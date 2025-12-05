@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Light theme (default) */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(240 10% 3.9%);
+  --primary: hsl(240 5.9% 10%);
+  --muted: hsl(240 4.8% 95.9%);
+  --border: hsl(240 5.9% 90%);
+  --ring: hsl(240 10% 3.9%);
+}
+
+/* Dark theme */
+.dark {
+  --background: hsl(240 10% 3.9%);
+  --foreground: hsl(0 0% 98%);
+  --primary: hsl(0 0% 98%);
+  --muted: hsl(240 3.7% 15.9%);
+  --border: hsl(240 3.7% 15.9%);
+  --ring: hsl(0 0% 98%);
+}
+
+/* Wire CSS variables to Tailwind v4 theme */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+}
+
+/* Minimal reset */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  margin: 0;
+  padding: 0;
+}
