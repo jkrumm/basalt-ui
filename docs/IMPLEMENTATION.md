@@ -168,7 +168,45 @@ In `packages/basalt-ui/`:
 
 ### 12. Typography & Fonts (Google Fonts)
 Back in `packages/basalt-ui/`:
-- [ ] Decide on exact font weights needed (Lato, Nunito Sans, JetBrains Mono)
+- [ ] Decide on exact font weights needed (Lato 400 & 700, Nunito Sans 400, JetBrains Mono 400)
+- Some examples: 
+Hero Font
+  Lato
+
+Lato
+Size
+64px
+Height
+1.2
+Spacing
+-0.5px
+Weight
+Bold
+Header Font
+Lato
+
+Lato
+Size
+32px
+Height
+1.3
+Spacing
+0.0px
+Weight
+Bold
+Body Font
+Nunito Sans
+
+Nunito Sans
+Size
+16px
+Height
+1.5
+Spacing
+0.0px
+Weight
+Regular
+
 - [ ] In `src/index.css`:
   - Add Google Fonts `@import` statements
   - Define font variables: `--font-heading`, `--font-body`, `--font-mono`

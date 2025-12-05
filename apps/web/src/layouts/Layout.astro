@@ -1,0 +1,51 @@
+---
+import '../styles/global.css'
+
+import ThemeToggle from '@/components/shared/ThemeToggle'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const {
+  title = 'Basalt UI - Framework-agnostic Tailwind CSS Design System',
+  description = 'A zinc-based Tailwind CSS design system with React components.',
+} = Astro.props
+
+// Create canonical URL with fallback for development
+const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {canonicalURL && <link rel="canonical" href={canonicalURL} />}
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    {canonicalURL && <meta property="og:url" content={canonicalURL} />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <header class="border-b">
+      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold">Basalt UI</h2>
+        <ThemeToggle client:load />
+      </div>
+    </header>
+    <slot />
+  </body>
+</html>

@@ -14,6 +14,8 @@
     "check:write": "bunx @biomejs/biome check --write .",
     "format": "bunx @biomejs/biome format --write .",
     "lint": "bunx @biomejs/biome lint .",
+    "typecheck": "bun --filter '*' typecheck",
+    "pre": "bun run format && bun run lint && bun run typecheck",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
     "hooks:uninstall": "lefthook uninstall"

@@ -1,0 +1,5 @@
+/* Import Tailwind v4 */
+@import "tailwindcss";
+
+/* Import basalt-ui tokens from workspace */
+@import "../../../../packages/basalt-ui/src/index.css";

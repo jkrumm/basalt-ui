@@ -1,0 +1,59 @@
+---
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Layout from '@/layouts/Layout.astro'
+---
+
+<Layout>
+  <main class="container mx-auto px-4 py-16">
+    <section class="text-center mb-16">
+      <h1 class="text-5xl font-bold tracking-tight mb-4">Basalt UI</h1>
+      <p class="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+        A framework-agnostic Tailwind CSS design system with zinc-based colors.
+      </p>
+      <div class="flex gap-4 justify-center">
+        <Button size="lg">
+          <a href="/playground">View Components</a>
+        </Button>
+        <Button variant="outline" size="lg">
+          <a href="https://github.com/jkrumm/basalt-ui">GitHub</a>
+        </Button>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-3 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Framework Agnostic</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p class="text-muted-foreground">
+            Works with React, Vue, Svelte, or any framework.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Zinc-Based Design</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p class="text-muted-foreground">
+            Professional color palette based on zinc tones.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dark Mode Ready</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p class="text-muted-foreground">
+            Built-in dark mode with CSS variables.
+          </p>
+        </CardContent>
+      </Card>
+    </section>
+  </main>
+</Layout>

@@ -109,10 +109,23 @@
     },
     {
       "includes": ["**/*.astro"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": {
+              "level": "off"
+            }
+          }
+        }
+      },
       "linter": {
         "rules": {
           "style": {
             "useConst": "warn"
+          },
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
           }
         }
       }

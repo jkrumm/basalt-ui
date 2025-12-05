@@ -9,6 +9,17 @@ Framework-agnostic Tailwind CSS design system with zinc-based colors.
 
 **DO NOT** automatically start executing tasks from `docs/IMPLEMENTATION.md` unless explicitly asked. Only perform the specific tasks that the user requests. The implementation plan is for reference and context, not a directive to execute autonomously.
 
+## Critical Rules (READ FIRST)
+
+- **Runtime**: Bun (not npm/pnpm)
+- **TypeScript**: Strict mode, no `any`, type inference preferred
+- **Tailwind**: v4 syntax (`@import`, `@theme`, NOT v3 `@tailwind` directives)
+- **Git**: Conventional commits, `master` branch (not main)
+- **ShadCN**: Copy-paste pattern (not npm dependency)
+- **Linting**: Biome (not ESLint/Prettier)
+- **Validation**: Check `package.json`, run type-check/build + format
+- **Code Style**: Typed object params, low nesting, early returns
+
 ## Tech Stack
 
 - **Runtime**: Bun (not Node/npm)
@@ -30,12 +41,38 @@ basalt-ui/
 └── docs/                  # Implementation plans
 ```
 
+## Documentation Structure
+
+This monorepo uses hierarchical CLAUDE.md files:
+
+- **Root `CLAUDE.md`** (this file) - Monorepo-wide conventions
+  - Bun workspace management
+  - Biome, commitlint, lefthook configuration
+  - Git workflow (trunk-based, conventional commits)
+  - Package management rules
+  - Release process
+
+- **`packages/basalt-ui/CLAUDE.md`** (future) - Theme package conventions
+  - Tailwind v4 preset architecture
+  - CSS token system
+  - Framework-agnostic patterns
+
+- **`apps/web/CLAUDE.md`** - Web app specific conventions
+  - Astro + React patterns
+  - ShadCN integration
+  - Islands architecture
+  - Performance & SEO guidelines
+
+Each workspace's CLAUDE.md focuses on its specific concerns while this root file covers shared monorepo infrastructure.
+
 ## Commands
 
 **Root:**
 ```bash
 bun install                # Install all workspaces
 bun run dev                # Start web app
+bun run pre                # Run format + lint + typecheck (pre-commit)
+bun run typecheck          # Type-check all workspaces
 bun run release            # Create release (local only)
 ```
 
@@ -58,6 +95,25 @@ bunx @biomejs/biome check --write .            # Fix all
 bunx commitlint --edit <file>                  # Validate commit msg
 ```
 
+## Validation & Quality Workflow
+
+**Available Commands**:
+- `bun run pre` - **Recommended**: Format + lint + typecheck all workspaces
+- `bun run format` - Format all files with Biome
+- `bun run lint` - Lint all files with Biome
+- `bun run typecheck` - Type-check all workspaces with TypeScript
+- `bunx @biomejs/biome check --write .` - Format + lint with Biome
+- `bunx @biomejs/biome check .` - Check without fixing
+- Individual workspace: `cd apps/web && bun run typecheck`
+
+**Workflow:**
+1. Make changes
+2. Run `bun run pre` to validate everything
+3. Fix any errors in changed files only
+4. Commit with conventional format
+
+**Rule**: Don't refactor untouched code. User validates running apps manually.
+
 ## MCP Tool Guidelines
 
 **Perplexity** (`@perplexity-ai/mcp-server`):
@@ -72,69 +128,35 @@ bunx commitlint --edit <file>                  # Validate commit msg
 - Up-to-date library documentation
 - API references
 
-## Critical Rules
+## Development Guidelines
 
 ### Package Management
 
-**IMPORTANT**: Never hardcode package versions in `package.json`.
+Never hardcode versions in `package.json`. Use `bun add` commands:
 
-✅ **Correct:**
 ```bash
-bun add -D @biomejs/biome          # Gets latest version
-bun add -D --exact @biomejs/biome  # Gets exact latest version
-```
+✅ bun add -D @biomejs/biome          # Gets latest
+✅ bun add -D --exact @biomejs/biome  # Gets exact latest
 
-❌ **Wrong:**
-```json
-{
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4"  // Don't manually write versions
-  }
-}
+❌ Manual edit: "@biomejs/biome": "^1.9.4"  # Don't do this
 ```
-
-**Why:** Always use `bun install` or `bun add` commands to ensure up-to-date versions and proper lockfile management.
 
 ### TypeScript
 
-**IMPORTANT**: Strict TypeScript. No `any`, no implicit types.
+Strict mode. No `any`, explicit types on all exports.
 
-✅ **Correct:**
 ```typescript
-export function createTheme(colors: Record<string, string>): ThemeConfig {
-  return { colors }
-}
-```
-
-❌ **Wrong:**
-```typescript
-export function createTheme(colors) {  // Missing types
-  return { colors }
-}
+✅ export function createTheme(colors: Record<string, string>): ThemeConfig
+❌ export function createTheme(colors)  // Missing types
 ```
 
 ### Tailwind v4 (Not v3!)
 
-**Key differences from v3:**
-- CSS-first configuration (`@theme` directive)
-- No `tailwind.config.js` plugins section
-- `@import "tailwindcss"` instead of `@tailwind` directives
-- Native CSS variables, not JIT
+Use v4 syntax with `@import` and `@theme`, NOT v3 `@tailwind` directives.
 
-✅ **Correct (v4):**
 ```css
-@import "tailwindcss";
-
-@theme inline {
-  --color-primary: var(--primary);
-}
-```
-
-❌ **Wrong (v3 syntax):**
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+✅ v4: @import "tailwindcss"; @theme inline { --color-primary: var(--primary); }
+❌ v3: @tailwind base; @tailwind components; @tailwind utilities;
 ```
 
 ### File Organization
