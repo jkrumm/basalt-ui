@@ -1,0 +1,408 @@
+---
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Layout from '@/layouts/Layout.astro';
+---
+
+<Layout
+  title="Typography - Basalt UI"
+  description="Complete typography system with Google Fonts: Lato, Nunito Sans, and JetBrains Mono"
+>
+  <main class="container mx-auto max-w-6xl px-4 py-16">
+    <!-- Hero Section -->
+    <div class="mb-16">
+      <h1 class="text-display tracking-tight">Typography</h1>
+      <p class="text-muted-foreground max-w-2xl">
+        Basalt UI's typography system uses semantic HTML that looks great by default. No utility
+        classes needed for headings or paragraphs. Three font families—Lato for headings, Nunito
+        Sans for body, and JetBrains Mono for code—create a warm, professional, volcanic aesthetic.
+      </p>
+    </div>
+
+    <!-- Semantic HTML Demo Section -->
+    <section class="mb-16">
+      <h2>Semantic HTML Works By Default</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="border-border bg-muted/30 mb-8 rounded-lg border p-6">
+            <article class="prose-basalt">
+              <h2>This h2 is styled automatically</h2>
+              <p>
+                This paragraph looks great without any classes. Basalt UI styles semantic HTML by
+                default, so you write clean markup and get beautiful typography.
+              </p>
+              <h3>This is an h3 heading</h3>
+              <p>
+                Notice how headings use Lato (bold) and body text uses Nunito Sans (regular). The
+                spacing, sizing, and colors are all automatic.
+              </p>
+              <p>
+                <a href="#">Links are styled automatically too</a>, with a sage green color and
+                subtle underline that responds to hover.
+              </p>
+              <ul>
+                <li>Lists work automatically</li>
+                <li>No classes needed</li>
+                <li>Just semantic HTML</li>
+              </ul>
+              <blockquote>
+                Blockquotes are styled with a sage green border and muted text, creating subtle
+                visual hierarchy.
+              </blockquote>
+              <p>
+                Inline <code>code elements</code> get monospace font with background highlighting.
+              </p>
+            </article>
+          </div>
+          <div class="text-small text-muted-foreground">
+            👆 All the typography above uses semantic HTML with zero utility classes on the elements
+            themselves.
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Font Families Section -->
+    <section class="mb-16">
+      <h2>Font Families</h2>
+
+      <div class="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Lato (Headings)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div class="font-heading text-2xl">The quick brown fox jumps over the lazy dog</div>
+              <div class="text-foreground/70 text-sm">
+                <code class="font-mono">font-heading</code> • Weights: 400, 700
+              </div>
+              <div class="text-foreground/50 text-xs">
+                Used for all headings (h1-h6), display text, and hero sections
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Nunito Sans (Body)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div class="font-body text-2xl">The quick brown fox jumps over the lazy dog</div>
+              <div class="text-foreground/70 text-sm">
+                <code class="font-mono">font-body</code> • Weight: 400
+              </div>
+              <div class="text-foreground/50 text-xs">
+                Used for paragraph text, descriptions, and general content
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>JetBrains Mono (Code)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div class="font-mono text-2xl">The quick brown fox</div>
+              <div class="text-foreground/70 text-sm">
+                <code class="font-mono">font-mono</code> • Weight: 400
+              </div>
+              <div class="text-foreground/50 text-xs">
+                Used for code blocks, inline code, and technical content
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Typography Scale Section -->
+    <section class="mb-16">
+      <h2>Typography Scale</h2>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div class="space-y-8">
+            <!-- Display -->
+            <div class="border-border border-b pb-6">
+              <div class="text-display tracking-tight">Display Text</div>
+              <div class="text-small text-muted-foreground font-mono">
+                text-display • 64px / 77px line-height • Lato Bold • -0.5px tracking
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Used for hero sections and large marketing headlines (requires .text-display class)
+              </div>
+            </div>
+
+            <!-- Hero -->
+            <div class="border-border border-b pb-6">
+              <div class="text-hero">Hero Text</div>
+              <div class="text-small text-muted-foreground font-mono">
+                text-hero • 48px / 58px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Subhero sections and large page headers (requires .text-hero class)
+              </div>
+            </div>
+
+            <!-- H1 -->
+            <div class="border-border border-b pb-6">
+              <h1>Heading 1</h1>
+              <div class="text-small text-muted-foreground font-mono">
+                h1 element • 40px / 48px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Primary page heading (automatic styling, no class needed)
+              </div>
+            </div>
+
+            <!-- H2 -->
+            <div class="border-border border-b pb-6">
+              <h2>Heading 2</h2>
+              <div class="text-small text-muted-foreground font-mono">
+                h2 element • 32px / 42px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Section headers (automatic styling, no class needed)
+              </div>
+            </div>
+
+            <!-- H3 -->
+            <div class="border-border border-b pb-6">
+              <h3>Heading 3</h3>
+              <div class="text-small text-muted-foreground font-mono">
+                h3 element • 24px / 34px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Subsection headers (automatic styling)
+              </div>
+            </div>
+
+            <!-- H4 -->
+            <div class="border-border border-b pb-6">
+              <h4>Heading 4</h4>
+              <div class="text-small text-muted-foreground font-mono">
+                h4 element • 20px / 28px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Card titles (automatic styling)
+              </div>
+            </div>
+
+            <!-- H5 -->
+            <div class="border-border border-b pb-6">
+              <h5>Heading 5</h5>
+              <div class="text-small text-muted-foreground font-mono">
+                h5 element • 18px / 27px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Small section headings (automatic styling)
+              </div>
+            </div>
+
+            <!-- H6 -->
+            <div class="border-border border-b pb-6">
+              <h6>Heading 6</h6>
+              <div class="text-small text-muted-foreground font-mono">
+                h6 element • 16px / 24px line-height • Lato Bold
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Tiny section headings (automatic styling)
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div class="border-border border-b pb-6">
+              <p>
+                Body text: The quick brown fox jumps over the lazy dog. This is the default
+                paragraph text style used throughout the design system. Nunito Sans provides a
+                friendly, readable aesthetic.
+              </p>
+              <div class="text-small text-muted-foreground font-mono">
+                p element • 16px / 24px line-height • Nunito Sans Regular
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Paragraph text and general content (automatic styling, default)
+              </div>
+            </div>
+
+            <!-- Small -->
+            <div class="border-border border-b pb-6">
+              <div class="text-small">
+                Small text for metadata, captions, and secondary information
+              </div>
+              <div class="text-small text-muted-foreground font-mono">
+                text-small • 14px / 20px line-height
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Metadata and captions (requires .text-small class)
+              </div>
+            </div>
+
+            <!-- Caption -->
+            <div class="pb-6">
+              <div class="text-caption">
+                Caption text for legal disclaimers, footnotes, and fine print
+              </div>
+              <div class="text-small text-muted-foreground font-mono">
+                text-caption • 12px / 16px line-height
+              </div>
+              <div class="text-caption text-muted-foreground mt-2">
+                Legal text and footnotes (requires .text-caption class)
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Usage Guidelines Section -->
+    <section class="mb-16">
+      <h2>Usage Guidelines</h2>
+
+      <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Semantic Classes -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Semantic Typography</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div>
+                <p class="mb-2 text-sm font-bold">Recommended for content hierarchy</p>
+                <pre
+                  class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Semantic HTML (automatic styling) -->
+<h1>Hero Title</h1>
+<h2>Section Header</h2>
+<p>Body paragraph text</p>
+
+<!-- Custom sizes when needed -->
+<div class="text-display">Extra Large Hero</div>
+<span class="text-small">Metadata or caption</span>
+
+<!-- Markup is cleaner, more semantic -->`}</pre>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Utility Classes -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Utility Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div>
+                <p class="mb-2 text-sm font-bold">For flexible custom styling</p>
+                <pre
+                  class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<div class="text-2xl font-bold">
+  Custom large text
+</div>
+
+<div class="text-base tracking-wide uppercase">
+  Uppercase label
+</div>
+
+<code class="text-sm font-mono">
+  Inline code snippet
+</code>`}</pre>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Font Weights & Letter Spacing -->
+    <section class="mb-16">
+      <h2>Weights & Spacing</h2>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Font Weights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-3">
+              <div class="font-regular text-xl">font-regular (400) - Body text</div>
+              <div class="text-xl font-bold">font-bold (700) - Headings and emphasis</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Letter Spacing</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-3">
+              <div class="text-xl tracking-tight">tracking-tight (-0.5px) - Display text</div>
+              <div class="text-xl tracking-normal">tracking-normal (0px) - Default</div>
+              <div class="text-xl tracking-wide">tracking-wide (0.025em) - Uppercase</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Implementation Section -->
+    <section>
+      <h2>Implementation</h2>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Google Fonts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-4">
+            <p class="font-body text-body">
+              Basalt UI uses an optimized font loading strategy to prevent layout shift and ensure
+              fast page loads. Add these lines to your HTML <code class="font-mono text-sm"
+                >&lt;head&gt;</code
+              >:
+            </p>
+
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Preconnect to Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+<!-- Load fonts with display=swap for zero flicker -->
+<link
+  rel="preload"
+  as="style"
+  href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
+  fetchpriority="high"
+/>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
+  media="print"
+  onload="this.media='all'"
+/>
+<noscript>
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
+  />
+</noscript>`}</pre>
+
+            <div class="border-border bg-muted/50 rounded border p-4">
+              <p class="mb-2 text-sm font-bold">Performance Benefits:</p>
+              <ul class="list-inside list-disc space-y-1 text-sm">
+                <li>Zero blocking: Fonts load asynchronously</li>
+                <li>Early connection: Preconnect reduces latency by 200-500ms</li>
+                <li>FOUT prevention: display=swap shows text immediately with fallbacks</li>
+                <li>Minimal CLS: Fallback fonts matched to web fonts</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  </main>
+</Layout>
