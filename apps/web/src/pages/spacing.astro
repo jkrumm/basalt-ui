@@ -1,0 +1,469 @@
+---
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Layout from '@/layouts/Layout.astro';
+
+const spacingValues = [
+  { value: '0', pixels: '0px', rem: '0rem', class: 'space-0' },
+  { value: '1', pixels: '4px', rem: '0.25rem', class: 'space-1' },
+  { value: '2', pixels: '8px', rem: '0.5rem', class: 'space-2' },
+  { value: '3', pixels: '12px', rem: '0.75rem', class: 'space-3' },
+  { value: '4', pixels: '16px', rem: '1rem', class: 'space-4' },
+  { value: '5', pixels: '20px', rem: '1.25rem', class: 'space-5' },
+  { value: '6', pixels: '24px', rem: '1.5rem', class: 'space-6' },
+  { value: '8', pixels: '32px', rem: '2rem', class: 'space-8' },
+  { value: '10', pixels: '40px', rem: '2.5rem', class: 'space-10' },
+  { value: '12', pixels: '48px', rem: '3rem', class: 'space-12' },
+  { value: '16', pixels: '64px', rem: '4rem', class: 'space-16' },
+  { value: '20', pixels: '80px', rem: '5rem', class: 'space-20' },
+  { value: '24', pixels: '96px', rem: '6rem', class: 'space-24' },
+  { value: '32', pixels: '128px', rem: '8rem', class: 'space-32' },
+];
+
+const useCases = [
+  {
+    title: 'Padding',
+    examples: [
+      { class: 'p-2', description: 'Small internal padding (8px)' },
+      { class: 'p-4', description: 'Default padding (16px)' },
+      { class: 'p-6', description: 'Comfortable padding (24px)' },
+      { class: 'p-8', description: 'Large padding (32px)' },
+    ],
+  },
+  {
+    title: 'Gap',
+    examples: [
+      { class: 'gap-2', description: 'Tight spacing between items (8px)' },
+      { class: 'gap-4', description: 'Default gap (16px)' },
+      { class: 'gap-6', description: 'Comfortable gap (24px)' },
+      { class: 'gap-8', description: 'Large gap (32px)' },
+    ],
+  },
+  {
+    title: 'Margin',
+    examples: [
+      { class: 'm-4', description: 'Small external margin (16px)' },
+      { class: 'm-8', description: 'Default margin (32px)' },
+      { class: 'm-12', description: 'Section margin (48px)' },
+      { class: 'm-16', description: 'Large margin (64px)' },
+    ],
+  },
+];
+---
+
+<Layout
+  title="Spacing - Basalt UI"
+  description="4px-based spacing system with a restricted scale for consistent layouts"
+>
+  <main class="container mx-auto max-w-6xl px-4 py-16">
+    <!-- Hero Section -->
+    <div class="mb-16">
+      <h1 class="text-display tracking-tight">Spacing</h1>
+      <p class="text-muted-foreground max-w-2xl">
+        Basalt UI uses a 4px base unit with a restrictive spacing scale. Only defined values are
+        available—this intentional limitation forces consistency and prevents arbitrary spacing that
+        leads to visual chaos.
+      </p>
+    </div>
+
+    <!-- Spacing Philosophy Section -->
+    <section class="mb-16">
+      <h2>Spacing Philosophy</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="space-y-6">
+            <div>
+              <h3 class="mb-2 text-lg font-bold">4px Base Unit</h3>
+              <p class="text-muted-foreground">
+                All spacing values are multiples of 4px. This creates a harmonious, predictable
+                rhythm throughout the interface and aligns with common screen pixel densities.
+              </p>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">Restricted Scale</h3>
+              <p class="text-muted-foreground mb-3">
+                Unlike default Tailwind, Basalt UI only provides specific spacing values. This is
+                intentional—if you need a value that isn't defined, the design system is telling you
+                to reconsider.
+              </p>
+              <div class="border-border bg-muted/50 rounded border p-4">
+                <p class="mb-2 text-sm font-bold">What's Missing and Why</p>
+                <p class="text-small text-muted-foreground mb-2">
+                  Values like 7, 9, 11, 13-15, 17-19, 21-23, 25-31, 33+ are intentionally omitted.
+                </p>
+                <p class="text-small text-muted-foreground">
+                  <strong>Example:</strong> Need p-7? Use p-6 (24px) or p-8 (32px) instead. This prevents
+                  the "pixel-perfect" trap where designers obsess over 28px vs 30px padding.
+                </p>
+              </div>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">Consistency Over Flexibility</h3>
+              <p class="text-muted-foreground">
+                A limited spacing scale ensures every component uses the same rhythm. This creates
+                visual harmony and makes layouts feel intentional rather than arbitrary.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Spacing Scale Visualization -->
+    <section class="mb-16">
+      <h2>Spacing Scale</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="space-y-4">
+            {
+              spacingValues.map((spacing) => (
+                <div class="flex items-center gap-4">
+                  <div class="w-16 text-right font-mono text-sm font-bold">{spacing.value}</div>
+                  <div class="bg-primary h-8 rounded" style={`width: ${spacing.pixels}`} />
+                  <div class="flex gap-4 font-mono text-sm">
+                    <span class="text-muted-foreground w-16">{spacing.pixels}</span>
+                    <span class="text-muted-foreground">{spacing.rem}</span>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+          <div class="text-caption text-muted-foreground mt-6">
+            Visual representation of each spacing value. The green bar shows the actual pixel size.
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Common Use Cases Section -->
+    <section class="mb-16">
+      <h2>Common Use Cases</h2>
+      <div class="grid gap-6 lg:grid-cols-3">
+        {
+          useCases.map((useCase) => (
+            <Card>
+              <CardHeader>
+                <CardTitle>{useCase.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div class="space-y-4">
+                  {useCase.examples.map((example) => (
+                    <div>
+                      <code class="bg-muted mb-1 inline-block rounded px-2 py-1 font-mono text-sm">
+                        {example.class}
+                      </code>
+                      <p class="text-small text-muted-foreground">{example.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Spacing in Action Section -->
+    <section class="mb-16">
+      <h2>Spacing in Action</h2>
+
+      <div class="space-y-6">
+        <!-- Padding Examples -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Padding Examples</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="grid gap-6 md:grid-cols-2">
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Tight padding (p-2)</p>
+                <div class="border-border bg-muted rounded border">
+                  <div class="bg-primary text-primary-foreground rounded p-2">
+                    Content with 8px padding
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Default padding (p-4)</p>
+                <div class="border-border bg-muted rounded border">
+                  <div class="bg-primary text-primary-foreground rounded p-4">
+                    Content with 16px padding
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Comfortable padding (p-6)</p>
+                <div class="border-border bg-muted rounded border">
+                  <div class="bg-primary text-primary-foreground rounded p-6">
+                    Content with 24px padding
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Large padding (p-8)</p>
+                <div class="border-border bg-muted rounded border">
+                  <div class="bg-primary text-primary-foreground rounded p-8">
+                    Content with 32px padding
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Gap Examples -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Gap Examples</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="grid gap-6 md:grid-cols-2">
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Small gap (gap-2)</p>
+                <div class="flex gap-2">
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Default gap (gap-4)</p>
+                <div class="flex gap-4">
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Comfortable gap (gap-6)</p>
+                <div class="flex gap-6">
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                </div>
+              </div>
+              <div>
+                <p class="text-small text-muted-foreground mb-3">Large gap (gap-8)</p>
+                <div class="flex gap-8">
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                  <div class="bg-primary h-12 flex-1 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <!-- Stack Example -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Vertical Stack (space-y-4)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-4">
+              <div class="bg-card border-border rounded border p-4">First item</div>
+              <div class="bg-card border-border rounded border p-4">Second item</div>
+              <div class="bg-card border-border rounded border p-4">Third item</div>
+              <div class="bg-card border-border rounded border p-4">Fourth item</div>
+            </div>
+            <p class="text-caption text-muted-foreground mt-4">
+              Stack components use margin-top on children (except first) to create consistent
+              vertical rhythm
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- What's Missing and Why Section -->
+    <section class="mb-16">
+      <h2>What's Missing and Why</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="space-y-4">
+            <div class="border-border bg-destructive/10 rounded border p-4">
+              <h3 class="mb-2 text-lg font-bold">Missing Values</h3>
+              <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-7</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-9</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-11</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-13</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-14</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-15</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-17</code>
+                <code class="bg-muted rounded px-2 py-1 text-center font-mono text-sm">p-18</code>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="mb-2 text-lg font-bold">Design Rationale</h3>
+              <p class="text-muted-foreground mb-4">
+                The gaps in our spacing scale are intentional. They prevent the "pixel-perfect" trap
+                where every component needs unique spacing values.
+              </p>
+              <div class="border-border bg-muted/30 space-y-3 rounded border p-4 text-sm">
+                <div>
+                  <p class="font-bold">If you need p-7 (28px):</p>
+                  <p class="text-muted-foreground">
+                    Ask yourself: "Is this meaningfully different from p-6 (24px) or p-8 (32px)?"
+                    Usually, the answer is no.
+                  </p>
+                </div>
+                <div>
+                  <p class="font-bold">If you need p-15 (60px):</p>
+                  <p class="text-muted-foreground">
+                    Use p-16 (64px) instead. The 4px difference won't be noticeable to users, but
+                    consistency across components will be.
+                  </p>
+                </div>
+                <div>
+                  <p class="font-bold">If you really need a custom value:</p>
+                  <p class="text-muted-foreground">
+                    Consider if this represents a new semantic spacing level that should be added to
+                    the design system itself.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Usage Guidelines Section -->
+    <section class="mb-16">
+      <h2>Usage Guidelines</h2>
+      <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Do's -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Do ✅</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul class="space-y-3 text-sm">
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span
+                  >Use spacing values from the defined scale (0, 1, 2, 3, 4, 5, 6, 8, 10...)</span
+                >
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Favor p-4 (16px) and p-6 (24px) for most internal padding</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use gap-4 (16px) for most flexbox/grid layouts</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use larger values (12, 16, 20, 24) for section spacing</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use smaller values (1, 2, 3) for tight spaces and compact UIs</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Maintain consistent spacing patterns within related components</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <!-- Don'ts -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Don't ❌</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul class="space-y-3 text-sm">
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't use arbitrary spacing values (p-[13px], m-[27px])</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't use undefined scale values (p-7, p-9, p-11, etc.)</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't mix spacing systems (rem + px + arbitrary values)</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't obsess over 4px differences—use nearest defined value</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't create one-off spacing values for individual components</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't ignore the scale—it exists to maintain consistency</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Implementation Section -->
+    <section>
+      <h2>Implementation</h2>
+
+      <div class="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>CSS Variables</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-small text-muted-foreground mb-4">
+              Use spacing variables directly in custom styles
+            </p>
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`.my-component {
+  padding: var(--spacing-4); /* 16px */
+  margin-bottom: var(--spacing-8); /* 32px */
+  gap: var(--spacing-6); /* 24px */
+}
+
+.my-section {
+  padding-top: var(--spacing-16); /* 64px */
+  padding-bottom: var(--spacing-16);
+}
+
+.my-card {
+  padding: var(--spacing-6);
+  margin: var(--spacing-4);
+}`}</pre>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tailwind Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-small text-muted-foreground mb-4">
+              Use utility classes for rapid development
+            </p>
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Padding -->
+<div class="p-4">16px padding all sides</div>
+<div class="px-6 py-4">24px horizontal, 16px vertical</div>
+
+<!-- Margin -->
+<section class="mb-16">64px bottom margin</section>
+
+<!-- Gap (flexbox/grid) -->
+<div class="flex gap-4">16px gap between items</div>
+<div class="grid gap-6">24px gap between cells</div>
+
+<!-- Space (vertical stack) -->
+<div class="space-y-4">16px between children</div>`}</pre>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+  </main>
+</Layout>

@@ -1,0 +1,397 @@
+---
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Layout from '@/layouts/Layout.astro';
+
+const semanticColors = [
+  {
+    name: 'Background',
+    variable: '--background',
+    light: 'oklch(0.985 0.002 90)',
+    dark: 'oklch(0.195 0.012 285)',
+    usage: 'Page background',
+    class: 'bg-background text-foreground',
+  },
+  {
+    name: 'Foreground',
+    variable: '--foreground',
+    light: 'oklch(0.265 0.015 285)',
+    dark: 'oklch(0.935 0.005 90)',
+    usage: 'Primary text color',
+    class: 'bg-foreground text-background',
+  },
+  {
+    name: 'Primary (Lichen Sage)',
+    variable: '--primary',
+    light: 'oklch(0.58 0.1 135)',
+    dark: 'oklch(0.68 0.11 135)',
+    usage: 'Actions, links, focus states',
+    class: 'bg-primary text-primary-foreground',
+  },
+  {
+    name: 'Secondary',
+    variable: '--secondary',
+    light: 'oklch(0.905 0.008 270)',
+    dark: 'oklch(0.31 0.015 285)',
+    usage: 'Subtle backgrounds, alternative actions',
+    class: 'bg-secondary text-secondary-foreground',
+  },
+  {
+    name: 'Accent',
+    variable: '--accent',
+    light: 'oklch(0.925 0.008 135)',
+    dark: 'oklch(0.35 0.02 135)',
+    usage: 'Hover states, highlights',
+    class: 'bg-accent text-accent-foreground',
+  },
+  {
+    name: 'Destructive (Magma Rust)',
+    variable: '--destructive',
+    light: 'oklch(0.58 0.18 35)',
+    dark: 'oklch(0.66 0.19 35)',
+    usage: 'Errors, warnings, delete actions',
+    class: 'bg-destructive text-destructive-foreground',
+  },
+  {
+    name: 'Ochre (Vein Ochre)',
+    variable: '--ochre',
+    light: 'oklch(0.7 0.12 75)',
+    dark: 'oklch(0.75 0.13 75)',
+    usage: 'Highlights, warm accents',
+    class: 'bg-ochre text-ochre-foreground',
+  },
+  {
+    name: 'Muted',
+    variable: '--muted',
+    light: 'oklch(0.935 0.005 270)',
+    dark: 'oklch(0.29 0.015 285)',
+    usage: 'Disabled states, subtle backgrounds',
+    class: 'bg-muted text-muted-foreground',
+  },
+  {
+    name: 'Card',
+    variable: '--card',
+    light: 'oklch(0.995 0.002 90)',
+    dark: 'oklch(0.22 0.012 285)',
+    usage: 'Card surfaces, elevated content',
+    class: 'bg-card text-card-foreground',
+  },
+  {
+    name: 'Border',
+    variable: '--border',
+    light: 'oklch(0.875 0.005 270)',
+    dark: 'oklch(0.32 0.015 285)',
+    usage: 'Borders, dividers, input borders',
+    class: 'bg-border',
+  },
+];
+
+const chartColors = [
+  { name: 'Chart 1', variable: '--chart-1', class: 'bg-chart-1' },
+  { name: 'Chart 2', variable: '--chart-2', class: 'bg-chart-2' },
+  { name: 'Chart 3', variable: '--chart-3', class: 'bg-chart-3' },
+  { name: 'Chart 4', variable: '--chart-4', class: 'bg-chart-4' },
+  { name: 'Chart 5', variable: '--chart-5', class: 'bg-chart-5' },
+];
+---
+
+<Layout
+  title="Colors - Basalt UI"
+  description="OKLCH-based color system with semantic tokens inspired by volcanic landscapes"
+>
+  <main class="container mx-auto max-w-6xl px-4 py-16">
+    <!-- Hero Section -->
+    <div class="mb-16">
+      <h1 class="text-display tracking-tight">Colors</h1>
+      <p class="text-muted-foreground max-w-2xl">
+        Basalt UI uses OKLCH color space for perceptually uniform, accessible colors. Our palette is
+        inspired by volcanic landscapes—Lichen Sage, Magma Rust, and Vein Ochre create a warm,
+        professional aesthetic that avoids stark extremes.
+      </p>
+    </div>
+
+    <!-- Color Philosophy Section -->
+    <section class="mb-16">
+      <h2>OKLCH Color Space</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="grid gap-6 md:grid-cols-3">
+            <div>
+              <h3 class="mb-2 text-lg font-bold">L (Lightness)</h3>
+              <p class="text-small text-muted-foreground">
+                0-1 scale representing perceived brightness. Unlike HSL, changes in L correspond to
+                human perception—no unexpected gray zones in gradients.
+              </p>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">C (Chroma)</h3>
+              <p class="text-small text-muted-foreground">
+                Saturation matching human perception. Higher values = more vibrant. Consistent
+                across different hues.
+              </p>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">H (Hue)</h3>
+              <p class="text-small text-muted-foreground">
+                Color angle (0-360). 135° = sage green, 35° = warm rust, 75° = golden ochre, 270° =
+                neutral zinc.
+              </p>
+            </div>
+          </div>
+          <div class="border-border bg-muted/50 mt-6 rounded border p-4">
+            <p class="mb-2 text-sm font-bold">Why OKLCH?</p>
+            <ul class="list-inside list-disc space-y-1 text-sm">
+              <li>Perceptually uniform—gradients stay clean and predictable</li>
+              <li>Better accessibility—easier to maintain proper contrast ratios</li>
+              <li>Consistent saturation across hues</li>
+              <li>Future-proof—native browser support with wide gamut displays</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Semantic Color Tokens Section -->
+    <section class="mb-16">
+      <h2>Semantic Color Tokens</h2>
+      <div class="grid gap-6">
+        {
+          semanticColors.map((color) => (
+            <Card>
+              <CardContent className="pt-6">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h3 class="mb-2 font-bold">{color.name}</h3>
+                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
+                    <div class="space-y-2 font-mono text-sm">
+                      <div>
+                        <span class="text-muted-foreground">Variable:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Light:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.light}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Dark:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.dark}</code>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
+                      <span class="text-sm font-bold">Sample Text</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Chart Colors Section -->
+    <section class="mb-16">
+      <h2>Chart Colors</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <p class="text-muted-foreground mb-6">
+            Five harmonious colors for data visualization, designed to work together in charts and
+            graphs.
+          </p>
+          <div class="grid gap-4 md:grid-cols-5">
+            {
+              chartColors.map((color) => (
+                <div>
+                  <div class={`${color.class} mb-2 h-24 rounded-lg`} />
+                  <p class="text-small text-center font-mono">{color.name}</p>
+                  <p class="text-caption text-muted-foreground text-center">{color.variable}</p>
+                </div>
+              ))
+            }
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Volcanic Inspiration Section -->
+    <section class="mb-16">
+      <h2>Volcanic Inspiration</h2>
+      <div class="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Lichen Sage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="bg-primary mb-4 h-20 rounded-lg"></div>
+            <p class="text-small text-muted-foreground">
+              Earthy green inspired by lichen growing on volcanic rock. Used for primary actions and
+              interactive elements.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Magma Rust</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="bg-destructive mb-4 h-20 rounded-lg"></div>
+            <p class="text-small text-muted-foreground">
+              Warm rust-red reminiscent of oxidized volcanic minerals. Reserved for warnings,
+              errors, and destructive actions.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Vein Ochre</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="bg-ochre mb-4 h-20 rounded-lg"></div>
+            <p class="text-small text-muted-foreground">
+              Golden yellow like mineral veins in basalt. Used for highlights and warm accents that
+              need attention without urgency.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Usage Guidelines Section -->
+    <section class="mb-16">
+      <h2>Usage Guidelines</h2>
+      <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Do's -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Do ✅</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul class="space-y-3 text-sm">
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use semantic color tokens (bg-primary, text-muted-foreground)</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Rely on automatic dark mode switching via .dark class</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use primary for interactive elements and links</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use destructive only for warnings and errors</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Use muted for disabled states and less important content</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-primary">•</span>
+                <span>Test contrast ratios for accessibility (WCAG AA minimum)</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <!-- Don'ts -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Don't ❌</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul class="space-y-3 text-sm">
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't use arbitrary color values (bg-[#f3f3f3])</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't use HSL or RGB colors (breaks OKLCH benefits)</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't use destructive for non-error states</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't manually handle dark mode (system does it automatically)</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't mix semantic tokens with arbitrary values</span>
+              </li>
+              <li class="flex gap-2">
+                <span class="text-destructive">•</span>
+                <span>Don't ignore contrast requirements for decorative colors</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    <!-- Implementation Section -->
+    <section>
+      <h2>Implementation</h2>
+
+      <div class="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>CSS Variables</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-small text-muted-foreground mb-4">
+              Use CSS variables directly in custom styles
+            </p>
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`.my-component {
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.my-button {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.my-button:hover {
+  background-color: var(--accent);
+}`}</pre>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tailwind Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p class="text-small text-muted-foreground mb-4">
+              Use semantic utility classes for rapid development
+            </p>
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Background and text -->
+<div class="bg-background text-foreground">
+
+<!-- Primary button -->
+<button class="bg-primary text-primary-foreground">
+
+<!-- Muted text -->
+<p class="text-muted-foreground">
+
+<!-- Card surface -->
+<div class="bg-card text-card-foreground border-border">
+
+<!-- Error state -->
+<div class="bg-destructive text-destructive-foreground">`}</pre>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+  </main>
+</Layout>
