@@ -1,73 +1,482 @@
 # Basalt UI
 
-Framework-agnostic Tailwind CSS design system with zinc-based colors.
+> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt and nature's palette.
 
-## Installation
+**Volcanic aesthetics meet modern design.** Basalt UI combines warm zinc-based neutrals with natural accent colors (sage, rust, ochre) to create professional, welcoming interfaces that feel organic, not clinical.
+
+---
+
+## Philosophy
+
+Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it **restricts** Tailwind to create consistency.
+
+- ✨ **Semantic HTML works by default** - `<h2>` looks like a heading without utility classes
+- 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
+- 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
+- 🌋 **Volcanic nature aesthetic** - Warm grays, sage green, magma rust, vein ochre
+- 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
+- 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
+
+---
+
+## Quick Start
+
+### Installation
 
 ```bash
-npm install basalt-ui tailwindcss@next
+bun add basalt-ui
+# or
+npm install basalt-ui
 ```
 
-## Usage
+### Setup
 
-### 1. Configure Tailwind
-
-In `tailwind.config.js`:
-
-```javascript
-import { preset } from 'basalt-ui'
-
-export default {
-  presets: [preset],
-  content: ['./src/**/*.{html,js,jsx,ts,tsx}'],
-}
-```
-
-### 2. Import CSS
-
-In your app's main CSS:
+Import the CSS in your main file:
 
 ```css
-@import 'basalt-ui/src/index.css';
+/* src/index.css or app/globals.css */
+@import "basalt-ui";
 ```
 
-Or in JavaScript:
-
-```javascript
-import 'basalt-ui/src/index.css'
-```
-
-### 3. Use Classes
+Add dark mode support to your HTML:
 
 ```html
-<div class="bg-background text-foreground p-4">
-  <h1 class="text-primary">Hello</h1>
-  <button class="bg-primary text-background">Click me</button>
+<html class="dark">
+  <!-- Your app -->
+</html>
+```
+
+### Use It
+
+Semantic HTML just works:
+
+```html
+<article>
+  <h2>Section Title</h2>
+  <p>This paragraph looks great without any classes.</p>
+  <a href="#">Links are styled automatically</a>
+</article>
+```
+
+Use defined utilities when needed:
+
+```html
+<div class="p-4 bg-card text-foreground rounded-lg shadow">
+  <h3>Card Title</h3>
+  <p class="text-muted-foreground">Card content</p>
 </div>
 ```
 
-## Dark Mode
+---
 
-Toggle `.dark` class on `<html>` element:
+## The Basalt UI Difference
 
-```javascript
-document.documentElement.classList.toggle('dark')
+### Before (Standard Tailwind)
+
+```html
+<!-- Infinite utilities, no consistency -->
+<div class="text-lg font-semibold tracking-tight p-3 rounded-md">
+  <p class="text-[17px] leading-[1.6]">Text with arbitrary values</p>
+</div>
 ```
 
-## Colors
+**Problems:**
+- Arbitrary values everywhere (`text-[17px]`)
+- No semantic meaning (`<div>` instead of `<h3>`)
+- Inconsistent spacing and sizing
+- Requires classes for basic styling
 
-- `background` / `foreground` - Base theme
-- `primary` - Primary action color
-- `muted` - Secondary/disabled state
-- `border` - Borders
-- `ring` - Focus rings
+### After (Basalt UI)
 
-All colors support light/dark via CSS variables.
+```html
+<!-- Semantic HTML with defined tokens -->
+<article>
+  <h3>Title is styled automatically</h3>
+  <p>Body text looks great by default.</p>
+</article>
 
-## Framework Support
+<!-- When you need custom styling -->
+<div class="p-4 rounded-md">
+  <p class="text-small">Use defined semantic sizes</p>
+</div>
+```
 
-Works with any framework: React, Vue, Svelte, Astro, vanilla JS, etc.
+**Benefits:**
+- Semantic HTML styled by default
+- Consistent, predictable tokens
+- Cleaner, more maintainable code
+- Design system enforces consistency
+
+---
+
+## Color System
+
+### Volcanic Nature Palette
+
+Basalt UI uses **OKLCH** color space for perceptually uniform colors that match human perception.
+
+#### Zinc Foundation (Neutrals)
+
+Warm, comfortable grays - not stark black and white:
+
+```css
+background  /* Warm white (light) / Deep gray (dark) */
+foreground  /* Rich dark gray (light) / Soft white (dark) */
+muted       /* Light backgrounds and disabled states */
+border      /* Subtle, visible borders */
+```
+
+#### Natural Accents
+
+Inspired by volcanic landscapes:
+
+```css
+primary     /* Lichen Sage - Earthy green for actions */
+destructive /* Magma Rust - Warm red for warnings */
+ochre       /* Vein Ochre - Golden yellow for highlights */
+```
+
+### Why OKLCH?
+
+**HSL Problems:**
+```css
+/* HSL: uneven perceived brightness */
+background: hsl(0, 0%, 50%);
+primary: hsl(120, 50%, 50%);
+/* These look completely different brightness! */
+```
+
+**OKLCH Solution:**
+```css
+/* OKLCH: perceptually uniform */
+background: oklch(0.50 0 0);
+primary: oklch(0.50 0.10 135);
+/* These look similar brightness ✓ */
+```
+
+Changes in L (lightness) and C (chroma) values match what your eyes perceive. No surprise gray zones in gradients.
+
+---
+
+## Typography
+
+### Font Stack
+
+- **Headings**: Lato (700) - Modern, geometric, professional
+- **Body**: Nunito Sans (400) - Rounded, friendly, readable
+- **Mono**: JetBrains Mono (400) - Clear, developer-friendly
+
+### Semantic Sizing
+
+HTML elements are styled automatically:
+
+```html
+<h1>Primary Heading (40px)</h1>
+<h2>Section Header (32px)</h2>
+<h3>Subsection (24px)</h3>
+<p>Body text (16px) - default</p>
+```
+
+Need custom sizes? Use semantic utilities:
+
+```html
+<div class="text-display">Hero Text (64px)</div>
+<div class="text-hero">Subhero (48px)</div>
+<span class="text-small">Metadata (14px)</span>
+<span class="text-caption">Fine print (12px)</span>
+```
+
+**No arbitrary values:**
+- ✅ `text-h2`, `text-body`, `text-small`
+- ❌ `text-lg`, `text-xl`, `text-[17px]`
+
+---
+
+## Spacing System
+
+Based on 4px increments, limited to purposeful values:
+
+```
+p-0   (0px)     p-1  (4px)     p-2  (8px)     p-3  (12px)
+p-4   (16px)    p-5  (20px)    p-6  (24px)    p-8  (32px)
+p-10  (40px)    p-12 (48px)    p-16 (64px)    p-20 (80px)
+p-24  (96px)    p-32 (128px)
+```
+
+**What's missing?** `p-7`, `p-9`, `p-11`, `p-13-15`, `p-17-19`, etc.
+
+**Why?** Force consistency. If you need a spacing value that's not defined, it's probably inconsistent with the design system.
+
+---
+
+## Restrictions
+
+Basalt UI is **opinionated**. It disables arbitrary values and infinite scales.
+
+### What Works ✅
+
+```html
+<!-- Defined tokens -->
+<div class="p-4 text-body font-bold bg-primary">
+
+<!-- Semantic HTML (styled automatically) -->
+<h2>Section Title</h2>
+<p>Body paragraph</p>
+
+<!-- ShadCN components -->
+<Button variant="default">Click Me</Button>
+```
+
+### What Doesn't Work ❌
+
+```html
+<!-- Arbitrary values (disabled) -->
+<div class="p-[13px]">           ❌
+<div class="text-[17px]">        ❌
+<div class="bg-[#f3f3f3]">       ❌
+
+<!-- Undefined utilities -->
+<div class="p-7">                ❌ (use p-6 or p-8)
+<div class="text-lg">            ❌ (use text-h4 or text-small)
+<div class="font-semibold">      ❌ (use font-regular or font-bold)
+```
+
+This is **intentional**. Consistency > flexibility.
+
+---
+
+## ShadCN Compatibility
+
+Basalt UI works seamlessly with ShadCN UI. All required tokens are defined:
+
+```bash
+# Install ShadCN
+npx shadcn@latest init
+
+# Choose "Zinc" as base color
+# ShadCN components will use Basalt UI's volcanic palette
+```
+
+Components automatically use:
+- Basalt color tokens
+- Restricted spacing scale
+- Semantic typography
+- Defined border radius
+
+---
+
+## Dark Mode
+
+Toggle dark mode by adding/removing the `dark` class:
+
+```html
+<html class="dark">
+  <!-- Dark mode active -->
+</html>
+```
+
+All colors automatically adjust to warm, comfortable dark mode values.
+
+**Light mode:** Warm whites, rich dark grays
+**Dark mode:** Deep warm grays, soft whites
+
+Both modes avoid stark extremes for comfortable, professional interfaces.
+
+---
+
+## Available Utilities
+
+### Colors
+
+```css
+/* Backgrounds */
+bg-background, bg-card, bg-muted, bg-primary, bg-destructive, bg-ochre
+
+/* Text */
+text-foreground, text-muted-foreground, text-primary, text-destructive
+
+/* Borders */
+border-border, border-input, border-primary
+
+/* Focus rings */
+ring-ring, ring-primary
+```
+
+### Typography
+
+```css
+/* Sizes (semantic) */
+text-display, text-hero, text-h1, text-h2, text-h3, text-h4, text-h5, text-h6
+text-body, text-small, text-caption
+
+/* Families */
+font-heading, font-body, font-mono
+
+/* Weights */
+font-regular, font-bold
+
+/* Letter spacing */
+tracking-tight, tracking-normal, tracking-wide
+```
+
+### Spacing
+
+```css
+/* Padding/Margin */
+p-0, p-1, p-2, p-3, p-4, p-5, p-6, p-8, p-10, p-12, p-16, p-20, p-24, p-32
+m-0, m-1, m-2, m-3, m-4, m-5, m-6, m-8, m-10, m-12, m-16, m-20, m-24, m-32
+
+/* Gap (flexbox/grid) */
+gap-0, gap-1, gap-2, gap-3, gap-4, gap-5, gap-6, gap-8, gap-10, gap-12
+```
+
+### Border Radius
+
+```css
+rounded-none, rounded-sm, rounded-md, rounded, rounded-lg, rounded-xl, rounded-full
+```
+
+### Shadows
+
+```css
+shadow-sm, shadow, shadow-md, shadow-lg, shadow-xl
+```
+
+---
+
+## Customization
+
+Want to adjust colors for your brand? Fork and modify `src/index.css`:
+
+```css
+:root {
+  /* Adjust OKLCH values */
+  --primary: oklch(0.58 0.10 135);  /* Change hue/chroma/lightness */
+  --destructive: oklch(0.58 0.18 35);
+}
+
+.dark {
+  /* Adjust dark mode */
+  --primary: oklch(0.68 0.11 135);  /* Lighter for dark backgrounds */
+}
+```
+
+**Keep the philosophy:**
+- Use OKLCH color space
+- Maintain perceptual uniformity
+- Preserve semantic HTML defaults
+- Keep restrictions (no arbitrary values)
+
+---
+
+## Examples
+
+### Card Component
+
+```html
+<div class="bg-card p-6 rounded-lg shadow">
+  <h3>Card Title</h3>
+  <p class="text-muted-foreground">Card description text.</p>
+  <button class="bg-primary text-primary-foreground px-4 py-2 rounded">
+    Action
+  </button>
+</div>
+```
+
+### Hero Section
+
+```html
+<header class="p-16 bg-background">
+  <h1 class="text-display font-heading font-bold tracking-tight">
+    Welcome to Your App
+  </h1>
+  <p class="text-h3 text-muted-foreground">
+    Build something amazing with Basalt UI.
+  </p>
+</header>
+```
+
+### Alert Component
+
+```html
+<div class="bg-destructive text-destructive-foreground p-4 rounded">
+  <h4>Error</h4>
+  <p class="text-small">Something went wrong. Please try again.</p>
+</div>
+```
+
+---
+
+## Why "Basalt UI"?
+
+Basalt is a volcanic rock formed from cooled lava. It's:
+- **Strong and foundational** - Like a mature design system
+- **Natural and earthy** - Inspiring the zinc + nature accent palette
+- **Structured but organic** - Restrictive yet beautiful
+
+The design system embodies this aesthetic: professional structure with warm, natural character.
+
+---
+
+## Use Cases
+
+Perfect for:
+- 📊 **Dashboards** - Clean, data-focused interfaces
+- 📝 **Content platforms** - Blogs, documentation, marketing sites
+- 🛠️ **SaaS applications** - Professional, warm, accessible
+- 🎨 **Design showcases** - Demonstrates thoughtful design system architecture
+
+Not ideal for:
+- 🎮 Gaming interfaces (too restrained)
+- 🎨 Highly artistic sites (needs more flexibility)
+- 🌈 Colorful, playful brands (neutral-focused palette)
+
+---
+
+## Requirements
+
+- **Tailwind CSS v4+** (uses `@theme inline` syntax)
+- Modern browser with OKLCH support (Chrome, Edge, Safari, Firefox 2023+)
+- No additional dependencies
+
+---
+
+## Documentation
+
+- [Full Design System Documentation](./CLAUDE.md) - Philosophy, architecture, guidelines
+- [Web Showcase](../../apps/web) - Interactive examples and component gallery
+
+---
+
+## Contributing
+
+Basalt UI is **opinionated by design**. Contributions should:
+
+1. Maintain restrictive philosophy
+2. Use OKLCH for all colors
+3. Preserve semantic HTML defaults
+4. Follow volcanic nature aesthetic
+5. Document changes in CLAUDE.md
+
+Open an issue before major changes to discuss alignment with project philosophy.
+
+---
 
 ## License
 
-Apache 2.0
+MIT License - Use freely, modify as needed, keep attribution.
+
+---
+
+## Inspiration
+
+- **Color Science**: OKLCH color space, Björn Ottosson's Oklab
+- **Nature**: Volcanic landscapes, basalt formations, natural materials
+- **Design Systems**: ShadCN UI, Radix Colors, Tailwind Zinc
+- **Philosophy**: Restrictive design, semantic HTML, mature consistency
+
+---
+
+**Built with intention. Designed for consistency. Inspired by nature.**
+
+🌋 Basalt UI - Where volcanic aesthetics meet modern design systems.

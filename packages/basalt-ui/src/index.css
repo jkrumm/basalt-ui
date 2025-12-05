@@ -1,48 +1,597 @@
 @import "tailwindcss";
 
-/* Light theme (default) */
+/**
+ * BASALT UI - Volcanic Nature Design System
+ *
+ * A mature, restrictive design system inspired by basalt stone and volcanic nature.
+ * Combines zinc-based neutrals with natural accent colors (sage, magma, ochre).
+ *
+ * Philosophy:
+ * - OKLCH color space for perceptual uniformity
+ * - Semantic HTML elements styled by default (h2 doesn't need utility classes)
+ * - Limited, purposeful design tokens (no infinite spacing scales)
+ * - Warm, professional aesthetic - not stark black/white
+ * - Restricts Tailwind to defined tokens while maintaining ShadCN compatibility
+ */
+
+/* ============================================================================
+   COLOR PALETTE - OKLCH Color Space
+   ============================================================================
+
+   Basalt Foundation (Zinc-based):
+   - Warm, neutral grays that feel natural, not clinical
+   - L (Lightness) values carefully chosen for comfortable contrast
+   - Very low chroma for neutral feel with slight warmth
+
+   Natural Accents:
+   - Lichen Sage: Primary actions, links, active states
+   - Magma Rust: Destructive/warning actions, warm highlights
+   - Vein Ochre: Tertiary accent, attention-grabbers
+
+   Perceptual Uniformity:
+   - Changes in L/C values correspond to perceived brightness/vibrancy
+   - Gradients stay clean without unexpected gray zones
+   - Accessible contrast ratios by design
+   ============================================================================ */
+
 :root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(240 10% 3.9%);
-  --primary: hsl(240 5.9% 10%);
-  --muted: hsl(240 4.8% 95.9%);
-  --border: hsl(240 5.9% 90%);
-  --ring: hsl(240 10% 3.9%);
+  /* === BASALT FOUNDATION: Zinc-based Neutrals (Light Mode) === */
+
+  /* Surface colors - warm whites, not stark */
+  --background: oklch(0.985 0.002 90); /* Almost white, slight warmth */
+  --foreground: oklch(0.265 0.015 285); /* Rich dark gray, readable but not black */
+
+  /* Card and elevated surfaces */
+  --card: oklch(0.995 0.002 90); /* Slightly elevated from background */
+  --card-foreground: oklch(0.265 0.015 285); /* Same as foreground for consistency */
+
+  /* Popover and floating elements */
+  --popover: oklch(0.995 0.002 90);
+  --popover-foreground: oklch(0.265 0.015 285);
+
+  /* Muted backgrounds and disabled states */
+  --muted: oklch(0.935 0.005 270); /* Light gray for backgrounds */
+  --muted-foreground: oklch(0.525 0.015 285); /* Medium gray for less prominent text */
+
+  /* Borders and dividers - subtle but visible */
+  --border: oklch(0.875 0.005 270); /* Soft border, not too light */
+  --input: oklch(0.875 0.005 270); /* Same as border for consistency */
+
+  /* === NATURAL ACCENTS === */
+
+  /* Primary: Lichen Sage - earthy green for main actions */
+  --primary: oklch(0.58 0.1 135); /* Sage green, balanced */
+  --primary-foreground: oklch(0.99 0.002 90); /* Light text on sage */
+
+  /* Secondary: Subtle zinc for secondary actions */
+  --secondary: oklch(0.905 0.008 270);
+  --secondary-foreground: oklch(0.265 0.015 285);
+
+  /* Accent: Lighter sage for hover states and subtle highlights */
+  --accent: oklch(0.925 0.008 135);
+  --accent-foreground: oklch(0.265 0.015 285);
+
+  /* Destructive: Magma Rust - warm red for warnings/errors */
+  --destructive: oklch(0.58 0.18 35); /* Warm rust red */
+  --destructive-foreground: oklch(0.99 0.002 90);
+
+  /* Tertiary: Vein Ochre - for special highlights and attention */
+  --ochre: oklch(0.7 0.12 75); /* Warm ochre yellow */
+  --ochre-foreground: oklch(0.265 0.015 285);
+
+  /* Focus ring - uses primary color */
+  --ring: oklch(0.58 0.1 135);
+
+  /* === CHART COLORS: Natural palette === */
+  --chart-1: oklch(0.58 0.1 135); /* Lichen sage */
+  --chart-2: oklch(0.58 0.18 35); /* Magma rust */
+  --chart-3: oklch(0.7 0.12 75); /* Vein ochre */
+  --chart-4: oklch(0.525 0.015 285); /* Medium zinc */
+  --chart-5: oklch(0.735 0.015 285); /* Light zinc */
+
+  /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
+  --sidebar: oklch(0.965 0.003 90);
+  --sidebar-foreground: oklch(0.265 0.015 285);
+  --sidebar-primary: oklch(0.58 0.1 135);
+  --sidebar-primary-foreground: oklch(0.99 0.002 90);
+  --sidebar-accent: oklch(0.925 0.008 135);
+  --sidebar-accent-foreground: oklch(0.265 0.015 285);
+  --sidebar-border: oklch(0.875 0.005 270);
+  --sidebar-ring: oklch(0.58 0.1 135);
+
+  /* === TYPOGRAPHY: Modern, welcoming fonts === */
+  --font-heading: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Menlo", "Monaco", "Courier New", monospace;
+
+  /* === BORDER RADIUS: Subtly rounded (ShadCN style) === */
+  --radius: 0.5rem; /* 8px - comfortable roundness */
+
+  /* === SHADOWS: Soft, natural depth === */
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 oklch(0 0 0 / 0.1), 0 1px 2px -1px oklch(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1), 0 8px 10px -6px oklch(0 0 0 / 0.1);
 }
 
-/* Dark theme */
+/* === DARK MODE: Warm, comfortable darkness (not pure black) === */
 .dark {
-  --background: hsl(240 10% 3.9%);
-  --foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --muted: hsl(240 3.7% 15.9%);
-  --border: hsl(240 3.7% 15.9%);
-  --ring: hsl(0 0% 98%);
+  /* Surface colors - warm dark grays, not stark black */
+  --background: oklch(0.195 0.012 285); /* Deep warm gray, not pure black */
+  --foreground: oklch(0.935 0.005 90); /* Soft white, not harsh */
+
+  /* Card and elevated surfaces - slightly lighter than background */
+  --card: oklch(0.22 0.012 285);
+  --card-foreground: oklch(0.935 0.005 90);
+
+  /* Popover and floating elements */
+  --popover: oklch(0.22 0.012 285);
+  --popover-foreground: oklch(0.935 0.005 90);
+
+  /* Muted backgrounds and disabled states */
+  --muted: oklch(0.29 0.015 285);
+  --muted-foreground: oklch(0.625 0.015 285);
+
+  /* Borders and dividers - visible but not harsh */
+  --border: oklch(0.32 0.015 285);
+  --input: oklch(0.32 0.015 285);
+
+  /* Primary: Lighter sage for dark mode (better contrast) */
+  --primary: oklch(0.68 0.11 135);
+  --primary-foreground: oklch(0.195 0.012 285);
+
+  /* Secondary */
+  --secondary: oklch(0.31 0.015 285);
+  --secondary-foreground: oklch(0.935 0.005 90);
+
+  /* Accent: Lighter for visibility */
+  --accent: oklch(0.35 0.02 135);
+  --accent-foreground: oklch(0.935 0.005 90);
+
+  /* Destructive: Brighter rust for dark mode */
+  --destructive: oklch(0.66 0.19 35);
+  --destructive-foreground: oklch(0.99 0.002 90);
+
+  /* Ochre: Adjusted for dark mode */
+  --ochre: oklch(0.75 0.13 75);
+  --ochre-foreground: oklch(0.195 0.012 285);
+
+  /* Focus ring */
+  --ring: oklch(0.68 0.11 135);
+
+  /* Chart colors - adjusted for dark mode */
+  --chart-1: oklch(0.68 0.11 135);
+  --chart-2: oklch(0.66 0.19 35);
+  --chart-3: oklch(0.75 0.13 75);
+  --chart-4: oklch(0.625 0.015 285);
+  --chart-5: oklch(0.425 0.015 285);
+
+  /* Sidebar - slightly different from main background */
+  --sidebar: oklch(0.21 0.012 285);
+  --sidebar-foreground: oklch(0.935 0.005 90);
+  --sidebar-primary: oklch(0.68 0.11 135);
+  --sidebar-primary-foreground: oklch(0.195 0.012 285);
+  --sidebar-accent: oklch(0.35 0.02 135);
+  --sidebar-accent-foreground: oklch(0.935 0.005 90);
+  --sidebar-border: oklch(0.32 0.015 285);
+  --sidebar-ring: oklch(0.68 0.11 135);
 }
 
-/* Wire CSS variables to Tailwind v4 theme */
+/* ============================================================================
+   TAILWIND V4 THEME CONFIGURATION
+   ============================================================================
+
+   Strategy:
+   1. Disable default Tailwind scales with `initial`
+   2. Define ONLY allowed values for mature design system
+   3. Map semantic tokens for ShadCN compatibility
+   4. Create limited, purposeful scales (not infinite values)
+
+   This restricts Tailwind while maintaining usability and ShadCN support.
+   ============================================================================ */
+
 @theme inline {
+  /* === DISABLE DEFAULT SCALES === */
+  --spacing: initial;
+  --font-size: initial;
+  --line-height: initial;
+  --font-weight: initial;
+  --letter-spacing: initial;
+  --border-radius: initial;
+  --box-shadow: initial;
+
+  /* === SPACING SCALE: Limited, purposeful values === */
+  /* Based on 4px base unit - predictable, consistent */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem; /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1rem; /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
+  --spacing-6: 1.5rem; /* 24px */
+  --spacing-8: 2rem; /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
+  --spacing-12: 3rem; /* 48px */
+  --spacing-16: 4rem; /* 64px */
+  --spacing-20: 5rem; /* 80px */
+  --spacing-24: 6rem; /* 96px */
+  --spacing-32: 8rem; /* 128px */
+
+  /* === TYPOGRAPHY SCALE: Semantic, limited sizes === */
+  /* Display - Hero sections */
+  --font-size-display: 4rem; /* 64px */
+  --line-height-display: 4.75rem; /* 77px */
+
+  /* Hero - Subhero sections */
+  --font-size-hero: 3rem; /* 48px */
+  --line-height-hero: 3.625rem; /* 58px */
+
+  /* Heading levels */
+  --font-size-h1: 2.5rem; /* 40px */
+  --line-height-h1: 3rem; /* 48px */
+
+  --font-size-h2: 2rem; /* 32px */
+  --line-height-h2: 2.625rem; /* 42px */
+
+  --font-size-h3: 1.5rem; /* 24px */
+  --line-height-h3: 2.125rem; /* 34px */
+
+  --font-size-h4: 1.25rem; /* 20px */
+  --line-height-h4: 1.75rem; /* 28px */
+
+  --font-size-h5: 1.125rem; /* 18px */
+  --line-height-h5: 1.6875rem; /* 27px */
+
+  --font-size-h6: 1rem; /* 16px */
+  --line-height-h6: 1.5rem; /* 24px */
+
+  /* Body text */
+  --font-size-body: 1rem; /* 16px - DEFAULT */
+  --line-height-body: 1.5rem; /* 24px */
+
+  /* Smaller text */
+  --font-size-small: 0.875rem; /* 14px */
+  --line-height-small: 1.25rem; /* 20px */
+
+  --font-size-caption: 0.75rem; /* 12px */
+  --line-height-caption: 1rem; /* 16px */
+
+  /* === FONT FAMILIES === */
+  --font-family-heading: var(--font-heading);
+  --font-family-body: var(--font-body);
+  --font-family-mono: var(--font-mono);
+
+  /* === FONT WEIGHTS: Only two weights for clarity === */
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+
+  /* === LETTER SPACING: Three purposeful values === */
+  --letter-spacing-tight: -0.5px; /* Display text */
+  --letter-spacing-normal: 0; /* Default - most text */
+  --letter-spacing-wide: 0.025em; /* Uppercase, small text */
+
+  /* === COLORS: Map to Tailwind utilities === */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ochre: var(--ochre);
+  --color-ochre-foreground: var(--ochre-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Chart colors */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar colors (ShadCN) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* === BORDER RADIUS: Limited scale === */
+  --radius-none: 0;
+  --radius-sm: calc(var(--radius) - 0.25rem); /* 4px */
+  --radius-md: calc(var(--radius) - 0.125rem); /* 6px */
+  --radius: var(--radius); /* 8px - DEFAULT */
+  --radius-lg: calc(var(--radius) + 0.125rem); /* 10px */
+  --radius-xl: calc(var(--radius) + 0.25rem); /* 12px */
+  --radius-full: 9999px; /* Pills, circles */
+
+  /* === BOX SHADOWS: Natural depth === */
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
-/* Minimal reset */
-* {
-  box-sizing: border-box;
+/* ============================================================================
+   SEMANTIC HTML DEFAULTS
+   ============================================================================
+
+   Core philosophy: HTML elements should look good by default.
+   You shouldn't need utility classes to make an h2 look like a heading.
+
+   This creates a mature design system where semantic HTML just works.
+   ============================================================================ */
+
+@layer base {
+  /* === DOCUMENT SETUP === */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+    font-weight: var(--font-weight-regular);
+    color: var(--foreground);
+    background-color: var(--background);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  /* === HEADINGS: Styled by default === */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--letter-spacing-normal);
+    color: var(--foreground);
+    margin-bottom: 0.5em;
+  }
+
+  h1 {
+    font-size: var(--font-size-h1);
+    line-height: var(--line-height-h1);
+  }
+
+  h2 {
+    font-size: var(--font-size-h2);
+    line-height: var(--line-height-h2);
+  }
+
+  h3 {
+    font-size: var(--font-size-h3);
+    line-height: var(--line-height-h3);
+  }
+
+  h4 {
+    font-size: var(--font-size-h4);
+    line-height: var(--line-height-h4);
+  }
+
+  h5 {
+    font-size: var(--font-size-h5);
+    line-height: var(--line-height-h5);
+  }
+
+  h6 {
+    font-size: var(--font-size-h6);
+    line-height: var(--line-height-h6);
+  }
+
+  /* === PARAGRAPHS AND TEXT === */
+  p {
+    margin-bottom: 1em;
+  }
+
+  /* === LINKS: Sage color with subtle underline === */
+  a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: oklch(from var(--primary) l c h / 0.3);
+    transition: all 150ms ease-in-out;
+  }
+
+  a:hover {
+    text-decoration-color: var(--primary);
+  }
+
+  /* === CODE AND PREFORMATTED TEXT === */
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background-color: var(--muted);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+  }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-small);
+    background-color: var(--muted);
+    padding: var(--spacing-4);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    margin-bottom: 1em;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  /* === LISTS === */
+  ul,
+  ol {
+    margin-bottom: 1em;
+    padding-left: var(--spacing-6);
+  }
+
+  li {
+    margin-bottom: 0.25em;
+  }
+
+  /* === BLOCKQUOTES === */
+  blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: var(--spacing-4);
+    margin-left: 0;
+    margin-bottom: 1em;
+    font-style: italic;
+    color: var(--muted-foreground);
+  }
+
+  /* === HORIZONTAL RULES === */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: var(--spacing-8) 0;
+  }
+
+  /* === IMAGES === */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* === TABLES === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+  }
+
+  th,
+  td {
+    padding: var(--spacing-2) var(--spacing-3);
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+
+  th {
+    background-color: var(--muted);
+    font-weight: var(--font-weight-bold);
+  }
 }
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================
 
-body {
-  color: var(--foreground);
-  background-color: var(--background);
-  margin: 0;
-  padding: 0;
+   Custom utility classes that complement the semantic defaults.
+   These follow the design system's restricted scale.
+   ============================================================================ */
+
+@layer utilities {
+  /* === DISPLAY TEXT (Hero sections) === */
+  .text-display {
+    font-size: var(--font-size-display);
+    line-height: var(--line-height-display);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  .text-hero {
+    font-size: var(--font-size-hero);
+    line-height: var(--line-height-hero);
+  }
+
+  /* === SEMANTIC TEXT SIZES === */
+  .text-h1 {
+    font-size: var(--font-size-h1);
+    line-height: var(--line-height-h1);
+  }
+  .text-h2 {
+    font-size: var(--font-size-h2);
+    line-height: var(--line-height-h2);
+  }
+  .text-h3 {
+    font-size: var(--font-size-h3);
+    line-height: var(--line-height-h3);
+  }
+  .text-h4 {
+    font-size: var(--font-size-h4);
+    line-height: var(--line-height-h4);
+  }
+  .text-h5 {
+    font-size: var(--font-size-h5);
+    line-height: var(--line-height-h5);
+  }
+  .text-h6 {
+    font-size: var(--font-size-h6);
+    line-height: var(--line-height-h6);
+  }
+  .text-body {
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+  }
+  .text-small {
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-small);
+  }
+  .text-caption {
+    font-size: var(--font-size-caption);
+    line-height: var(--line-height-caption);
+  }
+
+  /* === FONT FAMILIES === */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* === FONT WEIGHTS === */
+  .font-regular {
+    font-weight: var(--font-weight-regular);
+  }
+  .font-bold {
+    font-weight: var(--font-weight-bold);
+  }
+
+  /* === LETTER SPACING === */
+  .tracking-tight {
+    letter-spacing: var(--letter-spacing-tight);
+  }
+  .tracking-normal {
+    letter-spacing: var(--letter-spacing-normal);
+  }
+  .tracking-wide {
+    letter-spacing: var(--letter-spacing-wide);
+  }
 }
