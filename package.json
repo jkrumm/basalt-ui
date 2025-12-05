@@ -1,0 +1,73 @@
+{
+  "name": "basalt-ui-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "bun --filter web dev",
+    "dev": "bun run dev:web",
+    "release": "release-it",
+    "check": "bunx @biomejs/biome check .",
+    "check:write": "bunx @biomejs/biome check --write .",
+    "format": "bunx @biomejs/biome format --write .",
+    "lint": "bunx @biomejs/biome lint .",
+    "prepare": "lefthook install",
+    "hooks:install": "lefthook install",
+    "hooks:uninstall": "lefthook uninstall"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.8",
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "lefthook": "^2.0.8"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "type-enum": [
+        2,
+        "always",
+        [
+          "feat",
+          "fix",
+          "docs",
+          "style",
+          "refactor",
+          "perf",
+          "test",
+          "build",
+          "ci",
+          "chore",
+          "revert"
+        ]
+      ],
+      "subject-case": [
+        2,
+        "never",
+        [
+          "upper-case",
+          "pascal-case"
+        ]
+      ],
+      "subject-empty": [
+        2,
+        "never"
+      ],
+      "subject-full-stop": [
+        2,
+        "never",
+        "."
+      ],
+      "header-max-length": [
+        2,
+        "always",
+        100
+      ]
+    }
+  }
+}

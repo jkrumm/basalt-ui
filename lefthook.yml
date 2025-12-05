@@ -1,0 +1,30 @@
+# Lefthook Configuration
+min_version: 1.7.0
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-check-js:
+      glob: "*.{js,jsx,ts,tsx,cjs,mjs}"
+      run: bunx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      stage_fixed: true
+
+    biome-check-json:
+      glob: "*.{json,jsonc}"
+      run: bunx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      stage_fixed: true
+
+    biome-check-css:
+      glob: "*.{css,scss}"
+      run: bunx @biomejs/biome check --write --css-formatter-enabled=true --css-linter-enabled=true --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      stage_fixed: true
+
+    biome-check-astro:
+      glob: "*.astro"
+      run: bunx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    commitlint:
+      run: bunx commitlint --edit {1}

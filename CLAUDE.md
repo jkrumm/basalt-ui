@@ -74,6 +74,27 @@ bunx commitlint --edit <file>                  # Validate commit msg
 
 ## Critical Rules
 
+### Package Management
+
+**IMPORTANT**: Never hardcode package versions in `package.json`.
+
+✅ **Correct:**
+```bash
+bun add -D @biomejs/biome          # Gets latest version
+bun add -D --exact @biomejs/biome  # Gets exact latest version
+```
+
+❌ **Wrong:**
+```json
+{
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4"  // Don't manually write versions
+  }
+}
+```
+
+**Why:** Always use `bun install` or `bun add` commands to ensure up-to-date versions and proper lockfile management.
+
 ### TypeScript
 
 **IMPORTANT**: Strict TypeScript. No `any`, no implicit types.

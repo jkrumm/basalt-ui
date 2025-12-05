@@ -46,9 +46,8 @@ basalt-ui/
 
 ### 1. Monorepo Setup
 - [ ] Root `package.json`: `"private": true`, `"workspaces": ["packages/*", "apps/*"]`
-- [ ] Create `packages/basalt-ui/` directory
-- [ ] Create `apps/web/` directory
-- [ ] Run `bun install` from root
+- [ ] Create `packages/basalt-ui/` empty directory
+- [ ] Create `apps/web/` empty directory
 
 ### 2. Root Scripts & Config
 In root `package.json`:
