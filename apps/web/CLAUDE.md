@@ -169,15 +169,17 @@ bun run preview          # Preview production build (optional)
 bunx shadcn@latest add [component-name]
 
 # Quality (run from monorepo root)
-bunx @biomejs/biome check --write apps/web/  # Format
-bunx @biomejs/biome check apps/web/          # Check only
+bun run format           # Format all files (Biome + Prettier)
+bun run format:prettier  # Format only Astro files with Prettier
+bun run lint             # Lint all files with Biome
+bun run pre              # Full validation (format + lint + typecheck)
 ```
 
 **Workflow:**
 1. Make changes to components/pages
 2. Check `package.json` for validation commands
-3. Run build to verify no type errors
-4. Format before committing
+3. Run `bun run pre` from root to validate everything
+4. Fix any errors in changed files only
 5. Commit with conventional format
 
 **Note**: User runs `bun dev` manually for validation. Focus on type-checking and formatting.
@@ -230,12 +232,14 @@ In Bun workspaces, CSS imports from workspace packages work best with relative p
 - ❌ DON'T use default exports
 - ✅ DO use named exports only
 
-**Biome + Astro:**
-- Biome doesn't understand Astro's template syntax (HTML below `---`)
-- The following are disabled for `.astro` files in root `biome.json`:
-  - `noUnusedVariables` and `noUnusedImports` (prevents false positives)
-  - `organizeImports` (conflicts with Astro's frontmatter structure)
-- Regular `.ts/.tsx` files still get full linting and import organization
+**Formatting + Linting:**
+- `.astro` files are formatted by **Prettier** (better Astro support + Tailwind sorting)
+- `.ts/.tsx` files are formatted by **Biome** (25x faster)
+- All files are linted by **Biome**
+- Prettier plugin automatically sorts Tailwind classes in Astro files
+- Biome has relaxed rules for Astro files (`noUnusedVariables`: off, `noUnusedImports`: off)
+- Reason: Biome doesn't understand Astro template syntax, causes false positives
+- See root `CLAUDE.md` for full hybrid tooling strategy
 
 ## Architecture Decisions
 

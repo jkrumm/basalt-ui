@@ -19,9 +19,9 @@ pre-commit:
       run: bunx @biomejs/biome check --write --css-formatter-enabled=true --css-linter-enabled=true --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
       stage_fixed: true
 
-    biome-check-astro:
+    prettier-astro:
       glob: "*.astro"
-      run: bunx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
+      run: bunx prettier --write {staged_files}
       stage_fixed: true
 
 commit-msg:

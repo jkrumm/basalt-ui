@@ -12,7 +12,9 @@
     "release": "release-it",
     "check": "bunx @biomejs/biome check .",
     "check:write": "bunx @biomejs/biome check --write .",
-    "format": "bunx @biomejs/biome format --write .",
+    "format": "bun run format:biome && bun run format:prettier",
+    "format:biome": "bunx @biomejs/biome format --write .",
+    "format:prettier": "bunx prettier --write '**/*.astro'",
     "lint": "bunx @biomejs/biome lint .",
     "typecheck": "bun --filter '*' typecheck",
     "pre": "bun run format && bun run lint && bun run typecheck",
@@ -24,7 +26,10 @@
     "@biomejs/biome": "2.3.8",
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
-    "lefthook": "^2.0.8"
+    "lefthook": "^2.0.8",
+    "prettier": "^3.7.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.7.2"
   },
   "commitlint": {
     "extends": [

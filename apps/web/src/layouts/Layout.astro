@@ -1,23 +1,23 @@
 ---
-import '../styles/global.css'
+import '../styles/global.css';
 
-import ThemeToggle from '@/components/shared/ThemeToggle'
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface Props {
-  title?: string
-  description?: string
+  title?: string;
+  description?: string;
 }
 
 const {
   title = 'Basalt UI - Framework-agnostic Tailwind CSS Design System',
   description = 'A zinc-based Tailwind CSS design system with React components.',
-} = Astro.props
+} = Astro.props;
 
 // Create canonical URL with fallback for development
-const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
+const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -39,9 +39,9 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
   </head>
-  <body class="min-h-screen bg-background text-foreground antialiased">
+  <body class="bg-background text-foreground min-h-screen antialiased">
     <header class="border-b">
-      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="container mx-auto flex items-center justify-between px-4 py-4">
         <h2 class="text-xl font-bold">Basalt UI</h2>
         <ThemeToggle client:load />
       </div>

@@ -1,0 +1,20 @@
+# Biome handles these file types
+*.ts
+*.tsx
+*.js
+*.jsx
+*.mjs
+*.cjs
+*.json
+*.jsonc
+*.css
+
+# Build output
+dist/
+.astro/
+node_modules/
+
+# Version control
+.git/
+
+# Prettier only handles *.astro files

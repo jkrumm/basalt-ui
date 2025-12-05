@@ -16,7 +16,8 @@ Framework-agnostic Tailwind CSS design system with zinc-based colors.
 - **Tailwind**: v4 syntax (`@import`, `@theme`, NOT v3 `@tailwind` directives)
 - **Git**: Conventional commits, `master` branch (not main)
 - **ShadCN**: Copy-paste pattern (not npm dependency)
-- **Linting**: Biome (not ESLint/Prettier)
+- **Formatting**: Biome (JS/TS/JSON/CSS) + Prettier (Astro + Tailwind sorting)
+- **Linting**: Biome only (no ESLint)
 - **Validation**: Check `package.json`, run type-check/build + format
 - **Code Style**: Typed object params, low nesting, early returns
 
@@ -25,7 +26,8 @@ Framework-agnostic Tailwind CSS design system with zinc-based colors.
 - **Runtime**: Bun (not Node/npm)
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
 - **TypeScript**: Strict mode, all exports typed
-- **Linting**: Biome (not ESLint/Prettier)
+- **Formatting**: Biome (JS/TS/JSON/CSS) + Prettier (Astro)
+- **Linting**: Biome only (no ESLint)
 - **Git**: Conventional commits enforced via commitlint
 - **Theme**: Tailwind v4 (not v3 - important!)
 - **Components**: ShadCN (copy-paste, not dependency)
@@ -90,20 +92,23 @@ bun run build             # Production build
 
 **Code Quality:**
 ```bash
-bunx @biomejs/biome check .                    # Check all
-bunx @biomejs/biome check --write .            # Fix all
-bunx commitlint --edit <file>                  # Validate commit msg
+bun run format                                  # Format all (Biome + Prettier)
+bun run format:biome                            # Format with Biome only
+bun run format:prettier                         # Format Astro files with Prettier
+bun run lint                                    # Lint with Biome
+bun run pre                                     # Full validation (format + lint + typecheck)
+bunx commitlint --edit <file>                   # Validate commit msg
 ```
 
 ## Validation & Quality Workflow
 
 **Available Commands**:
 - `bun run pre` - **Recommended**: Format + lint + typecheck all workspaces
-- `bun run format` - Format all files with Biome
+- `bun run format` - Format all files (Biome + Prettier)
+- `bun run format:biome` - Format JS/TS/JSON/CSS with Biome
+- `bun run format:prettier` - Format Astro files with Prettier
 - `bun run lint` - Lint all files with Biome
 - `bun run typecheck` - Type-check all workspaces with TypeScript
-- `bunx @biomejs/biome check --write .` - Format + lint with Biome
-- `bunx @biomejs/biome check .` - Check without fixing
 - Individual workspace: `cd apps/web && bun run typecheck`
 
 **Workflow:**
@@ -113,6 +118,69 @@ bunx commitlint --edit <file>                  # Validate commit msg
 4. Commit with conventional format
 
 **Rule**: Don't refactor untouched code. User validates running apps manually.
+
+## Hybrid Tooling Strategy
+
+This project uses a **dual-formatter approach** for optimal results:
+
+### Why Hybrid?
+
+1. **Biome**: 25x faster formatting for 90% of files (JS/TS/JSON/CSS)
+2. **Prettier**: Better Astro formatting + official Tailwind class sorting plugin
+3. **Best of both worlds**: Speed where it matters, quality where it's needed
+
+### Tool Responsibilities
+
+| File Type | Formatting | Linting | Type Checking |
+|-----------|------------|---------|---------------|
+| `.ts/.tsx` (React components) | Biome | Biome (full) | tsc |
+| `.astro` files | Prettier + Tailwind plugin | Biome (JS/TS portions) | astro check |
+| `.json` | Biome | Biome | - |
+| `.css` | Biome | Biome | - |
+
+### Prettier Configuration
+
+**What Prettier handles**:
+- ✅ Astro file formatting (frontmatter + template)
+- ✅ Tailwind CSS class sorting (via prettier-plugin-tailwindcss)
+- ✅ Import organization in Astro files (understands Astro syntax)
+- ❌ Does NOT format JS/TS/JSON/CSS (Biome handles these)
+
+**Files**: `.prettierrc` and `.prettierignore` at monorepo root
+
+### Biome Configuration
+
+**What Biome handles**:
+- ✅ Fast formatting for JS/TS/JSX/TSX/JSON/CSS
+- ✅ Linting all file types (340+ rules)
+- ✅ Import organization (except Astro files)
+- 🟡 Partial linting of Astro files (JS/TS portions only, relaxed rules)
+
+**File**: `biome.json` at monorepo root
+
+**Astro-specific overrides**:
+- `noUnusedVariables`: `off` (Biome doesn't understand Astro template syntax)
+- `noUnusedImports`: `off` (Prettier handles imports)
+- `organizeImports`: `off` (Prettier handles organization)
+
+### Pre-commit Hooks
+
+Lefthook automatically runs the appropriate tool:
+- `biome-check-js`: JS/TS/JSX/TSX files → Biome
+- `biome-check-json`: JSON files → Biome
+- `biome-check-css`: CSS files → Biome
+- `prettier-astro`: Astro files → Prettier (includes Tailwind sorting)
+
+### Migration Notes
+
+**From**: Pure Biome setup with experimental Astro support
+**To**: Biome + Prettier hybrid for better Astro handling
+
+**Key improvements**:
+- Tailwind class sorting now works automatically
+- Better Astro import organization (no false positives)
+- Consistent formatting across all file types
+- Minimal performance impact (Prettier only runs on `.astro` files)
 
 ## MCP Tool Guidelines
 
