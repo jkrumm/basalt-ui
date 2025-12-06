@@ -1,8 +1,8 @@
 # Basalt UI
 
-> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt and Nord's expressive colors.
+> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt.
 
-**Volcanic aesthetics meet Nord's expressiveness.** Basalt UI combines warm zinc-based neutrals with Nord's carefully calibrated Aurora colors and professional blue accents to create interfaces that are both trustworthy and expressive.
+**Volcanic aesthetics meet modern expressiveness.** Basalt UI combines warm zinc-based neutrals with expressive semantic colors and professional blue accents to create interfaces that are both trustworthy and expressive.
 
 ---
 
@@ -13,7 +13,7 @@ Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it
 - ✨ **Semantic HTML works by default** - `<h2>` looks like a heading without utility classes
 - 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
 - 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
-- 🌋 **Basalt neutrals + Nord colors** - Warm zinc grays with Nord Aurora expressiveness
+- 🌋 **Basalt neutrals + expressive colors** - Warm zinc grays with semantic expressiveness
 - 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
 - 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
 
@@ -111,41 +111,92 @@ Use defined utilities when needed:
 
 ## Color System
 
-### Basalt + Nord Palette
+### Foundation Palette
 
-Basalt UI uses **OKLCH** color space for perceptually uniform colors that match human perception.
+Basalt UI starts with a **foundation palette**—core neutral tones defined once and referenced everywhere. This ensures consistency and makes the system easy to maintain.
 
-#### Zinc Foundation (Neutrals)
-
-Warm, comfortable grays - not stark black and white:
+#### Light Tones
+Light mode backgrounds, dark mode text, elevated surfaces:
 
 ```css
-background  /* Warm white (light) / Deep gray (dark) */
-foreground  /* Rich dark gray (light) / Soft white (dark) */
-muted       /* Light backgrounds and disabled states */
-border      /* Subtle, visible borders */
+light-1  /* oklch(0.99 0.002 90) - Brightest (cards, popovers) */
+light-2  /* oklch(0.985 0.002 90) - Main background (light mode) */
+light-3  /* oklch(0.96 0.004 270) - Muted backgrounds */
+light-4  /* oklch(0.93 0.005 270) - Borders, inputs */
 ```
 
-#### Blue Primary (Nord Frost)
-
-Professional, trustworthy accent based on Nord Frost colors:
+#### Dark Tones
+Dark mode backgrounds, light mode text:
 
 ```css
-blue        /* oklch(0.6965 0.0591 248.69) - Nord #81a1c1 */
+dark-1   /* oklch(0.24 0.012 285) - Main background (dark mode) */
+dark-2   /* oklch(0.26 0.012 285) - Cards (dark mode) */
+dark-3   /* oklch(0.30 0.013 285) - Muted/borders (dark mode) */
+dark-4   /* oklch(0.265 0.015 285) - Primary text (light mode) */
+```
+
+#### Extreme Tones
+High contrast text:
+
+```css
+white    /* oklch(0.99 0.002 90) - Text on dark backgrounds */
+```
+
+### Semantic Tokens (Reference Foundation)
+
+Semantic tokens provide meaningful names and reference the foundation palette:
+
+```css
+/* Light Mode */
+background   /* var(--light-2) - Main background */
+foreground   /* var(--dark-4) - Primary text */
+card         /* var(--light-1) - Elevated surfaces */
+muted        /* var(--light-3) - Subtle backgrounds */
+border       /* var(--light-4) - Borders, dividers */
+
+/* Dark Mode */
+background   /* var(--dark-1) - Main background */
+card         /* var(--dark-2) - Elevated surfaces */
+muted        /* var(--dark-3) - Subtle backgrounds */
+border       /* var(--dark-3) - Borders, dividers */
+```
+
+**Why this matters:** Change `--light-2` once → updates background across light mode everywhere.
+
+#### Blue Primary
+
+Professional, trustworthy accent for interactive elements:
+
+```css
+blue        /* oklch(0.6965 0.0591 248.69) - Primary blue */
+blue-foreground  /* oklch(0.99 0.002 90) - White text on blue */
+
 blue-light  /* oklch(0.78 0.045 249) - Hover states */
-blue-deep   /* oklch(0.5944 0.0772 254.03) - Nord #5e81ac */
+blue-light-foreground  /* oklch(0.265 0.015 285) - Dark text on blue-light */
+
+blue-deep   /* oklch(0.5944 0.0772 254.03) - Strong emphasis */
+blue-deep-foreground  /* oklch(0.99 0.002 90) - White text on blue-deep */
 ```
 
-#### Aurora Colors (Nord Aurora)
+#### Expressive Colors
 
-Expressive, semantic colors directly adopted from Nord's Aurora palette:
+Expressive, semantic colors for errors, warnings, success, and special states:
 
 ```css
 red         /* oklch(0.6061 0.1206 15.34) - Errors, destructive actions */
+red-foreground  /* oklch(0.99 0.002 90) - White text on red */
+
 orange      /* oklch(0.6929 0.0963 38.24) - Warnings, annotations */
+orange-foreground  /* oklch(0.265 0.015 285) - Dark text on orange */
+
 yellow      /* oklch(0.8549 0.0892 84.09) - Caution, highlights */
+yellow-foreground  /* oklch(0.265 0.015 285) - Dark text on yellow */
+
 green       /* oklch(0.7683 0.0749 131.06) - Success, confirmations */
+green-foreground  /* oklch(0.265 0.015 285) - Dark text on green */
+
 purple      /* oklch(0.6921 0.0625 332.66) - Special features */
+purple-foreground  /* oklch(0.99 0.002 90) - White text on purple */
 ```
 
 #### Sequential Chart Palette
@@ -309,14 +360,22 @@ Both modes avoid stark extremes for comfortable, professional interfaces.
 ### Colors
 
 ```css
-/* Backgrounds */
+/* Foundation Palette */
+bg-light-1, bg-light-2, bg-light-3, bg-light-4
+bg-dark-1, bg-dark-2, bg-dark-3, bg-dark-4
+text-dark-4, text-white
+
+/* Semantic Backgrounds */
 bg-background, bg-card, bg-muted, bg-primary
 bg-blue, bg-blue-light, bg-blue-deep
 bg-red, bg-orange, bg-yellow, bg-green, bg-purple
 
-/* Text */
-text-foreground, text-muted-foreground, text-primary
-text-blue, text-red, text-green, text-yellow, text-purple
+/* Text (always pair with background) */
+text-foreground, text-muted-foreground
+text-primary-foreground, text-secondary-foreground
+text-blue-foreground, text-blue-light-foreground, text-blue-deep-foreground
+text-red-foreground, text-orange-foreground, text-yellow-foreground
+text-green-foreground, text-purple-foreground
 
 /* Borders */
 border-border, border-input, border-primary
@@ -425,9 +484,22 @@ Want to adjust colors for your brand? Fork and modify `src/index.css`:
 ### Alert Component
 
 ```html
+<!-- Error alert with proper text pairing -->
 <div class="bg-destructive text-destructive-foreground p-4 rounded">
   <h4>Error</h4>
   <p class="text-small">Something went wrong. Please try again.</p>
+</div>
+
+<!-- Success alert -->
+<div class="bg-green text-green-foreground p-4 rounded">
+  <h4>Success</h4>
+  <p class="text-small">Your changes have been saved.</p>
+</div>
+
+<!-- Warning alert -->
+<div class="bg-orange text-orange-foreground p-4 rounded">
+  <h4>Warning</h4>
+  <p class="text-small">Please review your input before continuing.</p>
 </div>
 ```
 
@@ -497,7 +569,7 @@ MIT License - Use freely, modify as needed, keep attribution.
 ## Inspiration
 
 - **Color Science**: OKLCH color space, Björn Ottosson's Oklab
-- **Nord Theme**: Aurora color palette, Frost blue accents, Arctic color philosophy
+- **Nord Theme**: Inspired by expressive color approach for syntax highlighting
 - **Nature**: Volcanic landscapes, basalt formations, natural materials
 - **Design Systems**: ShadCN UI, Radix Colors, Tailwind Zinc
 - **Philosophy**: Restrictive design, semantic HTML, mature consistency

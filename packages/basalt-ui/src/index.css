@@ -4,12 +4,12 @@
  * BASALT UI - Volcanic Nature Design System
  *
  * A mature, restrictive design system inspired by basalt stone and volcanic nature.
- * Combines zinc-based neutrals with expressive Aurora colors and professional blue accents.
+ * Combines zinc-based neutrals with expressive semantic colors and professional blue accents.
  *
  * Color Philosophy:
  * - Warm, neutral grays (dark/light) for comfortable readability
  * - Blue primary accent for professional, trustworthy interface elements
- * - Aurora colors (red, orange, yellow, green, purple) for expressive, semantic states
+ * - Expressive colors (red, orange, yellow, green, purple) for semantic states
  * - Sequential blue palette for data visualization with perceptual uniformity
  * - OKLCH color space ensures accessible contrast and harmonious gradients
  *
@@ -31,24 +31,23 @@
    - Very low chroma for neutral feel with slight warmth
    - Different values for light/dark mode to maintain accessibility
 
-   Blue Primary (Nord Frost):
-   - Based on Nord Frost colors (#81a1c1, #5e81ac)
+   Blue Primary:
    - Professional, trustworthy, versatile accent color
    - Blue variants for different UI states (primary, light, deep)
    - Same values work in both light and dark modes
 
-   Aurora Colors (Nord Aurora):
-   - Direct adoption of Nord's Aurora palette for expressive semantics
-   - Red (#bf616a): Errors, destructive actions, critical warnings
-   - Orange (#d08770): Annotations, moderate warnings, special states
-   - Yellow (#ebcb8b): Caution, highlights, attention
-   - Green (#a3be8c): Success, confirmations, positive actions
-   - Purple (#b48ead): Special features, unique identifiers
-   - Same values work in both light and dark modes (Nord's careful calibration)
+   Expressive Colors:
+   - Semantic colors for expressive, meaningful UI states
+   - Red: Errors, destructive actions, critical warnings
+   - Orange: Annotations, moderate warnings, special states
+   - Yellow: Caution, highlights, attention
+   - Green: Success, confirmations, positive actions
+   - Purple: Special features, unique identifiers
+   - Same values work in both light and dark modes
 
    Sequential Chart Palette:
    - 8 blue tones from light to dark for data visualization
-   - Based on Nord blue hue (~249°) with progressive lightness steps
+   - Based on blue hue (249°) with progressive lightness steps
    - Gradually increasing chroma for perceptual uniformity
    - Exceeds WCAG 3:1 contrast between adjacent colors
 
@@ -59,46 +58,100 @@
    ============================================================================ */
 
 :root {
+  /* ============================================================================
+     FOUNDATION PALETTE - Base colors that everything else references
+     ============================================================================
+
+     This palette provides the foundational neutral tones that all other tokens
+     reference. Each OKLCH value is defined once and reused everywhere.
+     ============================================================================ */
+
+  /* === LIGHT TONES === */
+  /* Used for: light mode backgrounds, dark mode text, elevated surfaces */
+
+  --light-1: oklch(0.99 0.002 90); /* Brightest - cards, popovers, overlays */
+  --light-2: oklch(0.985 0.002 90); /* Very light - main background (light mode) */
+  --light-3: oklch(0.96 0.004 270); /* Light - muted backgrounds, disabled states */
+  --light-4: oklch(0.93 0.005 270); /* Medium light - borders, inputs */
+
+  /* === DARK TONES === */
+  /* Used for: dark mode backgrounds, light mode text */
+
+  --dark-1: oklch(0.195 0.012 285); /* Darkest - near-black, reserved for future use */
+  --dark-2: oklch(0.24 0.012 285); /* Very dark - main background (dark mode) */
+  --dark-3: oklch(0.26 0.012 285); /* Medium dark - cards, elevated surfaces (dark mode) */
+  --dark-4: oklch(0.3 0.012 285); /* Lightest dark - borders, muted backgrounds (dark mode) */
+
+  /* === TEXT TONES === */
+  /* Mid-range tones for subdued, secondary text */
+
+  --text-subdued-light: oklch(0.5 0.014 285); /* Muted text in light mode */
+  --text-subdued-dark: oklch(0.8 0.012 285); /* Muted text in dark mode */
+
+  /* === EXTREME TONES === */
+  /* Pure white/near-black for maximum contrast text */
+
+  --white: oklch(0.99 0.002 90); /* White - text on dark backgrounds */
+  --near-black: var(--dark-1); /* Near black - references darkest tone, reserved */
+
+  /* ============================================================================
+     SEMANTIC LAYER - References foundation palette
+     ============================================================================ */
+
   /* === BASALT FOUNDATION: Zinc-based Neutrals (Light Mode) === */
 
   /* Surface colors - warm whites, not stark */
-  --background: oklch(0.985 0.002 90); /* Almost white, slight warmth */
-  --foreground: oklch(0.265 0.015 285); /* Rich dark gray, readable but not black */
+  --background: var(--light-2); /* Almost white, slight warmth */
+  --foreground: var(--dark-4); /* Rich dark gray, readable but not black */
 
   /* Card and elevated surfaces */
-  --card: oklch(0.99 0.002 90); /* Very subtle elevation from background */
-  --card-foreground: oklch(0.265 0.015 285); /* Same as foreground for consistency */
+  --card: var(--light-1); /* Very subtle elevation from background */
+  --card-foreground: var(--dark-4); /* Same as foreground for consistency */
 
   /* Popover and floating elements */
-  --popover: oklch(0.995 0.002 90);
-  --popover-foreground: oklch(0.265 0.015 285);
+  --popover: oklch(0.995 0.002 90); /* Between light-1 and light-2 - highest elevation */
+  --popover-foreground: var(--dark-4);
 
   /* Muted backgrounds and disabled states */
-  --muted: oklch(0.96 0.004 270); /* Very light gray, subtle contrast */
-  --muted-foreground: oklch(0.5 0.014 285); /* Subdued text, readable */
+  --muted: var(--light-3); /* Very light gray, subtle contrast */
+  --muted-foreground: var(--text-subdued-light); /* Subdued text, readable */
 
   /* Borders and dividers - subtle but visible */
-  --border: oklch(0.93 0.005 270); /* Gentle border, ~6% contrast */
-  --input: oklch(0.93 0.005 270); /* Same as border for consistency */
+  --border: var(--light-4); /* Gentle border, ~6% contrast */
+  --input: var(--light-4); /* Same as border for consistency */
 
-  /* === AURORA COLORS: Expressive, semantic colors (Nord-inspired) === */
+  /* === EXPRESSIVE COLORS: Semantic colors for states === */
   /* Same values for light and dark modes - work well on both backgrounds */
 
-  --red: oklch(0.6061 0.1206 15.34); /* Nord #bf616a */
-  --orange: oklch(0.6929 0.0963 38.24); /* Nord #d08770 */
-  --yellow: oklch(0.8549 0.0892 84.09); /* Nord #ebcb8b */
-  --green: oklch(0.7683 0.0749 131.06); /* Nord #a3be8c */
-  --purple: oklch(0.6921 0.0625 332.66); /* Nord #b48ead */
+  --red: oklch(0.6061 0.1206 15.34); /* Errors, destructive */
+  --red-foreground: var(--white); /* White text on red */
 
-  /* === BLUE PRIMARY: Professional accent color (Nord Frost) === */
+  --orange: oklch(0.6929 0.0963 38.24); /* Warnings, annotations */
+  --orange-foreground: var(--dark-4); /* Dark text on orange */
+
+  --yellow: oklch(0.8549 0.0892 84.09); /* Caution, highlights */
+  --yellow-foreground: var(--dark-4); /* Dark text on yellow */
+
+  --green: oklch(0.7683 0.0749 131.06); /* Success, confirmations */
+  --green-foreground: var(--dark-4); /* Dark text on green */
+
+  --purple: oklch(0.6921 0.0625 332.66); /* Special features */
+  --purple-foreground: var(--white); /* White text on purple */
+
+  /* === BLUE PRIMARY: Professional accent color === */
   /* Same values for light and dark modes */
 
-  --blue: oklch(0.6965 0.0591 248.69); /* Primary blue - Nord #81a1c1 */
-  --blue-deep: oklch(0.5944 0.0772 254.03); /* Darker blue - Nord #5e81ac */
+  --blue: oklch(0.6965 0.0591 248.69); /* Primary blue */
+  --blue-foreground: var(--white); /* White text on blue */
+
+  --blue-deep: oklch(0.5944 0.0772 254.03); /* Deeper blue for emphasis */
+  --blue-deep-foreground: var(--white); /* White text on blue-deep */
+
   --blue-light: oklch(0.78 0.045 249); /* Lighter blue for hover/accent states */
+  --blue-light-foreground: var(--dark-4); /* Dark text on blue-light */
 
   /* === SEQUENTIAL CHART PALETTE: 8 blues for data visualization === */
-  /* Based on actual Nord blue hue (~249°) with progressive lightness */
+  /* Based on blue hue (249°) with progressive lightness */
 
   --chart-blue-1: oklch(0.9 0.03 249); /* Lightest */
   --chart-blue-2: oklch(0.8 0.04 249);
@@ -111,21 +164,21 @@
 
   /* === SEMANTIC COLOR TOKENS === */
 
-  /* Primary: Blue replaces green */
+  /* Primary: Blue for interactive elements */
   --primary: var(--blue);
-  --primary-foreground: oklch(0.99 0.002 90);
+  --primary-foreground: var(--white);
 
   /* Secondary: Subtle zinc for secondary actions */
-  --secondary: oklch(0.95 0.006 270);
-  --secondary-foreground: oklch(0.265 0.015 285);
+  --secondary: oklch(0.95 0.006 270); /* Between light-3 and light-2 */
+  --secondary-foreground: var(--dark-4);
 
   /* Accent: Lighter blue for hover states */
   --accent: var(--blue-light);
-  --accent-foreground: oklch(0.265 0.015 285);
+  --accent-foreground: var(--dark-4);
 
   /* Destructive: Red for errors/warnings */
   --destructive: var(--red);
-  --destructive-foreground: oklch(0.99 0.002 90);
+  --destructive-foreground: var(--white);
 
   /* Focus ring - uses primary blue */
   --ring: var(--blue);
@@ -166,34 +219,34 @@
 /* === DARK MODE: Warm, comfortable darkness (not pure black) === */
 .dark {
   /* Surface colors - warm dark grays, not stark black */
-  --background: oklch(0.21 0.012 285); /* Deep warm gray, slightly lighter */
-  --foreground: oklch(0.935 0.005 90); /* Soft white, not harsh */
+  --background: var(--dark-2); /* Very dark, main background */
+  --foreground: oklch(0.935 0.005 90); /* Soft white, not harsh - between light-1 and light-2 */
 
   /* Card and elevated surfaces - slightly lighter than background */
-  --card: oklch(0.22 0.012 285);
+  --card: var(--dark-3);
   --card-foreground: oklch(0.935 0.005 90);
 
   /* Popover and floating elements */
-  --popover: oklch(0.22 0.012 285);
+  --popover: var(--dark-3);
   --popover-foreground: oklch(0.935 0.005 90);
 
   /* Muted backgrounds and disabled states */
-  --muted: oklch(0.27 0.013 285); /* Subtle background difference */
-  --muted-foreground: oklch(0.77 0.012 285); /* Subdued text, lighter for readability */
+  --muted: var(--dark-4); /* Subtle background difference */
+  --muted-foreground: var(--text-subdued-dark); /* Subdued text, lighter for readability */
 
   /* Borders and dividers - subtle but visible */
-  --border: oklch(0.27 0.013 285); /* Gentle border, slightly more visible */
-  --input: oklch(0.27 0.013 285); /* Same as border for consistency */
+  --border: var(--dark-4); /* Gentle border, slightly more visible */
+  --input: var(--dark-4); /* Same as border for consistency */
 
   /* === SEMANTIC COLOR TOKENS === */
-  /* Aurora and Blue colors remain the same - defined in :root */
+  /* Expressive and Blue colors remain the same - defined in :root */
 
   /* Primary: Blue (same value as light mode) */
   --primary: var(--blue);
-  --primary-foreground: oklch(0.195 0.012 285);
+  --primary-foreground: var(--white);
 
   /* Secondary */
-  --secondary: oklch(0.26 0.013 285);
+  --secondary: oklch(0.27 0.012 285); /* Between dark-3 and dark-2 */
   --secondary-foreground: oklch(0.935 0.005 90);
 
   /* Accent: Blue light for hover states */
@@ -202,7 +255,7 @@
 
   /* Destructive: Red (same value as light mode) */
   --destructive: var(--red);
-  --destructive-foreground: oklch(0.99 0.002 90);
+  --destructive-foreground: var(--white);
 
   /* Focus ring */
   --ring: var(--blue);
@@ -215,13 +268,13 @@
   --chart-5: var(--purple);
 
   /* Sidebar - slightly different from main background */
-  --sidebar: oklch(0.21 0.012 285);
+  --sidebar: var(--dark-2);
   --sidebar-foreground: oklch(0.935 0.005 90);
   --sidebar-primary: var(--blue);
-  --sidebar-primary-foreground: oklch(0.195 0.012 285);
-  --sidebar-accent: oklch(0.35 0.02 252);
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: oklch(0.33 0.015 285); /* Slightly darker than dark-4 */
   --sidebar-accent-foreground: oklch(0.935 0.005 90);
-  --sidebar-border: oklch(0.32 0.015 285);
+  --sidebar-border: oklch(0.28 0.012 285); /* Between dark-3 and dark-4 */
   --sidebar-ring: var(--blue);
 }
 
@@ -319,6 +372,19 @@
   --letter-spacing-wide: 0.025em; /* Uppercase, small text */
 
   /* === COLORS: Map to Tailwind utilities === */
+
+  /* Foundation palette (bg-light-1, text-dark-4, etc.) */
+  --color-light-1: var(--light-1);
+  --color-light-2: var(--light-2);
+  --color-light-3: var(--light-3);
+  --color-light-4: var(--light-4);
+  --color-dark-1: var(--dark-1);
+  --color-dark-2: var(--dark-2);
+  --color-dark-3: var(--dark-3);
+  --color-dark-4: var(--dark-4);
+  --color-white: var(--white);
+
+  /* Semantic colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -339,17 +405,25 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Aurora colors - simple names (bg-red, text-green, etc.) */
+  /* Aurora colors with foregrounds (bg-red text-red-foreground, etc.) */
   --color-red: var(--red);
+  --color-red-foreground: var(--red-foreground);
   --color-orange: var(--orange);
+  --color-orange-foreground: var(--orange-foreground);
   --color-yellow: var(--yellow);
+  --color-yellow-foreground: var(--yellow-foreground);
   --color-green: var(--green);
+  --color-green-foreground: var(--green-foreground);
   --color-purple: var(--purple);
+  --color-purple-foreground: var(--purple-foreground);
 
-  /* Blue variants (bg-blue, bg-blue-light, bg-blue-deep) */
+  /* Blue variants with foregrounds (bg-blue text-blue-foreground, etc.) */
   --color-blue: var(--blue);
+  --color-blue-foreground: var(--blue-foreground);
   --color-blue-light: var(--blue-light);
+  --color-blue-light-foreground: var(--blue-light-foreground);
   --color-blue-deep: var(--blue-deep);
+  --color-blue-deep-foreground: var(--blue-deep-foreground);
 
   /* Categorical chart colors */
   --color-chart-1: var(--chart-1);
@@ -531,6 +605,14 @@
   ol {
     margin-bottom: 1em;
     padding-left: var(--spacing-6);
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ol {
+    list-style-type: decimal;
   }
 
   li {

@@ -49,19 +49,52 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 
 ### Color Palette Architecture
 
-**Basalt Foundation (Zinc-based Neutrals):**
+**Foundation Palette (Reusable Base Colors):**
+
+Like Nord's Polar Night and Snow Storm, our foundation palette provides the core neutral tones that all semantic tokens reference. Each OKLCH value is defined once:
+
+```
+Light Tones (light mode backgrounds, dark mode text):
+- light-1: oklch(0.99 0.002 90)    - Brightest (cards, popovers)
+- light-2: oklch(0.985 0.002 90)   - Main background (light mode)
+- light-3: oklch(0.96 0.004 270)   - Muted backgrounds
+- light-4: oklch(0.93 0.005 270)   - Borders, inputs
+
+Dark Tones (dark mode backgrounds, light mode text):
+- dark-1: oklch(0.195 0.012 285)   - Near-black, reserved
+- dark-2: oklch(0.24 0.012 285)    - Main background (dark mode)
+- dark-3: oklch(0.26 0.012 285)    - Cards (dark mode)
+- dark-4: oklch(0.30 0.012 285)    - Borders, muted (dark mode)
+
+Text Tones (subdued text):
+- text-subdued-light: oklch(0.5 0.014 285)  - Muted text (light mode)
+- text-subdued-dark: oklch(0.8 0.012 285)   - Muted text (dark mode)
+
+Extreme Tones (high contrast):
+- white: oklch(0.99 0.002 90)               - Text on dark backgrounds
+```
+
+**Why Foundation Colors?**
+- **DRY**: Each value defined once, referenced everywhere
+- **Consistency**: All semantic tokens use same base
+- **Maintainability**: Change once, update entire system
+- **Clarity**: Foundation → Semantic → UI hierarchy
+
+**Semantic Tokens (Reference Foundation):**
 ```
 Light Mode:
-- background: oklch(0.985 0.002 90)  - Almost white, warm
-- foreground: oklch(0.265 0.015 285) - Rich dark gray (not black)
-- muted: oklch(0.935 0.005 270)      - Light gray backgrounds
-- border: oklch(0.875 0.005 270)     - Subtle borders
+- background: var(--light-2)  - Main background
+- foreground: var(--dark-4)   - Primary text
+- card: var(--light-1)        - Elevated surfaces
+- muted: var(--light-3)       - Subtle backgrounds
+- border: var(--light-4)      - Borders, dividers
 
 Dark Mode:
-- background: oklch(0.195 0.012 285) - Warm dark gray (not black)
-- foreground: oklch(0.935 0.005 90)  - Soft white (not harsh)
-- muted: oklch(0.290 0.015 285)      - Dark gray backgrounds
-- border: oklch(0.320 0.015 285)     - Visible borders
+- background: var(--dark-2)   - Main background
+- foreground: oklch(0.935 0.005 90) - Soft white
+- card: var(--dark-3)         - Elevated surfaces
+- muted: var(--dark-4)        - Subtle backgrounds
+- border: var(--dark-4)       - Borders, dividers
 ```
 
 **Blue Primary (Nord Frost):**
@@ -71,10 +104,15 @@ Blue (Primary Accent):
 - Same for light and dark modes
 - Usage: Primary actions, links, focus rings, interactive elements
 
-Blue Variants:
+Blue Variants with Foregrounds:
 - blue:       oklch(0.6965 0.0591 248.69)  - Primary accent
+              blue-foreground: oklch(0.99 0.002 90) - White text on blue
+
 - blue-light: oklch(0.78 0.045 249)         - Hover states, highlights
+              blue-light-foreground: oklch(0.265 0.015 285) - Dark text on blue-light
+
 - blue-deep:  oklch(0.5944 0.0772 254.03)   - Strong emphasis (Nord #5e81ac)
+              blue-deep-foreground: oklch(0.99 0.002 90) - White text on blue-deep
 ```
 
 **Aurora Colors (Nord Aurora):**
@@ -82,10 +120,19 @@ Blue Variants:
 Direct adoption of Nord's Aurora palette - same values for light and dark modes
 
 Red:    oklch(0.6061 0.1206 15.34)  - Nord #bf616a - Errors, destructive actions
+        red-foreground: oklch(0.99 0.002 90) - White text on red
+
 Orange: oklch(0.6929 0.0963 38.24)  - Nord #d08770 - Annotations, warnings
+        orange-foreground: oklch(0.265 0.015 285) - Dark text on orange
+
 Yellow: oklch(0.8549 0.0892 84.09)  - Nord #ebcb8b - Caution, highlights
+        yellow-foreground: oklch(0.265 0.015 285) - Dark text on yellow
+
 Green:  oklch(0.7683 0.0749 131.06) - Nord #a3be8c - Success, confirmations
+        green-foreground: oklch(0.265 0.015 285) - Dark text on green
+
 Purple: oklch(0.6921 0.0625 332.66) - Nord #b48ead - Special features, unique identifiers
+        purple-foreground: oklch(0.99 0.002 90) - White text on purple
 ```
 
 **Sequential Chart Palette:**
@@ -108,25 +155,37 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 ### Semantic Color Tokens (ShadCN Compatible)
 
 ```css
-/* Surface & Text */
+/* Foundation Palette (base colors, defined once) */
+--light-1, --light-2, --light-3, --light-4  (light tones)
+--dark-1, --dark-2, --dark-3, --dark-4      (dark tones)
+--white                                      (pure white)
+--text-subdued-light, --text-subdued-dark   (muted text)
+
+/* Surface & Text (reference foundation) */
 --background, --foreground
 --card, --card-foreground
 --popover, --popover-foreground
 --muted, --muted-foreground
 
-/* Actions & States */
---primary, --primary-foreground  (blue)
+/* Actions & States (reference foundation + Aurora) */
+--primary, --primary-foreground             (var(--blue), var(--white))
 --secondary, --secondary-foreground
---accent, --accent-foreground  (blue-light)
---destructive, --destructive-foreground  (red)
+--accent, --accent-foreground               (var(--blue-light), var(--dark-4))
+--destructive, --destructive-foreground     (var(--red), var(--white))
 
-/* Aurora Colors */
---red, --orange, --yellow, --green, --purple
+/* Aurora Colors with Foregrounds (colorful accents) */
+--red, --red-foreground                     (var(--white))
+--orange, --orange-foreground               (var(--dark-4))
+--yellow, --yellow-foreground               (var(--dark-4))
+--green, --green-foreground                 (var(--dark-4))
+--purple, --purple-foreground               (var(--white))
 
-/* Blue Variants */
---blue, --blue-light, --blue-deep
+/* Blue Variants with Foregrounds (primary accent) */
+--blue, --blue-foreground                   (var(--white))
+--blue-light, --blue-light-foreground       (var(--dark-4))
+--blue-deep, --blue-deep-foreground         (var(--white))
 
-/* Structure */
+/* Structure (reference foundation) */
 --border, --input, --ring
 
 /* Categorical Charts */
