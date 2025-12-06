@@ -1,41 +1,42 @@
 ---
 import ThemeToggle from '@/components/shared/ThemeToggle';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { MobileMenuButton, MobileMenuPanel } from './MobileMenu';
-import { buttonVariants } from '@/components/ui/button.tsx';
 ---
 
 <header data-nav data-scrolled="false">
   <div class="nav-wrapper">
     <div class="px-4 py-4">
-      <!-- First row: Logo and buttons -->
-      <div class="flex items-center justify-between">
-        <a href="/" class="text-xl font-bold transition-opacity hover:opacity-80"> Basalt UI </a>
+      <!-- First row: Logo, Nav Links, Actions - Grid layout for perfect centering -->
+      <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <!-- Left: Logo -->
+        <div class="justify-self-start">
+          <a href="/" class="text-xl font-bold transition-opacity hover:opacity-80"> Basalt UI </a>
+        </div>
 
-        <!-- Desktop navigation -->
+        <!-- Center: Desktop navigation (perfectly centered) -->
         <nav class="hidden items-center gap-6 md:flex" aria-label="Primary navigation">
-          <a
-            href="/typography"
-            class="text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <a href="/typography" class="text-foreground hover:text-foreground transition-colors">
             Typography
           </a>
-          <a href="/colors" class="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/colors" class="text-foreground hover:text-foreground transition-colors">
             Colors
           </a>
-          <a href="/spacing" class="text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/spacing" class="text-foreground hover:text-foreground transition-colors">
             Spacing
           </a>
         </nav>
 
-        <!-- Desktop actions -->
-        <div class="hidden items-center gap-2 md:flex">
+        <!-- Right: Desktop actions -->
+        <div class="hidden items-center gap-2 justify-self-end md:flex">
           <ThemeToggle client:load />
           <a href="#docs" class={buttonVariants({ variant: 'default', size: 'lg' })}> Docs </a>
         </div>
 
-        <!-- Mobile menu button (only visible on mobile) -->
-        <MobileMenuButton client:load />
+        <!-- Mobile: Show only logo on left and menu button on right -->
+        <div class="col-start-3 justify-self-end md:hidden">
+          <MobileMenuButton client:load />
+        </div>
       </div>
 
       <!-- Second row: Mobile menu panel (slides down when open) -->

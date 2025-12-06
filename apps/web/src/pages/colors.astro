@@ -1,162 +1,216 @@
 ---
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ColorPalette } from '@/components/features/ColorPalette';
+import type { ColorSection } from '@/components/features/ColorPalette';
 import Layout from '@/layouts/Layout.astro';
+
+const lightTones: ColorSection = {
+  category: 'Light Tones',
+  description: 'Light mode backgrounds, dark mode text, elevated surfaces',
+  colors: [
+    {
+      name: 'Light 1',
+      variable: '--light-1',
+      class: 'bg-light-1',
+      usage: 'Cards, popovers, overlays',
+    },
+    {
+      name: 'Light 2',
+      variable: '--light-2',
+      class: 'bg-light-2',
+      usage: 'Main background (light mode)',
+    },
+    {
+      name: 'Light 3',
+      variable: '--light-3',
+      class: 'bg-light-3',
+      usage: 'Muted, disabled states',
+    },
+    {
+      name: 'Light 4',
+      variable: '--light-4',
+      class: 'bg-light-4',
+      usage: 'Borders, inputs',
+    },
+  ],
+};
+
+const darkTones: ColorSection = {
+  category: 'Dark Tones',
+  description: 'Dark mode backgrounds, light mode text',
+  colors: [
+    {
+      name: 'Dark 1',
+      variable: '--dark-1',
+      class: 'bg-dark-1 text-white',
+      usage: 'Near-black, reserved',
+    },
+    {
+      name: 'Dark 2',
+      variable: '--dark-2',
+      class: 'bg-dark-2 text-white',
+      usage: 'Main background (dark mode)',
+    },
+    {
+      name: 'Dark 3',
+      variable: '--dark-3',
+      class: 'bg-dark-3 text-white',
+      usage: 'Cards (dark mode)',
+    },
+    {
+      name: 'Dark 4',
+      variable: '--dark-4',
+      class: 'bg-dark-4 text-white',
+      usage: 'Borders, muted (dark mode)',
+    },
+  ],
+};
+
+const blueVariants: ColorSection = {
+  category: 'Blue Primary',
+  description: 'Professional blue accent for actions, links, and interactive elements',
+  colors: [
+    {
+      name: 'Blue',
+      variable: '--blue',
+      class: 'bg-blue text-blue-foreground',
+      usage: 'Primary actions, links, focus',
+    },
+    {
+      name: 'Blue Light',
+      variable: '--blue-light',
+      class: 'bg-blue-light text-blue-light-foreground',
+      usage: 'Hover states, highlights',
+    },
+    {
+      name: 'Blue Deep',
+      variable: '--blue-deep',
+      class: 'bg-blue-deep text-blue-deep-foreground',
+      usage: 'Strong emphasis',
+    },
+  ],
+};
+
+const expressiveColors: ColorSection = {
+  category: 'Expressive Colors',
+  description: 'Semantic colors for errors, warnings, success, and special states',
+  colors: [
+    {
+      name: 'Red',
+      variable: '--red',
+      class: 'bg-red text-red-foreground',
+      usage: 'Errors, destructive actions',
+    },
+    {
+      name: 'Orange',
+      variable: '--orange',
+      class: 'bg-orange text-orange-foreground',
+      usage: 'Warnings, moderate alerts',
+    },
+    {
+      name: 'Yellow',
+      variable: '--yellow',
+      class: 'bg-yellow text-yellow-foreground',
+      usage: 'Caution, highlights',
+    },
+    {
+      name: 'Green',
+      variable: '--green',
+      class: 'bg-green text-green-foreground',
+      usage: 'Success, confirmations',
+    },
+    {
+      name: 'Purple',
+      variable: '--purple',
+      class: 'bg-purple text-purple-foreground',
+      usage: 'Special features',
+    },
+  ],
+};
 
 const semanticColors = [
   {
     name: 'Background',
     variable: '--background',
-    light: 'oklch(0.985 0.002 90)',
-    dark: 'oklch(0.21 0.012 285)',
-    usage: 'Page background',
     class: 'bg-background text-foreground',
+    usage: 'Main page background',
   },
   {
     name: 'Foreground',
     variable: '--foreground',
-    light: 'oklch(0.265 0.015 285)',
-    dark: 'oklch(0.935 0.005 90)',
-    usage: 'Primary text color',
     class: 'bg-foreground text-background',
+    usage: 'Primary text color',
   },
   {
-    name: 'Primary (Blue)',
+    name: 'Primary',
     variable: '--primary',
-    light: 'oklch(0.692 0.097 252.0)',
-    dark: 'oklch(0.692 0.097 252.0)',
-    usage: 'Actions, links, focus states',
     class: 'bg-primary text-primary-foreground',
+    usage: 'Actions, links, focus',
   },
   {
     name: 'Secondary',
     variable: '--secondary',
-    light: 'oklch(0.95 0.006 270)',
-    dark: 'oklch(0.26 0.013 285)',
-    usage: 'Subtle backgrounds, alternative actions',
     class: 'bg-secondary text-secondary-foreground',
+    usage: 'Alternative actions',
   },
   {
     name: 'Accent',
     variable: '--accent',
-    light: 'oklch(0.794 0.102 219.9)',
-    dark: 'oklch(0.794 0.102 219.9)',
-    usage: 'Hover states, highlights',
     class: 'bg-accent text-accent-foreground',
+    usage: 'Hover states',
   },
   {
     name: 'Destructive',
     variable: '--destructive',
-    light: 'oklch(0.627 0.192 23.6)',
-    dark: 'oklch(0.627 0.192 23.6)',
-    usage: 'Errors, warnings, delete actions',
     class: 'bg-destructive text-destructive-foreground',
+    usage: 'Errors, delete actions',
   },
   {
     name: 'Muted',
     variable: '--muted',
-    light: 'oklch(0.96 0.004 270)',
-    dark: 'oklch(0.27 0.013 285)',
-    usage: 'Disabled states, subtle backgrounds',
     class: 'bg-muted text-muted-foreground',
+    usage: 'Disabled states',
   },
   {
     name: 'Card',
     variable: '--card',
-    light: 'oklch(0.99 0.002 90)',
-    dark: 'oklch(0.22 0.012 285)',
-    usage: 'Card surfaces, elevated content',
     class: 'bg-card text-card-foreground',
+    usage: 'Card surfaces',
   },
   {
     name: 'Border',
     variable: '--border',
-    light: 'oklch(0.93 0.005 270)',
-    dark: 'oklch(0.27 0.013 285)',
-    usage: 'Borders, dividers, input borders',
     class: 'bg-border',
+    usage: 'Borders, dividers',
   },
 ];
 
-const auroraColors = [
-  {
-    name: 'Red',
-    variable: '--red',
-    value: 'oklch(0.6061 0.1206 15.34)',
-    usage: 'Errors, destructive actions, critical warnings',
-    class: 'bg-red text-white',
-  },
-  {
-    name: 'Orange',
-    variable: '--orange',
-    value: 'oklch(0.6929 0.0963 38.24)',
-    usage: 'Annotations, moderate warnings, special states',
-    class: 'bg-orange text-foreground',
-  },
-  {
-    name: 'Yellow',
-    variable: '--yellow',
-    value: 'oklch(0.8549 0.0892 84.09)',
-    usage: 'Caution, important highlights, attention',
-    class: 'bg-yellow text-foreground',
-  },
-  {
-    name: 'Green',
-    variable: '--green',
-    value: 'oklch(0.7683 0.0749 131.06)',
-    usage: 'Success states, confirmations, positive actions',
-    class: 'bg-green text-foreground',
-  },
-  {
-    name: 'Purple',
-    variable: '--purple',
-    value: 'oklch(0.6921 0.0625 332.66)',
-    usage: 'Special features, unique identifiers, rare elements',
-    class: 'bg-purple text-white',
-  },
-];
+const chartColors: ColorSection = {
+  category: 'Categorical Chart Colors',
+  description: 'Five distinct colors for categorical data visualization',
+  colors: [
+    { name: 'Chart 1', variable: '--chart-1', class: 'bg-chart-1' },
+    { name: 'Chart 2', variable: '--chart-2', class: 'bg-chart-2' },
+    { name: 'Chart 3', variable: '--chart-3', class: 'bg-chart-3' },
+    { name: 'Chart 4', variable: '--chart-4', class: 'bg-chart-4' },
+    { name: 'Chart 5', variable: '--chart-5', class: 'bg-chart-5' },
+  ],
+};
 
-const blueVariants = [
-  {
-    name: 'Blue',
-    variable: '--blue',
-    value: 'oklch(0.6965 0.0591 248.69)',
-    usage: 'Primary accent - actions, links, focus states',
-    class: 'bg-blue text-white',
-  },
-  {
-    name: 'Blue Light',
-    variable: '--blue-light',
-    value: 'oklch(0.78 0.045 249)',
-    usage: 'Hover states, highlights, accent backgrounds',
-    class: 'bg-blue-light text-foreground',
-  },
-  {
-    name: 'Blue Deep',
-    variable: '--blue-deep',
-    value: 'oklch(0.5944 0.0772 254.03)',
-    usage: 'Strong emphasis, high contrast',
-    class: 'bg-blue-deep text-white',
-  },
-];
-
-const chartBlues = [
-  { name: 'Chart Blue 1', variable: '--chart-blue-1', class: 'bg-chart-blue-1', lightness: '0.90' },
-  { name: 'Chart Blue 2', variable: '--chart-blue-2', class: 'bg-chart-blue-2', lightness: '0.80' },
-  { name: 'Chart Blue 3', variable: '--chart-blue-3', class: 'bg-chart-blue-3', lightness: '0.72' },
-  { name: 'Chart Blue 4', variable: '--chart-blue-4', class: 'bg-chart-blue-4', lightness: '0.65' },
-  { name: 'Chart Blue 5', variable: '--chart-blue-5', class: 'bg-chart-blue-5', lightness: '0.55' },
-  { name: 'Chart Blue 6', variable: '--chart-blue-6', class: 'bg-chart-blue-6', lightness: '0.45' },
-  { name: 'Chart Blue 7', variable: '--chart-blue-7', class: 'bg-chart-blue-7', lightness: '0.35' },
-  { name: 'Chart Blue 8', variable: '--chart-blue-8', class: 'bg-chart-blue-8', lightness: '0.25' },
-];
-
-const chartColors = [
-  { name: 'Chart 1', variable: '--chart-1', class: 'bg-chart-1' },
-  { name: 'Chart 2', variable: '--chart-2', class: 'bg-chart-2' },
-  { name: 'Chart 3', variable: '--chart-3', class: 'bg-chart-3' },
-  { name: 'Chart 4', variable: '--chart-4', class: 'bg-chart-4' },
-  { name: 'Chart 5', variable: '--chart-5', class: 'bg-chart-5' },
-];
+const chartBlues: ColorSection = {
+  category: 'Sequential Chart Palette',
+  description: 'Eight perceptually uniform blue tones for sequential data',
+  colors: [
+    { name: 'Blue 1', variable: '--chart-blue-1', class: 'bg-chart-blue-1' },
+    { name: 'Blue 2', variable: '--chart-blue-2', class: 'bg-chart-blue-2' },
+    { name: 'Blue 3', variable: '--chart-blue-3', class: 'bg-chart-blue-3' },
+    { name: 'Blue 4', variable: '--chart-blue-4', class: 'bg-chart-blue-4' },
+    { name: 'Blue 5', variable: '--chart-blue-5', class: 'bg-chart-blue-5' },
+    { name: 'Blue 6', variable: '--chart-blue-6', class: 'bg-chart-blue-6' },
+    { name: 'Blue 7', variable: '--chart-blue-7', class: 'bg-chart-blue-7' },
+    { name: 'Blue 8', variable: '--chart-blue-8', class: 'bg-chart-blue-8' },
+  ],
+};
 ---
 
 <Layout
@@ -167,88 +221,96 @@ const chartColors = [
     <!-- Hero Section -->
     <div class="mb-16">
       <h1 class="text-display tracking-tight">Colors</h1>
-      <p class="text-muted-foreground max-w-2xl">
-        Basalt UI uses OKLCH color space for perceptually uniform, accessible colors. Our palette
-        combines warm zinc neutrals with professional blue accents and expressive Aurora colors
-        inspired by the Nord theme, creating a sophisticated design system that works beautifully in
-        both light and dark modes.
+      <p class="text-muted-foreground mb-6 max-w-3xl">
+        Basalt UI uses warm basalt colored neutrals meeting expressive accents. Our color system
+        uses <strong>foundation colors</strong>{' '}
+        defined once and referenced everywhere—change one value, update your entire interface.
       </p>
+
+      <!-- Philosophy Cards -->
+      <div class="mb-6 grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <h3 class="mb-2 text-sm font-bold">Foundation Palette</h3>
+            <p class="text-muted-foreground text-xs">
+              Base neutral tones (light/dark) defined once. All semantic tokens reference these
+              values—simple, consistent, maintainable.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <h3 class="mb-2 text-sm font-bold">Blue + Expressive Colors</h3>
+            <p class="text-muted-foreground text-xs">
+              Professional blue for actions and links. Expressive colors for errors, success, and
+              warnings. Same values work in light and dark modes.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <h3 class="mb-2 text-sm font-bold">Always Pair Foreground</h3>
+            <p class="text-muted-foreground text-xs">
+              Every background has a foreground token for accessible contrast. Use{' '}
+              <code class="text-caption font-mono">bg-blue text-blue-foreground</code> together.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
 
-    <!-- Color Philosophy Section -->
+    <!-- Foundation Palette Section -->
     <section class="mb-16">
-      <h2>OKLCH Color Space</h2>
-      <Card>
-        <CardContent className="pt-6">
-          <div class="grid gap-6 md:grid-cols-3">
-            <div>
-              <h3 class="mb-2 text-lg font-bold">L (Lightness)</h3>
-              <p class="text-small text-muted-foreground">
-                0-1 scale representing perceived brightness. Unlike HSL, changes in L correspond to
-                human perception—no unexpected gray zones in gradients.
-              </p>
-            </div>
-            <div>
-              <h3 class="mb-2 text-lg font-bold">C (Chroma)</h3>
-              <p class="text-small text-muted-foreground">
-                Saturation matching human perception. Higher values = more vibrant. Consistent
-                across different hues.
-              </p>
-            </div>
-            <div>
-              <h3 class="mb-2 text-lg font-bold">H (Hue)</h3>
-              <p class="text-small text-muted-foreground">
-                Color angle (0-360). 249° = blue, 15° = red, 38° = orange, 84° = yellow, 131° =
-                green, 333° = purple, 285° = neutral zinc.
-              </p>
-            </div>
-          </div>
-          <div class="border-border bg-muted/50 mt-6 rounded border p-4">
-            <p class="mb-2 text-sm font-bold">Why OKLCH?</p>
-            <ul class="list-inside list-disc space-y-1 text-sm">
-              <li>Perceptually uniform—gradients stay clean and predictable</li>
-              <li>Better accessibility—easier to maintain proper contrast ratios</li>
-              <li>Consistent saturation across hues</li>
-              <li>Future-proof—native browser support with wide gamut displays</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <h2>Foundation Palette</h2>
+      <p class="text-muted-foreground mb-6">
+        Core neutral tones defined once and reused everywhere. Change <code
+          class="font-mono text-xs">--light-2</code
+        >{' '}
+        → updates background across the entire system.
+      </p>
+
+      <div class="space-y-6">
+        <ColorPalette section={lightTones} columns={4} />
+
+        <ColorPalette section={darkTones} columns={4} />
+
+        <ColorPalette section={expressiveColors} columns={5} />
+
+        <ColorPalette section={blueVariants} columns={3} />
+      </div>
+
+      <div class="border-border bg-muted/50 mt-6 rounded border p-4">
+        <p class="mb-2 text-sm font-bold">Why Foundation Colors?</p>
+        <ul class="list-inside list-disc space-y-1 text-sm">
+          <li><strong>DRY:</strong> Each OKLCH value defined once, referenced everywhere</li>
+          <li><strong>Consistency:</strong> All semantic tokens use same base</li>
+          <li><strong>Maintainability:</strong> Change once, update entire system</li>
+          <li><strong>Clarity:</strong> Foundation → Semantic → UI hierarchy</li>
+        </ul>
+      </div>
     </section>
 
     <!-- Semantic Color Tokens Section -->
     <section class="mb-16">
       <h2>Semantic Color Tokens</h2>
-      <div class="grid gap-6">
+      <p class="text-muted-foreground mb-6">
+        Meaningful names for UI elements that reference the foundation palette. These automatically
+        switch between light and dark modes.
+      </p>
+      <div class="grid gap-4 md:grid-cols-3">
         {
           semanticColors.map((color) => (
             <Card>
-              <CardContent className="pt-6">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h3 class="mb-2 font-bold">{color.name}</h3>
-                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
-                    <div class="space-y-2 font-mono text-sm">
-                      <div>
-                        <span class="text-muted-foreground">Variable:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Light:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.light}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Dark:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.dark}</code>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
-                      <span class="text-sm font-bold">Sample Text</span>
-                    </div>
-                  </div>
+              <CardContent>
+                <div
+                  class={`${color.class} mb-3 flex h-16 items-center justify-center rounded-lg border`}
+                >
+                  <span class="text-sm font-bold">{color.name}</span>
                 </div>
+                <code class="text-muted-foreground mb-2 block font-mono text-xs">
+                  {color.variable}
+                </code>
+                <p class="text-muted-foreground text-caption mb-0">{color.usage}</p>
               </CardContent>
             </Card>
           ))
@@ -259,154 +321,72 @@ const chartColors = [
     <!-- Chart Colors Section -->
     <section class="mb-16">
       <h2>Categorical Chart Colors</h2>
-      <Card>
-        <CardContent className="pt-6">
-          <p class="text-muted-foreground mb-6">
-            Five distinct colors for categorical data visualization. Use when representing different
-            categories or groups that require clear visual distinction.
-          </p>
-          <div class="grid gap-4 md:grid-cols-5">
-            {
-              chartColors.map((color) => (
-                <div>
-                  <div class={`${color.class} mb-2 h-24 rounded-lg`} />
-                  <p class="text-small text-center font-mono">{color.name}</p>
-                  <p class="text-caption text-muted-foreground text-center">{color.variable}</p>
-                </div>
-              ))
-            }
-          </div>
-        </CardContent>
-      </Card>
-    </section>
-
-    <!-- Aurora Colors Section -->
-    <section class="mb-16">
-      <h2>Aurora Colors</h2>
       <p class="text-muted-foreground mb-6">
-        Expressive, semantic colors inspired by the Nord theme. These colors maintain consistent
-        appearance across light and dark modes, serving as brand colors with clear semantic
-        meanings.
+        Five distinct colors for categorical data where different categories require clear visual
+        distinction.
       </p>
-      <div class="grid gap-6">
-        {
-          auroraColors.map((color) => (
-            <Card>
-              <CardContent className="pt-6">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h3 class="mb-2 font-bold">{color.name}</h3>
-                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
-                    <div class="space-y-2 font-mono text-sm">
-                      <div>
-                        <span class="text-muted-foreground">Variable:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Value:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.value}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Class:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.class}</code>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
-                      <span class="text-sm font-bold">Sample Text</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        }
-      </div>
-    </section>
-
-    <!-- Blue Variants Section -->
-    <section class="mb-16">
-      <h2>Blue Variants</h2>
-      <p class="text-muted-foreground mb-6">
-        Professional blue accents based on Nord Frost colors. Blue serves as the primary accent
-        color, with variants for different UI states and emphasis levels.
-      </p>
-      <div class="grid gap-6">
-        {
-          blueVariants.map((color) => (
-            <Card>
-              <CardContent className="pt-6">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h3 class="mb-2 font-bold">{color.name}</h3>
-                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
-                    <div class="space-y-2 font-mono text-sm">
-                      <div>
-                        <span class="text-muted-foreground">Variable:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Value:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.value}</code>
-                      </div>
-                      <div>
-                        <span class="text-muted-foreground">Class:</span>{' '}
-                        <code class="bg-muted rounded px-1.5 py-0.5">{color.class}</code>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
-                      <span class="text-sm font-bold">Sample Text</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        }
-      </div>
+      <ColorPalette section={chartColors} columns={5} />
     </section>
 
     <!-- Sequential Chart Palette Section -->
     <section class="mb-16">
       <h2>Sequential Chart Palette</h2>
+      <p class="text-muted-foreground mb-6">
+        Constant hue (249°) with progressive lightness and gradually increasing chroma. All adjacent
+        colors exceed WCAG 3:1 contrast.
+      </p>
+      <ColorPalette section={chartBlues} columns={4} />
+
+      <div class="border-border bg-muted/50 mt-6 rounded border p-4">
+        <p class="mb-2 text-sm font-bold">Use Cases</p>
+        <ul class="list-inside list-disc space-y-1 text-sm">
+          <li>Sequential data: temperature scales, density maps, intensity visualization</li>
+          <li>Gradient backgrounds: from subtle (blue-1) to prominent (blue-8)</li>
+          <li>Perceptually uniform: equal perceived steps between colors</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Text Color Pairing Section -->
+    <section class="mb-16">
+      <h2>Text Color Pairing</h2>
       <Card>
         <CardContent className="pt-6">
           <p class="text-muted-foreground mb-6">
-            Eight perceptually uniform blue tones for data visualization. Constant hue (249°) with
-            progressive lightness increments and gradually increasing chroma ensures clear,
-            accessible sequential data representation. All adjacent colors exceed WCAG 3:1 contrast
-            requirements.
+            Every background color has a corresponding foreground token ensuring accessible
+            contrast.
           </p>
 
-          <!-- Gradient visualization -->
-          <div class="mb-6 flex h-16 overflow-hidden rounded-lg">
-            {chartBlues.map((color) => <div class={`${color.class} flex-1`} />)}
-          </div>
+          <div class="space-y-4">
+            <div class="grid gap-3 md:grid-cols-2">
+              <div class="border-border bg-muted/30 space-y-2 rounded border p-4">
+                <p class="text-sm font-bold">Light Text (White)</p>
+                <ul class="list-inside list-disc space-y-1 text-xs">
+                  <li><code class="font-mono">bg-primary text-primary-foreground</code></li>
+                  <li><code class="font-mono">bg-blue text-blue-foreground</code></li>
+                  <li><code class="font-mono">bg-red text-red-foreground</code></li>
+                  <li><code class="font-mono">bg-purple text-purple-foreground</code></li>
+                </ul>
+              </div>
 
-          <!-- Individual swatches -->
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
-            {
-              chartBlues.map((color) => (
-                <div>
-                  <div class={`${color.class} mb-2 h-24 rounded-lg`} />
-                  <p class="text-caption text-center font-mono">{color.name}</p>
-                  <p class="text-caption text-muted-foreground text-center">L: {color.lightness}</p>
-                </div>
-              ))
-            }
-          </div>
+              <div class="border-border bg-muted/30 space-y-2 rounded border p-4">
+                <p class="text-sm font-bold">Dark Text</p>
+                <ul class="list-inside list-disc space-y-1 text-xs">
+                  <li><code class="font-mono">bg-background text-foreground</code></li>
+                  <li><code class="font-mono">bg-orange text-orange-foreground</code></li>
+                  <li><code class="font-mono">bg-yellow text-yellow-foreground</code></li>
+                  <li><code class="font-mono">bg-green text-green-foreground</code></li>
+                </ul>
+              </div>
+            </div>
 
-          <div class="border-border bg-muted/50 mt-6 rounded border p-4">
-            <p class="mb-2 text-sm font-bold">Usage</p>
-            <ul class="list-inside list-disc space-y-1 text-sm">
-              <li>Sequential data: temperature scales, density maps, intensity visualization</li>
-              <li>Gradient backgrounds: from subtle (blue-1) to prominent (blue-8)</li>
-              <li>Perceptually uniform: equal perceived steps between colors</li>
-              <li>Accessible: maintains contrast ratios for readability</li>
-            </ul>
+            <div class="border-border bg-muted/50 rounded border p-4">
+              <p class="mb-2 text-sm font-bold">Best Practices</p>
+              <ul class="list-inside list-disc space-y-1 text-sm">
+                <li>Always use foreground tokens for automatic dark mode support</li>
+                <li>All pairs meet WCAG AA standards (4.5:1 for text)</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -416,16 +396,15 @@ const chartColors = [
     <section class="mb-16">
       <h2>Usage Guidelines</h2>
       <div class="grid gap-6 lg:grid-cols-2">
-        <!-- Do's -->
         <Card>
           <CardHeader>
-            <CardTitle>Do ✅</CardTitle>
+            <CardTitle>Do</CardTitle>
           </CardHeader>
           <CardContent>
             <ul class="space-y-3 text-sm">
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use semantic color tokens (bg-primary, bg-blue, text-muted-foreground)</span>
+                <span>Use semantic color tokens (bg-primary, text-muted-foreground)</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
@@ -437,24 +416,20 @@ const chartColors = [
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use Aurora colors for semantic states (red = error, green = success)</span>
+                <span>Use expressive colors for semantic states (red = error, green = success)</span
+                >
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use chart-blue-* for sequential data, chart-* for categorical</span>
-              </li>
-              <li class="flex gap-2">
-                <span class="text-primary">•</span>
-                <span>Test contrast ratios for accessibility (WCAG AA minimum)</span>
+                <span>Always pair background colors with their foreground tokens</span>
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        <!-- Don'ts -->
         <Card>
           <CardHeader>
-            <CardTitle>Don't ❌</CardTitle>
+            <CardTitle>Don't</CardTitle>
           </CardHeader>
           <CardContent>
             <ul class="space-y-3 text-sm">
@@ -476,11 +451,7 @@ const chartColors = [
               </li>
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
-                <span>Don't mix categorical and sequential chart palettes</span>
-              </li>
-              <li class="flex gap-2">
-                <span class="text-destructive">•</span>
-                <span>Don't ignore contrast requirements for data visualization</span>
+                <span>Don't use text-white or hardcoded colors - use foreground tokens</span>
               </li>
             </ul>
           </CardContent>
@@ -489,7 +460,7 @@ const chartColors = [
     </section>
 
     <!-- Implementation Section -->
-    <section>
+    <section class="mb-16">
       <h2>Implementation</h2>
 
       <div class="grid gap-6 lg:grid-cols-2">
@@ -498,23 +469,21 @@ const chartColors = [
             <CardTitle>CSS Variables</CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-small text-muted-foreground mb-4">
-              Use CSS variables directly in custom styles
-            </p>
             <pre
-              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`.my-component {
-  background-color: var(--background);
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`.component {
+  background: var(--background);
   color: var(--foreground);
   border: 1px solid var(--border);
 }
 
-.my-button {
-  background-color: var(--primary);
+.button {
+  background: var(--primary);
   color: var(--primary-foreground);
 }
 
-.my-button:hover {
-  background-color: var(--accent);
+.button:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }`}</pre>
           </CardContent>
         </Card>
@@ -524,27 +493,64 @@ const chartColors = [
             <CardTitle>Tailwind Classes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p class="text-small text-muted-foreground mb-4">
-              Use semantic utility classes for rapid development
-            </p>
             <pre
-              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Background and text -->
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Main layout -->
 <div class="bg-background text-foreground">
 
 <!-- Primary button -->
 <button class="bg-primary text-primary-foreground">
-
-<!-- Muted text -->
-<p class="text-muted-foreground">
+  Click me
+</button>
 
 <!-- Card surface -->
 <div class="bg-card text-card-foreground border-border">
+  Card content
+</div>
 
 <!-- Error state -->
-<div class="bg-destructive text-destructive-foreground">`}</pre>
+<div class="bg-destructive text-destructive-foreground">
+  Error message
+</div>`}</pre>
           </CardContent>
         </Card>
       </div>
+    </section>
+
+    <!-- OKLCH Color Space Section -->
+    <section>
+      <h2>OKLCH Color Space</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="mb-6 grid gap-6 md:grid-cols-3">
+            <div>
+              <h3 class="mb-2 text-lg font-bold">L (Lightness)</h3>
+              <p class="text-small text-muted-foreground">
+                0-1 scale. Changes correspond to perceived brightness—no unexpected gray zones.
+              </p>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">C (Chroma)</h3>
+              <p class="text-small text-muted-foreground">
+                Saturation matching human perception. Consistent across different hues.
+              </p>
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-bold">H (Hue)</h3>
+              <p class="text-small text-muted-foreground">
+                Color angle (0-360). 249° = blue, 15° = red, 84° = yellow, 131° = green.
+              </p>
+            </div>
+          </div>
+          <div class="border-border bg-muted/50 rounded border p-4">
+            <p class="mb-2 text-sm font-bold">Why OKLCH?</p>
+            <ul class="list-inside list-disc space-y-1 text-sm">
+              <li>Perceptually uniform—gradients stay clean and predictable</li>
+              <li>Better accessibility—easier to maintain proper contrast ratios</li>
+              <li>Consistent saturation across hues</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   </main>
 </Layout>

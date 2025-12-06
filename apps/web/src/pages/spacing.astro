@@ -80,21 +80,11 @@ const useCases = [
             </div>
             <div>
               <h3 class="mb-2 text-lg font-bold">Restricted Scale</h3>
-              <p class="text-muted-foreground mb-3">
-                Unlike default Tailwind, Basalt UI only provides specific spacing values. This is
-                intentional—if you need a value that isn't defined, the design system is telling you
-                to reconsider.
+              <p class="text-muted-foreground">
+                Unlike default Tailwind, Basalt UI only provides specific spacing values. Values
+                like 7, 9, 11, 13-15, and others are intentionally omitted to prevent arbitrary
+                spacing and maintain visual consistency.
               </p>
-              <div class="border-border bg-muted/50 rounded border p-4">
-                <p class="mb-2 text-sm font-bold">What's Missing and Why</p>
-                <p class="text-small text-muted-foreground mb-2">
-                  Values like 7, 9, 11, 13-15, 17-19, 21-23, 25-31, 33+ are intentionally omitted.
-                </p>
-                <p class="text-small text-muted-foreground">
-                  <strong>Example:</strong> Need p-7? Use p-6 (24px) or p-8 (32px) instead. This prevents
-                  the "pixel-perfect" trap where designers obsess over 28px vs 30px padding.
-                </p>
-              </div>
             </div>
             <div>
               <h3 class="mb-2 text-lg font-bold">Consistency Over Flexibility</h3>
@@ -128,7 +118,7 @@ const useCases = [
             }
           </div>
           <div class="text-caption text-muted-foreground mt-6">
-            Visual representation of each spacing value. The green bar shows the actual pixel size.
+            Visual representation of each spacing value. The blue bar shows the actual pixel size.
           </div>
         </CardContent>
       </Card>

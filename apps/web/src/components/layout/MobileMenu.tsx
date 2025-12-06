@@ -2,7 +2,7 @@ import { Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import ThemeToggle from '@/components/shared/ThemeToggle'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 
 // Create a custom event to communicate between button and panel
 const MOBILE_MENU_EVENT = 'mobile-menu-toggle'
@@ -165,9 +165,10 @@ export function MobileMenuPanel() {
 
         <div className="mt-4 flex flex-col gap-3">
           <ThemeToggle />
-          <Button variant="outline" asChild>
-            <a href="/docs">Docs</a>
-          </Button>
+          <a href="#docs" className={buttonVariants({ variant: 'default', size: 'lg' })}>
+            {' '}
+            Docs{' '}
+          </a>
         </div>
       </nav>
     </div>
