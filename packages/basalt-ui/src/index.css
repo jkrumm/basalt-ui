@@ -42,7 +42,7 @@
   --foreground: oklch(0.265 0.015 285); /* Rich dark gray, readable but not black */
 
   /* Card and elevated surfaces */
-  --card: oklch(0.995 0.002 90); /* Slightly elevated from background */
+  --card: oklch(0.99 0.002 90); /* Very subtle elevation from background */
   --card-foreground: oklch(0.265 0.015 285); /* Same as foreground for consistency */
 
   /* Popover and floating elements */
@@ -50,12 +50,12 @@
   --popover-foreground: oklch(0.265 0.015 285);
 
   /* Muted backgrounds and disabled states */
-  --muted: oklch(0.935 0.005 270); /* Light gray for backgrounds */
-  --muted-foreground: oklch(0.525 0.015 285); /* Medium gray for less prominent text */
+  --muted: oklch(0.96 0.004 270); /* Very light gray, subtle contrast */
+  --muted-foreground: oklch(0.5 0.014 285); /* Subdued text, readable */
 
   /* Borders and dividers - subtle but visible */
-  --border: oklch(0.875 0.005 270); /* Soft border, not too light */
-  --input: oklch(0.875 0.005 270); /* Same as border for consistency */
+  --border: oklch(0.93 0.005 270); /* Gentle border, ~6% contrast */
+  --input: oklch(0.93 0.005 270); /* Same as border for consistency */
 
   /* === NATURAL ACCENTS === */
 
@@ -64,11 +64,11 @@
   --primary-foreground: oklch(0.99 0.002 90); /* Light text on sage */
 
   /* Secondary: Subtle zinc for secondary actions */
-  --secondary: oklch(0.905 0.008 270);
+  --secondary: oklch(0.95 0.006 270); /* Lighter, more subtle */
   --secondary-foreground: oklch(0.265 0.015 285);
 
   /* Accent: Lighter sage for hover states and subtle highlights */
-  --accent: oklch(0.925 0.008 135);
+  --accent: oklch(0.955 0.006 135); /* Very subtle highlight */
   --accent-foreground: oklch(0.265 0.015 285);
 
   /* Destructive: Magma Rust - warm red for warnings/errors */
@@ -118,7 +118,7 @@
 /* === DARK MODE: Warm, comfortable darkness (not pure black) === */
 .dark {
   /* Surface colors - warm dark grays, not stark black */
-  --background: oklch(0.195 0.012 285); /* Deep warm gray, not pure black */
+  --background: oklch(0.21 0.012 285); /* Deep warm gray, slightly lighter */
   --foreground: oklch(0.935 0.005 90); /* Soft white, not harsh */
 
   /* Card and elevated surfaces - slightly lighter than background */
@@ -130,23 +130,23 @@
   --popover-foreground: oklch(0.935 0.005 90);
 
   /* Muted backgrounds and disabled states */
-  --muted: oklch(0.29 0.015 285);
-  --muted-foreground: oklch(0.625 0.015 285);
+  --muted: oklch(0.27 0.013 285); /* Subtle background difference */
+  --muted-foreground: oklch(0.77 0.012 285); /* Subdued text, lighter for readability */
 
-  /* Borders and dividers - visible but not harsh */
-  --border: oklch(0.32 0.015 285);
-  --input: oklch(0.32 0.015 285);
+  /* Borders and dividers - subtle but visible */
+  --border: oklch(0.27 0.013 285); /* Gentle border, slightly more visible */
+  --input: oklch(0.27 0.013 285); /* Same as border for consistency */
 
   /* Primary: Lighter sage for dark mode (better contrast) */
   --primary: oklch(0.68 0.11 135);
   --primary-foreground: oklch(0.195 0.012 285);
 
   /* Secondary */
-  --secondary: oklch(0.31 0.015 285);
+  --secondary: oklch(0.26 0.013 285); /* More subtle */
   --secondary-foreground: oklch(0.935 0.005 90);
 
   /* Accent: Lighter for visibility */
-  --accent: oklch(0.35 0.02 135);
+  --accent: oklch(0.28 0.015 135); /* Subtle highlight */
   --accent-foreground: oklch(0.935 0.005 90);
 
   /* Destructive: Brighter rust for dark mode */
@@ -346,6 +346,14 @@
     padding: 0;
   }
 
+  /* === TAILWIND V4: Set default border color === */
+  /* In v4, borders default to currentColor. Override to use our theme color. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -517,13 +525,17 @@
 @layer utilities {
   /* === DISPLAY TEXT (Hero sections) === */
   .text-display {
+    font-family: var(--font-heading);
     font-size: var(--font-size-display);
+    font-weight: var(--font-weight-bold);
     line-height: var(--line-height-display);
     letter-spacing: var(--letter-spacing-tight);
   }
 
   .text-hero {
+    font-family: var(--font-heading);
     font-size: var(--font-size-hero);
+    font-weight: var(--font-weight-bold);
     line-height: var(--line-height-hero);
   }
 
