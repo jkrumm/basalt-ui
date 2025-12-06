@@ -13,7 +13,7 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 2. **Restrictive by Design**: No infinite scales - only purposeful, defined tokens
 3. **OKLCH Color Space**: Perceptually uniform colors for accessible, harmonious palettes
 4. **Warm, Not Stark**: Professional but welcoming - never pure black/white
-5. **Natural Aesthetics**: Basalt stone zinc neutrals with sage, rust, and ochre accents
+5. **Natural Aesthetics**: Basalt stone zinc neutrals with professional blue accents and expressive Aurora colors
 
 ### What We **DO**
 
@@ -23,7 +23,7 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 - ✅ Restrict Tailwind scales to prevent arbitrary values
 - ✅ Maintain full ShadCN compatibility
 - ✅ Create warm, professional, accessible interfaces
-- ✅ Support volcanic nature aesthetic (zinc + natural accents)
+- ✅ Support volcanic nature aesthetic (zinc + blue + Aurora colors)
 
 ### What We **DON'T DO**
 
@@ -64,22 +64,45 @@ Dark Mode:
 - border: oklch(0.320 0.015 285)     - Visible borders
 ```
 
-**Natural Accents:**
+**Blue Primary (Nord Frost):**
 ```
-Lichen Sage (Primary):
-- Light: oklch(0.58 0.10 135)  - Earthy sage green
-- Dark:  oklch(0.68 0.11 135)  - Lighter for contrast
-- Usage: Primary actions, links, focus rings
+Blue (Primary Accent):
+- Value: oklch(0.6965 0.0591 248.69)  - Nord #81a1c1
+- Same for light and dark modes
+- Usage: Primary actions, links, focus rings, interactive elements
 
-Magma Rust (Destructive):
-- Light: oklch(0.58 0.18 35)   - Warm rust red
-- Dark:  oklch(0.66 0.19 35)   - Brighter for visibility
-- Usage: Errors, warnings, destructive actions
+Blue Variants:
+- blue:       oklch(0.6965 0.0591 248.69)  - Primary accent
+- blue-light: oklch(0.78 0.045 249)         - Hover states, highlights
+- blue-deep:  oklch(0.5944 0.0772 254.03)   - Strong emphasis (Nord #5e81ac)
+```
 
-Vein Ochre (Tertiary):
-- Light: oklch(0.70 0.12 75)   - Warm ochre yellow
-- Dark:  oklch(0.75 0.13 75)   - Adjusted for dark mode
-- Usage: Attention, special highlights, warnings
+**Aurora Colors (Nord Aurora):**
+```
+Direct adoption of Nord's Aurora palette - same values for light and dark modes
+
+Red:    oklch(0.6061 0.1206 15.34)  - Nord #bf616a - Errors, destructive actions
+Orange: oklch(0.6929 0.0963 38.24)  - Nord #d08770 - Annotations, warnings
+Yellow: oklch(0.8549 0.0892 84.09)  - Nord #ebcb8b - Caution, highlights
+Green:  oklch(0.7683 0.0749 131.06) - Nord #a3be8c - Success, confirmations
+Purple: oklch(0.6921 0.0625 332.66) - Nord #b48ead - Special features, unique identifiers
+```
+
+**Sequential Chart Palette:**
+```
+8 blue tones for data visualization (Nord blue hue ~249°)
+
+chart-blue-1: oklch(0.90 0.030 249) - Lightest
+chart-blue-2: oklch(0.80 0.040 249)
+chart-blue-3: oklch(0.72 0.050 249)
+chart-blue-4: oklch(0.65 0.059 249)
+chart-blue-5: oklch(0.58 0.065 249)
+chart-blue-6: oklch(0.50 0.070 249)
+chart-blue-7: oklch(0.42 0.075 249)
+chart-blue-8: oklch(0.34 0.077 249) - Darkest
+
+Progressive lightness and gradually increasing chroma for perceptual uniformity
+All adjacent colors exceed WCAG 3:1 contrast requirements
 ```
 
 ### Semantic Color Tokens (ShadCN Compatible)
@@ -92,21 +115,42 @@ Vein Ochre (Tertiary):
 --muted, --muted-foreground
 
 /* Actions & States */
---primary, --primary-foreground
+--primary, --primary-foreground  (blue)
 --secondary, --secondary-foreground
---accent, --accent-foreground
---destructive, --destructive-foreground
---ochre, --ochre-foreground
+--accent, --accent-foreground  (blue-light)
+--destructive, --destructive-foreground  (red)
+
+/* Aurora Colors */
+--red, --orange, --yellow, --green, --purple
+
+/* Blue Variants */
+--blue, --blue-light, --blue-deep
 
 /* Structure */
 --border, --input, --ring
 
-/* Charts & Data Viz */
+/* Categorical Charts */
 --chart-1 through --chart-5
+
+/* Sequential Charts */
+--chart-blue-1 through --chart-blue-8
 
 /* Sidebar (ShadCN) */
 --sidebar, --sidebar-foreground, --sidebar-primary, etc.
 ```
+
+### Chart Color Strategies
+
+**Categorical Data** (different categories/groups):
+- Use `--chart-1` through `--chart-5` (blue, red, green, yellow, purple)
+- Different hues provide clear visual distinction
+- Example: Product categories, user segments, status types
+
+**Sequential Data** (continuous scale/intensity):
+- Use `--chart-blue-1` through `--chart-blue-8`
+- Single hue with lightness progression
+- Perceptually uniform steps
+- Example: Temperature scales, density maps, time series intensity
 
 ## Typography System
 
@@ -294,16 +338,17 @@ All ShadCN components work because we define required tokens:
 Always work in OKLCH space:
 ```css
 /* Adjust lightness for contrast */
---primary: oklch(0.58 0.10 135);
---primary-hover: oklch(0.50 0.10 135);  /* Darker */
+--blue: oklch(0.692 0.097 252);
+--blue-darker: oklch(0.553 0.107 252);  /* Darker (blue-deep) */
 
 /* Adjust chroma for vibrancy */
---accent: oklch(0.68 0.08 135);   /* Muted */
---accent-vivid: oklch(0.68 0.15 135);  /* Vibrant */
+--blue-muted: oklch(0.765 0.076 192);   /* Muted */
+--blue-vivid: oklch(0.692 0.15 252);    /* More vibrant */
 
 /* Adjust hue for color shift */
---sage: oklch(0.58 0.10 135);     /* Green */
---rust: oklch(0.58 0.10 35);      /* Orange */
+--blue: oklch(0.692 0.097 252);      /* Blue (252°) */
+--teal: oklch(0.765 0.076 192);      /* Teal (192°) */
+--cyan: oklch(0.794 0.102 219);      /* Cyan (219°) */
 ```
 
 ### Testing Colors

@@ -1,8 +1,8 @@
 # Basalt UI
 
-> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt and nature's palette.
+> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt and Nord's expressive colors.
 
-**Volcanic aesthetics meet modern design.** Basalt UI combines warm zinc-based neutrals with natural accent colors (sage, rust, ochre) to create professional, welcoming interfaces that feel organic, not clinical.
+**Volcanic aesthetics meet Nord's expressiveness.** Basalt UI combines warm zinc-based neutrals with Nord's carefully calibrated Aurora colors and professional blue accents to create interfaces that are both trustworthy and expressive.
 
 ---
 
@@ -13,7 +13,7 @@ Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it
 - ✨ **Semantic HTML works by default** - `<h2>` looks like a heading without utility classes
 - 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
 - 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
-- 🌋 **Volcanic nature aesthetic** - Warm grays, sage green, magma rust, vein ochre
+- 🌋 **Basalt neutrals + Nord colors** - Warm zinc grays with Nord Aurora expressiveness
 - 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
 - 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
 
@@ -111,7 +111,7 @@ Use defined utilities when needed:
 
 ## Color System
 
-### Volcanic Nature Palette
+### Basalt + Nord Palette
 
 Basalt UI uses **OKLCH** color space for perceptually uniform colors that match human perception.
 
@@ -126,14 +126,34 @@ muted       /* Light backgrounds and disabled states */
 border      /* Subtle, visible borders */
 ```
 
-#### Natural Accents
+#### Blue Primary (Nord Frost)
 
-Inspired by volcanic landscapes:
+Professional, trustworthy accent based on Nord Frost colors:
 
 ```css
-primary     /* Lichen Sage - Earthy green for actions */
-destructive /* Magma Rust - Warm red for warnings */
-ochre       /* Vein Ochre - Golden yellow for highlights */
+blue        /* oklch(0.6965 0.0591 248.69) - Nord #81a1c1 */
+blue-light  /* oklch(0.78 0.045 249) - Hover states */
+blue-deep   /* oklch(0.5944 0.0772 254.03) - Nord #5e81ac */
+```
+
+#### Aurora Colors (Nord Aurora)
+
+Expressive, semantic colors directly adopted from Nord's Aurora palette:
+
+```css
+red         /* oklch(0.6061 0.1206 15.34) - Errors, destructive actions */
+orange      /* oklch(0.6929 0.0963 38.24) - Warnings, annotations */
+yellow      /* oklch(0.8549 0.0892 84.09) - Caution, highlights */
+green       /* oklch(0.7683 0.0749 131.06) - Success, confirmations */
+purple      /* oklch(0.6921 0.0625 332.66) - Special features */
+```
+
+#### Sequential Chart Palette
+
+8 blue tones for data visualization with perceptual uniformity:
+
+```css
+chart-blue-1 through chart-blue-8  /* Light to dark progression */
 ```
 
 ### Why OKLCH?
@@ -290,16 +310,22 @@ Both modes avoid stark extremes for comfortable, professional interfaces.
 
 ```css
 /* Backgrounds */
-bg-background, bg-card, bg-muted, bg-primary, bg-destructive, bg-ochre
+bg-background, bg-card, bg-muted, bg-primary
+bg-blue, bg-blue-light, bg-blue-deep
+bg-red, bg-orange, bg-yellow, bg-green, bg-purple
 
 /* Text */
-text-foreground, text-muted-foreground, text-primary, text-destructive
+text-foreground, text-muted-foreground, text-primary
+text-blue, text-red, text-green, text-yellow, text-purple
 
 /* Borders */
 border-border, border-input, border-primary
 
 /* Focus rings */
 ring-ring, ring-primary
+
+/* Charts */
+bg-chart-blue-1, bg-chart-blue-2, ... bg-chart-blue-8
 ```
 
 ### Typography
@@ -471,6 +497,7 @@ MIT License - Use freely, modify as needed, keep attribution.
 ## Inspiration
 
 - **Color Science**: OKLCH color space, Björn Ottosson's Oklab
+- **Nord Theme**: Aurora color palette, Frost blue accents, Arctic color philosophy
 - **Nature**: Volcanic landscapes, basalt formations, natural materials
 - **Design Systems**: ShadCN UI, Radix Colors, Tailwind Zinc
 - **Philosophy**: Restrictive design, semantic HTML, mature consistency

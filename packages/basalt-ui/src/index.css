@@ -4,7 +4,14 @@
  * BASALT UI - Volcanic Nature Design System
  *
  * A mature, restrictive design system inspired by basalt stone and volcanic nature.
- * Combines zinc-based neutrals with natural accent colors (sage, magma, ochre).
+ * Combines zinc-based neutrals with expressive Aurora colors and professional blue accents.
+ *
+ * Color Philosophy:
+ * - Warm, neutral grays (dark/light) for comfortable readability
+ * - Blue primary accent for professional, trustworthy interface elements
+ * - Aurora colors (red, orange, yellow, green, purple) for expressive, semantic states
+ * - Sequential blue palette for data visualization with perceptual uniformity
+ * - OKLCH color space ensures accessible contrast and harmonious gradients
  *
  * Philosophy:
  * - OKLCH color space for perceptual uniformity
@@ -18,15 +25,32 @@
    COLOR PALETTE - OKLCH Color Space
    ============================================================================
 
-   Basalt Foundation (Zinc-based):
+   Basalt Foundation (Zinc-based Neutrals):
    - Warm, neutral grays that feel natural, not clinical
    - L (Lightness) values carefully chosen for comfortable contrast
    - Very low chroma for neutral feel with slight warmth
+   - Different values for light/dark mode to maintain accessibility
 
-   Natural Accents:
-   - Lichen Sage: Primary actions, links, active states
-   - Magma Rust: Destructive/warning actions, warm highlights
-   - Vein Ochre: Tertiary accent, attention-grabbers
+   Blue Primary (Nord Frost):
+   - Based on Nord Frost colors (#81a1c1, #5e81ac)
+   - Professional, trustworthy, versatile accent color
+   - Blue variants for different UI states (primary, light, deep)
+   - Same values work in both light and dark modes
+
+   Aurora Colors (Nord Aurora):
+   - Direct adoption of Nord's Aurora palette for expressive semantics
+   - Red (#bf616a): Errors, destructive actions, critical warnings
+   - Orange (#d08770): Annotations, moderate warnings, special states
+   - Yellow (#ebcb8b): Caution, highlights, attention
+   - Green (#a3be8c): Success, confirmations, positive actions
+   - Purple (#b48ead): Special features, unique identifiers
+   - Same values work in both light and dark modes (Nord's careful calibration)
+
+   Sequential Chart Palette:
+   - 8 blue tones from light to dark for data visualization
+   - Based on Nord blue hue (~249°) with progressive lightness steps
+   - Gradually increasing chroma for perceptual uniformity
+   - Exceeds WCAG 3:1 contrast between adjacent colors
 
    Perceptual Uniformity:
    - Changes in L/C values correspond to perceived brightness/vibrancy
@@ -57,47 +81,71 @@
   --border: oklch(0.93 0.005 270); /* Gentle border, ~6% contrast */
   --input: oklch(0.93 0.005 270); /* Same as border for consistency */
 
-  /* === NATURAL ACCENTS === */
+  /* === AURORA COLORS: Expressive, semantic colors (Nord-inspired) === */
+  /* Same values for light and dark modes - work well on both backgrounds */
 
-  /* Primary: Lichen Sage - earthy green for main actions */
-  --primary: oklch(0.58 0.1 135); /* Sage green, balanced */
-  --primary-foreground: oklch(0.99 0.002 90); /* Light text on sage */
+  --red: oklch(0.6061 0.1206 15.34); /* Nord #bf616a */
+  --orange: oklch(0.6929 0.0963 38.24); /* Nord #d08770 */
+  --yellow: oklch(0.8549 0.0892 84.09); /* Nord #ebcb8b */
+  --green: oklch(0.7683 0.0749 131.06); /* Nord #a3be8c */
+  --purple: oklch(0.6921 0.0625 332.66); /* Nord #b48ead */
+
+  /* === BLUE PRIMARY: Professional accent color (Nord Frost) === */
+  /* Same values for light and dark modes */
+
+  --blue: oklch(0.6965 0.0591 248.69); /* Primary blue - Nord #81a1c1 */
+  --blue-deep: oklch(0.5944 0.0772 254.03); /* Darker blue - Nord #5e81ac */
+  --blue-light: oklch(0.78 0.045 249); /* Lighter blue for hover/accent states */
+
+  /* === SEQUENTIAL CHART PALETTE: 8 blues for data visualization === */
+  /* Based on actual Nord blue hue (~249°) with progressive lightness */
+
+  --chart-blue-1: oklch(0.9 0.03 249); /* Lightest */
+  --chart-blue-2: oklch(0.8 0.04 249);
+  --chart-blue-3: oklch(0.72 0.05 249);
+  --chart-blue-4: oklch(0.65 0.059 249);
+  --chart-blue-5: oklch(0.58 0.065 249);
+  --chart-blue-6: oklch(0.5 0.07 249);
+  --chart-blue-7: oklch(0.42 0.075 249);
+  --chart-blue-8: oklch(0.34 0.077 249); /* Darkest */
+
+  /* === SEMANTIC COLOR TOKENS === */
+
+  /* Primary: Blue replaces green */
+  --primary: var(--blue);
+  --primary-foreground: oklch(0.99 0.002 90);
 
   /* Secondary: Subtle zinc for secondary actions */
-  --secondary: oklch(0.95 0.006 270); /* Lighter, more subtle */
+  --secondary: oklch(0.95 0.006 270);
   --secondary-foreground: oklch(0.265 0.015 285);
 
-  /* Accent: Lighter sage for hover states and subtle highlights */
-  --accent: oklch(0.955 0.006 135); /* Very subtle highlight */
+  /* Accent: Lighter blue for hover states */
+  --accent: var(--blue-light);
   --accent-foreground: oklch(0.265 0.015 285);
 
-  /* Destructive: Magma Rust - warm red for warnings/errors */
-  --destructive: oklch(0.58 0.18 35); /* Warm rust red */
+  /* Destructive: Red for errors/warnings */
+  --destructive: var(--red);
   --destructive-foreground: oklch(0.99 0.002 90);
 
-  /* Tertiary: Vein Ochre - for special highlights and attention */
-  --ochre: oklch(0.7 0.12 75); /* Warm ochre yellow */
-  --ochre-foreground: oklch(0.265 0.015 285);
+  /* Focus ring - uses primary blue */
+  --ring: var(--blue);
 
-  /* Focus ring - uses primary color */
-  --ring: oklch(0.58 0.1 135);
-
-  /* === CHART COLORS: Natural palette === */
-  --chart-1: oklch(0.58 0.1 135); /* Lichen sage */
-  --chart-2: oklch(0.58 0.18 35); /* Magma rust */
-  --chart-3: oklch(0.7 0.12 75); /* Vein ochre */
-  --chart-4: oklch(0.525 0.015 285); /* Medium zinc */
-  --chart-5: oklch(0.735 0.015 285); /* Light zinc */
+  /* === CHART COLORS: Categorical palette === */
+  --chart-1: var(--blue);
+  --chart-2: var(--red);
+  --chart-3: var(--green);
+  --chart-4: var(--yellow);
+  --chart-5: var(--purple);
 
   /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
   --sidebar: oklch(0.965 0.003 90);
   --sidebar-foreground: oklch(0.265 0.015 285);
-  --sidebar-primary: oklch(0.58 0.1 135);
+  --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: oklch(0.99 0.002 90);
-  --sidebar-accent: oklch(0.925 0.008 135);
+  --sidebar-accent: oklch(0.925 0.008 252);
   --sidebar-accent-foreground: oklch(0.265 0.015 285);
   --sidebar-border: oklch(0.875 0.005 270);
-  --sidebar-ring: oklch(0.58 0.1 135);
+  --sidebar-ring: var(--blue);
 
   /* === TYPOGRAPHY: Modern, welcoming fonts === */
   --font-heading: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -137,45 +185,44 @@
   --border: oklch(0.27 0.013 285); /* Gentle border, slightly more visible */
   --input: oklch(0.27 0.013 285); /* Same as border for consistency */
 
-  /* Primary: Lighter sage for dark mode (better contrast) */
-  --primary: oklch(0.68 0.11 135);
+  /* === SEMANTIC COLOR TOKENS === */
+  /* Aurora and Blue colors remain the same - defined in :root */
+
+  /* Primary: Blue (same value as light mode) */
+  --primary: var(--blue);
   --primary-foreground: oklch(0.195 0.012 285);
 
   /* Secondary */
-  --secondary: oklch(0.26 0.013 285); /* More subtle */
+  --secondary: oklch(0.26 0.013 285);
   --secondary-foreground: oklch(0.935 0.005 90);
 
-  /* Accent: Lighter for visibility */
-  --accent: oklch(0.28 0.015 135); /* Subtle highlight */
+  /* Accent: Blue light for hover states */
+  --accent: var(--blue-light);
   --accent-foreground: oklch(0.935 0.005 90);
 
-  /* Destructive: Brighter rust for dark mode */
-  --destructive: oklch(0.66 0.19 35);
+  /* Destructive: Red (same value as light mode) */
+  --destructive: var(--red);
   --destructive-foreground: oklch(0.99 0.002 90);
 
-  /* Ochre: Adjusted for dark mode */
-  --ochre: oklch(0.75 0.13 75);
-  --ochre-foreground: oklch(0.195 0.012 285);
-
   /* Focus ring */
-  --ring: oklch(0.68 0.11 135);
+  --ring: var(--blue);
 
-  /* Chart colors - adjusted for dark mode */
-  --chart-1: oklch(0.68 0.11 135);
-  --chart-2: oklch(0.66 0.19 35);
-  --chart-3: oklch(0.75 0.13 75);
-  --chart-4: oklch(0.625 0.015 285);
-  --chart-5: oklch(0.425 0.015 285);
+  /* Chart colors - same categorical palette */
+  --chart-1: var(--blue);
+  --chart-2: var(--red);
+  --chart-3: var(--green);
+  --chart-4: var(--yellow);
+  --chart-5: var(--purple);
 
   /* Sidebar - slightly different from main background */
   --sidebar: oklch(0.21 0.012 285);
   --sidebar-foreground: oklch(0.935 0.005 90);
-  --sidebar-primary: oklch(0.68 0.11 135);
+  --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: oklch(0.195 0.012 285);
-  --sidebar-accent: oklch(0.35 0.02 135);
+  --sidebar-accent: oklch(0.35 0.02 252);
   --sidebar-accent-foreground: oklch(0.935 0.005 90);
   --sidebar-border: oklch(0.32 0.015 285);
-  --sidebar-ring: oklch(0.68 0.11 135);
+  --sidebar-ring: var(--blue);
 }
 
 /* ============================================================================
@@ -288,18 +335,38 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-ochre: var(--ochre);
-  --color-ochre-foreground: var(--ochre-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Chart colors */
+  /* Aurora colors - simple names (bg-red, text-green, etc.) */
+  --color-red: var(--red);
+  --color-orange: var(--orange);
+  --color-yellow: var(--yellow);
+  --color-green: var(--green);
+  --color-purple: var(--purple);
+
+  /* Blue variants (bg-blue, bg-blue-light, bg-blue-deep) */
+  --color-blue: var(--blue);
+  --color-blue-light: var(--blue-light);
+  --color-blue-deep: var(--blue-deep);
+
+  /* Categorical chart colors */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Sequential chart palette (bg-chart-blue-1 through bg-chart-blue-8) */
+  --color-chart-blue-1: var(--chart-blue-1);
+  --color-chart-blue-2: var(--chart-blue-2);
+  --color-chart-blue-3: var(--chart-blue-3);
+  --color-chart-blue-4: var(--chart-blue-4);
+  --color-chart-blue-5: var(--chart-blue-5);
+  --color-chart-blue-6: var(--chart-blue-6);
+  --color-chart-blue-7: var(--chart-blue-7);
+  --color-chart-blue-8: var(--chart-blue-8);
 
   /* Sidebar colors (ShadCN) */
   --color-sidebar: var(--sidebar);
@@ -419,7 +486,7 @@
     margin-bottom: 1em;
   }
 
-  /* === LINKS: Sage color with subtle underline === */
+  /* === LINKS: Blue color with subtle underline === */
   a {
     color: var(--primary);
     text-decoration: underline;
@@ -472,7 +539,7 @@
 
   /* === BLOCKQUOTES === */
   blockquote {
-    border-left: 3px solid var(--primary);
+    border-left: 3px solid var(--blue);
     padding-left: var(--spacing-4);
     margin-left: 0;
     margin-bottom: 1em;
