@@ -1,0 +1,122 @@
+---
+import ThemeToggle from '@/components/shared/ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { MobileMenuButton, MobileMenuPanel } from './MobileMenu';
+import { buttonVariants } from '@/components/ui/button.tsx';
+---
+
+<header data-nav data-scrolled="false">
+  <div class="nav-wrapper">
+    <div class="px-4 py-4">
+      <!-- First row: Logo and buttons -->
+      <div class="flex items-center justify-between">
+        <a href="/" class="text-xl font-bold transition-opacity hover:opacity-80"> Basalt UI </a>
+
+        <!-- Desktop navigation -->
+        <nav class="hidden items-center gap-6 md:flex" aria-label="Primary navigation">
+          <a
+            href="/typography"
+            class="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Typography
+          </a>
+          <a href="/colors" class="text-muted-foreground hover:text-foreground transition-colors">
+            Colors
+          </a>
+          <a href="/spacing" class="text-muted-foreground hover:text-foreground transition-colors">
+            Spacing
+          </a>
+        </nav>
+
+        <!-- Desktop actions -->
+        <div class="hidden items-center gap-2 md:flex">
+          <ThemeToggle client:load />
+          <a href="#docs" class={buttonVariants({ variant: 'default', size: 'lg' })}> Docs </a>
+        </div>
+
+        <!-- Mobile menu button (only visible on mobile) -->
+        <MobileMenuButton client:load />
+      </div>
+
+      <!-- Second row: Mobile menu panel (slides down when open) -->
+      <MobileMenuPanel client:load />
+    </div>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector('[data-nav]');
+  let scrolled = false;
+
+  function updateNav() {
+    const shouldBeScrolled = window.scrollY > 50;
+    if (shouldBeScrolled !== scrolled) {
+      scrolled = shouldBeScrolled;
+      header?.setAttribute('data-scrolled', String(scrolled));
+    }
+  }
+
+  window.addEventListener('scroll', updateNav, { passive: true });
+  updateNav(); // Check initial state
+</script>
+
+<style>
+  /* Default state: transparent, full width */
+  header[data-nav] {
+    width: calc(1182px - 2rem);
+    max-width: calc(100vw - 2rem);
+    margin-inline: auto;
+    position: sticky;
+    top: 1rem;
+    z-index: 50;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Scrolled state: floating glassmorphism card */
+  header[data-nav][data-scrolled='true'] {
+    border-radius: 0.75rem;
+    background: oklch(from var(--background) l c h / 0.8);
+    backdrop-filter: blur(12px) saturate(180%);
+    box-shadow: 0 4px 12px oklch(from var(--foreground) l c h / 0.1);
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+  }
+
+  /* Dark mode: higher opacity for legibility and darker shadow */
+  :global(.dark) header[data-nav][data-scrolled='true'] {
+    background: oklch(from var(--background) l c h / 0.9);
+    border-color: oklch(from var(--border) l c h / 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Mobile: disable blur for performance */
+  @media (max-width: 768px) {
+    header[data-nav][data-scrolled='true'] {
+      backdrop-filter: none;
+      background: oklch(from var(--background) l c h / 0.95);
+    }
+
+    :global(.dark) header[data-nav][data-scrolled='true'] {
+      background: oklch(from var(--background) l c h / 0.98);
+    }
+  }
+
+  /* Fallback for browsers without backdrop-filter support */
+  @supports not (backdrop-filter: blur(12px)) {
+    header[data-nav][data-scrolled='true'] {
+      background: oklch(from var(--background) l c h / 0.95);
+    }
+
+    :global(.dark) header[data-nav][data-scrolled='true'] {
+      background: oklch(from var(--background) l c h / 0.98);
+    }
+  }
+
+  /* Mobile menu panel - slides down from header */
+  :global(.mobile-menu-panel) {
+    overflow: hidden;
+  }
+</style>

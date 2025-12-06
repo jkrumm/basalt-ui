@@ -74,6 +74,7 @@ export default function ThemeToggle() {
     return (
       <Button
         variant="outline"
+        size="lg"
         aria-label="Loading theme toggle"
         className="cursor-pointer gap-2"
         type="button"
@@ -88,6 +89,7 @@ export default function ThemeToggle() {
   return (
     <Button
       variant="outline"
+      size="lg"
       onClick={cycleTheme}
       aria-label={`Current theme: ${theme}. Click to cycle.`}
       className="cursor-pointer gap-2"

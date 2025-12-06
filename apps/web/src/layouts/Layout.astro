@@ -1,8 +1,8 @@
 ---
 import '../styles/global.css';
 
+import Navigation from '@/components/layout/Navigation.astro';
 import ThemeScript from '@/components/shared/ThemeScript.astro';
-import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface Props {
   title?: string;
@@ -69,26 +69,7 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
     <meta name="twitter:description" content={description} />
   </head>
   <body class="bg-background text-foreground min-h-screen antialiased">
-    <header class="border-b">
-      <div class="container mx-auto flex items-center justify-between px-4 py-4">
-        <a href="/" class="text-xl font-bold">Basalt UI</a>
-        <nav class="flex items-center gap-6">
-          <a
-            href="/typography"
-            class="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Typography
-          </a>
-          <a href="/colors" class="text-muted-foreground hover:text-foreground transition-colors">
-            Colors
-          </a>
-          <a href="/spacing" class="text-muted-foreground hover:text-foreground transition-colors">
-            Spacing
-          </a>
-        </nav>
-        <ThemeToggle client:load />
-      </div>
-    </header>
+    <Navigation />
     <slot />
   </body>
 </html>

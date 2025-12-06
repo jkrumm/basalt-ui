@@ -1,7 +1,7 @@
 ---
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts/Layout.astro';
+import { buttonVariants } from '@/components/ui/button.tsx';
 ---
 
 <Layout>
@@ -12,14 +12,15 @@ import Layout from '@/layouts/Layout.astro';
         A framework-agnostic Tailwind CSS design system with zinc-based colors.
       </p>
       <div class="flex justify-center gap-4">
-        <Button size="lg">
-          <a href="/typography" class="text-primary-foreground">View Typography</a>
-        </Button>
-        <Button variant="outline" size="lg">
-          <a href="https://github.com/jkrumm/basalt-ui">GitHub</a>
-        </Button>
+        <a
+          href="https://github.com/jkrumm/basalt-ui"
+          target="_blank"
+          class={buttonVariants({ variant: 'outline', size: 'lg' })}>GitHub</a
+        >
       </div>
     </section>
+
+    <div class="min-h-screen"></div>
 
     <section class="grid gap-6 md:grid-cols-3">
       <Card>
