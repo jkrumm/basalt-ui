@@ -7,7 +7,7 @@ const semanticColors = [
     name: 'Background',
     variable: '--background',
     light: 'oklch(0.985 0.002 90)',
-    dark: 'oklch(0.195 0.012 285)',
+    dark: 'oklch(0.21 0.012 285)',
     usage: 'Page background',
     class: 'bg-background text-foreground',
   },
@@ -20,57 +20,49 @@ const semanticColors = [
     class: 'bg-foreground text-background',
   },
   {
-    name: 'Primary (Lichen Sage)',
+    name: 'Primary (Blue)',
     variable: '--primary',
-    light: 'oklch(0.58 0.1 135)',
-    dark: 'oklch(0.68 0.11 135)',
+    light: 'oklch(0.692 0.097 252.0)',
+    dark: 'oklch(0.692 0.097 252.0)',
     usage: 'Actions, links, focus states',
     class: 'bg-primary text-primary-foreground',
   },
   {
     name: 'Secondary',
     variable: '--secondary',
-    light: 'oklch(0.905 0.008 270)',
-    dark: 'oklch(0.31 0.015 285)',
+    light: 'oklch(0.95 0.006 270)',
+    dark: 'oklch(0.26 0.013 285)',
     usage: 'Subtle backgrounds, alternative actions',
     class: 'bg-secondary text-secondary-foreground',
   },
   {
     name: 'Accent',
     variable: '--accent',
-    light: 'oklch(0.925 0.008 135)',
-    dark: 'oklch(0.35 0.02 135)',
+    light: 'oklch(0.794 0.102 219.9)',
+    dark: 'oklch(0.794 0.102 219.9)',
     usage: 'Hover states, highlights',
     class: 'bg-accent text-accent-foreground',
   },
   {
-    name: 'Destructive (Magma Rust)',
+    name: 'Destructive',
     variable: '--destructive',
-    light: 'oklch(0.58 0.18 35)',
-    dark: 'oklch(0.66 0.19 35)',
+    light: 'oklch(0.627 0.192 23.6)',
+    dark: 'oklch(0.627 0.192 23.6)',
     usage: 'Errors, warnings, delete actions',
     class: 'bg-destructive text-destructive-foreground',
   },
   {
-    name: 'Ochre (Vein Ochre)',
-    variable: '--ochre',
-    light: 'oklch(0.7 0.12 75)',
-    dark: 'oklch(0.75 0.13 75)',
-    usage: 'Highlights, warm accents',
-    class: 'bg-ochre text-ochre-foreground',
-  },
-  {
     name: 'Muted',
     variable: '--muted',
-    light: 'oklch(0.935 0.005 270)',
-    dark: 'oklch(0.29 0.015 285)',
+    light: 'oklch(0.96 0.004 270)',
+    dark: 'oklch(0.27 0.013 285)',
     usage: 'Disabled states, subtle backgrounds',
     class: 'bg-muted text-muted-foreground',
   },
   {
     name: 'Card',
     variable: '--card',
-    light: 'oklch(0.995 0.002 90)',
+    light: 'oklch(0.99 0.002 90)',
     dark: 'oklch(0.22 0.012 285)',
     usage: 'Card surfaces, elevated content',
     class: 'bg-card text-card-foreground',
@@ -78,11 +70,84 @@ const semanticColors = [
   {
     name: 'Border',
     variable: '--border',
-    light: 'oklch(0.875 0.005 270)',
-    dark: 'oklch(0.32 0.015 285)',
+    light: 'oklch(0.93 0.005 270)',
+    dark: 'oklch(0.27 0.013 285)',
     usage: 'Borders, dividers, input borders',
     class: 'bg-border',
   },
+];
+
+const auroraColors = [
+  {
+    name: 'Red',
+    variable: '--red',
+    value: 'oklch(0.6061 0.1206 15.34)',
+    usage: 'Errors, destructive actions, critical warnings',
+    class: 'bg-red text-white',
+  },
+  {
+    name: 'Orange',
+    variable: '--orange',
+    value: 'oklch(0.6929 0.0963 38.24)',
+    usage: 'Annotations, moderate warnings, special states',
+    class: 'bg-orange text-foreground',
+  },
+  {
+    name: 'Yellow',
+    variable: '--yellow',
+    value: 'oklch(0.8549 0.0892 84.09)',
+    usage: 'Caution, important highlights, attention',
+    class: 'bg-yellow text-foreground',
+  },
+  {
+    name: 'Green',
+    variable: '--green',
+    value: 'oklch(0.7683 0.0749 131.06)',
+    usage: 'Success states, confirmations, positive actions',
+    class: 'bg-green text-foreground',
+  },
+  {
+    name: 'Purple',
+    variable: '--purple',
+    value: 'oklch(0.6921 0.0625 332.66)',
+    usage: 'Special features, unique identifiers, rare elements',
+    class: 'bg-purple text-white',
+  },
+];
+
+const blueVariants = [
+  {
+    name: 'Blue',
+    variable: '--blue',
+    value: 'oklch(0.6965 0.0591 248.69)',
+    usage: 'Primary accent - actions, links, focus states',
+    class: 'bg-blue text-white',
+  },
+  {
+    name: 'Blue Light',
+    variable: '--blue-light',
+    value: 'oklch(0.78 0.045 249)',
+    usage: 'Hover states, highlights, accent backgrounds',
+    class: 'bg-blue-light text-foreground',
+  },
+  {
+    name: 'Blue Deep',
+    variable: '--blue-deep',
+    value: 'oklch(0.5944 0.0772 254.03)',
+    usage: 'Strong emphasis, high contrast',
+    class: 'bg-blue-deep text-white',
+  },
+];
+
+const chartBlues = [
+  { name: 'Chart Blue 1', variable: '--chart-blue-1', class: 'bg-chart-blue-1', lightness: '0.90' },
+  { name: 'Chart Blue 2', variable: '--chart-blue-2', class: 'bg-chart-blue-2', lightness: '0.80' },
+  { name: 'Chart Blue 3', variable: '--chart-blue-3', class: 'bg-chart-blue-3', lightness: '0.72' },
+  { name: 'Chart Blue 4', variable: '--chart-blue-4', class: 'bg-chart-blue-4', lightness: '0.65' },
+  { name: 'Chart Blue 5', variable: '--chart-blue-5', class: 'bg-chart-blue-5', lightness: '0.55' },
+  { name: 'Chart Blue 6', variable: '--chart-blue-6', class: 'bg-chart-blue-6', lightness: '0.45' },
+  { name: 'Chart Blue 7', variable: '--chart-blue-7', class: 'bg-chart-blue-7', lightness: '0.35' },
+  { name: 'Chart Blue 8', variable: '--chart-blue-8', class: 'bg-chart-blue-8', lightness: '0.25' },
 ];
 
 const chartColors = [
@@ -103,9 +168,10 @@ const chartColors = [
     <div class="mb-16">
       <h1 class="text-display tracking-tight">Colors</h1>
       <p class="text-muted-foreground max-w-2xl">
-        Basalt UI uses OKLCH color space for perceptually uniform, accessible colors. Our palette is
-        inspired by volcanic landscapes—Lichen Sage, Magma Rust, and Vein Ochre create a warm,
-        professional aesthetic that avoids stark extremes.
+        Basalt UI uses OKLCH color space for perceptually uniform, accessible colors. Our palette
+        combines warm zinc neutrals with professional blue accents and expressive Aurora colors
+        inspired by the Nord theme, creating a sophisticated design system that works beautifully in
+        both light and dark modes.
       </p>
     </div>
 
@@ -132,8 +198,8 @@ const chartColors = [
             <div>
               <h3 class="mb-2 text-lg font-bold">H (Hue)</h3>
               <p class="text-small text-muted-foreground">
-                Color angle (0-360). 135° = sage green, 35° = warm rust, 75° = golden ochre, 270° =
-                neutral zinc.
+                Color angle (0-360). 249° = blue, 15° = red, 38° = orange, 84° = yellow, 131° =
+                green, 333° = purple, 285° = neutral zinc.
               </p>
             </div>
           </div>
@@ -192,12 +258,12 @@ const chartColors = [
 
     <!-- Chart Colors Section -->
     <section class="mb-16">
-      <h2>Chart Colors</h2>
+      <h2>Categorical Chart Colors</h2>
       <Card>
         <CardContent className="pt-6">
           <p class="text-muted-foreground mb-6">
-            Five harmonious colors for data visualization, designed to work together in charts and
-            graphs.
+            Five distinct colors for categorical data visualization. Use when representing different
+            categories or groups that require clear visual distinction.
           </p>
           <div class="grid gap-4 md:grid-cols-5">
             {
@@ -214,49 +280,136 @@ const chartColors = [
       </Card>
     </section>
 
-    <!-- Volcanic Inspiration Section -->
+    <!-- Aurora Colors Section -->
     <section class="mb-16">
-      <h2>Volcanic Inspiration</h2>
-      <div class="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Lichen Sage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="bg-primary mb-4 h-20 rounded-lg"></div>
-            <p class="text-small text-muted-foreground">
-              Earthy green inspired by lichen growing on volcanic rock. Used for primary actions and
-              interactive elements.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Magma Rust</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="bg-destructive mb-4 h-20 rounded-lg"></div>
-            <p class="text-small text-muted-foreground">
-              Warm rust-red reminiscent of oxidized volcanic minerals. Reserved for warnings,
-              errors, and destructive actions.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Vein Ochre</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="bg-ochre mb-4 h-20 rounded-lg"></div>
-            <p class="text-small text-muted-foreground">
-              Golden yellow like mineral veins in basalt. Used for highlights and warm accents that
-              need attention without urgency.
-            </p>
-          </CardContent>
-        </Card>
+      <h2>Aurora Colors</h2>
+      <p class="text-muted-foreground mb-6">
+        Expressive, semantic colors inspired by the Nord theme. These colors maintain consistent
+        appearance across light and dark modes, serving as brand colors with clear semantic
+        meanings.
+      </p>
+      <div class="grid gap-6">
+        {
+          auroraColors.map((color) => (
+            <Card>
+              <CardContent className="pt-6">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h3 class="mb-2 font-bold">{color.name}</h3>
+                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
+                    <div class="space-y-2 font-mono text-sm">
+                      <div>
+                        <span class="text-muted-foreground">Variable:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Value:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.value}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Class:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.class}</code>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
+                      <span class="text-sm font-bold">Sample Text</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        }
       </div>
+    </section>
+
+    <!-- Blue Variants Section -->
+    <section class="mb-16">
+      <h2>Blue Variants</h2>
+      <p class="text-muted-foreground mb-6">
+        Professional blue accents based on Nord Frost colors. Blue serves as the primary accent
+        color, with variants for different UI states and emphasis levels.
+      </p>
+      <div class="grid gap-6">
+        {
+          blueVariants.map((color) => (
+            <Card>
+              <CardContent className="pt-6">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h3 class="mb-2 font-bold">{color.name}</h3>
+                    <p class="text-small text-muted-foreground mb-4">{color.usage}</p>
+                    <div class="space-y-2 font-mono text-sm">
+                      <div>
+                        <span class="text-muted-foreground">Variable:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.variable}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Value:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.value}</code>
+                      </div>
+                      <div>
+                        <span class="text-muted-foreground">Class:</span>{' '}
+                        <code class="bg-muted rounded px-1.5 py-0.5">{color.class}</code>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class={`${color.class} flex items-center justify-center rounded-lg p-8`}>
+                      <span class="text-sm font-bold">Sample Text</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Sequential Chart Palette Section -->
+    <section class="mb-16">
+      <h2>Sequential Chart Palette</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <p class="text-muted-foreground mb-6">
+            Eight perceptually uniform blue tones for data visualization. Constant hue (249°) with
+            progressive lightness increments and gradually increasing chroma ensures clear,
+            accessible sequential data representation. All adjacent colors exceed WCAG 3:1 contrast
+            requirements.
+          </p>
+
+          <!-- Gradient visualization -->
+          <div class="mb-6 flex h-16 overflow-hidden rounded-lg">
+            {chartBlues.map((color) => <div class={`${color.class} flex-1`} />)}
+          </div>
+
+          <!-- Individual swatches -->
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
+            {
+              chartBlues.map((color) => (
+                <div>
+                  <div class={`${color.class} mb-2 h-24 rounded-lg`} />
+                  <p class="text-caption text-center font-mono">{color.name}</p>
+                  <p class="text-caption text-muted-foreground text-center">L: {color.lightness}</p>
+                </div>
+              ))
+            }
+          </div>
+
+          <div class="border-border bg-muted/50 mt-6 rounded border p-4">
+            <p class="mb-2 text-sm font-bold">Usage</p>
+            <ul class="list-inside list-disc space-y-1 text-sm">
+              <li>Sequential data: temperature scales, density maps, intensity visualization</li>
+              <li>Gradient backgrounds: from subtle (blue-1) to prominent (blue-8)</li>
+              <li>Perceptually uniform: equal perceived steps between colors</li>
+              <li>Accessible: maintains contrast ratios for readability</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </section>
 
     <!-- Usage Guidelines Section -->
@@ -272,7 +425,7 @@ const chartColors = [
             <ul class="space-y-3 text-sm">
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use semantic color tokens (bg-primary, text-muted-foreground)</span>
+                <span>Use semantic color tokens (bg-primary, bg-blue, text-muted-foreground)</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
@@ -280,15 +433,15 @@ const chartColors = [
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use primary for interactive elements and links</span>
+                <span>Use blue (primary) for interactive elements and links</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use destructive only for warnings and errors</span>
+                <span>Use Aurora colors for semantic states (red = error, green = success)</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
-                <span>Use muted for disabled states and less important content</span>
+                <span>Use chart-blue-* for sequential data, chart-* for categorical</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
@@ -315,7 +468,7 @@ const chartColors = [
               </li>
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
-                <span>Don't use destructive for non-error states</span>
+                <span>Don't use red for non-error states</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
@@ -323,11 +476,11 @@ const chartColors = [
               </li>
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
-                <span>Don't mix semantic tokens with arbitrary values</span>
+                <span>Don't mix categorical and sequential chart palettes</span>
               </li>
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
-                <span>Don't ignore contrast requirements for decorative colors</span>
+                <span>Don't ignore contrast requirements for data visualization</span>
               </li>
             </ul>
           </CardContent>
