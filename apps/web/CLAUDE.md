@@ -12,7 +12,6 @@ Documentation site and design playground for the Basalt UI design system.
 - **Styling**: Tailwind CSS v4 + basalt-ui preset
 - **Components**: ShadCN UI (copy-paste, not dependency)
 - **TypeScript**: Strict mode with React JSX
-- **State**: Nanostores (theme management)
 
 ## Project Structure
 
@@ -31,8 +30,7 @@ src/
 ├── styles/
 │   └── global.css       # Tailwind + basalt-ui imports
 └── lib/
-    ├── utils.ts         # cn() helper for ShadCN
-    └── theme-store.ts   # Nanostores theme state
+    └── utils.ts         # cn() helper for ShadCN
 ```
 
 ## Key Conventions
@@ -83,7 +81,7 @@ Use basalt-ui color tokens, not arbitrary values:
 ❌ <div class="bg-[#fff]">
 ```
 
-Theme: `.dark` class on `<html>`, state via Nanostores
+Theme: `.dark` class on `<html>`
 
 ### ShadCN Components
 
@@ -279,26 +277,25 @@ import { AreaChart } from '@/components/tremor/AreaChart';
 
 ### Color Compatibility
 
-Tremor components automatically use Basalt UI color tokens:
+Tremor components automatically use Basalt UI color tokens through the CSS definitions:
 
 ```tsx
-// Tremor color names map to Basalt UI Tailwind classes
+// Named colors map to Basalt UI tokens
 <AreaChart
-  colors={["blue"]}        // → bg-blue-500, stroke-blue-500
-  // Uses --color-blue OKLCH tokens from basalt-ui
-/>
-
-<AreaChart
-  colors={["emerald", "violet"]}  // Multiple series
+  colors={["blue", "emerald", "violet"]}
+  // Uses --color-blue-500, --color-emerald-500, --color-violet-500
 />
 ```
 
 **Available chart colors:**
-- `blue` (primary), `emerald` (success), `violet` (accent), `amber` (warning)
-- `gray`, `cyan`, `pink`, `lime`, `fuchsia`
+- `blue` (primary), `red` (error), `emerald` (success - maps to green), `amber` (warning - maps to yellow)
+- `violet` (accent - maps to purple), `cyan`, `indigo`
+- `chart-1` through `chart-5` (categorical: blue, red, green, yellow, purple)
+- `chart-blue-1` through `chart-blue-8` (sequential blues)
 
 **How it works:**
-- Tremor's `chartUtils.ts` defines color mappings (bg-blue-500, stroke-blue-500, etc.)
+- Basalt UI CSS defines all color shades (50-950) for each named color
+- Tremor's `chartUtils.ts` generates classes like `bg-blue-500`, `stroke-emerald-600`
 - These Tailwind classes are mapped to Basalt UI OKLCH tokens via `@theme inline` block
 - Dark mode automatically switches to appropriate OKLCH values
 
@@ -464,7 +461,6 @@ Astro's `client:only` cannot serialize functions, so props like `valueFormatter`
 |----------|-----------|
 | Astro over Next.js | Static-first, framework-agnostic showcase |
 | Islands architecture | Optimal performance, ship minimal JS |
-| Nanostores for theme | Lightweight (< 1kb), framework-agnostic |
 | ShadCN copy-paste | Full customization, no dependency bloat |
 | Path aliases `@/` | Matches monorepo convention, clean imports |
 | React 19 | Latest stable, no forwardRefs needed |

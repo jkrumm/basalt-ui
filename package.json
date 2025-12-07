@@ -86,8 +86,5 @@
         100
       ]
     }
-  },
-  "dependencies": {
-    "@remixicon/react": "^4.7.0"
   }
 }

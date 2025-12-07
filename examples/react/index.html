@@ -4,7 +4,31 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="darkreader-lock" />
     <title>react</title>
+    <script>
+      // Prevent flash of unstyled content (FOUC) - runs before React hydration
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem('theme')
+          let theme = savedTheme ? JSON.parse(savedTheme) : 'system'
+
+          // Resolve 'system' to actual theme
+          if (theme === 'system') {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          }
+
+          // Apply theme immediately
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark')
+          } else {
+            document.documentElement.classList.remove('dark')
+          }
+        } catch (_e) {
+          // Fail silently
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

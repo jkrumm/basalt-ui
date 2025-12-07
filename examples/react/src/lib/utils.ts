@@ -6,13 +6,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Tremor Raw cx [v0.0.0]
+// Tremor Raw cx helper [v0.0.0] - identical to cn() above
 export function cx(...args: ClassValue[]) {
   return twMerge(clsx(...args))
 }
 
 // Tremor focusInput [v0.0.2]
-
 export const focusInput = [
   // base
   'focus:ring-2',
@@ -23,7 +22,6 @@ export const focusInput = [
 ]
 
 // Tremor Raw focusRing [v0.0.1]
-
 export const focusRing = [
   // base
   'outline outline-offset-2 outline-0 focus-visible:outline-2',
@@ -32,7 +30,6 @@ export const focusRing = [
 ]
 
 // Tremor Raw hasErrorInput [v0.0.1]
-
 export const hasErrorInput = [
   // base
   'ring-2',
@@ -41,3 +38,60 @@ export const hasErrorInput = [
   // ring color
   'ring-red-200 dark:ring-red-700/30',
 ]
+
+/* Extension from dashboard template */
+
+interface CurrencyParams {
+  number: number
+  maxFractionDigits?: number
+  currency?: string
+}
+
+interface PercentageParams {
+  number: number
+  decimals?: number
+}
+
+interface MillionParams {
+  number: number
+  decimals?: number
+}
+
+type FormatterFunctions = {
+  currency: (params: CurrencyParams) => string
+  unit: (number: number) => string
+  percentage: (params: PercentageParams) => string
+  million: (params: MillionParams) => string
+}
+
+export const formatters: FormatterFunctions = {
+  currency: ({ number, maxFractionDigits = 2, currency = 'USD' }: CurrencyParams): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: maxFractionDigits,
+    }).format(number)
+  },
+
+  unit: (number: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+    }).format(number)
+  },
+
+  percentage: ({ number, decimals = 1 }: PercentageParams): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(number)
+  },
+
+  million: ({ number, decimals = 1 }: MillionParams): string => {
+    return `${new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(number)}M`
+  },
+}
