@@ -1,0 +1,130 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { Card } from '@/components/tremor/Card';
+import { AreaChart } from '@/components/tremor/AreaChart';
+
+const chartData = [
+  { date: 'Jan', views: 2400 },
+  { date: 'Feb', views: 1398 },
+  { date: 'Mar', views: 9800 },
+  { date: 'Apr', views: 3908 },
+  { date: 'May', views: 4800 },
+  { date: 'Jun', views: 3800 },
+];
+---
+
+<Layout title="Charts - Basalt UI">
+  <main class="container mx-auto max-w-6xl p-8">
+    <h1 class="mb-2">Chart Components</h1>
+    <p class="text-muted-foreground mb-8">
+      Data visualization components powered by Tremor Raw and Recharts, styled with Basalt UI
+      tokens.
+    </p>
+
+    <section class="space-y-8">
+      <div>
+        <h2 class="mb-4">Area Chart</h2>
+        <Card client:only="react">
+          <h3 class="text-h4 mb-4">Monthly Page Views</h3>
+          <div class="h-72">
+            <AreaChart
+              client:only="react"
+              data={chartData}
+              index="date"
+              categories={['views']}
+              colors={['blue']}
+            />
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h2 class="mb-4">Multi-Series Area Chart</h2>
+        <Card client:only="react">
+          <h3 class="text-h4 mb-4">Product Sales Comparison</h3>
+          <div class="h-72">
+            <AreaChart
+              client:only="react"
+              data={[
+                { month: 'Jan', product1: 2890, product2: 2338 },
+                { month: 'Feb', product1: 2756, product2: 2103 },
+                { month: 'Mar', product1: 3322, product2: 2194 },
+                { month: 'Apr', product1: 3470, product2: 2108 },
+                { month: 'May', product1: 3475, product2: 1812 },
+                { month: 'Jun', product1: 3129, product2: 1726 },
+              ]}
+              index="month"
+              categories={['product1', 'product2']}
+              colors={['blue', 'emerald']}
+            />
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h2 class="mb-4">Color Palette Examples</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card client:only="react">
+            <h3 class="text-h5 mb-4">Blue (Primary)</h3>
+            <div class="h-48">
+              <AreaChart
+                client:only="react"
+                data={chartData}
+                index="date"
+                categories={['views']}
+                colors={['blue']}
+                showLegend={false}
+                showYAxis={false}
+              />
+            </div>
+          </Card>
+
+          <Card client:only="react">
+            <h3 class="text-h5 mb-4">Green (Success)</h3>
+            <div class="h-48">
+              <AreaChart
+                client:only="react"
+                data={chartData}
+                index="date"
+                categories={['views']}
+                colors={['emerald']}
+                showLegend={false}
+                showYAxis={false}
+              />
+            </div>
+          </Card>
+
+          <Card client:only="react">
+            <h3 class="text-h5 mb-4">Violet (Accent)</h3>
+            <div class="h-48">
+              <AreaChart
+                client:only="react"
+                data={chartData}
+                index="date"
+                categories={['views']}
+                colors={['violet']}
+                showLegend={false}
+                showYAxis={false}
+              />
+            </div>
+          </Card>
+
+          <Card client:only="react">
+            <h3 class="text-h5 mb-4">Amber (Warning)</h3>
+            <div class="h-48">
+              <AreaChart
+                client:only="react"
+                data={chartData}
+                index="date"
+                categories={['views']}
+                colors={['amber']}
+                showLegend={false}
+                showYAxis={false}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

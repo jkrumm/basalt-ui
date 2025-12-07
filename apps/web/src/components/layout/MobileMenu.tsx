@@ -162,6 +162,13 @@ export function MobileMenuPanel() {
         >
           Spacing
         </a>
+        <a
+          href="/charts"
+          className="text-lg font-medium hover:text-primary transition-colors"
+          onClick={closeMenu}
+        >
+          Charts
+        </a>
 
         <div className="mt-4 flex flex-col gap-3">
           <ThemeToggle />

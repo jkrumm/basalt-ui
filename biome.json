@@ -129,6 +129,12 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/web/src/components/tremor/**", "apps/web/src/lib/chartUtils.ts"],
+      "linter": {
+        "enabled": false
+      }
     }
   ]
 }
