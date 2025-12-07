@@ -9,21 +9,24 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 
 ### Core Principles
 
-1. **Semantic HTML First**: h2 elements look like headings without utility classes
-2. **Restrictive by Design**: No infinite scales - only purposeful, defined tokens
-3. **OKLCH Color Space**: Perceptually uniform colors for accessible, harmonious palettes
-4. **Warm, Not Stark**: Professional but welcoming - never pure black/white
-5. **Natural Aesthetics**: Basalt stone zinc neutrals with professional blue accents and expressive Aurora colors
+1. **Opt-In Typography**: Use `.prose` class for rich typography, not global defaults
+2. **Component-Library Friendly**: Base layer minimal to avoid conflicts with ShadCN/Tremor
+3. **Restrictive by Design**: No infinite scales - only purposeful, defined tokens
+4. **OKLCH Color Space**: Perceptually uniform colors for accessible, harmonious palettes
+5. **Warm, Not Stark**: Professional but welcoming - never pure black/white
+6. **Natural Aesthetics**: Basalt stone zinc neutrals with professional blue accents and expressive Aurora colors
 
 ### What We **DO**
 
 - ✅ Define limited, purposeful design tokens
-- ✅ Style semantic HTML elements by default
+- ✅ Opt-in typography via `.prose` class (not global HTML defaults)
 - ✅ Use OKLCH for perceptual color uniformity
+- ✅ Foundation palette architecture (DRY - define once, reference everywhere)
 - ✅ Restrict Tailwind scales to prevent arbitrary values
 - ✅ Maintain full ShadCN compatibility
+- ✅ Tremor Raw compatibility via gray palette overrides
 - ✅ Create warm, professional, accessible interfaces
-- ✅ Support volcanic nature aesthetic (zinc + blue + Aurora colors)
+- ✅ Support volcanic nature aesthetic (zinc + blue + expressive colors)
 
 ### What We **DON'T DO**
 
@@ -31,7 +34,7 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 - ❌ Arbitrary color values (no `bg-[#f3f3f3]`)
 - ❌ Stark black/white (warm grays instead)
 - ❌ Extend Tailwind - we **replace** and **restrict** it
-- ❌ Require utility classes for semantic HTML
+- ❌ Style semantic HTML globally (conflicts with component libraries)
 - ❌ HSL/RGB colors (OKLCH only for consistency)
 - ❌ Premature abstractions or over-engineering
 
@@ -64,7 +67,7 @@ Dark Tones (dark mode backgrounds, light mode text):
 - dark-1: oklch(0.195 0.012 285)   - Near-black, reserved
 - dark-2: oklch(0.24 0.012 285)    - Main background (dark mode)
 - dark-3: oklch(0.26 0.012 285)    - Cards (dark mode)
-- dark-4: oklch(0.30 0.012 285)    - Borders, muted (dark mode)
+- dark-4: oklch(0.31 0.012 285)    - Borders, muted (dark mode)
 
 Text Tones (subdued text):
 - text-subdued-light: oklch(0.5 0.014 285)  - Muted text (light mode)
@@ -115,29 +118,29 @@ Blue Variants with Foregrounds:
               blue-deep-foreground: oklch(0.99 0.002 90) - White text on blue-deep
 ```
 
-**Aurora Colors (Nord Aurora):**
+**Expressive Colors (inspired by Nord Aurora):**
 ```
-Direct adoption of Nord's Aurora palette - same values for light and dark modes
+Semantic colors for meaningful UI states - same values for light and dark modes
 
-Red:    oklch(0.6061 0.1206 15.34)  - Nord #bf616a - Errors, destructive actions
+Red:    oklch(0.6061 0.1206 15.34)  - Errors, destructive actions
         red-foreground: oklch(0.99 0.002 90) - White text on red
 
-Orange: oklch(0.6929 0.0963 38.24)  - Nord #d08770 - Annotations, warnings
+Orange: oklch(0.6929 0.0963 38.24)  - Annotations, warnings
         orange-foreground: oklch(0.265 0.015 285) - Dark text on orange
 
-Yellow: oklch(0.8549 0.0892 84.09)  - Nord #ebcb8b - Caution, highlights
+Yellow: oklch(0.8549 0.0892 84.09)  - Caution, highlights
         yellow-foreground: oklch(0.265 0.015 285) - Dark text on yellow
 
-Green:  oklch(0.7683 0.0749 131.06) - Nord #a3be8c - Success, confirmations
+Green:  oklch(0.7683 0.0749 131.06) - Success, confirmations
         green-foreground: oklch(0.265 0.015 285) - Dark text on green
 
-Purple: oklch(0.6921 0.0625 332.66) - Nord #b48ead - Special features, unique identifiers
+Purple: oklch(0.6921 0.0625 332.66) - Special features, unique identifiers
         purple-foreground: oklch(0.99 0.002 90) - White text on purple
 ```
 
 **Sequential Chart Palette:**
 ```
-8 blue tones for data visualization (Nord blue hue ~249°)
+8 blue tones for data visualization (blue hue ~249°)
 
 chart-blue-1: oklch(0.90 0.030 249) - Lightest
 chart-blue-2: oklch(0.80 0.040 249)
@@ -150,7 +153,72 @@ chart-blue-8: oklch(0.34 0.077 249) - Darkest
 
 Progressive lightness and gradually increasing chroma for perceptual uniformity
 All adjacent colors exceed WCAG 3:1 contrast requirements
+Used for: Sequential data visualization (temperature scales, density maps, time series)
 ```
+
+**Chart Color Shades (Tremor Compatibility):**
+```
+Full 50-950 shade scales for Tremor's dynamic color system:
+- Blue shades (blue-50 through blue-950) - reuses chart-blue palette
+- Red shades (red-50 through red-950)
+- Emerald shades (emerald-50 through emerald-950) - maps to green
+- Amber shades (amber-50 through amber-950) - maps to yellow
+- Violet shades (violet-50 through violet-950) - maps to purple
+- Cyan shades (cyan-50 through cyan-950)
+- Indigo shades (indigo-50 through indigo-950)
+
+Each shade scale maintains perceptual uniformity in OKLCH space
+Used for: Tremor charts with classes like bg-blue-500, stroke-emerald-600
+```
+
+### Tailwind Gray Palette Override (Tremor Compatibility)
+
+**Strategy:** Override Tailwind's default gray scale (`white`, `black`, `gray-50` through `gray-950`) to use Basalt foundation colors automatically.
+
+**Why:** Component libraries like Tremor use hardcoded Tailwind classes (`bg-white`, `bg-gray-100`, `hover:bg-gray-800`, `text-gray-500`) that need to match Basalt's design system without manual changes.
+
+**Implementation:** Using `@theme` (NOT `@theme inline`) to create global CSS variables that Tremor's `dark:` variants can override.
+
+**Mapping (analyzed from Tremor usage patterns):**
+
+Backgrounds & Surfaces:
+```
+white    → light-1  (brightest - cards, popovers, elevated surfaces)
+gray-50  → light-2  (very light - main background in light mode)
+gray-100 → light-3  (muted backgrounds, disabled states)
+gray-200 → light-4  (borders, inputs)
+```
+
+Text Colors (Light Mode):
+```
+gray-300 → oklch(0.75 0.01 285) - very disabled/invisible text in light mode
+gray-400 → muted-foreground - disabled text, icons (light mode)
+gray-500 → muted-foreground - placeholders, subtle text (both modes)
+gray-600 → muted-foreground - medium muted text (light mode)
+gray-700 → oklch(0.35 0.013 285) - readable muted text (light mode)
+```
+
+Dark Mode Surfaces (used with `dark:` prefix):
+```
+gray-800 → dark-4  (borders/muted in dark mode)
+gray-900 → dark-3  (cards/elevated surfaces in dark mode)
+gray-950 → dark-2  (main background in dark mode)
+black    → dark-1  (darkest - near-black)
+```
+
+**How Tremor Uses These:**
+- Light mode: `text-gray-700` (readable) → `dark:text-gray-300` (disabled light text)
+- Light mode: `text-gray-400` (disabled) → `dark:text-gray-600` (muted dark text)
+- Both modes: `text-gray-500` (placeholders stay consistent via muted-foreground)
+- Backgrounds: `bg-white` (light cards) → `dark:bg-gray-950` (dark main bg)
+
+**Result:**
+- Tremor components automatically use Basalt colors in both light and dark modes
+- No manual theme configuration needed in Tremor components
+- Proper contrast maintained via muted-foreground semantic token
+- ShadCN continues using semantic tokens (unaffected)
+
+**Code Location:** `src/index.css` lines 510-537 (`@theme` block)
 
 ### Semantic Color Tokens (ShadCN Compatible)
 
@@ -173,7 +241,7 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 --accent, --accent-foreground               (var(--blue-light), var(--dark-4))
 --destructive, --destructive-foreground     (var(--red), var(--white))
 
-/* Aurora Colors with Foregrounds (colorful accents) */
+/* Expressive Colors with Foregrounds (semantic states) */
 --red, --red-foreground                     (var(--white))
 --orange, --orange-foreground               (var(--dark-4))
 --yellow, --yellow-foreground               (var(--dark-4))
@@ -208,6 +276,128 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 - Perceptually uniform steps
 - Example: Temperature scales, density maps, time series intensity
 
+## Typography: Opt-In with .prose
+
+Basalt UI uses the official `@tailwindcss/typography` plugin configured with Basalt design tokens for automatic dark mode support.
+
+### Core Philosophy
+
+**Semantic HTML is unstyled by default** to avoid conflicts with component libraries (ShadCN, Tremor). Use the `.prose` class for content areas where you want automatic semantic styling.
+
+### Usage
+
+**Content areas** (blog posts, articles, documentation):
+```html
+<article class="prose">
+  <h1>Article Title</h1>
+  <p>Content automatically styled with Basalt colors...</p>
+  <code>inline code</code>
+  <pre><code>code blocks</code></pre>
+</article>
+```
+
+**Component libraries** (ShadCN, Tremor, app UI):
+```html
+<!-- No .prose class - components style themselves -->
+<Table>...</Table>
+<Button>Click Me</Button>
+<nav><a href="#">Link</a></nav>
+```
+
+**Custom layouts** (UI components, app UI):
+```html
+<!-- Use utility classes for manual control -->
+<h2 class="text-h2 font-bold">Styled Heading</h2>
+<p class="text-body text-muted-foreground">Custom paragraph</p>
+```
+
+### Why Not Global Styling?
+
+Global semantic HTML defaults conflict with component libraries:
+- Tremor Table expects unstyled `<table>` elements
+- ShadCN Button shouldn't inherit link `<a>` styles
+- Navigation links don't want automatic blue underlines
+- Component padding/spacing conflicts with global paragraph margins
+
+**Migration from global styling:**
+- Old: `<h2>Title</h2>` styled everywhere → conflicts with components
+- New: `<article class="prose"><h2>Title</h2></article>` → styled only in content areas
+- Custom UI: `<h2 class="text-h2 font-bold">Title</h2>` → manual utility classes
+
+### Automatic Dark Mode
+
+Because `.prose` uses Basalt CSS variables, **no `dark:prose-invert` needed**:
+
+```html
+<body class="dark">
+  <article class="prose">
+    <!-- Text colors switch automatically via CSS variables -->
+  </article>
+</body>
+```
+
+### Plugin Configuration
+
+The typography plugin is configured in `tailwind.config.js`:
+
+**Color Mapping** (automatic dark mode):
+```javascript
+'--tw-prose-body': 'var(--foreground)',
+'--tw-prose-headings': 'var(--foreground)',
+'--tw-prose-links': 'var(--blue)',
+'--tw-prose-code': 'var(--foreground)',
+'--tw-prose-pre-bg': 'var(--muted)',
+// ... all mapped to Basalt variables
+```
+
+**Basalt Customizations** (design system specific):
+```javascript
+// Links - Basalt style
+a: {
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
+  fontWeight: '500',
+  transition: 'all 150ms ease-in-out',
+},
+
+// Code - use Basalt border radius
+code: {
+  backgroundColor: 'var(--muted)',
+  padding: '0.2em 0.4em',
+  borderRadius: 'var(--radius-sm)',
+},
+
+// Headings - use Basalt font family
+'h1, h2, h3, h4, h5, h6': {
+  fontFamily: 'var(--font-heading)',
+},
+
+// Blockquotes - Basalt blue border
+blockquote: {
+  borderLeftColor: 'var(--blue)',
+},
+```
+
+### What the Plugin Provides
+
+The typography plugin handles all the complex layout and spacing:
+- ✅ Professional heading hierarchy and sizing
+- ✅ Optimal paragraph spacing and line heights
+- ✅ List indentation and markers
+- ✅ Table layouts and borders
+- ✅ Code block formatting
+- ✅ Blockquote styling
+- ✅ Responsive typography scales
+
+Basalt only customizes:
+- Color mapping (CSS variables for automatic dark mode)
+- Font families (Lato for headings, Nunito Sans for body)
+- Border radius (matches Basalt tokens)
+- Link styling (underline, weight, transitions)
+- Code backgrounds (Basalt muted color)
+
+**Code Location:** `tailwind.config.js` lines 8-77
+
 ## Typography System
 
 ### Font Stack
@@ -229,25 +419,26 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 
 ### Type Scale
 
-**Semantic sizes with default HTML element styling:**
+**Semantic sizes for utility classes:**
 
 ```css
-Display: 64px/77px   - Hero sections (requires .text-display)
-Hero:    48px/58px   - Subhero sections (requires .text-hero)
-h1:      40px/48px   - Primary page heading (automatic)
-h2:      32px/42px   - Section headers (automatic)
-h3:      24px/34px   - Subsection headers (automatic)
-h4:      20px/28px   - Card titles (automatic)
-h5:      18px/27px   - Small headings (automatic)
-h6:      16px/24px   - Tiny headings (automatic)
-Body:    16px/24px   - Paragraphs (default, automatic)
-Small:   14px/20px   - Metadata (requires .text-small)
-Caption: 12px/16px   - Fine print (requires .text-caption)
+Display: 64px/77px   - Hero sections (use .text-display)
+Hero:    48px/58px   - Subhero sections (use .text-hero)
+h1:      40px/48px   - Primary page heading (use .text-h1 or .prose)
+h2:      32px/42px   - Section headers (use .text-h2 or .prose)
+h3:      24px/34px   - Subsection headers (use .text-h3 or .prose)
+h4:      20px/28px   - Card titles (use .text-h4 or .prose)
+h5:      18px/27px   - Small headings (use .text-h5 or .prose)
+h6:      16px/24px   - Tiny headings (use .text-h6 or .prose)
+Body:    16px/24px   - Paragraphs (default body text)
+Small:   14px/20px   - Metadata (use .text-small)
+Caption: 12px/16px   - Fine print (use .text-caption)
 ```
 
 **Key Philosophy**:
-- `<h2>` automatically looks like a heading - no classes needed
-- Only use utility classes for non-semantic sizing (display, hero, small, caption)
+- HTML elements (h1-h6, p, a, etc.) are **unstyled by default** to avoid component conflicts
+- Use `.prose` class for content areas (blog posts, articles) to get automatic semantic styling
+- Use utility classes (`.text-h2`, `.text-small`) for custom layouts and UI components
 - No arbitrary font sizes - only defined scale values
 
 ### Letter Spacing
@@ -328,29 +519,35 @@ All ShadCN components work because we define required tokens:
 
 ### What Users CAN Do
 
-```css
-/* Semantic HTML - just works */
-<h2>Section Title</h2>
-<p>Body paragraph.</p>
+```html
+<!-- Content areas - use .prose for automatic semantic styling -->
+<article class="prose">
+  <h2>Section Title</h2>
+  <p>Body paragraph with <a href="#">links</a> and <code>inline code</code>.</p>
+  <ul>
+    <li>List items</li>
+  </ul>
+</article>
 
-/* Defined utilities */
+<!-- UI components - use defined utilities -->
 <div class="p-4 bg-background text-foreground">
 <button class="bg-primary text-primary-foreground">
 
-/* Semantic text sizing when needed */
+<!-- Custom layouts - use semantic text sizing -->
 <div class="text-display">Hero Text</div>
+<h2 class="text-h2">Unstyled Heading (no .prose)</h2>
 <span class="text-small">Metadata</span>
 ```
 
 ### What Users CANNOT Do
 
-```css
-/* Arbitrary values (disabled) */
+```html
+<!-- Arbitrary values (disabled) -->
 <div class="p-[13px]">          ❌ Breaks
 <div class="text-[17px]">       ❌ Breaks
 <div class="bg-[#f3f3f3]">      ❌ Breaks
 
-/* Undefined utilities */
+<!-- Undefined utilities -->
 <div class="p-7">               ❌ Breaks (only 0-6, 8, 10, 12, 16, 20, 24, 32)
 <div class="text-lg">           ❌ Breaks (use text-h4, text-small, etc.)
 <div class="font-semibold">     ❌ Breaks (only font-regular, font-bold)
@@ -358,18 +555,32 @@ All ShadCN components work because we define required tokens:
 
 ### Migration from Standard Tailwind
 
-**Old Approach (Infinite Utilities):**
+**Old Approach (Global Semantic Styles):**
 ```html
-<div class="text-lg font-semibold tracking-tight p-3 rounded-md">
+<!-- Elements styled globally, conflicts with components -->
+<h2>Section Title</h2>              <!-- Always styled -->
+<Table>                             <!-- Inherits global table styles -->
+  <TableHeader>...</TableHeader>    <!-- Conflicts! -->
+</Table>
 ```
 
-**Basalt UI Approach (Semantic + Defined Tokens):**
+**Basalt UI Approach (Opt-In Typography):**
 ```html
-<!-- If it's a heading, use semantic HTML -->
-<h3>Title</h3>
+<!-- Content areas: Use .prose -->
+<article class="prose">
+  <h2>Section Title</h2>            <!-- Styled within .prose -->
+  <p>Automatic styling...</p>
+</article>
 
-<!-- If it needs custom styling, use defined tokens -->
-<div class="text-h3 font-bold tracking-normal p-3 rounded-md">
+<!-- Components: No .prose -->
+<Table>                             <!-- Clean, no conflicts -->
+  <TableHeader>...</TableHeader>    <!-- Works perfectly -->
+</Table>
+
+<!-- Custom UI: Use utilities -->
+<div class="text-h3 font-bold p-4 rounded-md">
+  Custom styled element
+</div>
 ```
 
 ## Development Guidelines
@@ -465,8 +676,8 @@ A: Clarity and simplicity. Most design systems only need regular and bold. Extra
 **Q: Can I use arbitrary values like `p-[13px]`?**
 A: No, these are disabled. If you need a spacing value, add it to the scale. This enforces consistency across your project.
 
-**Q: Why are h2/h3/etc styled by default?**
-A: Semantic HTML should look correct without classes. If you're writing `<h2>`, it should look like a heading. This creates cleaner, more maintainable code.
+**Q: Why aren't h2/h3/etc styled by default?**
+A: Global semantic HTML defaults conflict with component libraries like ShadCN and Tremor. These libraries expect unstyled elements. Use the `.prose` class for content areas (blog posts, articles) where you want automatic semantic styling. For UI components, use utility classes like `text-h2 font-bold`.
 
 **Q: How do I customize for my brand?**
 A: Fork the repo, adjust OKLCH values in `:root` and `.dark`, update natural accent colors to match your brand. Keep the restriction strategy.
@@ -476,6 +687,14 @@ A: Yes, fully compatible. All ShadCN tokens are defined. Components work out of 
 
 ## Roadmap
 
+### Completed
+- [x] Typography plugin integration (@tailwindcss/typography)
+- [x] Tremor Raw full compatibility
+- [x] Gray palette overrides for Tremor
+- [x] Foundation palette architecture (DRY)
+- [x] Chart color shades (50-950 scales)
+- [x] Opt-in `.prose` class (no global semantic HTML)
+
 ### Near Term
 - [ ] Validate with real projects
 - [ ] Create interactive color palette showcase
@@ -484,7 +703,6 @@ A: Yes, fully compatible. All ShadCN tokens are defined. Components work out of 
 - [ ] Create migration guide from standard Tailwind
 
 ### Future Considerations
-- [ ] Prose plugin alternative (restricted typography utilities)
 - [ ] Animation/transition tokens
 - [ ] Container query tokens
 - [ ] Grid system recommendations

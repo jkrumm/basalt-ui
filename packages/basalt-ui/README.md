@@ -13,10 +13,10 @@ Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it
 - ✨ **Opt-in typography** - Use `.prose` for content areas, keep components clean
 - 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
 - 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
-- 🌋 **Basalt neutrals + expressive colors** - Warm zinc grays with semantic expressiveness
+- 🌋 **Foundation palette** - DRY color system where each OKLCH value is defined once
 - 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
 - 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
-- 🧩 **Tremor compatible** - Works seamlessly with Tremor RAW UI & Chart components
+- 🧩 **Tremor compatible** - Full integration with Tremor RAW via gray palette overrides
 - 📝 **Component-library friendly** - No global styles that conflict with UI libraries
 
 ---
@@ -121,9 +121,15 @@ Add dark mode support to your HTML:
 
 ## Color System
 
-### Foundation Palette
+### Foundation Palette Architecture
 
-Basalt UI starts with a **foundation palette**—core neutral tones defined once and referenced everywhere. This ensures consistency and makes the system easy to maintain.
+Basalt UI uses a **three-layer color system** inspired by Nord's architecture:
+
+**1. Foundation Palette** → Core OKLCH values defined once
+**2. Semantic Tokens** → Meaningful names that reference foundation
+**3. UI Utilities** → Tailwind classes that use semantic tokens
+
+This DRY approach means changing `--light-2` once updates the background across your entire light mode.
 
 #### Light Tones
 Light mode backgrounds, dark mode text, elevated surfaces:
@@ -139,10 +145,18 @@ light-4  /* oklch(0.93 0.005 270) - Borders, inputs */
 Dark mode backgrounds, light mode text:
 
 ```css
-dark-1   /* oklch(0.24 0.012 285) - Main background (dark mode) */
-dark-2   /* oklch(0.26 0.012 285) - Cards (dark mode) */
-dark-3   /* oklch(0.30 0.013 285) - Muted/borders (dark mode) */
-dark-4   /* oklch(0.265 0.015 285) - Primary text (light mode) */
+dark-1   /* oklch(0.195 0.012 285) - Near-black (reserved) */
+dark-2   /* oklch(0.24 0.012 285) - Main background (dark mode) */
+dark-3   /* oklch(0.26 0.012 285) - Cards (dark mode) */
+dark-4   /* oklch(0.31 0.012 285) - Borders, muted (dark mode) */
+```
+
+#### Text Tones
+Subdued text for secondary information:
+
+```css
+text-subdued-light  /* oklch(0.5 0.014 285) - Muted text (light mode) */
+text-subdued-dark   /* oklch(0.8 0.012 285) - Muted text (dark mode) */
 ```
 
 #### Extreme Tones
@@ -163,12 +177,15 @@ foreground   /* var(--dark-4) - Primary text */
 card         /* var(--light-1) - Elevated surfaces */
 muted        /* var(--light-3) - Subtle backgrounds */
 border       /* var(--light-4) - Borders, dividers */
+muted-foreground  /* var(--text-subdued-light) - Secondary text */
 
 /* Dark Mode */
-background   /* var(--dark-1) - Main background */
-card         /* var(--dark-2) - Elevated surfaces */
-muted        /* var(--dark-3) - Subtle backgrounds */
-border       /* var(--dark-3) - Borders, dividers */
+background   /* var(--dark-2) - Main background */
+foreground   /* oklch(0.935 0.005 90) - Soft white */
+card         /* var(--dark-3) - Elevated surfaces */
+muted        /* var(--dark-4) - Subtle backgrounds */
+border       /* var(--dark-4) - Borders, dividers */
+muted-foreground  /* var(--text-subdued-dark) - Secondary text */
 ```
 
 **Why this matters:** Change `--light-2` once → updates background across light mode everywhere.
@@ -214,8 +231,17 @@ purple-foreground  /* oklch(0.99 0.002 90) - White text on purple */
 8 blue tones for data visualization with perceptual uniformity:
 
 ```css
-chart-blue-1 through chart-blue-8  /* Light to dark progression */
+chart-blue-1  /* oklch(0.90 0.030 249) - Lightest */
+chart-blue-2  /* oklch(0.80 0.040 249) */
+chart-blue-3  /* oklch(0.72 0.050 249) */
+chart-blue-4  /* oklch(0.65 0.059 249) */
+chart-blue-5  /* oklch(0.58 0.065 249) */
+chart-blue-6  /* oklch(0.50 0.070 249) */
+chart-blue-7  /* oklch(0.42 0.075 249) */
+chart-blue-8  /* oklch(0.34 0.077 249) - Darkest */
 ```
+
+Progressive lightness with gradually increasing chroma for perceptual uniformity. All adjacent colors exceed WCAG 3:1 contrast requirements.
 
 ### Why OKLCH?
 
@@ -385,7 +411,7 @@ Components automatically use:
 
 ### Tremor Raw
 
-Basalt UI includes full compatibility with [Tremor Raw](https://tremor.so) chart components out of the box:
+Basalt UI includes **full compatibility** with [Tremor Raw](https://tremor.so) chart components through automatic gray palette overrides:
 
 ```tsx
 import { AreaChart } from '@tremor/react';
@@ -398,11 +424,18 @@ import { AreaChart } from '@tremor/react';
 />
 ```
 
-**Supported colors:**
+**How it works:**
+- Basalt overrides Tailwind's default gray scale (`white`, `black`, `gray-50` through `gray-950`)
+- Tremor's hardcoded classes (`bg-white`, `text-gray-500`, `dark:bg-gray-950`) automatically use Basalt colors
+- No manual theme configuration needed in Tremor components
+
+**Supported chart colors:**
 - Named: `blue`, `red`, `emerald` (green), `amber` (yellow), `violet` (purple), `cyan`, `indigo`
 - Sequential: `chart-blue-1` through `chart-blue-8` (lightness progression)
+- Color shades: `blue-50` through `blue-950` for all chart colors
 
-All Tremor semantic tokens (`tremor-brand`, `tremor-background`, `tremor-content`, etc.) are automatically mapped to Basalt's OKLCH foundation palette. No configuration needed.
+**Tremor semantic tokens:**
+All Tremor tokens (`tremor-brand`, `tremor-background`, `tremor-content`, etc.) are mapped to Basalt's OKLCH foundation palette with proper light/dark mode support.
 
 ---
 
@@ -433,7 +466,7 @@ Both modes avoid stark extremes for comfortable, professional interfaces.
 /* Foundation Palette */
 bg-light-1, bg-light-2, bg-light-3, bg-light-4
 bg-dark-1, bg-dark-2, bg-dark-3, bg-dark-4
-text-dark-4, text-white
+text-white
 
 /* Semantic Backgrounds */
 bg-background, bg-card, bg-muted, bg-primary
@@ -453,8 +486,24 @@ border-border, border-input, border-primary
 /* Focus rings */
 ring-ring, ring-primary
 
-/* Charts */
+/* Sequential Charts */
 bg-chart-blue-1, bg-chart-blue-2, ... bg-chart-blue-8
+
+/* Tailwind Gray Overrides (for Tremor compatibility) */
+bg-white, bg-black
+bg-gray-50, bg-gray-100, bg-gray-200, bg-gray-300
+bg-gray-400, bg-gray-500, bg-gray-600, bg-gray-700
+bg-gray-800, bg-gray-900, bg-gray-950
+/* Automatically mapped to Basalt foundation palette */
+
+/* Chart Color Shades (for Tremor charts) */
+bg-blue-50 through bg-blue-950
+bg-red-50 through bg-red-950
+bg-emerald-50 through bg-emerald-950
+bg-amber-50 through bg-amber-950
+bg-violet-50 through bg-violet-950
+bg-cyan-50 through bg-cyan-950
+bg-indigo-50 through bg-indigo-950
 ```
 
 ### Typography

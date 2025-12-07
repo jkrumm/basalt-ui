@@ -82,7 +82,7 @@
   --dark-1: oklch(0.195 0.012 285); /* Darkest - near-black, reserved for future use */
   --dark-2: oklch(0.24 0.012 285); /* Very dark - main background (dark mode) */
   --dark-3: oklch(0.26 0.012 285); /* Medium dark - cards, elevated surfaces (dark mode) */
-  --dark-4: oklch(0.3 0.012 285); /* Lightest dark - borders, muted backgrounds (dark mode) */
+  --dark-4: oklch(0.31 0.012 285); /* Lightest dark - borders, muted backgrounds (dark mode) */
 
   /* === TEXT TONES === */
   /* Mid-range tones for subdued, secondary text */
@@ -465,9 +465,80 @@
    This restricts Tailwind while maintaining usability and ShadCN support.
    ============================================================================ */
 
+/* ============================================================================
+   DEFAULT GRAY PALETTE OVERRIDE
+   ============================================================================
+
+   Override Tailwind's default gray scale (white, black, gray-50 through gray-950)
+   with Basalt foundation colors. This ensures component libraries like Tremor
+   automatically use Basalt's OKLCH color system.
+
+   Strategy:
+   - Use @theme (NOT @theme inline) to create global CSS variables
+   - Map white/black/gray shades to foundation palette
+   - Tremor handles dark mode via their own dark: variants
+   - ShadCN uses semantic tokens (already defined separately)
+
+   Mapping (analyzed from Tremor usage patterns):
+
+   Backgrounds & Surfaces:
+   - white    → light-1 (brightest - cards, popovers, elevated surfaces)
+   - gray-50  → light-2 (very light - main background in light mode)
+   - gray-100 → light-3 (light - muted backgrounds, disabled states)
+   - gray-200 → light-4 (medium light - borders, inputs)
+
+   Text Colors (Light Mode):
+   - gray-300 → oklch(0.75) - very disabled/invisible text in light mode
+   - gray-400 → muted-foreground - disabled text, icons (light mode)
+   - gray-500 → muted-foreground - placeholders, subtle text (both modes)
+   - gray-600 → muted-foreground - medium muted text (light mode)
+   - gray-700 → oklch(0.35) - readable muted text (light mode)
+
+   Dark Mode Surfaces (used with dark: prefix):
+   - gray-800 → dark-4 (borders/muted in dark mode)
+   - gray-900 → dark-3 (cards/elevated surfaces in dark mode)
+   - gray-950 → dark-2 (main background in dark mode)
+   - black    → dark-1 (darkest - near-black)
+
+   How Tremor Uses These:
+   - Light mode: text-gray-700 (readable) → dark:text-gray-300 (disabled light)
+   - Light mode: text-gray-400 (disabled) → dark:text-gray-600 (muted dark)
+   - Both modes: text-gray-500 (placeholders stay consistent)
+   - Backgrounds: bg-white (light) → dark:bg-gray-950 (dark main bg)
+   ============================================================================ */
+
+@theme {
+  /* Override Tailwind's default gray palette with Basalt foundation colors */
+
+  /* Lightest tones - backgrounds and surfaces */
+  --color-white: var(--light-1); /* Cards, popovers, elevated surfaces (light mode) */
+  --color-gray-50: var(--light-2); /* Main background (light mode) */
+  --color-gray-100: var(--light-3); /* Muted backgrounds, disabled states */
+  --color-gray-200: var(--light-4); /* Borders, inputs */
+
+  /* Light tones - very disabled text (light mode only) */
+  --color-gray-300: oklch(0.75 0.01 285); /* Very disabled/invisible text (light mode) */
+
+  /* Mid-range - muted text via semantic token (adapts to light/dark) */
+  --color-gray-400: var(--muted-foreground); /* Disabled text, icons */
+  --color-gray-500: var(--muted-foreground); /* Placeholders, subtle text */
+  --color-gray-600: var(--muted-foreground); /* Medium muted text */
+
+  /* Mid-dark tones - readable muted text (light mode) */
+  --color-gray-700: oklch(0.35 0.013 285); /* Readable muted text (light mode) */
+
+  /* Dark tones - surfaces for dark mode (used with dark: prefix) */
+  --color-gray-800: var(--dark-4); /* Borders, muted backgrounds (dark mode) */
+  --color-gray-900: var(--dark-3); /* Cards, elevated surfaces (dark mode) */
+  --color-gray-950: var(--dark-2); /* Main background (dark mode) */
+
+  /* Darkest tone */
+  --color-black: var(--dark-1); /* Near-black, reserved */
+}
+
 @theme inline {
   /* === DISABLE DEFAULT SCALES === */
-  --spacing: initial;
+  /* --spacing: initial; */
   --font-size: initial;
   --line-height: initial;
   --font-weight: initial;
@@ -683,6 +754,11 @@
     color: var(--foreground);
     background-color: var(--background);
     letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .recharts-text.recharts-cartesian-axis-tick-value {
+    fill: var(--foreground);
+    font-size: var(--text-sm);
   }
 }
 
