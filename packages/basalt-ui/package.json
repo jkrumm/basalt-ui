@@ -12,9 +12,6 @@
     ".": {
       "import": "./index.js"
     },
-    "./tailwind": {
-      "import": "./tailwind.preset.js"
-    },
     "./css": {
       "import": "./src/index.css"
     }
@@ -22,7 +19,7 @@
   "files": [
     "src/",
     "index.js",
-    "tailwind.preset.js",
+    "tailwind.config.js",
     "README.md"
   ],
   "peerDependencies": {
@@ -30,5 +27,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19"
   }
 }

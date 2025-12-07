@@ -10,13 +10,14 @@
 
 Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it **restricts** Tailwind to create consistency.
 
-- ✨ **Semantic HTML works by default** - `<h2>` looks like a heading without utility classes
+- ✨ **Opt-in typography** - Use `.prose` for content areas, keep components clean
 - 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
 - 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
 - 🌋 **Basalt neutrals + expressive colors** - Warm zinc grays with semantic expressiveness
 - 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
 - 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
 - 🧩 **Tremor compatible** - Works seamlessly with Tremor RAW UI & Chart components
+- 📝 **Component-library friendly** - No global styles that conflict with UI libraries
 
 ---
 
@@ -49,21 +50,21 @@ Add dark mode support to your HTML:
 
 ### Use It
 
-Semantic HTML just works:
+**Content areas** - Use `.prose` for automatic semantic styling:
 
 ```html
-<article>
+<article class="prose">
   <h2>Section Title</h2>
-  <p>This paragraph looks great without any classes.</p>
-  <a href="#">Links are styled automatically</a>
+  <p>This paragraph looks great with <a href="#">automatic styling</a>.</p>
+  <code>inline code</code> and <pre><code>code blocks</code></pre>
 </article>
 ```
 
-Use defined utilities when needed:
+**UI components** - Use defined utilities (no global conflicts):
 
 ```html
 <div class="p-4 bg-card text-foreground rounded-lg shadow">
-  <h3>Card Title</h3>
+  <h3 class="text-h3 font-bold">Card Title</h3>
   <p class="text-muted-foreground">Card content</p>
 </div>
 ```
@@ -72,40 +73,48 @@ Use defined utilities when needed:
 
 ## The Basalt UI Difference
 
-### Before (Standard Tailwind)
+### Before (Standard Tailwind + Global Styles)
 
 ```html
-<!-- Infinite utilities, no consistency -->
-<div class="text-lg font-semibold tracking-tight p-3 rounded-md">
-  <p class="text-[17px] leading-[1.6]">Text with arbitrary values</p>
-</div>
+<!-- Global styles conflict with components -->
+<article>
+  <h2>Section Title</h2>              <!-- Always styled globally -->
+  <Table>                             <!-- Inherits global table styles -->
+    <TableHeader>...</TableHeader>    <!-- Styling conflicts! -->
+  </Table>
+</article>
 ```
 
 **Problems:**
-- Arbitrary values everywhere (`text-[17px]`)
-- No semantic meaning (`<div>` instead of `<h3>`)
+- Global semantic HTML styles conflict with component libraries
+- Arbitrary values everywhere (`text-[17px]`, `p-[13px]`)
+- Tremor/ShadCN components inherit unwanted styles
 - Inconsistent spacing and sizing
-- Requires classes for basic styling
 
 ### After (Basalt UI)
 
 ```html
-<!-- Semantic HTML with defined tokens -->
-<article>
-  <h3>Title is styled automatically</h3>
-  <p>Body text looks great by default.</p>
+<!-- Content areas: Use .prose -->
+<article class="prose">
+  <h2>Section Title</h2>              <!-- Styled within .prose -->
+  <p>Perfect typography...</p>
 </article>
 
-<!-- When you need custom styling -->
+<!-- Components: Clean, no conflicts -->
+<Table>                               <!-- No inherited styles -->
+  <TableHeader>...</TableHeader>      <!-- Works perfectly -->
+</Table>
+
+<!-- Custom UI: Defined tokens -->
 <div class="p-4 rounded-md">
-  <p class="text-small">Use defined semantic sizes</p>
+  <p class="text-h3">Use semantic sizes</p>
 </div>
 ```
 
 **Benefits:**
-- Semantic HTML styled by default
-- Consistent, predictable tokens
-- Cleaner, more maintainable code
+- `.prose` for content, clean components for UI
+- No conflicts with ShadCN/Tremor
+- Consistent, predictable tokens only
 - Design system enforces consistency
 
 ---
@@ -232,28 +241,62 @@ Changes in L (lightness) and C (chroma) values match what your eyes perceive. No
 
 ## Typography
 
+### Opt-In with `.prose`
+
+Basalt UI uses the official `@tailwindcss/typography` plugin configured with Basalt design tokens.
+
+**Content areas** (blog posts, articles, documentation):
+```html
+<article class="prose">
+  <h1>Primary Heading</h1>
+  <h2>Section Header</h2>
+  <p>Automatically styled paragraphs with <a href="#">links</a>.</p>
+  <code>inline code</code>
+  <pre><code>code blocks</code></pre>
+</article>
+```
+
+**Component libraries** (ShadCN, Tremor, app UI):
+```html
+<!-- No .prose class - components style themselves -->
+<Table>...</Table>
+<Button>Click Me</Button>
+<nav><a href="#">Link</a></nav>
+```
+
+### Why Not Global Styling?
+
+Global semantic HTML defaults conflict with component libraries:
+- Tremor Table expects unstyled `<table>` elements
+- ShadCN Button shouldn't inherit link `<a>` styles
+- Navigation links don't want automatic blue underlines
+
+### Automatic Dark Mode
+
+The `.prose` class uses Basalt CSS variables, so **no `dark:prose-invert` needed**:
+
+```html
+<body class="dark">
+  <article class="prose">
+    <!-- Text colors switch automatically -->
+  </article>
+</body>
+```
+
 ### Font Stack
 
 - **Headings**: Lato (700) - Modern, geometric, professional
 - **Body**: Nunito Sans (400) - Rounded, friendly, readable
 - **Mono**: JetBrains Mono (400) - Clear, developer-friendly
 
-### Semantic Sizing
+### Utility Classes
 
-HTML elements are styled automatically:
-
-```html
-<h1>Primary Heading (40px)</h1>
-<h2>Section Header (32px)</h2>
-<h3>Subsection (24px)</h3>
-<p>Body text (16px) - default</p>
-```
-
-Need custom sizes? Use semantic utilities:
+For custom layouts outside `.prose`:
 
 ```html
 <div class="text-display">Hero Text (64px)</div>
 <div class="text-hero">Subhero (48px)</div>
+<h2 class="text-h2">Manual heading (32px)</h2>
 <span class="text-small">Metadata (14px)</span>
 <span class="text-caption">Fine print (12px)</span>
 ```
@@ -288,15 +331,18 @@ Basalt UI is **opinionated**. It disables arbitrary values and infinite scales.
 ### What Works ✅
 
 ```html
+<!-- Content areas with .prose -->
+<article class="prose">
+  <h2>Section Title</h2>
+  <p>Automatically styled</p>
+</article>
+
 <!-- Defined tokens -->
 <div class="p-4 text-body font-bold bg-primary">
 
-<!-- Semantic HTML (styled automatically) -->
-<h2>Section Title</h2>
-<p>Body paragraph</p>
-
-<!-- ShadCN components -->
+<!-- ShadCN/Tremor components (no conflicts) -->
 <Button variant="default">Click Me</Button>
+<Table>...</Table>
 ```
 
 ### What Doesn't Work ❌
@@ -484,7 +530,7 @@ Want to adjust colors for your brand? Fork and modify `src/index.css`:
 
 ```html
 <div class="bg-card p-6 rounded-lg shadow">
-  <h3>Card Title</h3>
+  <h3 class="text-h3 font-bold">Card Title</h3>
   <p class="text-muted-foreground">Card description text.</p>
   <button class="bg-primary text-primary-foreground px-4 py-2 rounded">
     Action
@@ -510,19 +556,19 @@ Want to adjust colors for your brand? Fork and modify `src/index.css`:
 ```html
 <!-- Error alert with proper text pairing -->
 <div class="bg-destructive text-destructive-foreground p-4 rounded">
-  <h4>Error</h4>
+  <h4 class="text-h4 font-bold">Error</h4>
   <p class="text-small">Something went wrong. Please try again.</p>
 </div>
 
 <!-- Success alert -->
 <div class="bg-green text-green-foreground p-4 rounded">
-  <h4>Success</h4>
+  <h4 class="text-h4 font-bold">Success</h4>
   <p class="text-small">Your changes have been saved.</p>
 </div>
 
 <!-- Warning alert -->
 <div class="bg-orange text-orange-foreground p-4 rounded">
-  <h4>Warning</h4>
+  <h4 class="text-h4 font-bold">Warning</h4>
   <p class="text-small">Please review your input before continuing.</p>
 </div>
 ```
