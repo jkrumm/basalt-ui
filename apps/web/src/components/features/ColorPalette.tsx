@@ -41,7 +41,7 @@ export function ColorPalette({ section, columns = 4 }: ColorPaletteProps) {
           <div className={`grid ${gridCols} gap-2 p-4 bg-muted/30`}>
             {section.colors.map((color) => (
               <div key={color.variable}>
-                <p className="font-bold mb-0">{color.name}</p>
+                <p className="font-bold mt-0 mb-0">{color.name}</p>
                 <code className="font-mono text-xs text-muted-foreground block mt-2">
                   {color.variable}
                 </code>

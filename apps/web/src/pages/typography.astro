@@ -7,33 +7,36 @@ import Layout from '@/layouts/Layout.astro';
   title="Typography - Basalt UI"
   description="Complete typography system with Google Fonts: Lato, Nunito Sans, and JetBrains Mono"
 >
-  <main class="container mx-auto max-w-6xl px-4 py-16">
+  <main class="prose container mx-auto max-w-6xl px-4 py-16">
     <!-- Hero Section -->
-    <div class="mb-16">
+    <div class="prose prose-basalt mb-16">
       <h1 class="text-display tracking-tight">Typography</h1>
       <p class="text-muted-foreground max-w-2xl">
-        Basalt UI's typography system uses semantic HTML that looks great by default. No utility
-        classes needed for headings or paragraphs. Three font families — Lato for headings, Nunito
-        Sans for body, and JetBrains Mono for code — support the warm, professional aesthetic.
+        Basalt UI uses the <code class="text-sm">@tailwindcss/typography</code> plugin with opt-in semantic
+        HTML styling via the <code class="text-sm">.prose</code> class. Content areas like blog posts
+        and articles get automatic typography, while UI components stay clean and conflict-free. Three
+        font families — Lato for headings, Nunito Sans for body, and JetBrains Mono for code — support
+        the warm, professional aesthetic.
       </p>
     </div>
 
     <!-- Semantic HTML Demo Section -->
     <section class="mb-16">
-      <h2>Semantic HTML Works By Default</h2>
+      <h2>Using .prose for Content Areas</h2>
       <Card>
         <CardContent className="pt-6">
           <div class="border-border bg-muted/30 mb-8 rounded-lg border p-6">
-            <article class="prose-basalt">
-              <h2>This h2 is styled automatically</h2>
+            <article>
+              <h2>This h2 is styled automatically within .prose</h2>
               <p>
-                This paragraph looks great without any classes. Basalt UI styles semantic HTML by
-                default, so you write clean markup and get beautiful typography.
+                This paragraph looks great without extra classes. Basalt UI uses the official
+                <code>@tailwindcss/typography</code> plugin with the <code>.prose</code> class for opt-in
+                semantic styling. Perfect for blog posts, articles, and documentation.
               </p>
               <h3>This is an h3 heading</h3>
               <p>
                 Notice how headings use Lato (bold) and body text uses Nunito Sans (regular). The
-                spacing, sizing, and colors are all automatic.
+                spacing, sizing, and colors are all automatic within <code>.prose</code> containers.
               </p>
               <p>
                 <a href="#">Links are styled automatically too</a>, with the blue accent color and
@@ -54,8 +57,46 @@ import Layout from '@/layouts/Layout.astro';
             </article>
           </div>
           <div class="text-small text-muted-foreground">
-            👆 All the typography above uses semantic HTML with zero utility classes on the elements
-            themselves.
+            👆 All the typography above uses semantic HTML with the <code class="text-xs"
+              >.prose</code
+            > class on the container.
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <!-- Why .prose Section -->
+    <section class="mb-16">
+      <h2>Why Opt-In with .prose?</h2>
+      <Card>
+        <CardContent className="pt-6">
+          <div class="prose prose-basalt space-y-4">
+            <p>
+              Basalt UI uses <strong>opt-in typography</strong> to avoid conflicts with component libraries
+              like ShadCN and Tremor. Global semantic HTML defaults would interfere with:
+            </p>
+            <ul>
+              <li>Tremor Table components (expect unstyled <code>&lt;table&gt;</code> elements)</li>
+              <li>
+                ShadCN Buttons (shouldn't inherit link <code>&lt;a&gt;</code> styles)
+              </li>
+              <li>Navigation links (don't want automatic blue underlines)</li>
+              <li>Component padding/spacing (conflicts with global paragraph margins)</li>
+            </ul>
+            <p>
+              With the <code>.prose</code> class, you choose where semantic HTML styling applies:
+            </p>
+            <pre
+              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Content areas: Use .prose -->
+<article >
+  <h2>Article Title</h2>
+  <p>Automatically styled content...</p>
+</article>
+
+<!-- UI components: No .prose -->
+<Table>...</Table>
+<Button>Click Me</Button>
+<nav><a href="#">Link</a></nav>`}</pre>
           </div>
         </CardContent>
       </Card>

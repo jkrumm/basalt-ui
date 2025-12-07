@@ -185,18 +185,6 @@ const semanticColors = [
   },
 ];
 
-const chartColors: ColorSection = {
-  category: 'Categorical Chart Colors',
-  description: 'Five distinct colors for categorical data visualization',
-  colors: [
-    { name: 'Chart 1', variable: '--chart-1', class: 'bg-chart-1' },
-    { name: 'Chart 2', variable: '--chart-2', class: 'bg-chart-2' },
-    { name: 'Chart 3', variable: '--chart-3', class: 'bg-chart-3' },
-    { name: 'Chart 4', variable: '--chart-4', class: 'bg-chart-4' },
-    { name: 'Chart 5', variable: '--chart-5', class: 'bg-chart-5' },
-  ],
-};
-
 const chartBlues: ColorSection = {
   category: 'Sequential Chart Palette',
   description: 'Eight perceptually uniform blue tones for sequential data',
@@ -217,7 +205,7 @@ const chartBlues: ColorSection = {
   title="Colors - Basalt UI"
   description="OKLCH-based color system with semantic tokens inspired by volcanic landscapes"
 >
-  <main class="container mx-auto max-w-6xl px-4 py-16">
+  <main class="prose container mx-auto max-w-6xl px-4 py-16">
     <!-- Hero Section -->
     <div class="mb-16">
       <h1 class="text-display tracking-tight">Colors</h1>
@@ -230,7 +218,7 @@ const chartBlues: ColorSection = {
       <!-- Philosophy Cards -->
       <div class="mb-6 grid gap-4 md:grid-cols-3">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <h3 class="mb-2 text-sm font-bold">Foundation Palette</h3>
             <p class="text-muted-foreground text-xs">
               Base neutral tones (light/dark) defined once. All semantic tokens reference these
@@ -239,7 +227,7 @@ const chartBlues: ColorSection = {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <h3 class="mb-2 text-sm font-bold">Blue + Expressive Colors</h3>
             <p class="text-muted-foreground text-xs">
               Professional blue for actions and links. Expressive colors for errors, success, and
@@ -248,7 +236,7 @@ const chartBlues: ColorSection = {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent>
             <h3 class="mb-2 text-sm font-bold">Always Pair Foreground</h3>
             <p class="text-muted-foreground text-xs">
               Every background has a foreground token for accessible contrast. Use{' '}
@@ -274,9 +262,9 @@ const chartBlues: ColorSection = {
 
         <ColorPalette section={darkTones} columns={4} />
 
-        <ColorPalette section={expressiveColors} columns={5} />
-
         <ColorPalette section={blueVariants} columns={3} />
+
+        <ColorPalette section={expressiveColors} columns={5} />
       </div>
 
       <div class="border-border bg-muted/50 mt-6 rounded border p-4">
@@ -286,6 +274,25 @@ const chartBlues: ColorSection = {
           <li><strong>Consistency:</strong> All semantic tokens use same base</li>
           <li><strong>Maintainability:</strong> Change once, update entire system</li>
           <li><strong>Clarity:</strong> Foundation → Semantic → UI hierarchy</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Sequential Chart Palette Section -->
+    <section class="mb-16">
+      <h2>Sequential Chart Palette</h2>
+      <p class="text-muted-foreground mb-6">
+        Constant hue (249°) with progressive lightness and gradually increasing chroma. All adjacent
+        colors exceed WCAG 3:1 contrast.
+      </p>
+      <ColorPalette section={chartBlues} columns={4} />
+
+      <div class="border-border bg-muted/50 mt-6 rounded border p-4">
+        <p class="mb-2 text-sm font-bold">Use Cases</p>
+        <ul class="list-inside list-disc space-y-1 text-sm">
+          <li>Sequential data: temperature scales, density maps, intensity visualization</li>
+          <li>Gradient backgrounds: from subtle (blue-1) to prominent (blue-8)</li>
+          <li>Perceptually uniform: equal perceived steps between colors</li>
         </ul>
       </div>
     </section>
@@ -318,40 +325,11 @@ const chartBlues: ColorSection = {
       </div>
     </section>
 
-    <!-- Chart Colors Section -->
-    <section class="mb-16">
-      <h2>Categorical Chart Colors</h2>
-      <p class="text-muted-foreground mb-6">
-        Five distinct colors for categorical data where different categories require clear visual
-        distinction.
-      </p>
-      <ColorPalette section={chartColors} columns={5} />
-    </section>
-
-    <!-- Sequential Chart Palette Section -->
-    <section class="mb-16">
-      <h2>Sequential Chart Palette</h2>
-      <p class="text-muted-foreground mb-6">
-        Constant hue (249°) with progressive lightness and gradually increasing chroma. All adjacent
-        colors exceed WCAG 3:1 contrast.
-      </p>
-      <ColorPalette section={chartBlues} columns={4} />
-
-      <div class="border-border bg-muted/50 mt-6 rounded border p-4">
-        <p class="mb-2 text-sm font-bold">Use Cases</p>
-        <ul class="list-inside list-disc space-y-1 text-sm">
-          <li>Sequential data: temperature scales, density maps, intensity visualization</li>
-          <li>Gradient backgrounds: from subtle (blue-1) to prominent (blue-8)</li>
-          <li>Perceptually uniform: equal perceived steps between colors</li>
-        </ul>
-      </div>
-    </section>
-
     <!-- Text Color Pairing Section -->
     <section class="mb-16">
       <h2>Text Color Pairing</h2>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           <p class="text-muted-foreground mb-6">
             Every background color has a corresponding foreground token ensuring accessible
             contrast.
@@ -396,12 +374,12 @@ const chartBlues: ColorSection = {
     <section class="mb-16">
       <h2>Usage Guidelines</h2>
       <div class="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="gap-0">
           <CardHeader>
             <CardTitle>Do</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul class="space-y-3 text-sm">
+            <ul class="mb-0 space-y-3 text-sm">
               <li class="flex gap-2">
                 <span class="text-primary">•</span>
                 <span>Use semantic color tokens (bg-primary, text-muted-foreground)</span>
@@ -427,12 +405,12 @@ const chartBlues: ColorSection = {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="gap-0">
           <CardHeader>
             <CardTitle>Don't</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul class="space-y-3 text-sm">
+            <ul class="mb-0 space-y-3 text-sm">
               <li class="flex gap-2">
                 <span class="text-destructive">•</span>
                 <span>Don't use arbitrary color values (bg-[#f3f3f3])</span>
@@ -520,7 +498,7 @@ const chartBlues: ColorSection = {
     <section>
       <h2>OKLCH Color Space</h2>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           <div class="mb-6 grid gap-6 md:grid-cols-3">
             <div>
               <h3 class="mb-2 text-lg font-bold">L (Lightness)</h3>

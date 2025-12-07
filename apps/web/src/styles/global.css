@@ -1,5 +1,9 @@
-/* Import Tailwind v4 */
-@import "tailwindcss";
-
-/* Import basalt-ui tokens from workspace */
+/* Import basalt-ui (includes Tailwind v4, typography plugin, and all tokens) */
 @import "../../../../packages/basalt-ui/src/index.css";
+
+[data-slot="card-content"] > h3:first-child,
+[data-slot="card-content"] > h2:first-child,
+[data-slot="card-content"] > h4:first-child,
+[data-slot="card-content"] > p:first-child {
+  margin-top: 0;
+}
