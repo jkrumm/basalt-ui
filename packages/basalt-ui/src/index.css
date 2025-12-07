@@ -183,13 +183,6 @@
   /* Focus ring - uses primary blue */
   --ring: var(--blue);
 
-  /* === CHART COLORS: Categorical palette === */
-  --chart-1: var(--blue);
-  --chart-2: var(--red);
-  --chart-3: var(--green);
-  --chart-4: var(--yellow);
-  --chart-5: var(--purple);
-
   /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
   --sidebar: oklch(0.965 0.003 90);
   --sidebar-foreground: oklch(0.265 0.015 285);
@@ -214,6 +207,166 @@
   --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1), 0 8px 10px -6px oklch(0 0 0 / 0.1);
+
+  /* ============================================================================
+     TREMOR RAW COMPATIBILITY LAYER
+     ============================================================================
+
+     Maps Tremor's semantic color system to Basalt UI's OKLCH foundation palette.
+     Tremor uses intensity levels (faint → muted → subtle → DEFAULT → emphasis).
+
+     Strategy:
+     - tremor-brand → Blue (primary)
+     - tremor-background → Zinc neutrals (light-N, dark-N)
+     - tremor-content → Text hierarchy
+     - tremor-border/ring → Border tokens
+     - Chart colors → Support both chart-N and named colors (blue, emerald, etc.)
+     ============================================================================ */
+
+  /* === TREMOR BRAND COLORS (Blue Primary) === */
+  /* Light mode values - REUSE sequential chart-blue palette */
+  --color-tremor-brand-faint: var(--chart-blue-1); /* Lightest blue (0.90) */
+  --color-tremor-brand-muted: var(--chart-blue-2); /* Light blue (0.80) */
+  --color-tremor-brand-subtle: var(--blue-light); /* Existing token (0.78) */
+  --color-tremor-brand: var(--blue); /* Foundation color (0.6965) */
+  --color-tremor-brand-emphasis: var(--blue-deep); /* Existing token (0.5944) */
+  --color-tremor-brand-inverted: var(--white); /* White text on blue */
+
+  /* === TREMOR BACKGROUND COLORS (Zinc Neutrals) === */
+  --color-tremor-background-muted: var(--light-3); /* Muted bg */
+  --color-tremor-background-subtle: var(--light-4); /* Subtle bg */
+  --color-tremor-background: var(--background); /* Main bg */
+  --color-tremor-background-emphasis: var(--dark-4); /* Dark text */
+
+  /* === TREMOR BORDER/RING === */
+  --color-tremor-border: var(--border);
+  --color-tremor-ring: var(--ring);
+
+  /* === TREMOR CONTENT (Text Hierarchy) === */
+  --color-tremor-content-subtle: var(--text-subdued-light);
+  --color-tremor-content: var(--foreground);
+  --color-tremor-content-emphasis: oklch(from var(--foreground) calc(l - 0.05) calc(c * 1.1) h);
+  --color-tremor-content-strong: oklch(from var(--foreground) calc(l - 0.1) calc(c * 1.2) h);
+  --color-tremor-content-inverted: var(--background);
+
+  /* === TREMOR SHADOWS (map to existing) === */
+  --shadow-tremor-input: var(--shadow-sm);
+  --shadow-tremor-card: var(--shadow);
+  --shadow-tremor-dropdown: var(--shadow-md);
+
+  /* === TREMOR BORDER RADIUS (map to existing) === */
+  --radius-tremor-small: var(--radius-sm); /* 4px */
+  --radius-tremor-default: var(--radius); /* 8px */
+  --radius-tremor-full: var(--radius-full); /* 9999px */
+
+  /* === TREMOR FONT SIZES === */
+  --font-size-tremor-label: var(--font-size-caption); /* 12px */
+  --line-height-tremor-label: var(--line-height-caption);
+  --font-size-tremor-default: var(--font-size-small); /* 14px */
+  --line-height-tremor-default: var(--line-height-small);
+  --font-size-tremor-title: var(--font-size-h5); /* 18px */
+  --line-height-tremor-title: var(--line-height-h5);
+  --font-size-tremor-metric: 1.875rem; /* 30px */
+  --line-height-tremor-metric: 2.25rem;
+
+  /* ===================================================================
+     CHART COLOR SHADES (Required for Tremor's dynamic color system)
+     ===================================================================
+
+     Tremor generates classes like bg-blue-500, stroke-emerald-600, etc.
+     We define shades 50-950 for each named color, derived from foundation.
+     =================================================================== */
+
+  /* Blue shades (primary) - REUSE sequential chart-blue palette */
+  --color-blue-50: var(--chart-blue-1); /* 0.90 - Lightest */
+  --color-blue-100: var(--chart-blue-2); /* 0.80 */
+  --color-blue-200: var(--chart-blue-3); /* 0.72 */
+  --color-blue-300: var(--chart-blue-4); /* 0.65 */
+  --color-blue-400: var(--blue-light); /* 0.78 - Existing token */
+  --color-blue-500: var(--blue); /* 0.6965 - DEFAULT */
+  --color-blue-600: var(--chart-blue-5); /* 0.58 */
+  --color-blue-700: var(--blue-deep); /* 0.5944 - Existing token */
+  --color-blue-800: var(--chart-blue-7); /* 0.42 */
+  --color-blue-900: var(--chart-blue-8); /* 0.34 - Darkest */
+  --color-blue-950: oklch(0.26 0.08 249); /* Extra dark for completeness */
+
+  /* Red shades (error/destructive) */
+  --color-red-50: oklch(0.95 0.03 15);
+  --color-red-100: oklch(0.9 0.05 15);
+  --color-red-200: oklch(0.82 0.07 15);
+  --color-red-300: oklch(0.74 0.09 15);
+  --color-red-400: oklch(0.66 0.1 15);
+  --color-red-500: var(--red); /* 0.6061 - DEFAULT */
+  --color-red-600: oklch(0.54 0.13 15);
+  --color-red-700: oklch(0.48 0.14 15);
+  --color-red-800: oklch(0.4 0.15 15);
+  --color-red-900: oklch(0.32 0.16 15);
+  --color-red-950: oklch(0.24 0.17 15);
+
+  /* Emerald shades (success - maps to green) */
+  --color-emerald-50: oklch(0.96 0.02 131);
+  --color-emerald-100: oklch(0.92 0.03 131);
+  --color-emerald-200: oklch(0.86 0.045 131);
+  --color-emerald-300: oklch(0.81 0.06 131);
+  --color-emerald-400: oklch(0.76 0.07 131);
+  --color-emerald-500: var(--green); /* 0.7683 - DEFAULT */
+  --color-emerald-600: oklch(0.68 0.08 131);
+  --color-emerald-700: oklch(0.6 0.085 131);
+  --color-emerald-800: oklch(0.5 0.09 131);
+  --color-emerald-900: oklch(0.4 0.095 131);
+  --color-emerald-950: oklch(0.3 0.1 131);
+
+  /* Amber shades (warning - maps to yellow) */
+  --color-amber-50: oklch(0.97 0.02 84);
+  --color-amber-100: oklch(0.94 0.04 84);
+  --color-amber-200: oklch(0.9 0.06 84);
+  --color-amber-300: oklch(0.87 0.075 84);
+  --color-amber-400: var(--yellow); /* 0.8549 - DEFAULT */
+  --color-amber-500: oklch(0.82 0.09 84);
+  --color-amber-600: oklch(0.76 0.095 84);
+  --color-amber-700: oklch(0.68 0.1 84);
+  --color-amber-800: oklch(0.58 0.105 84);
+  --color-amber-900: oklch(0.48 0.11 84);
+  --color-amber-950: oklch(0.38 0.115 84);
+
+  /* Violet shades (special - maps to purple) */
+  --color-violet-50: oklch(0.95 0.015 333);
+  --color-violet-100: oklch(0.9 0.025 333);
+  --color-violet-200: oklch(0.84 0.04 333);
+  --color-violet-300: oklch(0.78 0.05 333);
+  --color-violet-400: oklch(0.72 0.06 333);
+  --color-violet-500: var(--purple); /* 0.6921 - DEFAULT */
+  --color-violet-600: oklch(0.62 0.07 333);
+  --color-violet-700: oklch(0.54 0.075 333);
+  --color-violet-800: oklch(0.44 0.08 333);
+  --color-violet-900: oklch(0.36 0.085 333);
+  --color-violet-950: oklch(0.28 0.09 333);
+
+  /* Cyan shades (additional chart color) */
+  --color-cyan-50: oklch(0.96 0.02 210);
+  --color-cyan-100: oklch(0.92 0.03 210);
+  --color-cyan-200: oklch(0.86 0.045 210);
+  --color-cyan-300: oklch(0.8 0.06 210);
+  --color-cyan-400: oklch(0.74 0.07 210);
+  --color-cyan-500: oklch(0.68 0.08 210); /* DEFAULT */
+  --color-cyan-600: oklch(0.6 0.085 210);
+  --color-cyan-700: oklch(0.52 0.09 210);
+  --color-cyan-800: oklch(0.44 0.095 210);
+  --color-cyan-900: oklch(0.36 0.1 210);
+  --color-cyan-950: oklch(0.28 0.105 210);
+
+  /* Indigo shades (deep blue variant) */
+  --color-indigo-50: oklch(0.95 0.02 260);
+  --color-indigo-100: oklch(0.9 0.03 260);
+  --color-indigo-200: oklch(0.84 0.045 260);
+  --color-indigo-300: oklch(0.78 0.06 260);
+  --color-indigo-400: oklch(0.7 0.07 260);
+  --color-indigo-500: oklch(0.62 0.08 260); /* DEFAULT */
+  --color-indigo-600: var(--blue-deep); /* 0.5944 */
+  --color-indigo-700: oklch(0.5 0.09 260);
+  --color-indigo-800: oklch(0.42 0.095 260);
+  --color-indigo-900: oklch(0.34 0.1 260);
+  --color-indigo-950: oklch(0.26 0.105 260);
 }
 
 /* === DARK MODE: Warm, comfortable darkness (not pure black) === */
@@ -260,13 +413,6 @@
   /* Focus ring */
   --ring: var(--blue);
 
-  /* Chart colors - same categorical palette */
-  --chart-1: var(--blue);
-  --chart-2: var(--red);
-  --chart-3: var(--green);
-  --chart-4: var(--yellow);
-  --chart-5: var(--purple);
-
   /* Sidebar - slightly different from main background */
   --sidebar: var(--dark-2);
   --sidebar-foreground: oklch(0.935 0.005 90);
@@ -276,6 +422,32 @@
   --sidebar-accent-foreground: oklch(0.935 0.005 90);
   --sidebar-border: oklch(0.28 0.012 285); /* Between dark-3 and dark-4 */
   --sidebar-ring: var(--blue);
+
+  /* === TREMOR DARK MODE OVERRIDES === */
+  /* Tremor brand - adjusted for dark mode, REUSE chart-blue palette */
+  --color-tremor-brand-faint: var(--chart-blue-8); /* Darkest blue inverted (0.34) */
+  --color-tremor-brand-muted: var(--chart-blue-7); /* Dark blue (0.42) */
+  --color-tremor-brand-subtle: var(--chart-blue-5); /* Medium blue (0.58) */
+  /* DEFAULT, emphasis stay same (blue works on both) */
+  --color-tremor-brand-inverted: var(--dark-2); /* Dark bg on blue */
+
+  /* Tremor background - dark mode values */
+  --color-tremor-background-muted: var(--dark-4);
+  --color-tremor-background-subtle: var(--dark-3);
+  --color-tremor-background: var(--background); /* Already switches */
+  --color-tremor-background-emphasis: var(--text-subdued-dark);
+
+  /* Tremor content - dark mode values */
+  --color-tremor-content-subtle: var(--text-subdued-dark);
+  --color-tremor-content: var(--foreground); /* Already switches */
+  --color-tremor-content-emphasis: oklch(from var(--foreground) calc(l + 0.05) calc(c * 1.1) h);
+  --color-tremor-content-strong: oklch(from var(--foreground) calc(l + 0.1) calc(c * 1.2) h);
+  --color-tremor-content-inverted: var(--background);
+
+  /* Tremor shadows - same values work on dark */
+  --shadow-tremor-input: var(--shadow-sm);
+  --shadow-tremor-card: var(--shadow);
+  --shadow-tremor-dropdown: var(--shadow-md);
 }
 
 /* ============================================================================
@@ -424,13 +596,6 @@
   --color-blue-light-foreground: var(--blue-light-foreground);
   --color-blue-deep: var(--blue-deep);
   --color-blue-deep-foreground: var(--blue-deep-foreground);
-
-  /* Categorical chart colors */
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
 
   /* Sequential chart palette (bg-chart-blue-1 through bg-chart-blue-8) */
   --color-chart-blue-1: var(--chart-blue-1);

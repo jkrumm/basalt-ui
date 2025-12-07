@@ -188,9 +188,6 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 /* Structure (reference foundation) */
 --border, --input, --ring
 
-/* Categorical Charts */
---chart-1 through --chart-5
-
 /* Sequential Charts */
 --chart-blue-1 through --chart-blue-8
 
@@ -201,7 +198,7 @@ All adjacent colors exceed WCAG 3:1 contrast requirements
 ### Chart Color Strategies
 
 **Categorical Data** (different categories/groups):
-- Use `--chart-1` through `--chart-5` (blue, red, green, yellow, purple)
+- Use named colors directly: `--blue`, `--red`, `--green`, `--yellow`, `--purple`
 - Different hues provide clear visual distinction
 - Example: Product categories, user segments, status types
 

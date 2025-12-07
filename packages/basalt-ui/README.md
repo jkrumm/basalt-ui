@@ -16,6 +16,7 @@ Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it
 - 🌋 **Basalt neutrals + expressive colors** - Warm zinc grays with semantic expressiveness
 - 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
 - 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
+- 🧩 **Tremor compatible** - Works seamlessly with Tremor RAW UI & Chart components
 
 ---
 
@@ -316,7 +317,9 @@ This is **intentional**. Consistency > flexibility.
 
 ---
 
-## ShadCN Compatibility
+## Component Library Compatibility
+
+### ShadCN UI
 
 Basalt UI works seamlessly with ShadCN UI. All required tokens are defined:
 
@@ -333,6 +336,27 @@ Components automatically use:
 - Restricted spacing scale
 - Semantic typography
 - Defined border radius
+
+### Tremor Raw
+
+Basalt UI includes full compatibility with [Tremor Raw](https://tremor.so) chart components out of the box:
+
+```tsx
+import { AreaChart } from '@tremor/react';
+
+<AreaChart
+  data={chartData}
+  index="date"
+  categories={['sales']}
+  colors={['blue']}  // Uses Basalt UI's OKLCH blue
+/>
+```
+
+**Supported colors:**
+- Named: `blue`, `red`, `emerald` (green), `amber` (yellow), `violet` (purple), `cyan`, `indigo`
+- Sequential: `chart-blue-1` through `chart-blue-8` (lightness progression)
+
+All Tremor semantic tokens (`tremor-brand`, `tremor-background`, `tremor-content`, etc.) are automatically mapped to Basalt's OKLCH foundation palette. No configuration needed.
 
 ---
 
