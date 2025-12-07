@@ -131,7 +131,13 @@
       }
     },
     {
-      "includes": ["apps/web/src/components/tremor/**", "apps/web/src/lib/chartUtils.ts"],
+      "includes": ["**/src/components/tremor/**", "**/src/lib/chartUtils.ts"],
+      "linter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": ["docs/**"],
       "linter": {
         "enabled": false
       }

@@ -4,11 +4,13 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "examples/*"
   ],
   "scripts": {
     "dev:web": "bun --filter web dev",
-    "dev": "bun run dev:web",
+    "dev:react": "bun --filter react dev",
+    "dev": "bun --filter '*' dev",
     "release": "release-it",
     "check": "bunx @biomejs/biome check .",
     "check:write": "bunx @biomejs/biome check --write .",
@@ -84,5 +86,8 @@
         100
       ]
     }
+  },
+  "dependencies": {
+    "@remixicon/react": "^4.7.0"
   }
 }
