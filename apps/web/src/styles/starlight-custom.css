@@ -1,0 +1,44 @@
+/* Import basalt-ui design system */
+@import "../../../../packages/basalt-ui/src/index.css";
+
+/* Map Starlight theme variables to basalt-ui tokens */
+:root {
+  /* Accent colors → basalt-ui blue */
+  --sl-color-accent-low: var(--blue-light);
+  --sl-color-accent: var(--blue);
+  --sl-color-accent-high: var(--blue-deep);
+
+  /* Text colors → basalt-ui foreground */
+  --sl-color-text: var(--foreground);
+  --sl-color-text-accent: var(--blue);
+
+  /* Backgrounds → basalt-ui surfaces */
+  --sl-color-bg: var(--background);
+  --sl-color-bg-nav: var(--card);
+  --sl-color-bg-sidebar: var(--card);
+
+  /* Borders → basalt-ui border */
+  --sl-color-border: var(--border);
+
+  /* Gray shades → basalt-ui muted */
+  --sl-color-gray-1: var(--muted);
+  --sl-color-gray-2: var(--muted-foreground);
+  --sl-color-gray-3: var(--border);
+  --sl-color-gray-4: var(--input);
+  --sl-color-gray-5: var(--foreground);
+
+  /* Fonts → basalt-ui fonts */
+  --sl-font: "Nunito Sans", system-ui, -apple-system, sans-serif;
+  --sl-font-headings: "Lato", system-ui, -apple-system, sans-serif;
+  --sl-font-mono: "JetBrains Mono", "Courier New", monospace;
+}
+
+/* Apply basalt-ui prose styling to Starlight content */
+.sl-markdown-content {
+  @apply prose;
+}
+
+/* Match sidebar styling with basalt-ui cards */
+.sidebar-content {
+  border-radius: var(--radius-md);
+}

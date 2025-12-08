@@ -1,4 +1,4 @@
-# Basalt UI - Web App (Astro + React)
+# Basalt UI - Web App (Astro + React + Starlight)
 
 **Inherits from**: `../../CLAUDE.md` (monorepo conventions: Bun, Biome, TypeScript strict, Tailwind v4)
 **This file adds**: Astro + React specific patterns and web app conventions
@@ -8,6 +8,7 @@ Documentation site and design playground for the Basalt UI design system.
 ## Tech Stack
 
 - **Framework**: Astro 5+ (static site generation)
+- **Documentation**: Starlight (integrated at `/docs/*`)
 - **UI Library**: React 19 (islands architecture)
 - **Styling**: Tailwind CSS v4 + basalt-ui preset
 - **Components**: ShadCN UI (copy-paste, not dependency)
@@ -17,6 +18,9 @@ Documentation site and design playground for the Basalt UI design system.
 
 ```
 src/
+├── content/
+│   └── docs/
+│       └── docs/        # Starlight documentation (becomes /docs/*)
 ├── components/
 │   ├── ui/              # ShadCN components (auto-generated via CLI)
 │   ├── layout/          # Header, Footer, Navigation
@@ -26,9 +30,13 @@ src/
 │   └── Layout.astro     # Base layout with SEO
 ├── pages/
 │   ├── index.astro      # Landing page
-│   └── playground.astro # Component playground
+│   ├── typography.astro # Demo pages
+│   ├── colors.astro
+│   ├── spacing.astro
+│   └── charts.astro
 ├── styles/
-│   └── global.css       # Tailwind + basalt-ui imports
+│   ├── global.css           # Tailwind + basalt-ui imports
+│   └── starlight-custom.css # Starlight theme bridge
 └── lib/
     └── utils.ts         # cn() helper for ShadCN
 ```
@@ -427,6 +435,51 @@ Astro's `client:only` cannot serialize functions, so props like `valueFormatter`
 
 **Chart components always need `client:only="react"`**
 **UI components (Badge, Button, Select) can use `client:load`**
+
+## Starlight Documentation
+
+This app uses Starlight for documentation at `/docs/*`.
+
+### Structure
+
+- **Documentation root**: `src/content/docs/docs/` (nested structure creates `/docs/*` URLs)
+- **Landing page**: `/docs` redirects to `/docs/introduction`
+- **Demo pages**: Root level (`/typography`, `/colors`, etc.)
+- **Docs pages**: `/docs/*` subpath
+
+### Adding Documentation
+
+1. Create new `.md` file in `src/content/docs/docs/`
+2. Add frontmatter:
+   ```markdown
+   ---
+   title: Page Title
+   description: Page description
+   ---
+   ```
+3. Update sidebar in `astro.config.mjs`:
+   ```javascript
+   sidebar: [
+     {
+       label: 'Section Name',
+       items: [
+         { label: 'Page Title', slug: 'docs/page-slug' },
+       ],
+     },
+   ]
+   ```
+
+### Styling
+
+- **Current**: Minimal setup with CSS variable mapping to basalt-ui tokens
+- **CSS bridge**: `src/styles/starlight-custom.css` maps Starlight variables to basalt-ui
+- **Future**: Can override Starlight components for explicit basalt-ui styling
+
+### Configuration
+
+- **Config file**: `astro.config.mjs` - Starlight integration
+- **Content config**: `src/content.config.ts` - Content collections setup
+- **Social links**: Configured as array in Starlight config (v0.37+ syntax)
 
 ## Critical Gotchas
 

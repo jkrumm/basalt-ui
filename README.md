@@ -7,7 +7,7 @@ Framework-agnostic design system built on Tailwind CSS. Zinc-based colors, works
 ```
 basalt-ui/
 ├── packages/basalt-ui/    # Framework-agnostic theme (Tailwind preset + CSS)
-└── apps/web/              # Docs & playground (Astro + React)
+└── apps/web/              # Docs & playground (Astro + React + Starlight)
 ```
 
 ## Install

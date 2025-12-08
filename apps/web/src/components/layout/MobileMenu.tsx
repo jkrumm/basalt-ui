@@ -172,7 +172,7 @@ export function MobileMenuPanel() {
 
         <div className="mt-4 flex flex-col gap-3">
           <ThemeToggle />
-          <a href="#docs" className={buttonVariants({ variant: 'default', size: 'lg' })}>
+          <a href="/docs" className={buttonVariants({ variant: 'default', size: 'lg' })}>
             {' '}
             Docs{' '}
           </a>
