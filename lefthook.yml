@@ -4,6 +4,17 @@ min_version: 1.7.0
 pre-commit:
   parallel: true
   commands:
+    isolated-basalt-ui:
+      run: |
+        STAGED=$(git diff --cached --name-only)
+        HAS_BASALT=$(echo "$STAGED" | grep -q '^packages/basalt-ui/' && echo 1 || echo 0)
+        HAS_OTHER=$(echo "$STAGED" | grep -v '^packages/basalt-ui/' | grep -v '^$' | head -1)
+        if [ "$HAS_BASALT" = "1" ] && [ -n "$HAS_OTHER" ]; then
+          echo "❌ packages/basalt-ui must be committed separately from other changes"
+          echo "   Found: $HAS_OTHER"
+          exit 1
+        fi
+
     biome-check-js:
       glob: "*.{js,jsx,ts,tsx,cjs,mjs}"
       run: bunx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --staged {staged_files}
