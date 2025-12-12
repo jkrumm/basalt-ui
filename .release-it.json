@@ -1,0 +1,39 @@
+{
+  "$schema": "https://unpkg.com/release-it/schema/release-it.json",
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "Release ${version}",
+    "requireBranch": "master",
+    "requireCleanWorkingDir": true,
+    "requireCommits": true,
+    "push": true,
+    "pushRepo": "origin"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "v${version}",
+    "draft": false,
+    "preRelease": false,
+    "autoGenerate": false
+  },
+  "npm": {
+    "publish": false
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "angular",
+      "infile": "packages/basalt-ui/CHANGELOG.md",
+      "gitRawCommitsOpts": {
+        "path": "packages/basalt-ui"
+      }
+    }
+  },
+  "hooks": {
+    "before:init": ["bun run pre"],
+    "after:bump": [
+      "cd packages/basalt-ui && bun version ${version} --no-git-tag-version",
+      "git add packages/basalt-ui/package.json packages/basalt-ui/CHANGELOG.md"
+    ]
+  }
+}
