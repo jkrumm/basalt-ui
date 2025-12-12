@@ -11,7 +11,7 @@
     "dev:web": "bun --filter web dev",
     "dev:react": "bun --filter react dev",
     "dev": "bun --filter '*' dev",
-    "release": "release-it",
+    "release": "bun scripts/release.ts",
     "check": "bunx @biomejs/biome check .",
     "check:write": "bunx @biomejs/biome check --write .",
     "format": "bun run format:biome && bun run format:prettier",
@@ -30,10 +30,12 @@
     "@commitlint/config-conventional": "^20.2.0",
     "@commitlint/types": "^20.2.0",
     "@release-it/conventional-changelog": "^10.0.3",
+    "@types/prompts": "^2.4.9",
     "lefthook": "^2.0.8",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "prompts": "^2.4.2",
     "release-it": "^19.1.0"
   },
   "version": "0.1.0"
