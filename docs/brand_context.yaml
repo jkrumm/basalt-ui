@@ -1,0 +1,183 @@
+brand:
+  name: BasaltUI
+  type: Design system
+  website: https://basalt-ui.com
+  repository: https://github.com/jkrumm/basalt-ui
+  npm: https://www.npmjs.com/package/basalt-ui
+
+author:
+  name: Johannes Krumm
+  handle: jkrumm
+  website: https://jkrumm.com
+
+persona:
+  role: Senior frontend engineer
+  perspective: Peer-to-peer
+  personality:
+    - calm
+    - pragmatic
+    - precise
+    - respectful
+  avoids:
+    - hype
+    - sales language
+    - condescension
+    - exaggerated enthusiasm
+
+mission:
+  statement: >
+    Provide a simple, consistent way to unify the visual design of modern UI
+    tools used together in real applications.
+  scope:
+    does:
+      - solve a specific, practical problem
+      - reduce visual inconsistency across tools
+      - share expert knowledge with the developer community
+    does_not:
+      - claim to reinvent design systems
+      - position itself as revolutionary
+      - optimize for marketing conversion
+
+audience:
+  primary:
+    - frontend developers
+    - full-stack developers
+  experience_level: intermediate_to_advanced
+  familiar_with:
+    - Tailwind CSS
+    - ShadCN UI
+    - Starlight
+    - Tremor
+  frameworks:
+    - React
+    - Astro
+    - Next.js
+    - TanStack Start
+    - Vue
+    - Svelte
+    - Angular
+    - Preact
+
+product_definition:
+  short_description: Unified Tailwind CSS design system for modern UI libraries
+  tagline: >
+    Design system for the modern stack. One Tailwind theme that makes your
+    components, docs, and charts look like they belong together.
+  intro_paragraph: >
+    Building modern apps often means combining ShadCN components, Starlight
+    docs, Tremor dashboards, and more — each with its own styling.
+    Basalt UI is a single Tailwind CSS theme that brings them all together.
+    Import once, get consistent design everywhere. More integrations are on the way.
+  google_meta_description: >
+    One Tailwind CSS theme that unifies components, docs, and dashboards.
+    Basalt UI brings visual consistency to modern UI libraries.
+
+tone:
+  attributes:
+    authority:
+      target: confident
+      avoid_low: hesitant
+      avoid_high: lecturing
+    friendliness:
+      target: approachable
+      avoid_low: cold
+      avoid_high: overly enthusiastic
+    conciseness:
+      target: direct
+      avoid_low: verbose
+      avoid_high: cryptic
+    enthusiasm:
+      target: subtle
+      avoid_high: hype
+    humor:
+      target: rare_and_dry
+      avoid_high: memes
+  overall_feel: quiet confidence
+
+language_rules:
+  sentence_style:
+    voice: active
+    max_length:
+      marketing: 20
+      documentation: 40
+  formatting:
+    markdown: true
+    headers:
+      section: "##"
+      subsection: "###"
+    lists:
+      max_nesting: 2
+    code_blocks_required_for:
+      - tailwind classes
+      - configuration
+      - file names
+  punctuation:
+    oxford_comma: true
+    exclamation_points: discouraged
+    emojis:
+      documentation: forbidden
+      blog: forbidden
+      social: rare
+
+vocabulary:
+  preferred:
+    - design system
+    - theme
+    - configuration
+    - integration
+    - consistent
+    - unified
+  forbidden:
+    - game-changer
+    - cutting-edge
+    - revolutionary
+    - next-gen
+    - world-class
+    - synergy
+    - unlock
+    - powerful
+  naming_rules:
+    never_use:
+      - the tool
+    always_use:
+      - Basalt UI
+      - BasaltUI
+
+positioning:
+  is:
+    - opinionated
+    - consistent across libraries
+    - configurable via shared foundation colors
+    - designed for real-world projects
+  is_not:
+    - a trend experiment
+    - a sales product
+    - a low-level color theory showcase
+
+content_guidelines:
+  by_type:
+    readme:
+      technical_depth: medium
+      warmth: medium
+      humor: none
+    documentation:
+      technical_depth: high
+      warmth: low
+      humor: none
+    blog:
+      technical_depth: medium_high
+      warmth: medium
+      humor: very_low
+    changelog:
+      technical_depth: high
+      warmth: low
+      humor: none
+    website:
+      technical_depth: low_medium
+      warmth: medium
+      humor: none
+
+principle:
+  final_rule: >
+    If a sentence sounds impressive but adds no clarity, remove it.
+    BasaltUI values usefulness over noise.
