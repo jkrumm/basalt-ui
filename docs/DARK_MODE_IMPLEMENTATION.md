@@ -277,7 +277,7 @@ import ThemeToggle from '@/components/shared/ThemeToggle'
 
 .dark {
   --background: oklch(0.21 0.012 285);
-  --foreground: oklch(0.935 0.005 90);
+  --foreground: var(--light-3);
   /* ... other tokens */
 }
 ```

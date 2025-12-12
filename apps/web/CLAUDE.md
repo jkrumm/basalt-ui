@@ -438,7 +438,7 @@ Astro's `client:only` cannot serialize functions, so props like `valueFormatter`
 
 ## Starlight Documentation
 
-This app uses Starlight for documentation at `/docs/*`.
+This app uses Starlight v0.37+ for documentation at `/docs/*`.
 
 ### Structure
 
@@ -471,15 +471,52 @@ This app uses Starlight for documentation at `/docs/*`.
 
 ### Styling
 
-- **Current**: Minimal setup with CSS variable mapping to basalt-ui tokens
-- **CSS bridge**: `src/styles/starlight-custom.css` maps Starlight variables to basalt-ui
-- **Future**: Can override Starlight components for explicit basalt-ui styling
+**Provided by basalt-ui Package:**
+
+Starlight styling is handled entirely by the `basalt-ui` package via a dedicated entry point.
+
+- **All CSS variables**: Mapped in `packages/basalt-ui/src/index.css` (lines 710-935)
+- **60+ Starlight tokens**: Colors, typography, layout, shadows all reference Basalt tokens
+- **Dark mode**: Automatic via Starlight's `data-theme` attribute on `<html>`
+- **Responsive**: Breakpoints at 50em and 72rem with Basalt spacing scale
+- **Integration**: Import `basalt-ui/src/starlight.css` in Starlight's `customCss` config
+- **Entry point**: `packages/basalt-ui/src/starlight.css` (imports full design system)
+
+**Clean Package Export:**
+
+The basalt-ui package exports a dedicated Starlight integration file:
+- Published packages: `import "basalt-ui/starlight"`
+- Monorepo: Reference `../packages/basalt-ui/src/starlight.css` directly
+- This file imports the complete design system with all Starlight mappings
+
+**Why this approach?**
+- Starlight support is reusable across any app using basalt-ui
+- Follows same pattern as Tremor integration (centralized in package)
+- Single source of truth - update package, all apps benefit
+- Philosophy: "basalt-ui offers Starlight support" (not "app customizes Starlight")
+
+**Available Starlight Features:**
+- Navigation (sidebar, top nav, mobile menu) - all styled
+- Table of contents - automatic with Basalt colors
+- Search - Pagefind integration with Basalt styling
+- Code blocks - ExpressiveCode with `github-dark`/`github-light` themes
+- Badges - All variants (note, tip, danger, caution, success) use Basalt semantic colors
+- Link cards, tabs, asides - all styled automatically
 
 ### Configuration
 
 - **Config file**: `astro.config.mjs` - Starlight integration
 - **Content config**: `src/content.config.ts` - Content collections setup
 - **Social links**: Configured as array in Starlight config (v0.37+ syntax)
+- **ExpressiveCode**: GitHub themes match Basalt's dark/light modes
+
+### Dark Mode
+
+Starlight uses its own theme switcher that sets `data-theme="light"` attribute:
+- Dark mode: No attribute or `data-theme="dark"` (default)
+- Light mode: `data-theme="light"` on `<html>`
+- Basalt UI CSS automatically handles both via `:root[data-theme='light']` selector
+- No conflicts with main app's `.dark` class (different selectors)
 
 ## Critical Gotchas
 

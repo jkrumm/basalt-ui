@@ -38,8 +38,9 @@ export default defineConfig({
         },
       ],
 
-      // Bridge Starlight theme with basalt-ui
-      customCss: ['./src/styles/starlight-custom.css'],
+      // Import basalt-ui tokens for Starlight pages
+      // All Starlight CSS variable mappings defined in packages/basalt-ui/src/index.css
+      customCss: ['../../packages/basalt-ui/src/starlight.css'],
 
       expressiveCode: {
         themes: ['github-dark', 'github-light'],
