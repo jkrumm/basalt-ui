@@ -44,11 +44,8 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
-      # First publish: Uses NPM_TOKEN secret
-      # After trusted publishing configured: Uses OIDC (no token needed)
-      # Provenance is auto-generated with both methods
+      # Trusted publishing uses OIDC - no token needed!
+      # Provenance is auto-generated with trusted publishing
       - name: Publish to npm
         working-directory: ./packages/basalt-ui
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
