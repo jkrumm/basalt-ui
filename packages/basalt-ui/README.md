@@ -1,23 +1,34 @@
 # Basalt UI
 
-> A mature, restrictive Tailwind CSS design system inspired by volcanic basalt.
+[![npm version](https://img.shields.io/npm/v/basalt-ui.svg)](https://www.npmjs.com/package/basalt-ui)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/jkrumm/basalt-ui/blob/master/LICENSE)
 
-**Volcanic aesthetics meet modern expressiveness.** Basalt UI combines warm zinc-based neutrals with expressive semantic colors and professional blue accents to create interfaces that are both trustworthy and expressive.
+> Design system for the modern stack. One Tailwind theme that makes your components, docs, and charts look like they belong together.
 
----
+**[Documentation](https://basalt-ui.com)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
-## Philosophy
+Building modern apps often means combining ShadCN components, Starlight docs, Tremor dashboards, and more — each with its own styling.
 
-Most design systems extend Tailwind infinitely. Basalt UI does the opposite - it **restricts** Tailwind to create consistency.
+Basalt UI is a single Tailwind CSS theme that brings them all together. Import once, get consistent design everywhere. More integrations are on the way.
 
-- ✨ **Opt-in typography** - Use `.prose` for content areas, keep components clean
-- 🎨 **OKLCH color space** - Perceptually uniform colors that feel natural
-- 📐 **Limited, purposeful tokens** - No `text-[17px]` or `p-[13px]`, only defined values
-- 🌋 **Foundation palette** - DRY color system where each OKLCH value is defined once
-- 🎯 **Mature restrictions** - Opinionated design system that enforces consistency
-- 🧩 **ShadCN compatible** - Works seamlessly with ShadCN UI components
-- 🧩 **Tremor compatible** - Full integration with Tremor RAW via gray palette overrides
-- 📝 **Component-library friendly** - No global styles that conflict with UI libraries
+### Why Basalt UI?
+
+Most teams don't use just one UI tool anymore.
+
+You combine component libraries, documentation frameworks, and charting tools — and they rarely look like they belong together.
+
+Basalt UI solves this with a single Tailwind configuration that works across your stack.
+
+No rewrites. No heavy abstractions. Just consistent design, everywhere.
+
+### What Basalt UI gives you
+
+- One Tailwind theme shared across apps, docs, and dashboards
+- Out-of-the-box support for ShadCN, Starlight, and Tremor
+- Matching light and dark modes by default
+- A consistent look without custom glue code
+
+More integrations will be added over time.
 
 ---
 
