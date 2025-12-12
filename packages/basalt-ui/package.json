@@ -14,6 +14,9 @@
     },
     "./css": {
       "import": "./src/index.css"
+    },
+    "./starlight": {
+      "import": "./src/starlight.css"
     }
   },
   "files": [

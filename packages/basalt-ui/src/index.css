@@ -93,8 +93,7 @@
   /* === EXTREME TONES === */
   /* Pure white/near-black for maximum contrast text */
 
-  --white: oklch(0.99 0.002 90); /* White - text on dark backgrounds */
-  --near-black: var(--dark-1); /* Near black - references darkest tone, reserved */
+  --white: var(--light-1); /* White - text on dark backgrounds */
 
   /* ============================================================================
      SEMANTIC LAYER - References foundation palette
@@ -189,7 +188,7 @@
   --sidebar: oklch(0.965 0.003 90);
   --sidebar-foreground: oklch(0.265 0.015 285);
   --sidebar-primary: var(--blue);
-  --sidebar-primary-foreground: oklch(0.99 0.002 90);
+  --sidebar-primary-foreground: var(--white);
   --sidebar-accent: oklch(0.925 0.008 252);
   --sidebar-accent-foreground: oklch(0.265 0.015 285);
   --sidebar-border: oklch(0.875 0.005 270);
@@ -375,15 +374,15 @@
 .dark {
   /* Surface colors - warm dark grays, not stark black */
   --background: var(--dark-2); /* Very dark, main background */
-  --foreground: oklch(0.935 0.005 90); /* Soft white, not harsh - between light-1 and light-2 */
+  --foreground: var(--light-3); /* Soft white, not harsh - between light-1 and light-2 */
 
   /* Card and elevated surfaces - slightly lighter than background */
   --card: var(--dark-3);
-  --card-foreground: oklch(0.935 0.005 90);
+  --card-foreground: var(--light-3);
 
   /* Popover and floating elements */
   --popover: var(--dark-3);
-  --popover-foreground: oklch(0.935 0.005 90);
+  --popover-foreground: var(--light-3);
 
   /* Muted backgrounds and disabled states */
   --muted: var(--dark-4); /* Subtle background difference */
@@ -402,11 +401,11 @@
 
   /* Secondary */
   --secondary: oklch(0.27 0.012 285); /* Between dark-3 and dark-2 */
-  --secondary-foreground: oklch(0.935 0.005 90);
+  --secondary-foreground: var(--light-3);
 
   /* Accent: Blue light for hover states */
   --accent: var(--blue-light);
-  --accent-foreground: oklch(0.935 0.005 90);
+  --accent-foreground: var(--light-3);
 
   /* Destructive: Red (same value as light mode) */
   --destructive: var(--red);
@@ -417,11 +416,11 @@
 
   /* Sidebar - slightly different from main background */
   --sidebar: var(--dark-2);
-  --sidebar-foreground: oklch(0.935 0.005 90);
+  --sidebar-foreground: var(--light-3);
   --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: var(--white);
   --sidebar-accent: oklch(0.33 0.015 285); /* Slightly darker than dark-4 */
-  --sidebar-accent-foreground: oklch(0.935 0.005 90);
+  --sidebar-accent-foreground: var(--light-3);
   --sidebar-border: oklch(0.28 0.012 285); /* Between dark-3 and dark-4 */
   --sidebar-ring: var(--blue);
 

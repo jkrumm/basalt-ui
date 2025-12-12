@@ -10,7 +10,7 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 ### Core Principles
 
 1. **Opt-In Typography**: Use `.prose` class for rich typography, not global defaults
-2. **Component-Library Friendly**: Base layer minimal to avoid conflicts with ShadCN/Tremor
+2. **Component-Library Friendly**: Base layer minimal to avoid conflicts with ShadCN/Tremor/Starlight
 3. **Restrictive by Design**: No infinite scales - only purposeful, defined tokens
 4. **OKLCH Color Space**: Perceptually uniform colors for accessible, harmonious palettes
 5. **Warm, Not Stark**: Professional but welcoming - never pure black/white
@@ -25,6 +25,7 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 - ✅ Restrict Tailwind scales to prevent arbitrary values
 - ✅ Maintain full ShadCN compatibility
 - ✅ Tremor Raw compatibility via gray palette overrides
+- ✅ Starlight compatibility via comprehensive CSS variable mapping
 - ✅ Create warm, professional, accessible interfaces
 - ✅ Support volcanic nature aesthetic (zinc + blue + expressive colors)
 
@@ -94,7 +95,7 @@ Light Mode:
 
 Dark Mode:
 - background: var(--dark-2)   - Main background
-- foreground: oklch(0.935 0.005 90) - Soft white
+- foreground: var(--light-3) - Soft white
 - card: var(--dark-3)         - Elevated surfaces
 - muted: var(--dark-4)        - Subtle backgrounds
 - border: var(--dark-4)       - Borders, dividers
@@ -219,6 +220,120 @@ black    → dark-1  (darkest - near-black)
 - ShadCN continues using semantic tokens (unaffected)
 
 **Code Location:** `src/index.css` lines 510-537 (`@theme` block)
+
+### Starlight Compatibility
+
+**Strategy:** Comprehensive CSS variable mapping for Astro Starlight documentation framework, similar to Tremor integration approach.
+
+**Why:** Starlight uses 60+ CSS variables for theming. By mapping all variables to Basalt tokens, any app using basalt-ui gets Starlight support automatically without app-specific CSS files.
+
+**Implementation:** Direct `:root` definitions after `@theme inline` block in `src/index.css` (lines 710-935).
+
+**Complete Variable Coverage:**
+
+Starlight Variables Mapped:
+- **Gray Palette** (8 shades): `--sl-color-white` through `--sl-color-black` → Basalt foundation colors
+- **Semantic Color Hues** (5 colors): `--sl-hue-orange`, `--sl-hue-green`, etc. → Extracted from Basalt OKLCH hues
+- **Color Intensity Variants**: `-low`, `-high` suffixes → OKLCH relative color calculations
+- **Accent Colors**: `--sl-color-accent-*` → Basalt blue variants
+- **UI Backgrounds**: `--sl-color-bg-*` → Basalt surface tokens
+- **Text Colors**: `--sl-color-text-*` → Basalt foreground tokens
+- **Borders**: `--sl-color-hairline-*` → Basalt border tokens with subtle variations
+- **Typography Scale** (13 sizes): `--sl-text-*` → Basalt typography tokens
+- **Fonts**: `--sl-font-*` → Basalt font families (Nunito Sans, JetBrains Mono)
+- **Line Heights**: `--sl-line-height-*` → Basalt line height tokens
+- **Shadows** (3 levels): `--sl-shadow-*` → Basalt shadow tokens
+- **Layout Tokens**: `--sl-nav-height`, `--sl-sidebar-width`, etc. → Basalt spacing scale
+- **Z-Index Values**: Starlight's stacking context preserved
+- **Responsive Overrides**: Media queries at 50em and 72rem breakpoints
+
+**Dark Mode Handling:**
+
+Starlight uses `data-theme="light"` attribute on `<html>` for light mode:
+```css
+/* Dark mode (default) */
+:root, ::backdrop {
+  --sl-color-white: var(--light-1);
+  --sl-color-gray-1: var(--light-2);
+  /* ... */
+}
+
+/* Light mode */
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-white: var(--dark-1);  /* Inverted */
+  --sl-color-gray-1: var(--dark-2);
+  /* ... */
+}
+```
+
+**Color Mapping Examples:**
+
+```css
+/* Gray palette → Foundation colors */
+--sl-color-white: var(--light-1);
+--sl-color-gray-1: var(--light-2);
+--sl-color-gray-5: var(--dark-4);
+--sl-color-black: var(--dark-2);
+
+/* Semantic colors → OKLCH relative colors */
+--sl-color-orange-low: oklch(from var(--orange) calc(l - 0.25) c h);
+--sl-color-orange: var(--orange);
+--sl-color-orange-high: oklch(from var(--orange) calc(l + 0.15) calc(c * 0.8) h);
+
+/* Typography → Basalt scale */
+--sl-text-base: var(--font-size-body);  /* 16px */
+--sl-text-lg: var(--font-size-h5);     /* 18px */
+--sl-text-h1: var(--font-size-h1);     /* 35-42px responsive */
+
+/* Layout → Basalt spacing */
+--sl-nav-height: calc(var(--spacing-12) + var(--spacing-4));  /* 64px */
+--sl-sidebar-pad-x: var(--spacing-4);  /* 16px */
+```
+
+**Usage in Apps:**
+
+Import the dedicated Starlight CSS file directly in your Starlight configuration:
+
+```javascript
+// astro.config.mjs
+import starlight from '@astrojs/starlight';
+
+export default defineConfig({
+  integrations: [
+    starlight({
+      title: 'My Docs',
+      customCss: [
+        // Import basalt-ui's Starlight integration
+        './node_modules/basalt-ui/src/starlight.css',
+        // Or in workspace: '../../../packages/basalt-ui/src/starlight.css'
+      ],
+    }),
+  ],
+});
+```
+
+**Package Export:**
+
+The package exports `basalt-ui/starlight` which imports the full design system:
+
+```css
+/* basalt-ui/src/starlight.css */
+@import "./index.css";
+```
+
+**Why this approach?** Starlight has its own layout system separate from your main app, so it needs explicit CSS import. We provide a dedicated entry point (`starlight.css`) that apps can reference directly - no wrapper files needed!
+
+**Result:**
+- All Starlight components use Basalt UI colors, typography, and spacing
+- Dark/light mode switching works seamlessly via `data-theme` attribute
+- Responsive behavior at Starlight's breakpoints (50em, 72rem)
+- WCAG AA contrast ratios maintained
+- No duplication - single source of truth in package
+
+**Code Location:** `src/index.css` lines 710-935 (Starlight Compatibility Layer)
+
+**Related:** Apps using basalt-ui can now add Starlight documentation without any additional styling configuration. See `apps/web` for working example.
 
 ### Semantic Color Tokens (ShadCN Compatible)
 

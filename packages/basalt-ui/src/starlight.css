@@ -1,0 +1,280 @@
+/**
+ * Basalt UI - Starlight Integration
+ *
+ * Import this file in your Starlight configuration to apply Basalt UI styling
+ * to all Starlight documentation pages.
+ *
+ * Usage in astro.config.mjs:
+ *
+ * ```javascript
+ * starlight({
+ *   title: 'My Docs',
+ *   customCss: ['basalt-ui/starlight'], // or './node_modules/basalt-ui/src/starlight.css'
+ * })
+ * ```
+ *
+ * This file imports the complete Basalt UI design system, which includes:
+ * - Tailwind CSS v4 base styles
+ * - Basalt UI foundation colors and tokens
+ * - Tremor Raw compatibility
+ * - ShadCN compatibility
+ * - Complete Starlight CSS variable mappings (60+ variables)
+ *
+ * All Starlight components will automatically use Basalt UI colors, typography,
+ * spacing, and styling. Dark/light mode switching works automatically via
+ * Starlight's data-theme attribute.
+ */
+
+@import "./index.css";
+
+/* ============================================================================
+   STARLIGHT COMPATIBILITY LAYER
+   ============================================================================
+
+   Comprehensive CSS variable mapping for Astro Starlight documentation framework.
+   Maps all Starlight design tokens to Basalt UI foundation palette and tokens.
+
+   Integration Philosophy:
+   - Starlight uses 60+ CSS variables for theming
+   - We map ALL variables to ensure complete Basalt UI styling
+   - Follows same centralized approach as Tremor integration
+   - Apps using basalt-ui get Starlight support automatically
+
+   Starlight Documentation: https://starlight.astro.build/guides/css-and-tailwind/
+   Props Reference: https://github.com/withastro/starlight/blob/main/packages/starlight/style/props.css
+
+   Dark Mode:
+   - Starlight uses data-theme="light" attribute on <html> for light mode
+   - Dark mode is default (no attribute or data-theme="dark")
+   - We support both with :root (dark) and :root[data-theme='light'] (light)
+   ============================================================================ */
+
+:root,
+::backdrop {
+  /* === STARLIGHT GRAY PALETTE (Dark Mode Default) === */
+  /* Maps to Basalt foundation colors for neutral surfaces and text */
+  /* Dark mode expects: dark backgrounds, light text */
+
+  --sl-color-white: var(--white); /* Soft white for text (not harsh) */
+  --sl-color-gray-1: var(--text-subdued-dark); /* Light gray for subdued text (0.8) */
+  --sl-color-gray-2: var(--text-subdued-dark); /* Medium - borders, muted elements (0.31) */
+  --sl-color-gray-3: var(--dark-1); /* Cards, elevated surfaces (0.26) */
+  --sl-color-gray-4: var(--dark-2); /* Main background (0.24) */
+  --sl-color-gray-5: var(--dark-4); /* Main background (0.24) */
+  --sl-color-gray-6: var(--dark-4); /* Cards (0.26) */
+  --sl-color-black: var(--dark-4); /* Darkest - near black (0.195) */
+
+  /* === SEMANTIC COLOR HUES === */
+  /* Extract hue values from Basalt OKLCH colors for Starlight's HSL system */
+
+  --sl-hue-orange: 38; /* From oklch(0.6929 0.0963 38.24) */
+  --sl-hue-green: 131; /* From oklch(0.7683 0.0749 131.06) */
+  --sl-hue-blue: 249; /* From oklch(0.6965 0.0591 248.69) */
+  --sl-hue-purple: 333; /* From oklch(0.6921 0.0625 332.66) */
+  --sl-hue-red: 15; /* From oklch(0.6061 0.1206 15.34) */
+
+  /* === COLOR INTENSITY VARIANTS === */
+  /* Using OKLCH relative color syntax for perceptually uniform variations */
+
+  /* Orange (warnings, annotations) */
+  --sl-color-orange-low: oklch(from var(--orange) calc(l - 0.25) c h);
+  --sl-color-orange: var(--orange);
+  --sl-color-orange-high: oklch(from var(--orange) calc(l + 0.15) calc(c * 0.8) h);
+
+  /* Green (success, confirmations) */
+  --sl-color-green-low: oklch(from var(--green) calc(l - 0.25) c h);
+  --sl-color-green: var(--green);
+  --sl-color-green-high: oklch(from var(--green) calc(l + 0.1) calc(c * 0.8) h);
+
+  /* Blue (info, links) */
+  --sl-color-blue-low: var(--chart-blue-7); /* Darker blue (0.42) */
+  --sl-color-blue: var(--blue); /* Primary blue (0.6965) */
+  --sl-color-blue-high: var(--chart-blue-2); /* Lighter blue (0.80) */
+
+  /* Purple (special features) */
+  --sl-color-purple-low: oklch(from var(--purple) calc(l - 0.25) c h);
+  --sl-color-purple: var(--purple);
+  --sl-color-purple-high: oklch(from var(--purple) calc(l + 0.15) calc(c * 0.8) h);
+
+  /* Red (errors, destructive actions) */
+  --sl-color-red-low: oklch(from var(--red) calc(l - 0.2) c h);
+  --sl-color-red: var(--red);
+  --sl-color-red-high: oklch(from var(--red) calc(l + 0.15) calc(c * 0.8) h);
+
+  /* === ACCENT COLORS (Primary Blue) === */
+  --sl-color-accent-low: var(--blue-light); /* Light blue for subtle highlights */
+  --sl-color-accent: var(--blue); /* Primary accent color */
+  --sl-color-accent-high: var(--blue-deep); /* Deep blue for emphasis */
+
+  /* === UI-SPECIFIC BACKGROUNDS === */
+  /* Dark mode: use dark foundation colors directly */
+  --sl-color-bg: var(--dark-2); /* Main page background */
+  --sl-color-bg-nav: var(--dark-3); /* Navigation bar background */
+  --sl-color-bg-sidebar: var(--dark-3); /* Sidebar background */
+  --sl-color-bg-inline-code: var(--dark-4); /* Inline code background */
+  --sl-color-bg-accent: var(--blue); /* Accent backgrounds (badges, highlights) */
+
+  /* === TEXT COLORS === */
+  /* Dark mode: use light colors for text */
+  --sl-color-text: var(--light-3); /* Soft white for primary text */
+  --sl-color-text-accent: var(--blue); /* Accent text (links) */
+  --sl-color-text-invert: var(--white); /* Dark text on accent backgrounds */
+
+  /* === BORDERS & DIVIDERS === */
+  /* Dark mode: use dark foundation colors */
+  --sl-color-hairline-light: oklch(from var(--dark-4) calc(l - 0.02) c h);
+  --sl-color-hairline: var(--dark-4);
+  --sl-color-hairline-shade: oklch(from var(--dark-4) calc(l + 0.03) c h);
+
+  /* === OVERLAY === */
+  --sl-color-backdrop-overlay: oklch(0 0 0 / 0.66); /* Semi-transparent backdrop */
+
+  /* === SHADOWS (Dark Mode) === */
+  --sl-shadow-sm: var(--shadow-sm);
+  --sl-shadow-md: var(--shadow-md);
+  --sl-shadow-lg: var(--shadow-lg);
+
+  /* === TYPOGRAPHY SCALE === */
+  /* Map Starlight text sizes to Basalt typography tokens */
+
+  --sl-text-2xs: var(--font-size-caption); /* 12px */
+  --sl-text-xs: 0.8125rem; /* 13px (Starlight-specific) */
+  --sl-text-sm: var(--font-size-small); /* 14px */
+  --sl-text-base: var(--font-size-body); /* 16px */
+  --sl-text-lg: var(--font-size-h5); /* 18px */
+  --sl-text-xl: var(--font-size-h4); /* 20px */
+  --sl-text-2xl: var(--font-size-h3); /* 24px */
+  --sl-text-3xl: var(--font-size-h2); /* 32px → 29px (close) */
+  --sl-text-4xl: var(--font-size-h1); /* 40px → 35px (close) */
+  --sl-text-5xl: var(--font-size-hero); /* 48px → 42px (close) */
+  --sl-text-6xl: var(--font-size-display); /* 64px */
+
+  /* Semantic text sizes */
+  --sl-text-body: var(--font-size-body);
+  --sl-text-body-sm: var(--font-size-caption);
+  --sl-text-code: var(--font-size-small);
+  --sl-text-code-sm: var(--font-size-caption);
+
+  /* Heading sizes */
+  --sl-text-h1: var(--font-size-h1);
+  --sl-text-h2: var(--font-size-h2);
+  --sl-text-h3: var(--font-size-h3);
+  --sl-text-h4: var(--font-size-h4);
+  --sl-text-h5: var(--font-size-h5);
+
+  /* === FONTS === */
+  --sl-font-system: var(--font-body); /* Nunito Sans */
+  --sl-font-system-mono: var(--font-mono); /* JetBrains Mono */
+  --sl-font: var(--font-body); /* Override for custom font */
+  --sl-font-mono: var(--font-mono); /* Override for custom mono font */
+
+  /* === LINE HEIGHTS === */
+  /* --sl-line-height: var(--line-height-body); /* 1.5 (body text) */
+  /* --sl-line-height-headings: var(--line-height-h2); /* 1.2 (headings) */
+
+  /* === LAYOUT TOKENS === */
+  /* Use Basalt spacing scale for consistent measurements */
+
+  /* --sl-nav-height: calc(var(--spacing-12) + var(--spacing-4)); /* 64px */
+  /* --sl-nav-pad-x: var(--spacing-4); /* 16px */
+  /* --sl-nav-pad-y: var(--spacing-3); /* 12px */
+  /* --sl-mobile-toc-height: var(--spacing-12); /* 48px */
+  /* --sl-sidebar-width: 18.75rem; /* 300px (keep Starlight's value) */
+  /* --sl-sidebar-pad-x: var(--spacing-4); /* 16px */
+  /* --sl-content-width: 45rem; /* 720px (keep Starlight's value) */
+  /* --sl-content-pad-x: var(--spacing-4); /* 16px */
+  /* --sl-content-gap-y: var(--spacing-4); /* 16px */
+  /* --sl-main-pad: 0 0 3vh 0; /* Keep Starlight's viewport-based value */
+  /* --sl-menu-button-size: var(--spacing-8); /* 32px */
+  /* --sl-nav-gap: var(--spacing-4); /* 16px */
+
+  /* === Z-INDEX TOKENS === */
+  /* Keep Starlight's z-index values for proper stacking */
+  /* --sl-z-index-toc: 4;
+  /* --sl-z-index-menu: 5;
+  /* --sl-z-index-navbar: 10;
+  /* --sl-z-index-skiplink: 20;
+
+  /* === UTILITY VALUES === */
+  /* --sl-outline-offset-inside: -0.1875rem; /* For inset focus outlines */
+}
+
+/* === STARLIGHT LIGHT MODE === */
+/* Inverted color mappings for light mode when data-theme="light" is set */
+/* Light mode expects: light backgrounds, dark text */
+
+:root[data-theme="light"],
+[data-theme="light"] ::backdrop {
+  --sl-color-white: var(--dark-1); /* Soft white for text (not harsh) */
+  --sl-color-gray-1: var(--text-subdued-light); /* Light gray for subdued text (0.8) */
+  --sl-color-gray-2: var(--text-subdued-light); /* Medium - borders, muted elements (0.31) */
+  --sl-color-gray-3: var(--light-1); /* Cards, elevated surfaces (0.26) */
+  --sl-color-gray-4: var(--light-2); /* Main background (0.24) */
+  --sl-color-gray-5: var(--light-4); /* Main background (0.24) */
+  --sl-color-gray-6: var(--light-4); /* Cards (0.26) */
+  --sl-color-black: var(--light-1); /* Darkest - near black (0.195) */
+
+  /* Light mode specific background overrides */
+  --sl-color-bg: var(--light-1); /* Main background - almost white */
+  --sl-color-bg-nav: var(--light-2); /* Navigation - slightly elevated */
+  --sl-color-bg-sidebar: var(--light-2); /* Sidebar - elevated */
+  --sl-color-bg-inline-code: var(--light-3); /* Muted background for code */
+
+  /* === TEXT COLORS === */
+  /* Light mode: use dark colors for text */
+  --sl-color-text: var(--dark-4); /* Rich dark gray for readable text */
+  /* --sl-color-text-accent: var(--blue); /* Accent text (links) */
+  /* --sl-color-text-invert: var(--white); /* Dark text on accent backgrounds */
+
+  /* === BORDERS & DIVIDERS === */
+  /* Light mode: use light foundation colors */
+  --sl-color-hairline-light: oklch(from var(--light-4) calc(l - 0.02) c h);
+  --sl-color-hairline: var(--light-4);
+  --sl-color-hairline-shade: oklch(from var(--light-4) calc(l + 0.03) c h);
+
+  /* Light mode color adjustments for better contrast */
+  --sl-color-orange-high: oklch(from var(--orange) calc(l - 0.2) calc(c * 1.1) h);
+  --sl-color-orange-low: oklch(from var(--orange) calc(l + 0.2) calc(c * 0.7) h);
+
+  --sl-color-green-high: oklch(from var(--green) calc(l - 0.25) calc(c * 1.1) h);
+  --sl-color-green-low: oklch(from var(--green) calc(l + 0.15) calc(c * 0.7) h);
+
+  --sl-color-blue-high: var(--blue-deep); /* Darker for light mode */
+  --sl-color-blue-low: var(--chart-blue-1); /* Lighter for light mode */
+
+  --sl-color-purple-high: oklch(from var(--purple) calc(l - 0.2) calc(c * 1.1) h);
+  --sl-color-purple-low: oklch(from var(--purple) calc(l + 0.2) calc(c * 0.7) h);
+
+  --sl-color-red-high: oklch(from var(--red) calc(l - 0.2) calc(c * 1.1) h);
+  --sl-color-red-low: oklch(from var(--red) calc(l + 0.2) calc(c * 0.7) h);
+}
+
+/* === STARLIGHT RESPONSIVE OVERRIDES === */
+/* Adjust sizes at breakpoints for better UX */
+
+/* @media (min-width: 50em) {
+/*   :root {
+/*     --sl-nav-height: var(--spacing-16); /* 64px on larger screens */
+/*     --sl-nav-pad-x: var(--spacing-6); /* 24px on larger screens */
+/*     --sl-text-h1: var(--font-size-hero); /* 48px on larger screens */
+/*     --sl-text-h2: var(--font-size-h1); /* 40px on larger screens */
+/*     --sl-text-h3: var(--font-size-h2); /* 32px on larger screens */
+/*     --sl-text-h4: var(--font-size-h3); /* 24px on larger screens */
+/*   }
+/* }
+/*
+/* @media (min-width: 72rem) {
+/*   :root {
+/*     --sl-content-pad-x: var(--spacing-6); /* 24px on desktop */
+/*     --sl-mobile-toc-height: 0; /* Hide mobile TOC on desktop */
+/*   }
+/* } */
+
+.pagination-links a {
+  background-color: var(--dark-3);
+}
+
+:root[data-theme="light"],
+[data-theme="light"] .pagination-links a {
+  background-color: var(--light-1);
+}

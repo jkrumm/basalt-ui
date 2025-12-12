@@ -181,7 +181,7 @@ muted-foreground  /* var(--text-subdued-light) - Secondary text */
 
 /* Dark Mode */
 background   /* var(--dark-2) - Main background */
-foreground   /* oklch(0.935 0.005 90) - Soft white */
+foreground   /* var(--light-3) - Soft white */
 card         /* var(--dark-3) - Elevated surfaces */
 muted        /* var(--dark-4) - Subtle backgrounds */
 border       /* var(--dark-4) - Borders, dividers */
