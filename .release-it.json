@@ -2,6 +2,7 @@
   "$schema": "https://unpkg.com/release-it/schema/release-it.json",
   "git": {
     "commitMessage": "chore: release v${version}",
+    "commitArgs": ["--no-verify"],
     "tagName": "v${version}",
     "tagAnnotation": "Release ${version}",
     "requireBranch": "master",
@@ -32,7 +33,7 @@
   "hooks": {
     "before:init": ["bun run pre"],
     "after:bump": [
-      "cd packages/basalt-ui && bun version ${version} --no-git-tag-version",
+      "cd packages/basalt-ui && bun pm version ${version} --no-git-tag-version --allow-same-version",
       "git add packages/basalt-ui/package.json packages/basalt-ui/CHANGELOG.md"
     ]
   }
