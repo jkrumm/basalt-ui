@@ -1,0 +1,22 @@
+comment:
+  on-update: recreate
+
+  snippets:
+    - id: basalt-ui-mixed-changes
+      files:
+        - all:
+            - 'packages/basalt-ui/**'
+            - 'apps/**'
+      body: |
+        <h3>:warning: Mixed changes detected</h3>
+
+        This PR modifies both `packages/basalt-ui` and `apps/`.
+        Consider splitting into separate PRs - basalt-ui should be updated independently.
+
+    - id: basalt-ui-changed
+      files:
+        - 'packages/basalt-ui/**'
+      body: |
+        <h3>:package: basalt-ui package modified</h3>
+
+        Run `bun release` after merging to publish to npm.
