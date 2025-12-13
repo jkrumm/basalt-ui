@@ -1,6 +1,6 @@
 ---
+import { Card } from '@/components/ui/card';
 import Layout from '@/layouts/Layout.astro';
-import { Card } from '@/components/tremor/Card';
 import { AreaChart } from '@/components/tremor/AreaChart';
 
 const chartData = [
@@ -24,7 +24,7 @@ const chartData = [
     <section class="space-y-8">
       <div>
         <h2 class="mb-4">Area Chart</h2>
-        <Card client:only="react">
+        <Card>
           <h3 class="text-h4 mb-4">Monthly Page Views</h3>
           <div class="h-72">
             <AreaChart
@@ -40,7 +40,7 @@ const chartData = [
 
       <div>
         <h2 class="mb-4">Multi-Series Area Chart</h2>
-        <Card client:only="react">
+        <Card>
           <h3 class="text-h4 mb-4">Product Sales Comparison</h3>
           <div class="h-72">
             <AreaChart
@@ -64,7 +64,7 @@ const chartData = [
       <div>
         <h2 class="mb-4">Color Palette Examples</h2>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Card client:only="react">
+          <Card>
             <h3 class="text-h5 mb-4">Blue (Primary)</h3>
             <div class="h-48">
               <AreaChart
@@ -79,7 +79,7 @@ const chartData = [
             </div>
           </Card>
 
-          <Card client:only="react">
+          <Card>
             <h3 class="text-h5 mb-4">Green (Success)</h3>
             <div class="h-48">
               <AreaChart
@@ -94,7 +94,7 @@ const chartData = [
             </div>
           </Card>
 
-          <Card client:only="react">
+          <Card>
             <h3 class="text-h5 mb-4">Violet (Accent)</h3>
             <div class="h-48">
               <AreaChart
@@ -109,7 +109,7 @@ const chartData = [
             </div>
           </Card>
 
-          <Card client:only="react">
+          <Card>
             <h3 class="text-h5 mb-4">Amber (Warning)</h3>
             <div class="h-48">
               <AreaChart

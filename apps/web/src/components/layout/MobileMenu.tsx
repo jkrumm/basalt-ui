@@ -1,4 +1,4 @@
-import { Menu, X } from 'lucide-react'
+import { IconMenu2, IconX } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 
 import ThemeToggle from '@/components/shared/ThemeToggle'
@@ -35,7 +35,7 @@ export function MobileMenuButton() {
       aria-controls="mobile-menu"
       className="md:hidden"
     >
-      {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      {isOpen ? <IconX className="h-5 w-5" /> : <IconMenu2 className="h-5 w-5" />}
     </Button>
   )
 }

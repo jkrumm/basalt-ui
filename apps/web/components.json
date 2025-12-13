@@ -1,6 +1,6 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
+  "style": "base-mira",
   "rsc": false,
   "tsx": true,
   "tailwind": {
@@ -13,7 +13,12 @@
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
-    "ui": "@/components/ui"
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "tabler",
+  "menuColor": "default",
+  "menuAccent": "bold",
+  "registries": {}
 }
