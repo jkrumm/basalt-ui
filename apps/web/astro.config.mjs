@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
 
 export default defineConfig({
-  site: 'https://basalt-ui.com', // Update with actual domain when available
+  site: 'https://basalt-ui.com',
   integrations: [
     react(),
     starlight({
