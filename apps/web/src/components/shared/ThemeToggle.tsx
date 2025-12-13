@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { IconDeviceDesktopFilled, IconMoonFilled, IconSunFilled } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -56,9 +56,9 @@ export default function ThemeToggle() {
   }
 
   const icons = {
-    light: Sun,
-    dark: Moon,
-    system: Monitor,
+    light: IconSunFilled,
+    dark: IconMoonFilled,
+    system: IconDeviceDesktopFilled,
   }
 
   const Icon = icons[theme]
@@ -80,7 +80,7 @@ export default function ThemeToggle() {
         type="button"
         disabled
       >
-        <Monitor className="h-4 w-4" />
+        <IconDeviceDesktopFilled className="h-4 w-4" />
         <span>System</span>
       </Button>
     )
