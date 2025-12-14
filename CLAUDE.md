@@ -31,7 +31,7 @@ Framework-agnostic Tailwind CSS design system with zinc-based colors.
 - **Git**: Conventional commits enforced via commitlint
 - **Theme**: Tailwind v4 (not v3 - important!)
 - **Components**: ShadCN (copy-paste, not dependency)
-- **Fonts**: Google Fonts (not self-hosted)
+- **Fonts**: Self-hosted variable fonts via @fontsource (Instrument Sans Variable, JetBrains Mono Variable)
 
 ## Structure
 
@@ -352,7 +352,7 @@ chore: release v0.1.0
 - ❌ Don't commit to master directly
 - ❌ Don't use default exports
 - ❌ Don't use `any` in TypeScript
-- ❌ Don't self-host fonts (use Google Fonts)
+- ❌ Don't use Google Fonts (use self-hosted @fontsource variable fonts)
 
 ## Project Philosophy
 

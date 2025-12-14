@@ -26,31 +26,6 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="darkreader-lock" />
 
-    <!-- Google Fonts - Zero-flicker loading strategy -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    {
-      (() => {
-        // Build font URL once, reuse across preload/link/noscript
-        const fontUrl = new URL('https://fonts.googleapis.com/css2');
-        fontUrl.searchParams.set('family', 'Lato:wght@400;700');
-        fontUrl.searchParams.append('family', 'Nunito+Sans:wght@400');
-        fontUrl.searchParams.append('family', 'JetBrains+Mono:wght@400');
-        fontUrl.searchParams.set('display', 'swap');
-        const href = fontUrl.toString();
-
-        return (
-          <>
-            <link rel="preload" as="style" href={href} fetchpriority="high" />
-            <link rel="stylesheet" href={href} media="print" onload="this.media='all'" />
-            <noscript>
-              <link rel="stylesheet" href={href} />
-            </noscript>
-          </>
-        );
-      })()
-    }
-
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {canonicalURL && <link rel="canonical" href={canonicalURL} />}
 

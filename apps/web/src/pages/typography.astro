@@ -5,18 +5,17 @@ import Layout from '@/layouts/Layout.astro';
 
 <Layout
   title="Typography - Basalt UI"
-  description="Complete typography system with Google Fonts: Lato, Nunito Sans, and JetBrains Mono"
+  description="Advanced variable font system: Instrument Sans with width axis (condensed/wide), JetBrains Mono with ligatures. Zero flicker, optimal performance."
 >
   <main class="prose container mx-auto max-w-6xl px-4 py-16">
     <!-- Hero Section -->
-    <div class="prose prose-basalt mb-16">
+    <div class="prose mb-16">
       <h1 class="text-display tracking-tight">Typography</h1>
       <p class="text-muted-foreground max-w-2xl">
-        Basalt UI uses the <code class="text-sm">@tailwindcss/typography</code> plugin with opt-in semantic
-        HTML styling via the <code class="text-sm">.prose</code> class. Content areas like blog posts
-        and articles get automatic typography, while UI components stay clean and conflict-free. Three
-        font families — Lato for headings, Nunito Sans for body, and JetBrains Mono for code — support
-        the warm, professional aesthetic.
+        Modern variable fonts with width control: <strong>Instrument Sans</strong> for UI text (with <code
+          >.font-condensed</code
+        > and <code>.font-wide</code> utilities) and <strong>JetBrains Mono</strong> for code (with ligatures).
+        Opt-in semantic HTML styling via <code>.prose</code> class.
       </p>
     </div>
 
@@ -35,8 +34,8 @@ import Layout from '@/layouts/Layout.astro';
               </p>
               <h3>This is an h3 heading</h3>
               <p>
-                Notice how headings use Lato (bold) and body text uses Nunito Sans (regular). The
-                spacing, sizing, and colors are all automatic within <code>.prose</code> containers.
+                Notice how spacing, sizing, and colors are all automatic within <code>.prose</code> containers.
+                Instrument Sans provides consistent typography across headings and body text.
               </p>
               <p>
                 <a href="#">Links are styled automatically too</a>, with the blue accent color and
@@ -56,7 +55,7 @@ import Layout from '@/layouts/Layout.astro';
               </p>
             </article>
           </div>
-          <div class="text-small text-muted-foreground">
+          <div class="text-muted-foreground text-sm">
             👆 All the typography above uses semantic HTML with the <code class="text-xs"
               >.prose</code
             > class on the container.
@@ -70,7 +69,7 @@ import Layout from '@/layouts/Layout.astro';
       <h2>Why Opt-In with .prose?</h2>
       <Card>
         <CardContent className="pt-6">
-          <div class="prose prose-basalt space-y-4">
+          <div class="prose space-y-4">
             <p>
               Basalt UI uses <strong>opt-in typography</strong> to avoid conflicts with component libraries
               like ShadCN and Tremor. Global semantic HTML defaults would interfere with:
@@ -106,19 +105,23 @@ import Layout from '@/layouts/Layout.astro';
     <section class="mb-16">
       <h2>Font Families</h2>
 
-      <div class="grid gap-6 md:grid-cols-3">
+      <div class="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Lato (Headings)</CardTitle>
+            <CardTitle>Instrument Sans Variable</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="space-y-4">
               <div class="font-heading text-2xl">The quick brown fox jumps over the lazy dog</div>
               <div class="text-muted-foreground text-sm">
-                <code class="font-mono">font-heading</code> • Weights: 400, 700
+                <code class="font-mono">font-heading</code> / <code class="font-mono"
+                  >font-body</code
+                > • Weights: 400-700 • Width: 85-110%
               </div>
               <div class="text-muted-foreground text-caption">
-                Used for all headings (h1-h6), display text, and hero sections
+                Used for all text (headings, body, UI). Variable font with width axis for <code
+                  >.font-condensed</code
+                > / <code>.font-wide</code> utilities.
               </div>
             </div>
           </CardContent>
@@ -126,33 +129,18 @@ import Layout from '@/layouts/Layout.astro';
 
         <Card>
           <CardHeader>
-            <CardTitle>Nunito Sans (Body)</CardTitle>
+            <CardTitle>JetBrains Mono Variable</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="space-y-4">
-              <div class="font-body text-2xl">The quick brown fox jumps over the lazy dog</div>
+              <div class="font-mono text-2xl">!== !== {'<='} {'>='} {'=>'}</div>
               <div class="text-muted-foreground text-sm">
-                <code class="font-mono">font-body</code> • Weight: 400
+                <code class="font-mono">font-mono</code> • Weights: 400-700 • Ligatures enabled
               </div>
               <div class="text-muted-foreground text-caption">
-                Used for paragraph text, descriptions, and general content
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>JetBrains Mono (Code)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="space-y-4">
-              <div class="font-mono text-2xl">The quick brown fox</div>
-              <div class="text-muted-foreground text-sm">
-                <code class="font-mono">font-mono</code> • Weight: 400
-              </div>
-              <div class="text-muted-foreground text-caption">
-                Used for code blocks, inline code, and technical content
+                Used for code blocks, inline code. Code ligatures for operators (!==, {'<='}, {
+                  '=>'
+                })
               </div>
             </div>
           </CardContent>
@@ -170,8 +158,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- Display -->
             <div class="border-border border-b pb-6">
               <div class="text-display tracking-tight">Display Text</div>
-              <div class="text-small text-muted-foreground font-mono">
-                text-display • 64px / 77px line-height • Lato Bold • -0.5px tracking
+              <div class="text-muted-foreground font-mono text-sm">
+                text-display • 64px / 77px • 700 weight • -0.5px tracking
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Used for hero sections and large marketing headlines (requires .text-display class)
@@ -181,8 +169,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- Hero -->
             <div class="border-border border-b pb-6">
               <div class="text-hero">Hero Text</div>
-              <div class="text-small text-muted-foreground font-mono">
-                text-hero • 48px / 58px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                text-hero • 48px / 58px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Subhero sections and large page headers (requires .text-hero class)
@@ -192,8 +180,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H1 -->
             <div class="border-border border-b pb-6">
               <h1>Heading 1</h1>
-              <div class="text-small text-muted-foreground font-mono">
-                h1 element • 40px / 48px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h1 element • 40px / 48px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Primary page heading (automatic styling, no class needed)
@@ -203,8 +191,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H2 -->
             <div class="border-border border-b pb-6">
               <h2>Heading 2</h2>
-              <div class="text-small text-muted-foreground font-mono">
-                h2 element • 32px / 42px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h2 element • 32px / 42px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Section headers (automatic styling, no class needed)
@@ -214,8 +202,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H3 -->
             <div class="border-border border-b pb-6">
               <h3>Heading 3</h3>
-              <div class="text-small text-muted-foreground font-mono">
-                h3 element • 24px / 34px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h3 element • 24px / 34px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Subsection headers (automatic styling)
@@ -225,8 +213,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H4 -->
             <div class="border-border border-b pb-6">
               <h4>Heading 4</h4>
-              <div class="text-small text-muted-foreground font-mono">
-                h4 element • 20px / 28px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h4 element • 20px / 28px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Card titles (automatic styling)
@@ -236,8 +224,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H5 -->
             <div class="border-border border-b pb-6">
               <h5>Heading 5</h5>
-              <div class="text-small text-muted-foreground font-mono">
-                h5 element • 18px / 27px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h5 element • 18px / 27px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Small section headings (automatic styling)
@@ -247,8 +235,8 @@ import Layout from '@/layouts/Layout.astro';
             <!-- H6 -->
             <div class="border-border border-b pb-6">
               <h6>Heading 6</h6>
-              <div class="text-small text-muted-foreground font-mono">
-                h6 element • 16px / 24px line-height • Lato Bold
+              <div class="text-muted-foreground font-mono text-sm">
+                h6 element • 16px / 24px • 700 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Tiny section headings (automatic styling)
@@ -259,11 +247,10 @@ import Layout from '@/layouts/Layout.astro';
             <div class="border-border border-b pb-6">
               <p>
                 Body text: The quick brown fox jumps over the lazy dog. This is the default
-                paragraph text style used throughout the design system. Nunito Sans provides a
-                friendly, readable aesthetic.
+                paragraph text style used throughout the design system.
               </p>
-              <div class="text-small text-muted-foreground font-mono">
-                p element • 16px / 24px line-height • Nunito Sans Regular
+              <div class="text-muted-foreground font-mono text-sm">
+                p element • 16px / 24px • 400 weight
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Paragraph text and general content (automatic styling, default)
@@ -272,14 +259,12 @@ import Layout from '@/layouts/Layout.astro';
 
             <!-- Small -->
             <div class="border-border border-b pb-6">
-              <div class="text-small">
+              <div class="text-sm">
                 Small text for metadata, captions, and secondary information
               </div>
-              <div class="text-small text-muted-foreground font-mono">
-                text-small • 14px / 20px line-height
-              </div>
+              <div class="text-muted-foreground font-mono text-sm">text-sm • 14px / 20px</div>
               <div class="text-caption text-muted-foreground mt-2">
-                Metadata and captions (requires .text-small class)
+                Metadata and captions (requires .text-sm class)
               </div>
             </div>
 
@@ -288,8 +273,8 @@ import Layout from '@/layouts/Layout.astro';
               <div class="text-caption">
                 Caption text for legal disclaimers, footnotes, and fine print
               </div>
-              <div class="text-small text-muted-foreground font-mono">
-                text-caption • 12px / 16px line-height
+              <div class="text-muted-foreground text-caption font-mono">
+                text-caption • 12px / 16px
               </div>
               <div class="text-caption text-muted-foreground mt-2">
                 Legal text and footnotes (requires .text-caption class)
@@ -322,7 +307,7 @@ import Layout from '@/layouts/Layout.astro';
 
 <!-- Custom sizes when needed -->
 <div class="text-display">Extra Large Hero</div>
-<span class="text-small">Metadata or caption</span>
+<span class="text-sm">Metadata or caption</span>
 
 <!-- Markup is cleaner, more semantic -->`}</pre>
               </div>
@@ -390,57 +375,46 @@ import Layout from '@/layouts/Layout.astro';
       </div>
     </section>
 
-    <!-- Implementation Section -->
+    <!-- Width Utilities Section -->
     <section>
-      <h2>Implementation</h2>
+      <h2>Variable Font Width</h2>
 
       <Card>
         <CardHeader>
-          <CardTitle>Loading Google Fonts</CardTitle>
+          <CardTitle>Width Utilities</CardTitle>
         </CardHeader>
         <CardContent>
           <div class="space-y-4">
-            <p class="font-body text-body">
-              Basalt UI uses an optimized font loading strategy to prevent layout shift and ensure
-              fast page loads. Add these lines to your HTML <code class="font-mono text-sm"
-                >&lt;head&gt;</code
-              >:
-            </p>
+            <div>
+              <p class="mb-2 text-sm font-semibold">Standard (100% width):</p>
+              <p class="text-base">This is Instrument Sans at normal width. Friendly and modern.</p>
+            </div>
+
+            <div>
+              <p class="mb-2 text-sm font-semibold">Condensed (85% width) - Data-focused:</p>
+              <p class="font-condensed text-base tracking-wider uppercase">
+                DASHBOARD ANALYTICS • SYSTEM STATUS • COMPACT UI
+              </p>
+            </div>
+
+            <div>
+              <p class="mb-2 text-sm font-semibold">Wide (110% width) - Spacious, labels:</p>
+              <p class="font-wide text-base">Generous spacing for button labels and callouts</p>
+            </div>
 
             <pre
-              class="bg-muted overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Preconnect to Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+              class="bg-muted mt-4 overflow-x-auto rounded p-4 font-mono text-xs">{`<!-- Condensed for tight, industrial look -->
+<div class="font-condensed uppercase tracking-wider text-xs font-semibold">
+  System Status
+</div>
 
-<!-- Load fonts with display=swap for zero flicker -->
-<link
-  rel="preload"
-  as="style"
-  href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
-  fetchpriority="high"
-/>
-<link
-  rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
-  media="print"
-  onload="this.media='all'"
-/>
-<noscript>
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Nunito+Sans:wght@400&family=JetBrains+Mono:wght@400&display=swap"
-  />
-</noscript>`}</pre>
+<!-- Wide for friendly, spacious feel -->
+<button class="font-wide text-lg">
+  Get Started
+</button>
 
-            <div class="border-border bg-muted/50 rounded border p-4">
-              <p class="mb-2 text-sm font-bold">Performance Benefits:</p>
-              <ul class="list-inside list-disc space-y-1 text-sm">
-                <li>Zero blocking: Fonts load asynchronously</li>
-                <li>Early connection: Preconnect reduces latency by 200-500ms</li>
-                <li>FOUT prevention: display=swap shows text immediately with fallbacks</li>
-                <li>Minimal CLS: Fallback fonts matched to web fonts</li>
-              </ul>
-            </div>
+<!-- Code with ligatures -->
+<code class="font-mono">!== !== <= >= -> =></code>`}</pre>
           </div>
         </CardContent>
       </Card>

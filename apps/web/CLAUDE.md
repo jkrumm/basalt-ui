@@ -210,6 +210,7 @@ In Bun workspaces, CSS imports from workspace packages work best with relative p
 - Color tokens (background, foreground, primary, muted, border, ring)
 - Typography scale
 - Border radius tokens
+- CDN-loaded variable fonts with `font-display: block` (no flicker)
 
 **Workspace Dependency:**
 ```json
@@ -218,6 +219,32 @@ In Bun workspaces, CSS imports from workspace packages work best with relative p
     "basalt-ui": "workspace:*"
   }
 }
+```
+
+## Font Loading
+
+**Default Behavior (from basalt-ui):**
+- Fonts load from jsDelivr CDN
+- Uses `font-display: block` → brief invisible text (~100ms), then font shows
+- No jarring swap/flicker
+- No extra setup needed
+
+**Optional: Self-hosted fonts**
+
+If you prefer self-hosted over CDN, add @fontsource imports BEFORE basalt-ui:
+
+```css
+/* src/styles/global.css */
+@import "@fontsource-variable/instrument-sans/wdth.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* Your imports override basalt-ui's CDN fonts */
+@import "../../../../packages/basalt-ui/src/index.css";
+```
+
+Install dependencies:
+```bash
+bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
 ```
 
 ## Tremor Raw Integration

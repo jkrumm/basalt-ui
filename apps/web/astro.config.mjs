@@ -10,6 +10,15 @@ export default defineConfig({
     starlight({
       title: 'Basalt UI',
       description: 'Framework-agnostic Tailwind CSS design system with zinc-based colors',
+      head: [
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'darkreader-lock',
+            // The value is typically empty or not required for this specific meta tag to work
+          },
+        },
+      ],
 
       // Sidebar navigation
       sidebar: [
