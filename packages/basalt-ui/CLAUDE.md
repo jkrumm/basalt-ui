@@ -240,7 +240,7 @@ Starlight Variables Mapped:
 - **Text Colors**: `--sl-color-text-*` → Basalt foreground tokens
 - **Borders**: `--sl-color-hairline-*` → Basalt border tokens with subtle variations
 - **Typography Scale** (13 sizes): `--sl-text-*` → Basalt typography tokens
-- **Fonts**: `--sl-font-*` → Basalt font families (Nunito Sans, JetBrains Mono)
+- **Fonts**: `--sl-font-*` → Basalt font families (Instrument Sans Variable, JetBrains Mono Variable)
 - **Line Heights**: `--sl-line-height-*` → Basalt line height tokens
 - **Shadows** (3 levels): `--sl-shadow-*` → Basalt shadow tokens
 - **Layout Tokens**: `--sl-nav-height`, `--sl-sidebar-width`, etc. → Basalt spacing scale
@@ -484,7 +484,7 @@ code: {
 
 // Headings - use Basalt font family
 'h1, h2, h3, h4, h5, h6': {
-  fontFamily: 'var(--font-heading)',
+  fontFamily: 'var(--font-heading)', // Instrument Sans Variable
 },
 
 // Blockquotes - Basalt blue border
@@ -506,7 +506,7 @@ The typography plugin handles all the complex layout and spacing:
 
 Basalt only customizes:
 - Color mapping (CSS variables for automatic dark mode)
-- Font families (Lato for headings, Nunito Sans for body)
+- Font families (Instrument Sans Variable for all text, JetBrains Mono Variable for code)
 - Border radius (matches Basalt tokens)
 - Link styling (underline, weight, transitions)
 - Code backgrounds (Basalt muted color)
@@ -515,22 +515,63 @@ Basalt only customizes:
 
 ## Typography System
 
-### Font Stack
+### Font Stack (Variable Fonts)
 
-**Headings**: Lato (700 weight)
-- Modern, geometric sans-serif
-- Excellent readability at large sizes
-- Professional but approachable
+**Instrument Sans Variable** (headings & body)
+- Modern geometric sans-serif with variable wdth axis
+- All weights 400-700 in single file (~80KB)
+- Width utilities: `.font-condensed` (85%), `.font-wide` (110%)
+- Professional, data-friendly aesthetic
+- Ligatures & kerning enabled by default
 
-**Body**: Nunito Sans (400 weight)
-- Rounded, friendly sans-serif
-- Optimized for reading comfort
-- Warm, welcoming aesthetic
-
-**Mono**: JetBrains Mono (400 weight)
+**JetBrains Mono Variable** (code)
+- All weights 400-700 in single file
+- Ligatures for code operators (!=, <=, =>, etc.)
 - Increased character height
 - Clear distinction between similar characters
-- Developer-friendly
+- Developer-optimized
+
+### Font Loading Strategy (Self-Hosted)
+
+**Implementation**:
+- Self-hosted via Fontsource npm packages (font files only)
+- Custom @font-face declarations with `font-display: block`
+- Fonts bundled with the app and served from same origin
+- Version-locked in package.json for stability
+
+**Why self-hosted over CDN**:
+- ✅ Zero external DNS/TLS overhead (same-origin requests)
+- ✅ Version-locked in package.json (no surprise updates)
+- ✅ 100% GDPR-compliant (no third-party tracking)
+- ✅ Works offline during development
+- ✅ No FOUT on every page navigation (critical for Astro MPA)
+
+**Why font-display: block** (not swap):
+- Astro uses MPA architecture (Multi-Page Application)
+- Every page navigation is a full reload
+- With `swap`, users see jarring font flicker on every route change
+- With `block`, brief invisible period (~100ms) then clean font display
+- Self-hosted fonts load fast enough that block period is barely noticeable
+- **Result**: No visible flicker on page navigation
+
+**Fontsource packages used**:
+```bash
+@fontsource-variable/instrument-sans  # Includes wdth axis (condensed/wide)
+@fontsource-variable/jetbrains-mono   # All weights, ligatures
+```
+
+**Custom @font-face declarations**:
+```css
+/* Reference Fontsource font files with font-display: block */
+@font-face {
+  font-family: "Instrument Sans Variable";
+  src: url("@fontsource-variable/instrument-sans/files/instrument-sans-latin-wdth-normal.woff2");
+  font-display: block;
+  /* ... */
+}
+```
+
+**Code Location**: `src/index.css` lines 6-50 (Font Loading section)
 
 ### Type Scale
 

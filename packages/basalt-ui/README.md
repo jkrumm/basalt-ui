@@ -320,11 +320,14 @@ The `.prose` class uses Basalt CSS variables, so **no `dark:prose-invert` needed
 </body>
 ```
 
-### Font Stack
+### Font Stack (Variable Fonts)
 
-- **Headings**: Lato (700) - Modern, geometric, professional
-- **Body**: Nunito Sans (400) - Rounded, friendly, readable
-- **Mono**: JetBrains Mono (400) - Clear, developer-friendly
+- **Instrument Sans Variable** (all text) - Modern geometric sans with variable width axis (wdth), all weights 400-700, ligatures & kerning enabled
+- **JetBrains Mono Variable** (code) - All weights 400-700, code ligatures (!=, <=, =>)
+
+**Width utilities:**
+- `.font-condensed` (85% width) - Tight, data-focused
+- `.font-wide` (110% width) - Spacious, friendly
 
 ### Utility Classes
 
@@ -393,7 +396,7 @@ Basalt UI is **opinionated**. It disables arbitrary values and infinite scales.
 <!-- Undefined utilities -->
 <div class="p-7">                ❌ (use p-6 or p-8)
 <div class="text-lg">            ❌ (use text-h4 or text-small)
-<div class="font-semibold">      ❌ (use font-regular or font-bold)
+<div class="font-light">         ❌ (use font-regular, font-medium, font-semibold, or font-bold)
 ```
 
 This is **intentional**. Consistency > flexibility.
@@ -527,8 +530,11 @@ text-body, text-small, text-caption
 /* Families */
 font-heading, font-body, font-mono
 
-/* Weights */
-font-regular, font-bold
+/* Weights (Variable fonts) */
+font-regular, font-medium, font-semibold, font-bold
+
+/* Width (Variable font wdth axis) */
+font-condensed, font-wide
 
 /* Letter spacing */
 tracking-tight, tracking-normal, tracking-wide
