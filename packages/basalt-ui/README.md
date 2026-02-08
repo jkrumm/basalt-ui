@@ -36,28 +36,167 @@ More integrations will be added over time.
 
 ### Installation
 
+**Step 1: Install basalt-ui and peer dependencies**
+
 ```bash
+# Using Bun
 bun add basalt-ui
-# or
+bun add -D @tailwindcss/typography shadcn tw-animate-css
+
+# Using npm
 npm install basalt-ui
+npm install -D @tailwindcss/typography shadcn tw-animate-css
+
+# Using pnpm
+pnpm add basalt-ui
+pnpm add -D @tailwindcss/typography shadcn tw-animate-css
 ```
 
-### Setup
-
-Import the CSS in your main file:
+**Step 2: Import the CSS**
 
 ```css
-/* src/index.css or app/globals.css */
-@import "basalt-ui";
+/* src/styles/globals.css or app/globals.css */
+@import "basalt-ui/css";
 ```
 
-Add dark mode support to your HTML:
+**⚠️ Important:** Use `basalt-ui/css`, not `basalt-ui` or `basalt-ui/src/index.css`
+
+**Step 3: Add dark mode support**
 
 ```html
 <html class="dark">
   <!-- Your app -->
 </html>
 ```
+
+### Framework-Specific Setup
+
+<details>
+<summary><strong>Vite (React, Vue, Svelte)</strong></summary>
+
+**vite.config.ts:**
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [
+    tailwindcss(), // Must come before framework plugin
+    react(),
+  ],
+});
+```
+
+**src/styles/globals.css:**
+```css
+@import "basalt-ui/css";
+```
+
+**src/main.tsx:**
+```typescript
+import './styles/globals.css';
+```
+</details>
+
+<details>
+<summary><strong>Next.js (App Router)</strong></summary>
+
+**app/globals.css:**
+```css
+@import "basalt-ui/css";
+```
+
+**app/layout.tsx:**
+```typescript
+import './globals.css';
+
+export default function RootLayout({ children }) {
+  return (
+    <html className="dark">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+**Note:** Tailwind v4 CSS imports work automatically in Next.js 15+ with App Router.
+</details>
+
+<details>
+<summary><strong>Astro</strong></summary>
+
+**src/styles/global.css:**
+```css
+@import "basalt-ui/css";
+```
+
+**src/layouts/Layout.astro:**
+```astro
+---
+import '../styles/global.css';
+---
+<html class="dark">
+  <body>
+    <slot />
+  </body>
+</html>
+```
+</details>
+
+### Troubleshooting
+
+<details>
+<summary><strong>Error: "./css" is not exported under the condition "style"</strong></summary>
+
+**Cause:** Using Tailwind v4 Vite plugin with older basalt-ui version.
+
+**Fix:** Update basalt-ui to latest version (includes `"style"` export condition):
+```bash
+bun update basalt-ui
+# or
+npm update basalt-ui
+```
+</details>
+
+<details>
+<summary><strong>Error: Can't resolve '@tailwindcss/typography'</strong></summary>
+
+**Cause:** Peer dependencies not installed.
+
+**Fix:** Install all required peer dependencies:
+```bash
+bun add -D @tailwindcss/typography shadcn tw-animate-css
+```
+</details>
+
+<details>
+<summary><strong>Error: Cannot find module 'basalt-ui'</strong></summary>
+
+**Cause:** Using incorrect import path.
+
+**Fix:** Use `basalt-ui/css` (not `basalt-ui` or `basalt-ui/src/index.css`):
+```css
+/* ❌ Wrong */
+@import "basalt-ui";
+@import "basalt-ui/src/index.css";
+
+/* ✅ Correct */
+@import "basalt-ui/css";
+```
+</details>
+
+<details>
+<summary><strong>Styles not applying / Components look unstyled</strong></summary>
+
+**Cause:** CSS import order or missing Tailwind plugin.
+
+**Fix:**
+1. Ensure `basalt-ui/css` is imported in your entry CSS file
+2. For Vite: Add `@tailwindcss/vite` plugin BEFORE framework plugin
+3. For Next.js: Ensure globals.css is imported in root layout
+4. Check browser console for CSS loading errors
+</details>
 
 ### Use It
 
@@ -669,9 +808,16 @@ Not ideal for:
 
 ## Requirements
 
-- **Tailwind CSS v4+** (uses `@theme inline` syntax)
-- Modern browser with OKLCH support (Chrome, Edge, Safari, Firefox 2023+)
-- No additional dependencies
+### Peer Dependencies (Required)
+- **Tailwind CSS v4+** - Core CSS framework (uses `@theme inline` syntax)
+- **@tailwindcss/typography v0.5+** - Typography plugin for `.prose` class
+- **tw-animate-css v1.4+** - Animation utilities
+- **shadcn v3.6+** - Component utilities
+
+All peer dependencies must be installed in your project.
+
+### Browser Support
+- Modern browsers with OKLCH support (Chrome 111+, Edge 111+, Safari 15.4+, Firefox 113+)
 
 ---
 
