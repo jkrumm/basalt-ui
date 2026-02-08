@@ -184,17 +184,15 @@ Lefthook automatically runs the appropriate tool:
 
 ## MCP Tool Guidelines
 
-**Perplexity** (`@perplexity-ai/mcp-server`):
-- High-level architectural analysis
-- Broad concept summaries
-
 **Tavily** (`tavily-mcp`):
+- Web research and content extraction
 - Deep dives into specific webpages
 - Extract granular technical details
 
 **Context7** (`https://mcp.context7.com/mcp`):
 - Up-to-date library documentation
-- API references
+- Official API references
+- Framework-specific docs
 
 ## Development Guidelines
 
