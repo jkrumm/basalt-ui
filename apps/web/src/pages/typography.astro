@@ -5,7 +5,7 @@ import Layout from '@/layouts/Layout.astro';
 
 <Layout
   title="Typography - Basalt UI"
-  description="Complete typography system with Google Fonts: Lato, Nunito Sans, and JetBrains Mono"
+  description="Complete typography system with self-hosted variable fonts: Instrument Sans Variable and JetBrains Mono Variable"
 >
   <main class="prose container mx-auto max-w-6xl px-4 py-16">
     <!-- Hero Section -->
@@ -14,9 +14,9 @@ import Layout from '@/layouts/Layout.astro';
       <p class="text-muted-foreground max-w-2xl">
         Basalt UI uses the <code class="text-sm">@tailwindcss/typography</code> plugin with opt-in semantic
         HTML styling via the <code class="text-sm">.prose</code> class. Content areas like blog posts
-        and articles get automatic typography, while UI components stay clean and conflict-free. Three
-        font families — Lato for headings, Nunito Sans for body, and JetBrains Mono for code — support
-        the warm, professional aesthetic.
+        and articles get automatic typography, while UI components stay clean and conflict-free. Two variable
+        font families — Instrument Sans Variable for headings and body text, JetBrains Mono Variable for
+        code — support the warm, professional aesthetic.
       </p>
     </div>
 
@@ -35,8 +35,10 @@ import Layout from '@/layouts/Layout.astro';
               </p>
               <h3>This is an h3 heading</h3>
               <p>
-                Notice how headings use Lato (bold) and body text uses Nunito Sans (regular). The
-                spacing, sizing, and colors are all automatic within <code>.prose</code> containers.
+                Notice how headings and body text both use Instrument Sans Variable with different
+                weights and sizes. The spacing, sizing, and colors are all automatic within <code
+                  >.prose</code
+                > containers.
               </p>
               <p>
                 <a href="#">Links are styled automatically too</a>, with the blue accent color and
