@@ -1,4 +1,4 @@
-/* Import basalt-ui (includes Tailwind v4, typography plugin, and all tokens) */
+/* Import basalt-ui (includes Tailwind v4, typography plugin, fonts, and all tokens) */
 @import "../../../../packages/basalt-ui/src/index.css";
 
 [data-slot="card-content"] > h3:first-child,
