@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/jkrumm/basalt-ui/compare/v0.2.0...v0.2.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* add missing language subsets and font weights ([e667d9a](https://github.com/jkrumm/basalt-ui/commit/e667d9af7e63527d807f946e97ac556ad3792255))
+* use font-display block to prevent flickering in Astro MPAs ([c3c286f](https://github.com/jkrumm/basalt-ui/commit/c3c286ffc41db5ebe3bdec0f45523c02baa3e7fa))
+
 # [0.2.0](https://github.com/jkrumm/basalt-ui/compare/v0.1.0...v0.2.0) (2026-02-09)
 
 
