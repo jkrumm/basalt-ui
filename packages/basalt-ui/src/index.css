@@ -1,8 +1,57 @@
+/* === IMPORTS (must come first per CSS spec) === */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/instrument-sans/index.css";
-@import "@fontsource-variable/jetbrains-mono/index.css";
+
+/* === FONT LOADING: Self-Hosted via Fontsource === */
+/*
+ * Using Fontsource packages for font files, with custom @font-face declarations.
+ * Fonts are bundled with the app and served from the same origin.
+ *
+ * Benefits:
+ * - Zero external DNS/TLS overhead (same-origin requests)
+ * - Version-locked in package.json (no surprise updates)
+ * - 100% GDPR-compliant (no third-party tracking)
+ * - Works offline during development
+ * - No FOUT on page navigation (critical for Astro MPA)
+ *
+ * font-display: block (prevents flicker on every Astro page navigation)
+ * - Brief invisible text period (~100ms), then shows font immediately
+ * - No jarring font swap on each page navigation
+ * - Better UX for MPA where fonts reload on every route change
+ * - Self-hosted fonts load fast enough that block period is barely noticeable
+ */
+
+/* Instrument Sans Variable - Latin with wdth axis (condensed/wide support) */
+@font-face {
+  font-family: "Instrument Sans Variable";
+  font-style: normal;
+  font-display: block;
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  src: url("@fontsource-variable/instrument-sans/files/instrument-sans-latin-wdth-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* JetBrains Mono Variable - Latin (all weights, ligatures) */
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-display: block;
+  font-weight: 400 700;
+  src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* === TAILWIND CONFIGURATION === */
 @plugin "@tailwindcss/typography";
 @config "../tailwind.config.js";
 
