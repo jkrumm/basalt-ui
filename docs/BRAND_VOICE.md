@@ -1,10 +1,10 @@
 # BasaltUI — Brand Voice & Writing Specification
 
-**Version:** 1.0  
-**Project:** BasaltUI  
-**Website:** https://basalt-ui.com  
-**GitHub:** https://github.com/jkrumm/basalt-ui  
-**npm:** https://www.npmjs.com/package/basalt-ui  
+**Version:** 1.0
+**Project:** BasaltUI
+**Website:** https://basalt-ui.com?utm_source=brand_voice
+**GitHub:** https://github.com/jkrumm/basalt-ui?utm_source=brand_voice
+**npm:** https://www.npmjs.com/package/basalt-ui?utm_source=brand_voice
 **Author / Maintainer:** Johannes Krumm (`jkrumm`) — https://jkrumm.com
 
 ---
