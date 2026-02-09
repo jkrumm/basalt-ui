@@ -163,7 +163,7 @@
   --sl-text-h5: var(--font-size-h5);
 
   /* === FONTS === */
-  --sl-font-system: var(--font-body); /* Nunito Sans */
+  --sl-font-system: var(--font-body); /* Instrument Sans Variable */
   --sl-font-system-mono: var(--font-mono); /* JetBrains Mono */
   --sl-font: var(--font-body); /* Override for custom font */
   --sl-font-mono: var(--font-mono); /* Override for custom mono font */
@@ -277,4 +277,32 @@
 :root[data-theme="light"],
 [data-theme="light"] .pagination-links a {
   background-color: var(--light-1);
+}
+
+/* ============================================================================
+   EXPRESSIVE CODE (Syntax Highlighting) OVERRIDES
+   ============================================================================
+
+   Override Expressive Code theme colors to use Basalt UI primary blue.
+   Expressive Code is used by Starlight for code syntax highlighting.
+
+   Variables Reference:
+   - --ec-frm-edActTabIndTopCol: Active tab indicator top color
+   - --ec-frm-edActTabBg: Active tab background
+   - --ec-frm-edActTabFg: Active tab foreground (text)
+   ============================================================================ */
+
+:root {
+  /* Active tab indicator - use Basalt primary blue */
+  --ec-frm-edActTabIndTopCol: var(--blue);
+
+  /* Active tab colors */
+  --ec-frm-edActTabBg: var(--blue-light);
+  --ec-frm-edActTabFg: var(--dark-4);
+}
+
+:root[data-theme="light"] {
+  /* Light mode: darker active tab for contrast */
+  --ec-frm-edActTabBg: var(--blue);
+  --ec-frm-edActTabFg: var(--white);
 }
