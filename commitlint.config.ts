@@ -1,4 +1,4 @@
-import type { SyncRule, UserConfig } from '@commitlint/types'
+import type { UserConfig } from '@commitlint/types'
 
 const Configuration: UserConfig = {
   extends: ['@commitlint/config-conventional'],
@@ -27,32 +27,11 @@ const Configuration: UserConfig = {
         'revert',
       ],
     ],
-    'scope-case': [0], // Disable default scope-case rule
-    'scope-enum': [0], // Disable scope enum if needed
-    'scope-pattern': [2, 'always'], // Enable custom scope pattern rule
+    'scope-empty': [2, 'always'], // Disallow scopes - they're redundant in this repo
     'subject-empty': [2, 'never'],
     'subject-case': [2, 'never', ['sentence-case', 'start-case', 'pascal-case', 'upper-case']],
     'subject-full-stop': [2, 'never', '.'],
   },
-  plugins: [
-    {
-      rules: {
-        'scope-pattern': ((parsed) => {
-          const scope = parsed.scope
-          // Allow only: no scope OR Linear token pattern (JK-[number])
-          if (!scope) return [true]
-
-          const isLinearToken = /^JK-\d+$/.test(scope)
-
-          if (isLinearToken) {
-            return [true]
-          }
-
-          return [false, `scope must be a Linear token (JK-[number]) or omitted entirely`]
-        }) as SyncRule,
-      },
-    },
-  ],
 }
 
 export default Configuration
