@@ -41,11 +41,27 @@ Add this to your main CSS file:
 @import "basalt-ui/css";
 ```
 
-⚠️ **Important:** Use `basalt-ui/css`, not `basalt-ui` or `basalt-ui/src/index.css`
+⚠️ **Critical:** This import **REPLACES** `@import "tailwindcss"` - do NOT use both!
+
+```css
+/* ❌ WRONG - Don't import both */
+@import "tailwindcss";
+@import "basalt-ui/css";
+
+/* ✅ CORRECT - Only basalt-ui */
+@import "basalt-ui/css";
+```
+
+**Why?** BasaltUI includes the complete Tailwind v4 theme. Importing both causes conflicts and duplicate CSS.
+
+**Import path formats:**
+- ✅ `basalt-ui/css` (correct)
+- ❌ `basalt-ui` (wrong)
+- ❌ `basalt-ui/src/index.css` (wrong)
 
 **What this imports:**
 - Complete Tailwind v4 theme (`@theme inline` CSS)
-- Self-hosted variable fonts (Instrument Sans Variable, JetBrains Mono Variable)
+- Self-hosted variable fonts (Instrument Sans Variable, JetBrains Mono Variable) with `font-display: block`
 - CSS variables for light/dark modes
 - Typography plugin configuration
 - Animation utilities
@@ -54,6 +70,9 @@ Add this to your main CSS file:
 - No `tailwind.config.js` file required
 - No manual font setup
 - No PostCSS configuration
+
+**Tailwind version requirement:**
+Basalt UI requires **Tailwind CSS v4.1.18 or newer**. Earlier v4.0.x versions had critical bugs that are fixed in v4.1.18+.
 
 ### Step 3: Add Dark Mode
 
@@ -64,6 +83,35 @@ Add the `dark` class to your HTML element:
   <!-- Your app -->
 </html>
 ```
+
+**Dynamic theme switching:**
+
+See the [Dark Mode Toggle](#dark-mode-toggle-component) section below for complete React/Vue component examples.
+
+### Step 4: Custom CSS Variables (Optional)
+
+If you need project-specific design tokens or overrides, add them **AFTER** the basalt-ui import:
+
+```css
+/* src/styles/globals.css */
+@import "basalt-ui/css";  /* Must come first */
+
+/* Your custom overrides come after */
+:root {
+  --my-custom-color: oklch(0.7 0.1 200);
+  --my-spacing: 2rem;
+}
+
+/* Override BasaltUI tokens if needed (not recommended) */
+.dark {
+  --background: oklch(0.15 0.01 285);  /* Darker than default */
+}
+```
+
+**Important ordering rules:**
+1. ✅ `@import "basalt-ui/css"` must be first
+2. ✅ Your custom CSS variables come after
+3. ❌ Don't define custom variables before the import (they'll be overridden)
 
 ## Framework-Specific Setup
 
@@ -404,16 +452,91 @@ export default defineConfig({
 <body class="dark">  <!-- Must be on html! -->
 ```
 
-**Toggle dark mode:**
+## Dark Mode Toggle Component
+
+### React Example
+
+```tsx
+'use client'; // For Next.js App Router
+
+import { useEffect, useState } from 'react';
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const initialTheme = savedTheme || 'dark';
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    localStorage.setItem('theme', newTheme);
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="rounded-md bg-primary px-4 py-2 text-primary-foreground"
+      aria-label="Toggle theme"
+    >
+      {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+    </button>
+  );
+}
+```
+
+### Vue 3 Example
+
+```vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+const theme = ref<'light' | 'dark'>('dark');
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+  const initialTheme = savedTheme || 'dark';
+  theme.value = initialTheme;
+  document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+});
+
+const toggleTheme = () => {
+  const newTheme = theme.value === 'dark' ? 'light' : 'dark';
+  theme.value = newTheme;
+  document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  localStorage.setItem('theme', newTheme);
+};
+</script>
+
+<template>
+  <button
+    @click="toggleTheme"
+    class="rounded-md bg-primary px-4 py-2 text-primary-foreground"
+    aria-label="Toggle theme"
+  >
+    {{ theme === 'dark' ? '🌙 Dark' : '☀️ Light' }}
+  </button>
+</template>
+```
+
+### Vanilla JavaScript
+
 ```javascript
-// Toggle
-document.documentElement.classList.toggle('dark');
+// Toggle dark mode
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
 
-// Enable
-document.documentElement.classList.add('dark');
-
-// Disable
-document.documentElement.classList.remove('dark');
+// Load saved theme on page load
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 ```
 
 ### TypeScript errors
