@@ -31,7 +31,7 @@ Framework-agnostic Tailwind CSS design system with zinc-based colors.
 - **Git**: Conventional commits enforced via commitlint
 - **Theme**: Tailwind v4 (not v3 - important!)
 - **Components**: ShadCN (copy-paste, not dependency)
-- **Fonts**: Google Fonts (not self-hosted)
+- **Fonts**: Self-hosted via @fontsource (variable fonts)
 
 ## Structure
 
@@ -184,17 +184,15 @@ Lefthook automatically runs the appropriate tool:
 
 ## MCP Tool Guidelines
 
-**Perplexity** (`@perplexity-ai/mcp-server`):
-- High-level architectural analysis
-- Broad concept summaries
-
 **Tavily** (`tavily-mcp`):
+- Web research and content extraction
 - Deep dives into specific webpages
 - Extract granular technical details
 
 **Context7** (`https://mcp.context7.com/mcp`):
 - Up-to-date library documentation
-- API references
+- Official API references
+- Framework-specific docs
 
 ## Development Guidelines
 
@@ -352,7 +350,7 @@ chore: release v0.1.0
 - ❌ Don't commit to master directly
 - ❌ Don't use default exports
 - ❌ Don't use `any` in TypeScript
-- ❌ Don't self-host fonts (use Google Fonts)
+- ✅ Self-host fonts via @fontsource (better performance, privacy)
 
 ## Project Philosophy
 
@@ -368,6 +366,41 @@ chore: release v0.1.0
 See `/docs` for detailed plans:
 - `IMPLEMENTATION.md` - Main implementation plan
 - `SHADCN_INTEGRATION.md` - ShadCN architecture details
+
+## Analytics & Tracking
+
+### UTM Parameter Strategy
+
+**Philosophy**: Minimal tracking with Plausible Analytics - track document source, not campaigns.
+
+**Format**: Single parameter identifying the file/location:
+```
+?utm_source={file_location}
+```
+
+**Defined Sources**:
+- `root_readme` - Links in root README.md
+- `basalt_ui_readme` - Links in packages/basalt-ui/README.md
+- `brand_voice` - Links in docs/BRAND_VOICE.md
+- `npm_package` - Homepage in packages/basalt-ui/package.json
+
+**Why This Approach**:
+1. **Plausible already tracks referrers** (github.com, npmjs.com) - no need for `utm_medium`
+2. **No active campaigns** - `utm_campaign` adds no value for passive documentation
+3. **Simple and maintainable** - One parameter, consistent naming
+4. **Answers the key question**: "Which document did they click from?"
+
+**Example**:
+```markdown
+[Documentation](https://basalt-ui.com?utm_source=root_readme)
+[Installation Guide](https://basalt-ui.com/docs/installation?utm_source=basalt_ui_readme)
+```
+
+**What We Don't Track**:
+- ❌ `utm_medium` - Referrer provides this
+- ❌ `utm_campaign` - No campaigns, just documentation
+- ❌ `utm_content` - Over-engineering for simple docs
+- ❌ `utm_term` - Not running paid ads
 
 ## Key Principles
 

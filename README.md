@@ -5,7 +5,7 @@
 
 > Design system for the modern stack. One Tailwind theme that makes your components, docs, and charts look like they belong together.
 
-**[Documentation](https://basalt-ui.com)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
+**[Documentation](https://basalt-ui.com?utm_source=root_readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
 Building modern apps often means combining ShadCN components, Starlight docs, Tremor dashboards, and more — each with its own styling.
 
@@ -51,6 +51,8 @@ For Starlight docs:
 ```css
 @import "basalt-ui/starlight";
 ```
+
+**Full installation guide:** See the [Installation Documentation](https://basalt-ui.com/docs/installation?utm_source=root_readme) for framework-specific setup, font loading strategies, troubleshooting, and integration patterns.
 
 ## Repository Structure
 
