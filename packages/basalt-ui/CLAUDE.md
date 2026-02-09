@@ -39,6 +39,56 @@ A mature, restrictive Tailwind CSS design system inspired by volcanic basalt sto
 - ❌ HSL/RGB colors (OKLCH only for consistency)
 - ❌ Premature abstractions or over-engineering
 
+## Documentation Philosophy
+
+### Single Source of Truth
+
+**Canonical documentation lives at:** https://basalt-ui.com/docs/installation
+
+**Package README.md should:**
+- Provide Quick Start only (3-step installation)
+- Link to canonical web documentation for details
+- **NOT duplicate** framework-specific setup instructions
+- **NOT duplicate** integration details (ShadCN, Tremor, Starlight)
+- **NOT duplicate** troubleshooting sections
+- **NOT duplicate** design system details (colors, typography, spacing)
+- Keep examples minimal and high-level
+- Target: ~200-300 lines total
+
+**Why:**
+- Prevents documentation drift and inconsistencies
+- Easier to maintain (update once, not everywhere)
+- Users always get most current information
+- Reduces package size and cognitive load
+- Keeps README scannable and focused
+
+**When updating documentation:**
+1. Update web docs first (`apps/web/src/content/docs/docs/installation.md`)
+2. Verify package README.md links to correct section
+3. Do NOT copy detailed instructions into package files
+4. Package README should be scannable in < 2 minutes
+5. Design system details belong in this CLAUDE.md or web docs
+
+**Good (README.md):**
+```markdown
+## Quick Start
+[3-step installation]
+
+📖 Complete Guide: https://basalt-ui.com/docs/installation
+```
+
+**Bad (README.md):**
+```markdown
+## Quick Start
+[3-step installation]
+
+### Framework-Specific Setup
+[50+ lines of Vite/Next/Astro examples]
+
+### Troubleshooting
+[200+ lines of error solutions]
+```
+
 ## Color System
 
 ### OKLCH: Perceptually Uniform Colors
@@ -240,7 +290,7 @@ Starlight Variables Mapped:
 - **Text Colors**: `--sl-color-text-*` → Basalt foreground tokens
 - **Borders**: `--sl-color-hairline-*` → Basalt border tokens with subtle variations
 - **Typography Scale** (13 sizes): `--sl-text-*` → Basalt typography tokens
-- **Fonts**: `--sl-font-*` → Basalt font families (Nunito Sans, JetBrains Mono)
+- **Fonts**: `--sl-font-*` → Basalt font families (Instrument Sans Variable, JetBrains Mono Variable)
 - **Line Heights**: `--sl-line-height-*` → Basalt line height tokens
 - **Shadows** (3 levels): `--sl-shadow-*` → Basalt shadow tokens
 - **Layout Tokens**: `--sl-nav-height`, `--sl-sidebar-width`, etc. → Basalt spacing scale
@@ -506,7 +556,7 @@ The typography plugin handles all the complex layout and spacing:
 
 Basalt only customizes:
 - Color mapping (CSS variables for automatic dark mode)
-- Font families (Lato for headings, Nunito Sans for body)
+- Font families (Instrument Sans Variable for headings and body)
 - Border radius (matches Basalt tokens)
 - Link styling (underline, weight, transitions)
 - Code backgrounds (Basalt muted color)
@@ -517,20 +567,50 @@ Basalt only customizes:
 
 ### Font Stack
 
-**Headings**: Lato (700 weight)
-- Modern, geometric sans-serif
-- Excellent readability at large sizes
-- Professional but approachable
+**Headings**: Instrument Sans Variable
+- Modern, clean geometric sans-serif
+- Excellent readability at all sizes
+- Professional and versatile
 
-**Body**: Nunito Sans (400 weight)
-- Rounded, friendly sans-serif
+**Body**: Instrument Sans Variable
+- Crisp, clear sans-serif
 - Optimized for reading comfort
-- Warm, welcoming aesthetic
+- Professional, modern aesthetic
 
-**Mono**: JetBrains Mono (400 weight)
+**Mono**: JetBrains Mono Variable
 - Increased character height
 - Clear distinction between similar characters
 - Developer-friendly
+
+### Font Philosophy: Strong Opinionated Defaults
+
+Basalt UI includes Instrument Sans Variable and JetBrains Mono Variable as **non-negotiable defaults**:
+
+- Fonts are imported automatically in `src/index.css` (via @fontsource-variable packages)
+- Users only need `@import "basalt-ui/css"` - fonts are included
+- No separate font import step required
+- No font override examples provided in documentation
+- Philosophy: "Use our fonts or fork the package"
+
+**Why opinionated?**
+- Ensures consistency across all integrations (ShadCN, Starlight, Tremor)
+- Eliminates decision fatigue for developers
+- Professional defaults that work everywhere
+- Variable fonts provide weight flexibility within the choice
+- Self-hosted from node_modules (privacy-first, no CDN requests)
+
+**Why variable fonts?**
+- Single file handles full weight range (400-700 for Instrument Sans)
+- Better performance than loading multiple font weights
+- Smooth font-weight animations if needed
+- Smaller bundle size vs. multiple static font files
+
+**If users need different fonts:**
+- Fork basalt-ui and modify font imports in `src/index.css`
+- Or override CSS variables (not recommended, breaks design system consistency)
+- Document that Basalt UI is opinionated by design
+
+**Code Location:** Fonts imported at top of `src/index.css` (lines 7-9)
 
 ### Type Scale
 
