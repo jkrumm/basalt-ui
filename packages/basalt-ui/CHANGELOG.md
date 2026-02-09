@@ -1,5 +1,14 @@
 # Changelog
 
+# [0.2.0](https://github.com/jkrumm/basalt-ui/compare/v0.1.0...v0.2.0) (2026-02-09)
+
+
+### Features
+
+* enhance package exports and peer dependencies ([d34a2cf](https://github.com/jkrumm/basalt-ui/commit/d34a2cf38f30d25ab759d6e7922a737f163104f8))
+* integrate fonts and improve CSS architecture ([b95fc24](https://github.com/jkrumm/basalt-ui/commit/b95fc24d8c6bcc1357e77ba9cfbadae0348f33ab))
+* **JK-34:** add `shadcn` and `tw-animate-css` to basalt-ui dependencies ([20c5a10](https://github.com/jkrumm/basalt-ui/commit/20c5a10f2c9d0fda9eed1e2be3d0d16fca6253ff))
+
 # 0.1.0 (2025-12-12)
 
 
