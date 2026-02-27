@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/jkrumm/basalt-ui/compare/v0.2.1...v0.2.2) (2026-02-27)
+
+
+### Performance Improvements
+
+* change font-display from block to swap ([ed485ba](https://github.com/jkrumm/basalt-ui/commit/ed485ba0bdddad77ed6f3e773dc0c565f4a7523d))
+
 ## [0.2.1](https://github.com/jkrumm/basalt-ui/compare/v0.2.0...v0.2.1) (2026-02-09)
 
 
