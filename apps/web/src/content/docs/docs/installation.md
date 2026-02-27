@@ -61,7 +61,7 @@ Add this to your main CSS file:
 
 **What this imports:**
 - Complete Tailwind v4 theme (`@theme inline` CSS)
-- Self-hosted variable fonts (Instrument Sans Variable, JetBrains Mono Variable) with `font-display: block`
+- Self-hosted variable fonts (Instrument Sans Variable, JetBrains Mono Variable) with `font-display: swap`
 - CSS variables for light/dark modes
 - Typography plugin configuration
 - Animation utilities
@@ -216,12 +216,12 @@ import '../styles/global.css';
 
 Basalt UI includes self-hosted variable fonts by default (Instrument Sans Variable and JetBrains Mono Variable). **No additional setup needed.**
 
-**Fonts load automatically when you import basalt-ui CSS:**
-
 ```css
 /* src/styles/global.css */
 @import "basalt-ui/css";  /* Includes fonts, no separate import needed */
 ```
+
+Fonts use `font-display: swap` — fallback text renders immediately, the web font swaps in when loaded. This avoids invisible text and benefits Core Web Vitals.
 
 **Why self-hosted?**
 - Privacy: No external CDN requests
@@ -321,6 +321,144 @@ Basalt UI includes two self-hosted variable fonts:
 --font-body: "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 --font-mono: "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
 ```
+
+## Font Performance Optimization
+
+Basalt UI ships with `font-display: swap` by default — text is visible immediately using a system fallback font, then the web font swaps in when loaded. This avoids invisible text and prevents slow Speed Index scores.
+
+The remaining challenge with `swap` is **Cumulative Layout Shift (CLS)**: because system fonts have slightly different metrics (x-height, ascent, line spacing) than your web fonts, swapping can cause text to reflow and push content around.
+
+The solution is **metric-calibrated fallbacks** — `@font-face` declarations for your system fonts that override their metrics to match the web font exactly. When metrics match, the swap is visually invisible and CLS reaches zero.
+
+### Recommended: fontaine Plugin
+
+[fontaine](https://github.com/unjs/fontaine) automates fallback metric calculation. It reads your web font files at build time and generates the calibrated `@font-face` overrides for you.
+
+**Optimal fallback fonts by platform:**
+
+| Font | Mac | Windows | Linux / Android |
+|-|-|-|-|
+| Instrument Sans Variable | Helvetica Neue | Segoe UI | Roboto |
+| JetBrains Mono Variable | Menlo / SF Mono | Consolas | Liberation Mono |
+
+**Install:**
+
+```bash
+bun add fontaine
+# or: npm install fontaine
+```
+
+**Astro (`astro.config.mjs`):**
+
+```js
+import { FontaineTransform } from 'fontaine'
+
+export default defineConfig({
+  vite: {
+    plugins: [
+      tailwindcss(),
+      FontaineTransform.vite({
+        fallbacks: {
+          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+        },
+        // Required: @fontsource-variable URLs are transformed by Vite,
+        // fontaine cannot resolve them without an explicit node_modules path.
+        resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
+      }),
+    ],
+  },
+})
+```
+
+**Vite (`vite.config.ts`):**
+
+```ts
+import { FontaineTransform } from 'fontaine'
+
+export default defineConfig({
+  plugins: [
+    FontaineTransform.vite({
+      fallbacks: {
+        'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+        'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+      },
+      resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
+    }),
+    react(),
+  ],
+})
+```
+
+**Next.js (`next.config.ts`):**
+
+```ts
+import { FontaineTransform } from 'fontaine'
+
+const nextConfig = {
+  webpack(config) {
+    config.plugins.push(
+      FontaineTransform.webpack({
+        fallbacks: {
+          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+        },
+        resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
+      })
+    )
+    return config
+  },
+}
+```
+
+:::note[Monorepo path]
+In a monorepo where `node_modules` is hoisted to the root, adjust `resolvePath` to point to the root:
+```js
+resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
+```
+:::
+
+### Additional: Font Preloading
+
+Preloading the two critical latin variable fonts makes them arrive before the CSS is even parsed, shrinking the fallback window significantly. This is complementary to fontaine — preload reduces how long the fallback shows, fontaine eliminates the visual jump when it swaps.
+
+**Astro layout (`Layout.astro`):**
+
+```astro
+<head>
+  <!-- Preload the two critical latin variable fonts -->
+  <link
+    rel="preload"
+    as="font"
+    type="font/woff2"
+    crossorigin="anonymous"
+    href="/node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wdth-normal.woff2"
+  />
+  <link
+    rel="preload"
+    as="font"
+    type="font/woff2"
+    crossorigin="anonymous"
+    href="/node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2"
+  />
+</head>
+```
+
+**HTML / generic:**
+
+```html
+<link
+  rel="preload"
+  as="font"
+  type="font/woff2"
+  crossorigin="anonymous"
+  href="/path/to/instrument-sans-latin-wdth-normal.woff2"
+/>
+```
+
+:::tip[Best results]
+Combine fontaine (CLS → 0) with preloading (minimal flash window) for the best possible font loading experience.
+:::
 
 ## Requirements
 

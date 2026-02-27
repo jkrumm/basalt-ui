@@ -2,6 +2,7 @@ import react from '@astrojs/react'
 import starlight from '@astrojs/starlight'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+import { FontaineTransform } from 'fontaine'
 
 export default defineConfig({
   site: 'https://basalt-ui.com',
@@ -48,6 +49,19 @@ export default defineConfig({
     }),
   ],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      // Generates calibrated @font-face fallback rules so text doesn't jump
+      // when Instrument Sans and JetBrains Mono swap in (near-zero CLS).
+      // resolvePath is required because @fontsource-variable URLs are
+      // transformed by Vite — fontaine can't resolve them otherwise.
+      FontaineTransform.vite({
+        fallbacks: {
+          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
+        },
+        resolvePath: (id) => new URL(`../../node_modules/${id}`, import.meta.url),
+      }),
+    ],
   },
 })
