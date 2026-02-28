@@ -1,3 +1,18 @@
+# [0.3.0](https://github.com/jkrumm/basalt-ui/compare/v0.2.2...v0.3.0) (2026-02-28)
+
+
+### Bug Fixes
+
+* remove --frozen-lockfile from Docker bun install ([b8ee288](https://github.com/jkrumm/basalt-ui/commit/b8ee288d10f04089f7d364caa9575c2c3574dae4))
+* remove scope from release commit message to satisfy commitlint ([5c8ca17](https://github.com/jkrumm/basalt-ui/commit/5c8ca17ced4b646ee7b51d7fc263a12e989add60))
+* replace @semantic-release/npm with exec to bypass workspace: protocol error ([905dc95](https://github.com/jkrumm/basalt-ui/commit/905dc95de06a1bf9f59ebf3fe9c1e4bfec5c3f6c))
+* skip Docker job on release dry run ([f479092](https://github.com/jkrumm/basalt-ui/commit/f479092ff7fa30d442f6d55a2454b7a94a4ad2ac))
+
+
+### Features
+
+* add OCI labels to Docker images ([cd8fcfb](https://github.com/jkrumm/basalt-ui/commit/cd8fcfb46e079a023065d09fa4b7f8d100a33086))
+
 # Changelog
 
 ## [0.2.2](https://github.com/jkrumm/basalt-ui/compare/v0.2.1...v0.2.2) (2026-02-27)
