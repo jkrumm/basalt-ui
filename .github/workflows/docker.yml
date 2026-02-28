@@ -28,8 +28,8 @@ jobs:
           file: apps/marketing/Dockerfile
           push: true
           tags: |
-            registry.jkrumm.com/basalt-ui-marketing:latest
-            registry.jkrumm.com/basalt-ui-marketing:${{ github.sha }}
+            registry.jkrumm.com/private/basalt-ui-marketing:latest
+            registry.jkrumm.com/private/basalt-ui-marketing:${{ github.sha }}
           labels: |
             org.opencontainers.image.title=Basalt UI Marketing
             org.opencontainers.image.description=Documentation and design playground for the Basalt UI design system
