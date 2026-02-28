@@ -47,7 +47,7 @@ jobs:
     name: Build & Push Versioned Docker Image
     runs-on: ubuntu-latest
     needs: release
-    if: needs.release.outputs.published == 'true'
+    if: needs.release.outputs.published == 'true' && !inputs.dry_run
     steps:
       - uses: actions/checkout@v4
         with:
