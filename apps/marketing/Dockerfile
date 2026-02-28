@@ -6,7 +6,7 @@ COPY apps/marketing/package.json ./apps/marketing/package.json
 COPY packages/basalt-ui/package.json ./packages/basalt-ui/package.json
 COPY examples/react/package.json ./examples/react/package.json
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --frozen-lockfile --ignore-scripts
+    bun install --ignore-scripts
 
 COPY tsconfig.json ./
 COPY packages/basalt-ui ./packages/basalt-ui
