@@ -103,11 +103,16 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Get build metadata
+      - name: Extract metadata
         id: meta
-        run: |
-          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
-          echo "revision=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        uses: docker/metadata-action@v5
+        with:
+          images: registry.jkrumm.com/private/basalt-ui-marketing
+          labels: |
+            org.opencontainers.image.title=Basalt UI Marketing
+            org.opencontainers.image.description=Documentation and design playground for the Basalt UI design system
+            org.opencontainers.image.url=https://github.com/jkrumm/basalt-ui
+            org.opencontainers.image.version=${{ needs.release.outputs.version }}
 
       - name: Build & push versioned image
         uses: docker/build-push-action@v6
@@ -118,13 +123,7 @@ jobs:
           tags: |
             registry.jkrumm.com/private/basalt-ui-marketing:${{ needs.release.outputs.version }}
             registry.jkrumm.com/private/basalt-ui-marketing:latest
-          labels: |
-            org.opencontainers.image.title=Basalt UI Marketing
-            org.opencontainers.image.description=Documentation and design playground for the Basalt UI design system
-            org.opencontainers.image.url=https://github.com/jkrumm/basalt-ui
-            org.opencontainers.image.source=https://github.com/jkrumm/basalt-ui
-            org.opencontainers.image.version=${{ needs.release.outputs.version }}
-            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
-            org.opencontainers.image.revision=${{ steps.meta.outputs.revision }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha,scope=marketing
           cache-to: type=gha,mode=max,scope=marketing
