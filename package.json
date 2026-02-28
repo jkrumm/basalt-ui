@@ -8,10 +8,9 @@
     "examples/*"
   ],
   "scripts": {
-    "dev:web": "bun --filter web dev",
+    "dev:marketing": "bun --filter marketing dev",
     "dev:react": "bun --filter react dev",
     "dev": "bun --filter '*' dev",
-    "release": "bun scripts/release.ts",
     "check": "bunx @biomejs/biome check .",
     "check:write": "bunx @biomejs/biome check --write .",
     "format": "bun run format:biome && bun run format:prettier",
@@ -29,14 +28,9 @@
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
     "@commitlint/types": "^20.4.0",
-    "@release-it/conventional-changelog": "^10.0.5",
-    "@types/prompts": "^2.4.9",
     "lefthook": "^2.1.0",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "prompts": "^2.4.2",
-    "release-it": "^19.2.4"
-  },
-  "version": "0.2.2"
+    "prettier-plugin-tailwindcss": "^0.7.2"
+  }
 }
