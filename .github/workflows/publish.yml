@@ -28,7 +28,11 @@ jobs:
         working-directory: ./packages/basalt-ui
         run: |
           PACKAGE_VERSION=$(jq -r .version package.json)
-          TAG_VERSION=${GITHUB_REF_NAME#v}
+          if [[ "$GITHUB_REF_NAME" == v* ]]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            TAG_VERSION="$PACKAGE_VERSION"
+          fi
           if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
             echo "Version mismatch: package.json=$PACKAGE_VERSION, tag=$TAG_VERSION"
             exit 1
