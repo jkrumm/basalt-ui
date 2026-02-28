@@ -4,7 +4,12 @@
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     ["@semantic-release/changelog", { "changelogFile": "packages/basalt-ui/CHANGELOG.md" }],
-    ["@semantic-release/npm", { "npmPublish": false, "pkgRoot": "packages/basalt-ui" }],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/basalt-ui/package.json','utf8'));p.version='${nextRelease.version}';fs.writeFileSync('packages/basalt-ui/package.json',JSON.stringify(p,null,2)+'\\n');\""
+      }
+    ],
     [
       "@semantic-release/git",
       {
