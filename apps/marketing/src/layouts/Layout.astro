@@ -45,9 +45,12 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
 
-    <!-- Plausible Analytics (proxied through Cloudflare Pages Functions) -->
-    <script is:inline defer data-domain="basalt-ui.com" data-api="/api/event" src="/js/script"
-    ></script>
+    <!-- Umami Analytics -->
+    <script
+      is:inline
+      defer
+      src="https://umami.jkrumm.com/script.js"
+      data-website-id="d6758a6a-6006-4f77-a778-54b74c3ac53d"></script>
   </head>
   <body class="bg-background text-foreground min-h-screen antialiased">
     <Navigation />

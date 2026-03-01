@@ -371,7 +371,7 @@ See `/docs` for detailed plans:
 
 ### UTM Parameter Strategy
 
-**Philosophy**: Minimal tracking with Plausible Analytics - track document source, not campaigns.
+**Philosophy**: Minimal tracking with Umami Analytics - track document source, not campaigns.
 
 **Format**: Single parameter identifying the file/location:
 ```
