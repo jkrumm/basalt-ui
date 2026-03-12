@@ -318,6 +318,8 @@ docs: update README
 chore: release v0.1.0
 ```
 
+**No scopes** — `commitlint.config.ts` enforces `scope-empty: always`. Never use `feat(scope):` syntax.
+
 **Pre-commit hooks** run automatically:
 - Biome format + lint
 - Commitlint validation
