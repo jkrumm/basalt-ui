@@ -1,3 +1,21 @@
+# [0.4.0](https://github.com/jkrumm/basalt-ui/compare/v0.3.0...v0.4.0) (2026-03-12)
+
+
+### Bug Fixes
+
+* add UTM param to docs link in index.css comment ([4945e38](https://github.com/jkrumm/basalt-ui/commit/4945e38cbd28d16dd504ae0b1740fe2f688a268a))
+* handle workflow_dispatch ref in publish version check ([5c72b9d](https://github.com/jkrumm/basalt-ui/commit/5c72b9dbbff1c5999b06e8c9dc7b413b70da1702))
+* upgrade CI to Node 24, fix CodeRabbit doc issues ([ea97378](https://github.com/jkrumm/basalt-ui/commit/ea97378ac1c061277738f4f2e8849f5f3834341a))
+
+
+### Features
+
+* add fontsource deps to example-react, rewrite font docs ([067cd76](https://github.com/jkrumm/basalt-ui/commit/067cd76582802d3608b9f9160483e190cb5c45a1))
+* fix font preloads on Starlight docs pages ([fb694c3](https://github.com/jkrumm/basalt-ui/commit/fb694c345fdcc165104ff6e4c1fa10cca577e811))
+* integrate npm publish into release workflow ([d6e5003](https://github.com/jkrumm/basalt-ui/commit/d6e500326731a954effb97802f7cc6ba87a3085b))
+* remove [@font-face](https://github.com/font-face) declarations, delegate font loading to apps ([ea083b4](https://github.com/jkrumm/basalt-ui/commit/ea083b4e12b41d2249a46437167f38ddc697b8f9))
+* upgrade to Astro 6 and adopt stable Fonts API ([ee17c45](https://github.com/jkrumm/basalt-ui/commit/ee17c457f9ba48bdcb30b6f55308d433771878b3))
+
 # [0.3.0](https://github.com/jkrumm/basalt-ui/compare/v0.2.2...v0.3.0) (2026-02-28)
 
 
