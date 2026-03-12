@@ -10,7 +10,7 @@
  *
  * Recommended approaches:
  *   Astro 6+    → fontProviders.fontsource() + <Font preload />
- *                 See: https://basalt-ui.com/docs/astro-fonts
+ *                 See: https://basalt-ui.com/docs/astro-fonts?utm_source=basalt_ui_css
  *   Vite / React → @import "@fontsource-variable/instrument-sans"
  *                           "@fontsource-variable/jetbrains-mono"
  *   Other        → Any @font-face / CDN that serves "Instrument Sans Variable"
