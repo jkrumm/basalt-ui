@@ -91,11 +91,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Publish to npm
         working-directory: ./packages/basalt-ui
-        run: npm publish --access public
+        # --provenance: Sigstore attestation linking package to this commit + workflow.
+        # --access public: required for unscoped packages.
+        # NODE_AUTH_TOKEN: only needed until Trusted Publishing is configured on
+        # npmjs.com (Settings → Trusted Publishers → Add GitHub Actions publisher).
+        # Once configured, remove the NPM_TOKEN secret — OIDC takes over automatically.
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
