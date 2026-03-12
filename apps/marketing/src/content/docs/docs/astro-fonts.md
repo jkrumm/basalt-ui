@@ -150,32 +150,6 @@ update. You must re-check the path after every `@fontsource-variable` upgrade.
 
 ## Troubleshooting
 
-### Double `@font-face` rules
-
-Basalt UI's `index.css` declares `@font-face` for non-Astro consumers. When the
-Fonts API is active, both sets load and the browser picks whichever it resolves
-first. This is harmless but wastes bandwidth.
-
-To suppress the basalt-ui declarations in your Astro app, override them in your
-`global.css` after the basalt-ui import:
-
-```css
-@import 'basalt-ui'; /* or relative path in monorepo */
-
-/* Suppress @fontsource declarations — Astro Fonts API serves these instead */
-@font-face {
-  font-family: 'Instrument Sans Variable';
-  src: local('');
-}
-@font-face {
-  font-family: 'JetBrains Mono Variable';
-  src: local('');
-}
-```
-
-`src: local('')` matches nothing and effectively disables the rule, letting the
-Fonts API's hashed files win.
-
 ### Variable font axes not loading
 
 The `weights` array in the config controls which static instances are

@@ -49,6 +49,10 @@ export default defineConfig({
       expressiveCode: {
         themes: ['github-dark', 'github-light'],
       },
+
+      components: {
+        Head: './src/components/starlight/Head.astro',
+      },
     }),
   ],
   fonts: [
