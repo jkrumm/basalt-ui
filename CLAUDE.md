@@ -325,9 +325,15 @@ chore: release v0.1.0
 - Commitlint validation
 
 **Release process**:
-1. `bun run release` (local)
-2. Creates git tag + GitHub release
-3. GitHub Action publishes to npm
+1. Trigger **Make Release** workflow on GitHub Actions (workflow_dispatch)
+2. `semantic-release-monorepo` analyzes only commits touching `packages/basalt-ui/`
+3. Creates git tag + GitHub release + publishes to npm automatically
+
+**Commit type discipline (affects npm versioning)**:
+- `feat:` / `fix:` — triggers minor/patch release → only use when changing `packages/basalt-ui/`
+- `ci:` — CI/CD changes, never triggers release (use for workflow, lefthook changes)
+- `chore:` / `docs:` / `refactor:` — no release (use for non-package work)
+- `BREAKING CHANGE:` in commit footer → major release
 
 ## Common Issues
 
