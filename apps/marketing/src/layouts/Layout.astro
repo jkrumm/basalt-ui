@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 
+import { Font } from 'astro:assets';
 import Navigation from '@/components/layout/Navigation.astro';
 import ThemeScript from '@/components/shared/ThemeScript.astro';
 
@@ -26,7 +27,8 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : null
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="darkreader-lock" />
 
-    <!-- Fonts loaded via basalt-ui package (see global.css) -->
+    <Font cssVariable="--font-instrument-sans" preload />
+    <Font cssVariable="--font-jetbrains-mono" preload />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {canonicalURL && <link rel="canonical" href={canonicalURL} />}

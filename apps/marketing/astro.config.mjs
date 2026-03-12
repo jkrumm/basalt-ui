@@ -1,8 +1,7 @@
 import react from '@astrojs/react'
 import starlight from '@astrojs/starlight'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'astro/config'
-import { FontaineTransform } from 'fontaine'
+import { defineConfig, fontProviders } from 'astro/config'
 
 export default defineConfig({
   site: 'https://basalt-ui.com',
@@ -29,6 +28,10 @@ export default defineConfig({
             { label: 'Spacing', slug: 'docs/spacing' },
           ],
         },
+        {
+          label: 'Guides',
+          items: [{ label: 'Astro Font Optimization', slug: 'docs/astro-fonts' }],
+        },
       ],
 
       social: [
@@ -48,20 +51,23 @@ export default defineConfig({
       },
     }),
   ],
+  fonts: [
+    {
+      provider: fontProviders.fontsource(),
+      name: 'Instrument Sans',
+      cssVariable: '--font-instrument-sans',
+      weights: [400, 500, 600, 700],
+      styles: ['normal'],
+    },
+    {
+      provider: fontProviders.fontsource(),
+      name: 'JetBrains Mono',
+      cssVariable: '--font-jetbrains-mono',
+      weights: [400, 500, 700],
+      styles: ['normal'],
+    },
+  ],
   vite: {
-    plugins: [
-      tailwindcss(),
-      // Generates calibrated @font-face fallback rules so text doesn't jump
-      // when Instrument Sans and JetBrains Mono swap in (near-zero CLS).
-      // resolvePath is required because @fontsource-variable URLs are
-      // transformed by Vite — fontaine can't resolve them otherwise.
-      FontaineTransform.vite({
-        fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
-        },
-        resolvePath: (id) => new URL(`../../node_modules/${id}`, import.meta.url),
-      }),
-    ],
+    plugins: [tailwindcss()],
   },
 })
