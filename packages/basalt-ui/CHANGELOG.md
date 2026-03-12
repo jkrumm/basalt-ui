@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/jkrumm/basalt-ui/compare/v0.4.0...v0.4.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* pass NODE_AUTH_TOKEN to npm publish step ([5b3ba0b](https://github.com/jkrumm/basalt-ui/commit/5b3ba0b5f933775a6864af58d2d333bac969d6b8))
+
 # [0.4.0](https://github.com/jkrumm/basalt-ui/compare/v0.3.0...v0.4.0) (2026-03-12)
 
 
