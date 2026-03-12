@@ -60,8 +60,13 @@
       "optional": true
     }
   },
+  "sideEffects": [
+    "./src/index.css",
+    "./src/starlight.css"
+  ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "dependencies": {}
 }
