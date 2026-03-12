@@ -19,4 +19,4 @@ comment:
       body: |
         <h3>:package: basalt-ui package modified</h3>
 
-        Run `bun release` after merging to publish to npm.
+        Trigger the **[Make Release](https://github.com/jkrumm/basalt-ui/actions/workflows/release.yml)** workflow after merging to publish to npm.
