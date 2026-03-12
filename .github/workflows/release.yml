@@ -42,9 +42,9 @@ jobs:
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
 
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            bunx semantic-release-monorepo --dry-run
+            node -r semantic-release-monorepo ./node_modules/.bin/semantic-release --dry-run
           else
-            bunx semantic-release-monorepo
+            node -r semantic-release-monorepo ./node_modules/.bin/semantic-release
           fi
 
           NEW_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
