@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/jkrumm/basalt-ui/compare/v0.4.1...v0.4.2) (2026-03-12)
+
+
+### Bug Fixes
+
+* add sideEffects and provenance to package.json ([3a1e512](https://github.com/jkrumm/basalt-ui/commit/3a1e51219fb500bebe17eb8a9031ec77296fc1d6))
+
 ## [0.4.1](https://github.com/jkrumm/basalt-ui/compare/v0.4.0...v0.4.1) (2026-03-12)
 
 
