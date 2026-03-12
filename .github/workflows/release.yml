@@ -84,6 +84,8 @@ jobs:
       - name: Publish to npm
         working-directory: ./packages/basalt-ui
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker:
     name: Build & Push Versioned Docker Image
