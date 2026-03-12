@@ -565,12 +565,13 @@ export default defineConfig({
 **Symptom:** Using fallback system fonts instead of Instrument Sans
 
 **Check:**
-1. Verify `basalt-ui/css` is imported (fonts are included)
+1. Verify fonts are loaded per your framework (see [Font Performance](#font-performance))
 2. Check browser DevTools Network tab for font requests
-3. Look for `InstrumentSans-Variable.woff2` and `JetBrainsMono-Variable.woff2`
-4. Ensure no Content Security Policy blocking fonts
+3. Look for font files (e.g. `InstrumentSans-Variable.woff2`)
+4. Ensure font imports come **before** `basalt-ui/css` in your CSS
+5. Ensure no Content Security Policy blocking fonts
 
-**Note:** Fonts are bundled automatically - no additional setup needed!
+**Note:** basalt-ui provides font-family tokens only — you must load fonts in your app.
 
 ### ShadCN components wrong colors
 
@@ -744,4 +745,4 @@ After installation:
 ## Getting Help
 
 - [GitHub Issues](https://github.com/jkrumm/basalt-ui/issues)
-- [Documentation](https://basalt-ui.com)
+- [Documentation](https://basalt-ui.com?utm_source=installation_docs)

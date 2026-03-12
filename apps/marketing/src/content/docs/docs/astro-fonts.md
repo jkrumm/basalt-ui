@@ -68,9 +68,10 @@ import { Font } from 'astro:assets'
 </head>
 ```
 
-`preload` injects a `<link rel="preload" as="font">` for the woff2 subset that
-matches the page's Unicode range. Remove the attribute to skip preloading
-(useful for secondary/icon fonts).
+`preload` injects `<link rel="preload" as="font">` tags for the configured
+font files. To preload only specific weights, styles, or subsets, pass an
+array of filter objects instead: `preload={[{ weight: '400', style: 'normal' }]}`.
+Remove the attribute entirely to skip preloading (useful for secondary/icon fonts).
 
 ### 4. Reference in CSS
 
@@ -131,14 +132,15 @@ export default defineConfig({
 
 ### Manual preload links
 
-Find the exact woff2 path from the built `dist/` output and hardcode it:
+Find the exact hashed woff2 path from the built `dist/_astro/` output and
+hardcode it. The path below is illustrative only:
 
 ```astro
 <link
   rel="preload"
   as="font"
   type="font/woff2"
-  href="/_fonts/instrument-sans-latin-400-normal.woff2"
+  href="/_astro/instrument-sans-latin-400-normal.<hash>.woff2"
   crossorigin
 />
 ```
