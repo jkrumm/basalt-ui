@@ -35,6 +35,8 @@
     "@radix-ui/react-visually-hidden": "^1.2.4",
     "@react-aria/datepicker": "^3.15.2",
     "@react-stately/datepicker": "^3.15.2",
+    "@fontsource-variable/instrument-sans": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@remixicon/react": "^4.7.0",
     "@tremor/react": "^3.18.7",
     "date-fns": "4.1.0",

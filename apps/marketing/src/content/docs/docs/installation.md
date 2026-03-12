@@ -61,15 +61,18 @@ Add this to your main CSS file:
 
 **What this imports:**
 - Complete Tailwind v4 theme (`@theme inline` CSS)
-- Self-hosted variable fonts (Instrument Sans Variable, JetBrains Mono Variable) with `font-display: swap`
+- Font-family CSS tokens (Instrument Sans Variable, JetBrains Mono Variable) — font files must be loaded by your app
 - CSS variables for light/dark modes
 - Typography plugin configuration
 - Animation utilities
 
 **What you DON'T need:**
 - No `tailwind.config.js` file required
-- No manual font setup
 - No PostCSS configuration
+
+:::note[Font loading]
+basalt-ui defines font-family tokens but does **not** bundle font files. You need to load fonts in your app — see the [Fonts](#fonts) section below for per-framework setup.
+:::
 
 **Tailwind version requirement:**
 Basalt UI requires **Tailwind CSS v4.1.18 or newer**. Earlier v4.0.x versions had critical bugs that are fixed in v4.1.18+.
@@ -137,17 +140,34 @@ export default defineConfig({
 });
 ```
 
-**3. Import CSS in entry file:**
+**3. Install fonts:**
+```bash
+bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
+```
+
+**4. Import CSS in entry file:**
 ```typescript
 // src/main.tsx
 import './styles/globals.css';
 ```
 
-**4. Create globals.css:**
+**5. Create globals.css:**
 ```css
 /* src/styles/globals.css */
+
+/* Self-hosted variable fonts */
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* basalt-ui design tokens (includes Tailwind v4) */
 @import "basalt-ui/css";
 ```
+
+Font imports must come **before** `basalt-ui/css` so the `@font-face` declarations are in scope when Tailwind processes the font-family tokens.
+
+:::tip[Zero FOUT with fontaine]
+Add `vite-plugin-fontaine` to generate metric-calibrated fallbacks and reach near-zero CLS. See [Font Performance](#font-performance) below.
+:::
 
 ### Next.js (App Router)
 
@@ -214,26 +234,58 @@ import '../styles/global.css';
 
 #### Font Loading
 
-Basalt UI includes self-hosted variable fonts by default (Instrument Sans Variable and JetBrains Mono Variable). **No additional setup needed.**
+Use the **Astro 6 Fonts API** — it downloads fonts at build time, serves them
+from `/_astro/fonts/` with content-hashed filenames, injects preload hints
+automatically, and generates metric-calibrated fallbacks. No extra packages needed.
 
-```css
-/* src/styles/global.css */
-@import "basalt-ui/css";  /* Includes fonts, no separate import needed */
+**`astro.config.mjs`:**
+```js
+import { defineConfig, fontProviders } from 'astro/config'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  fonts: [
+    {
+      provider: fontProviders.fontsource(),
+      name: 'Instrument Sans',
+      cssVariable: '--font-instrument-sans',
+      weights: [400, 500, 600, 700],
+      styles: ['normal'],
+    },
+    {
+      provider: fontProviders.fontsource(),
+      name: 'JetBrains Mono',
+      cssVariable: '--font-jetbrains-mono',
+      weights: [400, 500, 700],
+      styles: ['normal'],
+    },
+  ],
+  vite: { plugins: [tailwindcss()] },
+})
 ```
 
-Fonts use `font-display: swap` — fallback text renders immediately, the web font swaps in when loaded. This avoids invisible text and benefits Core Web Vitals.
+**Layout.astro:**
+```astro
+---
+import { Font } from 'astro:assets'
+import '../styles/global.css'
+---
+<html>
+  <head>
+    <Font cssVariable="--font-instrument-sans" preload />
+    <Font cssVariable="--font-jetbrains-mono" preload />
+  </head>
+  <body><slot /></body>
+</html>
+```
 
-**Why self-hosted?**
-- Privacy: No external CDN requests
-- Performance: Fonts served from your domain (faster, no DNS lookup)
-- Reliability: No dependency on Google Fonts availability
-- Control: Font files bundled with your app
+The `preload` attribute injects `<link rel="preload" as="font">` for the correct
+unicode-range subsets — fonts arrive before the first paint with zero FOUT.
 
-**Opinionated by design:**
-
-Basalt UI uses Instrument Sans Variable and JetBrains Mono Variable as non-negotiable defaults. This ensures consistency across all integrations (ShadCN, Starlight, Tremor) and eliminates decision fatigue.
-
-**If you need different fonts:** Fork the package and modify the font imports in `src/index.css`, or override the CSS variables (breaks consistency with Basalt UI philosophy).
+:::tip[Full guide]
+See [Astro Font Optimization](/docs/astro-fonts) for Starlight head injection,
+Astro 4/5 fallback approach, and troubleshooting.
+:::
 
 ## Integration with UI Libraries
 
@@ -300,84 +352,69 @@ export default defineConfig({
 
 ## Fonts
 
-### Self-Hosted Variable Fonts
+basalt-ui defines font-family tokens but does **not** bundle font files. This
+keeps the package framework-agnostic and lets each app pick the best loading
+strategy for its stack.
 
-Basalt UI includes two self-hosted variable fonts:
-
-**Instrument Sans Variable** - Headings and body text
-- Full variable font with weight axis (400-700)
-- Optimized for UI and content
-- Clean, modern sans-serif
-
-**JetBrains Mono Variable** - Code blocks and monospace
-- Full variable font with weight axis (400)
-- Designed for programming
-- Excellent readability
-
-**Font stack:**
+**Tokens defined by the package:**
 
 ```css
 --font-heading: "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-body: "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-mono: "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
+--font-body:    "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+--font-mono:    "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
 ```
 
-## Font Performance Optimization
+**Fonts used:**
 
-Basalt UI ships with `font-display: swap` by default — text is visible immediately using a system fallback font, then the web font swaps in when loaded. This avoids invisible text and prevents slow Speed Index scores.
+| Font | Role | Variable axes |
+|-|-|-|
+| Instrument Sans Variable | Headings + body | weight 400–700, width 75–100% |
+| JetBrains Mono Variable | Code + monospace | weight 100–800 |
 
-The remaining challenge with `swap` is **Cumulative Layout Shift (CLS)**: because system fonts have slightly different metrics (x-height, ascent, line spacing) than your web fonts, swapping can cause text to reflow and push content around.
+## Font Performance
 
-The solution is **metric-calibrated fallbacks** — `@font-face` declarations for your system fonts that override their metrics to match the web font exactly. When metrics match, the swap is visually invisible and CLS reaches zero.
+The goal is zero FOUT (Flash of Unstyled Text) and zero CLS (Cumulative Layout
+Shift). The approach differs by framework.
 
-### Recommended: fontaine Plugin
+### Astro 6 (recommended)
 
-[fontaine](https://github.com/unjs/fontaine) automates fallback metric calculation. It reads your web font files at build time and generates the calibrated `@font-face` overrides for you.
+The **Astro 6 Fonts API** handles everything in one step: downloads fonts at
+build time, serves them from `/_astro/fonts/` with content-hashed filenames,
+generates metric-calibrated fallbacks, and injects preload hints automatically.
 
-**Optimal fallback fonts by platform:**
+See the complete setup in the [Astro section above](#astro) and the
+[Astro Font Optimization guide](/docs/astro-fonts) for full details.
 
-| Font | Mac | Windows | Linux / Android |
-|-|-|-|-|
-| Instrument Sans Variable | Helvetica Neue | Segoe UI | Roboto |
-| JetBrains Mono Variable | Menlo / SF Mono | Consolas | Liberation Mono |
+### Vite / React
 
-**Install:**
-
+**1. Install fonts:**
 ```bash
-bun add fontaine
-# or: npm install fontaine
+bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
 ```
 
-**Astro (`astro.config.mjs`):**
-
-```js
-import { FontaineTransform } from 'fontaine'
-
-export default defineConfig({
-  vite: {
-    plugins: [
-      tailwindcss(),
-      FontaineTransform.vite({
-        fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
-          'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
-        },
-        // Required: @fontsource-variable URLs are transformed by Vite,
-        // fontaine cannot resolve them without an explicit node_modules path.
-        resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
-      }),
-    ],
-  },
-})
+**2. Import in your global CSS (before `basalt-ui/css`):**
+```css
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "basalt-ui/css";
 ```
 
-**Vite (`vite.config.ts`):**
+This gives you self-hosted fonts with `font-display: swap` — text is visible
+immediately and the web font swaps in when loaded. To eliminate the visual
+jump on swap (CLS), add metric-calibrated fallbacks with fontaine:
+
+**3. Optional — zero CLS with fontaine:**
+```bash
+bun add -D fontaine
+```
 
 ```ts
+// vite.config.ts
 import { FontaineTransform } from 'fontaine'
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     FontaineTransform.vite({
       fallbacks: {
         'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
@@ -390,9 +427,27 @@ export default defineConfig({
 })
 ```
 
-**Next.js (`next.config.ts`):**
+fontaine reads your font files at build time and generates `@font-face` overrides
+for the fallback fonts with matched metrics. When the metrics match, the swap is
+visually invisible and CLS reaches zero.
 
+### Next.js
+
+**1. Install fonts:**
+```bash
+bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
+```
+
+**2. Import in `app/globals.css`:**
+```css
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "basalt-ui/css";
+```
+
+**3. Optional — zero CLS with fontaine:**
 ```ts
+// next.config.ts
 import { FontaineTransform } from 'fontaine'
 
 const nextConfig = {
@@ -411,53 +466,11 @@ const nextConfig = {
 }
 ```
 
-:::note[Monorepo path]
-In a monorepo where `node_modules` is hoisted to the root, adjust `resolvePath` to point to the root:
+:::note[Monorepo resolvePath]
+When `node_modules` is hoisted to the monorepo root, adjust the path:
 ```js
 resolvePath: (id) => new URL('../../node_modules/' + id, import.meta.url)
 ```
-:::
-
-### Additional: Font Preloading
-
-Preloading the two critical latin variable fonts makes them arrive before the CSS is even parsed, shrinking the fallback window significantly. This is complementary to fontaine — preload reduces how long the fallback shows, fontaine eliminates the visual jump when it swaps.
-
-**Astro layout (`Layout.astro`):**
-
-```astro
-<head>
-  <!-- Preload the two critical latin variable fonts -->
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin="anonymous"
-    href="/node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wdth-normal.woff2"
-  />
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin="anonymous"
-    href="/node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2"
-  />
-</head>
-```
-
-**HTML / generic:**
-
-```html
-<link
-  rel="preload"
-  as="font"
-  type="font/woff2"
-  crossorigin="anonymous"
-  href="/path/to/instrument-sans-latin-wdth-normal.woff2"
-/>
-```
-
-:::tip[Best results]
-Combine fontaine (CLS → 0) with preloading (minimal flash window) for the best possible font loading experience.
 :::
 
 ## Requirements
