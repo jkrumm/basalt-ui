@@ -75,7 +75,7 @@ bun install                # Install all workspaces
 bun run dev                # Start web app
 bun run pre                # Run format + lint + typecheck (pre-commit)
 bun run typecheck          # Type-check all workspaces
-bun run release            # Create release (local only)
+                           # Releases: trigger Make Release workflow on GitHub Actions
 ```
 
 **Package (packages/basalt-ui):**
@@ -330,7 +330,7 @@ chore: release v0.1.0
 3. Creates git tag + GitHub release + publishes to npm automatically
 
 **Commit type discipline (affects npm versioning)**:
-- `feat:` / `fix:` — triggers minor/patch release → only use when changing `packages/basalt-ui/`
+- `feat:` / `fix:` — triggers minor/patch release **only when commit touches `packages/basalt-ui/`** (path-filtered); safe to use for other changes too
 - `ci:` — CI/CD changes, never triggers release (use for workflow, lefthook changes)
 - `chore:` / `docs:` / `refactor:` — no release (use for non-package work)
 - `BREAKING CHANGE:` in commit footer → major release
