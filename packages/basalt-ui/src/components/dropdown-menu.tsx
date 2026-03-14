@@ -1,6 +1,7 @@
 'use client'
 
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
+import type { IconProps } from '@tabler/icons-react'
 import type * as React from 'react'
 
 import { cn } from '../utils'
@@ -42,16 +43,35 @@ function DropdownMenuContent({
   )
 }
 
-function DropdownMenuItem({ className, ...props }: MenuPrimitive.Item.Props) {
+function DropdownMenuItem({
+  className,
+  icon,
+  intent = 'default',
+  hint,
+  children,
+  ...props
+}: MenuPrimitive.Item.Props & {
+  icon?: React.ComponentType<IconProps>
+  intent?: 'default' | 'danger'
+  hint?: React.ReactNode
+}) {
+  const Icon = icon
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "relative flex min-h-7 w-full cursor-default select-none items-center rounded-md px-2 py-1 text-xs/relaxed outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+        "relative flex min-h-7 w-full cursor-pointer select-none items-center rounded-md px-2 py-1 text-xs/relaxed outline-hidden focus:bg-muted focus:text-foreground data-disabled:cursor-not-allowed data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+        intent === 'danger' && 'text-red focus:bg-red/10 focus:text-red',
         className,
       )}
       {...props}
-    />
+    >
+      {Icon && (
+        <Icon className={cn('size-3.5 shrink-0', intent !== 'danger' && 'text-muted-foreground')} />
+      )}
+      {children}
+      {hint && <span className="ml-auto pl-4 text-muted-foreground">{hint}</span>}
+    </MenuPrimitive.Item>
   )
 }
 

@@ -182,7 +182,7 @@
   --orange-4: #ec9a3c; /* ORANGE4 */
   --orange-5: #fbb360; /* ORANGE5 */
   --orange: var(--orange-3);
-  --orange-foreground: var(--dark-4);
+  --orange-foreground: var(--white);
 
   /* Yellow (Caution — Blueprint GOLD3) */
   --yellow: #d1980b; /* GOLD3 */
@@ -329,8 +329,8 @@
   --destructive: var(--red);
   --destructive-foreground: var(--white);
 
-  /* Focus ring - uses primary blue */
-  --ring: var(--blue);
+  /* Focus ring — Blueprint uses rgba(BLUE2, 0.752) */
+  --ring: var(--blue-2);
 
   /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
   --sidebar: var(--light-2);
@@ -566,8 +566,8 @@
   --destructive: var(--red);
   --destructive-foreground: var(--white);
 
-  /* Focus ring */
-  --ring: var(--blue);
+  /* Focus ring — Blueprint uses rgba(BLUE2, 0.752) */
+  --ring: var(--blue-2);
 
   /* Sidebar - slightly different from main background */
   --sidebar: var(--dark-2);
@@ -1015,6 +1015,41 @@
   ::before,
   ::after {
     border-color: var(--border);
+  }
+
+  /* === INTERACTIVE CURSOR === */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="tab"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="checkbox"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="radio"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="switch"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="slider"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="menuitem"]:not([aria-disabled="true"]):not([data-disabled]),
+  [role="option"]:not([aria-disabled="true"]):not([data-disabled]),
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  label {
+    cursor: pointer;
+  }
+
+  /* === DISABLED CURSOR === */
+  :disabled,
+  [data-disabled],
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Labels that follow a disabled sibling (base-ui pattern: control → hidden input → label) */
+  :disabled ~ label,
+  :disabled ~ [data-slot="label"],
+  [data-disabled] ~ label,
+  [data-disabled] ~ [data-slot="label"],
+  [aria-disabled="true"] ~ label,
+  [aria-disabled="true"] ~ [data-slot="label"] {
+    cursor: not-allowed;
   }
 
   html {

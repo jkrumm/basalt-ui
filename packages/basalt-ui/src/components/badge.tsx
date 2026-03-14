@@ -1,6 +1,8 @@
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
+import { IconX } from '@tabler/icons-react'
 import { cva, type VariantProps } from 'class-variance-authority'
+import type * as React from 'react'
 
 import { cn } from '../utils'
 
@@ -14,13 +16,13 @@ const badgeVariants = cva(
         // Intent: solid fills matching button intent colors
         primary: 'bg-blue text-white',
         success: 'bg-green text-white',
-        warning: 'bg-orange text-white',
+        warning: 'bg-orange-5 text-gray-black',
         danger: 'bg-red text-white',
         // Minimal: low-opacity bg, colored text (Blueprint "minimal" tag)
         'primary-minimal': 'bg-blue/15 text-blue dark:bg-blue/20 dark:text-blue-4',
-        'success-minimal': 'bg-green/15 text-green-1 dark:bg-green/20 dark:text-green-4',
-        'warning-minimal': 'bg-orange/15 text-orange-1 dark:bg-orange/20 dark:text-orange-4',
-        'danger-minimal': 'bg-red/15 text-red-1 dark:bg-red/20 dark:text-red-4',
+        'success-minimal': 'bg-green/15 text-green dark:bg-green/20 dark:text-green-4',
+        'warning-minimal': 'bg-orange/15 text-orange dark:bg-orange/20 dark:text-orange-4',
+        'danger-minimal': 'bg-red/15 text-red dark:bg-red/20 dark:text-red-4',
         // Neutral/utility
         secondary: 'bg-muted text-muted-foreground dark:bg-muted/60',
         outline: 'border border-border bg-transparent text-foreground',
@@ -28,9 +30,14 @@ const badgeVariants = cva(
         // Legacy ShadCN alias
         destructive: 'bg-red text-white',
       },
+      size: {
+        default: '',
+        lg: 'h-6 px-2.5 text-xs',
+      },
     },
     defaultVariants: {
       variant: 'default',
+      size: 'default',
     },
   },
 )
@@ -38,16 +45,47 @@ const badgeVariants = cva(
 function Badge({
   className,
   variant = 'default',
+  size = 'default',
+  onRemove,
+  interactive = false,
   render,
+  children,
   ...props
-}: useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
+}: useRender.ComponentProps<'span'> &
+  VariantProps<typeof badgeVariants> & {
+    onRemove?: () => void
+    interactive?: boolean
+  }) {
+  const content = onRemove ? (
+    <>
+      {children}
+      <button
+        type="button"
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation()
+          onRemove()
+        }}
+        className="-mr-0.5 ml-0.5 inline-flex items-center justify-center rounded-sm opacity-70 hover:opacity-100"
+        aria-label="Remove"
+      >
+        <IconX className="size-2.5!" />
+      </button>
+    </>
+  ) : (
+    children
+  )
+
   return useRender({
-    defaultTagName: 'span',
+    defaultTagName: interactive ? 'button' : 'span',
     props: mergeProps<'span'>(
       {
-        className: cn(badgeVariants({ variant }), className),
+        className: cn(
+          badgeVariants({ variant, size }),
+          interactive && 'cursor-pointer hover:opacity-80',
+          className,
+        ),
       },
-      props,
+      { ...props, children: content },
     ),
     render,
     state: {
