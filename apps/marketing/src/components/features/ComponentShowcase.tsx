@@ -127,16 +127,16 @@ export function ComponentShowcase() {
             <SectionLabel>Buttons</SectionLabel>
             <div className="flex flex-wrap gap-2">
               <Button size="sm">Default</Button>
-              <Button size="sm" variant="outline">
-                Outline
+              <Button size="sm" variant="primary">
+                Primary
               </Button>
-              <Button size="sm" className="bg-green text-white hover:opacity-90">
+              <Button size="sm" variant="success">
                 Success
               </Button>
-              <Button size="sm" className="bg-orange text-dark-4 hover:opacity-90">
+              <Button size="sm" variant="warning">
                 Warning
               </Button>
-              <Button size="sm" className="bg-red text-white hover:opacity-90">
+              <Button size="sm" variant="danger">
                 Danger
               </Button>
               <Button size="sm" variant="ghost">
@@ -187,11 +187,18 @@ export function ComponentShowcase() {
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                <Badge variant="default">Primary</Badge>
-                <Badge variant="secondary">Secondary</Badge>
+                <Badge variant="primary">Primary</Badge>
+                <Badge variant="success">Success</Badge>
+                <Badge variant="warning">Warning</Badge>
+                <Badge variant="danger">Danger</Badge>
+                <Badge variant="secondary">Muted</Badge>
                 <Badge variant="outline">Outline</Badge>
-                <Badge variant="destructive">Destructive</Badge>
-                <Badge variant="ghost">Ghost</Badge>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Badge variant="primary-minimal">Primary</Badge>
+                <Badge variant="success-minimal">Success</Badge>
+                <Badge variant="warning-minimal">Warning</Badge>
+                <Badge variant="danger-minimal">Danger</Badge>
               </div>
             </div>
           </div>

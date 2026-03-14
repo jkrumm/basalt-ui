@@ -4,31 +4,43 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  "focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-md border border-transparent bg-clip-padding text-xs/relaxed font-medium focus-visible:ring-[2px] aria-invalid:ring-[2px] [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
+  "inline-flex cursor-default items-center justify-center gap-1 whitespace-nowrap rounded text-xs font-normal transition-[background-color,box-shadow] select-none outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
-        outline:
-          'border-border dark:bg-input/20 dark:bg-input/30 hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
-        secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        // Blueprint default: neutral gray background, dark text
+        default:
+          'bg-light-2 text-dark-2 shadow-btn hover:bg-light-3 active:bg-light-4 dark:bg-dark-3 dark:text-light-3 dark:hover:bg-dark-4 dark:active:bg-dark-5',
+        // Blueprint primary intent: saturated blue
+        primary:
+          'bg-blue text-white shadow-btn-intent hover:bg-blue-2 active:bg-blue-1 dark:hover:bg-blue-2',
+        // Blueprint success intent: green
+        success: 'bg-green text-white shadow-btn-intent hover:bg-green-2 active:bg-green-1',
+        // Blueprint warning intent: orange
+        warning: 'bg-orange-4 text-dark-4 shadow-btn-intent hover:bg-orange-3 active:bg-orange-2',
+        // Blueprint danger intent: red
+        danger: 'bg-red text-white shadow-btn-intent hover:bg-red-2 active:bg-red-1',
+        // Minimal / ghost: transparent, hover muted
         ghost:
-          'hover:bg-muted hover:text-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground',
-        destructive:
-          'bg-destructive/10 hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 text-destructive focus-visible:border-destructive/40 dark:hover:bg-destructive/30',
+          'bg-transparent text-foreground hover:bg-muted active:bg-muted/80 dark:hover:bg-muted/50',
+        // Outline: explicit border, same as default but transparent bg
+        outline:
+          'border border-border bg-transparent text-foreground hover:bg-muted dark:border-border dark:hover:bg-muted/50',
+        // Legacy ShadCN alias: maps to primary
+        secondary:
+          'bg-secondary text-secondary-foreground shadow-btn hover:bg-secondary/80 dark:hover:bg-secondary/70',
+        // Link
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default:
-          "h-7 gap-1 px-2 text-xs/relaxed has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        xs: "h-5 gap-1 rounded-sm px-2 text-[0.625rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-2.5",
-        sm: "h-6 gap-1 px-2 text-xs/relaxed has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        lg: "h-8 gap-1 px-2.5 text-xs/relaxed has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-4",
-        icon: "size-7 [&_svg:not([class*='size-'])]:size-3.5",
-        'icon-xs': "size-5 rounded-sm [&_svg:not([class*='size-'])]:size-2.5",
-        'icon-sm': "size-6 [&_svg:not([class*='size-'])]:size-3",
-        'icon-lg': "size-8 [&_svg:not([class*='size-'])]:size-4",
+        xs: 'h-5 px-1.5 text-[0.625rem]',
+        sm: 'h-6 px-2',
+        default: 'h-[1.875rem] px-2.5',
+        lg: 'h-9 px-4 text-sm',
+        icon: 'size-[1.875rem]',
+        'icon-sm': 'size-6',
+        'icon-xs': 'size-5 text-[0.625rem]',
+        'icon-lg': 'size-9',
       },
     },
     defaultVariants: {
