@@ -65,41 +65,42 @@
   --sl-color-black: var(--dark-4); /* Darkest - near black (0.195) */
 
   /* === SEMANTIC COLOR HUES === */
-  /* Extract hue values from Basalt OKLCH colors for Starlight's HSL system */
+  /* Approximate hue angles for Starlight's HSL-based tint system */
+  --sl-hue-orange: 62; /* Blueprint ORANGE — #C87619 */
+  --sl-hue-green: 155; /* Blueprint GREEN  — #238551 */
+  --sl-hue-blue: 258; /* Blueprint BLUE   — #2D72D2 */
+  --sl-hue-purple: 328; /* Blueprint VIOLET — #9D3F9D */
+  --sl-hue-red: 23; /* Blueprint RED    — #CD4246 */
 
-  --sl-hue-orange: 62; /* From oklch(0.592 0.131 62) */
-  --sl-hue-green: 155; /* From oklch(0.548 0.120 155) */
-  --sl-hue-blue: 258; /* From oklch(0.560 0.163 258) */
-  --sl-hue-purple: 333; /* From oklch(0.6921 0.0625 332.66) */
-  --sl-hue-red: 23; /* From oklch(0.535 0.152 23) */
+  /* === COLOR INTENSITY VARIANTS (dark mode) ===
+     low  = dark background tint → darkest shade (1)
+     base = mid tone              → shade 3 via semantic var
+     high = readable text/icon   → lightest shade (5)          */
 
-  /* === COLOR INTENSITY VARIANTS === */
-  /* Using OKLCH relative color syntax for perceptually uniform variations */
+  /* Orange */
+  --sl-color-orange-low: #77450d; /* ORANGE1 */
+  --sl-color-orange: var(--orange); /* ORANGE3 */
+  --sl-color-orange-high: #fbb360; /* ORANGE5 */
 
-  /* Orange (warnings, annotations) */
-  --sl-color-orange-low: oklch(from var(--orange) calc(l - 0.25) c h);
-  --sl-color-orange: var(--orange);
-  --sl-color-orange-high: oklch(from var(--orange) calc(l + 0.15) calc(c * 0.8) h);
+  /* Green */
+  --sl-color-green-low: #165a36; /* GREEN1 */
+  --sl-color-green: var(--green); /* GREEN3 */
+  --sl-color-green-high: #72ca9b; /* GREEN5 */
 
-  /* Green (success, confirmations) */
-  --sl-color-green-low: oklch(from var(--green) calc(l - 0.25) c h);
-  --sl-color-green: var(--green);
-  --sl-color-green-high: oklch(from var(--green) calc(l + 0.1) calc(c * 0.8) h);
+  /* Blue */
+  --sl-color-blue-low: #184a90; /* BLUE1 */
+  --sl-color-blue: var(--blue); /* BLUE3 */
+  --sl-color-blue-high: #8abbff; /* BLUE5 */
 
-  /* Blue (info, links) */
-  --sl-color-blue-low: var(--chart-blue-7); /* Darker blue (0.42) */
-  --sl-color-blue: var(--blue); /* Primary blue (0.6965) */
-  --sl-color-blue-high: var(--chart-blue-2); /* Lighter blue (0.80) */
+  /* Purple */
+  --sl-color-purple-low: #5c255c; /* VIOLET1 */
+  --sl-color-purple: var(--purple); /* VIOLET3 */
+  --sl-color-purple-high: #d69fd6; /* VIOLET5 */
 
-  /* Purple (special features) */
-  --sl-color-purple-low: oklch(from var(--purple) calc(l - 0.25) c h);
-  --sl-color-purple: var(--purple);
-  --sl-color-purple-high: oklch(from var(--purple) calc(l + 0.15) calc(c * 0.8) h);
-
-  /* Red (errors, destructive actions) */
-  --sl-color-red-low: oklch(from var(--red) calc(l - 0.2) c h);
-  --sl-color-red: var(--red);
-  --sl-color-red-high: oklch(from var(--red) calc(l + 0.15) calc(c * 0.8) h);
+  /* Red */
+  --sl-color-red-low: #8e292c; /* RED1 */
+  --sl-color-red: var(--red); /* RED3 */
+  --sl-color-red-high: #fa999c; /* RED5 */
 
   /* === ACCENT COLORS (Primary Blue) === */
   --sl-color-accent-low: var(--blue-light); /* Light blue for subtle highlights */
@@ -122,9 +123,9 @@
 
   /* === BORDERS & DIVIDERS === */
   /* Dark mode: use dark foundation colors */
-  --sl-color-hairline-light: oklch(from var(--dark-4) calc(l - 0.02) c h);
-  --sl-color-hairline: var(--dark-4);
-  --sl-color-hairline-shade: oklch(from var(--dark-4) calc(l + 0.03) c h);
+  --sl-color-hairline-light: #2f343c; /* DARK_GRAY3 — one step darker than dark-4 */
+  --sl-color-hairline: var(--dark-4); /* DARK_GRAY4 */
+  --sl-color-hairline-shade: #404854; /* DARK_GRAY5 — one step lighter than dark-4 */
 
   /* === OVERLAY === */
   --sl-color-backdrop-overlay: oklch(0 0 0 / 0.66); /* Semi-transparent backdrop */
@@ -228,25 +229,25 @@
 
   /* === BORDERS & DIVIDERS === */
   /* Light mode: use light foundation colors */
-  --sl-color-hairline-light: oklch(from var(--light-4) calc(l - 0.02) c h);
-  --sl-color-hairline: var(--light-4);
-  --sl-color-hairline-shade: oklch(from var(--light-4) calc(l + 0.03) c h);
+  --sl-color-hairline-light: #dce0e5; /* LIGHT_GRAY2 — one step darker than light-4 */
+  --sl-color-hairline: var(--light-4); /* LIGHT_GRAY3 */
+  --sl-color-hairline-shade: #edeff2; /* LIGHT_GRAY4 — one step lighter than light-4 */
 
-  /* Light mode color adjustments for better contrast */
-  --sl-color-orange-high: oklch(from var(--orange) calc(l - 0.2) calc(c * 1.1) h);
-  --sl-color-orange-low: oklch(from var(--orange) calc(l + 0.2) calc(c * 0.7) h);
+  /* Light mode: high = dark readable text (shade 1-2), low = light bg tint (shade 5) */
+  --sl-color-orange-high: #935610; /* ORANGE2 — dark for text on white */
+  --sl-color-orange-low: #fbb360; /* ORANGE5 — light tint for aside bg */
 
-  --sl-color-green-high: oklch(from var(--green) calc(l - 0.25) calc(c * 1.1) h);
-  --sl-color-green-low: oklch(from var(--green) calc(l + 0.15) calc(c * 0.7) h);
+  --sl-color-green-high: #1c6e42; /* GREEN2 — dark for text on white */
+  --sl-color-green-low: #72ca9b; /* GREEN5 — light tint for aside bg */
 
-  --sl-color-blue-high: var(--blue-deep); /* Darker for light mode */
-  --sl-color-blue-low: var(--chart-blue-1); /* Lighter for light mode */
+  --sl-color-blue-high: #184a90; /* BLUE1 — dark for text on white */
+  --sl-color-blue-low: #8abbff; /* BLUE5 — light tint for aside bg */
 
-  --sl-color-purple-high: oklch(from var(--purple) calc(l - 0.2) calc(c * 1.1) h);
-  --sl-color-purple-low: oklch(from var(--purple) calc(l + 0.2) calc(c * 0.7) h);
+  --sl-color-purple-high: #7c327c; /* VIOLET2 — dark for text on white */
+  --sl-color-purple-low: #d69fd6; /* VIOLET5 — light tint for aside bg */
 
-  --sl-color-red-high: oklch(from var(--red) calc(l - 0.2) calc(c * 1.1) h);
-  --sl-color-red-low: oklch(from var(--red) calc(l + 0.2) calc(c * 0.7) h);
+  --sl-color-red-high: #ac2f33; /* RED2 — dark for text on white */
+  --sl-color-red-low: #fa999c; /* RED5 — light tint for aside bg */
 }
 
 /* === STARLIGHT RESPONSIVE OVERRIDES === */

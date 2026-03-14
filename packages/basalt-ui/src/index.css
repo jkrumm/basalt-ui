@@ -87,24 +87,24 @@
      All values use hue ~253-258 for perceptually consistent cool blue-grays.
      ============================================================================ */
 
-  /* === FULL GRAY SCALE: 17 values === */
-  --gray-black: oklch(0.19 0.009 256); /* #111418 */
-  --gray-dark-1: oklch(0.245 0.014 253); /* #1C2127 */
-  --gray-dark-2: oklch(0.283 0.015 257); /* #252A31 */
-  --gray-dark-3: oklch(0.322 0.016 257); /* #2F343C */
-  --gray-dark-4: oklch(0.362 0.018 258); /* #383E47 */
-  --gray-dark-5: oklch(0.4 0.02 258); /* #404854 */
-  --gray-mid-1: oklch(0.524 0.031 257); /* #5F6B7C */
-  --gray-mid-2: oklch(0.594 0.03 255); /* #738091 */
-  --gray-mid-3: oklch(0.68 0.024 257); /* #8F99A8 */
-  --gray-mid-4: oklch(0.764 0.019 258); /* #ABB3BF */
-  --gray-mid-5: oklch(0.842 0.013 255); /* #C5CBD3 */
-  --gray-light-1: oklch(0.88 0.011 254); /* #D3D8DE */
-  --gray-light-2: oklch(0.905 0.008 254); /* #DCE0E5 */
-  --gray-light-3: oklch(0.93 0.005 248); /* #E5E8EB */
-  --gray-light-4: oklch(0.952 0.005 258); /* #EDEFF2 */
-  --gray-light-5: oklch(0.976 0.003 258); /* #F6F7F9 */
-  --gray-white: oklch(1 0 0); /* #FFFFFF */
+  /* === FULL GRAY SCALE: 17 values (Blueprint exact hex) === */
+  --gray-black: #111418; /* BLACK */
+  --gray-dark-1: #1c2127; /* DARK_GRAY1 */
+  --gray-dark-2: #252a31; /* DARK_GRAY2 */
+  --gray-dark-3: #2f343c; /* DARK_GRAY3 */
+  --gray-dark-4: #383e47; /* DARK_GRAY4 */
+  --gray-dark-5: #404854; /* DARK_GRAY5 */
+  --gray-mid-1: #5f6b7c; /* GRAY1 */
+  --gray-mid-2: #738091; /* GRAY2 */
+  --gray-mid-3: #8f99a8; /* GRAY3 */
+  --gray-mid-4: #abb3bf; /* GRAY4 */
+  --gray-mid-5: #c5cbd3; /* GRAY5 */
+  --gray-light-1: #d3d8de; /* LIGHT_GRAY1 */
+  --gray-light-2: #dce0e5; /* LIGHT_GRAY2 */
+  --gray-light-3: #e5e8eb; /* LIGHT_GRAY3 */
+  --gray-light-4: #edeff2; /* LIGHT_GRAY4 */
+  --gray-light-5: #f6f7f9; /* LIGHT_GRAY5 */
+  --gray-white: #ffffff; /* WHITE */
 
   /* === LIGHT TONES: Foundation shortcuts === */
   /* Used for: light mode backgrounds, dark mode text, elevated surfaces */
@@ -166,49 +166,48 @@
   /* === EXPRESSIVE COLORS: 5-shade intent palettes === */
   /* Same values for light and dark modes */
 
-  /* Red (Danger) */
-  --red-1: oklch(0.388 0.108 23); /* Darkest */
-  --red-2: oklch(0.451 0.131 23);
-  --red-3: oklch(0.535 0.152 23); /* Default */
-  --red-4: oklch(0.648 0.134 20);
-  --red-5: oklch(0.757 0.101 17); /* Lightest */
+  /* Red (Danger — Blueprint RED1-5) */
+  --red-1: #8e292c; /* RED1 */
+  --red-2: #ac2f33; /* RED2 */
+  --red-3: #cd4246; /* RED3 */
+  --red-4: #e76a6e; /* RED4 */
+  --red-5: #fa999c; /* RED5 */
   --red: var(--red-3);
   --red-foreground: var(--white);
 
-  /* Orange (Warning) */
-  --orange-1: oklch(0.398 0.087 62);
-  --orange-2: oklch(0.467 0.103 62);
-  --orange-3: oklch(0.592 0.131 62); /* Default */
-  --orange-4: oklch(0.721 0.138 62);
-  --orange-5: oklch(0.8 0.127 68);
+  /* Orange (Warning — Blueprint ORANGE1-5) */
+  --orange-1: #77450d; /* ORANGE1 */
+  --orange-2: #935610; /* ORANGE2 */
+  --orange-3: #c87619; /* ORANGE3 */
+  --orange-4: #ec9a3c; /* ORANGE4 */
+  --orange-5: #fbb360; /* ORANGE5 */
   --orange: var(--orange-3);
   --orange-foreground: var(--dark-4);
 
-  /* Yellow (Caution) - unchanged */
-  --yellow: oklch(0.8549 0.0892 84.09);
+  /* Yellow (Caution — Blueprint GOLD3) */
+  --yellow: #d1980b; /* GOLD3 */
   --yellow-foreground: var(--dark-4);
 
-  /* Green (Success) */
-  --green-1: oklch(0.396 0.088 155);
-  --green-2: oklch(0.462 0.098 155);
-  --green-3: oklch(0.548 0.12 155); /* Default */
-  --green-4: oklch(0.649 0.12 155);
-  --green-5: oklch(0.773 0.098 162);
+  /* Green (Success — Blueprint GREEN1-5) */
+  --green-1: #165a36; /* GREEN1 */
+  --green-2: #1c6e42; /* GREEN2 */
+  --green-3: #238551; /* GREEN3 */
+  --green-4: #32a467; /* GREEN4 */
+  --green-5: #72ca9b; /* GREEN5 */
   --green: var(--green-3);
-  --green-foreground: var(--white); /* White on darker green */
+  --green-foreground: var(--white);
 
-  /* Purple (Special) - unchanged */
-  --purple: oklch(0.6921 0.0625 332.66);
+  /* Purple (Special — Blueprint VIOLET3) */
+  --purple: #9d3f9d; /* VIOLET3 */
   --purple-foreground: var(--white);
 
-  /* === BLUE PRIMARY: 5-shade scale, highly saturated === */
-  /* Same values for light and dark modes */
+  /* === BLUE PRIMARY: 5-shade scale (Blueprint BLUE1-5) === */
 
-  --blue-1: oklch(0.417 0.127 258); /* Darkest */
-  --blue-2: oklch(0.487 0.146 258);
-  --blue-3: oklch(0.56 0.163 258); /* Default */
-  --blue-4: oklch(0.655 0.16 257);
-  --blue-5: oklch(0.784 0.111 257); /* Lightest */
+  --blue-1: #184a90; /* BLUE1 */
+  --blue-2: #215db0; /* BLUE2 */
+  --blue-3: #2d72d2; /* BLUE3 */
+  --blue-4: #4c90f0; /* BLUE4 */
+  --blue-5: #8abbff; /* BLUE5 */
   --blue: var(--blue-3);
   --blue-foreground: var(--white);
 
@@ -232,84 +231,84 @@
 
   /* === EXTENDED COLORS: 10 families × 5 shades === */
 
-  /* Cerulean (hue ~220) */
-  --cerulean-1: oklch(0.38 0.1 220);
-  --cerulean-2: oklch(0.46 0.11 220);
-  --cerulean-3: oklch(0.55 0.12 220);
-  --cerulean-4: oklch(0.66 0.12 220);
-  --cerulean-5: oklch(0.76 0.09 220);
+  /* Cerulean (Blueprint CERULEAN1-5) */
+  --cerulean-1: #0c5174; /* CERULEAN1 */
+  --cerulean-2: #0f6894; /* CERULEAN2 */
+  --cerulean-3: #147eb3; /* CERULEAN3 */
+  --cerulean-4: #3fa6da; /* CERULEAN4 */
+  --cerulean-5: #68c1ee; /* CERULEAN5 */
   --cerulean: var(--cerulean-3);
 
-  /* Indigo (hue ~280) */
-  --indigo-1: oklch(0.41 0.15 280);
-  --indigo-2: oklch(0.47 0.17 280);
-  --indigo-3: oklch(0.56 0.19 280);
-  --indigo-4: oklch(0.66 0.18 280);
-  --indigo-5: oklch(0.77 0.13 280);
+  /* Indigo (Blueprint INDIGO1-5) */
+  --indigo-1: #5642a6; /* INDIGO1 */
+  --indigo-2: #634dbf; /* INDIGO2 */
+  --indigo-3: #7961db; /* INDIGO3 */
+  --indigo-4: #9881f3; /* INDIGO4 */
+  --indigo-5: #bdadff; /* INDIGO5 */
   --indigo: var(--indigo-3);
 
-  /* Violet (hue ~320) */
-  --violet-1: oklch(0.32 0.12 320);
-  --violet-2: oklch(0.4 0.14 320);
-  --violet-3: oklch(0.5 0.16 320);
-  --violet-4: oklch(0.62 0.12 320);
-  --violet-5: oklch(0.73 0.09 320);
+  /* Violet (Blueprint VIOLET1-5) */
+  --violet-1: #5c255c; /* VIOLET1 */
+  --violet-2: #7c327c; /* VIOLET2 */
+  --violet-3: #9d3f9d; /* VIOLET3 */
+  --violet-4: #bd6bbd; /* VIOLET4 */
+  --violet-5: #d69fd6; /* VIOLET5 */
   --violet: var(--violet-3);
 
-  /* Gold (hue ~50) */
-  --gold-1: oklch(0.38 0.09 50);
-  --gold-2: oklch(0.48 0.11 50);
-  --gold-3: oklch(0.67 0.14 50);
-  --gold-4: oklch(0.78 0.14 55);
-  --gold-5: oklch(0.87 0.13 65);
+  /* Gold (Blueprint GOLD1-5) */
+  --gold-1: #5c4405; /* GOLD1 */
+  --gold-2: #866103; /* GOLD2 */
+  --gold-3: #d1980b; /* GOLD3 */
+  --gold-4: #f0b726; /* GOLD4 */
+  --gold-5: #fbd065; /* GOLD5 */
   --gold: var(--gold-3);
 
-  /* Forest (hue ~140) */
-  --forest-1: oklch(0.47 0.12 140);
-  --forest-2: oklch(0.53 0.14 140);
-  --forest-3: oklch(0.6 0.16 140);
-  --forest-4: oklch(0.7 0.15 140);
-  --forest-5: oklch(0.8 0.13 140);
+  /* Forest (Blueprint FOREST1-5) */
+  --forest-1: #1d7324; /* FOREST1 */
+  --forest-2: #238c2c; /* FOREST2 */
+  --forest-3: #29a634; /* FOREST3 */
+  --forest-4: #43bf4d; /* FOREST4 */
+  --forest-5: #62d96b; /* FOREST5 */
   --forest: var(--forest-3);
 
-  /* Turquoise (hue ~175) */
-  --turquoise-1: oklch(0.34 0.08 175);
-  --turquoise-2: oklch(0.44 0.1 175);
-  --turquoise-3: oklch(0.6 0.12 175);
-  --turquoise-4: oklch(0.73 0.12 175);
-  --turquoise-5: oklch(0.84 0.09 175);
+  /* Turquoise (Blueprint TURQUOISE1-5) */
+  --turquoise-1: #004d46; /* TURQUOISE1 */
+  --turquoise-2: #007067; /* TURQUOISE2 */
+  --turquoise-3: #00a396; /* TURQUOISE3 */
+  --turquoise-4: #13c9ba; /* TURQUOISE4 */
+  --turquoise-5: #7ae1d8; /* TURQUOISE5 */
   --turquoise: var(--turquoise-3);
 
-  /* Rose (hue ~345) */
-  --rose-1: oklch(0.42 0.14 345);
-  --rose-2: oklch(0.47 0.16 345);
-  --rose-3: oklch(0.53 0.18 345);
-  --rose-4: oklch(0.63 0.17 345);
-  --rose-5: oklch(0.73 0.14 345);
+  /* Rose (Blueprint ROSE1-5) */
+  --rose-1: #a82255; /* ROSE1 */
+  --rose-2: #c22762; /* ROSE2 */
+  --rose-3: #db2c6f; /* ROSE3 */
+  --rose-4: #f5498b; /* ROSE4 */
+  --rose-5: #ff66a1; /* ROSE5 */
   --rose: var(--rose-3);
 
-  /* Vermilion (hue ~25) */
-  --vermilion-1: oklch(0.4 0.12 25);
-  --vermilion-2: oklch(0.47 0.14 25);
-  --vermilion-3: oklch(0.54 0.16 25);
-  --vermilion-4: oklch(0.65 0.14 25);
-  --vermilion-5: oklch(0.76 0.11 25);
+  /* Vermilion (Blueprint VERMILION1-5) */
+  --vermilion-1: #96290d; /* VERMILION1 */
+  --vermilion-2: #b83211; /* VERMILION2 */
+  --vermilion-3: #d33d17; /* VERMILION3 */
+  --vermilion-4: #eb6847; /* VERMILION4 */
+  --vermilion-5: #ff9980; /* VERMILION5 */
   --vermilion: var(--vermilion-3);
 
-  /* Lime (hue ~95) */
-  --lime-1: oklch(0.39 0.09 95);
-  --lime-2: oklch(0.47 0.12 95);
-  --lime-3: oklch(0.67 0.15 95);
-  --lime-4: oklch(0.8 0.14 95);
-  --lime-5: oklch(0.91 0.12 95);
+  /* Lime (Blueprint LIME1-5) */
+  --lime-1: #43501b; /* LIME1 */
+  --lime-2: #5a701a; /* LIME2 */
+  --lime-3: #8eb125; /* LIME3 */
+  --lime-4: #b6d94c; /* LIME4 */
+  --lime-5: #d4f17e; /* LIME5 */
   --lime: var(--lime-3);
 
-  /* Sepia (hue ~45) */
-  --sepia-1: oklch(0.38 0.07 45);
-  --sepia-2: oklch(0.46 0.09 45);
-  --sepia-3: oklch(0.55 0.1 45);
-  --sepia-4: oklch(0.65 0.09 45);
-  --sepia-5: oklch(0.77 0.07 45);
+  /* Sepia (Blueprint SEPIA1-5) */
+  --sepia-1: #5e4123; /* SEPIA1 */
+  --sepia-2: #7a542e; /* SEPIA2 */
+  --sepia-3: #946638; /* SEPIA3 */
+  --sepia-4: #af855a; /* SEPIA4 */
+  --sepia-5: #d0b090; /* SEPIA5 */
   --sepia: var(--sepia-3);
 
   /* === SEMANTIC COLOR TOKENS === */
