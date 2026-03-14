@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  IconAlertCircle,
   IconAlertTriangle,
   IconCheck,
   IconChevronDown,
@@ -11,10 +12,11 @@ import {
   IconShieldCheck,
   IconTrash,
 } from '@tabler/icons-react'
+import { useState } from 'react'
 
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
@@ -38,9 +40,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Tooltip } from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -54,6 +57,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function ComponentShowcase() {
+  // Tabs state
+  const [tab1, setTab1] = useState('tab1')
+  const [tab2, setTab2] = useState('tab1')
+
+  // Slider state
+  const [slider1, setSlider1] = useState([40])
+  const [slider2, setSlider2] = useState([20, 70])
+  const [slider3, setSlider3] = useState([60])
+
+  // Toggle group state
+  const [toggle1, setToggle1] = useState(['b'])
+  const [toggle2, setToggle2] = useState(['x', 'y'])
+
   return (
     <div className="rounded bg-card border border-border p-5">
       <h2 className="mb-5 text-h5 font-bold">Component Kit</h2>
@@ -215,13 +231,9 @@ export function ComponentShowcase() {
               <SectionLabel>Dropdown Menu</SectionLabel>
               <div className="flex flex-wrap gap-2">
                 <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button size="sm">
-                        Actions <IconChevronDown />
-                      </Button>
-                    }
-                  />
+                  <DropdownMenuTrigger className={cn(buttonVariants({ size: 'sm' }))}>
+                    Actions <IconChevronDown className="size-3.5" />
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuLabel>Options</DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -237,12 +249,10 @@ export function ComponentShowcase() {
                 </DropdownMenu>
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={
-                      <Button size="sm" variant="primary">
-                        New <IconChevronDown />
-                      </Button>
-                    }
-                  />
+                    className={cn(buttonVariants({ size: 'sm', variant: 'primary' }))}
+                  >
+                    New <IconChevronDown className="size-3.5" />
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem>Project</DropdownMenuItem>
                     <DropdownMenuItem>Template</DropdownMenuItem>
@@ -257,15 +267,29 @@ export function ComponentShowcase() {
 
       <Separator className="my-6" />
 
-      {/* ── Row 2: Sliders | Tabs + Progress | Toggle Groups + Badges ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* ── Row 2: Sliders (1/2) | Tabs + Progress (1/2) ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sliders */}
         <div>
           <SectionLabel>Slider</SectionLabel>
-          <div className="space-y-5 px-1">
-            <Slider defaultValue={[40]} labelRenderer={(v) => `${v}`} />
-            <Slider defaultValue={[20, 70]} intent="success" labelRenderer={(v) => `${v}%`} />
-            <Slider defaultValue={[60]} intent="warning" labelRenderer={(v) => `${v}%`} />
+          <div className="space-y-6 px-1">
+            <Slider
+              value={slider1}
+              onValueChange={(v) => setSlider1([...(v as readonly number[])])}
+              labelRenderer={(v) => `${v}`}
+            />
+            <Slider
+              value={slider2}
+              onValueChange={(v) => setSlider2([...(v as readonly number[])])}
+              intent="success"
+              labelRenderer={(v) => `${v}%`}
+            />
+            <Slider
+              value={slider3}
+              onValueChange={(v) => setSlider3([...(v as readonly number[])])}
+              intent="warning"
+              labelRenderer={(v) => `${v}%`}
+            />
             <Slider defaultValue={[80]} intent="danger" disabled labelRenderer={(v) => `${v}`} />
           </div>
         </div>
@@ -275,14 +299,23 @@ export function ComponentShowcase() {
           <div>
             <SectionLabel>Tabs</SectionLabel>
             <div className="space-y-3">
-              <Tabs defaultValue="tab1">
+              <Tabs value={tab1} onValueChange={(v) => setTab1(v as string)}>
                 <TabsList>
                   <TabsTrigger value="tab1">Tab 1</TabsTrigger>
                   <TabsTrigger value="tab2">Tab 2</TabsTrigger>
                   <TabsTrigger value="tab3">Tab 3</TabsTrigger>
                 </TabsList>
+                <TabsContent value="tab1" className="pt-2">
+                  <p className="text-xs text-muted-foreground">Content of Tab 1</p>
+                </TabsContent>
+                <TabsContent value="tab2" className="pt-2">
+                  <p className="text-xs text-muted-foreground">Content of Tab 2</p>
+                </TabsContent>
+                <TabsContent value="tab3" className="pt-2">
+                  <p className="text-xs text-muted-foreground">Content of Tab 3</p>
+                </TabsContent>
               </Tabs>
-              <Tabs defaultValue="tab1">
+              <Tabs value={tab2} onValueChange={(v) => setTab2(v as string)}>
                 <TabsList variant="line">
                   <TabsTrigger value="tab1">Overview</TabsTrigger>
                   <TabsTrigger value="tab2">Analytics</TabsTrigger>
@@ -321,58 +354,65 @@ export function ComponentShowcase() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Toggle Groups + Badges */}
-        <div className="space-y-5">
-          <div>
-            <SectionLabel>Toggle Groups</SectionLabel>
-            <div className="space-y-2">
-              <ToggleGroup defaultValue={['b']} variant="outline">
-                <ToggleGroupItem value="a">Left</ToggleGroupItem>
-                <ToggleGroupItem value="b">Middle</ToggleGroupItem>
-                <ToggleGroupItem value="c">Right</ToggleGroupItem>
-              </ToggleGroup>
-              <ToggleGroup defaultValue={['x', 'y']}>
-                <ToggleGroupItem value="x">Alpha</ToggleGroupItem>
-                <ToggleGroupItem value="y">Beta</ToggleGroupItem>
-                <ToggleGroupItem value="z" disabled>
-                  Disabled
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+      <Separator className="my-6" />
+
+      {/* ── Row 3: Toggle Groups (1/3) + Badges (2/3) ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div>
+          <SectionLabel>Toggle Groups</SectionLabel>
+          <div className="space-y-2">
+            <ToggleGroup
+              value={toggle1}
+              onValueChange={(v) => setToggle1([...v])}
+              variant="outline"
+            >
+              <ToggleGroupItem value="a">Left</ToggleGroupItem>
+              <ToggleGroupItem value="b">Middle</ToggleGroupItem>
+              <ToggleGroupItem value="c">Right</ToggleGroupItem>
+            </ToggleGroup>
+            <ToggleGroup multiple value={toggle2} onValueChange={(v) => setToggle2([...v])}>
+              <ToggleGroupItem value="x">Alpha</ToggleGroupItem>
+              <ToggleGroupItem value="y">Beta</ToggleGroupItem>
+              <ToggleGroupItem value="z" disabled>
+                Disabled
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
+        </div>
 
-          <div>
-            <SectionLabel>Badges</SectionLabel>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="primary">Primary</Badge>
-                <Badge variant="success">Success</Badge>
-                <Badge variant="warning">Warning</Badge>
-                <Badge variant="danger">Danger</Badge>
-                <Badge variant="secondary">Muted</Badge>
-                <Badge variant="outline">Outline</Badge>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="primary-minimal">Primary</Badge>
-                <Badge variant="success-minimal">Success</Badge>
-                <Badge variant="warning-minimal">Warning</Badge>
-                <Badge variant="danger-minimal">Danger</Badge>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="primary" size="lg">
-                  Large
-                </Badge>
-                <Badge variant="success" size="lg">
-                  Success
-                </Badge>
-                <Badge variant="danger" onRemove={() => {}}>
-                  Removable
-                </Badge>
-                <Badge variant="primary-minimal" interactive onClick={() => {}}>
-                  Clickable
-                </Badge>
-              </div>
+        {/* Badges — spans 2 cols */}
+        <div className="lg:col-span-2">
+          <SectionLabel>Badges</SectionLabel>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="primary">Primary</Badge>
+              <Badge variant="success">Success</Badge>
+              <Badge variant="warning">Warning</Badge>
+              <Badge variant="danger">Danger</Badge>
+              <Badge variant="secondary">Muted</Badge>
+              <Badge variant="outline">Outline</Badge>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="primary-minimal">Primary</Badge>
+              <Badge variant="success-minimal">Success</Badge>
+              <Badge variant="warning-minimal">Warning</Badge>
+              <Badge variant="danger-minimal">Danger</Badge>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="primary" size="lg">
+                Large
+              </Badge>
+              <Badge variant="success" size="lg">
+                Success
+              </Badge>
+              <Badge variant="danger" onRemove={() => {}}>
+                Removable
+              </Badge>
+              <Badge variant="primary-minimal" interactive onClick={() => {}}>
+                Clickable
+              </Badge>
             </div>
           </div>
         </div>
@@ -380,26 +420,33 @@ export function ComponentShowcase() {
 
       <Separator className="my-6" />
 
-      {/* ── Row 3: Tooltip | Alerts | Checkboxes + Radio + Switches ── */}
+      {/* ── Row 4: Tooltip (1/3) | Alerts (2/3) ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tooltip */}
         <div>
           <SectionLabel>Tooltip</SectionLabel>
-          <div className="flex flex-wrap gap-2">
-            <Tooltip content="Default tooltip on top">
-              <Button size="sm">Hover me</Button>
-            </Tooltip>
-            <Tooltip content="Shown below" side="bottom">
-              <Button size="sm" variant="primary">
-                Below
-              </Button>
-            </Tooltip>
-            <Tooltip content="Shown to the right" side="right">
-              <Button size="sm" variant="ghost">
-                Right
-              </Button>
-            </Tooltip>
-          </div>
+          <TooltipProvider>
+            <div className="flex flex-wrap gap-2">
+              <Tooltip>
+                <TooltipTrigger className={cn(buttonVariants({ size: 'sm' }))}>
+                  Hover me
+                </TooltipTrigger>
+                <TooltipContent>Default tooltip on top</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className={cn(buttonVariants({ size: 'sm', variant: 'primary' }))}>
+                  Below
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Shown below</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className={cn(buttonVariants({ size: 'sm', variant: 'ghost' }))}>
+                  Right
+                </TooltipTrigger>
+                <TooltipContent side="right">Shown to the right</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
 
         {/* Alerts — spans 2 cols */}
@@ -416,7 +463,7 @@ export function ComponentShowcase() {
             <Alert intent="warning" icon={IconAlertTriangle} title="Warning">
               This action may have unintended consequences.
             </Alert>
-            <Alert intent="danger" title="Error">
+            <Alert intent="danger" icon={IconAlertCircle} title="Error">
               Something went wrong. Please try again.
             </Alert>
           </div>
@@ -425,11 +472,11 @@ export function ComponentShowcase() {
 
       <Separator className="my-6" />
 
-      {/* ── Row 4: Checkboxes | Radio | Switches ── */}
+      {/* ── Row 5: Checkboxes | Radio | Switches ── */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div>
           <SectionLabel>Checkboxes</SectionLabel>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Checkbox id="cb1" />
               <Label htmlFor="cb1" className="text-small">
@@ -459,7 +506,7 @@ export function ComponentShowcase() {
 
         <div>
           <SectionLabel>Radio</SectionLabel>
-          <RadioGroup defaultValue="r1" className="space-y-2.5">
+          <RadioGroup defaultValue="r1" className="space-y-2">
             <div className="flex items-center gap-2">
               <RadioGroupItem value="r1" id="r1" />
               <Label htmlFor="r1" className="text-small">
@@ -483,7 +530,7 @@ export function ComponentShowcase() {
 
         <div>
           <SectionLabel>Switches</SectionLabel>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Switch defaultChecked />
               <span className="text-small">On</span>
