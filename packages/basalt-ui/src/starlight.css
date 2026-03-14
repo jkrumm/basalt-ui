@@ -67,11 +67,11 @@
   /* === SEMANTIC COLOR HUES === */
   /* Extract hue values from Basalt OKLCH colors for Starlight's HSL system */
 
-  --sl-hue-orange: 38; /* From oklch(0.6929 0.0963 38.24) */
-  --sl-hue-green: 131; /* From oklch(0.7683 0.0749 131.06) */
-  --sl-hue-blue: 249; /* From oklch(0.6965 0.0591 248.69) */
+  --sl-hue-orange: 62; /* From oklch(0.592 0.131 62) */
+  --sl-hue-green: 155; /* From oklch(0.548 0.120 155) */
+  --sl-hue-blue: 258; /* From oklch(0.560 0.163 258) */
   --sl-hue-purple: 333; /* From oklch(0.6921 0.0625 332.66) */
-  --sl-hue-red: 15; /* From oklch(0.6061 0.1206 15.34) */
+  --sl-hue-red: 23; /* From oklch(0.535 0.152 23) */
 
   /* === COLOR INTENSITY VARIANTS === */
   /* Using OKLCH relative color syntax for perceptually uniform variations */

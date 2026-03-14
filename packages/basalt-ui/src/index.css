@@ -22,10 +22,10 @@
 @config "../tailwind.config.js";
 
 /**
- * BASALT UI - Volcanic Nature Design System
+ * BASALT UI - Professional Dashboard Design System
  *
- * A mature, restrictive design system inspired by basalt stone and volcanic nature.
- * Combines zinc-based neutrals with expressive semantic colors and professional blue accents.
+ * A mature, restrictive design system built for professional interfaces.
+ * Combines cool blue-gray neutrals with highly saturated accent colors and crisp minimal radius.
  *
  * Color Philosophy:
  * - Warm, neutral grays (dark/light) for comfortable readability
@@ -83,31 +83,51 @@
      FOUNDATION PALETTE - Base colors that everything else references
      ============================================================================
 
-     This palette provides the foundational neutral tones that all other tokens
-     reference. Each OKLCH value is defined once and reused everywhere.
+     Full 17-value gray scale derived from Blueprint's neutral palette.
+     All values use hue ~253-258 for perceptually consistent cool blue-grays.
      ============================================================================ */
 
-  /* === LIGHT TONES === */
+  /* === FULL GRAY SCALE: 17 values === */
+  --gray-black: oklch(0.19 0.009 256); /* #111418 */
+  --gray-dark-1: oklch(0.245 0.014 253); /* #1C2127 */
+  --gray-dark-2: oklch(0.283 0.015 257); /* #252A31 */
+  --gray-dark-3: oklch(0.322 0.016 257); /* #2F343C */
+  --gray-dark-4: oklch(0.362 0.018 258); /* #383E47 */
+  --gray-dark-5: oklch(0.4 0.02 258); /* #404854 */
+  --gray-mid-1: oklch(0.524 0.031 257); /* #5F6B7C */
+  --gray-mid-2: oklch(0.594 0.03 255); /* #738091 */
+  --gray-mid-3: oklch(0.68 0.024 257); /* #8F99A8 */
+  --gray-mid-4: oklch(0.764 0.019 258); /* #ABB3BF */
+  --gray-mid-5: oklch(0.842 0.013 255); /* #C5CBD3 */
+  --gray-light-1: oklch(0.88 0.011 254); /* #D3D8DE */
+  --gray-light-2: oklch(0.905 0.008 254); /* #DCE0E5 */
+  --gray-light-3: oklch(0.93 0.005 248); /* #E5E8EB */
+  --gray-light-4: oklch(0.952 0.005 258); /* #EDEFF2 */
+  --gray-light-5: oklch(0.976 0.003 258); /* #F6F7F9 */
+  --gray-white: oklch(1 0 0); /* #FFFFFF */
+
+  /* === LIGHT TONES: Foundation shortcuts === */
   /* Used for: light mode backgrounds, dark mode text, elevated surfaces */
 
-  --light-1: oklch(0.99 0.002 90); /* Brightest - cards, popovers, overlays */
-  --light-2: oklch(0.985 0.002 90); /* Very light - main background (light mode) */
-  --light-3: oklch(0.96 0.004 270); /* Light - muted backgrounds, disabled states */
-  --light-4: oklch(0.93 0.005 270); /* Medium light - borders, inputs */
+  --light-1: var(--gray-white); /* Brightest - cards, popovers, overlays */
+  --light-2: var(--gray-light-5); /* Very light - main background (light mode) */
+  --light-3: var(--gray-light-4); /* Light - muted backgrounds, disabled states */
+  --light-4: var(--gray-light-3); /* Medium light - borders, inputs */
 
-  /* === DARK TONES === */
+  /* === DARK TONES: Foundation shortcuts === */
   /* Used for: dark mode backgrounds, light mode text */
 
-  --dark-1: oklch(0.195 0.012 285); /* Darkest - near-black, reserved for future use */
-  --dark-2: oklch(0.24 0.012 285); /* Very dark - main background (dark mode) */
-  --dark-3: oklch(0.26 0.012 285); /* Medium dark - cards, elevated surfaces (dark mode) */
-  --dark-4: oklch(0.31 0.012 285); /* Lightest dark - borders, muted backgrounds (dark mode) */
+  --dark-1: var(--gray-black); /* Darkest - near-black */
+  --dark-2: var(--gray-dark-1); /* Very dark - main background (dark mode) */
+  --dark-3: var(--gray-dark-2); /* Medium dark - cards, elevated surfaces (dark mode) */
+  --dark-4: var(--gray-dark-4); /* Borders, muted backgrounds (dark mode) */
+  --dark-5: var(--gray-dark-5); /* Interactive/hover states in dark mode */
 
   /* === TEXT TONES === */
   /* Mid-range tones for subdued, secondary text */
 
-  --text-subdued-light: oklch(0.5 0.014 285); /* Muted text in light mode */
-  --text-subdued-dark: oklch(0.8 0.012 285); /* Muted text in dark mode */
+  --text-subdued-light: var(--gray-mid-1); /* Muted text in light mode */
+  --text-subdued-dark: var(--gray-mid-4); /* Muted text in dark mode */
 
   /* === EXTREME TONES === */
   /* Pure white/near-black for maximum contrast text */
@@ -129,7 +149,7 @@
   --card-foreground: var(--dark-4); /* Same as foreground for consistency */
 
   /* Popover and floating elements */
-  --popover: oklch(0.995 0.002 90); /* Between light-1 and light-2 - highest elevation */
+  --popover: var(--light-1); /* Pure white - highest elevation */
   --popover-foreground: var(--dark-4);
 
   /* Muted backgrounds and disabled states */
@@ -143,44 +163,154 @@
   /* === EXPRESSIVE COLORS: Semantic colors for states === */
   /* Same values for light and dark modes - work well on both backgrounds */
 
-  --red: oklch(0.6061 0.1206 15.34); /* Errors, destructive */
-  --red-foreground: var(--white); /* White text on red */
-
-  --orange: oklch(0.6929 0.0963 38.24); /* Warnings, annotations */
-  --orange-foreground: var(--dark-4); /* Dark text on orange */
-
-  --yellow: oklch(0.8549 0.0892 84.09); /* Caution, highlights */
-  --yellow-foreground: var(--dark-4); /* Dark text on yellow */
-
-  --green: oklch(0.7683 0.0749 131.06); /* Success, confirmations */
-  --green-foreground: var(--dark-4); /* Dark text on green */
-
-  --purple: oklch(0.6921 0.0625 332.66); /* Special features */
-  --purple-foreground: var(--white); /* White text on purple */
-
-  /* === BLUE PRIMARY: Professional accent color === */
+  /* === EXPRESSIVE COLORS: 5-shade intent palettes === */
   /* Same values for light and dark modes */
 
-  --blue: oklch(0.6965 0.0591 248.69); /* Primary blue */
-  --blue-foreground: var(--white); /* White text on blue */
+  /* Red (Danger) */
+  --red-1: oklch(0.388 0.108 23); /* Darkest */
+  --red-2: oklch(0.451 0.131 23);
+  --red-3: oklch(0.535 0.152 23); /* Default */
+  --red-4: oklch(0.648 0.134 20);
+  --red-5: oklch(0.757 0.101 17); /* Lightest */
+  --red: var(--red-3);
+  --red-foreground: var(--white);
 
-  --blue-deep: oklch(0.5944 0.0772 254.03); /* Deeper blue for emphasis */
-  --blue-deep-foreground: var(--white); /* White text on blue-deep */
+  /* Orange (Warning) */
+  --orange-1: oklch(0.398 0.087 62);
+  --orange-2: oklch(0.467 0.103 62);
+  --orange-3: oklch(0.592 0.131 62); /* Default */
+  --orange-4: oklch(0.721 0.138 62);
+  --orange-5: oklch(0.8 0.127 68);
+  --orange: var(--orange-3);
+  --orange-foreground: var(--dark-4);
 
-  --blue-light: oklch(0.78 0.045 249); /* Lighter blue for hover/accent states */
-  --blue-light-foreground: var(--dark-4); /* Dark text on blue-light */
+  /* Yellow (Caution) - unchanged */
+  --yellow: oklch(0.8549 0.0892 84.09);
+  --yellow-foreground: var(--dark-4);
+
+  /* Green (Success) */
+  --green-1: oklch(0.396 0.088 155);
+  --green-2: oklch(0.462 0.098 155);
+  --green-3: oklch(0.548 0.12 155); /* Default */
+  --green-4: oklch(0.649 0.12 155);
+  --green-5: oklch(0.773 0.098 162);
+  --green: var(--green-3);
+  --green-foreground: var(--white); /* White on darker green */
+
+  /* Purple (Special) - unchanged */
+  --purple: oklch(0.6921 0.0625 332.66);
+  --purple-foreground: var(--white);
+
+  /* === BLUE PRIMARY: 5-shade scale, highly saturated === */
+  /* Same values for light and dark modes */
+
+  --blue-1: oklch(0.417 0.127 258); /* Darkest */
+  --blue-2: oklch(0.487 0.146 258);
+  --blue-3: oklch(0.56 0.163 258); /* Default */
+  --blue-4: oklch(0.655 0.16 257);
+  --blue-5: oklch(0.784 0.111 257); /* Lightest */
+  --blue: var(--blue-3);
+  --blue-foreground: var(--white);
+
+  --blue-deep: var(--blue-1); /* Darkest blue for emphasis */
+  --blue-deep-foreground: var(--white);
+
+  --blue-light: var(--blue-5); /* Lightest blue for hover/accent states */
+  --blue-light-foreground: var(--dark-4);
 
   /* === SEQUENTIAL CHART PALETTE: 8 blues for data visualization === */
-  /* Based on blue hue (249°) with progressive lightness */
+  /* Based on blue hue (258°) with progressive lightness and higher chroma */
 
-  --chart-blue-1: oklch(0.9 0.03 249); /* Lightest */
-  --chart-blue-2: oklch(0.8 0.04 249);
-  --chart-blue-3: oklch(0.72 0.05 249);
-  --chart-blue-4: oklch(0.65 0.059 249);
-  --chart-blue-5: oklch(0.58 0.065 249);
-  --chart-blue-6: oklch(0.5 0.07 249);
-  --chart-blue-7: oklch(0.42 0.075 249);
-  --chart-blue-8: oklch(0.34 0.077 249); /* Darkest */
+  --chart-blue-1: oklch(0.9 0.04 258); /* Lightest */
+  --chart-blue-2: oklch(0.82 0.07 258);
+  --chart-blue-3: oklch(0.73 0.1 258);
+  --chart-blue-4: oklch(0.65 0.13 258);
+  --chart-blue-5: oklch(0.58 0.15 258);
+  --chart-blue-6: oklch(0.5 0.15 258);
+  --chart-blue-7: oklch(0.43 0.14 258);
+  --chart-blue-8: oklch(0.35 0.12 258); /* Darkest */
+
+  /* === EXTENDED COLORS: 10 families × 5 shades === */
+
+  /* Cerulean (hue ~220) */
+  --cerulean-1: oklch(0.38 0.1 220);
+  --cerulean-2: oklch(0.46 0.11 220);
+  --cerulean-3: oklch(0.55 0.12 220);
+  --cerulean-4: oklch(0.66 0.12 220);
+  --cerulean-5: oklch(0.76 0.09 220);
+  --cerulean: var(--cerulean-3);
+
+  /* Indigo (hue ~280) */
+  --indigo-1: oklch(0.41 0.15 280);
+  --indigo-2: oklch(0.47 0.17 280);
+  --indigo-3: oklch(0.56 0.19 280);
+  --indigo-4: oklch(0.66 0.18 280);
+  --indigo-5: oklch(0.77 0.13 280);
+  --indigo: var(--indigo-3);
+
+  /* Violet (hue ~320) */
+  --violet-1: oklch(0.32 0.12 320);
+  --violet-2: oklch(0.4 0.14 320);
+  --violet-3: oklch(0.5 0.16 320);
+  --violet-4: oklch(0.62 0.12 320);
+  --violet-5: oklch(0.73 0.09 320);
+  --violet: var(--violet-3);
+
+  /* Gold (hue ~50) */
+  --gold-1: oklch(0.38 0.09 50);
+  --gold-2: oklch(0.48 0.11 50);
+  --gold-3: oklch(0.67 0.14 50);
+  --gold-4: oklch(0.78 0.14 55);
+  --gold-5: oklch(0.87 0.13 65);
+  --gold: var(--gold-3);
+
+  /* Forest (hue ~140) */
+  --forest-1: oklch(0.47 0.12 140);
+  --forest-2: oklch(0.53 0.14 140);
+  --forest-3: oklch(0.6 0.16 140);
+  --forest-4: oklch(0.7 0.15 140);
+  --forest-5: oklch(0.8 0.13 140);
+  --forest: var(--forest-3);
+
+  /* Turquoise (hue ~175) */
+  --turquoise-1: oklch(0.34 0.08 175);
+  --turquoise-2: oklch(0.44 0.1 175);
+  --turquoise-3: oklch(0.6 0.12 175);
+  --turquoise-4: oklch(0.73 0.12 175);
+  --turquoise-5: oklch(0.84 0.09 175);
+  --turquoise: var(--turquoise-3);
+
+  /* Rose (hue ~345) */
+  --rose-1: oklch(0.42 0.14 345);
+  --rose-2: oklch(0.47 0.16 345);
+  --rose-3: oklch(0.53 0.18 345);
+  --rose-4: oklch(0.63 0.17 345);
+  --rose-5: oklch(0.73 0.14 345);
+  --rose: var(--rose-3);
+
+  /* Vermilion (hue ~25) */
+  --vermilion-1: oklch(0.4 0.12 25);
+  --vermilion-2: oklch(0.47 0.14 25);
+  --vermilion-3: oklch(0.54 0.16 25);
+  --vermilion-4: oklch(0.65 0.14 25);
+  --vermilion-5: oklch(0.76 0.11 25);
+  --vermilion: var(--vermilion-3);
+
+  /* Lime (hue ~95) */
+  --lime-1: oklch(0.39 0.09 95);
+  --lime-2: oklch(0.47 0.12 95);
+  --lime-3: oklch(0.67 0.15 95);
+  --lime-4: oklch(0.8 0.14 95);
+  --lime-5: oklch(0.91 0.12 95);
+  --lime: var(--lime-3);
+
+  /* Sepia (hue ~45) */
+  --sepia-1: oklch(0.38 0.07 45);
+  --sepia-2: oklch(0.46 0.09 45);
+  --sepia-3: oklch(0.55 0.1 45);
+  --sepia-4: oklch(0.65 0.09 45);
+  --sepia-5: oklch(0.77 0.07 45);
+  --sepia: var(--sepia-3);
 
   /* === SEMANTIC COLOR TOKENS === */
 
@@ -188,8 +318,8 @@
   --primary: var(--blue);
   --primary-foreground: var(--white);
 
-  /* Secondary: Subtle zinc for secondary actions */
-  --secondary: oklch(0.95 0.006 270); /* Between light-3 and light-2 */
+  /* Secondary: Subtle surface for secondary actions */
+  --secondary: var(--light-3);
   --secondary-foreground: var(--dark-4);
 
   /* Accent: Lighter blue for hover states */
@@ -204,13 +334,13 @@
   --ring: var(--blue);
 
   /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
-  --sidebar: oklch(0.965 0.003 90);
-  --sidebar-foreground: oklch(0.265 0.015 285);
+  --sidebar: var(--light-2);
+  --sidebar-foreground: var(--dark-2);
   --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: var(--white);
-  --sidebar-accent: oklch(0.925 0.008 252);
-  --sidebar-accent-foreground: oklch(0.265 0.015 285);
-  --sidebar-border: oklch(0.875 0.005 270);
+  --sidebar-accent: var(--light-4);
+  --sidebar-accent-foreground: var(--dark-2);
+  --sidebar-border: var(--gray-light-1);
   --sidebar-ring: var(--blue);
 
   /* === TYPOGRAPHY: Modern, welcoming fonts === */
@@ -220,8 +350,8 @@
     "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
 
-  /* === BORDER RADIUS: Subtly rounded (ShadCN style) === */
-  --radius: 0.5rem; /* 8px - comfortable roundness */
+  /* === BORDER RADIUS: Crisp, minimal (professional dashboard style) === */
+  --radius: 0.1875rem; /* 3px - crisp corners */
 
   /* === SHADOWS: Soft, natural depth === */
   --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.05);
@@ -299,57 +429,57 @@
      We define shades 50-950 for each named color, derived from foundation.
      =================================================================== */
 
-  /* Blue shades (primary) - REUSE sequential chart-blue palette */
-  --color-blue-50: var(--chart-blue-1); /* 0.90 - Lightest */
-  --color-blue-100: var(--chart-blue-2); /* 0.80 */
-  --color-blue-200: var(--chart-blue-3); /* 0.72 */
-  --color-blue-300: var(--chart-blue-4); /* 0.65 */
-  --color-blue-400: var(--blue-light); /* 0.78 - Existing token */
-  --color-blue-500: var(--blue); /* 0.6965 - DEFAULT */
-  --color-blue-600: var(--chart-blue-5); /* 0.58 */
-  --color-blue-700: var(--blue-deep); /* 0.5944 - Existing token */
-  --color-blue-800: var(--chart-blue-7); /* 0.42 */
-  --color-blue-900: var(--chart-blue-8); /* 0.34 - Darkest */
-  --color-blue-950: oklch(0.26 0.08 249); /* Extra dark for completeness */
+  /* Blue shades (primary) - aligned with Blueprint blue, hue 258 */
+  --color-blue-50: oklch(0.95 0.03 258);
+  --color-blue-100: oklch(0.9 0.06 258);
+  --color-blue-200: oklch(0.84 0.09 258);
+  --color-blue-300: oklch(0.77 0.12 258);
+  --color-blue-400: oklch(0.7 0.14 258);
+  --color-blue-500: var(--blue); /* 0.560 - DEFAULT */
+  --color-blue-600: var(--blue-2); /* 0.487 */
+  --color-blue-700: var(--blue-1); /* 0.417 */
+  --color-blue-800: oklch(0.35 0.11 258);
+  --color-blue-900: oklch(0.28 0.09 258);
+  --color-blue-950: oklch(0.22 0.07 258);
 
-  /* Red shades (error/destructive) */
-  --color-red-50: oklch(0.95 0.03 15);
-  --color-red-100: oklch(0.9 0.05 15);
-  --color-red-200: oklch(0.82 0.07 15);
-  --color-red-300: oklch(0.74 0.09 15);
-  --color-red-400: oklch(0.66 0.1 15);
-  --color-red-500: var(--red); /* 0.6061 - DEFAULT */
-  --color-red-600: oklch(0.54 0.13 15);
-  --color-red-700: oklch(0.48 0.14 15);
-  --color-red-800: oklch(0.4 0.15 15);
-  --color-red-900: oklch(0.32 0.16 15);
-  --color-red-950: oklch(0.24 0.17 15);
+  /* Red shades (error/destructive) - hue 23 */
+  --color-red-50: oklch(0.96 0.02 23);
+  --color-red-100: oklch(0.92 0.04 23);
+  --color-red-200: oklch(0.85 0.07 23);
+  --color-red-300: oklch(0.77 0.1 23);
+  --color-red-400: oklch(0.7 0.12 23);
+  --color-red-500: var(--red); /* 0.535 - DEFAULT */
+  --color-red-600: var(--red-2); /* 0.451 */
+  --color-red-700: var(--red-1); /* 0.388 */
+  --color-red-800: oklch(0.33 0.09 23);
+  --color-red-900: oklch(0.26 0.07 23);
+  --color-red-950: oklch(0.2 0.05 23);
 
-  /* Emerald shades (success - maps to green) */
-  --color-emerald-50: oklch(0.96 0.02 131);
-  --color-emerald-100: oklch(0.92 0.03 131);
-  --color-emerald-200: oklch(0.86 0.045 131);
-  --color-emerald-300: oklch(0.81 0.06 131);
-  --color-emerald-400: oklch(0.76 0.07 131);
-  --color-emerald-500: var(--green); /* 0.7683 - DEFAULT */
-  --color-emerald-600: oklch(0.68 0.08 131);
-  --color-emerald-700: oklch(0.6 0.085 131);
-  --color-emerald-800: oklch(0.5 0.09 131);
-  --color-emerald-900: oklch(0.4 0.095 131);
-  --color-emerald-950: oklch(0.3 0.1 131);
+  /* Emerald shades (success - maps to green) - hue 155 */
+  --color-emerald-50: oklch(0.96 0.02 155);
+  --color-emerald-100: oklch(0.92 0.04 155);
+  --color-emerald-200: oklch(0.86 0.06 155);
+  --color-emerald-300: oklch(0.78 0.08 155);
+  --color-emerald-400: oklch(0.7 0.1 155);
+  --color-emerald-500: var(--green); /* 0.548 - DEFAULT */
+  --color-emerald-600: var(--green-2); /* 0.462 */
+  --color-emerald-700: var(--green-1); /* 0.396 */
+  --color-emerald-800: oklch(0.32 0.07 155);
+  --color-emerald-900: oklch(0.26 0.05 155);
+  --color-emerald-950: oklch(0.2 0.04 155);
 
-  /* Amber shades (warning - maps to yellow) */
-  --color-amber-50: oklch(0.97 0.02 84);
-  --color-amber-100: oklch(0.94 0.04 84);
-  --color-amber-200: oklch(0.9 0.06 84);
-  --color-amber-300: oklch(0.87 0.075 84);
-  --color-amber-400: var(--yellow); /* 0.8549 - DEFAULT */
-  --color-amber-500: oklch(0.82 0.09 84);
-  --color-amber-600: oklch(0.76 0.095 84);
-  --color-amber-700: oklch(0.68 0.1 84);
-  --color-amber-800: oklch(0.58 0.105 84);
-  --color-amber-900: oklch(0.48 0.11 84);
-  --color-amber-950: oklch(0.38 0.115 84);
+  /* Amber shades (warning - maps to orange) - hue 62 */
+  --color-amber-50: oklch(0.97 0.02 62);
+  --color-amber-100: oklch(0.93 0.04 62);
+  --color-amber-200: oklch(0.87 0.07 62);
+  --color-amber-300: oklch(0.8 0.1 62);
+  --color-amber-400: oklch(0.72 0.12 62);
+  --color-amber-500: var(--orange); /* 0.592 - DEFAULT */
+  --color-amber-600: oklch(0.5 0.11 62);
+  --color-amber-700: var(--orange-1); /* 0.398 */
+  --color-amber-800: oklch(0.33 0.07 62);
+  --color-amber-900: oklch(0.26 0.06 62);
+  --color-amber-950: oklch(0.2 0.04 62);
 
   /* Violet shades (special - maps to purple) */
   --color-violet-50: oklch(0.95 0.015 333);
@@ -421,7 +551,7 @@
   --primary-foreground: var(--white);
 
   /* Secondary */
-  --secondary: oklch(0.27 0.012 285); /* Between dark-3 and dark-2 */
+  --secondary: var(--dark-3);
   --secondary-foreground: var(--light-3);
 
   /* Accent: Blue light for hover states */
@@ -440,9 +570,9 @@
   --sidebar-foreground: var(--light-3);
   --sidebar-primary: var(--blue);
   --sidebar-primary-foreground: var(--white);
-  --sidebar-accent: oklch(0.33 0.015 285); /* Slightly darker than dark-4 */
+  --sidebar-accent: var(--dark-4);
   --sidebar-accent-foreground: var(--light-3);
-  --sidebar-border: oklch(0.28 0.012 285); /* Between dark-3 and dark-4 */
+  --sidebar-border: var(--dark-3);
   --sidebar-ring: var(--blue);
 
   /* === TREMOR DARK MODE OVERRIDES === */
@@ -537,7 +667,7 @@
   --color-gray-200: var(--light-4); /* Borders, inputs */
 
   /* Light tones - very disabled text (light mode only) */
-  --color-gray-300: oklch(0.75 0.01 285); /* Very disabled/invisible text (light mode) */
+  --color-gray-300: oklch(0.764 0.019 258); /* Very disabled/invisible text (light mode) */
 
   /* Mid-range - muted text via semantic token (adapts to light/dark) */
   --color-gray-400: var(--muted-foreground); /* Disabled text, icons */
@@ -545,7 +675,7 @@
   --color-gray-600: var(--muted-foreground); /* Medium muted text */
 
   /* Mid-dark tones - readable muted text (light mode) */
-  --color-gray-700: oklch(0.35 0.013 285); /* Readable muted text (light mode) */
+  --color-gray-700: oklch(0.362 0.018 258); /* Readable muted text (light mode) */
 
   /* Dark tones - surfaces for dark mode (used with dark: prefix) */
   --color-gray-800: var(--dark-4); /* Borders, muted backgrounds (dark mode) */
@@ -647,6 +777,7 @@
   --color-dark-2: var(--dark-2);
   --color-dark-3: var(--dark-3);
   --color-dark-4: var(--dark-4);
+  --color-dark-5: var(--dark-5);
   --color-white: var(--white);
 
   /* Semantic colors */
@@ -670,25 +801,120 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Aurora colors with foregrounds (bg-red text-red-foreground, etc.) */
+  /* Intent colors with foregrounds and 5-shade scales */
   --color-red: var(--red);
   --color-red-foreground: var(--red-foreground);
+  --color-red-1: var(--red-1);
+  --color-red-2: var(--red-2);
+  --color-red-3: var(--red-3);
+  --color-red-4: var(--red-4);
+  --color-red-5: var(--red-5);
+
   --color-orange: var(--orange);
   --color-orange-foreground: var(--orange-foreground);
+  --color-orange-1: var(--orange-1);
+  --color-orange-2: var(--orange-2);
+  --color-orange-3: var(--orange-3);
+  --color-orange-4: var(--orange-4);
+  --color-orange-5: var(--orange-5);
+
   --color-yellow: var(--yellow);
   --color-yellow-foreground: var(--yellow-foreground);
+
   --color-green: var(--green);
   --color-green-foreground: var(--green-foreground);
+  --color-green-1: var(--green-1);
+  --color-green-2: var(--green-2);
+  --color-green-3: var(--green-3);
+  --color-green-4: var(--green-4);
+  --color-green-5: var(--green-5);
+
   --color-purple: var(--purple);
   --color-purple-foreground: var(--purple-foreground);
 
-  /* Blue variants with foregrounds (bg-blue text-blue-foreground, etc.) */
+  /* Blue variants with foregrounds and 5-shade scale */
   --color-blue: var(--blue);
   --color-blue-foreground: var(--blue-foreground);
+  --color-blue-1: var(--blue-1);
+  --color-blue-2: var(--blue-2);
+  --color-blue-3: var(--blue-3);
+  --color-blue-4: var(--blue-4);
+  --color-blue-5: var(--blue-5);
   --color-blue-light: var(--blue-light);
   --color-blue-light-foreground: var(--blue-light-foreground);
   --color-blue-deep: var(--blue-deep);
   --color-blue-deep-foreground: var(--blue-deep-foreground);
+
+  /* Extended color families */
+  --color-cerulean: var(--cerulean);
+  --color-cerulean-1: var(--cerulean-1);
+  --color-cerulean-2: var(--cerulean-2);
+  --color-cerulean-3: var(--cerulean-3);
+  --color-cerulean-4: var(--cerulean-4);
+  --color-cerulean-5: var(--cerulean-5);
+
+  --color-indigo: var(--indigo);
+  --color-indigo-1: var(--indigo-1);
+  --color-indigo-2: var(--indigo-2);
+  --color-indigo-3: var(--indigo-3);
+  --color-indigo-4: var(--indigo-4);
+  --color-indigo-5: var(--indigo-5);
+
+  --color-violet: var(--violet);
+  --color-violet-1: var(--violet-1);
+  --color-violet-2: var(--violet-2);
+  --color-violet-3: var(--violet-3);
+  --color-violet-4: var(--violet-4);
+  --color-violet-5: var(--violet-5);
+
+  --color-gold: var(--gold);
+  --color-gold-1: var(--gold-1);
+  --color-gold-2: var(--gold-2);
+  --color-gold-3: var(--gold-3);
+  --color-gold-4: var(--gold-4);
+  --color-gold-5: var(--gold-5);
+
+  --color-forest: var(--forest);
+  --color-forest-1: var(--forest-1);
+  --color-forest-2: var(--forest-2);
+  --color-forest-3: var(--forest-3);
+  --color-forest-4: var(--forest-4);
+  --color-forest-5: var(--forest-5);
+
+  --color-turquoise: var(--turquoise);
+  --color-turquoise-1: var(--turquoise-1);
+  --color-turquoise-2: var(--turquoise-2);
+  --color-turquoise-3: var(--turquoise-3);
+  --color-turquoise-4: var(--turquoise-4);
+  --color-turquoise-5: var(--turquoise-5);
+
+  --color-rose: var(--rose);
+  --color-rose-1: var(--rose-1);
+  --color-rose-2: var(--rose-2);
+  --color-rose-3: var(--rose-3);
+  --color-rose-4: var(--rose-4);
+  --color-rose-5: var(--rose-5);
+
+  --color-vermilion: var(--vermilion);
+  --color-vermilion-1: var(--vermilion-1);
+  --color-vermilion-2: var(--vermilion-2);
+  --color-vermilion-3: var(--vermilion-3);
+  --color-vermilion-4: var(--vermilion-4);
+  --color-vermilion-5: var(--vermilion-5);
+
+  --color-lime: var(--lime);
+  --color-lime-1: var(--lime-1);
+  --color-lime-2: var(--lime-2);
+  --color-lime-3: var(--lime-3);
+  --color-lime-4: var(--lime-4);
+  --color-lime-5: var(--lime-5);
+
+  --color-sepia: var(--sepia);
+  --color-sepia-1: var(--sepia-1);
+  --color-sepia-2: var(--sepia-2);
+  --color-sepia-3: var(--sepia-3);
+  --color-sepia-4: var(--sepia-4);
+  --color-sepia-5: var(--sepia-5);
 
   /* Sequential chart palette (bg-chart-blue-1 through bg-chart-blue-8) */
   --color-chart-blue-1: var(--chart-blue-1);
@@ -710,13 +936,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* === BORDER RADIUS: Limited scale === */
+  /* === BORDER RADIUS: Fixed scale (no calc to avoid negatives with 3px base) === */
   --radius-none: 0;
-  --radius-sm: calc(var(--radius) - 0.25rem); /* 4px */
-  --radius-md: calc(var(--radius) - 0.125rem); /* 6px */
-  --radius: var(--radius); /* 8px - DEFAULT */
-  --radius-lg: calc(var(--radius) + 0.125rem); /* 10px */
-  --radius-xl: calc(var(--radius) + 0.25rem); /* 12px */
+  --radius-sm: 0.0625rem; /* 1px */
+  --radius-md: 0.125rem; /* 2px */
+  --radius: var(--radius); /* 3px - DEFAULT */
+  --radius-lg: 0.25rem; /* 4px */
+  --radius-xl: 0.5rem; /* 8px */
   --radius-full: 9999px; /* Pills, circles */
 
   /* === BOX SHADOWS: Natural depth === */
