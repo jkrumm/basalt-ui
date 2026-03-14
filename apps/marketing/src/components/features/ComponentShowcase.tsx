@@ -44,38 +44,44 @@ import { Tooltip } from '@/components/ui/tooltip'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2 text-caption font-bold tracking-wide text-muted-foreground uppercase">
-      {children}
-    </p>
+    <div className="mb-3 flex items-center gap-2">
+      <p className="text-caption font-bold tracking-wide text-muted-foreground uppercase whitespace-nowrap">
+        {children}
+      </p>
+      <div className="h-px flex-1 bg-border" />
+    </div>
   )
 }
 
 export function ComponentShowcase() {
   return (
-    <div className="rounded bg-card border border-border p-6">
-      <h2 className="mb-6 text-h5 font-bold">Component Kit</h2>
+    <div className="rounded bg-card border border-border p-5">
+      <h2 className="mb-5 text-h5 font-bold">Component Kit</h2>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left column */}
-        <div className="space-y-6">
-          {/* Inputs */}
+      {/* ── Row 1: Inputs (1 col) + Buttons (2 cols) ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Inputs */}
+        <div className="space-y-5">
           <div>
             <SectionLabel>Inputs</SectionLabel>
             <div className="space-y-2">
               <Input placeholder="Default input" />
               <Input placeholder="Placeholder text" />
               <Input defaultValue="With value" />
+              <Input
+                className="border-ring ring-2 ring-ring/30"
+                defaultValue="Focused state"
+                readOnly
+              />
               <Input disabled placeholder="Disabled input" />
               <Input
                 className="border-destructive focus-visible:ring-destructive/30"
                 defaultValue="Error state"
                 aria-invalid="true"
               />
-              <Input type="search" placeholder="Search..." />
             </div>
           </div>
 
-          {/* Input Groups */}
           <div>
             <SectionLabel>Input Groups</SectionLabel>
             <div className="space-y-2">
@@ -91,7 +97,6 @@ export function ComponentShowcase() {
             </div>
           </div>
 
-          {/* Select */}
           <div>
             <SectionLabel>Select</SectionLabel>
             <div className="flex gap-2">
@@ -108,93 +113,10 @@ export function ComponentShowcase() {
               </select>
             </div>
           </div>
-
-          {/* Slider */}
-          <div>
-            <SectionLabel>Slider</SectionLabel>
-            <div className="space-y-4 px-1">
-              <Slider defaultValue={[40]} />
-              <Slider defaultValue={[20, 70]} intent="success" />
-              <Slider defaultValue={[60]} intent="warning" labelRenderer={(v) => `${v}%`} />
-              <Slider defaultValue={[80]} intent="danger" disabled />
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div>
-            <SectionLabel>Tabs</SectionLabel>
-            <div className="space-y-2">
-              <Tabs defaultValue="tab1">
-                <TabsList>
-                  <TabsTrigger value="tab1">Tab 1</TabsTrigger>
-                  <TabsTrigger value="tab2">Tab 2</TabsTrigger>
-                  <TabsTrigger value="tab3">Tab 3</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <Tabs defaultValue="tab1">
-                <TabsList variant="line">
-                  <TabsTrigger value="tab1">Overview</TabsTrigger>
-                  <TabsTrigger value="tab2">Analytics</TabsTrigger>
-                  <TabsTrigger value="tab3" disabled>
-                    Disabled
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
-
-          {/* Progress */}
-          <div>
-            <SectionLabel>Progress</SectionLabel>
-            <div className="space-y-3">
-              <Progress value={75}>
-                <ProgressLabel>Tasks</ProgressLabel>
-                <ProgressValue />
-                <ProgressTrack>
-                  <ProgressIndicator />
-                </ProgressTrack>
-              </Progress>
-              <Progress value={40}>
-                <ProgressLabel>Files</ProgressLabel>
-                <ProgressValue />
-                <ProgressTrack>
-                  <ProgressIndicator className="bg-green" />
-                </ProgressTrack>
-              </Progress>
-              <Progress value={20}>
-                <ProgressLabel>Quota</ProgressLabel>
-                <ProgressValue />
-                <ProgressTrack>
-                  <ProgressIndicator className="bg-red" />
-                </ProgressTrack>
-              </Progress>
-            </div>
-          </div>
-
-          {/* Alerts */}
-          <div>
-            <SectionLabel>Alert</SectionLabel>
-            <div className="space-y-2">
-              <Alert title="Default notice">Something happened that you should know about.</Alert>
-              <Alert intent="primary" icon={IconInfoCircle} title="Info">
-                Primary intent with icon and body text.
-              </Alert>
-              <Alert intent="success" icon={IconShieldCheck} title="Success">
-                Operation completed successfully.
-              </Alert>
-              <Alert intent="warning" icon={IconAlertTriangle} title="Warning">
-                This action may have unintended consequences.
-              </Alert>
-              <Alert intent="danger" title="Error">
-                Something went wrong. Please try again.
-              </Alert>
-            </div>
-          </div>
         </div>
 
-        {/* Right column */}
-        <div className="space-y-6">
-          {/* Buttons */}
+        {/* Buttons — spans 2 cols */}
+        <div className="space-y-5 lg:col-span-2">
           <div>
             <SectionLabel>Buttons</SectionLabel>
             <div className="space-y-2">
@@ -259,98 +181,149 @@ export function ComponentShowcase() {
             </div>
           </div>
 
-          {/* Button Groups */}
-          <div>
-            <SectionLabel>Button Groups</SectionLabel>
-            <div className="flex flex-wrap gap-3">
-              <div className="inline-flex">
-                <Button size="sm" variant="primary" className="rounded-r-none">
-                  Left
-                </Button>
-                <Button size="sm" variant="primary" className="-ml-px rounded-none bg-blue-1">
-                  Center
-                </Button>
-                <Button size="sm" variant="primary" className="-ml-px rounded-l-none">
-                  Right
-                </Button>
+          {/* Button Groups + Dropdown side by side */}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <SectionLabel>Button Groups</SectionLabel>
+              <div className="flex flex-col gap-2">
+                <div className="inline-flex">
+                  <Button size="sm" variant="primary" className="rounded-r-none">
+                    Left
+                  </Button>
+                  <Button size="sm" variant="primary" className="-ml-px rounded-none bg-blue-1">
+                    Center
+                  </Button>
+                  <Button size="sm" variant="primary" className="-ml-px rounded-l-none">
+                    Right
+                  </Button>
+                </div>
+                <div className="inline-flex">
+                  <Button size="sm" className="rounded-r-none">
+                    Cut
+                  </Button>
+                  <Button size="sm" className="-ml-px rounded-none">
+                    Copy
+                  </Button>
+                  <Button size="sm" className="-ml-px rounded-l-none">
+                    Paste
+                  </Button>
+                </div>
               </div>
-              <div className="inline-flex">
-                <Button size="sm" className="rounded-r-none">
-                  Cut
-                </Button>
-                <Button size="sm" className="-ml-px rounded-none">
-                  Copy
-                </Button>
-                <Button size="sm" className="-ml-px rounded-l-none">
-                  Paste
-                </Button>
+            </div>
+
+            <div>
+              <SectionLabel>Dropdown Menu</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button size="sm">
+                        Actions <IconChevronDown />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem icon={IconDatabase} hint="⌘E">
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem icon={IconPlus}>Duplicate</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem icon={IconTrash} intent="danger">
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button size="sm" variant="primary">
+                        New <IconChevronDown />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent>
+                    <DropdownMenuItem>Project</DropdownMenuItem>
+                    <DropdownMenuItem>Template</DropdownMenuItem>
+                    <DropdownMenuItem>Import...</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Dropdown */}
+      <Separator className="my-6" />
+
+      {/* ── Row 2: Sliders | Tabs + Progress | Toggle Groups + Badges ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Sliders */}
+        <div>
+          <SectionLabel>Slider</SectionLabel>
+          <div className="space-y-5 px-1">
+            <Slider defaultValue={[40]} labelRenderer={(v) => `${v}`} />
+            <Slider defaultValue={[20, 70]} intent="success" labelRenderer={(v) => `${v}%`} />
+            <Slider defaultValue={[60]} intent="warning" labelRenderer={(v) => `${v}%`} />
+            <Slider defaultValue={[80]} intent="danger" disabled labelRenderer={(v) => `${v}`} />
+          </div>
+        </div>
+
+        {/* Tabs + Progress */}
+        <div className="space-y-5">
           <div>
-            <SectionLabel>Dropdown Menu</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button size="sm">
-                      Actions <IconChevronDown />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent>
-                  <DropdownMenuLabel>Options</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem icon={IconDatabase} hint="⌘E">
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem icon={IconPlus}>Duplicate</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem icon={IconTrash} intent="danger">
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button size="sm" variant="primary">
-                      New <IconChevronDown />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent>
-                  <DropdownMenuItem>Project</DropdownMenuItem>
-                  <DropdownMenuItem>Template</DropdownMenuItem>
-                  <DropdownMenuItem>Import...</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <SectionLabel>Tabs</SectionLabel>
+            <div className="space-y-3">
+              <Tabs defaultValue="tab1">
+                <TabsList>
+                  <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+                  <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+                  <TabsTrigger value="tab3">Tab 3</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Tabs defaultValue="tab1">
+                <TabsList variant="line">
+                  <TabsTrigger value="tab1">Overview</TabsTrigger>
+                  <TabsTrigger value="tab2">Analytics</TabsTrigger>
+                  <TabsTrigger value="tab3" disabled>
+                    Disabled
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
-          {/* Tooltip */}
           <div>
-            <SectionLabel>Tooltip</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              <Tooltip content="Default tooltip on top">
-                <Button size="sm">Hover me</Button>
-              </Tooltip>
-              <Tooltip content="Shown below" side="bottom">
-                <Button size="sm" variant="primary">
-                  Below
-                </Button>
-              </Tooltip>
-              <Tooltip content="Shown to the right" side="right">
-                <Button size="sm" variant="ghost">
-                  Right
-                </Button>
-              </Tooltip>
+            <SectionLabel>Progress</SectionLabel>
+            <div className="space-y-3">
+              <Progress value={75}>
+                <ProgressLabel>Tasks</ProgressLabel>
+                <ProgressValue />
+                <ProgressTrack>
+                  <ProgressIndicator />
+                </ProgressTrack>
+              </Progress>
+              <Progress value={40}>
+                <ProgressLabel>Files</ProgressLabel>
+                <ProgressValue />
+                <ProgressTrack>
+                  <ProgressIndicator className="bg-green" />
+                </ProgressTrack>
+              </Progress>
+              <Progress value={20}>
+                <ProgressLabel>Quota</ProgressLabel>
+                <ProgressValue />
+                <ProgressTrack>
+                  <ProgressIndicator className="bg-red" />
+                </ProgressTrack>
+              </Progress>
             </div>
           </div>
+        </div>
 
-          {/* Toggle groups */}
+        {/* Toggle Groups + Badges */}
+        <div className="space-y-5">
           <div>
             <SectionLabel>Toggle Groups</SectionLabel>
             <div className="space-y-2">
@@ -369,7 +342,6 @@ export function ComponentShowcase() {
             </div>
           </div>
 
-          {/* Badges */}
           <div>
             <SectionLabel>Badges</SectionLabel>
             <div className="space-y-2">
@@ -403,83 +375,126 @@ export function ComponentShowcase() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <Separator />
+      <Separator className="my-6" />
 
-          {/* Checkboxes */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <SectionLabel>Checkboxes</SectionLabel>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="cb1" />
-                  <Label htmlFor="cb1" className="text-small">
-                    Default
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="cb2" checked />
-                  <Label htmlFor="cb2" className="text-small">
-                    Checked
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="cb3" indeterminate />
-                  <Label htmlFor="cb3" className="text-small">
-                    Indeterminate
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="cb4" disabled />
-                  <Label htmlFor="cb4" className="text-small text-muted-foreground">
-                    Disabled
-                  </Label>
-                </div>
-              </div>
+      {/* ── Row 3: Tooltip | Alerts | Checkboxes + Radio + Switches ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Tooltip */}
+        <div>
+          <SectionLabel>Tooltip</SectionLabel>
+          <div className="flex flex-wrap gap-2">
+            <Tooltip content="Default tooltip on top">
+              <Button size="sm">Hover me</Button>
+            </Tooltip>
+            <Tooltip content="Shown below" side="bottom">
+              <Button size="sm" variant="primary">
+                Below
+              </Button>
+            </Tooltip>
+            <Tooltip content="Shown to the right" side="right">
+              <Button size="sm" variant="ghost">
+                Right
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Alerts — spans 2 cols */}
+        <div className="lg:col-span-2">
+          <SectionLabel>Alert</SectionLabel>
+          <div className="space-y-2">
+            <Alert title="Default notice">Something happened that you should know about.</Alert>
+            <Alert intent="primary" icon={IconInfoCircle} title="Info">
+              Primary intent with icon and body text.
+            </Alert>
+            <Alert intent="success" icon={IconShieldCheck} title="Success">
+              Operation completed successfully.
+            </Alert>
+            <Alert intent="warning" icon={IconAlertTriangle} title="Warning">
+              This action may have unintended consequences.
+            </Alert>
+            <Alert intent="danger" title="Error">
+              Something went wrong. Please try again.
+            </Alert>
+          </div>
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
+      {/* ── Row 4: Checkboxes | Radio | Switches ── */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div>
+          <SectionLabel>Checkboxes</SectionLabel>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Checkbox id="cb1" />
+              <Label htmlFor="cb1" className="text-small">
+                Default
+              </Label>
             </div>
-
-            {/* Radio buttons */}
-            <div>
-              <SectionLabel>Radio</SectionLabel>
-              <RadioGroup defaultValue="r1" className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="r1" id="r1" />
-                  <Label htmlFor="r1" className="text-small">
-                    Option 1
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="r2" id="r2" />
-                  <Label htmlFor="r2" className="text-small">
-                    Option 2
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="r3" id="r3" disabled />
-                  <Label htmlFor="r3" className="text-small text-muted-foreground">
-                    Disabled
-                  </Label>
-                </div>
-              </RadioGroup>
+            <div className="flex items-center gap-2">
+              <Checkbox id="cb2" checked />
+              <Label htmlFor="cb2" className="text-small">
+                Checked
+              </Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="cb3" indeterminate />
+              <Label htmlFor="cb3" className="text-small">
+                Indeterminate
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="cb4" disabled />
+              <Label htmlFor="cb4" className="text-small text-muted-foreground">
+                Disabled
+              </Label>
+            </div>
+          </div>
+        </div>
 
-            {/* Switches */}
-            <div>
-              <SectionLabel>Switches</SectionLabel>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Switch defaultChecked />
-                  <span className="text-small">On</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch />
-                  <span className="text-small">Off</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch disabled />
-                  <span className="text-small text-muted-foreground">Disabled</span>
-                </div>
-              </div>
+        <div>
+          <SectionLabel>Radio</SectionLabel>
+          <RadioGroup defaultValue="r1" className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="r1" id="r1" />
+              <Label htmlFor="r1" className="text-small">
+                Option 1
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="r2" id="r2" />
+              <Label htmlFor="r2" className="text-small">
+                Option 2
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="r3" id="r3" disabled />
+              <Label htmlFor="r3" className="text-small text-muted-foreground">
+                Disabled
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <div>
+          <SectionLabel>Switches</SectionLabel>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Switch defaultChecked />
+              <span className="text-small">On</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch />
+              <span className="text-small">Off</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch disabled />
+              <span className="text-small text-muted-foreground">Disabled</span>
             </div>
           </div>
         </div>
