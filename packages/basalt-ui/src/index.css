@@ -360,6 +360,11 @@
   --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1), 0 8px 10px -6px oklch(0 0 0 / 0.1);
 
+  /* === BUTTON SHADOWS: Blueprint-inspired inset border + drop shadow === */
+  /* Light mode: dark inset border + subtle drop shadow */
+  --btn-shadow: inset 0 0 0 1px rgba(17, 20, 24, 0.2), 0 1px 2px rgba(17, 20, 24, 0.1);
+  --btn-shadow-intent: inset 0 0 0 1px rgba(17, 20, 24, 0.35), 0 1px 2px rgba(17, 20, 24, 0.2);
+
   /* ============================================================================
      TREMOR RAW COMPATIBILITY LAYER
      ============================================================================
@@ -575,6 +580,11 @@
   --sidebar-border: var(--dark-3);
   --sidebar-ring: var(--blue);
 
+  /* === BUTTON SHADOWS: Dark mode overrides === */
+  /* White inset border + stronger drop shadow */
+  --btn-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --btn-shadow-intent: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 0 1px 2px rgba(0, 0, 0, 0.4);
+
   /* === TREMOR DARK MODE OVERRIDES === */
   /* Tremor brand - adjusted for dark mode, REUSE chart-blue palette */
   --color-tremor-brand-faint: var(--chart-blue-8); /* Darkest blue inverted (0.34) */
@@ -773,6 +783,25 @@
   --color-light-2: var(--light-2);
   --color-light-3: var(--light-3);
   --color-light-4: var(--light-4);
+  /* Full gray scale (bg-gray-black, bg-gray-dark-1..5, bg-gray-mid-1..5, etc.) */
+  --color-gray-black: var(--gray-black);
+  --color-gray-dark-1: var(--gray-dark-1);
+  --color-gray-dark-2: var(--gray-dark-2);
+  --color-gray-dark-3: var(--gray-dark-3);
+  --color-gray-dark-4: var(--gray-dark-4);
+  --color-gray-dark-5: var(--gray-dark-5);
+  --color-gray-mid-1: var(--gray-mid-1);
+  --color-gray-mid-2: var(--gray-mid-2);
+  --color-gray-mid-3: var(--gray-mid-3);
+  --color-gray-mid-4: var(--gray-mid-4);
+  --color-gray-mid-5: var(--gray-mid-5);
+  --color-gray-light-1: var(--gray-light-1);
+  --color-gray-light-2: var(--gray-light-2);
+  --color-gray-light-3: var(--gray-light-3);
+  --color-gray-light-4: var(--gray-light-4);
+  --color-gray-light-5: var(--gray-light-5);
+  --color-gray-white: var(--gray-white);
+
   --color-dark-1: var(--dark-1);
   --color-dark-2: var(--dark-2);
   --color-dark-3: var(--dark-3);
@@ -951,6 +980,10 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
+
+  /* === BUTTON SHADOWS: Blueprint-inspired depth system === */
+  --shadow-btn: var(--btn-shadow);
+  --shadow-btn-intent: var(--btn-shadow-intent);
 }
 
 /* ============================================================================
