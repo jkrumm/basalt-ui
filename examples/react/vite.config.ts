@@ -10,6 +10,10 @@ export default defineConfig({
     tailwindcss(), // Must come before framework plugin
     react(),
   ],
+  server: {
+    port: 7711,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

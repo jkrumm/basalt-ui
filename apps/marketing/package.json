@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "dev": "lsof -ti:7710 | xargs kill -9 2>/dev/null; astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "typecheck": "astro check"

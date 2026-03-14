@@ -71,6 +71,10 @@ export default defineConfig({
       styles: ['normal'],
     },
   ],
+  server: {
+    port: 7710,
+    strictPort: true,
+  },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
