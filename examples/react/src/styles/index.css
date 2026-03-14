@@ -4,3 +4,6 @@
 
 /* Import basalt-ui (Tailwind v4, typography plugin, design tokens) */
 @import "../../../../packages/basalt-ui/src/index.css";
+
+/* Scan basalt-ui component source so Tailwind generates all custom utility classes */
+@source "../../../../packages/basalt-ui/src";

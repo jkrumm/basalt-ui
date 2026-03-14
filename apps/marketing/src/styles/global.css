@@ -1,6 +1,10 @@
 /* Import basalt-ui (includes Tailwind v4, typography plugin, fonts, and all tokens) */
 @import "../../../../packages/basalt-ui/src/index.css";
 
+/* Scan basalt-ui component source so Tailwind generates all custom utility classes
+   (shadow-btn, shadow-btn-intent, bg-light-*, bg-dark-*, etc.) used in dist/index.js */
+@source "../../../../packages/basalt-ui/src";
+
 [data-slot="card-content"] > h3:first-child,
 [data-slot="card-content"] > h2:first-child,
 [data-slot="card-content"] > h4:first-child,
