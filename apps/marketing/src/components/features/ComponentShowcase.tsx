@@ -1,8 +1,18 @@
 'use client'
 
+import { IconChevronDown } from '@tabler/icons-react'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -56,14 +66,14 @@ export function ComponentShowcase() {
           <div>
             <SectionLabel>Select</SectionLabel>
             <div className="flex gap-2">
-              <select className="flex h-7 w-full items-center justify-between rounded border border-input bg-input/20 px-2 py-1 text-xs text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30">
+              <select className="flex h-6 w-full items-center justify-between rounded border border-input bg-input/20 px-2 py-1 text-xs text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/30">
                 <option>Option A</option>
                 <option>Option B</option>
                 <option>Option C</option>
               </select>
               <select
                 disabled
-                className="flex h-7 w-full items-center justify-between rounded border border-input bg-input/20 px-2 py-1 text-xs text-muted-foreground opacity-50 outline-none"
+                className="flex h-6 w-full items-center justify-between rounded border border-input bg-input/20 px-2 py-1 text-xs text-muted-foreground opacity-50 outline-none"
               >
                 <option>Disabled</option>
               </select>
@@ -82,13 +92,22 @@ export function ComponentShowcase() {
           {/* Tabs */}
           <div>
             <SectionLabel>Tabs</SectionLabel>
-            <Tabs defaultValue="tab1">
-              <TabsList>
-                <TabsTrigger value="tab1">Tab 1</TabsTrigger>
-                <TabsTrigger value="tab2">Tab 2</TabsTrigger>
-                <TabsTrigger value="tab3">Tab 3</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="space-y-2">
+              <Tabs defaultValue="tab1">
+                <TabsList>
+                  <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+                  <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+                  <TabsTrigger value="tab3">Tab 3</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Tabs defaultValue="tab1">
+                <TabsList variant="line">
+                  <TabsTrigger value="tab1">Overview</TabsTrigger>
+                  <TabsTrigger value="tab2">Analytics</TabsTrigger>
+                  <TabsTrigger value="tab3">Settings</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* Progress */}
@@ -145,6 +164,73 @@ export function ComponentShowcase() {
             </div>
           </div>
 
+          {/* Button Groups */}
+          <div>
+            <SectionLabel>Button Groups</SectionLabel>
+            <div className="flex flex-wrap gap-3">
+              <div className="inline-flex">
+                <Button size="sm" variant="primary" className="rounded-r-none">
+                  Left
+                </Button>
+                <Button size="sm" variant="primary" className="-ml-px rounded-none">
+                  Center
+                </Button>
+                <Button size="sm" variant="primary" className="-ml-px rounded-l-none">
+                  Right
+                </Button>
+              </div>
+              <div className="inline-flex">
+                <Button size="sm" className="rounded-r-none">
+                  Cut
+                </Button>
+                <Button size="sm" className="-ml-px rounded-none">
+                  Copy
+                </Button>
+                <Button size="sm" className="-ml-px rounded-l-none">
+                  Paste
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dropdown */}
+          <div>
+            <SectionLabel>Dropdown Menu</SectionLabel>
+            <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button size="sm">
+                      Actions <IconChevronDown />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Edit</DropdownMenuItem>
+                  <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-red">Delete</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button size="sm" variant="primary">
+                      New <IconChevronDown />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Project</DropdownMenuItem>
+                  <DropdownMenuItem>Template</DropdownMenuItem>
+                  <DropdownMenuItem>Import...</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
           {/* Toggle groups */}
           <div>
             <SectionLabel>Toggle Groups</SectionLabel>
@@ -166,26 +252,6 @@ export function ComponentShowcase() {
           <div>
             <SectionLabel>Badges</SectionLabel>
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-1">
-                <span className="inline-flex items-center rounded-full bg-blue px-2 py-0.5 text-caption font-medium text-white">
-                  Blue
-                </span>
-                <span className="inline-flex items-center rounded-full bg-green px-2 py-0.5 text-caption font-medium text-white">
-                  Green
-                </span>
-                <span className="inline-flex items-center rounded-full bg-orange px-2 py-0.5 text-caption font-medium text-dark-4">
-                  Orange
-                </span>
-                <span className="inline-flex items-center rounded-full bg-red px-2 py-0.5 text-caption font-medium text-white">
-                  Red
-                </span>
-                <span className="inline-flex items-center rounded-full bg-purple px-2 py-0.5 text-caption font-medium text-white">
-                  Purple
-                </span>
-                <span className="inline-flex items-center rounded-full bg-gold px-2 py-0.5 text-caption font-medium text-dark-4">
-                  Gold
-                </span>
-              </div>
               <div className="flex flex-wrap gap-1">
                 <Badge variant="primary">Primary</Badge>
                 <Badge variant="success">Success</Badge>

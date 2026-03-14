@@ -17,7 +17,7 @@ const buttonVariants = cva(
         // Blueprint success intent: green
         success: 'bg-green text-white shadow-btn-intent hover:bg-green-2 active:bg-green-1',
         // Blueprint warning intent: orange
-        warning: 'bg-orange-4 text-dark-4 shadow-btn-intent hover:bg-orange-3 active:bg-orange-2',
+        warning: 'bg-orange text-white shadow-btn-intent hover:bg-orange-2 active:bg-orange-1',
         // Blueprint danger intent: red
         danger: 'bg-red text-white shadow-btn-intent hover:bg-red-2 active:bg-red-1',
         // Minimal / ghost: transparent, hover muted
@@ -34,8 +34,8 @@ const buttonVariants = cva(
       },
       size: {
         xs: 'h-5 px-1.5 text-[0.625rem]',
-        sm: 'h-6 px-2',
-        default: 'h-[1.875rem] px-2.5',
+        sm: 'h-6 px-2.5',
+        default: 'h-[1.875rem] px-3',
         lg: 'h-9 px-4 text-sm',
         icon: 'size-[1.875rem]',
         'icon-sm': 'size-6',

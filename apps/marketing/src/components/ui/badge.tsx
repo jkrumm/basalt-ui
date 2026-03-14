@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex min-h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded px-1.5 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap leading-none transition-colors [&>svg]:pointer-events-none [&>svg]:size-2.5!',
+  'inline-flex min-h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-[0.6875rem] font-medium whitespace-nowrap leading-none transition-colors [&>svg]:pointer-events-none [&>svg]:size-2.5!',
   {
     variants: {
       variant: {
@@ -14,7 +14,7 @@ const badgeVariants = cva(
         // Intent: solid fills matching button intent colors
         primary: 'bg-blue text-white',
         success: 'bg-green text-white',
-        warning: 'bg-orange-4 text-dark-4',
+        warning: 'bg-orange text-white',
         danger: 'bg-red text-white',
         // Minimal: low-opacity bg, colored text (Blueprint "minimal" tag)
         'primary-minimal': 'bg-blue/15 text-blue dark:bg-blue/20 dark:text-blue-4',
