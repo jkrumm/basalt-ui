@@ -172,7 +172,7 @@ export function ComponentShowcase() {
                 <Button size="sm" variant="primary" className="rounded-r-none">
                   Left
                 </Button>
-                <Button size="sm" variant="primary" className="-ml-px rounded-none">
+                <Button size="sm" variant="primary" className="-ml-px rounded-none bg-blue-1">
                   Center
                 </Button>
                 <Button size="sm" variant="primary" className="-ml-px rounded-l-none">
