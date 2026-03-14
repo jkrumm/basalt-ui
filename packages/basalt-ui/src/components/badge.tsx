@@ -16,7 +16,7 @@ const badgeVariants = cva(
         // Intent: solid fills matching button intent colors
         primary: 'bg-blue text-white',
         success: 'bg-green text-white',
-        warning: 'bg-orange-5 text-gray-black',
+        warning: 'bg-orange text-white',
         danger: 'bg-red text-white',
         // Minimal: low-opacity bg, colored text (Blueprint "minimal" tag)
         'primary-minimal': 'bg-blue/15 text-blue dark:bg-blue/20 dark:text-blue-4',
