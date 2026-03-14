@@ -65,9 +65,7 @@ function Tooltip({
     return (
       <TooltipPrimitive.Provider delay={delay}>
         <TooltipPrimitive.Root {...props}>
-          <TooltipPrimitive.Trigger render={children as React.ReactElement}>
-            {/* children element becomes the trigger via render prop */}
-          </TooltipPrimitive.Trigger>
+          <TooltipPrimitive.Trigger render={children as React.ReactElement} />
           <TooltipContent side={side}>{content}</TooltipContent>
         </TooltipPrimitive.Root>
       </TooltipPrimitive.Provider>
