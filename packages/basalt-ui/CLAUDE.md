@@ -1,9 +1,84 @@
 # Basalt UI - Design System Package
 
 **Inherits from**: `../../CLAUDE.md` (monorepo conventions)
-**This file defines**: Design system philosophy, color system, restrictions, and token architecture
+**This file defines**: Design system philosophy, color system, component architecture, and token architecture
 
-A mature, restrictive Tailwind CSS design system inspired by volcanic basalt stone and natural aesthetics.
+A Tailwind CSS design system with Blueprint-inspired React components and zinc-based color tokens.
+
+## Component Architecture
+
+### What basalt-ui Exports
+
+The package exports two things:
+
+1. **CSS tokens** (`basalt-ui/css`, `basalt-ui/starlight`) — Tailwind v4 preset with OKLCH palette, shadows, typography
+2. **React components** (`import { Button } from 'basalt-ui'`) — Blueprint-styled components with proper intent API
+
+### Component Philosophy
+
+Blueprint-inspired component API, not ShadCN defaults:
+- **Button**: default=neutral gray, explicit `primary/success/warning/danger` variants, Blueprint shadow system
+- **Badge**: pill-shaped (`rounded-full`), intent variants + minimal (low-opacity) variants
+- **Checkbox/Radio/Switch**: compact sizing for dense dashboard UIs (14px instead of 16px)
+- **DropdownMenu**: built on `@base-ui/react/menu`, matches Select/Popover styling
+
+All components use `@base-ui/react` primitives (not Radix UI). They accept `className` for overrides and follow the `cn()` merge pattern.
+
+### Source Layout
+
+```
+packages/basalt-ui/src/
+├── index.ts              # Barrel: re-exports all components + cn
+├── utils.ts              # cn() helper (clsx + tailwind-merge)
+├── components/
+│   ├── button.tsx        # Button with intent variants + shadow-btn system
+│   ├── badge.tsx         # Badge with intent + minimal variants (rounded-full)
+│   ├── checkbox.tsx      # Compact checkbox (size-3.5)
+│   ├── radio-group.tsx   # Compact radio (size-3.5)
+│   ├── switch.tsx        # Compact switch (14×24px default)
+│   └── dropdown-menu.tsx # Dropdown built on @base-ui/react/menu
+├── index.css             # CSS tokens (main entry)
+└── starlight.css         # Starlight compatibility layer
+```
+
+### Build Process
+
+```bash
+bun run build   # tsup → dist/index.js (ESM, peer deps external)
+```
+
+- Built to `dist/index.js` via **tsup** (esbuild-based, ESM only)
+- All React/base-ui/tabler deps are external (peer dependencies)
+- `dist/` is gitignored — always rebuild after component changes
+- Types served from `src/index.ts` (source TypeScript, avoids dts complexity)
+
+### Consuming in Apps (Workspace)
+
+```tsx
+import { Button, Badge, Switch, Checkbox, DropdownMenu } from 'basalt-ui'
+```
+
+Apps must add to their Vite config:
+```js
+optimizeDeps: { exclude: ['basalt-ui'] }
+```
+This prevents Vite from pre-bundling basalt-ui (peer deps resolve from the app's context).
+
+### Adding New Components
+
+When a ShadCN component is customized for Blueprint style:
+1. Create `src/components/<name>.tsx` — import from `@base-ui/react/<name>`, use `cn` from `../utils`
+2. Export from `src/index.ts`
+3. Run `bun run build`
+4. In marketing app, replace `src/components/ui/<name>.tsx` with a re-export: `export { Foo } from 'basalt-ui'`
+5. Commit basalt-ui changes FIRST (separate commit), then marketing app changes
+
+### What Stays in Marketing App
+
+Components not yet moved to basalt-ui (pass-through ShadCN wrappers without Blueprint customization):
+- Input, Label, Separator, Progress, Slider, Tabs, ToggleGroup, Select, Tooltip, Popover, Card
+
+Move a component to basalt-ui when it needs: intent API, Blueprint sizing, or design-system-level defaults.
 
 ## Design Philosophy
 
