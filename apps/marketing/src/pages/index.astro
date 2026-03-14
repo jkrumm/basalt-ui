@@ -2,6 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/layouts/Layout.astro';
 import { buttonVariants } from '@/components/ui/button.tsx';
+import { ComponentShowcase } from '@/components/features/ComponentShowcase.tsx';
+import { SidebarShowcase } from '@/components/features/SidebarShowcase.tsx';
 ---
 
 <Layout>
@@ -21,7 +23,13 @@ import { buttonVariants } from '@/components/ui/button.tsx';
       </div>
     </section>
 
-    <div class="min-h-screen"></div>
+    <section class="mb-16">
+      <ComponentShowcase client:load />
+    </section>
+
+    <section class="mb-16">
+      <SidebarShowcase client:load />
+    </section>
 
     <section class="grid gap-6 md:grid-cols-3">
       <Card>
