@@ -1,7 +1,18 @@
 'use client'
 
-import { IconChevronDown } from '@tabler/icons-react'
+import {
+  IconAlertTriangle,
+  IconCheck,
+  IconChevronDown,
+  IconDatabase,
+  IconInfoCircle,
+  IconPlus,
+  IconSearch,
+  IconShieldCheck,
+  IconTrash,
+} from '@tabler/icons-react'
 
+import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -14,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
 import {
   Progress,
@@ -28,6 +40,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tooltip } from '@/components/ui/tooltip'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -62,6 +75,22 @@ export function ComponentShowcase() {
             </div>
           </div>
 
+          {/* Input Groups */}
+          <div>
+            <SectionLabel>Input Groups</SectionLabel>
+            <div className="space-y-2">
+              <InputGroup hasLeftAddon>
+                <InputGroupAddon icon={IconSearch} side="left" />
+                <Input placeholder="Search..." />
+              </InputGroup>
+              <InputGroup hasLeftAddon hasRightAddon>
+                <InputGroupAddon icon={IconDatabase} side="left" />
+                <Input placeholder="Database query..." />
+                <InputGroupAddon icon={IconCheck} side="right" />
+              </InputGroup>
+            </div>
+          </div>
+
           {/* Select */}
           <div>
             <SectionLabel>Select</SectionLabel>
@@ -85,7 +114,9 @@ export function ComponentShowcase() {
             <SectionLabel>Slider</SectionLabel>
             <div className="space-y-4 px-1">
               <Slider defaultValue={[40]} />
-              <Slider defaultValue={[20, 70]} />
+              <Slider defaultValue={[20, 70]} intent="success" />
+              <Slider defaultValue={[60]} intent="warning" labelRenderer={(v) => `${v}%`} />
+              <Slider defaultValue={[80]} intent="danger" disabled />
             </div>
           </div>
 
@@ -104,7 +135,9 @@ export function ComponentShowcase() {
                 <TabsList variant="line">
                   <TabsTrigger value="tab1">Overview</TabsTrigger>
                   <TabsTrigger value="tab2">Analytics</TabsTrigger>
-                  <TabsTrigger value="tab3">Settings</TabsTrigger>
+                  <TabsTrigger value="tab3" disabled>
+                    Disabled
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -137,6 +170,26 @@ export function ComponentShowcase() {
               </Progress>
             </div>
           </div>
+
+          {/* Alerts */}
+          <div>
+            <SectionLabel>Alert</SectionLabel>
+            <div className="space-y-2">
+              <Alert title="Default notice">Something happened that you should know about.</Alert>
+              <Alert intent="primary" icon={IconInfoCircle} title="Info">
+                Primary intent with icon and body text.
+              </Alert>
+              <Alert intent="success" icon={IconShieldCheck} title="Success">
+                Operation completed successfully.
+              </Alert>
+              <Alert intent="warning" icon={IconAlertTriangle} title="Warning">
+                This action may have unintended consequences.
+              </Alert>
+              <Alert intent="danger" title="Error">
+                Something went wrong. Please try again.
+              </Alert>
+            </div>
+          </div>
         </div>
 
         {/* Right column */}
@@ -144,23 +197,65 @@ export function ComponentShowcase() {
           {/* Buttons */}
           <div>
             <SectionLabel>Buttons</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm">Default</Button>
-              <Button size="sm" variant="primary">
-                Primary
-              </Button>
-              <Button size="sm" variant="success">
-                Success
-              </Button>
-              <Button size="sm" variant="warning">
-                Warning
-              </Button>
-              <Button size="sm" variant="danger">
-                Danger
-              </Button>
-              <Button size="sm" variant="ghost">
-                Ghost
-              </Button>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm">Default</Button>
+                <Button size="sm" variant="primary">
+                  Primary
+                </Button>
+                <Button size="sm" variant="success">
+                  Success
+                </Button>
+                <Button size="sm" variant="warning">
+                  Warning
+                </Button>
+                <Button size="sm" variant="danger">
+                  Danger
+                </Button>
+                <Button size="sm" variant="ghost">
+                  Ghost
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" leftIcon={IconPlus}>
+                  Add Item
+                </Button>
+                <Button size="sm" variant="primary" leftIcon={IconPlus} rightIcon={IconChevronDown}>
+                  New
+                </Button>
+                <Button size="sm" variant="danger" leftIcon={IconTrash}>
+                  Delete
+                </Button>
+                <Button size="sm" loading>
+                  Loading
+                </Button>
+                <Button size="sm" variant="primary" loading>
+                  Saving
+                </Button>
+                <Button size="sm" fill variant="success" leftIcon={IconCheck}>
+                  Full width
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" disabled>
+                  Default
+                </Button>
+                <Button size="sm" variant="primary" disabled>
+                  Primary
+                </Button>
+                <Button size="sm" variant="success" disabled>
+                  Success
+                </Button>
+                <Button size="sm" variant="warning" disabled>
+                  Warning
+                </Button>
+                <Button size="sm" variant="danger" disabled>
+                  Danger
+                </Button>
+                <Button size="sm" variant="ghost" disabled>
+                  Ghost
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -208,10 +303,14 @@ export function ComponentShowcase() {
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Options</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Edit</DropdownMenuItem>
-                  <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                  <DropdownMenuItem icon={IconDatabase} hint="⌘E">
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem icon={IconPlus}>Duplicate</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red">Delete</DropdownMenuItem>
+                  <DropdownMenuItem icon={IconTrash} intent="danger">
+                    Delete
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <DropdownMenu>
@@ -231,6 +330,26 @@ export function ComponentShowcase() {
             </div>
           </div>
 
+          {/* Tooltip */}
+          <div>
+            <SectionLabel>Tooltip</SectionLabel>
+            <div className="flex flex-wrap gap-2">
+              <Tooltip content="Default tooltip on top">
+                <Button size="sm">Hover me</Button>
+              </Tooltip>
+              <Tooltip content="Shown below" side="bottom">
+                <Button size="sm" variant="primary">
+                  Below
+                </Button>
+              </Tooltip>
+              <Tooltip content="Shown to the right" side="right">
+                <Button size="sm" variant="ghost">
+                  Right
+                </Button>
+              </Tooltip>
+            </div>
+          </div>
+
           {/* Toggle groups */}
           <div>
             <SectionLabel>Toggle Groups</SectionLabel>
@@ -243,7 +362,9 @@ export function ComponentShowcase() {
               <ToggleGroup defaultValue={['x', 'y']}>
                 <ToggleGroupItem value="x">Alpha</ToggleGroupItem>
                 <ToggleGroupItem value="y">Beta</ToggleGroupItem>
-                <ToggleGroupItem value="z">Gamma</ToggleGroupItem>
+                <ToggleGroupItem value="z" disabled>
+                  Disabled
+                </ToggleGroupItem>
               </ToggleGroup>
             </div>
           </div>
@@ -265,6 +386,20 @@ export function ComponentShowcase() {
                 <Badge variant="success-minimal">Success</Badge>
                 <Badge variant="warning-minimal">Warning</Badge>
                 <Badge variant="danger-minimal">Danger</Badge>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Badge variant="primary" size="lg">
+                  Large
+                </Badge>
+                <Badge variant="success" size="lg">
+                  Success
+                </Badge>
+                <Badge variant="danger" onRemove={() => {}}>
+                  Removable
+                </Badge>
+                <Badge variant="primary-minimal" interactive onClick={() => {}}>
+                  Clickable
+                </Badge>
               </div>
             </div>
           </div>
@@ -289,8 +424,14 @@ export function ComponentShowcase() {
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Checkbox id="cb3" disabled />
-                  <Label htmlFor="cb3" className="text-small text-muted-foreground">
+                  <Checkbox id="cb3" indeterminate />
+                  <Label htmlFor="cb3" className="text-small">
+                    Indeterminate
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="cb4" disabled />
+                  <Label htmlFor="cb4" className="text-small text-muted-foreground">
                     Disabled
                   </Label>
                 </div>
