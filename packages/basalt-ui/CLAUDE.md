@@ -58,11 +58,20 @@ bun run build   # tsup → dist/index.js (ESM, peer deps external)
 import { Button, Badge, Switch, Checkbox, DropdownMenu } from 'basalt-ui'
 ```
 
-Apps must add to their Vite config:
+Apps must add two things:
+
+**1. Vite config** — prevents pre-bundling (peer deps resolve from app's context):
 ```js
 optimizeDeps: { exclude: ['basalt-ui'] }
 ```
-This prevents Vite from pre-bundling basalt-ui (peer deps resolve from the app's context).
+
+**2. `@source` directive in global CSS** — Tailwind v4 only generates utilities it detects in
+scanned files. The compiled `dist/index.js` is not scanned, so custom utilities like
+`shadow-btn`, `bg-light-2`, `h-[1.875rem]` etc. would be missing without this:
+```css
+@source "../path/to/packages/basalt-ui/src";
+```
+Adjust the relative path from the app's CSS file to `packages/basalt-ui/src`.
 
 ### Adding New Components
 
