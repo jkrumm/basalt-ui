@@ -73,5 +73,9 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      // basalt-ui dist imports peer deps — resolve them from the app's context, not pre-bundle
+      exclude: ['basalt-ui'],
+    },
   },
 })
