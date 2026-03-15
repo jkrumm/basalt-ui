@@ -54,7 +54,7 @@
   ],
   "peerDependencies": {
     "@base-ui/react": "^1.0.0",
-    "@fontsource-variable/instrument-sans": "^5.0.0",
+    "@fontsource-variable/geist": "^5.0.0",
     "@fontsource-variable/jetbrains-mono": "^5.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tabler/icons-react": "^3.0.0",
@@ -67,7 +67,7 @@
     "@base-ui/react": {
       "optional": true
     },
-    "@fontsource-variable/instrument-sans": {
+    "@fontsource-variable/geist": {
       "optional": true
     },
     "@fontsource-variable/jetbrains-mono": {

@@ -164,7 +164,7 @@
   --sl-text-h5: var(--font-size-h5);
 
   /* === FONTS === */
-  --sl-font-system: var(--font-body); /* Instrument Sans Variable */
+  --sl-font-system: var(--font-body); /* Geist Variable */
   --sl-font-system-mono: var(--font-mono); /* JetBrains Mono */
   --sl-font: var(--font-body); /* Override for custom font */
   --sl-font-mono: var(--font-mono); /* Override for custom mono font */

@@ -25,7 +25,7 @@ No rewrites. No heavy abstractions. Just consistent design, everywhere.
 
 - **One Tailwind theme** shared across apps, docs, and dashboards
 - **Zero configuration** - just import one CSS file
-- **Self-hosted fonts** bundled automatically (Instrument Sans Variable, JetBrains Mono Variable)
+- **Self-hosted fonts** bundled automatically (Geist Variable, JetBrains Mono Variable)
 - **Out-of-the-box support** for ShadCN, Starlight, and Tremor
 - **Matching light and dark modes** by default
 - **Framework-agnostic** - works with Next.js, Vite, Astro, and more
@@ -136,7 +136,7 @@ Basalt UI exports CSS files only (no config needed):
 - `tw-animate-css` - Animation utilities
 
 **Direct Dependencies** (bundled):
-- `@fontsource-variable/instrument-sans` - Heading and body font
+- `@fontsource-variable/geist` - Heading and body font
 - `@fontsource-variable/jetbrains-mono` - Monospace font
 
 **Why peer dependencies?**

@@ -374,7 +374,7 @@ Starlight Variables Mapped:
 - **Text Colors**: `--sl-color-text-*` → Basalt foreground tokens
 - **Borders**: `--sl-color-hairline-*` → Basalt border tokens with subtle variations
 - **Typography Scale** (13 sizes): `--sl-text-*` → Basalt typography tokens
-- **Fonts**: `--sl-font-*` → Basalt font families (Instrument Sans Variable, JetBrains Mono Variable)
+- **Fonts**: `--sl-font-*` → Basalt font families (Geist Variable, JetBrains Mono Variable)
 - **Line Heights**: `--sl-line-height-*` → Basalt line height tokens
 - **Shadows** (3 levels): `--sl-shadow-*` → Basalt shadow tokens
 - **Layout Tokens**: `--sl-nav-height`, `--sl-sidebar-width`, etc. → Basalt spacing scale
@@ -640,7 +640,7 @@ The typography plugin handles all the complex layout and spacing:
 
 Basalt only customizes:
 - Color mapping (CSS variables for automatic dark mode)
-- Font families (Instrument Sans Variable for headings and body)
+- Font families (Geist Variable for headings and body)
 - Border radius (matches Basalt tokens)
 - Link styling (underline, weight, transitions)
 - Code backgrounds (Basalt muted color)
@@ -651,12 +651,12 @@ Basalt only customizes:
 
 ### Font Stack
 
-**Headings**: Instrument Sans Variable
+**Headings**: Geist Variable
 - Modern, clean geometric sans-serif
 - Excellent readability at all sizes
 - Professional and versatile
 
-**Body**: Instrument Sans Variable
+**Body**: Geist Variable
 - Crisp, clear sans-serif
 - Optimized for reading comfort
 - Professional, modern aesthetic
@@ -668,7 +668,7 @@ Basalt only customizes:
 
 ### Font Philosophy: Strong Opinionated Defaults
 
-Basalt UI includes Instrument Sans Variable and JetBrains Mono Variable as **non-negotiable defaults**:
+Basalt UI includes Geist Variable and JetBrains Mono Variable as **non-negotiable defaults**:
 
 - Fonts are imported automatically in `src/index.css` (via @fontsource-variable packages)
 - Users only need `@import "basalt-ui/css"` - fonts are included
@@ -684,7 +684,7 @@ Basalt UI includes Instrument Sans Variable and JetBrains Mono Variable as **non
 - Self-hosted from node_modules (privacy-first, no CDN requests)
 
 **Why variable fonts?**
-- Single file handles full weight range (400-700 for Instrument Sans)
+- Single file handles full weight range (400-700 for Geist)
 - Better performance than loading multiple font weights
 - Smooth font-weight animations if needed
 - Smaller bundle size vs. multiple static font files

@@ -11,9 +11,9 @@
  * Recommended approaches:
  *   Astro 6+    → fontProviders.fontsource() + <Font preload />
  *                 See: https://basalt-ui.com/docs/astro-fonts?utm_source=basalt_ui_css
- *   Vite / React → @import "@fontsource-variable/instrument-sans"
+ *   Vite / React → @import "@fontsource-variable/geist"
  *                           "@fontsource-variable/jetbrains-mono"
- *   Other        → Any @font-face / CDN that serves "Instrument Sans Variable"
+ *   Other        → Any @font-face / CDN that serves "Geist Variable"
  *                  and "JetBrains Mono Variable"
  */
 
@@ -344,9 +344,8 @@
 
   /* === TYPOGRAPHY: Modern, welcoming fonts === */
   --font-heading:
-    "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body:
-    "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
 
   /* === BORDER RADIUS: Crisp, minimal (professional dashboard style) === */
