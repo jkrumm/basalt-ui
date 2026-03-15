@@ -58,8 +58,8 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Instrument Sans',
-      cssVariable: '--font-instrument-sans',
+      name: 'Geist',
+      cssVariable: '--font-geist',
       weights: [400, 500, 600, 700],
       styles: ['normal'],
     },

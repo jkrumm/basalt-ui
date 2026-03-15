@@ -72,7 +72,7 @@ export function ComponentShowcase() {
 
   return (
     <div className="rounded bg-card border border-border p-5">
-      <h2 className="mb-5 text-h5 font-bold">Component Kit</h2>
+      <h2 className="mb-5 text-h5 font-bold">Component Showcase</h2>
 
       {/* ── Row 1: Inputs (1 col) + Buttons (2 cols) ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

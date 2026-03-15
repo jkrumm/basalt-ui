@@ -61,7 +61,7 @@ Add this to your main CSS file:
 
 **What this imports:**
 - Complete Tailwind v4 theme (`@theme inline` CSS)
-- Font-family CSS tokens (Instrument Sans Variable, JetBrains Mono Variable) — font files must be loaded by your app
+- Font-family CSS tokens (Geist Variable, JetBrains Mono Variable) — font files must be loaded by your app
 - CSS variables for light/dark modes
 - Typography plugin configuration
 - Animation utilities
@@ -142,7 +142,7 @@ export default defineConfig({
 
 **3. Install fonts:**
 ```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
+bun add @fontsource-variable/geist @fontsource-variable/jetbrains-mono
 ```
 
 **4. Import CSS in entry file:**
@@ -156,7 +156,7 @@ import './styles/globals.css';
 /* src/styles/globals.css */
 
 /* Self-hosted variable fonts */
-@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/geist";
 @import "@fontsource-variable/jetbrains-mono";
 
 /* basalt-ui design tokens (includes Tailwind v4) */
@@ -247,8 +247,8 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Instrument Sans',
-      cssVariable: '--font-instrument-sans',
+      name: 'Geist',
+      cssVariable: '--font-geist',
       weights: [400, 500, 600, 700],
       styles: ['normal'],
     },
@@ -272,7 +272,7 @@ import '../styles/global.css'
 ---
 <html>
   <head>
-    <Font cssVariable="--font-instrument-sans" preload />
+    <Font cssVariable="--font-geist" preload />
     <Font cssVariable="--font-jetbrains-mono" preload />
   </head>
   <body><slot /></body>
@@ -359,8 +359,8 @@ strategy for its stack.
 **Tokens defined by the package:**
 
 ```css
---font-heading: "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
---font-body:    "Instrument Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+--font-heading: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+--font-body:    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 --font-mono:    "JetBrains Mono Variable", "Menlo", "Monaco", "Courier New", monospace;
 ```
 
@@ -368,7 +368,7 @@ strategy for its stack.
 
 | Font | Role | Variable axes |
 |-|-|-|
-| Instrument Sans Variable | Headings + body | weight 400–700, width 75–100% |
+| Geist Variable | Headings + body | weight 400–700, width 75–100% |
 | JetBrains Mono Variable | Code + monospace | weight 100–800 |
 
 ## Font Performance
@@ -389,12 +389,12 @@ See the complete setup in the [Astro section above](#astro) and the
 
 **1. Install fonts:**
 ```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
+bun add @fontsource-variable/geist @fontsource-variable/jetbrains-mono
 ```
 
 **2. Import in your global CSS (before `basalt-ui/css`):**
 ```css
-@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/geist";
 @import "@fontsource-variable/jetbrains-mono";
 @import "basalt-ui/css";
 ```
@@ -417,7 +417,7 @@ export default defineConfig({
     tailwindcss(),
     FontaineTransform.vite({
       fallbacks: {
-        'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+        'Geist Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
         'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
       },
       resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
@@ -435,12 +435,12 @@ visually invisible and CLS reaches zero.
 
 **1. Install fonts:**
 ```bash
-bun add @fontsource-variable/instrument-sans @fontsource-variable/jetbrains-mono
+bun add @fontsource-variable/geist @fontsource-variable/jetbrains-mono
 ```
 
 **2. Import in `app/globals.css`:**
 ```css
-@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/geist";
 @import "@fontsource-variable/jetbrains-mono";
 @import "basalt-ui/css";
 ```
@@ -455,7 +455,7 @@ const nextConfig = {
     config.plugins.push(
       FontaineTransform.webpack({
         fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
+          'Geist Variable': ['Helvetica Neue', 'Segoe UI', 'Roboto', 'Arial'],
           'JetBrains Mono Variable': ['Consolas', 'Menlo', 'SF Mono', 'Courier New'],
         },
         resolvePath: (id) => new URL('node_modules/' + id, import.meta.url),
@@ -562,12 +562,12 @@ export default defineConfig({
 
 ### Fonts not loading
 
-**Symptom:** Using fallback system fonts instead of Instrument Sans
+**Symptom:** Using fallback system fonts instead of Geist
 
 **Check:**
 1. Verify fonts are loaded per your framework (see [Font Performance](#font-performance))
 2. Check browser DevTools Network tab for font requests
-3. Look for font files (e.g. `InstrumentSans-Variable.woff2`)
+3. Look for font files (e.g. `Geist-Variable.woff2`)
 4. Ensure font imports come **before** `basalt-ui/css` in your CSS
 5. Ensure no Content Security Policy blocking fonts
 

@@ -36,8 +36,8 @@ export default defineConfig({
   fonts: [
     {
       provider: fontProviders.fontsource(),
-      name: 'Instrument Sans', // Fontsource registry name, not the CSS font-family
-      cssVariable: '--font-instrument-sans',
+      name: 'Geist', // Fontsource registry name, not the CSS font-family
+      cssVariable: '--font-geist',
       weights: [400, 500, 600, 700],
       styles: ['normal'],
     },
@@ -63,7 +63,7 @@ packages needed in the Astro app itself.
 import { Font } from 'astro:assets'
 ---
 <head>
-  <Font cssVariable="--font-instrument-sans" preload />
+  <Font cssVariable="--font-geist" preload />
   <Font cssVariable="--font-jetbrains-mono" preload />
 </head>
 ```
@@ -75,13 +75,13 @@ Remove the attribute entirely to skip preloading (useful for secondary/icon font
 
 ### 4. Reference in CSS
 
-The API injects a `--font-instrument-sans` CSS variable containing the
+The API injects a `--font-geist` CSS variable containing the
 `font-family` value. Basalt UI's `index.css` already maps this to the
 `--font-sans` token via:
 
 ```css
 @theme inline {
-  --font-sans: var(--font-instrument-sans, 'Instrument Sans Variable', sans-serif);
+  --font-sans: var(--font-geist, 'Geist Variable', sans-serif);
   --font-mono: var(--font-jetbrains-mono, 'JetBrains Mono Variable', monospace);
 }
 ```
@@ -120,7 +120,7 @@ export default defineConfig({
     plugins: [
       FontaineTransform.vite({
         fallbacks: {
-          'Instrument Sans Variable': ['Helvetica Neue', 'Segoe UI', 'Arial'],
+          'Geist Variable': ['Helvetica Neue', 'Segoe UI', 'Arial'],
           'JetBrains Mono Variable': ['Consolas', 'Menlo', 'Courier New'],
         },
         resolvePath: (id) => new URL(`../../node_modules/${id}`, import.meta.url),
@@ -140,7 +140,7 @@ hardcode it. The path below is illustrative only:
   rel="preload"
   as="font"
   type="font/woff2"
-  href="/_astro/instrument-sans-latin-400-normal.<hash>.woff2"
+  href="/_astro/geist-latin-400-normal.<hash>.woff2"
   crossorigin
 />
 ```
@@ -163,6 +163,6 @@ font file covers that range via the Fontsource registry.
 
 `fontProviders.fontsource()` resolves font names from the Fontsource registry
 at build time. The `name` field must match the **Fontsource registry family name**, not the
-CSS `font-family` value. Use `"Instrument Sans"` (the registry name), not
-`"Instrument Sans Variable"` (the CSS family). Check the font's
+CSS `font-family` value. Use `"Geist"` (the registry name), not
+`"Geist Variable"` (the CSS family). Check the font's
 `metadata.json` → `"family"` field for the exact value.

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__perplexity__search",
+      "mcp__tavily__tavily-search",
+      "mcp__tavily__tavily-extract"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
