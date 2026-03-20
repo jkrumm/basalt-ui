@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }} # PAT as jkrumm — bypasses branch protection ruleset
 
       - uses: actions/setup-node@v4
         with:
@@ -56,7 +56,7 @@ jobs:
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }} # must be PAT — github-actions[bot] has no bypass rights
           MONOREPO_DIR: packages/basalt-ui
 
   publish:
