@@ -6,18 +6,19 @@
 import { checkTheme, init, sync } from '../dist/cli/index.js'
 
 const cmd = process.argv[2]
+const flags = process.argv.slice(3)
 
 switch (cmd) {
   case 'init':
     init()
     break
   case 'sync':
-    sync()
+    sync({ force: flags.includes('--force'), check: flags.includes('--check') })
     break
   case 'check-theme':
     checkTheme()
     break
   default:
-    console.error('Usage: basalt <init|sync|check-theme>')
+    console.error('Usage: basalt <init | sync [--force] [--check] | check-theme>')
     process.exit(1)
 }

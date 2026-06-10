@@ -31,6 +31,8 @@ for f in \
   dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
   src/index.ts \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
+  agent/rules/basalt-tokens.md agent/rules/basalt-charts.md \
+  agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl agent/templates/settings.stanza.json \
   bin/basalt.mjs; do require "$f"; done
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
 for f in src/index.css src/starlight.css tailwind.config.js \

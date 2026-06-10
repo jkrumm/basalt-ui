@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "basalt-ui": {
+      "source": {
+        "source": "github",
+        "repo": "{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "basalt@basalt-ui": true
+  }
+}
