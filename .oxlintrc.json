@@ -77,6 +77,7 @@
     {
       "files": ["packages/basalt-ui/src/charts/**"],
       "rules": {
+        "no-underscore-dangle": "off",
         "no-restricted-imports": [
           "error",
           {
