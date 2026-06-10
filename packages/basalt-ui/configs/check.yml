@@ -1,0 +1,25 @@
+# basalt-ui consumer CI template.
+# Copy to your repo as .github/workflows/check.yml. Mirrors the basalt-ui gate
+# order: frozen install -> lint + theme guard -> format check -> typecheck -> tests.
+# `basalt check-theme` is the palette guard shipped by basalt-ui (fails on raw
+# color literals / off-identity accents that bypass the --vx-* token system).
+name: check
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bunx oxlint .
+      - run: bunx basalt check-theme
+      - run: bunx oxfmt 'src/**' '!**/dist/**' --check
+      - run: bun run typecheck
+      - run: bun run test

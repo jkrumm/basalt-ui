@@ -59,7 +59,7 @@ pnpm add -D @tailwindcss/typography shadcn tw-animate-css
 
 ```css
 /* src/styles/globals.css or app/globals.css */
-@import "basalt-ui/css";
+@import 'basalt-ui/css';
 ```
 
 **⚠️ Important:** Use `basalt-ui/css`, not `basalt-ui` or `basalt-ui/src/index.css`
@@ -84,7 +84,8 @@ pnpm add -D @tailwindcss/typography shadcn tw-animate-css
 <article class="prose">
   <h2>Section Title</h2>
   <p>This paragraph looks great with <a href="#">automatic styling</a>.</p>
-  <code>inline code</code> and <pre><code>code blocks</code></pre>
+  <code>inline code</code> and
+  <pre><code>code blocks</code></pre>
 </article>
 ```
 
@@ -108,13 +109,14 @@ Basalt UI exports CSS files only (no config needed):
 ```json
 {
   "exports": {
-    "./css": "./src/index.css",        // Main design system
-    "./starlight": "./src/starlight.css"  // Starlight docs integration
+    "./css": "./src/index.css", // Main design system
+    "./starlight": "./src/starlight.css" // Starlight docs integration
   }
 }
 ```
 
 **What you get:**
+
 - Complete Tailwind v4 theme via `@theme inline` CSS
 - Self-hosted variable fonts (bundled automatically)
 - CSS variables for light/dark modes
@@ -122,6 +124,7 @@ Basalt UI exports CSS files only (no config needed):
 - Animation utilities
 
 **What you DON'T need:**
+
 - ❌ No `tailwind.config.js` file
 - ❌ No manual font setup
 - ❌ No theme configuration
@@ -130,16 +133,19 @@ Basalt UI exports CSS files only (no config needed):
 ### Dependencies
 
 **Peer Dependencies** (you install):
+
 - `tailwindcss` v4+ - Core CSS framework
 - `@tailwindcss/typography` - Powers `.prose` class
 - `shadcn` - Component CLI tool
 - `tw-animate-css` - Animation utilities
 
 **Direct Dependencies** (bundled):
+
 - `@fontsource-variable/instrument-sans` - Heading and body font
 - `@fontsource-variable/jetbrains-mono` - Monospace font
 
 **Why peer dependencies?**
+
 - Prevents version conflicts across your project
 - You control which versions to use
 - Reduces duplicate packages in node_modules
@@ -170,12 +176,17 @@ See the **[Installation Guide](https://basalt-ui.com/docs/installation?utm_sourc
 <!-- Arbitrary values everywhere -->
 <div class="text-[17px] p-[13px] bg-[#f3f3f3]">
   <!-- Components conflict with global styles -->
-  <h2>Heading</h2>  <!-- Styled globally -->
-  <Table>...</Table>  <!-- Inherits unwanted styles -->
+  <h2>Heading</h2>
+  <!-- Styled globally -->
+  <table>
+    ...
+  </table>
+  <!-- Inherits unwanted styles -->
 </div>
 ```
 
 **Problems:**
+
 - Arbitrary values lead to inconsistency
 - Global semantic HTML styles conflict with component libraries
 - Tremor/ShadCN components inherit unwanted styles
@@ -187,15 +198,20 @@ See the **[Installation Guide](https://basalt-ui.com/docs/installation?utm_sourc
 <div class="text-body p-4 bg-card">
   <!-- Content areas: Use .prose -->
   <article class="prose">
-    <h2>Heading</h2>  <!-- Styled within .prose -->
+    <h2>Heading</h2>
+    <!-- Styled within .prose -->
   </article>
 
   <!-- Components: Clean, no conflicts -->
-  <Table>...</Table>  <!-- Works perfectly -->
+  <table>
+    ...
+  </table>
+  <!-- Works perfectly -->
 </div>
 ```
 
 **Benefits:**
+
 - Consistent, predictable design tokens
 - `.prose` for content, clean components for UI
 - No conflicts with ShadCN/Tremor
@@ -206,6 +222,7 @@ See the **[Installation Guide](https://basalt-ui.com/docs/installation?utm_sourc
 ## Why "Basalt UI"?
 
 Basalt is a volcanic rock formed from cooled lava. It's:
+
 - **Strong and foundational** - Like a mature design system
 - **Natural and earthy** - Inspiring the zinc + nature accent palette
 - **Structured but organic** - Restrictive yet beautiful
@@ -217,6 +234,7 @@ The design system embodies this aesthetic: professional structure with warm, nat
 ## Requirements
 
 ### Peer Dependencies (Required)
+
 - **Tailwind CSS v4+** - Core CSS framework (uses `@theme inline` syntax)
 - **@tailwindcss/typography v0.5+** - Typography plugin for `.prose` class
 - **tw-animate-css v1.4+** - Animation utilities
@@ -225,6 +243,7 @@ The design system embodies this aesthetic: professional structure with warm, nat
 All peer dependencies must be installed in your project.
 
 ### Browser Support
+
 - Modern browsers with OKLCH support (Chrome 111+, Edge 111+, Safari 16.4+, Firefox 113+)
 
 ---

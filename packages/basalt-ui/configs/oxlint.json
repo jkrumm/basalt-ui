@@ -1,0 +1,99 @@
+{
+  "//": "basalt-ui shipped oxlint preset. Consumers extend this from their own .oxlintrc.json via the node_modules-relative path: { \"extends\": [\"./node_modules/basalt-ui/configs/oxlint.json\"] }. oxlint rejects bare specifiers, so the relative ./node_modules path is required. NOTE: oxlint `extends` is per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an override glob, so any ban that must also hold inside an override is duplicated into that override below.",
+  "plugins": [
+    "react",
+    "react-perf",
+    "typescript",
+    "import",
+    "unicorn",
+    "jsx-a11y",
+    "promise",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-var": "error",
+    "eqeqeq": "error",
+    "no-console": "warn",
+    "no-shadow": "off",
+    "react/rules-of-hooks": "error",
+    "react/jsx-key": "error",
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-explicit-any": "warn",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/**", "app/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "antd",
+                "message": "Use Mantine — antd is not part of the basalt-ui stack."
+              },
+              {
+                "name": "@ant-design/icons",
+                "message": "Use @tabler/icons-react."
+              },
+              {
+                "name": "react-router",
+                "message": "Use @tanstack/react-router."
+              },
+              {
+                "name": "react-router-dom",
+                "message": "Use @tanstack/react-router."
+              },
+              {
+                "name": "@visx/tooltip",
+                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**). Compose basalt-ui chart primitives/kinds instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/charts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@visx/tooltip",
+                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

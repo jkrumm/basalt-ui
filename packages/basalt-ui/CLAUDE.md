@@ -1,919 +1,150 @@
-# Basalt UI - Design System Package
+# Basalt UI — Package
 
-**Inherits from**: `../../CLAUDE.md` (monorepo conventions)
-**This file defines**: Design system philosophy, color system, restrictions, and token architecture
+**Inherits from**: `../../CLAUDE.md` (monorepo conventions).
 
-A mature, restrictive Tailwind CSS design system inspired by volcanic basalt stone and natural aesthetics.
+The only published package (npm: `basalt-ui`, v1.0.0). An opinionated framework for Mantine-based
+React apps, extracted from argo: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an
+app shell, a visx chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
+raw toolchain config presets, and a `basalt` CLI.
 
-## Design Philosophy
+> The old Tailwind CSS theme (OKLCH foundation palette, ShadCN/Tremor/Starlight compat,
+> typography plugin, spacing-restriction strategy) is **gone**. Breaking 1.0 (`feat!:`), same npm
+> name; `./css` and `./starlight` exports dropped.
 
-### Core Principles
+## Staged migration (READ FIRST)
 
-1. **Opt-In Typography**: Use `.prose` class for rich typography, not global defaults
-2. **Component-Library Friendly**: Base layer minimal to avoid conflicts with ShadCN/Tremor/Starlight
-3. **Restrictive by Design**: No infinite scales - only purposeful, defined tokens
-4. **OKLCH Color Space**: Perceptually uniform colors for accessible, harmonious palettes
-5. **Warm, Not Stark**: Professional but welcoming - never pure black/white
-6. **Natural Aesthetics**: Basalt stone zinc neutrals with professional blue accents and expressive Aurora colors
+This is **S0** of a 5-stage argo extraction (S0 pivot → S1 toolchain → S2 charts/tokens →
+S3 theme → S4 shell → S5 agentic + vite). `src/**` is currently **compiling stubs** with
+argo-grounded, stable signatures — real bodies land in S2–S4. The public API shapes documented
+below are real; their implementations are placeholders. Plan against `../../docs/BLUEPRINT.md`.
 
-### What We **DO**
+## Published surface (subpath exports)
 
-- ✅ Define limited, purposeful design tokens
-- ✅ Opt-in typography via `.prose` class (not global HTML defaults)
-- ✅ Use OKLCH for perceptual color uniformity
-- ✅ Foundation palette architecture (DRY - define once, reference everywhere)
-- ✅ Restrict Tailwind scales to prevent arbitrary values
-- ✅ Maintain full ShadCN compatibility
-- ✅ Tremor Raw compatibility via gray palette overrides
-- ✅ Starlight compatibility via comprehensive CSS variable mapping
-- ✅ Create warm, professional, accessible interfaces
-- ✅ Support volcanic nature aesthetic (zinc + blue + expressive colors)
+| Subpath        | Mantine? | Contents                                                                                                                                                                     |
+| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, shell types |
+| `./charts`     | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                |
+| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                             |
+| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                         |
+| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                     |
+| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                |
+| `./configs/*`  | —        | raw toolchain presets (real file paths — `extends` needs them)                                                                                                               |
 
-### What We **DON'T DO**
+Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-- ❌ Infinite utility scales (no `text-[17px]`, no `p-[13px]`)
-- ❌ Arbitrary color values (no `bg-[#f3f3f3]`)
-- ❌ Stark black/white (warm grays instead)
-- ❌ Extend Tailwind - we **replace** and **restrict** it
-- ❌ Style semantic HTML globally (conflicts with component libraries)
-- ❌ HSL/RGB colors (OKLCH only for consistency)
-- ❌ Premature abstractions or over-engineering
+## Layering: Mantine-coupled vs Mantine-free
 
-## Documentation Philosophy
+- `src/charts/**` and `src/tokens/**` are **Mantine-free** — zero `@mantine/*` imports.
+- `@visx/*` may **only** be imported inside `src/charts/**`.
+- Both rules are enforced by oxlint `no-restricted-imports` — repo-local AND in the shipped
+  consumer oxlint preset, so the boundary holds for downstream apps too.
+- The root barrel (`.`) does **not** re-export `./tokens` / `./charts`, so a charts/tokens-only
+  consumer never pulls in `@mantine/*`.
 
-### Single Source of Truth
+## Build (dist-first, unbundled)
 
-**Canonical documentation lives at:** https://basalt-ui.com/docs/installation
-
-**Package README.md should:**
-- Provide Quick Start only (3-step installation)
-- Link to canonical web documentation for details
-- **NOT duplicate** framework-specific setup instructions
-- **NOT duplicate** integration details (ShadCN, Tremor, Starlight)
-- **NOT duplicate** troubleshooting sections
-- **NOT duplicate** design system details (colors, typography, spacing)
-- Keep examples minimal and high-level
-- Target: ~200-300 lines total
-
-**Why:**
-- Prevents documentation drift and inconsistencies
-- Easier to maintain (update once, not everywhere)
-- Users always get most current information
-- Reduces package size and cognitive load
-- Keeps README scannable and focused
-
-**When updating documentation:**
-1. Update web docs first (`apps/web/src/content/docs/docs/installation.md`)
-2. Verify package README.md links to correct section
-3. Do NOT copy detailed instructions into package files
-4. Package README should be scannable in < 2 minutes
-5. Design system details belong in this CLAUDE.md or web docs
-
-**Good (README.md):**
-```markdown
-## Quick Start
-[3-step installation]
-
-📖 Complete Guide: https://basalt-ui.com/docs/installation
+```bash
+bun run build
+# = tsup && cp src/styles.css dist/styles.css && tsc --emitDeclarationOnly --declarationMap
 ```
 
-**Bad (README.md):**
-```markdown
-## Quick Start
-[3-step installation]
+- **tsup** with `bundle: false`, `splitting: false`, `dts: false`, `entry: src/**/*.{ts,tsx}`,
+  `loader: { '.css': 'copy' }` — transpiles each module in place, mirroring the `src/` tree to
+  `dist/` so subpath exports resolve to real files. `bundle: false` alone only emits entry modules
+  and drops CSS, so the glob entry + `splitting: false` are required.
+- `loader: { '.css': 'copy' }` copies component-imported `*.module.css` verbatim and rewrites the
+  import path (the S4 CSS-modules path). `src/styles.css` is imported by no module, so the build
+  script **copies it explicitly** — don't remove that `cp`.
+- **tsc owns declarations** (`--emitDeclarationOnly --declarationMap`) — running tsup's `dts` too
+  fights it. `.d.ts` + maps ship alongside.
+- The tarball ships `dist/` + `src/` + `configs/` + `bin/` so go-to-definition lands in real source.
+- **Never use `import.meta.env`** (Vite-only) in shipped code — use `process.env.NODE_ENV`.
+- The **pack-test** (`bun pm pack` + scratch-install) is the dist gate in CI; the playground only
+  exercises `src/`, never `dist/`.
+- tsup is in maintenance mode (upstream → tsdown). The CSS-copy behavior is the load-bearing piece
+  and works today — **re-evaluate tsdown before S4's CSS-module work, behind the pack-test**.
 
-### Framework-Specific Setup
-[50+ lines of Vite/Next/Astro examples]
+## Dependencies
 
-### Troubleshooting
-[200+ lines of error solutions]
+- **deps**: 8 `@visx/*` pinned **exact** at `4.0.0-alpha.11` (`axis`, `curve`, `event`, `grid`,
+  `group`, `scale`, `shape`, `threshold`). No stable visx 4 exists — exact-pinning IS the
+  hardening; a stable bump becomes a coordinated minor.
+- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
+  `@mantine/dates` optional.
+- **NO** zustand, **NO** `@tanstack/*`, **NO** `@tabler/icons` — icons are passed in as `ReactNode`.
+- `sideEffects: ['*.css']`.
+
+## Token system (`--vx-*`, three tiers)
+
+1. **Palette data** — pure data + string helpers (`BP`, `p()`, semantic/status/neutral/surface
+   pairs). Zero React, zero `@mantine/*`, zero browser API.
+2. **CSS variables** — emitted as `--vx-*` custom properties under the light/dark color scheme;
+   resolution is pure CSS.
+3. **Token refs** (`VX.*`) — just `var(--vx-*)` strings (colors) plus non-color sizing constants,
+   so they work in components AND non-component files.
+
+Keep the `--vx-*` prefix (do not rename — it makes argo's migration byte-provable). A color pair
+keeps its hue identity but shifts shade across schemes. Apply opacity with `alpha(token, a)`
+(`color-mix`), never `rgba()`, so the hue keeps resolving per scheme.
+
+### Consumer-series extensibility (`./tokens`)
+
+App-specific series colors are domain data — they live in the consumer, not the framework. The
+framework ships the primitives:
+
+```ts
+buildPaletteCss(opts?)                  // → full PALETTE_CSS string (embeds consumer series/groups/derived)
+seriesTokens(map, prefix?)              // → { hrv: 'var(--vx-hrv)', ... } exact-keyed; stale keys fail tsc
+groupTokens(name, map)                  // → namespaced token refs for a group
+defineSeries(map)                       // sugar — returns the series map (css + tokens)
+alpha(token, a)                         // theme-aware opacity helper
 ```
 
-## Color System
-
-### OKLCH: Perceptually Uniform Colors
-
-**Why OKLCH:**
-- L (Lightness): Changes correspond to perceived brightness
-- C (Chroma): Saturation that matches human perception
-- H (Hue): Color angle (0-360)
-- Gradients stay clean, no unexpected gray zones
-- Accessible contrast by design
-- Supported in all modern browsers (2025)
-
-### Color Palette Architecture
-
-**Foundation Palette (Reusable Base Colors):**
-
-Like Nord's Polar Night and Snow Storm, our foundation palette provides the core neutral tones that all semantic tokens reference. Each OKLCH value is defined once:
-
-```
-Light Tones (light mode backgrounds, dark mode text):
-- light-1: oklch(0.99 0.002 90)    - Brightest (cards, popovers)
-- light-2: oklch(0.985 0.002 90)   - Main background (light mode)
-- light-3: oklch(0.96 0.004 270)   - Muted backgrounds
-- light-4: oklch(0.93 0.005 270)   - Borders, inputs
-
-Dark Tones (dark mode backgrounds, light mode text):
-- dark-1: oklch(0.195 0.012 285)   - Near-black, reserved
-- dark-2: oklch(0.24 0.012 285)    - Main background (dark mode)
-- dark-3: oklch(0.26 0.012 285)    - Cards (dark mode)
-- dark-4: oklch(0.31 0.012 285)    - Borders, muted (dark mode)
-
-Text Tones (subdued text):
-- text-subdued-light: oklch(0.5 0.014 285)  - Muted text (light mode)
-- text-subdued-dark: oklch(0.8 0.012 285)   - Muted text (dark mode)
-
-Extreme Tones (high contrast):
-- white: oklch(0.99 0.002 90)               - Text on dark backgrounds
-```
-
-**Why Foundation Colors?**
-- **DRY**: Each value defined once, referenced everywhere
-- **Consistency**: All semantic tokens use same base
-- **Maintainability**: Change once, update entire system
-- **Clarity**: Foundation → Semantic → UI hierarchy
-
-**Semantic Tokens (Reference Foundation):**
-```
-Light Mode:
-- background: var(--light-2)  - Main background
-- foreground: var(--dark-4)   - Primary text
-- card: var(--light-1)        - Elevated surfaces
-- muted: var(--light-3)       - Subtle backgrounds
-- border: var(--light-4)      - Borders, dividers
-
-Dark Mode:
-- background: var(--dark-2)   - Main background
-- foreground: var(--light-3) - Soft white
-- card: var(--dark-3)         - Elevated surfaces
-- muted: var(--dark-4)        - Subtle backgrounds
-- border: var(--dark-4)       - Borders, dividers
-```
-
-**Blue Primary (Nord Frost):**
-```
-Blue (Primary Accent):
-- Value: oklch(0.6965 0.0591 248.69)  - Nord #81a1c1
-- Same for light and dark modes
-- Usage: Primary actions, links, focus rings, interactive elements
-
-Blue Variants with Foregrounds:
-- blue:       oklch(0.6965 0.0591 248.69)  - Primary accent
-              blue-foreground: oklch(0.99 0.002 90) - White text on blue
-
-- blue-light: oklch(0.78 0.045 249)         - Hover states, highlights
-              blue-light-foreground: oklch(0.265 0.015 285) - Dark text on blue-light
-
-- blue-deep:  oklch(0.5944 0.0772 254.03)   - Strong emphasis (Nord #5e81ac)
-              blue-deep-foreground: oklch(0.99 0.002 90) - White text on blue-deep
-```
-
-**Expressive Colors (inspired by Nord Aurora):**
-```
-Semantic colors for meaningful UI states - same values for light and dark modes
-
-Red:    oklch(0.6061 0.1206 15.34)  - Errors, destructive actions
-        red-foreground: oklch(0.99 0.002 90) - White text on red
-
-Orange: oklch(0.6929 0.0963 38.24)  - Annotations, warnings
-        orange-foreground: oklch(0.265 0.015 285) - Dark text on orange
-
-Yellow: oklch(0.8549 0.0892 84.09)  - Caution, highlights
-        yellow-foreground: oklch(0.265 0.015 285) - Dark text on yellow
-
-Green:  oklch(0.7683 0.0749 131.06) - Success, confirmations
-        green-foreground: oklch(0.265 0.015 285) - Dark text on green
-
-Purple: oklch(0.6921 0.0625 332.66) - Special features, unique identifiers
-        purple-foreground: oklch(0.99 0.002 90) - White text on purple
-```
-
-**Sequential Chart Palette:**
-```
-8 blue tones for data visualization (blue hue ~249°)
-
-chart-blue-1: oklch(0.90 0.030 249) - Lightest
-chart-blue-2: oklch(0.80 0.040 249)
-chart-blue-3: oklch(0.72 0.050 249)
-chart-blue-4: oklch(0.65 0.059 249)
-chart-blue-5: oklch(0.58 0.065 249)
-chart-blue-6: oklch(0.50 0.070 249)
-chart-blue-7: oklch(0.42 0.075 249)
-chart-blue-8: oklch(0.34 0.077 249) - Darkest
-
-Progressive lightness and gradually increasing chroma for perceptual uniformity
-All adjacent colors exceed WCAG 3:1 contrast requirements
-Used for: Sequential data visualization (temperature scales, density maps, time series)
-```
-
-**Chart Color Shades (Tremor Compatibility):**
-```
-Full 50-950 shade scales for Tremor's dynamic color system:
-- Blue shades (blue-50 through blue-950) - reuses chart-blue palette
-- Red shades (red-50 through red-950)
-- Emerald shades (emerald-50 through emerald-950) - maps to green
-- Amber shades (amber-50 through amber-950) - maps to yellow
-- Violet shades (violet-50 through violet-950) - maps to purple
-- Cyan shades (cyan-50 through cyan-950)
-- Indigo shades (indigo-50 through indigo-950)
-
-Each shade scale maintains perceptual uniformity in OKLCH space
-Used for: Tremor charts with classes like bg-blue-500, stroke-emerald-600
-```
-
-### Tailwind Gray Palette Override (Tremor Compatibility)
-
-**Strategy:** Override Tailwind's default gray scale (`white`, `black`, `gray-50` through `gray-950`) to use Basalt foundation colors automatically.
-
-**Why:** Component libraries like Tremor use hardcoded Tailwind classes (`bg-white`, `bg-gray-100`, `hover:bg-gray-800`, `text-gray-500`) that need to match Basalt's design system without manual changes.
-
-**Implementation:** Using `@theme` (NOT `@theme inline`) to create global CSS variables that Tremor's `dark:` variants can override.
-
-**Mapping (analyzed from Tremor usage patterns):**
-
-Backgrounds & Surfaces:
-```
-white    → light-1  (brightest - cards, popovers, elevated surfaces)
-gray-50  → light-2  (very light - main background in light mode)
-gray-100 → light-3  (muted backgrounds, disabled states)
-gray-200 → light-4  (borders, inputs)
-```
-
-Text Colors (Light Mode):
-```
-gray-300 → oklch(0.75 0.01 285) - very disabled/invisible text in light mode
-gray-400 → muted-foreground - disabled text, icons (light mode)
-gray-500 → muted-foreground - placeholders, subtle text (both modes)
-gray-600 → muted-foreground - medium muted text (light mode)
-gray-700 → oklch(0.35 0.013 285) - readable muted text (light mode)
-```
-
-Dark Mode Surfaces (used with `dark:` prefix):
-```
-gray-800 → dark-4  (borders/muted in dark mode)
-gray-900 → dark-3  (cards/elevated surfaces in dark mode)
-gray-950 → dark-2  (main background in dark mode)
-black    → dark-1  (darkest - near-black)
-```
-
-**How Tremor Uses These:**
-- Light mode: `text-gray-700` (readable) → `dark:text-gray-300` (disabled light text)
-- Light mode: `text-gray-400` (disabled) → `dark:text-gray-600` (muted dark text)
-- Both modes: `text-gray-500` (placeholders stay consistent via muted-foreground)
-- Backgrounds: `bg-white` (light cards) → `dark:bg-gray-950` (dark main bg)
-
-**Result:**
-- Tremor components automatically use Basalt colors in both light and dark modes
-- No manual theme configuration needed in Tremor components
-- Proper contrast maintained via muted-foreground semantic token
-- ShadCN continues using semantic tokens (unaffected)
-
-**Code Location:** `src/index.css` lines 510-537 (`@theme` block)
-
-### Starlight Compatibility
-
-**Strategy:** Comprehensive CSS variable mapping for Astro Starlight documentation framework, similar to Tremor integration approach.
-
-**Why:** Starlight uses 60+ CSS variables for theming. By mapping all variables to Basalt tokens, any app using basalt-ui gets Starlight support automatically without app-specific CSS files.
-
-**Implementation:** Direct `:root` definitions after `@theme inline` block in `src/index.css` (lines 710-935).
-
-**Complete Variable Coverage:**
-
-Starlight Variables Mapped:
-- **Gray Palette** (8 shades): `--sl-color-white` through `--sl-color-black` → Basalt foundation colors
-- **Semantic Color Hues** (5 colors): `--sl-hue-orange`, `--sl-hue-green`, etc. → Extracted from Basalt OKLCH hues
-- **Color Intensity Variants**: `-low`, `-high` suffixes → OKLCH relative color calculations
-- **Accent Colors**: `--sl-color-accent-*` → Basalt blue variants
-- **UI Backgrounds**: `--sl-color-bg-*` → Basalt surface tokens
-- **Text Colors**: `--sl-color-text-*` → Basalt foreground tokens
-- **Borders**: `--sl-color-hairline-*` → Basalt border tokens with subtle variations
-- **Typography Scale** (13 sizes): `--sl-text-*` → Basalt typography tokens
-- **Fonts**: `--sl-font-*` → Basalt font families (Instrument Sans Variable, JetBrains Mono Variable)
-- **Line Heights**: `--sl-line-height-*` → Basalt line height tokens
-- **Shadows** (3 levels): `--sl-shadow-*` → Basalt shadow tokens
-- **Layout Tokens**: `--sl-nav-height`, `--sl-sidebar-width`, etc. → Basalt spacing scale
-- **Z-Index Values**: Starlight's stacking context preserved
-- **Responsive Overrides**: Media queries at 50em and 72rem breakpoints
-
-**Dark Mode Handling:**
-
-Starlight uses `data-theme="light"` attribute on `<html>` for light mode:
-```css
-/* Dark mode (default) */
-:root, ::backdrop {
-  --sl-color-white: var(--light-1);
-  --sl-color-gray-1: var(--light-2);
-  /* ... */
-}
-
-/* Light mode */
-:root[data-theme='light'],
-[data-theme='light'] ::backdrop {
-  --sl-color-white: var(--dark-1);  /* Inverted */
-  --sl-color-gray-1: var(--dark-2);
-  /* ... */
-}
-```
-
-**Color Mapping Examples:**
-
-```css
-/* Gray palette → Foundation colors */
---sl-color-white: var(--light-1);
---sl-color-gray-1: var(--light-2);
---sl-color-gray-5: var(--dark-4);
---sl-color-black: var(--dark-2);
-
-/* Semantic colors → OKLCH relative colors */
---sl-color-orange-low: oklch(from var(--orange) calc(l - 0.25) c h);
---sl-color-orange: var(--orange);
---sl-color-orange-high: oklch(from var(--orange) calc(l + 0.15) calc(c * 0.8) h);
-
-/* Typography → Basalt scale */
---sl-text-base: var(--font-size-body);  /* 16px */
---sl-text-lg: var(--font-size-h5);     /* 18px */
---sl-text-h1: var(--font-size-h1);     /* 35-42px responsive */
-
-/* Layout → Basalt spacing */
---sl-nav-height: calc(var(--spacing-12) + var(--spacing-4));  /* 64px */
---sl-sidebar-pad-x: var(--spacing-4);  /* 16px */
-```
-
-**Usage in Apps:**
-
-Import the dedicated Starlight CSS file directly in your Starlight configuration:
-
-```javascript
-// astro.config.mjs
-import starlight from '@astrojs/starlight';
-
-export default defineConfig({
-  integrations: [
-    starlight({
-      title: 'My Docs',
-      customCss: [
-        // Import basalt-ui's Starlight integration
-        './node_modules/basalt-ui/src/starlight.css',
-        // Or in workspace: '../../../packages/basalt-ui/src/starlight.css'
-      ],
-    }),
-  ],
-});
-```
-
-**Package Export:**
-
-The package exports `basalt-ui/starlight` which imports the full design system:
-
-```css
-/* basalt-ui/src/starlight.css */
-@import "./index.css";
-```
-
-**Why this approach?** Starlight has its own layout system separate from your main app, so it needs explicit CSS import. We provide a dedicated entry point (`starlight.css`) that apps can reference directly - no wrapper files needed!
-
-**Result:**
-- All Starlight components use Basalt UI colors, typography, and spacing
-- Dark/light mode switching works seamlessly via `data-theme` attribute
-- Responsive behavior at Starlight's breakpoints (50em, 72rem)
-- WCAG AA contrast ratios maintained
-- No duplication - single source of truth in package
-
-**Code Location:** `src/index.css` lines 710-935 (Starlight Compatibility Layer)
-
-**Related:** Apps using basalt-ui can now add Starlight documentation without any additional styling configuration. See `apps/web` for working example.
-
-### Semantic Color Tokens (ShadCN Compatible)
-
-```css
-/* Foundation Palette (base colors, defined once) */
---light-1, --light-2, --light-3, --light-4  (light tones)
---dark-1, --dark-2, --dark-3, --dark-4      (dark tones)
---white                                      (pure white)
---text-subdued-light, --text-subdued-dark   (muted text)
-
-/* Surface & Text (reference foundation) */
---background, --foreground
---card, --card-foreground
---popover, --popover-foreground
---muted, --muted-foreground
-
-/* Actions & States (reference foundation + Aurora) */
---primary, --primary-foreground             (var(--blue), var(--white))
---secondary, --secondary-foreground
---accent, --accent-foreground               (var(--blue-light), var(--dark-4))
---destructive, --destructive-foreground     (var(--red), var(--white))
-
-/* Expressive Colors with Foregrounds (semantic states) */
---red, --red-foreground                     (var(--white))
---orange, --orange-foreground               (var(--dark-4))
---yellow, --yellow-foreground               (var(--dark-4))
---green, --green-foreground                 (var(--dark-4))
---purple, --purple-foreground               (var(--white))
-
-/* Blue Variants with Foregrounds (primary accent) */
---blue, --blue-foreground                   (var(--white))
---blue-light, --blue-light-foreground       (var(--dark-4))
---blue-deep, --blue-deep-foreground         (var(--white))
-
-/* Structure (reference foundation) */
---border, --input, --ring
-
-/* Sequential Charts */
---chart-blue-1 through --chart-blue-8
-
-/* Sidebar (ShadCN) */
---sidebar, --sidebar-foreground, --sidebar-primary, etc.
-```
-
-### Chart Color Strategies
-
-**Categorical Data** (different categories/groups):
-- Use named colors directly: `--blue`, `--red`, `--green`, `--yellow`, `--purple`
-- Different hues provide clear visual distinction
-- Example: Product categories, user segments, status types
-
-**Sequential Data** (continuous scale/intensity):
-- Use `--chart-blue-1` through `--chart-blue-8`
-- Single hue with lightness progression
-- Perceptually uniform steps
-- Example: Temperature scales, density maps, time series intensity
-
-## Typography: Opt-In with .prose
-
-Basalt UI uses the official `@tailwindcss/typography` plugin configured with Basalt design tokens for automatic dark mode support.
-
-### Core Philosophy
-
-**Semantic HTML is unstyled by default** to avoid conflicts with component libraries (ShadCN, Tremor). Use the `.prose` class for content areas where you want automatic semantic styling.
-
-### Usage
-
-**Content areas** (blog posts, articles, documentation):
-```html
-<article class="prose">
-  <h1>Article Title</h1>
-  <p>Content automatically styled with Basalt colors...</p>
-  <code>inline code</code>
-  <pre><code>code blocks</code></pre>
-</article>
-```
-
-**Component libraries** (ShadCN, Tremor, app UI):
-```html
-<!-- No .prose class - components style themselves -->
-<Table>...</Table>
-<Button>Click Me</Button>
-<nav><a href="#">Link</a></nav>
-```
-
-**Custom layouts** (UI components, app UI):
-```html
-<!-- Use utility classes for manual control -->
-<h2 class="text-h2 font-bold">Styled Heading</h2>
-<p class="text-body text-muted-foreground">Custom paragraph</p>
-```
-
-### Why Not Global Styling?
-
-Global semantic HTML defaults conflict with component libraries:
-- Tremor Table expects unstyled `<table>` elements
-- ShadCN Button shouldn't inherit link `<a>` styles
-- Navigation links don't want automatic blue underlines
-- Component padding/spacing conflicts with global paragraph margins
-
-**Migration from global styling:**
-- Old: `<h2>Title</h2>` styled everywhere → conflicts with components
-- New: `<article class="prose"><h2>Title</h2></article>` → styled only in content areas
-- Custom UI: `<h2 class="text-h2 font-bold">Title</h2>` → manual utility classes
-
-### Automatic Dark Mode
-
-Because `.prose` uses Basalt CSS variables, **no `dark:prose-invert` needed**:
-
-```html
-<body class="dark">
-  <article class="prose">
-    <!-- Text colors switch automatically via CSS variables -->
-  </article>
-</body>
-```
-
-### Plugin Configuration
-
-The typography plugin is configured in `tailwind.config.js`:
-
-**Color Mapping** (automatic dark mode):
-```javascript
-'--tw-prose-body': 'var(--foreground)',
-'--tw-prose-headings': 'var(--foreground)',
-'--tw-prose-links': 'var(--blue)',
-'--tw-prose-code': 'var(--foreground)',
-'--tw-prose-pre-bg': 'var(--muted)',
-// ... all mapped to Basalt variables
-```
-
-**Basalt Customizations** (design system specific):
-```javascript
-// Links - Basalt style
-a: {
-  textDecoration: 'underline',
-  textUnderlineOffset: '2px',
-  fontWeight: '500',
-  transition: 'all 150ms ease-in-out',
-},
-
-// Code - use Basalt border radius
-code: {
-  backgroundColor: 'var(--muted)',
-  padding: '0.2em 0.4em',
-  borderRadius: 'var(--radius-sm)',
-},
-
-// Headings - use Basalt font family
-'h1, h2, h3, h4, h5, h6': {
-  fontFamily: 'var(--font-heading)',
-},
-
-// Blockquotes - Basalt blue border
-blockquote: {
-  borderLeftColor: 'var(--blue)',
-},
-```
-
-### What the Plugin Provides
-
-The typography plugin handles all the complex layout and spacing:
-- ✅ Professional heading hierarchy and sizing
-- ✅ Optimal paragraph spacing and line heights
-- ✅ List indentation and markers
-- ✅ Table layouts and borders
-- ✅ Code block formatting
-- ✅ Blockquote styling
-- ✅ Responsive typography scales
-
-Basalt only customizes:
-- Color mapping (CSS variables for automatic dark mode)
-- Font families (Instrument Sans Variable for headings and body)
-- Border radius (matches Basalt tokens)
-- Link styling (underline, weight, transitions)
-- Code backgrounds (Basalt muted color)
-
-**Code Location:** `tailwind.config.js` lines 8-77
-
-## Typography System
-
-### Font Stack
-
-**Headings**: Instrument Sans Variable
-- Modern, clean geometric sans-serif
-- Excellent readability at all sizes
-- Professional and versatile
-
-**Body**: Instrument Sans Variable
-- Crisp, clear sans-serif
-- Optimized for reading comfort
-- Professional, modern aesthetic
-
-**Mono**: JetBrains Mono Variable
-- Increased character height
-- Clear distinction between similar characters
-- Developer-friendly
-
-### Font Philosophy: Strong Opinionated Defaults
-
-Basalt UI includes Instrument Sans Variable and JetBrains Mono Variable as **non-negotiable defaults**:
-
-- Fonts are imported automatically in `src/index.css` (via @fontsource-variable packages)
-- Users only need `@import "basalt-ui/css"` - fonts are included
-- No separate font import step required
-- No font override examples provided in documentation
-- Philosophy: "Use our fonts or fork the package"
-
-**Why opinionated?**
-- Ensures consistency across all integrations (ShadCN, Starlight, Tremor)
-- Eliminates decision fatigue for developers
-- Professional defaults that work everywhere
-- Variable fonts provide weight flexibility within the choice
-- Self-hosted from node_modules (privacy-first, no CDN requests)
-
-**Why variable fonts?**
-- Single file handles full weight range (400-700 for Instrument Sans)
-- Better performance than loading multiple font weights
-- Smooth font-weight animations if needed
-- Smaller bundle size vs. multiple static font files
-
-**If users need different fonts:**
-- Fork basalt-ui and modify font imports in `src/index.css`
-- Or override CSS variables (not recommended, breaks design system consistency)
-- Document that Basalt UI is opinionated by design
-
-**Code Location:** Fonts imported at top of `src/index.css` (lines 7-9)
-
-### Type Scale
-
-**Semantic sizes for utility classes:**
-
-```css
-Display: 64px/77px   - Hero sections (use .text-display)
-Hero:    48px/58px   - Subhero sections (use .text-hero)
-h1:      40px/48px   - Primary page heading (use .text-h1 or .prose)
-h2:      32px/42px   - Section headers (use .text-h2 or .prose)
-h3:      24px/34px   - Subsection headers (use .text-h3 or .prose)
-h4:      20px/28px   - Card titles (use .text-h4 or .prose)
-h5:      18px/27px   - Small headings (use .text-h5 or .prose)
-h6:      16px/24px   - Tiny headings (use .text-h6 or .prose)
-Body:    16px/24px   - Paragraphs (default body text)
-Small:   14px/20px   - Metadata (use .text-small)
-Caption: 12px/16px   - Fine print (use .text-caption)
-```
-
-**Key Philosophy**:
-- HTML elements (h1-h6, p, a, etc.) are **unstyled by default** to avoid component conflicts
-- Use `.prose` class for content areas (blog posts, articles) to get automatic semantic styling
-- Use utility classes (`.text-h2`, `.text-small`) for custom layouts and UI components
-- No arbitrary font sizes - only defined scale values
-
-### Letter Spacing
-
-```css
---letter-spacing-tight:  -0.5px   (Display text only)
---letter-spacing-normal: 0        (Default - most text)
---letter-spacing-wide:   0.025em  (Uppercase, small text)
-```
-
-## Spacing System
-
-### Limited, Purposeful Scale
-
-Based on 4px base unit for predictable, consistent layouts:
-
-```
-0:  0      (none)
-1:  4px    (tiny gaps)
-2:  8px    (small gaps, internal padding)
-3:  12px   (comfortable spacing)
-4:  16px   (default spacing unit)
-5:  20px   (medium gaps)
-6:  24px   (comfortable section spacing)
-8:  32px   (larger gaps)
-10: 40px   (section spacing)
-12: 48px   (comfortable whitespace)
-16: 64px   (major sections)
-20: 80px   (large whitespace)
-24: 96px   (hero spacing)
-32: 128px  (massive whitespace)
-```
-
-**What's Missing**: 7, 9, 11, 13-15, 17-19, 21-23, 25-31, 33+
-**Why**: Force consistency, prevent arbitrary spacing
-
-## Tailwind v4 Restriction Strategy
-
-### How We Limit Tailwind
-
-```css
-@theme inline {
-  /* Disable entire namespaces */
-  --spacing: initial;
-  --font-size: initial;
-  --font-weight: initial;
-
-  /* Define ONLY allowed values */
-  --spacing-4: 1rem;
-  --spacing-8: 2rem;
-
-  --font-size-body: 1rem;
-  --font-size-small: 0.875rem;
-
-  --font-weight-regular: 400;
-  --font-weight-bold: 700;
-}
-```
-
-### What This Achieves
-
-✅ `p-4` works (defined)
-❌ `p-7` doesn't work (not defined)
-❌ `p-[17px]` doesn't work (arbitrary values disabled)
-✅ `text-body` works (defined)
-❌ `text-lg` doesn't work (not defined)
-❌ `text-[19px]` doesn't work (arbitrary values disabled)
-
-### ShadCN Compatibility
-
-All ShadCN components work because we define required tokens:
-- Colors: background, foreground, primary, etc.
-- Radius: sm, md, lg, xl
-- Shadows: sm, md, lg, xl
-- Spacing: Standard scale that ShadCN uses
-
-## Restrictions & Guidelines
-
-### What Users CAN Do
-
-```html
-<!-- Content areas - use .prose for automatic semantic styling -->
-<article class="prose">
-  <h2>Section Title</h2>
-  <p>Body paragraph with <a href="#">links</a> and <code>inline code</code>.</p>
-  <ul>
-    <li>List items</li>
-  </ul>
-</article>
-
-<!-- UI components - use defined utilities -->
-<div class="p-4 bg-background text-foreground">
-<button class="bg-primary text-primary-foreground">
-
-<!-- Custom layouts - use semantic text sizing -->
-<div class="text-display">Hero Text</div>
-<h2 class="text-h2">Unstyled Heading (no .prose)</h2>
-<span class="text-small">Metadata</span>
-```
-
-### What Users CANNOT Do
-
-```html
-<!-- Arbitrary values (disabled) -->
-<div class="p-[13px]">          ❌ Breaks
-<div class="text-[17px]">       ❌ Breaks
-<div class="bg-[#f3f3f3]">      ❌ Breaks
-
-<!-- Undefined utilities -->
-<div class="p-7">               ❌ Breaks (only 0-6, 8, 10, 12, 16, 20, 24, 32)
-<div class="text-lg">           ❌ Breaks (use text-h4, text-small, etc.)
-<div class="font-semibold">     ❌ Breaks (only font-regular, font-bold)
-```
-
-### Migration from Standard Tailwind
-
-**Old Approach (Global Semantic Styles):**
-```html
-<!-- Elements styled globally, conflicts with components -->
-<h2>Section Title</h2>              <!-- Always styled -->
-<Table>                             <!-- Inherits global table styles -->
-  <TableHeader>...</TableHeader>    <!-- Conflicts! -->
-</Table>
-```
-
-**Basalt UI Approach (Opt-In Typography):**
-```html
-<!-- Content areas: Use .prose -->
-<article class="prose">
-  <h2>Section Title</h2>            <!-- Styled within .prose -->
-  <p>Automatic styling...</p>
-</article>
-
-<!-- Components: No .prose -->
-<Table>                             <!-- Clean, no conflicts -->
-  <TableHeader>...</TableHeader>    <!-- Works perfectly -->
-</Table>
-
-<!-- Custom UI: Use utilities -->
-<div class="text-h3 font-bold p-4 rounded-md">
-  Custom styled element
-</div>
-```
+`VX.series` is NOT in the framework — argo rebuilds it app-side in one guard-exempt file.
+
+## Theme & provider surface (`.`)
+
+- `baseTheme` — Mantine `createTheme` base (Blueprint-anchored: `primaryColor`, `primaryShade`
+  light/dark, owned spacing/radius scales, named `fontWeights` ladder, mono font, `autoContrast`).
+  Full 10-shade ramp reskin lands in S2.
+- `createBasaltTheme(overrides?)` = `mergeThemeOverrides(baseTheme, overrides)`.
+- `cssVariablesResolver` — binds Mantine's surface system to the same `--vx-*` vars the charts
+  use, so chrome and charts share one scheme-reactive identity. Exported and pre-wired in
+  `BasaltProvider`.
+- `BasaltProvider` — wraps `MantineProvider`, injects the palette `<style>` (`injectPalette={false}`
+  escape hatch for SSR/head injection), bridges the Vx tokens.
+
+## App shell (`.`)
+
+`BasaltShell` composes `AppSidebar` / `MobileNav` / `AppBreadcrumbs` / page-header
+(`PageHeaderProvider` / `PageActions` / `PageActionsOutlet`). Brand, `SidebarSection[]`, a
+`globalActions` slot, footer/settings extras; collapse persisted via `@mantine/hooks`
+`useLocalStorage`. Router-agnostic — badge/active/navigate wiring stays consumer-side; ship
+`NavCountBadge` for the count-badge pattern. No zustand, no router adapter.
+
+## CLI (`basalt`)
+
+One bin: `basalt init | sync | check-theme` (Bun runtime).
+
+- `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
+  palette. Reads config from the consumer package.json `"basalt"` key
+  (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); argo's hardcoded values are the
+  defaults. Ships as `bunx basalt check-theme`. Consumer lint = `oxlint . && basalt check-theme`.
+- `init` / `sync` — **S5 stubs** (scaffold rules, settings stanza, CLAUDE.md block, toolchain
+  templates; sync does three-way diff). Not functional yet.
+
+## Toolchain (oxlint + oxfmt — not Biome/Prettier)
+
+oxfmt style: single quotes, **no semicolons**, `printWidth` 100, `trailingComma` all, 2-space
+indent. The `configs/` presets (`oxlint.json`, `oxfmt.json`, `tsconfig.{base,react-app,node}.json`,
+`lefthook.yml`, `check.yml`) ship raw for consumer `extends` / scaffolding.
 
 ## Development Guidelines
 
-### Adding New Tokens
-
-**DO:**
-1. Consider if it fits the natural/volcanic aesthetic
-2. Use OKLCH color space for colors
-3. Add to both light and dark modes
-4. Update `@theme inline` mapping
-5. Document in this file
-
-**DON'T:**
-1. Add arbitrary values
-2. Extend the spacing scale without justification
-3. Add font weights beyond 400/700
-4. Use HSL/RGB for new colors
-
-### Color Modification
-
-Always work in OKLCH space:
-```css
-/* Adjust lightness for contrast */
---blue: oklch(0.692 0.097 252);
---blue-darker: oklch(0.553 0.107 252);  /* Darker (blue-deep) */
-
-/* Adjust chroma for vibrancy */
---blue-muted: oklch(0.765 0.076 192);   /* Muted */
---blue-vivid: oklch(0.692 0.15 252);    /* More vibrant */
-
-/* Adjust hue for color shift */
---blue: oklch(0.692 0.097 252);      /* Blue (252°) */
---teal: oklch(0.765 0.076 192);      /* Teal (192°) */
---cyan: oklch(0.794 0.102 219);      /* Cyan (219°) */
-```
-
-### Testing Colors
-
-Use browser DevTools or OKLCH color pickers:
-- https://oklch.com/
-- https://www.oklch.org/
-- Chrome/Edge DevTools (native OKLCH support)
-
-Check contrast ratios:
-- WCAG AA: 4.5:1 for body text, 3:1 for large text
-- WCAG AAA: 7:1 for body text, 4.5:1 for large text
-
-## File Architecture
-
-```
-packages/basalt-ui/
-├── src/
-│   └── index.css          # Main design system file
-│       ├── Color Palette  (OKLCH definitions)
-│       ├── @theme inline  (Tailwind v4 restrictions)
-│       ├── @layer base    (Semantic HTML defaults)
-│       └── @layer utilities (Custom utilities)
-├── CLAUDE.md              # This file - design philosophy
-├── README.md              # User-facing documentation
-└── package.json
-```
-
-## Version Strategy
-
-**Current**: Pre-1.0 (experimental, breaking changes allowed)
-
-**Path to 1.0:**
-1. Validate color palette with real projects
-2. Confirm ShadCN component compatibility
-3. Test typography scale across use cases
-4. Gather feedback on restrictions
-5. Stabilize token API
-
-**Post-1.0:**
-- Semantic versioning
-- No breaking changes to token names
-- Color value adjustments are patches
-- New tokens are minor versions
-- Removed tokens are major versions
-
-## Common Questions
-
-**Q: Why restrict Tailwind instead of building custom CSS?**
-A: Tailwind's JIT, build optimization, and ecosystem are valuable. We want Tailwind's power with design system discipline.
-
-**Q: Why OKLCH instead of HSL?**
-A: Perceptual uniformity. `oklch(0.5 0.1 135)` to `oklch(0.6 0.1 135)` looks like a consistent brightness increase. HSL doesn't guarantee this.
-
-**Q: Why only 400/700 font weights?**
-A: Clarity and simplicity. Most design systems only need regular and bold. Extra weights (300, 500, 600) create confusion and inconsistency.
-
-**Q: Can I use arbitrary values like `p-[13px]`?**
-A: No, these are disabled. If you need a spacing value, add it to the scale. This enforces consistency across your project.
-
-**Q: Why aren't h2/h3/etc styled by default?**
-A: Global semantic HTML defaults conflict with component libraries like ShadCN and Tremor. These libraries expect unstyled elements. Use the `.prose` class for content areas (blog posts, articles) where you want automatic semantic styling. For UI components, use utility classes like `text-h2 font-bold`.
-
-**Q: How do I customize for my brand?**
-A: Fork the repo, adjust OKLCH values in `:root` and `.dark`, update natural accent colors to match your brand. Keep the restriction strategy.
-
-**Q: Does this work with ShadCN?**
-A: Yes, fully compatible. All ShadCN tokens are defined. Components work out of the box.
-
-## Roadmap
-
-### Completed
-- [x] Typography plugin integration (@tailwindcss/typography)
-- [x] Tremor Raw full compatibility
-- [x] Gray palette overrides for Tremor
-- [x] Foundation palette architecture (DRY)
-- [x] Chart color shades (50-950 scales)
-- [x] Opt-in `.prose` class (no global semantic HTML)
-
-### Near Term
-- [ ] Validate with real projects
-- [ ] Create interactive color palette showcase
-- [ ] Add focus state examples
-- [ ] Document all available utilities
-- [ ] Create migration guide from standard Tailwind
-
-### Future Considerations
-- [ ] Animation/transition tokens
-- [ ] Container query tokens
-- [ ] Grid system recommendations
-- [ ] Dark mode transition animations
-- [ ] Color palette generator tool
-
-## Support & Contribution
-
-This is an opinionated design system. Contributions should:
-1. Maintain the restrictive philosophy
-2. Use OKLCH for colors
-3. Preserve semantic HTML defaults
-4. Follow volcanic nature aesthetic
-5. Document in CLAUDE.md and README.md
-
-For questions or feedback, open an issue describing:
-- Your use case
-- Why existing tokens don't work
-- How your proposal aligns with the philosophy
+- Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early
+  returns.
+- Function components only; no `React.FC`, no default exports.
+- Respect the Mantine-free boundary and the `@visx/*`-only-in-charts rule.
+- Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
+  `import.meta.env` reference in shipped code.
+- When adding API surface in S2–S4, keep signatures grounded in the argo source the stub cites.

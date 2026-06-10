@@ -1,0 +1,26 @@
+/**
+ * basalt-ui global styles — plain global CSS (NOT a CSS module).
+ *
+ * Kept in a dedicated `@layer basalt` so consumer styles and Mantine's own layers can win or lose
+ * deterministically by import order. Carries cross-app safety nets that have no app coupling.
+ */
+
+/* Font stack — overridable via the --basalt-font-* custom properties. */
+@layer base {
+  :root {
+    --basalt-font-sans:
+      'Instrument Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+      Helvetica, Arial, sans-serif;
+    --basalt-font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono Variable', Menlo, monospace;
+  }
+}
+
+@layer basalt {
+  /* iOS input zoom safety net: any input that escapes the theme's `md` (16px) default still
+     renders at 16px, so iOS Safari never zooms the viewport on focus. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

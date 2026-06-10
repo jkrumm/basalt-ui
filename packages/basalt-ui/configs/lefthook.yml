@@ -1,0 +1,13 @@
+# basalt-ui consumer lefthook template.
+# Copy to your repo root as lefthook.yml. Runs oxlint + oxfmt on staged files
+# pre-commit. Assumes oxlint/oxfmt are installed and your .oxlintrc.json extends
+# ./node_modules/basalt-ui/configs/oxlint.json.
+pre-commit:
+  parallel: true
+  commands:
+    oxlint:
+      glob: '*.{ts,tsx,js,jsx}'
+      run: bunx oxlint {staged_files}
+    oxfmt:
+      glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
+      run: bunx oxfmt --check {staged_files}
