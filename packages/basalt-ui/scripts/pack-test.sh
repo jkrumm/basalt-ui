@@ -27,10 +27,15 @@ for f in \
   dist/tokens/index.js dist/tokens/index.d.ts \
   dist/vite.js dist/vite.d.ts \
   dist/theme-lab/index.js dist/cli/index.js dist/styles.css \
+  dist/shell/index.js \
+  dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
   src/index.ts \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   bin/basalt.mjs; do require "$f"; done
-for f in src/index.css src/starlight.css tailwind.config.js; do forbid "$f"; done
+# CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
+for f in src/index.css src/starlight.css tailwind.config.js \
+  dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
+  dist/shell/app-header.module.css.d.js; do forbid "$f"; done
 echo "tarball contents OK"
 
 echo "==> scratch-consumer resolution test"

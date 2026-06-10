@@ -5,21 +5,27 @@ import { defineConfig } from 'tsup'
  *
  * - `bundle: false` transpiles each module in place instead of bundling, so the
  *   src/ tree is mirrored under dist/ and subpath exports resolve to real files.
- *   `bundle: false` ALONE only emits entry modules (tsup #1000) and drops CSS
- *   (tsup #1101), so the glob entry + `splitting: false` are required.
- * - `loader: { '.css': 'copy' }` copies any component-imported `.module.css`
- *   verbatim into dist next to its JS and rewrites the import path (the S4 CSS
- *   modules path). The standalone `src/styles.css` is not imported by any module,
- *   so the build script copies it explicitly.
+ *   `bundle: false` ALONE only emits entry modules (tsup #1000), so the glob
+ *   entry + `splitting: false` are required.
+ * - Under `bundle: false` esbuild does NOT follow imports, so the CSS-module
+ *   imports in shell components are left verbatim in the emitted JS (the consumer's
+ *   bundler — e.g. Vite — processes them as CSS modules). The `.css` files
+ *   themselves are NOT touched by tsup; `scripts/copy-assets.mjs` mirrors every
+ *   CSS file under src (and the co-located CSS-module type declarations) into dist
+ *   so the preserved imports resolve. (A `.css` loader would be inert here and
+ *   only risks rewriting the import to an asset path, which breaks CSS-module
+ *   class maps — so it is deliberately absent.)
+ * - The entry excludes declaration files: the per-file CSS-module `.d.ts`
+ *   declarations end in `.ts` and would otherwise be transpiled into junk `.js`.
  * - `dts: false` because tsc owns declarations (`--emitDeclarationOnly
  *   --declarationMap`); running both emitters fights (tsup #1366).
  *
- * tsup is in maintenance mode (upstream points to tsdown); the CSS-copy behavior
- * is the load-bearing piece and works today. Re-evaluate tsdown before S4's
- * heavier CSS-module work, behind the same pack-test.
+ * tsup is in maintenance mode (upstream points to tsdown); this unbundled +
+ * manual-copy CSS path is tsup-stable, so the tsdown migration stays deferred
+ * behind the pack-test.
  */
 export default defineConfig({
-  entry: ['src/**/*.{ts,tsx}'],
+  entry: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
   format: ['esm'],
   bundle: false,
   splitting: false,
@@ -27,5 +33,4 @@ export default defineConfig({
   clean: true,
   outDir: 'dist',
   target: 'es2022',
-  loader: { '.css': 'copy' },
 })

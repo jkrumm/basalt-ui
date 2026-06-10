@@ -25,4 +25,6 @@ export {
   type AppSidebarProps,
   type MobileNavItem,
   type MobileNavSection,
+  type NavLinkRenderer,
+  type MobileNavLinkRenderer,
 } from './shell'
