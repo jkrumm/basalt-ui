@@ -1,11 +1,16 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { basaltViteConfig } from 'basalt-ui/vite'
+import { fileURLToPath } from 'node:url'
+import { mergeConfig } from 'vite'
 
-// S0: a plain Vite + React config is enough to prove the `workspace:*` link to
-// basalt-ui resolves and the playground builds. Once the package ships real UI
-// (S2+), this adopts `basaltViteConfig` from `basalt-ui/vite` and a source alias
-// for HMR-on-package-source.
-export default defineConfig({
+// `basaltViteConfig` supplies the shared spine (Mantine dedupe + optimizeDeps, strictPort dev
+// server, the __APP_VERSION__ define). Plugins stay app-side — the preset deliberately ships none.
+//
+// `basaltSrc` aliases the `basalt-ui` import to the package's `src/`, so the playground exercises
+// source directly (instant HMR, exact types) rather than the built `dist/`, per the repo contract
+// that the playground is the everyday iteration surface on source.
+const basaltSrc = fileURLToPath(new URL('../../packages/basalt-ui/src', import.meta.url))
+
+export default mergeConfig(basaltViteConfig({ port: 4319, version: '1.0.0', basaltSrc }), {
   plugins: [react()],
-  server: { port: 4319, strictPort: true },
 })
