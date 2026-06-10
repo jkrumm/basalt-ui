@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "basalt-ui",
+  "description": "The basalt-ui design-system marketplace. Ships the 'basalt' plugin: design/charts/app skills that own the visx + Mantine chart-and-design doctrine. Pair the plugin with 'basalt init' — the plugin ships skills, init ships the project doctrine (rules + CLAUDE block + DESIGN.md) that plugins cannot.",
+  "owner": {
+    "name": "jkrumm"
+  },
+  "plugins": [
+    {
+      "name": "basalt",
+      "description": "Design-system companion for Mantine + visx apps built on basalt-ui. Skills for the design/theme-lab loop, adding charts (kinds + consumer series), and scaffolding an app via 'basalt init'.",
+      "source": "./plugins/basalt"
+    }
+  ]
+}
