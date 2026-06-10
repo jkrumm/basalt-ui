@@ -1,0 +1,114 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "react-perf",
+    "typescript",
+    "import",
+    "unicorn",
+    "jsx-a11y",
+    "promise",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-var": "error",
+    "eqeqeq": "error",
+    "no-console": "warn",
+    "no-shadow": "off",
+    "react/rules-of-hooks": "error",
+    "react/jsx-key": "error",
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-explicit-any": "warn",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": "off"
+  },
+  "ignorePatterns": ["dist", "node_modules", "apps/marketing/**", "examples/**"],
+  "overrides": [
+    {
+      "files": ["packages/basalt-ui/src/**", "apps/playground/src/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside packages/basalt-ui/src/charts/**. Compose chart primitives/kinds instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/tokens/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside packages/basalt-ui/src/charts/**."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/charts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@visx/tooltip",
+                "message": "Use ChartTooltip + TooltipHeader/Row/Body from charts primitives."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/cli/**", "packages/basalt-ui/bin/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}

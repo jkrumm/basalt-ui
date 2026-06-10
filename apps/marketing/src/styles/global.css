@@ -1,5 +1,5 @@
-/* Import basalt-ui (includes Tailwind v4, typography plugin, fonts, and all tokens) */
-@import "../../../../packages/basalt-ui/src/index.css";
+/* Frozen vendored copy of basalt-ui 0.4.x CSS — pending the Mantine rebuild */
+@import "./basalt/index.css";
 
 [data-slot="card-content"] > h3:first-child,
 [data-slot="card-content"] > h2:first-child,

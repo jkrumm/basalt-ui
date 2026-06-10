@@ -1,0 +1,877 @@
+/* === IMPORTS (must come first per CSS spec) === */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/* === FONT LOADING ===
+ * basalt-ui provides font-family tokens only. Font files must be loaded by
+ * the consuming application — this keeps the package framework-agnostic and
+ * avoids double loading in apps that manage their own font pipeline.
+ *
+ * Recommended approaches:
+ *   Astro 6+    → fontProviders.fontsource() + <Font preload />
+ *                 See: https://basalt-ui.com/docs/astro-fonts?utm_source=basalt_ui_css
+ *   Vite / React → @import "@fontsource-variable/instrument-sans"
+ *                           "@fontsource-variable/jetbrains-mono"
+ *   Other        → Any @font-face / CDN that serves "Instrument Sans Variable"
+ *                  and "JetBrains Mono Variable"
+ */
+
+/* === TAILWIND CONFIGURATION === */
+@plugin "@tailwindcss/typography";
+@config "./tailwind.config.js";
+
+/**
+ * BASALT UI - Volcanic Nature Design System
+ *
+ * A mature, restrictive design system inspired by basalt stone and volcanic nature.
+ * Combines zinc-based neutrals with expressive semantic colors and professional blue accents.
+ *
+ * Color Philosophy:
+ * - Warm, neutral grays (dark/light) for comfortable readability
+ * - Blue primary accent for professional, trustworthy interface elements
+ * - Expressive colors (red, orange, yellow, green, purple) for semantic states
+ * - Sequential blue palette for data visualization with perceptual uniformity
+ * - OKLCH color space ensures accessible contrast and harmonious gradients
+ *
+ * Philosophy:
+ * - OKLCH color space for perceptual uniformity
+ * - Semantic HTML elements styled by default (h2 doesn't need utility classes)
+ * - Limited, purposeful design tokens (no infinite spacing scales)
+ * - Warm, professional aesthetic - not stark black/white
+ * - Restricts Tailwind to defined tokens while maintaining ShadCN compatibility
+ */
+
+/* ============================================================================
+   COLOR PALETTE - OKLCH Color Space
+   ============================================================================
+
+   Basalt Foundation (Zinc-based Neutrals):
+   - Warm, neutral grays that feel natural, not clinical
+   - L (Lightness) values carefully chosen for comfortable contrast
+   - Very low chroma for neutral feel with slight warmth
+   - Different values for light/dark mode to maintain accessibility
+
+   Blue Primary:
+   - Professional, trustworthy, versatile accent color
+   - Blue variants for different UI states (primary, light, deep)
+   - Same values work in both light and dark modes
+
+   Expressive Colors:
+   - Semantic colors for expressive, meaningful UI states
+   - Red: Errors, destructive actions, critical warnings
+   - Orange: Annotations, moderate warnings, special states
+   - Yellow: Caution, highlights, attention
+   - Green: Success, confirmations, positive actions
+   - Purple: Special features, unique identifiers
+   - Same values work in both light and dark modes
+
+   Sequential Chart Palette:
+   - 8 blue tones from light to dark for data visualization
+   - Based on blue hue (249°) with progressive lightness steps
+   - Gradually increasing chroma for perceptual uniformity
+   - Exceeds WCAG 3:1 contrast between adjacent colors
+
+   Perceptual Uniformity:
+   - Changes in L/C values correspond to perceived brightness/vibrancy
+   - Gradients stay clean without unexpected gray zones
+   - Accessible contrast ratios by design
+   ============================================================================ */
+
+:root {
+  /* ============================================================================
+     FOUNDATION PALETTE - Base colors that everything else references
+     ============================================================================
+
+     This palette provides the foundational neutral tones that all other tokens
+     reference. Each OKLCH value is defined once and reused everywhere.
+     ============================================================================ */
+
+  /* === LIGHT TONES === */
+  /* Used for: light mode backgrounds, dark mode text, elevated surfaces */
+
+  --light-1: oklch(0.99 0.002 90); /* Brightest - cards, popovers, overlays */
+  --light-2: oklch(0.985 0.002 90); /* Very light - main background (light mode) */
+  --light-3: oklch(0.96 0.004 270); /* Light - muted backgrounds, disabled states */
+  --light-4: oklch(0.93 0.005 270); /* Medium light - borders, inputs */
+
+  /* === DARK TONES === */
+  /* Used for: dark mode backgrounds, light mode text */
+
+  --dark-1: oklch(0.195 0.012 285); /* Darkest - near-black, reserved for future use */
+  --dark-2: oklch(0.24 0.012 285); /* Very dark - main background (dark mode) */
+  --dark-3: oklch(0.26 0.012 285); /* Medium dark - cards, elevated surfaces (dark mode) */
+  --dark-4: oklch(0.31 0.012 285); /* Lightest dark - borders, muted backgrounds (dark mode) */
+
+  /* === TEXT TONES === */
+  /* Mid-range tones for subdued, secondary text */
+
+  --text-subdued-light: oklch(0.5 0.014 285); /* Muted text in light mode */
+  --text-subdued-dark: oklch(0.8 0.012 285); /* Muted text in dark mode */
+
+  /* === EXTREME TONES === */
+  /* Pure white/near-black for maximum contrast text */
+
+  --white: var(--light-1); /* White - text on dark backgrounds */
+
+  /* ============================================================================
+     SEMANTIC LAYER - References foundation palette
+     ============================================================================ */
+
+  /* === BASALT FOUNDATION: Zinc-based Neutrals (Light Mode) === */
+
+  /* Surface colors - warm whites, not stark */
+  --background: var(--light-2); /* Almost white, slight warmth */
+  --foreground: var(--dark-4); /* Rich dark gray, readable but not black */
+
+  /* Card and elevated surfaces */
+  --card: var(--light-1); /* Very subtle elevation from background */
+  --card-foreground: var(--dark-4); /* Same as foreground for consistency */
+
+  /* Popover and floating elements */
+  --popover: oklch(0.995 0.002 90); /* Between light-1 and light-2 - highest elevation */
+  --popover-foreground: var(--dark-4);
+
+  /* Muted backgrounds and disabled states */
+  --muted: var(--light-3); /* Very light gray, subtle contrast */
+  --muted-foreground: var(--text-subdued-light); /* Subdued text, readable */
+
+  /* Borders and dividers - subtle but visible */
+  --border: var(--light-4); /* Gentle border, ~6% contrast */
+  --input: var(--light-4); /* Same as border for consistency */
+
+  /* === EXPRESSIVE COLORS: Semantic colors for states === */
+  /* Same values for light and dark modes - work well on both backgrounds */
+
+  --red: oklch(0.6061 0.1206 15.34); /* Errors, destructive */
+  --red-foreground: var(--white); /* White text on red */
+
+  --orange: oklch(0.6929 0.0963 38.24); /* Warnings, annotations */
+  --orange-foreground: var(--dark-4); /* Dark text on orange */
+
+  --yellow: oklch(0.8549 0.0892 84.09); /* Caution, highlights */
+  --yellow-foreground: var(--dark-4); /* Dark text on yellow */
+
+  --green: oklch(0.7683 0.0749 131.06); /* Success, confirmations */
+  --green-foreground: var(--dark-4); /* Dark text on green */
+
+  --purple: oklch(0.6921 0.0625 332.66); /* Special features */
+  --purple-foreground: var(--white); /* White text on purple */
+
+  /* === BLUE PRIMARY: Professional accent color === */
+  /* Same values for light and dark modes */
+
+  --blue: oklch(0.6965 0.0591 248.69); /* Primary blue */
+  --blue-foreground: var(--white); /* White text on blue */
+
+  --blue-deep: oklch(0.5944 0.0772 254.03); /* Deeper blue for emphasis */
+  --blue-deep-foreground: var(--white); /* White text on blue-deep */
+
+  --blue-light: oklch(0.78 0.045 249); /* Lighter blue for hover/accent states */
+  --blue-light-foreground: var(--dark-4); /* Dark text on blue-light */
+
+  /* === SEQUENTIAL CHART PALETTE: 8 blues for data visualization === */
+  /* Based on blue hue (249°) with progressive lightness */
+
+  --chart-blue-1: oklch(0.9 0.03 249); /* Lightest */
+  --chart-blue-2: oklch(0.8 0.04 249);
+  --chart-blue-3: oklch(0.72 0.05 249);
+  --chart-blue-4: oklch(0.65 0.059 249);
+  --chart-blue-5: oklch(0.58 0.065 249);
+  --chart-blue-6: oklch(0.5 0.07 249);
+  --chart-blue-7: oklch(0.42 0.075 249);
+  --chart-blue-8: oklch(0.34 0.077 249); /* Darkest */
+
+  /* === SEMANTIC COLOR TOKENS === */
+
+  /* Primary: Blue for interactive elements */
+  --primary: var(--blue);
+  --primary-foreground: var(--white);
+
+  /* Secondary: Subtle zinc for secondary actions */
+  --secondary: oklch(0.95 0.006 270); /* Between light-3 and light-2 */
+  --secondary-foreground: var(--dark-4);
+
+  /* Accent: Lighter blue for hover states */
+  --accent: var(--blue-light);
+  --accent-foreground: var(--dark-4);
+
+  /* Destructive: Red for errors/warnings */
+  --destructive: var(--red);
+  --destructive-foreground: var(--white);
+
+  /* Focus ring - uses primary blue */
+  --ring: var(--blue);
+
+  /* === SIDEBAR TOKENS (for ShadCN compatibility) === */
+  --sidebar: oklch(0.965 0.003 90);
+  --sidebar-foreground: oklch(0.265 0.015 285);
+  --sidebar-primary: var(--blue);
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: oklch(0.925 0.008 252);
+  --sidebar-accent-foreground: oklch(0.265 0.015 285);
+  --sidebar-border: oklch(0.875 0.005 270);
+  --sidebar-ring: var(--blue);
+
+  /* === TYPOGRAPHY: Modern, welcoming fonts === */
+  --font-heading:
+    'Instrument Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body:
+    'Instrument Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'Menlo', 'Monaco', 'Courier New', monospace;
+
+  /* === BORDER RADIUS: Subtly rounded (ShadCN style) === */
+  --radius: 0.5rem; /* 8px - comfortable roundness */
+
+  /* === SHADOWS: Soft, natural depth === */
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 oklch(0 0 0 / 0.1), 0 1px 2px -1px oklch(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.1), 0 2px 4px -2px oklch(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.1), 0 4px 6px -4px oklch(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.1), 0 8px 10px -6px oklch(0 0 0 / 0.1);
+
+  /* ============================================================================
+     TREMOR RAW COMPATIBILITY LAYER
+     ============================================================================
+
+     Maps Tremor's semantic color system to Basalt UI's OKLCH foundation palette.
+     Tremor uses intensity levels (faint → muted → subtle → DEFAULT → emphasis).
+
+     Strategy:
+     - tremor-brand → Blue (primary)
+     - tremor-background → Zinc neutrals (light-N, dark-N)
+     - tremor-content → Text hierarchy
+     - tremor-border/ring → Border tokens
+     - Chart colors → Support both chart-N and named colors (blue, emerald, etc.)
+     ============================================================================ */
+
+  /* === TREMOR BRAND COLORS (Blue Primary) === */
+  /* Light mode values - REUSE sequential chart-blue palette */
+  --color-tremor-brand-faint: var(--chart-blue-1); /* Lightest blue (0.90) */
+  --color-tremor-brand-muted: var(--chart-blue-2); /* Light blue (0.80) */
+  --color-tremor-brand-subtle: var(--blue-light); /* Existing token (0.78) */
+  --color-tremor-brand: var(--blue); /* Foundation color (0.6965) */
+  --color-tremor-brand-emphasis: var(--blue-deep); /* Existing token (0.5944) */
+  --color-tremor-brand-inverted: var(--white); /* White text on blue */
+
+  /* === TREMOR BACKGROUND COLORS (Zinc Neutrals) === */
+  --color-tremor-background-muted: var(--light-3); /* Muted bg */
+  --color-tremor-background-subtle: var(--light-4); /* Subtle bg */
+  --color-tremor-background: var(--background); /* Main bg */
+  --color-tremor-background-emphasis: var(--dark-4); /* Dark text */
+
+  /* === TREMOR BORDER/RING === */
+  --color-tremor-border: var(--border);
+  --color-tremor-ring: var(--ring);
+
+  /* === TREMOR CONTENT (Text Hierarchy) === */
+  --color-tremor-content-subtle: var(--text-subdued-light);
+  --color-tremor-content: var(--foreground);
+  --color-tremor-content-emphasis: oklch(from var(--foreground) calc(l - 0.05) calc(c * 1.1) h);
+  --color-tremor-content-strong: oklch(from var(--foreground) calc(l - 0.1) calc(c * 1.2) h);
+  --color-tremor-content-inverted: var(--background);
+
+  /* === TREMOR SHADOWS (map to existing) === */
+  --shadow-tremor-input: var(--shadow-sm);
+  --shadow-tremor-card: var(--shadow);
+  --shadow-tremor-dropdown: var(--shadow-md);
+
+  /* === TREMOR BORDER RADIUS (map to existing) === */
+  --radius-tremor-small: var(--radius-sm); /* 4px */
+  --radius-tremor-default: var(--radius); /* 8px */
+  --radius-tremor-full: var(--radius-full); /* 9999px */
+
+  /* === TREMOR FONT SIZES === */
+  --font-size-tremor-label: var(--font-size-caption); /* 12px */
+  --line-height-tremor-label: var(--line-height-caption);
+  --font-size-tremor-default: var(--font-size-small); /* 14px */
+  --line-height-tremor-default: var(--line-height-small);
+  --font-size-tremor-title: var(--font-size-h5); /* 18px */
+  --line-height-tremor-title: var(--line-height-h5);
+  --font-size-tremor-metric: 1.875rem; /* 30px */
+  --line-height-tremor-metric: 2.25rem;
+
+  /* ===================================================================
+     CHART COLOR SHADES (Required for Tremor's dynamic color system)
+     ===================================================================
+
+     Tremor generates classes like bg-blue-500, stroke-emerald-600, etc.
+     We define shades 50-950 for each named color, derived from foundation.
+     =================================================================== */
+
+  /* Blue shades (primary) - REUSE sequential chart-blue palette */
+  --color-blue-50: var(--chart-blue-1); /* 0.90 - Lightest */
+  --color-blue-100: var(--chart-blue-2); /* 0.80 */
+  --color-blue-200: var(--chart-blue-3); /* 0.72 */
+  --color-blue-300: var(--chart-blue-4); /* 0.65 */
+  --color-blue-400: var(--blue-light); /* 0.78 - Existing token */
+  --color-blue-500: var(--blue); /* 0.6965 - DEFAULT */
+  --color-blue-600: var(--chart-blue-5); /* 0.58 */
+  --color-blue-700: var(--blue-deep); /* 0.5944 - Existing token */
+  --color-blue-800: var(--chart-blue-7); /* 0.42 */
+  --color-blue-900: var(--chart-blue-8); /* 0.34 - Darkest */
+  --color-blue-950: oklch(0.26 0.08 249); /* Extra dark for completeness */
+
+  /* Red shades (error/destructive) */
+  --color-red-50: oklch(0.95 0.03 15);
+  --color-red-100: oklch(0.9 0.05 15);
+  --color-red-200: oklch(0.82 0.07 15);
+  --color-red-300: oklch(0.74 0.09 15);
+  --color-red-400: oklch(0.66 0.1 15);
+  --color-red-500: var(--red); /* 0.6061 - DEFAULT */
+  --color-red-600: oklch(0.54 0.13 15);
+  --color-red-700: oklch(0.48 0.14 15);
+  --color-red-800: oklch(0.4 0.15 15);
+  --color-red-900: oklch(0.32 0.16 15);
+  --color-red-950: oklch(0.24 0.17 15);
+
+  /* Emerald shades (success - maps to green) */
+  --color-emerald-50: oklch(0.96 0.02 131);
+  --color-emerald-100: oklch(0.92 0.03 131);
+  --color-emerald-200: oklch(0.86 0.045 131);
+  --color-emerald-300: oklch(0.81 0.06 131);
+  --color-emerald-400: oklch(0.76 0.07 131);
+  --color-emerald-500: var(--green); /* 0.7683 - DEFAULT */
+  --color-emerald-600: oklch(0.68 0.08 131);
+  --color-emerald-700: oklch(0.6 0.085 131);
+  --color-emerald-800: oklch(0.5 0.09 131);
+  --color-emerald-900: oklch(0.4 0.095 131);
+  --color-emerald-950: oklch(0.3 0.1 131);
+
+  /* Amber shades (warning - maps to yellow) */
+  --color-amber-50: oklch(0.97 0.02 84);
+  --color-amber-100: oklch(0.94 0.04 84);
+  --color-amber-200: oklch(0.9 0.06 84);
+  --color-amber-300: oklch(0.87 0.075 84);
+  --color-amber-400: var(--yellow); /* 0.8549 - DEFAULT */
+  --color-amber-500: oklch(0.82 0.09 84);
+  --color-amber-600: oklch(0.76 0.095 84);
+  --color-amber-700: oklch(0.68 0.1 84);
+  --color-amber-800: oklch(0.58 0.105 84);
+  --color-amber-900: oklch(0.48 0.11 84);
+  --color-amber-950: oklch(0.38 0.115 84);
+
+  /* Violet shades (special - maps to purple) */
+  --color-violet-50: oklch(0.95 0.015 333);
+  --color-violet-100: oklch(0.9 0.025 333);
+  --color-violet-200: oklch(0.84 0.04 333);
+  --color-violet-300: oklch(0.78 0.05 333);
+  --color-violet-400: oklch(0.72 0.06 333);
+  --color-violet-500: var(--purple); /* 0.6921 - DEFAULT */
+  --color-violet-600: oklch(0.62 0.07 333);
+  --color-violet-700: oklch(0.54 0.075 333);
+  --color-violet-800: oklch(0.44 0.08 333);
+  --color-violet-900: oklch(0.36 0.085 333);
+  --color-violet-950: oklch(0.28 0.09 333);
+
+  /* Cyan shades (additional chart color) */
+  --color-cyan-50: oklch(0.96 0.02 210);
+  --color-cyan-100: oklch(0.92 0.03 210);
+  --color-cyan-200: oklch(0.86 0.045 210);
+  --color-cyan-300: oklch(0.8 0.06 210);
+  --color-cyan-400: oklch(0.74 0.07 210);
+  --color-cyan-500: oklch(0.68 0.08 210); /* DEFAULT */
+  --color-cyan-600: oklch(0.6 0.085 210);
+  --color-cyan-700: oklch(0.52 0.09 210);
+  --color-cyan-800: oklch(0.44 0.095 210);
+  --color-cyan-900: oklch(0.36 0.1 210);
+  --color-cyan-950: oklch(0.28 0.105 210);
+
+  /* Indigo shades (deep blue variant) */
+  --color-indigo-50: oklch(0.95 0.02 260);
+  --color-indigo-100: oklch(0.9 0.03 260);
+  --color-indigo-200: oklch(0.84 0.045 260);
+  --color-indigo-300: oklch(0.78 0.06 260);
+  --color-indigo-400: oklch(0.7 0.07 260);
+  --color-indigo-500: oklch(0.62 0.08 260); /* DEFAULT */
+  --color-indigo-600: var(--blue-deep); /* 0.5944 */
+  --color-indigo-700: oklch(0.5 0.09 260);
+  --color-indigo-800: oklch(0.42 0.095 260);
+  --color-indigo-900: oklch(0.34 0.1 260);
+  --color-indigo-950: oklch(0.26 0.105 260);
+}
+
+/* === DARK MODE: Warm, comfortable darkness (not pure black) === */
+.dark {
+  /* Surface colors - warm dark grays, not stark black */
+  --background: var(--dark-2); /* Very dark, main background */
+  --foreground: var(--light-3); /* Soft white, not harsh - between light-1 and light-2 */
+
+  /* Card and elevated surfaces - slightly lighter than background */
+  --card: var(--dark-3);
+  --card-foreground: var(--light-3);
+
+  /* Popover and floating elements */
+  --popover: var(--dark-3);
+  --popover-foreground: var(--light-3);
+
+  /* Muted backgrounds and disabled states */
+  --muted: var(--dark-4); /* Subtle background difference */
+  --muted-foreground: var(--text-subdued-dark); /* Subdued text, lighter for readability */
+
+  /* Borders and dividers - subtle but visible */
+  --border: var(--dark-4); /* Gentle border, slightly more visible */
+  --input: var(--dark-4); /* Same as border for consistency */
+
+  /* === SEMANTIC COLOR TOKENS === */
+  /* Expressive and Blue colors remain the same - defined in :root */
+
+  /* Primary: Blue (same value as light mode) */
+  --primary: var(--blue);
+  --primary-foreground: var(--white);
+
+  /* Secondary */
+  --secondary: oklch(0.27 0.012 285); /* Between dark-3 and dark-2 */
+  --secondary-foreground: var(--light-3);
+
+  /* Accent: Blue light for hover states */
+  --accent: var(--blue-light);
+  --accent-foreground: var(--light-3);
+
+  /* Destructive: Red (same value as light mode) */
+  --destructive: var(--red);
+  --destructive-foreground: var(--white);
+
+  /* Focus ring */
+  --ring: var(--blue);
+
+  /* Sidebar - slightly different from main background */
+  --sidebar: var(--dark-2);
+  --sidebar-foreground: var(--light-3);
+  --sidebar-primary: var(--blue);
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: oklch(0.33 0.015 285); /* Slightly darker than dark-4 */
+  --sidebar-accent-foreground: var(--light-3);
+  --sidebar-border: oklch(0.28 0.012 285); /* Between dark-3 and dark-4 */
+  --sidebar-ring: var(--blue);
+
+  /* === TREMOR DARK MODE OVERRIDES === */
+  /* Tremor brand - adjusted for dark mode, REUSE chart-blue palette */
+  --color-tremor-brand-faint: var(--chart-blue-8); /* Darkest blue inverted (0.34) */
+  --color-tremor-brand-muted: var(--chart-blue-7); /* Dark blue (0.42) */
+  --color-tremor-brand-subtle: var(--chart-blue-5); /* Medium blue (0.58) */
+  /* DEFAULT, emphasis stay same (blue works on both) */
+  --color-tremor-brand-inverted: var(--dark-2); /* Dark bg on blue */
+
+  /* Tremor background - dark mode values */
+  --color-tremor-background-muted: var(--dark-4);
+  --color-tremor-background-subtle: var(--dark-3);
+  --color-tremor-background: var(--background); /* Already switches */
+  --color-tremor-background-emphasis: var(--text-subdued-dark);
+
+  /* Tremor content - dark mode values */
+  --color-tremor-content-subtle: var(--text-subdued-dark);
+  --color-tremor-content: var(--foreground); /* Already switches */
+  --color-tremor-content-emphasis: oklch(from var(--foreground) calc(l + 0.05) calc(c * 1.1) h);
+  --color-tremor-content-strong: oklch(from var(--foreground) calc(l + 0.1) calc(c * 1.2) h);
+  --color-tremor-content-inverted: var(--background);
+
+  /* Tremor shadows - same values work on dark */
+  --shadow-tremor-input: var(--shadow-sm);
+  --shadow-tremor-card: var(--shadow);
+  --shadow-tremor-dropdown: var(--shadow-md);
+}
+
+/* ============================================================================
+   TAILWIND V4 THEME CONFIGURATION
+   ============================================================================
+
+   Strategy:
+   1. Disable default Tailwind scales with `initial`
+   2. Define ONLY allowed values for mature design system
+   3. Map semantic tokens for ShadCN compatibility
+   4. Create limited, purposeful scales (not infinite values)
+
+   This restricts Tailwind while maintaining usability and ShadCN support.
+   ============================================================================ */
+
+/* ============================================================================
+   DEFAULT GRAY PALETTE OVERRIDE
+   ============================================================================
+
+   Override Tailwind's default gray scale (white, black, gray-50 through gray-950)
+   with Basalt foundation colors. This ensures component libraries like Tremor
+   automatically use Basalt's OKLCH color system.
+
+   Strategy:
+   - Use @theme (NOT @theme inline) to create global CSS variables
+   - Map white/black/gray shades to foundation palette
+   - Tremor handles dark mode via their own dark: variants
+   - ShadCN uses semantic tokens (already defined separately)
+
+   Mapping (analyzed from Tremor usage patterns):
+
+   Backgrounds & Surfaces:
+   - white    → light-1 (brightest - cards, popovers, elevated surfaces)
+   - gray-50  → light-2 (very light - main background in light mode)
+   - gray-100 → light-3 (light - muted backgrounds, disabled states)
+   - gray-200 → light-4 (medium light - borders, inputs)
+
+   Text Colors (Light Mode):
+   - gray-300 → oklch(0.75) - very disabled/invisible text in light mode
+   - gray-400 → muted-foreground - disabled text, icons (light mode)
+   - gray-500 → muted-foreground - placeholders, subtle text (both modes)
+   - gray-600 → muted-foreground - medium muted text (light mode)
+   - gray-700 → oklch(0.35) - readable muted text (light mode)
+
+   Dark Mode Surfaces (used with dark: prefix):
+   - gray-800 → dark-4 (borders/muted in dark mode)
+   - gray-900 → dark-3 (cards/elevated surfaces in dark mode)
+   - gray-950 → dark-2 (main background in dark mode)
+   - black    → dark-1 (darkest - near-black)
+
+   How Tremor Uses These:
+   - Light mode: text-gray-700 (readable) → dark:text-gray-300 (disabled light)
+   - Light mode: text-gray-400 (disabled) → dark:text-gray-600 (muted dark)
+   - Both modes: text-gray-500 (placeholders stay consistent)
+   - Backgrounds: bg-white (light) → dark:bg-gray-950 (dark main bg)
+   ============================================================================ */
+
+@theme {
+  /* Override Tailwind's default gray palette with Basalt foundation colors */
+
+  /* Lightest tones - backgrounds and surfaces */
+  --color-white: var(--light-1); /* Cards, popovers, elevated surfaces (light mode) */
+  --color-gray-50: var(--light-2); /* Main background (light mode) */
+  --color-gray-100: var(--light-3); /* Muted backgrounds, disabled states */
+  --color-gray-200: var(--light-4); /* Borders, inputs */
+
+  /* Light tones - very disabled text (light mode only) */
+  --color-gray-300: oklch(0.75 0.01 285); /* Very disabled/invisible text (light mode) */
+
+  /* Mid-range - muted text via semantic token (adapts to light/dark) */
+  --color-gray-400: var(--muted-foreground); /* Disabled text, icons */
+  --color-gray-500: var(--muted-foreground); /* Placeholders, subtle text */
+  --color-gray-600: var(--muted-foreground); /* Medium muted text */
+
+  /* Mid-dark tones - readable muted text (light mode) */
+  --color-gray-700: oklch(0.35 0.013 285); /* Readable muted text (light mode) */
+
+  /* Dark tones - surfaces for dark mode (used with dark: prefix) */
+  --color-gray-800: var(--dark-4); /* Borders, muted backgrounds (dark mode) */
+  --color-gray-900: var(--dark-3); /* Cards, elevated surfaces (dark mode) */
+  --color-gray-950: var(--dark-2); /* Main background (dark mode) */
+
+  /* Darkest tone */
+  --color-black: var(--dark-1); /* Near-black, reserved */
+}
+
+@theme inline {
+  /* === DISABLE DEFAULT SCALES === */
+  /* --spacing: initial; */
+  --font-size: initial;
+  --line-height: initial;
+  --font-weight: initial;
+  --letter-spacing: initial;
+  --border-radius: initial;
+  --box-shadow: initial;
+
+  /* === SPACING SCALE: Limited, purposeful values === */
+  /* Based on 4px base unit - predictable, consistent */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem; /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1rem; /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
+  --spacing-6: 1.5rem; /* 24px */
+  --spacing-8: 2rem; /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
+  --spacing-12: 3rem; /* 48px */
+  --spacing-16: 4rem; /* 64px */
+  --spacing-20: 5rem; /* 80px */
+  --spacing-24: 6rem; /* 96px */
+  --spacing-32: 8rem; /* 128px */
+
+  /* === TYPOGRAPHY SCALE: Semantic, limited sizes === */
+  /* Display - Hero sections */
+  --font-size-display: 4rem; /* 64px */
+  --line-height-display: 4.75rem; /* 77px */
+
+  /* Hero - Subhero sections */
+  --font-size-hero: 3rem; /* 48px */
+  --line-height-hero: 3.625rem; /* 58px */
+
+  /* Heading levels */
+  --font-size-h1: 2.5rem; /* 40px */
+  --line-height-h1: 3rem; /* 48px */
+
+  --font-size-h2: 2rem; /* 32px */
+  --line-height-h2: 2.625rem; /* 42px */
+
+  --font-size-h3: 1.5rem; /* 24px */
+  --line-height-h3: 2.125rem; /* 34px */
+
+  --font-size-h4: 1.25rem; /* 20px */
+  --line-height-h4: 1.75rem; /* 28px */
+
+  --font-size-h5: 1.125rem; /* 18px */
+  --line-height-h5: 1.6875rem; /* 27px */
+
+  --font-size-h6: 1rem; /* 16px */
+  --line-height-h6: 1.5rem; /* 24px */
+
+  /* Body text */
+  --font-size-body: 1rem; /* 16px - DEFAULT */
+  --line-height-body: 1.5rem; /* 24px */
+
+  /* Smaller text */
+  --font-size-small: 0.875rem; /* 14px */
+  --line-height-small: 1.25rem; /* 20px */
+
+  --font-size-caption: 0.75rem; /* 12px */
+  --line-height-caption: 1rem; /* 16px */
+
+  /* === FONT FAMILIES === */
+  --font-family-heading: var(--font-heading);
+  --font-family-body: var(--font-body);
+  --font-family-mono: var(--font-mono);
+
+  /* === FONT WEIGHTS: Only two weights for clarity === */
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+
+  /* === LETTER SPACING: Three purposeful values === */
+  --letter-spacing-tight: -0.5px; /* Display text */
+  --letter-spacing-normal: 0; /* Default - most text */
+  --letter-spacing-wide: 0.025em; /* Uppercase, small text */
+
+  /* === COLORS: Map to Tailwind utilities === */
+
+  /* Foundation palette (bg-light-1, text-dark-4, etc.) */
+  --color-light-1: var(--light-1);
+  --color-light-2: var(--light-2);
+  --color-light-3: var(--light-3);
+  --color-light-4: var(--light-4);
+  --color-dark-1: var(--dark-1);
+  --color-dark-2: var(--dark-2);
+  --color-dark-3: var(--dark-3);
+  --color-dark-4: var(--dark-4);
+  --color-white: var(--white);
+
+  /* Semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Aurora colors with foregrounds (bg-red text-red-foreground, etc.) */
+  --color-red: var(--red);
+  --color-red-foreground: var(--red-foreground);
+  --color-orange: var(--orange);
+  --color-orange-foreground: var(--orange-foreground);
+  --color-yellow: var(--yellow);
+  --color-yellow-foreground: var(--yellow-foreground);
+  --color-green: var(--green);
+  --color-green-foreground: var(--green-foreground);
+  --color-purple: var(--purple);
+  --color-purple-foreground: var(--purple-foreground);
+
+  /* Blue variants with foregrounds (bg-blue text-blue-foreground, etc.) */
+  --color-blue: var(--blue);
+  --color-blue-foreground: var(--blue-foreground);
+  --color-blue-light: var(--blue-light);
+  --color-blue-light-foreground: var(--blue-light-foreground);
+  --color-blue-deep: var(--blue-deep);
+  --color-blue-deep-foreground: var(--blue-deep-foreground);
+
+  /* Sequential chart palette (bg-chart-blue-1 through bg-chart-blue-8) */
+  --color-chart-blue-1: var(--chart-blue-1);
+  --color-chart-blue-2: var(--chart-blue-2);
+  --color-chart-blue-3: var(--chart-blue-3);
+  --color-chart-blue-4: var(--chart-blue-4);
+  --color-chart-blue-5: var(--chart-blue-5);
+  --color-chart-blue-6: var(--chart-blue-6);
+  --color-chart-blue-7: var(--chart-blue-7);
+  --color-chart-blue-8: var(--chart-blue-8);
+
+  /* Sidebar colors (ShadCN) */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* === BORDER RADIUS: Limited scale === */
+  --radius-none: 0;
+  --radius-sm: calc(var(--radius) - 0.25rem); /* 4px */
+  --radius-md: calc(var(--radius) - 0.125rem); /* 6px */
+  --radius: var(--radius); /* 8px - DEFAULT */
+  --radius-lg: calc(var(--radius) + 0.125rem); /* 10px */
+  --radius-xl: calc(var(--radius) + 0.25rem); /* 12px */
+  --radius-full: 9999px; /* Pills, circles */
+
+  /* === BOX SHADOWS: Natural depth === */
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+}
+
+/* ============================================================================
+   BASE LAYER: Minimal Resets + Body Defaults
+   ============================================================================
+
+   Core philosophy: Keep base layer minimal to avoid conflicts with component
+   libraries (ShadCN, Tremor). For rich typography, use the .prose class from
+   @tailwindcss/typography plugin.
+
+   Base layer contains:
+   - Box-sizing reset
+   - Border color default
+   - Font smoothing
+   - Body typography defaults
+
+   Semantic HTML styling (h1-h6, a, code, etc.) is opt-in via .prose class.
+   ============================================================================ */
+
+@layer base {
+  /* === DOCUMENT SETUP === */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* === TAILWIND V4: Set default border color === */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* === BODY DEFAULTS: Core typography and colors === */
+  body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+    font-weight: var(--font-weight-regular);
+    color: var(--foreground);
+    background-color: var(--background);
+    letter-spacing: var(--letter-spacing-normal);
+  }
+
+  .recharts-text.recharts-cartesian-axis-tick-value {
+    fill: var(--foreground);
+    font-size: var(--text-sm);
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================
+
+   Custom utility classes that complement the semantic defaults.
+   These follow the design system's restricted scale.
+   ============================================================================ */
+
+@layer utilities {
+  /* === DISPLAY TEXT (Hero sections) === */
+  .text-display {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-display);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  .text-hero {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-hero);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-hero);
+  }
+
+  /* === SEMANTIC TEXT SIZES === */
+  .text-h1 {
+    font-size: var(--font-size-h1);
+    line-height: var(--line-height-h1);
+  }
+  .text-h2 {
+    font-size: var(--font-size-h2);
+    line-height: var(--line-height-h2);
+  }
+  .text-h3 {
+    font-size: var(--font-size-h3);
+    line-height: var(--line-height-h3);
+  }
+  .text-h4 {
+    font-size: var(--font-size-h4);
+    line-height: var(--line-height-h4);
+  }
+  .text-h5 {
+    font-size: var(--font-size-h5);
+    line-height: var(--line-height-h5);
+  }
+  .text-h6 {
+    font-size: var(--font-size-h6);
+    line-height: var(--line-height-h6);
+  }
+  .text-body {
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-body);
+  }
+  .text-small {
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-small);
+  }
+  .text-caption {
+    font-size: var(--font-size-caption);
+    line-height: var(--line-height-caption);
+  }
+
+  /* === FONT FAMILIES === */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* === FONT WEIGHTS === */
+  .font-regular {
+    font-weight: var(--font-weight-regular);
+  }
+  .font-bold {
+    font-weight: var(--font-weight-bold);
+  }
+
+  /* === LETTER SPACING === */
+  .tracking-tight {
+    letter-spacing: var(--letter-spacing-tight);
+  }
+  .tracking-normal {
+    letter-spacing: var(--letter-spacing-normal);
+  }
+  .tracking-wide {
+    letter-spacing: var(--letter-spacing-wide);
+  }
+}

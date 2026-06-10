@@ -43,13 +43,13 @@ bun add basalt-ui
 Import the CSS in your main stylesheet:
 
 ```css
-@import "basalt-ui/css";
+@import 'basalt-ui/css';
 ```
 
 For Starlight docs:
 
 ```css
-@import "basalt-ui/starlight";
+@import 'basalt-ui/starlight';
 ```
 
 **Full installation guide:** See the [Installation Documentation](https://basalt-ui.com/docs/installation?utm_source=root_readme) for framework-specific setup, font loading strategies, troubleshooting, and integration patterns.

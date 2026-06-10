@@ -28,11 +28,17 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Lint (Biome)
+      - name: Lint (oxlint)
         run: bun run lint
 
-      - name: Prettier (Astro format)
-        run: bunx prettier --check '**/*.astro'
+      - name: Format check (oxfmt)
+        run: bun run fmt:check
+
+      - name: Build package
+        run: bun --filter basalt-ui build
 
       - name: Typecheck
         run: bun run typecheck
+
+      - name: Pack test (dist resolution gate)
+        run: bun --filter basalt-ui pack-test

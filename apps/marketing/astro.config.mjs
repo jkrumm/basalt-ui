@@ -42,9 +42,9 @@ export default defineConfig({
         },
       ],
 
-      // Import basalt-ui tokens for Starlight pages
-      // All Starlight CSS variable mappings defined in packages/basalt-ui/src/index.css
-      customCss: ['../../packages/basalt-ui/src/starlight.css'],
+      // Frozen vendored copy of basalt-ui 0.4.x Starlight CSS — pending the Mantine rebuild
+      // All Starlight CSS variable mappings defined in ./src/styles/basalt/index.css
+      customCss: ['./src/styles/basalt/starlight.css'],
 
       expressiveCode: {
         themes: ['github-dark', 'github-light'],

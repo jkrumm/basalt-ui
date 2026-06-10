@@ -1,419 +1,168 @@
-# Basalt UI - Project Context
+# Basalt UI — Project Context
 
-Framework-agnostic Tailwind CSS design system with zinc-based colors.
+An opinionated framework for **Mantine-based React apps**, extracted from argo (the POC). A
+consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an app
+shell (`BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header), a visx chart system, a
+three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain config presets, and a
+`basalt` CLI.
 
-**Package (basalt-ui)**: Pure Tailwind preset + CSS tokens (works with any framework)
-**Docs/Playground (apps/web)**: Astro + React + ShadCN for demos
+**Breaking 1.0** (`feat!:`, same npm name `basalt-ui`): the package pivoted from the old Tailwind
+CSS theme into the Mantine framework above. v0.4.2 had zero external consumers, so the pivot ships
+clean. The old `./css` and `./starlight` Tailwind exports are **dropped**. Anything below
+referencing Tailwind / OKLCH foundation palettes / ShadCN / Tremor / Starlight / Biome / Prettier /
+Astro docs is obsolete — that doctrine no longer applies.
 
-## IMPORTANT: Working Instructions
+## Working Instructions
 
-**DO NOT** automatically start executing tasks from `docs/IMPLEMENTATION.md` unless explicitly asked. Only perform the specific tasks that the user requests. The implementation plan is for reference and context, not a directive to execute autonomously.
+This is **S0 of a 5-stage argo extraction** (S0 repo pivot → S1 toolchain → S2 charts/tokens →
+S3 theme → S4 shell → S5 agentic + vite). `packages/basalt-ui/src/**` is currently **compiling
+stubs** with argo-grounded signatures; real bodies land in S2–S4. The blueprint is
+`docs/BLUEPRINT.md`. Do NOT autonomously execute blueprint stages — only do what is explicitly
+requested.
 
 ## Critical Rules (READ FIRST)
 
 - **Runtime**: Bun (not npm/pnpm)
-- **TypeScript**: Strict mode, no `any`, type inference preferred
-- **Tailwind**: v4 syntax (`@import`, `@theme`, NOT v3 `@tailwind` directives)
-- **Git**: Conventional commits, `master` branch (not main)
-- **ShadCN**: Copy-paste pattern (not npm dependency)
-- **Formatting**: Biome (JS/TS/JSON/CSS) + Prettier (Astro + Tailwind sorting)
-- **Linting**: Biome only (no ESLint)
-- **Validation**: Check `package.json`, run type-check/build + format
-- **Code Style**: Typed object params, low nesting, early returns
+- **UI lib**: Mantine v9 (NOT Tailwind — that era is over)
+- **Tokens**: three-tier `--vx-*` CSS-variable system (palette data → CSS vars → `VX.*` refs)
+- **Lint**: oxlint (NOT Biome). **Format**: oxfmt (NOT Prettier). No ESLint, no Biome, no Prettier.
+- **TypeScript**: strict mode, no `any`, type inference preferred, explicit types on public exports
+- **Git**: conventional commits, **empty scope** (commitlint `scope-empty: always`), `master` branch
+- **Exports**: named only, **no default exports**
+- **Files**: `kebab-case.ts`; components `PascalCase.tsx`
+- **basalt-ui is ALWAYS a separate commit** (NPM published — lefthook `isolated-basalt-ui` guard)
 
 ## Tech Stack
 
-- **Runtime**: Bun (not Node/npm)
+- **Runtime**: Bun
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
-- **TypeScript**: Strict mode, all exports typed
-- **Formatting**: Biome (JS/TS/JSON/CSS) + Prettier (Astro)
-- **Linting**: Biome only (no ESLint)
-- **Git**: Conventional commits enforced via commitlint
-- **Theme**: Tailwind v4 (not v3 - important!)
-- **Components**: ShadCN (copy-paste, not dependency)
-- **Fonts**: Self-hosted via @fontsource (variable fonts)
+- **UI**: Mantine v9 (`@mantine/core` + `@mantine/hooks` `^9.3`, `@mantine/dates` optional peer)
+- **React**: 19 (peer)
+- **Charts**: visx (8 `@visx/*` packages, pinned exact `4.0.0-alpha.11`)
+- **Lint/format**: oxlint + oxfmt
+- **Type-check**: tsc (strict)
+- **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
+- **Release**: semantic-release-monorepo + npm provenance
 
 ## Structure
 
 ```
 basalt-ui/
-├── packages/basalt-ui/    # Theme package (framework-agnostic)
-├── apps/web/              # Astro + React docs site
-├── CLAUDE.md              # You are here
-└── docs/                  # Implementation plans
+├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui, v1.0.0)
+├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
+├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on Mantine post-migration
+├── docs/BLUEPRINT.md       # the 5-stage argo-extraction plan
+└── CLAUDE.md               # you are here
 ```
 
-## Documentation Structure
-
-This monorepo uses hierarchical CLAUDE.md files:
-
-- **Root `CLAUDE.md`** (this file) - Monorepo-wide conventions
-  - Bun workspace management
-  - Biome, commitlint, lefthook configuration
-  - Git workflow (trunk-based, conventional commits)
-  - Package management rules
-  - Release process
-
-- **`packages/basalt-ui/CLAUDE.md`** (future) - Theme package conventions
-  - Tailwind v4 preset architecture
-  - CSS token system
-  - Framework-agnostic patterns
-
-- **`apps/web/CLAUDE.md`** - Web app specific conventions
-  - Astro + React patterns
-  - ShadCN integration
-  - Islands architecture
-  - Performance & SEO guidelines
-
-Each workspace's CLAUDE.md focuses on its specific concerns while this root file covers shared monorepo infrastructure.
+- `packages/basalt-ui` — the published framework. See its own `CLAUDE.md`.
+- `apps/playground` — the everyday iteration surface; grows as the package gains surface. Instant
+  HMR, exact types, zero linking via `workspace:*`.
+- `apps/marketing` — basalt-ui.com. Content-frozen until rebuilt on Mantine post-migration; will
+  vendor its own legacy CSS and stop depending on the package. Don't iterate on it for now.
+- `examples/*` was removed from the workspace.
 
 ## Commands
 
 **Root:**
+
 ```bash
-bun install                # Install all workspaces
-bun run dev                # Start web app
-bun run pre                # Run format + lint + typecheck (pre-commit)
-bun run typecheck          # Type-check all workspaces
-                           # Releases: trigger Make Release workflow on GitHub Actions
+bun install                # install all workspaces
+bun run dev                # = dev:playground
+bun run dev:playground     # start the playground consumer
+bun run lint               # oxlint
+bun run fmt                # oxfmt (write)
+bun run fmt:check          # oxfmt (check only)
+bun run typecheck          # tsc across package + playground
+bun run pre                # fmt:check && lint && typecheck (run before committing)
 ```
 
-**Package (packages/basalt-ui):**
+**Package (`packages/basalt-ui`):**
+
 ```bash
-bun run build             # Build package
-bun run test              # Run tests
+cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + tsc declarations
 ```
 
-**Web (apps/web):**
-```bash
-bun run dev               # Dev server
-bun run build             # Production build
-```
+**Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
+playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
+artifact resolves.
 
-**Code Quality:**
-```bash
-bun run format                                  # Format all (Biome + Prettier)
-bun run format:biome                            # Format with Biome only
-bun run format:prettier                         # Format Astro files with Prettier
-bun run lint                                    # Lint with Biome
-bun run pre                                     # Full validation (format + lint + typecheck)
-bunx commitlint --edit <file>                   # Validate commit msg
-```
+## Mantine-Free Boundary (enforced)
+
+`src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`. `@visx/*` may **only** be
+imported inside `src/charts/**`. Enforced by oxlint `no-restricted-imports` — both repo-local AND
+in the shipped consumer oxlint preset. This keeps the `./charts` and `./tokens` subpath exports
+Mantine-free, so a charts/tokens-only consumer never pulls in Mantine.
 
 ## Validation & Quality Workflow
 
-**Available Commands**:
-- `bun run pre` - **Recommended**: Format + lint + typecheck all workspaces
-- `bun run format` - Format all files (Biome + Prettier)
-- `bun run format:biome` - Format JS/TS/JSON/CSS with Biome
-- `bun run format:prettier` - Format Astro files with Prettier
-- `bun run lint` - Lint all files with Biome
-- `bun run typecheck` - Type-check all workspaces with TypeScript
-- Individual workspace: `cd apps/web && bun run typecheck`
+1. Make changes.
+2. Run `bun run pre` (fmt:check + lint + typecheck) to validate.
+3. Fix errors in changed files only — don't refactor untouched code.
+4. Commit with conventional format (empty scope).
 
-**Workflow:**
-1. Make changes
-2. Run `bun run pre` to validate everything
-3. Fix any errors in changed files only
-4. Commit with conventional format
-
-**Rule**: Don't refactor untouched code. User validates running apps manually.
-
-## Hybrid Tooling Strategy
-
-This project uses a **dual-formatter approach** for optimal results:
-
-### Why Hybrid?
-
-1. **Biome**: 25x faster formatting for 90% of files (JS/TS/JSON/CSS)
-2. **Prettier**: Better Astro formatting + official Tailwind class sorting plugin
-3. **Best of both worlds**: Speed where it matters, quality where it's needed
-
-### Tool Responsibilities
-
-| File Type | Formatting | Linting | Type Checking |
-|-----------|------------|---------|---------------|
-| `.ts/.tsx` (React components) | Biome | Biome (full) | tsc |
-| `.astro` files | Prettier + Tailwind plugin | Biome (JS/TS portions) | astro check |
-| `.json` | Biome | Biome | - |
-| `.css` | Biome | Biome | - |
-
-### Prettier Configuration
-
-**What Prettier handles**:
-- ✅ Astro file formatting (frontmatter + template)
-- ✅ Tailwind CSS class sorting (via prettier-plugin-tailwindcss)
-- ✅ Import organization in Astro files (understands Astro syntax)
-- ❌ Does NOT format JS/TS/JSON/CSS (Biome handles these)
-
-**Files**: `.prettierrc` and `.prettierignore` at monorepo root
-
-### Biome Configuration
-
-**What Biome handles**:
-- ✅ Fast formatting for JS/TS/JSX/TSX/JSON/CSS
-- ✅ Linting all file types (340+ rules)
-- ✅ Import organization (except Astro files)
-- 🟡 Partial linting of Astro files (JS/TS portions only, relaxed rules)
-
-**File**: `biome.json` at monorepo root
-
-**Astro-specific overrides**:
-- `noUnusedVariables`: `off` (Biome doesn't understand Astro template syntax)
-- `noUnusedImports`: `off` (Prettier handles imports)
-- `organizeImports`: `off` (Prettier handles organization)
-
-### Pre-commit Hooks
-
-Lefthook automatically runs the appropriate tool:
-- `biome-check-js`: JS/TS/JSX/TSX files → Biome
-- `biome-check-json`: JSON files → Biome
-- `biome-check-css`: CSS files → Biome
-- `prettier-astro`: Astro files → Prettier (includes Tailwind sorting)
-
-### Migration Notes
-
-**From**: Pure Biome setup with experimental Astro support
-**To**: Biome + Prettier hybrid for better Astro handling
-
-**Key improvements**:
-- Tailwind class sorting now works automatically
-- Better Astro import organization (no false positives)
-- Consistent formatting across all file types
-- Minimal performance impact (Prettier only runs on `.astro` files)
-
-## MCP Tool Guidelines
-
-**Tavily** (`tavily-mcp`):
-- Web research and content extraction
-- Deep dives into specific webpages
-- Extract granular technical details
-
-**Context7** (`https://mcp.context7.com/mcp`):
-- Up-to-date library documentation
-- Official API references
-- Framework-specific docs
-
-## Development Guidelines
-
-### Package Management
-
-Never hardcode versions in `package.json`. Use `bun add` commands:
-
-```bash
-✅ bun add -D @biomejs/biome          # Gets latest
-✅ bun add -D --exact @biomejs/biome  # Gets exact latest
-
-❌ Manual edit: "@biomejs/biome": "^1.9.4"  # Don't do this
-```
-
-### TypeScript
-
-Strict mode. No `any`, explicit types on all exports.
-
-```typescript
-✅ export function createTheme(colors: Record<string, string>): ThemeConfig
-❌ export function createTheme(colors)  // Missing types
-```
-
-### Tailwind v4 (Not v3!)
-
-Use v4 syntax with `@import` and `@theme`, NOT v3 `@tailwind` directives.
-
-```css
-✅ v4: @import "tailwindcss"; @theme inline { --color-primary: var(--primary); }
-❌ v3: @tailwind base; @tailwind components; @tailwind utilities;
-```
-
-### File Organization
-
-**Package exports** - Always explicit:
-```typescript
-// packages/basalt-ui/src/index.ts
-export * from './theme'
-export * from './tokens'
-```
-
-**No default exports** - Named exports only:
-```typescript
-export function Button() {}     // ✅ Correct
-export default function() {}    // ❌ Wrong
-```
-
-### ShadCN Integration
-
-ShadCN components are **copied** into `apps/web`, not installed as dependency.
-
-```bash
-cd apps/web
-bunx shadcn@latest add button
-```
-
-Components automatically use basalt-ui theme via Tailwind preset.
-
-### Imports
-
-**Workspace protocol** for internal deps:
-```json
-{
-  "dependencies": {
-    "basalt-ui": "workspace:*"
-  }
-}
-```
-
-**Path aliases** - Use `@/` for imports:
-```typescript
-import { Button } from '@/components/ui/button'  // ✅
-import { Button } from '../../../components'     // ❌
-```
-
-## Code Style
-
-### Naming Conventions
-
-- **Files**: `kebab-case.ts` (not camelCase or PascalCase)
-- **Components**: `PascalCase.tsx`
-- **Functions**: `camelCase()`
-- **Constants**: `UPPER_SNAKE_CASE`
-- **CSS variables**: `--kebab-case`
-
-### React Patterns
-
-**Function components** only:
-```typescript
-export function Button({ children }: { children: React.ReactNode }) {
-  return <button>{children}</button>
-}
-```
-
-**No React.FC** or arrow functions for components.
-
-### CSS Variables
-
-**Follow convention** - Define in `:root` and `.dark`:
-```css
-:root {
-  --background: hsl(0 0% 100%);
-}
-
-.dark {
-  --background: hsl(0 0% 3.9%);
-}
-
-@theme inline {
-  --color-background: var(--background);
-}
-```
+The user validates running apps manually — don't start dev servers.
 
 ## Git Workflow
 
-**Branch**: `master` (not main)
+**Branch**: `master`.
 
-**Commit format**:
+**Commit format** — conventional, **empty scope**:
+
 ```bash
-feat: add button component
-fix: correct dark mode colors
+feat: add chart legend kind
+fix: correct dark-scheme surface var
 docs: update README
-chore: release v0.1.0
+chore: bump dev dep
 ```
 
-**No scopes** — `commitlint.config.ts` enforces `scope-empty: always`. Never use `feat(scope):` syntax.
+`commitlint.config.ts` enforces `scope-empty: always` — never `feat(scope):`.
 
-**Pre-commit hooks** run automatically:
-- Biome format + lint
-- Commitlint validation
+**The basalt-ui separate-commit rule (critical):** `packages/basalt-ui/**` changes must be
+committed **separately** from everything else. The lefthook `isolated-basalt-ui` pre-commit hook
+fails a mixed staging set.
 
-**Release process**:
-1. Trigger **Make Release** workflow on GitHub Actions (workflow_dispatch)
-2. `semantic-release-monorepo` analyzes only commits touching `packages/basalt-ui/`
-3. Creates git tag + GitHub release + publishes to npm automatically
+**Pre-commit hooks** (lefthook): oxlint + oxfmt on staged files; commitlint on the message.
 
-**Commit type discipline (affects npm versioning)**:
-- `feat:` / `fix:` — triggers minor/patch release **only when commit touches `packages/basalt-ui/`** (path-filtered); safe to use for other changes too
-- `ci:` — CI/CD changes, never triggers release (use for workflow, lefthook changes)
-- `chore:` / `docs:` / `refactor:` — no release (use for non-package work)
-- `BREAKING CHANGE:` in commit footer → major release
+**Commit type discipline (affects npm versioning):**
 
-## Common Issues
+- `feat:` / `fix:` — triggers minor/patch release **only when the commit touches
+  `packages/basalt-ui/`** (path-filtered). `feat!:` or a `BREAKING CHANGE:` footer → major.
+- `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
+- `chore:` / `docs:` / `refactor:` — no release.
 
-**"Module not found"**
-→ Run `bun install` from root
+## Release Process
 
-**Biome errors**
-→ Run `bunx @biomejs/biome check --write .`
-
-**Wrong Tailwind version behavior**
-→ Check you're using v4 syntax (see rules above)
-
-**ShadCN component doesn't use theme**
-→ Verify Tailwind config uses basalt-ui preset
-
-## What NOT to Do
-
-- ❌ Don't use `npm` or `pnpm` (use `bun`)
-- ❌ Don't write Tailwind v3 syntax
-- ❌ Don't install ShadCN as dependency
-- ❌ Don't use ESLint/Prettier (use Biome)
-- ❌ Don't commit to master directly
-- ❌ Don't use default exports
-- ❌ Don't use `any` in TypeScript
-- ✅ Self-host fonts via @fontsource (better performance, privacy)
-
-## Project Philosophy
-
-1. **Framework-agnostic package** - basalt-ui works with any framework (React, Vue, Svelte, etc.)
-2. **Theme only, no components** - Keep basalt-ui minimal
-3. **React for our apps** - Web app uses Astro + React + ShadCN for demos
-4. **Zinc-based colors** - Not stone, not gray
-5. **Design by seeing** - Web app as design lab
-6. **Progressive disclosure** - Build incrementally
-
-## Documentation
-
-See `/docs` for detailed plans:
-- `IMPLEMENTATION.md` - Main implementation plan
-- `SHADCN_INTEGRATION.md` - ShadCN architecture details
+1. Trigger the **Make Release** / release workflow on GitHub Actions (workflow_dispatch).
+2. `semantic-release-monorepo` analyzes only commits touching `packages/basalt-ui/`.
+3. Creates git tag + GitHub release + publishes to npm **with provenance** automatically.
 
 ## Analytics & Tracking
 
 ### UTM Parameter Strategy
 
-**Philosophy**: Minimal tracking with Umami Analytics - track document source, not campaigns.
+**Philosophy**: minimal tracking with Umami Analytics — track document source, not campaigns.
 
-**Format**: Single parameter identifying the file/location:
+**Format**: a single parameter identifying the file/location:
+
 ```
 ?utm_source={file_location}
 ```
 
-**Defined Sources**:
-- `root_readme` - Links in root README.md
-- `basalt_ui_readme` - Links in packages/basalt-ui/README.md
-- `brand_voice` - Links in docs/BRAND_VOICE.md
-- `npm_package` - Homepage in packages/basalt-ui/package.json
+**Defined sources**: `root_readme`, `basalt_ui_readme`, `brand_voice`, `npm_package`.
 
-**Why This Approach**:
-1. **Plausible already tracks referrers** (github.com, npmjs.com) - no need for `utm_medium`
-2. **No active campaigns** - `utm_campaign` adds no value for passive documentation
-3. **Simple and maintainable** - One parameter, consistent naming
-4. **Answers the key question**: "Which document did they click from?"
+**Why**: the analytics already tracks referrers (github.com, npmjs.com), there are no active
+campaigns, and one consistent parameter answers the only question that matters — "which document
+did they click from?". We don't track `utm_medium` / `utm_campaign` / `utm_content` / `utm_term`.
 
-**Example**:
 ```markdown
 [Documentation](https://basalt-ui.com?utm_source=root_readme)
-[Installation Guide](https://basalt-ui.com/docs/installation?utm_source=basalt_ui_readme)
 ```
-
-**What We Don't Track**:
-- ❌ `utm_medium` - Referrer provides this
-- ❌ `utm_campaign` - No campaigns, just documentation
-- ❌ `utm_content` - Over-engineering for simple docs
-- ❌ `utm_term` - Not running paid ads
 
 ## Key Principles
 
-- **Concise over verbose** - Less code is better
-- **Examples over description** - Show, don't tell
-- **TypeScript strict** - No shortcuts
-- **Iterate fast** - See changes immediately in web app
-- **Document decisions** - Update this file as needed
+- **Concise over verbose** — less code is better.
+- **Examples over description** — show, don't tell.
+- **TypeScript strict** — no shortcuts.
+- **Iterate in the playground** — see changes immediately.
+- **Document decisions** — update this file as conventions evolve.
