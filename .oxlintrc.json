@@ -106,7 +106,11 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/cli/**", "packages/basalt-ui/bin/**"],
+      "files": [
+        "packages/basalt-ui/src/cli/**",
+        "packages/basalt-ui/bin/**",
+        "packages/basalt-ui/scripts/**"
+      ],
       "rules": {
         "no-console": "off"
       }
