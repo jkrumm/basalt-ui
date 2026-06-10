@@ -7,8 +7,9 @@
  * files. Apply opacity via `alpha(token, a)` (never raw `rgba()`) so the hue keeps resolving.
  *
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
- * S0: signatures are stable + grounded; full palette data lands in S2.
  */
+
+import { BP, p, SEMANTIC, STATUS, NEUTRAL, SURFACE } from './palette'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
@@ -16,19 +17,26 @@ export type ColorPair = { light: string; dark: string }
 /** A map of token name → per-theme color pair (the input shape for series/group builders). */
 export type SeriesMap = Record<string, ColorPair>
 
+/** Framework palette data — Blueprint families, the shade-pair helper, and the generic pairs. */
+export { BP, p, SEMANTIC, STATUS, NEUTRAL, SURFACE }
+
 /**
  * Apply opacity to any palette token, theme-aware. Use instead of raw `rgba()` so the
  * underlying hue still resolves per color scheme.
  *
  *   alpha(VX.neutral, 0.5)        // muted hairline
- *   alpha(VX.series.hrv, 0.08)    // soft tint of a series color
+ *   alpha(VX.status.warn, 0.1)    // zone-band fill
  */
 export const alpha = (token: string, a: number): string =>
   `color-mix(in srgb, ${token} ${Math.round(a * 100)}%, transparent)`
 
 /**
- * VX tokens — a small representative set of `var(--vx-*)` string refs grounded in argo's VX.
- * S0 placeholder surface; the full token registry (every series/activity/usage hue) lands in S2.
+ * VX tokens — `var(--vx-*)` string refs + non-color sizing constants. Colors resolve per
+ * color scheme in CSS, so `VX.*` works in components AND in non-component files. Never
+ * reference raw hex in chart files — use `VX.*` / `alpha()`.
+ *
+ * The framework ships ONLY generic primitives — no domain `VX.series` tree (apps rebuild
+ * that with `seriesTokens` / `groupTokens` against their own series maps).
  */
 export const VX = {
   // Non-color sizing constants
@@ -37,11 +45,29 @@ export const VX = {
   axisFont: 11,
   dotR: 5,
 
-  // Neutral primary line/text color — default for single-series, no-signal marks
+  // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
+  line2Dark: 'var(--vx-line2)',
+
+  // Semantic fills — consistent opacity across all charts
+  good: 'var(--vx-good)',
+  goodSoft: 'var(--vx-goodSoft)',
+  bad: 'var(--vx-bad)',
+  warn: 'var(--vx-warn)',
+  goodSolid: 'var(--vx-goodSolid)',
+  badSolid: 'var(--vx-badSolid)',
+  warnSolid: 'var(--vx-warnSolid)',
+
+  // Reference/dashed lines for thresholds
+  goodRef: 'var(--vx-goodRef)',
+  badRef: 'var(--vx-badRef)',
+  warnRef: 'var(--vx-warnRef)',
+
+  // Neutral primary line/text color — the default for single-series, no-signal marks
+  // ("white/gray per theme"). Same value as the NEUTRAL.line pair.
   line: 'var(--vx-line)',
   line2: 'var(--vx-line2)',
 
-  // Grid / hover / legend
+  // Grid, hover, legend
   grid: 'var(--vx-grid)',
   crosshair: 'var(--vx-crosshair)',
   dotStroke: 'var(--vx-dotStroke)',
@@ -59,14 +85,6 @@ export const VX = {
   },
   shadowCard: 'var(--vx-shadowCard)',
 
-  // Semantic fills
-  good: 'var(--vx-good)',
-  bad: 'var(--vx-bad)',
-  warn: 'var(--vx-warn)',
-  goodSolid: 'var(--vx-goodSolid)',
-  badSolid: 'var(--vx-badSolid)',
-  warnSolid: 'var(--vx-warnSolid)',
-
   // Score / zone status scale (excellent → poor)
   status: {
     excellent: 'var(--vx-status-excellent)',
@@ -76,29 +94,75 @@ export const VX = {
     neutral: 'var(--vx-status-neutral)',
   },
 
-  // Per-metric series colors — stable hue identity, shade resolved per theme.
-  series: {
-    hrv: 'var(--vx-hrv)',
-    restingHr: 'var(--vx-restingHr)',
-    sleepDuration: 'var(--vx-sleepDuration)',
-    steps: 'var(--vx-steps)',
-    calories: 'var(--vx-calories)',
-    vo2max: 'var(--vx-vo2max)',
-  },
-
   // Shared sizing
   margin: { top: 12, right: 16, bottom: 30, left: 44 },
   minPxPerTick: 55,
 } as const
 
+type Side = 'light' | 'dark'
+
 /** A CSS declaration line for a single `--vx-*` custom property. */
 const decl = (name: string, value: string): string => `  --vx-${name}: ${value};`
 
 /** Emit one prefixed group of pairs for a given scheme side. */
-const groupSide = (prefix: string, map: SeriesMap, side: 'light' | 'dark'): string =>
+const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
   Object.entries(map)
     .map(([key, pair]) => decl(`${prefix}${key}`, pair[side]))
     .join('\n')
+
+/**
+ * Built-in framework primitives for a given scheme side — STATUS group, semantic solids,
+ * neutral line/axis/grid/tooltip chrome, legend text, and the surface ramp. Domain series
+ * (SERIES/ACTIVITY/USAGE) are NOT shipped — apps append them via `opts.groups`.
+ */
+function frameworkPrimitives(side: Side): string {
+  const n = NEUTRAL
+  const s = SEMANTIC
+  const su = SURFACE
+  return [
+    groupSide('status-', STATUS as SeriesMap, side),
+    decl('goodSolid', s.good[side]),
+    decl('badSolid', s.bad[side]),
+    decl('warnSolid', s.warn[side]),
+    decl('neutral', n.neutral[side]),
+    decl('shadowCard', side === 'dark' ? 'none' : '0 1px 3px rgba(17,20,24,0.06)'),
+    decl('line', n.line[side]),
+    decl('line2', n.line2[side]),
+    decl('axis', n.axis[side]),
+    decl('axisStroke', n.axisStroke[side]),
+    decl('grid', n.grid[side]),
+    decl('crosshair', n.crosshair[side]),
+    decl('dotStroke', n.dotStroke[side]),
+    decl('tooltipBg', n.tooltipBg[side]),
+    decl('tooltipText', n.tooltipText[side]),
+    decl('tooltipMuted', n.tooltipMuted[side]),
+    decl('tooltipBorder', n.tooltipBorder[side]),
+    decl('tooltipShadow', n.tooltipShadow[side]),
+    decl('legendText', side === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(17,20,24,0.82)'),
+    decl('surface-bg', su.bg[side]),
+    decl('surface-panel', su.panel[side]),
+    decl('surface-elevated', su.elevated[side]),
+    decl('surface-border', su.border[side]),
+  ].join('\n')
+}
+
+/**
+ * Theme-independent scalars + semantic fills, defined once on `:root`.
+ *
+ * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
+ * to retune every line-area fill live). 0%/0% disables gradients app-wide.
+ */
+const FRAMEWORK_DERIVED = [
+  decl('area-top', '22%'),
+  decl('area-bottom', '1%'),
+  decl('good', 'color-mix(in srgb, var(--vx-goodSolid) 18%, transparent)'),
+  decl('goodSoft', 'color-mix(in srgb, var(--vx-goodSolid) 8%, transparent)'),
+  decl('bad', 'color-mix(in srgb, var(--vx-badSolid) 18%, transparent)'),
+  decl('warn', 'color-mix(in srgb, var(--vx-warnSolid) 8%, transparent)'),
+  decl('goodRef', 'color-mix(in srgb, var(--vx-goodSolid) 30%, transparent)'),
+  decl('badRef', 'color-mix(in srgb, var(--vx-badSolid) 30%, transparent)'),
+  decl('warnRef', 'color-mix(in srgb, var(--vx-warnSolid) 20%, transparent)'),
+].join('\n')
 
 /**
  * Wrap a map of `{ name: ColorPair }` into `var(--vx-<prefix><name>)` token refs — the runtime
@@ -111,8 +175,8 @@ export function seriesTokens(map: SeriesMap, prefix = ''): Record<string, string
 }
 
 /**
- * Define a named series map. Identity passthrough in S0 — gives consumers a typed authoring
- * entry point and a single place to validate/normalize series declarations in later stages.
+ * Define a named series map. Identity passthrough — gives consumers a typed authoring entry
+ * point and a single place to validate/normalize series declarations.
  */
 export function defineSeries(map: SeriesMap): SeriesMap {
   return map
@@ -135,16 +199,24 @@ export type BuildPaletteOpts = {
  * Emit the `--vx-*` stylesheet: a `:root` block of theme-independent scalars, then the
  * dark (default) and light primitive blocks under `html[data-mantine-color-scheme='…']`.
  *
- * S0 placeholder: emits only what it is given. The full palette wiring (SERIES/ACTIVITY/
- * USAGE/STATUS/NEUTRAL/SURFACE → CSS) lands in S2; the signature here is the stable contract.
+ * The framework chrome (STATUS/SEMANTIC/SURFACE pairs + the framework DERIVED defaults) is
+ * built in, so an empty `buildPaletteCss()` already emits every framework var. Consumer
+ * `opts.groups` / `opts.derived` append on top (e.g. argo's domain SERIES/ACTIVITY/USAGE).
+ *
+ * Dark is the default (`:root`) since the framework defaults to dark; the
+ * `[data-mantine-color-scheme]` selectors track Mantine's toggle on `<html>`.
  */
 export function buildPaletteCss(opts: BuildPaletteOpts = {}): string {
   const groups = opts.groups ?? {}
-  const derived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const side = (s: 'light' | 'dark'): string =>
-    Object.entries(groups)
+  const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
+  const derived = extraDerived ? `${FRAMEWORK_DERIVED}\n${extraDerived}` : FRAMEWORK_DERIVED
+  const side = (s: Side): string => {
+    const extra = Object.entries(groups)
       .map(([prefix, map]) => groupSide(prefix, map, s))
       .join('\n')
+    const framework = frameworkPrimitives(s)
+    return extra ? `${framework}\n${extra}` : framework
+  }
   return `:root {
 ${derived}
 }

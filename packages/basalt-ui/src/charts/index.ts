@@ -1,16 +1,89 @@
 /**
- * Chart primitives surface — Mantine-free (ZERO `@mantine/*` imports, lint-enforced).
+ * `./charts` — Mantine-free visx chart system (ZERO `@mantine/*` imports, lint-enforced).
  *
- * S0 proves the @visx dependency boundary resolves and the Mantine-free rule holds by
- * re-exporting a representative set of raw @visx primitives. The full primitive/kind/sparkline
- * layer (ChartCard, ChartLegend, ChartTooltip, Axes, ZonedLine, Bars, StackedArea, Donut,
- * sparklines, hooks) lands in S2 — grounded in argo `packages/charts/src/index.ts`.
+ * Re-exports the framework token layer (so chart consumers have one import surface), the chart
+ * theme context, the shared-cursor hover context, the primitives, kinds, sparklines, hooks, utils,
+ * and a curated set of raw @visx primitives for bespoke charts.
  *
- * visx is pinned EXACT at 4.0.0-alpha.11 across the 8 packages:
- *   @visx/axis @visx/curve @visx/event @visx/grid @visx/group @visx/scale @visx/shape @visx/threshold
+ * The framework ships ONLY generic primitives + framework palette data — no domain series tree
+ * (apps rebuild that app-side with `seriesTokens` / `groupTokens` against their own series maps).
+ * Grounded in argo `packages/charts/src/index.ts`.
  */
 
-// ── Re-exported visx primitives (proves deps resolve + Mantine-free boundary) ──
+// ── Framework token surface (Mantine-free) ───────────────────────────────
+export {
+  VX,
+  alpha,
+  type ColorPair,
+  type SeriesMap,
+  buildPaletteCss,
+  seriesTokens,
+  defineSeries,
+  groupTokens,
+  BP,
+  SEMANTIC,
+  STATUS,
+  NEUTRAL,
+  SURFACE,
+} from '../tokens'
+
+// ── Chart theme + hover context ──────────────────────────────────────────
+export { VxThemeProvider, useVxTheme, type VxTheme } from './theme'
+export { HoverContext, DEFAULT_NO_OP_SET_HOVER, type HoverCtx } from './hover-context'
+
+// ── Primitives ───────────────────────────────────────────────────────────
+export { ChartCard } from './primitives/ChartCard'
+export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
+export {
+  ChartTooltip,
+  TooltipHeader,
+  TooltipRow,
+  TooltipBody,
+  useTooltipStyles,
+} from './primitives/ChartTooltip'
+export { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './primitives/Axes'
+export { HoverOverlay } from './primitives/HoverOverlay'
+export { ZoneRects, type ZoneSpec } from './primitives/ZoneRects'
+export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
+
+// ── Hooks ────────────────────────────────────────────────────────────────
+export { useChartTooltip, type TooltipState } from './hooks/useChartTooltip'
+export { useHoverSync } from './hooks/useHoverSync'
+
+// ── Utils ────────────────────────────────────────────────────────────────
+export { fmtAxisDate, fmtTooltipDate } from './utils/format'
+export { smartTicks } from './utils/ticks'
+
+// ── Kind components (owned by a sibling agent under ./kinds) ──────────────
+export {
+  ZonedLine,
+  type ZonedLineProps,
+  type ZonedLineZone,
+  type ZonedLineThreshold,
+  type ZonedLineRefLine,
+  type ZonedLineTooltipLabel,
+} from './kinds/ZonedLine'
+
+export {
+  Bars,
+  type BarsProps,
+  type BarsBar,
+  type BarsLine,
+  type BarsZone,
+  type BarsRefLine,
+  type BarsAxisConfig,
+} from './kinds/Bars'
+
+export { StackedArea, type StackedAreaProps } from './kinds/StackedArea'
+export { Donut, type DonutProps, type DonutDatum } from './kinds/Donut'
+
+// ── Sparklines ───────────────────────────────────────────────────────────
+export { LineSparkline, BarSparkline } from './sparklines'
+
+// ── Re-exported visx primitives ──────────────────────────────────────────
+// Bespoke charts (genuinely unique compositions per CLAUDE.md) need raw
+// visx primitives. Re-exporting them keeps the dependency declared in one
+// place and preserves the rule that consumers only import from `basalt-ui/charts`.
 export { Group } from '@visx/group'
 export { GridRows, GridColumns } from '@visx/grid'
 export { scaleLinear, scaleBand, scalePoint, scaleTime } from '@visx/scale'
@@ -23,6 +96,3 @@ export {
   curveStepAfter,
   curveBasis,
 } from '@visx/curve'
-
-// Re-export the Mantine-free token layer so chart consumers have one import surface.
-export { VX, alpha, type ColorPair } from '../tokens'
