@@ -15,7 +15,7 @@
  * at config-evaluation time (plain Node), where only `process.env` exists.
  */
 import { resolve } from 'node:path'
-import type { UserConfig } from 'vite'
+import { type UserConfig, searchForWorkspaceRoot } from 'vite'
 
 export type BasaltViteOptions = {
   /** Dev server port. Passed with `strictPort: true` so the app fails fast on a busy port. */
@@ -104,9 +104,12 @@ export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
       ...config.resolve,
       alias: { 'basalt-ui': srcDir },
     }
+    // Serving from an out-of-root srcDir requires widening fs.allow, but an explicit allow list
+    // replaces Vite's default (the workspace root) — so the consumer's own root must be re-added,
+    // else its index.html / source falls outside the list. searchForWorkspaceRoot finds it.
     config.server = {
       ...config.server,
-      fs: { allow: [srcDir] },
+      fs: { allow: [searchForWorkspaceRoot(process.cwd()), srcDir] },
     }
   }
 
