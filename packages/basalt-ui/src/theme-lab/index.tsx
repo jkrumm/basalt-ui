@@ -189,8 +189,12 @@ export function ThemeLabControls({
 
   const copyJson = () => {
     const json = JSON.stringify(overrides, null, 2)
-    void navigator.clipboard.writeText(json)
-    onCopy?.(json)
+    // Fire onCopy only on a successful write; swallow rejection (clipboard denied/unavailable in
+    // some contexts) so it never surfaces as an unhandled promise rejection.
+    navigator.clipboard.writeText(json).then(
+      () => onCopy?.(json),
+      () => {},
+    )
   }
 
   const valueOf = (name: string): string => overrides[name] ?? readVar(name)

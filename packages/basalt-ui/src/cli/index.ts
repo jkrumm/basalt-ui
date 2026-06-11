@@ -9,12 +9,12 @@
  * toolchain templates (oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
  * idempotent three-way reconciliation. Dependency-free — Node/Bun built-ins only.
  *
- * Bun runtime only (uses `Bun.Glob`). Config is read from the consuming package.json `"basalt"`
- * key; argo's hardcoded values are the DEFAULTS.
+ * Runtime-agnostic (Node or Bun) — built-ins only, no `bun`-module import, so the exported API is
+ * safe to import under plain Node. Config is read from the consuming package.json `"basalt"` key;
+ * argo's hardcoded values are the DEFAULTS.
  */
-import { Glob } from 'bun'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -101,12 +101,35 @@ function scanFile(
   }
 }
 
+/** Recursively collect .ts/.tsx files under a root, skipping dependency/build dirs. Node+Bun-safe. */
+function walkTsFiles(dir: string, out: string[] = []): string[] {
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return out // root absent — nothing to scan
+  }
+  for (const name of entries) {
+    if (name === 'node_modules' || name === '.git' || name === 'dist') continue
+    const abs = resolve(dir, name)
+    let isDir: boolean
+    try {
+      isDir = statSync(abs).isDirectory()
+    } catch {
+      continue
+    }
+    if (isDir) walkTsFiles(abs, out)
+    else if (/\.tsx?$/.test(name)) out.push(abs)
+  }
+  return out
+}
+
 /**
  * Theme guard — scans source roots for raw color literals (hex / rgb() / hsl()), off-identity
  * Mantine accent props, raw spacing/radius props that equal a named scale step, and localStorage
- * theme reads. Exits non-zero on violations. A `theme-allow` comment exempts a line.
+ * theme reads. Returns 0 when clean, 1 on violations. A `theme-allow` comment exempts a line.
  */
-export function checkTheme(cwd: string = process.cwd()): void {
+export function checkTheme(cwd: string = process.cwd()): number {
   const cfg = readBasaltConfig(cwd)
   const roots = cfg.roots ?? DEFAULT_ROOTS
   const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
@@ -127,8 +150,7 @@ export function checkTheme(cwd: string = process.cwd()): void {
 
   const violations: Violation[] = []
   for (const root of roots) {
-    const glob = new Glob('**/*.{ts,tsx}')
-    for (const f of glob.scanSync({ cwd: resolve(cwd, root), absolute: true })) {
+    for (const f of walkTsFiles(resolve(cwd, root))) {
       const rel = relative(cwd, f)
       if (SKIP.test(rel) || exempt.has(rel)) continue
       scanFile(f, rel, patterns, violations)
@@ -137,7 +159,7 @@ export function checkTheme(cwd: string = process.cwd()): void {
 
   if (violations.length === 0) {
     console.log('✓ Theme guard: no off-palette colors.')
-    process.exit(0)
+    return 0
   }
 
   const byFile = new Map<string, Violation[]>()
@@ -159,7 +181,7 @@ export function checkTheme(cwd: string = process.cwd()): void {
       'a status hue (red/green/orange/yellow); for raw spacing/radius use the scale token. Add a ' +
       '`theme-allow` comment for a deliberate exception.',
   )
-  process.exit(1)
+  return 1
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -526,8 +548,8 @@ function renderContext(cwd: string): RenderContext {
   return { pkgRoot, vars: buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd)) }
 }
 
-/** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. */
-export function init(cwd: string = process.cwd()): void {
+/** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
+export function init(cwd: string = process.cwd()): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const files = managedFiles()
@@ -568,7 +590,7 @@ export function init(cwd: string = process.cwd()): void {
       `basalt init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
   }
-  process.exit(0)
+  return 0
 }
 
 type SyncOptions = { force?: boolean; check?: boolean }
@@ -580,7 +602,7 @@ type SyncOptions = { force?: boolean; check?: boolean }
  *   (a CI freshness gate), exit 0 when all current.
  * - `--force` overwrites locally-drifted files instead of skipping them.
  */
-export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): void {
+export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
   const files = managedFiles()
@@ -637,10 +659,10 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): void 
     }
     if (staleForCheck > 0) {
       console.error(`basalt sync --check: ${staleForCheck} managed file(s) out of date.`)
-      process.exit(1)
+      return 1
     }
     console.log('✓ basalt sync --check: all managed files current.')
-    process.exit(0)
+    return 0
   }
 
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
@@ -657,7 +679,27 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): void 
       `basalt sync: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
   }
-  process.exit(0)
+  return 0
+}
+
+/**
+ * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
+ * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
+ * of process side effects and are safe to import and call from tests.
+ */
+export function run(argv: string[], cwd: string = process.cwd()): number {
+  const [cmd, ...flags] = argv
+  switch (cmd) {
+    case 'init':
+      return init(cwd)
+    case 'sync':
+      return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
+    case 'check-theme':
+      return checkTheme(cwd)
+    default:
+      console.error('Usage: basalt <init | sync [--force] [--check] | check-theme>')
+      return 1
+  }
 }
 
 // Re-export the managed-file manifest for testing / introspection (no default export).

@@ -15,7 +15,7 @@
  *
  * Mantine usage is allowed in this `./` root layer (unlike `src/charts/**` and `src/tokens/**`).
  */
-import { MantineProvider, type MantineProviderProps, useMantineColorScheme } from '@mantine/core'
+import { MantineProvider, type MantineProviderProps, useComputedColorScheme } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
@@ -52,8 +52,9 @@ function BasaltBridge({
   injectPalette: boolean
   paletteOptions: BuildPaletteOpts | undefined
 }) {
-  const { colorScheme } = useMantineColorScheme()
-  const resolved = colorScheme === 'auto' ? 'dark' : colorScheme
+  // Resolve via Mantine's computed scheme so 'auto' follows the OS prefers-color-scheme
+  // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
+  const resolved = useComputedColorScheme('dark')
   return (
     <VxThemeProvider colorScheme={resolved}>
       {injectPalette ? <style>{buildPaletteCss(paletteOptions)}</style> : null}

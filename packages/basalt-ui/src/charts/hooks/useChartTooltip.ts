@@ -17,12 +17,9 @@ export function useChartTooltip<T>() {
     const overflowsRight = event.clientX + 12 + width + margin > vw
     const x = overflowsRight ? Math.max(margin, event.clientX - 12 - width) : event.clientX + 12
     const y = Math.min(Math.max(margin, event.clientY - 12), vh - height - margin)
+    // State-driven positioning: the tooltip element reads x/y from `tip`. (A prior direct
+    // el.style.left/top write here was dead — the React render overwrote it the same frame.)
     setTip({ data, x, y })
-    // Move tooltip via DOM directly to avoid re-renders on every pixel
-    if (el) {
-      el.style.left = `${x}px`
-      el.style.top = `${y}px`
-    }
   }, [])
 
   const hide = useCallback(() => {

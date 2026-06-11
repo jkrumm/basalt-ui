@@ -1,11 +1,9 @@
 import { localPoint } from '@visx/event'
-import { useCallback, useContext } from 'react'
+import { useCallback, useContext, useRef } from 'react'
 import { DEFAULT_NO_OP_SET_HOVER, HoverContext } from '../hover-context'
 import { useChartTooltip } from './useChartTooltip'
 
-type XScale = ((x: string) => number | undefined) | { (x: string): number | undefined }
-
-let warnedMissingProvider = false
+type XScale = (x: string) => number | undefined
 
 /**
  * Wires a chart into the shared-cursor HoverContext plus the local tooltip state.
@@ -34,13 +32,14 @@ export function useHoverSync<T>({
   marginLeft: number
 }) {
   const ctx = useContext(HoverContext)
+  const warnedRef = useRef(false)
 
   if (
-    process.env.NODE_ENV !== 'production' &&
+    process.env['NODE_ENV'] !== 'production' &&
     ctx.setHover === DEFAULT_NO_OP_SET_HOVER &&
-    !warnedMissingProvider
+    !warnedRef.current
   ) {
-    warnedMissingProvider = true
+    warnedRef.current = true
     // eslint-disable-next-line no-console
     console.warn(
       '[charts] useHoverSync used outside <HoverContext.Provider>. Cross-chart cursor sync will not work.',

@@ -15,7 +15,7 @@ import {
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
-import { smartTicks } from '../utils/ticks'
+import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 export type StackedAreaProps<T> = {
   data: T[]
@@ -162,11 +162,4 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
       </ChartTooltip>
     </div>
   )
-}
-
-function smartTicksEvery(dates: string[], count: number): string[] {
-  if (dates.length === 0) return []
-  if (dates.length <= count) return dates
-  const step = Math.ceil(dates.length / count)
-  return dates.filter((_, i) => i % step === 0 || i === dates.length - 1)
 }

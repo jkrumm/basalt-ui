@@ -1,24 +1,9 @@
 #!/usr/bin/env bun
 /**
- * basalt-ui CLI entry. Dispatches `init | sync | check-theme` to the built CLI (../dist/cli/index.js).
- * In S0 dist exists after the orchestrator's tsup build.
+ * basalt-ui CLI entry. Dispatches `init | sync | check-theme` to the built CLI (../dist/cli/index.js)
+ * via `run()`, which returns an exit code — this entry is the ONLY place that calls process.exit, so
+ * the exported command functions stay free of process side effects.
  */
-import { checkTheme, init, sync } from '../dist/cli/index.js'
+import { run } from '../dist/cli/index.js'
 
-const cmd = process.argv[2]
-const flags = process.argv.slice(3)
-
-switch (cmd) {
-  case 'init':
-    init()
-    break
-  case 'sync':
-    sync({ force: flags.includes('--force'), check: flags.includes('--check') })
-    break
-  case 'check-theme':
-    checkTheme()
-    break
-  default:
-    console.error('Usage: basalt <init | sync [--force] [--check] | check-theme>')
-    process.exit(1)
-}
+process.exit(run(process.argv.slice(2)))

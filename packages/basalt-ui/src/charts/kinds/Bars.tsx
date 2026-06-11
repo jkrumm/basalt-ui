@@ -16,7 +16,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects, type ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
-import { smartTicks } from '../utils/ticks'
+import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 export type BarsBar = {
   /** Field key — `getValue(d, key)` extracts the number (null = skip this slot, not domain hole). */
@@ -370,7 +370,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupWidth}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
                   />,
                 )
                 posOffset = top
@@ -390,7 +390,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupWidth}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
                   />,
                 )
                 negOffset = top
@@ -410,7 +410,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupedBarWidths[i] ?? 0}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
                   />,
                 )
               })
@@ -567,10 +567,3 @@ function BarsInner<T>(props: BarsProps<T>) {
  * hot bars kind in `React.memo` to retain the auto-memoization it had as source.
  */
 export const Bars = memo(BarsInner) as typeof BarsInner
-
-function smartTicksEvery(dates: string[], count: number): string[] {
-  if (dates.length === 0) return []
-  if (dates.length <= count) return dates
-  const step = Math.ceil(dates.length / count)
-  return dates.filter((_, i) => i % step === 0 || i === dates.length - 1)
-}

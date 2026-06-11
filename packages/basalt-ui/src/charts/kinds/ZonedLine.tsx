@@ -4,7 +4,7 @@ import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { AreaClosed, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
-import { useMemo, type ReactNode } from 'react'
+import { memo, useMemo, type ReactNode } from 'react'
 import { AreaGradient, areaFillUrl } from '../primitives/AreaGradient'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
@@ -19,7 +19,7 @@ import { ZoneRects, type ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
-import { smartTicks } from '../utils/ticks'
+import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 /** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias for back-compat. */
 export type ZonedLineZone = ZoneSpec
@@ -98,7 +98,7 @@ export type ZonedLineProps<T> = {
  * when the series has nulls; the line itself skips null points (creating
  * visual gaps).
  */
-export function ZonedLine<T>(props: ZonedLineProps<T>) {
+function ZonedLineInner<T>(props: ZonedLineProps<T>) {
   const {
     data,
     width,
@@ -298,10 +298,8 @@ export function ZonedLine<T>(props: ZonedLineProps<T>) {
   )
 }
 
-/** Variant of smartTicks that targets an exact tick count rather than deriving from width. */
-function smartTicksEvery(dates: string[], count: number): string[] {
-  if (dates.length === 0) return []
-  if (dates.length <= count) return dates
-  const step = Math.ceil(dates.length / count)
-  return dates.filter((_, i) => i % step === 0 || i === dates.length - 1)
-}
+/**
+ * Hand-memoized: React Compiler does not process the shipped dist, so the hot ZonedLine kind is
+ * wrapped in `React.memo` to retain the auto-memoization it had as source (parity with Bars).
+ */
+export const ZonedLine = memo(ZonedLineInner) as typeof ZonedLineInner
