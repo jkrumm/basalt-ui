@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "npx kill-port 7710 && astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
     "typecheck": "astro check"

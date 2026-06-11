@@ -5,6 +5,7 @@ import { defineConfig, fontProviders } from 'astro/config'
 
 export default defineConfig({
   site: 'https://basalt-ui.com',
+  server: { port: 7710, host: false },
   integrations: [
     react(),
     starlight({
@@ -73,5 +74,10 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    server: { allowedHosts: ['basalt.test'] },
+    // Astro 6 + Starlight prefetch bug (withastro/astro#15520, #15836): Vite's dep optimizer
+    // pre-bundles prefetch.js via esbuild, skipping the prefetch plugin's transform hook, so
+    // __PREFETCH_PREFETCH_ALL__ reaches the browser raw. Exclude it until the upstream fix ships.
+    optimizeDeps: { exclude: ['astro/virtual-modules/prefetch.js'] },
   },
 })

@@ -11,6 +11,14 @@ import { mergeConfig } from 'vite'
 // that the playground is the everyday iteration surface on source.
 const basaltSrc = fileURLToPath(new URL('../../packages/basalt-ui/src', import.meta.url))
 
-export default mergeConfig(basaltViteConfig({ port: 4319, version: '1.0.0', basaltSrc }), {
-  plugins: [react()],
-})
+export default mergeConfig(
+  basaltViteConfig({
+    port: 7714,
+    version: '1.0.0',
+    basaltSrc,
+    allowedHosts: ['basalt-playground.test'],
+  }),
+  {
+    plugins: [react()],
+  },
+)

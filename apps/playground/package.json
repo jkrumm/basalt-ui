@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx kill-port 4319 && vite --strictPort --port 4319",
+    "dev": "npx kill-port 7714 && vite --strictPort --port 7714",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
