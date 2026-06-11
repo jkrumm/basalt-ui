@@ -17,7 +17,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { BasaltShell, NavCountBadge, type NavLinkRenderer, type SidebarSection } from 'basalt-ui'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ChartsPage } from './demo/ChartsPage'
 import { DashboardPage } from './demo/DashboardPage'
 import { SettingsPage } from './demo/SettingsPage'
@@ -78,10 +78,13 @@ export function App() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const dark = (colorScheme === 'auto' ? 'dark' : colorScheme) === 'dark'
 
-  const go = (key: PageKey) => (e: { preventDefault: () => void }) => {
-    e.preventDefault()
-    setPage(key)
-  }
+  const go = useCallback(
+    (key: PageKey) => (e: { preventDefault: () => void }) => {
+      e.preventDefault()
+      setPage(key)
+    },
+    [],
+  )
 
   const sections = useMemo<SidebarSection[]>(
     () => [
@@ -150,7 +153,7 @@ export function App() {
         ],
       },
     ],
-    [page],
+    [page, go],
   )
 
   return (
