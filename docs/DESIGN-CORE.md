@@ -1,26 +1,31 @@
-# Basalt Design Core — The Law
+# Basalt Design Core — The Design Source (internal)
 
-This is the **universal design law** of basalt-ui: the doctrine every consumer inherits without
-re-deciding it. It governs the chart system, the token architecture, and the colour/elevation
-discipline that make a basalt app read as a calm, professional terminal rather than a toy.
+This is basalt-ui's **internal design rationale** — the universal law in full, with the influences
+and reasoning behind it. It governs the chart system, the token architecture, and the
+colour/elevation discipline that make a basalt app read as a calm, professional terminal.
+
+**It is NOT shipped to consumers.** The consumer-facing, enforceable subset is distilled into the
+shipped `basalt-*` agent rules (which `basalt init` writes into each repo) and the `/basalt:design`
+skill. This file is the source those are kept in sync with — a developer reference for building
+basalt-ui, not a file an agent loads in a consumer.
 
 It is deliberately **identity-agnostic**. It declares the _rules_ — what earns a colour, how tokens
 flow, how depth is built, what every chart composes — not the concrete hues. A consumer's own
 `DESIGN.md` instantiates the palette (the brand voltage, the per-series data dictionary) on top of
-this law.
+the shipped rules.
 
 ## Precedence
 
-When two sources disagree, higher wins:
+In a **consumer repo** (where this file does not exist) the law resolves highest-wins:
 
 ```
-consumer DESIGN.md deltas  >  DESIGN-CORE.md  >  shipped basalt-* rules  >  skills / habit
+consumer DESIGN.md deltas  >  shipped basalt-* rules  >  skills / habit
 ```
 
 A consumer `DESIGN.md` may **override** any instantiation choice (its palette, its accent families,
-its per-metric assignments) — but it **extends**, never contradicts, the law below. The shipped
-`basalt-*` agent rules are the machine-checkable subset of this law; the skills are guidance that
-defers to both. Where a skill or habit conflicts with this file, this file wins.
+its per-metric assignments) — but it **extends**, never contradicts, the rules. **This file** is the
+source those rules are distilled from: when it and a shipped rule disagree, fix the rule to match
+(or update both deliberately).
 
 > **This file governs the system, not the data.** It declares the rules, the tiers, and the
 > contract. The **per-metric colour assignments** — which series gets which hue — are a data

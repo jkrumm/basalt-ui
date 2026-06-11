@@ -10,6 +10,7 @@
     "dev:playground": "bun --filter @basalt-ui/playground dev",
     "dev:marketing": "bun --filter marketing dev",
     "dev": "bun --filter @basalt-ui/playground dev",
+    "dev:plugin": "claude --plugin-dir ./plugins/basalt",
     "fmt": "oxfmt packages apps/playground *.json *.md",
     "fmt:check": "oxfmt --check packages apps/playground *.json *.md",
     "format": "bun run fmt",

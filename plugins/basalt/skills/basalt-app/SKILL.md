@@ -8,28 +8,32 @@ when-to-use: User is adding basalt-ui to a new or existing app, asks how to set 
 CLI subcommands — `basalt init` (first run) and `basalt sync` (refresh) — and explains the wiring
 they don't do for you (provider, shell, vite). All of it via `bunx basalt` (Bun runtime).
 
-## The plugin and `basalt init` are a MANDATORY PAIR (read this first)
+## Two channels: the plugin (skills) + `basalt init` (repo doctrine)
 
-This plugin ships **skills only**. A Claude Code plugin **cannot** ship project context — not a
-`CLAUDE.md`, not `.claude/rules/`, not a `DESIGN.md`. That is by design: skills travel with the
-*user*; doctrine must live in the *repo*. So the agentic layer is **two channels that are
-worthless apart**:
+The agentic layer is two complementary channels with different lifecycles:
 
 | Channel | Ships | Mechanism |
 |-|-|-|
-| **Plugin** (this) | The three skills: `/basalt:design`, `/basalt:charts`, `/basalt:app` | repo-as-marketplace + `enabledPlugins` in `.claude/settings.json` |
-| **`basalt init`** | The doctrine: `.claude/rules/basalt-*.md`, the managed CLAUDE block, the thin `DESIGN.md`, `DESIGN-CORE.md`, toolchain templates | `bunx basalt init` writes them into the repo |
+| **Plugin** (this) | The three skills: `/basalt:design`, `/basalt:charts`, `/basalt:app` | installed **once at user scope** — available in every project, auto-updates |
+| **`basalt init`** | The repo doctrine: `.claude/rules/basalt-*.md`, the managed CLAUDE block, the thin `DESIGN.md`, oxfmt/lefthook/CI templates | `bunx basalt init` writes them into each repo |
 
-- **Plugin without `basalt init` = skills with no doctrine to defer to.** `/basalt:design`'s very
-  first step is "load the consumer `DESIGN.md`, then `DESIGN-CORE.md`" — neither exists until
-  `init` writes them. The skill degrades to generic advice with nothing project-specific to obey.
-- **`basalt init` without the plugin = doctrine no agent reaches via a slash command.** The rules
-  still load as project context, but the design/charts/app *workflows* live in the skills.
+A Claude Code plugin **cannot** ship project context (no `CLAUDE.md`, no `.claude/rules/`, no
+`DESIGN.md`) — that is why doctrine is a separate, per-repo `init`. And a project `.claude/settings.json`
+**cannot auto-install** a plugin (it only *enables* an already-installed one), so the plugin is a
+one-time **user-scope** install, not something `init` writes per project.
 
-Therefore: **always do both.** When scaffolding, run `bunx basalt init` AND ensure the plugin is
-enabled (the `init` settings stanza wires `extraKnownMarketplaces` + `enabledPlugins` so this is one
-step). If a user has only one, point out the missing half — this is the single most common setup
-mistake and the skills silently underperform without the pair.
+- **Install the plugin once (user scope → every project, auto-updates):**
+  ```
+  claude plugin marketplace add jkrumm/basalt-ui
+  claude plugin install basalt@basalt-ui     # enable auto-update when prompted
+  ```
+  Equivalently, add it to `~/.claude/settings.json` with `"autoUpdate": true` on the marketplace.
+- **Run `bunx basalt init` once per consumer repo** for the doctrine, then `bunx basalt sync` after
+  a basalt-ui upgrade.
+
+Skills without `init` degrade to generic advice (no `DESIGN.md`/rules to obey); `init` without the
+plugin still loads the rules as project context, but the design/charts *workflows* aren't a slash
+command away. Do both: plugin once, `init` per repo.
 
 ## First-time scaffold: `bunx basalt init`
 
@@ -41,10 +45,8 @@ mistake and the skills silently underperform without the pair.
 - A managed `<!-- basalt:begin --> ... <!-- basalt:end -->` block in `CLAUDE.md`: stack facts, the
   **DESIGN.md-is-law** pointer, and the **frontend-design restraint override** (in a dashboard, the
   bold move is calm — defer to `/basalt:design`, not generic "make it striking" instincts).
-- A **thin** `DESIGN.md` instantiation ("extends basalt-ui core; deltas only"): identity
-  confirmation, the series dictionary, app deviations. Plus `DESIGN-CORE.md` (the universal law).
-- The `.claude/settings.json` stanza: `extraKnownMarketplaces` + `enabledPlugins` for the `basalt`
-  plugin (this is the half that makes the plugin auto-available — the pairing, automated).
+- A **thin** `DESIGN.md` seed (deltas only on top of the `basalt-*` rules): identity confirmation,
+  the series dictionary, app deviations. The CLAUDE block `@`-imports it, so it auto-loads.
 - Toolchain templates with no `extends` mechanism: `oxfmt.json`, `lefthook.yml`, `check.yml`. (The
   oxlint preset is consumed via `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`, not
   copied.)
@@ -77,7 +79,7 @@ import 'basalt-ui/styles.css'   // @layer basalt base styles, iOS input safety n
 ```
 
 Lint wires as `oxlint . && basalt check-theme` — the theme guard is the teeth behind the token
-doctrine (`check-theme` is the one CLI subcommand that is fully real today). The consumer series
+doctrine. The consumer series
 file (`lib/series.ts`) is the single guard-exempt palette source — see `/basalt:charts`.
 
 ## Refresh: `bunx basalt sync`
@@ -98,11 +100,11 @@ The thin `DESIGN.md` is yours to edit (deltas only) and `sync` respects local ed
 
 After scaffolding, the doctrine resolves in this order (highest wins):
 
-> consumer `DESIGN.md` (deltas) > `DESIGN-CORE.md` > shipped `basalt-*` rules > skills
+> consumer `DESIGN.md` (deltas) > shipped `basalt-*` rules > skills
 
-So an app deviation goes in `DESIGN.md`; a universal rule lives in `DESIGN-CORE.md`; enforcement
-detail in the rules; and the skills (`/basalt:design`, `/basalt:charts`) are the method that obeys
-all of it.
+So an app deviation goes in `DESIGN.md`; the universal law and its enforcement live in the
+`basalt-*` rules; and the skills (`/basalt:design`, `/basalt:charts`) are the method that obeys
+both.
 
 ## Checklist
 
@@ -111,15 +113,15 @@ all of it.
 - `BasaltProvider` wraps the app; `createBasaltTheme` used for theme deltas; `basalt-ui/styles.css`
   imported.
 - `basaltViteConfig` adopted; `oxlint . && basalt check-theme` is the lint command.
-- A thin `DESIGN.md` (deltas) + `DESIGN-CORE.md` + the six `basalt-*` rules + the managed CLAUDE
-  block are present.
+- A thin `DESIGN.md` (deltas) + the six `basalt-*` rules + the managed CLAUDE block are present.
 - `lib/series.ts` exists as the one guard-exempt series source (for any app metric colors).
 - `basalt sync --check` wired in CI (recommended) to catch drift on future upgrades.
 
 ## Notes
 
-- `init` / `sync` are S5 deliverables; today they print a not-yet-implemented stub. `check-theme`
-  is real. When wiring CI now, you can use `bunx basalt check-theme` immediately; treat `init`/
-  `sync` as the scaffold contract being built out.
+- `init`, `sync`, and `check-theme` are all **real**. `init` scaffolds the doctrine and prints a
+  one-time hint to install the `basalt` plugin; `sync` reconciles via a sha256 three-way diff
+  (`--check` is a CI drift gate, `--force` overwrites local edits); `check-theme` is the palette
+  guard. All via `bunx basalt …`.
 - The framework ships **no** icon or notification dep — pass icons as `ReactNode` and wire toasts
   yourself (e.g. `ThemeLabControls`' `copyIcon` / `onCopy`).

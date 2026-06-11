@@ -6,9 +6,5 @@
   "author": {
     "name": "jkrumm"
   },
-  "skills": [
-    "./skills/basalt-design/SKILL.md",
-    "./skills/basalt-charts/SKILL.md",
-    "./skills/basalt-app/SKILL.md"
-  ]
+  "skills": ["./skills/basalt-design", "./skills/basalt-charts", "./skills/basalt-app"]
 }

@@ -16,12 +16,10 @@ one that exists. Lower layers fill gaps; they never override a higher layer.
 1. **Consumer `DESIGN.md`** (repo root) — the thin, app-specific instantiation. Identity
    confirmation, the series dictionary, app deviations. **This wins on every conflict.** It is the
    Google-spec convention (YAML token front matter + Markdown prose, sibling to `CLAUDE.md`).
-2. **`DESIGN-CORE.md`** (shipped by basalt-ui, copied into the consumer by `basalt init`) — the
-   universal law: Blueprint v6 palette, one-hue-per-metric, neutral structure, gradient defaults,
-   the three-tier token contract.
-3. **Shipped `basalt-*` rules** (`.claude/rules/basalt-{tokens,charts,mantine,state}.md`) —
-   enforcement detail.
-4. **This skill** — only the loop and the judgment, where the above are silent.
+2. **Shipped `basalt-*` rules** (`.claude/rules/basalt-{tokens,charts,mantine,state}.md`) — the
+   universal law AND its enforcement: Blueprint v6 palette, one-hue-per-metric, neutral structure,
+   gradient defaults, the three-tier token contract, the elevation/density doctrine.
+3. **This skill** — only the loop and the judgment, where the above are silent.
 
 If a consumer `DESIGN.md` does not exist yet, the app has not been scaffolded — run `/basalt:app`
 (it wraps `basalt init`, which writes the thin `DESIGN.md` and the `basalt-*` rules). Do not invent
