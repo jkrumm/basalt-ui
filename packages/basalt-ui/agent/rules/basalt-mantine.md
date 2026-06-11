@@ -71,6 +71,24 @@ Route components import chart primitives directly from `basalt-ui/charts` — ne
   if you install/render it.
 - **Responsive chart sizing**: `useElementSize` from `@mantine/hooks` (replaces `@visx/responsive`).
 
+## Elevation, density & shape
+
+basalt-ui targets dense, professional surfaces (a terminal, not a marketing page). The depth and
+shape doctrine lives here; the spacing/radius/type **tokens** are in basalt-tokens.md.
+
+- **Density is the point.** Sections separate by surface change and hairlines, not by large air.
+  Card interior padding defaults to the `md` spacing step.
+- **Depth = surface + hairline, never drop shadows** (Linear/Carbon discipline). Elevation tiers:
+  0 flat (no border/shadow — body, page bg); 1 surface (`surface-1` on `canvas` — cards, panels);
+  2 elevated (`surface-2` + 1px hairline — chart areas, tooltips, lifted cards); 3 focus (2px
+  primary outline — focused control). `Card`/`Paper` default to `withBorder` with **no** shadow;
+  `VX.shadowCard` is the single soft card shadow (`none` on dark) — use it deliberately, never as a
+  default.
+- **Tight radii read precise/technical** (Linear): `sm` for controls, `md` for cards, `pill` for
+  badges. Consume the token, never a raw number (basalt-tokens.md).
+- **Type is carried by size + weight** — system-sans (no display/body split), numbers in the mono
+  tabular stack so metric columns align (a Coinbase pattern).
+
 ## Icons
 
 basalt-ui takes icons as `ReactNode` (no icon dependency shipped). Use a single icon library across the

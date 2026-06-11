@@ -5,8 +5,8 @@
  * fails on colors bypassing the central palette.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
- * Claude Code rules, a settings stanza, a managed CLAUDE.md block, a DESIGN.md seed, and the
- * toolchain templates (oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
+ * Claude Code rules, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain templates
+ * (oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
  * idempotent three-way reconciliation. Dependency-free — Node/Bun built-ins only.
  *
  * Runtime-agnostic (Node or Bun) — built-ins only, no `bun`-module import, so the exported API is
@@ -342,19 +342,6 @@ function managedFiles(): ManagedFile[] {
     render: (ctx) => readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`),
   }))
 
-  const settings: ManagedFile = {
-    dest: '.claude/settings.json',
-    strategy: 'merge',
-    source: 'agent/templates/settings.stanza.json',
-    // For merge, render() returns the *stanza* (placeholders resolved) — the hashed/managed unit,
-    // not the merged file. The writer merges it into the live consumer file at apply time.
-    render: (ctx) => {
-      const tpl = readSource(ctx.pkgRoot, 'agent/templates/settings.stanza.json')
-      if (tpl === null) return null
-      return fillTemplate(tpl, ctx.vars)
-    },
-  }
-
   const claudeBlock: ManagedFile = {
     dest: 'CLAUDE.md',
     strategy: 'block',
@@ -400,7 +387,7 @@ function managedFiles(): ManagedFile[] {
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/check.yml'),
   }
 
-  return [...rules, settings, claudeBlock, design, oxfmt, lefthook, ci]
+  return [...rules, claudeBlock, design, oxfmt, lefthook, ci]
 }
 
 type Manifest = {
@@ -590,6 +577,15 @@ export function init(cwd: string = process.cwd()): number {
       `basalt init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
   }
+  // Skills ship via the basalt plugin, not init (a plugin can't write repo doctrine, and project
+  // settings can't auto-install a plugin). Install it once at user scope — applies to every project
+  // and auto-updates — so per-project setup stays just `basalt init`.
+  const mp = `${ctx.vars.MARKETPLACE_OWNER}/${ctx.vars.MARKETPLACE_REPO}`
+  console.log(
+    `\nSkills: install the basalt plugin once (user scope → all projects, then auto-updates):\n` +
+      `  claude plugin marketplace add ${mp}\n` +
+      `  claude plugin install basalt@${ctx.vars.MARKETPLACE_REPO}   (enable auto-update when prompted)`,
+  )
   return 0
 }
 

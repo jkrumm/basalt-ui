@@ -2,7 +2,7 @@
 
 **Inherits from**: `../../CLAUDE.md` (monorepo conventions).
 
-The only published package (npm: `basalt-ui`, v1.0.0). An opinionated framework for Mantine-based
+The only published package (npm: `basalt-ui`; the breaking 1.0 ships from this branch). An opinionated framework for Mantine-based
 React apps, extracted from argo: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an
 app shell, a visx chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
 raw toolchain config presets, and a `basalt` CLI.
@@ -11,12 +11,12 @@ raw toolchain config presets, and a `basalt` CLI.
 > typography plugin, spacing-restriction strategy) is **gone**. Breaking 1.0 (`feat!:`), same npm
 > name; `./css` and `./starlight` exports dropped.
 
-## Staged migration (READ FIRST)
+## Status
 
-This is **S0** of a 5-stage argo extraction (S0 pivot → S1 toolchain → S2 charts/tokens →
-S3 theme → S4 shell → S5 agentic + vite). `src/**` is currently **compiling stubs** with
-argo-grounded, stable signatures — real bodies land in S2–S4. The public API shapes documented
-below are real; their implementations are placeholders. Plan against `../../docs/BLUEPRINT.md`.
+The full S0→S5 argo extraction is **implemented** on `feat/s0-mantine-pivot`: tokens, charts,
+theme/provider/theme-lab, the router-agnostic shell, the vite preset, the agentic layer, and the
+real `init`/`sync`/`check-theme` CLI. `src/**` is real code, not stubs. The historical plan lives
+in `../../docs/BLUEPRINT.md`.
 
 ## Published surface (subpath exports)
 
@@ -45,16 +45,19 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 
 ```bash
 bun run build
-# = tsup && cp src/styles.css dist/styles.css && tsc --emitDeclarationOnly --declarationMap
+# = tsup && tsc --emitDeclarationOnly --declarationMap
+#   && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs
 ```
 
-- **tsup** with `bundle: false`, `splitting: false`, `dts: false`, `entry: src/**/*.{ts,tsx}`,
-  `loader: { '.css': 'copy' }` — transpiles each module in place, mirroring the `src/` tree to
-  `dist/` so subpath exports resolve to real files. `bundle: false` alone only emits entry modules
-  and drops CSS, so the glob entry + `splitting: false` are required.
-- `loader: { '.css': 'copy' }` copies component-imported `*.module.css` verbatim and rewrites the
-  import path (the S4 CSS-modules path). `src/styles.css` is imported by no module, so the build
-  script **copies it explicitly** — don't remove that `cp`.
+- **tsup** with `bundle: false`, `splitting: false`, `dts: false`, `entry: src/**/*.{ts,tsx}` —
+  transpiles each module in place, mirroring the `src/` tree to `dist/` so subpath exports resolve
+  to real files. `bundle: false` alone only emits entry modules, so the glob entry + `splitting:
+false` are required.
+- **`scripts/copy-assets.mjs`** mirrors every `src/**/*.css` (plus co-located `*.module.css.d.ts`)
+  into `dist/` — under `bundle: false` esbuild leaves `.module.css` imports verbatim for the
+  consumer's bundler, and `styles.css` is imported by no module, so both must be copied.
+- **`scripts/fix-esm-extensions.mjs`** fully-specifies relative ESM imports in the unbundled `dist`
+  (`./x` → `./x.js`, dir → `/index.js`) so Node resolves the subpaths — the pack-test enforces it.
 - **tsc owns declarations** (`--emitDeclarationOnly --declarationMap`) — running tsup's `dts` too
   fights it. `.d.ts` + maps ship alongside.
 - The tarball ships `dist/` + `src/` + `configs/` + `bin/` so go-to-definition lands in real source.
@@ -130,8 +133,12 @@ One bin: `basalt init | sync | check-theme` (Bun runtime).
   palette. Reads config from the consumer package.json `"basalt"` key
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); argo's hardcoded values are the
   defaults. Ships as `bunx basalt check-theme`. Consumer lint = `oxlint . && basalt check-theme`.
-- `init` / `sync` — **S5 stubs** (scaffold rules, settings stanza, CLAUDE.md block, toolchain
-  templates; sync does three-way diff). Not functional yet.
+- `init` / `sync` — **real**. `init` scaffolds the repo doctrine (`.claude/rules/basalt-*.md`, the
+  managed CLAUDE.md block, a `DESIGN.md` seed, oxfmt/lefthook/CI templates) and prints a one-time
+  hint to install the `basalt` plugin (skills) at user scope. `sync` reconciles them against
+  `.basalt/manifest.json` via a sha256 three-way diff (copy/block/seed strategies; `--check` is a
+  CI drift gate, `--force` overwrites local edits). `init` does NOT write `.claude/settings.json` —
+  the plugin installs at user scope, not per project.
 
 ## Toolchain (oxlint + oxfmt — not Biome/Prettier)
 
@@ -147,4 +154,5 @@ indent. The `configs/` presets (`oxlint.json`, `oxfmt.json`, `tsconfig.{base,rea
 - Respect the Mantine-free boundary and the `@visx/*`-only-in-charts rule.
 - Don't reintroduce Tailwind, OKLCH foundation palettes, ShadCN/Tremor/Starlight compat, or any
   `import.meta.env` reference in shipped code.
-- When adding API surface in S2–S4, keep signatures grounded in the argo source the stub cites.
+- When extending the public API, keep it grounded in the argo source it was extracted from, and
+  update this file in the same commit.
