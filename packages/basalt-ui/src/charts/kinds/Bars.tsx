@@ -370,7 +370,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupWidth}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
                 )
                 posOffset = top
@@ -390,7 +390,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupWidth}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
                 )
                 negOffset = top
@@ -410,7 +410,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                     width={groupedBarWidths[i] ?? 0}
                     height={yBottom - yTop}
                     fill={b.color}
-                    fillOpacity={(barOpacity ? barOpacity(d, b.key) : 0.85) * dimOpacity(b.key)}
+                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
                 )
               })
