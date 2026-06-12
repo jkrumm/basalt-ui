@@ -1,10 +1,18 @@
 /**
- * palette.ts — Blueprint-derived single source of truth for ALL framework color
+ * palette.ts — Basalt single source of truth for ALL framework color
  * (charts via VX tokens + chrome via the Mantine theme).
  *
- * Design rules baked in (see the dataviz rule):
- *  - Muted, UI-tuned hues only (Blueprint v6) — never raw Material/AntD/Tailwind defaults.
- *  - Limited, harmonious hue range reused across every page → tabs feel like one app.
+ * Identity: volcanic charcoal. The neutral ramps are WARM-NEUTRAL (a whisper of warmth,
+ * blue channel <= red channel) so chrome never reads as cool/steel/blue. The accent is a
+ * single MUTED slate-blue used sparingly (neutral-dominant: ~60/30/10) — never a saturated
+ * "Bootstrap blue" flooding the UI. Semantic/status hues stay UI-tuned (muted, not raw
+ * Material/AntD/Tailwind defaults).
+ *
+ * Design rules baked in (see the basalt design doctrine):
+ *  - Warm-neutral grays carry ~90% of the surface — chrome is monochrome, accent only points.
+ *  - The accent (`blue`) is desaturated on purpose; it lives on the ONE primary action per view,
+ *    focus rings, links, and small status pops ONLY — never on active nav (that's a neutral fill),
+ *    borders, large fills, or every icon.
  *  - Each metric is ONE hue; multi-series only where data is genuinely categorical.
  *  - Series colors are per-theme PAIRS: a lighter shade on dark (no glow/bleed on dark
  *    backgrounds), a deeper shade on light (enough contrast). Hue identity stays constant.
@@ -15,15 +23,24 @@
 
 import type { ColorPair } from './index'
 
-/** Blueprint v6 palette. Each family is shade 1→5 (index 0 = darkest, 4 = lightest). */
+/**
+ * Basalt palette. Each family is shade 1→5 (index 0 = darkest, 4 = lightest).
+ * Neutrals are warm-neutral charcoal (blue channel <= red channel — no cool/steel cast).
+ * `blue` is the single muted slate accent (kept low-saturation on purpose).
+ */
 export const BP = {
-  black: '#111418',
+  black: '#121110',
   white: '#ffffff',
-  darkGray: ['#1c2127', '#252a31', '#2f343c', '#383e47', '#404854'],
-  gray: ['#5f6b7c', '#738091', '#8f99a8', '#abb3bf', '#c5cbd3'],
-  lightGray: ['#d3d8de', '#dce0e5', '#e5e8eb', '#edeff2', '#f6f7f9'],
+  // Warm-neutral charcoal: bg, panel, elevated, hairline, strong-hairline.
+  darkGray: ['#191917', '#1f1f1d', '#262624', '#33322f', '#3d3c39'],
+  // Mid greys for text / lines (warm-neutral, not blue-grey).
+  gray: ['#6e6b65', '#847f78', '#9b958d', '#b3ada4', '#cac4bb'],
+  // Light surfaces: near-neutral off-whites + soft hairlines. Only a whisper of warmth (last
+  // digit) so it reads clean/modern — NOT creamy/yellow — while never going cool/blue.
+  lightGray: ['#dededc', '#ededec', '#f2f2f1', '#f6f6f5', '#fafafa'],
 
-  blue: ['#184a90', '#215db0', '#2d72d2', '#4c90f0', '#8abbff'],
+  // Muted slate-blue accent (~50% sat vs Blueprint's ~76%). Subtle, Notion/Linear-calm.
+  blue: ['#324a66', '#3c5b7e', '#4f78a4', '#7099c4', '#a5c1dd'],
   green: ['#165a36', '#1c6e42', '#238551', '#32a467', '#72ca9b'],
   orange: ['#77450d', '#935610', '#c87619', '#ec9a3c', '#fbb360'],
   red: ['#8e292c', '#ac2f33', '#cd4246', '#e76a6e', '#fa999c'],
@@ -40,7 +57,7 @@ export const BP = {
 } as const
 
 /**
- * Pick a per-theme shade pair from a Blueprint family.
+ * Pick a per-theme shade pair from a Basalt family.
  * Defaults: shade 3 (index 2) on light, shade 4 (index 3) on dark — the dark-mode lift
  * that stops saturated hues from glowing. Override indices for ordered/sibling cases.
  */
@@ -70,29 +87,33 @@ export const STATUS = {
 
 /**
  * Theme-resolved neutrals (line / axis / grid / tooltip chrome). Mirrors the old
- * useVxTheme() outputs, now sourced from Blueprint grays.
+ * useVxTheme() outputs, sourced from the Basalt warm-neutral greys + warm near-black.
  */
 export const NEUTRAL = {
   line: { light: BP.gray[0], dark: BP.gray[4] }, // primary line
   line2: { light: BP.gray[1], dark: BP.gray[2] }, // secondary line
-  axis: { light: 'rgba(17,20,24,0.6)', dark: 'rgba(255,255,255,0.6)' },
-  axisStroke: { light: 'rgba(17,20,24,0.12)', dark: 'rgba(255,255,255,0.12)' },
-  grid: { light: 'rgba(17,20,24,0.07)', dark: 'rgba(255,255,255,0.06)' },
-  crosshair: { light: 'rgba(17,20,24,0.32)', dark: 'rgba(255,255,255,0.42)' },
+  axis: { light: 'rgba(18,17,16,0.6)', dark: 'rgba(255,255,255,0.6)' },
+  axisStroke: { light: 'rgba(18,17,16,0.12)', dark: 'rgba(255,255,255,0.12)' },
+  grid: { light: 'rgba(18,17,16,0.07)', dark: 'rgba(255,255,255,0.06)' },
+  crosshair: { light: 'rgba(18,17,16,0.32)', dark: 'rgba(255,255,255,0.42)' },
   dotStroke: { light: BP.white, dark: BP.darkGray[1] }, // matches chart-area bg
-  tooltipBg: { light: BP.white, dark: 'rgba(28,33,39,0.96)' },
-  tooltipText: { light: 'rgba(17,20,24,0.88)', dark: 'rgba(255,255,255,0.88)' },
-  tooltipMuted: { light: 'rgba(17,20,24,0.5)', dark: 'rgba(255,255,255,0.5)' },
+  tooltipBg: { light: BP.white, dark: 'rgba(31,31,29,0.96)' },
+  tooltipText: { light: 'rgba(18,17,16,0.88)', dark: 'rgba(255,255,255,0.88)' },
+  tooltipMuted: { light: 'rgba(18,17,16,0.5)', dark: 'rgba(255,255,255,0.5)' },
   tooltipBorder: { light: `1px solid ${BP.lightGray[1]}`, dark: 'none' },
-  tooltipShadow: { light: '0 2px 8px rgba(17,20,24,0.1)', dark: '0 2px 8px rgba(0,0,0,0.35)' },
+  tooltipShadow: { light: '0 2px 8px rgba(18,17,16,0.1)', dark: '0 2px 8px rgba(0,0,0,0.35)' },
   // Base neutral for hairlines / muted text / overlays — apply opacity via alpha().
   neutral: { light: BP.gray[0], dark: BP.gray[2] },
 } as const
 
-/** App chrome surfaces — Blueprint dark/light neutral ramps for the Mantine theme. */
+/** App chrome surfaces — Basalt warm-neutral dark/light ramps for the Mantine theme. */
 export const SURFACE = {
   bg: { light: BP.lightGray[4], dark: BP.darkGray[0] }, // page background
   panel: { light: BP.white, dark: BP.darkGray[1] }, // cards
   elevated: { light: BP.white, dark: BP.darkGray[2] }, // chart area, lifted
   border: { light: BP.lightGray[1], dark: BP.darkGray[3] },
+  // Subtle/hover/striped/track surface — distinct from `panel`: a faint step BELOW white on light
+  // (panel is white, so hover must go darker) and ABOVE panel on dark (hover goes lighter). Used by
+  // Table hover/striped, Code, SegmentedControl track, Tabs/Accordion/Menu hover.
+  subtle: { light: BP.lightGray[2], dark: BP.darkGray[2] }, // #f2f2f1 / #262624
 } as const

@@ -2,11 +2,11 @@
  * Basalt Mantine theme.
  *
  * Grounded in argo `apps/dashboard/src/theme.ts`: a `createTheme` base reskinned to the
- * Blueprint palette so the Mantine chrome shares the charts' identity, plus a
+ * Basalt warm-neutral palette so the Mantine chrome shares the charts' identity, plus a
  * `cssVariablesResolver` that binds Mantine's surface system to the same `--vx-*` variables
  * the charts use, so chrome and charts draw from one scheme-reactive identity.
  *
- * Every Mantine accent (red/teal/yellow/…) is overridden with a Blueprint family, so existing
+ * Every Mantine accent (red/teal/yellow/…) is overridden with a Basalt family, so existing
  * `color="teal"`-style props become on-palette with zero call-site changes.
  *
  * theme.ts is allowed to import the pure palette DATA from `../tokens` — the Mantine-free
@@ -22,6 +22,7 @@ import {
   type MantineColorsTuple,
   type MantineThemeOverride,
   mergeThemeOverrides,
+  NavLink,
   NumberInput,
   Paper,
   PasswordInput,
@@ -31,7 +32,7 @@ import {
 } from '@mantine/core'
 import { BP, NEUTRAL, SURFACE } from '../tokens'
 
-// Blueprint families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
+// Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
 function hexToRgb(h: string): [number, number, number] {
   const n = Number.parseInt(h.slice(1), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
@@ -55,23 +56,23 @@ function ramp10(stops: readonly string[]): MantineColorsTuple {
   return out as unknown as MantineColorsTuple
 }
 
-// Blueprint neutral ramp at the indices Mantine reads:
+// Basalt warm-neutral charcoal ramp at the indices Mantine reads:
 // text=dark[0], dimmed=dark[2], border=dark[4], hover=dark[5], surface=dark[6], body=dark[7].
-const bpDark: MantineColorsTuple = [
-  '#c5cbd3',
-  '#abb3bf',
-  '#8f99a8',
-  '#738091',
-  '#383e47',
-  '#2f343c',
-  '#252a31',
-  '#1c2127',
-  '#181c22',
-  '#111418',
+const basaltDark: MantineColorsTuple = [
+  '#e9e7e2', // text — warm off-white
+  '#cac4bb',
+  '#9b958d', // dimmed
+  '#847f78',
+  '#3d3c39', // border
+  '#33322f', // hover
+  '#1f1f1d', // surface (panel)
+  '#191917', // body (page bg)
+  '#161614',
+  '#121110',
 ]
 
 /**
- * Basalt base theme — Mantine `createTheme` reskinned to Blueprint.
+ * Basalt base theme — Mantine `createTheme` reskinned to the Basalt warm-neutral palette.
  *
  * Inputs default to `md` (16px font) so iOS Safari never zooms the viewport on focus. The base
  * `Input` default does not cascade to TextInput/Select/etc. (each component resolves its own
@@ -84,7 +85,7 @@ export const baseTheme: MantineThemeOverride = createTheme({
   autoContrast: true,
   luminanceThreshold: 0.45,
   white: '#ffffff',
-  black: '#111418',
+  black: '#121110',
   // Tight, precise radii (Linear/Carbon). v9's default is `md` (8px); Basalt pins `sm` (4px) for
   // buttons/inputs/badges and bumps cards to `md` (8px).
   defaultRadius: 'sm',
@@ -95,10 +96,12 @@ export const baseTheme: MantineThemeOverride = createTheme({
   // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
   // defaults. Values match Mantine v9 today (a zero-pixel ownership step). 10 12 16 20 32.
   spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.25rem', xl: '2rem' },
-  // 2 4 8 16 32
+  // 2 4 8 16 32. NOTE: `md` (0.5rem = 8px) deliberately MIRRORS the Mantine-free `--vx-radius-card`
+  // (8px) so a Mantine card and a charts `ChartCard` share one corner radius — keep them in lockstep
+  // (the token is the authoritative 8px; this scale is the rem mirror). See tokens `VX.radiusCard`.
   radius: { xs: '0.125rem', sm: '0.25rem', md: '0.5rem', lg: '1rem', xl: '2rem' },
   colors: {
-    dark: bpDark,
+    dark: basaltDark,
     gray: ramp10(BP.gray),
     blue: ramp10(BP.blue),
     cyan: ramp10(BP.cerulean),
@@ -116,8 +119,52 @@ export const baseTheme: MantineThemeOverride = createTheme({
   components: {
     // Depth = surface change + 1px hairline, never a drop shadow. Cards sit at md (8px) while
     // controls stay tight at sm (4px). The hairline is --vx-surface-border.
-    Card: Card.extend({ defaultProps: { withBorder: true, radius: 'md' } }),
-    Paper: Paper.extend({ defaultProps: { withBorder: true } }),
+    // ONE card identity, enforced at the theme so NO component can diverge. Every card-like
+    // surface — Mantine `Card`, a bare `Paper` used as a card, and the Mantine-free `ChartCard` —
+    // resolves to the SAME three tokens:
+    //   • background → `--vx-surface-panel` (the white/elevated panel, NOT the page body). Mantine
+    //     defaults Paper/Card bg to `--mantine-color-body` (the page bg `--vx-surface-bg`), which
+    //     would make a card blend into the page and read as a bare outlined box — so we force the
+    //     panel surface here.
+    //   • border    → `--vx-surface-border` (via `withBorder` → `--mantine-color-default-border`).
+    //   • radius    → `md` (8px) = `--vx-radius-card`.
+    // This is the single source the user's "strict border + background across components" demands;
+    // the `raw-surface` guard then stops consumers re-overriding any of it inline.
+    Card: Card.extend({
+      defaultProps: { withBorder: true, radius: 'md' },
+      styles: { root: { backgroundColor: 'var(--vx-surface-panel)' } },
+    }),
+    Paper: Paper.extend({
+      defaultProps: { withBorder: true, radius: 'md' },
+      styles: { root: { backgroundColor: 'var(--vx-surface-panel)' } },
+    }),
+    // "Ink earns its color" — a nav selection is UI state, not the identity accent. The active
+    // item is a QUIET neutral surface fill (scheme-adaptive color-mix of --vx-neutral), never the
+    // blue. Forced here at the THEME level (via NavLink's --nl-* vars) so it holds for every render
+    // path — including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell
+    // CSS module. This is what keeps "blue active nav everywhere" from ever coming back.
+    NavLink: NavLink.extend({
+      vars: () => ({
+        root: {
+          '--nl-bg': 'color-mix(in srgb, var(--vx-neutral) 13%, transparent)',
+          '--nl-color': 'var(--mantine-color-text)',
+          '--nl-hover': 'color-mix(in srgb, var(--vx-neutral) 8%, transparent)',
+          '--nl-padding': '2px 8px',
+        },
+        children: {},
+      }),
+      // Dense, rounded nav rows — applied at the THEME level so they survive EVERY render path,
+      // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
+      // module (the module's `.link` only reaches the shell's own fallback `<NavLink>`). Same
+      // reasoning as the `--nl-*` fill above: layout is single-sourced here, not in two places.
+      styles: {
+        root: {
+          minHeight: 24,
+          borderRadius: '6px',
+          '&[data-active]': { fontWeight: 600 },
+        },
+      },
+    }),
     Input: Input.extend({ defaultProps: { size: 'md' } }),
     TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
     NumberInput: NumberInput.extend({ defaultProps: { size: 'md' } }),
@@ -154,6 +201,21 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.light})`,
     '--mantine-color-default-border': `var(--vx-surface-border, ${SURFACE.border.light})`, // the hairline
     '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
+    '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.light})`,
+    // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
+    // `--mantine-color-default-*`; each hardcodes a RAW ramp step (`--mantine-color-gray-{2,3,4}`
+    // on light) directly — which is why AppShell/Table/Input/Divider/Tabs/Popover/Accordion borders
+    // render an off-system `#aba59c` while cards use the hairline. Collapse the border-class ramp
+    // steps onto the ONE hairline token so EVERY component's border is identical and the agent
+    // cannot reintroduce a divergent border. (Hover/subtle BG steps are handled below.)
+    '--mantine-color-gray-2': `var(--vx-surface-border, ${SURFACE.border.light})`,
+    '--mantine-color-gray-3': `var(--vx-surface-border, ${SURFACE.border.light})`,
+    '--mantine-color-gray-4': `var(--vx-surface-border, ${SURFACE.border.light})`,
+    // Hover/subtle/striped/track surfaces read `gray-0/1` raw → the dedicated subtle token (a faint
+    // step below white, so hover is actually visible on white panels). Dark hover uses the
+    // `basaltDark` dark-5/6/7 steps, already on-identity.
+    '--mantine-color-gray-0': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
+    '--mantine-color-gray-1': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
   },
   dark: {
     '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.dark})`,
@@ -161,6 +223,11 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.dark})`,
     '--mantine-color-default-border': `var(--vx-surface-border, ${SURFACE.border.dark})`,
     '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
+    '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.dark})`,
+    // Dark components read `--mantine-color-dark-4` (border) raw. The `basaltDark` tuple already
+    // sets dark-4, but to a slightly lighter step than the hairline token, so layout borders read
+    // marginally heavier than card borders. Pin dark-4 to the SAME hairline token for parity.
+    '--mantine-color-dark-4': `var(--vx-surface-border, ${SURFACE.border.dark})`,
   },
 })
 

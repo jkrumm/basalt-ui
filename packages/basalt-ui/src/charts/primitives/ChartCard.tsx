@@ -22,20 +22,27 @@ function InfoIcon({ title }: { title: string }) {
 }
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
+// Flat by design — depth is the 1px hairline, never a drop shadow — so a ChartCard reads
+// IDENTICALLY to a Mantine Card/Paper (same border token, same radius token, no shadow, no
+// intrinsic margin; outer spacing comes from the parent Stack/SimpleGrid gap).
 const cardStyle = {
   border: `1px solid ${VX.surface.border}`,
-  borderRadius: 8,
-  marginBottom: 16,
+  borderRadius: VX.radiusCard,
+  // Clip children to the rounded corners — a chart/header with its own square edges would
+  // otherwise poke past the card's border-radius. Trade-off: a chart tooltip that overflows the
+  // card bounds is clipped too; the kinds keep tooltips inside the plot area, so this is fine in
+  // practice — a consumer rendering an oversized/edge tooltip should portal it out of the card.
   overflow: 'hidden' as const,
   backgroundColor: VX.surface.panel,
-  boxShadow: VX.shadowCard,
 }
 const headerStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '8px 12px',
-  borderBottom: `1px solid ${alpha(VX.neutral, 0.14)}`,
+  // The INTERNAL header/body divider stays subordinate to the card's OUTER hairline — a muted,
+  // lower-contrast line (not the full surface-border) so it doesn't read as a doubled edge.
+  borderBottom: `1px solid ${alpha(VX.neutral, 0.12)}`,
 }
 const titleColumnStyle = {
   display: 'inline-flex',

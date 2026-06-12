@@ -1,0 +1,378 @@
+import { curveMonotoneX } from '@visx/curve'
+import { GridRows } from '@visx/grid'
+import { Group } from '@visx/group'
+import { scaleLinear, scalePoint } from '@visx/scale'
+import { LinePath } from '@visx/shape'
+import { memo, useMemo, useState, type ReactNode } from 'react'
+import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
+import {
+  ChartTooltip,
+  TooltipBody,
+  TooltipHeader,
+  TooltipRow,
+  useTooltipStyles,
+} from '../primitives/ChartTooltip'
+import { ChartLegend, type LegendEntry } from '../primitives/ChartLegend'
+import { HoverOverlay } from '../primitives/HoverOverlay'
+import { ZoneRects, type ZoneSpec } from '../primitives/ZoneRects'
+import { useHoverSync } from '../hooks/useHoverSync'
+import { VX } from '../../tokens'
+import { smartTicks, smartTicksEvery } from '../utils/ticks'
+
+/** One line in a {@link MultiLine} chart — shares the single y-axis with every other series. */
+export type MultiLineSeries<T> = {
+  /** Stable identity for keys, legend highlight, and tooltip rows. */
+  key: string
+  /** Legend + tooltip label. */
+  label: string
+  /** Resolved CSS color / token ref (never a raw hex). */
+  color: string
+  /** Y accessor — return null to break the line (visual gap) and skip the tooltip row. */
+  getY: (d: T) => number | null
+  /** Render the line dashed (e.g. a moving-average companion). */
+  dashed?: boolean
+  /** Stroke width override. Default VX.lineWidth. */
+  strokeWidth?: number
+  /** Whether this series appears in the legend. Default true; false = companion line (e.g. MA). */
+  legend?: boolean
+  /**
+   * Parent series key. A companion (e.g. a moving-average line with `legend: false`) names its
+   * parent here so legend-hover dimming keeps the pair together — hovering the parent does NOT
+   * dim its companion.
+   */
+  parent?: string
+  /** Per-point marker (PR star / status dot). Return null for no marker at that point. */
+  getMarker?: (d: T) => { color?: string; r?: number } | null
+}
+
+export type MultiLineProps<T> = {
+  data: T[]
+  width: number
+  height: number
+  chartId: string
+  /** Extracts the x-axis category (date string) from a data point. */
+  getX: (d: T) => string
+  /** 1+ line series sharing one y-axis. */
+  series: MultiLineSeries<T>[]
+  /** Fixed y-domain (e.g. [-2.5, 2.5]) or 'auto' to compute from all series. */
+  yDomain: [number, number] | 'auto'
+  /** When 'auto': upper bound is at least this value. */
+  yAutoMaxFloor?: number
+  /** When 'auto': lower bound is at most this value. Default 0. */
+  yAutoMinCeil?: number
+  /** When 'auto': padding multiplier away from zero. Default 1.1. */
+  yAutoPad?: number
+  /** Horizontal value-range overlays (target zones), rendered behind the lines on the left scale. */
+  zones?: ZoneSpec[]
+  /** Dashed (by default) horizontal reference lines. */
+  refLines?: { value: number; color: string; dashed?: boolean }[]
+  numTicksX?: number
+  numTicksY?: number
+  /** Tooltip + (per-series) value formatter. */
+  formatValue: (v: number) => string
+  /** Y-axis tick label formatter. Falls back to the scale's default. */
+  formatYTick?: (v: number) => string
+  /** Label shown at the right of the tooltip header (e.g. status badge). */
+  tooltipLabel?: (d: T) => { text: string; color: string } | null
+  /** Extra tooltip rows rendered after the per-series rows. */
+  renderExtraTooltipRows?: (d: T) => ReactNode
+  /** Marker glyph for per-point markers. Default 'circle'. */
+  markerShape?: 'circle' | 'star'
+}
+
+const STAR_R = 6
+
+/** Five-point star path centered at (cx, cy) with outer radius r. */
+function starPath(cx: number, cy: number, r: number): string {
+  const inner = r * 0.4
+  const pts: string[] = []
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? r : inner
+    const angle = (Math.PI / 5) * i - Math.PI / 2
+    pts.push(`${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`)
+  }
+  return `M${pts.join('L')}Z`
+}
+
+/**
+ * N series sharing one y-axis, with optional zones/reference lines, per-point markers
+ * (PR stars / status dots), a dashed companion line per series, legend-hover dimming, and a
+ * shared-cursor tooltip. Generalizes the multi-line argo charts (e1RM trend, relative
+ * progression, training load, fitness trends).
+ *
+ * X-axis is built from the full `data` array so the calendar is preserved even when a series
+ * has nulls; each series line skips null points (creating visual gaps).
+ */
+function MultiLineInner<T>(props: MultiLineProps<T>) {
+  const {
+    data,
+    width,
+    height,
+    chartId,
+    getX,
+    series,
+    yDomain,
+    yAutoPad = 1.1,
+    yAutoMaxFloor,
+    yAutoMinCeil = 0,
+    zones = [],
+    refLines = [],
+    numTicksX,
+    numTicksY = 5,
+    formatValue,
+    formatYTick,
+    tooltipLabel,
+    renderExtraTooltipRows,
+    markerShape = 'circle',
+  } = props
+
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
+  // A series stays at full opacity when nothing is highlighted, when it IS the highlighted series,
+  // or when it is a companion of the highlighted series (its `parent` matches).
+  const dimOpacity = (s: MultiLineSeries<T>): number =>
+    highlightedKey === null || s.key === highlightedKey || s.parent === highlightedKey ? 1 : 0.25
+
+  const MARGIN = VX.margin
+  const xMax = width - MARGIN.left - MARGIN.right
+  const yMax = height - MARGIN.top - MARGIN.bottom
+
+  const xScale = useMemo(
+    () =>
+      scalePoint<string>({
+        // Full calendar — axis does not compress across nulls.
+        domain: data.map(getX),
+        range: [0, xMax],
+        padding: 0.3,
+      }),
+    [data, xMax, getX],
+  )
+
+  const yScale = useMemo(() => {
+    if (yDomain === 'auto') {
+      let dataMax = -Infinity
+      let dataMin = Infinity
+      for (const d of data) {
+        for (const s of series) {
+          const v = s.getY(d)
+          if (v === null || v === undefined || Number.isNaN(v)) continue
+          if (v > dataMax) dataMax = v
+          if (v < dataMin) dataMin = v
+        }
+      }
+      const safeMax = Number.isFinite(dataMax) ? dataMax : 0
+      const safeMin = Number.isFinite(dataMin) ? dataMin : 0
+      const upper = Math.max(safeMax, yAutoMaxFloor ?? safeMax) * yAutoPad
+      const lower = Math.min(safeMin, yAutoMinCeil) * yAutoPad
+      return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
+    }
+    return scaleLinear<number>({ domain: yDomain, range: [yMax, 0] })
+  }, [data, series, yDomain, yMax, yAutoPad, yAutoMaxFloor, yAutoMinCeil])
+
+  const tooltipStyles = useTooltipStyles()
+  const { tip, tooltipRef, syncedPoint, isDirectHover, handleMouse, handleLeave } = useHoverSync<T>(
+    {
+      data,
+      chartId,
+      getX,
+      xScale,
+      marginLeft: MARGIN.left,
+    },
+  )
+
+  const tickValues = useMemo(
+    () =>
+      numTicksX ? smartTicksEvery(data.map(getX), numTicksX) : smartTicks(data.map(getX), xMax),
+    [data, xMax, getX, numTicksX],
+  )
+
+  const legendItems = useMemo<LegendEntry[]>(
+    () =>
+      series
+        .filter((s) => s.legend !== false)
+        .map((s) => ({
+          key: s.key,
+          label: s.label,
+          color: s.color,
+          shape: 'line' as const,
+          ...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth }),
+          ...(s.dashed !== undefined && { dashed: s.dashed }),
+        })),
+    [series],
+  )
+
+  // Per-series valid points, computed once per (data, series) change — not re-walked inside the
+  // render map on every paint (parity with ZonedLine's single `valid` memo). Reused by the lines,
+  // the per-point markers, and the synced dots.
+  type LinePt = { __d: T; __y: number }
+  const seriesPts = useMemo(() => {
+    const out = new Map<string, LinePt[]>()
+    for (const s of series) {
+      const pts: LinePt[] = []
+      for (const d of data) {
+        const v = s.getY(d)
+        if (v !== null && v !== undefined && !Number.isNaN(v)) pts.push({ __d: d, __y: v })
+      }
+      out.set(s.key, pts)
+    }
+    return out
+  }, [data, series])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <ChartLegend
+        items={legendItems}
+        highlighted={highlightedKey}
+        onHighlight={setHighlightedKey}
+      />
+      <svg width={width} height={height}>
+        <Group left={MARGIN.left} top={MARGIN.top}>
+          <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
+
+          <ZoneRects zones={zones} width={xMax} leftScale={yScale} />
+
+          {refLines.map((r, i) => (
+            <line
+              key={`ref-${i}`}
+              x1={0}
+              x2={xMax}
+              y1={yScale(r.value)}
+              y2={yScale(r.value)}
+              stroke={r.color}
+              strokeDasharray={r.dashed === false ? undefined : '4 4'}
+            />
+          ))}
+
+          {series.map((s) => {
+            const valid = seriesPts.get(s.key) ?? []
+            if (valid.length === 0) return null
+            return (
+              <LinePath<LinePt>
+                key={`line-${s.key}`}
+                data={valid}
+                x={(p) => xScale(getX(p.__d)) ?? 0}
+                y={(p) => yScale(p.__y)}
+                stroke={s.color}
+                strokeWidth={s.strokeWidth ?? VX.lineWidth}
+                strokeDasharray={s.dashed ? '4 4' : undefined}
+                strokeOpacity={dimOpacity(s)}
+                curve={curveMonotoneX}
+              />
+            )
+          })}
+
+          {series.flatMap((s) => {
+            const getMarker = s.getMarker
+            if (!getMarker) return [] as ReactNode[]
+            const op = dimOpacity(s)
+            const markers: ReactNode[] = []
+            for (const p of seriesPts.get(s.key) ?? []) {
+              const m = getMarker(p.__d)
+              if (m === null) continue
+              const cx = xScale(getX(p.__d)) ?? 0
+              const cy = yScale(p.__y)
+              const color = m.color ?? s.color
+              const r = m.r ?? (markerShape === 'star' ? STAR_R : VX.dotR)
+              markers.push(
+                markerShape === 'star' ? (
+                  <path
+                    key={`mk-${s.key}-${getX(p.__d)}`}
+                    d={starPath(cx, cy, r)}
+                    fill={color}
+                    stroke={VX.dotStroke}
+                    strokeWidth={1.5}
+                    fillOpacity={op}
+                    strokeOpacity={op}
+                  />
+                ) : (
+                  <circle
+                    key={`mk-${s.key}-${getX(p.__d)}`}
+                    cx={cx}
+                    cy={cy}
+                    r={r}
+                    fill={color}
+                    stroke={VX.dotStroke}
+                    strokeWidth={2}
+                    fillOpacity={op}
+                    strokeOpacity={op}
+                  />
+                ),
+              )
+            }
+            return markers
+          })}
+
+          {syncedPoint &&
+            (() => {
+              const sx = xScale(getX(syncedPoint)) ?? 0
+              return (
+                <>
+                  <line x1={sx} x2={sx} y1={0} y2={yMax} stroke={VX.crosshair} strokeWidth={1} />
+                  {series.map((s) => {
+                    const v = s.getY(syncedPoint)
+                    if (v === null || v === undefined || Number.isNaN(v)) return null
+                    return (
+                      <circle
+                        key={`dot-${s.key}`}
+                        cx={sx}
+                        cy={yScale(v)}
+                        r={VX.dotR}
+                        fill={s.color}
+                        stroke={VX.dotStroke}
+                        strokeWidth={2}
+                      />
+                    )
+                  })}
+                </>
+              )
+            })()}
+
+          <AxisLeftNumeric
+            scale={yScale}
+            numTicks={numTicksY}
+            {...(formatYTick !== undefined && { tickFormat: formatYTick })}
+          />
+          <AxisBottomDate top={yMax} scale={xScale} tickValues={tickValues} />
+
+          <HoverOverlay width={xMax} height={yMax} onMove={handleMouse} onLeave={handleLeave} />
+        </Group>
+      </svg>
+      <ChartTooltip tip={isDirectHover ? tip : null} tooltipRef={tooltipRef} styles={tooltipStyles}>
+        {tip && isDirectHover && (
+          <>
+            <TooltipHeader
+              date={getX(tip.data)}
+              {...(() => {
+                const lbl = tooltipLabel?.(tip.data) ?? null
+                return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
+              })()}
+            />
+            <TooltipBody>
+              {series.map((s) => {
+                const v = s.getY(tip.data)
+                if (v === null || v === undefined || Number.isNaN(v)) return null
+                return (
+                  <TooltipRow
+                    key={s.key}
+                    color={s.color}
+                    label={s.label}
+                    value={formatValue(v)}
+                    shape="line"
+                    {...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth })}
+                    {...(s.dashed !== undefined && { dashed: s.dashed })}
+                  />
+                )
+              })}
+              {renderExtraTooltipRows?.(tip.data)}
+            </TooltipBody>
+          </>
+        )}
+      </ChartTooltip>
+    </div>
+  )
+}
+
+/**
+ * Hand-memoized: React Compiler does not process the shipped dist, so the hot MultiLine kind is
+ * wrapped in `React.memo` to retain the auto-memoization it had as source (parity with ZonedLine).
+ */
+export const MultiLine = memo(MultiLineInner) as typeof MultiLineInner

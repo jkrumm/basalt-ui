@@ -128,12 +128,16 @@ function IconClose() {
   )
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+/**
+ * Group label. `flush` drops the intrinsic inset/margin so the collapsible `sectionHeader` can own
+ * the padding instead (otherwise the button's hover box double-insets and hugs the text).
+ */
+function SectionLabel({ children, flush }: { children: ReactNode; flush?: boolean }) {
   return (
     <Text
       component="div"
-      px="xs"
-      mb={4}
+      px={flush ? 0 : 'xs'}
+      mb={flush ? 0 : 4}
       size="xs"
       fw={600}
       c="dimmed"
@@ -204,7 +208,7 @@ export function AppSidebar({
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
-      <Group className={classes.brand} h={36} mb="md" px="xs" gap="sm" wrap="nowrap">
+      <Group className={classes.brand} h={32} mb="xs" px="xs" gap="sm" wrap="nowrap">
         <Group className={classes.brandLead} gap="sm" wrap="nowrap">
           {brand.logoSrc && (
             <img
@@ -232,7 +236,7 @@ export function AppSidebar({
         </ActionIcon>
       </Group>
 
-      <Stack gap="lg" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <Stack gap="xs" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {sections.map((section) => {
           if (!section.collapsible) {
             return (
@@ -256,7 +260,7 @@ export function AppSidebar({
                 }
                 aria-expanded={isOpen}
               >
-                <SectionLabel>{section.label}</SectionLabel>
+                <SectionLabel flush>{section.label}</SectionLabel>
                 <IconChevron open={isOpen} />
               </UnstyledButton>
               <Collapse expanded={isOpen}>

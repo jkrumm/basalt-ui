@@ -35,10 +35,22 @@ chart primitives directly from`basalt-ui/charts`, never from the bridge file.
 2. **ChartLegend** — never hand-rolled legend markup. Supports `line | bar | split | splitLine`
    shapes and optional highlight state.
 3. **ChartTooltip** + `TooltipHeader` + `TooltipRow` + `TooltipBody` — never `@visx/tooltip` directly.
-4. **AxisLeftNumeric** / **AxisRightNumeric** + **AxisBottomDate** — never raw `<AxisLeft>`/`<AxisBottom>`
-   (they miss theme tokens + smart ticks).
+4. **AxisLeftNumeric** / **AxisRightNumeric** + **AxisBottomDate** — never raw `<AxisLeft>`/`<AxisBottom>`/`<AxisRight>`
+   (they miss theme tokens + smart ticks). Enforced by `basalt check-theme` (`raw-visx-axis` guard
+   fails the build on a raw axis in a `/charts/` file; escape via `theme-allow`), not just convention.
 5. **HoverOverlay** for mouse capture, **HoverContext** for cross-chart crosshair sync,
-   **useChartTooltip** for tip state, **useHoverSync** for the shared cursor.
+   **useChartTooltip** for tip state, **useHoverSync** for the shared cursor. Wrap a group of
+   date-aligned charts in **ChartHoverSync** (from `basalt-ui/charts`) to activate cross-chart sync —
+   hovering one chart casts a ghost crosshair on all siblings; without it `useHoverSync` runs
+   per-chart only and logs a dev warning:
+
+   ```tsx
+   <ChartHoverSync>
+     <ChartCard>…</ChartCard>
+     <ChartCard>…</ChartCard>
+   </ChartHoverSync>
+   ```
+
 6. **Theme-aware colors** via `VX.*` tokens + `alpha()`. **Never** a raw hex literal in a chart file.
    **Never** `localStorage.getItem('theme')` — the scheme resolves via CSS vars (see Dark/light below).
 
@@ -53,6 +65,13 @@ basalt-ui ships these kinds (declarative props, generic over your point type via
 - **`Bars`** — bars with optional overlaid line, zones, ref lines, dual-axis config.
 - **`StackedArea`** — opaque stacked bands.
 - **`Donut`** — proportional donut.
+- **`MultiLine`** — N series on a shared y-axis: legend-hover dimming, per-series synced dots,
+  dashed companion (MA) lines, per-point markers (PR stars / status dots), zones + refLines, fixed
+  or auto domain (covers z-score/σ via a fixed symmetric domain + zero refLine).
+- **`DualPanel`** — top line-pane + bottom signed-histogram pane sharing one x-scale and one cursor;
+  optional fill-between two top lines, zones, refLines.
+- **`Heatmap`** — category×category intensity grid (`color-mix` alpha), per-cell tooltip, optional
+  gradient legend strip.
 
 How to add a chart:
 

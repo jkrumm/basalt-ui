@@ -30,6 +30,45 @@ export type BasaltConfig = {
   forbiddenAccents?: string[]
   /** Earned accent hue recorded in DESIGN.md `{{ACCENT_HUE}}`. Default: `blue`. */
   accentHue?: string
+  /**
+   * Flag ad-hoc inline surface styling (`border`/`borderRadius`/`boxShadow` literals in a `style={{}}`)
+   * that bypasses the `withBorder` + radius-token + `VX.surface.*` system. Default: `true` (ON).
+   * Set `false` to disable the `raw-surface` check.
+   */
+  rawSurface?: boolean
+  /**
+   * Flag references to a raw Mantine ramp step used for surface color
+   * (`var(--mantine-color-gray-N)` / `var(--mantine-color-dark-N)`) — these bypass the basalt
+   * surface tokens. Default: `true` (ON). Set `false` to disable the `off-system-surface-var` check.
+   */
+  offSystemSurfaceVar?: boolean
+  /**
+   * Flag raw lowercase JSX layout/surface elements (`div`/`span`/`section`/…) carrying an inline
+   * `style={{}}` with a layout/surface property — steer to a Mantine layout primitive
+   * (`Box`/`Flex`/`Grid`/`Stack`/`Group`/`SimpleGrid`/`Paper`). Default: `true` (ON). Set `false`
+   * to disable the `raw-html-layout` check.
+   */
+  rawHtmlLayout?: boolean
+  /**
+   * Flag spacing/sizing literals inside an inline `style={{}}` (`padding`/`margin`/`gap`/…) — the
+   * `raw-spacing` check only catches the Mantine prop syntax. Default: `true` (ON). Set `false` to
+   * disable the `inline-spacing` check.
+   */
+  inlineSpacing?: boolean
+  /**
+   * Flag `display: 'flex' | 'grid' | 'inline-flex' | 'inline-grid'` in an inline `style={{}}` —
+   * steer to `<Flex>`/`<Grid>`/`<Group>`. Default: `true` (ON). Set `false` to disable the
+   * `inline-display` check.
+   */
+  inlineDisplay?: boolean
+  /**
+   * Flag raw `<AxisLeft>` / `<AxisBottom>` / `<AxisRight>` visx JSX inside chart files (a path
+   * containing `/charts/`) — these bypass the `AxisLeftNumeric` / `AxisBottomDate` /
+   * `AxisRightNumeric` primitives that carry the theme tokens + smart ticks. The legitimate wrapper
+   * (`Axes.tsx`, which IS the primitive) is exempt. Default: `true` (ON). Set `false` to disable the
+   * `raw-visx-axis` check.
+   */
+  rawVisxAxis?: boolean
   /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
   seriesModulePath?: string
   /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
@@ -53,6 +92,68 @@ const FUNC = /\b(?:rgba?|hsla?)\(/g
 // localStorage theme read — banned (theme must resolve via the Mantine color scheme + --vx-* vars).
 const LOCALSTORAGE_THEME = /localStorage\s*\.\s*getItem\s*\(\s*['"]theme['"]\s*\)/g
 
+// Ad-hoc inline surface styling that bypasses the token/elevation system. Scoped to the three
+// surface-shaping properties — `border*` / `borderRadius` / `boxShadow` — anchored on the property
+// name so legitimate non-surface inline styles (flex, padding, text color, …) never match.
+//
+// Conservative on purpose: `backgroundColor` is intentionally NOT covered here. A raw hex bg is
+// already caught by `raw-hex`, and flagging every literal `backgroundColor:` produces too many
+// false positives (it routinely points at a token/computed value), so it stays out of scope.
+//
+// A value that is a `var(--…)` reference (the system itself) passes — so `border: '1px solid
+// var(--mantine-color-default-border)'`, `borderRadius: 'var(--vx-radius-card)'` etc. are allowed.
+//
+// `border` / `borderTop` / `borderBottom` / `borderLeft` / `borderRight` with a literal value.
+// The lookahead scans for `var(` ANYWHERE inside the quoted value (`[^'"`]*var\(`), so a token
+// reference like `border: '1px solid var(--vx-surface-border)'` passes — the `var(` is not
+// adjacent to the opening quote.
+const SURFACE_BORDER =
+  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+// `borderRadius` with a numeric/px literal (radius must come from the `radius` token / a `--…` var).
+const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
+// `boxShadow` with a literal value (depth is a hairline token, not an ad-hoc shadow). Same
+// scan-anywhere lookahead so `boxShadow: 'var(--…)'` passes.
+const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+
+// Raw Mantine ramp step used for surface color — `var(--mantine-color-gray-N)` /
+// `var(--mantine-color-dark-N)`. This is the exact bug class the basalt surface tokens exist to
+// prevent: reaching into the raw neutral ramp instead of `VX.surface.*` / `--vx-surface-*`. Scoped
+// to gray/dark + a step digit so the named surface vars (`--mantine-color-default-border`, etc.)
+// and accent ramps never match.
+const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
+
+// Raw lowercase JSX layout/surface element carrying inline `style={{}}` with a layout/surface
+// property. Detection is line-scoped: a layout/surface tag AND `style={{` AND a layout/surface prop
+// must all be present on the line — so `<div ref={...}>` (no style), `<img>`, `<svg>` never match.
+// Consumer-roots-only by construction: the Mantine-free `src/charts/**` (which legitimately uses raw
+// <div>) is never in a consumer's `roots`.
+const RAW_HTML_TAG = /<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\b/
+const INLINE_STYLE = /style=\{\{/
+const LAYOUT_SURFACE_PROP =
+  /\b(?:display|padding|margin|gap|flex|grid|border|background|width|height)\b/
+
+// Spacing/sizing literal inside an inline `style={{}}` (the prop-syntax `raw-spacing` check misses
+// these). Anchored on the property name; a `var(...)` value or a literal `0` passes — `0` needs no
+// token and `var(...)` is the system itself.
+const INLINE_SPACING =
+  /\b(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap)\s*:\s*(?!var\()['"]?-?(?!0\b)\d/g
+
+// `display: 'flex' | 'grid' | 'inline-flex' | 'inline-grid'` in an inline style — route through a
+// Mantine layout primitive instead.
+const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
+
+// Raw visx axis JSX — `<AxisLeft` / `<AxisBottom` / `<AxisRight`. oxlint allows `@visx/axis` imports
+// inside `charts/`, so a chart file can render the raw axis and bypass the AxisLeftNumeric /
+// AxisBottomDate / AxisRightNumeric primitives (which carry theme tokens + smart ticks) with nothing
+// failing the build. This guard closes that hole — but ONLY inside chart files (a path containing
+// `/charts/`), and never in the `Axes.tsx` wrapper that legitimately wraps the raw axes.
+const RAW_VISX_AXIS = /<Axis(?:Left|Bottom|Right)\b/g
+// The legitimate wrapper basename(s) — the primitive that IS allowed to render the raw visx axes.
+const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
+function isChartFile(rel: string): boolean {
+  return rel.includes('/charts/') && !AXIS_WRAPPER_FILE.test(rel)
+}
+
 type Violation = { rel: string; line: number; token: string; kind: string }
 
 function readBasaltConfig(cwd: string): BasaltConfig {
@@ -73,13 +174,25 @@ function scanFile(
     forbiddenAccent: RegExp
     spacingProp: RegExp
     radiusProp: RegExp
+    rawSurface: boolean
+    offSystemSurfaceVar: boolean
+    rawHtmlLayout: boolean
+    inlineSpacing: boolean
+    inlineDisplay: boolean
+    rawVisxAxis: boolean
   },
   violations: Violation[],
 ): void {
+  const chartFile = isChartFile(rel)
   const lines = readFileSync(abs, 'utf8').split('\n')
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? ''
     if (line.includes('theme-allow')) continue
+    // Skip pure-comment lines (line comments + JSDoc bodies) so an explanatory mention of a
+    // banned token/element (e.g. "never use a raw <AxisLeft>") doesn't trip a guard. Inline
+    // trailing comments are rare; use `theme-allow` for those deliberate cases.
+    const trimmed = line.trimStart()
+    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
     for (const m of line.matchAll(HEX)) {
       violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-hex' })
     }
@@ -97,6 +210,45 @@ function scanFile(
     }
     for (const m of line.matchAll(patterns.radiusProp)) {
       violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-radius' })
+    }
+    if (patterns.rawSurface) {
+      for (const m of line.matchAll(SURFACE_BORDER)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+      for (const m of line.matchAll(SURFACE_RADIUS)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+      for (const m of line.matchAll(SURFACE_SHADOW)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+    }
+    if (patterns.offSystemSurfaceVar) {
+      for (const m of line.matchAll(OFF_SYSTEM_SURFACE_VAR)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
+      }
+    }
+    if (
+      patterns.rawHtmlLayout &&
+      RAW_HTML_TAG.test(line) &&
+      INLINE_STYLE.test(line) &&
+      LAYOUT_SURFACE_PROP.test(line)
+    ) {
+      violations.push({ rel, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
+    }
+    if (patterns.inlineSpacing) {
+      for (const m of line.matchAll(INLINE_SPACING)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'inline-spacing' })
+      }
+    }
+    if (patterns.inlineDisplay) {
+      for (const m of line.matchAll(INLINE_DISPLAY)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'inline-display' })
+      }
+    }
+    if (patterns.rawVisxAxis && chartFile) {
+      for (const m of line.matchAll(RAW_VISX_AXIS)) {
+        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
+      }
     }
   }
 }
@@ -126,8 +278,13 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
 
 /**
  * Theme guard — scans source roots for raw color literals (hex / rgb() / hsl()), off-identity
- * Mantine accent props, raw spacing/radius props that equal a named scale step, and localStorage
- * theme reads. Returns 0 when clean, 1 on violations. A `theme-allow` comment exempts a line.
+ * Mantine accent props, raw spacing/radius props that equal a named scale step, ad-hoc inline
+ * surface styling (`border`/`borderRadius`/`boxShadow` literals that bypass `withBorder` + the
+ * radius/elevation tokens), raw Mantine ramp steps used for surface color
+ * (`var(--mantine-color-gray|dark-N)`), raw HTML layout elements with inline layout/surface styles,
+ * inline spacing literals, inline `display:flex|grid`, raw visx axis JSX inside chart files
+ * (`<AxisLeft|Bottom|Right>` bypassing the Axis*Numeric/Date primitives), and localStorage theme
+ * reads. Returns 0 when clean, 1 on violations. A `theme-allow` comment exempts a line.
  */
 export function checkTheme(cwd: string = process.cwd()): number {
   const cfg = readBasaltConfig(cwd)
@@ -135,6 +292,12 @@ export function checkTheme(cwd: string = process.cwd()): number {
   const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
   const spacingSteps = cfg.spacingSteps ?? DEFAULT_SPACING_STEPS
   const forbiddenAccents = cfg.forbiddenAccents ?? DEFAULT_FORBIDDEN_ACCENTS
+  const rawSurface = cfg.rawSurface ?? true
+  const offSystemSurfaceVar = cfg.offSystemSurfaceVar ?? true
+  const rawHtmlLayout = cfg.rawHtmlLayout ?? true
+  const inlineSpacing = cfg.inlineSpacing ?? true
+  const inlineDisplay = cfg.inlineDisplay ?? true
+  const rawVisxAxis = cfg.rawVisxAxis ?? true
 
   const patterns = {
     forbiddenAccent: new RegExp(
@@ -146,12 +309,20 @@ export function checkTheme(cwd: string = process.cwd()): number {
       'g',
     ),
     radiusProp: /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g,
+    rawSurface,
+    offSystemSurfaceVar,
+    rawHtmlLayout,
+    inlineSpacing,
+    inlineDisplay,
+    rawVisxAxis,
   }
 
   const violations: Violation[] = []
   for (const root of roots) {
     for (const f of walkTsFiles(resolve(cwd, root))) {
-      const rel = relative(cwd, f)
+      // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
+      // identical on Windows (where `relative` yields backslashes) and POSIX.
+      const rel = relative(cwd, f).replace(/\\/g, '/')
       if (SKIP.test(rel) || exempt.has(rel)) continue
       scanFile(f, rel, patterns, violations)
     }
@@ -172,14 +343,25 @@ export function checkTheme(cwd: string = process.cwd()): number {
   for (const [file, vs] of [...byFile].toSorted()) {
     console.error(file)
     for (const v of vs.toSorted((a, b) => a.line - b.line)) {
-      console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(18)} ${v.token}`)
+      console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.token}`)
     }
     console.error('')
   }
   console.error(
     'Fix: route color through VX.* / the Mantine theme; for an off-identity accent use blue/gray or ' +
-      'a status hue (red/green/orange/yellow); for raw spacing/radius use the scale token. Add a ' +
-      '`theme-allow` comment for a deliberate exception.',
+      'a status hue (red/green/orange/yellow); for raw spacing/radius use the scale token; for ' +
+      'raw-surface use `withBorder` + a `radius` token / `VX.surface.*` / `var(--vx-radius-card)` ' +
+      'instead of inline border/radius/shadow. ' +
+      'off-system-surface-var: raw Mantine ramp step bypasses the basalt surface tokens — use ' +
+      'VX.surface.* / --vx-surface-* (border/panel/subtle/bg) instead. ' +
+      'raw-html-layout: raw HTML element with inline layout/surface styling — use a Mantine layout ' +
+      'primitive (Box/Flex/Grid/Stack/Group). ' +
+      'inline-spacing: inline spacing literal — use the Mantine spacing prop/token (p/m/gap with ' +
+      'xs..xl). ' +
+      'inline-display: use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid. ' +
+      'raw-visx-axis: raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use ' +
+      'AxisLeftNumeric / AxisBottomDate / AxisRightNumeric from the charts primitives. ' +
+      'Add a `theme-allow` comment for a deliberate exception.',
   )
   return 1
 }

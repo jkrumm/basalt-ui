@@ -183,14 +183,14 @@ export function BasaltShell({
       <AppShell
         h="100dvh"
         layout="alt"
-        header={{ height: { base: 108, sm: 56 } }}
+        header={{ height: { base: 96, sm: 48 } }}
         navbar={{
-          width: { base: 240, sm: collapsed ? 72 : 240 },
+          width: { base: 224, sm: collapsed ? 64 : 224 },
           breakpoint: 'sm',
           collapsed: { mobile: !mobileOpened },
         }}
-        footer={{ height: { base: 56, sm: 0 } }}
-        padding="md"
+        footer={{ height: { base: 52, sm: 0 } }}
+        padding="sm"
       >
         <AppShell.Header px="md">
           <div className={headerClasses.bar}>
@@ -211,7 +211,7 @@ export function BasaltShell({
           </div>
         </AppShell.Header>
 
-        <AppShell.Navbar p="md">
+        <AppShell.Navbar p="sm">
           <AppSidebar
             brand={brand}
             sections={sections}

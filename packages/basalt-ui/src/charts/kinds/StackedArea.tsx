@@ -122,16 +122,32 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
             }
           </AreaStack>
 
-          {syncedPoint && (
-            <line
-              x1={xScale(getX(syncedPoint)) ?? 0}
-              x2={xScale(getX(syncedPoint)) ?? 0}
-              y1={0}
-              y2={yMax}
-              stroke={VX.crosshair}
-              strokeWidth={1}
-            />
-          )}
+          {syncedPoint &&
+            (() => {
+              const sx = xScale(getX(syncedPoint)) ?? 0
+              // A dot on each band's TOP edge (its cumulative stacked value), so the tooltip's
+              // per-series rows visibly attach to the boundary between that series and the one above.
+              let cum = 0
+              return (
+                <>
+                  <line x1={sx} x2={sx} y1={0} y2={yMax} stroke={VX.crosshair} strokeWidth={1} />
+                  {groups.map((g) => {
+                    cum += getValue(syncedPoint, g) ?? 0
+                    return (
+                      <circle
+                        key={`dot-${g}`}
+                        cx={sx}
+                        cy={yScale(cum)}
+                        r={VX.dotR}
+                        fill={colorForGroup(g)}
+                        stroke={VX.dotStroke}
+                        strokeWidth={2}
+                      />
+                    )
+                  })}
+                </>
+              )
+            })()}
 
           <AxisLeftNumeric scale={yScale} numTicks={numTicksY} tickFormat={formatValue} />
           <AxisBottomDate top={yMax} scale={xScale} tickValues={tickValues} />

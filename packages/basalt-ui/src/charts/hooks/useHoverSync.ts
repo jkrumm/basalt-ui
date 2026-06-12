@@ -1,5 +1,5 @@
 import { localPoint } from '@visx/event'
-import { useCallback, useContext, useRef } from 'react'
+import { useCallback, useContext, useMemo, useRef } from 'react'
 import { DEFAULT_NO_OP_SET_HOVER, HoverContext } from '../hover-context'
 import { useChartTooltip } from './useChartTooltip'
 
@@ -32,6 +32,11 @@ export function useHoverSync<T>({
   marginLeft: number
 }) {
   const ctx = useContext(HoverContext)
+  // Latest context in a ref so the mouse callbacks stay referentially stable: the provider's value
+  // is a NEW object on every hover broadcast, and depending on `ctx` would re-create both callbacks
+  // (and re-bind HoverOverlay's listeners) in every sibling chart on every cursor move.
+  const ctxRef = useRef(ctx)
+  ctxRef.current = ctx
   const warnedRef = useRef(false)
 
   if (
@@ -48,6 +53,14 @@ export function useHoverSync<T>({
   }
 
   const { tip, show, hide, tooltipRef, lastDateRef } = useChartTooltip<T>()
+
+  // O(1) lookup of a point by its x-category. Under a provider every sibling resolves the broadcast
+  // date each frame; an O(n) `data.find` per sibling per move is N×O(M). This makes it N×O(1).
+  const pointByX = useMemo(() => {
+    const m = new Map<string, T>()
+    for (const d of data) m.set(getX(d), d)
+    return m
+  }, [data, getX])
 
   const handleMouse = useCallback(
     (event: React.MouseEvent<SVGRectElement>) => {
@@ -68,19 +81,30 @@ export function useHoverSync<T>({
       const date = getX(closest)
       if (lastDateRef.current !== date) {
         lastDateRef.current = date
-        ctx.setHover(date, chartId)
+        ctxRef.current.setHover(date, chartId)
       }
     },
-    [data, xScale, getX, chartId, marginLeft, show, lastDateRef, ctx],
+    [data, xScale, getX, chartId, marginLeft, show, lastDateRef],
   )
 
   const handleLeave = useCallback(() => {
     hide()
-    ctx.setHover(null, null)
-  }, [hide, ctx])
+    // Only clear the SHARED hover if this chart currently owns it. When the cursor moves quickly from
+    // chart A to chart B, A's `mouseleave` can fire AFTER B's `mousemove` has already claimed the
+    // hover — an unconditional clear would then wipe B's cursor and flicker every sibling crosshair.
+    if (ctxRef.current.source === chartId) ctxRef.current.setHover(null, null)
+  }, [hide, chartId])
 
-  const syncedPoint = ctx.date ? (data.find((d) => getX(d) === ctx.date) ?? null) : null
-  const isDirectHover = ctx.source === chartId
+  // The point the crosshair + synced dots track. Inside a <ChartHoverSync> this follows the
+  // broadcast date (so every sibling paints a ghost crosshair at the same x). WITHOUT a provider the
+  // chart is standalone, so it falls back to THIS chart's own hovered point (`tip.data`) — otherwise
+  // a chart outside a provider would never draw a crosshair/dots at all.
+  const syncedPoint = ctx.date ? (pointByX.get(ctx.date) ?? null) : (tip?.data ?? null)
+  // Which chart owns the floating tooltip. Inside a provider the hovered chart is the one whose id
+  // matches the broadcast source (siblings show a ghost crosshair only). Standalone, its own local
+  // hover (`tip`) drives the tooltip.
+  const hasProvider = ctx.setHover !== DEFAULT_NO_OP_SET_HOVER
+  const isDirectHover = hasProvider ? ctx.source === chartId : tip !== null
 
   return {
     tip,

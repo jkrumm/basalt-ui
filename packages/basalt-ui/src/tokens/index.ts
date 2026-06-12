@@ -17,7 +17,7 @@ export type ColorPair = { light: string; dark: string }
 /** A map of token name → per-theme color pair (the input shape for series/group builders). */
 export type SeriesMap = Record<string, ColorPair>
 
-/** Framework palette data — Blueprint families, the shade-pair helper, and the generic pairs. */
+/** Framework palette data — Basalt families, the shade-pair helper, and the generic pairs. */
 export { BP, p, SEMANTIC, STATUS, NEUTRAL, SURFACE }
 
 /**
@@ -45,6 +45,10 @@ export const VX = {
   axisFont: 11,
   dotR: 5,
 
+  // Single source for the card corner radius — shared by the Mantine-free ChartCard and the
+  // Mantine chrome (theme `radius.md` is the same 8px). One knob, so cards never diverge.
+  radiusCard: 'var(--vx-radius-card)',
+
   // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
   line2Dark: 'var(--vx-line2)',
 
@@ -67,6 +71,11 @@ export const VX = {
   line: 'var(--vx-line)',
   line2: 'var(--vx-line2)',
 
+  // Axis label + axis stroke colors (theme-aware). Exposed as flat refs so a bespoke chart that
+  // renders raw <text> labels or axis lines (without the Axis* primitives) needs no hook.
+  axis: 'var(--vx-axis)',
+  axisStroke: 'var(--vx-axisStroke)',
+
   // Grid, hover, legend
   grid: 'var(--vx-grid)',
   crosshair: 'var(--vx-crosshair)',
@@ -81,9 +90,9 @@ export const VX = {
     bg: 'var(--vx-surface-bg)',
     panel: 'var(--vx-surface-panel)',
     elevated: 'var(--vx-surface-elevated)',
+    subtle: 'var(--vx-surface-subtle)',
     border: 'var(--vx-surface-border)',
   },
-  shadowCard: 'var(--vx-shadowCard)',
 
   // Score / zone status scale (excellent → poor)
   status: {
@@ -125,7 +134,6 @@ function frameworkPrimitives(side: Side): string {
     decl('badSolid', s.bad[side]),
     decl('warnSolid', s.warn[side]),
     decl('neutral', n.neutral[side]),
-    decl('shadowCard', side === 'dark' ? 'none' : '0 1px 3px rgba(17,20,24,0.06)'),
     decl('line', n.line[side]),
     decl('line2', n.line2[side]),
     decl('axis', n.axis[side]),
@@ -138,10 +146,11 @@ function frameworkPrimitives(side: Side): string {
     decl('tooltipMuted', n.tooltipMuted[side]),
     decl('tooltipBorder', n.tooltipBorder[side]),
     decl('tooltipShadow', n.tooltipShadow[side]),
-    decl('legendText', side === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(17,20,24,0.82)'),
+    decl('legendText', side === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(18,17,16,0.82)'),
     decl('surface-bg', su.bg[side]),
     decl('surface-panel', su.panel[side]),
     decl('surface-elevated', su.elevated[side]),
+    decl('surface-subtle', su.subtle[side]),
     decl('surface-border', su.border[side]),
   ].join('\n')
 }
@@ -153,6 +162,7 @@ function frameworkPrimitives(side: Side): string {
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
 const FRAMEWORK_DERIVED = [
+  decl('radius-card', '8px'),
   decl('area-top', '22%'),
   decl('area-bottom', '1%'),
   decl('good', 'color-mix(in srgb, var(--vx-goodSolid) 18%, transparent)'),

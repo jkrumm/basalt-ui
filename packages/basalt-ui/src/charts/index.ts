@@ -30,6 +30,7 @@ export {
 // ── Chart theme + hover context ──────────────────────────────────────────
 export { VxThemeProvider, useVxTheme, type VxTheme } from './theme'
 export { HoverContext, DEFAULT_NO_OP_SET_HOVER, type HoverCtx } from './hover-context'
+export { ChartHoverSync, type ChartHoverSyncProps } from './hover-sync'
 
 // ── Primitives ───────────────────────────────────────────────────────────
 export { ChartCard } from './primitives/ChartCard'
@@ -76,6 +77,10 @@ export {
 
 export { StackedArea, type StackedAreaProps } from './kinds/StackedArea'
 export { Donut, type DonutProps, type DonutDatum } from './kinds/Donut'
+
+export { MultiLine, type MultiLineProps, type MultiLineSeries } from './kinds/MultiLine'
+export { DualPanel, type DualPanelProps, type DualPanelLine } from './kinds/DualPanel'
+export { Heatmap, type HeatmapProps } from './kinds/Heatmap'
 
 // ── Sparklines ───────────────────────────────────────────────────────────
 export { LineSparkline, BarSparkline } from './sparklines'

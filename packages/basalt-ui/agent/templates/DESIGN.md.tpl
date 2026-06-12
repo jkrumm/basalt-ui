@@ -21,12 +21,24 @@ law, the law wins.
 ## Identity
 
 {{APP_NAME}} inherits the basalt-ui identity verbatim: a calm, dense, dark-first professional
-surface — Blueprint v6 palette, one earned accent (blue), neutral grey as the default data ink,
-hairline elevation, system-sans carried by size+weight with mono numbers. Confirm or restate any
+surface — **warm-neutral charcoal** (volcanic basalt; neutrals are warm, blue channel ≤ red, never
+cool/steel/blue-grey), **one earned accent: a muted slate-blue** (desaturated, calm Notion/Linear —
+not "Bootstrap blue"), neutral grey as the default data ink, hairline elevation, system-sans carried
+by size+weight with mono numbers. Neutrals do ~90% of the surface; the accent only points (primary
+CTA, focus, links, small status pops) — never floods. Active nav is a neutral surface fill, never the
+accent. Light mode is a near-neutral off-white (page `#fafafa`, cards `#ffffff`, hairline `#ededec` —
+only a whisper of warmth, not creamy/yellow) with near-black text; dark mode is warm charcoal (not
+blue-tinted, not pure black). **Dense by default** (compact nav, `sm` gaps/padding); all cards render
+identically — **flat, one border token, one radius token (`--vx-radius-card`)** — never inline-override
+a surface's border/radius/shadow/bg (enforced by `basalt check-theme`). The theme runs a **strict
+surface system**: it collapses Mantine's raw ramp steps onto the `--vx-surface-*` tokens, so every
+component shares one border/bg/radius. **Use Mantine primitives, not raw HTML** (`Box`/`Flex`/`Grid`/
+`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card` over `<div>`/`<span>` with inline `style`) — also enforced
+by `check-theme`. Confirm or restate any
 intentional identity shift here; **silence means "inherits the basalt-ui defaults unchanged."**
 
-- **Voltage hue:** {{ACCENT_HUE}} (default: blue — `var(--vx-line)` neutral is still the default
-  for single-series marks)
+- **Accent hue:** {{ACCENT_HUE}} (default: the muted slate-blue — `var(--vx-line)` neutral is still
+  the default for single-series marks)
 - **Tone deltas:** _(none — inherits)_
 
 ## Series dictionary
@@ -38,7 +50,7 @@ consumer; keep it the single source of truth and never inline a hex elsewhere.
 
 | Series name | Light hex | Dark hex | `defineSeries` key | Role / earned reason |
 |-|-|-|-|-|
-| _e.g. requests_ | `#2d72d2` | `#4c90f0` | `requests` | Primary metric (identity blue) |
+| _e.g. requests_ | `#4f78a4` | `#7099c4` | `requests` | Primary metric (muted slate accent) |
 | | | | | |
 
 ```ts
@@ -46,7 +58,7 @@ consumer; keep it the single source of truth and never inline a hex elsewhere.
 import { buildPaletteCss, defineSeries, seriesTokens } from 'basalt-ui/tokens'
 
 const SERIES_MAP = defineSeries({
-  // requests: { light: '#2d72d2', dark: '#4c90f0' },
+  // requests: { light: '#4f78a4', dark: '#7099c4' },
 })
 
 export const series = seriesTokens(SERIES_MAP) // { requests: 'var(--vx-requests)', ... }

@@ -30,13 +30,42 @@ renders.
 
 - Use `createBasaltTheme(overrides?)` for the theme — it merges your overrides over `baseTheme`
   (last-wins), so you can retune any field without forking. Don't hand-build `createTheme`.
-- The theme reskins **every** Mantine accent to a Blueprint family and binds Mantine's surface vars to
-  the same `--vx-*` tokens the charts use (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so
-  chrome and charts share one scheme-reactive identity. Don't add a second `cssVariablesResolver`.
+- The theme reskins **every** Mantine accent to the Basalt identity — **warm-neutral charcoal** ramps
+  (volcanic basalt, blue channel ≤ red — never cool/steel/blue-grey) plus a **single muted slate-blue
+  accent** — and binds Mantine's surface vars to the same `--vx-*` tokens the charts use
+  (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so chrome and charts share one
+  scheme-reactive identity. (Blueprint is the historical hue-tuning ancestor; the identity is Basalt
+  warm-neutral now.) Don't add a second `cssVariablesResolver`.
 - Color scheme: read/write via `useMantineColorScheme()`. **Never** read the color scheme from
   localStorage directly, and never `localStorage.getItem('theme')` — see basalt-state.md.
 - Owned `spacing`/`radius` scales and the `fontWeights` ladder live in the theme — consume them as
   tokens (`p="md"`, `radius="sm"`, `fw="semibold"`), not raw numbers (see basalt-tokens.md).
+
+## Color & accent restraint
+
+Restraint is the #1 lever — neutrals carry the surface, the accent only points. The palette is
+**one muted slate-blue accent** over warm-neutral charcoal; the neutrals do ~90% of the work
+(60/30/10, pushed toward 90/10).
+
+- **The accent appears ONLY on**: the single primary CTA per view, focus rings, links, and small
+  status pops. It does **NOT** appear on active nav, borders, large fills, every icon, or
+  secondary/routine buttons. Don't flood blue — "ink earns its color."
+- **Active nav = neutral surface fill** + plain text + a weight bump, **never the accent**. This is
+  baked into the theme's NavLink defaults (`--nl-*` vars) and holds for _every_ render path,
+  including a consumer's router `<Link>` passed via `renderNavLink` — so "blue active nav
+  everywhere" can't return. Don't re-color the active state back to the accent.
+- **Buttons**: the primary action = filled accent (`variant="filled"`), **exactly one per view**.
+  Every other/secondary action = `variant="default"` (neutral). Do **not** use a colored
+  `variant="light"` for routine actions — it reads washed-out on the warm light canvas.
+- **Status hues stay muted/forest.** Positive deltas use `color="green"` (forest green), never
+  `color="teal"` (vivid turquoise) or a saturated emerald. Status (`red`/`green`/`orange`/`yellow`)
+  is for signal only, kept muted — never raw Material/AntD.
+- **Dark mode** is warm charcoal — not blue-tinted, not pure black. Lift elevation via small
+  warm-neutral lightness steps; the accent uses its lighter shade on dark to avoid glow/bleed.
+- **Light mode** is never pure-white page + pure-black text (harsh halation). Page = near-neutral
+  off-white (`#fafafa` — only a whisper of warmth, not a creamy/yellow cast), cards = white
+  (`#ffffff`) that lift above it, soft low-contrast hairline (`#ededec`), text = near-black
+  (`#121110`). Hairline borders; shadows reserved for genuinely floating elements.
 
 ## Bridging Mantine ↔ charts
 
@@ -71,19 +100,58 @@ Route components import chart primitives directly from `basalt-ui/charts` — ne
   if you install/render it.
 - **Responsive chart sizing**: `useElementSize` from `@mantine/hooks` (replaces `@visx/responsive`).
 
+## Strict surfaces & layout primitives
+
+The theme runs a **strict surface system**: Mantine components don't chain through
+`--mantine-color-default-*` — each reads a **raw ramp step** directly — so `cssVariablesResolver`
+**collapses the ramp steps onto the basalt tokens**. Light borders (`--mantine-color-gray-2/3/4`)
+and dark borders (`--mantine-color-dark-4`) both resolve to `--vx-surface-border`; light
+hover/subtle steps (`--mantine-color-gray-0/1`) resolve to the `--vx-surface-subtle` token;
+`Card`/`Paper` backgrounds are forced to `--vx-surface-panel` via theme `styles` (Mantine otherwise
+defaults card bg to the page body color, so cards blend into the page); `--app-shell-border-color`
+is pinned to `--vx-surface-border`. Net: **one border shade, one card background, one radius
+(`--vx-radius-card`) across every surface** — AppShell, Table, Input, Divider, Tabs, Popover,
+Accordion, cards. The agent cannot reintroduce a divergent border/bg (no more off-system
+`#aba59c`). Surfaces must come from `VX.surface.*` / `withBorder` + the radius token — **never**
+inline `border`/`borderRadius`/`backgroundColor`/`boxShadow`, and never a raw Mantine ramp-step var
+(`var(--mantine-color-gray-N)`).
+
+- **Use Mantine primitives, not raw HTML.** To keep padding/spacing/radius/colors consistent,
+  consumer code must compose Mantine layout/surface primitives — `Box`, `Flex`, `Grid`,
+  `SimpleGrid`, `Stack`, `Group`, `Paper`, `Card` — instead of raw `<div>`/`<span>` with inline
+  `style`. Raw HTML with inline layout/surface styling defeats the token system.
+- **Mechanical enforcement.** `basalt check-theme` now adds four guard kinds (each a config knob,
+  default ON; `theme-allow` line-comment escape): `off-system-surface-var` (raw ramp-step vars),
+  `raw-html-layout` (raw `<div>`/`<span>` with inline layout/surface styling), `inline-spacing`
+  (inline spacing literals), `inline-display` (inline `display` literals). The Mantine-free
+  `src/charts/**` is the only place raw `<div>` is allowed — and it must still use `VX.*` tokens.
+
 ## Elevation, density & shape
 
 basalt-ui targets dense, professional surfaces (a terminal, not a marketing page). The depth and
 shape doctrine lives here; the spacing/radius/type **tokens** are in basalt-tokens.md.
 
-- **Density is the point.** Sections separate by surface change and hairlines, not by large air.
-  Card interior padding defaults to the `md` spacing step.
+- **Density is the point** (Linear/Notion). Sections separate by surface change and hairlines, not
+  by large air — default to the tighter spacing step. The shipped dense defaults: shell header
+  **48px**, navbar width **224** (collapsed **64**) with **`sm` (12px)** padding; sidebar section
+  gap **`sm`**, compact nav rows (`--nl-padding: 6px 8px`, `min-height: 30px`, `sm` font), brand row
+  32px. Pages: KPI/card padding **`sm` (12px)**, page `Stack`/`SimpleGrid` gaps **`sm`**; ChartCard
+  header/body padding stays tight (`8px 12px`).
+- **Surface single-source.** All cards — Mantine `Card`/`Paper` **and** the Mantine-free
+  `ChartCard` — resolve to **one border token** (`--vx-surface-border`) and **one radius token**
+  (`--vx-radius-card` = `radius.md` = **8px**), rendered **flat** (no `boxShadow`). Cards must never
+  diverge: same border, same radius, no shadow. Never inline-override `border`/`borderRadius`/
+  `boxShadow`/`backgroundColor` on a surface — use `withBorder` + the radius token (`radius="md"` /
+  `var(--vx-radius-card)`) + `VX.surface.*`. Mechanically enforced by `basalt check-theme`'s
+  `raw-surface` guard. Outer spacing comes from the parent `Stack`/`SimpleGrid` gap, not an
+  intrinsic card margin.
 - **Depth = surface + hairline, never drop shadows** (Linear/Carbon discipline). Elevation tiers:
   0 flat (no border/shadow — body, page bg); 1 surface (`surface-1` on `canvas` — cards, panels);
   2 elevated (`surface-2` + 1px hairline — chart areas, tooltips, lifted cards); 3 focus (2px
-  primary outline — focused control). `Card`/`Paper` default to `withBorder` with **no** shadow;
-  `VX.shadowCard` is the single soft card shadow (`none` on dark) — use it deliberately, never as a
-  default.
+  primary outline — focused control). `Card`/`Paper` default to `withBorder` with **no** shadow,
+  and the Mantine-free `ChartCard` matches them (flat, same border + `--vx-radius-card` radius). All
+  cards are flat by design — there is no default card shadow token. (Genuinely floating elements —
+  modals, popovers, menus — get their elevation from Mantine's own shadow scale, not from a card.)
 - **Tight radii read precise/technical** (Linear): `sm` for controls, `md` for cards, `pill` for
   badges. Consume the token, never a raw number (basalt-tokens.md).
 - **Type is carried by size + weight** — system-sans (no display/body split), numbers in the mono
