@@ -17,8 +17,9 @@ one that exists. Lower layers fill gaps; they never override a higher layer.
    confirmation, the series dictionary, app deviations. **This wins on every conflict.** It is the
    Google-spec convention (YAML token front matter + Markdown prose, sibling to `CLAUDE.md`).
 2. **Shipped `basalt-*` rules** (`.claude/rules/basalt-{tokens,charts,mantine,state}.md`) — the
-   universal law AND its enforcement: Blueprint v6 palette, one-hue-per-metric, neutral structure,
-   gradient defaults, the three-tier token contract, the elevation/density doctrine.
+   universal law AND its enforcement: the Basalt warm-neutral palette + single muted slate accent,
+   one-hue-per-metric, neutral structure, gradient defaults, the three-tier token contract, the
+   elevation/density doctrine.
 3. **This skill** — only the loop and the judgment, where the above are silent.
 
 If a consumer `DESIGN.md` does not exist yet, the app has not been scaffolded — run `/basalt:app`
@@ -31,12 +32,13 @@ This is the same restraint `frontend-design` calls for, applied to data: intenti
 intensity. The `basalt init` CLAUDE block sets a restraint override for exactly this reason — in a
 dashboard the bold move is calm.
 
-- **One muted hue family, reused everywhere.** Blueprint v6, never raw Material / AntD / Tailwind
-  primaries (they read childish and clash). A small harmonious subset across every page so tabs
-  feel like one app.
+- **One muted hue family, reused everywhere.** The Basalt warm-neutral identity (below), never raw
+  Material / AntD / Tailwind primaries (they read childish and clash). A small harmonious subset
+  across every page so tabs feel like one app.
 - **Single hue per metric.** Each metric owns ONE color, stable across all views (HRV always
-  violet, bench always blue). Multiple colors only for genuinely categorical data (sleep stages,
-  source breakdown). A line chart almost never needs more than one hue plus neutrals.
+  violet, bench always amber). Series colors are app-side and distinct from the UI accent — don't
+  reuse the slate accent as a metric hue. Multiple colors only for genuinely categorical data
+  (sleep stages, source breakdown). A line chart almost never needs more than one hue plus neutrals.
 - **Neutral structure, colored signal.** Lines/axes/grids in muted neutrals; color is the data and
   status (good/warn/bad). A single neutral line with a soft tinted area reads more premium than a
   rainbow.
@@ -46,13 +48,76 @@ dashboard the bold move is calm.
 - **Quiet chrome.** Hairline grids (~6–8% neutral), thin crosshairs, restrained tooltips with a
   card surface and one accent swatch per row. Generous whitespace.
 
+## Color identity & accent restraint (the #1 lever)
+
+The Basalt identity is **warm-neutral volcanic charcoal + a single muted slate accent** — not a
+cool/blue/steel "Blueprint" identity (that framing is obsolete). Restraint on the accent is the
+single biggest difference between premium and AI-default.
+
+**Neutrals carry the surface (~90/10, not 60/30/10).** Warm-neutral means **only a whisper of
+warmth** (blue channel ≤ red, last-digit) — **not** a creamy/yellow cast. Dark is warm charcoal;
+light is a clean near-neutral off-white:
+
+- **Dark:** bg `#191917`, panel `#1f1f1d`, elevated `#262624`, subtle `#262624` (hover/striped,
+  above panel), hairline `#33322f`. Warm charcoal, never blue-tinted, never pure black. Small warm
+  elevation steps for depth.
+- **Light:** page `#fafafa` (near-neutral off-white, no yellow), cards `#ffffff` lifting above it,
+  subtle `#f2f2f1` (hover/striped, a step below white), soft low-contrast hairline `#ededec`.
+  Near-black text `#121110` — never pure `#000` on pure `#fff`.
+
+The surface token set is `bg` (page) · `panel` (card) · `elevated` (lifted) · `subtle`
+(hover/striped/track) · `border` (hairline). `--vx-surface-subtle` backs Table hover/striped, `Code`,
+the `SegmentedControl` track, and Tabs/Accordion/Menu hover.
+
+**One accent, muted slate-blue** (~50% saturation, Notion/Linear-calm — NOT a saturated Bootstrap
+blue): family `['#324a66','#3c5b7e','#4f78a4','#7099c4','#a5c1dd']`.
+
+The accent appears **only** on: the single primary CTA per view, focus rings, links, small status
+pops. It appears **never** on: active nav, borders, large fills, every icon, secondary buttons.
+"Ink earns its color" — neutral does the structure, the accent only points.
+
+- **Active nav = neutral surface fill + plain text + a weight bump, never the accent.** The theme
+  bakes this into `NavLink` for every render path — don't re-color it.
+- **Buttons:** exactly one filled-accent primary CTA per view; every other action is
+  `variant="default"` (neutral). Avoid colored `variant="light"` for routine actions — washed-out,
+  especially on the warm light canvas.
+- **Status:** positive deltas `color="green"` (forest), never `teal`/turquoise/saturated emerald.
+- **Dark done right:** warm charcoal, not blue-tinted, not pure black; keep the accent muted so it
+  doesn't glow/bleed.
+- **Light done right:** near-neutral off-white page (`#fafafa`, no yellow) + white cards that lift;
+  soft low-contrast hairline (`#ededec`); shadows only for genuinely floating elements.
+
+### Density & surface consistency
+
+- **Dense by default** (Linear/Notion): compact nav rows, `sm` (12px) gaps and card padding, a
+  48px shell header. Separate by surface + hairline, not by large air — default to the tighter step.
+- **All cards render identically:** Mantine `Card`/`Paper` **and** the Mantine-free `ChartCard`
+  resolve to **one border token** + **one radius token** (`--vx-radius-card` = `radius.md` = 8px),
+  **flat** (no drop shadow — depth is the 1px hairline). Never inline-override a surface's
+  `border`/`borderRadius`/`boxShadow`/`backgroundColor` — use `withBorder` + the radius token +
+  `VX.surface.*`. Mechanically enforced by `basalt check-theme`'s `raw-surface` guard.
+- **Strict surfaces & primitives.** The theme runs a strict surface system: Mantine components read
+  raw ramp steps directly, so `cssVariablesResolver` **collapses the ramp steps onto the
+  `--vx-surface-*` tokens** — one border, one card bg, one radius across every component (AppShell,
+  Table, Input, Divider, Tabs, Popover, Accordion, cards). Consumer code must **use Mantine layout
+  primitives** (`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card`), not raw
+  `<div>`/`<span>` with inline `style`. `check-theme` adds four guard kinds to enforce this
+  (default ON, `theme-allow` escape): `off-system-surface-var` (raw ramp-step vars),
+  `raw-html-layout`, `inline-spacing`, `inline-display`. Only the Mantine-free `src/charts/**` may
+  use raw `<div>` (still with `VX.*` tokens).
+
+**Anti-slop checklist:** no pure `#000`/`#fff`; one accent locked page-wide; neutral does the
+structure, accent only points; don't flood blue; hierarchy via scale/weight/contrast/space, not
+color; depth = surface + hairline, not drop-shadow.
+
 ## The three-tier token system (centralize + enforce)
 
 Aesthetics only survive if they cannot be bypassed. basalt-ui ships this as the `./tokens` and
 `./charts` surfaces:
 
-1. **Palette data** — `BP` (Blueprint families) plus every semantic/status/neutral/surface entry
-   as a per-theme `{ light, dark }` pair. Pure data: no React, no `@mantine/*`, no browser API.
+1. **Palette data** — the Basalt warm-neutral ramps + the single muted slate accent family, plus
+   every semantic/status/neutral/surface entry as a per-theme `{ light, dark }` pair. Pure data: no
+   React, no `@mantine/*`, no browser API.
 2. **CSS variables** — `buildPaletteCss(opts)` emits the pairs as `--vx-*` custom properties under
    the light/dark color-scheme selector. Theme resolution is **pure CSS** — no JS branching, works
    in non-component files.
@@ -128,9 +193,19 @@ Every chart composes the shipped primitives — never hand-rolled equivalents:
 - **`ChartTooltip`** + `TooltipHeader` / `TooltipRow` / `TooltipBody` — never import `@visx/tooltip`
   directly (oxlint bans it in chart files).
 - **`AxisBottomDate`** / **`AxisLeftNumeric`** / **`AxisRightNumeric`** — never raw
-  `<AxisLeft>`/`<AxisBottom>` (they miss theme tokens + smart ticks).
-- **`HoverOverlay`** + `HoverContext` + `useChartTooltip` for hover/crosshair.
+  `<AxisLeft>`/`<AxisBottom>` (they miss theme tokens + smart ticks). Now lint-enforced:
+  `basalt check-theme`'s `raw-visx-axis` guard fails the build on a raw axis inside a `/charts/`
+  file (escape via `theme-allow`).
+- **`HoverOverlay`** + `HoverContext` + `useChartTooltip` for hover/crosshair. Wrap a group of
+  date-aligned charts in **`ChartHoverSync`** to cast a ghost crosshair across all siblings on hover
+  (without it, `useHoverSync` runs per-chart only and warns in dev).
 - **`AreaGradient`** / `areaFillUrl` for the soft single-hue fill.
+
+Shipped kinds beyond `ZonedLine` / `Bars` / `StackedArea` / `Donut`: **`MultiLine`** (N series on a
+shared y-axis, legend-hover dimming, dashed MA companions, per-point markers, zones/refLines, fixed
+or auto domain — also z-score/σ via a symmetric domain + zero refLine), **`DualPanel`** (line pane
++ signed-histogram pane on one x-scale and cursor, optional fill-between), **`Heatmap`**
+(category×category intensity grid with per-cell tooltip + optional gradient legend strip).
 
 > If the new chart does not fit the primitives, **add a kind — don't loosen the primitives.**
 > Recurring shape → extract a kind via the Rule of Three. Genuinely unique → stay bespoke,

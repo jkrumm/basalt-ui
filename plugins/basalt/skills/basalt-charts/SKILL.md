@@ -13,9 +13,20 @@ how should this look". This skill answers "how do I wire it" with basalt-ui's `.
 
 Before writing chart code, decide which of three paths you are on:
 
-1. **Reuse a shipped kind.** basalt-ui ships `ZonedLine`, `Bars`, `StackedArea`, `Donut`. If the
-   shape matches, use it — props are declarative (data, width/height, `getX`/`getY` accessors,
-   zones/thresholds/refLines as plain arrays, `seriesLabel`, `formatValue`). Done.
+1. **Reuse a shipped kind.** basalt-ui ships `ZonedLine`, `Bars`, `StackedArea`, `Donut`,
+   `MultiLine`, `DualPanel`, `Heatmap`. If the shape matches, use it — props are declarative (data,
+   width/height, `getX`/`getY` accessors, zones/thresholds/refLines as plain arrays, `seriesLabel`,
+   `formatValue`). Done.
+   - **`MultiLine`** — N series on a shared y-axis: legend-hover dimming, per-series synced dots,
+     dashed companion (MA) lines, per-point markers (PR stars / status dots), zones + refLines,
+     fixed or auto domain (also covers z-score/σ charts via a fixed symmetric domain + zero
+     refLine). Replaces bespoke multi-line / relative-progression / training-load /
+     strength-composite / fitness-trends.
+   - **`DualPanel`** — top line-pane + bottom signed-histogram pane sharing ONE x-scale and ONE
+     cursor; optional fill-between two top lines, zones, refLines. Replaces bespoke divergence /
+     momentum.
+   - **`Heatmap`** — category×category intensity grid (`color-mix` alpha), per-cell tooltip,
+     optional gradient legend strip. Replaces bespoke time-of-day.
 2. **Extract a new kind (second instance of a pattern).** When you are about to build the *second*
    chart of a shape that has no shipped kind, extract a kind. Don't extract on the first; don't
    wait past the third. A new kind lives in the consumer's chart kinds dir (or, if generic enough
@@ -116,6 +127,21 @@ Never substitute: hand-rolled legend markup, a raw `<AxisLeft>`/`<AxisBottom>`, 
 and `alpha(token, a)`. Sparklines (`charts/sparklines/`) are the one exemption from the
 Card/Legend/Tooltip composition — but they still use `VX.*` tokens.
 
+## Cross-chart cursor sync
+
+Wrap a group of date-aligned charts in `ChartHoverSync` (from `basalt-ui/charts`) to activate
+cross-chart cursor sync — hovering one chart casts a ghost crosshair on every sibling. Without the
+provider, `useHoverSync` runs per-chart only (and logs a dev warning):
+
+```tsx
+import { ChartHoverSync } from 'basalt-ui/charts'
+
+<ChartHoverSync>
+  <ChartCard>…</ChartCard>
+  <ChartCard>…</ChartCard>
+</ChartHoverSync>
+```
+
 ## Respect the boundary (oxlint-enforced)
 
 - **`@visx/*` may only be imported inside chart files.** The shipped consumer oxlint preset bans
@@ -125,6 +151,9 @@ Card/Legend/Tooltip composition — but they still use `VX.*` tokens.
   free of Mantine so a charts/tokens-only consumer never pulls Mantine in.
 - **No raw color literals** anywhere except the one guard-exempt series file (and a deliberate
   `theme-allow` line). `basalt check-theme` is the teeth; run it before committing.
+- **No raw visx axes.** `basalt check-theme`'s `raw-visx-axis` guard fails the build on a raw
+  `<AxisLeft>`/`<AxisBottom>`/`<AxisRight>` inside any `/charts/` file — use the tokenized
+  `AxisLeftNumeric` / `AxisRightNumeric` / `AxisBottomDate` (escape via `theme-allow`).
 
 ## Checklist for a new chart
 

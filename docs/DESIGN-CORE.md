@@ -131,8 +131,9 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
   | 2 (elevated) | `surface-2` + 1px hairline                  | Chart area, tooltips, lifted cards |
   | 3 (focus)    | 2px primary outline                         | Focused input / control            |
 
-  `Card`/`Paper` default to `withBorder` and no shadow. `VX.shadowCard` is the one soft card shadow
-  (`none` on dark) — use it deliberately, not as a default.
+  `Card`/`Paper` default to `withBorder` and stay flat — depth comes from the 1px hairline, not a
+  drop shadow. There is no card-shadow token; if a lifted surface genuinely needs one, reach for a
+  Mantine `shadow` prop deliberately, never as a default.
 - **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: default `sm` for
   controls, cards at `md`, pills/badges at `pill`. Owned in the theme, not inherited.
 - **Type carried by size + weight.** System-sans, no display/body family split. Numbers render in a
