@@ -7,7 +7,7 @@
  * refLines, tooltip), LineSparkline / BarSparkline, PageActions, the app-side `demoColors` series
  * tokens, and `alpha()`.
  */
-import { Badge, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
 import {
   alpha,
   BarSparkline,
@@ -76,40 +76,34 @@ export function DashboardPage() {
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
   return (
-    <Stack gap="md">
+    <Stack gap="sm">
       <PageActions>
-        <Button size="xs" variant="light">
+        <Button size="xs" variant="default">
           Export
         </Button>
       </PageActions>
 
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
         {KPIS.map((kpi) => (
-          <Paper
-            key={kpi.key}
-            p="md"
-            radius="md"
-            withBorder
-            style={{ backgroundColor: VX.surface.panel }}
-          >
+          <Paper key={kpi.key} p="sm" radius="md" withBorder>
             <Group justify="space-between" align="flex-start" mb={6}>
               <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
                 {kpi.label}
               </Text>
-              <Badge size="sm" variant="light" color="teal">
+              <Badge size="sm" variant="light" color="green">
                 {kpi.delta}
               </Badge>
             </Group>
             <Text fz={28} fw={700} lh={1}>
               {kpi.value}
             </Text>
-            <div style={{ marginTop: 10 }}>
+            <Box mt="xs">
               {kpi.bar ? (
                 <BarSparkline data={kpi.spark} width={220} height={36} color={kpi.color} />
               ) : (
                 <LineSparkline data={kpi.spark} width={220} height={36} color={kpi.color} />
               )}
-            </div>
+            </Box>
           </Paper>
         ))}
       </SimpleGrid>
@@ -124,7 +118,7 @@ export function DashboardPage() {
           </Text>
         }
       >
-        <div ref={ref}>
+        <Box ref={ref}>
           <Bars<DayPoint>
             data={SERIES_DATA}
             width={width}
@@ -159,7 +153,7 @@ export function DashboardPage() {
             formatValue={(v) => fmtInt(v)}
             highlightedKey={highlighted}
           />
-        </div>
+        </Box>
         <ChartLegend items={LEGEND} highlighted={highlighted} onHighlight={setHighlighted} />
       </ChartCard>
     </Stack>

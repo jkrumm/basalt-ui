@@ -17,8 +17,8 @@ export const DEMO_GROUP = 'demo'
  * identity but shifts shade across schemes (lighter on dark to avoid glow, deeper on light).
  */
 export const DEMO_SERIES = defineSeries({
-  sessions: { light: '#2965cc', dark: '#7da9f5' },
-  signups: { light: '#0f9960', dark: '#62d6a0' },
+  sessions: { light: '#4f78a4', dark: '#7099c4' },
+  signups: { light: '#3f8a63', dark: '#62c08f' },
   revenue: { light: '#d9822b', dark: '#f0a868' },
   churn: { light: '#c23030', dark: '#f08c8c' },
 })

@@ -60,3 +60,111 @@ export const CHANNEL_MIX: ChannelSlice[] = [
 export const SPARK_SESSIONS = SESSIONS
 export const SPARK_SIGNUPS = SIGNUPS
 export const SPARK_REVENUE = REVENUE
+
+// ── MultiLine demo: per-lift e1RM trend + trailing MA + PR markers ──────────
+
+/** Trailing moving average (deterministic) — window-sized mean ending at each index. */
+function trailingMa(arr: number[], window: number): number[] {
+  return arr.map((_, i) => {
+    const start = Math.max(0, i - window + 1)
+    const slice = arr.slice(start, i + 1)
+    return slice.reduce((s, v) => s + v, 0) / slice.length
+  })
+}
+
+/** Boolean PR flags — true where the value strictly exceeds every prior value (a running max). */
+function prFlags(arr: number[]): boolean[] {
+  let max = -Infinity
+  return arr.map((v) => {
+    const isPr = v > max
+    if (isPr) max = v
+    return isPr
+  })
+}
+
+const BENCH = [100, 102, 101, 105, 104, 108, 107, 110, 109, 113, 112, 116]
+const SQUAT = [140, 143, 142, 148, 150, 149, 154, 156, 155, 160, 162, 166]
+const DEAD = [180, 178, 185, 188, 186, 192, 195, 193, 200, 198, 205, 208]
+const BENCH_MA = trailingMa(BENCH, 4)
+const SQUAT_MA = trailingMa(SQUAT, 4)
+const DEAD_MA = trailingMa(DEAD, 4)
+const BENCH_PR = prFlags(BENCH)
+const SQUAT_PR = prFlags(SQUAT)
+const DEAD_PR = prFlags(DEAD)
+
+export type LiftPoint = {
+  /** Session label (x category). */
+  session: string
+  bench: number
+  squat: number
+  dead: number
+  benchMa: number
+  squatMa: number
+  deadMa: number
+  benchPr: boolean
+  squatPr: boolean
+  deadPr: boolean
+}
+
+/** Estimated 1RM (kg) across 12 sessions for three lifts, with 4-session MAs + PR flags. */
+export const LIFT_TREND: LiftPoint[] = BENCH.map((_, i) => ({
+  session: `S${i + 1}`,
+  bench: BENCH[i]!,
+  squat: SQUAT[i]!,
+  dead: DEAD[i]!,
+  benchMa: Math.round((BENCH_MA[i] ?? 0) * 10) / 10,
+  squatMa: Math.round((SQUAT_MA[i] ?? 0) * 10) / 10,
+  deadMa: Math.round((DEAD_MA[i] ?? 0) * 10) / 10,
+  benchPr: BENCH_PR[i] ?? false,
+  squatPr: SQUAT_PR[i] ?? false,
+  deadPr: DEAD_PR[i] ?? false,
+}))
+
+// ── DualPanel demo: acute vs chronic load + signed divergence histogram ─────
+
+const ACUTE = [48, 55, 60, 52, 46, 58, 66, 70, 64, 55, 50, 62, 68, 58]
+const CHRONIC = [50, 51, 52, 52, 53, 54, 55, 57, 58, 58, 57, 58, 60, 60]
+
+export type LoadPoint = {
+  date: string
+  /** 7-day acute training load. */
+  acute: number
+  /** 28-day chronic training load (baseline). */
+  chronic: number
+  /** Signed acute − chronic (the bottom-pane histogram). */
+  divergence: number
+}
+
+/** Acute/chronic load over the same 14-day calendar as SERIES_DATA. */
+export const LOAD_TREND: LoadPoint[] = DAY_LABELS.map((date, i) => ({
+  date,
+  acute: ACUTE[i]!,
+  chronic: CHRONIC[i]!,
+  divergence: ACUTE[i]! - CHRONIC[i]!,
+}))
+
+// ── Heatmap demo: day-of-week × hour-of-day session intensity ───────────────
+
+const HEATMAP_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+const HEATMAP_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const
+
+/** Deterministic intensity: weekday morning + evening peaks, lighter weekends. */
+function sessionLoad(dayIdx: number, hour: number): number {
+  const weekend = dayIdx >= 5
+  const morning = Math.max(0, 10 - Math.abs(hour - 10) * 2.2)
+  const evening = Math.max(0, 12 - Math.abs(hour - 18) * 2.6)
+  const base = morning + evening
+  const dayFactor = weekend ? 0.45 : 1 - dayIdx * 0.05
+  return Math.round(base * dayFactor)
+}
+
+export type HeatCell = { day: string; hour: string; sessions: number }
+
+/** 7×12 grid of session counts (84 cells). */
+export const ACTIVITY_HEATMAP: HeatCell[] = HEATMAP_DAYS.flatMap((day, di) =>
+  HEATMAP_HOURS.map((hour) => ({
+    day,
+    hour: `${hour}:00`,
+    sessions: sessionLoad(di, hour),
+  })),
+)

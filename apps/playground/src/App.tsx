@@ -19,11 +19,19 @@ import {
 import { BasaltShell, NavCountBadge, type NavLinkRenderer, type SidebarSection } from 'basalt-ui'
 import { useCallback, useMemo, useState } from 'react'
 import { ChartsPage } from './demo/ChartsPage'
+import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
 import { SettingsPage } from './demo/SettingsPage'
-import { IconActivity, IconChart, IconDashboard, IconPalette, IconSettings } from './demo/icons'
+import {
+  IconActivity,
+  IconChart,
+  IconComponents,
+  IconDashboard,
+  IconPalette,
+  IconSettings,
+} from './demo/icons'
 
-type PageKey = 'dashboard' | 'charts' | 'activity' | 'settings'
+type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -130,6 +138,15 @@ export function App() {
             onClick: go('charts'),
           },
           {
+            key: 'components',
+            label: 'Components',
+            mobile: true,
+            icon: <IconComponents />,
+            href: '/components',
+            active: page === 'components',
+            onClick: go('components'),
+          },
+          {
             key: 'reports',
             label: 'Reports',
             icon: <IconActivity />,
@@ -179,6 +196,7 @@ export function App() {
     >
       {page === 'dashboard' && <DashboardPage />}
       {page === 'charts' && <ChartsPage />}
+      {page === 'components' && <ComponentsPage />}
       {page === 'settings' && <SettingsPage />}
       {page === 'activity' && <DashboardPage />}
     </BasaltShell>
