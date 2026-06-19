@@ -3,271 +3,211 @@
 [![npm version](https://img.shields.io/npm/v/basalt-ui.svg)](https://www.npmjs.com/package/basalt-ui)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/jkrumm/basalt-ui/blob/master/LICENSE)
 
-> Design system for the modern stack. One Tailwind theme that makes your components, docs, and charts look like they belong together.
+> Opinionated framework for Mantine v9 + visx React apps — theme, app shell, chart system, and the agentic layer to drive them.
 
 **[Documentation](https://basalt-ui.com?utm_source=basalt_ui_readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
-Building modern apps often means combining ShadCN components, Starlight docs, Tremor dashboards, and more — each with its own styling.
+Building a dashboard app means wiring a Mantine theme, a visx chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other.
 
-Basalt UI is a single Tailwind CSS theme that brings them all together. Import once, get consistent design everywhere. More integrations are on the way.
-
-### Why Basalt UI?
-
-Most teams don't use just one UI tool anymore.
-
-You combine component libraries, documentation frameworks, and charting tools — and they rarely look like they belong together.
-
-Basalt UI solves this with a single Tailwind configuration that works across your stack.
-
-No rewrites. No heavy abstractions. Just consistent design, everywhere.
-
-### What Basalt UI gives you
-
-- **One Tailwind theme** shared across apps, docs, and dashboards
-- **Zero configuration** - just import one CSS file
-- **Self-hosted fonts** bundled automatically (Instrument Sans Variable, JetBrains Mono Variable)
-- **Out-of-the-box support** for ShadCN, Starlight, and Tremor
-- **Matching light and dark modes** by default
-- **Framework-agnostic** - works with Next.js, Vite, Astro, and more
-- **No config file needed** - uses Tailwind v4's CSS-first approach
-
-More integrations will be added over time.
+Basalt UI is the extraction of that setup from a production app. Install once, get a coherent system.
 
 ---
 
-## Quick Start
+## Quick start
 
-### Installation
-
-**Step 1: Install basalt-ui and peer dependencies**
+### 1. Install
 
 ```bash
-# Using Bun
 bun add basalt-ui
-bun add -D @tailwindcss/typography shadcn tw-animate-css
-
-# Using npm
-npm install basalt-ui
-npm install -D @tailwindcss/typography shadcn tw-animate-css
-
-# Using pnpm
-pnpm add basalt-ui
-pnpm add -D @tailwindcss/typography shadcn tw-animate-css
+bun add react react-dom @mantine/core @mantine/hooks
+# @mantine/dates is optional (date pickers only)
 ```
 
-**Step 2: Import the CSS**
+Peer requirements: `react` / `react-dom` `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`.
 
-```css
-/* src/styles/globals.css or app/globals.css */
-@import 'basalt-ui/css';
+### 2. Scaffold the repo doctrine (`basalt init`)
+
+```bash
+bunx basalt init
 ```
 
-**⚠️ Important:** Use `basalt-ui/css`, not `basalt-ui` or `basalt-ui/src/index.css`
+Writes into the consumer repo:
 
-**Step 3: Add dark mode support**
+- `.claude/rules/basalt-*.md` — six Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`)
+- A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
+- A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
+- Toolchain templates: `oxfmt.json`, `lefthook.yml`, `check.yml`
+- `.oxlintrc.json` with `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`
+- `.basalt/manifest.json` — sha256 per managed file for `sync` three-way diff
 
-```html
-<html class="dark">
-  <!-- Your app -->
-</html>
+### 3. Install the plugin (skills)
+
+```bash
+claude plugin marketplace add jkrumm/basalt-ui
+claude plugin install basalt@basalt-ui     # enable auto-update when prompted
 ```
 
-**📖 Complete Guide:** For framework-specific setup (Vite, Next.js, Astro), troubleshooting, font loading details, and advanced integration patterns, see the **[Installation Documentation](https://basalt-ui.com/docs/installation?utm_source=basalt_ui_readme)**.
+Gives you `/basalt:app`, `/basalt:design`, `/basalt:charts` in every Claude Code session.
+
+### The plugin and `basalt init` are a pair
+
+| Channel           | Ships                                                                | Scope                                                   |
+| ----------------- | -------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Plugin**        | The three skills (`/basalt:app`, `/basalt:design`, `/basalt:charts`) | User scope — installed once, available in every project |
+| **`basalt init`** | The repo doctrine (rules, CLAUDE block, DESIGN.md, toolchain)        | Per repo — run once per consumer                        |
+
+A Claude Code plugin cannot write project context (`CLAUDE.md`, `.claude/rules/`, `DESIGN.md`) — that is why doctrine is a separate per-repo `init`. And `init` cannot auto-install a plugin at user scope — that is why the plugin is a one-time separate step. Skills without `init` degrade to generic advice. `init` without the plugin still loads the rules as context, but the design and charts workflows are not a slash command away. Do both.
 
 ---
 
-## Usage Examples
+## Wire the runtime
 
-**Content areas** - Use `.prose` for automatic semantic styling:
+After `bunx basalt init`, wire the provider, shell, and vite preset:
 
-```html
-<article class="prose">
-  <h2>Section Title</h2>
-  <p>This paragraph looks great with <a href="#">automatic styling</a>.</p>
-  <code>inline code</code> and
-  <pre><code>code blocks</code></pre>
-</article>
-```
+```tsx
+// Provider — wraps MantineProvider, injects the --vx-* palette, bridges the Vx tokens
+import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
+import 'basalt-ui/styles.css'
 
-**UI components** - Use defined utilities (no global conflicts):
+const theme = createBasaltTheme({
+  /* app deltas only */
+})
 
-```html
-<div class="p-4 bg-card text-foreground rounded-lg shadow">
-  <h3 class="text-h3 font-bold">Card Title</h3>
-  <p class="text-muted-foreground">Card content</p>
-</div>
-```
-
----
-
-## How It Works
-
-### Package Exports
-
-Basalt UI exports CSS files only (no config needed):
-
-```json
-{
-  "exports": {
-    "./css": "./src/index.css", // Main design system
-    "./starlight": "./src/starlight.css" // Starlight docs integration
-  }
+export function App() {
+  return <BasaltProvider theme={theme}>{/* app */}</BasaltProvider>
 }
 ```
 
-**What you get:**
-
-- Complete Tailwind v4 theme via `@theme inline` CSS
-- Self-hosted variable fonts (bundled automatically)
-- CSS variables for light/dark modes
-- Typography plugin configuration
-- Animation utilities
-
-**What you DON'T need:**
-
-- ❌ No `tailwind.config.js` file
-- ❌ No manual font setup
-- ❌ No theme configuration
-- ❌ No PostCSS config
-
-### Dependencies
-
-**Peer Dependencies** (you install):
-
-- `tailwindcss` v4+ - Core CSS framework
-- `@tailwindcss/typography` - Powers `.prose` class
-- `shadcn` - Component CLI tool
-- `tw-animate-css` - Animation utilities
-
-**Direct Dependencies** (bundled):
-
-- `@fontsource-variable/instrument-sans` - Heading and body font
-- `@fontsource-variable/jetbrains-mono` - Monospace font
-
-**Why peer dependencies?**
-
-- Prevents version conflicts across your project
-- You control which versions to use
-- Reduces duplicate packages in node_modules
-- Standard practice for plugin ecosystems
-
----
-
-## Framework & Library Compatibility
-
-Basalt UI works seamlessly with:
-
-- ✅ **Next.js** - App Router with Tailwind v4
-- ✅ **Vite** - React, Vue, Svelte, Solid
-- ✅ **Astro** - Static sites and SSR
-- ✅ **ShadCN UI** - All components work out of the box
-- ✅ **Tremor** - Charts and dashboards
-- ✅ **Starlight** - Documentation framework
-
-See the **[Installation Guide](https://basalt-ui.com/docs/installation?utm_source=basalt_ui_readme)** for framework-specific setup examples and integration details.
-
----
-
-## The Basalt UI Difference
-
-### Before (Standard Tailwind)
-
-```html
-<!-- Arbitrary values everywhere -->
-<div class="text-[17px] p-[13px] bg-[#f3f3f3]">
-  <!-- Components conflict with global styles -->
-  <h2>Heading</h2>
-  <!-- Styled globally -->
-  <table>
-    ...
-  </table>
-  <!-- Inherits unwanted styles -->
-</div>
+```tsx
+// Shell — sidebar / mobile-nav / breadcrumbs / page-header; router-agnostic
+import { BasaltShell, NavCountBadge } from 'basalt-ui'
+import type { SidebarSection } from 'basalt-ui'
 ```
 
-**Problems:**
+```ts
+// vite.config.ts
+import { basaltViteConfig } from 'basalt-ui/vite'
 
-- Arbitrary values lead to inconsistency
-- Global semantic HTML styles conflict with component libraries
-- Tremor/ShadCN components inherit unwanted styles
-
-### After (Basalt UI)
-
-```html
-<!-- Defined tokens only -->
-<div class="text-body p-4 bg-card">
-  <!-- Content areas: Use .prose -->
-  <article class="prose">
-    <h2>Heading</h2>
-    <!-- Styled within .prose -->
-  </article>
-
-  <!-- Components: Clean, no conflicts -->
-  <table>
-    ...
-  </table>
-  <!-- Works perfectly -->
-</div>
+export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' })
 ```
 
-**Benefits:**
-
-- Consistent, predictable design tokens
-- `.prose` for content, clean components for UI
-- No conflicts with ShadCN/Tremor
-- Design system enforces consistency
+```ts
+// Lint — theme guard is the teeth behind the token doctrine
+// package.json scripts:
+"lint": "oxlint . && basalt check-theme"
+```
 
 ---
 
-## Why "Basalt UI"?
+## Subpath exports
 
-Basalt is a volcanic rock formed from cooled lava. It's:
+| Subpath        | Mantine? | Contents                                                                                                                                                                                                                               |
+| -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + `AppSidebar` / `MobileNav` / `AppBreadcrumbs` / `PageHeaderProvider` / `PageActions` / `PageActionsOutlet`, `NavCountBadge`, shell types |
+| `./charts`     | **free** | visx primitives, 7 chart kinds (Bars, Donut, DualPanel, Heatmap, MultiLine, StackedArea, ZonedLine), sparklines, hooks; re-exports the token layer                                                                                     |
+| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                                                                       |
+| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS`                                                                                                                                                                                   |
+| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                                                                               |
+| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                                          |
+| `./configs/*`  | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                        |
 
-- **Strong and foundational** - Like a mature design system
-- **Natural and earthy** - Inspiring the zinc + nature accent palette
-- **Structured but organic** - Restrictive yet beautiful
+Named exports only — no default exports.
 
-The design system embodies this aesthetic: professional structure with warm, natural character.
+---
+
+## Mantine-free boundary
+
+`./charts` and `./tokens` import zero `@mantine/*`. `@visx/*` is only allowed inside `src/charts/**`. The root barrel (`.`) does not re-export `./charts` or `./tokens` — a charts/tokens-only consumer never pulls in Mantine.
+
+This boundary is enforced by oxlint `no-restricted-imports` in both the repo and the shipped consumer preset, so the constraint holds downstream too.
+
+---
+
+## Token system (`--vx-*`, three tiers)
+
+```
+Tier 1 — Palette data     Pure data + string helpers (BP, p()). Zero React, zero Mantine, zero browser.
+Tier 2 — CSS variables    Emitted as --vx-* custom properties under light/dark color-scheme. Pure CSS.
+Tier 3 — Token refs       VX.* — just var(--vx-*) strings. Work in components and non-component files.
+```
+
+Apply opacity with `alpha(token, a)` (backed by `color-mix`) — never `rgba()`, so the hue keeps resolving per scheme.
+
+### Consumer-series extensibility
+
+App-specific series colors live in the consumer, not the framework. The framework ships the factories:
+
+```ts
+import { defineSeries, seriesTokens, groupTokens, buildPaletteCss, alpha } from 'basalt-ui/tokens'
+
+// Define once in lib/series.ts (the single guard-exempt file)
+export const SERIES = defineSeries({
+  hrv: '#6C8EBF',
+  rhr: '#D6A84E',
+  load: '#7BAF7B',
+})
+
+// Exact-keyed token refs — stale keys fail tsc at the call site
+export const S = seriesTokens(SERIES)
+// S.hrv → 'var(--vx-hrv)'
+```
+
+Every `defineX` factory is const-generic and exact-keyed — the return type mirrors the literal input shape, so `tsc` catches stale keys.
+
+---
+
+## CLI
+
+```bash
+bunx basalt init          # scaffold doctrine into a consumer repo
+bunx basalt sync          # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
+bunx basalt sync --check  # CI drift gate — non-zero exit on any managed-file drift
+bunx basalt check-theme   # palette guard — fails on colors that bypass the central --vx-* system
+```
+
+`sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff); missing → recreate. `--force` overwrites local edits.
+
+---
+
+## Toolchain
+
+- **Lint**: oxlint (NOT ESLint / Biome)
+- **Format**: oxfmt (NOT Prettier / Biome)
+- **Runtime**: Bun
+- **TypeScript**: strict mode throughout
+- **Tarball ships `src/`** alongside `dist/` — go-to-definition lands in real source, not compiled output
+
+The `./configs/*` export gives consumer apps raw presets to `extends` or copy via `basalt init`:
+
+```json
+// .oxlintrc.json
+{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }
+```
+
+---
+
+## `basalt sync` in CI
+
+Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
+
+```yaml
+# .github/workflows/check.yml (scaffolded by basalt init)
+- run: bunx basalt sync --check
+```
 
 ---
 
 ## Requirements
 
-### Peer Dependencies (Required)
-
-- **Tailwind CSS v4+** - Core CSS framework (uses `@theme inline` syntax)
-- **@tailwindcss/typography v0.5+** - Typography plugin for `.prose` class
-- **tw-animate-css v1.4+** - Animation utilities
-- **shadcn v3.8+** - Component utilities
-
-All peer dependencies must be installed in your project.
-
-### Browser Support
-
-- Modern browsers with OKLCH support (Chrome 111+, Edge 111+, Safari 16.4+, Firefox 113+)
-
----
-
-## Contributing
-
-Basalt UI is **opinionated by design**. Contributions should:
-
-1. Maintain restrictive philosophy
-2. Use OKLCH for all colors
-3. Preserve semantic HTML defaults
-4. Follow volcanic nature aesthetic
-5. Document changes in CLAUDE.md
-
-Open an issue before major changes to discuss alignment with project philosophy.
+| Peer                  | Version | Notes                        |
+| --------------------- | ------- | ---------------------------- |
+| `react` / `react-dom` | `^19`   | required                     |
+| `@mantine/core`       | `^9.3`  | required                     |
+| `@mantine/hooks`      | `^9.3`  | required                     |
+| `@mantine/dates`      | `^9.3`  | optional — date pickers only |
 
 ---
 
 ## License
 
-Apache 2.0 License - Use freely, modify as needed, keep attribution.
-
----
-
-**Built with intention. Designed for consistency. Inspired by nature.**
-
-🌋 Basalt UI - Where volcanic aesthetics meet modern design systems.
+Apache 2.0 — use freely, modify as needed, keep attribution.
