@@ -56,10 +56,24 @@ query results, derived data, or theme scheme in the store.
 
 ## Forms — Mantine form + Zod
 
+`@mantine/form` exports a native `schemaResolver` built on the
+[Standard Schema spec](https://standardschema.dev) since Mantine v9.0.0. Zod ≥4, Valibot, and
+ArkType implement the spec natively — no separate resolver package is needed.
+
+> **Prerequisite:** `@mantine/form` is **not** a declared peer dependency of `basalt-ui` (peers are
+> only `@mantine/core`, `@mantine/hooks`, and optional `@mantine/dates`). A consumer must install it
+> explicitly before using the forms doctrine:
+>
+> ```bash
+> bun add @mantine/form
+> ```
+>
+> It is a forthcoming **optional** peer of the planned `./forms` battery, which has not yet shipped
+> as package code.
+
 ```ts
-import { useForm } from '@mantine/form'
+import { useForm, schemaResolver } from '@mantine/form'
 import { z } from 'zod'
-import { zodResolver } from '../lib/zod-resolver'
 
 const Schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -67,33 +81,22 @@ const Schema = z.object({
 })
 
 const form = useForm({
+  mode: 'uncontrolled',
   initialValues: { date: '', amount: 0 },
-  validate: zodResolver(Schema),
+  validate: schemaResolver(Schema, { sync: true }),
 })
 ```
 
-### zodResolver
+### schemaResolver options
 
-`@mantine/form` v9 does not export a Zod resolver. Define one shared helper in `src/lib/zod-resolver.ts`
-and always import it — never redefine it inline:
-
-```ts
-import type { UseFormInput } from '@mantine/form'
-import { z } from 'zod'
-
-export function zodResolver<T>(schema: z.ZodType<T>): UseFormInput<T>['validate'] {
-  return (values) => {
-    const result = schema.safeParse(values)
-    if (result.success) return {}
-    const errors: Record<string, string> = {}
-    for (const issue of result.error.issues) {
-      const path = issue.path.join('.')
-      if (path !== '') errors[path] = issue.message
-    }
-    return errors
-  }
-}
-```
+- **`{ sync: true }`** — pass this for synchronous schemas (Zod v4, Valibot, ArkType). It keeps
+  `form.validate()` and `form.isValid()` returning synchronous values. Omit it only when the schema
+  has async refinements — in that case `form.validate()` returns a `Promise`.
+- **Zod ≥4** — `import { z } from 'zod'`. Zod 4's root export implements Standard Schema, so neither
+  a `zod/v4` subpath nor a separate resolver package is needed. Per-field errors arrive as
+  `{ error: '...' }` objects rather than the Zod v3 `{ message: '...' }` shape.
+- **No hand-rolled resolver** — `src/lib/zod-resolver.ts` is obsolete; delete it and replace any
+  import of it with the native `schemaResolver` import above.
 
 ### List helpers
 
