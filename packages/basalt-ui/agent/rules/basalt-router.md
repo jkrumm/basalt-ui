@@ -88,4 +88,7 @@ function ResourcePage() {
 `tsr generate` (also during `typecheck`). File names starting with `__` are reserved; only `__root.tsx`
 is valid.
 
-The shipped oxlint preset bans `react-router` / `react-router-dom` — use `@tanstack/react-router`.
+The shipped oxlint preset does **not** ban `react-router` or `react-router-dom` — basalt is
+router-agnostic and imposes no mechanical guard. TanStack Router is the recommended/idiomatic
+choice (this rule documents its conventions, and the forthcoming `./router-tanstack` adapter targets
+it), but using `react-router` is an advisory preference, not an enforced restriction.
