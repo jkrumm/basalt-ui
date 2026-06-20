@@ -49,10 +49,14 @@ const mockTransport: AgentTransport<AgentPart, string> = {
       if (signal?.aborted) return
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(resolve, 120)
-        signal?.addEventListener('abort', () => {
-          clearTimeout(timer)
-          reject(new DOMException('Aborted', 'AbortError'))
-        })
+        signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer)
+            reject(new DOMException('Aborted', 'AbortError'))
+          },
+          { once: true },
+        )
       })
       if (signal?.aborted) return
       yield part
