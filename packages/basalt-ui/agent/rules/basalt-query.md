@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: TanStack Query conventions for basalt-ui apps — query factories, Suspense reads, and mutation/invalidation. Advisory (the framework ships no data layer).
+description: TanStack Query conventions for basalt-ui apps — query factories, Suspense reads, and mutation/invalidation. basalt-ui ships ./query (createBasaltQueryClient + unwrap + devtools); this rule covers the advisory consumer patterns on top.
 paths:
   - 'src/lib/queries/**'
   - 'apps/**/src/lib/queries/**'
@@ -10,9 +10,12 @@ paths:
 
 # Basalt Query — TanStack Query Conventions
 
-basalt-ui ships **no data layer** — server state is the consumer's concern. This rule is the recommended
-opinion layer when you use TanStack Query (the basalt-ui default). It is **advisory**; nothing in the
-framework enforces it.
+basalt-ui ships `./query` — a thin TanStack Query adapter providing `createBasaltQueryClient`,
+`unwrap`, `BasaltQueryDevtools`, and convenience re-exports (`QueryClientProvider`,
+`QueryErrorResetBoundary`, `useQueryErrorResetBoundary`). @tanstack/react-query is an optional peer.
+
+This rule covers the advisory consumer patterns on top of that adapter. Nothing in the framework
+enforces these conventions beyond the `unwrap` seam.
 
 ## Query factories
 
@@ -20,24 +23,26 @@ Each resource has a factory in `src/lib/queries/<resource>.ts`:
 
 ```ts
 import { queryOptions } from '@tanstack/react-query'
+import { unwrap } from 'basalt-ui/query'
 import { api } from '../api-client'
 
 export const resourceQueries = {
   list: (params: ListParams) =>
     queryOptions({
       queryKey: ['resource', 'list', params],
-      queryFn: () => api.resource.get({ query: params }).then((r) => r.data!),
+      queryFn: () => unwrap(api.resource.get({ query: params })),
     }),
   summary: () =>
     queryOptions({
       queryKey: ['resource', 'summary'],
-      queryFn: () => api.resource.summary.get().then((r) => r.data!),
+      queryFn: () => unwrap(api.resource.summary.get()),
     }),
 }
 ```
 
 - Key hierarchy: `[resource, action, ...params]`.
-- `queryFn` unwraps typed responses (`.data!`) — throw on null so failures surface.
+- `queryFn` unwraps typed responses via `unwrap()` from `basalt-ui/query` — throws on the error
+  branch so failures surface to the nearest error boundary or TanStack Query's error state.
 - Never use raw strings as query keys in components — always import from the factory.
 
 ## Reading data in components
@@ -54,7 +59,7 @@ const { data } = useSuspenseQuery(resourceQueries.summary())
 
 ```ts
 const mutation = useMutation({
-  mutationFn: (body) => api.resource.post({ body }).then((r) => r.data!),
+  mutationFn: (body) => unwrap(api.resource.post({ body })),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['resource'] })
     notifications.show({ message: 'Saved', color: 'green' })
@@ -69,6 +74,36 @@ const mutation = useMutation({
 
 ## DevTools
 
-`ReactQueryDevtools` is dev-only — never import it unconditionally. Render it behind a
-`process.env.NODE_ENV === 'development'` guard (basalt-ui ships code without `import.meta.env`; mirror
-that in app code that the framework's tooling scans).
+Use `BasaltQueryDevtools` from `basalt-ui/query` — it is lazy, production-excluded, and safe to
+import unconditionally:
+
+```tsx
+import { BasaltQueryDevtools, QueryClientProvider } from 'basalt-ui/query'
+
+function Root() {
+  return (
+    <QueryClientProvider client={client}>
+      {children}
+      <BasaltQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  )
+}
+```
+
+Never import `@tanstack/react-query-devtools` directly in app code — it is an optional peer and
+the lazy wrapper handles the production guard for you.
+
+## Eden footguns (hard authoring rules)
+
+Two patterns silently degrade Eden Treaty inference to `any` — both must be avoided:
+
+1. **Non-chained route definitions**: Elysia routes MUST be method-chained on the `app` instance.
+   A standalone `app.get(...)` (reassigned or called without chaining back to the root) drops the
+   `App` type to `any`, which propagates into the Treaty client and loses all type safety.
+
+2. **Mismatched tsconfig path aliases**: The client package and the server package MUST share or
+   extend one root `tsconfig` so path aliases (`~/*`, `@/*`, etc.) resolve identically in both.
+   A mismatch causes Eden's type extraction to fail silently and degrade to `any`.
+
+Both footguns produce no TypeScript error at the point of breakage — they only manifest as `any`
+types on the Treaty client, making them hard to spot. Check these first when Eden types regress.
