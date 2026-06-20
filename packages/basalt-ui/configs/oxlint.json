@@ -39,18 +39,6 @@
                 "message": "Use Mantine — antd is not part of the basalt-ui stack."
               },
               {
-                "name": "@ant-design/icons",
-                "message": "Use @tabler/icons-react."
-              },
-              {
-                "name": "react-router",
-                "message": "Use @tanstack/react-router."
-              },
-              {
-                "name": "react-router-dom",
-                "message": "Use @tanstack/react-router."
-              },
-              {
                 "name": "@visx/tooltip",
                 "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
               }
@@ -58,7 +46,37 @@
             "patterns": [
               {
                 "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**). Compose basalt-ui chart primitives/kinds instead."
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/tokens/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "tokens must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**)."
               }
             ]
           }

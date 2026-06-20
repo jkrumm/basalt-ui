@@ -16,10 +16,26 @@
  * Mantine usage is allowed in this `./` root layer (unlike `src/charts/**` and `src/tokens/**`).
  */
 import { MantineProvider, type MantineProviderProps, useComputedColorScheme } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode, useEffect } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
 import { type BuildPaletteOpts, buildPaletteCss } from '../tokens'
+
+/**
+ * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
+ *
+ * @example
+ * <BasaltProvider
+ *   onError={(e, ctx) => {
+ *     if (ctx.kind === 'render') Sentry.captureException(e, { extra: { info: ctx.info } })
+ *     if (ctx.kind === 'unhandledrejection') Sentry.captureException(e)
+ *   }}
+ * >
+ */
+export type BasaltErrorContext =
+  | { kind: 'render'; info: ErrorInfo }
+  | { kind: 'window'; event: ErrorEvent }
+  | { kind: 'unhandledrejection'; reason: unknown }
 
 export type BasaltProviderProps = {
   children: ReactNode
@@ -37,31 +53,129 @@ export type BasaltProviderProps = {
   paletteOptions?: BuildPaletteOpts
   /** Default color scheme. Defaults to dark. */
   defaultColorScheme?: MantineProviderProps['defaultColorScheme']
+  /**
+   * Report errors caught by the in-provider boundary AND global window/unhandledrejection listeners.
+   * Unset → console.error in dev (process.env.NODE_ENV !== 'production'), no-op in prod.
+   * NEVER a no-op prop — the BasaltErrorBoundary + listeners that feed it ship in this same freeze.
+   *
+   * @example
+   * <BasaltProvider onError={(e, ctx) => Sentry.captureException(e, { tags: { kind: ctx.kind } })}>
+   */
+  onError?: (error: unknown, ctx: BasaltErrorContext) => void
+  /**
+   * CSP nonce for the raw palette `<style>` at provider/index.tsx (the one element `...rest`
+   * cannot reach — it is basalt's own JSX, not a Mantine prop). For Mantine's own injected styles,
+   * also pass `getStyleNonce={() => nonce}` via `...rest` — Mantine v9 has no top-level `nonce`
+   * prop; its nonce mechanism is `getStyleNonce: () => string`, which flows through `...rest`.
+   */
+  nonce?: string
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme'>
+
+// ── Default error handler ─────────────────────────────────────────────────────────────────────────
+
+function defaultOnError(error: unknown, ctx: BasaltErrorContext): void {
+  if (process.env['NODE_ENV'] !== 'production') {
+    // eslint-disable-next-line no-console -- intentional dev-only diagnostic when no onError is supplied
+    console.error('[BasaltProvider] unhandled error', ctx.kind, error)
+  }
+  // prod: no-op
+}
+
+// ── Error boundary ────────────────────────────────────────────────────────────────────────────────
+
+type BoundaryProps = {
+  children: ReactNode
+  onError: (error: unknown, ctx: BasaltErrorContext) => void
+}
+
+type BoundaryState = { hasError: boolean }
+
+/**
+ * Error boundary that catches render-phase errors inside `BasaltProvider`. Wraps `BasaltBridge` +
+ * children INSIDE `MantineProvider` so a thrown render error still has theme context for a fallback.
+ * Also exported so consumers can mount nested boundaries with the same `onError` contract.
+ *
+ * @example
+ * <BasaltErrorBoundary onError={(e, ctx) => Sentry.captureException(e)}>
+ *   <MyFeature />
+ * </BasaltErrorBoundary>
+ */
+export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState> {
+  constructor(props: BoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(): BoundaryState {
+    return { hasError: true }
+  }
+
+  override componentDidCatch(error: unknown, info: ErrorInfo): void {
+    this.props.onError(error, { kind: 'render', info })
+  }
+
+  override render(): ReactNode {
+    if (this.state.hasError) {
+      return null
+    }
+    return this.props.children
+  }
+}
+
+// ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────
 
 /**
  * Inner bridge — must render INSIDE `MantineProvider` to read the active color scheme. Provides
  * the Vx chart theme context and injects the palette `<style>`. Mirrors argo's `VxBridge`.
+ * Also registers global window error listeners for the `onError` contract.
  */
 function BasaltBridge({
   children,
   injectPalette,
   paletteOptions,
+  nonce,
+  onError,
 }: {
   children: ReactNode
   injectPalette: boolean
   paletteOptions: BuildPaletteOpts | undefined
+  nonce: string | undefined
+  onError: (error: unknown, ctx: BasaltErrorContext) => void
 }) {
   // Resolve via Mantine's computed scheme so 'auto' follows the OS prefers-color-scheme
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
+
+  useEffect(() => {
+    // SSR guard — window is not available in server contexts
+    if (typeof window === 'undefined') return
+
+    const handleError = (e: ErrorEvent): void => {
+      onError(e.error ?? e, { kind: 'window', event: e })
+    }
+
+    const handleUnhandledRejection = (e: PromiseRejectionEvent): void => {
+      onError(e.reason, { kind: 'unhandledrejection', reason: e.reason })
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [onError])
+
   return (
     <VxThemeProvider colorScheme={resolved}>
-      {injectPalette ? <style>{buildPaletteCss(paletteOptions)}</style> : null}
+      {injectPalette ? <style nonce={nonce}>{buildPaletteCss(paletteOptions)}</style> : null}
       {children}
     </VxThemeProvider>
   )
 }
+
+// ── Public provider ───────────────────────────────────────────────────────────────────────────────
 
 export function BasaltProvider({
   children,
@@ -69,8 +183,12 @@ export function BasaltProvider({
   injectPalette = true,
   paletteOptions,
   defaultColorScheme = 'dark',
+  onError,
+  nonce,
   ...rest
 }: BasaltProviderProps) {
+  const errorHandler = onError ?? defaultOnError
+
   return (
     <MantineProvider
       theme={createBasaltTheme(theme)}
@@ -78,9 +196,16 @@ export function BasaltProvider({
       defaultColorScheme={defaultColorScheme}
       {...rest}
     >
-      <BasaltBridge injectPalette={injectPalette} paletteOptions={paletteOptions}>
-        {children}
-      </BasaltBridge>
+      <BasaltErrorBoundary onError={errorHandler}>
+        <BasaltBridge
+          injectPalette={injectPalette}
+          paletteOptions={paletteOptions}
+          nonce={nonce}
+          onError={errorHandler}
+        >
+          {children}
+        </BasaltBridge>
+      </BasaltErrorBoundary>
     </MantineProvider>
   )
 }

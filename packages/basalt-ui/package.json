@@ -1,6 +1,6 @@
 {
   "name": "basalt-ui",
-  "version": "0.4.2",
+  "version": "1.0.0",
   "description": "Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets",
   "keywords": [
     "charts",
@@ -62,6 +62,14 @@
       "types": "./dist/vite.d.ts",
       "import": "./dist/vite.js"
     },
+    "./guard": {
+      "types": "./dist/guard/index.d.ts",
+      "import": "./dist/guard/index.js"
+    },
+    "./state": {
+      "types": "./dist/state.d.ts",
+      "import": "./dist/state.js"
+    },
     "./styles.css": "./dist/styles.css",
     "./configs/*": "./configs/*"
   },
@@ -109,6 +117,15 @@
   "basalt": {
     "roots": [
       "src"
-    ]
+    ],
+    "exempt": [
+      "src/tokens/palette.ts",
+      "src/tokens/index.ts",
+      "src/theme/index.ts"
+    ],
+    "rawSurface": false,
+    "rawHtmlLayout": false,
+    "inlineSpacing": false,
+    "inlineDisplay": false
   }
 }

@@ -16,6 +16,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
+import type { SeriesKey } from '../../register'
 
 export type StackedAreaProps<T> = {
   data: T[]
@@ -23,9 +24,9 @@ export type StackedAreaProps<T> = {
   height: number
   chartId: string
   getX: (d: T) => string
-  groups: string[]
+  groups: SeriesKey[]
   getValue: (d: T, group: string) => number
-  colorForGroup: (group: string) => string
+  colorForGroup: (group: SeriesKey) => string
   seriesLabel?: (group: string) => string
   formatValue: (v: number) => string
   yLabel?: string
@@ -115,7 +116,8 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
                 <path
                   key={`stack-${stack.key}`}
                   d={path(stack) || ''}
-                  fill={colorForGroup(String(stack.key))}
+                  // stack.key is Key = SeriesKey when keys={groups: SeriesKey[]}; cast is safe
+                  fill={colorForGroup(stack.key as SeriesKey)}
                   stroke="transparent"
                 />
               ))

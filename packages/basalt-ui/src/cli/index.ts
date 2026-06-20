@@ -1,8 +1,12 @@
 /**
- * basalt-ui CLI — `init`, `sync`, `check-theme`.
+ * basalt-ui CLI — `init`, `sync`, `check-theme`, `check-coverage`.
  *
- * `checkTheme` is a REAL Bun-runtime port of argo `scripts/check-theme.mjs`: the theme guard that
- * fails on colors bypassing the central palette.
+ * `checkTheme` is a thin FS walker over the headless guard core (`../guard`). It reads the
+ * BasaltConfig, builds a GuardConfig, walks the source roots, calls `checkSource` per file,
+ * collects Finding[], groups/reports findings, and returns an exit code.
+ *
+ * `checkCoverage` asserts the four PROJECTION 5 invariants: guardKinds ⊆ GUARD_RULES,
+ * rule files on disk, skill union ⊆ plugin.json, and subpath-export-coverage.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
  * Claude Code rules, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain templates
@@ -17,6 +21,11 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
+import type { Finding, GuardConfig } from '../guard'
+import { RULE_NAMES, SURFACES } from '../surfaces'
+import type { DoctrineSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
@@ -83,78 +92,8 @@ const DEFAULT_EXEMPT = [
   'packages/charts/src/utils/color.ts',
   'apps/dashboard/src/theme.ts',
 ]
-const DEFAULT_SPACING_STEPS = [10, 12, 16, 20, 32]
-const DEFAULT_FORBIDDEN_ACCENTS = ['teal', 'violet', 'grape', 'indigo', 'pink']
 
 const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
-const HEX = /#[0-9a-fA-F]{3,8}\b/g
-const FUNC = /\b(?:rgba?|hsla?)\(/g
-// localStorage theme read — banned (theme must resolve via the Mantine color scheme + --vx-* vars).
-const LOCALSTORAGE_THEME = /localStorage\s*\.\s*getItem\s*\(\s*['"]theme['"]\s*\)/g
-
-// Ad-hoc inline surface styling that bypasses the token/elevation system. Scoped to the three
-// surface-shaping properties — `border*` / `borderRadius` / `boxShadow` — anchored on the property
-// name so legitimate non-surface inline styles (flex, padding, text color, …) never match.
-//
-// Conservative on purpose: `backgroundColor` is intentionally NOT covered here. A raw hex bg is
-// already caught by `raw-hex`, and flagging every literal `backgroundColor:` produces too many
-// false positives (it routinely points at a token/computed value), so it stays out of scope.
-//
-// A value that is a `var(--…)` reference (the system itself) passes — so `border: '1px solid
-// var(--mantine-color-default-border)'`, `borderRadius: 'var(--vx-radius-card)'` etc. are allowed.
-//
-// `border` / `borderTop` / `borderBottom` / `borderLeft` / `borderRight` with a literal value.
-// The lookahead scans for `var(` ANYWHERE inside the quoted value (`[^'"`]*var\(`), so a token
-// reference like `border: '1px solid var(--vx-surface-border)'` passes — the `var(` is not
-// adjacent to the opening quote.
-const SURFACE_BORDER =
-  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
-// `borderRadius` with a numeric/px literal (radius must come from the `radius` token / a `--…` var).
-const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
-// `boxShadow` with a literal value (depth is a hairline token, not an ad-hoc shadow). Same
-// scan-anywhere lookahead so `boxShadow: 'var(--…)'` passes.
-const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
-
-// Raw Mantine ramp step used for surface color — `var(--mantine-color-gray-N)` /
-// `var(--mantine-color-dark-N)`. This is the exact bug class the basalt surface tokens exist to
-// prevent: reaching into the raw neutral ramp instead of `VX.surface.*` / `--vx-surface-*`. Scoped
-// to gray/dark + a step digit so the named surface vars (`--mantine-color-default-border`, etc.)
-// and accent ramps never match.
-const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
-
-// Raw lowercase JSX layout/surface element carrying inline `style={{}}` with a layout/surface
-// property. Detection is line-scoped: a layout/surface tag AND `style={{` AND a layout/surface prop
-// must all be present on the line — so `<div ref={...}>` (no style), `<img>`, `<svg>` never match.
-// Consumer-roots-only by construction: the Mantine-free `src/charts/**` (which legitimately uses raw
-// <div>) is never in a consumer's `roots`.
-const RAW_HTML_TAG = /<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\b/
-const INLINE_STYLE = /style=\{\{/
-const LAYOUT_SURFACE_PROP =
-  /\b(?:display|padding|margin|gap|flex|grid|border|background|width|height)\b/
-
-// Spacing/sizing literal inside an inline `style={{}}` (the prop-syntax `raw-spacing` check misses
-// these). Anchored on the property name; a `var(...)` value or a literal `0` passes — `0` needs no
-// token and `var(...)` is the system itself.
-const INLINE_SPACING =
-  /\b(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap)\s*:\s*(?!var\()['"]?-?(?!0\b)\d/g
-
-// `display: 'flex' | 'grid' | 'inline-flex' | 'inline-grid'` in an inline style — route through a
-// Mantine layout primitive instead.
-const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
-
-// Raw visx axis JSX — `<AxisLeft` / `<AxisBottom` / `<AxisRight`. oxlint allows `@visx/axis` imports
-// inside `charts/`, so a chart file can render the raw axis and bypass the AxisLeftNumeric /
-// AxisBottomDate / AxisRightNumeric primitives (which carry theme tokens + smart ticks) with nothing
-// failing the build. This guard closes that hole — but ONLY inside chart files (a path containing
-// `/charts/`), and never in the `Axes.tsx` wrapper that legitimately wraps the raw axes.
-const RAW_VISX_AXIS = /<Axis(?:Left|Bottom|Right)\b/g
-// The legitimate wrapper basename(s) — the primitive that IS allowed to render the raw visx axes.
-const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
-function isChartFile(rel: string): boolean {
-  return rel.includes('/charts/') && !AXIS_WRAPPER_FILE.test(rel)
-}
-
-type Violation = { rel: string; line: number; token: string; kind: string }
 
 function readBasaltConfig(cwd: string): BasaltConfig {
   try {
@@ -164,92 +103,6 @@ function readBasaltConfig(cwd: string): BasaltConfig {
     return pkg.basalt ?? {}
   } catch {
     return {}
-  }
-}
-
-function scanFile(
-  abs: string,
-  rel: string,
-  patterns: {
-    forbiddenAccent: RegExp
-    spacingProp: RegExp
-    radiusProp: RegExp
-    rawSurface: boolean
-    offSystemSurfaceVar: boolean
-    rawHtmlLayout: boolean
-    inlineSpacing: boolean
-    inlineDisplay: boolean
-    rawVisxAxis: boolean
-  },
-  violations: Violation[],
-): void {
-  const chartFile = isChartFile(rel)
-  const lines = readFileSync(abs, 'utf8').split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
-    if (line.includes('theme-allow')) continue
-    // Skip pure-comment lines (line comments + JSDoc bodies) so an explanatory mention of a
-    // banned token/element (e.g. "never use a raw <AxisLeft>") doesn't trip a guard. Inline
-    // trailing comments are rare; use `theme-allow` for those deliberate cases.
-    const trimmed = line.trimStart()
-    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
-    for (const m of line.matchAll(HEX)) {
-      violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-hex' })
-    }
-    for (const m of line.matchAll(FUNC)) {
-      violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-color-fn' })
-    }
-    for (const m of line.matchAll(LOCALSTORAGE_THEME)) {
-      violations.push({ rel, line: i + 1, token: m[0], kind: 'localstorage-theme' })
-    }
-    for (const m of line.matchAll(patterns.forbiddenAccent)) {
-      violations.push({ rel, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
-    }
-    for (const m of line.matchAll(patterns.spacingProp)) {
-      violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-spacing' })
-    }
-    for (const m of line.matchAll(patterns.radiusProp)) {
-      violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-radius' })
-    }
-    if (patterns.rawSurface) {
-      for (const m of line.matchAll(SURFACE_BORDER)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
-      }
-      for (const m of line.matchAll(SURFACE_RADIUS)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
-      }
-      for (const m of line.matchAll(SURFACE_SHADOW)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-surface' })
-      }
-    }
-    if (patterns.offSystemSurfaceVar) {
-      for (const m of line.matchAll(OFF_SYSTEM_SURFACE_VAR)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
-      }
-    }
-    if (
-      patterns.rawHtmlLayout &&
-      RAW_HTML_TAG.test(line) &&
-      INLINE_STYLE.test(line) &&
-      LAYOUT_SURFACE_PROP.test(line)
-    ) {
-      violations.push({ rel, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
-    }
-    if (patterns.inlineSpacing) {
-      for (const m of line.matchAll(INLINE_SPACING)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'inline-spacing' })
-      }
-    }
-    if (patterns.inlineDisplay) {
-      for (const m of line.matchAll(INLINE_DISPLAY)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'inline-display' })
-      }
-    }
-    if (patterns.rawVisxAxis && chartFile) {
-      for (const m of line.matchAll(RAW_VISX_AXIS)) {
-        violations.push({ rel, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
-      }
-    }
   }
 }
 
@@ -277,69 +130,51 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
 }
 
 /**
- * Theme guard — scans source roots for raw color literals (hex / rgb() / hsl()), off-identity
- * Mantine accent props, raw spacing/radius props that equal a named scale step, ad-hoc inline
- * surface styling (`border`/`borderRadius`/`boxShadow` literals that bypass `withBorder` + the
- * radius/elevation tokens), raw Mantine ramp steps used for surface color
- * (`var(--mantine-color-gray|dark-N)`), raw HTML layout elements with inline layout/surface styles,
- * inline spacing literals, inline `display:flex|grid`, raw visx axis JSX inside chart files
- * (`<AxisLeft|Bottom|Right>` bypassing the Axis*Numeric/Date primitives), and localStorage theme
- * reads. Returns 0 when clean, 1 on violations. A `theme-allow` comment exempts a line.
+ * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
+ * GuardConfig, walks roots, calls checkSource per file, collects Finding[], groups/reports, returns
+ * 0 (clean) / 1 (violations). A `theme-allow` comment exempts a line.
  */
 export function checkTheme(cwd: string = process.cwd()): number {
   const cfg = readBasaltConfig(cwd)
   const roots = cfg.roots ?? DEFAULT_ROOTS
   const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
-  const spacingSteps = cfg.spacingSteps ?? DEFAULT_SPACING_STEPS
-  const forbiddenAccents = cfg.forbiddenAccents ?? DEFAULT_FORBIDDEN_ACCENTS
-  const rawSurface = cfg.rawSurface ?? true
-  const offSystemSurfaceVar = cfg.offSystemSurfaceVar ?? true
-  const rawHtmlLayout = cfg.rawHtmlLayout ?? true
-  const inlineSpacing = cfg.inlineSpacing ?? true
-  const inlineDisplay = cfg.inlineDisplay ?? true
-  const rawVisxAxis = cfg.rawVisxAxis ?? true
 
-  const patterns = {
-    forbiddenAccent: new RegExp(
-      `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${forbiddenAccents.join('|')})['"]`,
-      'g',
-    ),
-    spacingProp: new RegExp(
-      `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${spacingSteps.join('|')})\\}`,
-      'g',
-    ),
-    radiusProp: /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g,
-    rawSurface,
-    offSystemSurfaceVar,
-    rawHtmlLayout,
-    inlineSpacing,
-    inlineDisplay,
-    rawVisxAxis,
+  const guardCfg: GuardConfig = {
+    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
+    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
+    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
+    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
+    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
+    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
+    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
+    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
+    allowComment: 'theme-allow',
   }
 
-  const violations: Violation[] = []
+  const findings: Finding[] = []
   for (const root of roots) {
     for (const f of walkTsFiles(resolve(cwd, root))) {
       // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
       // identical on Windows (where `relative` yields backslashes) and POSIX.
       const rel = relative(cwd, f).replace(/\\/g, '/')
       if (SKIP.test(rel) || exempt.has(rel)) continue
-      scanFile(f, rel, patterns, violations)
+      const text = readFileSync(f, 'utf8')
+      findings.push(...checkSource(text, rel, guardCfg))
     }
   }
 
-  if (violations.length === 0) {
+  if (findings.length === 0) {
     console.log('✓ Theme guard: no off-palette colors.')
     return 0
   }
 
-  const byFile = new Map<string, Violation[]>()
-  for (const v of violations) {
-    const list = byFile.get(v.rel) ?? []
-    list.push(v)
-    byFile.set(v.rel, list)
+  const byFile = new Map<string, Finding[]>()
+  for (const f of findings) {
+    const list = byFile.get(f.relPath) ?? []
+    list.push(f)
+    byFile.set(f.relPath, list)
   }
-  console.error(`✖ Theme guard: ${violations.length} off-palette / off-identity violation(s)\n`)
+  console.error(`✖ Theme guard: ${findings.length} off-palette / off-identity violation(s)\n`)
   for (const [file, vs] of [...byFile].toSorted()) {
     console.error(file)
     for (const v of vs.toSorted((a, b) => a.line - b.line)) {
@@ -376,13 +211,10 @@ export function checkTheme(cwd: string = process.cwd()): number {
  * - `copy`  : verbatim asset. init skips if the dest already exists; sync three-way reconciles it.
  * - `block` : a `<!-- basalt:begin -->…<!-- basalt:end -->` region inside a host file (CLAUDE.md).
  *             The rest of the host file is owned by the consumer; only the block is managed.
- * - `merge` : a JSON stanza shallow-merged into the consumer file (settings.json). init/sync union
- *             the stanza in without clobbering consumer keys; the manifest hashes the *stanza*,
- *             so local edits to other keys never trip drift.
  * - `seed`  : written once if absent, then owned entirely by the consumer. sync never overwrites it
  *             and never reports drift (it is a starting point, not a managed mirror).
  */
-type Strategy = 'copy' | 'block' | 'merge' | 'seed'
+type Strategy = 'copy' | 'block' | 'seed'
 
 /** A single file the framework writes into a consumer repo. */
 type ManagedFile = {
@@ -425,8 +257,6 @@ type TemplateVars = {
 const BLOCK_BEGIN_PREFIX = '<!-- basalt:begin'
 const BLOCK_END = '<!-- basalt:end -->'
 const MANIFEST_PATH = '.basalt/manifest.json'
-
-const RULE_NAMES = ['tokens', 'charts', 'mantine', 'router', 'query', 'state'] as const
 
 function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex')
@@ -507,21 +337,13 @@ function applyBlock(host: string, block: string): string {
   return base.length === 0 ? `${block.trim()}\n` : `${base}\n\n${block.trim()}\n`
 }
 
-/** Shallow-merge a JSON stanza into a host JSON object; stanza keys take precedence. */
-function mergeStanza(hostJson: string | null, stanza: string): string {
-  const host = hostJson ? (JSON.parse(hostJson) as Record<string, unknown>) : {}
-  const add = JSON.parse(stanza) as Record<string, unknown>
-  const merged = { ...host, ...add }
-  return `${JSON.stringify(merged, null, 2)}\n`
-}
-
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
 function managedFiles(): ManagedFile[] {
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
-    strategy: 'copy',
+    strategy: 'copy' as const,
     source: `agent/rules/basalt-${name}.md`,
-    render: (ctx) => readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`),
+    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`),
   }))
 
   const claudeBlock: ManagedFile = {
@@ -569,7 +391,17 @@ function managedFiles(): ManagedFile[] {
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/check.yml'),
   }
 
-  return [...rules, claudeBlock, design, oxfmt, lefthook, ci]
+  // Seed an `.oxlintrc.json` that extends the shipped preset (written once, then consumer-owned).
+  // `render` emits the stub inline rather than copying `source`; `source` names the preset the stub
+  // extends, and the `seed` strategy never reports drift, so it is not read back at sync time.
+  const oxlintrc: ManagedFile = {
+    dest: '.oxlintrc.json',
+    strategy: 'seed',
+    source: 'configs/oxlint.json',
+    render: () => '{\n  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"]\n}\n',
+  }
+
+  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc]
 }
 
 type Manifest = {
@@ -601,11 +433,11 @@ function packageRoot(): string {
 
 /**
  * The current on-disk state of a managed unit, plus the version the framework wants. For `block`
- * the "current" unit is the existing region (markers included); for `merge` it is the
- * stanza-shaped subset of the live settings file; for `copy`/`seed` it is the whole file.
+ * the "current" unit is the existing region (markers included); for `copy`/`seed` it is the whole
+ * file.
  */
 type UnitState = {
-  /** The managed unit's current bytes on disk (block region / stanza-subset / whole file). */
+  /** The managed unit's current bytes on disk (block region / whole file). */
   current: string | null
   /** The managed unit's desired bytes from the shipped source. null = source not shipped yet. */
   desired: string | null
@@ -619,37 +451,6 @@ function extractBlockRegion(host: string | null): string | null {
   return host.slice(region.start, region.end).trim()
 }
 
-/** Canonicalize a JSON string by parse+pretty-reprint so formatting never affects comparison. */
-function canonicalJson(text: string): string | null {
-  try {
-    return JSON.stringify(JSON.parse(text) as unknown, null, 2)
-  } catch {
-    return null
-  }
-}
-
-/**
- * The stanza-shaped subset of a live settings file (only the keys the stanza manages), canonically
- * serialized so it is byte-comparable against the canonical desired stanza.
- */
-function extractStanzaSubset(host: string | null, stanza: string): string | null {
-  if (host === null) return null
-  let parsedHost: Record<string, unknown>
-  let parsedStanza: Record<string, unknown>
-  try {
-    parsedHost = JSON.parse(host) as Record<string, unknown>
-    parsedStanza = JSON.parse(stanza) as Record<string, unknown>
-  } catch {
-    return null
-  }
-  const subset: Record<string, unknown> = {}
-  for (const key of Object.keys(parsedStanza)) {
-    if (key in parsedHost) subset[key] = parsedHost[key]
-  }
-  if (Object.keys(subset).length === 0) return null
-  return JSON.stringify(subset, null, 2)
-}
-
 /** Read the current vs desired managed-unit bytes for a file. */
 function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitState {
   const desired = file.render(ctx)
@@ -657,14 +458,6 @@ function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitStat
   const onDisk = readIfExists(destAbs)
   if (file.strategy === 'block') {
     return { current: extractBlockRegion(onDisk), desired }
-  }
-  if (file.strategy === 'merge') {
-    // Compare canonical stanza vs canonical stanza-subset so formatting/key-order never trips drift.
-    const stanza = desired === null ? null : canonicalJson(desired)
-    return {
-      current: stanza === null ? null : extractStanzaSubset(onDisk, stanza),
-      desired: stanza,
-    }
   }
   return { current: onDisk, desired }
 }
@@ -675,11 +468,6 @@ function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   if (file.strategy === 'block') {
     const host = readIfExists(destAbs) ?? ''
     writeFileEnsuringDir(destAbs, applyBlock(host, desired))
-    return sha256(desired)
-  }
-  if (file.strategy === 'merge') {
-    const host = readIfExists(destAbs)
-    writeFileEnsuringDir(destAbs, mergeStanza(host, desired))
     return sha256(desired)
   }
   writeFileEnsuringDir(destAbs, desired)
@@ -735,7 +523,6 @@ export function init(cwd: string = process.cwd()): number {
     }
 
     // `seed` + `copy` are skip-if-exists on init. `block` always inserts/updates its region;
-    // `merge` always unions its stanza (both are non-destructive to consumer-owned content).
     const destExists = existsSync(resolve(cwd, file.dest))
     if ((file.strategy === 'copy' || file.strategy === 'seed') && destExists) {
       // Already present — keep the consumer's copy untouched. Record the SHIPPED hash so a later
@@ -860,6 +647,112 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   return 0
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// check-coverage — PROJECTION 5 triad + plugin-skill coverage gate
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Assert the four PROJECTION 5 invariants against the live SURFACES + GUARD_RULES + plugin.json.
+ * Returns 0 when all pass; 1 when any fail (console.error each failure).
+ *
+ * Four assertions:
+ *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
+ *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
+ *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills.
+ *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
+ *
+ * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
+ * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
+ * via the deduped skill union (no independent per-#-surface skill row).
+ */
+export function checkCoverage(cwd: string = process.cwd()): number {
+  const pkgRoot = packageRoot()
+  const failures: string[] = []
+
+  const allSpecs = Object.entries(SURFACES) as [string, { kind: string }][]
+  const doctrineSpecs = (Object.values(SURFACES) as { kind: string }[]).filter(
+    (s): s is DoctrineSpec => s.kind === 'doctrine',
+  )
+
+  // ── Assertion 1: every doctrine spec's guardKinds ⊆ keyof GUARD_RULES ──────
+  const validGuardKinds = new Set(Object.keys(GUARD_RULES))
+  for (const [key, spec] of allSpecs) {
+    if (spec.kind !== 'doctrine') continue
+    const doctrine = spec as unknown as DoctrineSpec
+    for (const kind of doctrine.guardKinds) {
+      if (!validGuardKinds.has(kind)) {
+        failures.push(
+          `SURFACES['${key}'].guardKinds includes '${kind}' which is not in GUARD_RULES`,
+        )
+      }
+    }
+  }
+
+  // ── Assertion 2: every doctrine rule (deduped) → agent/rules/basalt-{rule}.md ──
+  for (const rule of RULE_NAMES) {
+    const rulePath = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
+    if (!existsSync(rulePath)) {
+      failures.push(
+        `Missing rule file: agent/rules/basalt-${rule}.md (derived from SURFACES doctrine rules)`,
+      )
+    }
+  }
+
+  // ── Assertion 3: deduped union of doctrine skill[] ⊆ plugin.json skills ────
+  const pluginJsonPath = resolve(cwd, 'plugins/basalt/.claude-plugin/plugin.json')
+  let pluginSkillNames: Set<string> = new Set()
+  try {
+    const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf8')) as { skills?: string[] }
+    // skills are path references like './skills/basalt-app'; extract the last path segment
+    pluginSkillNames = new Set((pluginJson.skills ?? []).map((s) => s.split('/').pop() ?? s))
+  } catch {
+    failures.push(`Cannot read plugin.json at ${pluginJsonPath}`)
+  }
+
+  const doctrineSkillUnion = new Set(doctrineSpecs.flatMap((s) => [...s.skill]))
+  for (const skill of doctrineSkillUnion) {
+    if (!pluginSkillNames.has(skill)) {
+      failures.push(
+        `SURFACES doctrine skill '${skill}' is not listed in plugins/basalt/.claude-plugin/plugin.json skills`,
+      )
+    }
+  }
+
+  // ── Assertion 4: subpath-export-coverage ────────────────────────────────────
+  // Every non-#, non-'.' JS-subpath SURFACES key must have a package.json exports entry.
+  let pkgExports: Set<string> = new Set()
+  try {
+    const consumerPkgPath = resolve(pkgRoot, 'package.json')
+    const consumerPkg = JSON.parse(readFileSync(consumerPkgPath, 'utf8')) as {
+      exports?: Record<string, unknown>
+    }
+    pkgExports = new Set(Object.keys(consumerPkg.exports ?? {}))
+  } catch {
+    failures.push(`Cannot read package.json at ${pkgRoot}`)
+  }
+
+  for (const key of Object.keys(SURFACES)) {
+    if (key.startsWith('#') || key === '.') continue
+    if (!pkgExports.has(key)) {
+      failures.push(
+        `SURFACES key '${key}' is a JS subpath but has no entry in package.json exports`,
+      )
+    }
+  }
+
+  // ── Report ──────────────────────────────────────────────────────────────────
+  if (failures.length === 0) {
+    console.log('✓ check-coverage: all PROJECTION 5 assertions pass.')
+    return 0
+  }
+
+  console.error(`✖ check-coverage: ${failures.length} failure(s)`)
+  for (const f of failures) {
+    console.error(`  ${f}`)
+  }
+  return 1
+}
+
 /**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
  * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
@@ -874,8 +767,12 @@ export function run(argv: string[], cwd: string = process.cwd()): number {
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
     case 'check-theme':
       return checkTheme(cwd)
+    case 'check-coverage':
+      return checkCoverage(cwd)
     default:
-      console.error('Usage: basalt <init | sync [--force] [--check] | check-theme>')
+      console.error(
+        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage>',
+      )
       return 1
   }
 }

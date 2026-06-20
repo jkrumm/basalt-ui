@@ -1,0 +1,284 @@
+/**
+ * ./guard — headless policy core. Mantine-free, dependency-free.
+ *
+ * GUARD_RULES: the closed registry of all 12 violation kinds.
+ * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
+ */
+import type { Finding, GuardConfig, GuardKind } from './types'
+
+export type { Finding, GuardConfig, GuardKind }
+
+// ── Static regex consts ──────────────────────────────────────────────────────────────────────────
+
+const HEX = /#[0-9a-fA-F]{3,8}\b/g
+const FUNC = /\b(?:rgba?|hsla?)\(/g
+const LOCALSTORAGE_THEME = /localStorage\s*\.\s*getItem\s*\(\s*['"]theme['"]\s*\)/g
+
+// Ad-hoc inline surface styling — border* / borderRadius / boxShadow with literal values.
+// A var(--…) reference inside the quoted value passes (the system itself).
+const SURFACE_BORDER =
+  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
+const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+
+// Raw Mantine ramp step used for surface color — gray/dark + a step digit.
+const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
+
+// Raw lowercase JSX layout/surface element with inline style and layout/surface prop — line-scoped.
+const RAW_HTML_TAG = /<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\b/
+const INLINE_STYLE = /style=\{\{/
+const LAYOUT_SURFACE_PROP =
+  /\b(?:display|padding|margin|gap|flex|grid|border|background|width|height)\b/
+
+// Spacing/sizing literals in inline style={{}} — anchored on property name; var() or 0 pass.
+const INLINE_SPACING =
+  /\b(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap)\s*:\s*(?!var\()['"]?-?(?!0\b)\d/g
+
+// display:flex/grid/inline-flex/inline-grid in an inline style.
+const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
+
+// Raw visx axis JSX — only inside chart files, not in the Axes.tsx wrapper.
+const RAW_VISX_AXIS = /<Axis(?:Left|Bottom|Right)\b/g
+const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
+
+// ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
+
+/** Default spacing steps (px) flagged as raw spacing props. */
+const DEFAULT_SPACING_STEPS: readonly number[] = [10, 12, 16, 20, 32]
+/** Default off-identity Mantine accent families. */
+const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape', 'indigo', 'pink']
+
+/** Shared default config — CLI and tests import this to avoid duplication. */
+export const DEFAULT_GUARD_CONFIG: GuardConfig = {
+  spacingSteps: DEFAULT_SPACING_STEPS,
+  forbiddenAccents: DEFAULT_FORBIDDEN_ACCENTS,
+  rawSurface: true,
+  offSystemSurfaceVar: true,
+  rawHtmlLayout: true,
+  inlineSpacing: true,
+  inlineDisplay: true,
+  rawVisxAxis: true,
+  allowComment: 'theme-allow',
+}
+
+// ── Path predicate ────────────────────────────────────────────────────────────────────────────────
+
+function isChartFile(relPath: string): boolean {
+  return relPath.includes('/charts/') && !AXIS_WRAPPER_FILE.test(relPath)
+}
+
+// ── GUARD_RULES registry ─────────────────────────────────────────────────────────────────────────
+
+type GuardRule = {
+  readonly kind: GuardKind
+  /** Static regex, or a builder over cfg for the 3 dynamic kinds (forbiddenAccent/spacing/radius). */
+  readonly pattern: RegExp | ((cfg: GuardConfig) => RegExp)
+  /** Path-applicability: raw-visx-axis only fires in chart files. */
+  readonly appliesTo?: (relPath: string) => boolean
+  /** Knob gating; always-on kinds omit this. */
+  readonly enabled?: (cfg: GuardConfig) => boolean
+  /** Per-kind fix-hint message. */
+  readonly message: string
+}
+
+/**
+ * The closed registry of all 12 guard kinds. The triad test asserts
+ * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
+ *
+ * raw-surface and raw-html-layout are handled inline in checkSource (multi-regex / multi-condition);
+ * all other kinds map to a single pattern entry.
+ */
+export const GUARD_RULES = {
+  'raw-hex': {
+    kind: 'raw-hex',
+    pattern: HEX,
+    message: 'Route color through VX.* / the Mantine theme.',
+  },
+  'raw-color-fn': {
+    kind: 'raw-color-fn',
+    pattern: FUNC,
+    message: 'Route color through VX.* / the Mantine theme; for opacity use alpha(token, a).',
+  },
+  'localstorage-theme': {
+    kind: 'localstorage-theme',
+    pattern: LOCALSTORAGE_THEME,
+    message: 'Theme must resolve via the Mantine color scheme + --vx-* vars.',
+  },
+  'off-identity-accent': {
+    kind: 'off-identity-accent',
+    pattern: (cfg: GuardConfig) =>
+      new RegExp(
+        `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${cfg.forbiddenAccents.join('|')})['"]`,
+        'g',
+      ),
+    message: 'For an off-identity accent use blue/gray or a status hue (red/green/orange/yellow).',
+  },
+  'raw-spacing': {
+    kind: 'raw-spacing',
+    pattern: (cfg: GuardConfig) =>
+      new RegExp(
+        `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${cfg.spacingSteps.join('|')})\\}`,
+        'g',
+      ),
+    message: 'Use the Mantine spacing prop/token (p/m/gap with xs..xl).',
+  },
+  'raw-radius': {
+    kind: 'raw-radius',
+    pattern: /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g,
+    message: 'Use the radius token (radius="md") instead of a numeric literal.',
+  },
+  'raw-surface': {
+    kind: 'raw-surface',
+    pattern: SURFACE_BORDER, // handled inline; this entry exists so the registry is complete
+    enabled: (cfg: GuardConfig) => cfg.rawSurface,
+    message:
+      'Use withBorder + a radius token / VX.surface.* / var(--vx-radius-card) instead of inline border/radius/shadow.',
+  },
+  'off-system-surface-var': {
+    kind: 'off-system-surface-var',
+    pattern: OFF_SYSTEM_SURFACE_VAR,
+    enabled: (cfg: GuardConfig) => cfg.offSystemSurfaceVar,
+    message:
+      'Raw Mantine ramp step bypasses the basalt surface tokens — use VX.surface.* / --vx-surface-* instead.',
+  },
+  'raw-html-layout': {
+    kind: 'raw-html-layout',
+    pattern: RAW_HTML_TAG, // handled inline (3-condition conjunction); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
+    message:
+      'Raw HTML element with inline layout/surface styling — use a Mantine layout primitive (Box/Flex/Grid/Stack/Group).',
+  },
+  'inline-spacing': {
+    kind: 'inline-spacing',
+    pattern: INLINE_SPACING,
+    enabled: (cfg: GuardConfig) => cfg.inlineSpacing,
+    message: 'Inline spacing literal — use the Mantine spacing prop/token (p/m/gap with xs..xl).',
+  },
+  'inline-display': {
+    kind: 'inline-display',
+    pattern: INLINE_DISPLAY,
+    enabled: (cfg: GuardConfig) => cfg.inlineDisplay,
+    message: 'Use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
+  },
+  'raw-visx-axis': {
+    kind: 'raw-visx-axis',
+    pattern: RAW_VISX_AXIS,
+    enabled: (cfg: GuardConfig) => cfg.rawVisxAxis,
+    appliesTo: isChartFile,
+    message:
+      'Raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use AxisLeftNumeric / AxisBottomDate / AxisRightNumeric.',
+  },
+} as const satisfies Record<GuardKind, GuardRule>
+
+// ── checkSource ───────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Scan ONE file's text for theme-guard violations. Pure: same (text, relPath, cfg) → same Finding[].
+ * No FS, no walk, no console. The 3 dynamic regexes (forbiddenAccent, spacing, radius) are derived
+ * INTERNALLY from cfg. isChartFile(relPath) is applied internally so the oxlint-plugin /
+ * PreToolUse-hook adapters get correct kind-applicability for free.
+ *
+ * @example
+ * const findings = checkSource(src, 'src/Dashboard.tsx', DEFAULT_GUARD_CONFIG)
+ * if (findings.some((f) => f.kind === 'raw-hex')) { ... }
+ */
+export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
+  const findings: Finding[] = []
+  const chartFile = isChartFile(relPath)
+
+  // Derive the 3 dynamic regexes from cfg.
+  const forbiddenAccentRe = new RegExp(
+    `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${cfg.forbiddenAccents.join('|')})['"]`,
+    'g',
+  )
+  const spacingPropRe = new RegExp(
+    `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${cfg.spacingSteps.join('|')})\\}`,
+    'g',
+  )
+  const radiusPropRe = /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g
+
+  const lines = text.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? ''
+
+    // Skip lines with the allow-comment or pure-comment lines.
+    if (line.includes(cfg.allowComment)) continue
+    const trimmed = line.trimStart()
+    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
+
+    // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme).
+    for (const m of line.matchAll(HEX)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-hex' })
+    }
+    for (const m of line.matchAll(FUNC)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-color-fn' })
+    }
+    for (const m of line.matchAll(LOCALSTORAGE_THEME)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+    }
+
+    // Dynamic-regex kinds.
+    for (const m of line.matchAll(forbiddenAccentRe)) {
+      findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+    }
+    for (const m of line.matchAll(spacingPropRe)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
+    }
+    for (const m of line.matchAll(radiusPropRe)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
+    }
+
+    // raw-surface: 3 separate regex checks, one kind (gated on cfg.rawSurface).
+    if (cfg.rawSurface) {
+      for (const m of line.matchAll(SURFACE_BORDER)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+      for (const m of line.matchAll(SURFACE_RADIUS)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+      for (const m of line.matchAll(SURFACE_SHADOW)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
+      }
+    }
+
+    // off-system-surface-var (gated).
+    if (cfg.offSystemSurfaceVar) {
+      for (const m of line.matchAll(OFF_SYSTEM_SURFACE_VAR)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
+      }
+    }
+
+    // raw-html-layout: 3-condition conjunction on the same line (gated).
+    if (
+      cfg.rawHtmlLayout &&
+      RAW_HTML_TAG.test(line) &&
+      INLINE_STYLE.test(line) &&
+      LAYOUT_SURFACE_PROP.test(line)
+    ) {
+      findings.push({ relPath, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
+    }
+
+    // inline-spacing (gated).
+    if (cfg.inlineSpacing) {
+      for (const m of line.matchAll(INLINE_SPACING)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-spacing' })
+      }
+    }
+
+    // inline-display (gated).
+    if (cfg.inlineDisplay) {
+      for (const m of line.matchAll(INLINE_DISPLAY)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-display' })
+      }
+    }
+
+    // raw-visx-axis (gated + chart-file-scoped).
+    if (cfg.rawVisxAxis && chartFile) {
+      for (const m of line.matchAll(RAW_VISX_AXIS)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
+      }
+    }
+  }
+
+  return findings
+}

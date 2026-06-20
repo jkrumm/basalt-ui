@@ -4,14 +4,15 @@ import { useMemo, useState } from 'react'
 import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
+import type { SeriesKey } from '../../register'
 
-export type DonutDatum = { key: string; value: number }
+export type DonutDatum = { key: SeriesKey; value: number }
 
 export type DonutProps = {
   data: DonutDatum[]
   width: number
   height: number
-  colorForKey: (key: string) => string
+  colorForKey: (key: SeriesKey) => string
   formatValue: (v: number) => string
   seriesLabel?: (key: string) => string
   centerLabel?: string

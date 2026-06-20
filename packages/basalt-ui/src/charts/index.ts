@@ -27,6 +27,9 @@ export {
   SURFACE,
 } from '../tokens'
 
+// ── Design seam type (type-only; erased at runtime — no @mantine value) ─
+export type { SeriesKey } from '../register'
+
 // ── Chart theme + hover context ──────────────────────────────────────────
 export { VxThemeProvider, useVxTheme, type VxTheme } from './theme'
 export { HoverContext, DEFAULT_NO_OP_SET_HOVER, type HoverCtx } from './hover-context'
