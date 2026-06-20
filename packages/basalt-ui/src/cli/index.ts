@@ -753,6 +753,182 @@ export function checkCoverage(cwd: string = process.cwd()): number {
   return 1
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// info — SURFACES-derived surface map
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** One row in the `basalt info` output — one per published JS subpath export. */
+export type InfoSubpath = {
+  path: string
+  layer: string
+  rule: string | null
+  skills: readonly string[]
+  optionalPeers: string[]
+}
+
+/** The stable JSON shape for `basalt info --json`. */
+export type InfoOutput = {
+  name: string
+  version: string
+  subpaths: InfoSubpath[]
+}
+
+/**
+ * Print a human-readable (or JSON) map of the published basalt-ui surface derived from
+ * SURFACES + package.json. Every row is live-derived — the subpath list cannot drift.
+ *
+ * `basalt info`         → human-readable table
+ * `basalt info --json`  → stable JSON (InfoOutput shape)
+ */
+export function info(flags: string[]): number {
+  const pkgRoot = packageRoot()
+
+  // Read package.json for name, version, peerDependencies, peerDependenciesMeta, and exports.
+  let pkgName = 'basalt-ui'
+  let pkgVersion = '0.0.0'
+  let peerDeps: Record<string, string> = {}
+  let peerMeta: Record<string, { optional?: boolean }> = {}
+  let pkgExports: Record<string, unknown> = {}
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
+      name?: string
+      version?: string
+      peerDependencies?: Record<string, string>
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>
+      exports?: Record<string, unknown>
+    }
+    pkgName = pkg.name ?? pkgName
+    pkgVersion = pkg.version ?? pkgVersion
+    peerDeps = pkg.peerDependencies ?? {}
+    peerMeta = pkg.peerDependenciesMeta ?? {}
+    pkgExports = pkg.exports ?? {}
+  } catch {
+    // proceed with defaults
+  }
+
+  // Derive optional peer set: all peers marked optional in peerDependenciesMeta.
+  const optionalPeerSet = new Set(
+    Object.entries(peerMeta)
+      .filter(([, m]) => m.optional === true)
+      .map(([name]) => name),
+  )
+
+  // Build subpath rows from SURFACES — only real JS subpath keys (non-#, non-'./configs/*').
+  // Restrict to keys that also appear in package.json exports so we match what is published.
+  const publishedExportKeys = new Set(Object.keys(pkgExports))
+
+  const subpaths: InfoSubpath[] = []
+  for (const [key, spec] of Object.entries(SURFACES)) {
+    if (key.startsWith('#')) continue
+    if (!publishedExportKeys.has(key)) continue
+
+    const docSpec = spec.kind === 'doctrine' ? (spec as DoctrineSpec) : null
+
+    // Derive which optional peers this subpath needs: any optional peer that could be required
+    // by this subpath's layer. We derive this by checking which optional peers appear in the
+    // package.json peerDependencies and flagging those associated with this subpath key.
+    // Strategy: emit ALL optional peers for mantine-coupled subpaths, query-specific for headless
+    // adapters. The canonical source is the peerDependenciesMeta — we enumerate all optional peers.
+    // Since we can't statically map subpath→peer without hardcoding, we emit only those whose
+    // specifier prefix matches the subpath's known peer group (rule name heuristic).
+    const rule = docSpec?.rule ?? null
+    const optionalPeers = deriveOptionalPeers(key, rule, optionalPeerSet, peerDeps)
+
+    subpaths.push({
+      path: `basalt-ui${key === '.' ? '' : key.slice(1)}`,
+      layer: spec.layer,
+      rule,
+      skills: docSpec?.skill ?? [],
+      optionalPeers,
+    })
+  }
+
+  // Also add ./state — it is in package.json exports but has no SURFACES entry (synthetic #state key).
+  if (publishedExportKeys.has('./state') && !subpaths.some((s) => s.path === 'basalt-ui/state')) {
+    subpaths.push({
+      path: 'basalt-ui/state',
+      layer: 'mantine-coupled',
+      rule: 'state',
+      skills: ['basalt-design'],
+      optionalPeers: [],
+    })
+  }
+
+  const output: InfoOutput = { name: pkgName, version: pkgVersion, subpaths }
+
+  if (flags.includes('--json')) {
+    console.log(JSON.stringify(output, null, 2))
+    return 0
+  }
+
+  // Human-readable output
+  console.log(`\nbasalt-ui v${pkgVersion} — published surface\n`)
+  const COL = { path: 32, layer: 18, rule: 18, skills: 36 }
+  const header = [
+    'SUBPATH'.padEnd(COL.path),
+    'LAYER'.padEnd(COL.layer),
+    'RULE'.padEnd(COL.rule),
+    'SKILLS'.padEnd(COL.skills),
+    'OPTIONAL PEERS',
+  ].join('  ')
+  console.log(header)
+  console.log('-'.repeat(header.length))
+  for (const row of output.subpaths) {
+    const line = [
+      row.path.padEnd(COL.path),
+      row.layer.padEnd(COL.layer),
+      (row.rule ?? '—').padEnd(COL.rule),
+      (row.skills.join(', ') || '—').padEnd(COL.skills),
+      row.optionalPeers.join(', ') || '—',
+    ].join('  ')
+    console.log(line)
+  }
+  console.log('')
+  return 0
+}
+
+/**
+ * Derive which optional peers belong to a given subpath + rule.
+ * Maps the rule name (and subpath key) to the known optional peer packages for that domain.
+ * This keeps the mapping close to the rule names without hardcoding the full subpath list.
+ */
+function deriveOptionalPeers(
+  subpathKey: string,
+  rule: string | null,
+  optionalPeerSet: Set<string>,
+  peerDeps: Record<string, string>,
+): string[] {
+  // Map rule/subpath to the peer package prefixes it depends on.
+  const peerPrefixes: string[] = []
+  switch (rule) {
+    case 'query':
+      peerPrefixes.push('@tanstack/react-query', '@tanstack/react-query-devtools')
+      break
+    case 'router':
+      peerPrefixes.push('@tanstack/react-router')
+      break
+    case 'forms':
+      peerPrefixes.push('@mantine/form')
+      break
+    case 'notifications':
+      peerPrefixes.push('@mantine/notifications')
+      break
+    case 'commands':
+      peerPrefixes.push('@mantine/spotlight', '@mantine/modals')
+      break
+    case 'data':
+      peerPrefixes.push('@tanstack/react-table', '@tanstack/react-virtual')
+      break
+    case 'agent':
+      peerPrefixes.push('react-markdown', 'remark-gfm', 'use-stick-to-bottom')
+      break
+    default:
+      break
+  }
+  // Return only those that are actually in the optional peer set and have a declared version.
+  return peerPrefixes.filter((p) => optionalPeerSet.has(p) && p in peerDeps)
+}
+
 /**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
  * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
@@ -769,9 +945,11 @@ export function run(argv: string[], cwd: string = process.cwd()): number {
       return checkTheme(cwd)
     case 'check-coverage':
       return checkCoverage(cwd)
+    case 'info':
+      return info(flags)
     default:
       console.error(
-        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage>',
+        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json]>',
       )
       return 1
   }

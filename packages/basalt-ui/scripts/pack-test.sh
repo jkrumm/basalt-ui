@@ -41,6 +41,7 @@ for f in \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-charts.md \
   agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl \
+  llms.txt \
   bin/basalt.mjs; do require "$f"; done
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
 for f in src/index.css src/starlight.css tailwind.config.js \
@@ -51,14 +52,23 @@ echo "tarball contents OK"
 echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
 node scripts/check-dist-layering.mjs
 
-echo "==> scratch-consumer resolution test"
+echo "==> scratch-consumer resolution test (with optional peers)"
 ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
 SCRATCH2=""
 trap 'rm -rf "$SCRATCH" "$SCRATCH2"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks typescript >/dev/null 2>&1
+bun add "$ABS_TGZ" \
+  react react-dom \
+  @mantine/core @mantine/hooks \
+  @mantine/form @mantine/notifications @mantine/spotlight @mantine/modals \
+  "@tanstack/react-query@^5.101.0" "@tanstack/react-query-devtools@^5.101.0" \
+  "@tanstack/react-router@^1.170.0" \
+  "@tanstack/react-table@>=8" "@tanstack/react-virtual@>=3" \
+  "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
+  "use-stick-to-bottom@^1.1.6" \
+  typescript >/dev/null 2>&1
 cat >test.mjs <<'JS'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -73,6 +83,13 @@ const subpaths = [
   'basalt-ui/vite',
   'basalt-ui/theme-lab',
   'basalt-ui/styles.css',
+  'basalt-ui/query',
+  'basalt-ui/router-tanstack',
+  'basalt-ui/forms',
+  'basalt-ui/notifications',
+  'basalt-ui/commands',
+  'basalt-ui/data',
+  'basalt-ui/agent',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -91,7 +108,17 @@ if (typeof guard.checkSource !== 'function') throw new Error('guard.checkSource 
 // the raw oxlint preset must resolve via ./configs/* and be valid JSON
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
 
-console.log('scratch resolution OK')
+// headless adapter smoke imports (peers installed — these load without a DOM/provider)
+const queryMod = await import('basalt-ui/query')
+if (typeof queryMod.createBasaltQueryClient !== 'function') throw new Error('query.createBasaltQueryClient missing')
+console.log('smoke: basalt-ui/query OK')
+
+const agentMod = await import('basalt-ui/agent')
+if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAgentStream missing')
+if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
+console.log('smoke: basalt-ui/agent OK')
+
+console.log('scratch resolution OK (15 subpaths)')
 JS
 node test.mjs
 

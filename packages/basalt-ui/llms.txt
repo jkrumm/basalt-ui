@@ -1,0 +1,93 @@
+# basalt-ui v1.0.0
+# Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets
+#
+# basalt-ui is an opinionated framework for Mantine-based React apps.
+# It provides a theme + cssVariablesResolver, a BasaltProvider, an app shell
+# (BasaltShell + sidebar/mobile-nav/breadcrumbs), a visx chart system with a
+# three-tier --vx-* CSS-variable token system, adapter batteries for TanStack
+# Query/Router, Mantine forms/notifications/commands, a streaming-chat agent
+# layer, and toolchain presets (oxlint, oxfmt, tsconfig, lefthook, CI).
+#
+# Subpaths: use the exact import specifier below — do not guess.
+# Charts and tokens are Mantine-free; the root (.) is Mantine-coupled.
+# Optional peers are listed per subpath; install only what you use.
+
+Package: basalt-ui
+Version: 1.0.0
+
+## basalt-ui
+Import: import { ... } from 'basalt-ui'
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge
+Layer: mantine-coupled
+
+## basalt-ui/charts
+Import: import { ... } from 'basalt-ui/charts'
+Description: visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)
+Layer: headless
+
+## basalt-ui/tokens
+Import: import { ... } from 'basalt-ui/tokens'
+Description: VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)
+Layer: headless
+
+## basalt-ui/theme-lab
+Import: import { ... } from 'basalt-ui/theme-lab'
+Description: ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection
+Layer: mantine-coupled
+
+## basalt-ui/vite
+Import: import { ... } from 'basalt-ui/vite'
+Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps
+Layer: mantine-coupled
+
+## basalt-ui/guard
+Import: import { ... } from 'basalt-ui/guard'
+Description: checkSource, GUARD_RULES, Finding types — the headless theme-guard core
+Layer: headless
+
+## basalt-ui/query
+Import: import { ... } from 'basalt-ui/query'
+Description: createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools
+Layer: headless
+OptionalPeers: @tanstack/react-query@^5.101.0, @tanstack/react-query-devtools@^5.101.0
+
+## basalt-ui/router-tanstack
+Import: import { ... } from 'basalt-ui/router-tanstack'
+Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs
+Layer: headless
+OptionalPeers: @tanstack/react-router@^1.170.0
+
+## basalt-ui/forms
+Import: import { ... } from 'basalt-ui/forms'
+Description: Mantine form adapter: createForm, field, FormErrorSummary, useFormDraft (Standard Schema)
+Layer: mantine-coupled
+OptionalPeers: @mantine/form@^9.3.0
+
+## basalt-ui/notifications
+Import: import { ... } from 'basalt-ui/notifications'
+Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell
+Layer: mantine-coupled
+OptionalPeers: @mantine/notifications@^9.3.0
+
+## basalt-ui/commands
+Import: import { ... } from 'basalt-ui/commands'
+Description: typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays
+Layer: mantine-coupled
+OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0
+
+## basalt-ui/data
+Import: import { ... } from 'basalt-ui/data'
+Description: TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)
+Layer: mantine-coupled
+OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3 <4
+
+## basalt-ui/agent
+Import: import { ... } from 'basalt-ui/agent'
+Description: Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)
+Layer: headless
+OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
+
+## basalt-ui/state
+Import: import { ... } from 'basalt-ui/state'
+Description: createPersistedState — versioned localStorage state primitive (Mantine-free)
+Layer: mantine-coupled

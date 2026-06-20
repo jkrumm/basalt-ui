@@ -34,6 +34,7 @@
     "configs/",
     "agent/",
     "bin/",
+    "llms.txt",
     "README.md",
     "CHANGELOG.md"
   ],
