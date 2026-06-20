@@ -20,7 +20,7 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 
-const DIST = resolve(import.meta.dir, '..', 'dist')
+const DIST = resolve(import.meta.dirname, '..', 'dist')
 
 if (!existsSync(DIST)) {
   console.error('fix-esm-extensions: dist/ not found — run the build first')

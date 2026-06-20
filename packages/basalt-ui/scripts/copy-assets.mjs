@@ -14,8 +14,8 @@
 import { readdirSync, statSync, mkdirSync, copyFileSync } from 'node:fs'
 import { join, relative, dirname, resolve } from 'node:path'
 
-const SRC = resolve(import.meta.dir, '..', 'src')
-const DIST = resolve(import.meta.dir, '..', 'dist')
+const SRC = resolve(import.meta.dirname, '..', 'src')
+const DIST = resolve(import.meta.dirname, '..', 'dist')
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {

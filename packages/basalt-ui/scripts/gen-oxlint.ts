@@ -153,7 +153,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
 
 // ── File paths ────────────────────────────────────────────────────────────────────────────────────
 
-const root = join(import.meta.dir, '..', '..', '..')
+const root = join(import.meta.dirname, '..', '..', '..')
 const shippedPath = join(root, 'packages/basalt-ui/configs/oxlint.json')
 const repoPath = join(root, '.oxlintrc.json')
 
