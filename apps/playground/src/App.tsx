@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { ChartsPage } from './demo/ChartsPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
+import { QueryDemoPage } from './demo/QueryDemoPage'
 import { SettingsPage } from './demo/SettingsPage'
 import {
   IconActivity,
@@ -31,7 +32,7 @@ import {
   IconSettings,
 } from './demo/icons'
 
-type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings'
+type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings' | 'query'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -155,6 +156,21 @@ export function App() {
         ],
       },
       {
+        label: 'Data',
+        icon: <IconActivity />,
+        items: [
+          {
+            key: 'query',
+            label: 'Query',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/query',
+            active: page === 'query',
+            onClick: go('query'),
+          },
+        ],
+      },
+      {
         label: 'System',
         icon: <IconSettings />,
         items: [
@@ -199,6 +215,7 @@ export function App() {
       {page === 'components' && <ComponentsPage />}
       {page === 'settings' && <SettingsPage />}
       {page === 'activity' && <DashboardPage />}
+      {page === 'query' && <QueryDemoPage />}
     </BasaltShell>
   )
 }
