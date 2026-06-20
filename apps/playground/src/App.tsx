@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { ChartsPage } from './demo/ChartsPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
+import { FormsDemoPage } from './demo/FormsDemoPage'
 import { QueryDemoPage } from './demo/QueryDemoPage'
 import { RouterDemoPage } from './demo/RouterDemoPage'
 import { SettingsPage } from './demo/SettingsPage'
@@ -33,7 +34,15 @@ import {
   IconSettings,
 } from './demo/icons'
 
-type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings' | 'query' | 'router'
+type PageKey =
+  | 'dashboard'
+  | 'charts'
+  | 'components'
+  | 'activity'
+  | 'settings'
+  | 'query'
+  | 'router'
+  | 'forms'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -178,6 +187,15 @@ export function App() {
             active: page === 'router',
             onClick: go('router'),
           },
+          {
+            key: 'forms',
+            label: 'Forms',
+            mobile: true,
+            icon: <IconComponents />,
+            href: '/forms',
+            active: page === 'forms',
+            onClick: go('forms'),
+          },
         ],
       },
       {
@@ -227,6 +245,7 @@ export function App() {
       {page === 'activity' && <DashboardPage />}
       {page === 'query' && <QueryDemoPage />}
       {page === 'router' && <RouterDemoPage />}
+      {page === 'forms' && <FormsDemoPage />}
     </BasaltShell>
   )
 }
