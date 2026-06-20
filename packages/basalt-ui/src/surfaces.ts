@@ -9,13 +9,21 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 7 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 8 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
- * const bad: RuleName = 'overlays' // tsc error — not in the union
+ * // const bad: RuleName = 'overlays' // tsc error — not in the union
  */
-export type RuleName = 'tokens' | 'charts' | 'mantine' | 'router' | 'query' | 'state' | 'forms'
+export type RuleName =
+  | 'tokens'
+  | 'charts'
+  | 'mantine'
+  | 'router'
+  | 'query'
+  | 'state'
+  | 'forms'
+  | 'notifications'
 
 /** The 3 plugin skill names (plugins/basalt/skills/basalt-{name}/).
  *
@@ -138,7 +146,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack) — real package.json exports.
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./notifications) — real package.json exports.
  * - #-prefixed synthetic keys (#state, #app) — advisory doctrine surfaces that
  *   carry a rule but ship NO JS export (state), plus the synthetic global app-wide ban
  *   layer (#app). The #-prefix guarantees they are never mistaken for export paths.
@@ -206,6 +214,14 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'forms',
     skill: ['basalt-design'],
+    guardKinds: [],
+    forbiddenImports: [],
+  },
+  './notifications': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'notifications',
+    skill: ['basalt-app'],
     guardKinds: [],
     forbiddenImports: [],
   },
