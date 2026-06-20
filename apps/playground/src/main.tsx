@@ -1,8 +1,9 @@
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
+import '@mantine/spotlight/styles.css'
 import 'basalt-ui/styles.css'
 import { BasaltProvider } from 'basalt-ui'
-import { BasaltNotifications } from 'basalt-ui/notifications'
+import { BasaltOverlays } from 'basalt-ui/commands'
 import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -21,8 +22,9 @@ createRoot(root).render(
     {/* paletteOptions.groups emits the consumer's `--vx-demo-*` custom properties alongside the
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
     <BasaltProvider paletteOptions={{ groups: demoPaletteGroups }}>
-      <BasaltNotifications />
-      <App />
+      <BasaltOverlays>
+        <App />
+      </BasaltOverlays>
     </BasaltProvider>
   </StrictMode>,
 )

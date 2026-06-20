@@ -19,6 +19,7 @@ import {
 import { BasaltShell, NavCountBadge, type NavLinkRenderer, type SidebarSection } from 'basalt-ui'
 import { useCallback, useMemo, useState } from 'react'
 import { ChartsPage } from './demo/ChartsPage'
+import { CommandsDemoPage } from './demo/CommandsDemoPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
 import { FormsDemoPage } from './demo/FormsDemoPage'
@@ -46,6 +47,7 @@ type PageKey =
   | 'router'
   | 'forms'
   | 'notifications'
+  | 'commands'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -208,6 +210,15 @@ export function App() {
             active: page === 'notifications',
             onClick: go('notifications'),
           },
+          {
+            key: 'commands',
+            label: 'Commands',
+            mobile: true,
+            icon: <IconComponents />,
+            href: '/commands',
+            active: page === 'commands',
+            onClick: go('commands'),
+          },
         ],
       },
       {
@@ -262,6 +273,7 @@ export function App() {
       {page === 'router' && <RouterDemoPage />}
       {page === 'forms' && <FormsDemoPage />}
       {page === 'notifications' && <NotificationsDemoPage />}
+      {page === 'commands' && <CommandsDemoPage />}
     </BasaltShell>
   )
 }
