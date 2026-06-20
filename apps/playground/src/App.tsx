@@ -22,6 +22,7 @@ import { ChartsPage } from './demo/ChartsPage'
 import { CommandsDemoPage } from './demo/CommandsDemoPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
+import { DataDemoPage } from './demo/DataDemoPage'
 import { FormsDemoPage } from './demo/FormsDemoPage'
 import { NotificationsDemoPage } from './demo/NotificationsDemoPage'
 import { QueryDemoPage } from './demo/QueryDemoPage'
@@ -48,6 +49,7 @@ type PageKey =
   | 'forms'
   | 'notifications'
   | 'commands'
+  | 'data'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -219,6 +221,15 @@ export function App() {
             active: page === 'commands',
             onClick: go('commands'),
           },
+          {
+            key: 'data',
+            label: 'Data',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/data',
+            active: page === 'data',
+            onClick: go('data'),
+          },
         ],
       },
       {
@@ -274,6 +285,7 @@ export function App() {
       {page === 'forms' && <FormsDemoPage />}
       {page === 'notifications' && <NotificationsDemoPage />}
       {page === 'commands' && <CommandsDemoPage />}
+      {page === 'data' && <DataDemoPage />}
     </BasaltShell>
   )
 }
