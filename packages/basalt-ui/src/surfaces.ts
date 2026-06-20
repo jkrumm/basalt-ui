@@ -9,13 +9,13 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 6 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 7 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
- * const bad: RuleName = 'forms' // tsc error — not in the union
+ * const bad: RuleName = 'overlays' // tsc error — not in the union
  */
-export type RuleName = 'tokens' | 'charts' | 'mantine' | 'router' | 'query' | 'state'
+export type RuleName = 'tokens' | 'charts' | 'mantine' | 'router' | 'query' | 'state' | 'forms'
 
 /** The 3 plugin skill names (plugins/basalt/skills/basalt-{name}/).
  *
@@ -201,6 +201,14 @@ export const SURFACES = {
     guardKinds: [],
     forbiddenImports: [],
   },
+  './forms': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'forms',
+    skill: ['basalt-design'],
+    guardKinds: [],
+    forbiddenImports: [],
+  },
 
   // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
   '#state': {
@@ -232,7 +240,7 @@ export const SURFACES = {
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
  * Delete the literal at cli/index.ts:429; derive instead.
- * → ['mantine', 'charts', 'tokens', 'router', 'query', 'state'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'router', 'query', 'state', 'forms'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

@@ -66,6 +66,10 @@
       "types": "./dist/guard/index.d.ts",
       "import": "./dist/guard/index.js"
     },
+    "./forms": {
+      "types": "./dist/forms/index.d.ts",
+      "import": "./dist/forms/index.js"
+    },
     "./query": {
       "types": "./dist/query/index.d.ts",
       "import": "./dist/query/index.js"
@@ -114,6 +118,7 @@
   },
   "peerDependencies": {
     "@mantine/core": "^9.3.0",
+    "@mantine/form": "^9.3.0",
     "@mantine/hooks": "^9.3.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-devtools": "^5.101.0",
@@ -122,6 +127,9 @@
     "react-dom": "^19.2.7"
   },
   "peerDependenciesMeta": {
+    "@mantine/form": {
+      "optional": true
+    },
     "@tanstack/react-query": {
       "optional": true
     },
