@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { BasaltShell, NavCountBadge, type NavLinkRenderer, type SidebarSection } from 'basalt-ui'
 import { useCallback, useMemo, useState } from 'react'
+import { AgentDemoPage } from './demo/AgentDemoPage'
 import { ChartsPage } from './demo/ChartsPage'
 import { CommandsDemoPage } from './demo/CommandsDemoPage'
 import { ComponentsPage } from './demo/ComponentsPage'
@@ -50,6 +51,7 @@ type PageKey =
   | 'notifications'
   | 'commands'
   | 'data'
+  | 'agent'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -230,6 +232,15 @@ export function App() {
             active: page === 'data',
             onClick: go('data'),
           },
+          {
+            key: 'agent',
+            label: 'Agent',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/agent',
+            active: page === 'agent',
+            onClick: go('agent'),
+          },
         ],
       },
       {
@@ -286,6 +297,7 @@ export function App() {
       {page === 'notifications' && <NotificationsDemoPage />}
       {page === 'commands' && <CommandsDemoPage />}
       {page === 'data' && <DataDemoPage />}
+      {page === 'agent' && <AgentDemoPage />}
     </BasaltShell>
   )
 }
