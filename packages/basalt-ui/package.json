@@ -70,6 +70,10 @@
       "types": "./dist/query/index.d.ts",
       "import": "./dist/query/index.js"
     },
+    "./router-tanstack": {
+      "types": "./dist/router-tanstack/index.d.ts",
+      "import": "./dist/router-tanstack/index.js"
+    },
     "./state": {
       "types": "./dist/state.d.ts",
       "import": "./dist/state.js"
@@ -113,6 +117,7 @@
     "@mantine/hooks": "^9.3.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-devtools": "^5.101.0",
+    "@tanstack/react-router": "^1.170.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
@@ -121,6 +126,9 @@
       "optional": true
     },
     "@tanstack/react-query-devtools": {
+      "optional": true
+    },
+    "@tanstack/react-router": {
       "optional": true
     }
   },

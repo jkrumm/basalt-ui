@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: TanStack Router conventions for basalt-ui apps — file-based routes, typed search params, and loader/query coupling. Advisory (the framework ships no router adapter).
+description: TanStack Router conventions for basalt-ui apps — file-based routes, typed search params, and loader/query coupling. Advisory (ships an optional ./router-tanstack adapter for active-state and breadcrumb wiring).
 paths:
   - 'src/routes/**'
   - 'apps/**/src/routes/**'
@@ -8,10 +8,13 @@ paths:
 
 # Basalt Router — TanStack Router Conventions
 
-basalt-ui is **router-agnostic** — it ships no router adapter; nav active-state, badge counts, and
-navigation wiring stay consumer-side (`BasaltShell` takes a `NavLinkRenderer` for exactly this). This
-rule is the recommended opinion layer when you use TanStack Router (the basalt-ui default). It is
-**advisory** — adopt it for consistency; nothing in the framework enforces it.
+basalt-ui is **router-agnostic** — `BasaltShell` takes a `NavLinkRenderer` for nav rendering and
+receives active state from the consumer. Nav active-state can now be resolved via
+`useBasaltNav().isActive(item.href)` from `basalt-ui/router-tanstack`, and breadcrumbs via
+`useRouterBreadcrumbs()`; navigation itself stays with TanStack's typed `<Link>` / `useNavigate`.
+Badge counts and navigation wiring remain consumer-side. This rule is the recommended opinion layer
+when you use TanStack Router (the basalt-ui default). It is **advisory** — adopt it for
+consistency; nothing in the framework enforces it.
 
 ## Adding a page
 
@@ -90,5 +93,70 @@ is valid.
 
 The shipped oxlint preset does **not** ban `react-router` or `react-router-dom` — basalt is
 router-agnostic and imposes no mechanical guard. TanStack Router is the recommended/idiomatic
-choice (this rule documents its conventions, and the forthcoming `./router-tanstack` adapter targets
-it), but using `react-router` is an advisory preference, not an enforced restriction.
+choice (this rule documents its conventions, and the `./router-tanstack` adapter targets it), but
+using `react-router` is an advisory preference, not an enforced restriction.
+
+## ./router-tanstack adapter
+
+The optional `./router-tanstack` subpath ships a headless (Mantine-free) TanStack Router bridge.
+Install `@tanstack/react-router` as a peer, then import from `basalt-ui/router-tanstack`.
+
+**StaticDataRouteOption augmentation** — declare on any route to drive the adapter:
+
+```ts
+export const Route = createFileRoute('/reports')({
+  staticData: { title: 'Reports', navSection: 'Insights' },
+  component: ReportsPage,
+})
+```
+
+Augmented fields: `title?: string`, `icon?: ReactNode`, `navSection?: string` (all optional — any
+route remains valid without them).
+
+**useBasaltNav** — reactive active-state resolution:
+
+```ts
+import { useBasaltNav } from 'basalt-ui/router-tanstack'
+
+const { currentPath, isActive } = useBasaltNav()
+isActive('/reports') // prefix match (active on /reports/42 too)
+isActive('/reports', { exact: true }) // exact match only
+isActive('/') // always exact (root is never a prefix match)
+```
+
+**useRouterBreadcrumbs** — ancestor→deepest breadcrumb trail from `staticData.title`:
+
+```ts
+import { useRouterBreadcrumbs } from 'basalt-ui/router-tanstack'
+
+function AppBreadcrumbs() {
+  const crumbs = useRouterBreadcrumbs()
+  return <nav>{crumbs.map((c) => <a key={c.href} href={c.href}>{c.title}</a>)}</nav>
+}
+```
+
+**renderNavLink pattern** — wire the shell's `NavLinkRenderer` with typed TanStack routes.
+basalt does NOT ship this renderer; typed-route `to` is the consumer's typed concern:
+
+```ts
+import { Link } from '@tanstack/react-router'
+import { NavLink as MantineNavLink } from '@mantine/core'
+import { useBasaltNav } from 'basalt-ui/router-tanstack'
+import type { NavLinkRenderer } from 'basalt-ui'
+
+const { isActive } = useBasaltNav()
+
+const renderNavLink: NavLinkRenderer = (item, _flags) => (
+  <MantineNavLink
+    component={Link}
+    to={item.href ?? '/'}
+    label={item.label}
+    leftSection={item.icon}
+    rightSection={item.badge}
+    active={isActive(item.href ?? '/')}
+  />
+)
+```
+
+Navigation (`.navigate()`, `<Link to={…}>`) is always the consumer's typed concern — the adapter
+exposes no `navigate()` helper so that TanStack's route-tree types remain authoritative.

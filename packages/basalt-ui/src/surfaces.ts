@@ -138,9 +138,9 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query) — real package.json exports.
- * - #-prefixed synthetic keys (#router, #state, #app) — advisory doctrine surfaces that
- *   carry a rule but ship NO JS export (router/state), plus the synthetic global app-wide ban
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack) — real package.json exports.
+ * - #-prefixed synthetic keys (#state, #app) — advisory doctrine surfaces that
+ *   carry a rule but ship NO JS export (state), plus the synthetic global app-wide ban
  *   layer (#app). The #-prefix guarantees they are never mistaken for export paths.
  *
  * @example
@@ -193,16 +193,16 @@ export const SURFACES = {
     guardKinds: [],
     forbiddenImports: [],
   },
-
-  // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
-  '#router': {
+  './router-tanstack': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
+    layer: 'headless',
     rule: 'router',
     skill: ['basalt-app'],
     guardKinds: [],
     forbiddenImports: [],
   },
+
+  // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
   '#state': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
