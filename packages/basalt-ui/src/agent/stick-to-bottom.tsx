@@ -5,7 +5,10 @@
  * import() so importing 'basalt-ui/agent' does NOT eagerly resolve use-stick-to-bottom. The
  * package is loaded only when BasaltStickToBottom is first rendered.
  *
- * Renders:
+ * If use-stick-to-bottom is not installed, BasaltStickToBottom renders a plain scrollable <div>
+ * (graceful degradation) — no unhandled rejection, no crash.
+ *
+ * Renders (when peer is present):
  *   <StickToBottom>
  *     <StickToBottom.Content>{children}</StickToBottom.Content>
  *     [scroll-to-bottom button when not at bottom]
@@ -31,49 +34,62 @@ type WrapperProps = {
   style?: CSSProperties
 }
 
+/** Plain scrollable container rendered when use-stick-to-bottom peer is absent. */
+function PlainContainerFallback({ children, className, style }: WrapperProps): JSX.Element {
+  const props: { className?: string; style?: CSSProperties } = {
+    style: { overflowY: 'auto', ...style },
+  }
+  if (className !== undefined) props.className = className
+  return <div {...props}>{children}</div>
+}
+
 // The lazy wrapper resolves use-stick-to-bottom only when rendered.
-const LazyStickToBottom = lazy(async () => {
-  const { StickToBottom, useStickToBottomContext } = await import('use-stick-to-bottom')
+// If the peer is absent the import fails — .catch resolves to PlainContainerFallback so
+// the optional-peer contract is honoured: no unhandled rejection, no crash.
+const LazyStickToBottom = lazy(() =>
+  import('use-stick-to-bottom')
+    .then(({ StickToBottom, useStickToBottomContext }) => {
+      function StickToBottomInner({
+        children,
+        className,
+      }: {
+        children: ReactNode
+        className?: string
+      }): JSX.Element {
+        const { isAtBottom, scrollToBottom } = useStickToBottomContext()
+        const contentProps = className !== undefined ? { className } : {}
+        return (
+          <>
+            <StickToBottom.Content {...contentProps}>{children}</StickToBottom.Content>
+            {!isAtBottom && (
+              <button
+                type="button"
+                className="basalt-agent-scroll-to-bottom"
+                onClick={() => scrollToBottom()}
+                aria-label="Scroll to bottom"
+              >
+                ↓
+              </button>
+            )}
+          </>
+        )
+      }
 
-  function StickToBottomInner({
-    children,
-    className,
-  }: {
-    children: ReactNode
-    className?: string
-  }): JSX.Element {
-    const { isAtBottom, scrollToBottom } = useStickToBottomContext()
-    const contentProps = className !== undefined ? { className } : {}
-    return (
-      <>
-        <StickToBottom.Content {...contentProps}>{children}</StickToBottom.Content>
-        {!isAtBottom && (
-          <button
-            type="button"
-            className="basalt-agent-scroll-to-bottom"
-            onClick={() => scrollToBottom()}
-            aria-label="Scroll to bottom"
-          >
-            ↓
-          </button>
-        )}
-      </>
-    )
-  }
+      // oxlint-disable-next-line unicorn/consistent-function-scoping
+      function StickToBottomWrapper({ children, className, style }: WrapperProps): JSX.Element {
+        const outerProps = style !== undefined ? { style } : {}
+        const innerProps = className !== undefined ? { className } : {}
+        return (
+          <StickToBottom {...outerProps}>
+            <StickToBottomInner {...innerProps}>{children}</StickToBottomInner>
+          </StickToBottom>
+        )
+      }
 
-  // oxlint-disable-next-line unicorn/consistent-function-scoping
-  function StickToBottomWrapper({ children, className, style }: WrapperProps): JSX.Element {
-    const outerProps = style !== undefined ? { style } : {}
-    const innerProps = className !== undefined ? { className } : {}
-    return (
-      <StickToBottom {...outerProps}>
-        <StickToBottomInner {...innerProps}>{children}</StickToBottomInner>
-      </StickToBottom>
-    )
-  }
-
-  return { default: StickToBottomWrapper }
-})
+      return { default: StickToBottomWrapper }
+    })
+    .catch(() => ({ default: PlainContainerFallback })),
+)
 
 // ── BasaltStickToBottom ───────────────────────────────────────────────────────
 

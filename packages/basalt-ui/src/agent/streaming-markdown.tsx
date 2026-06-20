@@ -6,6 +6,9 @@
  * packages are loaded only when this component is first rendered and the Suspense boundary fires.
  * This mirrors the pattern in src/query/devtools.tsx.
  *
+ * If react-markdown/remark-gfm are not installed, StreamingMarkdown renders the text as plain
+ * text (graceful degradation) — no unhandled rejection, no crash.
+ *
  * Tailwind-free: all default element overrides use className hooks (e.g. 'basalt-agent-md-h1').
  * The consumer can override any element via the `components` prop (passed through to react-markdown).
  *
@@ -42,53 +45,61 @@ type MarkdownProps = {
   components?: Components
 }
 
+/**
+ * Default headless component overrides: plain HTML elements with className hooks.
+ * Defined at module scope (static JSX data — no closure over dynamic imports).
+ * Consumers override the entire map via `components` to apply Mantine or custom styles.
+ * Typed as `Components` (react-markdown's own type) to avoid type-checking friction.
+ */
+const DEFAULT_MD_COMPONENTS: Components = {
+  h1: ({ children }) => <h1 className="basalt-agent-md-h1">{children}</h1>,
+  h2: ({ children }) => <h2 className="basalt-agent-md-h2">{children}</h2>,
+  h3: ({ children }) => <h3 className="basalt-agent-md-h3">{children}</h3>,
+  p: ({ children }) => <p className="basalt-agent-md-p">{children}</p>,
+  code: ({ children, className }) => (
+    <code className={['basalt-agent-md-code', className].filter(Boolean).join(' ')}>
+      {children}
+    </code>
+  ),
+  pre: ({ children }) => <pre className="basalt-agent-md-pre">{children}</pre>,
+  ul: ({ children }) => <ul className="basalt-agent-md-ul">{children}</ul>,
+  ol: ({ children }) => <ol className="basalt-agent-md-ol">{children}</ol>,
+  li: ({ children }) => <li className="basalt-agent-md-li">{children}</li>,
+  a: ({ children, href }) => (
+    <a className="basalt-agent-md-a" href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="basalt-agent-md-blockquote">{children}</blockquote>
+  ),
+}
+
+/** Plain-text fallback rendered when react-markdown/remark-gfm peers are absent. */
+function PlainTextFallback({ children }: MarkdownProps): JSX.Element {
+  return <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>
+}
+
 // The dynamic import chain loads react-markdown + remark-gfm only at render time.
-// The default export wrapper satisfies React.lazy's `{ default: ComponentType }` contract.
-const LazyMarkdown = lazy(async () => {
-  const [{ default: ReactMarkdown }, { default: remarkGfm }] = await Promise.all([
-    import('react-markdown'),
-    import('remark-gfm'),
-  ])
-
-  /**
-   * Default headless component overrides: plain HTML elements with className hooks.
-   * Consumers override the entire map via `components` to apply Mantine or custom styles.
-   * These are typed as `Components` (react-markdown's own type) to avoid type-checking friction.
-   */
-  const DEFAULT_MD_COMPONENTS: Components = {
-    h1: ({ children }) => <h1 className="basalt-agent-md-h1">{children}</h1>,
-    h2: ({ children }) => <h2 className="basalt-agent-md-h2">{children}</h2>,
-    h3: ({ children }) => <h3 className="basalt-agent-md-h3">{children}</h3>,
-    p: ({ children }) => <p className="basalt-agent-md-p">{children}</p>,
-    code: ({ children, className }) => (
-      <code className={['basalt-agent-md-code', className].filter(Boolean).join(' ')}>
-        {children}
-      </code>
-    ),
-    pre: ({ children }) => <pre className="basalt-agent-md-pre">{children}</pre>,
-    ul: ({ children }) => <ul className="basalt-agent-md-ul">{children}</ul>,
-    ol: ({ children }) => <ol className="basalt-agent-md-ol">{children}</ol>,
-    li: ({ children }) => <li className="basalt-agent-md-li">{children}</li>,
-    a: ({ children, href }) => (
-      <a className="basalt-agent-md-a" href={href} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    ),
-    blockquote: ({ children }) => (
-      <blockquote className="basalt-agent-md-blockquote">{children}</blockquote>
-    ),
-  }
-
-  function MarkdownWithGfm({ children, components }: MarkdownProps): JSX.Element {
-    return (
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components ?? DEFAULT_MD_COMPONENTS}>
-        {children}
-      </ReactMarkdown>
-    )
-  }
-
-  return { default: MarkdownWithGfm }
-})
+// If either peer is absent the import fails — .catch resolves to PlainTextFallback so
+// the optional-peer contract is honoured: no unhandled rejection, no crash.
+const LazyMarkdown = lazy(() =>
+  Promise.all([import('react-markdown'), import('remark-gfm')])
+    .then(([{ default: ReactMarkdown }, { default: remarkGfm }]) => {
+      function MarkdownWithGfm({ children, components }: MarkdownProps): JSX.Element {
+        return (
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={components ?? DEFAULT_MD_COMPONENTS}
+          >
+            {children}
+          </ReactMarkdown>
+        )
+      }
+      return { default: MarkdownWithGfm }
+    })
+    .catch(() => ({ default: PlainTextFallback })),
+)
 
 // ── StreamingMarkdown ─────────────────────────────────────────────────────────
 

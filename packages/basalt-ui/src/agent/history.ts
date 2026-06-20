@@ -20,6 +20,7 @@
  *   // ...
  * }
  */
+import { useCallback, useRef } from 'react'
 import { createPersistedState } from '../state'
 import type { AgentPart } from './parts'
 
@@ -100,15 +101,27 @@ export function createChatHistoryStore<TPart = AgentPart>(
   return function useChatHistoryStore(): ChatHistoryStore<TPart> {
     const [messages, setMessages] = usePersistedMessages()
 
-    const append = (message: ChatMessage<TPart>): void => {
-      const next = [...messages, message]
-      // Ring-buffer: trim to max, dropping oldest entries first.
-      setMessages(next.length > max ? next.slice(next.length - max) : next)
-    }
+    // Ref mirrors the latest committed value so that two synchronous append() calls in one
+    // render cycle accumulate correctly. createPersistedState's setter is a whole-value setter
+    // (not a functional updater), so the second call would otherwise overwrite the first.
+    const ref = useRef(messages)
+    ref.current = messages
 
-    const clear = (): void => {
+    const append = useCallback(
+      (message: ChatMessage<TPart>): void => {
+        const next = [...ref.current, message]
+        // Ring-buffer: trim to max, dropping oldest entries first.
+        const trimmed = next.length > max ? next.slice(next.length - max) : next
+        ref.current = trimmed // sync so a second append in the same tick sees the update
+        setMessages(trimmed)
+      },
+      [setMessages],
+    )
+
+    const clear = useCallback((): void => {
+      ref.current = []
       setMessages([])
-    }
+    }, [setMessages])
 
     return { messages, append, clear }
   }

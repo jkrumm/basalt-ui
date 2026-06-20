@@ -20,7 +20,7 @@
  *   }}
  * />
  */
-import { type JSX, Fragment } from 'react'
+import { type JSX, Fragment, useMemo } from 'react'
 import { assertNever } from '../register'
 import type {
   AgentPart,
@@ -157,7 +157,12 @@ export function PartList<TPart extends AgentPart = AgentPart>({
   parts,
   components,
 }: PartListProps<TPart>): JSX.Element {
-  const renderers = { ...DEFAULT_RENDERERS, ...components } as AgentPartRenderers<TPart>
+  // Memoised to avoid rebuilding the renderer map on every streaming re-render (hot path).
+  // Cast required because DEFAULT_RENDERERS is typed for the base AgentPart, not the generic TPart.
+  const renderers = useMemo(
+    () => ({ ...DEFAULT_RENDERERS, ...components }) as AgentPartRenderers<TPart>,
+    [components],
+  )
 
   return (
     <Fragment>

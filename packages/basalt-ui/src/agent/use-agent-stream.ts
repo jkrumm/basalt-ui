@@ -26,7 +26,7 @@
  *   )
  * }
  */
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AgentPart } from './parts'
 import type { AgentTransport } from './transport'
 
@@ -79,6 +79,14 @@ export function useAgentStream<TPart = AgentPart, TInput = string>({
   const controllerRef = useRef<AbortController | null>(null)
   const lastInputRef = useRef<TInput | undefined>(undefined)
 
+  // Abort any in-flight stream on unmount to stop the async generator.
+  useEffect(
+    () => () => {
+      controllerRef.current?.abort()
+    },
+    [],
+  )
+
   const send = useCallback(
     async (input: TInput): Promise<void> => {
       // Abort any in-flight stream.
@@ -93,13 +101,18 @@ export function useAgentStream<TPart = AgentPart, TInput = string>({
 
       try {
         for await (const part of transport.stream(input, controller.signal)) {
+          // Guard: if a newer send() has superseded this stream, stop updating state.
+          if (controllerRef.current !== controller) return
           if (controller.signal.aborted) break
           setParts((prev) => [...prev, part])
         }
-        if (!controller.signal.aborted) setStatus('done')
+        // Only mark done if this stream is still the current one and wasn't aborted.
+        if (controllerRef.current === controller && !controller.signal.aborted) setStatus('done')
       } catch (err) {
-        // Ignore abort errors — they are intentional (stop() was called).
+        // Ignore abort errors — they are intentional (stop() was called or superseded).
         if (err instanceof Error && err.name === 'AbortError') return
+        // Guard: don't corrupt state if a newer stream has taken over.
+        if (controllerRef.current !== controller) return
         setError(err)
         setStatus('error')
       }
