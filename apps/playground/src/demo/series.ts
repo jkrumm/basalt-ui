@@ -7,7 +7,13 @@
  * `paletteOptions.groups` so the matching `--vx-demo-*` custom properties are emitted into the
  * palette stylesheet. Both halves (CSS emission + token refs) trace back to this single source.
  */
-import { defineSeries, groupTokens } from 'basalt-ui/charts'
+import { defineSeries, groupTokens, type SeriesKey } from 'basalt-ui/charts'
+
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    series: typeof DEMO_SERIES
+  }
+}
 
 /** The group prefix the palette CSS uses (`--vx-demo-<key>`). */
 export const DEMO_GROUP = 'demo'
@@ -24,22 +30,15 @@ export const DEMO_SERIES = defineSeries({
 })
 
 /**
- * `groupTokens` → `{ sessions: 'var(--vx-demo-sessions)', ... }`. The framework returns a
- * `Record<string, string>`; we re-key it into a literal-keyed object (explicit named properties,
- * not an index signature) so call sites read clean property access — `demoColors.sessions` — and a
- * renamed/removed series fails tsc.
+ * `groupTokens` now returns an exact-keyed `{ [K in keyof T]: string }` type, so the result is
+ * directly usable — `demoColors.sessions` typechecks and a renamed/removed series fails tsc
+ * without any manual re-keying.
  */
-const rawDemoTokens = groupTokens(DEMO_GROUP, DEMO_SERIES)
-export const demoColors = {
-  sessions: rawDemoTokens['sessions']!,
-  signups: rawDemoTokens['signups']!,
-  revenue: rawDemoTokens['revenue']!,
-  churn: rawDemoTokens['churn']!,
-} satisfies Record<keyof typeof DEMO_SERIES, string>
+export const demoColors = groupTokens(DEMO_GROUP, DEMO_SERIES)
 
-/** Exact-keyed accessor for the dynamic-group/donut call sites (no index-signature widening). */
-export function demoColor(key: string): string {
-  return (rawDemoTokens as Record<string, string | undefined>)[key] ?? 'var(--vx-line)'
+/** Exact-keyed accessor for the dynamic-group/donut call sites — no cast, no fallback. */
+export function demoColor(key: SeriesKey): string {
+  return demoColors[key]
 }
 
 /** The `paletteOptions.groups` shape `BasaltProvider` forwards to `buildPaletteCss`. */

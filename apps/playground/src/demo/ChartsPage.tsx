@@ -23,6 +23,7 @@ import {
   StackedArea,
   VX,
   ZonedLine,
+  type DonutDatum,
   type ZoneSpec,
 } from 'basalt-ui/charts'
 import {
@@ -235,7 +236,7 @@ export function ChartsPage() {
           tooltip="A donut over four channels; hover a slice for its share of total."
         >
           <Donut
-            data={CHANNEL_MIX}
+            data={CHANNEL_MIX as DonutDatum[]}
             width={260}
             height={260}
             colorForKey={demoColor}

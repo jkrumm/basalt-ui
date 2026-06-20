@@ -34,10 +34,16 @@
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "@visx/tooltip",
+                "message": "Use ChartTooltip + TooltipHeader/Row/Body from charts primitives."
+              }
+            ],
             "patterns": [
               {
                 "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside packages/basalt-ui/src/charts/**. Compose chart primitives/kinds instead."
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -67,7 +73,7 @@
               },
               {
                 "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside packages/basalt-ui/src/charts/**."
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
