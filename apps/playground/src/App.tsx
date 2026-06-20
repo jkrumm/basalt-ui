@@ -22,6 +22,7 @@ import { ChartsPage } from './demo/ChartsPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
 import { QueryDemoPage } from './demo/QueryDemoPage'
+import { RouterDemoPage } from './demo/RouterDemoPage'
 import { SettingsPage } from './demo/SettingsPage'
 import {
   IconActivity,
@@ -32,7 +33,7 @@ import {
   IconSettings,
 } from './demo/icons'
 
-type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings' | 'query'
+type PageKey = 'dashboard' | 'charts' | 'components' | 'activity' | 'settings' | 'query' | 'router'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -168,6 +169,15 @@ export function App() {
             active: page === 'query',
             onClick: go('query'),
           },
+          {
+            key: 'router',
+            label: 'Router',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/router',
+            active: page === 'router',
+            onClick: go('router'),
+          },
         ],
       },
       {
@@ -216,6 +226,7 @@ export function App() {
       {page === 'settings' && <SettingsPage />}
       {page === 'activity' && <DashboardPage />}
       {page === 'query' && <QueryDemoPage />}
+      {page === 'router' && <RouterDemoPage />}
     </BasaltShell>
   )
 }
