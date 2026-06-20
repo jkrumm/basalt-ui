@@ -40,8 +40,8 @@ import type { Slot } from '../register'
  *   render: ({ name }) => <Text>Delete "{name}"?</Text>,
  * }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Overlay<P = any> = {
+// Default is Record<string, unknown> so a bare Overlay (no type arg) doesn't silently become any
+export type Overlay<P = Record<string, unknown>> = {
   /** Optional modal title (ReactNode for rich headers). */
   title?: ReactNode
   /** Render the modal body for a given payload. */
@@ -56,7 +56,7 @@ export type Overlay<P = any> = {
  *   'confirm:delete': { title: 'Confirm', render: (p: { name: string }) => <span>{p.name}</span> },
  * }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// any is load-bearing here: Overlay<unknown> would reject Overlay<{specific}> by contravariance
 export type OverlayMap = Record<string, Overlay<any>>
 
 // ── Slot extraction ───────────────────────────────────────────────────────────
@@ -108,9 +108,10 @@ export function defineOverlays<const T extends OverlayMap>(spec: T): T {
 /**
  * Extract the props type for a registered overlay key.
  * When Overlays is un-augmented ({}) this resolves to `never` so open() is uncallable.
+ * _K is the mapped key variable; V is the inferred props type — kept distinct to avoid shadowing.
  */
-type OverlayProps<K extends OverlayKey> = Overlays extends { [P in K]: Overlay<infer P> }
-  ? P
+type OverlayProps<K extends OverlayKey> = Overlays extends { [_K in K]: Overlay<infer V> }
+  ? V
   : never
 
 /**
@@ -136,7 +137,11 @@ export const overlays = {
    */
   open<K extends OverlayKey>(key: K, props: OverlayProps<K>): void {
     const spec = activeOverlays[key as string]
-    if (spec === undefined) return
+    if (spec === undefined) {
+      if (process.env['NODE_ENV'] !== 'production')
+        console.warn(`[basalt] overlays.open: no overlay registered for "${String(key)}"`)
+      return
+    }
     modals.open({
       title: spec.title,
       children: spec.render(props),

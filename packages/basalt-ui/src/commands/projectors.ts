@@ -22,14 +22,18 @@ import type { CommandId } from './define-commands'
  * Project the active command registry into a Mantine Spotlight `SpotlightActionData[]` array.
  * Commands where `when()` returns false are excluded from the list.
  *
- * Each action's `onClick` calls `onTrigger?.(id)` first (if provided), then `runCommand(id)`.
- * Pass `onTrigger` to close the palette before executing:
+ * Reads a one-time snapshot of the runtime command stash at call time — commands registered AFTER
+ * this is called (lazy/code-split) won't appear. Register all commands at module load before
+ * mounting <BasaltOverlays>.
+ *
+ * When onTrigger is provided it is called INSTEAD OF runCommand (put runCommand(id) inside your
+ * onTrigger if you want it to fire); without onTrigger, runCommand(id) fires directly.
  *
  * @example
  * // Close the palette then run the command:
  * const actions = toSpotlightActions((id) => { spotlight.close(); runCommand(id) })
  *
- * // Default: just runs the command
+ * // Default: just runs the command directly
  * const actions = toSpotlightActions()
  */
 export function toSpotlightActions(onTrigger?: (id: CommandId) => void): SpotlightActionData[] {
@@ -46,6 +50,7 @@ export function toSpotlightActions(onTrigger?: (id: CommandId) => void): Spotlig
       leftSection: cmd.icon,
       keywords: [cmd.group ?? '', id].join(' ').trim(),
       onClick: () => {
+        // id is the actual stash key (string from Object.entries), narrowed to CommandId for the typed callback
         if (onTrigger !== undefined) {
           onTrigger(id as CommandId)
         } else {
@@ -77,6 +82,10 @@ export type ShortcutEntry = {
  * Project the active command registry into a flat list of commands that have a `shortcut` field.
  * Use this to render a shortcuts-help display (see `ShortcutsHelp`).
  * Commands where `when()` returns false are excluded.
+ *
+ * Reads a one-time snapshot of the runtime command stash at call time — commands registered AFTER
+ * this is called (lazy/code-split) won't appear. Register all commands at module load before
+ * mounting <BasaltOverlays>.
  *
  * @example
  * const shortcuts = toShortcutList()

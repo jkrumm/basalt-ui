@@ -142,8 +142,13 @@ export function defineCommands<const T extends CommandMap>(spec: T): T {
  * Convenience helper to type a single Command object with full inference.
  * Useful when splitting commands across files before merging into defineCommands.
  *
+ * WARNING: defineCommand only TYPES a command — it does NOT register it into the runtime stash.
+ * Only defineCommands(map) registers commands. Calling defineCommand alone means the command will
+ * never appear in the palette or be reachable via runCommand.
+ *
  * @example
  * const saveCmd = defineCommand({ label: 'Save', shortcut: 'Mod+S', run: () => save() })
+ * // Then include saveCmd in a defineCommands({ 'file:save': saveCmd }) call to register it.
  */
 export function defineCommand(cmd: Command): Command {
   return cmd
@@ -165,11 +170,15 @@ export function defineCommand(cmd: Command): Command {
  */
 export function runCommand(id: CommandId, ctx?: CommandRunContext): void | Promise<void> {
   const cmd = activeCommands[id as string]
-  if (cmd === undefined) return
+  if (cmd === undefined) {
+    if (process.env['NODE_ENV'] !== 'production')
+      console.warn(`[basalt] runCommand: no command registered for "${id}"`)
+    return
+  }
   return cmd.run(ctx)
 }
 
-/** @internal — exposed for projectors.ts to iterate the runtime stash. */
-export function getActiveCommands(): CommandMap {
+/** @internal — exposed for projectors.ts to iterate the runtime stash. Returns a readonly view. */
+export function getActiveCommands(): Readonly<CommandMap> {
   return activeCommands
 }

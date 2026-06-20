@@ -4,7 +4,9 @@
  * DISPLAY ONLY in 1.0 — live key binding is deferred to 1.1 (@tanstack/react-hotkeys is alpha).
  * Reads from the active command registry at render time via `toShortcutList()`.
  *
- * Platform-aware label: 'Mod' → '⌘' on mac, 'Ctrl' elsewhere (derived from navigator.platform).
+ * Platform-aware label: 'Mod' → '⌘' on mac, 'Ctrl' elsewhere.
+ * Platform detection defers to post-mount (useEffect) to avoid SSR/client hydration mismatch.
+ * Server and first client render both use non-mac glyphs; the client updates after mount.
  *
  * @example
  * import { ShortcutsHelp } from 'basalt-ui/commands'
@@ -15,6 +17,7 @@
  * // With a custom title and max width:
  * <ShortcutsHelp title="Keyboard shortcuts" maw={480} />
  */
+import { useEffect, useState } from 'react'
 import { Box, Group, Kbd, Stack, Text, Title } from '@mantine/core'
 import { toShortcutList } from './projectors'
 
@@ -28,12 +31,18 @@ export type ShortcutsHelpProps = {
 // ── Platform detection ────────────────────────────────────────────────────────
 
 /**
- * Returns true when running on macOS (client-side only; SSR-safe — defaults false).
- * Used to replace 'Mod' with '⌘' vs 'Ctrl'.
+ * Returns true when running on macOS. SSR-safe — returns false when navigator is unavailable.
+ * Uses userAgentData.platform when available; falls back to userAgent string regex.
+ * Never call during render — use only inside useEffect to avoid hydration mismatches.
  */
-function isMac(): boolean {
+function detectMac(): boolean {
   if (typeof navigator === 'undefined') return false
-  return /mac/i.test(navigator.platform)
+  // userAgentData is the modern, non-deprecated API
+  const uadPlatform = (navigator as { userAgentData?: { platform?: string } }).userAgentData
+    ?.platform
+  if (uadPlatform !== undefined) return /mac|iphone|ipad/i.test(uadPlatform)
+  // Fall back to userAgent string — navigator.platform is deprecated
+  return /Mac|iPhone|iPad/.test(navigator.userAgent)
 }
 
 // ── Shortcut label rendering ──────────────────────────────────────────────────
@@ -42,21 +51,22 @@ function isMac(): boolean {
  * Convert a shortcut string to a list of Kbd-friendly tokens.
  * 'Mod+S' → ['⌘', 'S'] (mac) or ['Ctrl', 'S'] (other).
  * 'Shift+Mod+P' → ['⇧', '⌘', 'P'] (mac) or ['Shift', 'Ctrl', 'P'] (other).
+ * isMac is the post-mount platform flag; defaults false on SSR / first render.
  */
-function parseShortcut(shortcut: string): string[] {
-  const mac = isMac()
+function parseShortcut(shortcut: string, isMac: boolean): string[] {
   return shortcut.split('+').map((key) => {
     switch (key.toLowerCase()) {
       case 'mod':
-        return mac ? '⌘' : 'Ctrl'
+        return isMac ? '⌘' : 'Ctrl'
       case 'shift':
-        return mac ? '⇧' : 'Shift'
+        return isMac ? '⇧' : 'Shift'
       case 'alt':
-        return mac ? '⌥' : 'Alt'
+        return isMac ? '⌥' : 'Alt'
       case 'meta':
-        return '⌘'
+        // platform-aware: Meta key is ⌘ on mac, 'Meta' on other platforms
+        return isMac ? '⌘' : 'Meta'
       case 'ctrl':
-        return mac ? '^' : 'Ctrl'
+        return isMac ? '^' : 'Ctrl'
       default:
         return key.toUpperCase()
     }
@@ -65,8 +75,16 @@ function parseShortcut(shortcut: string): string[] {
 
 // ── ShortcutRow ───────────────────────────────────────────────────────────────
 
-function ShortcutRow({ label, shortcut }: { label: string; shortcut: string }) {
-  const keys = parseShortcut(shortcut)
+function ShortcutRow({
+  label,
+  shortcut,
+  isMac,
+}: {
+  label: string
+  shortcut: string
+  isMac: boolean
+}) {
+  const keys = parseShortcut(shortcut, isMac)
   return (
     <Group justify="space-between" gap="xs" py={2}>
       <Text size="sm">{label}</Text>
@@ -93,6 +111,13 @@ function ShortcutRow({ label, shortcut }: { label: string; shortcut: string }) {
  * <ShortcutsHelp title="Keyboard shortcuts" />
  */
 export function ShortcutsHelp({ title = 'Keyboard shortcuts', maw }: ShortcutsHelpProps) {
+  // Default false — SSR and first client render produce non-mac glyphs (no hydration mismatch).
+  // Post-mount effect flips to true on macOS, triggering a single client-only re-render.
+  const [isMac, setIsMac] = useState(false)
+  useEffect(() => {
+    setIsMac(detectMac())
+  }, [])
+
   const shortcuts = toShortcutList()
 
   if (shortcuts.length === 0) return null
@@ -123,7 +148,12 @@ export function ShortcutsHelp({ title = 'Keyboard shortcuts', maw }: ShortcutsHe
               </Text>
             )}
             {entries.map((entry) => (
-              <ShortcutRow key={entry.id} label={entry.label} shortcut={entry.shortcut} />
+              <ShortcutRow
+                key={entry.id}
+                label={entry.label}
+                shortcut={entry.shortcut}
+                isMac={isMac}
+              />
             ))}
           </Stack>
         ))}
