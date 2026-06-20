@@ -171,10 +171,6 @@ export const baseTheme: MantineThemeOverride = createTheme({
     PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
     Select: Select.extend({ defaultProps: { size: 'md' } }),
     Textarea: Textarea.extend({ defaultProps: { size: 'md' } }),
-    // Keyed by name (not `DatePickerInput.extend`) so the framework never statically imports
-    // `@mantine/dates` — it stays an OPTIONAL peer. Mantine applies these defaults only if the
-    // consumer actually installs/renders the component; otherwise the entry is inert.
-    DatePickerInput: { defaultProps: { size: 'md' } },
   },
 })
 

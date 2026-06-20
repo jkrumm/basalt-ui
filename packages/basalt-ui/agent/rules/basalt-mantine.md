@@ -95,9 +95,8 @@ Route components import chart primitives directly from `basalt-ui/charts` — ne
 - **Modals**: `modals.openConfirmModal(...)` for destructive actions; `modals.open(...)` for forms.
 - **Inputs**: from `@mantine/core` (`TextInput`, `Select`, `Combobox`, …). Don't use native `<select>`.
   The theme defaults inputs to `md` (16px font) so iOS Safari never zooms on focus.
-- **DatePickerInput**: from `@mantine/dates` (an optional peer). In v9 it uses string values
-  (`YYYY-MM-DD`) for `value`/`onChange` — no `Date` conversion. The theme applies its `md` default only
-  if you install/render it.
+- **DatePickerInput**: from `@mantine/dates` (if you separately install it). In v9 it uses string
+  values (`YYYY-MM-DD`) for `value`/`onChange` — no `Date` conversion.
 - **Responsive chart sizing**: `useElementSize` from `@mantine/hooks` (replaces `@visx/responsive`).
 
 ## Strict surfaces & layout primitives

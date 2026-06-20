@@ -61,8 +61,8 @@ query results, derived data, or theme scheme in the store.
 ArkType implement the spec natively — no separate resolver package is needed.
 
 > **Prerequisite:** `@mantine/form` is **not** a declared peer dependency of `basalt-ui` (peers are
-> only `@mantine/core`, `@mantine/hooks`, and optional `@mantine/dates`). A consumer must install it
-> explicitly before using the forms doctrine:
+> only `@mantine/core` and `@mantine/hooks`). A consumer must install it explicitly before using
+> the forms doctrine:
 >
 > ```bash
 > bun add @mantine/form

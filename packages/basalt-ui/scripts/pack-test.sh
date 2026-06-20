@@ -17,6 +17,12 @@ bun pm pack
 TGZ=$(ls basalt-ui-*.tgz)
 echo "packed: $TGZ"
 
+echo "==> publint"
+bunx publint --strict "$TGZ"
+
+echo "==> attw (are-the-types-wrong)"
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css
+
 echo "==> assert tarball contents"
 LIST=$(tar -tzf "$TGZ")
 require() { echo "$LIST" | grep -qx "package/$1" || { echo "MISSING in tarball: $1"; exit 1; }; }
@@ -42,10 +48,14 @@ for f in src/index.css src/starlight.css tailwind.config.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
 echo "tarball contents OK"
 
+echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
+node scripts/check-dist-layering.mjs
+
 echo "==> scratch-consumer resolution test"
 ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
-trap 'rm -rf "$SCRATCH"' EXIT
+SCRATCH2=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 bun add "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks typescript >/dev/null 2>&1
@@ -140,5 +150,41 @@ export { render, _k, _sk, _gk, _f }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"
+
+echo "==> charts/tokens-only (no-Mantine) resolution + render"
+SCRATCH2=$(mktemp -d)
+cd "$SCRATCH2"
+echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
+bun add "$ABS_TGZ" react react-dom >/dev/null 2>&1
+cat >free.mjs <<'JS'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+// The Mantine-free subpaths must load with NO @mantine installed.
+const charts = await import('basalt-ui/charts')
+const tokens = await import('basalt-ui/tokens')
+if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
+if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteCss() did not return a string')
+// Render proof: Bars accepts explicit width+height and uses VX token refs (plain var() strings,
+// SSR-safe). Wrapped in VxThemeProvider (also Mantine-free) so useVxTheme() resolves; the
+// provider itself has no @mantine dependency. renderToStaticMarkup works with all React hooks
+// (useCallback/useMemo/useRef/useContext run synchronously in SSR).
+const { VxThemeProvider, Bars } = charts
+const data = [{ x: '2024-01', v: 10 }, { x: '2024-02', v: 20 }, { x: '2024-03', v: 15 }]
+const chart = createElement(Bars, {
+  data,
+  width: 400,
+  height: 200,
+  chartId: 'test',
+  getX: (d) => d.x,
+  getValue: (d, key) => key === 'v' ? d.v : null,
+  positiveBars: [{ key: 'v', label: 'Value', color: 'var(--vx-blue)' }],
+  leftAxis: { domain: [0, 30] },
+})
+const wrapped = createElement(VxThemeProvider, { colorScheme: 'light' }, chart)
+const html = renderToStaticMarkup(wrapped)
+if (!html.includes('<svg')) throw new Error('chart kind did not render an <svg>')
+console.log('charts/tokens-only resolution + render OK')
+JS
+node free.mjs
 
 echo "PACK TEST PASSED"

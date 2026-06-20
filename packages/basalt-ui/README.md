@@ -20,7 +20,6 @@ Basalt UI is the extraction of that setup from a production app. Install once, g
 ```bash
 bun add basalt-ui
 bun add react react-dom @mantine/core @mantine/hooks
-# @mantine/dates is optional (date pickers only)
 ```
 
 Peer requirements: `react` / `react-dom` `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`.
@@ -199,12 +198,11 @@ Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
 
 ## Requirements
 
-| Peer                  | Version | Notes                        |
-| --------------------- | ------- | ---------------------------- |
-| `react` / `react-dom` | `^19`   | required                     |
-| `@mantine/core`       | `^9.3`  | required                     |
-| `@mantine/hooks`      | `^9.3`  | required                     |
-| `@mantine/dates`      | `^9.3`  | optional — date pickers only |
+| Peer                  | Version | Notes    |
+| --------------------- | ------- | -------- |
+| `react` / `react-dom` | `^19`   | required |
+| `@mantine/core`       | `^9.3`  | required |
+| `@mantine/hooks`      | `^9.3`  | required |
 
 ---
 

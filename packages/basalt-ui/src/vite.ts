@@ -60,14 +60,13 @@ export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
       // Force these packages to a single instance. Without dedupe, Vite's optimizer can stamp a
       // second copy of @mantine/core into another subpackage's pre-bundle, which breaks
       // MantineProvider context.
-      dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/hooks', '@mantine/dates'],
+      dedupe: ['react', 'react-dom', '@mantine/core', '@mantine/hooks'],
     },
     optimizeDeps: {
       // Pre-bundle the Mantine subpackages together so they share one @mantine/core instance (and
       // one MantineProvider context). Consumers append their own (e.g. @mantine/schedule).
       include: [
         '@mantine/core',
-        '@mantine/dates',
         '@mantine/hooks',
         '@mantine/form',
         '@mantine/modals',
