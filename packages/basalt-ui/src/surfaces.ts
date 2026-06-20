@@ -9,7 +9,7 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 10 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 11 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
@@ -26,6 +26,7 @@ export type RuleName =
   | 'notifications'
   | 'commands'
   | 'data'
+  | 'agent'
 
 /** The 3 plugin skill names (plugins/basalt/skills/basalt-{name}/).
  *
@@ -148,7 +149,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./notifications, ./commands) — real package.json exports.
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./notifications, ./commands, ./agent) — real package.json exports.
  * - #-prefixed synthetic keys (#state, #app) — advisory doctrine surfaces that
  *   carry a rule but ship NO JS export (state), plus the synthetic global app-wide ban
  *   layer (#app). The #-prefix guarantees they are never mistaken for export paths.
@@ -243,6 +244,17 @@ export const SURFACES = {
     guardKinds: [],
     forbiddenImports: [],
   },
+  './agent': {
+    kind: 'doctrine',
+    layer: 'headless',
+    rule: 'agent',
+    skill: ['basalt-app'],
+    guardKinds: [],
+    forbiddenImports: [
+      ...MANTINE_BANS,
+      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+    ],
+  },
 
   // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
   '#state': {
@@ -274,7 +286,7 @@ export const SURFACES = {
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
  * Delete the literal at cli/index.ts:429; derive instead.
- * → ['mantine', 'charts', 'tokens', 'router', 'query', 'state', 'forms', 'notifications', 'commands', 'data'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'router', 'query', 'state', 'forms', 'notifications', 'commands', 'data', 'agent'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

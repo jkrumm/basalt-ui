@@ -90,6 +90,10 @@
       "types": "./dist/data/index.d.ts",
       "import": "./dist/data/index.js"
     },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "import": "./dist/agent/index.js"
+    },
     "./state": {
       "types": "./dist/state.d.ts",
       "import": "./dist/state.js"
@@ -124,8 +128,11 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "publint": "0.3.21",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
+    "use-stick-to-bottom": "^1.1.6",
     "vite": "^8.0.16"
   },
   "peerDependencies": {
@@ -141,7 +148,10 @@
     "@tanstack/react-table": ">=8 <9",
     "@tanstack/react-virtual": ">=3 <4",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "use-stick-to-bottom": "^1.1.6"
   },
   "peerDependenciesMeta": {
     "@mantine/form": {
@@ -169,6 +179,15 @@
       "optional": true
     },
     "@tanstack/react-virtual": {
+      "optional": true
+    },
+    "react-markdown": {
+      "optional": true
+    },
+    "remark-gfm": {
+      "optional": true
+    },
+    "use-stick-to-bottom": {
       "optional": true
     }
   },

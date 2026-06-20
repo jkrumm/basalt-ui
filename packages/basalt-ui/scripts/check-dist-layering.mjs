@@ -54,6 +54,7 @@ const subpaths = [
   { rel: 'state.js', banVisx: true },
   { rel: 'query/index.js', banVisx: true },
   { rel: 'router-tanstack/index.js', banVisx: true },
+  { rel: 'agent/index.js', banVisx: true },
 ]
 for (const { rel, banVisx } of subpaths) {
   const entry = resolve(DIST, rel)
