@@ -22,6 +22,7 @@ import { ChartsPage } from './demo/ChartsPage'
 import { ComponentsPage } from './demo/ComponentsPage'
 import { DashboardPage } from './demo/DashboardPage'
 import { FormsDemoPage } from './demo/FormsDemoPage'
+import { NotificationsDemoPage } from './demo/NotificationsDemoPage'
 import { QueryDemoPage } from './demo/QueryDemoPage'
 import { RouterDemoPage } from './demo/RouterDemoPage'
 import { SettingsPage } from './demo/SettingsPage'
@@ -33,6 +34,7 @@ import {
   IconPalette,
   IconSettings,
 } from './demo/icons'
+import { NotificationBell } from 'basalt-ui/notifications'
 
 type PageKey =
   | 'dashboard'
@@ -43,6 +45,7 @@ type PageKey =
   | 'query'
   | 'router'
   | 'forms'
+  | 'notifications'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -196,6 +199,15 @@ export function App() {
             active: page === 'forms',
             onClick: go('forms'),
           },
+          {
+            key: 'notifications',
+            label: 'Notifications',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/notifications',
+            active: page === 'notifications',
+            onClick: go('notifications'),
+          },
         ],
       },
       {
@@ -223,16 +235,19 @@ export function App() {
       sections={sections}
       renderNavLink={renderNavLink}
       globalActions={
-        <Tooltip label={dark ? 'Switch to light' : 'Switch to dark'} withArrow>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            onClick={toggleColorScheme}
-            aria-label="Toggle color scheme"
-          >
-            <SchemeIcon dark={dark} />
-          </ActionIcon>
-        </Tooltip>
+        <>
+          <NotificationBell />
+          <Tooltip label={dark ? 'Switch to light' : 'Switch to dark'} withArrow>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              onClick={toggleColorScheme}
+              aria-label="Toggle color scheme"
+            >
+              <SchemeIcon dark={dark} />
+            </ActionIcon>
+          </Tooltip>
+        </>
       }
       settingsMenuItems={[
         { key: 'theme', label: 'Theme lab', icon: <IconPalette />, onClick: go('settings') },
@@ -246,6 +261,7 @@ export function App() {
       {page === 'query' && <QueryDemoPage />}
       {page === 'router' && <RouterDemoPage />}
       {page === 'forms' && <FormsDemoPage />}
+      {page === 'notifications' && <NotificationsDemoPage />}
     </BasaltShell>
   )
 }
