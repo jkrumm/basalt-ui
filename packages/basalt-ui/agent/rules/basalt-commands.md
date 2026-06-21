@@ -179,9 +179,9 @@ spotlight.open()
 `toShortcutList()` returns commands with a `shortcut` field as a flat list. `ShortcutsHelp`
 renders them in a grouped Mantine layout with platform-aware labels (⌘ on mac, Ctrl elsewhere).
 
-**DISPLAY ONLY in 1.0.** Live key binding is deferred to 1.1 — `@tanstack/react-hotkeys` is
-alpha (0.10.0, pre-1.0, "API may change"). Shortcut strings are stored as data; Spotlight
-`mod + K` covers the palette trigger for 1.0.
+**Display + live binding.** `ShortcutsHelp` renders the shortcuts for reference, and the same
+`shortcut` field is bound to live keys by `useCommandHotkeys()` (via the `@tanstack/react-hotkeys`
+optional peer). Spotlight `mod + K` covers the palette trigger.
 
 ```tsx
 import { ShortcutsHelp } from 'basalt-ui/commands'
