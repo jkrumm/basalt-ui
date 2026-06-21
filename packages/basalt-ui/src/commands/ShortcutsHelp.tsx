@@ -1,8 +1,8 @@
 /**
  * ShortcutsHelp — renders a keyboard shortcut reference list grouped by command group.
  *
- * DISPLAY ONLY in 1.0 — live key binding is deferred to 1.1 (@tanstack/react-hotkeys is alpha).
- * Reads from the active command registry at render time via `toShortcutList()`.
+ * Reads from the active command registry at render time via `toShortcutList()`. The same
+ * Command.shortcut field also drives live key binding via useCommandHotkeys().
  *
  * Platform-aware label: 'Mod' → '⌘' on mac, 'Ctrl' elsewhere.
  * Platform detection defers to post-mount (useEffect) to avoid SSR/client hydration mismatch.

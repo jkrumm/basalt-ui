@@ -62,8 +62,8 @@ export type Command = {
   /** Optional icon (ReactNode — no @tabler/icons dependency per house rules). */
   icon?: ReactNode
   /**
-   * Optional keyboard shortcut string for display only in 1.0.
-   * Live key binding is deferred to 1.1 (@tanstack/react-hotkeys is alpha).
+   * Optional keyboard shortcut string. Drives BOTH the ShortcutsHelp display AND live key
+   * binding via useCommandHotkeys() (which registers with @tanstack/react-hotkeys optional peer).
    * Convention: 'Mod+S' (Mod = Cmd on mac, Ctrl elsewhere), 'Shift+Mod+P', etc.
    */
   shortcut?: string

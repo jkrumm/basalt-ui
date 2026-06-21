@@ -13,7 +13,7 @@
  * // Render a shortcut reference list:
  * const shortcuts = toShortcutList()  // [{ id, label, shortcut, group? }, ...]
  *
- * // Bind hotkeys (used internally by useCommandHotkeys):
+ * // Opt-in: drive your own useHotkeys() call (useCommandHotkeys uses the imperative manager API instead):
  * const bindings = toHotkeyBindings()
  * useHotkeys(bindings)
  */
@@ -31,7 +31,13 @@ import { formatShortcutDisplay, detectMac } from './shortcut-format'
  */
 export type HotkeyBinding = {
   hotkey: string
-  callback: () => void
+  /**
+   * Callback invoked when the hotkey fires. Widened to match @tanstack/react-hotkeys'
+   * HotkeyCallback signature — `(event: KeyboardEvent, context?: unknown) => void` — so
+   * consumers can pass toHotkeyBindings() directly to useHotkeys() without a tsc error.
+   * The implementations produced by toHotkeyBindings() only use the zero-arg form internally.
+   */
+  callback: (event: KeyboardEvent, context?: unknown) => void
 }
 
 // ── toSpotlightActions ────────────────────────────────────────────────────────
@@ -138,9 +144,13 @@ export function toShortcutList(): ShortcutEntry[] {
  * included in the bindings but their callback is a no-op (the command is gated at call time, not
  * at registration time — this avoids hook-count churn when `when()` toggles).
  *
- * Reads a one-time snapshot of the runtime command stash. Called inside `useCommandHotkeys` on
- * every render so the bindings stay in sync with the latest `run` closures (no stale closure
- * issue — useHotkeys syncs callbacks on every render).
+ * Reads a one-time snapshot of the runtime command stash.
+ *
+ * NOTE: the built-in useCommandHotkeys() does NOT call this function. It uses the imperative
+ * getHotkeyManager() API from @tanstack/react-hotkeys directly (register/unregister per
+ * mount/unmount cycle). toHotkeyBindings() is an opt-in convenience projector for consumers
+ * who want to drive their own useHotkeys([...]) call — it is not on the path that
+ * useCommandHotkeys() takes.
  *
  * @example
  * import { useHotkeys } from '@tanstack/react-hotkeys'
