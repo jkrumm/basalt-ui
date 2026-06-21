@@ -9,17 +9,17 @@ Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `mas
 | Subpath                     | Layer           | Purpose                                                                                         |
 | --------------------------- | --------------- | ----------------------------------------------------------------------------------------------- |
 | `basalt-ui`                 | mantine-coupled | BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge  |
-| `basalt-ui/charts`          | headless        | visx chart primitives, sparklines, hooks, token re-exports (Mantine-free)                       |
+| `basalt-ui/charts`          | headless        | visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)                   |
 | `basalt-ui/tokens`          | headless        | VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)   |
 | `basalt-ui/theme-lab`       | mantine-coupled | ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection                        |
 | `basalt-ui/vite`            | mantine-coupled | basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps                                |
-| `basalt-ui/guard`           | headless        | checkSource, GUARD_RULES, Finding types — headless theme-guard core                             |
+| `basalt-ui/guard`           | headless        | checkSource, GUARD_RULES, Finding types — the headless theme-guard core                         |
 | `basalt-ui/query`           | headless        | createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools                    |
 | `basalt-ui/router-tanstack` | headless        | TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs                      |
-| `basalt-ui/forms`           | mantine-coupled | Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft                      |
+| `basalt-ui/forms`           | mantine-coupled | Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)    |
 | `basalt-ui/notifications`   | mantine-coupled | Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell      |
 | `basalt-ui/commands`        | mantine-coupled | typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays       |
-| `basalt-ui/data`            | mantine-coupled | TanStack Table + Virtual: BasaltDataTable, BasaltVirtualList (Mantine-rendered)                 |
+| `basalt-ui/data`            | mantine-coupled | TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)           |
 | `basalt-ui/agent`           | headless        | Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)           |
 | `basalt-ui/state`           | headless        | createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives |
 
