@@ -18,13 +18,8 @@ import {
   Tooltip,
   useMantineColorScheme,
 } from '@mantine/core'
-import {
-  BasaltShell,
-  NavCountBadge,
-  type NavLinkRenderer,
-  type SidebarSection,
-  useOnlineStatus,
-} from 'basalt-ui'
+import { BasaltShell, NavCountBadge, useOnlineStatus } from 'basalt-ui'
+import type { NavLinkRenderer, SidebarSection } from 'basalt-ui'
 import { useCallback, useMemo, useState } from 'react'
 import { AgentDemoPage } from './demo/AgentDemoPage'
 import { ChartsPage } from './demo/ChartsPage'

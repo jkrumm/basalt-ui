@@ -14,13 +14,14 @@ import {
   Bars,
   ChartCard,
   ChartLegend,
-  type LegendEntry,
   LineSparkline,
   VX,
 } from 'basalt-ui/charts'
+import type { LegendEntry } from 'basalt-ui/charts'
 import { PageActions } from 'basalt-ui'
 import { useState } from 'react'
-import { type DayPoint, SERIES_DATA, SPARK_REVENUE, SPARK_SESSIONS, SPARK_SIGNUPS } from './data'
+import { SERIES_DATA, SPARK_REVENUE, SPARK_SESSIONS, SPARK_SIGNUPS } from './data'
+import type { DayPoint } from './data'
 import { demoColors } from './series'
 import { useMeasureWidth } from './use-measure'
 

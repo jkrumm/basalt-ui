@@ -7,7 +7,8 @@
  * `paletteOptions.groups` so the matching `--vx-demo-*` custom properties are emitted into the
  * palette stylesheet. Both halves (CSS emission + token refs) trace back to this single source.
  */
-import { defineSeries, groupTokens, type SeriesKey } from 'basalt-ui/charts'
+import { defineSeries, groupTokens } from 'basalt-ui/charts'
+import type { SeriesKey } from 'basalt-ui/charts'
 
 declare module 'basalt-ui' {
   interface BasaltRegister {

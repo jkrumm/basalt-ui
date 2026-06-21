@@ -1,3 +1,4 @@
+// oxlint-disable import/no-default-export -- commitlint requires a default export
 import type { UserConfig } from '@commitlint/types'
 
 const Configuration: UserConfig = {

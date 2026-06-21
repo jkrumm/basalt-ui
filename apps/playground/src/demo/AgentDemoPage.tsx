@@ -9,8 +9,6 @@
  */
 import { Badge, Button, Divider, Group, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import {
-  type AgentPart,
-  type AgentTransport,
   BasaltStickToBottom,
   createChatHistoryStore,
   edenTransport,
@@ -18,6 +16,7 @@ import {
   StreamingMarkdown,
   useAgentStream,
 } from 'basalt-ui/agent'
+import type { AgentPart, AgentTransport } from 'basalt-ui/agent'
 import { useCallback, useState } from 'react'
 
 // ── edenTransport wire-up (reference) ────────────────────────────────────────

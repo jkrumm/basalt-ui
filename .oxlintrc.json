@@ -1,15 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "react",
-    "react-perf",
-    "typescript",
-    "import",
-    "unicorn",
-    "jsx-a11y",
-    "promise",
-    "oxc"
-  ],
+  "plugins": ["react", "typescript", "import", "unicorn", "jsx-a11y", "promise", "oxc"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -22,11 +13,20 @@
     "react/rules-of-hooks": "error",
     "react/jsx-key": "error",
     "react/react-in-jsx-scope": "off",
-    "typescript/no-explicit-any": "warn",
+    "typescript/no-explicit-any": "error",
     "import/no-duplicates": "error",
-    "import/no-unassigned-import": "off"
+    "import/no-unassigned-import": "off",
+    "import/no-default-export": "error",
+    "import/consistent-type-specifier-style": "error",
+    "react/hook-use-state": "warn"
   },
-  "ignorePatterns": ["dist", "node_modules", "apps/marketing/**", "examples/**"],
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "apps/marketing/**",
+    "examples/**",
+    "**/*.module.css.d.ts"
+  ],
   "overrides": [
     {
       "files": ["packages/basalt-ui/src/**", "apps/playground/src/**"],
@@ -112,6 +112,96 @@
       }
     },
     {
+      "files": ["packages/basalt-ui/src/guard/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "guard must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "guard must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "guard must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/query/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "query must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "query must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "query must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/router-tanstack/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/basalt-ui/src/agent/**"],
       "rules": {
         "no-restricted-imports": [
@@ -131,6 +221,36 @@
               {
                 "group": ["@mantine/*"],
                 "message": "agent must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/state.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "state must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "state must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "state must be Mantine-free — no Mantine imports allowed."
               },
               {
                 "group": ["@visx/*"],

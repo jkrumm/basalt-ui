@@ -1,5 +1,6 @@
 // J.4 apps/playground/src/asyncstate-fourth-variant.type-guard.ts
-import { assertNever, type AsyncState } from 'basalt-ui'
+import { assertNever } from 'basalt-ui'
+import type { AsyncState } from 'basalt-ui'
 type Extended = AsyncState<number> | { status: 'refreshing'; data: number }
 export function render(s: Extended): string {
   switch (s.status) {

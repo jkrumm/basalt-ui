@@ -1,3 +1,4 @@
+// oxlint-disable import/no-default-export -- vite config requires a default export
 import react from '@vitejs/plugin-react'
 import { basaltViteConfig } from 'basalt-ui/vite'
 import { fileURLToPath } from 'node:url'

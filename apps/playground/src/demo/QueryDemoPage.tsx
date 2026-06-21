@@ -132,6 +132,7 @@ function ResetBoundaryNote() {
 // ── Page ──────────────────────────────────────────────────────────────────────────────────────────
 
 export function QueryDemoPage() {
+  // oxlint-disable-next-line react/hook-use-state -- stable singleton; setter intentionally omitted
   const [client] = useState(() => createBasaltQueryClient())
   const [forceError, setForceError] = useState(false)
   const staleTimeMs = useMemo(() => {

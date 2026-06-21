@@ -25,20 +25,10 @@ import {
   StackedArea,
   VX,
   ZonedLine,
-  type DonutDatum,
-  type ZoneSpec,
 } from 'basalt-ui/charts'
-import {
-  ACTIVITY_HEATMAP,
-  CHANNEL_MIX,
-  type DayPoint,
-  type HeatCell,
-  LIFT_TREND,
-  type LiftPoint,
-  LOAD_TREND,
-  type LoadPoint,
-  SERIES_DATA,
-} from './data'
+import type { DonutDatum, ZoneSpec } from 'basalt-ui/charts'
+import { ACTIVITY_HEATMAP, CHANNEL_MIX, LIFT_TREND, LOAD_TREND, SERIES_DATA } from './data'
+import type { DayPoint, HeatCell, LiftPoint, LoadPoint } from './data'
 import { demoColor, demoColors } from './series'
 import { useMeasureWidth } from './use-measure'
 
