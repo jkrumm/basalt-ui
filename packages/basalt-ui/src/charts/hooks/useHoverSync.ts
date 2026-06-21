@@ -40,7 +40,6 @@ export function useHoverSync<T>({
   const warnedRef = useRef(false)
 
   if (
-    typeof process !== 'undefined' &&
     process.env['NODE_ENV'] !== 'production' &&
     ctx.setHover === DEFAULT_NO_OP_SET_HOVER &&
     !warnedRef.current

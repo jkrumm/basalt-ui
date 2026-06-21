@@ -49,6 +49,7 @@ export type BarsZone = ZoneSpec
 export type BarsRefLine = {
   value: number
   color: string
+  /** Solid by default; set true for a dashed line. */
   dashed?: boolean
   axisSide?: 'left' | 'right'
 }
@@ -320,6 +321,8 @@ function BarsInner<T>(props: BarsProps<T>) {
   const formatBar = (b: BarsBar, v: number) => (b.formatValue ?? formatValue)(v)
   const formatLine = (ln: BarsLine, v: number) => (ln.formatValue ?? formatValue)(v)
 
+  const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
+
   return (
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
@@ -343,7 +346,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                 y1={scale(r.value)}
                 y2={scale(r.value)}
                 stroke={r.color}
-                strokeDasharray={r.dashed === false ? undefined : '4 4'}
+                strokeDasharray={r.dashed ? '4 4' : undefined}
               />
             )
           })}
@@ -503,10 +506,7 @@ function BarsInner<T>(props: BarsProps<T>) {
           <>
             <TooltipHeader
               date={getX(tip.data)}
-              {...(() => {
-                const lbl = tooltipLabel?.(tip.data) ?? null
-                return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
-              })()}
+              {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
             />
             <TooltipBody>
               {renderPrefixTooltipRows?.(tip.data)}

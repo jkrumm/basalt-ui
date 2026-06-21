@@ -1,6 +1,6 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
 import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
 import { useChartTooltip } from '../hooks/useChartTooltip'
 import { useVxTheme } from '../theme'
@@ -39,8 +39,8 @@ function DonutInner(props: DonutProps) {
   const theme = useVxTheme()
   const tooltipStyles = useTooltipStyles()
 
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
   const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum>()
+  const hoveredKey = tip?.data.key ?? null
 
   const radius = Math.min(width, height) / 2 - 4
   const innerRadius = radius * innerRatio
@@ -69,14 +69,12 @@ function DonutInner(props: DonutProps) {
                   <g
                     key={key}
                     onMouseEnter={(event) => {
-                      setHoveredKey(key)
                       show(arc.data, event)
                     }}
                     onMouseMove={(event) => {
                       show(arc.data, event)
                     }}
                     onMouseLeave={() => {
-                      setHoveredKey(null)
                       hide()
                     }}
                     style={{ cursor: 'pointer' }}

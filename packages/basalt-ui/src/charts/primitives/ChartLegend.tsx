@@ -1,3 +1,5 @@
+import { type CSSProperties, type MouseEvent } from 'react'
+
 export type LegendEntry = {
   key: string
   label: string
@@ -7,6 +9,22 @@ export type LegendEntry = {
   shape?: 'line' | 'bar' | 'split' | 'splitLine'
   /** Render line-style swatches as dashed (only applies to 'line' / 'splitLine'). */
   dashed?: boolean
+}
+
+const LEGEND_WRAP_STYLE: CSSProperties = {
+  display: 'flex',
+  gap: 18,
+  justifyContent: 'center',
+  padding: '8px 0 2px',
+  fontSize: 13,
+}
+
+const LEGEND_ITEM_BASE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  cursor: 'default',
+  transition: 'opacity 0.15s',
 }
 
 /**
@@ -22,29 +40,24 @@ export function ChartLegend({
   highlighted?: string | null
   onHighlight?: (key: string | null) => void
 }) {
+  const handleEnter = (e: MouseEvent<HTMLDivElement>) => {
+    const key = (e.currentTarget as HTMLDivElement).dataset['legendKey']
+    if (key !== undefined) onHighlight?.(key)
+  }
+  const handleLeave = () => onHighlight?.(null)
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 18,
-        justifyContent: 'center',
-        padding: '8px 0 2px',
-        fontSize: 13,
-      }}
-    >
+    <div style={LEGEND_WRAP_STYLE}>
       {items.map((item) => (
         <div
           key={item.key}
+          data-legend-key={item.key}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            cursor: 'default',
+            ...LEGEND_ITEM_BASE,
             opacity: highlighted === null || highlighted === item.key ? 1 : 0.3,
-            transition: 'opacity 0.15s',
           }}
-          onMouseEnter={() => onHighlight?.(item.key)}
-          onMouseLeave={() => onHighlight?.(null)}
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
         >
           {item.shape === 'splitLine' ? (
             <svg width={20} height={14} style={{ flexShrink: 0 }}>

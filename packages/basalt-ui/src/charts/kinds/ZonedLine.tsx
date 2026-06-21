@@ -35,6 +35,7 @@ export type ZonedLineThreshold = {
 export type ZonedLineRefLine = {
   value: number
   color: string
+  /** Solid by default; set true for a dashed line. */
   dashed?: boolean
 }
 
@@ -184,6 +185,8 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     [data, xMax, getX, numTicksX],
   )
 
+  const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
+
   return (
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
@@ -232,7 +235,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
               y1={yScale(r.value)}
               y2={yScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed === false ? undefined : '4 4'}
+              strokeDasharray={r.dashed ? '4 4' : undefined}
             />
           ))}
 
@@ -277,10 +280,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
           <>
             <TooltipHeader
               date={getX(tip.data)}
-              {...(() => {
-                const lbl = tooltipLabel?.(tip.data) ?? null
-                return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
-              })()}
+              {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
             />
             <TooltipBody>
               <TooltipRow

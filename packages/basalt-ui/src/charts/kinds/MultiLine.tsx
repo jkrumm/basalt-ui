@@ -64,7 +64,7 @@ export type MultiLineProps<T> = {
   yAutoPad?: number
   /** Horizontal value-range overlays (target zones), rendered behind the lines on the left scale. */
   zones?: ZoneSpec[]
-  /** Dashed (by default) horizontal reference lines. */
+  /** Horizontal reference lines. Solid by default; set dashed: true for a dashed line. */
   refLines?: { value: number; color: string; dashed?: boolean }[]
   numTicksX?: number
   numTicksY?: number
@@ -217,6 +217,8 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     return out
   }, [data, series])
 
+  const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
+
   return (
     <div style={{ position: 'relative' }}>
       <ChartLegend
@@ -238,7 +240,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
               y1={yScale(r.value)}
               y2={yScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed === false ? undefined : '4 4'}
+              strokeDasharray={r.dashed ? '4 4' : undefined}
             />
           ))}
 
@@ -341,10 +343,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
           <>
             <TooltipHeader
               date={getX(tip.data)}
-              {...(() => {
-                const lbl = tooltipLabel?.(tip.data) ?? null
-                return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
-              })()}
+              {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
             />
             <TooltipBody>
               {series.map((s) => {

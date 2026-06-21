@@ -130,13 +130,13 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
 
-          <AreaStack<T>
+          <AreaStack<T, SeriesKey>
             data={data}
             keys={groups}
             x={(d) => xScale(getX(d.data)) ?? 0}
             y0={(d) => yScale(d[0]) ?? 0}
             y1={(d) => yScale(d[1]) ?? 0}
-            value={(d, key) => getValue(d, key as string) ?? 0}
+            value={(d, key) => getValue(d, key) ?? 0}
             curve={curveMonotoneX}
           >
             {({ stacks, path }) =>
@@ -144,8 +144,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
                 <path
                   key={`stack-${stack.key}`}
                   d={path(stack) || ''}
-                  // stack.key is Key = SeriesKey when keys={groups: SeriesKey[]}; cast is safe
-                  fill={colorForGroup(stack.key as SeriesKey)}
+                  fill={colorForGroup(stack.key)}
                   stroke="transparent"
                   fillOpacity={highlightedKey === null || highlightedKey === stack.key ? 1 : 0.25}
                 />

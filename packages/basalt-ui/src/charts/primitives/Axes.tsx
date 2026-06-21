@@ -1,9 +1,7 @@
-import { AxisBottom, AxisLeft, AxisRight, type AxisScale } from '@visx/axis'
+import { AxisBottom, AxisLeft, AxisRight, type AxisScale, type TickFormatter } from '@visx/axis'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'
-
-type NumericTickFormat = (v: number) => string
 
 /** Themed left numeric axis — baked-in theme colors + font size. */
 export function AxisLeftNumeric({
@@ -13,14 +11,14 @@ export function AxisLeftNumeric({
 }: {
   scale: AxisScale
   numTicks?: number
-  tickFormat?: NumericTickFormat
+  tickFormat?: TickFormatter<number>
 }) {
   const { axis, axisStroke } = useVxTheme()
   return (
     <AxisLeft
       scale={scale}
       numTicks={numTicks}
-      tickFormat={tickFormat as (v: number) => string}
+      {...(tickFormat !== undefined && { tickFormat })}
       tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: -4 }}
       stroke={axisStroke}
       tickStroke={axisStroke}
@@ -39,7 +37,7 @@ export function AxisRightNumeric({
   /** Left offset inside the Group (typically xMax). Required since AxisRight needs positioning. */
   left: number
   numTicks?: number
-  tickFormat?: NumericTickFormat
+  tickFormat?: TickFormatter<number>
 }) {
   const { axis, axisStroke } = useVxTheme()
   return (
@@ -47,7 +45,7 @@ export function AxisRightNumeric({
       left={left}
       scale={scale}
       numTicks={numTicks}
-      tickFormat={tickFormat as (v: number) => string}
+      {...(tickFormat !== undefined && { tickFormat })}
       tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: 4 }}
       stroke={axisStroke}
       tickStroke={axisStroke}

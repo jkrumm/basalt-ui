@@ -41,7 +41,7 @@ export type DualPanelProps<T> = {
   topYDomain?: [number, number] | 'auto'
   /** Shade the band between two top lines (by key), filled on both sides. */
   fillBetween?: { from: string; to: string; fill: string }
-  /** Dashed horizontal reference lines on the top pane. */
+  /** Horizontal reference lines on the top pane. Solid by default; set dashed: true for a dashed line. */
   topRefLines?: { value: number; color: string; dashed?: boolean }[]
   /** Horizontal value-range bands on the top pane. */
   topZones?: ZoneSpec[]
@@ -231,7 +231,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
               y1={topYScale(r.value)}
               y2={topYScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed === false ? undefined : '4 4'}
+              strokeDasharray={r.dashed ? '4 4' : undefined}
             />
           ))}
 
