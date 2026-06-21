@@ -23,13 +23,38 @@ Pick the right home for each kind of state — don't dump everything into one st
   **never** `localStorage.getItem('theme')`. The scheme persists to Mantine's own key and resolves the
   `--vx-*` tokens via CSS; reading it any other way breaks scheme reactivity and trips `basalt check-theme`.
 - **UI preferences that must survive navigation but aren't URL-worthy** (sidebar collapsed, panel
-  layout) → a small client store. `BasaltShell` already persists its own collapse state via
-  `useLocalStorage` from `@mantine/hooks` — for one or two flags, `useLocalStorage` is enough; reach for
-  a store (e.g. Zustand) only when shared, cross-component UI state genuinely warrants it.
+  layout, draft filters) → `createPersistedState` from `basalt-ui/state` — the framework's own
+  versioned localStorage primitive (see below). `BasaltShell` already persists its own collapse state
+  internally; use `createPersistedState` for app-level preferences. Reach for a third-party store
+  only when complex cross-component state genuinely warrants it (see escape hatch below).
 
-## Client store pattern (when warranted)
+## createPersistedState — the default primitive
 
-If you adopt a store, keep it small and persist only what must survive reload:
+`createPersistedState` is a factory hook: call it once at module scope, use the returned hook in
+components. SSR-safe, cross-tab via the `storage` event, versioned to handle shape migrations.
+
+```ts
+import { createPersistedState } from 'basalt-ui/state'
+
+// 1. Define the hook once (version: increment when the shape changes):
+export const usePanelLayout = createPersistedState({
+  key: 'panel-layout',
+  version: 1,
+  initial: 'split' as 'split' | 'stacked',
+})
+
+// 2. Use in any component — no provider, no context:
+const [layout, setLayout] = usePanelLayout()
+```
+
+Keys are namespaced `basalt:<key>` automatically and never collide with the theme-scheme guard.
+Pass a `schema` (Standard Schema) to validate persisted values and fall back to `initial` on mismatch.
+
+## Zustand escape hatch (complex cross-component stores)
+
+Reach for Zustand only when `createPersistedState` is insufficient — typically when multiple
+unrelated components share mutable state that is **not** URL-worthy and has no single owning
+component:
 
 ```ts
 import { create } from 'zustand'
@@ -51,8 +76,8 @@ export const useUiStore = create<UiState>()(
 )
 ```
 
-basalt-ui does **not** ship or depend on a state library — this is a consumer choice. Resist putting
-query results, derived data, or theme scheme in the store.
+basalt-ui does **not** ship or depend on Zustand — it is a consumer choice. Resist putting
+query results, derived data, or theme scheme in any store.
 
 > **Forms** are covered by `basalt-forms.md` — see `./forms` (createForm, field, FormErrorSummary,
 > useFormDraft). `@mantine/form` is an optional peer; install it with `bun add @mantine/form`.

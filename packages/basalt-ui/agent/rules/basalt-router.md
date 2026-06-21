@@ -101,6 +101,17 @@ using `react-router` is an advisory preference, not an enforced restriction.
 The optional `./router-tanstack` subpath ships a headless (Mantine-free) TanStack Router bridge.
 Install `@tanstack/react-router` as a peer, then import from `basalt-ui/router-tanstack`.
 
+**Prerequisites:**
+
+- `@tanstack/router-plugin/vite` must be configured in your Vite config and `tsr generate` must
+  have run at least once — the `StaticDataRouteOption` augmentation only takes effect once the route
+  tree (`src/routeTree.gen.ts`) has been generated. In CI and after adding routes, run
+  `tsr generate` (or `bun run typecheck`, which triggers it) before relying on breadcrumb or nav data.
+- The loader's `context.queryClient` requires `createRootRouteWithContext<{ queryClient: QueryClient }>()`.
+  Run `basalt init` to scaffold a `query-client.ts` + `__root.tsx` seed that wires the TanStack
+  Router + Query context correctly — the generated `__root.tsx` uses
+  `createRootRouteWithContext<{ queryClient }>()` and passes the client through `RouterProvider`.
+
 **StaticDataRouteOption augmentation** — declare on any route to drive the adapter:
 
 ```ts

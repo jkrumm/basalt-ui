@@ -63,6 +63,25 @@ const mockTransport: AgentTransport = {
 1. **NO response schema on the stream route.** Leave the `.post(handler)` call schema-free for
    the streaming generator.
 2. **Validate at yield-time.** Check part shape before yielding, not in the Elysia schema layer.
+   Use `parseAgentPart` from `basalt-ui/agent` to narrow untrusted values arriving over the wire:
+
+   ```ts
+   import { parseAgentPart } from 'basalt-ui/agent'
+
+   // On the client — e.g. parsing raw NDJSON lines from a custom transport:
+   const raw: unknown = JSON.parse(line)
+   const part = parseAgentPart(raw) // AgentPart | null
+   if (part !== null) handlePart(part)
+
+   // On the server — guard before yielding from external tool output:
+   const candidate = buildPartFromTool(toolResult)
+   const part = parseAgentPart(candidate)
+   if (part !== null) yield part
+   ```
+
+   `parseAgentPart` performs structural narrowing against every variant in the discriminated union
+   and returns `null` for unknown types or malformed shapes — no exceptions thrown.
+
 3. **Explicit return type annotation.** The handler MUST declare `: AsyncGenerator<AgentPart>`.
 
 ```ts
