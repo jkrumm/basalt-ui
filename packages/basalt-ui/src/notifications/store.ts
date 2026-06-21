@@ -165,13 +165,8 @@ const noopSubscribe =
 
 function subscribe(cb: () => void): () => void {
   listeners.add(cb)
-  const onStorage = (e: StorageEvent): void => {
-    if (e.key === STORAGE_KEY) cb()
-  }
-  window.addEventListener('storage', onStorage)
   return () => {
     listeners.delete(cb)
-    window.removeEventListener('storage', onStorage)
   }
 }
 

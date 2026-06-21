@@ -8,6 +8,11 @@
 import { useSyncExternalStore } from 'react'
 import type { StandardSchemaV1 } from './register'
 
+// Shared noop subscribe — passed to useSyncExternalStore on the server so no window access occurs.
+const noopSubscribe =
+  (_cb: () => void): (() => void) =>
+  () => {}
+
 // ── useOnlineStatus ────────────────────────────────────────────────────────────────────────────────
 
 function subscribeOnline(cb: () => void): () => void {
@@ -22,6 +27,9 @@ function subscribeOnline(cb: () => void): () => void {
 const getOnlineSnapshot = (): boolean => navigator.onLine
 const getOnlineServerSnapshot = (): boolean => true
 
+// Detect SSR once at module load — mirrors createPersistedState's isServer pattern.
+const isOnlineServer = typeof window === 'undefined'
+
 /**
  * Returns `true` when the browser reports an active network connection, `false` otherwise.
  * Backed by `useSyncExternalStore`: subscribes to window `online`/`offline` events.
@@ -32,7 +40,11 @@ const getOnlineServerSnapshot = (): boolean => true
  * if (!isOnline) return <OfflineBanner />
  */
 export function useOnlineStatus(): boolean {
-  return useSyncExternalStore(subscribeOnline, getOnlineSnapshot, getOnlineServerSnapshot)
+  return useSyncExternalStore(
+    isOnlineServer ? noopSubscribe : subscribeOnline,
+    isOnlineServer ? getOnlineServerSnapshot : getOnlineSnapshot,
+    getOnlineServerSnapshot,
+  )
 }
 
 export type PersistedStateOptions<T> = {
@@ -103,10 +115,6 @@ function writeStorage<T>(opts: PersistedStateOptions<T>, next: T): void {
     // Silently fail (storage full, private browsing, etc.)
   }
 }
-
-const noopSubscribe =
-  (_cb: () => void): (() => void) =>
-  () => {}
 
 /**
  * Versioned, Standard-Schema-validated localStorage state via useSyncExternalStore (no zustand).

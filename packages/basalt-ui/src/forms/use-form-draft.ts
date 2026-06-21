@@ -155,7 +155,6 @@ export function useFormDraft<Values extends Record<string, unknown>>(
       formRef.current.setValues(mountDraft.values as Partial<Values>)
     }
     // Intentionally empty deps — restore happens once on mount only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const saveDraft = (): void => {
