@@ -48,7 +48,7 @@ type MarkdownProps = {
 /**
  * Default headless component overrides: plain HTML elements with className hooks.
  * Defined at module scope (static JSX data — no closure over dynamic imports).
- * Consumers override the entire map via `components` to apply Mantine or custom styles.
+ * Consumers pass `components` to override individual entries; keys not supplied keep these defaults.
  * Typed as `Components` (react-markdown's own type) to avoid type-checking friction.
  */
 const DEFAULT_MD_COMPONENTS: Components = {
@@ -90,7 +90,7 @@ const LazyMarkdown = lazy(() =>
         return (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            components={components ?? DEFAULT_MD_COMPONENTS}
+            components={{ ...DEFAULT_MD_COMPONENTS, ...components }}
           >
             {children}
           </ReactMarkdown>
@@ -107,8 +107,9 @@ export type StreamingMarkdownProps = {
   /** The markdown string to render. Safe to update on every character during streaming. */
   readonly children: string
   /**
-   * Override the component map passed to react-markdown.
-   * If provided, replaces the entire default component map — merge manually if needed.
+   * Component overrides merged over the default component map.
+   * Providing one override does not discard the other defaults — only the keys you supply
+   * are replaced (consistent with PartList renderer merge semantics).
    */
   readonly components?: Components
 }

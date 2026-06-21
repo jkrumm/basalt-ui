@@ -36,6 +36,7 @@ export type {
   SourcePart,
   ErrorPart,
 } from './parts'
+export { parseAgentPart } from './parts'
 
 // ── AgentTransport + edenTransport ───────────────────────────────────────────
 export type { AgentTransport } from './transport'

@@ -113,6 +113,9 @@ export function useAgentStream<TPart = AgentPart, TInput = string>({
         if (err instanceof Error && err.name === 'AbortError') return
         // Guard: don't corrupt state if a newer stream has taken over.
         if (controllerRef.current !== controller) return
+        // Guard: don't overwrite a user-cancelled 'done' if the signal was aborted (e.g. stop()
+        // aborted the controller before a non-AbortError propagated from the transport).
+        if (controller.signal.aborted) return
         setError(err)
         setStatus('error')
       }

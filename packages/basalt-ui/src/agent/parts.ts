@@ -55,3 +55,50 @@ export type ErrorPart = { readonly type: 'error'; readonly message: string }
  * const part: AgentPart = { type: 'text', text: 'Hello' }
  */
 export type AgentPart = TextPart | ReasoningPart | ToolCallPart | SourcePart | ErrorPart
+
+// ── parseAgentPart ───────────────────────────────────────────────────────────
+
+/**
+ * Runtime type-narrowing guard: validates an unknown value against the AgentPart discriminated
+ * union and returns the narrowed type or null when validation fails.
+ *
+ * @example
+ * const raw = JSON.parse(line)
+ * const part = parseAgentPart(raw)
+ * if (part !== null) handlePart(part)
+ */
+export function parseAgentPart(raw: unknown): AgentPart | null {
+  if (raw === null || typeof raw !== 'object') return null
+  const obj = raw as Record<string, unknown>
+  if (typeof obj['type'] !== 'string') return null
+
+  switch (obj['type']) {
+    case 'text':
+      if (typeof obj['text'] !== 'string') return null
+      return { type: 'text', text: obj['text'] }
+    case 'reasoning':
+      if (typeof obj['text'] !== 'string') return null
+      return { type: 'reasoning', text: obj['text'] }
+    case 'tool':
+      if (typeof obj['toolName'] !== 'string') return null
+      if (!('input' in obj)) return null
+      return {
+        type: 'tool',
+        toolName: obj['toolName'],
+        input: obj['input'],
+        ...(obj['output'] !== undefined ? { output: obj['output'] } : {}),
+      }
+    case 'source':
+      if (typeof obj['url'] !== 'string') return null
+      return {
+        type: 'source',
+        url: obj['url'],
+        ...(typeof obj['title'] === 'string' ? { title: obj['title'] } : {}),
+      }
+    case 'error':
+      if (typeof obj['message'] !== 'string') return null
+      return { type: 'error', message: obj['message'] }
+    default:
+      return null
+  }
+}
