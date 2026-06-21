@@ -114,17 +114,19 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@visx/axis": "4.0.0-alpha.11",
-    "@visx/curve": "4.0.0-alpha.11",
-    "@visx/event": "4.0.0-alpha.11",
-    "@visx/grid": "4.0.0-alpha.11",
-    "@visx/group": "4.0.0-alpha.11",
-    "@visx/scale": "4.0.0-alpha.11",
-    "@visx/shape": "4.0.0-alpha.11",
-    "@visx/threshold": "4.0.0-alpha.11"
+    "@visx/axis": "4.0.0",
+    "@visx/curve": "4.0.0",
+    "@visx/event": "4.0.0",
+    "@visx/grid": "4.0.0",
+    "@visx/group": "4.0.0",
+    "@visx/responsive": "4.0.0",
+    "@visx/scale": "4.0.0",
+    "@visx/shape": "4.0.0",
+    "@visx/threshold": "4.0.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.3",
+    "@tanstack/react-hotkeys": "0.10.0",
     "@types/bun": "^1.3.14",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -143,6 +145,7 @@
     "@mantine/modals": "^9.3.0",
     "@mantine/notifications": "^9.3.0",
     "@mantine/spotlight": "^9.3.0",
+    "@tanstack/react-hotkeys": "0.10.0",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@tanstack/react-router": "^1.170.0",
@@ -156,6 +159,9 @@
   },
   "peerDependenciesMeta": {
     "@mantine/form": {
+      "optional": true
+    },
+    "@tanstack/react-hotkeys": {
       "optional": true
     },
     "@mantine/modals": {
