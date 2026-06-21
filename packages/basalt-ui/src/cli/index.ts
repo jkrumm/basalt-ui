@@ -401,7 +401,34 @@ function managedFiles(): ManagedFile[] {
     render: () => '{\n  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"]\n}\n',
   }
 
-  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc]
+  // ── Seed scaffolds: written by init, never overwritten by sync ─────────────
+  // These are starting-point files owned entirely by the consumer after first write.
+
+  /** TanStack Query client bootstrap (seed — consumer-owned after init). */
+  const queryClient: ManagedFile = {
+    dest: 'src/query-client.ts',
+    strategy: 'seed',
+    source: 'agent/templates/query-client.ts.tpl',
+    render: (ctx) => {
+      const tpl = readSource(ctx.pkgRoot, 'agent/templates/query-client.ts.tpl')
+      if (tpl === null) return null
+      return fillTemplate(tpl, ctx.vars)
+    },
+  }
+
+  /** TanStack Router root route with QueryClient context wiring (seed — consumer-owned after init). */
+  const rootRoute: ManagedFile = {
+    dest: 'src/routes/__root.tsx',
+    strategy: 'seed',
+    source: 'agent/templates/__root.tpl',
+    render: (ctx) => {
+      const tpl = readSource(ctx.pkgRoot, 'agent/templates/__root.tpl')
+      if (tpl === null) return null
+      return fillTemplate(tpl, ctx.vars)
+    },
+  }
+
+  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, queryClient, rootRoute]
 }
 
 type Manifest = {
@@ -773,6 +800,116 @@ export function checkCoverage(cwd: string = process.cwd()): number {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// doctor — consumer repo integration health check
+// ──────────────────────────────────────────────────────────────────────────────
+
+type DoctorResult = {
+  /** Number of hard failures (exit non-zero). */
+  hardFailures: number
+  /** Number of warnings (informational only). */
+  warnings: number
+}
+
+/**
+ * Check a consumer repo's basalt integration and print a pass/warn report.
+ *
+ * Hard failures (exit non-zero):
+ *   1. .basalt/manifest.json exists (init was run).
+ *
+ * Warnings (non-fatal):
+ *   2. CLAUDE.md contains the basalt managed block (<!-- basalt:begin marker).
+ *   3. All 11 basalt-*.md rule files exist under .claude/rules/.
+ *   4. The basalt plugin appears to be installed (best-effort ~/.claude/settings.json check).
+ *
+ * Returns the exit code: 0 = all good, 1 = one or more hard failures.
+ */
+export function doctor(cwd: string = process.cwd()): number {
+  const result: DoctorResult = { hardFailures: 0, warnings: 0 }
+  const lines: string[] = [`\nbasalt doctor — ${cwd}\n`]
+
+  function pass(msg: string): void {
+    lines.push(`  ✓ ${msg}`)
+  }
+  function warn(msg: string): void {
+    lines.push(`  ⚠ ${msg}`)
+    result.warnings++
+  }
+  function fail(msg: string): void {
+    lines.push(`  ✖ ${msg}`)
+    result.hardFailures++
+  }
+
+  // ── Hard check 1: manifest exists ──────────────────────────────────────────
+  const manifestAbs = resolve(cwd, MANIFEST_PATH)
+  if (existsSync(manifestAbs)) {
+    pass(`${MANIFEST_PATH} exists`)
+  } else {
+    fail(`${MANIFEST_PATH} missing — run \`basalt init\` to scaffold the consumer repo`)
+  }
+
+  // ── Warn check 2: CLAUDE.md contains the basalt managed block ──────────────
+  const claudeMdAbs = resolve(cwd, 'CLAUDE.md')
+  const claudeMdContent = readIfExists(claudeMdAbs)
+  if (claudeMdContent !== null && claudeMdContent.includes(BLOCK_BEGIN_PREFIX)) {
+    pass('CLAUDE.md contains the basalt managed block')
+  } else if (claudeMdContent === null) {
+    warn('CLAUDE.md not found — run `basalt init` to scaffold the basalt block')
+  } else {
+    warn(
+      `CLAUDE.md does not contain the basalt managed block (expected marker: ${BLOCK_BEGIN_PREFIX}) — run \`basalt sync\``,
+    )
+  }
+
+  // ── Warn check 3: all 11 rule files exist ──────────────────────────────────
+  const missingRules: string[] = []
+  for (const name of RULE_NAMES) {
+    const ruleAbs = resolve(cwd, `.claude/rules/basalt-${name}.md`)
+    if (!existsSync(ruleAbs)) missingRules.push(`basalt-${name}.md`)
+  }
+  if (missingRules.length === 0) {
+    pass(`all ${RULE_NAMES.length} basalt-*.md rule files present under .claude/rules/`)
+  } else {
+    warn(
+      `missing rule files under .claude/rules/: ${missingRules.join(', ')} — run \`basalt sync\` to restore`,
+    )
+  }
+
+  // ── Warn check 4: basalt plugin appears installed (best-effort) ─────────────
+  const settingsPath = resolve(process.env['HOME'] ?? '~', '.claude', 'settings.json')
+  try {
+    const settingsContent = readIfExists(settingsPath)
+    if (settingsContent !== null && settingsContent.includes('basalt')) {
+      pass('basalt plugin appears installed in ~/.claude/settings.json')
+    } else {
+      warn(
+        'basalt plugin not detected in ~/.claude/settings.json — install once at user scope:\n' +
+          '    claude plugin marketplace add jkrumm/basalt-ui',
+      )
+    }
+  } catch {
+    warn('could not read ~/.claude/settings.json — plugin install status unknown')
+  }
+
+  // ── Report ──────────────────────────────────────────────────────────────────
+  lines.push('')
+  if (result.hardFailures === 0 && result.warnings === 0) {
+    lines.push('All checks passed.')
+  } else {
+    if (result.hardFailures > 0)
+      lines.push(`${result.hardFailures} hard failure(s), ${result.warnings} warning(s).`)
+    else lines.push(`${result.warnings} warning(s).`)
+  }
+  lines.push('')
+
+  if (result.hardFailures > 0) {
+    console.error(lines.join('\n'))
+    return 1
+  }
+  console.log(lines.join('\n'))
+  return 0
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // info — SURFACES-derived surface map
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -912,9 +1049,11 @@ export function run(argv: string[], cwd: string = process.cwd()): number {
       return checkCoverage(cwd)
     case 'info':
       return info(flags)
+    case 'doctor':
+      return doctor(cwd)
     default:
       console.error(
-        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json]>',
+        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor>',
       )
       return 1
   }
@@ -922,4 +1061,4 @@ export function run(argv: string[], cwd: string = process.cwd()): number {
 
 // Re-export the managed-file manifest for testing / introspection (no default export).
 export { managedFiles, MANIFEST_PATH, RULE_NAMES }
-export type { ManagedFile, Manifest, SyncOptions }
+export type { ManagedFile, Manifest, SyncOptions, DoctorResult }
