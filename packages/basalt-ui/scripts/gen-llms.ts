@@ -44,6 +44,8 @@ type Row = {
   description: string
   layer: string
   optionalPeers: string[]
+  /** true for non-JS assets (styles.css, configs/*, llms.txt) — no import line emitted */
+  isAsset?: boolean
 }
 
 const rows: Row[] = []
@@ -52,7 +54,9 @@ for (const [key, spec] of Object.entries(SURFACES)) {
   if (key.startsWith('#')) continue
   if (!publishedExportKeys.has(key)) continue
 
-  const importSpec = `basalt-ui${key === '.' ? '' : key.slice(1)}`
+  const isAsset = spec.layer === 'non-js-asset'
+  // For ./configs/* the importSpec uses the glob form; others strip the leading './'
+  const importSpec = key === '.' ? 'basalt-ui' : `basalt-ui${key.slice(1)}`
 
   // Resolve optional peers: names come from spec.optionalPeers (single source), versions from package.json
   const specPeers: readonly string[] =
@@ -66,6 +70,7 @@ for (const [key, spec] of Object.entries(SURFACES)) {
     description: spec.description ?? `basalt-ui${key === '.' ? '' : key} subpath`,
     layer: spec.layer,
     optionalPeers: resolvedPeers,
+    isAsset,
   })
 }
 
@@ -82,6 +87,8 @@ export function generateLlmsTxt(): string {
     '# three-tier --vx-* CSS-variable token system, adapter batteries for TanStack',
     '# Query/Router, Mantine forms/notifications/commands, a streaming-chat agent',
     '# layer, and toolchain presets (oxlint, oxfmt, tsconfig, lefthook, CI).',
+    '# BasaltRegister is the unifying type-augmentation interface for consumer-side',
+    '# extension (series tokens, command registry, notification registry).',
     '#',
     '# Subpaths: use the exact import specifier below — do not guess.',
     '# Charts and tokens are Mantine-free; the root (.) is Mantine-coupled.',
@@ -94,7 +101,11 @@ export function generateLlmsTxt(): string {
 
   for (const row of rows) {
     lines.push(`## ${row.importSpec}`)
-    lines.push(`Import: import { ... } from '${row.importSpec}'`)
+    if (row.isAsset) {
+      lines.push(`Asset: ${row.importSpec}`)
+    } else {
+      lines.push(`Import: import { ... } from '${row.importSpec}'`)
+    }
     lines.push(`Description: ${row.description}`)
     lines.push(`Layer: ${row.layer}`)
     if (row.optionalPeers.length > 0) {

@@ -7,6 +7,8 @@
 # three-tier --vx-* CSS-variable token system, adapter batteries for TanStack
 # Query/Router, Mantine forms/notifications/commands, a streaming-chat agent
 # layer, and toolchain presets (oxlint, oxfmt, tsconfig, lefthook, CI).
+# BasaltRegister is the unifying type-augmentation interface for consumer-side
+# extension (series tokens, command registry, notification registry).
 #
 # Subpaths: use the exact import specifier below — do not guess.
 # Charts and tokens are Mantine-free; the root (.) is Mantine-coupled.
@@ -91,3 +93,18 @@ OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1
 Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState — versioned localStorage state primitive (Mantine-free)
 Layer: headless
+
+## basalt-ui/styles.css
+Asset: basalt-ui/styles.css
+Description: Mandatory first CSS import — @layer basalt base styles, iOS input safety net, font stack
+Layer: non-js-asset
+
+## basalt-ui/configs/*
+Asset: basalt-ui/configs/*
+Description: Raw toolchain presets for consumer extends: oxlint.json, oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml
+Layer: non-js-asset
+
+## basalt-ui/llms.txt
+Asset: basalt-ui/llms.txt
+Description: Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers
+Layer: non-js-asset

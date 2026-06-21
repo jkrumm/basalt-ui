@@ -35,6 +35,7 @@
     "agent/",
     "bin/",
     "llms.txt",
+    "AGENTS.md",
     "README.md",
     "CHANGELOG.md"
   ],
@@ -100,7 +101,8 @@
       "import": "./dist/state.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./configs/*": "./configs/*"
+    "./configs/*": "./configs/*",
+    "./llms.txt": "./llms.txt"
   },
   "publishConfig": {
     "access": "public",

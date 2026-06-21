@@ -334,6 +334,29 @@ export const SURFACES = {
     forbiddenImports: [],
   },
 
+  // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────
+  './styles.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'Mandatory first CSS import — @layer basalt base styles, iOS input safety net, font stack',
+    forbiddenImports: [],
+  },
+  './configs/*': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'Raw toolchain presets for consumer extends: oxlint.json, oxfmt.json, tsconfig.*.json, lefthook.yml, check.yml',
+    forbiddenImports: [],
+  },
+  './llms.txt': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers',
+    forbiddenImports: [],
+  },
+
   // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
   '#app': {
     // synthetic global app-wide ban layer — the src/**+app/** glob

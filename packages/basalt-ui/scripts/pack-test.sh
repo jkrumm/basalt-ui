@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./llms.txt
 
 echo "==> assert tarball contents"
 LIST=$(tar -tzf "$TGZ")

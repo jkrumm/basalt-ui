@@ -1,0 +1,52 @@
+## basalt-ui — Agent Quick Reference
+
+React 19 + Mantine v9 framework: `BasaltProvider` + `createBasaltTheme`, app shell, visx chart
+system with a three-tier `--vx-*` CSS-variable token system, and TanStack adapter batteries.
+Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `master` branch.
+
+## Subpath ownership
+
+| Subpath                     | Layer           | Purpose                                                                                        |
+| --------------------------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| `basalt-ui`                 | mantine-coupled | BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge |
+| `basalt-ui/charts`          | headless        | visx chart primitives, sparklines, hooks, token re-exports (Mantine-free)                      |
+| `basalt-ui/tokens`          | headless        | VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)  |
+| `basalt-ui/theme-lab`       | mantine-coupled | ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection                       |
+| `basalt-ui/vite`            | mantine-coupled | basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps                               |
+| `basalt-ui/guard`           | headless        | checkSource, GUARD_RULES, Finding types — headless theme-guard core                            |
+| `basalt-ui/query`           | headless        | createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools                   |
+| `basalt-ui/router-tanstack` | headless        | TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs                     |
+| `basalt-ui/forms`           | mantine-coupled | Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft                     |
+| `basalt-ui/notifications`   | mantine-coupled | Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell     |
+| `basalt-ui/commands`        | mantine-coupled | typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays      |
+| `basalt-ui/data`            | mantine-coupled | TanStack Table + Virtual: BasaltDataTable, BasaltVirtualList (Mantine-rendered)                |
+| `basalt-ui/agent`           | headless        | Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)          |
+| `basalt-ui/state`           | headless        | createPersistedState — versioned localStorage state primitive (Mantine-free)                   |
+
+## Hard rules
+
+**Mantine-free boundary**: `basalt-ui/charts`, `basalt-ui/tokens`, `basalt-ui/guard`,
+`basalt-ui/query`, `basalt-ui/router-tanstack`, `basalt-ui/agent`, and `basalt-ui/state` must
+import zero `@mantine/*`. `@visx/*` is permitted only inside `src/charts/**`. Both rules are
+enforced by oxlint `no-restricted-imports` (repo-local and in the shipped consumer preset).
+
+**No raw hex or raw color functions**: route every color through `VX.*` tokens or the Mantine
+theme. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style code. Use
+`alpha(token, a)` for opacity (`color-mix` under the hood) — never `rgba()`.
+
+## Key commands
+
+```bash
+bunx basalt check-theme       # fail on off-palette colors in consumer source
+bunx basalt sync              # reconcile managed files (.claude/rules/, CLAUDE.md block)
+bunx basalt sync --check      # CI freshness gate — exits non-zero if any managed file drifted
+bunx basalt check-coverage    # PROJECTION 5: assert all SURFACES entries are consistent
+bunx basalt doctor            # check consumer repo basalt integration health
+bunx basalt info              # print published surface map
+bunx basalt info --json       # stable JSON surface map
+```
+
+## Machine-readable surface map
+
+See `basalt-ui/llms.txt` (importable via the package specifier) for the full surface map: one
+entry per published subpath with import specifier, description, layer, and optional peer packages.
