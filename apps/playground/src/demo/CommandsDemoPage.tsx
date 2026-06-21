@@ -20,6 +20,7 @@ import {
   runCommand,
   ShortcutsHelp,
   toShortcutList,
+  toSpotlightActions,
   useCommandHotkeys,
 } from 'basalt-ui/commands'
 
@@ -134,6 +135,7 @@ function SpotlightSection() {
 
 function LiveHotkeysSection({ toggled }: { toggled: boolean }) {
   const shortcuts = toShortcutList()
+  const spotlightActions = toSpotlightActions()
   return (
     <Stack gap="xs">
       <Text size="xs" tt="uppercase" fw={600} c="dimmed">
@@ -150,7 +152,7 @@ function LiveHotkeysSection({ toggled }: { toggled: boolean }) {
       <Paper p="sm" radius="sm" withBorder>
         <Stack gap={4}>
           <Text size="xs" fw={600} c="dimmed" tt="uppercase" mb={4}>
-            Active shortcuts ({shortcuts.length})
+            Active shortcuts ({shortcuts.length}) · Spotlight actions ({spotlightActions.length})
           </Text>
           {shortcuts.map((s) => (
             <Group key={s.id} justify="space-between" gap="xs">

@@ -2,7 +2,7 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/spotlight/styles.css'
 import 'basalt-ui/styles.css'
-import { BasaltProvider } from 'basalt-ui'
+import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
 import { BasaltOverlays } from 'basalt-ui/commands'
 import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
 import { StrictMode } from 'react'
@@ -14,6 +14,11 @@ import { demoPaletteGroups } from './demo/series'
 // a tuning session survives a refresh (per the theme-lab contract).
 applyOverrides(loadOverrides())
 
+// createBasaltTheme exercises the export. A consumer can build a full MantineThemeOverride
+// and pass it to BasaltProvider.theme — the provider merges it onto the base internally.
+// Extracting it here (rather than inlining) proves the named export resolves at build time.
+const playgroundTheme = createBasaltTheme()
+
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
 
@@ -21,7 +26,9 @@ createRoot(root).render(
   <StrictMode>
     {/* paletteOptions.groups emits the consumer's `--vx-demo-*` custom properties alongside the
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
-    <BasaltProvider paletteOptions={{ groups: demoPaletteGroups }}>
+    {/* theme={playgroundTheme}: exercises createBasaltTheme — the result is a valid MantineThemeOverride.
+        BasaltProvider merges it with mergeThemeOverrides(base, overrides), so no-override call is safe. */}
+    <BasaltProvider theme={playgroundTheme} paletteOptions={{ groups: demoPaletteGroups }}>
       {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
           binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
           the default (hotkeys enabled) so BasaltOverlays binds them globally. */}

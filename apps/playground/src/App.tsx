@@ -8,15 +8,23 @@
  *
  * Exercises: BasaltShell, SidebarSection / SidebarItem (collapsible section, mobile flags, disabled
  * "coming soon" item, badges), NavCountBadge, renderNavLink, globalActions, settingsMenuItems,
- * sidebarFooterExtra, AppBreadcrumbs (derived from the active item).
+ * sidebarFooterExtra, AppBreadcrumbs (derived from the active item), useOnlineStatus (badge).
  */
 import {
   ActionIcon,
+  Badge,
   NavLink as MantineNavLink,
+  Text,
   Tooltip,
   useMantineColorScheme,
 } from '@mantine/core'
-import { BasaltShell, NavCountBadge, type NavLinkRenderer, type SidebarSection } from 'basalt-ui'
+import {
+  BasaltShell,
+  NavCountBadge,
+  type NavLinkRenderer,
+  type SidebarSection,
+  useOnlineStatus,
+} from 'basalt-ui'
 import { useCallback, useMemo, useState } from 'react'
 import { AgentDemoPage } from './demo/AgentDemoPage'
 import { ChartsPage } from './demo/ChartsPage'
@@ -105,6 +113,7 @@ export function App() {
   const [page, setPage] = useState<PageKey>('dashboard')
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const dark = (colorScheme === 'auto' ? 'dark' : colorScheme) === 'dark'
+  const online = useOnlineStatus()
 
   const go = useCallback(
     (key: PageKey) => (e: { preventDefault: () => void }) => {
@@ -269,6 +278,17 @@ export function App() {
       renderNavLink={renderNavLink}
       globalActions={
         <>
+          {/* useOnlineStatus — renders an online/offline badge in the header */}
+          <Tooltip label={online ? 'Connected' : 'Offline'} withArrow>
+            <Badge
+              size="sm"
+              variant="dot"
+              color={online ? 'teal' : 'red'}
+              style={{ cursor: 'default' }}
+            >
+              <Text size="xs">{online ? 'Online' : 'Offline'}</Text>
+            </Badge>
+          </Tooltip>
           <NotificationBell />
           <Tooltip label={dark ? 'Switch to light' : 'Switch to dark'} withArrow>
             <ActionIcon
@@ -285,6 +305,11 @@ export function App() {
       settingsMenuItems={[
         { key: 'theme', label: 'Theme lab', icon: <IconPalette />, onClick: go('settings') },
       ]}
+      sidebarFooterExtra={
+        <Text size="xs" c="dimmed" ta="center" py={4}>
+          basalt-ui playground
+        </Text>
+      }
     >
       {page === 'dashboard' && <DashboardPage />}
       {page === 'charts' && <ChartsPage />}

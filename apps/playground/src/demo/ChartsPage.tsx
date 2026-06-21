@@ -9,7 +9,8 @@
  *
  * Exercises: ChartHoverSync · ZonedLine (zones/thresholds/refLines/areaFill/tooltipLabel) ·
  * StackedArea · DualPanel (top lines + fill-between + signed-histogram pane, shared cursor) ·
- * MultiLine · Heatmap · Donut · ChartCard · ZoneSpec · alpha().
+ * MultiLine · Heatmap (wrapped in ResponsiveChart) · Donut · ChartCard · ZoneSpec · alpha() ·
+ * ResponsiveChart (child render-prop with width/height).
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
 import {
@@ -20,6 +21,7 @@ import {
   DualPanel,
   Heatmap,
   MultiLine,
+  ResponsiveChart,
   StackedArea,
   VX,
   ZonedLine,
@@ -70,7 +72,6 @@ export function ChartsPage() {
   const [areaRef, areaWidth] = useMeasureWidth()
   const [loadRef, loadWidth] = useMeasureWidth()
   const [multiRef, multiWidth] = useMeasureWidth()
-  const [heatRef, heatWidth] = useMeasureWidth()
 
   return (
     <Stack gap="sm">
@@ -211,23 +212,26 @@ export function ChartsPage() {
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
         <ChartCard
           title="Activity by hour"
-          subtitle="Sessions across the day-of-week × hour grid"
-          tooltip="Heatmap: each cell's opacity scales with its value. Empty cells stay a faint track."
+          subtitle="Sessions across the day-of-week × hour grid — width via ResponsiveChart"
+          tooltip="Heatmap wrapped in ResponsiveChart: the width tracks the container via ResizeObserver (debounced 60ms). Each cell's opacity scales with its value."
         >
-          <Box ref={heatRef}>
-            <Heatmap<HeatCell>
-              data={ACTIVITY_HEATMAP}
-              width={heatWidth}
-              height={300}
-              chartId="charts-heat"
-              getRow={(d) => d.day}
-              getCol={(d) => d.hour}
-              getValue={(d) => d.sessions}
-              color={demoColors.sessions}
-              formatValue={(v) => `${v} sessions`}
-              legend={{ min: 'quiet', max: 'busy' }}
-            />
-          </Box>
+          {/* ResponsiveChart replaces the useMeasureWidth pattern — proves responsive width. */}
+          <ResponsiveChart height={300}>
+            {({ width, height }) => (
+              <Heatmap<HeatCell>
+                data={ACTIVITY_HEATMAP}
+                width={width}
+                height={height}
+                chartId="charts-heat"
+                getRow={(d) => d.day}
+                getCol={(d) => d.hour}
+                getValue={(d) => d.sessions}
+                color={demoColors.sessions}
+                formatValue={(v) => `${v} sessions`}
+                legend={{ min: 'quiet', max: 'busy' }}
+              />
+            )}
+          </ResponsiveChart>
         </ChartCard>
 
         <ChartCard

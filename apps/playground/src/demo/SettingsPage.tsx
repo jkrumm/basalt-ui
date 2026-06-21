@@ -1,13 +1,16 @@
 /**
- * Settings page — the theme lab + a light/dark scheme toggle.
+ * Settings page — the theme lab + a light/dark scheme toggle + createPersistedState demo.
  *
  * Mounts `ThemeLabControls` with the framework `COLOR_GROUPS` plus an app-defined Demo group, so a
  * consumer can retune both framework chrome AND its own series colors live. Icons + the copy
  * feedback are injected by the consumer (the framework ships no icon / notification dep).
  *
- * Exercises: ThemeLabControls (groups + copyIcon/resetIcon + onCopy), COLOR_GROUPS, useMantineColorScheme.
+ * Exercises: ThemeLabControls (groups + copyIcon/resetIcon + onCopy), COLOR_GROUPS, useMantineColorScheme,
+ * createPersistedState (factory hook — survives navigate-away/back).
  */
 import {
+  Badge,
+  Button,
   Code,
   Group,
   Paper,
@@ -16,10 +19,47 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core'
+import { createPersistedState } from 'basalt-ui'
 import { COLOR_GROUPS, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { useState } from 'react'
 import { IconCopy, IconReset } from './icons'
 import { DEMO_SERIES } from './series'
+
+// ── createPersistedState demo ─────────────────────────────────────────────────
+// Created once at module scope — the hook is stable across renders and tabs.
+// Navigate away and back: the counter value survives (stored as basalt:settings-counter).
+const useSettingsCounter = createPersistedState({ key: 'settings-counter', version: 1, initial: 0 })
+
+function PersistedStateDemo() {
+  const [count, setCount] = useSettingsCounter()
+  return (
+    <Paper p="sm" radius="md" withBorder>
+      <Stack gap="xs">
+        <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+          createPersistedState
+        </Text>
+        <Text size="sm">
+          Factory hook backed by versioned localStorage. Navigate away and back — the counter
+          survives. Cross-tab: open another window and click to see both stay in sync.
+        </Text>
+        <Group gap="sm" align="center">
+          <Button size="compact-sm" variant="default" onClick={() => setCount(count - 1)}>
+            −
+          </Button>
+          <Badge size="lg" variant="light" color="blue">
+            {count}
+          </Badge>
+          <Button size="compact-sm" variant="default" onClick={() => setCount(count + 1)}>
+            +
+          </Button>
+          <Button size="compact-sm" variant="subtle" color="gray" onClick={() => setCount(0)}>
+            Reset
+          </Button>
+        </Group>
+      </Stack>
+    </Paper>
+  )
+}
 
 /** Consumer-augmented theme-lab groups: framework chrome + the app's own Demo series. */
 const LAB_GROUPS = [
@@ -41,6 +81,8 @@ export function SettingsPage() {
 
   return (
     <Stack gap="md">
+      <PersistedStateDemo />
+
       <Paper p="md" radius="md" withBorder>
         <Group justify="space-between" align="center">
           <Stack gap={2}>

@@ -109,6 +109,9 @@ function ProjectForm() {
 
           <Group mt="xs">
             <Button type="submit">Submit</Button>
+            <Button variant="outline" color="orange" onClick={() => form.validate()}>
+              Force validate
+            </Button>
             {hasDraft && (
               <Button
                 variant="subtle"
@@ -122,6 +125,10 @@ function ProjectForm() {
               </Button>
             )}
           </Group>
+          <Text size="xs" c="dimmed">
+            "Force validate" surfaces all errors before the first submit attempt — useful for guided
+            wizards or save-and-review flows where the user hasn't touched every field.
+          </Text>
         </Stack>
       </form>
 

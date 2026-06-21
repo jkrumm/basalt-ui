@@ -1,20 +1,54 @@
 /**
  * NotificationsDemoPage — exercises basalt-ui/notifications:
  * notifySuccess, notifyError, notifyWarning, notifyInfo, notifyPromise,
- * NotificationBell, NotificationCenter, BasaltNotifications.
+ * NotificationBell, NotificationCenter, BasaltNotifications,
+ * defineNotifications (typed registry) + emit() (typed dispatch).
  *
  * BasaltNotifications is mounted in main.tsx — this page only drives the notify helpers.
+ *
+ * TYPED REGISTRY PATTERN:
+ *   In a real app, defineNotifications lives in notifications.ts + a BasaltRegister augment:
+ *     declare module 'basalt-ui' { interface BasaltRegister { notifications: typeof DEMO_NOTIFS } }
+ *   Then emit('demo:upload-success', { name: 'photo.jpg' }) is fully typed at the call site.
+ *   This demo includes that augment, so the emit() calls below are fully typed — no casts.
  */
-import { Badge, Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Code, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import {
+  defineNotifications,
+  emit,
   notifyError,
   notifyInfo,
+  notifyPromise,
   notifySuccess,
   notifyWarning,
-  notifyPromise,
   useNotificationHistory,
   NotificationCenter,
 } from 'basalt-ui/notifications'
+
+// ── Typed registry (module-scope, call once) ──────────────────────────────────
+// In a real app this lives in notifications.ts alongside the BasaltRegister augment.
+// The last call to defineNotifications wins as the active runtime registry.
+const DEMO_NOTIFS = defineNotifications({
+  'demo:upload-success': {
+    intent: 'success',
+    toMessage: (p: unknown) => `Uploaded ${(p as { name: string }).name}`,
+  },
+  'demo:save-error': {
+    intent: 'error',
+    toMessage: () => 'Failed to save — try again',
+  },
+  'demo:quota-warn': {
+    intent: 'warning',
+    toMessage: (p: unknown) => `Storage ${(p as { pct: number }).pct}% full`,
+  },
+})
+// Augment BasaltRegister with the demo registry — the real typed path: emit()'s keys are now
+// checked at the call site (a stale key is a tsc error), exactly as a consumer app would wire it.
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    notifications: typeof DEMO_NOTIFS
+  }
+}
 
 // ── Demo helpers ──────────────────────────────────────────────────────────────
 
@@ -110,6 +144,46 @@ function PromiseButtons() {
   )
 }
 
+// ── Typed registry + emit() demo ─────────────────────────────────────────────
+
+function TypedRegistrySection() {
+  return (
+    <Stack gap="xs">
+      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+        defineNotifications + emit() (typed registry)
+      </Text>
+      <Code block style={{ fontSize: 11 }}>{`// notifications.ts
+const NOTIFS = defineNotifications({
+  'demo:upload-success': { intent: 'success', toMessage: (p) => \`Uploaded \${p.name}\` },
+  'demo:save-error':     { intent: 'error',   toMessage: () => 'Failed to save' },
+})
+declare module 'basalt-ui' { interface BasaltRegister { notifications: typeof NOTIFS } }
+// usage:
+emit('demo:upload-success', { name: 'photo.jpg' })  // ✓ typed
+emit('nonexistent', {})                              // ✗ tsc error`}</Code>
+      <Group gap="xs" wrap="wrap">
+        <Button
+          size="compact-sm"
+          color="green"
+          onClick={() => emit('demo:upload-success', { name: 'photo.jpg' })}
+        >
+          emit upload-success
+        </Button>
+        <Button size="compact-sm" color="red" onClick={() => emit('demo:save-error', null)}>
+          emit save-error
+        </Button>
+        <Button
+          size="compact-sm"
+          color="yellow"
+          onClick={() => emit('demo:quota-warn', { pct: 87 })}
+        >
+          emit quota-warn
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
 // ── History panel ─────────────────────────────────────────────────────────────
 
 function HistoryPanel() {
@@ -142,8 +216,8 @@ export function NotificationsDemoPage() {
       <div>
         <Title order={3}>./notifications adapter</Title>
         <Text size="sm" c="dimmed" mt={4}>
-          notify helpers + notifyPromise + persisted history store + NotificationBell +
-          NotificationCenter
+          notify helpers + notifyPromise + defineNotifications typed registry + emit() + persisted
+          history store + NotificationBell + NotificationCenter
         </Text>
       </div>
 
@@ -165,6 +239,8 @@ export function NotificationsDemoPage() {
           <ToastButtons />
           <Divider />
           <PromiseButtons />
+          <Divider />
+          <TypedRegistrySection />
         </Stack>
       </Paper>
 
