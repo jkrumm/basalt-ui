@@ -22,7 +22,10 @@ createRoot(root).render(
     {/* paletteOptions.groups emits the consumer's `--vx-demo-*` custom properties alongside the
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
     <BasaltProvider paletteOptions={{ groups: demoPaletteGroups }}>
-      <BasaltOverlays>
+      {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
+          binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
+          the default (hotkeys enabled) so BasaltOverlays binds them globally. */}
+      <BasaltOverlays hotkeys={false}>
         <App />
       </BasaltOverlays>
     </BasaltProvider>

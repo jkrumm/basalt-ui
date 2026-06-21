@@ -1,6 +1,6 @@
 /**
  * FormsDemoPage — exercises basalt-ui/forms:
- * createForm + field + FormErrorSummary + useFormDraft with a Valibot schema.
+ * useBasaltForm + field + FormErrorSummary + useFormDraft with a Valibot schema.
  *
  * Demo: a project entry form (name, email, budget) with draft persistence.
  * Draft is autosaved on every value change (via onValuesChange wired to saveDraft ref),
@@ -17,7 +17,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { createForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
+import { useBasaltForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
 import { useRef, useState } from 'react'
 import * as v from 'valibot'
 
@@ -39,17 +39,17 @@ function ProjectForm() {
   const [submitted, setSubmitted] = useState<ProjectValues | null>(null)
 
   // saveDraft is stable across renders via the ref pattern below.
-  // We hold a ref so we can pass it into createForm's onValuesChange without
+  // We hold a ref so we can pass it into useBasaltForm's onValuesChange without
   // creating a dependency cycle (form needs saveDraft, useFormDraft needs form).
   const saveDraftRef = useRef<(() => void) | null>(null)
 
-  const form = createForm<ProjectValues>({
+  const form = useBasaltForm<ProjectValues>({
     initialValues: INITIAL,
     schema: ProjectSchema,
     mode: 'uncontrolled',
     // Wire autosave: calls saveDraftRef.current on every field change.
     // The ref is populated by useFormDraft after the hook runs (hooks run top-to-bottom,
-    // but createForm runs on each render so the ref is always current by the time
+    // but useBasaltForm runs on each render so the ref is always current by the time
     // onValuesChange fires in user interactions — not on the initial render call itself).
     onValuesChange: () => {
       saveDraftRef.current?.()
@@ -148,7 +148,7 @@ export function FormsDemoPage() {
       <div>
         <Title order={3}>./forms adapter</Title>
         <Text size="sm" c="dimmed" mt={4}>
-          createForm + field + FormErrorSummary + useFormDraft (Valibot schema, draft
+          useBasaltForm + field + FormErrorSummary + useFormDraft (Valibot schema, draft
           restore/autosave/clear)
         </Text>
       </div>
