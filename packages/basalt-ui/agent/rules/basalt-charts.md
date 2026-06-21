@@ -117,6 +117,41 @@ color) with the global strength knobs (`--vx-area-top` / `--vx-area-bottom`). De
 for plain metric lines, **off** when the chart already carries zone/threshold fills (avoid double-fill
 clutter). Keep stacked-area bands opaque — fading them leaks lower bands.
 
+## Responsive sizing
+
+Use `ResponsiveChart` (render-prop container) or `useChartSize` (hook) from `basalt-ui/charts` —
+both are backed by `@visx/responsive`'s `useParentSize` and keep the `@visx/*` import inside
+`src/charts/**` per the boundary rule. Never reach for `@visx/responsive` directly or
+`useElementSize` from `@mantine/hooks` in a chart file.
+
+```tsx
+import { ResponsiveChart, Bars } from 'basalt-ui/charts'
+
+// Preferred: render prop, renders nothing until the first measurement
+<ResponsiveChart height={320}>
+  {({ width, height }) => (
+    <Bars width={width} height={height} data={data} chartId="load" getX={…} getY={…} />
+  )}
+</ResponsiveChart>
+
+// aspectRatio variant: height = width / ratio
+<ResponsiveChart aspectRatio={16 / 9}>
+  {({ width, height }) => <MyChart width={width} height={height} />}
+</ResponsiveChart>
+```
+
+Use `useChartSize` directly when you need the `ref` on a custom container:
+
+```ts
+import { useChartSize } from 'basalt-ui/charts'
+
+const { ref, width, height } = useChartSize()
+// attach ref to your container div; width/height update via ResizeObserver
+```
+
+`ResponsiveChartProps`: `height` (default 240), `aspectRatio`, `debounceMs` (default 0), `children`.
+`UseChartSizeResult`: `{ ref, width, height }`.
+
 ## Rule of thumb
 
 > If the new chart doesn't fit the primitives, add a kind — don't loosen the primitives.

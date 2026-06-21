@@ -97,7 +97,9 @@ Route components import chart primitives directly from `basalt-ui/charts` — ne
   The theme defaults inputs to `md` (16px font) so iOS Safari never zooms on focus.
 - **DatePickerInput**: from `@mantine/dates` (if you separately install it). In v9 it uses string
   values (`YYYY-MM-DD`) for `value`/`onChange` — no `Date` conversion.
-- **Responsive chart sizing**: `useElementSize` from `@mantine/hooks` (replaces `@visx/responsive`).
+- **Responsive chart sizing**: use `ResponsiveChart` or `useChartSize` from `basalt-ui/charts`
+  (see basalt-charts.md). Never `useElementSize` from `@mantine/hooks` in a chart file (Mantine is
+  banned inside `charts/**`), and never raw `@visx/responsive` outside `charts/**`.
 
 ## Strict surfaces & layout primitives
 
@@ -155,6 +157,45 @@ shape doctrine lives here; the spacing/radius/type **tokens** are in basalt-toke
   badges. Consume the token, never a raw number (basalt-tokens.md).
 - **Type is carried by size + weight** — system-sans (no display/body split), numbers in the mono
   tabular stack so metric columns align (a Coinbase pattern).
+
+## Composing the shell from sub-components
+
+`BasaltShell` is the canonical single-mount. When a fully custom layout is needed, the shell
+sub-components are available individually from `basalt-ui`:
+
+- `AppSidebar` — desktop sidebar (sections, collapse, brand, footer/settings extras)
+- `MobileNav` — bottom-tab mobile nav
+- `AppBreadcrumbs` — breadcrumb bar (reads from `useRouterBreadcrumbs` or a manual trail)
+- `PageHeaderProvider` + `PageActions` + `PageActionsOutlet` — portal-based page action slots
+- `NavCountBadge` — count badge for sidebar nav items
+
+```tsx
+import {
+  AppSidebar,
+  MobileNav,
+  AppBreadcrumbs,
+  PageHeaderProvider,
+  PageActionsOutlet,
+  NavCountBadge,
+} from 'basalt-ui'
+
+function CustomShell({ children }: { children: React.ReactNode }) {
+  return (
+    <PageHeaderProvider>
+      <AppSidebar sections={sections} brand={brand} renderNavLink={renderNavLink} />
+      <MobileNav sections={mobileSections} renderNavLink={renderNavLink} />
+      <main>
+        <AppBreadcrumbs />
+        <PageActionsOutlet />
+        {children}
+      </main>
+    </PageHeaderProvider>
+  )
+}
+```
+
+Prefer `BasaltShell` unless the layout genuinely diverges — it already composes all of the above
+with the correct wiring (collapse persistence, mobile breakpoint, breadcrumb integration).
 
 ## Icons
 

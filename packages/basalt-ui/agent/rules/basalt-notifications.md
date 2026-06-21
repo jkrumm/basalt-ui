@@ -151,6 +151,27 @@ emit('nonexistent', null) // ✗ tsc error
 `emit` resolves `intent` + calls `toMessage(payload)` from the registered spec, then calls
 `notify()`. Pass extra `NotifyOptions` as a third argument to override spec defaults.
 
+## defineNotification (single-spec helper)
+
+Mirror of `defineOverlay` from `./commands` — types a single notification spec without registering
+it. Use when splitting notification definitions across files before merging into `defineNotifications`.
+
+```ts
+import { defineNotification, defineNotifications } from 'basalt-ui/notifications'
+
+// Type an isolated spec constant — useful when splitting across files:
+const uploadSuccess = defineNotification({
+  intent: 'success',
+  toMessage: (p: { name: string }) => `Uploaded ${p.name}`,
+})
+
+// Merge into the full registry (defineNotifications does the actual registration):
+export const NOTIFICATIONS = defineNotifications({ 'upload:success': uploadSuccess })
+```
+
+WARNING: `defineNotification` only TYPES — it does NOT register. Only `defineNotifications(map)`
+registers. Calling `emit` without a prior `defineNotifications` is a no-op at runtime.
+
 ## Notification history store
 
 Every `notify()` / `notifyPromise()` call records to a module-level persisted external store

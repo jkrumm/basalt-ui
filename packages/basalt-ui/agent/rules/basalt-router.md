@@ -29,7 +29,7 @@ consistency; nothing in the framework enforces it.
 
 ```ts
 import { createFileRoute } from '@tanstack/react-router'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from 'basalt-ui/query'
 import { z } from 'zod'
 import { resourceQueries } from '../lib/queries/resource'
 

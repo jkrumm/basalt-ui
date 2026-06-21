@@ -28,6 +28,22 @@ Pick the right home for each kind of state — don't dump everything into one st
   internally; use `createPersistedState` for app-level preferences. Reach for a third-party store
   only when complex cross-component state genuinely warrants it (see escape hatch below).
 
+## useOnlineStatus — SSR-safe online/offline hook
+
+`useOnlineStatus()` returns `true` when the browser reports an active network connection,
+`false` when offline. Backed by `useSyncExternalStore` + `window.online`/`offline` events.
+SSR-safe — server snapshot is `true` (optimistic). Exported from both `basalt-ui` (root) and
+`basalt-ui/state`.
+
+```ts
+import { useOnlineStatus } from 'basalt-ui/state'
+
+const isOnline = useOnlineStatus()
+if (!isOnline) return <OfflineBanner />
+```
+
+No props, no options. Use it in any component; no provider needed.
+
 ## createPersistedState — the default primitive
 
 `createPersistedState` is a factory hook: call it once at module scope, use the returned hook in
