@@ -1,5 +1,5 @@
 /**
- * PROJECTION 5 — surfaces coverage + plugin-version lockstep.
+ * Surfaces coverage + plugin-version lockstep.
  *
  * Asserts:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
@@ -7,6 +7,9 @@
  *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills (CHECK, not derive).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  5. plugin.json and package.json share a major version (lockstep assertion from legacy test).
+ *  6. Every surface with non-empty forbiddenImports has a globs field.
+ *  7. Every headless surface carries all 3 Mantine bans (Mantine-free boundary).
+ *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
  * assertions for direct test feedback on failure.
@@ -48,7 +51,7 @@ function packageExports(): Set<string> {
 // ── gate: checkCoverage() must return 0 ─────────────────────────────────────
 
 describe('check-coverage gate', () => {
-  it('checkCoverage() returns 0 (all PROJECTION 5 assertions pass)', () => {
+  it('checkCoverage() returns 0 (all 8 assertions pass)', () => {
     // Pass root as cwd so plugin.json is found at <root>/plugins/basalt/.claude-plugin/plugin.json
     expect(checkCoverage(root)).toBe(0)
   })
@@ -111,6 +114,55 @@ describe('subpath export coverage', () => {
     const missing = Object.keys(SURFACES).filter(
       (key) => !key.startsWith('#') && key !== '.' && !exports.has(key),
     )
+    expect(missing).toEqual([])
+  })
+})
+
+// ── Assertion 7: every headless surface carries all 3 Mantine bans ─────────
+
+describe('headless Mantine-ban coverage', () => {
+  const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+
+  it('every headless surface has all 3 Mantine bans in forbiddenImports', () => {
+    const missing: string[] = []
+    for (const [key, spec] of Object.entries(SURFACES)) {
+      if (spec.layer !== 'headless') continue
+      for (const required of REQUIRED_MANTINE_BANS) {
+        const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
+        if (!hasBan) missing.push(`${key} missing ban for '${required}'`)
+      }
+    }
+    expect(missing).toEqual([])
+  })
+})
+
+// ── Assertion 8: doctrine optionalPeers → peerDependencies + peerDependenciesMeta ────
+
+describe('optionalPeers peerDependencies coverage', () => {
+  const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
+    peerDependencies?: Record<string, string>
+    peerDependenciesMeta?: Record<string, { optional?: boolean }>
+  }
+  const peerDeps = pkg.peerDependencies ?? {}
+  const peerMeta = pkg.peerDependenciesMeta ?? {}
+
+  it('every doctrine optionalPeer is in peerDependencies', () => {
+    const missing: string[] = []
+    for (const spec of doctrineSpecs) {
+      for (const peer of spec.optionalPeers ?? []) {
+        if (!(peer in peerDeps)) missing.push(peer)
+      }
+    }
+    expect(missing).toEqual([])
+  })
+
+  it('every doctrine optionalPeer is marked optional in peerDependenciesMeta', () => {
+    const missing: string[] = []
+    for (const spec of doctrineSpecs) {
+      for (const peer of spec.optionalPeers ?? []) {
+        if (peerMeta[peer]?.optional !== true) missing.push(peer)
+      }
+    }
     expect(missing).toEqual([])
   })
 })
