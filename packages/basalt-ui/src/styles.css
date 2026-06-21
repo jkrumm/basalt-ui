@@ -24,3 +24,13 @@
     font-size: 16px;
   }
 }
+
+/* Print: hide the BasaltShell chrome so only page content prints.
+ * AppShell.Navbar → <nav>, AppShell.Header → <header>, AppShell.Footer → <footer>. */
+@media print {
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+}

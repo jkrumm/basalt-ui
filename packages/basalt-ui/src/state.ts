@@ -8,6 +8,33 @@
 import { useSyncExternalStore } from 'react'
 import type { StandardSchemaV1 } from './register'
 
+// ── useOnlineStatus ────────────────────────────────────────────────────────────────────────────────
+
+function subscribeOnline(cb: () => void): () => void {
+  window.addEventListener('online', cb)
+  window.addEventListener('offline', cb)
+  return () => {
+    window.removeEventListener('online', cb)
+    window.removeEventListener('offline', cb)
+  }
+}
+
+const getOnlineSnapshot = (): boolean => navigator.onLine
+const getOnlineServerSnapshot = (): boolean => true
+
+/**
+ * Returns `true` when the browser reports an active network connection, `false` otherwise.
+ * Backed by `useSyncExternalStore`: subscribes to window `online`/`offline` events.
+ * SSR-safe — `getServerSnapshot` returns `true` (optimistic: assume online on the server).
+ *
+ * @example
+ * const isOnline = useOnlineStatus()
+ * if (!isOnline) return <OfflineBanner />
+ */
+export function useOnlineStatus(): boolean {
+  return useSyncExternalStore(subscribeOnline, getOnlineSnapshot, getOnlineServerSnapshot)
+}
+
 export type PersistedStateOptions<T> = {
   /** localStorage key (will be namespaced as `basalt:<key>`). */
   readonly key: string

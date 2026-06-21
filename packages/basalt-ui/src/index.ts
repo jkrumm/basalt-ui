@@ -47,8 +47,8 @@ export {
   type StandardSchemaV1,
 } from './register'
 
-// ── Persisted state (state.ts) ────────────────────────────────────────────────────────────────────
-export { createPersistedState, type PersistedStateOptions } from './state'
+// ── Persisted state + online hook (state.ts) ─────────────────────────────────────────────────────
+export { createPersistedState, type PersistedStateOptions, useOnlineStatus } from './state'
 
 // ── Type-only re-exports for compile fixtures (H.4) ──────────────────────────────────────────────
 // SurfaceSpec/RuleName/SkillName: the value SURFACES stays internal; types only for surfaces-broken

@@ -36,6 +36,7 @@ export { HoverContext, DEFAULT_NO_OP_SET_HOVER, type HoverCtx } from './hover-co
 export { ChartHoverSync, type ChartHoverSyncProps } from './hover-sync'
 
 // ── Primitives ───────────────────────────────────────────────────────────
+export { ResponsiveChart, type ResponsiveChartProps } from './primitives/ResponsiveChart'
 export { ChartCard } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
 export {
@@ -53,6 +54,7 @@ export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
 // ── Hooks ────────────────────────────────────────────────────────────────
 export { useChartTooltip, type TooltipState } from './hooks/useChartTooltip'
 export { useHoverSync } from './hooks/useHoverSync'
+export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
 // ── Utils ────────────────────────────────────────────────────────────────
 export { fmtAxisDate, fmtTooltipDate } from './utils/format'
