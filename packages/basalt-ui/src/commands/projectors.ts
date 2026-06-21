@@ -1,20 +1,38 @@
 /**
- * projectors — project the active command registry into Mantine Spotlight actions and a shortcut list.
+ * projectors — project the active command registry into Mantine Spotlight actions, a shortcut list,
+ * and a @tanstack/react-hotkeys bindings array.
  *
- * Both functions read the runtime stash (populated by defineCommands) — they do NOT read the
+ * All functions read the runtime stash (populated by defineCommands) — they do NOT read the
  * type-erased BasaltRegister slot. They are safe to call before any commands are registered
  * (returns empty array).
  *
  * @example
  * // In BasaltOverlays, pass toSpotlightActions() to Spotlight:
- * <Spotlight actions={toSpotlightActions()} shortcut="mod + K" />
+ * <Spotlight store={basaltSpotlight[0]} actions={toSpotlightActions()} shortcut="mod + K" />
  *
  * // Render a shortcut reference list:
  * const shortcuts = toShortcutList()  // [{ id, label, shortcut, group? }, ...]
+ *
+ * // Bind hotkeys (used internally by useCommandHotkeys):
+ * const bindings = toHotkeyBindings()
+ * useHotkeys(bindings)
  */
 import type { SpotlightActionData } from '@mantine/spotlight'
 import { getActiveCommands, runCommand } from './define-commands'
 import type { CommandId } from './define-commands'
+import { formatShortcutDisplay, detectMac } from './shortcut-format'
+
+// ── UseHotkeyDefinition (re-typed locally to avoid peer import at module level) ──
+
+/**
+ * Shape of a single entry in the array passed to useHotkeys().
+ * Mirrors UseHotkeyDefinition from @tanstack/react-hotkeys — typed locally so
+ * projectors.ts has no hard import on the optional peer.
+ */
+export type HotkeyBinding = {
+  hotkey: string
+  callback: () => void
+}
 
 // ── toSpotlightActions ────────────────────────────────────────────────────────
 
@@ -58,7 +76,10 @@ export function toSpotlightActions(onTrigger?: (id: CommandId) => void): Spotlig
         }
       },
     }
-    if (cmd.shortcut !== undefined) action.description = `Shortcut: ${cmd.shortcut}`
+    if (cmd.shortcut !== undefined) {
+      // detectMac() is SSR-safe (returns false when navigator is unavailable)
+      action.description = formatShortcutDisplay(cmd.shortcut, detectMac())
+    }
     if (cmd.group !== undefined) action.group = cmd.group
     actions.push(action)
   }
@@ -105,4 +126,46 @@ export function toShortcutList(): ShortcutEntry[] {
   }
 
   return result
+}
+
+// ── toHotkeyBindings ──────────────────────────────────────────────────────────
+
+/**
+ * Project the active command registry into a `UseHotkeyDefinition[]` bindings array — the exact
+ * shape accepted by `useHotkeys` from `@tanstack/react-hotkeys`.
+ *
+ * Commands without a `shortcut` field are skipped. Commands where `when()` returns false are
+ * included in the bindings but their callback is a no-op (the command is gated at call time, not
+ * at registration time — this avoids hook-count churn when `when()` toggles).
+ *
+ * Reads a one-time snapshot of the runtime command stash. Called inside `useCommandHotkeys` on
+ * every render so the bindings stay in sync with the latest `run` closures (no stale closure
+ * issue — useHotkeys syncs callbacks on every render).
+ *
+ * @example
+ * import { useHotkeys } from '@tanstack/react-hotkeys'
+ * import { toHotkeyBindings } from 'basalt-ui/commands'
+ *
+ * function MyHotkeys() {
+ *   useHotkeys(toHotkeyBindings())
+ * }
+ */
+export function toHotkeyBindings(): HotkeyBinding[] {
+  const cmds = getActiveCommands()
+  const bindings: HotkeyBinding[] = []
+
+  for (const [id, cmd] of Object.entries(cmds)) {
+    if (cmd.shortcut === undefined) continue
+
+    bindings.push({
+      hotkey: cmd.shortcut,
+      callback: () => {
+        // Respect the when() gate at execution time (not registration time)
+        if (cmd.when !== undefined && !cmd.when()) return
+        void runCommand(id as CommandId)
+      },
+    })
+  }
+
+  return bindings
 }

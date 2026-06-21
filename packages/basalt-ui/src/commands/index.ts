@@ -1,10 +1,11 @@
 /**
  * ./commands — command bus, overlay controller, Spotlight projection, shortcuts display,
- * and composable overlay mount for basalt-ui apps.
+ * live keybindings, and composable overlay mount for basalt-ui apps.
  *
- * Optional peers: @mantine/modals ^9.3.0, @mantine/spotlight ^9.3.0, @mantine/notifications ^9.3.0.
+ * Optional peers: @mantine/modals ^9.3.0, @mantine/spotlight ^9.3.0,
+ *   @mantine/notifications ^9.3.0, @tanstack/react-hotkeys 0.10.0.
  *
- * Install with: bun add @mantine/modals @mantine/spotlight @mantine/notifications
+ * Install with: bun add @mantine/modals @mantine/spotlight @mantine/notifications @tanstack/react-hotkeys
  * Also import the Spotlight styles in main.tsx: import '@mantine/spotlight/styles.css'
  *
  * @example
@@ -25,6 +26,10 @@
  * // usage.ts — run a command:
  * import { runCommand } from 'basalt-ui/commands'
  * runCommand('file:save')
+ *
+ * // Open/close Spotlight programmatically:
+ * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
+ * openSpotlight()
  */
 
 // ── defineCommands + runCommand ───────────────────────────────────────────────
@@ -38,9 +43,10 @@ export {
   type CommandRunContext,
 } from './define-commands'
 
-// ── defineOverlays + overlays controller ─────────────────────────────────────
+// ── defineOverlays + defineOverlay + overlays controller ─────────────────────
 export {
   defineOverlays,
+  defineOverlay,
   overlays,
   type Overlay,
   type OverlayMap,
@@ -48,10 +54,28 @@ export {
 } from './define-overlays'
 
 // ── Projectors ────────────────────────────────────────────────────────────────
-export { toSpotlightActions, toShortcutList, type ShortcutEntry } from './projectors'
+export {
+  toSpotlightActions,
+  toShortcutList,
+  toHotkeyBindings,
+  type ShortcutEntry,
+  type HotkeyBinding,
+} from './projectors'
+
+// ── Shortcut format utils ─────────────────────────────────────────────────────
+export { parseShortcut, detectMac, formatShortcutDisplay } from './shortcut-format'
+
+// ── useCommandHotkeys hook ────────────────────────────────────────────────────
+export { useCommandHotkeys } from './useCommandHotkeys'
 
 // ── ShortcutsHelp ─────────────────────────────────────────────────────────────
 export { ShortcutsHelp, type ShortcutsHelpProps } from './ShortcutsHelp'
 
-// ── BasaltOverlays mount ──────────────────────────────────────────────────────
-export { BasaltOverlays, type BasaltOverlaysProps } from './overlays-mount'
+// ── BasaltOverlays mount + Spotlight controls ─────────────────────────────────
+export {
+  BasaltOverlays,
+  type BasaltOverlaysProps,
+  basaltSpotlight,
+  openSpotlight,
+  closeSpotlight,
+} from './overlays-mount'

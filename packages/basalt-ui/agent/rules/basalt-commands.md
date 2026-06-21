@@ -196,10 +196,112 @@ const list = toShortcutList()
 // [{ id: 'file:save', label: 'Save file', shortcut: 'Mod+S', group: 'File' }, ...]
 ```
 
-## Deferred (not yet shipped)
+## Live keybindings (useCommandHotkeys)
 
-- **Live key binding (`toHotkeyBindings` / `useCommandHotkeys`)** — deferred to 1.1. Requires
-  `@tanstack/react-hotkeys` to reach 1.0 stable. The `shortcut` field on `Command` is intentionally
-  typed now so no breaking changes are needed when the binding lands.
+`useCommandHotkeys()` binds all registered command shortcuts to their `run()` functions via
+`@tanstack/react-hotkeys`. It is an **optional-peer** hook — degrades to a no-op when the peer is
+absent; core resolves cleanly either way. No `HotkeysProvider` wrapper is required.
+
+Install the optional peer:
+
+```bash
+bun add @tanstack/react-hotkeys
+```
+
+### Mount pattern
+
+**BasaltOverlays mounts it automatically** (via the internal `HotkeysMount` component) when
+`hotkeys={true}` (default). No extra setup needed if using `BasaltOverlays`.
+
+For manual mounting, call `useCommandHotkeys()` once in the component tree, after `defineCommands`:
+
+```tsx
+import { useCommandHotkeys } from 'basalt-ui/commands'
+
+function App() {
+  // Activate all registered command shortcuts — call once per tree, not per-command.
+  useCommandHotkeys()
+  return <RouterProvider router={router} />
+}
+```
+
+If you want hotkeys active only on a specific page:
+
+```tsx
+function EditorPage() {
+  useCommandHotkeys()
+  return <EditorLayout />
+}
+```
+
+### toHotkeyBindings
+
+`toHotkeyBindings()` projects the command registry into the `UseHotkeyDefinition[]` array that
+`useHotkeys` from `@tanstack/react-hotkeys` expects. Commands without a `shortcut` are skipped.
+Commands where `when()` returns false at press time are silently skipped.
+
+```ts
+import { toHotkeyBindings } from 'basalt-ui/commands'
+import { useHotkeys } from '@tanstack/react-hotkeys'
+
+// Manual binding — equivalent to useCommandHotkeys() but you control the options:
+function MyHotkeys() {
+  useHotkeys(toHotkeyBindings(), { preventDefault: true })
+}
+```
+
+### Shortcut string format
+
+Shortcut strings use the `Mod+Key` convention: `Mod` resolves to `⌘` on macOS and `Ctrl`
+elsewhere. The `@tanstack/hotkeys` package handles platform resolution at runtime.
+
+```ts
+defineCommands({
+  'file:save': { label: 'Save', shortcut: 'Mod+S', run: () => save() },
+  'file:close': { label: 'Close', shortcut: 'Mod+W', run: () => close() },
+  'edit:find': { label: 'Find', shortcut: 'Mod+F', run: () => find() },
+  'view:zoom': { label: 'Zoom', shortcut: 'Mod+Shift+Z', run: () => zoom() },
+})
+```
+
+## Spotlight live store (basaltSpotlight)
+
+`BasaltOverlays` mounts Spotlight against a basalt-owned store (`createSpotlight()` singleton).
+Import `openSpotlight` / `closeSpotlight` from `basalt-ui/commands` instead of Mantine's global
+`spotlight` to target this instance:
+
+```ts
+import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
+
+// Open the palette programmatically:
+openSpotlight()
+
+// From a command handler (close palette, then run):
+runCommand('palette:open', { close: () => closeSpotlight() })
+```
+
+Spotlight actions are synced from the registry via `toSpotlightActions()` at mount time. Shortcuts
+displayed in the Spotlight action description are platform-formatted via `formatShortcutDisplay`
+(`⌘S` on mac, `Ctrl+S` on windows).
+
+## defineOverlay (single-overlay helper)
+
+Mirror of `defineCommand` — types a single overlay without registering it. Use when splitting
+overlay definitions across files.
+
+```ts
+import { defineOverlay } from 'basalt-ui/commands'
+
+const confirmDelete = defineOverlay<{ name: string }>({
+  title: 'Confirm delete',
+  render: ({ name }) => <Text>Delete "{name}"?</Text>,
+})
+// Then include in defineOverlays({ 'confirm:delete': confirmDelete })
+```
+
+WARNING: `defineOverlay` only TYPES — it does NOT register. Only `defineOverlays(map)` registers.
+
+## Deferred
+
 - **`SidebarItem.command?: CommandId`** — cross-ref between the shell sidebar and the command bus
   is a later integration step. Do not add it now.

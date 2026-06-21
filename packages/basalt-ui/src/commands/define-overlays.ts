@@ -103,6 +103,27 @@ export function defineOverlays<const T extends OverlayMap>(spec: T): T {
   return spec
 }
 
+// ── defineOverlay (single-overlay helper) ─────────────────────────────────────
+
+/**
+ * Convenience helper to type a single Overlay object with full inference.
+ * Useful when splitting overlays across files before merging into defineOverlays.
+ *
+ * WARNING: defineOverlay only TYPES an overlay — it does NOT register it into the runtime stash.
+ * Only defineOverlays(map) registers overlays. Calling defineOverlay alone means the overlay will
+ * never be reachable via overlays.open().
+ *
+ * @example
+ * const deleteOverlay = defineOverlay<{ name: string }>({
+ *   title: 'Confirm delete',
+ *   render: ({ name }) => <Text>Delete "{name}"?</Text>,
+ * })
+ * // Then include it in a defineOverlays({ 'confirm:delete': deleteOverlay }) call to register it.
+ */
+export function defineOverlay<P = Record<string, unknown>>(overlay: Overlay<P>): Overlay<P> {
+  return overlay
+}
+
 // ── overlays controller ───────────────────────────────────────────────────────
 
 /**

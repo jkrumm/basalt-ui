@@ -13,6 +13,12 @@
  *   @mantine/modals ^9.3.0     (for modals)
  *   @mantine/spotlight ^9.3.0  (for spotlight)
  *   @mantine/notifications ^9.3.0 (for notifications)
+ *   @tanstack/react-hotkeys ^0.10.0 (optional — keybindings degrade to no-op when absent)
+ *
+ * Spotlight live store: BasaltOverlays uses a basalt-owned createSpotlight() store so the
+ * spotlight instance is separate from Mantine's default global. Import `basaltSpotlight` and call
+ * `basaltSpotlight.open()` / `basaltSpotlight.close()` from consumer code. The re-exported
+ * `openSpotlight` / `closeSpotlight` helpers from index.ts delegate to this store.
  *
  * @example
  * // main.tsx — replace <BasaltNotifications /> with <BasaltOverlays>:
@@ -31,12 +37,53 @@
  * <BasaltOverlays spotlight={false}>
  *   <App />
  * </BasaltOverlays>
+ *
+ * // Open/close programmatically:
+ * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
+ * openSpotlight()
  */
-import type { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { ModalsProvider } from '@mantine/modals'
-import { Spotlight } from '@mantine/spotlight'
+import { Spotlight, createSpotlight } from '@mantine/spotlight'
 import { Notifications } from '@mantine/notifications'
+import { runCommand } from './define-commands'
+import type { CommandId } from './define-commands'
 import { toSpotlightActions } from './projectors'
+import { useCommandHotkeys } from './useCommandHotkeys'
+
+// ── basaltSpotlight singleton ─────────────────────────────────────────────────
+
+/**
+ * Basalt-owned Spotlight store. Use this singleton instead of Mantine's global `spotlight`
+ * to avoid collisions when the consumer also uses @mantine/spotlight directly.
+ *
+ * createSpotlight() returns [store, { open, close, toggle }].
+ */
+const [basaltSpotlightStore, basaltSpotlightActions] = createSpotlight()
+
+/**
+ * Singleton Spotlight store for basalt-ui apps. Pass to `<Spotlight store={...} />` when
+ * mounting manually outside BasaltOverlays.
+ *
+ * @example
+ * import { basaltSpotlight } from 'basalt-ui/commands'
+ * basaltSpotlight.open()
+ */
+export const basaltSpotlight = basaltSpotlightActions
+
+// ── openSpotlight / closeSpotlight ────────────────────────────────────────────
+
+/** Open the basalt Spotlight palette programmatically. */
+export function openSpotlight(): void {
+  basaltSpotlightActions.open()
+}
+
+/** Close the basalt Spotlight palette programmatically. */
+export function closeSpotlight(): void {
+  basaltSpotlightActions.close()
+}
+
+// ── BasaltOverlaysProps ───────────────────────────────────────────────────────
 
 export type BasaltOverlaysProps = {
   /** Mount @mantine/modals ModalsProvider. Default: true. */
@@ -45,9 +92,42 @@ export type BasaltOverlaysProps = {
   spotlight?: boolean
   /** Mount @mantine/notifications Notifications overlay. Default: true. */
   notifications?: boolean
+  /**
+   * Activate @tanstack/react-hotkeys keybindings for all registered commands. Default: true.
+   * Degrades to no-op when @tanstack/react-hotkeys peer is absent — safe to leave enabled.
+   */
+  hotkeys?: boolean
   /** App content (required). */
   children: ReactNode
 }
+
+// ── SpotlightMount (inner component to sync live actions) ─────────────────────
+
+/**
+ * Mounts Spotlight with a live-updating actions list synced to the command registry.
+ * Separated into its own component so hooks run inside the overlay tree.
+ *
+ * Actions are a snapshot at render time — sufficient because commands are registered at module
+ * load before BasaltOverlays mounts. A future reactive stash can add a version counter here.
+ */
+function SpotlightMount() {
+  const actions = toSpotlightActions((id) => {
+    basaltSpotlightActions.close()
+    void runCommand(id as CommandId)
+  })
+
+  return <Spotlight store={basaltSpotlightStore} actions={actions} shortcut="mod + K" />
+}
+
+// ── HotkeysMount (inner component — ensures hook is inside component tree) ────
+
+/** Mounts useCommandHotkeys inside the overlay tree. Graceful no-op when peer is absent. */
+function HotkeysMount() {
+  useCommandHotkeys()
+  return null
+}
+
+// ── BasaltOverlays ────────────────────────────────────────────────────────────
 
 /**
  * Composable overlay mount — wraps children in ModalsProvider and renders Spotlight +
@@ -68,12 +148,14 @@ export function BasaltOverlays({
   modals: enableModals = true,
   spotlight: enableSpotlight = true,
   notifications: enableNotifications = true,
+  hotkeys: enableHotkeys = true,
   children,
 }: BasaltOverlaysProps) {
   const content = (
     <>
-      {enableSpotlight && <Spotlight actions={toSpotlightActions()} shortcut="mod + K" />}
+      {enableSpotlight && <SpotlightMount />}
       {enableNotifications && <Notifications position="bottom-right" autoClose={4000} limit={5} />}
+      {enableHotkeys && <HotkeysMount />}
       {children}
     </>
   )
