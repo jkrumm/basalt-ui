@@ -329,7 +329,8 @@ export const SURFACES = {
     rule: 'state',
     skill: ['basalt-design'],
     guardKinds: ['localstorage-theme'],
-    description: 'createPersistedState — versioned localStorage state primitive (Mantine-free)',
+    description:
+      'createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives',
     optionalPeers: [],
     forbiddenImports: [],
   },

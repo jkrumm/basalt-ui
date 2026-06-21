@@ -91,7 +91,7 @@ OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
-Description: createPersistedState — versioned localStorage state primitive (Mantine-free)
+Description: createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives
 Layer: headless
 
 ## basalt-ui/styles.css

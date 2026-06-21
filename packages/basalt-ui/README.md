@@ -32,7 +32,7 @@ bunx basalt init
 
 Writes into the consumer repo:
 
-- `.claude/rules/basalt-*.md` — six Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`)
+- `.claude/rules/basalt-*.md` — eleven Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`)
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
 - Toolchain templates: `oxfmt.json`, `lefthook.yml`, `check.yml`
@@ -115,9 +115,10 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 | `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                              |
 | `./data`            | coupled  | TanStack Table + Virtual kinds: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered)                                                                                    |
 | `./agent`           | **free** | Headless streaming-chat layer: `useAgentStream`, `edenTransport`, `PartList`                                                                                                 |
-| `./state`           | **free** | `createPersistedState` — versioned localStorage state primitive                                                                                                              |
+| `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                          |
 | `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                |
 | `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                              |
+| `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                 |
 
 Named exports only — no default exports.
 
@@ -324,7 +325,7 @@ bunx basalt init              # scaffold doctrine into a consumer repo
 bunx basalt sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
 bunx basalt sync --check      # CI drift gate — non-zero exit on any managed-file drift
 bunx basalt check-theme       # palette guard — fails on colors that bypass the central --vx-* system
-bunx basalt check-coverage    # SURFACES projection gate — asserts guard kinds, rule files, skills, and subpath-export coverage are consistent
+bunx basalt doctor            # check consumer repo basalt integration health (manifest, CLAUDE.md block, rules, plugin)
 bunx basalt info              # human-readable surface map: subpath, layer, rule, skills, optional peers
 bunx basalt info --json       # same map as stable JSON (InfoOutput shape)
 ```

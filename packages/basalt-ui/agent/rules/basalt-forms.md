@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Mantine form conventions for basalt-ui apps — createForm, field, FormErrorSummary, useFormDraft from the shipped ./forms battery. @mantine/form is an optional peer.
+description: Mantine form conventions for basalt-ui apps — useBasaltForm, field, FormErrorSummary, useFormDraft from the shipped ./forms battery. @mantine/form is an optional peer.
 paths:
   - 'src/**'
   - 'apps/**/src/**'
@@ -8,7 +8,7 @@ paths:
 
 # Basalt Forms
 
-basalt-ui ships `./forms` — a Mantine form adapter battery providing `createForm`, `field`,
+basalt-ui ships `./forms` — a Mantine form adapter battery providing `useBasaltForm`, `field`,
 `FormErrorSummary`, and `useFormDraft` on top of `@mantine/form`. `@mantine/form` is an **optional
 peer** — install it explicitly before using this battery:
 
@@ -19,14 +19,14 @@ bun add @mantine/form
 Valibot is the default validation library (install it too: `bun add valibot`). Zod 4 works if
 already standardised in the project.
 
-## createForm
+## useBasaltForm
 
-`createForm` is a typed `useForm` wrapper that applies basalt defaults — `mode: 'uncontrolled'`
+`useBasaltForm` is a typed `useForm` wrapper that applies basalt defaults — `mode: 'uncontrolled'`
 and `schemaResolver(schema, { sync: true })` when a schema is provided.
 
 ```ts
 import * as v from 'valibot'
-import { createForm, field } from 'basalt-ui/forms'
+import { useBasaltForm, field } from 'basalt-ui/forms'
 import { TextInput, NumberInput, Button } from '@mantine/core'
 
 const Schema = v.object({
@@ -38,7 +38,7 @@ type Values = v.InferOutput<typeof Schema>
 const INITIAL: Values = { name: '', email: '', amount: 0 }
 
 function MyForm() {
-  const form = createForm({ initialValues: INITIAL, schema: Schema })
+  const form = useBasaltForm({ initialValues: INITIAL, schema: Schema })
 
   return (
     <form onSubmit={form.onSubmit((values) => console.log(values))}>
@@ -104,7 +104,7 @@ import { FormErrorSummary } from 'basalt-ui/forms'
 SSR-safe, cross-tab). It restores the draft on mount and exposes `clearDraft` + `saveDraft`.
 
 ```ts
-import { createForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
+import { useBasaltForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
 import { Button, TextInput } from '@mantine/core'
 
 const INITIAL: Values = { name: '', email: '' }
@@ -112,8 +112,8 @@ const INITIAL: Values = { name: '', email: '' }
 function EditForm() {
   const { clearDraft, saveDraft } = useFormDraft(form, { key: 'edit-form', version: 1 })
 
-  // Wire saveDraft into createForm's onValuesChange for automatic autosave:
-  const form = createForm({
+  // Wire saveDraft into useBasaltForm's onValuesChange for automatic autosave:
+  const form = useBasaltForm({
     initialValues: INITIAL,
     schema: Schema,
     onValuesChange: saveDraft,    // ← automatic autosave on every field change
@@ -140,7 +140,7 @@ function EditForm() {
 `@mantine/form` v9 has no built-in whole-form change subscription on an existing form instance —
 `form.watch` is per-field only. The correct autosave paths are:
 
-1. **`createForm({ onValuesChange: saveDraft })`** (recommended) — `onValuesChange` fires on every
+1. **`useBasaltForm({ onValuesChange: saveDraft })`** (recommended) — `onValuesChange` fires on every
    value change with `(values, previous)`. Pass `saveDraft` directly (it snapshots `form.getValues()`
    internally).
 2. **`<TextInput {...field(form, 'name')} onBlur={saveDraft} />`** — explicit blur-based autosave.

@@ -79,5 +79,5 @@ export const useUiStore = create<UiState>()(
 basalt-ui does **not** ship or depend on Zustand — it is a consumer choice. Resist putting
 query results, derived data, or theme scheme in any store.
 
-> **Forms** are covered by `basalt-forms.md` — see `./forms` (createForm, field, FormErrorSummary,
+> **Forms** are covered by `basalt-forms.md` — see `./forms` (useBasaltForm, field, FormErrorSummary,
 > useFormDraft). `@mantine/form` is an optional peer; install it with `bun add @mantine/form`.
