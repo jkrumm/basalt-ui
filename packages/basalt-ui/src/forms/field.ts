@@ -12,10 +12,10 @@ import type { LooseKeys, UseFormReturnType } from '@mantine/form'
  * every field site.
  *
  * @example
- * import { createForm, field } from 'basalt-ui/forms'
+ * import { useBasaltForm, field } from 'basalt-ui/forms'
  *
  * function MyForm() {
- *   const form = createForm({ initialValues: { email: '' } })
+ *   const form = useBasaltForm({ initialValues: { email: '' } })
  *   return <TextInput {...field(form, 'email')} label="Email" />
  * }
  */

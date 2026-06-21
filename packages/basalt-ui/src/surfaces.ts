@@ -268,7 +268,7 @@ export const SURFACES = {
     skill: ['basalt-design'],
     guardKinds: [],
     description:
-      'Mantine form adapter: createForm, field, FormErrorSummary, useFormDraft (Standard Schema)',
+      'Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)',
     optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },

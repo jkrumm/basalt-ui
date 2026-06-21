@@ -4,21 +4,24 @@
  *
  * AUTOSAVE NOTE: @mantine/form v9 has no whole-form subscription hook on an existing form
  * instance — `form.watch` is per-path only. The cleanest autosave path is to thread
- * `onValuesChange` through createForm at creation time (the consumer passes the callback
+ * `onValuesChange` through useBasaltForm at creation time (the consumer passes the callback
  * there). useFormDraft therefore exposes an explicit `saveDraft()` that the consumer calls
- * at field blur / form change events. Wire it via createForm's `onValuesChange` prop for
+ * at field blur / form change events. Wire it via useBasaltForm's `onValuesChange` prop for
  * fully-automatic autosave:
  *
  * @example (manual blur-based autosave)
+ * const form = useBasaltForm({ initialValues, schema })
  * const { clearDraft, saveDraft } = useFormDraft(form, { key: 'my-form', version: 1 })
  * <TextInput {...field(form, 'name')} onBlur={saveDraft} />
  *
- * @example (automatic via onValuesChange in createForm)
+ * @example (automatic via onValuesChange in useBasaltForm — use saveDraft ref pattern)
+ * const saveDraftRef = useRef<(() => void) | null>(null)
+ * const form = useBasaltForm({ initialValues, schema, onValuesChange: () => saveDraftRef.current?.() })
  * const { clearDraft, saveDraft } = useFormDraft(form, { key: 'my-form', version: 1 })
- * // pass saveDraft into createForm:
- * const form = createForm({ initialValues, schema, onValuesChange: () => saveDraft() })
- * // NOTE: create the form AFTER calling useFormDraft, or use the returned saveDraft ref pattern
- * // shown in FormsDemoPage (clearDraft passed to onSubmit, saveDraft to onValuesChange).
+ * saveDraftRef.current = saveDraft
+ * // NOTE: the ref pattern avoids the init-order problem — form is created first, the ref
+ * // is populated after useFormDraft runs (hooks run top-to-bottom), so by the time
+ * // onValuesChange fires on user interaction the ref is always populated.
  */
 import { useEffect, useRef } from 'react'
 import type { UseFormReturnType } from '@mantine/form'
@@ -60,22 +63,22 @@ export type UseFormDraftReturn = {
  * MUST-HAVES:
  * - Restores the draft once on mount if a draft is persisted.
  * - `clearDraft()` removes the persisted draft (call in onSubmit success).
- * - `saveDraft()` snapshots current form values (call onBlur or wire into createForm's `onValuesChange`).
+ * - `saveDraft()` snapshots current form values (call onBlur or wire into useBasaltForm's `onValuesChange`).
  *
  * AUTOSAVE: @mantine/form has no whole-form change subscription on an existing form.
- * The cleanest path is to pass `saveDraft` to `createForm({ onValuesChange: () => saveDraft() })`.
- * For forms not created via createForm, call `saveDraft` manually on blur.
+ * The cleanest path is to pass `saveDraft` to `useBasaltForm({ onValuesChange: () => saveDraft() })`.
+ * For forms not created via useBasaltForm, call `saveDraft` manually on blur.
  *
  * @example
  * import * as v from 'valibot'
- * import { createForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
+ * import { useBasaltForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
  *
  * const Schema = v.object({ name: v.pipe(v.string(), v.minLength(2)), amount: v.number() })
  * type Values = v.InferOutput<typeof Schema>
  * const INITIAL: Values = { name: '', amount: 0 }
  *
  * function MyForm() {
- *   const form = createForm({ initialValues: INITIAL, schema: Schema, mode: 'uncontrolled' })
+ *   const form = useBasaltForm({ initialValues: INITIAL, schema: Schema, mode: 'uncontrolled' })
  *   const { clearDraft, saveDraft, hasDraft } = useFormDraft(form, { key: 'my-form', version: 1 })
  *   // Wire saveDraft into onValuesChange after form creation via a ref or external callback:
  *   // form is created above; wire via onBlur as the safe fallback shown here.

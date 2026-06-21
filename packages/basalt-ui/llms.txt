@@ -59,7 +59,7 @@ OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
-Description: Mantine form adapter: createForm, field, FormErrorSummary, useFormDraft (Standard Schema)
+Description: Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)
 Layer: mantine-coupled
 OptionalPeers: @mantine/form@^9.3.0
 

@@ -34,8 +34,9 @@ export {
 } from './notify'
 export type { NotifyOptions, NotifyPromiseMessages } from './notify'
 
-// ── defineNotifications + typed emit ─────────────────────────────────────────
+// ── defineNotification + defineNotifications + typed emit ─────────────────────
 export {
+  defineNotification,
   defineNotifications,
   emit,
   type NotificationKind,

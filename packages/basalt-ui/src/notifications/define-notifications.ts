@@ -51,6 +51,29 @@ type Notifications = Slot<'notifications', NotificationSpecMap>
  */
 export type NotificationKind = Extract<keyof Notifications, string>
 
+// ── defineNotification (singular) ────────────────────────────────────────────
+
+/**
+ * Type a single notification spec without registering it.
+ * Identity passthrough — preserves the exact literal shape for local type-checking.
+ *
+ * **WARNING:** this does NOT register the spec in the runtime registry and does NOT
+ * augment BasaltRegister. Use `defineNotifications` (plural) to register a full spec
+ * map and enable `emit()`. Use this only when you need to type an isolated spec constant
+ * before merging it into a larger map.
+ *
+ * @example
+ * const uploadSuccess = defineNotification({
+ *   intent: 'success',
+ *   toMessage: (p: { name: string }) => `Uploaded ${p.name}`,
+ * })
+ * // Merge into the full registry before passing to defineNotifications:
+ * const NOTIFICATIONS = defineNotifications({ 'upload:success': uploadSuccess })
+ */
+export function defineNotification<const T extends NotificationSpec>(spec: T): T {
+  return spec
+}
+
 // ── defineNotifications ───────────────────────────────────────────────────────
 
 /**

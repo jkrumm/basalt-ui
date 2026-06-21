@@ -22,10 +22,10 @@ export type FormErrorSummaryProps<Values extends Record<string, unknown>> = {
  * Returns `null` when the form has no errors (renders nothing when the form is clean).
  *
  * @example
- * import { FormErrorSummary, createForm } from 'basalt-ui/forms'
+ * import { FormErrorSummary, useBasaltForm } from 'basalt-ui/forms'
  *
  * function MyForm() {
- *   const form = createForm({ initialValues: { email: '' } })
+ *   const form = useBasaltForm({ initialValues: { email: '' } })
  *   return (
  *     <form onSubmit={form.onSubmit(console.log)}>
  *       <FormErrorSummary form={form} title="Fix these before submitting" />

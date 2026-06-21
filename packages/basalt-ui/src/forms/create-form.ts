@@ -1,14 +1,14 @@
 /**
- * ./forms — createForm: typed useForm wrapper applying basalt defaults.
+ * ./forms — useBasaltForm: typed useForm wrapper applying basalt defaults.
  * Mantine-coupled. Optional peer: @mantine/form.
  */
 import { schemaResolver, useForm, type UseFormInput, type UseFormReturnType } from '@mantine/form'
 import type { StandardSchemaV1 } from '../register'
 
-// ── createForm ────────────────────────────────────────────────────────────────
+// ── useBasaltForm ─────────────────────────────────────────────────────────────
 
-/** Options for createForm — a typed useForm wrapper that applies basalt defaults. */
-export type CreateFormOptions<Values extends Record<string, unknown>> = Omit<
+/** Options for useBasaltForm — a typed useForm wrapper that applies basalt defaults. */
+export type UseBasaltFormOptions<Values extends Record<string, unknown>> = Omit<
   UseFormInput<Values>,
   'validate'
 > & {
@@ -19,24 +19,27 @@ export type CreateFormOptions<Values extends Record<string, unknown>> = Omit<
 }
 
 /**
- * Custom hook implementing basalt form defaults.
- * Named `useBasaltForm` so React's rules-of-hooks lint can validate the hook call chain.
- * Exported as `createForm` for the public API (see below).
+ * Typed useForm wrapper that applies basalt defaults:
+ * - `mode: 'uncontrolled'` by default (avoids per-keystroke re-renders)
+ * - `validate: schemaResolver(schema, { sync: true })` when `schema` is provided
+ *
+ * Call this inside a React component or custom hook — it is a hook wrapper.
+ * All useForm options are forwarded unchanged.
  *
  * @example
  * import * as v from 'valibot'
- * import { createForm, field } from 'basalt-ui/forms'
+ * import { useBasaltForm, field } from 'basalt-ui/forms'
  *
  * const Schema = v.object({ name: v.pipe(v.string(), v.minLength(2)), email: v.string() })
  * type Values = v.InferOutput<typeof Schema>
  *
  * function MyForm() {
- *   const form = createForm({ initialValues: { name: '', email: '' }, schema: Schema })
+ *   const form = useBasaltForm({ initialValues: { name: '', email: '' }, schema: Schema })
  *   return <TextInput {...field(form, 'name')} label="Name" />
  * }
  */
-function useBasaltForm<Values extends Record<string, unknown>>(
-  opts: CreateFormOptions<Values>,
+export function useBasaltForm<Values extends Record<string, unknown>>(
+  opts: UseBasaltFormOptions<Values>,
 ): UseFormReturnType<Values> {
   const { schema, mode = 'uncontrolled', ...rest } = opts
   return useForm<Values>({
@@ -51,15 +54,3 @@ function useBasaltForm<Values extends Record<string, unknown>>(
     }),
   })
 }
-
-/**
- * Typed useForm wrapper that applies basalt defaults:
- * - `mode: 'uncontrolled'` by default (avoids per-keystroke re-renders)
- * - `validate: schemaResolver(schema, { sync: true })` when `schema` is provided
- *
- * Call this inside a React component or custom hook — it is a hook wrapper.
- * All useForm options are forwarded unchanged.
- */
-export const createForm: <Values extends Record<string, unknown>>(
-  opts: CreateFormOptions<Values>,
-) => UseFormReturnType<Values> = useBasaltForm
