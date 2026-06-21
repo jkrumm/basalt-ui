@@ -43,6 +43,10 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * etc.). TData is inferred from the data field. Throws on the error branch so failures surface
  * to the nearest error boundary or TanStack Query's error state.
  *
+ * Null guard: if `error` is falsy but `data` is `null`, unwrap throws with a descriptive message.
+ * This catches 204 No Content responses and silent transport failures that return `{ data: null,
+ * error: null }` — both signal an unexpected absence of data and should not silently resolve.
+ *
  * @example
  * import { unwrap } from 'basalt-ui/query'
  *
@@ -57,15 +61,30 @@ export async function unwrap<TData>(
 ): Promise<TData> {
   const { data, error } = await response
   if (error) throw error
+  if (data === null)
+    throw new Error(
+      'unwrap: null data with no error — check for a 204 response or a transport failure',
+    )
   return data as TData
 }
 
 // ── Re-exports from @tanstack/react-query ────────────────────────────────────────────────────────
 
+// Provider + boundary helpers
 export {
   QueryClientProvider,
   QueryErrorResetBoundary,
   useQueryErrorResetBoundary,
+} from '@tanstack/react-query'
+
+// Primary fetch hooks — import from basalt-ui/query rather than dual-importing @tanstack/react-query
+export {
+  useQuery,
+  useSuspenseQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  queryOptions,
 } from '@tanstack/react-query'
 
 // ── Re-export devtools helper ─────────────────────────────────────────────────────────────────────

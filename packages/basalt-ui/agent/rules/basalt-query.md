@@ -14,6 +14,20 @@ basalt-ui ships `./query` — a thin TanStack Query adapter providing `createBas
 `unwrap`, `BasaltQueryDevtools`, and convenience re-exports (`QueryClientProvider`,
 `QueryErrorResetBoundary`, `useQueryErrorResetBoundary`). @tanstack/react-query is an optional peer.
 
+`./query` also re-exports the primary fetch hooks so consumers never need to dual-import from both
+`basalt-ui/query` and `@tanstack/react-query`:
+
+```ts
+import {
+  useQuery,
+  useSuspenseQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  queryOptions,
+} from 'basalt-ui/query'
+```
+
 This rule covers the advisory consumer patterns on top of that adapter. Nothing in the framework
 enforces these conventions beyond the `unwrap` seam.
 
@@ -22,7 +36,7 @@ enforces these conventions beyond the `unwrap` seam.
 Each resource has a factory in `src/lib/queries/<resource>.ts`:
 
 ```ts
-import { queryOptions } from '@tanstack/react-query'
+import { queryOptions, useSuspenseQuery } from 'basalt-ui/query'
 import { unwrap } from 'basalt-ui/query'
 import { api } from '../api-client'
 
@@ -41,13 +55,19 @@ export const resourceQueries = {
 ```
 
 - Key hierarchy: `[resource, action, ...params]`.
-- `queryFn` unwraps typed responses via `unwrap()` from `basalt-ui/query` — throws on the error
-  branch so failures surface to the nearest error boundary or TanStack Query's error state.
+- `queryOptions` and all hooks import from `basalt-ui/query` — do not dual-import from
+  `@tanstack/react-query` directly.
+- `queryFn` unwraps typed responses via `unwrap()` — throws on the error branch so failures surface
+  to the nearest error boundary or TanStack Query's error state. Also throws when `data` is `null`
+  with no error (e.g. a 204 No Content or a silent transport failure that returns
+  `{ data: null, error: null }`). Both cases are bugs the caller must address.
 - Never use raw strings as query keys in components — always import from the factory.
 
 ## Reading data in components
 
 ```ts
+import { useSuspenseQuery } from 'basalt-ui/query'
+
 const { data } = useSuspenseQuery(resourceQueries.summary())
 ```
 

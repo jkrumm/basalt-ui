@@ -14,7 +14,7 @@
  *   getItemKey={(item) => item.id}
  * />
  */
-import { Box } from '@mantine/core'
+import { Box, Skeleton } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ReactNode, useRef } from 'react'
 
@@ -58,6 +58,17 @@ export type BasaltVirtualListProps<T> = {
    * Providing a stable key prevents react reconciliation churn on scroll.
    */
   getItemKey?: (item: T, index: number) => string | number
+  /**
+   * When true, renders skeleton placeholder rows at the given height instead of the virtual item
+   * list. The scroll container is still rendered at the specified `height`. Use while async data
+   * is loading.
+   */
+  isLoading?: boolean
+  /**
+   * Number of skeleton rows to render when `isLoading` is true.
+   * @default 5
+   */
+  skeletonRows?: number
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -90,6 +101,8 @@ export function BasaltVirtualList<T>({
   overscan = 5,
   renderItem,
   getItemKey,
+  isLoading = false,
+  skeletonRows = 5,
 }: BasaltVirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -108,6 +121,21 @@ export function BasaltVirtualList<T>({
       },
     }),
   })
+
+  if (isLoading) {
+    return (
+      <Box style={{ height, overflow: 'auto' }}>
+        {Array.from({ length: skeletonRows }, (_, i) => (
+          <div
+            key={`skeleton-${i}`}
+            style={{ height: estimateSize, padding: '8px 12px', boxSizing: 'border-box' }}
+          >
+            <Skeleton height={estimateSize - 16} radius="sm" />
+          </div>
+        ))}
+      </Box>
+    )
+  }
 
   return (
     <Box

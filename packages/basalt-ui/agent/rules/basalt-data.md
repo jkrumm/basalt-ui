@@ -46,14 +46,57 @@ const columns = [
 
 ### Props
 
-| Prop               | Type             | Default  | Notes                              |
-| ------------------ | ---------------- | -------- | ---------------------------------- |
-| `data`             | `T[]`            | required | Row data array                     |
-| `columns`          | `ColumnDef<T>[]` | required | TanStack column definitions        |
-| `enableSorting`    | `boolean`        | `true`   | Clickable headers, asc/desc toggle |
-| `striped`          | `boolean`        | —        | Forwarded to Mantine `Table`       |
-| `highlightOnHover` | `boolean`        | —        | Forwarded to Mantine `Table`       |
-| `emptyState`       | `ReactNode`      | —        | Shown when `data` is empty         |
+| Prop               | Type                        | Default  | Notes                                                  |
+| ------------------ | --------------------------- | -------- | ------------------------------------------------------ |
+| `data`             | `T[]`                       | required | Row data array                                         |
+| `columns`          | `ColumnDef<T>[]`            | required | TanStack column definitions                            |
+| `enableSorting`    | `boolean`                   | `true`   | Clickable headers, asc/desc toggle                     |
+| `striped`          | `boolean`                   | —        | Forwarded to Mantine `Table`                           |
+| `highlightOnHover` | `boolean`                   | —        | Forwarded to Mantine `Table`                           |
+| `emptyState`       | `ReactNode`                 | —        | Shown when `data` is empty and not loading             |
+| `isLoading`        | `boolean`                   | `false`  | Shows skeleton rows instead of empty-state/data        |
+| `skeletonRows`     | `number`                    | `5`      | Number of skeleton rows when `isLoading` is true       |
+| `initialSorting`   | `SortingState`              | `[]`     | Initial sort state; drives `useState` initializer      |
+| `onSortingChange`  | `(s: SortingState) => void` | —        | Called whenever sorting changes; omit for uncontrolled |
+
+### Controlled sorting and URL sync
+
+`initialSorting` seeds the internal `useState` and `onSortingChange` is called on every sort
+change — the table stays internally managed (uncontrolled) when `onSortingChange` is omitted.
+
+To sync sort state with TanStack Router search params:
+
+```tsx
+import { type SortingState } from 'basalt-ui/data'
+
+// In the route definition (validated search params):
+// sortBy: z.string().optional(), sortDir: z.enum(['asc','desc']).optional()
+
+function UsersTable() {
+  const { sortBy, sortDir } = Route.useSearch()
+  const navigate = Route.useNavigate()
+
+  const initialSorting: SortingState = sortBy ? [{ id: sortBy, desc: sortDir === 'desc' }] : []
+
+  return (
+    <BasaltDataTable
+      data={users}
+      columns={columns}
+      initialSorting={initialSorting}
+      onSortingChange={(s) => {
+        const col = s[0]
+        navigate({
+          search: (prev) => ({
+            ...prev,
+            sortBy: col?.id,
+            sortDir: col?.desc ? 'desc' : 'asc',
+          }),
+        })
+      }}
+    />
+  )
+}
+```
 
 ### Column definitions
 
@@ -125,6 +168,8 @@ const items = Array.from({ length: 10_000 }, (_, i) => ({ id: i, name: `Row ${i}
 | `overscan`     | `number`                                       | `5`      | Extra rows rendered beyond visible viewport       |
 | `renderItem`   | `(item: T, index: number) => ReactNode`        | required | Row render function                               |
 | `getItemKey`   | `(item: T, index: number) => string \| number` | —        | Stable key (defaults to index)                    |
+| `isLoading`    | `boolean`                                      | `false`  | Shows skeleton rows at `estimateSize` height      |
+| `skeletonRows` | `number`                                       | `5`      | Number of skeleton rows when `isLoading` is true  |
 
 ### useFlushSync: false (React 19)
 

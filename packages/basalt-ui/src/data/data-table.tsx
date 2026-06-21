@@ -14,7 +14,7 @@
  * ]
  * <BasaltDataTable data={rows} columns={columns} />
  */
-import { Box, Table, Text } from '@mantine/core'
+import { Box, Skeleton, Table, Text } from '@mantine/core'
 import {
   flexRender,
   getCoreRowModel,
@@ -23,7 +23,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -63,6 +63,30 @@ export type BasaltDataTableProps<T> = {
   highlightOnHover?: boolean
   /** Rendered when `data` is empty. Falls back to a simple message when omitted. */
   emptyState?: ReactNode
+  /**
+   * When true, renders skeleton placeholder rows instead of the empty-state branch.
+   * The header remains visible. Use while async data is loading.
+   */
+  isLoading?: boolean
+  /**
+   * Number of skeleton rows to render when `isLoading` is true.
+   * @default 5
+   */
+  skeletonRows?: number
+  /**
+   * Initial sorting state. Drives `useState` initial value — useful for restoring
+   * sort order from URL search params (e.g. `initialSorting={Route.useSearch().sorting}`).
+   * @example
+   * // URL-sync pattern with TanStack Router
+   * const { sorting } = Route.useSearch()
+   * <BasaltDataTable initialSorting={sorting} onSortingChange={(s) => navigate({ search: { sorting: s } })} … />
+   */
+  initialSorting?: SortingState
+  /**
+   * Called whenever the internal sorting state changes. Receives the new `SortingState`.
+   * The table continues to manage sorting internally (uncontrolled) when this is omitted.
+   */
+  onSortingChange?: (sorting: SortingState) => void
 }
 
 // ── Sort indicator ────────────────────────────────────────────────────────────
@@ -102,14 +126,29 @@ export function BasaltDataTable<T>({
   striped,
   highlightOnHover,
   emptyState,
+  isLoading = false,
+  skeletonRows = 5,
+  initialSorting,
+  onSortingChange,
 }: BasaltDataTableProps<T>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
+
+  const handleSortingChange = useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      setSorting((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater
+        onSortingChange?.(next)
+        return next
+      })
+    },
+    [onSortingChange],
+  )
 
   const table = useReactTable<T>({
     data,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting,
@@ -145,7 +184,17 @@ export function BasaltDataTable<T>({
         ))}
       </Table.Thead>
       <Table.Tbody>
-        {data.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: skeletonRows }, (_, rowIndex) => (
+            <Table.Tr key={`skeleton-${rowIndex}`}>
+              {columns.map((_, colIndex) => (
+                <Table.Td key={`skeleton-${rowIndex}-${colIndex}`}>
+                  <Skeleton height={16} radius="sm" />
+                </Table.Td>
+              ))}
+            </Table.Tr>
+          ))
+        ) : data.length === 0 ? (
           <Table.Tr>
             <Table.Td colSpan={columns.length}>
               {emptyState ?? (
