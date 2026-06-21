@@ -86,9 +86,11 @@ function defaultOnError(error: unknown, ctx: BasaltErrorContext): void {
 type BoundaryProps = {
   children: ReactNode
   onError: (error: unknown, ctx: BasaltErrorContext) => void
+  /** Optional UI to render when a render error is caught. If a function, called with the error. Defaults to null. */
+  fallback?: ReactNode | ((error: unknown) => ReactNode)
 }
 
-type BoundaryState = { hasError: boolean }
+type BoundaryState = { hasError: boolean; error: unknown }
 
 /**
  * Error boundary that catches render-phase errors inside `BasaltProvider`. Wraps `BasaltBridge` +
@@ -96,18 +98,18 @@ type BoundaryState = { hasError: boolean }
  * Also exported so consumers can mount nested boundaries with the same `onError` contract.
  *
  * @example
- * <BasaltErrorBoundary onError={(e, ctx) => Sentry.captureException(e)}>
+ * <BasaltErrorBoundary onError={(e, ctx) => Sentry.captureException(e)} fallback={<p>Something went wrong.</p>}>
  *   <MyFeature />
  * </BasaltErrorBoundary>
  */
 export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState> {
   constructor(props: BoundaryProps) {
     super(props)
-    this.state = { hasError: false }
+    this.state = { hasError: false, error: undefined }
   }
 
-  static getDerivedStateFromError(): BoundaryState {
-    return { hasError: true }
+  static getDerivedStateFromError(error: unknown): BoundaryState {
+    return { hasError: true, error }
   }
 
   override componentDidCatch(error: unknown, info: ErrorInfo): void {
@@ -116,7 +118,9 @@ export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState>
 
   override render(): ReactNode {
     if (this.state.hasError) {
-      return null
+      const { fallback } = this.props
+      if (fallback === undefined) return null
+      return typeof fallback === 'function' ? fallback(this.state.error) : fallback
     }
     return this.props.children
   }
