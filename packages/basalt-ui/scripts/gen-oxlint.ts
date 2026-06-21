@@ -4,6 +4,7 @@
  * read from the current files and spliced in unchanged — only the overrides array is replaced.
  *
  * Usage: bun packages/basalt-ui/scripts/gen-oxlint.ts
+ *        bun packages/basalt-ui/scripts/gen-oxlint.ts --check  (CI drift gate)
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -20,23 +21,6 @@ type NoRestrictedImports = { paths?: OxlintPath[]; patterns?: OxlintPattern[] }
 type OverrideBlock = {
   files: string[]
   rules: Record<string, unknown>
-}
-
-// ── Glob lookup — derive per surface key + target ─────────────────────────────────────────────────
-
-const GLOBS: Record<string, Record<Target, string[]>> = {
-  './charts': {
-    shipped: ['**/charts/**'],
-    repo: ['packages/basalt-ui/src/charts/**'],
-  },
-  './tokens': {
-    shipped: ['**/tokens/**'],
-    repo: ['packages/basalt-ui/src/tokens/**'],
-  },
-  '#app': {
-    shipped: ['src/**', 'app/**'],
-    repo: ['packages/basalt-ui/src/**', 'apps/playground/src/**'],
-  },
 }
 
 // ── Context resolution — fills the {ctx} placeholder per import spec + target ────────────────────
@@ -60,31 +44,41 @@ function fillCtx(message: string, ctx: string): string {
 
 /**
  * Derives the `overrides` array for the given target from SURFACES.
- * Only surfaces with non-empty forbiddenImports emit a no-restricted-imports block.
- * That is exactly: ./charts, ./tokens, #app.
+ * Only surfaces with both a `globs` field and non-empty forbiddenImports emit a block.
  *
- * @example
- * const blocks = projectBanList('shipped') // → 3 override blocks
- * const repoBlocks = projectBanList('repo') // → 4 blocks (3 + cli/bin/scripts no-console:off)
+ * Emission order is LOAD-BEARING — oxlint resolves per-glob `no-restricted-imports`
+ * last-writer-wins (a later matching block REPLACES an earlier one). The broad `#app` (src/**)
+ * block must come FIRST so the narrower, re-allowing blocks (`./tokens`, then `./charts`,
+ * then `./agent`) win for files they match. In particular `./charts` (which OMITS the @visx/*
+ * ban = the re-allow) must be LAST among the chart/token/agent trio, or the `#app` @visx/* ban
+ * leaks into the charts boundary.
+ *
+ * The SURFACES insertion order already reflects this: #app is last in the dict but first in
+ * EMIT_ORDER. We derive EMIT_ORDER from SURFACES key order, but move #app to the front.
  */
 export function projectBanList(target: Target): OverrideBlock[] {
   const blocks: OverrideBlock[] = []
 
-  // Emission order is LOAD-BEARING. oxlint resolves per-glob `no-restricted-imports` last-writer-wins
-  // (a later matching block REPLACES an earlier one — it does not merge). The broad `#app` (src/**)
-  // block must come FIRST so the narrower, re-allowing blocks (`./tokens`, then `./charts`) win for
-  // files they match. In particular `./charts` (which OMITS the @visx/* ban = the re-allow) must be
-  // LAST, or the `#app` @visx/* ban leaks into the charts boundary. Do NOT iterate SURFACES insertion
-  // order here (it is charts-first, which inverts this and re-bans @visx inside charts).
-  const EMIT_ORDER = ['#app', './tokens', './charts'] as const
+  // Build the ordered emit list from SURFACES: surfaces with globs + non-empty forbiddenImports.
+  // #app is moved to the front (it is the broad src/** override that must come first).
+  const candidates = (
+    Object.entries(SURFACES) as [string, (typeof SURFACES)[keyof typeof SURFACES]][]
+  )
+    .filter(([, spec]) => spec.globs !== undefined && spec.forbiddenImports.length > 0)
+    .map(([key]) => key)
 
-  for (const key of EMIT_ORDER) {
-    const surface = SURFACES[key]
-    const globs = GLOBS[key as keyof typeof GLOBS]
-    if (globs === undefined) continue
+  const appIdx = candidates.indexOf('#app')
+  if (appIdx > 0) {
+    candidates.splice(appIdx, 1)
+    candidates.unshift('#app')
+  }
+
+  for (const key of candidates) {
+    const surface = SURFACES[key as keyof typeof SURFACES]
+    if (!surface.globs) continue
     if (surface.forbiddenImports.length === 0) continue
 
-    const files = globs[target]
+    const files = [...surface.globs[target]]
 
     // Derive the surface name for Mantine ban ctx (e.g. './charts' → 'charts', '#app' → 'app')
     const surfaceName = key.startsWith('#') ? key.slice(1) : key.replace(/^\.\//, '')
@@ -159,13 +153,58 @@ const repoPath = join(root, '.oxlintrc.json')
 
 // ── Main — regenerate both config files ──────────────────────────────────────────────────────────
 
-function main(): void {
+function generate(): {
+  shippedResult: Record<string, unknown>
+  repoResult: Record<string, unknown>
+} {
   // Read and parse the hand-maintained base (preserves all keys except overrides)
   const shippedBase = JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>
   const repoBase = JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>
 
-  const shippedResult = { ...shippedBase, overrides: projectBanList('shipped') }
-  const repoResult = { ...repoBase, overrides: projectBanList('repo') }
+  return {
+    shippedResult: { ...shippedBase, overrides: projectBanList('shipped') },
+    repoResult: { ...repoBase, overrides: projectBanList('repo') },
+  }
+}
+
+function main(): void {
+  const args = process.argv.slice(2)
+  const checkMode = args.includes('--check')
+
+  const { shippedResult, repoResult } = generate()
+
+  if (checkMode) {
+    // Parse the committed files and deep-compare (format-agnostic) against generated output
+    const committedShipped = JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<
+      string,
+      unknown
+    >
+    const committedRepo = JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>
+
+    const genShippedJson = JSON.stringify(shippedResult, null, 2) + '\n'
+    const genRepoJson = JSON.stringify(repoResult, null, 2) + '\n'
+    const committedShippedJson = JSON.stringify(committedShipped, null, 2) + '\n'
+    const committedRepoJson = JSON.stringify(committedRepo, null, 2) + '\n'
+
+    let driftFound = false
+
+    if (genShippedJson !== committedShippedJson) {
+      console.error('✖ gen-oxlint --check: packages/basalt-ui/configs/oxlint.json is out of sync.')
+      console.error('  Run: bun packages/basalt-ui/scripts/gen-oxlint.ts')
+      driftFound = true
+    }
+    if (genRepoJson !== committedRepoJson) {
+      console.error('✖ gen-oxlint --check: .oxlintrc.json is out of sync.')
+      console.error('  Run: bun packages/basalt-ui/scripts/gen-oxlint.ts')
+      driftFound = true
+    }
+
+    if (driftFound) {
+      process.exit(1)
+    }
+    console.log('✓ gen-oxlint --check: both oxlint configs are in sync with SURFACES.')
+    return
+  }
 
   writeFileSync(shippedPath, JSON.stringify(shippedResult, null, 2) + '\n', 'utf8')
   writeFileSync(repoPath, JSON.stringify(repoResult, null, 2) + '\n', 'utf8')

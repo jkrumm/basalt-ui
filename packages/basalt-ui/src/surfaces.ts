@@ -87,6 +87,19 @@ type BaseSurface = {
    * visx). The projection emits the full list.
    */
   readonly replaceBans?: true
+  /**
+   * Human-readable description of this surface — single source for llms.txt and info output.
+   * Optional on tooling surfaces (they have no llms.txt row).
+   */
+  readonly description?: string
+  /**
+   * Glob sets for this surface's oxlint boundary — emitted when non-empty forbiddenImports present.
+   * `shipped` → globs in the consumer preset; `repo` → globs in the repo-local config.
+   */
+  readonly globs?: {
+    readonly shipped: readonly string[]
+    readonly repo: readonly string[]
+  }
 }
 
 /**
@@ -104,6 +117,11 @@ export type DoctrineSpec = BaseSurface & {
   readonly skill: readonly SkillName[]
   /** Required, but [] is legal for advisory surfaces (router/query: rule only, no guard). */
   readonly guardKinds: readonly GuardKind[]
+  /**
+   * Optional peer package names this surface depends on (e.g. '@tanstack/react-query').
+   * Single source of truth — read by gen-llms.ts and cli/index.ts; versions resolved from package.json.
+   */
+  readonly optionalPeers?: readonly string[]
 }
 
 /**
@@ -149,10 +167,9 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./notifications, ./commands, ./agent) — real package.json exports.
- * - #-prefixed synthetic keys (#state, #app) — advisory doctrine surfaces that
- *   carry a rule but ship NO JS export (state), plus the synthetic global app-wide ban
- *   layer (#app). The #-prefix guarantees they are never mistaken for export paths.
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./forms, ./notifications, ./commands, ./data, ./agent, ./state) — real package.json exports.
+ * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
+ *   guarantees it is never mistaken for an export path.
  *
  * @example
  * import { SURFACES } from 'basalt-ui/src/surfaces'
@@ -166,6 +183,8 @@ export const SURFACES = {
     rule: 'mantine',
     skill: ['basalt-app', 'basalt-design'],
     guardKinds: [],
+    description:
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge',
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -174,6 +193,11 @@ export const SURFACES = {
     rule: 'charts',
     skill: ['basalt-charts'],
     guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis'],
+    description: 'visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)',
+    globs: {
+      shipped: ['**/charts/**'],
+      repo: ['packages/basalt-ui/src/charts/**'],
+    },
     replaceBans: true, // @visx/* MUST NOT inherit from src/** (the re-allow). Full list emitted.
     forbiddenImports: [
       ...MANTINE_BANS,
@@ -188,20 +212,43 @@ export const SURFACES = {
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
     guardKinds: ['raw-hex', 'raw-color-fn', 'off-identity-accent', 'off-system-surface-var'],
+    description:
+      'VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
+    globs: {
+      shipped: ['**/tokens/**'],
+      repo: ['packages/basalt-ui/src/tokens/**'],
+    },
     forbiddenImports: [
       ...MANTINE_BANS,
       vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
     ], // shipped tokens override is MISSING today → this projection EMITS it (closes D2)
   },
-  './theme-lab': { kind: 'tooling', layer: 'mantine-coupled', forbiddenImports: [] },
-  './vite': { kind: 'tooling', layer: 'mantine-coupled', forbiddenImports: [] },
-  './guard': { kind: 'tooling', layer: 'headless', forbiddenImports: [] }, // 6th JS subpath
+  './theme-lab': {
+    kind: 'tooling',
+    layer: 'mantine-coupled',
+    description: 'ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection',
+    forbiddenImports: [],
+  },
+  './vite': {
+    kind: 'tooling',
+    layer: 'mantine-coupled',
+    description: 'basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps',
+    forbiddenImports: [],
+  },
+  './guard': {
+    kind: 'tooling',
+    layer: 'headless',
+    description: 'checkSource, GUARD_RULES, Finding types — the headless theme-guard core',
+    forbiddenImports: [],
+  }, // 6th JS subpath
   './query': {
     kind: 'doctrine',
     layer: 'headless',
     rule: 'query',
     skill: ['basalt-app'],
     guardKinds: [],
+    description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
+    optionalPeers: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
     forbiddenImports: [],
   },
   './router-tanstack': {
@@ -210,6 +257,8 @@ export const SURFACES = {
     rule: 'router',
     skill: ['basalt-app'],
     guardKinds: [],
+    description: 'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs',
+    optionalPeers: ['@tanstack/react-router'],
     forbiddenImports: [],
   },
   './forms': {
@@ -218,6 +267,9 @@ export const SURFACES = {
     rule: 'forms',
     skill: ['basalt-design'],
     guardKinds: [],
+    description:
+      'Mantine form adapter: createForm, field, FormErrorSummary, useFormDraft (Standard Schema)',
+    optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },
   './notifications': {
@@ -226,6 +278,9 @@ export const SURFACES = {
     rule: 'notifications',
     skill: ['basalt-app'],
     guardKinds: [],
+    description:
+      'Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell',
+    optionalPeers: ['@mantine/notifications'],
     forbiddenImports: [],
   },
   './commands': {
@@ -234,6 +289,9 @@ export const SURFACES = {
     rule: 'commands',
     skill: ['basalt-app'],
     guardKinds: [],
+    description:
+      'typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays',
+    optionalPeers: ['@mantine/spotlight', '@mantine/modals', '@tanstack/react-hotkeys'],
     forbiddenImports: [],
   },
   './data': {
@@ -242,6 +300,9 @@ export const SURFACES = {
     rule: 'data',
     skill: ['basalt-design'],
     guardKinds: [],
+    description:
+      'TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)',
+    optionalPeers: ['@tanstack/react-table', '@tanstack/react-virtual'],
     forbiddenImports: [],
   },
   './agent': {
@@ -250,21 +311,30 @@ export const SURFACES = {
     rule: 'agent',
     skill: ['basalt-app'],
     guardKinds: [],
+    description:
+      'Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)',
+    optionalPeers: ['react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
+    globs: {
+      shipped: ['**/agent/**'],
+      repo: ['packages/basalt-ui/src/agent/**'],
+    },
     forbiddenImports: [
       ...MANTINE_BANS,
       vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
     ],
   },
-
-  // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
-  '#state': {
+  './state': {
     kind: 'doctrine',
-    layer: 'mantine-coupled',
+    layer: 'headless',
     rule: 'state',
     skill: ['basalt-design'],
     guardKinds: ['localstorage-theme'],
+    description: 'createPersistedState — versioned localStorage state primitive (Mantine-free)',
+    optionalPeers: [],
     forbiddenImports: [],
   },
+
+  // ── #-prefixed synthetic surfaces (advisory rules + global ban layer; NOT export keys) ────────
   '#app': {
     // synthetic global app-wide ban layer — the src/**+app/** glob
     kind: 'doctrine',
@@ -272,6 +342,10 @@ export const SURFACES = {
     rule: 'mantine',
     skill: ['basalt-app'],
     guardKinds: [],
+    globs: {
+      shipped: ['src/**', 'app/**'],
+      repo: ['packages/basalt-ui/src/**', 'apps/playground/src/**'],
+    },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
     forbiddenImports: [
       v('antd', 'Use Mantine — antd is not part of the basalt-ui stack.', { shippedOnly: true }),
@@ -285,8 +359,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * Delete the literal at cli/index.ts:429; derive instead.
- * → ['mantine', 'charts', 'tokens', 'router', 'query', 'state', 'forms', 'notifications', 'commands', 'data', 'agent'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'state'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

@@ -73,7 +73,7 @@ OptionalPeers: @mantine/notifications@^9.3.0
 Import: import { ... } from 'basalt-ui/commands'
 Description: typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays
 Layer: mantine-coupled
-OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0
+OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0, @tanstack/react-hotkeys@0.10.0
 
 ## basalt-ui/data
 Import: import { ... } from 'basalt-ui/data'
@@ -90,4 +90,4 @@ OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState — versioned localStorage state primitive (Mantine-free)
-Layer: mantine-coupled
+Layer: headless

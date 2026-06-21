@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url'
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
 import type { Finding, GuardConfig } from '../guard'
 import { RULE_NAMES, SURFACES } from '../surfaces'
-import type { DoctrineSpec } from '../surfaces'
+import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
@@ -669,8 +669,8 @@ export function checkCoverage(cwd: string = process.cwd()): number {
   const pkgRoot = packageRoot()
   const failures: string[] = []
 
-  const allSpecs = Object.entries(SURFACES) as [string, { kind: string }][]
-  const doctrineSpecs = (Object.values(SURFACES) as { kind: string }[]).filter(
+  const allSpecs = Object.entries(SURFACES) as [string, SurfaceSpec][]
+  const doctrineSpecs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
     (s): s is DoctrineSpec => s.kind === 'doctrine',
   )
 
@@ -678,8 +678,7 @@ export function checkCoverage(cwd: string = process.cwd()): number {
   const validGuardKinds = new Set(Object.keys(GUARD_RULES))
   for (const [key, spec] of allSpecs) {
     if (spec.kind !== 'doctrine') continue
-    const doctrine = spec as unknown as DoctrineSpec
-    for (const kind of doctrine.guardKinds) {
+    for (const kind of spec.guardKinds) {
       if (!validGuardKinds.has(kind)) {
         failures.push(
           `SURFACES['${key}'].guardKinds includes '${kind}' which is not in GUARD_RULES`,
@@ -736,6 +735,26 @@ export function checkCoverage(cwd: string = process.cwd()): number {
     if (!pkgExports.has(key)) {
       failures.push(
         `SURFACES key '${key}' is a JS subpath but has no entry in package.json exports`,
+      )
+    }
+  }
+
+  // ── Assertion 5: every real package.json exports key has a SURFACES entry ────
+  // Excludes ./styles.css and ./configs/* (non-JS assets / raw file paths).
+  for (const exportKey of pkgExports) {
+    if (exportKey === '.' || exportKey === './styles.css' || exportKey.startsWith('./configs/'))
+      continue
+    if (!(exportKey in SURFACES)) {
+      failures.push(`package.json exports key '${exportKey}' has no matching SURFACES entry`)
+    }
+  }
+
+  // ── Assertion 6: every surface with non-empty forbiddenImports has a globs field ──
+  for (const [key, spec] of allSpecs) {
+    if (spec.forbiddenImports.length === 0) continue
+    if (!('globs' in spec) || spec.globs === undefined) {
+      failures.push(
+        `SURFACES['${key}'] has non-empty forbiddenImports but no globs field (required for oxlint emission)`,
       )
     }
   }
@@ -818,39 +837,27 @@ export function info(flags: string[]): number {
   const publishedExportKeys = new Set(Object.keys(pkgExports))
 
   const subpaths: InfoSubpath[] = []
-  for (const [key, spec] of Object.entries(SURFACES)) {
+  for (const [key, spec] of Object.entries(SURFACES) as [string, SurfaceSpec][]) {
     if (key.startsWith('#')) continue
     if (!publishedExportKeys.has(key)) continue
 
-    const docSpec = spec.kind === 'doctrine' ? (spec as DoctrineSpec) : null
+    const docSpec = spec.kind === 'doctrine' ? spec : null
 
-    // Derive which optional peers this subpath needs: any optional peer that could be required
-    // by this subpath's layer. We derive this by checking which optional peers appear in the
-    // package.json peerDependencies and flagging those associated with this subpath key.
-    // Strategy: emit ALL optional peers for mantine-coupled subpaths, query-specific for headless
-    // adapters. The canonical source is the peerDependenciesMeta — we enumerate all optional peers.
-    // Since we can't statically map subpath→peer without hardcoding, we emit only those whose
-    // specifier prefix matches the subpath's known peer group (rule name heuristic).
-    const rule = docSpec?.rule ?? null
-    const optionalPeers = deriveOptionalPeers(key, rule, optionalPeerSet, peerDeps)
+    // Resolve optional peers from spec.optionalPeers (SURFACES SSOT), with versions from package.json.
+    const specPeers: readonly string[] =
+      docSpec !== null && 'optionalPeers' in docSpec && Array.isArray(docSpec.optionalPeers)
+        ? docSpec.optionalPeers
+        : []
+    const optionalPeers = specPeers
+      .filter((p) => optionalPeerSet.has(p) && p in peerDeps)
+      .map((p) => `${p}@${peerDeps[p]}`)
 
     subpaths.push({
       path: `basalt-ui${key === '.' ? '' : key.slice(1)}`,
       layer: spec.layer,
-      rule,
+      rule: docSpec?.rule ?? null,
       skills: docSpec?.skill ?? [],
       optionalPeers,
-    })
-  }
-
-  // Also add ./state — it is in package.json exports but has no SURFACES entry (synthetic #state key).
-  if (publishedExportKeys.has('./state') && !subpaths.some((s) => s.path === 'basalt-ui/state')) {
-    subpaths.push({
-      path: 'basalt-ui/state',
-      layer: 'mantine-coupled',
-      rule: 'state',
-      skills: ['basalt-design'],
-      optionalPeers: [],
     })
   }
 
@@ -885,48 +892,6 @@ export function info(flags: string[]): number {
   }
   console.log('')
   return 0
-}
-
-/**
- * Derive which optional peers belong to a given subpath + rule.
- * Maps the rule name (and subpath key) to the known optional peer packages for that domain.
- * This keeps the mapping close to the rule names without hardcoding the full subpath list.
- */
-function deriveOptionalPeers(
-  subpathKey: string,
-  rule: string | null,
-  optionalPeerSet: Set<string>,
-  peerDeps: Record<string, string>,
-): string[] {
-  // Map rule/subpath to the peer package prefixes it depends on.
-  const peerPrefixes: string[] = []
-  switch (rule) {
-    case 'query':
-      peerPrefixes.push('@tanstack/react-query', '@tanstack/react-query-devtools')
-      break
-    case 'router':
-      peerPrefixes.push('@tanstack/react-router')
-      break
-    case 'forms':
-      peerPrefixes.push('@mantine/form')
-      break
-    case 'notifications':
-      peerPrefixes.push('@mantine/notifications')
-      break
-    case 'commands':
-      peerPrefixes.push('@mantine/spotlight', '@mantine/modals')
-      break
-    case 'data':
-      peerPrefixes.push('@tanstack/react-table', '@tanstack/react-virtual')
-      break
-    case 'agent':
-      peerPrefixes.push('react-markdown', 'remark-gfm', 'use-stick-to-bottom')
-      break
-    default:
-      break
-  }
-  // Return only those that are actually in the optional peer set and have a declared version.
-  return peerPrefixes.filter((p) => optionalPeerSet.has(p) && p in peerDeps)
 }
 
 /**

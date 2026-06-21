@@ -54,6 +54,36 @@
       }
     },
     {
+      "files": ["**/charts/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@visx/tooltip",
+                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "charts must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/tokens/**"],
       "rules": {
         "no-restricted-imports": [
@@ -84,7 +114,7 @@
       }
     },
     {
-      "files": ["**/charts/**"],
+      "files": ["**/agent/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -92,21 +122,21 @@
             "paths": [
               {
                 "name": "@mantine/core",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
+                "message": "agent must be Mantine-free — no Mantine imports allowed."
               },
               {
                 "name": "@mantine/hooks",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@visx/tooltip",
-                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
+                "message": "agent must be Mantine-free — no Mantine imports allowed."
               }
             ],
             "patterns": [
               {
                 "group": ["@mantine/*"],
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
+                "message": "agent must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "group": ["@visx/*"],
+                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**)."
               }
             ]
           }
