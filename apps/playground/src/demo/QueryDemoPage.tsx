@@ -22,6 +22,7 @@ import {
   BasaltQueryDevtools,
   createBasaltQueryClient,
   QueryClientProvider,
+  toErrorMessage,
   unwrap,
   useQuery,
   useQueryClient,
@@ -65,16 +66,10 @@ function MetricsTable({ forceError }: { forceError: boolean }) {
   })
 
   if (isError) {
-    const msg =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'object' && error !== null && 'message' in error
-          ? String((error as { message: unknown }).message)
-          : String(error)
     return (
       <Stack gap="xs">
         <Alert color="red" title="Query error">
-          {msg}
+          {toErrorMessage(error)}
         </Alert>
         <Button
           size="compact-sm"

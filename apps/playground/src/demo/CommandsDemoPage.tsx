@@ -3,8 +3,9 @@
  * defineCommands, runCommand, defineOverlays, overlays.open, toSpotlightActions,
  * ShortcutsHelp, BasaltOverlays, useCommandHotkeys (live keybindings), openSpotlight.
  *
- * Commands + overlays are defined here inline for demo; in a real app they would live in
- * dedicated app-level files with a BasaltRegister augment.
+ * Commands + overlays are defined here inline for demo. The BasaltRegister augment at the top
+ * of this file shows exactly how a real app wires its commands.ts / overlays.ts — with it, every
+ * runCommand / overlays.open call uses the literal-key union (no casts).
  *
  * LIVE KEYBINDINGS PROOF: Pressing Mod+G greets, Mod+L logs to console, Mod+T toggles
  * the highlight box below. useCommandHotkeys() is called here so the shortcuts are active
@@ -29,6 +30,17 @@ import {
 // Module-level mutable ref so the toggle command can update React state.
 // In a real app this would be Zustand / a context signal / a query mutation.
 let toggledSetter: ((v: (prev: boolean) => boolean) => void) | null = null
+
+// ── Typed registry augmentation ───────────────────────────────────────────────
+// The augment below mirrors how a real app wires its commands.ts. With it, every
+// runCommand / overlays.open call below uses the literal-key union — no casts required.
+// (The augment cannot appear after the value it references, so it lives above defineCommands.)
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    commands: typeof DEMO_COMMANDS
+    overlays: typeof DEMO_OVERLAYS
+  }
+}
 
 // ── Demo command registry ─────────────────────────────────────────────────────
 
@@ -66,10 +78,7 @@ const DEMO_COMMANDS = defineCommands({
     group: 'Demo',
     shortcut: 'Mod+Shift+O',
     run: () => {
-      // Cast needed: BasaltRegister.overlays is not augmented in the demo (no top-level augment)
-      overlays.open('demo:info' as Parameters<typeof overlays.open>[0], {
-        message: 'Opened from the command bus!',
-      })
+      overlays.open('demo:info', { message: 'Opened from the command bus!' })
     },
   },
   'demo:async': {
@@ -83,15 +92,9 @@ const DEMO_COMMANDS = defineCommands({
   },
 })
 
-// The demo augment below would normally live in a top-level commands.ts:
-// declare module 'basalt-ui' { interface BasaltRegister { commands: typeof DEMO_COMMANDS } }
-// We omit it here to keep this page self-contained (CommandId would be never without the augment).
-// The buttons below call runCommand via the string cast path — a real app would use the typed form.
-void DEMO_COMMANDS // satisfy TS "declared but never read"
-
 // ── Demo overlay registry ─────────────────────────────────────────────────────
 
-defineOverlays({
+const DEMO_OVERLAYS = defineOverlays({
   'demo:info': {
     title: 'Demo overlay',
     render: (p: { message: string }) => (
@@ -169,27 +172,22 @@ function LiveHotkeysSection({ toggled }: { toggled: boolean }) {
 }
 
 function RunCommandSection() {
-  // In a real app with BasaltRegister.commands augmented, these would be:
-  //   runCommand('demo:greet')  — but without the augment CommandId = never
-  // We use a cast so the demo compiles without the augment.
-  type AnyId = Parameters<typeof runCommand>[0]
-
   return (
     <Stack gap="xs">
       <Text size="xs" tt="uppercase" fw={600} c="dimmed">
         runCommand
       </Text>
       <Group gap="xs" wrap="wrap">
-        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:greet' as AnyId)}>
+        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:greet')}>
           demo:greet
         </Button>
-        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:log' as AnyId)}>
+        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:log')}>
           demo:log (console)
         </Button>
-        <Button size="compact-sm" color="teal" onClick={() => runCommand('demo:toggle' as AnyId)}>
+        <Button size="compact-sm" color="teal" onClick={() => runCommand('demo:toggle')}>
           demo:toggle (Mod+T)
         </Button>
-        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:async' as AnyId)}>
+        <Button size="compact-sm" color="blue" onClick={() => runCommand('demo:async')}>
           demo:async (1s)
         </Button>
       </Group>
@@ -212,9 +210,7 @@ function OverlaysSection() {
           size="compact-sm"
           color="violet"
           onClick={() =>
-            overlays.open('demo:info' as Parameters<typeof overlays.open>[0], {
-              message: 'Opened via overlays.open() directly!',
-            })
+            overlays.open('demo:info', { message: 'Opened via overlays.open() directly!' })
           }
         >
           overlays.open('demo:info', …)

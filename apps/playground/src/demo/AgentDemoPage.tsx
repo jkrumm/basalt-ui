@@ -12,6 +12,7 @@ import {
   BasaltStickToBottom,
   createChatHistoryStore,
   edenTransport,
+  parseAgentPart,
   PartList,
   StreamingMarkdown,
   useAgentStream,
@@ -29,6 +30,19 @@ import { useCallback, useState } from 'react'
 //
 // Satisfies the AgentTransport<AgentPart, string> interface — no extra deps.
 void edenTransport // type-exercises the export without instantiating (no live server)
+
+// ── parseAgentPart — raw-SSE deserialization reference ───────────────────────
+// When driving useAgentStream from a raw EventSource (bypassing edenTransport),
+// call parseAgentPart to deserialize individual SSE data lines into AgentParts:
+//
+//   const sse = new EventSource('/api/chat')
+//   sse.onmessage = (e) => {
+//     const part = parseAgentPart(e.data) // → AgentPart | null (null on malformed JSON)
+//     if (part) appendPart(part)          // hand to your own reducer or useAgentStream
+//   }
+//
+// parseAgentPart is a safe parse — it never throws, returning null on invalid input.
+void parseAgentPart // type-exercise the export
 
 // ── Persisted history store ───────────────────────────────────────────────────
 // Call once at module scope with a stable key — survives navigate-away/back.

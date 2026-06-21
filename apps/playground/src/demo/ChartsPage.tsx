@@ -7,24 +7,44 @@
  * MA companions + PR star markers + legend-hover dimming), Heatmap (category×category intensity),
  * and Donut.
  *
+ * Bottom section: BespokeChart — the escape hatch pattern: compose primitives (LinePath,
+ * AxisBottomDate, AxisLeftNumeric, HoverOverlay, ChartTooltip + TooltipHeader/Row/Body, and
+ * useChartTooltip) directly for a genuinely unique chart shape that no kind covers.
+ *
  * Exercises: ChartHoverSync · ZonedLine (zones/thresholds/refLines/areaFill/tooltipLabel) ·
  * StackedArea · DualPanel (top lines + fill-between + signed-histogram pane, shared cursor) ·
  * MultiLine · Heatmap (wrapped in ResponsiveChart) · Donut · ChartCard · ZoneSpec · alpha() ·
- * ResponsiveChart (child render-prop with width/height).
+ * ResponsiveChart (child render-prop with width/height) ·
+ * BespokeChart (primitive composition — the escape hatch).
  */
 import { Box, SimpleGrid, Stack } from '@mantine/core'
 import {
   alpha,
+  AxisBottomDate,
+  AxisLeftNumeric,
   ChartCard,
   ChartHoverSync,
+  ChartTooltip,
   Donut,
   DualPanel,
+  Group as VxGroup,
   Heatmap,
+  HoverOverlay,
+  LinePath,
   MultiLine,
   ResponsiveChart,
+  scaleLinear,
+  scalePoint,
   StackedArea,
+  TooltipBody,
+  TooltipHeader,
+  TooltipRow,
+  useChartTooltip,
+  useTooltipStyles,
   VX,
   ZonedLine,
+  smartTicks,
+  curveMonotoneX,
 } from 'basalt-ui/charts'
 import type { DonutDatum, ZoneSpec } from 'basalt-ui/charts'
 import { ACTIVITY_HEATMAP, CHANNEL_MIX, LIFT_TREND, LOAD_TREND, SERIES_DATA } from './data'
@@ -57,11 +77,153 @@ const LIFTS = [
   { key: 'dead', label: 'Deadlift', color: demoColors.revenue, pr: (d: LiftPoint) => d.deadPr },
 ] as const
 
+// ── Bespoke chart — primitive composition escape hatch ────────────────────────
+//
+// When no kind fits, compose the building blocks directly:
+//   useChartTooltip + HoverOverlay   →  mouse capture + positioned tooltip state
+//   ChartTooltip / TooltipHeader / TooltipRow / TooltipBody  →  themed tooltip shell
+//   AxisBottomDate / AxisLeftNumeric  →  themed axes (theme tokens baked in)
+//   LinePath                          →  the data path
+//   Group (VxGroup re-export)         →  SVG transform wrapper
+//   scaleLinear / scalePoint          →  visx scale helpers
+//   VX.*                              →  --vx-* token refs (no raw hex)
+//
+// This chart overlays two series (sessions + revenue) on a single date axis to show
+// dual-metric comparison — a layout none of the named kinds produces natively.
+
+type BespokePoint = DayPoint
+
+function BespokeChart({ data, width }: { data: BespokePoint[]; width: number }) {
+  const margin = VX.margin
+  const height = 260
+  const xMax = Math.max(0, width - margin.left - margin.right)
+  const yMax = Math.max(0, height - margin.top - margin.bottom)
+
+  const dates = data.map((d) => d.date)
+
+  const xScale = scalePoint({ domain: dates, range: [0, xMax], padding: 0.5 })
+  const sessionsMax = Math.max(...data.map((d) => d.sessions)) * 1.1
+  const revenueMax = Math.max(...data.map((d) => d.revenue)) * 1.1
+  const yScaleSessions = scaleLinear({ domain: [0, sessionsMax], range: [yMax, 0] })
+  const yScaleRevenue = scaleLinear({ domain: [0, revenueMax], range: [yMax, 0] })
+
+  const tickValues = smartTicks(dates, xMax)
+
+  const { tip, show, hide, tooltipRef } = useChartTooltip<BespokePoint>()
+  const tooltipStyles = useTooltipStyles()
+
+  const handleMove = (e: React.MouseEvent<SVGRectElement>) => {
+    const svgRect = e.currentTarget.closest('svg')?.getBoundingClientRect()
+    if (!svgRect) return
+    const relX = e.clientX - svgRect.left - margin.left
+    // Find nearest point by x position
+    let nearest = data[0]
+    let minDist = Infinity
+    for (const d of data) {
+      const px = xScale(d.date) ?? 0
+      const dist = Math.abs(relX - px)
+      if (dist < minDist) {
+        minDist = dist
+        nearest = d
+      }
+    }
+    if (nearest) show(nearest, e)
+  }
+
+  if (width < 60) return null
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <svg width={width} height={height}>
+        <VxGroup top={margin.top} left={margin.left}>
+          {/* Sessions line — left axis, demoColors.sessions token */}
+          <LinePath<BespokePoint>
+            data={data}
+            x={(d) => xScale(d.date) ?? 0}
+            y={(d) => yScaleSessions(d.sessions)}
+            stroke={demoColors.sessions}
+            strokeWidth={VX.lineWidth}
+            curve={curveMonotoneX}
+          />
+          {/* Revenue line — right axis scale mapped to same y pixel range, demoColors.revenue */}
+          <LinePath<BespokePoint>
+            data={data}
+            x={(d) => xScale(d.date) ?? 0}
+            y={(d) => yScaleRevenue(d.revenue)}
+            stroke={demoColors.revenue}
+            strokeWidth={VX.lineWidth}
+            strokeDasharray="6 3"
+            curve={curveMonotoneX}
+          />
+          <AxisLeftNumeric
+            scale={yScaleSessions}
+            numTicks={4}
+            tickFormat={(v) => String(Math.round(Number(v)))}
+          />
+          <AxisBottomDate scale={xScale} top={yMax} tickValues={tickValues} />
+          {/* Transparent rect last so it sits on top and captures mouse events */}
+          <HoverOverlay width={xMax} height={yMax} onMove={handleMove} onLeave={hide} />
+        </VxGroup>
+      </svg>
+      {/* Legend — inline, token colors, no raw hex */}
+      <div style={{ display: 'flex', gap: 16, padding: '4px 0 0', fontSize: 11 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span
+            style={{
+              width: 16,
+              height: 2,
+              background: demoColors.sessions,
+              display: 'inline-block',
+            }}
+          />
+          <span style={{ color: VX.legendText }}>Sessions (left axis)</span>
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <svg width={16} height={4}>
+            <line
+              x1={0}
+              y1={2}
+              x2={16}
+              y2={2}
+              stroke={demoColors.revenue}
+              strokeWidth={2}
+              strokeDasharray="6 3"
+            />
+          </svg>
+          <span style={{ color: VX.legendText }}>Revenue ×1k (right scale)</span>
+        </span>
+      </div>
+      <ChartTooltip tip={tip} tooltipRef={tooltipRef} styles={tooltipStyles}>
+        {tip && (
+          <>
+            <TooltipHeader date={tip.data.date} />
+            <TooltipBody>
+              <TooltipRow
+                color={demoColors.sessions}
+                label="Sessions"
+                value={fmtInt(tip.data.sessions)}
+              />
+              <TooltipRow
+                color={demoColors.revenue}
+                label="Revenue"
+                value={`$${tip.data.revenue.toFixed(1)}k`}
+                shape="line"
+                dashed
+              />
+            </TooltipBody>
+          </>
+        )}
+      </ChartTooltip>
+    </div>
+  )
+}
+
 export function ChartsPage() {
   const [lineRef, lineWidth] = useMeasureWidth()
   const [areaRef, areaWidth] = useMeasureWidth()
   const [loadRef, loadWidth] = useMeasureWidth()
   const [multiRef, multiWidth] = useMeasureWidth()
+  const [bespokeRef, bespokeWidth] = useMeasureWidth()
 
   return (
     <Stack gap="sm">
@@ -241,6 +403,17 @@ export function ChartsPage() {
           />
         </ChartCard>
       </SimpleGrid>
+
+      {/* ── Bespoke chart — primitive composition escape hatch ──────────────────── */}
+      <ChartCard
+        title="Bespoke: sessions vs revenue"
+        subtitle="Two series, same date axis — composed from primitives, not a named kind"
+        tooltip="The escape hatch: when no kind fits, compose useChartTooltip + HoverOverlay + ChartTooltip + AxisBottomDate + AxisLeftNumeric + LinePath directly. No raw hex — all colors are VX.* token refs."
+      >
+        <Box ref={bespokeRef}>
+          <BespokeChart data={SERIES_DATA} width={bespokeWidth} />
+        </Box>
+      </ChartCard>
     </Stack>
   )
 }

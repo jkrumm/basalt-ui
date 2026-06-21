@@ -10,6 +10,34 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { demoPaletteGroups } from './demo/series'
 
+// ── SSR / Next.js manual-provider path (reference) ───────────────────────────
+//
+// Consumers who cannot use BasaltProvider directly (e.g. Next.js App Router where the
+// provider must be in a Server Component boundary, or apps that already own their
+// MantineProvider) can compose the three pieces manually:
+//
+//   import { MantineProvider } from '@mantine/core'
+//   import { baseTheme, cssVariablesResolver, createBasaltTheme } from 'basalt-ui'
+//
+//   // Option A — use baseTheme as-is (zero overrides):
+//   <MantineProvider theme={baseTheme} cssVariablesResolver={cssVariablesResolver}>
+//     {children}
+//   </MantineProvider>
+//
+//   // Option B — merge consumer overrides on top (createBasaltTheme is mergeThemeOverrides):
+//   const theme = createBasaltTheme({ primaryColor: 'teal' })
+//   <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
+//     {children}
+//   </MantineProvider>
+//
+// NOTE: This path skips BasaltProvider's error boundary, palette injection, and the Vx
+// chart theme context. Add those pieces manually if needed:
+//   - Palette:      emit buildPaletteCss() as a <style> tag in your document <head>.
+//   - Chart bridge: wrap children in <VxThemeProvider colorScheme={resolved}>.
+//   - Error boundary: wrap with <BasaltErrorBoundary onError={…}>.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
 // The theme lab owns only the editing UI — the host re-applies any persisted overrides at boot, so
 // a tuning session survives a refresh (per the theme-lab contract).
 applyOverrides(loadOverrides())
@@ -28,7 +56,12 @@ createRoot(root).render(
         framework primitives, so the app-side series colors resolve per scheme just like the chrome. */}
     {/* theme={playgroundTheme}: exercises createBasaltTheme — the result is a valid MantineThemeOverride.
         BasaltProvider merges it with mergeThemeOverrides(base, overrides), so no-override call is safe. */}
-    <BasaltProvider theme={playgroundTheme} paletteOptions={{ groups: demoPaletteGroups }}>
+    <BasaltProvider
+      theme={playgroundTheme}
+      paletteOptions={{ groups: demoPaletteGroups }}
+      // oxlint-disable-next-line no-console
+      onError={(error, ctx) => console.error('[basalt]', ctx, error)}
+    >
       {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
           binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
           the default (hotkeys enabled) so BasaltOverlays binds them globally. */}

@@ -14,8 +14,11 @@
  */
 import { Badge, Button, Code, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import {
+  add,
   defineNotifications,
   emit,
+  markAllRead,
+  markRead,
   notifyError,
   notifyInfo,
   notifyPromise,
@@ -184,6 +187,64 @@ emit('nonexistent', {})                              // ✗ tsc error`}</Code>
   )
 }
 
+// ── History store mutation API demo ──────────────────────────────────────────
+
+function HistoryMutationSection() {
+  const { items, unreadCount } = useNotificationHistory()
+  const firstUnread = items.find((item) => item.readAt === undefined)
+
+  return (
+    <Stack gap="xs">
+      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+        History store mutation API
+      </Text>
+      <Text size="xs" c="dimmed">
+        <code>add</code> / <code>markRead(id)</code> / <code>markAllRead()</code> are the three
+        imperative mutations — trigger toasts above to populate the store, then exercise the APIs
+        here. <code>unreadCount</code>: {unreadCount}.
+      </Text>
+      <Group gap="xs" wrap="wrap">
+        <Button
+          size="compact-sm"
+          variant="default"
+          onClick={() =>
+            add({
+              id: crypto.randomUUID(),
+              intent: 'info',
+              title: 'Manual add',
+              message: `Added at ${new Date().toLocaleTimeString()}`,
+              createdAt: Date.now(),
+            })
+          }
+        >
+          add() directly
+        </Button>
+        <Button
+          size="compact-sm"
+          variant="default"
+          disabled={firstUnread === undefined}
+          onClick={() => firstUnread !== undefined && markRead(firstUnread.id)}
+        >
+          markRead(first unread)
+        </Button>
+        <Button
+          size="compact-sm"
+          variant="default"
+          disabled={unreadCount === 0}
+          onClick={() => markAllRead()}
+        >
+          markAllRead()
+        </Button>
+      </Group>
+      <Text size="xs" c="dimmed">
+        Note: <code>markRead</code> / <code>markAllRead</code> are also exposed on the{' '}
+        <code>useNotificationHistory()</code> return, for components that already subscribe to the
+        store.
+      </Text>
+    </Stack>
+  )
+}
+
 // ── History panel ─────────────────────────────────────────────────────────────
 
 function HistoryPanel() {
@@ -245,7 +306,11 @@ export function NotificationsDemoPage() {
       </Paper>
 
       <Paper p="sm" radius="md" withBorder>
-        <HistoryPanel />
+        <Stack gap="md">
+          <HistoryMutationSection />
+          <Divider />
+          <HistoryPanel />
+        </Stack>
       </Paper>
     </Stack>
   )

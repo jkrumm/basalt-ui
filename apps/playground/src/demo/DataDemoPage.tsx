@@ -9,8 +9,21 @@
  * The table uses a small typed dataset with ColumnDef<T>[] columns (createColumnHelper).
  * The virtual list renders 1 000 items in a fixed-height 300px box to prove windowing.
  */
-import { Badge, Button, Divider, Group, Paper, Stack, Switch, Text, Title } from '@mantine/core'
+import {
+  Badge,
+  Box,
+  Button,
+  Divider,
+  Group,
+  Paper,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core'
 import { BasaltDataTable, BasaltVirtualList, createColumnHelper } from 'basalt-ui/data'
+import type { SortingState } from 'basalt-ui/data'
+import { VX } from 'basalt-ui/tokens'
 import { useMemo, useState } from 'react'
 
 // ── Table demo ────────────────────────────────────────────────────────────────
@@ -63,6 +76,7 @@ const TABLE_COLUMNS = [
 function TableSection() {
   const [isLoading, setIsLoading] = useState(false)
   const [cleared, setCleared] = useState(false)
+  const [lastSorting, setLastSorting] = useState<SortingState | null>(null)
   const data = cleared ? [] : EMPLOYEES
 
   return (
@@ -90,8 +104,10 @@ function TableSection() {
       </Group>
       <Text size="sm">
         Toggle <em>isLoading</em> → skeleton rows appear (5). Click <em>Clear data</em> → the empty
-        state renders. Powered by <code>@tanstack/react-table</code> (headless logic) and Mantine{' '}
-        <code>Table</code> (markup + styles).
+        state renders. <code>onSortingChange</code> is the search-param-sync seam — click any header
+        and observe the state update below (mirror:{' '}
+        <code>navigate({'{ search: { sorting } }'})</code>
+        in a real TanStack Router app).
       </Text>
       <BasaltDataTable
         data={data}
@@ -102,7 +118,13 @@ function TableSection() {
         isLoading={isLoading}
         skeletonRows={5}
         emptyState={<Text c="dimmed">No employees found.</Text>}
+        onSortingChange={setLastSorting}
       />
+      {lastSorting !== null && (
+        <Text size="xs" c="dimmed" ff="monospace">
+          onSortingChange → {JSON.stringify(lastSorting)}
+        </Text>
+      )}
     </Stack>
   )
 }
@@ -141,25 +163,20 @@ function VirtualListSection() {
         overscan={5}
         getItemKey={(item) => item.id}
         renderItem={(item, index) => (
-          <div
+          <Box
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 12px',
               height: '100%',
-              borderBottom: '1px solid var(--mantine-color-default-border)',
-              background:
-                index % 2 === 0
-                  ? 'var(--mantine-color-body)'
-                  : 'var(--mantine-color-default-hover)',
+              borderBottom: '1px solid var(--vx-surface-border)',
+              background: index % 2 === 0 ? VX.surface.bg : VX.surface.subtle,
             }}
           >
-            <Text size="sm">{item.label}</Text>
-            <Badge size="xs" variant="light">
-              {item.category}
-            </Badge>
-          </div>
+            <Group px="xs" h="100%" justify="space-between" align="center" wrap="nowrap">
+              <Text size="sm">{item.label}</Text>
+              <Badge size="xs" variant="light">
+                {item.category}
+              </Badge>
+            </Group>
+          </Box>
         )}
       />
     </Stack>

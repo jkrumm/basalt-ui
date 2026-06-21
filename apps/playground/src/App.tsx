@@ -266,6 +266,10 @@ export function App() {
     [page, go],
   )
 
+  // BasaltShell composes AppSidebar, MobileNav, AppBreadcrumbs, and PageHeader internally.
+  // Each is also individually importable from 'basalt-ui' for a custom shell that keeps only
+  // some of the pieces (e.g. just AppSidebar + a custom header, or just AppBreadcrumbs in a
+  // plain layout). The standard path is BasaltShell — override only when the composition doesn't fit.
   return (
     <BasaltShell
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
