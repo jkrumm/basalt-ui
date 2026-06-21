@@ -8,7 +8,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { type ForbiddenImport, type RuleOverride, SURFACES } from '../src/surfaces'
+import type { ForbiddenImport, RuleOverride } from '../src/surfaces'
+import { SURFACES } from '../src/surfaces'
 
 // ── Types ────────────────────────────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
     if (surface.forbiddenImports.length === 0) continue
 
     const files = [...surface.globs[target]]
+    if (files.length === 0) continue
 
     // Derive the surface name for Mantine ban ctx (e.g. './charts' → 'charts', '#app' → 'app')
     const surfaceName = key.startsWith('#') ? key.slice(1) : key.replace(/^\.\//, '')

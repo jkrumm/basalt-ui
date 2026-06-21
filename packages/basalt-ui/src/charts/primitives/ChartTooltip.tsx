@@ -1,4 +1,5 @@
-import { useMemo, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import type { CSSProperties, ReactNode, RefObject } from 'react'
+import { useMemo } from 'react'
 import { useVxTheme } from '../theme'
 import { VX, alpha } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'

@@ -31,7 +31,8 @@
  *   {markdownText}
  * </StreamingMarkdown>
  */
-import { lazy, Suspense, type JSX } from 'react'
+import { lazy, Suspense } from 'react'
+import type { JSX } from 'react'
 
 // ── Type for react-markdown Components ────────────────────────────────────────
 

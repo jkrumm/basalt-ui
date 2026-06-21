@@ -14,7 +14,8 @@ import {
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
 import { HoverOverlay } from '../primitives/HoverOverlay'
-import { ZoneRects, type ZoneSpec } from '../primitives/ZoneRects'
+import { ZoneRects } from '../primitives/ZoneRects'
+import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
 import { smartTicks } from '../utils/ticks'

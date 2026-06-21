@@ -16,7 +16,8 @@
  */
 import { Box, Skeleton } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useRef } from 'react'
+import { useRef } from 'react'
+import type { ReactNode } from 'react'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 

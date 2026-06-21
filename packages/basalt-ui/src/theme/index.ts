@@ -17,10 +17,7 @@
 import {
   Card,
   createTheme,
-  type CSSVariablesResolver,
   Input,
-  type MantineColorsTuple,
-  type MantineThemeOverride,
   mergeThemeOverrides,
   NavLink,
   NumberInput,
@@ -30,6 +27,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
+import type { CSSVariablesResolver, MantineColorsTuple, MantineThemeOverride } from '@mantine/core'
 import { BP, NEUTRAL, SURFACE } from '../tokens'
 
 // Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).

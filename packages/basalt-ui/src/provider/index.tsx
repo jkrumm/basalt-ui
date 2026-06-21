@@ -15,11 +15,14 @@
  *
  * Mantine usage is allowed in this `./` root layer (unlike `src/charts/**` and `src/tokens/**`).
  */
-import { MantineProvider, type MantineProviderProps, useComputedColorScheme } from '@mantine/core'
-import { Component, type ErrorInfo, type ReactNode, useEffect } from 'react'
+import { MantineProvider, useComputedColorScheme } from '@mantine/core'
+import type { MantineProviderProps } from '@mantine/core'
+import { Component, useEffect } from 'react'
+import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
-import { type BuildPaletteOpts, buildPaletteCss } from '../tokens'
+import { buildPaletteCss } from '../tokens'
+import type { BuildPaletteOpts } from '../tokens'
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).

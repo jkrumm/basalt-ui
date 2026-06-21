@@ -1,3 +1,4 @@
+// oxlint-disable import/no-default-export -- tsup requires a default export
 import { defineConfig } from 'tsup'
 
 /**

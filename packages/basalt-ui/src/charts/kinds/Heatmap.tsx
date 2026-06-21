@@ -1,5 +1,6 @@
 import { Group } from '@visx/group'
-import { memo, useMemo, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { memo, useMemo } from 'react'
 import {
   ChartTooltip,
   TooltipBody,

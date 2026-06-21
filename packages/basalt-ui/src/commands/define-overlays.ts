@@ -56,7 +56,7 @@ export type Overlay<P = Record<string, unknown>> = {
  *   'confirm:delete': { title: 'Confirm', render: (p: { name: string }) => <span>{p.name}</span> },
  * }
  */
-// any is load-bearing here: Overlay<unknown> would reject Overlay<{specific}> by contravariance
+// oxlint-disable-next-line typescript/no-explicit-any -- load-bearing contravariant overlay map
 export type OverlayMap = Record<string, Overlay<any>>
 
 // ── Slot extraction ───────────────────────────────────────────────────────────

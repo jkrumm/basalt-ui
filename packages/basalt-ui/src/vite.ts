@@ -15,7 +15,8 @@
  * at config-evaluation time (plain Node), where only `process.env` exists.
  */
 import { resolve } from 'node:path'
-import { type UserConfig, searchForWorkspaceRoot } from 'vite'
+import { searchForWorkspaceRoot } from 'vite'
+import type { UserConfig } from 'vite'
 
 export type BasaltViteOptions = {
   /** Dev server port. Passed with `strictPort: true` so the app fails fast on a busy port. */

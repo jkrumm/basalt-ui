@@ -1,5 +1,7 @@
-import { type ReactNode, useCallback, useMemo, useState } from 'react'
-import { type HoverCtx, HoverContext } from './hover-context'
+import type { ReactNode } from 'react'
+import type { HoverCtx } from './hover-context'
+import { useCallback, useMemo, useState } from 'react'
+import { HoverContext } from './hover-context'
 
 export type ChartHoverSyncProps = {
   children: ReactNode
@@ -19,6 +21,7 @@ type HoverState = {
  * Wrap a group of charts that should share a cursor in `<ChartHoverSync>`.
  */
 export function ChartHoverSync({ children }: ChartHoverSyncProps) {
+  // oxlint-disable-next-line react/hook-use-state -- raw setter; renaming shadows setHover (the context callback)
   const [hover, setHoverState] = useState<HoverState>({ date: null, source: null })
 
   const setHover = useCallback<HoverCtx['setHover']>((date, source) => {

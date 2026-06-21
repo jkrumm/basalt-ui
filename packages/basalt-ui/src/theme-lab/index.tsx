@@ -29,7 +29,8 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { BP } from '../tokens'
 
 export type ColorTunable = { var: string; label: string }

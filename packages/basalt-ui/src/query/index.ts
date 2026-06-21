@@ -2,7 +2,8 @@
  * ./query — thin TanStack Query adapter + transport-agnostic Eden unwrap.
  * Optional peer: @tanstack/react-query.
  */
-import { QueryClient, type QueryClientConfig } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import type { QueryClientConfig } from '@tanstack/react-query'
 
 // ── createBasaltQueryClient ───────────────────────────────────────────────────────────────────────
 

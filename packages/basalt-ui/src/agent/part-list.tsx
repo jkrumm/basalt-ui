@@ -20,7 +20,8 @@
  *   }}
  * />
  */
-import { type JSX, Fragment, useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
+import type { JSX } from 'react'
 import { assertNever } from '../register'
 import type {
   AgentPart,

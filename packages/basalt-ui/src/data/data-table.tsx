@@ -15,16 +15,15 @@
  * <BasaltDataTable data={rows} columns={columns} />
  */
 import { Box, Skeleton, Table, Text } from '@mantine/core'
+import type { ColumnDef, SortingState, Updater } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
-  type ColumnDef,
-  type SortingState,
-  type Updater,
 } from '@tanstack/react-table'
-import { type ReactNode, useCallback, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useCallback, useState } from 'react'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -51,7 +50,7 @@ export type BasaltDataTableProps<T> = {
   // The cell-value type varies per column, so the array is heterogeneous in TValue. `any` here
   // is the TanStack-idiomatic escape (accessor columns infer their own TValue); row typing stays
   // exact via the `T` data generic.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
   columns: ColumnDef<T, any>[]
   /**
    * Enable column sorting via clickable headers.

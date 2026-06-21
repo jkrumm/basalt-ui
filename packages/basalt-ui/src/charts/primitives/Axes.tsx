@@ -1,4 +1,5 @@
-import { AxisBottom, AxisLeft, AxisRight, type AxisScale, type TickFormatter } from '@visx/axis'
+import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis'
+import type { AxisScale, TickFormatter } from '@visx/axis'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'

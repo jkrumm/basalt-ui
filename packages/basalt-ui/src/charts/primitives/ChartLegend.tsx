@@ -1,4 +1,4 @@
-import { type CSSProperties, type MouseEvent } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 
 export type LegendEntry = {
   key: string

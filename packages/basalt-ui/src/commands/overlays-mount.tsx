@@ -42,7 +42,7 @@
  * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
  * openSpotlight()
  */
-import { type ComponentProps, type ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { ModalsProvider } from '@mantine/modals'
 import { Spotlight, createSpotlight } from '@mantine/spotlight'
 import { Notifications } from '@mantine/notifications'

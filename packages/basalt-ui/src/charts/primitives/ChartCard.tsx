@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { VX, alpha } from '../../tokens'
 
 function InfoIcon({ title }: { title: string }) {

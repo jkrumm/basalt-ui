@@ -24,7 +24,8 @@
  *   <PartList parts={parts} />
  * </BasaltStickToBottom>
  */
-import { type CSSProperties, lazy, Suspense, type JSX, type ReactNode } from 'react'
+import { lazy, Suspense } from 'react'
+import type { CSSProperties, JSX, ReactNode } from 'react'
 
 // ── Lazy-loaded StickToBottom ─────────────────────────────────────────────────
 

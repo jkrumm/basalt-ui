@@ -6,7 +6,8 @@
  * Grounded verbatim in argo `apps/dashboard/src/components/app-shell/page-header.tsx`. This is a
  * real, working implementation (the slot/portal mechanism has no app coupling) — not a stub.
  */
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useState } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 const TargetContext = createContext<HTMLElement | null>(null)

@@ -46,6 +46,8 @@ type Row = {
   optionalPeers: string[]
   /** true for non-JS assets (styles.css, configs/*, llms.txt) — no import line emitted */
   isAsset?: boolean
+  /** Doctrine rule name — present only for doctrine surfaces */
+  rule?: string
 }
 
 const rows: Row[] = []
@@ -71,6 +73,7 @@ for (const [key, spec] of Object.entries(SURFACES)) {
     layer: spec.layer,
     optionalPeers: resolvedPeers,
     isAsset,
+    rule: spec.kind === 'doctrine' ? spec.rule : undefined,
   })
 }
 
@@ -108,6 +111,9 @@ export function generateLlmsTxt(): string {
     }
     lines.push(`Description: ${row.description}`)
     lines.push(`Layer: ${row.layer}`)
+    if (row.rule !== undefined) {
+      lines.push(`Rule: basalt-${row.rule}`)
+    }
     if (row.optionalPeers.length > 0) {
       lines.push(`OptionalPeers: ${row.optionalPeers.join(', ')}`)
     }

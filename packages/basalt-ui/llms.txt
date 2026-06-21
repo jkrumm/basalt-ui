@@ -21,16 +21,19 @@ Version: 1.0.0
 Import: import { ... } from 'basalt-ui'
 Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge
 Layer: mantine-coupled
+Rule: basalt-mantine
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
 Description: visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)
 Layer: headless
+Rule: basalt-charts
 
 ## basalt-ui/tokens
 Import: import { ... } from 'basalt-ui/tokens'
 Description: VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)
 Layer: headless
+Rule: basalt-tokens
 
 ## basalt-ui/theme-lab
 Import: import { ... } from 'basalt-ui/theme-lab'
@@ -51,48 +54,56 @@ Layer: headless
 Import: import { ... } from 'basalt-ui/query'
 Description: createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools
 Layer: headless
+Rule: basalt-query
 OptionalPeers: @tanstack/react-query@^5.101.0, @tanstack/react-query-devtools@^5.101.0
 
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
 Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs
 Layer: headless
+Rule: basalt-router
 OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
 Description: Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)
 Layer: mantine-coupled
+Rule: basalt-forms
 OptionalPeers: @mantine/form@^9.3.0
 
 ## basalt-ui/notifications
 Import: import { ... } from 'basalt-ui/notifications'
 Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell
 Layer: mantine-coupled
+Rule: basalt-notifications
 OptionalPeers: @mantine/notifications@^9.3.0
 
 ## basalt-ui/commands
 Import: import { ... } from 'basalt-ui/commands'
 Description: typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays
 Layer: mantine-coupled
+Rule: basalt-commands
 OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0, @tanstack/react-hotkeys@0.10.0
 
 ## basalt-ui/data
 Import: import { ... } from 'basalt-ui/data'
 Description: TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)
 Layer: mantine-coupled
+Rule: basalt-data
 OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
 Description: Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)
 Layer: headless
+Rule: basalt-agent
 OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives
 Layer: headless
+Rule: basalt-state
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css

@@ -5,8 +5,10 @@
  * BasaltConfig, builds a GuardConfig, walks the source roots, calls `checkSource` per file,
  * collects Finding[], groups/reports findings, and returns an exit code.
  *
- * `checkCoverage` asserts the four PROJECTION 5 invariants: guardKinds ⊆ GUARD_RULES,
- * rule files on disk, skill union ⊆ plugin.json, and subpath-export-coverage.
+ * `checkCoverage` asserts 8 invariants: guardKinds ⊆ GUARD_RULES, rule files on disk,
+ * skill union ⊆ plugin.json, subpath-export-coverage, exports→SURFACES reverse, globs
+ * required for non-empty forbiddenImports, headless Mantine-ban completeness, and
+ * optionalPeers peerDependencies/peerDependenciesMeta presence.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
  * Claude Code rules, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain templates
@@ -689,18 +691,22 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — PROJECTION 5 triad + plugin-skill coverage gate
+// check-coverage — 8-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Assert the four PROJECTION 5 invariants against the live SURFACES + GUARD_RULES + plugin.json.
+ * Assert the 8 SURFACES invariants against the live SURFACES + GUARD_RULES + plugin.json.
  * Returns 0 when all pass; 1 when any fail (console.error each failure).
  *
- * Four assertions:
+ * Six assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
  *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills.
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
+ *  5. Every real package.json exports key has a SURFACES entry.
+ *  6. Every surface with non-empty forbiddenImports has a globs field.
+ *  7. Every headless surface carries all 3 Mantine bans (Mantine-free boundary).
+ *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
  * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
@@ -807,9 +813,55 @@ export function checkCoverage(cwd: string = process.cwd()): number {
     }
   }
 
+  // ── Assertion 7: every headless surface carries all 3 Mantine bans ───────────
+  // Guarantees the Mantine-free boundary — a future headless surface without bans fails here.
+  const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+  for (const [key, spec] of allSpecs) {
+    if (spec.layer !== 'headless') continue
+    for (const required of REQUIRED_MANTINE_BANS) {
+      const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
+      if (!hasBan) {
+        failures.push(
+          `SURFACES['${key}'] is headless but missing Mantine ban for '${required}' in forbiddenImports`,
+        )
+      }
+    }
+  }
+
+  // ── Assertion 8: every doctrine optionalPeers entry → peerDependencies + peerDependenciesMeta ──
+  // Closes the silent-drop gap: an optionalPeer listed in SURFACES but absent from package.json
+  // means the published package never tells npm about the dependency.
+  let peerDependencies: Record<string, string> = {}
+  let peerDependenciesMeta: Record<string, { optional?: boolean }> = {}
+  try {
+    const frameworkPkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
+      peerDependencies?: Record<string, string>
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>
+    }
+    peerDependencies = frameworkPkg.peerDependencies ?? {}
+    peerDependenciesMeta = frameworkPkg.peerDependenciesMeta ?? {}
+  } catch {
+    failures.push(`Cannot read package.json peerDependencies at ${pkgRoot}`)
+  }
+
+  for (const spec of doctrineSpecs) {
+    for (const peer of spec.optionalPeers ?? []) {
+      if (!(peer in peerDependencies)) {
+        failures.push(
+          `SURFACES doctrine optionalPeer '${peer}' is not listed in package.json peerDependencies`,
+        )
+      }
+      if (peerDependenciesMeta[peer]?.optional !== true) {
+        failures.push(
+          `SURFACES doctrine optionalPeer '${peer}' is not marked optional in package.json peerDependenciesMeta`,
+        )
+      }
+    }
+  }
+
   // ── Report ──────────────────────────────────────────────────────────────────
   if (failures.length === 0) {
-    console.log('✓ check-coverage: all PROJECTION 5 assertions pass.')
+    console.log('✓ check-coverage: all 8 assertions pass.')
     return 0
   }
 
@@ -938,6 +990,7 @@ export function doctor(cwd: string = process.cwd()): number {
 /** One row in the `basalt info` output — one per published JS subpath export. */
 export type InfoSubpath = {
   path: string
+  description: string
   layer: string
   rule: string | null
   skills: readonly string[]
@@ -1013,6 +1066,7 @@ export function info(flags: string[]): number {
 
     subpaths.push({
       path: `basalt-ui${key === '.' ? '' : key.slice(1)}`,
+      description: spec.description ?? `basalt-ui${key === '.' ? '' : key} subpath`,
       layer: spec.layer,
       rule: docSpec?.rule ?? null,
       skills: docSpec?.skill ?? [],

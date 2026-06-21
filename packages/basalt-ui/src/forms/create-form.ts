@@ -2,7 +2,8 @@
  * ./forms — useBasaltForm: typed useForm wrapper applying basalt defaults.
  * Mantine-coupled. Optional peer: @mantine/form.
  */
-import { schemaResolver, useForm, type UseFormInput, type UseFormReturnType } from '@mantine/form'
+import { schemaResolver, useForm } from '@mantine/form'
+import type { UseFormInput, UseFormReturnType } from '@mantine/form'
 import type { StandardSchemaV1 } from '../register'
 
 // ── useBasaltForm ─────────────────────────────────────────────────────────────

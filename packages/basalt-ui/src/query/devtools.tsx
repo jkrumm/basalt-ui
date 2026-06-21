@@ -3,7 +3,8 @@
  * The devtools package is an OPTIONAL peer — never imported at module evaluation time.
  * The dynamic import() resolves only when rendered in non-production.
  */
-import { type ComponentProps, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
+import type { ComponentProps } from 'react'
 import type { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 const LazyDevtools = lazy(() =>

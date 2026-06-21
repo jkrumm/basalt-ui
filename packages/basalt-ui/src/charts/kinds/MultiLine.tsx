@@ -3,7 +3,8 @@ import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { LinePath } from '@visx/shape'
-import { memo, useMemo, useState, type ReactNode } from 'react'
+import { memo, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
   ChartTooltip,
@@ -12,9 +13,11 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
-import { ChartLegend, type LegendEntry } from '../primitives/ChartLegend'
+import { ChartLegend } from '../primitives/ChartLegend'
+import type { LegendEntry } from '../primitives/ChartLegend'
 import { HoverOverlay } from '../primitives/HoverOverlay'
-import { ZoneRects, type ZoneSpec } from '../primitives/ZoneRects'
+import { ZoneRects } from '../primitives/ZoneRects'
+import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
@@ -189,14 +192,18 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     () =>
       series
         .filter((s) => s.legend !== false)
-        .map((s) => ({
-          key: s.key,
-          label: s.label,
-          color: s.color,
-          shape: 'line' as const,
-          ...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth }),
-          ...(s.dashed !== undefined && { dashed: s.dashed }),
-        })),
+        .map((s) =>
+          Object.assign(
+            {
+              key: s.key,
+              label: s.label,
+              color: s.color,
+              shape: 'line' as const,
+            },
+            s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth },
+            s.dashed !== undefined && { dashed: s.dashed },
+          ),
+        ),
     [series],
   )
 

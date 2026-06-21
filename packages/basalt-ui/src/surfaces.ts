@@ -239,7 +239,14 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'headless',
     description: 'checkSource, GUARD_RULES, Finding types — the headless theme-guard core',
-    forbiddenImports: [],
+    globs: {
+      shipped: ['**/guard/**'],
+      repo: ['packages/basalt-ui/src/guard/**'],
+    },
+    forbiddenImports: [
+      ...MANTINE_BANS,
+      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+    ],
   }, // 6th JS subpath
   './query': {
     kind: 'doctrine',
@@ -249,7 +256,14 @@ export const SURFACES = {
     guardKinds: [],
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
     optionalPeers: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
-    forbiddenImports: [],
+    globs: {
+      shipped: ['**/query/**'],
+      repo: ['packages/basalt-ui/src/query/**'],
+    },
+    forbiddenImports: [
+      ...MANTINE_BANS,
+      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+    ],
   },
   './router-tanstack': {
     kind: 'doctrine',
@@ -259,7 +273,14 @@ export const SURFACES = {
     guardKinds: [],
     description: 'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs',
     optionalPeers: ['@tanstack/react-router'],
-    forbiddenImports: [],
+    globs: {
+      shipped: ['**/router-tanstack/**'],
+      repo: ['packages/basalt-ui/src/router-tanstack/**'],
+    },
+    forbiddenImports: [
+      ...MANTINE_BANS,
+      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+    ],
   },
   './forms': {
     kind: 'doctrine',
@@ -332,7 +353,17 @@ export const SURFACES = {
     description:
       'createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives',
     optionalPeers: [],
-    forbiddenImports: [],
+    // Consumers import basalt-ui/state from node_modules (lint-ignored), so there is nothing to
+    // enforce consumer-side, and a shipped **/state* glob would wrongly hit consumers' own
+    // Mantine-using state files. Enforce only basalt's own src/state.ts.
+    globs: {
+      shipped: [],
+      repo: ['packages/basalt-ui/src/state.ts'],
+    },
+    forbiddenImports: [
+      ...MANTINE_BANS,
+      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+    ],
   },
 
   // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────

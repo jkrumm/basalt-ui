@@ -12,7 +12,8 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
-import { ChartLegend, type LegendEntry } from '../primitives/ChartLegend'
+import type { LegendEntry } from '../primitives/ChartLegend'
+import { ChartLegend } from '../primitives/ChartLegend'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
