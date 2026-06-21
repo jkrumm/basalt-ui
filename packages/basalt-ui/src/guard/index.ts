@@ -41,6 +41,9 @@ const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
 const RAW_VISX_AXIS = /<Axis(?:Left|Bottom|Right)\b/g
 const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
 
+// radius prop with a numeric literal (module-level so it is not re-created per call).
+const RADIUS_PROP_RE = /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g
+
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
@@ -124,7 +127,7 @@ export const GUARD_RULES = {
   },
   'raw-radius': {
     kind: 'raw-radius',
-    pattern: /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g,
+    pattern: RADIUS_PROP_RE,
     message: 'Use the radius token (radius="md") instead of a numeric literal.',
   },
   'raw-surface': {
@@ -184,18 +187,17 @@ export const GUARD_RULES = {
  */
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
   const findings: Finding[] = []
-  const chartFile = isChartFile(relPath)
 
-  // Derive the 3 dynamic regexes from cfg.
-  const forbiddenAccentRe = new RegExp(
-    `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${cfg.forbiddenAccents.join('|')})['"]`,
-    'g',
+  // Derive the 3 dynamic regexes via GUARD_RULES pattern builders.
+  const forbiddenAccentRe = (
+    GUARD_RULES['off-identity-accent'].pattern as (cfg: GuardConfig) => RegExp
+  )(cfg)
+  const spacingPropRe = (GUARD_RULES['raw-spacing'].pattern as (cfg: GuardConfig) => RegExp)(cfg)
+  // raw-radius uses a static pattern (module const) — clone via source + flags to reset lastIndex.
+  const radiusPropRe = new RegExp(
+    (GUARD_RULES['raw-radius'].pattern as RegExp).source,
+    (GUARD_RULES['raw-radius'].pattern as RegExp).flags,
   )
-  const spacingPropRe = new RegExp(
-    `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${cfg.spacingSteps.join('|')})\\}`,
-    'g',
-  )
-  const radiusPropRe = /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g
 
   const lines = text.split('\n')
   for (let i = 0; i < lines.length; i++) {
@@ -206,18 +208,18 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     const trimmed = line.trimStart()
     if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
 
-    // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme).
-    for (const m of line.matchAll(HEX)) {
+    // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme) — patterns from GUARD_RULES.
+    for (const m of line.matchAll(GUARD_RULES['raw-hex'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-hex' })
     }
-    for (const m of line.matchAll(FUNC)) {
+    for (const m of line.matchAll(GUARD_RULES['raw-color-fn'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-color-fn' })
     }
-    for (const m of line.matchAll(LOCALSTORAGE_THEME)) {
+    for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
     }
 
-    // Dynamic-regex kinds.
+    // Dynamic-regex kinds — patterns already resolved above.
     for (const m of line.matchAll(forbiddenAccentRe)) {
       findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
     }
@@ -228,8 +230,8 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
     }
 
-    // raw-surface: 3 separate regex checks, one kind (gated on cfg.rawSurface).
-    if (cfg.rawSurface) {
+    // raw-surface: 3 separate regex checks, one kind — gated via GUARD_RULES entry.
+    if (GUARD_RULES['raw-surface'].enabled!(cfg)) {
       for (const m of line.matchAll(SURFACE_BORDER)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
       }
@@ -241,16 +243,16 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       }
     }
 
-    // off-system-surface-var (gated).
-    if (cfg.offSystemSurfaceVar) {
-      for (const m of line.matchAll(OFF_SYSTEM_SURFACE_VAR)) {
+    // off-system-surface-var — pattern + gating from GUARD_RULES.
+    if (GUARD_RULES['off-system-surface-var'].enabled!(cfg)) {
+      for (const m of line.matchAll(GUARD_RULES['off-system-surface-var'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
       }
     }
 
-    // raw-html-layout: 3-condition conjunction on the same line (gated).
+    // raw-html-layout: 3-condition conjunction on the same line — gated via GUARD_RULES entry.
     if (
-      cfg.rawHtmlLayout &&
+      GUARD_RULES['raw-html-layout'].enabled!(cfg) &&
       RAW_HTML_TAG.test(line) &&
       INLINE_STYLE.test(line) &&
       LAYOUT_SURFACE_PROP.test(line)
@@ -258,23 +260,26 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       findings.push({ relPath, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
     }
 
-    // inline-spacing (gated).
-    if (cfg.inlineSpacing) {
-      for (const m of line.matchAll(INLINE_SPACING)) {
+    // inline-spacing — pattern + gating from GUARD_RULES.
+    if (GUARD_RULES['inline-spacing'].enabled!(cfg)) {
+      for (const m of line.matchAll(GUARD_RULES['inline-spacing'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-spacing' })
       }
     }
 
-    // inline-display (gated).
-    if (cfg.inlineDisplay) {
-      for (const m of line.matchAll(INLINE_DISPLAY)) {
+    // inline-display — pattern + gating from GUARD_RULES.
+    if (GUARD_RULES['inline-display'].enabled!(cfg)) {
+      for (const m of line.matchAll(GUARD_RULES['inline-display'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-display' })
       }
     }
 
-    // raw-visx-axis (gated + chart-file-scoped).
-    if (cfg.rawVisxAxis && chartFile) {
-      for (const m of line.matchAll(RAW_VISX_AXIS)) {
+    // raw-visx-axis — pattern + gating + path applicability from GUARD_RULES.
+    if (
+      GUARD_RULES['raw-visx-axis'].enabled!(cfg) &&
+      GUARD_RULES['raw-visx-axis'].appliesTo!(relPath)
+    ) {
+      for (const m of line.matchAll(GUARD_RULES['raw-visx-axis'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
       }
     }

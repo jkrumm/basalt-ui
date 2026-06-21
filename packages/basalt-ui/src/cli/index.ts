@@ -19,11 +19,12 @@
  */
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, relative, resolve } from 'node:path'
+import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
 import type { Finding, GuardConfig } from '../guard'
+import { evaluateGuardHook } from '../guard/guard-hook'
 import { RULE_NAMES, SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
@@ -582,6 +583,19 @@ export function init(cwd: string = process.cwd()): number {
       `  claude plugin marketplace add ${mp}\n` +
       `  claude plugin install basalt@${ctx.vars.MARKETPLACE_REPO}   (enable auto-update when prompted)`,
   )
+  // The guard-hook PreToolUse registration is NOT written automatically — add it manually to
+  // .claude/settings.json so every Write/Edit/MultiEdit goes through the theme guard.
+  console.log(
+    `\nTheme guard hook: add to .claude/settings.json → hooks.PreToolUse to catch violations before they land:\n` +
+      `  "hooks": {\n` +
+      `    "PreToolUse": [\n` +
+      `      {\n` +
+      `        "matcher": "Write|Edit|MultiEdit",\n` +
+      `        "hooks": [{ "type": "command", "command": "bunx basalt guard-hook" }]\n` +
+      `      }\n` +
+      `    ]\n` +
+      `  }`,
+  )
   return 0
 }
 
@@ -1040,11 +1054,99 @@ export function info(flags: string[]): number {
 }
 
 /**
+ * guard-hook — PreToolUse stdin adapter.
+ *
+ * Reads a JSON PreToolUse payload from stdin, evaluates it against the consumer's GuardConfig
+ * (from the "basalt" key in the nearest package.json), and writes the Claude Code hook response
+ * to stdout. Always exits 0 — the hook must never block Claude on a parse error or non-file tool.
+ */
+export async function guardHook(cwd: string = process.cwd()): Promise<number> {
+  let raw: string
+  try {
+    // Bun: Bun.stdin.text() drains stdin to a string; under Node fall back to manual drain.
+    if (typeof (globalThis as Record<string, unknown>)['Bun'] !== 'undefined') {
+      // @ts-expect-error — Bun global, not in @types/bun for this import context
+      raw = await globalThis['Bun'].stdin.text()
+    } else {
+      const chunks: Buffer[] = []
+      for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
+      raw = Buffer.concat(chunks).toString('utf8')
+    }
+  } catch {
+    // Unreadable stdin → allow
+    process.stdout.write(
+      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
+    )
+    return 0
+  }
+
+  let payload: unknown
+  try {
+    payload = JSON.parse(raw)
+  } catch {
+    // Malformed JSON → allow (never block on a bad payload)
+    process.stdout.write(
+      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
+    )
+    return 0
+  }
+
+  const cfg = readBasaltConfig(cwd)
+  const guardCfg: GuardConfig = {
+    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
+    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
+    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
+    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
+    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
+    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
+    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
+    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
+    allowComment: 'theme-allow',
+  }
+
+  // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
+  // palette source or files outside the guarded roots (mirrors checkTheme's file-walk scoping).
+  const roots = cfg.roots ?? DEFAULT_ROOTS
+  const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
+  const isInScope = (filePath: string): boolean => {
+    const abs = isAbsolute(filePath) ? filePath : resolve(cwd, filePath)
+    const rel = relative(cwd, abs).replace(/\\/g, '/')
+    if (rel === '' || rel.startsWith('..')) return false
+    if (SKIP.test(rel) || exempt.has(rel)) return false
+    return roots.some((root) => {
+      const r = root.replace(/\\/g, '/').replace(/\/+$/, '')
+      return rel === r || rel.startsWith(`${r}/`)
+    })
+  }
+
+  const result = evaluateGuardHook(payload, guardCfg, { isInScope })
+
+  if (result.permissionDecision === 'deny' && result.reason !== undefined) {
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason: result.reason,
+        },
+      }) + '\n',
+    )
+  } else {
+    process.stdout.write(
+      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
+    )
+  }
+  return 0
+}
+
+/**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
  * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
  * of process side effects and are safe to import and call from tests.
+ *
+ * The `guard-hook` subcommand is async (reads stdin); all others are synchronous.
  */
-export function run(argv: string[], cwd: string = process.cwd()): number {
+export function run(argv: string[], cwd: string = process.cwd()): number | Promise<number> {
   const [cmd, ...flags] = argv
   switch (cmd) {
     case 'init':
@@ -1059,9 +1161,11 @@ export function run(argv: string[], cwd: string = process.cwd()): number {
       return info(flags)
     case 'doctor':
       return doctor(cwd)
+    case 'guard-hook':
+      return guardHook(cwd)
     default:
       console.error(
-        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor>',
+        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor | guard-hook>',
       )
       return 1
   }
