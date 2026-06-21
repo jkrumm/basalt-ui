@@ -22,6 +22,7 @@ import {
   useReactTable,
   type ColumnDef,
   type SortingState,
+  type Updater,
 } from '@tanstack/react-table'
 import { type ReactNode, useCallback, useState } from 'react'
 
@@ -134,7 +135,7 @@ export function BasaltDataTable<T>({
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
 
   const handleSortingChange = useCallback(
-    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+    (updater: Updater<SortingState>) => {
       setSorting((prev) => {
         const next = typeof updater === 'function' ? updater(prev) : updater
         onSortingChange?.(next)

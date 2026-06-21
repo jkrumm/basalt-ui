@@ -47,7 +47,11 @@ export {
 
 // ── history store ─────────────────────────────────────────────────────────────
 export { add, markRead, markAllRead, clear, useNotificationHistory } from './store'
-export type { NotificationHistoryItem, UseNotificationHistoryReturn } from './store'
+export type {
+  NotificationHistoryItem,
+  NotificationHistoryState,
+  UseNotificationHistoryReturn,
+} from './store'
 
 // ── NotificationBell ──────────────────────────────────────────────────────────
 export { NotificationBell } from './bell'

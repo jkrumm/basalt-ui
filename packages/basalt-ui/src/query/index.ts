@@ -68,6 +68,42 @@ export async function unwrap<TData>(
   return data as TData
 }
 
+// ── toErrorMessage ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Extract a human-readable message from an unknown thrown value (e.g. the raw Eden envelope
+ * thrown by `unwrap`). Removes the 8-line three-branch boilerplate consumers duplicate.
+ *
+ * Resolution order:
+ *   1. `Error` instance       → err.message
+ *   2. `{ message: string }`  → message (Eden / Elysia error shape)
+ *   3. `{ value: ... }`       → toErrorMessage(value) recursively (Eden nested value envelope)
+ *   4. plain string            → itself
+ *   5. anything else           → JSON.stringify with safe fallback to String()
+ *
+ * @example
+ * try {
+ *   await unwrap(api.resource.post({ body }))
+ * } catch (e) {
+ *   toast(toErrorMessage(e))
+ * }
+ */
+export function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (typeof err === 'string') return err
+  if (typeof err === 'object' && err !== null) {
+    const obj = err as Record<string, unknown>
+    if (typeof obj['message'] === 'string') return obj['message']
+    // Eden-style { value: ... } or { status, value } envelopes — unwrap one level.
+    if ('value' in obj) return toErrorMessage(obj['value'])
+  }
+  try {
+    return JSON.stringify(err)
+  } catch {
+    return String(err)
+  }
+}
+
 // ── Re-exports from @tanstack/react-query ────────────────────────────────────────────────────────
 
 // Provider + boundary helpers

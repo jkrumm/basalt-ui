@@ -133,19 +133,33 @@ export function createPersistedState<T>(
 ): () => readonly [T, (next: T) => void] {
   const storageKey = `basalt:${opts.key}`
 
+  // One Set of subscriber callbacks — mirrors notifications/store.ts single-listener-to-Set pattern.
   const listeners = new Set<() => void>()
+
+  // ONE module-scoped 'storage' event listener per key, registered lazily on first subscriber.
+  // Removed when the last subscriber unsubscribes (cleanup semantics preserved).
+  let storageHandler: ((e: StorageEvent) => void) | null = null
 
   const subscribe = (cb: () => void): (() => void) => {
     listeners.add(cb)
 
-    const onStorage = (e: StorageEvent): void => {
-      if (e.key === storageKey) cb()
+    // Attach the shared window listener on the first subscriber.
+    if (storageHandler === null) {
+      storageHandler = (e: StorageEvent): void => {
+        if (e.key === storageKey) {
+          for (const listener of listeners) listener()
+        }
+      }
+      window.addEventListener('storage', storageHandler)
     }
-    window.addEventListener('storage', onStorage)
 
     return () => {
       listeners.delete(cb)
-      window.removeEventListener('storage', onStorage)
+      // Detach the shared window listener when the last subscriber unsubscribes.
+      if (listeners.size === 0 && storageHandler !== null) {
+        window.removeEventListener('storage', storageHandler)
+        storageHandler = null
+      }
     }
   }
 

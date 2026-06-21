@@ -42,7 +42,7 @@
  * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
  * openSpotlight()
  */
-import { type ReactNode } from 'react'
+import { type ComponentProps, type ReactNode } from 'react'
 import { ModalsProvider } from '@mantine/modals'
 import { Spotlight, createSpotlight } from '@mantine/spotlight'
 import { Notifications } from '@mantine/notifications'
@@ -97,6 +97,8 @@ export type BasaltOverlaysProps = {
    * Degrades to no-op when @tanstack/react-hotkeys peer is absent — safe to leave enabled.
    */
   hotkeys?: boolean
+  /** Override or extend the Notifications props (position, autoClose, limit, etc.). Defaults: position="bottom-right", autoClose=4000, limit=5. */
+  notificationsProps?: Omit<ComponentProps<typeof Notifications>, 'children'>
   /** App content (required). */
   children: ReactNode
 }
@@ -149,12 +151,15 @@ export function BasaltOverlays({
   spotlight: enableSpotlight = true,
   notifications: enableNotifications = true,
   hotkeys: enableHotkeys = true,
+  notificationsProps,
   children,
 }: BasaltOverlaysProps) {
   const content = (
     <>
       {enableSpotlight && <SpotlightMount />}
-      {enableNotifications && <Notifications position="bottom-right" autoClose={4000} limit={5} />}
+      {enableNotifications && (
+        <Notifications position="bottom-right" autoClose={4000} limit={5} {...notificationsProps} />
+      )}
       {enableHotkeys && <HotkeysMount />}
       {children}
     </>

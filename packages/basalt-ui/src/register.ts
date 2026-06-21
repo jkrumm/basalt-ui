@@ -33,9 +33,10 @@ export interface BasaltRegister {}
  * SeriesKey are baked into this one place and locked by fixture J.1 / J.2.
  *
  * `infer S extends Constraint` is a BOUND-CHECK, not a cast — an ill-typed augment falls through
- * to `{}` rather than poisoning the union. This ONE generic is the frozen mechanism every future
- * battery slot (commands, overlays, notifications, router, query) instantiates against; only
- * `series` ships in Phase 1.
+ * to `{}` rather than poisoning the union. This ONE generic is the frozen mechanism every battery
+ * slot instantiates against. At 1.0 the `series`, `commands`, `overlays`, and `notifications`
+ * slots ship and have concrete instantiations (define-commands.ts, define-overlays.ts,
+ * define-notifications.ts); `router`, `query`, and `state` remain advisory.
  */
 export type Slot<K extends string, Constraint> = BasaltRegister extends {
   [P in K]: infer S extends Constraint
