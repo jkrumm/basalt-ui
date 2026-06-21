@@ -100,15 +100,24 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 
 ## Subpath exports
 
-| Subpath        | Mantine? | Contents                                                                                                                                                                                                                               |
-| -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + `AppSidebar` / `MobileNav` / `AppBreadcrumbs` / `PageHeaderProvider` / `PageActions` / `PageActionsOutlet`, `NavCountBadge`, shell types |
-| `./charts`     | **free** | visx primitives, 7 chart kinds (Bars, Donut, DualPanel, Heatmap, MultiLine, StackedArea, ZonedLine), sparklines, hooks; re-exports the token layer                                                                                     |
-| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                                                                       |
-| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS`                                                                                                                                                                                   |
-| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                                                                               |
-| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                                          |
-| `./configs/*`  | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                        |
+| Subpath             | Mantine? | Purpose                                                                                                                                                                      |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, shell types |
+| `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                               |
+| `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                  |
+| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                               |
+| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps                                                                                                           |
+| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                |
+| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                           |
+| `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                               |
+| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                         |
+| `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                               |
+| `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                              |
+| `./data`            | coupled  | TanStack Table + Virtual kinds: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered)                                                                                    |
+| `./agent`           | **free** | Headless streaming-chat layer: `useAgentStream`, `edenTransport`, `PartList`                                                                                                 |
+| `./state`           | **free** | `createPersistedState` — versioned localStorage state primitive                                                                                                              |
+| `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                |
+| `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                              |
 
 Named exports only — no default exports.
 
@@ -137,31 +146,187 @@ Apply opacity with `alpha(token, a)` (backed by `color-mix`) — never `rgba()`,
 App-specific series colors live in the consumer, not the framework. The framework ships the factories:
 
 ```ts
-import { defineSeries, seriesTokens, groupTokens, buildPaletteCss, alpha } from 'basalt-ui/tokens'
+// src/theme/series.ts — the single guard-exempt file
+import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
-// Define once in lib/series.ts (the single guard-exempt file)
+// 1. Declare the series with light/dark pairs (ColorPair shape — hex strings per scheme)
 export const SERIES = defineSeries({
-  hrv: '#6C8EBF',
-  rhr: '#D6A84E',
-  load: '#7BAF7B',
+  sessions: { light: '#4f78a4', dark: '#7099c4' },
+  signups: { light: '#3f8a63', dark: '#62c08f' },
+  revenue: { light: '#d9822b', dark: '#f0a868' },
+  churn: { light: '#c23030', dark: '#f08c8c' },
 })
 
-// Exact-keyed token refs — stale keys fail tsc at the call site
-export const S = seriesTokens(SERIES)
-// S.hrv → 'var(--vx-hrv)'
+// 2. Augment BasaltRegister — gives exact-keyed typing everywhere that reads series
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    series: typeof SERIES
+  }
+}
+
+// 3. Namespaced token refs — stale keys fail tsc at the call site
+export const GROUP = 'app'
+export const colors = groupTokens(GROUP, SERIES)
+// colors.sessions → 'var(--vx-app-sessions)'
+
+// 4. Hand the same map to BasaltProvider so the --vx-app-* vars are emitted
+export const paletteGroups = { [`${GROUP}-`]: SERIES }
+```
+
+```tsx
+// main.tsx — wire paletteGroups into BasaltProvider
+import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
+import { paletteGroups } from './theme/series'
+
+export function App() {
+  return (
+    <BasaltProvider theme={createBasaltTheme()} paletteOptions={{ groups: paletteGroups }}>
+      {/* app */}
+    </BasaltProvider>
+  )
+}
 ```
 
 Every `defineX` factory is const-generic and exact-keyed — the return type mirrors the literal input shape, so `tsc` catches stale keys.
 
 ---
 
+## Adapter batteries
+
+Seven optional-peer batteries extend the core. Install only what you use — core resolves without them.
+
+### `./query` — TanStack Query adapter
+
+```bash
+bun add @tanstack/react-query @tanstack/react-query-devtools
+```
+
+```tsx
+import { createBasaltQueryClient, QueryClientProvider, unwrap } from 'basalt-ui/query'
+
+const [client] = useState(() => createBasaltQueryClient())
+// queryFn: () => unwrap(api.users.get())
+```
+
+### `./router-tanstack` — TanStack Router bridge
+
+```bash
+bun add @tanstack/react-router
+```
+
+```tsx
+import { useBasaltNav, useRouterBreadcrumbs } from 'basalt-ui/router-tanstack'
+
+const { isActive } = useBasaltNav()
+const crumbs = useRouterBreadcrumbs()
+```
+
+### `./forms` — Mantine form adapter
+
+```bash
+bun add @mantine/form
+```
+
+```tsx
+import { useBasaltForm, field, FormErrorSummary } from 'basalt-ui/forms'
+
+const form = useBasaltForm({ initialValues: { email: '' } })
+```
+
+### `./notifications` — Mantine notifications
+
+```bash
+bun add @mantine/notifications
+```
+
+```tsx
+import { BasaltNotifications, notifySuccess, notifyError } from 'basalt-ui/notifications'
+
+// in main.tsx: <BasaltProvider><BasaltNotifications /><App /></BasaltProvider>
+notifySuccess('Saved')
+notifyError('Upload failed', { title: 'Error' })
+```
+
+### `./commands` — command bus + Spotlight overlay
+
+```bash
+bun add @mantine/spotlight @mantine/modals @mantine/notifications @tanstack/react-hotkeys
+```
+
+```tsx
+import { defineCommands, runCommand, BasaltOverlays } from 'basalt-ui/commands'
+
+export const COMMANDS = defineCommands({
+  'file:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => save() },
+})
+// in main.tsx: <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>
+runCommand('file:save')
+```
+
+### `./data` — TanStack Table + Virtual
+
+```bash
+bun add @tanstack/react-table @tanstack/react-virtual
+```
+
+```tsx
+import { BasaltDataTable, BasaltVirtualList, createColumnHelper } from 'basalt-ui/data'
+
+const col = createColumnHelper<Row>()
+const columns = [col.accessor('name', { header: 'Name' })]
+// <BasaltDataTable data={rows} columns={columns} />
+```
+
+### `./agent` — streaming-chat layer
+
+```bash
+bun add react-markdown remark-gfm use-stick-to-bottom
+```
+
+```tsx
+import { useAgentStream, edenTransport, PartList } from 'basalt-ui/agent'
+
+const transport = edenTransport((input, signal) =>
+  api.chat.post({ body: { message: input }, fetch: { signal } }),
+)
+const { parts, send, status } = useAgentStream({ transport })
+```
+
+---
+
+## Type seam (`BasaltRegister`)
+
+`BasaltRegister` is the single declaration-merge interface consumers augment to register their app-specific shapes for exact-keyed typing. It follows the same pattern as TanStack Router's `Register` interface — augment once per concern in the concern's own file, and every battery that reads the slot gets narrow types automatically.
+
+```ts
+// src/commands.ts — augment the commands slot
+import { defineCommands } from 'basalt-ui/commands'
+
+export const COMMANDS = defineCommands({
+  'file:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => save() },
+})
+
+declare module 'basalt-ui' {
+  interface BasaltRegister {
+    commands: typeof COMMANDS
+  }
+}
+```
+
+Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `./commands`), and `overlays` / `notifications` (read by `./commands` / `./notifications`). An un-augmented slot defaults to a never-keyed `{}` — augment only the slots you use.
+
+---
+
 ## CLI
 
 ```bash
-bunx basalt init          # scaffold doctrine into a consumer repo
-bunx basalt sync          # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
-bunx basalt sync --check  # CI drift gate — non-zero exit on any managed-file drift
-bunx basalt check-theme   # palette guard — fails on colors that bypass the central --vx-* system
+bunx basalt init              # scaffold doctrine into a consumer repo
+bunx basalt sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
+bunx basalt sync --check      # CI drift gate — non-zero exit on any managed-file drift
+bunx basalt check-theme       # palette guard — fails on colors that bypass the central --vx-* system
+bunx basalt check-coverage    # SURFACES projection gate — asserts guard kinds, rule files, skills, and subpath-export coverage are consistent
+bunx basalt info              # human-readable surface map: subpath, layer, rule, skills, optional peers
+bunx basalt info --json       # same map as stable JSON (InfoOutput shape)
 ```
 
 `sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff); missing → recreate. `--force` overwrites local edits.
@@ -203,6 +368,8 @@ Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
 | `react` / `react-dom` | `^19`   | required |
 | `@mantine/core`       | `^9.3`  | required |
 | `@mantine/hooks`      | `^9.3`  | required |
+
+Optional peer batteries and their packages are listed per battery above.
 
 ---
 
