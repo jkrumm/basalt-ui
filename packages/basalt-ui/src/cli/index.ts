@@ -725,22 +725,29 @@ export function checkCoverage(cwd: string = process.cwd()): number {
   }
 
   // ── Assertion 3: deduped union of doctrine skill[] ⊆ plugin.json skills ────
+  // Skipped gracefully when plugin.json is absent (non-framework-repo context).
   const pluginJsonPath = resolve(cwd, 'plugins/basalt/.claude-plugin/plugin.json')
-  let pluginSkillNames: Set<string> = new Set()
-  try {
-    const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf8')) as { skills?: string[] }
-    // skills are path references like './skills/basalt-app'; extract the last path segment
-    pluginSkillNames = new Set((pluginJson.skills ?? []).map((s) => s.split('/').pop() ?? s))
-  } catch {
-    failures.push(`Cannot read plugin.json at ${pluginJsonPath}`)
-  }
+  if (!existsSync(pluginJsonPath)) {
+    console.log(
+      `  (assertion 3 skipped: plugin.json not found — not in the basalt-ui framework repo, skipping the plugin-skills check)`,
+    )
+  } else {
+    let pluginSkillNames: Set<string> = new Set()
+    try {
+      const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf8')) as { skills?: string[] }
+      // skills are path references like './skills/basalt-app'; extract the last path segment
+      pluginSkillNames = new Set((pluginJson.skills ?? []).map((s) => s.split('/').pop() ?? s))
+    } catch {
+      failures.push(`Cannot read plugin.json at ${pluginJsonPath}`)
+    }
 
-  const doctrineSkillUnion = new Set(doctrineSpecs.flatMap((s) => [...s.skill]))
-  for (const skill of doctrineSkillUnion) {
-    if (!pluginSkillNames.has(skill)) {
-      failures.push(
-        `SURFACES doctrine skill '${skill}' is not listed in plugins/basalt/.claude-plugin/plugin.json skills`,
-      )
+    const doctrineSkillUnion = new Set(doctrineSpecs.flatMap((s) => [...s.skill]))
+    for (const skill of doctrineSkillUnion) {
+      if (!pluginSkillNames.has(skill)) {
+        failures.push(
+          `SURFACES doctrine skill '${skill}' is not listed in plugins/basalt/.claude-plugin/plugin.json skills`,
+        )
+      }
     }
   }
 
@@ -883,7 +890,8 @@ export function doctor(cwd: string = process.cwd()): number {
     } else {
       warn(
         'basalt plugin not detected in ~/.claude/settings.json — install once at user scope:\n' +
-          '    claude plugin marketplace add jkrumm/basalt-ui',
+          '    claude plugin marketplace add jkrumm/basalt-ui\n' +
+          '    claude plugin install basalt@basalt-ui',
       )
     }
   } catch {
