@@ -92,7 +92,7 @@ export const baseTheme: MantineThemeOverride = createTheme({
   // Numbers render mono+tabular — keeps metric columns aligned.
   fontFamilyMonospace: "ui-monospace, 'SF Mono', Menlo, monospace",
   // Named weight ladder (v9 fontWeights).
-  fontWeights: { normal: '400', medium: '500', semibold: '600', bold: '700' },
+  fontWeights: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
   // defaults. Values match Mantine v9 today (a zero-pixel ownership step). 10 12 16 20 32.
   spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.25rem', xl: '2rem' },

@@ -91,8 +91,10 @@ export type BasaltBreadcrumb = {
 export function useRouterBreadcrumbs(): BasaltBreadcrumb[] {
   return useMatches({
     select: (matches) =>
-      matches
-        .filter((m) => typeof m.staticData?.title === 'string')
-        .map((m) => ({ title: m.staticData.title as string, href: m.pathname })),
+      matches.flatMap((m) =>
+        typeof m.staticData?.title === 'string'
+          ? [{ title: m.staticData.title, href: m.pathname }]
+          : [],
+      ),
   })
 }

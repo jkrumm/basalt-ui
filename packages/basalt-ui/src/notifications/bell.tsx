@@ -40,14 +40,7 @@ export function NotificationBell({ label = 'Notifications' }: NotificationBellPr
   }
 
   return (
-    <Popover
-      opened={opened}
-      onClose={close}
-      position="bottom-end"
-      withArrow
-      shadow="md"
-      withinPortal
-    >
+    <Popover opened={opened} onClose={close} position="bottom-end" withArrow withinPortal>
       <Popover.Target>
         <Tooltip label={label} withArrow>
           <Indicator

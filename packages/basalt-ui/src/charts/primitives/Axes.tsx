@@ -20,7 +20,7 @@ export function AxisLeftNumeric({
     <AxisLeft
       scale={scale}
       numTicks={numTicks}
-      tickFormat={tickFormat as never}
+      tickFormat={tickFormat as (v: number) => string}
       tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: -4 }}
       stroke={axisStroke}
       tickStroke={axisStroke}
@@ -47,7 +47,7 @@ export function AxisRightNumeric({
       left={left}
       scale={scale}
       numTicks={numTicks}
-      tickFormat={tickFormat as never}
+      tickFormat={tickFormat as (v: number) => string}
       tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: 4 }}
       stroke={axisStroke}
       tickStroke={axisStroke}

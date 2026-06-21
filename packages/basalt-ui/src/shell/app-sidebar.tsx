@@ -176,7 +176,7 @@ export function AppSidebar({
                 classNames={{ root: classes.link }}
                 label={item.label}
                 leftSection={item.icon}
-                disabled
+                data-disabled
               />
             </Box>
           </Tooltip>
@@ -273,7 +273,7 @@ export function AppSidebar({
 
       <Divider my="sm" mx="-md" />
       <Group gap="xs" wrap="nowrap">
-        <Menu position="top-start" withArrow shadow="md" width={200} zIndex={500}>
+        <Menu position="top-start" withArrow width={200} zIndex={500}>
           <Menu.Target>
             <UnstyledButton className={classes.footerBtn} aria-label="Settings">
               <IconGear />

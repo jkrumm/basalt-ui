@@ -1,7 +1,8 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
+import { useChartTooltip } from '../hooks/useChartTooltip'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
 import type { SeriesKey } from '../../register'
@@ -21,7 +22,7 @@ export type DonutProps = {
   padAngle?: number
 }
 
-export function Donut(props: DonutProps) {
+function DonutInner(props: DonutProps) {
   const {
     data,
     width,
@@ -39,7 +40,7 @@ export function Donut(props: DonutProps) {
   const tooltipStyles = useTooltipStyles()
 
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
-  const [tip, setTip] = useState<{ x: number; y: number; datum: DonutDatum } | null>(null)
+  const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum>()
 
   const radius = Math.min(width, height) / 2 - 4
   const innerRadius = radius * innerRatio
@@ -69,22 +70,14 @@ export function Donut(props: DonutProps) {
                     key={key}
                     onMouseEnter={(event) => {
                       setHoveredKey(key)
-                      setTip({
-                        x: event.clientX + 12,
-                        y: event.clientY - 12,
-                        datum: arc.data,
-                      })
+                      show(arc.data, event)
                     }}
                     onMouseMove={(event) => {
-                      setTip({
-                        x: event.clientX + 12,
-                        y: event.clientY - 12,
-                        datum: arc.data,
-                      })
+                      show(arc.data, event)
                     }}
                     onMouseLeave={() => {
                       setHoveredKey(null)
-                      setTip(null)
+                      hide()
                     }}
                     style={{ cursor: 'pointer' }}
                   >
@@ -128,24 +121,30 @@ export function Donut(props: DonutProps) {
         </Group>
       </svg>
 
-      {tip && (
-        <ChartTooltip tip={{ x: tip.x, y: tip.y }} styles={tooltipStyles}>
+      <ChartTooltip tip={tip} tooltipRef={tooltipRef} styles={tooltipStyles}>
+        {tip && (
           <TooltipBody>
             <TooltipRow
-              color={colorForKey(tip.datum.key)}
-              label={seriesLabel(tip.datum.key)}
-              value={formatValue(tip.datum.value)}
+              color={colorForKey(tip.data.key)}
+              label={seriesLabel(tip.data.key)}
+              value={formatValue(tip.data.value)}
               shape="bar"
             />
             <TooltipRow
               color={VX.grid}
               label="Share"
-              value={`${total > 0 ? Math.round((tip.datum.value / total) * 100) : 0}%`}
+              value={`${total > 0 ? Math.round((tip.data.value / total) * 100) : 0}%`}
               shape="bar"
             />
           </TooltipBody>
-        </ChartTooltip>
-      )}
+        )}
+      </ChartTooltip>
     </div>
   )
 }
+
+/**
+ * Hand-memoized: React Compiler does not process the shipped dist, so we wrap the
+ * hot donut kind in `React.memo` to retain the auto-memoization it had as source.
+ */
+export const Donut = memo(DonutInner) as typeof DonutInner

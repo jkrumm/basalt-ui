@@ -3,7 +3,7 @@ import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { AreaStack } from '@visx/shape'
-import { useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
   ChartTooltip,
@@ -12,6 +12,7 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
+import { ChartLegend, type LegendEntry } from '../primitives/ChartLegend'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { VX } from '../../tokens'
@@ -33,9 +34,15 @@ export type StackedAreaProps<T> = {
   numTicksY?: number
   numTicksX?: number
   yAutoMaxFloor?: number
+  /** Show legend above the chart. Default true. */
+  legend?: boolean
 }
 
-export function StackedArea<T>(props: StackedAreaProps<T>) {
+/**
+ * Multi-series stacked-area chart with an optional ChartLegend (default on) and legend-hover
+ * dimming. Each band's fillOpacity is dimmed when a different key is highlighted via the legend.
+ */
+function StackedAreaInner<T>(props: StackedAreaProps<T>) {
   const {
     data,
     width,
@@ -50,7 +57,10 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
     numTicksY = 5,
     numTicksX,
     yAutoMaxFloor,
+    legend = true,
   } = props
+
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   const MARGIN = VX.margin
   const xMax = width - MARGIN.left - MARGIN.right
@@ -96,8 +106,26 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
     [data, xMax, getX, numTicksX],
   )
 
+  const legendItems = useMemo<LegendEntry[]>(
+    () =>
+      groups.map((g) => ({
+        key: g,
+        label: seriesLabel(g),
+        color: colorForGroup(g),
+        shape: 'bar' as const,
+      })),
+    [groups, colorForGroup, seriesLabel],
+  )
+
   return (
     <div style={{ position: 'relative' }}>
+      {legend && (
+        <ChartLegend
+          items={legendItems}
+          highlighted={highlightedKey}
+          onHighlight={setHighlightedKey}
+        />
+      )}
       <svg width={width} height={height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
@@ -119,6 +147,7 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
                   // stack.key is Key = SeriesKey when keys={groups: SeriesKey[]}; cast is safe
                   fill={colorForGroup(stack.key as SeriesKey)}
                   stroke="transparent"
+                  fillOpacity={highlightedKey === null || highlightedKey === stack.key ? 1 : 0.25}
                 />
               ))
             }
@@ -181,3 +210,10 @@ export function StackedArea<T>(props: StackedAreaProps<T>) {
     </div>
   )
 }
+
+/**
+ * Hand-memoized: React Compiler does not process the shipped dist, so we wrap the
+ * hot stacked-area kind in `React.memo` to retain the auto-memoization it had as source
+ * (parity with ZonedLine / Bars / MultiLine).
+ */
+export const StackedArea = memo(StackedAreaInner) as typeof StackedAreaInner
