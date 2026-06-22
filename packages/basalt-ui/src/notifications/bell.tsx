@@ -1,7 +1,10 @@
 /**
- * NotificationBell — ActionIcon + Indicator showing unread count, opens a NotificationCenter
- * in a Popover. Designed for the shell `globalActions` slot (ReactNode).
- * Marks all items read when the center opens.
+ * NotificationBell — ActionIcon + Indicator showing the unread Inbox count, opens a
+ * NotificationCenter in a Popover. Designed for the shell `globalActions` slot (ReactNode).
+ *
+ * The badge counts unread Inbox items (errors / warnings / actionable notifications you haven't
+ * seen) — not every toast that fired. Opening the bell does NOT mark anything read; items are
+ * marked read when interacted with inside the center.
  *
  * @example
  * import { NotificationBell } from 'basalt-ui/notifications'
@@ -23,21 +26,14 @@ export type NotificationBellProps = {
 }
 
 /**
- * Bell icon button with unread count indicator. Opens a NotificationCenter popover.
- * Mark items read when the center opens (onOpen calls markAllRead).
+ * Bell icon button with an unread-Inbox indicator. Opens a NotificationCenter popover.
  *
  * @example
  * <BasaltShell globalActions={<NotificationBell />} {...rest} />
  */
 export function NotificationBell({ label = 'Notifications' }: NotificationBellProps) {
-  const [opened, { open, close }] = useDisclosure(false)
-  const { unreadCount, markAllRead } = useNotificationHistory()
-
-  function handleOpen(): void {
-    open()
-    // Mark all read when the center opens
-    markAllRead()
-  }
+  const [opened, { toggle, close }] = useDisclosure(false)
+  const { unreadCount } = useNotificationHistory()
 
   return (
     <Popover opened={opened} onClose={close} position="bottom-end" withArrow withinPortal>
@@ -53,7 +49,7 @@ export function NotificationBell({ label = 'Notifications' }: NotificationBellPr
             <ActionIcon
               variant="subtle"
               color="gray"
-              onClick={opened ? close : handleOpen}
+              onClick={toggle}
               aria-label={label}
               aria-expanded={opened}
               aria-haspopup="dialog"

@@ -39,6 +39,8 @@ export {
   defineNotification,
   defineNotifications,
   emit,
+  resolveAction,
+  type NotificationAction,
   type NotificationKind,
   type NotificationSpec,
   type NotificationSpecMap,
@@ -46,8 +48,19 @@ export {
 } from './define-notifications'
 
 // ── history store ─────────────────────────────────────────────────────────────
-export { add, markRead, markAllRead, clear, useNotificationHistory } from './store'
+export {
+  add,
+  markRead,
+  markAllRead,
+  dismiss,
+  dismissAll,
+  remove,
+  clear,
+  needsAttention,
+  useNotificationHistory,
+} from './store'
 export type {
+  NotificationActionRef,
   NotificationHistoryItem,
   NotificationHistoryState,
   UseNotificationHistoryReturn,

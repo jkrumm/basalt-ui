@@ -23,6 +23,17 @@ import { useSyncExternalStore } from 'react'
 
 export type NotificationIntent = 'success' | 'error' | 'warning' | 'info'
 
+/**
+ * A serializable reference to a registered action. Resolved at render time against the
+ * notifications registry (see resolveAction in ./define-notifications). The handler itself is NOT
+ * stored — only the kind + payload — so an actionable notification survives a reload.
+ */
+export type NotificationActionRef = {
+  kind: string
+  /** Must be JSON-serializable — it is persisted to localStorage alongside the item. */
+  payload?: unknown
+}
+
 /** A persisted history item — message/title stored as strings (ReactNode is not serializable). */
 export type NotificationHistoryItem = {
   id: string
@@ -30,23 +41,44 @@ export type NotificationHistoryItem = {
   title?: string
   message: string
   createdAt: number
+  /** Set when the user has seen the item (markRead). undefined = unread. */
   readAt?: number
+  /** Set when the user has dealt with the item (dismiss) — removes it from the Inbox view. */
+  dismissedAt?: number
+  /** A registry-resolved action — gives the item an actionable button in the center. */
+  action?: NotificationActionRef
 }
 
 export type NotificationHistoryState = NotificationHistoryItem[]
 
 export type UseNotificationHistoryReturn = {
+  /** All history items, newest first (the "All" view). */
   items: NotificationHistoryItem[]
+  /** Items that need attention and are not yet dismissed (the "Inbox" view). */
+  inbox: NotificationHistoryItem[]
+  /** Unread Inbox items — the bell badge count ("N things need your attention"). */
   unreadCount: number
   markRead: (id: string) => void
   markAllRead: () => void
+  dismiss: (id: string) => void
+  dismissAll: () => void
+  remove: (id: string) => void
   clear: () => void
+}
+
+/**
+ * Whether an item belongs in the Inbox: it has an action, or it is an error/warning. Plain
+ * success/info confirmations are disposable — they live only in the full history, never the Inbox.
+ */
+export function needsAttention(item: NotificationHistoryItem): boolean {
+  return item.action !== undefined || item.intent === 'error' || item.intent === 'warning'
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'basalt:notifications'
-const VERSION = 1
+// v2: added dismissedAt + action (inbox/all split). v1 payloads are dropped on read (no consumers).
+const VERSION = 2
 const RING_CAP = 50
 
 // ── Persistence helpers ───────────────────────────────────────────────────────
@@ -148,6 +180,44 @@ export function markAllRead(): void {
 }
 
 /**
+ * Dismiss a single item — marks it dealt-with so it leaves the Inbox view. The item stays in the
+ * full history ("All" view). Use remove() to delete it outright.
+ *
+ * @example
+ * dismiss('notification-id')
+ */
+export function dismiss(id: string): void {
+  setState(state.map((item) => (item.id === id ? { ...item, dismissedAt: Date.now() } : item)))
+}
+
+/**
+ * Dismiss every Inbox item at once — archives the whole attention set (they stay in the full
+ * history). The bulk counterpart to dismiss(); does not touch already-dismissed or non-attention
+ * items.
+ *
+ * @example
+ * dismissAll()
+ */
+export function dismissAll(): void {
+  const now = Date.now()
+  setState(
+    state.map((item) =>
+      item.dismissedAt === undefined && needsAttention(item) ? { ...item, dismissedAt: now } : item,
+    ),
+  )
+}
+
+/**
+ * Remove a single item from history entirely (per-item clear).
+ *
+ * @example
+ * remove('notification-id')
+ */
+export function remove(id: string): void {
+  setState(state.filter((item) => item.id !== id))
+}
+
+/**
  * Clear all notification history.
  *
  * @example
@@ -185,16 +255,20 @@ const isServer = typeof window === 'undefined'
 
 /**
  * Reactive notification history — consumes the module-level persisted store.
- * Mark items read when the notification center opens.
+ * Exposes both the full history (`items`) and the attention Inbox (`inbox`); `unreadCount` is the
+ * unread Inbox count (the bell badge). Items are marked read on interaction, not on open.
  *
  * @example
  * function NotificationCenter() {
- *   const { items, unreadCount, markAllRead, clear } = useNotificationHistory()
+ *   const { inbox, unreadCount, markRead, dismiss } = useNotificationHistory()
  *   return (
  *     <div>
- *       <button onClick={markAllRead}>Mark all read</button>
- *       <button onClick={clear}>Clear</button>
- *       {items.map(item => <div key={item.id}>{item.message}</div>)}
+ *       {inbox.map(item => (
+ *         <div key={item.id} onClick={() => markRead(item.id)}>
+ *           {item.message}
+ *           <button onClick={() => dismiss(item.id)}>Dismiss</button>
+ *         </div>
+ *       ))}
  *     </div>
  *   )
  * }
@@ -206,7 +280,8 @@ export function useNotificationHistory(): UseNotificationHistoryReturn {
     getServerSnapshot,
   )
 
-  const unreadCount = items.filter((item) => item.readAt === undefined).length
+  const inbox = items.filter((item) => item.dismissedAt === undefined && needsAttention(item))
+  const unreadCount = inbox.filter((item) => item.readAt === undefined).length
 
-  return { items, unreadCount, markRead, markAllRead, clear }
+  return { items, inbox, unreadCount, markRead, markAllRead, dismiss, dismissAll, remove, clear }
 }

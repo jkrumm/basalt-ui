@@ -17,7 +17,7 @@
 import type { ReactNode } from 'react'
 import { notifications } from '@mantine/notifications'
 import { add } from './store'
-import type { NotificationIntent } from './store'
+import type { NotificationIntent, NotificationActionRef } from './store'
 
 export type { NotificationIntent }
 
@@ -79,6 +79,12 @@ export type NotifyOptions = {
   autoClose?: number | false
   id?: string
   dedupKey?: string
+  /**
+   * A serializable action ref — gives the recorded item an action button in the notification
+   * center. Usually attached automatically by `emit()` from the kind's spec; pass it directly
+   * only when calling `notify()` for an action registered in the notifications registry.
+   */
+  action?: NotificationActionRef
 }
 
 // ── notify ────────────────────────────────────────────────────────────────────
@@ -92,7 +98,7 @@ export type NotifyOptions = {
  * const id = notify({ intent: 'error', message: <b>Failed</b>, autoClose: false })
  */
 export function notify(opts: NotifyOptions): string {
-  const { intent = 'info', message, title, icon, autoClose, id, dedupKey } = opts
+  const { intent = 'info', message, title, icon, autoClose, id, dedupKey, action } = opts
 
   // Two-layer dedup: dedupKey window guard
   if (dedupKey !== undefined && isDuplicateKey(dedupKey)) return id ?? nextId()
@@ -119,6 +125,7 @@ export function notify(opts: NotifyOptions): string {
     ...(title !== undefined && { title: String(title) }),
     message: String(message),
     createdAt: Date.now(),
+    ...(action !== undefined && { action }),
   })
 
   return resolvedId

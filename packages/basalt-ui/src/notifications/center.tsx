@@ -1,12 +1,31 @@
 /**
- * NotificationCenter — lists history items with title, message, relative time, unread dot,
- * "Mark all read" and "Clear" actions. Consumes useNotificationHistory.
+ * NotificationCenter — a two-view notification surface, not a flat toast log.
+ *
+ *  - **Inbox** (default): items that need attention (errors, warnings, anything with an action) and
+ *    are not yet dismissed. This is the working set — the things you still have to deal with.
+ *  - **All**: the full persisted history, newest first.
+ *
+ * Each item can be marked read (on interaction), dismissed (leaves the Inbox, stays in history), or
+ * removed outright. Actionable items render a button resolved from the notifications registry, so a
+ * notification can navigate or open a modal even after a reload. Consumes useNotificationHistory.
  *
  * @example
  * import { NotificationCenter } from 'basalt-ui/notifications'
  * <NotificationCenter />
  */
-import { ActionIcon, Badge, Button, Group, ScrollArea, Stack, Text } from '@mantine/core'
+import { useState } from 'react'
+import type { MouseEvent } from 'react'
+import {
+  Box,
+  Button,
+  CloseButton,
+  Group,
+  ScrollArea,
+  SegmentedControl,
+  Stack,
+  Text,
+} from '@mantine/core'
+import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
 import type { NotificationHistoryItem, NotificationIntent } from './store'
 
@@ -23,58 +42,97 @@ function relativeTime(createdAt: number): string {
   return `${days}d ago`
 }
 
-// ── Intent dot color ──────────────────────────────────────────────────────────
+// ── Intent → Mantine color ────────────────────────────────────────────────────
 
-const INTENT_DOT: Record<NotificationIntent, string> = {
+const INTENT_COLOR: Record<NotificationIntent, string> = {
   success: 'green',
   error: 'red',
   warning: 'yellow',
   info: 'blue',
 }
 
+type CenterView = 'inbox' | 'all'
+
 // ── NotificationItem ──────────────────────────────────────────────────────────
 
 function NotificationItem({
   item,
+  view,
   onMarkRead,
+  onDismiss,
+  onRemove,
 }: {
   item: NotificationHistoryItem
+  view: CenterView
   onMarkRead: (id: string) => void
+  onDismiss: (id: string) => void
+  onRemove: (id: string) => void
 }) {
   const isUnread = item.readAt === undefined
+  const isDismissed = item.dismissedAt !== undefined
+  const color = INTENT_COLOR[item.intent]
+  const resolved = item.action !== undefined ? resolveAction(item.action) : undefined
+
+  function handleAction(e: MouseEvent): void {
+    e.stopPropagation()
+    onMarkRead(item.id)
+    resolved?.run()
+  }
+
+  // In the Inbox, the close button archives (dismiss); in the full history it deletes (remove).
+  function handleClose(): void {
+    if (view === 'inbox') onDismiss(item.id)
+    else onRemove(item.id)
+  }
 
   return (
-    <Group
-      gap="xs"
-      align="flex-start"
-      wrap="nowrap"
-      style={{ cursor: isUnread ? 'pointer' : 'default' }}
+    <Box
+      px="xs"
+      py={6}
       onClick={isUnread ? () => onMarkRead(item.id) : undefined}
+      style={{
+        cursor: isUnread ? 'pointer' : 'default',
+        borderInlineStart: `3px solid var(--mantine-color-${color}-6)`,
+        borderRadius: 'var(--mantine-radius-sm)',
+        background: isUnread ? 'var(--mantine-color-default-hover)' : 'transparent',
+        opacity: isDismissed ? 0.55 : 1,
+      }}
     >
-      {/* Unread indicator */}
-      <Badge
-        size="xs"
-        circle
-        color={INTENT_DOT[item.intent]}
-        variant={isUnread ? 'filled' : 'outline'}
-        style={{ flexShrink: 0, marginTop: 4 }}
-        aria-label={isUnread ? 'Unread' : undefined}
-      />
-
-      <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-        {item.title !== undefined && (
-          <Text size="sm" fw={isUnread ? 600 : 400} truncate="end">
-            {item.title}
+      <Group gap="xs" align="flex-start" wrap="nowrap">
+        <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+          {item.title !== undefined && (
+            <Text size="sm" fw={isUnread ? 600 : 500} lh={1.2} truncate="end">
+              {item.title}
+            </Text>
+          )}
+          <Text
+            size="sm"
+            lh={1.3}
+            {...(item.title !== undefined && { c: 'dimmed' })}
+            style={{ wordBreak: 'break-word' }}
+          >
+            {item.message}
           </Text>
-        )}
-        <Text size="sm" {...(item.title !== undefined && { c: 'dimmed' })} truncate="end">
-          {item.message}
-        </Text>
-        <Text size="xs" c="dimmed">
-          {relativeTime(item.createdAt)}
-        </Text>
-      </Stack>
-    </Group>
+          <Group gap="xs" align="center" mt={2} wrap="nowrap">
+            <Text size="xs" c="dimmed">
+              {relativeTime(item.createdAt)}
+            </Text>
+            {resolved !== undefined && (
+              <Button variant="light" color={color} size="compact-xs" onClick={handleAction}>
+                {resolved.label}
+              </Button>
+            )}
+          </Group>
+        </Stack>
+        <CloseButton
+          size="sm"
+          onClick={handleClose}
+          aria-label={view === 'inbox' ? 'Dismiss notification' : 'Delete notification'}
+          title={view === 'inbox' ? 'Dismiss' : 'Delete'}
+          style={{ flexShrink: 0 }}
+        />
+      </Group>
+    </Box>
   )
 }
 
@@ -86,8 +144,9 @@ export type NotificationCenterProps = {
 }
 
 /**
- * Notification history list with mark-all-read and clear actions.
- * Designed to be mounted inside a Popover or Drawer (e.g. NotificationBell).
+ * Two-view notification center (Inbox / All) with per-item read, dismiss, and remove, plus
+ * registry-resolved action buttons. Designed to be mounted inside a Popover or Drawer (e.g.
+ * NotificationBell).
  *
  * @example
  * import { NotificationCenter } from 'basalt-ui/notifications'
@@ -99,97 +158,71 @@ export type NotificationCenterProps = {
  * </Popover>
  */
 export function NotificationCenter({ maxHeight = 320 }: NotificationCenterProps) {
-  const { items, unreadCount, markRead, markAllRead, clear } = useNotificationHistory()
+  const { items, inbox, unreadCount, markRead, markAllRead, dismiss, dismissAll, remove, clear } =
+    useNotificationHistory()
+  const [view, setView] = useState<CenterView>('inbox')
+
+  const list = view === 'inbox' ? inbox : items
+  const emptyLabel = view === 'inbox' ? "You're all caught up" : 'No notifications yet'
 
   return (
-    <Stack gap="xs" style={{ width: 300 }}>
-      {/* Header row */}
-      <Group justify="space-between" align="center">
+    <Stack gap="xs" style={{ width: 320 }}>
+      {/* Header: title + a single mark-all-read affordance (only when there's something unread) */}
+      <Group justify="space-between" align="center" wrap="nowrap">
         <Text size="sm" fw={600}>
           Notifications
-          {unreadCount > 0 && (
-            <Text span c="blue" ml={4}>
-              ({unreadCount})
-            </Text>
-          )}
         </Text>
-        <Group gap={4}>
-          {unreadCount > 0 && (
-            <ActionIcon
-              variant="subtle"
-              size="sm"
-              onClick={markAllRead}
-              aria-label="Mark all read"
-              title="Mark all read"
-            >
-              {/* Double-check icon (simple SVG, no @tabler/icons dep) */}
-              <svg
-                width={14}
-                height={14}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M2 12l5 5L17 7" />
-                <path d="M9 12l5 5 5-8" />
-              </svg>
-            </ActionIcon>
-          )}
-          {items.length > 0 && (
-            <ActionIcon
-              variant="subtle"
-              size="sm"
-              color="gray"
-              onClick={clear}
-              aria-label="Clear all notifications"
-              title="Clear all"
-            >
-              {/* X icon */}
-              <svg
-                width={14}
-                height={14}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </ActionIcon>
-          )}
-        </Group>
+        {unreadCount > 0 && (
+          <Button variant="subtle" size="compact-xs" onClick={markAllRead}>
+            Mark all read
+          </Button>
+        )}
       </Group>
 
-      {/* Item list */}
-      {items.length === 0 ? (
-        <Text size="sm" c="dimmed" ta="center" py="md">
-          No notifications
+      {/* View switch */}
+      <SegmentedControl
+        fullWidth
+        size="xs"
+        value={view}
+        onChange={(value) => setView(value as CenterView)}
+        data={[
+          { value: 'inbox', label: inbox.length > 0 ? `Inbox (${inbox.length})` : 'Inbox' },
+          { value: 'all', label: 'All' },
+        ]}
+      />
+
+      {/* List */}
+      {list.length === 0 ? (
+        <Text size="sm" c="dimmed" ta="center" py="lg">
+          {emptyLabel}
         </Text>
       ) : (
-        <ScrollArea style={{ maxHeight }}>
-          <Stack gap="sm" py={4}>
-            {items.map((item) => (
-              <NotificationItem key={item.id} item={item} onMarkRead={markRead} />
+        <ScrollArea.Autosize mah={maxHeight} type="hover">
+          <Stack gap={4} pr="xs">
+            {list.map((item) => (
+              <NotificationItem
+                key={item.id}
+                item={item}
+                view={view}
+                onMarkRead={markRead}
+                onDismiss={dismiss}
+                onRemove={remove}
+              />
             ))}
           </Stack>
-        </ScrollArea>
+        </ScrollArea.Autosize>
       )}
 
-      {/* Footer actions */}
-      {items.length > 0 && (
-        <Group justify="flex-end" gap={4}>
-          {unreadCount > 0 && (
-            <Button variant="subtle" size="compact-xs" onClick={markAllRead}>
-              Mark all read
-            </Button>
-          )}
+      {/* Footer: bulk action scoped to the active view */}
+      {view === 'inbox' && inbox.length > 0 && (
+        <Group justify="flex-end">
+          <Button variant="subtle" size="compact-xs" color="gray" onClick={dismissAll}>
+            Dismiss all
+          </Button>
+        </Group>
+      )}
+      {view === 'all' && items.length > 0 && (
+        <Group justify="flex-end">
           <Button variant="subtle" size="compact-xs" color="gray" onClick={clear}>
             Clear all
           </Button>

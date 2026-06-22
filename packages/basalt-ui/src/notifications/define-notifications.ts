@@ -25,15 +25,30 @@ import type { ReactNode } from 'react'
 import type { Slot } from '../register'
 import { notify } from './notify'
 import type { NotifyOptions, NotificationIntent } from './notify'
+import type { NotificationActionRef } from './store'
 
 export type { NotificationIntent }
 
+// ── NotificationAction ────────────────────────────────────────────────────────
+
+/**
+ * The action a notification kind carries: a button label + a handler. The handler lives in the
+ * registry (code, app-scoped) — only a serializable `{ kind, payload }` ref is persisted — so an
+ * actionable notification keeps working after a reload. The handler can do anything (navigate, open
+ * a modal, retry a request); it receives the same payload that was passed to `emit`.
+ */
+export type NotificationAction = {
+  label: string
+  run: (payload: unknown) => void
+}
+
 // ── NotificationSpecMap ───────────────────────────────────────────────────────
 
-/** A single notification kind spec — intent + optional payload→message renderer. */
+/** A single notification kind spec — intent + optional payload→message renderer + optional action. */
 export type NotificationSpec = {
   intent?: NotificationIntent
   toMessage?: (payload: unknown) => ReactNode
+  action?: NotificationAction
 }
 
 /** The map of kind → spec that a consumer registers. */
@@ -120,10 +135,28 @@ export function emit(
   opts?: Omit<NotifyOptions, 'intent' | 'message'>,
 ): string {
   // The kind's compile-time validity comes from the BasaltRegister slot; the runtime spec
-  // (intent/toMessage) comes from the registry stashed by defineNotifications.
+  // (intent/toMessage/action) comes from the registry stashed by defineNotifications.
   const spec: NotificationSpec | undefined = activeRegistry[kind]
   const intent = spec?.intent ?? 'info'
   const message = spec?.toMessage !== undefined ? spec.toMessage(payload) : kind
+  // When the kind defines an action, persist a serializable ref so the center can resolve it later.
+  const action: NotificationActionRef | undefined =
+    spec?.action !== undefined ? { kind, payload } : undefined
 
-  return notify({ ...opts, intent, message })
+  return notify({ ...opts, intent, message, ...(action !== undefined && { action }) })
+}
+
+// ── resolveAction ───────────────────────────────────────────────────────────
+
+/**
+ * Resolve a persisted action ref against the active registry — returns the button label and a
+ * bound handler, or undefined if the kind is unregistered (e.g. the registry changed since the
+ * item was stored). Used by the notification center to render an item's action.
+ */
+export function resolveAction(
+  ref: NotificationActionRef,
+): { label: string; run: () => void } | undefined {
+  const action = activeRegistry[ref.kind]?.action
+  if (action === undefined) return undefined
+  return { label: action.label, run: () => action.run(ref.payload) }
 }
