@@ -177,23 +177,38 @@ const FRAMEWORK_DERIVED = [
 /**
  * Wrap a map of `{ name: ColorPair }` into `var(--vx-<prefix><name>)` token refs — the runtime
  * companion to `buildPaletteCss`. Lets a consumer define its own series and read stable refs.
+ *
+ * Returns an exact-keyed object: the return type mirrors the keys of the input map, so a renamed
+ * or removed key becomes a tsc error rather than silently widening to `Record<string, string>`.
  */
-export function seriesTokens(map: SeriesMap, prefix = ''): Record<string, string> {
-  const out: Record<string, string> = {}
-  for (const key of Object.keys(map)) out[key] = `var(--vx-${prefix}${key})`
+export function seriesTokens<const T extends SeriesMap>(
+  map: T,
+  prefix = '',
+): { [K in keyof T]: string } {
+  const out = {} as { [K in keyof T]: string }
+  for (const key of Object.keys(map) as (keyof T)[]) out[key] = `var(--vx-${prefix}${String(key)})`
   return out
 }
 
 /**
  * Define a named series map. Identity passthrough — gives consumers a typed authoring entry
- * point and a single place to validate/normalize series declarations.
+ * point and preserves the exact literal keys of the input (const-generic so callers get back T,
+ * not the widened SeriesMap, enabling downstream exact-key checks in groupTokens / seriesTokens).
  */
-export function defineSeries(map: SeriesMap): SeriesMap {
+export function defineSeries<const T extends SeriesMap>(map: T): T {
   return map
 }
 
-/** Build a single namespaced group's token refs (`var(--vx-<name>-<key>)`). */
-export function groupTokens(name: string, map: SeriesMap): Record<string, string> {
+/**
+ * Build a single namespaced group's token refs (`var(--vx-<name>-<key>)`).
+ *
+ * Returns an exact-keyed object matching the keys of `map` — a stale or renamed key is a tsc
+ * error at the call site rather than a silent `Record<string, string>` widening.
+ */
+export function groupTokens<const T extends SeriesMap>(
+  name: string,
+  map: T,
+): { [K in keyof T]: string } {
   return seriesTokens(map, `${name}-`)
 }
 

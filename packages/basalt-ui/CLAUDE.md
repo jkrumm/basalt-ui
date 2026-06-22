@@ -70,8 +70,9 @@ false` are required.
 ## Dependencies
 
 - **deps**: 8 `@visx/*` pinned **exact** at `4.0.0-alpha.11` (`axis`, `curve`, `event`, `grid`,
-  `group`, `scale`, `shape`, `threshold`). No stable visx 4 exists — exact-pinning IS the
-  hardening; a stable bump becomes a coordinated minor.
+  `group`, `scale`, `shape`, `threshold`). Stable `@visx` 4.0.0 shipped 2026-06-11, but the
+  alpha.11 pin is **intentionally held** — the bump is co-scheduled with the Phase 2 tsdown
+  migration, behind the pack-test; do not bump it unilaterally.
 - **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
   `@mantine/dates` optional.
 - **NO** zustand, **NO** `@tanstack/*`, **NO** `@tabler/icons` — icons are passed in as `ReactNode`.
@@ -105,6 +106,34 @@ alpha(token, a)                         // theme-aware opacity helper
 
 `VX.series` is NOT in the framework — argo rebuilds it app-side in one guard-exempt file.
 
+### Canonical token-factory contract
+
+Every `defineX` factory exported from `./tokens` follows **one shape** — const-generic, exact-keyed,
+no widening:
+
+```ts
+// canonical signature (const-generic, exact-keyed, satisfies for validation)
+function defineX<const T extends Constraint>(spec: T): T
+
+// ✓ correct — preserves literal key set, tsc catches stale keys
+const MY = defineX({ hrv: '#…', rhr: '#…' } satisfies Constraint)
+
+// ✗ wrong — widening annotation discards the literal keys
+const MY: Constraint = defineX({ hrv: '#…', rhr: '#…' })
+```
+
+Rules that apply to every factory, without exception:
+
+- **`const` generic** — `<const T extends Constraint>` so the return type mirrors the exact input
+  shape verbatim; never widen `T` to `Constraint`.
+- **Exact-keyed return** — return type is `T` (or a mapped form of `T`), not the constraint base.
+  Stale keys therefore fail `tsc` at the call site.
+- **`satisfies` for validation, never a widening annotation** — callers write
+  `defineX({ … } satisfies Constraint)`, not `const x: Constraint = defineX(…)`.
+- **No fluent builder, no config bag** — the factory is a single call; no chained `.add()`, no
+  options object that accumulates state.
+- New factories must match this shape before being added to the public surface.
+
 ## Theme & provider surface (`.`)
 
 - `baseTheme` — Mantine `createTheme` base (Blueprint-anchored: `primaryColor`, `primaryShade`
@@ -134,7 +163,8 @@ One bin: `basalt init | sync | check-theme` (Bun runtime).
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); argo's hardcoded values are the
   defaults. Ships as `bunx basalt check-theme`. Consumer lint = `oxlint . && basalt check-theme`.
 - `init` / `sync` — **real**. `init` scaffolds the repo doctrine (`.claude/rules/basalt-*.md`, the
-  managed CLAUDE.md block, a `DESIGN.md` seed, oxfmt/lefthook/CI templates) and prints a one-time
+  managed CLAUDE.md block, a `DESIGN.md` seed, oxfmt/lefthook/CI templates, an `.oxlintrc.json`
+  extends-stub) and prints a one-time
   hint to install the `basalt` plugin (skills) at user scope. `sync` reconciles them against
   `.basalt/manifest.json` via a sha256 three-way diff (copy/block/seed strategies; `--check` is a
   CI drift gate, `--force` overwrites local edits). `init` does NOT write `.claude/settings.json` —
