@@ -16,6 +16,7 @@
     "format": "bun run fmt",
     "lint": "oxlint",
     "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground typecheck",
+    "test": "bun test",
     "pre": "bun run fmt:check && bun run lint && bun run typecheck",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
