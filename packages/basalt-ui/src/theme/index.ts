@@ -29,6 +29,7 @@ import {
 } from '@mantine/core'
 import type { CSSVariablesResolver, MantineColorsTuple, MantineThemeOverride } from '@mantine/core'
 import { BP, NEUTRAL, SURFACE } from '../tokens'
+import navLinkClasses from './nav-link.module.css'
 
 // Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
 function hexToRgb(h: string): [number, number, number] {
@@ -155,11 +156,13 @@ export const baseTheme: MantineThemeOverride = createTheme({
       // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
       // module (the module's `.link` only reaches the shell's own fallback `<NavLink>`). Same
       // reasoning as the `--nl-*` fill above: layout is single-sourced here, not in two places.
+      // The active-weight state selector can't live in `styles` (flat inline props only) — it's in
+      // nav-link.module.css, wired via `classNames` so it reaches the same every-render-path scope.
+      classNames: { root: navLinkClasses.root },
       styles: {
         root: {
           minHeight: 24,
           borderRadius: '6px',
-          '&[data-active]': { fontWeight: 600 },
         },
       },
     }),

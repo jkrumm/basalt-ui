@@ -1,0 +1,12 @@
+/*
+ * Active nav row = heavier weight, applied at the THEME level via `classNames` so it reaches EVERY
+ * NavLink render path — including a consumer's router `<Link>` mounted through `renderNavLink`,
+ * which a shell-scoped CSS module never sees. Mantine's `styles` prop only takes flat inline
+ * properties (a nested `&[data-active]` there throws a React warning), so the state selector lives
+ * here. React Router's NavLink marks the active item via `aria-current` rather than the `active`
+ * prop's `data-active`, so both states are matched.
+ */
+.root[data-active],
+.root[aria-current='page'] {
+  font-weight: 600;
+}
