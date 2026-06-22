@@ -14,7 +14,7 @@ const basaltSrc = fileURLToPath(new URL('../../packages/basalt-ui/src', import.m
 
 export default mergeConfig(
   basaltViteConfig({
-    port: 7714,
+    port: 7710,
     version: '1.0.0',
     basaltSrc,
     allowedHosts: ['basalt-playground.test'],
