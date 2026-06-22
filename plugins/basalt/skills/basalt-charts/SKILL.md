@@ -1,7 +1,7 @@
 ---
 name: basalt-charts
 description: Add or extend a chart in a basalt-ui app — pick a kind vs go bespoke (Rule of Three), register a consumer series with defineSeries/groupTokens (since VX.series is app-side, not shipped), compose the visx primitives, and respect the @visx-only-in-charts + Mantine-free boundary. Use when adding a new chart, a new metric/series color, or extracting a repeated chart shape into a kind.
-when-to-use: User wants to add a chart, restyle an existing one structurally, introduce a new metric/series and its color, extract a recurring chart shape into a reusable kind, or asks where chart series colors live / how to register them. The how-to companion to /basalt:design (which owns the aesthetic law).
+when_to_use: User wants to add a chart, restyle an existing one structurally, introduce a new metric/series and its color, extract a recurring chart shape into a reusable kind, or asks where chart series colors live / how to register them. The how-to companion to /basalt:design (which owns the aesthetic law).
 ---
 
 `/basalt:charts` is the how-to for the chart system. `/basalt:design` owns the aesthetic law

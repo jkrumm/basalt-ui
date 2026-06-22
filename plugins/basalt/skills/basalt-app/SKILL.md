@@ -1,7 +1,7 @@
 ---
 name: basalt-app
 description: Scaffold or refresh a basalt-ui app — guided wrapper around 'basalt init' (first-time scaffold) and 'basalt sync' (drift-managed refresh). Hard-states that the plugin and 'basalt init' are a mandatory PAIR — the plugin ships skills, init ships the project doctrine (rules + CLAUDE block + DESIGN.md) that a plugin cannot. Use when setting up basalt-ui in a new/existing app, wiring the provider/shell/vite preset, or when the doctrine feels missing.
-when-to-use: User is adding basalt-ui to a new or existing app, asks how to set it up / scaffold it, wants to wire BasaltProvider / BasaltShell / the vite preset, refresh the shipped rules and DESIGN.md, or run a freshness check in CI. Also when /basalt:design reports no consumer DESIGN.md (the app isn't scaffolded yet).
+when_to_use: User is adding basalt-ui to a new or existing app, asks how to set it up / scaffold it, wants to wire BasaltProvider / BasaltShell / the vite preset, refresh the shipped rules and DESIGN.md, or run a freshness check in CI. Also when /basalt:design reports no consumer DESIGN.md (the app isn't scaffolded yet).
 ---
 
 `/basalt:app` scaffolds a basalt-ui consumer and keeps its shipped doctrine fresh. It wraps the two

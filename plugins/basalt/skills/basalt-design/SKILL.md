@@ -1,7 +1,7 @@
 ---
 name: basalt-design
 description: Design and restyle data visualizations and analytics UIs in a basalt-ui app (Mantine v9 + visx). The dataviz successor — restraint doctrine plus the live theme-lab tuning loop and the centralized, lint-enforced --vx-* token system. Use when building or restyling charts/dashboards, choosing a palette, tuning dark/light, or when charts look childish / inconsistent / over-colored.
-when-to-use: User is building or restyling charts, dashboards, or metric UIs in a basalt-ui consumer; picking or tuning a palette; deciding on dark/light shades; or complaining that charts look "AI default", inconsistent across tabs, or over-saturated. Also the entry point for any "make this look professional" dataviz request in a Mantine + visx app.
+when_to_use: User is building or restyling charts, dashboards, or metric UIs in a basalt-ui consumer; picking or tuning a palette; deciding on dark/light shades; or complaining that charts look "AI default", inconsistent across tabs, or over-saturated. Also the entry point for any "make this look professional" dataviz request in a Mantine + visx app.
 ---
 
 `/basalt:design` is the design authority for a basalt-ui app. It is the **method**; the project's
