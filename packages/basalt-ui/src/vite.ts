@@ -56,6 +56,11 @@ export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
   const config: UserConfig = {
     define: {
       __APP_VERSION__: JSON.stringify(process.env['BUILD_VERSION'] ?? version),
+      // basalt-ui source uses `process.env.NODE_ENV` for cross-bundler dev-only stripping (the
+      // package bans `import.meta.env`). When consumed as a pre-bundled dist dep, Vite's optimizer
+      // replaces it — but the source-aliased playground / BASALT_LOCAL path bypasses optimization,
+      // leaving `process` undefined in the browser. Define it here so source-served basalt-ui runs.
+      'process.env.NODE_ENV': JSON.stringify(process.env['NODE_ENV'] ?? 'development'),
     },
     resolve: {
       // Force these packages to a single instance. Without dedupe, Vite's optimizer can stamp a
