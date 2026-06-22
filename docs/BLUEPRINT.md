@@ -78,7 +78,7 @@ basalt-ui/  (repo = npm package + playground + marketing + Claude plugin marketp
 | Layering | Charts/tokens stay Mantine-free via oxlint `no-restricted-imports` overrides — both in basalt-ui's own repo config and in the shipped consumer config (`**/charts/**` bans `@mantine/*`). Same mechanism argo uses today. |
 | Build | Dist-first: tsup unbundled transpile (`bundle: false`, CSS-modules copied verbatim) + `tsc --emitDeclarationOnly --declarationMap`; `src/` ships in the tarball so go-to-definition lands in real source. Fix `import.meta.env.DEV` → `process.env.NODE_ENV !== 'production'`. |
 | CSS | Native CSS only — no postcss-preset-mantine, zero consumer PostCSS config (argo's proven precedent). PALETTE_CSS is runtime-generated (embeds consumer series) and injected by `BasaltProvider` (`injectPalette={false}` escape hatch for SSR/head injection). |
-| Dependencies | deps: 8 `@visx/*` pinned **exact** at `4.0.0-alpha.11`. peers: react/react-dom `^19`, `@mantine/core` + `@mantine/hooks` `^9.2`; `@mantine/dates` optional peer. NO zustand, NO @tanstack/*, NO @tabler/icons (icons passed as ReactNode). `sideEffects: ['*.css']`. |
+| Dependencies | deps: 8 `@visx/*` pinned **exact** at `4.0.0-alpha.11`. peers: react/react-dom `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`; `@mantine/dates` optional peer. NO zustand, NO @tanstack/*, NO @tabler/icons (icons passed as ReactNode). `sideEffects: ['*.css']`. |
 | Bin | One `basalt` bin with subcommands: `check-theme` (the guard), `init`, `sync`. |
 | Publish | Keep semantic-release + monorepo plugin + npm provenance + the isolated-basalt-ui lefthook commit guard. Swap Biome → oxlint/oxfmt repo-wide. |
 
@@ -171,7 +171,8 @@ rules as project context; postinstall is dead under bun):
    lockstep with npm via semantic-release exec. Consumers auto-install via an
    `extraKnownMarketplaces`/`enabledPlugins` stanza in `.claude/settings.json`. Three skills:
    `/basalt:design`, `/basalt:charts`, `/basalt:app`.
-2. **`basalt init` / `basalt sync`**: scaffolds `.claude/rules/basalt-*.md`, the settings stanza,
+2. **`basalt init` / `basalt sync`**: scaffolds `.claude/rules/basalt-*.md`, an `.oxlintrc.json`
+   extends-stub,
    a managed `<!-- basalt:begin/end -->` block in CLAUDE.md (stack facts, DESIGN.md-is-law
    pointer, frontend-design restraint override), thin DESIGN.md, toolchain templates, and
    `.basalt/manifest.json` (sha256 per managed file). `sync` does three-way comparison:

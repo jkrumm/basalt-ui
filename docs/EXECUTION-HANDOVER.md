@@ -1,6 +1,8 @@
 # Execution Handover — Phase 0/1 of the basalt-ui maturation
 
-> **Status:** ready-to-execute handover (grounded 2026-06-17). Companion to the three planning
+> **Status:** Phase 0 **EXECUTED 2026-06-18** — see [`PHASE-1-HANDOVER.md`](./PHASE-1-HANDOVER.md)
+> for what landed, the deviations from this plan, the gotchas discovered, and the next phase.
+> Originally grounded 2026-06-17. Companion to the three planning
 > docs: [`MATURATION-ROADMAP.md`](./MATURATION-ROADMAP.md) (what to build),
 > [`ENFORCEMENT-HARDENING.md`](./ENFORCEMENT-HARDENING.md) (mechanical prevention),
 > [`INTEGRATION-DX.md`](./INTEGRATION-DX.md) (design/type prevention).
@@ -213,9 +215,10 @@ return { groups: results, seriesDiff }
 > so a serial pass is fully deterministic and avoids reconciliation. For a Phase-0-sized batch,
 > serial is usually the lower-friction choice.
 >
-> **Alternative (no ultracode):** the same work routes cleanly to parallel `mcp__sideclaw__implement`
-> jobs (off Max quota) — one job per file-group, each with `validateCmd: 'bun run pre'`, then
-> `job_wait` each. Use this when you want the offload but not the workflow ceremony.
+> **Alternative (no ultracode):** the same work routes cleanly to parallel `@implementer` Sonnet
+> subagents (native, on Max, each its own prompt cache) — one per disjoint file-group, each handed
+> the §2 file:line spec, then a single `bun run pre` barrier. Use this when you want the offload but
+> not the workflow ceremony. (The old sideclaw `implement` worker is retired — it is no longer a lane.)
 
 ---
 
