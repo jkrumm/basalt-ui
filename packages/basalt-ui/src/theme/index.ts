@@ -17,6 +17,7 @@
 import {
   Card,
   createTheme,
+  defaultVariantColorsResolver,
   Input,
   mergeThemeOverrides,
   NavLink,
@@ -27,7 +28,12 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import type { CSSVariablesResolver, MantineColorsTuple, MantineThemeOverride } from '@mantine/core'
+import type {
+  CSSVariablesResolver,
+  MantineColorsTuple,
+  MantineThemeOverride,
+  VariantColorsResolver,
+} from '@mantine/core'
 import { BP, NEUTRAL, SURFACE } from '../tokens'
 import navLinkClasses from './nav-link.module.css'
 
@@ -71,6 +77,39 @@ const basaltDark: MantineColorsTuple = [
 ]
 
 /**
+ * Keep the `light` variant legible in BOTH schemes — the enforcement seam for badges/controls.
+ *
+ * Mantine resolves the light-variant BACKGROUND to `--mantine-color-{c}-1`. Basalt's `ramp10`
+ * only lightens shade 0, so shade 1 stays a fully saturated mid-tone — i.e. the light background
+ * renders VIVID, not a faint tint, and the colored text can't sit on it (green measured 2.91:1 in
+ * light mode; dark mode was fine at ~9:1 because Mantine uses a proper dark tint there). The text
+ * was never the problem, so white text wouldn't help — it'd be invisible on the tint.
+ *
+ * Fix: rebuild the light background as a faint mix of the variant's OWN text color
+ * (`--mantine-color-{c}-light-color`, which is itself scheme-reactive — dark ink in light mode,
+ * light ink in dark mode). A 12% mix of that ink over the surface is therefore a pale tint under
+ * dark text on light, and a dim tint under light text on dark: one expression, identical logic
+ * both ways, always high-contrast. `filled` (autoContrast) / `outline` / `subtle` keep Mantine's
+ * defaults. Only plain theme-palette color names are remapped; hex / indexed colors fall through.
+ */
+const basaltVariantColorResolver: VariantColorsResolver = (input) => {
+  const resolved = defaultVariantColorsResolver(input)
+  const colorName = input.color ?? input.theme.primaryColor
+  const isThemeColor = Object.prototype.hasOwnProperty.call(input.theme.colors, colorName)
+  if (input.variant !== 'light' || !isThemeColor) return resolved
+  const ink = `var(--mantine-color-${colorName}-light-color)`
+  // 10% keeps the worst-case (forest green, whose ink isn't very dark) comfortably past AA 4.5
+  // while staying a clearly visible tint for the darker accents.
+  return {
+    ...resolved,
+    background: `color-mix(in srgb, ${ink} 10%, transparent)`,
+    hover: `color-mix(in srgb, ${ink} 20%, transparent)`,
+    color: ink,
+    border: 'none',
+  }
+}
+
+/**
  * Basalt base theme — Mantine `createTheme` reskinned to the Basalt warm-neutral palette.
  *
  * Inputs default to `md` (16px font) so iOS Safari never zooms the viewport on focus. The base
@@ -83,6 +122,8 @@ export const baseTheme: MantineThemeOverride = createTheme({
   primaryShade: { light: 6, dark: 4 }, // deeper on light, lighter on dark (no glow)
   autoContrast: true,
   luminanceThreshold: 0.45,
+  // Force the `light` variant to a faint, AA-legible tint in both schemes (see resolver above).
+  variantColorResolver: basaltVariantColorResolver,
   white: '#ffffff',
   black: '#121110',
   // Tight, precise radii (Linear/Carbon). v9's default is `md` (8px); Basalt pins `sm` (4px) for
