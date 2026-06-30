@@ -1,4 +1,5 @@
 // oxlint-disable import/no-default-export -- vite config requires a default export
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { basaltViteConfig } from 'basalt-ui/vite'
 import { fileURLToPath } from 'node:url'
@@ -20,6 +21,8 @@ export default mergeConfig(
     allowedHosts: ['basalt-playground.test'],
   }),
   {
-    plugins: [react()],
+    // tanstackRouter must precede the React plugin — it generates `src/routeTree.gen.ts` from the
+    // `src/routes/` tree and rewrites route files for code-splitting before React's transform runs.
+    plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react()],
   },
 )

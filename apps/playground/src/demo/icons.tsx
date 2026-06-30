@@ -91,6 +91,51 @@ export function IconComponents() {
   )
 }
 
+export function IconSparkle() {
+  return (
+    <Glyph size={16}>
+      <path d="M12 3l1.9 4.8a3 3 0 0 0 1.7 1.7l4.8 1.9l-4.8 1.9a3 3 0 0 0 -1.7 1.7l-1.9 4.8l-1.9 -4.8a3 3 0 0 0 -1.7 -1.7l-4.8 -1.9l4.8 -1.9a3 3 0 0 0 1.7 -1.7z" />
+    </Glyph>
+  )
+}
+
+export function IconUser() {
+  return (
+    <Glyph size={16}>
+      <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+      <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+    </Glyph>
+  )
+}
+
+export function IconSend() {
+  return (
+    <Glyph size={16}>
+      <path d="M10 14l11 -11" />
+      <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1z" />
+    </Glyph>
+  )
+}
+
+export function IconStop() {
+  return (
+    <Glyph size={16}>
+      <path d="M5 5m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+    </Glyph>
+  )
+}
+
+export function IconTrash() {
+  return (
+    <Glyph size={16}>
+      <path d="M4 7h16" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+      <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+    </Glyph>
+  )
+}
+
 export function IconPalette() {
   return (
     <Glyph size={16}>

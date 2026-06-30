@@ -2,13 +2,14 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/spotlight/styles.css'
 import 'basalt-ui/styles.css'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
 import { BasaltOverlays } from 'basalt-ui/commands'
 import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { App } from './App'
 import { demoPaletteGroups } from './demo/series'
+import { routeTree } from './routeTree.gen'
 
 // ── SSR / Next.js manual-provider path (reference) ───────────────────────────
 //
@@ -47,6 +48,16 @@ applyOverrides(loadOverrides())
 // Extracting it here (rather than inlining) proves the named export resolves at build time.
 const playgroundTheme = createBasaltTheme()
 
+// Browser-history router built from the generated route tree. Registering its type below makes
+// every <Link>/useNavigate across the app type-safe against the real route set.
+const router = createRouter({ routeTree })
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
 
@@ -66,7 +77,7 @@ createRoot(root).render(
           binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
           the default (hotkeys enabled) so BasaltOverlays binds them globally. */}
       <BasaltOverlays hotkeys={false}>
-        <App />
+        <RouterProvider router={router} />
       </BasaltOverlays>
     </BasaltProvider>
   </StrictMode>,

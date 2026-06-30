@@ -46,7 +46,7 @@ function PersistedStateDemo() {
           <Button size="compact-sm" variant="default" onClick={() => setCount(count - 1)}>
             −
           </Button>
-          <Badge size="lg" variant="light" color="blue">
+          <Badge size="lg" variant="default">
             {count}
           </Badge>
           <Button size="compact-sm" variant="default" onClick={() => setCount(count + 1)}>

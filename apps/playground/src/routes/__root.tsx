@@ -1,14 +1,16 @@
 /**
- * Playground app — a full exercise of the basalt-ui surface at runtime.
+ * Root route — the persistent app shell for the playground.
  *
- * Demonstrates the router-agnostic shell seam: there is NO router. Active state is plain `useState`,
- * each `SidebarItem` carries `active` + `onClick` (the consumer's job), and `href` is set purely so
- * the rail renders real anchors. The Charts section additionally passes a `renderNavLink` to prove
- * the consumer-link seam (here a styled `<a>` standing in for a router `<Link>`).
- *
- * Exercises: BasaltShell, SidebarSection / SidebarItem (collapsible section, mobile flags, disabled
- * "coming soon" item, badges), NavCountBadge, renderNavLink, globalActions, settingsMenuItems,
- * sidebarFooterExtra, AppBreadcrumbs (derived from the active item), useOnlineStatus (badge).
+ * This is the mature counterpart to the old `useState` page-switcher: the playground is now a real
+ * TanStack Router app on browser history, so the URL is the single source of truth for "where am
+ * I". The shell stays exactly as router-agnostic as it ships — we drive it through the documented
+ * seams:
+ *   - `active` comes from the shipped `useBasaltNav().isActive(href)` adapter (reactive to the URL),
+ *   - `renderNavLink` renders a real TanStack `<Link>` so clicks update the URL + enable
+ *     intent-preloading + back/forward,
+ *   - the shell's own breadcrumb (`findActiveCrumb`) follows `active`, so it tracks the route for
+ *     free.
+ * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
 import {
   ActionIcon,
@@ -18,20 +20,12 @@ import {
   Tooltip,
   useMantineColorScheme,
 } from '@mantine/core'
+import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, NavCountBadge, useOnlineStatus } from 'basalt-ui'
 import type { NavLinkRenderer, SidebarSection } from 'basalt-ui'
-import { useCallback, useMemo, useState } from 'react'
-import { AgentDemoPage } from './demo/AgentDemoPage'
-import { ChartsPage } from './demo/ChartsPage'
-import { CommandsDemoPage } from './demo/CommandsDemoPage'
-import { ComponentsPage } from './demo/ComponentsPage'
-import { DashboardPage } from './demo/DashboardPage'
-import { DataDemoPage } from './demo/DataDemoPage'
-import { FormsDemoPage } from './demo/FormsDemoPage'
-import { NotificationsDemoPage } from './demo/NotificationsDemoPage'
-import { QueryDemoPage } from './demo/QueryDemoPage'
-import { RouterDemoPage } from './demo/RouterDemoPage'
-import { SettingsPage } from './demo/SettingsPage'
+import { useBasaltNav } from 'basalt-ui/router-tanstack'
+import { NotificationBell } from 'basalt-ui/notifications'
+import { useMemo } from 'react'
 import {
   IconActivity,
   IconChart,
@@ -39,22 +33,7 @@ import {
   IconDashboard,
   IconPalette,
   IconSettings,
-} from './demo/icons'
-import { NotificationBell } from 'basalt-ui/notifications'
-
-type PageKey =
-  | 'dashboard'
-  | 'charts'
-  | 'components'
-  | 'activity'
-  | 'settings'
-  | 'query'
-  | 'router'
-  | 'forms'
-  | 'notifications'
-  | 'commands'
-  | 'data'
-  | 'agent'
+} from '../demo/icons'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -62,19 +41,21 @@ type PageKey =
 declare const __APP_VERSION__: string
 
 /**
- * A consumer link renderer standing in for a router `<Link>` — proves the `renderNavLink` seam: the
- * shell hands each item + a precomputed `active` flag, and the consumer owns the actual element.
- * Hoisted (captures nothing) so it isn't recreated per render.
+ * A consumer link renderer wiring the shell's router seam to a real TanStack `<Link>`. Hoisted
+ * (captures nothing) so it isn't recreated per render.
+ *
+ * `item.href` is a plain `string` by the shell's router-agnostic contract, while TanStack's typed
+ * `<Link to>` wants a registered route literal. Casting at this single seam boundary is correct:
+ * the hrefs ARE real routes, and keeping the shell string-typed is what makes it router-agnostic.
  */
 const renderNavLink: NavLinkRenderer = (item, { active }) => (
   <MantineNavLink
-    component="a"
-    href={item.href ?? '#'}
+    component={Link}
+    to={(item.href ?? '/') as never}
     label={item.label}
     leftSection={item.icon}
     rightSection={item.badge}
     active={active}
-    {...(item.onClick !== undefined && { onClick: item.onClick })}
   />
 )
 
@@ -104,19 +85,12 @@ function SchemeIcon({ dark }: { dark: boolean }) {
   )
 }
 
-export function App() {
-  const [page, setPage] = useState<PageKey>('dashboard')
+function RootLayout() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const dark = (colorScheme === 'auto' ? 'dark' : colorScheme) === 'dark'
   const online = useOnlineStatus()
-
-  const go = useCallback(
-    (key: PageKey) => (e: { preventDefault: () => void }) => {
-      e.preventDefault()
-      setPage(key)
-    },
-    [],
-  )
+  const { isActive } = useBasaltNav()
+  const navigate = useNavigate()
 
   const sections = useMemo<SidebarSection[]>(
     () => [
@@ -131,8 +105,7 @@ export function App() {
             mobile: true,
             icon: <IconDashboard />,
             href: '/dashboard',
-            active: page === 'dashboard',
-            onClick: go('dashboard'),
+            active: isActive('/dashboard'),
             badge: <NavCountBadge count={3} />,
           },
           {
@@ -141,8 +114,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/activity',
-            active: page === 'activity',
-            onClick: go('activity'),
+            active: isActive('/activity'),
           },
         ],
       },
@@ -150,7 +122,6 @@ export function App() {
         label: 'Insights',
         icon: <IconChart />,
         collapsible: true,
-        // This section uses the renderNavLink seam (the others fall back to the plain <a> path).
         items: [
           {
             key: 'charts',
@@ -158,8 +129,7 @@ export function App() {
             mobile: true,
             icon: <IconChart />,
             href: '/charts',
-            active: page === 'charts',
-            onClick: go('charts'),
+            active: isActive('/charts'),
           },
           {
             key: 'components',
@@ -167,8 +137,7 @@ export function App() {
             mobile: true,
             icon: <IconComponents />,
             href: '/components',
-            active: page === 'components',
-            onClick: go('components'),
+            active: isActive('/components'),
           },
           {
             key: 'reports',
@@ -188,8 +157,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/query',
-            active: page === 'query',
-            onClick: go('query'),
+            active: isActive('/query'),
           },
           {
             key: 'router',
@@ -197,8 +165,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/router',
-            active: page === 'router',
-            onClick: go('router'),
+            active: isActive('/router'),
           },
           {
             key: 'forms',
@@ -206,8 +173,7 @@ export function App() {
             mobile: true,
             icon: <IconComponents />,
             href: '/forms',
-            active: page === 'forms',
-            onClick: go('forms'),
+            active: isActive('/forms'),
           },
           {
             key: 'notifications',
@@ -215,8 +181,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/notifications',
-            active: page === 'notifications',
-            onClick: go('notifications'),
+            active: isActive('/notifications'),
           },
           {
             key: 'commands',
@@ -224,8 +189,7 @@ export function App() {
             mobile: true,
             icon: <IconComponents />,
             href: '/commands',
-            active: page === 'commands',
-            onClick: go('commands'),
+            active: isActive('/commands'),
           },
           {
             key: 'data',
@@ -233,8 +197,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/data',
-            active: page === 'data',
-            onClick: go('data'),
+            active: isActive('/data'),
           },
           {
             key: 'agent',
@@ -242,8 +205,7 @@ export function App() {
             mobile: true,
             icon: <IconActivity />,
             href: '/agent',
-            active: page === 'agent',
-            onClick: go('agent'),
+            active: isActive('/agent'),
           },
         ],
       },
@@ -257,19 +219,14 @@ export function App() {
             mobile: true,
             icon: <IconSettings />,
             href: '/settings',
-            active: page === 'settings',
-            onClick: go('settings'),
+            active: isActive('/settings'),
           },
         ],
       },
     ],
-    [page, go],
+    [isActive],
   )
 
-  // BasaltShell composes AppSidebar, MobileNav, AppBreadcrumbs, and PageHeader internally.
-  // Each is also individually importable from 'basalt-ui' for a custom shell that keeps only
-  // some of the pieces (e.g. just AppSidebar + a custom header, or just AppBreadcrumbs in a
-  // plain layout). The standard path is BasaltShell — override only when the composition doesn't fit.
   return (
     <BasaltShell
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
@@ -302,7 +259,12 @@ export function App() {
         </>
       }
       settingsMenuItems={[
-        { key: 'theme', label: 'Theme lab', icon: <IconPalette />, onClick: go('settings') },
+        {
+          key: 'theme',
+          label: 'Theme lab',
+          icon: <IconPalette />,
+          onClick: () => navigate({ to: '/settings' }),
+        },
       ]}
       sidebarFooterExtra={
         <Text size="xs" c="dimmed" ta="center" py={4}>
@@ -310,18 +272,12 @@ export function App() {
         </Text>
       }
     >
-      {page === 'dashboard' && <DashboardPage />}
-      {page === 'charts' && <ChartsPage />}
-      {page === 'components' && <ComponentsPage />}
-      {page === 'settings' && <SettingsPage />}
-      {page === 'activity' && <DashboardPage />}
-      {page === 'query' && <QueryDemoPage />}
-      {page === 'router' && <RouterDemoPage />}
-      {page === 'forms' && <FormsDemoPage />}
-      {page === 'notifications' && <NotificationsDemoPage />}
-      {page === 'commands' && <CommandsDemoPage />}
-      {page === 'data' && <DataDemoPage />}
-      {page === 'agent' && <AgentDemoPage />}
+      <Outlet />
     </BasaltShell>
   )
 }
+
+export const Route = createRootRoute({
+  staticData: { title: 'Home' },
+  component: RootLayout,
+})
