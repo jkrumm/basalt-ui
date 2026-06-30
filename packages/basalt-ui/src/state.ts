@@ -76,12 +76,10 @@ function isEnvelope(raw: unknown): raw is Envelope {
   )
 }
 
-function readStorage<T>(opts: PersistedStateOptions<T>): T {
-  const storageKey = `basalt:${opts.key}`
+/** Parse a raw localStorage string (or null) into a value, falling back to `initial` on any miss. */
+function parseStorage<T>(raw: string | null, opts: PersistedStateOptions<T>): T {
+  if (raw === null) return opts.initial
   try {
-    const raw = window.localStorage.getItem(storageKey)
-    if (raw === null) return opts.initial
-
     const parsed: unknown = JSON.parse(raw)
     if (!isEnvelope(parsed)) return opts.initial
 
@@ -163,7 +161,30 @@ export function createPersistedState<T>(
     }
   }
 
-  const getSnapshot = (): T => readStorage(opts)
+  // Snapshot cache — useSyncExternalStore requires getSnapshot to return a referentially STABLE
+  // value while the store is unchanged. parseStorage() allocates a fresh object/array on every
+  // call, so returning it raw makes React see an ever-changing snapshot for object/array state
+  // and loop until "Maximum update depth exceeded". We cache the parsed value keyed on the raw
+  // localStorage string: same string → same reference; a write (this tab or another) changes the
+  // string, so the next read re-parses exactly once. Primitive state was unaffected — this fixes
+  // the object/array case (chat history, form drafts).
+  let cachedRaw: string | null = null
+  let cachedValue: T = opts.initial
+  let primed = false
+
+  const getSnapshot = (): T => {
+    let raw: string | null
+    try {
+      raw = window.localStorage.getItem(storageKey)
+    } catch {
+      raw = null
+    }
+    if (primed && raw === cachedRaw) return cachedValue
+    cachedRaw = raw
+    cachedValue = parseStorage(raw, opts)
+    primed = true
+    return cachedValue
+  }
   const getServerSnapshot = (): T => opts.initial
 
   const setState = (next: T): void => {
