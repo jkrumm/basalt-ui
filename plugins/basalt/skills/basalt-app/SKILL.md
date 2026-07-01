@@ -60,7 +60,9 @@ import { BasaltProvider } from 'basalt-ui'
 <BasaltProvider>{/* app */}</BasaltProvider>
 
 // Shell — sidebar / mobile-nav / breadcrumbs / page-header; router-agnostic
-import { BasaltShell, NavCountBadge } from 'basalt-ui'
+import { BasaltShell, NavCountBadge, ThemeToggle } from 'basalt-ui'
+// <ThemeToggle /> in globalActions — cycles light/dark/system on click, hover/focus reveals
+// a direct-select popover. Animated (motion) sun/moon glyph, never a computer/monitor icon.
 
 // Theme — start from the base, override deltas only
 import { createBasaltTheme } from 'basalt-ui'
@@ -125,3 +127,7 @@ both.
   guard. All via `bunx basalt …`.
 - The framework ships **no** icon or notification dep — pass icons as `ReactNode` and wire toasts
   yourself (e.g. `ThemeLabControls`' `copyIcon` / `onCopy`).
+- The framework DOES ship `motion` (motion.dev, formerly framer-motion) as a bundled dependency —
+  animated chrome (`ThemeToggle` today) comes for free, no consumer dependency needed. Reach for
+  the shared `MOTION_DURATION` / `MOTION_SPRING` tokens for any new animated interaction rather
+  than inventing ad hoc durations/easings or a competing animation library.

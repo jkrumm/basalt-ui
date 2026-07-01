@@ -47,6 +47,13 @@ dashboard the bold move is calm.
   lower bands.
 - **Quiet chrome.** Hairline grids (~6–8% neutral), thin crosshairs, restrained tooltips with a
   card surface and one accent swatch per row. Generous whitespace.
+- **Motion restraint (same doctrine, applied to animation).** Subtle and purposeful, never
+  decorative — a state change earns a transition, idle chrome does not. Reach for the shared
+  `MOTION_DURATION` / `MOTION_SPRING` tokens (`basalt-ui`'s `src/motion`) instead of inventing
+  per-component durations/easings, so animated chrome feels like one identity the same way the
+  `--vx-*` palette does for color. Never a looping/pulsing idle animation. Always respect
+  `useReducedMotion` (`@mantine/hooks`) — an animated component needs a real unanimated code path,
+  not just `duration: 0`.
 
 ## Color identity & accent restraint (the #1 lever)
 
