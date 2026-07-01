@@ -124,7 +124,8 @@
     "@visx/responsive": "4.0.0",
     "@visx/scale": "4.0.0",
     "@visx/shape": "4.0.0",
-    "@visx/threshold": "4.0.0"
+    "@visx/threshold": "4.0.0",
+    "motion": "12.42.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.3",

@@ -13,6 +13,7 @@ export {
   type BasaltErrorContext,
 } from './provider'
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
+export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export {
   BasaltShell,
   NavCountBadge,

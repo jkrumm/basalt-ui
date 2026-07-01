@@ -20,15 +20,15 @@ in `../../docs/BLUEPRINT.md`.
 
 ## Published surface (subpath exports)
 
-| Subpath        | Mantine? | Contents                                                                                                                                                                     |
-| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, shell types |
-| `./charts`     | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                |
-| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                             |
-| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                         |
-| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                     |
-| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                |
-| `./configs/*`  | —        | raw toolchain presets (real file paths — `extends` needs them)                                                                                                               |
+| Subpath        | Mantine? | Contents                                                                                                                                                                                    |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `ThemeToggle`, shell types |
+| `./charts`     | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                               |
+| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                            |
+| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                                        |
+| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                                    |
+| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                               |
+| `./configs/*`  | —        | raw toolchain presets (real file paths — `extends` needs them)                                                                                                                              |
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
@@ -75,6 +75,9 @@ false` are required.
   migration, behind the pack-test; do not bump it unilaterally.
 - **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
   `@mantine/dates` optional.
+- **`motion`** pinned exact at `12.42.0` — the framework's one animation dependency (bundled
+  implementation detail of shipped components, same precedent as `@visx/*`; not a peer). See
+  "Motion" below.
 - **NO** zustand, **NO** `@tanstack/*`, **NO** `@tabler/icons` — icons are passed in as `ReactNode`.
 - `sideEffects: ['*.css']`.
 
@@ -145,6 +148,30 @@ Rules that apply to every factory, without exception:
   `BasaltProvider`.
 - `BasaltProvider` — wraps `MantineProvider`, injects the palette `<style>` (`injectPalette={false}`
   escape hatch for SSR/head injection), bridges the Vx tokens.
+- `ThemeToggle` — tri-state (light/dark/system) control. Click cycles all three (Mantine's own
+  `toggleColorScheme` only flips light/dark); hover/focus reveals a popover to pick one directly.
+  Single animated sun/moon glyph — never a third "computer/monitor" icon — with a subtle ring
+  indicating system mode. See "Motion" below for the animation layer it's built on.
+
+## Motion (`motion`, the animation layer)
+
+The motion analog of the `--vx-*` token system — one shared set of constants instead of ad hoc
+durations/easings scattered per component.
+
+- `src/motion/index.ts` exports `MOTION_DURATION` (seconds: `fast`/`base`/`slow`), `MOTION_SPRING`
+  (the standard interactive spring), `MOTION_EASE_STANDARD` (tween curve). Zero React, zero
+  `@mantine/*` — importable from Mantine-coupled AND Mantine-free code alike (`motion` itself has
+  no framework coupling, so using it inside `src/charts/**`/`src/tokens/**` does NOT violate the
+  Mantine-free boundary — only `@mantine/*` imports are banned there).
+- Reduced-motion is read via `@mantine/hooks`' `useReducedMotion` (already a peer dep) at the call
+  site, not a duplicate hook from `motion` — every animated component must branch on it and render
+  an unanimated, instant equivalent (see `ThemeToggle` for the pattern: a fully separate
+  no-`motion`-import code path when reduced motion is requested, not just `duration: 0`).
+- `ThemeToggle` is the first consumer: the sun/moon glyph crossfade/rotate and the direct-select
+  popover reveal both animate via `motion/react` (`motion.*` components + `AnimatePresence`) using
+  the shared spring token.
+- Restraint applies to motion the same way it applies to color (see `/basalt:design`): subtle,
+  purposeful, physically-plausible — never a looping/pulsing idle animation, never decorative.
 
 ## App shell (`.`)
 
