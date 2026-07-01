@@ -44,6 +44,12 @@ const AXIS_WRAPPER_FILE = /(?:^|\/)Axes\.tsx$/
 // radius prop with a numeric literal (module-level so it is not re-created per call).
 const RADIUS_PROP_RE = /\bradius=(?:\{[0-9]+\}|"[0-9]+")/g
 
+// Hardcoded motion transition params — a duration/spring/ease literal inline in `transition={{}}`
+// instead of the shared MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD tokens.
+const MOTION_TRANSITION_NUMERIC =
+  /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
+const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
+
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
@@ -61,6 +67,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   inlineSpacing: true,
   inlineDisplay: true,
   rawVisxAxis: true,
+  rawMotionValue: true,
   allowComment: 'theme-allow',
 }
 
@@ -85,7 +92,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 12 guard kinds. The triad test asserts
+ * The closed registry of all 13 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface and raw-html-layout are handled inline in checkSource (multi-regex / multi-condition);
@@ -170,6 +177,13 @@ export const GUARD_RULES = {
     appliesTo: isChartFile,
     message:
       'Raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use AxisLeftNumeric / AxisBottomDate / AxisRightNumeric.',
+  },
+  'raw-motion-value': {
+    kind: 'raw-motion-value',
+    pattern: MOTION_TRANSITION_NUMERIC, // handled inline (2-regex kind); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.rawMotionValue,
+    message:
+      'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -281,6 +295,16 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     ) {
       for (const m of line.matchAll(GUARD_RULES['raw-visx-axis'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
+      }
+    }
+
+    // raw-motion-value: 2 separate regex checks, one kind — gated via GUARD_RULES entry.
+    if (GUARD_RULES['raw-motion-value'].enabled!(cfg)) {
+      for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
+      }
+      for (const m of line.matchAll(MOTION_TRANSITION_EASE_ARRAY)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
       }
     }
   }

@@ -81,6 +81,12 @@ export type BasaltConfig = {
    * `raw-visx-axis` check.
    */
   rawVisxAxis?: boolean
+  /**
+   * Flag a hardcoded duration/spring/ease literal inline in a `transition={{...}}` prop — route it
+   * through `MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` instead. Default: `true`
+   * (ON). Set `false` to disable the `raw-motion-value` check.
+   */
+  rawMotionValue?: boolean
   /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
   seriesModulePath?: string
   /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
@@ -151,6 +157,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
+    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     allowComment: 'theme-allow',
   }
 
@@ -199,6 +206,8 @@ export function checkTheme(cwd: string = process.cwd()): number {
       'inline-display: use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid. ' +
       'raw-visx-axis: raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use ' +
       'AxisLeftNumeric / AxisBottomDate / AxisRightNumeric from the charts primitives. ' +
+      'raw-motion-value: hardcoded duration/spring/ease in `transition={{...}}` — use ' +
+      'MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD instead. ' +
       'Add a `theme-allow` comment for a deliberate exception.',
   )
   return 1
@@ -1155,6 +1164,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
+    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     allowComment: 'theme-allow',
   }
 

@@ -226,3 +226,27 @@ Guidelines:
 - A button that turns into a check **is** the confirmation; the toast is for context the user can't see.
 - Destructive actions: `modals.openConfirmModal` first, then the same in-button success pattern after.
 - Form errors: prefer inline field errors over toast; toast only for submit-level failures.
+
+## Motion (`motion`)
+
+basalt-ui ships `motion` (motion.dev, formerly framer-motion) as a bundled dependency — the same
+precedent as `@visx/*`: an internal implementation detail, not a peer the consumer opts into.
+`ThemeToggle` is the first consumer (icon morph + direct-select popover reveal).
+
+- **Reach for Mantine's own `<Transition>`** (above) for simple mount/unmount fades/pops — it's
+  already there, needs no import. **Reach for `motion`** when the interaction needs something
+  `Transition` can't do: crossfade between two different elements (not just show/hide one),
+  spring physics, or a gesture-driven reveal.
+- **Import from `motion/react`, never the raw `framer-motion` package** — `motion` re-exports it,
+  but a direct `framer-motion` import bypasses the pinned/vetted specifier. Enforced by oxlint
+  `no-restricted-imports` (repo-local and the shipped consumer preset).
+- **Never a hardcoded duration/spring/ease literal in a `transition={{...}}` prop.** Import
+  `MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` from `basalt-ui` instead — the
+  motion analog of routing color through `VX.*`. `MOTION_DURATION` is capped at 0.3s (300ms),
+  matching the interaction-feedback ceiling above. Mechanically enforced by `basalt check-theme`'s
+  `raw-motion-value` guard (default ON; `theme-allow` line-comment escape).
+- **Always branch on `useReducedMotion`** (`@mantine/hooks`) — render a real unanimated code path
+  (no `motion.*` wrapper at all), not just `transition={{ duration: 0 }}`. See `ThemeToggle`'s
+  `SchemeGlyph` for the pattern.
+- **Restraint applies to motion too.** Subtle and purposeful — a state change earns a transition,
+  idle chrome does not. Never a looping/pulsing idle animation.

@@ -7,9 +7,9 @@
  * selectable — cycling and direct-select share one state, so they can never drift.
  *
  * The glyph is a single animated sun/moon (never a third "computer" icon) reflecting the
- * *resolved* appearance (`useComputedColorScheme`); a subtle dashed ring appears around it only
- * while `colorScheme === 'auto'`, signalling "following the OS" without a distinct icon. Animated
- * via `motion` (see `../motion` for the shared duration/spring tokens); collapses to an instant,
+ * *resolved* appearance (`useComputedColorScheme`) — no extra chrome for system mode; the tooltip
+ * ("System (dark)") and the popover's selected option carry that state instead. Animated via
+ * `motion` (see `../motion` for the shared duration/spring tokens); collapses to an instant,
  * unanimated swap when `useReducedMotion` reports a preference for reduced motion.
  */
 import {
@@ -104,50 +104,6 @@ function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: bool
   )
 }
 
-function RingGlyph() {
-  return (
-    <svg
-      width={26}
-      height={26}
-      viewBox="0 0 26 26"
-      aria-hidden
-      style={{ position: 'absolute', inset: -4, pointerEvents: 'none' }}
-    >
-      <circle
-        cx={13}
-        cy={13}
-        r={11}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1}
-        strokeDasharray="2 3"
-        opacity={0.5}
-      />
-    </svg>
-  )
-}
-
-/** Dashed ring that appears only in system mode — "following the OS", not a distinct icon. */
-function AutoRing({ visible, reduceMotion }: { visible: boolean; reduceMotion: boolean }) {
-  if (reduceMotion) return visible ? <RingGlyph /> : null
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          key="auto-ring"
-          style={{ position: 'absolute', inset: 0 }}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={MOTION_SPRING}
-        >
-          <RingGlyph />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
 export type ThemeToggleProps = {
   /** Delay (ms) before the direct-select popover opens on hover/focus. Default 150. */
   openDelay?: number
@@ -200,10 +156,7 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
             onFocus={scheduleOpen}
             onBlur={scheduleClose}
           >
-            <span style={{ position: 'relative', display: 'inline-flex' }}>
-              <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
-              <AutoRing visible={auto} reduceMotion={reduceMotion} />
-            </span>
+            <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
           </ActionIcon>
         </Tooltip>
       </Popover.Target>

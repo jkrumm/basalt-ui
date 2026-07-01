@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 12 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 13 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -444,6 +444,48 @@ describe('raw-visx-axis', () => {
   it('does NOT flag a theme-allow line in a chart file', () => {
     const f = find(`<AxisLeft scale={s} /> // theme-allow: bespoke`, CHART_PATH)
     expect(kinds(f)).not.toContain('raw-visx-axis')
+  })
+})
+
+// ── 13. raw-motion-value ─────────────────────────────────────────────────────
+
+describe('raw-motion-value', () => {
+  it('flags a hardcoded duration in transition={{}}', () => {
+    const f = find(`<motion.div transition={{ duration: 0.3 }} />`)
+    expect(kinds(f)).toContain('raw-motion-value')
+  })
+
+  it('flags a hardcoded spring stiffness in transition={{}}', () => {
+    const f = find(`<motion.div transition={{ type: 'spring', stiffness: 400 }} />`)
+    expect(kinds(f)).toContain('raw-motion-value')
+  })
+
+  it('flags a hardcoded ease bezier array in transition={{}}', () => {
+    const f = find(`<motion.div transition={{ ease: [0.4, 0, 0.2, 1] }} />`)
+    expect(kinds(f)).toContain('raw-motion-value')
+  })
+
+  it('does NOT flag a transition referencing the shared token', () => {
+    const f = find(`<motion.div transition={MOTION_SPRING} />`)
+    expect(kinds(f)).not.toContain('raw-motion-value')
+  })
+
+  it('does NOT flag a named easing string (not a magic number)', () => {
+    const f = find(`<motion.div transition={{ ease: 'easeInOut' }} />`)
+    expect(kinds(f)).not.toContain('raw-motion-value')
+  })
+
+  it('does NOT flag when rawMotionValue is false', () => {
+    const f = checkSource(`<motion.div transition={{ duration: 0.3 }} />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      rawMotionValue: false,
+    })
+    expect(kinds(f)).not.toContain('raw-motion-value')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(`<motion.div transition={{ duration: 0.3 }} /> // theme-allow: bespoke`)
+    expect(kinds(f)).not.toContain('raw-motion-value')
   })
 })
 

@@ -14,6 +14,7 @@ export {
 } from './provider'
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
+export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {
   BasaltShell,
   NavCountBadge,

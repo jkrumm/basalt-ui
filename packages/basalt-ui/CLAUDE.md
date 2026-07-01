@@ -158,11 +158,13 @@ Rules that apply to every factory, without exception:
 The motion analog of the `--vx-*` token system — one shared set of constants instead of ad hoc
 durations/easings scattered per component.
 
-- `src/motion/index.ts` exports `MOTION_DURATION` (seconds: `fast`/`base`/`slow`), `MOTION_SPRING`
-  (the standard interactive spring), `MOTION_EASE_STANDARD` (tween curve). Zero React, zero
-  `@mantine/*` — importable from Mantine-coupled AND Mantine-free code alike (`motion` itself has
-  no framework coupling, so using it inside `src/charts/**`/`src/tokens/**` does NOT violate the
-  Mantine-free boundary — only `@mantine/*` imports are banned there).
+- `src/motion/index.ts` exports `MOTION_DURATION` (seconds: `fast`/`base`/`slow`, capped at 0.3 —
+  matches basalt-mantine.md's "never above 300ms" interaction-feedback ceiling), `MOTION_SPRING`
+  (the standard interactive spring), `MOTION_EASE_STANDARD` (tween curve) — all re-exported from
+  the root `.` barrel. Zero React, zero `@mantine/*` — importable from Mantine-coupled AND
+  Mantine-free code alike (`motion` itself has no framework coupling, so using it inside
+  `src/charts/**`/`src/tokens/**` does NOT violate the Mantine-free boundary — only `@mantine/*`
+  imports are banned there).
 - Reduced-motion is read via `@mantine/hooks`' `useReducedMotion` (already a peer dep) at the call
   site, not a duplicate hook from `motion` — every animated component must branch on it and render
   an unanimated, instant equivalent (see `ThemeToggle` for the pattern: a fully separate
@@ -172,6 +174,14 @@ durations/easings scattered per component.
   the shared spring token.
 - Restraint applies to motion the same way it applies to color (see `/basalt:design`): subtle,
   purposeful, physically-plausible — never a looping/pulsing idle animation, never decorative.
+- **Mechanically enforced, same rigor as the Mantine-free boundary and the color guard:**
+  - oxlint `no-restricted-imports` bans a direct `framer-motion` import repo-wide and in the
+    shipped consumer preset (`#app` synthetic surface in `surfaces.ts`) — must import from
+    `motion/react`. Regenerate via `bun packages/basalt-ui/scripts/gen-oxlint.ts` after any
+    `SURFACES` edit (`--check` is the CI drift gate).
+  - `basalt check-theme`'s 13th guard kind, `raw-motion-value`, fails the build on a hardcoded
+    duration/spring/ease literal inline in a `transition={{...}}` prop — route it through the
+    tokens above instead (`theme-allow` escape same as every other guard kind).
 
 ## App shell (`.`)
 

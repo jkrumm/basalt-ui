@@ -32,6 +32,10 @@
               {
                 "name": "@visx/tooltip",
                 "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
+              },
+              {
+                "name": "framer-motion",
+                "message": "Import from 'motion/react', not the raw framer-motion package."
               }
             ],
             "patterns": [

@@ -182,9 +182,9 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'mantine',
     skill: ['basalt-app', 'basalt-design'],
-    guardKinds: [],
+    guardKinds: ['raw-motion-value'],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle',
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -406,6 +406,7 @@ export const SURFACES = {
       v('antd', 'Use Mantine — antd is not part of the basalt-ui stack.', { shippedOnly: true }),
       v('@visx/tooltip', 'Use ChartTooltip + TooltipHeader/Row/Body from {ctx}.'),
       vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
+      v('framer-motion', "Import from 'motion/react', not the raw framer-motion package."),
     ],
   },
 } as const satisfies Record<string, SurfaceSpec>
