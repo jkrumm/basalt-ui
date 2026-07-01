@@ -77,8 +77,6 @@ export function SettingsPage() {
   const { colorScheme, setColorScheme } = useMantineColorScheme()
   const [copied, setCopied] = useState<string | null>(null)
 
-  const scheme = colorScheme === 'auto' ? 'dark' : colorScheme
-
   return (
     <Stack gap="md">
       <PersistedStateDemo />
@@ -93,11 +91,12 @@ export function SettingsPage() {
             </Text>
           </Stack>
           <SegmentedControl
-            value={scheme}
-            onChange={(v) => setColorScheme(v as 'light' | 'dark')}
+            value={colorScheme}
+            onChange={(v) => setColorScheme(v as 'light' | 'dark' | 'auto')}
             data={[
               { label: 'Light', value: 'light' },
               { label: 'Dark', value: 'dark' },
+              { label: 'System', value: 'auto' },
             ]}
           />
         </Group>

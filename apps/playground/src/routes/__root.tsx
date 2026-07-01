@@ -12,16 +12,9 @@
  *     free.
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import {
-  ActionIcon,
-  Badge,
-  NavLink as MantineNavLink,
-  Text,
-  Tooltip,
-  useMantineColorScheme,
-} from '@mantine/core'
+import { Badge, NavLink as MantineNavLink, Text, Tooltip } from '@mantine/core'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
-import { BasaltShell, NavCountBadge, useOnlineStatus } from 'basalt-ui'
+import { BasaltShell, NavCountBadge, ThemeToggle, useOnlineStatus } from 'basalt-ui'
 import type { NavLinkRenderer, SidebarSection } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
@@ -59,35 +52,7 @@ const renderNavLink: NavLinkRenderer = (item, { active }) => (
   />
 )
 
-/** Sun/moon glyph for the top-bar scheme toggle. */
-function SchemeIcon({ dark }: { dark: boolean }) {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      {dark ? (
-        <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
-      ) : (
-        <>
-          <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-          <path d="M3 12h1M20 12h1M12 3v1M12 20v1M5.6 5.6l.7 .7M17.7 17.7l.7 .7M5.6 18.4l.7 -.7M17.7 6.3l.7 -.7" />
-        </>
-      )}
-    </svg>
-  )
-}
-
 function RootLayout() {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme()
-  const dark = (colorScheme === 'auto' ? 'dark' : colorScheme) === 'dark'
   const online = useOnlineStatus()
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
@@ -246,16 +211,7 @@ function RootLayout() {
             </Badge>
           </Tooltip>
           <NotificationBell />
-          <Tooltip label={dark ? 'Switch to light' : 'Switch to dark'} withArrow>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={toggleColorScheme}
-              aria-label="Toggle color scheme"
-            >
-              <SchemeIcon dark={dark} />
-            </ActionIcon>
-          </Tooltip>
+          <ThemeToggle />
         </>
       }
       settingsMenuItems={[
