@@ -12,9 +12,9 @@
  *     free.
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { Badge, NavLink as MantineNavLink, Text, Tooltip } from '@mantine/core'
+import { NavLink as MantineNavLink, Text } from '@mantine/core'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
-import { BasaltShell, NavCountBadge, ThemeToggle, useOnlineStatus } from 'basalt-ui'
+import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from 'basalt-ui'
 import type { NavLinkRenderer, SidebarSection } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
@@ -53,7 +53,6 @@ const renderNavLink: NavLinkRenderer = (item, { active }) => (
 )
 
 function RootLayout() {
-  const online = useOnlineStatus()
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
 
@@ -179,6 +178,14 @@ function RootLayout() {
         icon: <IconSettings />,
         items: [
           {
+            key: 'connectivity',
+            label: 'Connectivity',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/connectivity',
+            active: isActive('/connectivity'),
+          },
+          {
             key: 'settings',
             label: 'Settings',
             mobile: true,
@@ -199,17 +206,7 @@ function RootLayout() {
       renderNavLink={renderNavLink}
       globalActions={
         <>
-          {/* useOnlineStatus — renders an online/offline badge in the header */}
-          <Tooltip label={online ? 'Connected' : 'Offline'} withArrow>
-            <Badge
-              size="sm"
-              variant="dot"
-              color={online ? 'teal' : 'red'}
-              style={{ cursor: 'default' }}
-            >
-              <Text size="xs">{online ? 'Online' : 'Offline'}</Text>
-            </Badge>
-          </Tooltip>
+          <ConnectivityIndicator />
           <NotificationBell />
           <ThemeToggle />
         </>

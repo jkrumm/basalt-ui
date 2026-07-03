@@ -146,3 +146,15 @@ export function IconPalette() {
     </Glyph>
   )
 }
+
+/** Subtle wifi icon for the online-status indicator. */
+export function IconWifi() {
+  return (
+    <Glyph size={18}>
+      <path d="M12 18h.01" />
+      <path d="M9.172 15.172a4 4 0 0 1 5.656 0" />
+      <path d="M6.343 12.343a8 8 0 0 1 11.314 0" />
+      <path d="M3.515 9.515c4.686 -4.687 12.284 -4.687 16.97 0" />
+    </Glyph>
+  )
+}
