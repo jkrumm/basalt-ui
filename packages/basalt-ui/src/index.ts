@@ -52,6 +52,15 @@ export {
 // ── Persisted state + online hook (state.ts) ─────────────────────────────────────────────────────
 export { createPersistedState, type PersistedStateOptions, useOnlineStatus } from './state'
 
+// ── Connectivity (auto-mounted by BasaltProvider) ────────────────────────────────────────────────
+export { ConnectivityProvider, ConnectivityIndicator, useConnectivity } from './connectivity'
+export type {
+  ConnectivityStatus,
+  ConnectivitySnapshot,
+  ConnectivityProviderProps,
+  ConnectivityOverride,
+} from './connectivity'
+
 // ── Type-only re-exports for compile fixtures (H.4) ──────────────────────────────────────────────
 // SurfaceSpec/RuleName/SkillName: the value SURFACES stays internal; types only for surfaces-broken
 // fixture. GuardKind: type-only for fixture completeness. No ./surfaces subpath exposed.

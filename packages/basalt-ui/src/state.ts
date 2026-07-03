@@ -35,6 +35,10 @@ const isOnlineServer = typeof window === 'undefined'
  * Backed by `useSyncExternalStore`: subscribes to window `online`/`offline` events.
  * SSR-safe — `getServerSnapshot` returns `true` (optimistic: assume online on the server).
  *
+ * @deprecated Use `useConnectivity()` from `basalt-ui` instead — it aggregates browser,
+ *   React Query, SSE, and health-ping signals into a richer `{ status, details }` object.
+ *   `useOnlineStatus` remains for simple boolean needs without a provider dependency.
+ *
  * @example
  * const isOnline = useOnlineStatus()
  * if (!isOnline) return <OfflineBanner />

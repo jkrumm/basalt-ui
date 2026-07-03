@@ -16,7 +16,6 @@ import {
   ActionIcon,
   Popover,
   SegmentedControl,
-  Tooltip,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core'
@@ -133,7 +132,6 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
   }
 
   const dark = resolved === 'dark'
-  const auto = colorScheme === 'auto'
 
   return (
     <Popover
@@ -145,20 +143,18 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
       trapFocus={false}
     >
       <Popover.Target>
-        <Tooltip label={auto ? `System (${dark ? 'dark' : 'light'})` : LABEL[resolved]} withArrow>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={`Theme: ${LABEL[colorScheme]}. Click to cycle, hover to pick directly.`}
-            onClick={() => setColorScheme(nextScheme(colorScheme))}
-            onMouseEnter={scheduleOpen}
-            onMouseLeave={scheduleClose}
-            onFocus={scheduleOpen}
-            onBlur={scheduleClose}
-          >
-            <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
-          </ActionIcon>
-        </Tooltip>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          aria-label={`Theme: ${LABEL[colorScheme]}. Click to cycle, hover to pick directly.`}
+          onClick={() => setColorScheme(nextScheme(colorScheme))}
+          onMouseEnter={scheduleOpen}
+          onMouseLeave={scheduleClose}
+          onFocus={scheduleOpen}
+          onBlur={scheduleClose}
+        >
+          <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
+        </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown p={4} onMouseEnter={scheduleOpen} onMouseLeave={scheduleClose}>
         <SegmentedControl

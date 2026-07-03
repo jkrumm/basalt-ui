@@ -20,6 +20,7 @@ import type { MantineProviderProps } from '@mantine/core'
 import { Component, useEffect } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
+import { ConnectivityProvider } from '../connectivity'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
 import { buildPaletteCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
@@ -72,6 +73,12 @@ export type BasaltProviderProps = {
    * prop; its nonce mechanism is `getStyleNonce: () => string`, which flows through `...rest`.
    */
   nonce?: string
+  /** Optional SSE endpoint for connectivity monitoring. When set, an EventSource is opened. */
+  sseUrl?: string
+  /** Optional health-check endpoint for connectivity monitoring. When set, periodic GET pings run. */
+  healthUrl?: string
+  /** Interval in ms for health pings. Default: 30_000 (30s). */
+  healthIntervalMs?: number
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme'>
 
 // ── Default error handler ─────────────────────────────────────────────────────────────────────────
@@ -192,6 +199,9 @@ export function BasaltProvider({
   defaultColorScheme = 'dark',
   onError,
   nonce,
+  sseUrl,
+  healthUrl,
+  healthIntervalMs,
   ...rest
 }: BasaltProviderProps) {
   const errorHandler = onError ?? defaultOnError
@@ -210,7 +220,13 @@ export function BasaltProvider({
           nonce={nonce}
           onError={errorHandler}
         >
-          {children}
+          <ConnectivityProvider
+            {...(sseUrl !== undefined ? { sseUrl } : {})}
+            {...(healthUrl !== undefined ? { healthUrl } : {})}
+            {...(healthIntervalMs !== undefined ? { healthIntervalMs } : {})}
+          >
+            {children}
+          </ConnectivityProvider>
         </BasaltBridge>
       </BasaltErrorBoundary>
     </MantineProvider>

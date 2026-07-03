@@ -100,6 +100,10 @@
       "types": "./dist/state.d.ts",
       "import": "./dist/state.js"
     },
+    "./connectivity": {
+      "types": "./dist/connectivity/index.d.ts",
+      "import": "./dist/connectivity/index.js"
+    },
     "./styles.css": "./dist/styles.css",
     "./configs/*": "./configs/*",
     "./llms.txt": "./llms.txt"
