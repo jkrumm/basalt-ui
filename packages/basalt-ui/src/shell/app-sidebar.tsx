@@ -17,7 +17,6 @@ import {
   ActionIcon,
   Box,
   Collapse,
-  Divider,
   Group,
   Menu,
   NavLink,
@@ -93,8 +92,8 @@ function IconChevron({ open }: { open: boolean }) {
 function IconGear() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -171,7 +170,7 @@ export function AppSidebar({
       if (item.disabled) {
         return (
           <Tooltip key={item.key} label="Coming soon" position="right" withArrow>
-            <Box>
+            <Box className={classes.navItem}>
               <NavLink
                 classNames={{ root: classes.link }}
                 label={item.label}
@@ -201,14 +200,14 @@ export function AppSidebar({
 
       return (
         <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
-          <Box>{body}</Box>
+          <Box className={classes.navItem}>{body}</Box>
         </Tooltip>
       )
     })
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
-      <Group className={classes.brand} h={32} mb="xs" px="xs" gap="sm" wrap="nowrap">
+      <Group className={classes.brand} h={48} px={8} gap="sm" wrap="nowrap">
         <Group className={classes.brandLead} gap="sm" wrap="nowrap">
           {brand.logoSrc && (
             <img
@@ -236,22 +235,24 @@ export function AppSidebar({
         </ActionIcon>
       </Group>
 
-      <Stack gap="xs" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <Stack gap={0} className={classes.nav} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {sections.map((section) => {
           if (!section.collapsible) {
             return (
-              <Stack key={section.label} gap={2}>
-                <SectionLabel>{section.label}</SectionLabel>
-                {renderItems(section)}
-              </Stack>
+              <div key={section.label}>
+                <div className={classes.sectionBand}>
+                  <SectionLabel flush>{section.label}</SectionLabel>
+                </div>
+                <Stack gap={0}>{renderItems(section)}</Stack>
+              </div>
             )
           }
 
           const isOpen = !collapsedSections[section.label]
           return (
-            <Stack key={section.label} gap={2}>
+            <div key={section.label}>
               <UnstyledButton
-                className={classes.sectionHeader}
+                className={`${classes.sectionBand} ${classes.sectionHeader}`}
                 onClick={() =>
                   setCollapsedSections((prev) => ({
                     ...prev,
@@ -264,15 +265,14 @@ export function AppSidebar({
                 <IconChevron open={isOpen} />
               </UnstyledButton>
               <Collapse expanded={isOpen}>
-                <Stack gap={2}>{renderItems(section)}</Stack>
+                <Stack gap={0}>{renderItems(section)}</Stack>
               </Collapse>
-            </Stack>
+            </div>
           )
         })}
       </Stack>
 
-      <Divider my="sm" mx="-md" />
-      <Group gap="xs" wrap="nowrap">
+      <Group className={classes.footer} gap="xs" wrap="nowrap">
         <Menu position="top-start" withArrow width={200} zIndex={500}>
           <Menu.Target>
             <UnstyledButton className={classes.footerBtn} aria-label="Settings">

@@ -188,10 +188,10 @@ export const baseTheme: MantineThemeOverride = createTheme({
     NavLink: NavLink.extend({
       vars: () => ({
         root: {
-          '--nl-bg': 'color-mix(in srgb, var(--vx-neutral) 13%, transparent)',
+          '--nl-bg': 'color-mix(in srgb, var(--vx-neutral) 9%, transparent)',
           '--nl-color': 'var(--mantine-color-text)',
-          '--nl-hover': 'color-mix(in srgb, var(--vx-neutral) 8%, transparent)',
-          '--nl-padding': '2px 8px',
+          '--nl-hover': 'color-mix(in srgb, var(--vx-neutral) 6%, transparent)',
+          '--nl-padding': '0 2px',
         },
         children: {},
       }),
@@ -204,8 +204,8 @@ export const baseTheme: MantineThemeOverride = createTheme({
       classNames: { root: navLinkClasses.root },
       styles: {
         root: {
-          minHeight: 24,
-          borderRadius: '6px',
+          minHeight: 20,
+          borderRadius: 0,
         },
       },
     }),

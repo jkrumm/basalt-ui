@@ -24,26 +24,59 @@
   margin-inline-end: 8px;
 }
 
+/*
+ * Brand header — a FIXED separator: a bottom hairline (mirrors the footer's `Divider`) delimits the
+ * logo from the scrollable nav, so content scrolls cleanly beneath a persistent header rule. Its
+ * height is pinned (h={48}) to match the top header bar so the two bottom borders form one continuous
+ * line across the shell.
+ */
 .brand {
   justify-content: space-between;
+  border-bottom: 1px solid var(--vx-surface-border);
+  flex-shrink: 0;
+}
+
+/*
+ * The first section's own top border is redundant — the fixed brand border above already opens the
+ * region. Drop it (and its 1px overlap pull) so there's exactly one hairline under the logo.
+ */
+.nav > div:first-child .sectionBand {
+  margin-top: 0;
+  border-top: none;
 }
 
 .brandLead {
   min-width: 0;
 }
 
+/*
+ * Footer region — a full-bleed top hairline separates it from the nav. NOT a Mantine `Divider`,
+ * whose `my` margins wrapped the line in a dark band above the footer; the border sits flush and the
+ * footer row's own padding supplies the spacing, so it lines up with the nav rows.
+ */
+.footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--vx-surface-border);
+}
+
+/*
+ * Footer settings row — mirrors Mantine's resolved NavLink geometry (padding 8px 12px, 12px icon
+ * gap, 18px icon, square corners, 6% neutral hover) so it reads as one of the nav rows rather than a
+ * separate control. (The theme's `--nl-*` vars don't drive NavLink padding in v9 — the row renders
+ * Mantine's default 8px/12px — so these are matched to the computed values, not the token.)
+ */
 .footerBtn {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 0;
 }
 
 .footerBtn:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 8%, transparent);
+  background-color: color-mix(in srgb, var(--vx-neutral) 6%, transparent);
 }
 
 .footerText {
@@ -52,28 +85,39 @@
 }
 
 /*
- * Collapsible group header — keeps the SectionLabel look (dimmed, uppercase) and adds a trailing
- * neutral chevron. Color is set to dimmed so the chevron inherits a quiet stroke (no accent). The
- * label is rendered `flush` (no intrinsic inset/margin) so the header OWNS the padding here — the
- * hover box then matches the plain label's left inset and breathes vertically instead of hugging
- * the text.
+ * Framed section band — THE region separator. A full-bleed hairline top/bottom rule (no resting
+ * fill) delimits each nav region. Both the static label and the collapsible header button share the
+ * frame; only the button (`.sectionHeader`) adds a pointer, a hover lift and a trailing chevron. The
+ * SectionLabel inside is rendered `flush` so the band OWNS the padding — the label then lines up with
+ * the nav-item icon column.
  */
-.sectionHeader {
+.sectionBand {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 3px var(--mantine-spacing-xs);
-  color: var(--mantine-color-dimmed);
-  border-radius: 6px;
+  padding: 9px 8px;
+  /* Pull each band up 1px so its top border overlaps whatever sits directly above it. When a
+   * collapsed section (zero trailing height) is followed by the next band, the two hairlines
+   * coincide into ONE shared border instead of a doubled line. Against an expanded section's items
+   * it just nudges into the padding — no visible effect. */
+  margin-top: -1px;
+  border-top: 1px solid var(--vx-surface-border);
+  border-bottom: 1px solid var(--vx-surface-border);
 }
 
-.sectionHeader > svg {
+.sectionBand > svg {
   flex: none;
 }
 
+/* Collapsible variant — interactive: dimmed chevron stroke, pointer, a hover lift over the fill. */
+.sectionHeader {
+  color: var(--mantine-color-dimmed);
+  cursor: pointer;
+}
+
 .sectionHeader:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 8%, transparent);
+  background-color: color-mix(in srgb, var(--vx-neutral) 11%, transparent);
 }
 
 /*
@@ -90,21 +134,34 @@
     display: none;
   }
 
-  .root[data-collapsed] .sectionLabel,
-  .root[data-collapsed] .sectionHeader {
+  /* Region separators in the rail: the band collapses to a full-width hairline (label + chevron
+   * hidden, no padding) so grouped icons stay visually separated without their text headers. The
+   * first band stays borderless via the `.nav > div:first-child` rule, so no line hugs the brand. */
+  .root[data-collapsed] .sectionBand {
+    padding: 0;
+    min-height: 0;
+    border-bottom: none;
+    pointer-events: none;
+  }
+
+  .root[data-collapsed] .sectionBand > * {
     display: none;
   }
 
-  .root[data-collapsed] .link {
+  /* Collapse every nav row to its icon. Targets `.navItem` — the wrapper Box present on EVERY render
+   * path — so it covers the shell's fallback NavLink AND a consumer's `renderNavLink` (e.g. a router
+   * <Link>), both of which render a Mantine NavLink inside. Keying off `.link` alone missed consumer
+   * links, so their labels overflowed the 64px rail. */
+  .root[data-collapsed] .navItem :global(.mantine-NavLink-root) {
     justify-content: center;
   }
 
-  .root[data-collapsed] .link :global(.mantine-NavLink-body),
-  .root[data-collapsed] .link :global(.mantine-NavLink-section[data-position='right']) {
+  .root[data-collapsed] .navItem :global(.mantine-NavLink-body),
+  .root[data-collapsed] .navItem :global(.mantine-NavLink-section[data-position='right']) {
     display: none;
   }
 
-  .root[data-collapsed] .link :global(.mantine-NavLink-section[data-position='left']) {
+  .root[data-collapsed] .navItem :global(.mantine-NavLink-section[data-position='left']) {
     margin-inline-end: 0;
   }
 

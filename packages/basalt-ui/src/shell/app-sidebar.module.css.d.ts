@@ -7,12 +7,16 @@
 declare const classes: {
   readonly root: string
   readonly link: string
+  readonly navItem: string
   readonly brand: string
   readonly brandLead: string
+  readonly nav: string
   readonly collapseBtn: string
+  readonly footer: string
   readonly footerBtn: string
   readonly footerText: string
   readonly sectionLabel: string
+  readonly sectionBand: string
   readonly sectionHeader: string
 }
 export default classes
