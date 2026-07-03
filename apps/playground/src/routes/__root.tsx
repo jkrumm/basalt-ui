@@ -15,7 +15,7 @@
 import { NavLink as MantineNavLink, Text } from '@mantine/core'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from 'basalt-ui'
-import type { NavLinkRenderer, SidebarSection } from 'basalt-ui'
+import type { BreadcrumbLinkRenderer, NavLinkRenderer, SidebarSection } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { useMemo } from 'react'
@@ -52,6 +52,13 @@ const renderNavLink: NavLinkRenderer = (item, { active }) => (
     rightSection={item.badge}
     active={active}
   />
+)
+
+/** Renders breadcrumb parent segments as client-side TanStack Links. */
+const renderBreadcrumbLink: BreadcrumbLinkRenderer = (href, label) => (
+  <Text size="sm" c="dimmed" truncate component={Link} to={href as never}>
+    {label}
+  </Text>
 )
 
 function RootLayout() {
@@ -229,6 +236,7 @@ function RootLayout() {
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
       sections={sections}
       renderNavLink={renderNavLink}
+      renderBreadcrumbLink={renderBreadcrumbLink}
       globalActions={
         <>
           <ConnectivityIndicator />
