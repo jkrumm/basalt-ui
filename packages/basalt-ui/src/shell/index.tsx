@@ -18,6 +18,7 @@ import type { NavLinkRenderer } from './app-sidebar'
 import { MobileNav } from './app-mobile-nav'
 import type { MobileNavItem, MobileNavSection } from './app-mobile-nav'
 import { AppBreadcrumbs } from './app-breadcrumbs'
+import type { BreadcrumbLinkRenderer } from './app-breadcrumbs'
 import { PageActionsOutlet, PageHeaderProvider } from './page-header'
 import headerClasses from './app-header.module.css'
 
@@ -28,7 +29,7 @@ export {
   type MobileNavSection,
   type MobileNavLinkRenderer,
 } from './app-mobile-nav'
-export { AppBreadcrumbs } from './app-breadcrumbs'
+export { AppBreadcrumbs, type BreadcrumbLinkRenderer } from './app-breadcrumbs'
 export { PageHeaderProvider, PageActions, PageActionsOutlet } from './page-header'
 
 /** A single sidebar destination. Grounded verbatim in argo's `SidebarItem`. */
@@ -102,6 +103,12 @@ export type BasaltShellProps = {
   settingsMenuItems?: SettingsMenuItem[]
   /** localStorage key for the persisted sidebar-collapsed flag. */
   storageKey?: string
+  /**
+   * Optional router link renderer for the breadcrumb parent segment. When provided, the parent
+   * breadcrumb label is rendered through this callback (e.g. a TanStack `<Link>`) instead of a
+   * plain `<a href>`, enabling client-side navigation.
+   */
+  renderBreadcrumbLink?: BreadcrumbLinkRenderer | undefined
   /** Page content. */
   children?: ReactNode
 }
@@ -120,28 +127,38 @@ export function NavCountBadge({ count }: { count: number }) {
   )
 }
 
-/** Active nav item across all sections → `{ section, parent?, page }` for the breadcrumb. */
+/** Active nav item across all sections → `{ section, parent?, parentHref?, page }` for the breadcrumb. */
 function findActiveCrumb(
   sections: SidebarSection[],
-): { section: string; parent?: string | undefined; page: string } | undefined {
+):
+  | { section: string; parent?: string | undefined; parentHref?: string | undefined; page: string }
+  | undefined {
   for (const section of sections) {
     const found = findActiveWithParent(section.items)
-    if (found) return { section: section.label, parent: found.parent, page: found.page }
+    if (found)
+      return {
+        section: section.label,
+        parent: found.parent,
+        parentHref: found.parentHref,
+        page: found.page,
+      }
   }
   return undefined
 }
 
-/** Recursively search for the first active item, returning the parent label when nested. */
+/** Recursively search for the deepest active item, returning the parent label + href when nested. */
 function findActiveWithParent(
   items: SidebarItem[],
   parentLabel?: string | undefined,
-): { parent?: string | undefined; page: string } | undefined {
+  parentHref?: string | undefined,
+): { parent?: string | undefined; parentHref?: string | undefined; page: string } | undefined {
   for (const item of items) {
-    if (item.active) return { parent: parentLabel, page: item.label }
+    // Recurse into children first — deeper active match wins over a prefix-matched parent.
     if (item.children) {
-      const found = findActiveWithParent(item.children, item.label)
+      const found = findActiveWithParent(item.children, item.label, item.href)
       if (found) return found
     }
+    if (item.active) return { parent: parentLabel, parentHref, page: item.label }
   }
   return undefined
 }
@@ -191,6 +208,7 @@ export function BasaltShell({
   sidebarFooterExtra,
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
+  renderBreadcrumbLink,
   children,
 }: BasaltShellProps) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
@@ -221,7 +239,7 @@ export function BasaltShell({
         <AppShell.Header px="md">
           <div className={headerClasses.bar}>
             <div className={headerClasses.lead}>
-              <AppBreadcrumbs {...activeCrumb} />
+              <AppBreadcrumbs {...activeCrumb} renderBreadcrumbLink={renderBreadcrumbLink} />
             </div>
             <PageActionsOutlet className={headerClasses.pageActions} />
             {globalActions && (

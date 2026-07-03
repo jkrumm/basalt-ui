@@ -21,6 +21,7 @@ export {
   AppSidebar,
   MobileNav,
   AppBreadcrumbs,
+  type BreadcrumbLinkRenderer,
   PageHeaderProvider,
   PageActions,
   PageActionsOutlet,
