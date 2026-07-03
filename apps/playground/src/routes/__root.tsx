@@ -75,13 +75,6 @@ function RootLayout() {
             badge: <NavCountBadge count={4} />,
             children: [
               {
-                key: 'dashboard-overview',
-                label: 'Overview',
-                icon: <IconDashboard />,
-                href: '/dashboard',
-                active: isActive('/dashboard', { exact: true }),
-              },
-              {
                 key: 'dashboard-sessions',
                 label: 'Sessions',
                 icon: <IconUser />,
