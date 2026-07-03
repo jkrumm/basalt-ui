@@ -17,7 +17,7 @@ one that exists. Lower layers fill gaps; they never override a higher layer.
    confirmation, the series dictionary, app deviations. **This wins on every conflict.** It is the
    Google-spec convention (YAML token front matter + Markdown prose, sibling to `CLAUDE.md`).
 2. **Shipped `basalt-*` rules** (`.claude/rules/basalt-{tokens,charts,mantine,state}.md`) — the
-   universal law AND its enforcement: the Basalt warm-neutral palette + single muted slate accent,
+   universal law AND its enforcement: the Basalt zinc-charcoal palette + single muted slate accent,
    one-hue-per-metric, neutral structure, gradient defaults, the three-tier token contract, the
    elevation/density doctrine.
 3. **This skill** — only the loop and the judgment, where the above are silent.
@@ -32,7 +32,7 @@ This is the same restraint `frontend-design` calls for, applied to data: intenti
 intensity. The `basalt init` CLAUDE block sets a restraint override for exactly this reason — in a
 dashboard the bold move is calm.
 
-- **One muted hue family, reused everywhere.** The Basalt warm-neutral identity (below), never raw
+- **One muted hue family, reused everywhere.** The Basalt zinc-charcoal identity (below), never raw
   Material / AntD / Tailwind primaries (they read childish and clash). A small harmonious subset
   across every page so tabs feel like one app.
 - **Single hue per metric.** Each metric owns ONE color, stable across all views (HRV always
@@ -57,20 +57,22 @@ dashboard the bold move is calm.
 
 ## Color identity & accent restraint (the #1 lever)
 
-The Basalt identity is **warm-neutral volcanic charcoal + a single muted slate accent** — not a
-cool/blue/steel "Blueprint" identity (that framing is obsolete). Restraint on the accent is the
-single biggest difference between premium and AI-default.
+The Basalt identity is **lifted zinc-charcoal + a single muted slate accent** — dark surfaces are a
+lifted neutral/faint-cool zinc, the light canvas stays a warm-neutral off-white; NOT a saturated
+steel-blue "Blueprint" identity (that framing is obsolete). Restraint on the accent is the single
+biggest difference between premium and AI-default.
 
-**Neutrals carry the surface (~90/10, not 60/30/10).** Warm-neutral means **only a whisper of
-warmth** (blue channel ≤ red, last-digit) — **not** a creamy/yellow cast. Dark is warm charcoal;
-light is a clean near-neutral off-white:
+**Neutrals carry the surface (~90/10, not 60/30/10).** Dark is a lifted zinc-charcoal (blue a whisper
+above red, light enough that cards/borders separate); light is a clean warm-neutral off-white (blue ≤
+red, last-digit — **not** a creamy/yellow cast):
 
-- **Dark:** bg `#191917`, panel `#1f1f1d`, elevated `#262624`, subtle `#262624` (hover/striped,
-  above panel), hairline `#33322f`. Warm charcoal, never blue-tinted, never pure black. Small warm
-  elevation steps for depth.
+- **Dark:** bg `#212126`, panel `#27272d`, elevated `#323239`, subtle `#323239` (hover/striped,
+  above panel), hairline `#3a3a42`. Lifted zinc-charcoal — neutral/faint-cool, never steel-blue,
+  never pure black, lighter than a near-black so cards/borders separate. Small elevation steps for
+  depth; dimmed text `#b6b6bc`.
 - **Light:** page `#fafafa` (near-neutral off-white, no yellow), cards `#ffffff` lifting above it,
   subtle `#f2f2f1` (hover/striped, a step below white), soft low-contrast hairline `#ededec`.
-  Near-black text `#121110` — never pure `#000` on pure `#fff`.
+  Near-black text `#121110`, dimmed text `#5e5e64` — never pure `#000` on pure `#fff`.
 
 The surface token set is `bg` (page) · `panel` (card) · `elevated` (lifted) · `subtle`
 (hover/striped/track) · `border` (hairline). `--vx-surface-subtle` backs Table hover/striped, `Code`,
@@ -89,8 +91,8 @@ pops. It appears **never** on: active nav, borders, large fills, every icon, sec
   `variant="default"` (neutral). Avoid colored `variant="light"` for routine actions — washed-out,
   especially on the warm light canvas.
 - **Status:** positive deltas `color="green"` (forest), never `teal`/turquoise/saturated emerald.
-- **Dark done right:** warm charcoal, not blue-tinted, not pure black; keep the accent muted so it
-  doesn't glow/bleed.
+- **Dark done right:** lifted zinc-charcoal, neutral/faint-cool (not steel-blue), not pure black;
+  keep the accent muted so it doesn't glow/bleed.
 - **Light done right:** near-neutral off-white page (`#fafafa`, no yellow) + white cards that lift;
   soft low-contrast hairline (`#ededec`); shadows only for genuinely floating elements.
 
@@ -122,7 +124,7 @@ color; depth = surface + hairline, not drop-shadow.
 Aesthetics only survive if they cannot be bypassed. basalt-ui ships this as the `./tokens` and
 `./charts` surfaces:
 
-1. **Palette data** — the Basalt warm-neutral ramps + the single muted slate accent family, plus
+1. **Palette data** — the Basalt zinc-charcoal ramps + the single muted slate accent family, plus
    every semantic/status/neutral/surface entry as a per-theme `{ light, dark }` pair. Pure data: no
    React, no `@mantine/*`, no browser API.
 2. **CSS variables** — `buildPaletteCss(opts)` emits the pairs as `--vx-*` custom properties under
