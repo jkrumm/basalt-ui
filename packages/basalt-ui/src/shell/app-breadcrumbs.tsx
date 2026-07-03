@@ -6,7 +6,16 @@
  */
 import { Group, Text } from '@mantine/core'
 
-export function AppBreadcrumbs({ section, page }: { section?: string; page?: string }) {
+export function AppBreadcrumbs({
+  section,
+  parent,
+  page,
+}: {
+  section?: string
+  /** Parent item label — shown when the active page is a nested child (e.g. "Dashboard"). */
+  parent?: string | undefined
+  page?: string
+}) {
   if (!page) return null
   return (
     <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
@@ -14,6 +23,16 @@ export function AppBreadcrumbs({ section, page }: { section?: string; page?: str
         <>
           <Text size="sm" c="dimmed" truncate>
             {section}
+          </Text>
+          <Text size="sm" c="dimmed">
+            /
+          </Text>
+        </>
+      )}
+      {parent && (
+        <>
+          <Text size="sm" c="dimmed" truncate>
+            {parent}
           </Text>
           <Text size="sm" c="dimmed">
             /

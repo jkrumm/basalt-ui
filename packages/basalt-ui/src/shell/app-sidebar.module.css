@@ -121,11 +121,15 @@
 }
 
 /*
- * Inline child items — indented and one size smaller. Only rendered when the parent or a sibling
- * child is active, so the sub-navigation context is visible without a hover.
+ * Inline child items — same alignment as parent items, one size smaller. A thin left guide line
+ * on each child NavLink replaces indentation so the active-state indicator stays at the root edge.
  */
 .childList {
-  padding-left: calc(var(--mantine-spacing-md) + 12px);
+  /* no indent */
+}
+
+.childList :global(.mantine-NavLink-root) {
+  border-left: 2px solid var(--vx-surface-border);
 }
 
 .childList :global(.mantine-NavLink-label) {

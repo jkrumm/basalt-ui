@@ -120,23 +120,26 @@ export function NavCountBadge({ count }: { count: number }) {
   )
 }
 
-/** Active nav item across all sections → `{ section, page }` for the breadcrumb. */
+/** Active nav item across all sections → `{ section, parent?, page }` for the breadcrumb. */
 function findActiveCrumb(
   sections: SidebarSection[],
-): { section: string; page: string } | undefined {
+): { section: string; parent?: string | undefined; page: string } | undefined {
   for (const section of sections) {
-    const found = searchActiveItem(section.items)
-    if (found) return { section: section.label, page: found.label }
+    const found = findActiveWithParent(section.items)
+    if (found) return { section: section.label, parent: found.parent, page: found.page }
   }
   return undefined
 }
 
-/** Recursively search for the first active item in a tree. */
-function searchActiveItem(items: SidebarItem[]): SidebarItem | undefined {
+/** Recursively search for the first active item, returning the parent label when nested. */
+function findActiveWithParent(
+  items: SidebarItem[],
+  parentLabel?: string | undefined,
+): { parent?: string | undefined; page: string } | undefined {
   for (const item of items) {
-    if (item.active) return item
+    if (item.active) return { parent: parentLabel, page: item.label }
     if (item.children) {
-      const found = searchActiveItem(item.children)
+      const found = findActiveWithParent(item.children, item.label)
       if (found) return found
     }
   }

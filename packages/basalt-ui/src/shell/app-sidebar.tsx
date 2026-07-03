@@ -241,6 +241,43 @@ function NavItemRow({
   // --- Parent item with children ---
   const active = Boolean(item.active)
 
+  // When children are already visible inline (active descendant), suppress the hover popover.
+  if (isExpanded) {
+    return (
+      <Box key={item.key}>
+        <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
+          <Box className={classes.navItem}>
+            <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+          </Box>
+        </Tooltip>
+        <Stack gap={0} className={classes.childList}>
+          {item.children!.map((child) => {
+            if (child.disabled) {
+              return (
+                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
+                  <Box>
+                    <NavLink
+                      classNames={{ root: classes.link }}
+                      label={child.label}
+                      leftSection={child.icon}
+                      data-disabled
+                    />
+                  </Box>
+                </Tooltip>
+              )
+            }
+            const childActive = Boolean(child.active)
+            return (
+              <Box key={child.key}>
+                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+              </Box>
+            )
+          })}
+        </Stack>
+      </Box>
+    )
+  }
+
   return (
     <Popover
       key={item.key}
