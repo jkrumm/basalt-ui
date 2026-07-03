@@ -2,7 +2,7 @@
  * Basalt Mantine theme.
  *
  * Grounded in argo `apps/dashboard/src/theme.ts`: a `createTheme` base reskinned to the
- * Basalt warm-neutral palette so the Mantine chrome shares the charts' identity, plus a
+ * Basalt zinc-charcoal palette so the Mantine chrome shares the charts' identity, plus a
  * `cssVariablesResolver` that binds Mantine's surface system to the same `--vx-*` variables
  * the charts use, so chrome and charts draw from one scheme-reactive identity.
  *
@@ -61,19 +61,21 @@ function ramp10(stops: readonly string[]): MantineColorsTuple {
   return out as unknown as MantineColorsTuple
 }
 
-// Basalt warm-neutral charcoal ramp at the indices Mantine reads:
+// Basalt lifted zinc-charcoal ramp at the indices Mantine reads:
 // text=dark[0], dimmed=dark[2], border=dark[4], hover=dark[5], surface=dark[6], body=dark[7].
+// Mirrors tokens `BP.darkGray` (surfaces) + `NEUTRAL.neutral.dark` (dimmed) — keep in lockstep. The
+// resolver re-pins dark-4 to --vx-surface-border, so [4] is the strong-hairline fallback only.
 const basaltDark: MantineColorsTuple = [
-  '#e9e7e2', // text — warm off-white
-  '#cac4bb',
-  '#9b958d', // dimmed
-  '#847f78',
-  '#3d3c39', // border
-  '#33322f', // hover
-  '#1f1f1d', // surface (panel)
-  '#191917', // body (page bg)
-  '#161614',
-  '#121110',
+  '#eaeaec', // text — neutral off-white
+  '#d2d2d6',
+  '#b6b6bc', // dimmed (= NEUTRAL.neutral.dark)
+  '#8c8c93',
+  '#4e4e57', // border fallback (strong hairline; resolver pins dark-4 → --vx-surface-border)
+  '#3a3a42', // hover (= BP.darkGray[3])
+  '#27272d', // surface (panel) (= BP.darkGray[1])
+  '#212126', // body (page bg) (= BP.darkGray[0])
+  '#191a1d',
+  '#121114',
 ]
 
 /**
@@ -110,7 +112,7 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
 }
 
 /**
- * Basalt base theme — Mantine `createTheme` reskinned to the Basalt warm-neutral palette.
+ * Basalt base theme — Mantine `createTheme` reskinned to the Basalt zinc-charcoal palette.
  *
  * Inputs default to `md` (16px font) so iOS Safari never zooms the viewport on focus. The base
  * `Input` default does not cascade to TextInput/Select/etc. (each component resolves its own

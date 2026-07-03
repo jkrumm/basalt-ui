@@ -10,12 +10,13 @@ paths:
 # Basalt Tokens — Color, Spacing, Radius, Type
 
 basalt-ui ships one color/type/spacing/radius identity shared by the Mantine chrome and the visx
-charts. The **identity is Basalt warm-neutral charcoal** (volcanic basalt) — neutral ramps are
-warm-neutral (**blue channel ≤ red** — never cool/steel/blue-grey) — carrying a **single muted
-slate-blue accent** (deliberately desaturated, calm Notion/Linear, not "Bootstrap blue"). Neutrals
-do ~90% of the surface (60/30/10, pushed toward 90/10); the accent only points — primary CTA, focus,
-links, small status pops — never floods. (Blueprint is the historical hue-tuning ancestor; the
-identity is Basalt warm-neutral now.) This rule is the operational checklist; it is enforced
+charts. The **identity is Basalt zinc-charcoal** (volcanic basalt) — the **dark surface ramp is a
+lifted neutral/faint-cool zinc** (blue channel a whisper above red), while the **light canvas and the
+chart mid-grey lines stay warm-neutral** (blue ≤ red — never cool/steel/blue-grey) — carrying a
+**single muted slate-blue accent** (deliberately desaturated, calm Notion/Linear, not "Bootstrap
+blue"). Neutrals do ~90% of the surface (60/30/10, pushed toward 90/10); the accent only points —
+primary CTA, focus, links, small status pops — never floods. (Blueprint is the historical hue-tuning
+ancestor; the identity is Basalt zinc-charcoal now.) This rule is the operational checklist; it is enforced
 mechanically by **`basalt check-theme`**
 (wire it into `lint`: `oxlint . && basalt check-theme`). A violation fails the build. Escape hatch: a
 `theme-allow` line comment (diff-visible, deliberate).
@@ -56,7 +57,7 @@ The surface token set is **`bg` · `panel` · `elevated` · `subtle` · `border`
 - `--vx-surface-panel` (`VX.surface.panel`) — the card/`Paper` background.
 - `--vx-surface-elevated` (`VX.surface.elevated`) — a lifted surface (chart areas, tooltips).
 - `--vx-surface-subtle` (`VX.surface.subtle`) — a faint hover/striped/track surface: a step
-  **below white on light** (`#f2f2f1`), **above panel on dark** (`#262624`). Used for Table
+  **below white on light** (`#f2f2f1`), **above panel on dark** (`#323239`). Used for Table
   hover/striped rows, `Code`, the `SegmentedControl` track, and Tabs/Accordion/Menu hover.
 - `--vx-surface-border` (`VX.surface.border`) — the single hairline border token.
 

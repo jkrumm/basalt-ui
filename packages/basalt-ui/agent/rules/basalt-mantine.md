@@ -30,12 +30,12 @@ renders.
 
 - Use `createBasaltTheme(overrides?)` for the theme — it merges your overrides over `baseTheme`
   (last-wins), so you can retune any field without forking. Don't hand-build `createTheme`.
-- The theme reskins **every** Mantine accent to the Basalt identity — **warm-neutral charcoal** ramps
-  (volcanic basalt, blue channel ≤ red — never cool/steel/blue-grey) plus a **single muted slate-blue
-  accent** — and binds Mantine's surface vars to the same `--vx-*` tokens the charts use
-  (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so chrome and charts share one
-  scheme-reactive identity. (Blueprint is the historical hue-tuning ancestor; the identity is Basalt
-  warm-neutral now.) Don't add a second `cssVariablesResolver`.
+- The theme reskins **every** Mantine accent to the Basalt identity — **lifted zinc-charcoal** ramps
+  (volcanic basalt; dark surfaces neutral/faint-cool, the light canvas + chart neutrals warm-neutral)
+  plus a **single muted slate-blue accent** — and binds Mantine's surface vars to the same `--vx-*`
+  tokens the charts use (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so chrome and charts
+  share one scheme-reactive identity. (Blueprint is the historical hue-tuning ancestor; the identity
+  is Basalt zinc-charcoal now.) Don't add a second `cssVariablesResolver`.
 - Color scheme: read/write via `useMantineColorScheme()`. **Never** read the color scheme from
   localStorage directly, and never `localStorage.getItem('theme')` — see basalt-state.md.
 - Owned `spacing`/`radius` scales and the `fontWeights` ladder live in the theme — consume them as
@@ -44,7 +44,7 @@ renders.
 ## Color & accent restraint
 
 Restraint is the #1 lever — neutrals carry the surface, the accent only points. The palette is
-**one muted slate-blue accent** over warm-neutral charcoal; the neutrals do ~90% of the work
+**one muted slate-blue accent** over lifted zinc-charcoal; the neutrals do ~90% of the work
 (60/30/10, pushed toward 90/10).
 
 - **The accent appears ONLY on**: the single primary CTA per view, focus rings, links, and small
@@ -60,8 +60,9 @@ Restraint is the #1 lever — neutrals carry the surface, the accent only points
 - **Status hues stay muted/forest.** Positive deltas use `color="green"` (forest green), never
   `color="teal"` (vivid turquoise) or a saturated emerald. Status (`red`/`green`/`orange`/`yellow`)
   is for signal only, kept muted — never raw Material/AntD.
-- **Dark mode** is warm charcoal — not blue-tinted, not pure black. Lift elevation via small
-  warm-neutral lightness steps; the accent uses its lighter shade on dark to avoid glow/bleed.
+- **Dark mode** is a lifted neutral/faint-cool zinc-charcoal — not steel-blue, not pure black, and
+  lighter than a near-black so cards/borders separate. Lift elevation via small lightness steps; the
+  accent uses its lighter shade on dark to avoid glow/bleed.
 - **Light mode** is never pure-white page + pure-black text (harsh halation). Page = near-neutral
   off-white (`#fafafa` — only a whisper of warmth, not a creamy/yellow cast), cards = white
   (`#ffffff`) that lift above it, soft low-contrast hairline (`#ededec`), text = near-black

@@ -2,14 +2,16 @@
  * palette.ts — Basalt single source of truth for ALL framework color
  * (charts via VX tokens + chrome via the Mantine theme).
  *
- * Identity: volcanic charcoal. The neutral ramps are WARM-NEUTRAL (a whisper of warmth,
- * blue channel <= red channel) so chrome never reads as cool/steel/blue. The accent is a
- * single MUTED slate-blue used sparingly (neutral-dominant: ~60/30/10) — never a saturated
- * "Bootstrap blue" flooding the UI. Semantic/status hues stay UI-tuned (muted, not raw
- * Material/AntD/Tailwind defaults).
+ * Identity: lifted zinc-charcoal. The DARK surface ramp is a lifted neutral/faint-cool zinc
+ * (blue channel a whisper ABOVE red) — light enough that cards/borders separate from the page,
+ * grey enough that it never reads as a warm/brown near-black. The LIGHT canvas stays a warm-neutral
+ * off-white and the chart mid-grey line ramp stays warm-neutral (both unchanged — the faint-cool
+ * departure is the dark surfaces only). The accent is a single MUTED slate-blue used sparingly
+ * (neutral-dominant: ~60/30/10) — never a saturated "Bootstrap blue" flooding the UI.
+ * Semantic/status hues stay UI-tuned (muted, not raw Material/AntD/Tailwind defaults).
  *
  * Design rules baked in (see the basalt design doctrine):
- *  - Warm-neutral grays carry ~90% of the surface — chrome is monochrome, accent only points.
+ *  - Neutral zinc greys carry ~90% of the surface — chrome is monochrome, accent only points.
  *  - The accent (`blue`) is desaturated on purpose; it lives on the ONE primary action per view,
  *    focus rings, links, and small status pops ONLY — never on active nav (that's a neutral fill),
  *    borders, large fills, or every icon.
@@ -25,14 +27,18 @@ import type { ColorPair } from './index'
 
 /**
  * Basalt palette. Each family is shade 1→5 (index 0 = darkest, 4 = lightest).
- * Neutrals are warm-neutral charcoal (blue channel <= red channel — no cool/steel cast).
- * `blue` is the single muted slate accent (kept low-saturation on purpose).
+ * The dark surface ramp (`darkGray`) is a lifted neutral/faint-cool zinc (blue channel a whisper
+ * above red); the mid-grey line ramp (`gray`) and the light surfaces (`lightGray`) stay warm-neutral
+ * (blue channel <= red — no cool/steel cast). `blue` is the single muted slate accent (kept
+ * low-saturation on purpose).
  */
 export const BP = {
   black: '#121110',
   white: '#ffffff',
-  // Warm-neutral charcoal: bg, panel, elevated, hairline, strong-hairline.
-  darkGray: ['#191917', '#1f1f1d', '#262624', '#33322f', '#3d3c39'],
+  // Lifted neutral/faint-cool zinc-charcoal: bg, panel, elevated, hairline, strong-hairline.
+  // Blue channel sits a whisper ABOVE red (faint-cool zinc) and every step is lighter than the old
+  // warm charcoal, so cards/borders lift off the page and the canvas reads clean grey, not near-black.
+  darkGray: ['#212126', '#27272d', '#323239', '#3a3a42', '#4e4e57'],
   // Mid greys for text / lines (warm-neutral, not blue-grey).
   gray: ['#6e6b65', '#847f78', '#9b958d', '#b3ada4', '#cac4bb'],
   // Light surfaces: near-neutral off-whites + soft hairlines. Only a whisper of warmth (last
@@ -102,11 +108,14 @@ export const NEUTRAL = {
   tooltipMuted: { light: 'rgba(18,17,16,0.5)', dark: 'rgba(255,255,255,0.5)' },
   tooltipBorder: { light: `1px solid ${BP.lightGray[1]}`, dark: 'none' },
   tooltipShadow: { light: '0 2px 8px rgba(18,17,16,0.1)', dark: '0 2px 8px rgba(0,0,0,0.35)' },
-  // Base neutral for hairlines / muted text / overlays — apply opacity via alpha().
-  neutral: { light: BP.gray[0], dark: BP.gray[2] },
+  // Base neutral for hairlines / muted / DIMMED text / overlays — apply opacity via alpha().
+  // Binds to --mantine-color-dimmed, so it is THE dimmed-text lever: lighter on dark (lifts off the
+  // lifted charcoal), darker on light (more contrast on the off-white). Neutral/faint-cool to match
+  // the zinc surfaces — deliberately decoupled from BP.gray (the warm chart-line ramp).
+  neutral: { light: '#5e5e64', dark: '#b6b6bc' },
 } as const
 
-/** App chrome surfaces — Basalt warm-neutral dark/light ramps for the Mantine theme. */
+/** App chrome surfaces — lifted zinc dark + warm-neutral off-white light ramps for the Mantine theme. */
 export const SURFACE = {
   bg: { light: BP.lightGray[4], dark: BP.darkGray[0] }, // page background
   panel: { light: BP.white, dark: BP.darkGray[1] }, // cards
@@ -115,5 +124,5 @@ export const SURFACE = {
   // Subtle/hover/striped/track surface — distinct from `panel`: a faint step BELOW white on light
   // (panel is white, so hover must go darker) and ABOVE panel on dark (hover goes lighter). Used by
   // Table hover/striped, Code, SegmentedControl track, Tabs/Accordion/Menu hover.
-  subtle: { light: BP.lightGray[2], dark: BP.darkGray[2] }, // #f2f2f1 / #262624
+  subtle: { light: BP.lightGray[2], dark: BP.darkGray[2] }, // #f2f2f1 / #323239
 } as const
