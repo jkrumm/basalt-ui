@@ -45,6 +45,8 @@ export type SidebarItem = {
   disabled?: boolean
   onClick?: (e: MouseEvent) => void
   badge?: ReactNode
+  /** Nested sub-navigation items — surfaced in a hover popover and inline when active. */
+  children?: SidebarItem[]
 }
 
 /** A labelled group of sidebar items. Grounded verbatim in argo's `SidebarSection`. */
@@ -123,8 +125,19 @@ function findActiveCrumb(
   sections: SidebarSection[],
 ): { section: string; page: string } | undefined {
   for (const section of sections) {
-    for (const item of section.items) {
-      if (item.active) return { section: section.label, page: item.label }
+    const found = searchActiveItem(section.items)
+    if (found) return { section: section.label, page: found.label }
+  }
+  return undefined
+}
+
+/** Recursively search for the first active item in a tree. */
+function searchActiveItem(items: SidebarItem[]): SidebarItem | undefined {
+  for (const item of items) {
+    if (item.active) return item
+    if (item.children) {
+      const found = searchActiveItem(item.children)
+      if (found) return found
     }
   }
   return undefined
@@ -132,8 +145,8 @@ function findActiveCrumb(
 
 /**
  * Mobile bottom-nav projection: one tab per (non-`mobileTab:false`) section, each raising a bottom
- * sheet of that section's destinations. Mirrors `__root.tsx`'s `mobileSections` mapping. Each
- * handler closes the mobile drawer via the wrapped `onClick`.
+ * sheet of that section's destinations. Children are flattened into the section's item list so
+ * subpages appear in the mobile drawer.
  */
 function toMobileSections(sections: SidebarSection[], closeMobile: () => void): MobileNavSection[] {
   return sections
@@ -143,7 +156,7 @@ function toMobileSections(sections: SidebarSection[], closeMobile: () => void): 
       label: s.label,
       icon: s.icon,
       active: s.items.some((i) => i.active),
-      items: s.items.map(
+      items: flattenSidebarItems(s.items).map(
         (i): MobileNavItem => ({
           key: i.key,
           label: i.label,
@@ -157,6 +170,14 @@ function toMobileSections(sections: SidebarSection[], closeMobile: () => void): 
         }),
       ),
     }))
+}
+
+/** Flatten a tree of SidebarItems (including children) into a single-level array. */
+function flattenSidebarItems(items: SidebarItem[]): SidebarItem[] {
+  return items.flatMap((item) => [
+    item,
+    ...(item.children ? flattenSidebarItems(item.children) : []),
+  ])
 }
 
 export function BasaltShell({

@@ -121,6 +121,31 @@
 }
 
 /*
+ * Inline child items — indented and one size smaller. Only rendered when the parent or a sibling
+ * child is active, so the sub-navigation context is visible without a hover.
+ */
+.childList {
+  padding-left: calc(var(--mantine-spacing-md) + 12px);
+}
+
+.childList :global(.mantine-NavLink-label) {
+  font-size: var(--mantine-font-size-xs);
+}
+
+/* Subnav popover dropdown — match sidebar surface and density. */
+.subnavDropdown {
+  min-width: 180px;
+}
+
+.subnavDropdown :global(.mantine-NavLink-root) {
+  border-radius: 0;
+}
+
+.subnavDropdown :global(.mantine-NavLink-label) {
+  font-size: var(--mantine-font-size-sm);
+}
+
+/*
  * Icon-rail (collapsed) — desktop only. Gated behind min-width: sm (48em) so the mobile drawer keeps
  * full labels even when the persisted collapse flag is on. Hide the brand text, section labels and
  * nav labels; center the remaining icons.
@@ -170,6 +195,10 @@
   }
 
   .root[data-collapsed] .footerText {
+    display: none;
+  }
+
+  .root[data-collapsed] .childList {
     display: none;
   }
 }

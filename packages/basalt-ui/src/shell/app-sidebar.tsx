@@ -20,12 +20,14 @@ import {
   Group,
   Menu,
   NavLink,
+  Popover,
   Stack,
   Text,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
-import { useState } from 'react'
+import { useDisclosure } from '@mantine/hooks'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
 import classes from './app-sidebar.module.css'
@@ -127,6 +129,42 @@ function IconClose() {
   )
 }
 
+const HOVER_OPEN_DELAY = 150
+const HOVER_CLOSE_DELAY = 200
+
+/** True when the item or any descendant is active — drives inline child expansion. */
+function hasActiveDescendant(item: SidebarItem): boolean {
+  if (item.active) return true
+  return item.children?.some((c) => hasActiveDescendant(c)) ?? false
+}
+
+/** Renders a nav link body without the Tooltip/Box wrapper. */
+function NavLinkBody({
+  item,
+  active,
+  renderNavLink,
+}: {
+  item: SidebarItem
+  active: boolean
+  renderNavLink?: NavLinkRenderer | undefined
+}) {
+  if (renderNavLink) {
+    return <>{renderNavLink(item, { active })}</>
+  }
+  return (
+    <NavLink
+      classNames={{ root: classes.link }}
+      component="a"
+      label={item.label}
+      leftSection={item.icon}
+      rightSection={item.badge}
+      active={active}
+      {...(item.href !== undefined && { href: item.href })}
+      {...(item.onClick !== undefined && { onClick: item.onClick })}
+    />
+  )
+}
+
 /**
  * Group label. `flush` drops the intrinsic inset/margin so the collapsible `sectionHeader` can own
  * the padding instead (otherwise the button's hover box double-insets and hugs the text).
@@ -149,6 +187,142 @@ function SectionLabel({ children, flush }: { children: ReactNode; flush?: boolea
   )
 }
 
+function NavItemRow({
+  item,
+  collapsed,
+  renderNavLink,
+}: {
+  item: SidebarItem
+  collapsed: boolean
+  renderNavLink?: NavLinkRenderer | undefined
+}) {
+  const [opened, { open, close }] = useDisclosure(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const scheduleOpen = () => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => open(), HOVER_OPEN_DELAY)
+  }
+  const scheduleClose = () => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => close(), HOVER_CLOSE_DELAY)
+  }
+
+  const hasChildren = item.children && item.children.length > 0
+  const isExpanded = hasChildren && hasActiveDescendant(item)
+
+  // --- Leaf item (no children) ---
+  if (!hasChildren) {
+    if (item.disabled) {
+      return (
+        <Tooltip key={item.key} label="Coming soon" position="right" withArrow>
+          <Box className={classes.navItem}>
+            <NavLink
+              classNames={{ root: classes.link }}
+              label={item.label}
+              leftSection={item.icon}
+              data-disabled
+            />
+          </Box>
+        </Tooltip>
+      )
+    }
+
+    const active = Boolean(item.active)
+    return (
+      <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
+        <Box className={classes.navItem}>
+          <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+        </Box>
+      </Tooltip>
+    )
+  }
+
+  // --- Parent item with children ---
+  const active = Boolean(item.active)
+
+  return (
+    <Popover
+      key={item.key}
+      opened={opened}
+      onClose={close}
+      position="right-start"
+      offset={4}
+      withArrow={false}
+      withinPortal
+      zIndex={400}
+    >
+      <Popover.Target>
+        <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
+          <Box className={classes.navItem} onMouseEnter={scheduleOpen} onMouseLeave={scheduleClose}>
+            <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+          </Box>
+        </Tooltip>
+      </Popover.Target>
+
+      <Popover.Dropdown
+        p={4}
+        className={classes.subnavDropdown}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+      >
+        <Stack gap={0}>
+          {item.children!.map((child) => {
+            if (child.disabled) {
+              return (
+                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
+                  <Box>
+                    <NavLink
+                      classNames={{ root: classes.link }}
+                      label={child.label}
+                      leftSection={child.icon}
+                      data-disabled
+                    />
+                  </Box>
+                </Tooltip>
+              )
+            }
+            const childActive = Boolean(child.active)
+            return (
+              <Box key={child.key}>
+                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+              </Box>
+            )
+          })}
+        </Stack>
+      </Popover.Dropdown>
+
+      {/* Inline children when active */}
+      {isExpanded && (
+        <Stack gap={0} className={classes.childList}>
+          {item.children!.map((child) => {
+            if (child.disabled) {
+              return (
+                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
+                  <Box>
+                    <NavLink
+                      classNames={{ root: classes.link }}
+                      label={child.label}
+                      leftSection={child.icon}
+                      data-disabled
+                    />
+                  </Box>
+                </Tooltip>
+              )
+            }
+            const childActive = Boolean(child.active)
+            return (
+              <Box key={child.key}>
+                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+              </Box>
+            )
+          })}
+        </Stack>
+      )}
+    </Popover>
+  )
+}
+
 export function AppSidebar({
   brand,
   sections,
@@ -165,45 +339,10 @@ export function AppSidebar({
     Object.fromEntries(sections.map((s) => [s.label, Boolean(s.defaultCollapsed)])),
   )
 
-  const renderItems = (section: SidebarSection) =>
-    section.items.map((item) => {
-      if (item.disabled) {
-        return (
-          <Tooltip key={item.key} label="Coming soon" position="right" withArrow>
-            <Box className={classes.navItem}>
-              <NavLink
-                classNames={{ root: classes.link }}
-                label={item.label}
-                leftSection={item.icon}
-                data-disabled
-              />
-            </Box>
-          </Tooltip>
-        )
-      }
-
-      const active = Boolean(item.active)
-      const body = renderNavLink ? (
-        renderNavLink(item, { active })
-      ) : (
-        <NavLink
-          classNames={{ root: classes.link }}
-          component="a"
-          label={item.label}
-          leftSection={item.icon}
-          rightSection={item.badge}
-          active={active}
-          {...(item.href !== undefined && { href: item.href })}
-          {...(item.onClick !== undefined && { onClick: item.onClick })}
-        />
-      )
-
-      return (
-        <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
-          <Box className={classes.navItem}>{body}</Box>
-        </Tooltip>
-      )
-    })
+  const renderSectionItems = (section: SidebarSection) =>
+    section.items.map((item) => (
+      <NavItemRow key={item.key} item={item} collapsed={collapsed} renderNavLink={renderNavLink} />
+    ))
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
@@ -243,7 +382,7 @@ export function AppSidebar({
                 <div className={classes.sectionBand}>
                   <SectionLabel flush>{section.label}</SectionLabel>
                 </div>
-                <Stack gap={0}>{renderItems(section)}</Stack>
+                <Stack gap={0}>{renderSectionItems(section)}</Stack>
               </div>
             )
           }
@@ -265,7 +404,7 @@ export function AppSidebar({
                 <IconChevron open={isOpen} />
               </UnstyledButton>
               <Collapse expanded={isOpen}>
-                <Stack gap={0}>{renderItems(section)}</Stack>
+                <Stack gap={0}>{renderSectionItems(section)}</Stack>
               </Collapse>
             </div>
           )
@@ -273,7 +412,7 @@ export function AppSidebar({
       </Stack>
 
       <Group className={classes.footer} gap="xs" wrap="nowrap">
-        <Menu position="top-start" withArrow width={200} zIndex={500}>
+        <Menu position="right-start" withArrow width={200} zIndex={500}>
           <Menu.Target>
             <UnstyledButton className={classes.footerBtn} aria-label="Settings">
               <IconGear />
