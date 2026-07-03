@@ -23,9 +23,11 @@ import {
   IconActivity,
   IconChart,
   IconComponents,
+  IconCurrency,
   IconDashboard,
   IconPalette,
   IconSettings,
+  IconUser,
 } from '../demo/icons'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
@@ -70,7 +72,37 @@ function RootLayout() {
             icon: <IconDashboard />,
             href: '/dashboard',
             active: isActive('/dashboard'),
-            badge: <NavCountBadge count={3} />,
+            badge: <NavCountBadge count={4} />,
+            children: [
+              {
+                key: 'dashboard-overview',
+                label: 'Overview',
+                icon: <IconDashboard />,
+                href: '/dashboard',
+                active: isActive('/dashboard', { exact: true }),
+              },
+              {
+                key: 'dashboard-sessions',
+                label: 'Sessions',
+                icon: <IconUser />,
+                href: '/dashboard/sessions',
+                active: isActive('/dashboard/sessions'),
+              },
+              {
+                key: 'dashboard-traffic',
+                label: 'Traffic',
+                icon: <IconChart />,
+                href: '/dashboard/traffic',
+                active: isActive('/dashboard/traffic'),
+              },
+              {
+                key: 'dashboard-revenue',
+                label: 'Revenue',
+                icon: <IconCurrency />,
+                href: '/dashboard/revenue',
+                active: isActive('/dashboard/revenue'),
+              },
+            ],
           },
           {
             key: 'activity',

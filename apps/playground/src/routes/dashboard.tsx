@@ -1,7 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { DashboardPage } from '../demo/DashboardPage'
+import { Outlet, createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/dashboard')({
   staticData: { title: 'Dashboard' },
-  component: DashboardPage,
+  component: Outlet,
 })

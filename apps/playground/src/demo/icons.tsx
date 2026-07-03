@@ -147,6 +147,16 @@ export function IconPalette() {
   )
 }
 
+/** Simple dollar/currency icon for revenue-related nav items. */
+export function IconCurrency() {
+  return (
+    <Glyph size={18}>
+      <path d="M12 2v20" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </Glyph>
+  )
+}
+
 /** Subtle wifi icon for the online-status indicator. */
 export function IconWifi() {
   return (
