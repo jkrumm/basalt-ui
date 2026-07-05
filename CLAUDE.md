@@ -169,74 +169,14 @@ did they click from?". We don't track `utm_medium` / `utm_campaign` / `utm_conte
 
 ## Search Param Persistence
 
-URL search params that represent a filter/view/tab/range state MUST be backed by
-localStorage via `createSearchParamStore` (`basalt-ui/router-tanstack`). This
-factory combines three concerns: a `validateSearch` for the route, a `useStore`
-hook for the filter component, and a `readStored` plain function.
+URL search params representing user-mutable state (date ranges, tabs, filters) MUST
+use `createSearchParamStore` from `basalt-ui/router-tanstack`. See the JSDoc on
+`createSearchParamStore` for the full 5-step recipe — it ships with every consumer
+via autocomplete. Key rules that won't fit in a JSDoc bullet:
 
-**Why:** navigating away and back, or sharing a link, should restore the user's
-last choice, not reset to the factory default. The URL is canonical, localStorage
-is the fallback.
-
-**Pattern:**
-
-```ts
-// 1. Define once (e.g. in a shared demo/ or lib/ module):
-export const rangeStore = createSearchParamStore({
-  key: 'dashboard-range',                 // localStorage key (auto-namespaced)
-  param: 'range',                         // URL ?range=…
-  values: ['1d', '7d', '30d'] as const,   // allowed values
-  fallback: '30d',                        // factory default
-})
-
-// 2. Parent route:
-export const Route = createFileRoute('/dashboard')({
-  validateSearch: rangeStore.validateSearch,
-  // …
-})
-
-// 3. Filter component (rendered in the layout, uses PageActions portal):
-function DateFilter() {
-  const { range } = useSearch({ from: '/dashboard' })
-  const [, persist] = rangeStore.useStore()
-  const navigate = useNavigate()
-  const router = useRouter()
-  return (
-    <SegmentedControl
-      value={range}
-      onChange={(v) => {
-        persist(v)
-        navigate({
-          to: router.state.location.pathname,
-          search: (prev) => ({ ...prev, range: v }),
-        })
-      }}
-    />
-  )
-}
-
-// 4. Page component — accepts the param as a prop (NOT useSearch directly):
-function DashboardPage({ range }: { range?: DateRange }) {
-  const resolved = range ?? '30d'
-  const data = useMemo(() => generateData(resolved), [resolved])
-  // …
-}
-
-// 5. Child route reads parent search and passes to the page:
-function DashboardIndex() {
-  const { range } = Route.useSearch()  // from the parent /dashboard route
-  return <DashboardPage range={range} />
-}
-```
-
-**Critical: never call `useSearch({ from: '/dashboard' })` from a page
-component that might render on a sibling route.** Sibling routes (e.g.
-`/activity`) are not children of `/dashboard`, so `from` fails with "Could not
-find an active match". Pass the param as a prop instead, with a default for
-non-dashboard renderers.
-
-**Dashboard nav links should use `search={true}`** so switching between sub-pages
-(e.g. Sessions → Traffic) preserves the current `?range=` value. This does NOT
-leak to non-dashboard pages because the `isDashboard` guard only applies it to
-`/dashboard/*` targets. The invariant-failure danger was in `useSearch({ from:
-'/dashboard' })` inside a page component, not in the nav's `search={true}`.
+- Page components accept the param as a **prop**, never via `useSearch({ from:
+'/dashboard' })` — sibling routes fail that `from`.
+- Dashboard `<Link>`s use `search={true}` guarded by `href.startsWith('/dashboard')`
+  so sub-page switches preserve the filter; non-dashboard links get no search injection.
+- The localStorage fallback in `validateSearch` restores the value when navigating
+  back; the filter's `navigate({ search: (prev) => (...) })` keeps it current.
