@@ -18,7 +18,7 @@ import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from '
 import type { BreadcrumbLinkRenderer, NavLinkRenderer, SidebarSection } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   IconActivity,
   IconChart,
@@ -35,35 +35,41 @@ import {
 // oxlint-disable-next-line no-underscore-dangle
 declare const __APP_VERSION__: string
 
-/**
- * A consumer link renderer wiring the shell's router seam to a real TanStack `<Link>`. Hoisted
- * (captures nothing) so it isn't recreated per render.
- *
- * `item.href` is a plain `string` by the shell's router-agnostic contract, while TanStack's typed
- * `<Link to>` wants a registered route literal. Casting at this single seam boundary is correct:
- * the hrefs ARE real routes, and keeping the shell string-typed is what makes it router-agnostic.
- */
-const renderNavLink: NavLinkRenderer = (item, { active }) => (
-  <MantineNavLink
-    component={Link}
-    to={(item.href ?? '/') as never}
-    label={item.label}
-    leftSection={item.icon}
-    rightSection={item.badge}
-    active={active}
-  />
-)
-
-/** Renders breadcrumb parent segments as client-side TanStack Links. */
-const renderBreadcrumbLink: BreadcrumbLinkRenderer = (href, label) => (
-  <Text size="sm" c="dimmed" truncate component={Link} to={href as never}>
-    {label}
-  </Text>
-)
-
 function RootLayout() {
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
+
+  /** Renders breadcrumb parent segments as client-side TanStack Links. */
+  const renderBreadcrumbLink = useCallback<BreadcrumbLinkRenderer>(
+    (href, label) => (
+      <Text size="sm" c="dimmed" truncate component={Link} to={href as never}>
+        {label}
+      </Text>
+    ),
+    [],
+  )
+
+  /**
+   * Router-agnostic link renderer wired to a real TanStack `<Link>`. Uses
+   * `search={true}` on dashboard links to preserve the `range` param across
+   * sub-page navigation — TanStack Router's native "carry all current params"
+   * shorthand.
+   */
+  const renderNavLink = useCallback<NavLinkRenderer>((item, { active }) => {
+    const href = item.href ?? '/'
+    const isDashboard = href === '/dashboard' || href.startsWith('/dashboard/')
+    return (
+      <MantineNavLink
+        component={Link}
+        to={href as never}
+        {...(isDashboard ? { search: true as never } : {})}
+        label={item.label}
+        leftSection={item.icon}
+        rightSection={item.badge}
+        active={active}
+      />
+    )
+  }, [])
 
   const sections = useMemo<SidebarSection[]>(
     () => [

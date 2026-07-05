@@ -7,7 +7,7 @@
  * refLines, tooltip), LineSparkline / BarSparkline, PageActions, the app-side `demoColors` series
  * tokens, and `alpha()`.
  */
-import { Badge, Box, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Badge, Box, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
 import {
   alpha,
   BarSparkline,
@@ -18,12 +18,18 @@ import {
   VX,
 } from 'basalt-ui/charts'
 import type { LegendEntry } from 'basalt-ui/charts'
-import { PageActions } from 'basalt-ui'
-import { useState } from 'react'
-import { SERIES_DATA, SPARK_REVENUE, SPARK_SESSIONS, SPARK_SIGNUPS } from './data'
+import { useSearch } from '@tanstack/react-router'
+import { useMemo, useState } from 'react'
+import { generateDashboardData } from './data'
 import type { DayPoint } from './data'
 import { demoColors } from './series'
 import { useMeasureWidth } from './use-measure'
+
+const RANGE_LABEL: Record<string, string> = {
+  '1d': 'Last 24 hours',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+}
 
 const fmtInt = (v: number) => Math.round(v).toLocaleString('en-US')
 const fmtMoney = (v: number) => `$${v.toFixed(1)}k`
@@ -38,34 +44,6 @@ type Kpi = {
   bar?: boolean
 }
 
-const KPIS: Kpi[] = [
-  {
-    key: 'sessions',
-    label: 'Sessions',
-    value: fmtInt(SERIES_DATA.reduce((s, d) => s + d.sessions, 0)),
-    delta: '+12.4%',
-    color: demoColors.sessions ?? VX.line,
-    spark: SPARK_SESSIONS,
-  },
-  {
-    key: 'signups',
-    label: 'Signups',
-    value: fmtInt(SERIES_DATA.reduce((s, d) => s + d.signups, 0)),
-    delta: '+8.1%',
-    color: demoColors.signups ?? VX.line,
-    spark: SPARK_SIGNUPS,
-    bar: true,
-  },
-  {
-    key: 'revenue',
-    label: 'Revenue',
-    value: fmtMoney(SERIES_DATA.reduce((s, d) => s + d.revenue, 0)),
-    delta: '+18.9%',
-    color: demoColors.revenue ?? VX.line,
-    spark: SPARK_REVENUE,
-  },
-]
-
 const LEGEND: LegendEntry[] = [
   { key: 'sessions', label: 'Sessions', color: demoColors.sessions ?? VX.line, shape: 'bar' },
   { key: 'signups', label: 'Signups', color: demoColors.signups ?? VX.line2, shape: 'bar' },
@@ -73,19 +51,47 @@ const LEGEND: LegendEntry[] = [
 ]
 
 export function DashboardPage() {
+  const { range } = useSearch({ from: '/dashboard' })
+  const { series, sparks } = useMemo(() => generateDashboardData(range), [range])
+
+  const kpis: Kpi[] = useMemo(
+    () => [
+      {
+        key: 'sessions',
+        label: 'Sessions',
+        value: fmtInt(series.reduce((s, d) => s + d.sessions, 0)),
+        delta: '+12.4%',
+        color: demoColors.sessions ?? VX.line,
+        spark: sparks.sessions,
+      },
+      {
+        key: 'signups',
+        label: 'Signups',
+        value: fmtInt(series.reduce((s, d) => s + d.signups, 0)),
+        delta: '+8.1%',
+        color: demoColors.signups ?? VX.line,
+        spark: sparks.signups,
+        bar: true,
+      },
+      {
+        key: 'revenue',
+        label: 'Revenue',
+        value: fmtMoney(series.reduce((s, d) => s + d.revenue, 0)),
+        delta: '+18.9%',
+        color: demoColors.revenue ?? VX.line,
+        spark: sparks.revenue,
+      },
+    ],
+    [series, sparks],
+  )
+
   const [ref, width] = useMeasureWidth()
   const [highlighted, setHighlighted] = useState<string | null>(null)
 
   return (
     <Stack gap="sm">
-      <PageActions>
-        <Button size="xs" variant="default">
-          Export
-        </Button>
-      </PageActions>
-
       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-        {KPIS.map((kpi) => (
+        {kpis.map((kpi) => (
           <Paper key={kpi.key} p="sm" radius="md" withBorder>
             <Group justify="space-between" align="flex-start" mb={6}>
               <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
@@ -115,13 +121,13 @@ export function DashboardPage() {
         tooltip="Grouped bars share the left axis; the churn line reads against the right axis. Hover a legend entry to isolate a series."
         extra={
           <Text size="xs" c="dimmed">
-            Last 14 days
+            {RANGE_LABEL[range] ?? 'Last 30 days'}
           </Text>
         }
       >
         <Box ref={ref}>
           <Bars<DayPoint>
-            data={SERIES_DATA}
+            data={series}
             width={width}
             height={300}
             chartId="dashboard-acquisition"

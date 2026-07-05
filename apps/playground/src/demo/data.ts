@@ -14,6 +14,8 @@ export type DayPoint = {
   health: number
 }
 
+export type DateRange = '1d' | '7d' | '30d'
+
 const DAY_LABELS = [
   'Mar 01',
   'Mar 02',
@@ -46,6 +48,73 @@ export const SERIES_DATA: DayPoint[] = DAY_LABELS.map((date, i) => ({
   churn: CHURN[i] ?? 0,
   health: HEALTH[i] ?? 0,
 }))
+
+// ── Date-range data generator ────────────────────────────────────────────────
+
+/** Base daily values used as the seed for all range generators. */
+const BASE_DAILY = { sessions: 1100, signups: 65, revenue: 3.0, churn: 6, health: 75 }
+
+/**
+ * Deterministic pseudo-random value seeded by a day index. Produces a repeatable
+ * multiplier in [0.6, 1.5] that gives the charts a realistic wavy shape without
+ * any runtime randomness.
+ */
+function dayWave(day: number): number {
+  // Mixing sine waves at different frequencies — purely cosmetic, fully deterministic.
+  const v = Math.sin(day * 0.27 + 1.3) * 0.25 + Math.sin(day * 0.13 + 2.7) * 0.2 + 1.0
+  return Math.round(v * 100) / 100
+}
+
+function hourlyWave(hour: number): number {
+  const v = Math.sin(hour * 0.52 + 0.8) * 0.3 + Math.sin(hour * 0.18 + 1.9) * 0.15 + 1.0
+  return Math.round(v * 100) / 100
+}
+
+function hourLabel(h: number): string {
+  return `${String(h).padStart(2, '0')}:00`
+}
+
+function dayLabel(offset: number): string {
+  // Count backwards from "today" (Jun 30) so the 30d view looks recent.
+  const d = new Date(2025, 5, 30 - offset)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+export function generateDashboardData(range: DateRange): {
+  series: DayPoint[]
+  sparks: { sessions: number[]; signups: number[]; revenue: number[] }
+} {
+  const count = range === '1d' ? 24 : range === '7d' ? 7 : 30
+  const isHourly = range === '1d'
+
+  const series: DayPoint[] = []
+  const sSessions: number[] = []
+  const sSignups: number[] = []
+  const sRevenue: number[] = []
+
+  for (let i = 0; i < count; i++) {
+    const wave = isHourly ? hourlyWave(i) : dayWave(i)
+    const sessions = Math.round(BASE_DAILY.sessions * wave * (isHourly ? 0.06 : 1))
+    const signups = Math.round(BASE_DAILY.signups * wave * (isHourly ? 0.06 : 1))
+    const revenue = Math.round(BASE_DAILY.revenue * wave * (isHourly ? 0.06 : 1) * 100) / 100
+    const churn = Math.round(BASE_DAILY.churn * (2 - wave))
+    const health = Math.round(BASE_DAILY.health * Math.min(wave, 1.3))
+
+    series.push({
+      date: isHourly ? hourLabel(i) : dayLabel(count - 1 - i),
+      sessions,
+      signups,
+      revenue,
+      churn,
+      health,
+    })
+    sSessions.push(sessions)
+    sSignups.push(signups)
+    sRevenue.push(revenue)
+  }
+
+  return { series, sparks: { sessions: sSessions, signups: sSignups, revenue: sRevenue } }
+}
 
 /** Channel mix for the Donut demo. */
 export type ChannelSlice = { key: string; label: string; value: number }

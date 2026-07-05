@@ -166,3 +166,60 @@ did they click from?". We don't track `utm_medium` / `utm_campaign` / `utm_conte
 - **TypeScript strict** — no shortcuts.
 - **Iterate in the playground** — see changes immediately.
 - **Document decisions** — update this file as conventions evolve.
+
+## Search Param Persistence
+
+URL search params that represent a filter/view/tab/range state MUST be backed by
+localStorage via `createSearchParamStore` (`basalt-ui/router-tanstack`). This
+factory combines three concerns: a `validateSearch` for the route, a `useStore`
+hook for the filter component, and a `readStored` plain function.
+
+**Why:** navigating away and back, or sharing a link, should restore the user's
+last choice, not reset to the factory default. The URL is canonical, localStorage
+is the fallback.
+
+**Pattern:**
+
+```ts
+// 1. Define once (e.g. in a shared demo/ or lib/ module):
+export const rangeStore = createSearchParamStore({
+  key: 'dashboard-range',                 // localStorage key (auto-namespaced)
+  param: 'range',                         // URL ?range=…
+  values: ['1d', '7d', '30d'] as const,   // allowed values
+  fallback: '30d',                        // factory default
+})
+
+// 2. Route:
+export const Route = createFileRoute('/dashboard')({
+  validateSearch: rangeStore.validateSearch,
+  // …
+})
+
+// 3. Filter component:
+function DateFilter() {
+  const { range } = useSearch({ from: '/dashboard' })
+  const [, persist] = rangeStore.useStore()
+  const navigate = useNavigate()
+  const router = useRouter()
+  return (
+    <SegmentedControl
+      value={range}
+      onChange={(v) => {
+        persist(v)
+        navigate({
+          to: router.state.location.pathname,
+          search: (prev) => ({ ...prev, range: v }),
+        })
+      }}
+    />
+  )
+}
+```
+
+**When to use:** any search param the user can change — date ranges, tab views,
+table filters, pagination offset, sort order, chart type toggles. Use
+`search={true}` on `<Link>` components inside that route tree so cross-page
+navigation preserves the params.
+
+**When NOT to use:** transient navigation state (redirect targets, one-shot
+modals), auth tokens, or params that must change on every visit.

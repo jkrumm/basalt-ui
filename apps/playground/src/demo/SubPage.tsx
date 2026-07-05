@@ -1,11 +1,12 @@
-import { Stack, Text, Paper, Group } from '@mantine/core'
+import { Stack, Text, Paper, Group, Badge } from '@mantine/core'
 
 export type SubPageProps = {
   title: string
   description: string
+  range?: string | undefined
 }
 
-export function SubPage({ title, description }: SubPageProps) {
+export function SubPage({ title, description, range }: SubPageProps) {
   return (
     <Stack gap="md">
       <Paper p="md" withBorder>
@@ -13,6 +14,11 @@ export function SubPage({ title, description }: SubPageProps) {
           <Text fw={600} fz="lg">
             {title}
           </Text>
+          {range ? (
+            <Badge size="sm" variant="light">
+              {range}
+            </Badge>
+          ) : null}
         </Group>
         <Text size="sm" c="dimmed">
           {description}
