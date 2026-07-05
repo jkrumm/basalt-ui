@@ -50,10 +50,11 @@ function RootLayout() {
   )
 
   /**
-   * Router-agnostic link renderer wired to a real TanStack `<Link>`. Uses
-   * `search={true}` on dashboard links to preserve the `range` param across
-   * sub-page navigation — TanStack Router's native "carry all current params"
-   * shorthand.
+   * Router-agnostic link renderer wired to a real TanStack `<Link>`. Dashboard
+   * links use `search={true}` to preserve the current `?range=` param across
+   * sub-page switches. Non-dashboard links get no search injection — the
+   * localStorage fallback in `validateSearch` restores the selection when
+   * navigating back to `/dashboard/*`.
    */
   const renderNavLink = useCallback<NavLinkRenderer>((item, { active }) => {
     const href = item.href ?? '/'

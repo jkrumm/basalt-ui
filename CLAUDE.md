@@ -189,13 +189,13 @@ export const rangeStore = createSearchParamStore({
   fallback: '30d',                        // factory default
 })
 
-// 2. Route:
+// 2. Parent route:
 export const Route = createFileRoute('/dashboard')({
   validateSearch: rangeStore.validateSearch,
   // …
 })
 
-// 3. Filter component:
+// 3. Filter component (rendered in the layout, uses PageActions portal):
 function DateFilter() {
   const { range } = useSearch({ from: '/dashboard' })
   const [, persist] = rangeStore.useStore()
@@ -214,12 +214,29 @@ function DateFilter() {
     />
   )
 }
+
+// 4. Page component — accepts the param as a prop (NOT useSearch directly):
+function DashboardPage({ range }: { range?: DateRange }) {
+  const resolved = range ?? '30d'
+  const data = useMemo(() => generateData(resolved), [resolved])
+  // …
+}
+
+// 5. Child route reads parent search and passes to the page:
+function DashboardIndex() {
+  const { range } = Route.useSearch()  // from the parent /dashboard route
+  return <DashboardPage range={range} />
+}
 ```
 
-**When to use:** any search param the user can change — date ranges, tab views,
-table filters, pagination offset, sort order, chart type toggles. Use
-`search={true}` on `<Link>` components inside that route tree so cross-page
-navigation preserves the params.
+**Critical: never call `useSearch({ from: '/dashboard' })` from a page
+component that might render on a sibling route.** Sibling routes (e.g.
+`/activity`) are not children of `/dashboard`, so `from` fails with "Could not
+find an active match". Pass the param as a prop instead, with a default for
+non-dashboard renderers.
 
-**When NOT to use:** transient navigation state (redirect targets, one-shot
-modals), auth tokens, or params that must change on every visit.
+**Dashboard nav links should use `search={true}`** so switching between sub-pages
+(e.g. Sessions → Traffic) preserves the current `?range=` value. This does NOT
+leak to non-dashboard pages because the `isDashboard` guard only applies it to
+`/dashboard/*` targets. The invariant-failure danger was in `useSearch({ from:
+'/dashboard' })` inside a page component, not in the nav's `search={true}`.

@@ -237,3 +237,42 @@ export const ACTIVITY_HEATMAP: HeatCell[] = HEATMAP_DAYS.flatMap((day, di) =>
     sessions: sessionLoad(di, hour),
   })),
 )
+
+// ── Channel volume demo: high-cardinality legend regression guard ──────────
+//
+// 4 acquisition-channel bars (stacked) + a 3-week moving-average overlay + 3 threshold
+// reference lines = 8 legend entries. Deliberately exercises `ChartLegend`'s flexWrap,
+// `role`-based grouping (series/overlay/reference), and the `maxRows` "+N more" rollup so the
+// weekly-volume-class overlap/overflow regression can't silently return.
+
+const WEEK_LABELS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'] as const
+
+const ORGANIC = [320, 340, 355, 300, 380, 410, 395, 420]
+const PAID = [210, 225, 200, 240, 260, 250, 270, 265]
+const REFERRAL = [140, 150, 165, 155, 170, 180, 175, 190]
+const DIRECT = [95, 100, 90, 110, 105, 115, 120, 118]
+const CHANNEL_TOTAL = ORGANIC.map((v, i) => v + PAID[i]! + REFERRAL[i]! + DIRECT[i]!)
+const CHANNEL_MA = trailingMa(CHANNEL_TOTAL, 3)
+
+export type ChannelVolumePoint = {
+  week: string
+  organic: number
+  paid: number
+  referral: number
+  direct: number
+  /** Sum of the four channels — what the MA + thresholds are measured against. */
+  total: number
+  /** Trailing 3-week average of `total`. */
+  ma: number
+}
+
+/** 8 weeks × 4 acquisition channels, stacked, plus a trailing MA of the weekly total. */
+export const CHANNEL_VOLUME: ChannelVolumePoint[] = WEEK_LABELS.map((week, i) => ({
+  week,
+  organic: ORGANIC[i]!,
+  paid: PAID[i]!,
+  referral: REFERRAL[i]!,
+  direct: DIRECT[i]!,
+  total: CHANNEL_TOTAL[i]!,
+  ma: Math.round((CHANNEL_MA[i] ?? 0) * 10) / 10,
+}))

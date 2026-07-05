@@ -1,29 +1,17 @@
 /**
  * Dashboard page — KPI tiles (each with a sparkline) + a grouped Bars chart with a left/right axis,
- * a reference line, an interactive legend, and a page-header action portalled into the shell top
- * bar via `PageActions`.
+ * a reference line, and a page-header action portalled into the shell top bar via `PageActions`.
  *
- * Exercises: ChartCard, ChartLegend (highlight state), Bars kind (grouped layout, dual axis,
- * refLines, tooltip), LineSparkline / BarSparkline, PageActions, the app-side `demoColors` series
+ * Exercises: ChartCard, Bars kind (grouped layout, dual axis, refLines, its own derived legend +
+ * hover-dim, tooltip), LineSparkline / BarSparkline, PageActions, the app-side `demoColors` series
  * tokens, and `alpha()`.
  */
 import { Badge, Box, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
-import {
-  alpha,
-  BarSparkline,
-  Bars,
-  ChartCard,
-  ChartLegend,
-  LineSparkline,
-  VX,
-} from 'basalt-ui/charts'
-import type { LegendEntry } from 'basalt-ui/charts'
-import { useSearch } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { alpha, BarSparkline, Bars, ChartCard, LineSparkline, VX } from 'basalt-ui/charts'
+import { useMemo } from 'react'
 import { generateDashboardData } from './data'
-import type { DayPoint } from './data'
+import type { DateRange, DayPoint } from './data'
 import { demoColors } from './series'
-import { useMeasureWidth } from './use-measure'
 
 const RANGE_LABEL: Record<string, string> = {
   '1d': 'Last 24 hours',
@@ -44,15 +32,9 @@ type Kpi = {
   bar?: boolean
 }
 
-const LEGEND: LegendEntry[] = [
-  { key: 'sessions', label: 'Sessions', color: demoColors.sessions ?? VX.line, shape: 'bar' },
-  { key: 'signups', label: 'Signups', color: demoColors.signups ?? VX.line2, shape: 'bar' },
-  { key: 'churn', label: 'Churn %', color: demoColors.churn ?? VX.badSolid, shape: 'line' },
-]
-
-export function DashboardPage() {
-  const { range } = useSearch({ from: '/dashboard' })
-  const { series, sparks } = useMemo(() => generateDashboardData(range), [range])
+export function DashboardPage({ range }: { range?: DateRange }) {
+  const resolved = range ?? '30d'
+  const { series, sparks } = useMemo(() => generateDashboardData(resolved), [resolved])
 
   const kpis: Kpi[] = useMemo(
     () => [
@@ -84,9 +66,6 @@ export function DashboardPage() {
     ],
     [series, sparks],
   )
-
-  const [ref, width] = useMeasureWidth()
-  const [highlighted, setHighlighted] = useState<string | null>(null)
 
   return (
     <Stack gap="sm">
@@ -121,47 +100,42 @@ export function DashboardPage() {
         tooltip="Grouped bars share the left axis; the churn line reads against the right axis. Hover a legend entry to isolate a series."
         extra={
           <Text size="xs" c="dimmed">
-            {RANGE_LABEL[range] ?? 'Last 30 days'}
+            {RANGE_LABEL[resolved] ?? 'Last 30 days'}
           </Text>
         }
       >
-        <Box ref={ref}>
-          <Bars<DayPoint>
-            data={series}
-            width={width}
-            height={300}
-            chartId="dashboard-acquisition"
-            getX={(d) => d.date}
-            getValue={(d, key) => (d[key as keyof DayPoint] as number) ?? null}
-            barLayout="grouped"
-            positiveBars={[
-              { key: 'sessions', label: 'Sessions', color: demoColors.sessions ?? VX.line },
-              {
-                key: 'signups',
-                label: 'Signups',
-                color: demoColors.signups ?? VX.line2,
-                weight: 0.8,
-              },
-            ]}
-            lines={[
-              {
-                key: 'churn',
-                label: 'Churn %',
-                color: demoColors.churn ?? VX.badSolid,
-                axisSide: 'right',
-                formatValue: (v) => `${v.toFixed(0)}%`,
-              },
-            ]}
-            refLines={[
-              { value: 1000, color: alpha(VX.neutral, 0.4), dashed: true, axisSide: 'left' },
-            ]}
-            leftAxis={{ domain: 'auto', formatTick: (v) => fmtInt(v) }}
-            rightAxis={{ domain: [0, 20], formatTick: (v) => `${v}%`, numTicks: 4 }}
-            formatValue={(v) => fmtInt(v)}
-            highlightedKey={highlighted}
-          />
-        </Box>
-        <ChartLegend items={LEGEND} highlighted={highlighted} onHighlight={setHighlighted} />
+        <Bars<DayPoint>
+          data={series}
+          height={300}
+          chartId="dashboard-acquisition"
+          getX={(d) => d.date}
+          getValue={(d, key) => (d[key as keyof DayPoint] as number) ?? null}
+          barLayout="grouped"
+          positiveBars={[
+            { key: 'sessions', label: 'Sessions', color: demoColors.sessions ?? VX.line },
+            {
+              key: 'signups',
+              label: 'Signups',
+              color: demoColors.signups ?? VX.line2,
+              weight: 0.8,
+            },
+          ]}
+          lines={[
+            {
+              key: 'churn',
+              label: 'Churn %',
+              color: demoColors.churn ?? VX.badSolid,
+              axisSide: 'right',
+              formatValue: (v) => `${v.toFixed(0)}%`,
+            },
+          ]}
+          refLines={[
+            { value: 1000, color: alpha(VX.neutral, 0.4), dashed: true, axisSide: 'left' },
+          ]}
+          leftAxis={{ domain: 'auto', formatTick: (v) => fmtInt(v) }}
+          rightAxis={{ domain: [0, 20], formatTick: (v) => `${v}%`, numTicks: 4 }}
+          formatValue={(v) => fmtInt(v)}
+        />
       </ChartCard>
     </Stack>
   )
