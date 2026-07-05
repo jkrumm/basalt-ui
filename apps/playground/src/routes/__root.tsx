@@ -210,6 +210,14 @@ function RootLayout() {
             href: '/agent',
             active: isActive('/agent'),
           },
+          {
+            key: 'threads',
+            label: 'Threads',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/threads',
+            active: isActive('/threads'),
+          },
         ],
       },
       {
