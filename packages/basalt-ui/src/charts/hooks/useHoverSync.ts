@@ -21,13 +21,13 @@ type XScale = (x: string) => number | undefined
 export function useHoverSync<T>({
   data,
   chartId,
-  getX,
+  getKey,
   xScale,
   marginLeft,
 }: {
   data: T[]
   chartId: string
-  getX: (d: T) => string
+  getKey: (d: T) => string
   xScale: XScale
   marginLeft: number
 }) {
@@ -53,13 +53,13 @@ export function useHoverSync<T>({
 
   const { tip, show, hide, tooltipRef, lastDateRef } = useChartTooltip<T>()
 
-  // O(1) lookup of a point by its x-category. Under a provider every sibling resolves the broadcast
-  // date each frame; an O(n) `data.find` per sibling per move is N×O(M). This makes it N×O(1).
-  const pointByX = useMemo(() => {
+  // O(1) lookup of a point by its key. Under a provider every sibling resolves the broadcast
+  // key each frame; an O(n) `data.find` per sibling per move is N×O(M). This makes it N×O(1).
+  const pointByKey = useMemo(() => {
     const m = new Map<string, T>()
-    for (const d of data) m.set(getX(d), d)
+    for (const d of data) m.set(getKey(d), d)
     return m
-  }, [data, getX])
+  }, [data, getKey])
 
   const handleMouse = useCallback(
     (event: React.MouseEvent<SVGRectElement>) => {
@@ -69,7 +69,7 @@ export function useHoverSync<T>({
       let closest: T = data[0] as T
       let minDist = Infinity
       for (const d of data) {
-        const sx = xScale(getX(d)) ?? 0
+        const sx = xScale(getKey(d)) ?? 0
         const dist = Math.abs(sx - px)
         if (dist < minDist) {
           minDist = dist
@@ -77,13 +77,13 @@ export function useHoverSync<T>({
         }
       }
       show(closest, event)
-      const date = getX(closest)
-      if (lastDateRef.current !== date) {
-        lastDateRef.current = date
-        ctxRef.current.setHover(date, chartId)
+      const key = getKey(closest)
+      if (lastDateRef.current !== key) {
+        lastDateRef.current = key
+        ctxRef.current.setHover(key, chartId)
       }
     },
-    [data, xScale, getX, chartId, marginLeft, show, lastDateRef],
+    [data, xScale, getKey, chartId, marginLeft, show, lastDateRef],
   )
 
   const handleLeave = useCallback(() => {
@@ -95,10 +95,10 @@ export function useHoverSync<T>({
   }, [hide, chartId])
 
   // The point the crosshair + synced dots track. Inside a <ChartHoverSync> this follows the
-  // broadcast date (so every sibling paints a ghost crosshair at the same x). WITHOUT a provider the
+  // broadcast key (so every sibling paints a ghost crosshair at the same x). WITHOUT a provider the
   // chart is standalone, so it falls back to THIS chart's own hovered point (`tip.data`) — otherwise
   // a chart outside a provider would never draw a crosshair/dots at all.
-  const syncedPoint = ctx.date ? (pointByX.get(ctx.date) ?? null) : (tip?.data ?? null)
+  const syncedPoint = ctx.key ? (pointByKey.get(ctx.key) ?? null) : (tip?.data ?? null)
   // Which chart owns the floating tooltip. Inside a provider the hovered chart is the one whose id
   // matches the broadcast source (siblings show a ghost crosshair only). Standalone, its own local
   // hover (`tip`) drives the tooltip.

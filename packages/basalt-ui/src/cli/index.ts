@@ -87,6 +87,12 @@ export type BasaltConfig = {
    * (ON). Set `false` to disable the `raw-motion-value` check.
    */
   rawMotionValue?: boolean
+  /**
+   * Flag a hand-rolled `<ChartLegend items={[...]}>` array literal — legend entries must be
+   * derived (e.g. `items={deriveLegend(series)}`), never authored inline. Default: `true` (ON).
+   * Set `false` to disable the `unframed-chart` check.
+   */
+  unframedChart?: boolean
   /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
   seriesModulePath?: string
   /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
@@ -158,6 +164,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
+    unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     allowComment: 'theme-allow',
   }
 
@@ -208,6 +215,8 @@ export function checkTheme(cwd: string = process.cwd()): number {
       'AxisLeftNumeric / AxisBottomDate / AxisRightNumeric from the charts primitives. ' +
       'raw-motion-value: hardcoded duration/spring/ease in `transition={{...}}` — use ' +
       'MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD instead. ' +
+      'unframed-chart: hand-rolled ChartLegend built from an inline array literal — pass a ' +
+      'derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you. ' +
       'Add a `theme-allow` comment for a deliberate exception.',
   )
   return 1
@@ -1165,6 +1174,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
+    unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     allowComment: 'theme-allow',
   }
 

@@ -396,6 +396,82 @@ describe('check-theme raw-visx-axis', () => {
   })
 })
 
+describe('check-theme unframed-chart', () => {
+  it('flags a hand-rolled <ChartLegend items={[...]}> array literal', () => {
+    fixtureAt(
+      'charts/kinds/Foo.tsx',
+      `export const Foo = () => <ChartLegend items={[{ key: 'a', label: 'A', color: '#fff' }]} />\n`,
+    )
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('unframed-chart')
+  })
+
+  it('flags a hand-rolled legend array literal formatted across multiple lines', () => {
+    fixtureAt(
+      'charts/kinds/Foo.tsx',
+      [
+        'export const Foo = () => (',
+        '  <ChartLegend',
+        "    items={[{ key: 'a', label: 'A', color: VX.line }]}",
+        '    placement="bottom"',
+        '  />',
+        ')',
+        '',
+      ].join('\n'),
+    )
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('unframed-chart')
+  })
+
+  it('does NOT flag a derived legend (items={deriveLegend(series)})', () => {
+    fixtureAt(
+      'charts/primitives/ChartFrame.tsx',
+      [
+        'export const Foo = () => (',
+        '  <ChartLegend',
+        '    items={deriveLegend(series)}',
+        '    placement={placement}',
+        '  />',
+        ')',
+        '',
+      ].join('\n'),
+    )
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('unframed-chart')
+  })
+
+  it('does NOT flag an unrelated items={[...]} prop on a non-ChartLegend component', () => {
+    fixtureAt('widgets/Menu.tsx', `export const Foo = () => <Menu items={[{ label: 'a' }]} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('unframed-chart')
+  })
+
+  it('respects the unframedChart:false config knob', () => {
+    fixtureAt(
+      'charts/kinds/Foo.tsx',
+      `export const Foo = () => <ChartLegend items={[{ key: 'a', label: 'A' }]} />\n`,
+      { roots: ['src'], unframedChart: false },
+    )
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('unframed-chart')
+  })
+
+  it('does NOT flag a line carrying a theme-allow comment', () => {
+    fixtureAt(
+      'charts/kinds/Foo.tsx',
+      `export const Foo = () => <ChartLegend items={[{ key: 'a', label: 'A' }]} /> // theme-allow: bespoke legend\n`,
+    )
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('unframed-chart')
+  })
+})
+
 describe('check-theme comment skipping', () => {
   it('does NOT flag a banned element mentioned in a pure line comment', () => {
     fixtureAt(

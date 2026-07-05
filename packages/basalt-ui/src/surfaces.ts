@@ -192,7 +192,7 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis'],
+    guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'unframed-chart'],
     description: 'visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)',
     globs: {
       shipped: ['**/charts/**'],

@@ -15,11 +15,14 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
+import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
-import { useVxTheme } from '../theme'
+import { deriveTooltipRows } from '../series'
+import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
@@ -48,13 +51,15 @@ export type ZonedLineTooltipLabel = {
 
 export type ZonedLineProps<T> = {
   data: T[]
-  width: number
-  height: number
+  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  height?: number
   chartId: string
   /** Extracts the x-axis category (date string) from a data point. */
   getX: (d: T) => string
-  /** Extracts the y value — return null to exclude the point from the line and tooltip. */
-  getY: (d: T) => number | null
+  /** Single-series line — the sole source of truth for color, dash, legend, and tooltip row. Pass
+   * exactly one entry (kept as an array for parity with the other kinds and so `ChartFrame` /
+   * `deriveLegend` / `deriveTooltipRows` can consume it directly). */
+  series: ChartSeries<T>[]
   /** Fixed y-domain (e.g. [0, 100]) or 'auto' to compute from data. */
   yDomain: [number, number] | 'auto'
   /**
@@ -77,19 +82,20 @@ export type ZonedLineProps<T> = {
   numTicksX?: number
   /** Label shown at the right of the tooltip header (e.g. zone name with zone color). */
   tooltipLabel?: (d: T) => ZonedLineTooltipLabel | null
-  /** Row label in the tooltip body (e.g. "ACWR", "Recovery"). */
-  seriesLabel: string
   /** Formatter for the tooltip value. */
   formatValue: (v: number) => string
   /** Optional extra tooltip rows (rendered after the main row). */
   renderExtraTooltipRows?: (d: T) => ReactNode
   /**
    * Opt-in soft gradient fill under the line. Pass a color token to tint the area
-   * with that hue — the modern single-hue look. Off by default (a neutral fill under
-   * the neutral line just reads as grey haze). Strength is global via
-   * `--vx-area-top` / `--vx-area-bottom` (tunable in the dev theme lab).
+   * with that hue — the modern single-hue look. `true` falls back to the series color. Off by
+   * default (a neutral fill under the neutral line just reads as grey haze). Strength is global
+   * via `--vx-area-top` / `--vx-area-bottom` (tunable in the dev theme lab).
    */
   areaFill?: string | boolean
+  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+   * Default `{ placement: 'bottom' }`. */
+  legend?: ChartLegendConfig | false
 }
 
 /**
@@ -97,18 +103,40 @@ export type ZonedLineProps<T> = {
  * shared-cursor tooltip. Covers the line-with-zones pattern. Does NOT handle
  * dual-panel charts (keep those bespoke).
  *
+ * Composes `ChartFrame` for measuring + the derived legend — single-series, so the legend is
+ * optional in practice but present by default (gained relative to the pre-redesign kind).
+ *
  * X-axis is built from the full `data` array so the calendar is preserved even
  * when the series has nulls; the line itself skips null points (creating
  * visual gaps).
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
+  const { series, chartId, height, legend } = props
+
+  return (
+    <ChartFrame
+      series={series}
+      chartId={chartId}
+      {...(height !== undefined && { height })}
+      legend={resolveLegend(legend)}
+    >
+      {(plot) => <ZonedLinePlot {...props} plot={plot} />}
+    </ChartFrame>
+  )
+}
+
+type ZonedLinePlotProps<T> = ZonedLineProps<T> & {
+  plot: { width: number; height: number }
+}
+
+/** The measured plot — split from {@link ZonedLineInner} so its scale/hover-sync hooks only run
+ * once `ChartFrame` has resolved a non-empty plot rect. */
+function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
   const {
     data,
-    width,
-    height,
     chartId,
     getX,
-    getY,
+    series,
     yDomain,
     yAutoPad = 1.1,
     yAutoMaxFloor,
@@ -119,34 +147,34 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     numTicksY = 5,
     numTicksX,
     tooltipLabel,
-    seriesLabel,
     formatValue,
     renderExtraTooltipRows,
     areaFill,
+    plot,
   } = props
 
-  const { line } = useVxTheme()
+  const primary = series[0]
   const MARGIN = VX.margin
-  const xMax = width - MARGIN.left - MARGIN.right
-  const yMax = height - MARGIN.top - MARGIN.bottom
+  const xMax = plot.width - MARGIN.left - MARGIN.right
+  const yMax = plot.height - MARGIN.top - MARGIN.bottom
 
   // Area is opt-in: pass a color token to get a cohesive single-hue fill under the line.
   // (A neutral fill under the neutral line just reads as grey haze, so there is no default-on.)
   const showArea = areaFill !== undefined && areaFill !== false
-  const areaColor = typeof areaFill === 'string' ? areaFill : line
+  const areaColor = typeof areaFill === 'string' ? areaFill : primary?.color
   const areaId = `${chartId}-area`
 
   type Valid = T & { __y: number }
   const valid = useMemo<Valid[]>(() => {
     const out: Valid[] = []
     for (const d of data) {
-      const y = getY(d)
+      const y = primary?.getValue(d) ?? null
       if (y !== null && y !== undefined && !Number.isNaN(y)) {
         out.push(Object.assign({}, d, { __y: y }) as Valid)
       }
     }
     return out
-  }, [data, getY])
+  }, [data, primary])
 
   const xScale = useMemo(
     () =>
@@ -176,7 +204,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     useHoverSync<Valid>({
       data: valid,
       chartId,
-      getX,
+      getKey: getX,
       xScale,
       marginLeft: MARGIN.left,
     })
@@ -190,8 +218,8 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
   const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg width={width} height={height}>
+    <>
+      <svg width={plot.width} height={plot.height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
 
@@ -213,7 +241,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
             />
           ))}
 
-          {showArea && (
+          {showArea && areaColor !== undefined && (
             <>
               <defs>
                 <AreaGradient id={areaId} color={areaColor} />
@@ -237,36 +265,29 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
               y1={yScale(r.value)}
               y2={yScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed ? '4 4' : undefined}
+              strokeDasharray={r.dashed ? VX.dashArray : undefined}
             />
           ))}
 
-          <LinePath<Valid>
-            data={valid}
-            x={(d) => xScale(getX(d)) ?? 0}
-            y={(d) => yScale(d.__y)}
-            stroke={line}
-            strokeWidth={VX.lineWidth}
-            curve={curveMonotoneX}
-          />
+          {primary && (
+            <LinePath<Valid>
+              data={valid}
+              x={(d) => xScale(getX(d)) ?? 0}
+              y={(d) => yScale(d.__y)}
+              stroke={primary.color}
+              strokeWidth={primary.strokeWidth ?? VX.lineWidth}
+              strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}
+              curve={curveMonotoneX}
+            />
+          )}
 
-          {syncedPoint && (
+          {syncedPoint && primary && (
             <>
-              <line
-                x1={xScale(getX(syncedPoint)) ?? 0}
-                x2={xScale(getX(syncedPoint)) ?? 0}
-                y1={0}
-                y2={yMax}
-                stroke={VX.crosshair}
-                strokeWidth={1}
-              />
-              <circle
+              <Crosshair x={xScale(getX(syncedPoint)) ?? 0} top={0} bottom={yMax} />
+              <SeriesDot
                 cx={xScale(getX(syncedPoint)) ?? 0}
                 cy={yScale(syncedPoint.__y)}
-                r={VX.dotR}
-                fill={line}
-                stroke={VX.dotStroke}
-                strokeWidth={2}
+                color={primary.color}
               />
             </>
           )}
@@ -285,18 +306,23 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
               {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
             />
             <TooltipBody>
-              <TooltipRow
-                color={line}
-                label={seriesLabel}
-                value={formatValue(tip.data.__y)}
-                shape="line"
-              />
+              {deriveTooltipRows(series, tip.data, formatValue).map((row) => (
+                <TooltipRow
+                  key={row.key}
+                  color={row.color}
+                  label={row.label}
+                  value={row.value}
+                  shape={row.shape}
+                  dashed={row.dashed}
+                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+                />
+              ))}
               {renderExtraTooltipRows?.(tip.data)}
             </TooltipBody>
           </>
         )}
       </ChartTooltip>
-    </div>
+    </>
   )
 }
 

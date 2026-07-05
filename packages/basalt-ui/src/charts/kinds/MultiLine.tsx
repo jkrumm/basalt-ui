@@ -13,50 +13,27 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
-import { ChartLegend } from '../primitives/ChartLegend'
-import type { LegendEntry } from '../primitives/ChartLegend'
+import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
+import { deriveTooltipRows } from '../series'
+import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
-/** One line in a {@link MultiLine} chart — shares the single y-axis with every other series. */
-export type MultiLineSeries<T> = {
-  /** Stable identity for keys, legend highlight, and tooltip rows. */
-  key: string
-  /** Legend + tooltip label. */
-  label: string
-  /** Resolved CSS color / token ref (never a raw hex). */
-  color: string
-  /** Y accessor — return null to break the line (visual gap) and skip the tooltip row. */
-  getY: (d: T) => number | null
-  /** Render the line dashed (e.g. a moving-average companion). */
-  dashed?: boolean
-  /** Stroke width override. Default VX.lineWidth. */
-  strokeWidth?: number
-  /** Whether this series appears in the legend. Default true; false = companion line (e.g. MA). */
-  legend?: boolean
-  /**
-   * Parent series key. A companion (e.g. a moving-average line with `legend: false`) names its
-   * parent here so legend-hover dimming keeps the pair together — hovering the parent does NOT
-   * dim its companion.
-   */
-  parent?: string
-  /** Per-point marker (PR star / status dot). Return null for no marker at that point. */
-  getMarker?: (d: T) => { color?: string; r?: number } | null
-}
-
 export type MultiLineProps<T> = {
   data: T[]
-  width: number
-  height: number
+  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  height?: number
   chartId: string
   /** Extracts the x-axis category (date string) from a data point. */
   getX: (d: T) => string
-  /** 1+ line series sharing one y-axis. */
-  series: MultiLineSeries<T>[]
+  /** 1+ line series sharing one y-axis — the single source of truth for color, dash, legend, and
+   * tooltip rows. */
+  series: ChartSeries<T>[]
   /** Fixed y-domain (e.g. [-2.5, 2.5]) or 'auto' to compute from all series. */
   yDomain: [number, number] | 'auto'
   /** When 'auto': upper bound is at least this value. */
@@ -81,6 +58,9 @@ export type MultiLineProps<T> = {
   renderExtraTooltipRows?: (d: T) => ReactNode
   /** Marker glyph for per-point markers. Default 'circle'. */
   markerShape?: 'circle' | 'star'
+  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+   * Default `{ placement: 'bottom' }`. */
+  legend?: ChartLegendConfig | false
 }
 
 const STAR_R = 6
@@ -103,14 +83,42 @@ function starPath(cx: number, cy: number, r: number): string {
  * shared-cursor tooltip. Generalizes the multi-line argo charts (e1RM trend, relative
  * progression, training load, fitness trends).
  *
+ * Composes `ChartFrame` for measuring + the derived legend — `series` is the single array that
+ * drives the plotted lines, the legend, and the tooltip rows.
+ *
  * X-axis is built from the full `data` array so the calendar is preserved even when a series
  * has nulls; each series line skips null points (creating visual gaps).
  */
 function MultiLineInner<T>(props: MultiLineProps<T>) {
+  const { series, chartId, height, legend } = props
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
+
+  return (
+    <ChartFrame
+      series={series}
+      chartId={chartId}
+      {...(height !== undefined && { height })}
+      legend={resolveLegend(legend, {
+        highlighted: highlightedKey,
+        onHighlight: setHighlightedKey,
+      })}
+    >
+      {(plot) => <MultiLinePlot {...props} plot={plot} highlightedKey={highlightedKey} />}
+    </ChartFrame>
+  )
+}
+
+type MultiLinePlotProps<T> = MultiLineProps<T> & {
+  plot: { width: number; height: number }
+  highlightedKey: string | null
+}
+
+/** The measured plot — split from {@link MultiLineInner} so its scale/hover-sync hooks only run
+ * once `ChartFrame` has resolved a non-empty plot rect (hooks can't run inside a conditionally
+ * invoked render-prop callback). */
+function MultiLinePlot<T>(props: MultiLinePlotProps<T>) {
   const {
     data,
-    width,
-    height,
     chartId,
     getX,
     series,
@@ -127,17 +135,18 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     tooltipLabel,
     renderExtraTooltipRows,
     markerShape = 'circle',
+    plot,
+    highlightedKey,
   } = props
 
-  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
   // A series stays at full opacity when nothing is highlighted, when it IS the highlighted series,
   // or when it is a companion of the highlighted series (its `parent` matches).
-  const dimOpacity = (s: MultiLineSeries<T>): number =>
+  const dimOpacity = (s: ChartSeries<T>): number =>
     highlightedKey === null || s.key === highlightedKey || s.parent === highlightedKey ? 1 : 0.25
 
   const MARGIN = VX.margin
-  const xMax = width - MARGIN.left - MARGIN.right
-  const yMax = height - MARGIN.top - MARGIN.bottom
+  const xMax = plot.width - MARGIN.left - MARGIN.right
+  const yMax = plot.height - MARGIN.top - MARGIN.bottom
 
   const xScale = useMemo(
     () =>
@@ -156,7 +165,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
       let dataMin = Infinity
       for (const d of data) {
         for (const s of series) {
-          const v = s.getY(d)
+          const v = s.getValue(d)
           if (v === null || v === undefined || Number.isNaN(v)) continue
           if (v > dataMax) dataMax = v
           if (v < dataMin) dataMin = v
@@ -176,7 +185,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     {
       data,
       chartId,
-      getX,
+      getKey: getX,
       xScale,
       marginLeft: MARGIN.left,
     },
@@ -188,25 +197,6 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     [data, xMax, getX, numTicksX],
   )
 
-  const legendItems = useMemo<LegendEntry[]>(
-    () =>
-      series
-        .filter((s) => s.legend !== false)
-        .map((s) =>
-          Object.assign(
-            {
-              key: s.key,
-              label: s.label,
-              color: s.color,
-              shape: 'line' as const,
-            },
-            s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth },
-            s.dashed !== undefined && { dashed: s.dashed },
-          ),
-        ),
-    [series],
-  )
-
   // Per-series valid points, computed once per (data, series) change — not re-walked inside the
   // render map on every paint (parity with ZonedLine's single `valid` memo). Reused by the lines,
   // the per-point markers, and the synced dots.
@@ -216,7 +206,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     for (const s of series) {
       const pts: LinePt[] = []
       for (const d of data) {
-        const v = s.getY(d)
+        const v = s.getValue(d)
         if (v !== null && v !== undefined && !Number.isNaN(v)) pts.push({ __d: d, __y: v })
       }
       out.set(s.key, pts)
@@ -227,13 +217,8 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
   const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
 
   return (
-    <div style={{ position: 'relative' }}>
-      <ChartLegend
-        items={legendItems}
-        highlighted={highlightedKey}
-        onHighlight={setHighlightedKey}
-      />
-      <svg width={width} height={height}>
+    <>
+      <svg width={plot.width} height={plot.height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
 
@@ -247,7 +232,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
               y1={yScale(r.value)}
               y2={yScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed ? '4 4' : undefined}
+              strokeDasharray={r.dashed ? VX.dashArray : undefined}
             />
           ))}
 
@@ -262,7 +247,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
                 y={(p) => yScale(p.__y)}
                 stroke={s.color}
                 strokeWidth={s.strokeWidth ?? VX.lineWidth}
-                strokeDasharray={s.dashed ? '4 4' : undefined}
+                strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
                 strokeOpacity={dimOpacity(s)}
                 curve={curveMonotoneX}
               />
@@ -315,21 +300,11 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
               const sx = xScale(getX(syncedPoint)) ?? 0
               return (
                 <>
-                  <line x1={sx} x2={sx} y1={0} y2={yMax} stroke={VX.crosshair} strokeWidth={1} />
+                  <Crosshair x={sx} top={0} bottom={yMax} />
                   {series.map((s) => {
-                    const v = s.getY(syncedPoint)
+                    const v = s.getValue(syncedPoint)
                     if (v === null || v === undefined || Number.isNaN(v)) return null
-                    return (
-                      <circle
-                        key={`dot-${s.key}`}
-                        cx={sx}
-                        cy={yScale(v)}
-                        r={VX.dotR}
-                        fill={s.color}
-                        stroke={VX.dotStroke}
-                        strokeWidth={2}
-                      />
-                    )
+                    return <SeriesDot key={`dot-${s.key}`} cx={sx} cy={yScale(v)} color={s.color} />
                   })}
                 </>
               )
@@ -353,27 +328,23 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
               {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
             />
             <TooltipBody>
-              {series.map((s) => {
-                const v = s.getY(tip.data)
-                if (v === null || v === undefined || Number.isNaN(v)) return null
-                return (
-                  <TooltipRow
-                    key={s.key}
-                    color={s.color}
-                    label={s.label}
-                    value={formatValue(v)}
-                    shape="line"
-                    {...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth })}
-                    {...(s.dashed !== undefined && { dashed: s.dashed })}
-                  />
-                )
-              })}
+              {deriveTooltipRows(series, tip.data, formatValue).map((row) => (
+                <TooltipRow
+                  key={row.key}
+                  color={row.color}
+                  label={row.label}
+                  value={row.value}
+                  shape={row.shape}
+                  dashed={row.dashed}
+                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+                />
+              ))}
               {renderExtraTooltipRows?.(tip.data)}
             </TooltipBody>
           </>
         )}
       </ChartTooltip>
-    </div>
+    </>
   )
 }
 

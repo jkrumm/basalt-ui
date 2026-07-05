@@ -1,9 +1,9 @@
 import { createContext } from 'react'
 
 export type HoverCtx = {
-  date: string | null
+  key: string | null
   source: string | null
-  setHover: (date: string | null, source: string | null) => void
+  setHover: (key: string | null, source: string | null) => void
 }
 
 /**
@@ -18,11 +18,11 @@ export type HoverCtx = {
 export const DEFAULT_NO_OP_SET_HOVER: HoverCtx['setHover'] = () => {}
 
 /**
- * Shared-cursor context — charts write the hovered date + their own chartId;
- * other charts read and show a ghost crosshair + dot on the same date.
+ * Shared-cursor context — charts write the hovered key (an opaque category/date string) + their
+ * own chartId; other charts read and show a ghost crosshair + dot on the same key.
  */
 export const HoverContext = createContext<HoverCtx>({
-  date: null,
+  key: null,
   source: null,
   setHover: DEFAULT_NO_OP_SET_HOVER,
 })

@@ -13,31 +13,26 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
+import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
+import { deriveTooltipRows } from '../series'
+import type { ChartLegendConfig, ChartSeries, SeriesStyle } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks } from '../utils/ticks'
 
-/** One line in the top pane. `color` is a resolved CSS color / token ref. */
-export type DualPanelLine<T> = {
-  key: string
-  label: string
-  color: string
-  /** Extracts the y value — return null to drop the point (creates a gap). */
-  getY: (d: T) => number | null
-  dashed?: boolean
-}
-
 export type DualPanelProps<T> = {
   data: T[]
-  width: number
-  height: number
+  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  height?: number
   chartId: string
   getX: (d: T) => string
-  /** 1+ line series in the top pane. */
-  topLines: DualPanelLine<T>[]
+  /** 1+ line series in the top pane — the single source of truth for color, dash, legend, and
+   * tooltip rows. E.g. acute (solid) / chronic (dashed). */
+  series: ChartSeries<T>[]
   /** Top-pane y-domain. Default 'auto' (computed from all top lines, padded). */
   topYDomain?: [number, number] | 'auto'
   /** Shade the band between two top lines (by key), filled on both sides. */
@@ -57,6 +52,9 @@ export type DualPanelProps<T> = {
   formatBottom: (v: number) => string
   /** Tooltip badge — appears at the right of the tooltip header. */
   tooltipLabel?: (d: T) => { text: string; color: string } | null
+  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+   * Default `{ placement: 'bottom' }`. */
+  legend?: ChartLegendConfig | false
 }
 
 const PANE_GAP = 12
@@ -66,17 +64,51 @@ const PANE_GAP = 12
  * ONE x-scale and ONE cursor. Generalizes argo's divergence (acute/chronic +
  * divergence) and momentum (e1RM + velocity) charts.
  *
+ * Composes `ChartFrame` for measuring + the derived legend — `series` (the top lines) plus a
+ * synthesized divergence entry drive the legend, so acute/chronic/divergence are all legible
+ * without hovering (previously legend-less).
+ *
  * X-axis is built from the full `data` array so the calendar is preserved even
  * when a series has nulls; lines/bars skip null points (visual gaps).
  */
 function DualPanelInner<T>(props: DualPanelProps<T>) {
+  const { series, chartId, height, barLabel, barColorPositive, legend } = props
+
+  // The bottom pane's signed histogram gets one representative legend entry alongside the top
+  // lines — a diverging metric can't express its sign-dependent color as a single SeriesStyle, so
+  // `barColorPositive` stands in as the swatch color.
+  const legendSeries = useMemo<SeriesStyle[]>(
+    () => [
+      ...series,
+      { key: '__divergence', label: barLabel, color: barColorPositive, mark: 'bar' },
+    ],
+    [series, barLabel, barColorPositive],
+  )
+
+  return (
+    <ChartFrame
+      series={legendSeries}
+      chartId={chartId}
+      {...(height !== undefined && { height })}
+      legend={resolveLegend(legend)}
+    >
+      {(plot) => <DualPanelPlot {...props} plot={plot} />}
+    </ChartFrame>
+  )
+}
+
+type DualPanelPlotProps<T> = DualPanelProps<T> & {
+  plot: { width: number; height: number }
+}
+
+/** The measured plot — split from {@link DualPanelInner} so its scale/hover-sync hooks only run
+ * once `ChartFrame` has resolved a non-empty plot rect. */
+function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
   const {
     data,
-    width,
-    height,
     chartId,
     getX,
-    topLines,
+    series,
     topYDomain = 'auto',
     fillBetween,
     topRefLines = [],
@@ -89,12 +121,13 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
     formatTop,
     formatBottom,
     tooltipLabel,
+    plot,
   } = props
 
   const MARGIN = VX.margin
-  const xMax = width - MARGIN.left - MARGIN.right
+  const xMax = plot.width - MARGIN.left - MARGIN.right
   // Inner plot height shared by both panes (excludes top/bottom margin + gutter).
-  const plotH = height - MARGIN.top - MARGIN.bottom - PANE_GAP
+  const plotH = plot.height - MARGIN.top - MARGIN.bottom - PANE_GAP
   const topH = Math.max(Math.round(plotH * topFraction), 1)
   const bottomH = Math.max(plotH - topH, 1)
   const bottomTop = topH + PANE_GAP
@@ -112,9 +145,9 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
     }
     let lo = Infinity
     let hi = -Infinity
-    for (const ln of topLines) {
+    for (const s of series) {
       for (const d of data) {
-        const v = ln.getY(d)
+        const v = s.getValue(d)
         if (v === null || v === undefined || Number.isNaN(v)) continue
         if (v < lo) lo = v
         if (v > hi) hi = v
@@ -130,7 +163,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
       range: [topH, 0],
       nice: true,
     })
-  }, [data, topLines, topYDomain, topH])
+  }, [data, series, topYDomain, topH])
 
   // Bottom pane: symmetric signed scale around zero.
   const bottomYScale = useMemo(() => {
@@ -154,7 +187,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
     {
       data,
       chartId,
-      getX,
+      getKey: getX,
       xScale,
       marginLeft: MARGIN.left,
     },
@@ -167,42 +200,42 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
   type FillPt = { __d: T; __from: number; __to: number }
   const fillPts = useMemo<FillPt[]>(() => {
     if (!fillBetween) return []
-    const fromLine = topLines.find((ln) => ln.key === fillBetween.from)
-    const toLine = topLines.find((ln) => ln.key === fillBetween.to)
+    const fromLine = series.find((s) => s.key === fillBetween.from)
+    const toLine = series.find((s) => s.key === fillBetween.to)
     if (!fromLine || !toLine) return []
     const out: FillPt[] = []
     for (const d of data) {
-      const f = fromLine.getY(d)
-      const t = toLine.getY(d)
+      const f = fromLine.getValue(d)
+      const t = toLine.getValue(d)
       if (f === null || f === undefined || Number.isNaN(f)) continue
       if (t === null || t === undefined || Number.isNaN(t)) continue
       out.push({ __d: d, __from: f, __to: t })
     }
     return out
-  }, [data, fillBetween, topLines])
+  }, [data, fillBetween, series])
 
   type LinePt = { __d: T; __y: number }
-  // Per-line valid points, computed once per (data, topLines) — not re-walked inside the render map
+  // Per-line valid points, computed once per (data, series) — not re-walked inside the render map
   // every paint (parity with MultiLine's seriesPts).
   const lineValid = useMemo(() => {
     const out = new Map<string, LinePt[]>()
-    for (const ln of topLines) {
+    for (const s of series) {
       const pts: LinePt[] = []
       for (const d of data) {
-        const v = ln.getY(d)
+        const v = s.getValue(d)
         if (v !== null && v !== undefined && !Number.isNaN(v)) pts.push({ __d: d, __y: v })
       }
-      out.set(ln.key, pts)
+      out.set(s.key, pts)
     }
     return out
-  }, [data, topLines])
+  }, [data, series])
 
   const sx = syncedPoint ? (xScale(getX(syncedPoint)) ?? 0) : 0
   const syncedBar = syncedPoint ? getBar(syncedPoint) : null
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg width={width} height={height}>
+    <>
+      <svg width={plot.width} height={plot.height}>
         {/* Top pane: line series + fill-between + zones + ref lines. */}
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={topYScale} width={xMax} stroke={VX.grid} numTicks={4} />
@@ -232,22 +265,22 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
               y1={topYScale(r.value)}
               y2={topYScale(r.value)}
               stroke={r.color}
-              strokeDasharray={r.dashed ? '4 4' : undefined}
+              strokeDasharray={r.dashed ? VX.dashArray : undefined}
             />
           ))}
 
-          {topLines.map((ln) => {
-            const valid = lineValid.get(ln.key) ?? []
+          {series.map((s) => {
+            const valid = lineValid.get(s.key) ?? []
             if (valid.length === 0) return null
             return (
               <LinePath<LinePt>
-                key={`top-line-${ln.key}`}
+                key={`top-line-${s.key}`}
                 data={valid}
                 x={(p) => xScale(getX(p.__d)) ?? 0}
                 y={(p) => topYScale(p.__y)}
-                stroke={ln.color}
-                strokeWidth={VX.lineWidth}
-                strokeDasharray={ln.dashed ? '6 4' : undefined}
+                stroke={s.color}
+                strokeWidth={s.strokeWidth ?? VX.lineWidth}
+                strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
                 curve={curveMonotoneX}
               />
             )
@@ -256,19 +289,11 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
           {/* Dots only — the crosshair LINE is the single continuous span drawn below. */}
           {syncedPoint && (
             <>
-              {topLines.map((ln) => {
-                const v = ln.getY(syncedPoint)
+              {series.map((s) => {
+                const v = s.getValue(syncedPoint)
                 if (v === null || v === undefined || Number.isNaN(v)) return null
                 return (
-                  <circle
-                    key={`top-dot-${ln.key}`}
-                    cx={sx}
-                    cy={topYScale(v)}
-                    r={VX.dotR}
-                    fill={ln.color}
-                    stroke={VX.dotStroke}
-                    strokeWidth={2}
-                  />
+                  <SeriesDot key={`top-dot-${s.key}`} cx={sx} cy={topYScale(v)} color={s.color} />
                 )
               })}
             </>
@@ -320,13 +345,10 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
           {syncedPoint && (
             <>
               {syncedBar !== null && syncedBar !== undefined && !Number.isNaN(syncedBar) && (
-                <circle
+                <SeriesDot
                   cx={sx}
                   cy={bottomYScale(syncedBar)}
-                  r={VX.dotR}
-                  fill={syncedBar >= 0 ? barColorPositive : barColorNegative}
-                  stroke={VX.dotStroke}
-                  strokeWidth={2}
+                  color={syncedBar >= 0 ? barColorPositive : barColorNegative}
                 />
               )}
             </>
@@ -345,7 +367,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
         {/* Continuous crosshair spanning the gutter between panes. */}
         {syncedPoint && (
           <Group left={MARGIN.left} top={MARGIN.top}>
-            <line x1={sx} x2={sx} y1={0} y2={innerH} stroke={VX.crosshair} strokeWidth={1} />
+            <Crosshair x={sx} top={0} bottom={innerH} />
           </Group>
         )}
       </svg>
@@ -361,20 +383,17 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
               })()}
             />
             <TooltipBody>
-              {topLines.map((ln) => {
-                const v = ln.getY(tip.data)
-                if (v === null || v === undefined || Number.isNaN(v)) return null
-                return (
-                  <TooltipRow
-                    key={`tip-${ln.key}`}
-                    color={ln.color}
-                    label={ln.label}
-                    value={formatTop(v)}
-                    shape="line"
-                    {...(ln.dashed !== undefined && { dashed: ln.dashed })}
-                  />
-                )
-              })}
+              {deriveTooltipRows(series, tip.data, formatTop).map((row) => (
+                <TooltipRow
+                  key={row.key}
+                  color={row.color}
+                  label={row.label}
+                  value={row.value}
+                  shape={row.shape}
+                  dashed={row.dashed}
+                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+                />
+              ))}
               {(() => {
                 const v = getBar(tip.data)
                 if (v === null || v === undefined || Number.isNaN(v)) return null
@@ -391,7 +410,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
           </>
         )}
       </ChartTooltip>
-    </div>
+    </>
   )
 }
 

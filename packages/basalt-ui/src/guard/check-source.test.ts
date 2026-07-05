@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 13 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 14 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -486,6 +486,64 @@ describe('raw-motion-value', () => {
   it('does NOT flag a theme-allow line', () => {
     const f = find(`<motion.div transition={{ duration: 0.3 }} /> // theme-allow: bespoke`)
     expect(kinds(f)).not.toContain('raw-motion-value')
+  })
+})
+
+// ── 14. unframed-chart ───────────────────────────────────────────────────────
+
+describe('unframed-chart', () => {
+  it('flags a hand-rolled <ChartLegend items={[...]}> on one line', () => {
+    const f = find(`<ChartLegend items={[{ key: 'a', label: 'A', color: '#fff' }]} />`)
+    expect(kinds(f)).toContain('unframed-chart')
+  })
+
+  it('flags a hand-rolled legend array literal formatted across multiple lines', () => {
+    const text = [
+      '<ChartLegend',
+      "  items={[{ key: 'a', label: 'A', color: VX.line }]}",
+      '  placement="bottom"',
+      '/>',
+    ].join('\n')
+    const f = find(text)
+    expect(kinds(f)).toContain('unframed-chart')
+  })
+
+  it('reports the line carrying the items={[ token, not the tag-open line', () => {
+    const text = ['<ChartLegend', "  items={[{ key: 'a', label: 'A' }]}", '/>'].join('\n')
+    const f = find(text)
+    const hit = f.find((x) => x.kind === 'unframed-chart')
+    expect(hit?.line).toBe(2)
+  })
+
+  it('does NOT flag ChartFrame composing its own derived legend (call expression)', () => {
+    const text = [
+      '<ChartLegend',
+      '  items={deriveLegend(series)}',
+      '  placement={placement}',
+      '/>',
+    ].join('\n')
+    const f = find(text)
+    expect(kinds(f)).not.toContain('unframed-chart')
+  })
+
+  it('does NOT flag an unrelated items={[...]} prop on a different component', () => {
+    const f = find(`<Menu items={[{ label: 'a' }]} />`)
+    expect(kinds(f)).not.toContain('unframed-chart')
+  })
+
+  it('does NOT flag when unframedChart is false', () => {
+    const f = checkSource(`<ChartLegend items={[{ key: 'a', label: 'A' }]} />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      unframedChart: false,
+    })
+    expect(kinds(f)).not.toContain('unframed-chart')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(
+      `<ChartLegend items={[{ key: 'a', label: 'A' }]} /> // theme-allow: bespoke legend`,
+    )
+    expect(kinds(f)).not.toContain('unframed-chart')
   })
 })
 

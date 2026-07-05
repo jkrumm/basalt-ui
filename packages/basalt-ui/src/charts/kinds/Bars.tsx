@@ -3,7 +3,7 @@ import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { LinePath } from '@visx/shape'
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from '../primitives/Axes'
 import {
@@ -13,10 +13,14 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
+import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
+import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
+import { deriveTooltipRows } from '../series'
+import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
@@ -73,8 +77,8 @@ export type BarsAxisConfig = {
 
 export type BarsProps<T> = {
   data: T[]
-  width: number
-  height: number
+  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  height?: number
   chartId: string
   getX: (d: T) => string
   /** Generic value accessor — given a data point and a bar/line key, returns the value or null. */
@@ -127,11 +131,9 @@ export type BarsProps<T> = {
   /** Override the left margin (defaults to VX.margin.left = 44). Useful when
    * y-axis labels are unusually wide (e.g. five-digit step counts). */
   marginLeft?: number
-  /**
-   * Series currently highlighted via legend hover. When set, bars and lines
-   * whose `key` does NOT match are dimmed. null → no dimming.
-   */
-  highlightedKey?: string | null
+  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+   * Default `{ placement: 'bottom' }`. */
+  legend?: ChartLegendConfig | false
 }
 
 /**
@@ -139,14 +141,87 @@ export type BarsProps<T> = {
  * overlays on left/right axes, horizontal zones, and reference lines. Covers
  * diverging-stack + bar+line + any future stacked-bar preset.
  *
+ * Composes `ChartFrame` for measuring + the derived legend — the legend was previously pushed
+ * entirely to the consumer; it is now derived from `positiveBars` + `negativeBars` + `lines` and
+ * owns its own hover-dim state (the legend-hover wiring that used to require a consumer-supplied
+ * `highlightedKey` prop).
+ *
  * X-axis is built from the full `data` array so the calendar is preserved even
  * with per-bar nulls (nulls become visual gaps, not domain holes).
  */
 function BarsInner<T>(props: BarsProps<T>) {
+  const { positiveBars, negativeBars = [], lines = [], getValue, chartId, height, legend } = props
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
+
+  const barSeries = useMemo<ChartSeries<T>[]>(
+    () =>
+      [...positiveBars, ...negativeBars].map((b) => ({
+        key: b.key,
+        label: b.label,
+        color: b.color,
+        mark: 'bar' as const,
+        fillOpacity: 0.85,
+        getValue: (d: T) => getValue(d, b.key),
+        ...(b.formatValue !== undefined && { formatValue: b.formatValue }),
+      })),
+    [positiveBars, negativeBars, getValue],
+  )
+
+  const lineSeries = useMemo<ChartSeries<T>[]>(
+    () =>
+      lines.map((ln) => ({
+        key: ln.key,
+        label: ln.label,
+        color: ln.color,
+        mark: 'line' as const,
+        dash: ln.dashed ? ('dashed' as const) : ('solid' as const),
+        ...(ln.strokeWidth !== undefined && { strokeWidth: ln.strokeWidth }),
+        getValue: (d: T) => getValue(d, ln.key),
+        ...(ln.formatValue !== undefined && { formatValue: ln.formatValue }),
+      })),
+    [lines, getValue],
+  )
+
+  const legendSeries = useMemo<ChartSeries<T>[]>(
+    () => [...barSeries, ...lineSeries],
+    [barSeries, lineSeries],
+  )
+
+  return (
+    <ChartFrame
+      series={legendSeries}
+      chartId={chartId}
+      {...(height !== undefined && { height })}
+      legend={resolveLegend(legend, {
+        highlighted: highlightedKey,
+        onHighlight: setHighlightedKey,
+      })}
+    >
+      {(plot) => (
+        <BarsPlot
+          {...props}
+          plot={plot}
+          highlightedKey={highlightedKey}
+          barSeries={barSeries}
+          lineSeries={lineSeries}
+        />
+      )}
+    </ChartFrame>
+  )
+}
+
+type BarsPlotProps<T> = BarsProps<T> & {
+  plot: { width: number; height: number }
+  highlightedKey: string | null
+  barSeries: ChartSeries<T>[]
+  lineSeries: ChartSeries<T>[]
+}
+
+/** The measured plot — split from {@link BarsInner} so its scale/hover-sync hooks only run once
+ * `ChartFrame` has resolved a non-empty plot rect. */
+function BarsPlot<T>(props: BarsPlotProps<T>) {
   const {
     data,
-    width,
-    height,
     chartId,
     getX,
     getValue,
@@ -167,7 +242,10 @@ function BarsInner<T>(props: BarsProps<T>) {
     formatValue = (v) => String(Math.round(v)),
     numTicksX,
     marginLeft,
-    highlightedKey = null,
+    plot,
+    highlightedKey,
+    barSeries,
+    lineSeries,
   } = props
 
   const dimOpacity = (key: string): number =>
@@ -182,8 +260,8 @@ function BarsInner<T>(props: BarsProps<T>) {
     }),
     [rightAxis, marginLeft],
   )
-  const xMax = width - MARGIN.left - MARGIN.right
-  const yMax = height - MARGIN.top - MARGIN.bottom
+  const xMax = plot.width - MARGIN.left - MARGIN.right
+  const yMax = plot.height - MARGIN.top - MARGIN.bottom
 
   const xScale = useMemo(
     () => scalePoint<string>({ domain: data.map(getX), range: [0, xMax], padding: 0.3 }),
@@ -288,7 +366,7 @@ function BarsInner<T>(props: BarsProps<T>) {
     {
       data,
       chartId,
-      getX,
+      getKey: getX,
       xScale,
       marginLeft: MARGIN.left,
     },
@@ -320,14 +398,11 @@ function BarsInner<T>(props: BarsProps<T>) {
   const scaleFor = (side: 'left' | 'right' | undefined) =>
     side === 'right' && rightYScale ? rightYScale : leftYScale
 
-  const formatBar = (b: BarsBar, v: number) => (b.formatValue ?? formatValue)(v)
-  const formatLine = (ln: BarsLine, v: number) => (ln.formatValue ?? formatValue)(v)
-
   const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
 
   return (
-    <div style={{ position: 'relative' }}>
-      <svg width={width} height={height}>
+    <>
+      <svg width={plot.width} height={plot.height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows
             scale={leftYScale}
@@ -348,7 +423,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                 y1={scale(r.value)}
                 y2={scale(r.value)}
                 stroke={r.color}
-                strokeDasharray={r.dashed ? '4 4' : undefined}
+                strokeDasharray={r.dashed ? VX.dashArray : undefined}
               />
             )
           })}
@@ -441,7 +516,7 @@ function BarsInner<T>(props: BarsProps<T>) {
                 y={(p) => scale(p.__y)}
                 stroke={ln.color}
                 strokeWidth={ln.strokeWidth ?? VX.lineWidth}
-                strokeDasharray={ln.dashed ? '4 4' : undefined}
+                strokeDasharray={ln.dashed ? VX.dashArray : undefined}
                 strokeOpacity={dimOpacity(ln.key)}
                 curve={curveMonotoneX}
               />
@@ -464,21 +539,13 @@ function BarsInner<T>(props: BarsProps<T>) {
               const sx = xScale(getX(syncedPoint)) ?? 0
               return (
                 <>
-                  <line x1={sx} x2={sx} y1={0} y2={yMax} stroke={VX.crosshair} strokeWidth={1} />
+                  <Crosshair x={sx} top={0} bottom={yMax} />
                   {lines.map((ln) => {
                     const v = getValue(syncedPoint, ln.key)
                     if (v === null || Number.isNaN(v)) return null
                     const scale = scaleFor(ln.axisSide)
                     return (
-                      <circle
-                        key={`dot-${ln.key}`}
-                        cx={sx}
-                        cy={scale(v)}
-                        r={4}
-                        fill={ln.color}
-                        stroke={VX.dotStroke}
-                        strokeWidth={2}
-                      />
+                      <SeriesDot key={`dot-${ln.key}`} cx={sx} cy={scale(v)} color={ln.color} />
                     )
                   })}
                 </>
@@ -513,54 +580,32 @@ function BarsInner<T>(props: BarsProps<T>) {
             <TooltipBody>
               {renderPrefixTooltipRows?.(tip.data)}
               {!hideBarTooltipRows &&
-                positiveBars.map((b) => {
-                  const v = getValue(tip.data, b.key)
-                  if (v === null || Number.isNaN(v)) return null
-                  return (
-                    <TooltipRow
-                      key={b.key}
-                      color={b.color}
-                      label={b.label}
-                      value={formatBar(b, v)}
-                      shape="bar"
-                    />
-                  )
-                })}
-              {!hideBarTooltipRows &&
-                negativeBars.map((b) => {
-                  const v = getValue(tip.data, b.key)
-                  if (v === null || Number.isNaN(v)) return null
-                  return (
-                    <TooltipRow
-                      key={b.key}
-                      color={b.color}
-                      label={b.label}
-                      value={formatBar(b, v)}
-                      shape="bar"
-                    />
-                  )
-                })}
-              {lines.map((ln) => {
-                const v = getValue(tip.data, ln.key)
-                if (v === null || Number.isNaN(v)) return null
-                return (
+                deriveTooltipRows(barSeries, tip.data, formatValue).map((row) => (
                   <TooltipRow
-                    key={ln.key}
-                    color={ln.color}
-                    label={ln.label}
-                    value={formatLine(ln, v)}
-                    shape="line"
-                    {...(ln.strokeWidth !== undefined && { strokeWidth: ln.strokeWidth })}
-                    {...(ln.dashed !== undefined && { dashed: ln.dashed })}
+                    key={row.key}
+                    color={row.color}
+                    label={row.label}
+                    value={row.value}
+                    shape={row.shape}
                   />
-                )
-              })}
+                ))}
+              {deriveTooltipRows(lineSeries, tip.data, formatValue).map((row) => (
+                <TooltipRow
+                  key={row.key}
+                  color={row.color}
+                  label={row.label}
+                  value={row.value}
+                  shape={row.shape}
+                  dashed={row.dashed}
+                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+                />
+              ))}
               {renderExtraTooltipRows?.(tip.data)}
             </TooltipBody>
           </>
         )}
       </ChartTooltip>
-    </div>
+    </>
   )
 }
 

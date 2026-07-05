@@ -8,29 +8,29 @@ export type ChartHoverSyncProps = {
 }
 
 type HoverState = {
-  date: string | null
+  key: string | null
   source: string | null
 }
 
 /**
- * Activates the shared-cursor HoverContext: holds the hovered date + source
- * chartId in one place so every descendant chart's `useHoverSync` reads and
- * writes the same cursor. Hovering one chart shows a ghost crosshair + dot on
- * all sibling charts under this provider.
+ * Activates the shared-cursor HoverContext: holds the hovered key (an opaque
+ * category/date string) + source chartId in one place so every descendant
+ * chart's `useHoverSync` reads and writes the same cursor. Hovering one chart
+ * shows a ghost crosshair + dot on all sibling charts under this provider.
  *
  * Wrap a group of charts that should share a cursor in `<ChartHoverSync>`.
  */
 export function ChartHoverSync({ children }: ChartHoverSyncProps) {
   // oxlint-disable-next-line react/hook-use-state -- raw setter; renaming shadows setHover (the context callback)
-  const [hover, setHoverState] = useState<HoverState>({ date: null, source: null })
+  const [hover, setHoverState] = useState<HoverState>({ key: null, source: null })
 
-  const setHover = useCallback<HoverCtx['setHover']>((date, source) => {
-    setHoverState({ date, source })
+  const setHover = useCallback<HoverCtx['setHover']>((key, source) => {
+    setHoverState({ key, source })
   }, [])
 
   const value = useMemo<HoverCtx>(
-    () => ({ date: hover.date, source: hover.source, setHover }),
-    [hover.date, hover.source, setHover],
+    () => ({ key: hover.key, source: hover.source, setHover }),
+    [hover.key, hover.source, setHover],
   )
 
   return <HoverContext.Provider value={value}>{children}</HoverContext.Provider>

@@ -2,17 +2,19 @@ import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
 import { memo, useMemo } from 'react'
 import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
+import { ChartFrame } from '../primitives/ChartFrame'
 import { useChartTooltip } from '../hooks/useChartTooltip'
 import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
+import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
 
 export type DonutDatum = { key: SeriesKey; value: number }
 
 export type DonutProps = {
   data: DonutDatum[]
-  width: number
-  height: number
+  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  height?: number
   colorForKey: (key: SeriesKey) => string
   formatValue: (v: number) => string
   seriesLabel?: (key: string) => string
@@ -22,11 +24,41 @@ export type DonutProps = {
   padAngle?: number
 }
 
+/**
+ * Radial slice-share chart with a punched-out center label. Composes `ChartFrame` for a
+ * categorical legend derived from the slices (one `SeriesStyle` per slice, `mark: 'bar'`) so the
+ * legend can never drift from what's plotted. No crosshair — meaningless for a radial layout.
+ * Hover stays local to the pie (dimming siblings on hover) rather than joining the shared
+ * `HoverContext`: a date-keyed cursor has no counterpart on a donut, and cross-kind category sync
+ * (donut ↔ bar, via the generalized key) is a distinct, deliberately deferred feature.
+ */
 function DonutInner(props: DonutProps) {
+  const { data, height, colorForKey, seriesLabel = (k) => k } = props
+
+  const series: SeriesStyle[] = data.map((d) => ({
+    key: d.key,
+    label: seriesLabel(d.key),
+    color: colorForKey(d.key),
+    mark: 'bar',
+  }))
+
+  return (
+    <ChartFrame series={series} {...(height !== undefined && { height })}>
+      {(plot) => <DonutPlot {...props} plot={plot} />}
+    </ChartFrame>
+  )
+}
+
+type DonutPlotProps = DonutProps & {
+  plot: { width: number; height: number }
+}
+
+/** The measured plot — split from {@link DonutInner} so it only draws once `ChartFrame` has
+ * resolved a non-empty plot rect (radius/center depend on the measured size). */
+function DonutPlot(props: DonutPlotProps) {
   const {
     data,
-    width,
-    height,
+    plot,
     colorForKey,
     formatValue,
     seriesLabel = (k) => k,
@@ -35,6 +67,7 @@ function DonutInner(props: DonutProps) {
     innerRatio = 0.6,
     padAngle = 0.01,
   } = props
+  const { width, height } = plot
 
   const theme = useVxTheme()
   const tooltipStyles = useTooltipStyles()

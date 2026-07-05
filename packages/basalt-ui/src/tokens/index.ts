@@ -44,6 +44,11 @@ export const VX = {
   line2Width: 2,
   axisFont: 11,
   dotR: 5,
+  // The ONE dashed pattern — plotted stroke, legend swatch, tooltip swatch all read this.
+  dashArray: '6 4' as const,
+  // Legend layout — replaces the hardcoded 18/13 in ChartLegend.
+  legendGap: 18,
+  legendFontSize: 13,
 
   // Single source for the card corner radius — shared by the Mantine-free ChartCard and the
   // Mantine chrome (theme `radius.md` is the same 8px). One knob, so cards never diverge.

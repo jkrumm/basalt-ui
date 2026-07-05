@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 12 violation kinds.
+ * GUARD_RULES: the closed registry of all 14 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind } from './types'
@@ -50,6 +50,14 @@ const MOTION_TRANSITION_NUMERIC =
   /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
 const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
 
+// A hand-rolled <ChartLegend items={[ …array literal… ]}> — legend entries authored inline
+// instead of derived (`items={deriveLegend(series)}`, a call expression, which must NOT match).
+// Scoped to the JSX tag itself ([^>]* is bounded by the tag's own closing `>`, which also makes
+// this a full-text scan rather than the per-line style every other kind uses — a multi-line-
+// formatted <ChartLegend ...\n  items={[...\n/> still resolves to one match). Bounded scans over
+// text this small are not a performance concern.
+const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
+
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
@@ -68,6 +76,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   inlineDisplay: true,
   rawVisxAxis: true,
   rawMotionValue: true,
+  unframedChart: true,
   allowComment: 'theme-allow',
 }
 
@@ -92,7 +101,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 13 guard kinds. The triad test asserts
+ * The closed registry of all 14 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface and raw-html-layout are handled inline in checkSource (multi-regex / multi-condition);
@@ -184,6 +193,13 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.rawMotionValue,
     message:
       'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
+  },
+  'unframed-chart': {
+    kind: 'unframed-chart',
+    pattern: RAW_CHART_LEGEND_ARRAY, // handled inline (full-text tag-scoped scan); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.unframedChart,
+    message:
+      'Hand-rolled ChartLegend built from an inline array literal — pass a derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -306,6 +322,25 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       for (const m of line.matchAll(MOTION_TRANSITION_EASE_ARRAY)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
       }
+    }
+  }
+
+  // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
+  // Reports at the line of the `items={[` token itself; honors the same theme-allow / pure-comment
+  // skip as every per-line kind by checking that reported line directly.
+  if (GUARD_RULES['unframed-chart'].enabled!(cfg)) {
+    for (const m of text.matchAll(RAW_CHART_LEGEND_ARRAY)) {
+      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+      const targetLine = lines[lineNo - 1] ?? ''
+      if (targetLine.includes(cfg.allowComment)) continue
+      const trimmedTarget = targetLine.trimStart()
+      if (
+        trimmedTarget.startsWith('//') ||
+        trimmedTarget.startsWith('*') ||
+        trimmedTarget.startsWith('/*')
+      )
+        continue
+      findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
     }
   }
 

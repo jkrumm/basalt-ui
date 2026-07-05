@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 13 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 14 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 13 theme-guard violation kinds. */
+/** The 14 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -21,6 +21,7 @@ export type GuardKind =
   | 'inline-display'
   | 'raw-visx-axis'
   | 'raw-motion-value'
+  | 'unframed-chart'
 
 /**
  * A structured finding — the chosen testable surface (§C.4). Replaces the old `Violation` type.
@@ -64,6 +65,13 @@ export type GuardConfig = {
   readonly rawVisxAxis: boolean
   /** Flag a hardcoded duration/spring/ease literal in a `transition={{...}}` prop. Default true. */
   readonly rawMotionValue: boolean
+  /**
+   * Flag a hand-rolled `<ChartLegend items={[...]}>` array literal — legend entries must be
+   * derived (e.g. `items={deriveLegend(series)}`), never authored inline, so a bespoke chart
+   * can't silently drift from the shared legend. Default `true` (ON). Set `false` to disable the
+   * `unframed-chart` check.
+   */
+  readonly unframedChart: boolean
   /**
    * Allow-comment policy: a line containing this substring is skipped entirely.
    * Default 'theme-allow'. Pure-comment lines (// * /\*) are always skipped.

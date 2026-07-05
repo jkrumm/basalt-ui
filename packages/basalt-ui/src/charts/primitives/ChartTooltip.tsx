@@ -56,7 +56,7 @@ export function TooltipHeader({
   label?: string
   labelColor?: string
 }) {
-  const { tooltipMuted } = useVxTheme()
+  const { tooltipText } = useVxTheme()
   return (
     <div
       style={{
@@ -68,7 +68,9 @@ export function TooltipHeader({
         borderBottom: `1px solid ${alpha(VX.neutral, 0.2)}`,
       }}
     >
-      <span style={{ fontSize: 11, color: tooltipMuted }}>{fmtTooltipDate(date)}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: tooltipText }}>
+        {fmtTooltipDate(date)}
+      </span>
       {label !== undefined && (
         <span style={{ fontSize: 11, fontWeight: 500, color: labelColor }}>{label}</span>
       )}
@@ -114,8 +116,8 @@ export function TooltipRow({
               x2={12}
               y2={5}
               stroke={color}
-              strokeWidth={strokeWidth ?? 2}
-              strokeDasharray={dashed ? '3 2' : undefined}
+              strokeWidth={strokeWidth ?? VX.lineWidth}
+              strokeDasharray={dashed ? VX.dashArray : undefined}
             />
           </svg>
         ) : (
