@@ -13,37 +13,52 @@
  * Headless — no Mantine, no JSX. Same tier as `useBasaltNav` and
  * `useRouterBreadcrumbs`.
  *
- * @example
- * // 1. Define once per search param:
- * const rangeStore = createSearchParamStore({
- *   key: 'dashboard-range',
- *   param: 'range',
- *   values: ['1d', '7d', '30d'] as const,
- *   fallback: '30d',
- * })
+ * ## Full integration recipe (5 steps)
  *
- * // 2. In your route file:
- * export const Route = createFileRoute('/dashboard')({
- *   validateSearch: rangeStore.validateSearch,
- *   component: DashboardLayout,
- * })
+ * **1. Define** — one call per search param, e.g. in a shared lib/ module:
  *
- * // 3. In your filter component:
- * function DateFilter() {
- *   const { range } = useSearch({ from: '/dashboard' })
- *   const [, persist] = rangeStore.useStore()
- *   const navigate = useNavigate()
- *   const router = useRouter()
- *   return (
- *     <SegmentedControl
- *       value={range}
- *       onChange={(v) => {
- *         persist(v)
- *         navigate({ to: router.state.location.pathname, search: (prev) => ({ ...prev, range: v }) })
- *       }}
- *     />
- *   )
- * }
+ *     export const dashboardRange = createSearchParamStore({
+ *       key: 'dashboard-range',  param: 'range',
+ *       values: ['1d', '7d', '30d'] as const,  fallback: '30d',
+ *     })
+ *
+ * **2. Route** — plug validateSearch into the parent layout route:
+ *
+ *     export const Route = createFileRoute('/dashboard')({
+ *       validateSearch: dashboardRange.validateSearch,
+ *       component: DashboardLayout,  // renders <DateFilter/> + <Outlet/>
+ *     })
+ *
+ * **3. Filter** — a component in the shell header (PageActions portal):
+ *
+ *     function DateFilter() {
+ *       const { range } = useSearch({ from: '/dashboard' })
+ *       const [, persist] = dashboardRange.useStore()
+ *       return <SegmentedControl value={range}
+ *         onChange={(v) => { persist(v); navigate({ to: '.',
+ *           search: (prev) => ({ ...prev, range: v }) }) }} />
+ *     }
+ *
+ * **4. Page** — accepts the param as a **prop**, NOT from useSearch:
+ *
+ *     // CRITICAL: never call useSearch({ from: '/dashboard' }) in a page
+ *     // component that renders on a sibling route (e.g. /activity).
+ *     // Sibling routes aren't children — the `from` fails.
+ *     function DashboardPage({ range = '30d' }: { range?: DateRange }) {
+ *       const data = useMemo(() => generateData(range), [range])
+ *       return <Charts data={data} range={range} />
+ *     }
+ *
+ * **5. Nav links** — carry the param across sub-pages via search={true},
+ * guarded by a path-prefix check so non-dashboard links stay clean:
+ *
+ *     const renderNavLink = (item, { active }) => {
+ *       const isDashboard = item.href?.startsWith('/dashboard/')
+ *         || item.href === '/dashboard'
+ *       return <MantineNavLink component={Link} to={item.href}
+ *         {...(isDashboard ? { search: true } : {})}
+ *         label={item.label} active={active} />
+ *     }
  */
 
 import { createPersistedState, readPersistedValue } from '../state'
