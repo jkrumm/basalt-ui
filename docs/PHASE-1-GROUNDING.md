@@ -1,5 +1,8 @@
 # Phase 1 SPINE — Grounded Work-List
 
+> ⛔ **HISTORICAL — phase complete (2026-07-05).** This work-list was executed. Process artifact,
+> kept for provenance. For current state, see [`STATUS.md`](./STATUS.md).
+
 > Output of the Phase-1 **understand** workflow (8 parallel read-only readers → synthesis →
 > completeness critic, 2026-06-20). Verified ground truth for the spine — typed `SURFACES` registry +
 > augmentable `BasaltRegister` + headless `./guard` extraction + StandardSchema/AsyncState house style

@@ -1,5 +1,9 @@
 # Basalt UI — Integration, Type-Safety Spine & DX Plan
 
+> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](./STATUS.md).** The type spine and all
+> seven batteries shipped; every phase below is BUILT except the owner-gated finish line. The
+> per-phase "remaining" language is historical — kept for provenance, not live work.
+
 > **Status: ADOPTED 2026-06-19. Maximum-ambition 1.0 scope.** All seven batteries (`./query`,
 > `./router-tanstack`, `./agent`, `./commands`, `./forms`, `./notifications`, `./data`) ship as
 > runtime subpaths in 1.0 — none demoted. BLUEPRINT argo S0–S5 + `feat/argo-voice` shell-prerequisite

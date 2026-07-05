@@ -1,5 +1,9 @@
 # Basalt UI — Maturation Roadmap
 
+> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](./STATUS.md).** Every phase below is
+> BUILT except the owner-gated finish line (push · PR · npm Trusted Publisher · review · release).
+> The "proposal / remaining / pending" language is historical — kept for provenance, not live work.
+
 > Status: proposal, pending approval. Synthesized from a multi-agent pass (18 research + 18
 > repo-grounded analyses → consolidation into 146 deduped recommendations + 11 conflict
 > resolutions → 6 backward-join lenses → majority-vote synthesis), 2026-06-15. Channels Tanner

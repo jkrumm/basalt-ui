@@ -1,5 +1,8 @@
 # Execution Handover — Phase 1 of the basalt-ui maturation
 
+> ⛔ **HISTORICAL — phase complete (2026-07-05).** The Phase-1 spine was built. Process artifact,
+> kept for provenance. For current state and the remaining finish-line, see [`STATUS.md`](./STATUS.md).
+
 > **Status:** kickoff (NOT yet grounded). Unlike [`EXECUTION-HANDOVER.md`](./EXECUTION-HANDOVER.md)
 > (Phase 0, whose work-list was verified against source before execution), Phase 1 is a *design*
 > phase — `understand → design → implement → review`. Its first workflow **grounds** it; do not

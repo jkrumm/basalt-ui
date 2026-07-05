@@ -1,5 +1,8 @@
 # HANDOVER — basalt-ui Phase 1: IMPLEMENT → REVIEW
 
+> ⛔ **HISTORICAL — phase complete (2026-07-05).** The spine was implemented and reviewed. Process
+> artifact, kept for provenance. For current state, see [`STATUS.md`](./STATUS.md).
+
 > Post-compaction kickoff for the **implement** and **review** steps of the Phase-1 spine. The
 > `understand` and `design` steps are **done and signed off** — do not redo them. Paste §0 into a fresh
 > in-repo session.
