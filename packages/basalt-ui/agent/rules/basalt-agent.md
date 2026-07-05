@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Headless streaming-agent layer for basalt-ui apps — Eden-native transport, AgentPart exhaustive handling, StreamingMarkdown, StickToBottom, and chat history. basalt-ui ships ./agent; this rule covers the authoring doctrine and the Eden #231 footgun mitigation.
+description: Streaming-agent layer for basalt-ui apps — Eden-native transport, AgentPart exhaustive handling, StreamingMarkdown, StickToBottom, chat history, AND the multi-thread ThreadWorkspace (concurrent runs + a distilled-outcome feed + detail panel). Headless layer in ./agent; the Mantine chrome ships from the root entry. Covers authoring doctrine and the Eden #231 footgun.
 paths:
   - 'src/**/*agent*'
   - 'src/**/chat*'
@@ -204,6 +204,65 @@ append({ id: crypto.randomUUID(), role: 'user', parts: [...], createdAt: Date.no
 Built on `createPersistedState` — SSR-safe, cross-tab via the `storage` event. Ring-buffered to
 `max` (default 100). Increment `version` when the `ChatMessage` shape changes to clear stale data.
 
+## Multi-thread workspace (shipped)
+
+For the "many short chats" pattern — each prompt a short-lived thread, the feed showing only a
+distilled outcome (title + summary), a right-hand detail panel to open and continue — basalt-ui
+ships a full workspace. The headless multi-thread layer lives in `./agent` (Mantine-free); the
+ready-built Mantine chrome ships from the root `basalt-ui` entry.
+
+### Headless (`basalt-ui/agent`)
+
+```ts
+import { createThreadsStore, useAgentThreadRuns, heuristicOutcome } from 'basalt-ui/agent'
+import type { AgentThread, AgentOutcome, OutcomeResolver, ThreadStatus } from 'basalt-ui/agent'
+
+// Call ONCE at module scope — same doctrine as createChatHistoryStore:
+const useThreads = createThreadsStore({ key: 'main-threads', version: 1 })
+```
+
+- `createThreadsStore({ key, version, maxThreads?, maxMessagesPerThread? })` — the multi-thread
+  analog of `createChatHistoryStore`: a persisted, ring-buffered registry of `AgentThread`s (each
+  carrying its own `ChatMessage[]`, a distilled `AgentOutcome | null`, a `ThreadStatus`, and a read
+  flag). Threads are newest-first; `create()` returns the new id and never touches `activeId`.
+- `useAgentThreadRuns({ transport, store, resolveOutcome })` — the CONCURRENT run manager. Unlike
+  `useAgentStream` (one in-flight turn), it runs N streams keyed by thread id, so many short chats
+  stream and resolve in the background independently. `start(threadId, input)` / `stop(threadId)` /
+  `stopAll()`; `runs` is the live per-thread `{ status, parts }` map for the detail view.
+- `AgentOutcome = { title; summary; status: 'done' | 'attention' | 'error' }` — the distilled feed
+  projection, deliberately a DIFFERENT shape from the transcript so raw prompt/thinking can never
+  leak into the feed (the enforced boundary).
+
+### Outcome resolver — the summarize-to-outcome seam
+
+basalt ships ONLY the seam, never an LLM call. `OutcomeResolver = (thread) => AgentOutcome |
+Promise<AgentOutcome>` — the app supplies it. In production derive `{ title, summary }` from the
+finished run (e.g. a structured final step of your own model) and return it. `heuristicOutcome` is
+a demo-only fallback that truncates the last assistant text — never the production path.
+
+### Ready-built UI (`basalt-ui`, Mantine)
+
+```tsx
+import { ThreadWorkspace } from 'basalt-ui'
+;<ThreadWorkspace
+  useThreads={useThreads}
+  transport={transport}
+  resolveOutcome={resolveOutcome}
+  newThreadPlaceholder="Ask anything…"
+/>
+```
+
+`ThreadWorkspace` is the flagship composite: a `ThreadFeed` of distilled `ThreadOutcomeCard`s + an
+anchored new-thread `Composer` on the left, a `ThreadDetailPanel` (full transcript + a continue
+composer) on the right, collapsing to a single pane below 768px. The lower-level pieces
+(`ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`, `Composer`, `ThreadTranscript`,
+`threadPartRenderers`) are exported too for bespoke layouts. Motion (feed insert, panel slide) runs
+on the shared `MOTION_*` tokens and honours `useReducedMotion`.
+
+**Boundary:** the headless layer (`createThreadsStore`, `useAgentThreadRuns`, the outcome types)
+stays Mantine-free in `./agent`; the components are Mantine-coupled and ship from the root entry.
+Never add `@mantine/*` under `src/agent/**` — it is oxlint-enforced Mantine-free.
+
 ## AI SDK (opt-in, not shipped)
 
 `@ai-sdk/react`'s `useChat` is a hook interface, not an async generator — it does not fit the
@@ -224,9 +283,12 @@ const aiSdkTransport: AgentTransport = {
 
 The following are explicitly deferred and MUST NOT be scaffolded:
 
-- Full `<Chat>` composite component (message-bubble kit, input bar, send button)
 - Voice/audio streaming
 - `aiSdkTransport` adapter
 - `streamdown` integration (Tailwind-only)
 - Elysia stream route scaffold in app code (consumer's responsibility)
 - `agent-parts.ts` helper files beyond the basalt surface
+
+> The full thread-chat composite (`ThreadWorkspace`) is now **shipped** — see "Multi-thread
+> workspace" above. It was previously on this list; a real consumer drove it, so it graduated per
+> the "build-when-driven" rule rather than being scaffolded speculatively.

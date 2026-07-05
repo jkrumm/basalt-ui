@@ -72,3 +72,23 @@ export type {
 // fixture. GuardKind: type-only for fixture completeness. No ./surfaces subpath exposed.
 export type { SurfaceSpec, RuleName, SkillName } from './surfaces'
 export type { GuardKind } from './guard/types'
+
+// ── Agent chat (thread feed + detail workspace) ──────────────────────────────────────────────────
+// Everything from `./agent-chat` (Mantine-styled thread-chat components + the flagship
+// ThreadWorkspace) belongs at the root. From the headless `./agent` layer, SELECTIVELY re-export
+// only the pieces a ThreadWorkspace consumer needs — NOT an export-star — so the optional-peer
+// components (StreamingMarkdown, BasaltStickToBottom) and the rest of `./agent` stay off the root
+// entry; `edenTransport` stays out too, sourced from `basalt-ui/agent` instead.
+export * from './agent-chat'
+export { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from './agent'
+export type {
+  AgentThread,
+  AgentOutcome,
+  ThreadStatus,
+  ThreadsStore,
+  ThreadsStoreOptions,
+  OutcomeResolver,
+  ChatMessage,
+  AgentPart,
+  AgentTransport,
+} from './agent'

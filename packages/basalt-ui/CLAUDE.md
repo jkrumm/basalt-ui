@@ -32,6 +32,18 @@ in `../../docs/BLUEPRINT.md`.
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
+### Agent chat (`.` + `./agent`)
+
+`./agent` ships the headless streaming layer (Mantine-free): `useAgentStream`, `AgentPart` +
+`parseAgentPart`, `AgentTransport` / `edenTransport`, `PartList`, `StreamingMarkdown`,
+`BasaltStickToBottom`, `createChatHistoryStore`, plus the multi-thread primitives
+`createThreadsStore`, `useAgentThreadRuns` (N concurrent per-thread runs), and the `AgentOutcome` /
+`OutcomeResolver` / `heuristicOutcome` summarize-to-outcome seam. The root `.` entry adds the
+Mantine chrome: **`ThreadWorkspace`** — the flagship "many short chats" composite (a distilled
+outcome feed + a detail panel) — plus `ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`,
+`Composer`, `ThreadTranscript`, and `threadPartRenderers`. Full doctrine + usage:
+`agent/rules/basalt-agent.md`.
+
 ## Layering: Mantine-coupled vs Mantine-free
 
 - `src/charts/**` and `src/tokens/**` are **Mantine-free** — zero `@mantine/*` imports.

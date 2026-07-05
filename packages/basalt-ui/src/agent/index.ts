@@ -46,6 +46,14 @@ export { edenTransport } from './transport'
 export { useAgentStream } from './use-agent-stream'
 export type { StreamStatus, UseAgentStreamReturn } from './use-agent-stream'
 
+// ── useAgentThreadRuns ────────────────────────────────────────────────────────
+export { useAgentThreadRuns } from './use-agent-thread-runs'
+export type {
+  ThreadRunState,
+  UseAgentThreadRunsArgs,
+  UseAgentThreadRunsReturn,
+} from './use-agent-thread-runs'
+
 // ── PartList + renderer types ─────────────────────────────────────────────────
 export { PartList } from './part-list'
 export type {
@@ -69,3 +77,11 @@ export type { BasaltStickToBottomProps } from './stick-to-bottom'
 // ── createChatHistoryStore + ChatMessage ──────────────────────────────────────
 export { createChatHistoryStore } from './history'
 export type { ChatMessage, ChatHistoryStore, ChatHistoryStoreOptions } from './history'
+
+// ── createThreadsStore + AgentThread ──────────────────────────────────────────
+export { createThreadsStore } from './thread'
+export type { AgentThread, ThreadStatus, ThreadsStore, ThreadsStoreOptions } from './thread'
+
+// ── AgentOutcome + heuristicOutcome ────────────────────────────────────────────
+export { heuristicOutcome } from './outcome'
+export type { AgentOutcome, OutcomeResolver } from './outcome'

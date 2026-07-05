@@ -19,7 +19,7 @@ Version: 1.0.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components
 Layer: mantine-coupled
 Rule: basalt-mantine
 
@@ -94,7 +94,7 @@ OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
-Description: Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)
+Description: Headless streaming-chat layer: useAgentStream, edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
 Layer: headless
 Rule: basalt-agent
 OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6

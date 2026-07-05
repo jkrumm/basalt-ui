@@ -100,25 +100,25 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 
 ## Subpath exports
 
-| Subpath             | Mantine? | Purpose                                                                                                                                                                      |
-| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, shell types |
-| `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                               |
-| `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                  |
-| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                               |
-| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps                                                                                                           |
-| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                |
-| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                           |
-| `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                               |
-| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                         |
-| `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                               |
-| `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                              |
-| `./data`            | coupled  | TanStack Table + Virtual kinds: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered)                                                                                    |
-| `./agent`           | **free** | Headless streaming-chat layer: `useAgentStream`, `edenTransport`, `PartList`                                                                                                 |
-| `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                          |
-| `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                |
-| `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                              |
-| `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                 |
+| Subpath             | Mantine? | Purpose                                                                                                                                                                                                                  |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `ThreadWorkspace` + thread-chat components, shell types |
+| `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                                                                           |
+| `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                              |
+| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                           |
+| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps                                                                                                                                                       |
+| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                            |
+| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                                                                       |
+| `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                                                                           |
+| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                     |
+| `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                           |
+| `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                                                                          |
+| `./data`            | coupled  | TanStack Table + Virtual kinds: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered)                                                                                                                                |
+| `./agent`           | **free** | Headless streaming layer (`useAgentStream`, `PartList`) + multi-thread `createThreadsStore` / `useAgentThreadRuns` / outcome seam                                                                                        |
+| `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                      |
+| `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                            |
+| `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                          |
+| `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                                                             |
 
 Named exports only — no default exports.
 
@@ -284,6 +284,8 @@ const columns = [col.accessor('name', { header: 'Name' })]
 bun add react-markdown remark-gfm use-stick-to-bottom
 ```
 
+Single conversation — headless streaming primitives:
+
 ```tsx
 import { useAgentStream, edenTransport, PartList } from 'basalt-ui/agent'
 
@@ -292,6 +294,32 @@ const transport = edenTransport((input, signal) =>
 )
 const { parts, send, status } = useAgentStream({ transport })
 ```
+
+Many short chats — the `ThreadWorkspace` composite (a distilled-outcome feed + a detail panel).
+The headless multi-thread layer lives in `./agent`; the Mantine chrome ships from the root entry:
+
+```tsx
+import { ThreadWorkspace } from 'basalt-ui'
+import { createThreadsStore, heuristicOutcome } from 'basalt-ui/agent'
+
+// Once at module scope:
+const useThreads = createThreadsStore({ key: 'main-threads', version: 1 })
+
+function Inbox() {
+  return (
+    <ThreadWorkspace
+      useThreads={useThreads}
+      transport={transport}
+      resolveOutcome={heuristicOutcome} // swap for your LLM-backed {title, summary} resolver
+      newThreadPlaceholder="Ask anything…"
+    />
+  )
+}
+```
+
+`useAgentThreadRuns` streams each thread concurrently in the background; the feed shows only the
+distilled `{ title, summary }` outcome, never the raw prompt or thinking. See
+`agent/rules/basalt-agent.md` for the full doctrine.
 
 ---
 

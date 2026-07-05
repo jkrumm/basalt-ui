@@ -184,7 +184,7 @@ export const SURFACES = {
     skill: ['basalt-app', 'basalt-design'],
     guardKinds: ['raw-motion-value'],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components',
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -333,7 +333,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Headless streaming-chat layer: useAgentStream, edenTransport, PartList (Mantine-free)',
+      'Headless streaming-chat layer: useAgentStream, edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
     optionalPeers: ['react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
     globs: {
       shipped: ['**/agent/**'],
