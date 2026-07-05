@@ -51,7 +51,12 @@ export {
 } from './register'
 
 // ── Persisted state + online hook (state.ts) ─────────────────────────────────────────────────────
-export { createPersistedState, type PersistedStateOptions, useOnlineStatus } from './state'
+export {
+  createPersistedState,
+  type PersistedStateOptions,
+  useOnlineStatus,
+  readPersistedValue,
+} from './state'
 
 // ── Connectivity (auto-mounted by BasaltProvider) ────────────────────────────────────────────────
 export { ConnectivityProvider, ConnectivityIndicator, useConnectivity } from './connectivity'

@@ -211,3 +211,36 @@ export function createPersistedState<T>(
     return [value, setState] as const
   }
 }
+
+// ── readPersistedValue — plain function, no React required ─────────────────────────────────
+
+/**
+ * Read a value previously written by `createPersistedState` under the namespaced key
+ * `basalt:<key>`. Parses the versioned envelope shape `{ v, value }`. Returns `null` on
+ * miss, corruption, version mismatch, or SSR — no fallback is applied (call sites supply
+ * their own default).
+ *
+ * Primary use: `validateSearch` in TanStack Router (which runs outside React, so it can't
+ * call `usePersistedState`). Combine with a URL-param check to create a search-param store
+ * backed by localStorage.
+ *
+ * @param key  — un-namespaced key (the same one passed to `createPersistedState`)
+ * @param version — if provided, the envelope version must match; stale envelopes return `null`
+ *
+ * @example
+ * const stored = readPersistedValue('dashboard-range', 1)
+ * // stored is '1d' | '7d' | '30d' | null
+ */
+export function readPersistedValue(key: string, version?: number): unknown | null {
+  const storageKey = `basalt:${key}`
+  try {
+    const raw = localStorage.getItem(storageKey)
+    if (raw === null) return null
+    const envelope: unknown = JSON.parse(raw)
+    if (!isEnvelope(envelope)) return null
+    if (version !== undefined && envelope.v !== version) return null
+    return envelope.value
+  } catch {
+    return null
+  }
+}

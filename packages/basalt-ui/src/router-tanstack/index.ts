@@ -4,6 +4,12 @@
  * Augments StaticDataRouteOption with title/icon/navSection for breadcrumb
  * and nav-active wiring — no Mantine, no JSX, no navigate() helper.
  */
+
+export {
+  createSearchParamStore,
+  type SearchParamStore,
+  type SearchParamStoreOptions,
+} from './search-param-store'
 import type { ReactNode } from 'react'
 import { useLocation, useMatches } from '@tanstack/react-router'
 
