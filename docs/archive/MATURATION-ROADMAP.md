@@ -1,6 +1,6 @@
 # Basalt UI — Maturation Roadmap
 
-> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](./STATUS.md).** Every phase below is
+> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](../STATUS.md).** Every phase below is
 > BUILT except the owner-gated finish line (push · PR · npm Trusted Publisher · review · release).
 > The "proposal / remaining / pending" language is historical — kept for provenance, not live work.
 

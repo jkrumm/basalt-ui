@@ -1,7 +1,7 @@
 # Phase 1 SPINE — Unified Public-API Design (recommended)
 
 > ⛔ **HISTORICAL — phase complete (2026-07-05).** This design was signed off and built. Process
-> artifact, kept for provenance. For current state, see [`STATUS.md`](./STATUS.md).
+> artifact, kept for provenance. For current state, see [`STATUS.md`](../STATUS.md).
 
 > **Status: AWAITING OWNER SIGN-OFF.** Output of the Phase-1 **design** workflow (3 lens-diverse
 > designs → 3 weighted judges → synthesis → adversarial critic, 2026-06-20). Base design **A

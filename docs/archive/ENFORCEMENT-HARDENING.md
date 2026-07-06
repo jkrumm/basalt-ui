@@ -1,6 +1,6 @@
 # Basalt UI — Enforcement Hardening Plan
 
-> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](./STATUS.md).** The guard core, SURFACES
+> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](../STATUS.md).** The guard core, SURFACES
 > SSOT, `gen-oxlint`/`gen-llms` projection, `check-coverage`, and the `guard-hook` PreToolUse adapter
 > are all BUILT. The "proposal / pending approval" phrasing below is historical — kept for provenance.
 

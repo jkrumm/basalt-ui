@@ -77,11 +77,18 @@ is superseded as basalt-ui's roadmap — do not execute it here.
 
 ## Doc map (post-reconciliation)
 
-- **`STATUS.md`** (this file) — current state, single source of truth.
-- **Superseded scope ledgers** — `MATURATION-ROADMAP.md`, `ENFORCEMENT-HARDENING.md`,
-  `INTEGRATION-DX.md`. Their phases are built except the finish line above; per-phase
-  "proposal/remaining" language is historical.
-- **Superseded plan** — `BLUEPRINT.md` (S0–S5 = argo-consumer migration, do not execute here).
-- **Historical process artifacts** (phase complete, kept for provenance) —
-  `ONE-ZERO-DRIVE-HANDOVER.md`, `EXECUTION-HANDOVER.md`, `PHASE-1-HANDOVER.md`,
-  `PHASE-1-GROUNDING.md`, `PHASE-1-DESIGN.md`, `PHASE-1-IMPLEMENT-HANDOVER.md`.
+- **Living reference** (current, maintained alongside the code) — **`STATUS.md`** (this file,
+  single source of truth), `DESIGN-CORE.md`, `MANTINE-THEMING.md`, `MATURATION-REVIEW.md`.
+- **`docs/archive/`** — superseded scope ledgers and historical process artifacts, kept for
+  provenance only:
+  - Superseded scope ledgers — `MATURATION-ROADMAP.md`, `ENFORCEMENT-HARDENING.md`,
+    `INTEGRATION-DX.md`. Their phases are built except the finish line above; per-phase
+    "proposal/remaining" language is historical.
+  - Superseded plan — `BLUEPRINT.md` (S0–S5 = argo-consumer migration, do not execute here).
+  - Historical process artifacts (phase complete) — `ONE-ZERO-DRIVE-HANDOVER.md`,
+    `EXECUTION-HANDOVER.md`, `PHASE-1-HANDOVER.md`, `PHASE-1-GROUNDING.md`, `PHASE-1-DESIGN.md`,
+    `PHASE-1-IMPLEMENT-HANDOVER.md`.
+- **Deleted** — 7 orphaned pre-pivot marketing/tooling docs (`BRAND_VOICE.md`,
+  `brand_context.yaml`, `llm.md`, `prose/PROSE_TRANSITION.md`, `prose/tailwind_prose.md`,
+  `prose/prose_styles.js`, `research/DARK_MODE_IMPLEMENTATION.md`) — zero references repo-wide,
+  described dead Tailwind/Astro tooling that doesn't survive the marketing rebuild.

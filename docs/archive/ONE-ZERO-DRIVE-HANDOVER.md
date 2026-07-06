@@ -2,7 +2,7 @@
 
 > ⛔ **HISTORICAL — phase complete (2026-07-05).** This driver ran to completion: the 1.0 package is
 > built. Process artifact, kept for provenance. For current state and the remaining finish-line, see
-> [`STATUS.md`](./STATUS.md).
+> [`STATUS.md`](../STATUS.md).
 
 > **Save this as `docs/ONE-ZERO-DRIVE-HANDOVER.md`** — do NOT overwrite `docs/PHASE-1-HANDOVER.md` (that is the historical Phase-1 *kickoff* doc, now superseded). The "(this doc)" pointer in §0 refers to THIS file.
 

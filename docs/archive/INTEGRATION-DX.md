@@ -1,6 +1,6 @@
 # Basalt UI — Integration, Type-Safety Spine & DX Plan
 
-> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](./STATUS.md).** The type spine and all
+> ⚠️ **RECONCILED 2026-07-05 — SUPERSEDED by [`STATUS.md`](../STATUS.md).** The type spine and all
 > seven batteries shipped; every phase below is BUILT except the owner-gated finish line. The
 > per-phase "remaining" language is historical — kept for provenance, not live work.
 

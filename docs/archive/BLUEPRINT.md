@@ -1,7 +1,7 @@
 # Basalt UI 1.0 — Blueprint
 
 > ⛔ **SUPERSEDED as basalt-ui's roadmap (2026-07-05).** The S0–S5 stages track the *argo-consumer
-> migration*, not the basalt-ui build (which is 1.0-complete — see [`STATUS.md`](./STATUS.md)). Do
+> migration*, not the basalt-ui build (which is 1.0-complete — see [`STATUS.md`](../STATUS.md)). Do
 > NOT execute S0–S5 here.
 
 > Status: proposal, pending approval. Synthesized from a multi-agent research + design pass over

@@ -1,7 +1,7 @@
 # Execution Handover — Phase 0/1 of the basalt-ui maturation
 
 > ⛔ **HISTORICAL — phase complete (2026-07-05).** Process artifact from the 1.0 build, kept for
-> provenance. For current state and the remaining finish-line, see [`STATUS.md`](./STATUS.md).
+> provenance. For current state and the remaining finish-line, see [`STATUS.md`](../STATUS.md).
 
 > **Status:** Phase 0 **EXECUTED 2026-06-18** — see [`PHASE-1-HANDOVER.md`](./PHASE-1-HANDOVER.md)
 > for what landed, the deviations from this plan, the gotchas discovered, and the next phase.

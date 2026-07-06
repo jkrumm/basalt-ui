@@ -17,7 +17,7 @@ Astro docs is obsolete — that doctrine no longer applies.
 This is **S0 of a 5-stage argo extraction** (S0 repo pivot → S1 toolchain → S2 charts/tokens →
 S3 theme → S4 shell → S5 agentic + vite). `packages/basalt-ui/src/**` is currently **compiling
 stubs** with argo-grounded signatures; real bodies land in S2–S4. The blueprint is
-`docs/BLUEPRINT.md`. Do NOT autonomously execute blueprint stages — only do what is explicitly
+`docs/archive/BLUEPRINT.md`. Do NOT autonomously execute blueprint stages — only do what is explicitly
 requested.
 
 ## Critical Rules (READ FIRST)
@@ -36,9 +36,9 @@ requested.
 
 - **Runtime**: Bun
 - **Monorepo**: Bun workspaces (`packages/*`, `apps/*`)
-- **UI**: Mantine v9 (`@mantine/core` + `@mantine/hooks` `^9.3`, `@mantine/dates` optional peer)
+- **UI**: Mantine v9 (`@mantine/core` + `@mantine/hooks` `^9.3`)
 - **React**: 19 (peer)
-- **Charts**: visx (8 `@visx/*` packages, pinned exact `4.0.0-alpha.11`)
+- **Charts**: visx (9 `@visx/*` packages, pinned exact stable `4.0.0`)
 - **Lint/format**: oxlint + oxfmt
 - **Type-check**: tsc (strict)
 - **Git**: conventional commits enforced via commitlint; lefthook pre-commit hooks
@@ -51,7 +51,7 @@ basalt-ui/
 ├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui, v1.0.0)
 ├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
 ├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on Mantine post-migration
-├── docs/BLUEPRINT.md       # the 5-stage argo-extraction plan
+├── docs/archive/BLUEPRINT.md  # the 5-stage argo-extraction plan
 └── CLAUDE.md               # you are here
 ```
 
