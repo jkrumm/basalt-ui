@@ -167,10 +167,30 @@ export function BasaltDataTable<T>({
             {headerGroup.headers.map((header) => {
               const canSort = enableSorting && header.column.getCanSort()
               const sorted = header.column.getIsSorted()
+              const toggleSorting = header.column.getToggleSortingHandler()
               return (
                 <Table.Th
                   key={header.id}
-                  onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                  onClick={canSort ? toggleSorting : undefined}
+                  onKeyDown={
+                    canSort
+                      ? (event) => {
+                          if (event.key !== 'Enter' && event.key !== ' ') return
+                          event.preventDefault()
+                          toggleSorting?.(event)
+                        }
+                      : undefined
+                  }
+                  tabIndex={canSort ? 0 : undefined}
+                  aria-sort={
+                    canSort
+                      ? sorted === 'asc'
+                        ? 'ascending'
+                        : sorted === 'desc'
+                          ? 'descending'
+                          : 'none'
+                      : undefined
+                  }
                   style={canSort ? { cursor: 'pointer', userSelect: 'none' } : undefined}
                 >
                   {header.isPlaceholder

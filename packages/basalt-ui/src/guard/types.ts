@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 14 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 15 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 14 theme-guard violation kinds. */
+/** The 15 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -22,6 +22,7 @@ export type GuardKind =
   | 'raw-visx-axis'
   | 'raw-motion-value'
   | 'unframed-chart'
+  | 'chart-missing-aria-label'
 
 /**
  * A structured finding — the chosen testable surface (§C.4). Replaces the old `Violation` type.
@@ -72,6 +73,13 @@ export type GuardConfig = {
    * `unframed-chart` check.
    */
   readonly unframedChart: boolean
+  /**
+   * Flag a chart-kind JSX usage (`<MultiLine>`, `<Bars>`, `<Donut>`, `<DualPanel>`, `<Heatmap>`,
+   * `<ZonedLine>`, `<StackedArea>`, `<LineSparkline>`, `<BarSparkline>`) missing an `ariaLabel`
+   * prop — screen readers otherwise get an unlabeled empty graphic. Default `true` (ON). Set
+   * `false` to disable the `chart-missing-aria-label` check.
+   */
+  readonly chartMissingAriaLabel: boolean
   /**
    * Allow-comment policy: a line containing this substring is skipped entirely.
    * Default 'theme-allow'. Pure-comment lines (// * /\*) are always skipped.

@@ -263,6 +263,12 @@ on the shared `MOTION_*` tokens and honours `useReducedMotion`.
 stays Mantine-free in `./agent`; the components are Mantine-coupled and ship from the root entry.
 Never add `@mantine/*` under `src/agent/**` — it is oxlint-enforced Mantine-free.
 
+**No custom part types at the workspace level.** `ThreadWorkspace`, `ThreadDetailPanel`, and
+`ThreadTranscript` render the framework's `AgentPart` union only — they are not generic over a
+consumer-extended part type. If you need custom rendering for the existing part shapes, drop to
+the headless layer instead: compose your own transcript from `PartList` (`basalt-ui/agent`) with a
+custom `components` renderer map, rather than passing a wider type through `ThreadWorkspace`.
+
 ## AI SDK (opt-in, not shipped)
 
 `@ai-sdk/react`'s `useChat` is a hook interface, not an async generator — it does not fit the

@@ -61,6 +61,8 @@ export type MultiLineProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 const STAR_R = 6
@@ -90,7 +92,7 @@ function starPath(cx: number, cy: number, r: number): string {
  * has nulls; each series line skips null points (creating visual gaps).
  */
 function MultiLineInner<T>(props: MultiLineProps<T>) {
-  const { series, chartId, height, legend } = props
+  const { series, chartId, height, legend, ariaLabel } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   return (
@@ -98,6 +100,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
       series={series}
       chartId={chartId}
       {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend, {
         highlighted: highlightedKey,
         onHighlight: setHighlightedKey,

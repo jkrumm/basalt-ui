@@ -36,6 +36,12 @@ export type ChartFrameProps = {
   chartId?: string
   /** `false` only for the sparkline exemption — every other chart gets a legend by default. */
   legend?: ChartFrameLegend | false
+  /**
+   * Accessible text alternative for the chart, applied as `aria-label` (+ `role="img"`) on the
+   * outer container so screen readers announce something other than an unlabeled graphic. Every
+   * kind composing `ChartFrame` should accept and forward this from its own props.
+   */
+  ariaLabel?: string
   /** Draw the SVG marks given the plot rect that already excludes the legend band. */
   children: (plot: { width: number; height: number }) => ReactNode
 }
@@ -99,6 +105,7 @@ export function ChartFrame({
   minWidth = DEFAULT_MIN_WIDTH,
   chartId,
   legend = {},
+  ariaLabel,
   children,
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
@@ -137,7 +144,11 @@ export function ChartFrame({
     )
 
   return (
-    <div ref={containerRef} style={outerStyle(fill, vertical)}>
+    <div
+      ref={containerRef}
+      style={outerStyle(fill, vertical)}
+      {...(ariaLabel !== undefined && { role: 'img', 'aria-label': ariaLabel })}
+    >
       {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
       {plot.width > 0 && plot.height > 0 ? children(plot) : null}
       {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}

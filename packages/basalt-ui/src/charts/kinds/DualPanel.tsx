@@ -55,6 +55,8 @@ export type DualPanelProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 const PANE_GAP = 12
@@ -72,7 +74,7 @@ const PANE_GAP = 12
  * when a series has nulls; lines/bars skip null points (visual gaps).
  */
 function DualPanelInner<T>(props: DualPanelProps<T>) {
-  const { series, chartId, height, barLabel, barColorPositive, legend } = props
+  const { series, chartId, height, barLabel, barColorPositive, legend, ariaLabel } = props
 
   // The bottom pane's signed histogram gets one representative legend entry alongside the top
   // lines — a diverging metric can't express its sign-dependent color as a single SeriesStyle, so
@@ -90,6 +92,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
       series={legendSeries}
       chartId={chartId}
       {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <DualPanelPlot {...props} plot={plot} />}

@@ -65,8 +65,9 @@ After `bunx basalt init`, wire the provider, shell, and vite preset:
 
 ```tsx
 // Provider — wraps MantineProvider, injects the --vx-* palette, bridges the Vx tokens
-import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
+import '@mantine/core/styles.css'
 import 'basalt-ui/styles.css'
+import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
 
 const theme = createBasaltTheme({
   /* app deltas only */
@@ -96,6 +97,22 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 "lint": "oxlint . && basalt check-theme"
 ```
 
+`check-theme` scans your own source roots, not basalt's — point it at them via a `"basalt"` key
+in your `package.json` (defaults are argo's own paths and will scan 0 files in any other repo):
+
+```json
+// package.json
+{
+  "basalt": {
+    "roots": ["src"]
+  }
+}
+```
+
+`roots` is required for a real scan. `check-theme` warns (instead of a false `✓`) when the
+configured roots resolve to zero scanned files. Other `"basalt"` config keys (`exempt`,
+`spacingSteps`, `forbiddenAccents`, …) are documented on the `BasaltConfig` type.
+
 ---
 
 ## Subpath exports
@@ -113,9 +130,12 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 | `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                     |
 | `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                           |
 | `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                                                                          |
-| `./data`            | coupled  | TanStack Table + Virtual kinds: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered)                                                                                                                                |
+| `./data`            | coupled  | Convenience barrel pulling both peer groups: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered) — prefer `./data/table` / `./data/virtual` for per-feature opt-in                                                 |
+| `./data/table`      | coupled  | `BasaltDataTable` — sortable data table over TanStack Table, rendered with Mantine                                                                                                                                       |
+| `./data/virtual`    | coupled  | `BasaltVirtualList` — windowed virtual list over TanStack Virtual, rendered with Mantine                                                                                                                                 |
 | `./agent`           | **free** | Headless streaming layer (`useAgentStream`, `PartList`) + multi-thread `createThreadsStore` / `useAgentThreadRuns` / outcome seam                                                                                        |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                      |
+| `./connectivity`    | coupled  | `ConnectivityProvider` (aggregates browser/React-Query/SSE/health-check status), `useConnectivity`, `ConnectivityIndicator` — auto-mounted by `BasaltProvider`                                                           |
 | `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                            |
 | `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                          |
 | `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                                                             |
@@ -266,6 +286,9 @@ runCommand('file:save')
 
 ### `./data` — TanStack Table + Virtual
 
+`./data` is a convenience barrel that pulls in both peer groups. Prefer the fine subpaths below
+for per-feature opt-in — each only requires its own peer.
+
 ```bash
 bun add @tanstack/react-table @tanstack/react-virtual
 ```
@@ -276,6 +299,26 @@ import { BasaltDataTable, BasaltVirtualList, createColumnHelper } from 'basalt-u
 const col = createColumnHelper<Row>()
 const columns = [col.accessor('name', { header: 'Name' })]
 // <BasaltDataTable data={rows} columns={columns} />
+```
+
+#### `./data/table` — BasaltDataTable only
+
+```bash
+bun add @tanstack/react-table
+```
+
+```tsx
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
+```
+
+#### `./data/virtual` — BasaltVirtualList only
+
+```bash
+bun add @tanstack/react-virtual
+```
+
+```tsx
+import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 ```
 
 ### `./agent` — streaming-chat layer

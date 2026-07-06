@@ -165,6 +165,21 @@ export function useAgentThreadRuns<TPart = AgentPart>({
     [],
   )
 
+  // Reconcile orphaned in-flight threads on mount: a persisted thread can be stuck 'pending' or
+  // 'streaming' after a reload/remount, since controllersRef and `runs` both start empty — nothing
+  // would otherwise resolve that skeleton. Mark any such thread 'interrupted' so the UI renders a
+  // resend prompt instead of an unresolving skeleton. Mount-only by design (empty deps): this is a
+  // one-time sweep of whatever was persisted when this manager first attaches, not a recurring
+  // check — a thread only needs reconciling once per stale mount.
+  useEffect(() => {
+    for (const thread of storeRef.current.threads) {
+      const orphaned =
+        (thread.status === 'pending' || thread.status === 'streaming') &&
+        !controllersRef.current.has(thread.id)
+      if (orphaned) storeRef.current.setStatus(thread.id, 'interrupted')
+    }
+  }, [])
+
   const start = useCallback(
     (threadId: string, input: string): void => {
       // Ignore a second concurrent turn on the SAME thread; different threads run concurrently.

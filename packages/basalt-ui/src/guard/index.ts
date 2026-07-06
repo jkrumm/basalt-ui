@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 14 violation kinds.
+ * GUARD_RULES: the closed registry of all 15 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind } from './types'
@@ -58,6 +58,14 @@ const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\
 // text this small are not a performance concern.
 const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
 
+// A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — full opening/self-closing tag,
+// scanned for a missing `ariaLabel` prop (an accessible text alternative for the SVG graphic).
+// Bounded, full-text scan (like RAW_CHART_LEGEND_ARRAY above) so a multi-line-formatted tag still
+// resolves to one match.
+const CHART_ENTRY_POINT_TAG =
+  /<(?:MultiLine|Bars|Donut|DualPanel|Heatmap|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b[^>]*?>/g
+const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
+
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
@@ -77,6 +85,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawVisxAxis: true,
   rawMotionValue: true,
   unframedChart: true,
+  chartMissingAriaLabel: true,
   allowComment: 'theme-allow',
 }
 
@@ -101,7 +110,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 14 guard kinds. The triad test asserts
+ * The closed registry of all 15 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface and raw-html-layout are handled inline in checkSource (multi-regex / multi-condition);
@@ -200,6 +209,13 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.unframedChart,
     message:
       'Hand-rolled ChartLegend built from an inline array literal — pass a derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
+  },
+  'chart-missing-aria-label': {
+    kind: 'chart-missing-aria-label',
+    pattern: CHART_ENTRY_POINT_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
+    message:
+      'Chart has no accessible text alternative — pass ariaLabel="…" so screen readers get more than an unlabeled graphic.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -341,6 +357,31 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       )
         continue
       findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
+    }
+  }
+
+  // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
+  // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
+  if (GUARD_RULES['chart-missing-aria-label'].enabled!(cfg)) {
+    for (const m of text.matchAll(CHART_ENTRY_POINT_TAG)) {
+      const tagText = m[0]
+      if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
+      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      const targetLine = lines[lineNo - 1] ?? ''
+      if (targetLine.includes(cfg.allowComment)) continue
+      const trimmedTarget = targetLine.trimStart()
+      if (
+        trimmedTarget.startsWith('//') ||
+        trimmedTarget.startsWith('*') ||
+        trimmedTarget.startsWith('/*')
+      )
+        continue
+      findings.push({
+        relPath,
+        line: lineNo,
+        token: tagText.slice(0, 40),
+        kind: 'chart-missing-aria-label',
+      })
     }
   }
 

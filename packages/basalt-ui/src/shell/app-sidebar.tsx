@@ -287,11 +287,18 @@ function NavItemRow({
       offset={4}
       withArrow={false}
       withinPortal
+      keepMounted
       zIndex={400}
     >
       <Popover.Target>
         <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
-          <Box className={classes.navItem} onMouseEnter={scheduleOpen} onMouseLeave={scheduleClose}>
+          <Box
+            className={classes.navItem}
+            onMouseEnter={scheduleOpen}
+            onMouseLeave={scheduleClose}
+            onFocus={scheduleOpen}
+            onBlur={scheduleClose}
+          >
             <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
           </Box>
         </Tooltip>
@@ -302,6 +309,8 @@ function NavItemRow({
         className={classes.subnavDropdown}
         onMouseEnter={scheduleOpen}
         onMouseLeave={scheduleClose}
+        onFocus={scheduleOpen}
+        onBlur={scheduleClose}
       >
         <Stack gap={0}>
           {item.children!.map((child) => {

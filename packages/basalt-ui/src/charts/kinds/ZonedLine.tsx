@@ -96,6 +96,8 @@ export type ZonedLineProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 /**
@@ -111,13 +113,14 @@ export type ZonedLineProps<T> = {
  * visual gaps).
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
-  const { series, chartId, height, legend } = props
+  const { series, chartId, height, legend, ariaLabel } = props
 
   return (
     <ChartFrame
       series={series}
       chartId={chartId}
       {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <ZonedLinePlot {...props} plot={plot} />}

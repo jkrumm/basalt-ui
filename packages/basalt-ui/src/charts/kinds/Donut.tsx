@@ -22,6 +22,8 @@ export type DonutProps = {
   centerSubLabel?: string
   innerRatio?: number
   padAngle?: number
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 /**
@@ -33,7 +35,7 @@ export type DonutProps = {
  * (donut ↔ bar, via the generalized key) is a distinct, deliberately deferred feature.
  */
 function DonutInner(props: DonutProps) {
-  const { data, height, colorForKey, seriesLabel = (k) => k } = props
+  const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel } = props
 
   const series: SeriesStyle[] = data.map((d) => ({
     key: d.key,
@@ -43,7 +45,11 @@ function DonutInner(props: DonutProps) {
   }))
 
   return (
-    <ChartFrame series={series} {...(height !== undefined && { height })}>
+    <ChartFrame
+      series={series}
+      {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
+    >
       {(plot) => <DonutPlot {...props} plot={plot} />}
     </ChartFrame>
   )

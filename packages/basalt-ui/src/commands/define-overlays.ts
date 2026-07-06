@@ -26,8 +26,22 @@
  * overlays.open('nonexistent', {})                         // ✗ tsc error
  */
 import type { ReactNode } from 'react'
-import { modals } from '@mantine/modals'
 import type { Slot } from '../register'
+
+// ── Lazy @mantine/modals resolution ───────────────────────────────────────────
+// @mantine/modals is an OPTIONAL peer — never imported at module evaluation time, so importing
+// this module (and the ./commands barrel that re-exports it) does not require the peer. Resolves
+// to undefined when the peer is absent — overlays.open/close then degrade to a no-op.
+
+type ModalsModule = typeof import('@mantine/modals')
+type ModalsSingleton = ModalsModule['modals']
+
+let modalsPromise: Promise<ModalsSingleton | undefined> | undefined
+
+function loadModals(): Promise<ModalsSingleton | undefined> {
+  modalsPromise ??= import('@mantine/modals').then((m) => m.modals).catch(() => undefined)
+  return modalsPromise
+}
 
 // ── Overlay + OverlayMap ──────────────────────────────────────────────────────
 
@@ -163,10 +177,12 @@ export const overlays = {
         console.warn(`[basalt] overlays.open: no overlay registered for "${String(key)}"`)
       return
     }
-    modals.open({
-      title: spec.title,
-      children: spec.render(props),
-    })
+    void loadModals().then((modals) =>
+      modals?.open({
+        title: spec.title,
+        children: spec.render(props),
+      }),
+    )
   },
 
   /**
@@ -176,6 +192,6 @@ export const overlays = {
    * overlays.close()
    */
   close(): void {
-    modals.closeAll()
+    void loadModals().then((modals) => modals?.closeAll())
   },
 }

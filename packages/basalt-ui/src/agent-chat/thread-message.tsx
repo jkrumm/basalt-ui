@@ -210,7 +210,13 @@ export function ThreadTranscript({
         <MessageBlock key={message.id} author={message.role} parts={message.parts} />
       ))}
       {liveParts !== undefined && liveParts.length > 0 && (
-        <MessageBlock author="assistant" parts={liveParts} streaming={liveStatus === 'streaming'} />
+        <div aria-live="polite" aria-atomic="false" aria-relevant="additions">
+          <MessageBlock
+            author="assistant"
+            parts={liveParts}
+            streaming={liveStatus === 'streaming'}
+          />
+        </div>
       )}
     </Stack>
   )

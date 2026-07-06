@@ -92,6 +92,14 @@
       "types": "./dist/data/index.d.ts",
       "import": "./dist/data/index.js"
     },
+    "./data/table": {
+      "types": "./dist/data/table.d.ts",
+      "import": "./dist/data/table.js"
+    },
+    "./data/virtual": {
+      "types": "./dist/data/virtual.d.ts",
+      "import": "./dist/data/virtual.js"
+    },
     "./agent": {
       "types": "./dist/agent/index.d.ts",
       "import": "./dist/agent/index.js"

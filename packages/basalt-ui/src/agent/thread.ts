@@ -29,8 +29,14 @@ import type { AgentPart } from './parts'
 
 // ── ThreadStatus ──────────────────────────────────────────────────────────────
 
-/** The lifecycle status of a single thread. */
-export type ThreadStatus = 'pending' | 'streaming' | 'done' | 'attention' | 'error'
+/**
+ * The lifecycle status of a single thread.
+ *
+ * `'interrupted'` is a terminal-until-resent state: reconciled onto any thread found still
+ * `'pending'`/`'streaming'` when `useAgentThreadRuns` mounts with no live run for it (e.g. after a
+ * reload mid-stream) — see `useAgentThreadRuns`'s mount-reconciliation effect.
+ */
+export type ThreadStatus = 'pending' | 'streaming' | 'done' | 'attention' | 'error' | 'interrupted'
 
 // ── AgentThread ───────────────────────────────────────────────────────────────
 

@@ -38,6 +38,8 @@ export type StackedAreaProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 /**
@@ -46,7 +48,7 @@ export type StackedAreaProps<T> = {
  * The tooltip renders rows in reversed (top-to-bottom) stack order so it matches the visual stack.
  */
 function StackedAreaInner<T>(props: StackedAreaProps<T>) {
-  const { series, chartId, height, legend } = props
+  const { series, chartId, height, legend, ariaLabel } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   return (
@@ -54,6 +56,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       series={series}
       chartId={chartId}
       {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend, {
         highlighted: highlightedKey,
         onHighlight: setHighlightedKey,

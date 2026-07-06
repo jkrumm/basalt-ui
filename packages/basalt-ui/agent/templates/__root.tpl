@@ -4,7 +4,7 @@
  *
  * Scaffold written by `basalt init`. This file is yours — `basalt sync` will not overwrite it.
  */
-import { createRootRouteWithContext } from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
 import { BasaltShell } from 'basalt-ui'
@@ -24,6 +24,8 @@ function RootComponent() {
       sections={[
         // { label: 'Section', items: [{ label: 'Page', to: '/page', icon: <Icon /> }] }
       ]}
-    />
+    >
+      <Outlet />
+    </BasaltShell>
   )
 }

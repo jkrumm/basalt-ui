@@ -11,6 +11,9 @@
  * Install with:
  *   bun add @tanstack/react-table @tanstack/react-virtual
  *
+ * Convenience barrel — pulls both peer groups. Use the fine subpaths
+ * (`basalt-ui/data/table`, `basalt-ui/data/virtual`) for per-feature opt-in.
+ *
  * @example
  * // Data table:
  * import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data'
@@ -26,20 +29,8 @@
  * <BasaltVirtualList items={items} height={400} renderItem={(item) => <div>{item.label}</div>} />
  */
 
-// ── BasaltDataTable ───────────────────────────────────────────────────────────
-export { BasaltDataTable } from './data-table'
-export type { BasaltDataTableProps } from './data-table'
+// ── BasaltDataTable (+ @tanstack/react-table re-exports) ──────────────────────
+export * from './table'
 
 // ── BasaltVirtualList ─────────────────────────────────────────────────────────
-export { BasaltVirtualList } from './virtual-list'
-export type { BasaltVirtualListProps } from './virtual-list'
-
-// ── @tanstack/react-table convenience re-exports ──────────────────────────────
-// These are the handful of table primitives a consumer needs at the call site;
-// importing them from basalt-ui/data avoids a separate @tanstack/react-table import.
-export {
-  createColumnHelper,
-  type ColumnDef,
-  type SortingState,
-  type ColumnHelper,
-} from '@tanstack/react-table'
+export * from './virtual'

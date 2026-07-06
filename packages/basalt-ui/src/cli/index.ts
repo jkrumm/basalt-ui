@@ -93,6 +93,12 @@ export type BasaltConfig = {
    * Set `false` to disable the `unframed-chart` check.
    */
   unframedChart?: boolean
+  /**
+   * Flag a chart entry-point JSX tag (`MultiLine`/`Bars`/`Donut`/`DualPanel`/`Heatmap`/`ZonedLine`/
+   * `StackedArea`/`LineSparkline`/`BarSparkline`) missing an `ariaLabel` prop. Default: `true`
+   * (ON). Set `false` to disable the `chart-missing-aria-label` check.
+   */
+  chartMissingAriaLabel?: boolean
   /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
   seriesModulePath?: string
   /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
@@ -165,19 +171,30 @@ export function checkTheme(cwd: string = process.cwd()): number {
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
+    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
     allowComment: 'theme-allow',
   }
 
   const findings: Finding[] = []
+  let scannedCount = 0
   for (const root of roots) {
     for (const f of walkTsFiles(resolve(cwd, root))) {
       // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
       // identical on Windows (where `relative` yields backslashes) and POSIX.
       const rel = relative(cwd, f).replace(/\\/g, '/')
       if (SKIP.test(rel) || exempt.has(rel)) continue
+      scannedCount += 1
       const text = readFileSync(f, 'utf8')
       findings.push(...checkSource(text, rel, guardCfg))
     }
+  }
+
+  if (scannedCount === 0) {
+    console.warn(
+      `⚠ basalt check-theme: 0 files scanned across configured roots (${roots.join(', ')}) — ` +
+        'set "basalt": { "roots": [...] } in package.json to point at your source directories.',
+    )
+    return 0
   }
 
   if (findings.length === 0) {
@@ -358,8 +375,48 @@ function applyBlock(host: string, block: string): string {
   return base.length === 0 ? `${block.trim()}\n` : `${base}\n\n${block.trim()}\n`
 }
 
+/**
+ * Explicit `--with-router` / `--with-query` CLI flags force-include a router/query scaffold even
+ * when the peer isn't detected in the consumer's package.json yet (e.g. it's about to be added).
+ */
+type ScaffoldFlags = { withRouter?: boolean; withQuery?: boolean }
+
+/** Router/query peer presence, resolved from detection + explicit flags. */
+type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
+
+/** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
+function hasDependency(cwd: string, pkgName: string): boolean {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+    return Boolean(
+      pkg.dependencies?.[pkgName] ??
+      pkg.devDependencies?.[pkgName] ??
+      pkg.peerDependencies?.[pkgName],
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Resolves whether the consumer has the optional TanStack router/query peers — auto-detected from
+ * package.json, or forced via `--with-router` / `--with-query`. Both `basalt init` (for gating
+ * which seed scaffolds to write) and `basalt sync` (so it doesn't silently re-seed a scaffold whose
+ * peer was never installed) call this once, up front.
+ */
+function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
+  return {
+    hasRouter: flags.withRouter === true || hasDependency(cwd, '@tanstack/react-router'),
+    hasQuery: flags.withQuery === true || hasDependency(cwd, '@tanstack/react-query'),
+  }
+}
+
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
-function managedFiles(): ManagedFile[] {
+function managedFiles(peers: PeerFlags): ManagedFile[] {
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
     strategy: 'copy' as const,
@@ -449,7 +506,15 @@ function managedFiles(): ManagedFile[] {
     },
   }
 
-  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, queryClient, rootRoute]
+  // `query-client.ts` only needs @tanstack/react-query; `__root.tsx` imports BOTH
+  // @tanstack/react-router (createRootRouteWithContext) and @tanstack/react-query (the QueryClient
+  // type) — both are documented optional peers, so seeding either scaffold without its peer(s)
+  // installed would ship a file with an unresolved import.
+  const scaffolds: ManagedFile[] = []
+  if (peers.hasQuery) scaffolds.push(queryClient)
+  if (peers.hasRouter && peers.hasQuery) scaffolds.push(rootRoute)
+
+  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, ...scaffolds]
 }
 
 type Manifest = {
@@ -554,10 +619,11 @@ function renderContext(cwd: string): RenderContext {
 }
 
 /** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
-export function init(cwd: string = process.cwd()): number {
+export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
-  const files = managedFiles()
+  const peers = resolvePeerFlags(cwd, scaffoldFlags)
+  const files = managedFiles(peers)
 
   let written = 0
   let skipped = 0
@@ -592,6 +658,20 @@ export function init(cwd: string = process.cwd()): number {
   if (missingSources.length > 0) {
     console.log(
       `basalt init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
+    )
+  }
+  // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
+  // without the peer installed would ship an unresolved import. Hint how to opt in instead.
+  if (!peers.hasQuery) {
+    console.log(
+      'basalt init: skipped src/query-client.ts (no @tanstack/react-query dependency detected) — ' +
+        'install it, or re-run with --with-query, to scaffold it.',
+    )
+  }
+  if (!peers.hasRouter || !peers.hasQuery) {
+    console.log(
+      'basalt init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +
+        '@tanstack/react-query) — install both, or re-run with --with-router --with-query, to scaffold it.',
     )
   }
   // Skills ship via the basalt plugin, not init (a plugin can't write repo doctrine, and project
@@ -631,7 +711,8 @@ type SyncOptions = { force?: boolean; check?: boolean }
 export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
-  const files = managedFiles()
+  const peers = resolvePeerFlags(cwd, {})
+  const files = managedFiles(peers)
 
   let updated = 0
   let recreated = 0
@@ -1175,6 +1256,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
+    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
     allowComment: 'theme-allow',
   }
 
@@ -1224,7 +1306,10 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   const [cmd, ...flags] = argv
   switch (cmd) {
     case 'init':
-      return init(cwd)
+      return init(cwd, {
+        withRouter: flags.includes('--with-router'),
+        withQuery: flags.includes('--with-query'),
+      })
     case 'sync':
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
     case 'check-theme':
@@ -1239,7 +1324,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return guardHook(cwd)
     default:
       console.error(
-        'Usage: basalt <init | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor | guard-hook>',
+        'Usage: basalt <init [--with-router] [--with-query] | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor | guard-hook>',
       )
       return 1
   }

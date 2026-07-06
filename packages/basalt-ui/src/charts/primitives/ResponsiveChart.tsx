@@ -14,6 +14,12 @@ export type ResponsiveChartProps = {
   aspectRatio?: number
   /** ResizeObserver debounce in milliseconds. Default 0 (immediate). */
   debounceMs?: number
+  /**
+   * Accessible text alternative for the chart, applied as `aria-label` (+ `role="img"`) on the
+   * outer measuring container — e.g. when wrapping `Heatmap`, which measures via this primitive
+   * rather than `ChartFrame`.
+   */
+  ariaLabel?: string
   /** Render prop — called with the measured `{ width, height }`. */
   children: (size: { width: number; height: number }) => ReactNode
 }
@@ -39,6 +45,7 @@ export function ResponsiveChart({
   height = 240,
   aspectRatio,
   debounceMs = 0,
+  ariaLabel,
   children,
 }: ResponsiveChartProps): ReactNode {
   const { ref, width } = useChartSize(debounceMs)
@@ -46,7 +53,11 @@ export function ResponsiveChart({
   const resolvedHeight = aspectRatio !== undefined ? Math.round(width / aspectRatio) : height
 
   return (
-    <div ref={ref} style={{ width: '100%' }}>
+    <div
+      ref={ref}
+      style={{ width: '100%' }}
+      {...(ariaLabel !== undefined && { role: 'img', 'aria-label': ariaLabel })}
+    >
       {width > 0 ? children({ width, height: resolvedHeight }) : null}
     </div>
   )

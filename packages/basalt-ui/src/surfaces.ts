@@ -167,7 +167,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./forms, ./notifications, ./commands, ./data, ./agent, ./state) — real package.json exports.
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./forms, ./notifications, ./commands, ./data, ./data/table, ./data/virtual, ./agent, ./state, ./connectivity) — real package.json exports.
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -322,8 +322,30 @@ export const SURFACES = {
     skill: ['basalt-design'],
     guardKinds: [],
     description:
-      'TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)',
+      'Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in',
     optionalPeers: ['@tanstack/react-table', '@tanstack/react-virtual'],
+    forbiddenImports: [],
+  },
+  './data/table': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'data',
+    skill: ['basalt-design'],
+    guardKinds: [],
+    description:
+      'BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)',
+    optionalPeers: ['@tanstack/react-table'],
+    forbiddenImports: [],
+  },
+  './data/virtual': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'data',
+    skill: ['basalt-design'],
+    guardKinds: [],
+    description:
+      'BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)',
+    optionalPeers: ['@tanstack/react-virtual'],
     forbiddenImports: [],
   },
   './agent': {
@@ -364,6 +386,18 @@ export const SURFACES = {
       ...MANTINE_BANS,
       vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
     ],
+  },
+
+  './connectivity': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'mantine',
+    skill: ['basalt-app'],
+    guardKinds: [],
+    description:
+      'ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider',
+    optionalPeers: ['@tanstack/react-query'],
+    forbiddenImports: [],
   },
 
   // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────

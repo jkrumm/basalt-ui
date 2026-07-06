@@ -35,13 +35,7 @@
 import { Box, Divider, Flex, Paper, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { JSX, ReactNode } from 'react'
-import type {
-  AgentPart,
-  AgentThread,
-  AgentTransport,
-  OutcomeResolver,
-  ThreadsStore,
-} from '../agent'
+import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
 import { useAgentThreadRuns } from '../agent'
 import { Composer } from './composer'
 import { ThreadDetailPanel } from './thread-detail-panel'
@@ -50,16 +44,16 @@ import { ThreadFeed } from './thread-feed'
 const NARROW_BREAKPOINT = '(max-width: 768px)'
 const DETAIL_PANEL_WIDTH = 'clamp(440px, 40%, 520px)'
 
-export type ThreadWorkspaceProps<TPart = AgentPart> = {
+export type ThreadWorkspaceProps = {
   /**
    * The thread-store hook, created ONCE at module scope via `createThreadsStore` and passed in —
    * ThreadWorkspace must not call `createThreadsStore` itself.
    */
-  readonly useThreads: () => ThreadsStore<TPart>
+  readonly useThreads: () => ThreadsStore
   /** The injected transport seam — one stream per `start()` call. */
-  readonly transport: AgentTransport<TPart, string>
+  readonly transport: AgentTransport<AgentPart, string>
   /** Distills a finished thread into a feed-ready `AgentOutcome`. */
-  readonly resolveOutcome: OutcomeResolver<TPart>
+  readonly resolveOutcome: OutcomeResolver<AgentPart>
   /** Placeholder for the new-thread composer pinned under the feed. */
   readonly newThreadPlaceholder?: string
   /** Rendered in place of the feed while there are no threads yet. */
@@ -88,25 +82,21 @@ function FeedEmptyState(): JSX.Element {
  * @example
  * <ThreadWorkspace useThreads={useThreads} transport={transport} resolveOutcome={heuristicOutcome} />
  */
-export function ThreadWorkspace<TPart = AgentPart>({
+export function ThreadWorkspace({
   useThreads,
   transport,
   resolveOutcome,
   newThreadPlaceholder,
   emptyState,
-}: ThreadWorkspaceProps<TPart>): JSX.Element {
+}: ThreadWorkspaceProps): JSX.Element {
   const store = useThreads()
   const runs = useAgentThreadRuns({ transport, store, resolveOutcome })
   const narrow = useMediaQuery(NARROW_BREAKPOINT)
 
-  // ThreadFeed / ThreadDetailPanel render the framework-default AgentPart shape — a custom
-  // TPart is only ever read (never produced) by these Mantine renderers, so the cast is scoped
-  // to this display hand-off boundary (same pattern as the toUserParts fallback cast in
-  // useAgentThreadRuns).
-  const threads = store.threads as unknown as AgentThread[]
+  const threads = store.threads
   const activeThread = threads.find((thread) => thread.id === store.activeId) ?? null
   const activeRun = store.activeId !== null ? runs.runs.get(store.activeId) : undefined
-  const liveParts = activeRun?.parts as unknown as AgentPart[] | undefined
+  const liveParts = activeRun?.parts
 
   const handleSelect = (id: string): void => {
     store.select(id)

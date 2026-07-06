@@ -134,6 +134,8 @@ export type BarsProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
 }
 
 /**
@@ -150,7 +152,16 @@ export type BarsProps<T> = {
  * with per-bar nulls (nulls become visual gaps, not domain holes).
  */
 function BarsInner<T>(props: BarsProps<T>) {
-  const { positiveBars, negativeBars = [], lines = [], getValue, chartId, height, legend } = props
+  const {
+    positiveBars,
+    negativeBars = [],
+    lines = [],
+    getValue,
+    chartId,
+    height,
+    legend,
+    ariaLabel,
+  } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   const barSeries = useMemo<ChartSeries<T>[]>(
@@ -192,6 +203,7 @@ function BarsInner<T>(props: BarsProps<T>) {
       series={legendSeries}
       chartId={chartId}
       {...(height !== undefined && { height })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend, {
         highlighted: highlightedKey,
         onHighlight: setHighlightedKey,

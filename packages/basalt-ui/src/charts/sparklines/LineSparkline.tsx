@@ -10,11 +10,14 @@ type LineSparklineProps = {
   width: number
   height: number
   color?: string
+  /** Accessible text alternative, applied as `aria-label` (+ `role="img"`) on the `<svg>`. */
+  ariaLabel?: string
 }
 
-export function LineSparkline({ data, width, height, color }: LineSparklineProps) {
+export function LineSparkline({ data, width, height, color, ariaLabel }: LineSparklineProps) {
   const { line } = useVxTheme()
   const strokeColor = color ?? line
+  const a11yProps = ariaLabel !== undefined ? { role: 'img' as const, 'aria-label': ariaLabel } : {}
 
   const xScale = useMemo(
     () => scaleLinear<number>({ domain: [0, Math.max(data.length - 1, 1)], range: [0, width] }),
@@ -30,13 +33,13 @@ export function LineSparkline({ data, width, height, color }: LineSparklineProps
     return scaleLinear<number>({ domain: [min - pad, max + pad], range: [height, 0] })
   }, [data, height])
 
-  if (data.length < 2) return <svg width={width} height={height} />
+  if (data.length < 2) return <svg width={width} height={height} {...a11yProps} />
 
   const indexed = data.map((v, i) => ({ v, i }))
   const last = indexed[indexed.length - 1]
 
   return (
-    <svg width={width} height={height}>
+    <svg width={width} height={height} {...a11yProps}>
       <Group>
         <LinePath<{ v: number; i: number }>
           data={indexed}

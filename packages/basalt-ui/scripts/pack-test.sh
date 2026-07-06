@@ -89,6 +89,8 @@ const subpaths = [
   'basalt-ui/notifications',
   'basalt-ui/commands',
   'basalt-ui/data',
+  'basalt-ui/data/table',
+  'basalt-ui/data/virtual',
   'basalt-ui/agent',
 ]
 for (const s of subpaths) {
@@ -118,7 +120,7 @@ if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAge
 if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
-console.log('scratch resolution OK (15 subpaths)')
+console.log('scratch resolution OK (17 subpaths)')
 JS
 node test.mjs
 

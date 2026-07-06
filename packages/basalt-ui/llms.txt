@@ -87,10 +87,24 @@ OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0, @tanstack/reac
 
 ## basalt-ui/data
 Import: import { ... } from 'basalt-ui/data'
-Description: TanStack Table + Virtual kinds: BasaltDataTable, BasaltVirtualList (Mantine-rendered)
+Description: Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in
 Layer: mantine-coupled
 Rule: basalt-data
 OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3 <4
+
+## basalt-ui/data/table
+Import: import { ... } from 'basalt-ui/data/table'
+Description: BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)
+Layer: mantine-coupled
+Rule: basalt-data
+OptionalPeers: @tanstack/react-table@>=8 <9
+
+## basalt-ui/data/virtual
+Import: import { ... } from 'basalt-ui/data/virtual'
+Description: BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)
+Layer: mantine-coupled
+Rule: basalt-data
+OptionalPeers: @tanstack/react-virtual@>=3 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
@@ -104,6 +118,13 @@ Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives
 Layer: headless
 Rule: basalt-state
+
+## basalt-ui/connectivity
+Import: import { ... } from 'basalt-ui/connectivity'
+Description: ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider
+Layer: mantine-coupled
+Rule: basalt-mantine
+OptionalPeers: @tanstack/react-query@^5.101.0
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css

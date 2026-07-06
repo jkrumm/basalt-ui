@@ -131,6 +131,11 @@ export function ThreadDetailPanel({
               This run didn’t finish. Try sending the message again.
             </Alert>
           )}
+          {thread.status === 'interrupted' && (
+            <Alert color="yellow" variant="light" mt="md">
+              Interrupted — resend to continue.
+            </Alert>
+          )}
         </BasaltStickToBottom>
       </Box>
       <Divider />
