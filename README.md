@@ -3,70 +3,42 @@
 [![npm version](https://img.shields.io/npm/v/basalt-ui.svg)](https://www.npmjs.com/package/basalt-ui)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/jkrumm/basalt-ui/blob/master/LICENSE)
 
-> Design system for the modern stack. One Tailwind theme that makes your components, docs, and charts look like they belong together.
+> Opinionated framework for Mantine v9 + visx React apps — theme, app shell, chart system, and the agentic layer to drive them.
 
 **[Documentation](https://basalt-ui.com?utm_source=root_readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
-Building modern apps often means combining ShadCN components, Starlight docs, Tremor dashboards, and more — each with its own styling.
-
-Basalt UI is a single Tailwind CSS theme that brings them all together. Import once, get consistent design everywhere. More integrations are on the way.
-
-### Why Basalt UI?
-
-Most teams don't use just one UI tool anymore.
-
-You combine component libraries, documentation frameworks, and charting tools — and they rarely look like they belong together.
-
-Basalt UI solves this with a single Tailwind configuration that works across your stack.
-
-No rewrites. No heavy abstractions. Just consistent design, everywhere.
-
-### What Basalt UI gives you
-
-- One Tailwind theme shared across apps, docs, and dashboards
-- Out-of-the-box support for ShadCN, Starlight, and Tremor
-- Matching light and dark modes by default
-- A consistent look without custom glue code
-
-More integrations will be added over time.
+Building a dashboard app means wiring a Mantine theme, a visx chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other. Basalt UI is the extraction of that setup from a production app: install once, get a coherent system.
 
 ## Install
 
 ```bash
-npm install basalt-ui
-# or
 bun add basalt-ui
+bun add react react-dom @mantine/core @mantine/hooks
 ```
 
-## Usage
+Scaffold the repo doctrine (Claude Code rules, `CLAUDE.md` block, `DESIGN.md` seed, toolchain templates):
 
-Import the CSS in your main stylesheet:
-
-```css
-@import 'basalt-ui/css';
+```bash
+bunx basalt init
 ```
 
-For Starlight docs:
-
-```css
-@import 'basalt-ui/starlight';
-```
-
-**Full installation guide:** See the [Installation Documentation](https://basalt-ui.com/docs/installation?utm_source=root_readme) for framework-specific setup, font loading strategies, troubleshooting, and integration patterns.
+**Full docs, subpath export table, token system, and adapter batteries:** see the
+[package README](./packages/basalt-ui/README.md).
 
 ## Repository Structure
 
 ```
 basalt-ui/
-├── packages/basalt-ui/    # The npm package
-└── apps/web/              # Docs & playground (Astro + Starlight)
+├── packages/basalt-ui/    # the published npm package (basalt-ui)
+├── apps/playground/       # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
+└── apps/marketing/        # basalt-ui.com — content-frozen until rebuilt on Mantine
 ```
 
 ## Development
 
 ```bash
 bun install
-bun run dev
+bun run dev              # = dev:playground
 ```
 
 ## License
