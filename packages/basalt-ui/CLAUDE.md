@@ -16,7 +16,7 @@ raw toolchain config presets, and a `basalt` CLI.
 The full S0→S5 argo extraction is **implemented** on `feat/s0-mantine-pivot`: tokens, charts,
 theme/provider/theme-lab, the router-agnostic shell, the vite preset, the agentic layer, and the
 real `init`/`sync`/`check-theme` CLI. `src/**` is real code, not stubs. The historical plan lives
-in `../../docs/BLUEPRINT.md`.
+in `../../docs/archive/BLUEPRINT.md`.
 
 ## Published surface (subpath exports)
 
@@ -81,12 +81,9 @@ false` are required.
 
 ## Dependencies
 
-- **deps**: 8 `@visx/*` pinned **exact** at `4.0.0-alpha.11` (`axis`, `curve`, `event`, `grid`,
-  `group`, `scale`, `shape`, `threshold`). Stable `@visx` 4.0.0 shipped 2026-06-11, but the
-  alpha.11 pin is **intentionally held** — the bump is co-scheduled with the Phase 2 tsdown
-  migration, behind the pack-test; do not bump it unilaterally.
-- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
-  `@mantine/dates` optional.
+- **deps**: 9 `@visx/*` pinned **exact** at stable `4.0.0` (`axis`, `curve`, `event`, `grid`,
+  `group`, `responsive`, `scale`, `shape`, `threshold`).
+- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`.
 - **`motion`** pinned exact at `12.42.0` — the framework's one animation dependency (bundled
   implementation detail of shipped components, same precedent as `@visx/*`; not a peer). See
   "Motion" below.

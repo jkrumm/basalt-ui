@@ -64,6 +64,15 @@ A Claude Code plugin cannot write project context (`CLAUDE.md`, `.claude/rules/`
 After `bunx basalt init`, wire the provider, shell, and vite preset:
 
 ```tsx
+// main.tsx — plain Vite CSR entry. BasaltProvider defaults to the dark color scheme and reads any
+// stored scheme from localStorage before mount, so a client-only app needs no ColorSchemeScript.
+import { createRoot } from 'react-dom/client'
+import { App } from './App'
+
+createRoot(document.getElementById('root')!).render(<App />)
+```
+
+```tsx
 // Provider — wraps MantineProvider, injects the --vx-* palette, bridges the Vx tokens
 import '@mantine/core/styles.css'
 import 'basalt-ui/styles.css'
@@ -77,6 +86,11 @@ export function App() {
   return <BasaltProvider theme={theme}>{/* app */}</BasaltProvider>
 }
 ```
+
+> **SSR only:** Next.js / React Router (SSR) consumers must additionally render
+> `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
+> document `<head>` to avoid a flash of the wrong theme during hydration. Plain Vite CSR apps don't
+> need it — there is no hydration to mismatch. See `docs/MANTINE-THEMING.md`.
 
 ```tsx
 // Shell — sidebar / mobile-nav / breadcrumbs / page-header; router-agnostic
