@@ -77,6 +77,7 @@ export function MobileNav({
             onClick={() => setOpenSection(section)}
             className={classes.tab}
             data-active={section.active || undefined}
+            aria-current={section.active ? 'page' : undefined}
             aria-label={section.label}
           >
             {section.icon}

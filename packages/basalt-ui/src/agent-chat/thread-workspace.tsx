@@ -120,6 +120,11 @@ export function ThreadWorkspace({
     runs.stop(store.activeId)
   }
 
+  const handleRetry = (): void => {
+    if (store.activeId === null) return
+    runs.retry(store.activeId)
+  }
+
   const feed = (
     <Paper
       withBorder
@@ -150,6 +155,7 @@ export function ThreadWorkspace({
       {...(activeRun !== undefined ? { runStatus: activeRun.status } : {})}
       onSend={handleSend}
       onStop={handleStop}
+      onRetry={handleRetry}
       onClose={() => store.select(null)}
     />
   )

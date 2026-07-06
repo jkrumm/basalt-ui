@@ -170,7 +170,8 @@
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "use-stick-to-bottom": "^1.1.6"
+    "use-stick-to-bottom": "^1.1.6",
+    "vite": "^7 || ^8"
   },
   "peerDependenciesMeta": {
     "@mantine/form": {
@@ -210,6 +211,9 @@
       "optional": true
     },
     "use-stick-to-bottom": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   },

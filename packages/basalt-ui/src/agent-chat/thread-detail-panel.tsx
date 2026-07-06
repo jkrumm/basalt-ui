@@ -4,7 +4,8 @@
  * A plain pane (Paper/Box), NOT a Modal — the composite that wires this up owns responsive
  * collapse/layout decisions. The header shares a `layoutId` (thread.id) with `ThreadOutcomeCard`
  * so opening a thread reads as one continuous shared-element FLIP transition rather than a swap.
- * Pure and prop-driven: no store, no fetching — `onSend`/`onStop`/`onClose` are the only seams.
+ * Pure and prop-driven: no store, no fetching — `onSend`/`onStop`/`onClose`/`onRetry` are the
+ * only seams.
  *
  * @example
  * import { ThreadDetailPanel } from 'basalt-ui/agent-chat'
@@ -78,6 +79,11 @@ export type ThreadDetailPanelProps = {
   readonly onSend: (text: string) => void
   readonly onStop: () => void
   readonly onClose: () => void
+  /**
+   * Replay the last user input on this thread. When provided, a "Retry" action appears in the
+   * failed-run alert; omit it to render the alert without a retry affordance.
+   */
+  readonly onRetry?: () => void
 }
 
 /**
@@ -94,6 +100,7 @@ export function ThreadDetailPanel({
   onSend,
   onStop,
   onClose,
+  onRetry,
 }: ThreadDetailPanelProps): JSX.Element {
   const reduceMotion = useReducedMotion()
 
@@ -128,7 +135,14 @@ export function ThreadDetailPanel({
           />
           {thread.status === 'error' && (
             <Alert color="red" variant="light" mt="md">
-              This run didn’t finish. Try sending the message again.
+              <Stack gap="xs" align="flex-start">
+                <Text size="sm">This run didn’t finish. Try sending the message again.</Text>
+                {onRetry !== undefined && (
+                  <Button size="compact-sm" variant="light" color="red" onClick={onRetry}>
+                    Retry
+                  </Button>
+                )}
+              </Stack>
             </Alert>
           )}
           {thread.status === 'interrupted' && (

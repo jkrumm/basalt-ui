@@ -35,6 +35,13 @@ import type { AgentPart } from './parts'
  * `'interrupted'` is a terminal-until-resent state: reconciled onto any thread found still
  * `'pending'`/`'streaming'` when `useAgentThreadRuns` mounts with no live run for it (e.g. after a
  * reload mid-stream) — see `useAgentThreadRuns`'s mount-reconciliation effect.
+ *
+ * This is one of THREE overlapping status-shaped unions in the agent layer: `StreamStatus`
+ * (single-turn stream lifecycle, `./use-agent-stream`), this `ThreadStatus` (persisted thread
+ * lifecycle), and `AgentOutcome['status']` (`./outcome` — the terminal `'done' | 'attention' |
+ * 'error'` subset of this union, once a turn has settled). Vocabulary note: `StreamStatus`'s
+ * `'idle'` (no turn in flight) corresponds to this union's `'pending'` (thread created, no turn
+ * started yet) — the literal rename is intentionally deferred, see `AgentOutcome['status']`'s doc.
  */
 export type ThreadStatus = 'pending' | 'streaming' | 'done' | 'attention' | 'error' | 'interrupted'
 
@@ -63,6 +70,20 @@ export type AgentThread<TPart = AgentPart> = {
   readonly read: boolean
   readonly createdAt: number
   readonly updatedAt: number
+  /**
+   * Freeform consumer metadata (e.g. `{ source: 'sidebar' }`, `{ model: 'gpt-5' }`) — set once at
+   * `create()` time and otherwise opaque to this store. Intentionally untyped: the framework has
+   * no opinion on what a consumer wants to stash per thread, and adding a `TMeta` generic here
+   * would ripple through `AgentThread<TPart>`, `ThreadsStore<TPart>`, `useAgentThreadRuns`, and
+   * every component that renders a thread. Consumers narrow at the read site instead, e.g.:
+   *
+   * ```ts
+   * const model = thread.meta?.model as string | undefined
+   * ```
+   *
+   * Revisit trigger: promote this to a `TMeta` generic only once a real consumer needs typed,
+   * validated meta (not just a documented convention) — don't add the generic speculatively.
+   */
   readonly meta?: Record<string, unknown>
 }
 

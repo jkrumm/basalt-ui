@@ -26,6 +26,19 @@ import type { AgentThread } from './thread'
  * subject/intent (capped ~48 chars); `summary` is a concrete, past-tense description of what
  * happened (capped ~88 chars); `status` drives the feed's visual treatment.
  *
+ * `status` is the TERMINAL subset of `ThreadStatus` (see `./thread`): only the three outcomes a
+ * finished turn can resolve to. It deliberately excludes `ThreadStatus`'s in-flight/unresolved
+ * members (`'pending'`, `'streaming'`, `'interrupted'`) — an `AgentOutcome` only exists once a
+ * turn has settled, so those never apply here.
+ *
+ * Note there are THREE overlapping status-shaped unions in this module family, one per layer:
+ * `StreamStatus` (single-turn stream lifecycle, `./use-agent-stream`), `ThreadStatus` (persisted
+ * thread lifecycle, `./thread`), and this `AgentOutcome['status']` (feed-facing terminal
+ * projection). They are related but not identical — `StreamStatus`'s `'idle'` (no turn in
+ * flight) corresponds to `ThreadStatus`'s `'pending'` (thread created, no turn started yet); the
+ * literal rename from `'idle'` to `'pending'` is intentionally deferred since it would ripple
+ * into `use-agent-stream.ts` and its call sites.
+ *
  * @example
  * const outcome: AgentOutcome = { title: 'New chat', summary: '', status: 'done' }
  */

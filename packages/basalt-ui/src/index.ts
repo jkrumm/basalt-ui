@@ -79,7 +79,23 @@ export type { GuardKind } from './guard/types'
 // only the pieces a ThreadWorkspace consumer needs — NOT an export-star — so the optional-peer
 // components (StreamingMarkdown, BasaltStickToBottom) and the rest of `./agent` stay off the root
 // entry; `edenTransport` stays out too, sourced from `basalt-ui/agent` instead.
-export * from './agent-chat'
+export {
+  ThreadWorkspace,
+  ThreadFeed,
+  ThreadOutcomeCard,
+  ThreadDetailPanel,
+  Composer,
+  threadPartRenderers,
+  ThreadTranscript,
+} from './agent-chat'
+export type {
+  ThreadWorkspaceProps,
+  ThreadFeedProps,
+  ThreadOutcomeCardProps,
+  ThreadDetailPanelProps,
+  ComposerProps,
+  ThreadTranscriptProps,
+} from './agent-chat'
 export { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from './agent'
 export type {
   AgentThread,

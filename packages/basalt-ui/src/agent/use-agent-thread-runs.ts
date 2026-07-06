@@ -40,20 +40,24 @@ import type { AgentOutcome, OutcomeResolver } from './outcome'
 import type { AgentPart } from './parts'
 import type { AgentThread, ThreadsStore } from './thread'
 import type { AgentTransport } from './transport'
-import type { StreamStatus } from './use-agent-stream'
 
 // ── ThreadRunState ────────────────────────────────────────────────────────────
 
 /**
- * The live stream state of a single thread's in-flight (or last completed) turn.
+ * The live stream state of a single thread's in-flight turn.
+ *
+ * A thread only has an entry in the `runs` map while its turn is actively streaming — once a
+ * turn finishes (success or error), its entry is deleted from the map (the outcome lives on the
+ * persisted `AgentThread` instead). So `status` only ever holds `'streaming'`; there is no
+ * `'done'`/`'idle'`/`'error'` to observe here.
  *
  * @example
  * const state: ThreadRunState = { status: 'streaming', parts: [{ type: 'text', text: 'Hi' }] }
  */
 export type ThreadRunState<TPart = AgentPart> = {
-  /** Current lifecycle status of this thread's turn. */
-  readonly status: StreamStatus
-  /** Accumulated parts from the current (or last completed) stream for this thread. */
+  /** Always `'streaming'` — see the type doc for why no other status is reachable here. */
+  readonly status: 'streaming'
+  /** Accumulated parts from the current stream for this thread. */
   readonly parts: TPart[]
 }
 
@@ -80,6 +84,11 @@ export type UseAgentThreadRunsReturn<TPart = AgentPart> = {
   readonly runs: ReadonlyMap<string, ThreadRunState<TPart>>
   /** Start a new turn on `threadId`. No-op if that thread already has a stream in flight. */
   readonly start: (threadId: string, input: string) => void
+  /**
+   * Replay the last user input sent on `threadId` (same code path as `start`). No-op if
+   * `threadId` has never had a turn started, or already has one in flight.
+   */
+  readonly retry: (threadId: string) => void
   /** Abort the in-flight stream for `threadId` (no-op if idle). */
   readonly stop: (threadId: string) => void
   /** Abort every in-flight stream across all threads. */
@@ -146,6 +155,9 @@ export function useAgentThreadRuns<TPart = AgentPart>({
 
   // Refs: mutable per-render state that must not trigger re-renders.
   const controllersRef = useRef<Map<string, AbortController>>(new Map())
+  // Caches the last user input per thread so retry() can replay a failed turn without the
+  // caller having to hold onto (or re-collect) what was typed.
+  const lastInputRef = useRef<Map<string, string>>(new Map())
   // Mirrors the latest store every render so completion callbacks (which fire long after the
   // render that started them) read the freshest threads rather than a stale closure.
   const storeRef = useRef(store)
@@ -184,6 +196,8 @@ export function useAgentThreadRuns<TPart = AgentPart>({
     (threadId: string, input: string): void => {
       // Ignore a second concurrent turn on the SAME thread; different threads run concurrently.
       if (controllersRef.current.has(threadId)) return
+
+      lastInputRef.current.set(threadId, input)
 
       const userMessage: ChatMessage<TPart> = {
         id: crypto.randomUUID(),
@@ -266,6 +280,15 @@ export function useAgentThreadRuns<TPart = AgentPart>({
     [transport, resolveOutcome],
   )
 
+  const retry = useCallback(
+    (threadId: string): void => {
+      const input = lastInputRef.current.get(threadId)
+      if (input === undefined) return
+      start(threadId, input)
+    },
+    [start],
+  )
+
   const stop = useCallback((threadId: string): void => {
     controllersRef.current.get(threadId)?.abort()
     controllersRef.current.delete(threadId)
@@ -284,5 +307,5 @@ export function useAgentThreadRuns<TPart = AgentPart>({
     setRuns(new Map())
   }, [])
 
-  return { runs, start, stop, stopAll }
+  return { runs, start, retry, stop, stopAll }
 }

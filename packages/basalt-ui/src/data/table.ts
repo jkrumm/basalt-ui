@@ -25,8 +25,15 @@ export type { BasaltDataTableProps } from './data-table'
 // ── @tanstack/react-table convenience re-exports ──────────────────────────────
 // These are the handful of table primitives a consumer needs at the call site;
 // importing them from basalt-ui/data/table avoids a separate @tanstack/react-table import.
+// useReactTable + flexRender + the row-model builders (getCoreRowModel/getSortedRowModel) are the
+// raw escape hatch: a bespoke, fully custom table can be built from this subpath alone, with no
+// direct @tanstack/react-table import in consumer code.
 export {
   createColumnHelper,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
   type ColumnDef,
   type SortingState,
   type ColumnHelper,

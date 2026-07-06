@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent, ReactNode } from 'react'
+import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react'
 import { VX, alpha } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
 
@@ -26,6 +26,20 @@ const LEGEND_ITEM_BASE: CSSProperties = {
   gap: 6,
   cursor: 'default',
   transition: 'opacity 0.15s',
+}
+
+// An interactive legend entry is a native <button> (keyboard-focusable, no jsx-a11y role hack) —
+// this strips the browser's default button chrome so it renders identically to the static entry.
+const LEGEND_ITEM_BUTTON: CSSProperties = {
+  ...LEGEND_ITEM_BASE,
+  appearance: 'none',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  margin: 0,
+  font: 'inherit',
+  color: 'inherit',
+  textAlign: 'inherit',
 }
 
 const GROUP_ORDER: SeriesRole[] = ['series', 'overlay', 'reference']
@@ -232,8 +246,8 @@ export function ChartLegend({
   groups?: boolean
   maxRows?: number
 }) {
-  const handleEnter = (e: MouseEvent<HTMLDivElement>) => {
-    const key = (e.currentTarget as HTMLDivElement).dataset['legendKey']
+  const handleEnter = (e: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => {
+    const key = e.currentTarget.dataset['legendKey']
     if (key !== undefined) onHighlight?.(key)
   }
   const handleLeave = () => onHighlight?.(null)
@@ -248,22 +262,26 @@ export function ChartLegend({
   const nodes: ReactNode[] = []
   visible.forEach((item, i) => {
     nodes.push(
-      <div
+      <button
         key={item.key}
+        type="button"
         data-legend-key={item.key}
+        aria-label={item.label}
         style={{
-          ...LEGEND_ITEM_BASE,
+          ...LEGEND_ITEM_BUTTON,
           opacity: highlighted === null || highlighted === item.key ? 1 : 0.3,
         }}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
+        onFocus={handleEnter}
+        onBlur={handleLeave}
       >
         <LegendSwatch item={item} idPrefix={idPrefix} />
         <span>{item.label}</span>
         {item.children?.map((child) => (
           <LegendChild key={child.key} item={child} />
         ))}
-      </div>,
+      </button>,
     )
     if (dividerAfter.has(i))
       nodes.push(<LegendDivider key={`divider-${item.key}`} columnLayout={vertical} />)

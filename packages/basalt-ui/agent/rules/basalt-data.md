@@ -131,7 +131,44 @@ The 1.0 table ships sorting only. Natural extensions are **not** in scope yet:
 - Row selection (checkboxes)
 - Row expansion / sub-rows
 
-Add them when a concrete consumer need arises; keep the API additive.
+Add them when a concrete consumer need arises; keep the API additive. Controlled (fully external)
+sorting for `BasaltDataTable` itself is likewise deferred — `onSortingChange` above is the current
+sync seam.
+
+### The blessed lane vs the raw escape hatch
+
+`BasaltDataTable` (from `basalt-ui/data/table`) is the **blessed, opinionated grid** — batteries
+included (sorting, loading skeletons, empty state, Mantine `Table` chrome) and the default choice
+for a data grid in a basalt-ui app.
+
+For a bespoke table shape `BasaltDataTable` doesn't cover, `basalt-ui/data/table` also re-exports
+the raw TanStack Table primitives as the documented **escape hatch**: `useReactTable`, `flexRender`,
+`getCoreRowModel`, `getSortedRowModel`, `createColumnHelper`, and the `ColumnDef` type — the full
+surface for constructing and rendering a fully custom table, with no direct `@tanstack/react-table`
+import in consumer code:
+
+```tsx
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from 'basalt-ui/data/table'
+
+type Row = { name: string; score: number }
+const col = createColumnHelper<Row>()
+const columns = [
+  col.accessor('name', { header: 'Name' }),
+  col.accessor('score', { header: 'Score' }),
+]
+
+const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel() })
+// table.getHeaderGroups() / table.getRowModel().rows, rendered with flexRender(...) and your own markup
+```
+
+Reach for the escape hatch only when `BasaltDataTable`'s props genuinely can't express the shape —
+grid feature growth (pagination, server-side data, column visibility, filtering) is consumer-pulled
+future work, not a reason to bypass the blessed lane by default.
 
 ## BasaltVirtualList
 

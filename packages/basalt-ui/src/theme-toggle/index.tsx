@@ -156,7 +156,13 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
           <SchemeGlyph dark={dark} reduceMotion={reduceMotion} />
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown p={4} onMouseEnter={scheduleOpen} onMouseLeave={scheduleClose}>
+      <Popover.Dropdown
+        p={4}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
+        onFocus={scheduleOpen}
+        onBlur={scheduleClose}
+      >
         <SegmentedControl
           size="xs"
           value={colorScheme}

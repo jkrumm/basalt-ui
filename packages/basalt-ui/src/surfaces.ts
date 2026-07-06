@@ -240,7 +240,7 @@ export const SURFACES = {
     layer: 'headless',
     description: 'checkSource, GUARD_RULES, Finding types — the headless theme-guard core',
     globs: {
-      shipped: ['**/guard/**'],
+      shipped: [],
       repo: ['packages/basalt-ui/src/guard/**'],
     },
     forbiddenImports: [
@@ -257,7 +257,7 @@ export const SURFACES = {
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
     optionalPeers: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
     globs: {
-      shipped: ['**/query/**'],
+      shipped: [],
       repo: ['packages/basalt-ui/src/query/**'],
     },
     forbiddenImports: [
@@ -274,7 +274,7 @@ export const SURFACES = {
     description: 'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs',
     optionalPeers: ['@tanstack/react-router'],
     globs: {
-      shipped: ['**/router-tanstack/**'],
+      shipped: [],
       repo: ['packages/basalt-ui/src/router-tanstack/**'],
     },
     forbiddenImports: [
@@ -358,7 +358,7 @@ export const SURFACES = {
       'Headless streaming-chat layer: useAgentStream, edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
     optionalPeers: ['react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
     globs: {
-      shipped: ['**/agent/**'],
+      shipped: [],
       repo: ['packages/basalt-ui/src/agent/**'],
     },
     forbiddenImports: [
