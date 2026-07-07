@@ -30,6 +30,8 @@ import { useDisclosure } from '@mantine/hooks'
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
+import { SidebarAccount } from './app-sidebar-account'
+import type { BasaltAccountProps } from './account-types'
 import classes from './app-sidebar.module.css'
 
 /** Renders a single nav item. The consumer's router `Link` lives here; `active` is precomputed. */
@@ -50,6 +52,11 @@ export type AppSidebarProps = {
   settingsMenuItems?: SettingsMenuItem[]
   /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
   footerExtra?: ReactNode
+  /**
+   * Optional account row rendered above the settings menu in the sidebar footer (see
+   * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
+   */
+  account?: BasaltAccountProps
 }
 
 /** Inline collapse/expand chevrons — keeps the shell icon-dependency-free. */
@@ -378,6 +385,7 @@ export function AppSidebar({
   renderNavLink,
   settingsMenuItems,
   footerExtra,
+  account,
 }: AppSidebarProps) {
   // Desktop collapsible-section state, keyed by section label. Seeded once from each section's
   // `defaultCollapsed`; non-collapsible sections are simply never read here.
@@ -389,6 +397,45 @@ export function AppSidebar({
     section.items.map((item) => (
       <NavItemRow key={item.key} item={item} collapsed={collapsed} renderNavLink={renderNavLink} />
     ))
+
+  // The settings-menu row is unchanged; only its wrapper's class moves onto the outer footer
+  // Stack when `account` is rendered above it, so omitting `account` reproduces today's footer
+  // markup byte-for-byte (no extra wrapper element).
+  const settingsRow = (
+    <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
+      <Menu position="right-start" withArrow width={200} zIndex={500}>
+        <Menu.Target>
+          <UnstyledButton className={classes.footerBtn} aria-label="Settings">
+            <IconGear />
+            <Text className={classes.footerText} size="sm">
+              Settings
+            </Text>
+          </UnstyledButton>
+        </Menu.Target>
+        <Menu.Dropdown>
+          {settingsMenuItems?.map((entry) => (
+            <Menu.Item key={entry.key} leftSection={entry.icon} onClick={entry.onClick}>
+              {entry.label}
+            </Menu.Item>
+          ))}
+          {brand.version && (
+            <>
+              <Menu.Divider />
+              <Menu.Label>
+                {brand.name} v{brand.version}
+              </Menu.Label>
+            </>
+          )}
+        </Menu.Dropdown>
+      </Menu>
+      <Group gap={2} wrap="nowrap" hiddenFrom="sm">
+        {footerExtra}
+        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close navigation">
+          <IconClose />
+        </ActionIcon>
+      </Group>
+    </Group>
+  )
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
@@ -457,39 +504,17 @@ export function AppSidebar({
         })}
       </Stack>
 
-      <Group className={classes.footer} gap="xs" wrap="nowrap">
-        <Menu position="right-start" withArrow width={200} zIndex={500}>
-          <Menu.Target>
-            <UnstyledButton className={classes.footerBtn} aria-label="Settings">
-              <IconGear />
-              <Text className={classes.footerText} size="sm">
-                Settings
-              </Text>
-            </UnstyledButton>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {settingsMenuItems?.map((entry) => (
-              <Menu.Item key={entry.key} leftSection={entry.icon} onClick={entry.onClick}>
-                {entry.label}
-              </Menu.Item>
-            ))}
-            {brand.version && (
-              <>
-                <Menu.Divider />
-                <Menu.Label>
-                  {brand.name} v{brand.version}
-                </Menu.Label>
-              </>
-            )}
-          </Menu.Dropdown>
-        </Menu>
-        <Group gap={2} wrap="nowrap" hiddenFrom="sm">
-          {footerExtra}
-          <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close navigation">
-            <IconClose />
-          </ActionIcon>
-        </Group>
-      </Group>
+      {account ? (
+        <Stack gap={0} className={classes.footer}>
+          <SidebarAccount
+            state={account.state}
+            {...(account.actions !== undefined && { actions: account.actions })}
+          />
+          {settingsRow}
+        </Stack>
+      ) : (
+        settingsRow
+      )}
     </Stack>
   )
 }

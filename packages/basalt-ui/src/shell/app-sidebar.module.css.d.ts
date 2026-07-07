@@ -15,6 +15,9 @@ declare const classes: {
   readonly footer: string
   readonly footerBtn: string
   readonly footerText: string
+  readonly accountRow: string
+  readonly accountText: string
+  readonly accountBadges: string
   readonly sectionLabel: string
   readonly sectionBand: string
   readonly sectionHeader: string

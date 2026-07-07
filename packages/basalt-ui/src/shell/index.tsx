@@ -20,9 +20,21 @@ import type { MobileNavItem, MobileNavSection } from './app-mobile-nav'
 import { AppBreadcrumbs } from './app-breadcrumbs'
 import type { BreadcrumbLinkRenderer } from './app-breadcrumbs'
 import { PageActionsOutlet, PageHeaderProvider } from './page-header'
+import type { BasaltAccountProps } from './account-types'
 import headerClasses from './app-header.module.css'
 
 export { AppSidebar, type AppSidebarProps, type NavLinkRenderer } from './app-sidebar'
+export { SidebarAccount } from './app-sidebar-account'
+export type {
+  AccountBadgeTone,
+  BasaltIdentity,
+  BasaltRole,
+  BasaltPlan,
+  AccountMenuItem,
+  BasaltAccountState,
+  BasaltAccountActions,
+  BasaltAccountProps,
+} from './account-types'
 export {
   MobileNav,
   type MobileNavItem,
@@ -101,6 +113,11 @@ export type BasaltShellProps = {
   sidebarFooterExtra?: ReactNode
   /** Entries appended to the sidebar settings menu. */
   settingsMenuItems?: SettingsMenuItem[]
+  /**
+   * Optional account row rendered above the settings menu in the sidebar footer (see
+   * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
+   */
+  account?: BasaltAccountProps
   /** localStorage key for the persisted sidebar-collapsed flag. */
   storageKey?: string
   /**
@@ -209,6 +226,7 @@ export function BasaltShell({
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
   renderBreadcrumbLink,
+  account,
   children,
 }: BasaltShellProps) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
@@ -265,6 +283,7 @@ export function BasaltShell({
             footerExtra={sidebarFooterExtra}
             {...(renderNavLink !== undefined && { renderNavLink })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
+            {...(account !== undefined && { account })}
           />
         </AppShell.Navbar>
 

@@ -19,6 +19,7 @@ export {
   BasaltShell,
   NavCountBadge,
   AppSidebar,
+  SidebarAccount,
   MobileNav,
   AppBreadcrumbs,
   type BreadcrumbLinkRenderer,
@@ -35,6 +36,14 @@ export {
   type MobileNavSection,
   type NavLinkRenderer,
   type MobileNavLinkRenderer,
+  type AccountBadgeTone,
+  type BasaltIdentity,
+  type BasaltRole,
+  type BasaltPlan,
+  type AccountMenuItem,
+  type BasaltAccountState,
+  type BasaltAccountActions,
+  type BasaltAccountProps,
 } from './shell'
 
 // ── Design seam (register.ts) ─────────────────────────────────────────────────────────────────────
