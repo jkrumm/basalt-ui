@@ -44,6 +44,10 @@ that language is historical; see the banner on each.
   operable chart legend, `DataTable` sort, mobile-nav `aria-current`, streaming `aria-live`), agent
   `retry(threadId)` + orphaned-in-flight-thread reconcile, and a documentation cleanup (10 planning
   docs archived to `docs/archive/`, 7 marketing orphans deleted).
+- **Sidebar account** — `SidebarAccount` (a presentational footer row) + a provider-agnostic
+  account contract (`BasaltAccountProps`/`State`/`Actions`) threaded optionally through
+  `AppSidebar`/`BasaltShell`'s `account` prop. No better-auth dependency, no `./auth` subpath — the
+  Better-Auth mapping recipe ships as JSDoc only.
 
 ## Open — the finish line (owner-gated, cannot be closed from source)
 
