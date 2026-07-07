@@ -13,12 +13,20 @@
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
 import { NavLink as MantineNavLink, Text } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from 'basalt-ui'
-import type { BreadcrumbLinkRenderer, NavLinkRenderer, SidebarSection } from 'basalt-ui'
+import type {
+  BasaltAccountActions,
+  BreadcrumbLinkRenderer,
+  NavLinkRenderer,
+  SidebarSection,
+} from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { useCallback, useMemo } from 'react'
+import { AccountDrawer } from '../demo/AccountDrawer'
+import { BillingDrawer } from '../demo/BillingDrawer'
 import {
   IconActivity,
   IconChart,
@@ -29,6 +37,7 @@ import {
   IconSettings,
   IconUser,
 } from '../demo/icons'
+import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -38,6 +47,18 @@ declare const __APP_VERSION__: string
 function RootLayout() {
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
+  const [scenario, setScenario] = useUserScenario()
+  const [accountOpened, accountHandlers] = useDisclosure(false)
+  const [billingOpened, billingHandlers] = useDisclosure(false)
+
+  const accountState = scenarioToAccountState(scenario)
+  const accountActions: BasaltAccountActions = {
+    onSignIn: () => setScenario({ ...scenario, auth: 'signed-in' }),
+    onSignOut: () => setScenario({ ...scenario, auth: 'signed-out' }),
+    onUpgrade: () => setScenario({ ...scenario, plan: 'pro' }),
+    onManageAccount: accountHandlers.open,
+    onManageBilling: billingHandlers.open,
+  }
 
   /** Renders breadcrumb parent segments as client-side TanStack Links. */
   const renderBreadcrumbLink = useCallback<BreadcrumbLinkRenderer>(
@@ -218,6 +239,14 @@ function RootLayout() {
             href: '/threads',
             active: isActive('/threads'),
           },
+          {
+            key: 'user',
+            label: 'User',
+            icon: <IconUser />,
+            href: '/user',
+            active: isActive('/user'),
+            mobile: true,
+          },
         ],
       },
       {
@@ -272,8 +301,11 @@ function RootLayout() {
           basalt-ui playground
         </Text>
       }
+      account={{ state: accountState, actions: accountActions }}
     >
       <Outlet />
+      <AccountDrawer opened={accountOpened} onClose={accountHandlers.close} />
+      <BillingDrawer opened={billingOpened} onClose={billingHandlers.close} />
     </BasaltShell>
   )
 }
