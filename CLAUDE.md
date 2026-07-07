@@ -14,11 +14,11 @@ Astro docs is obsolete — that doctrine no longer applies.
 
 ## Working Instructions
 
-This is **S0 of a 5-stage argo extraction** (S0 repo pivot → S1 toolchain → S2 charts/tokens →
-S3 theme → S4 shell → S5 agentic + vite). `packages/basalt-ui/src/**` is currently **compiling
-stubs** with argo-grounded signatures; real bodies land in S2–S4. The blueprint is
-`docs/archive/BLUEPRINT.md`. Do NOT autonomously execute blueprint stages — only do what is explicitly
-requested.
+The full S0→S5 argo extraction is **implemented** on `feat/s0-mantine-pivot` — `packages/basalt-ui/src/**`
+is real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). The historical plan
+lives in `docs/archive/BLUEPRINT.md`. `docs/STATUS.md` is the live single-source-of-truth for
+current state; `docs/MATURATION-REVIEW.md` is the (now-executed) quality ledger. Do what is
+explicitly requested — don't autonomously execute large roadmap phases.
 
 ## Critical Rules (READ FIRST)
 

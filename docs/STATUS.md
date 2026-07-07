@@ -1,9 +1,11 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-07-05**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-07-07**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `feat/s0-mantine-pivot` (PR-required, unmerged, **15 commits ahead of `origin`**).
+**Branch:** `feat/s0-mantine-pivot` (PR-required, unmerged, pushed to
+`origin/feat/s0-mantine-pivot` on 2026-06-11; many maturation commits have landed since — see
+`git log`).
 **Version:** `1.0.0` in `package.json`, **unpublished** (last npm tag: `v0.4.2`).
 
 ## TL;DR
@@ -13,22 +15,23 @@ line. What's left is the owner-gated **ship sequence** (push → PR → npm Trus
 review → release). The June-era roadmap/handover docs still phrase built work as "remaining" —
 that language is historical; see the banner on each.
 
-## Built (verified as-built, 2026-07-05)
+## Built (verified as-built, 2026-07-07)
 
 - **Spine** — `surfaces.ts` (the SSOT registry), `register.ts` (`BasaltRegister`/`Slot`/`SeriesKey`/
   `AsyncState`), `state.ts` (`createPersistedState`), `guard/` (incl. the `basalt guard-hook`
   PreToolUse adapter; `GUARD_RULES` drives `checkSource`), provider freeze (`BasaltErrorBoundary` +
   `onError` + CSP nonce).
 - **Seven batteries** ship as runtime subpaths: `./query`, `./router-tanstack`, `./agent`,
-  `./commands`, `./forms`, `./notifications`, `./data` — plus `./guard`, `./state`,
-  `./connectivity`, `./llms.txt`. All 15 subpaths resolve in the pack-test.
+  `./commands`, `./forms`, `./notifications`, `./data` (split into `./data/table` +
+  `./data/virtual`) — plus `./guard`, `./state`, `./connectivity`, `./llms.txt`. All 18 subpaths
+  (incl. `./connectivity`) resolve in the pack-test.
 - **Charts / tokens** — config-driven chart system (legend/tooltip/crosshair), `ResponsiveChart` +
   `useChartSize`, the semantic-tier `--vx-*` token keystone, zinc-charcoal palette, motion
   discipline (oxlint + `check-theme` enforced).
 - **Enforcement** — `SURFACES` projects `gen-oxlint` + `gen-llms`; `check-coverage` (8 assertions);
   Mantine-free boundary enforced on headless surfaces; `@visx/*`-only-in-`charts` boundary.
 - **Release gates** (`scripts/pack-test.sh`) — `publint --strict` + `attw` (esm-only) +
-  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 15-subpath resolution.
+  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 18-subpath resolution.
 - **CLI** — `init` · `sync` (+ `--check` drift gate) · `check-theme` · `check-coverage` · `info`
   (+ `--json`) · `doctor` · `guard-hook`.
 - **Agent-DX** — `llms.txt`, `AGENTS.md`, `basalt info --json`, `basalt doctor`; the `basalt`
@@ -36,10 +39,16 @@ that language is historical; see the banner on each.
 - **Resolved owner decisions** — `@visx/*` bumped alpha.11 → **4.0.0 stable** (+ `@visx/responsive`);
   `@tanstack/react-hotkeys@0.10.0` optional peer (live keybinding) shipped; `createForm` →
   `useBasaltForm` rename.
+- **Maturation review executed** (see `MATURATION-REVIEW.md`) — the `./data` split (`./data/table`
+  + `./data/virtual`), `./connectivity` registered in `SURFACES`, an accessibility wave (keyboard-
+  operable chart legend, `DataTable` sort, mobile-nav `aria-current`, streaming `aria-live`), agent
+  `retry(threadId)` + orphaned-in-flight-thread reconcile, and a documentation cleanup (10 planning
+  docs archived to `docs/archive/`, 7 marketing orphans deleted).
 
 ## Open — the finish line (owner-gated, cannot be closed from source)
 
-1. **Push** the 15 commits to `origin/feat/s0-mantine-pivot`.
+1. **Push** the outstanding commits to `origin/feat/s0-mantine-pivot` (pushed to `origin` on
+   2026-06-11; many maturation commits have landed since — see `git log`).
 2. **Open the PR** (basalt-ui is PR-required).
 3. **npm Trusted Publisher** — configure `jkrumm/basalt-ui` → `publish.yml`, then **delete the
    `NPM_TOKEN` GitHub secret**. Without this the OIDC publish 403s.
@@ -48,8 +57,9 @@ that language is historical; see the banner on each.
 
 ## Validation
 
-Last verified green ~**2026-06-21** — before ~15 subsequent commits. **Re-run `bun run pre` +
-pack-test before shipping**; the current tip has not been re-validated.
+Last verified green **2026-07-07** — `bun run pre` (fmt/lint/typecheck), 164 tests, build,
+`check-coverage` (8/8), and pack-test (18 subpaths) all pass on the maturation + docs-cleanup tip.
+**Re-run `bun run pre` + pack-test before shipping** if further commits land.
 
 ## Deferred by design — do NOT build for 1.0
 

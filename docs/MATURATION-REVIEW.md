@@ -1,5 +1,10 @@
 # Basalt UI — Maturation Review (2026-07-06)
 
+> **ALL WAVES EXECUTED (2026-07-07)** — every task (T01–T32) is complete (commits `7783adb`,
+> `4de05ad`, `3be610c`, `b16d3fe`). This document is retained as a historical ledger;
+> `docs/STATUS.md` is the live SSOT. The §4 findings and §5 tasks below are DONE — read them as
+> provenance, not an action list.
+
 > Actionable synthesis of a multi-agent maturation pass over the working tree of
 > `feat/s0-mantine-pivot`. Aligns with [`STATUS.md`](./STATUS.md) — it does not re-open the
 > owner-gated finish line (push · PR · npm Trusted Publisher · review · release) or re-propose
