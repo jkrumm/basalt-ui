@@ -92,6 +92,7 @@ const subpaths = [
   'basalt-ui/data/table',
   'basalt-ui/data/virtual',
   'basalt-ui/agent',
+  'basalt-ui/connectivity',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -120,7 +121,7 @@ if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAge
 if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
-console.log('scratch resolution OK (17 subpaths)')
+console.log('scratch resolution OK (18 subpaths)')
 JS
 node test.mjs
 

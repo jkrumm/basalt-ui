@@ -42,8 +42,9 @@ createRoot(root).render(
 <BasaltNotifications position="top-right" autoClose={3000} limit={3} />
 ```
 
-NOTE: The composable `<BasaltOverlays>` (combining notifications + modals + commands in one mount)
-arrives with the `./commands` battery — until then, mount `<BasaltNotifications />` directly.
+NOTE: `BasaltOverlays` (from `basalt-ui/commands`) is the shipped composable mount that wires
+notifications together with spotlight/modals in one place. A standalone `<BasaltNotifications />`
+remains available for apps that don't use the overlays layer.
 
 ## notify
 

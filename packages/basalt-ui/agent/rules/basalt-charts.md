@@ -25,9 +25,9 @@ downstream apps too:
   `curveMonotoneX`, …) — keep the dependency declared in one place.
 - **`@visx/tooltip` is banned everywhere.** Use `ChartTooltip` + `TooltipHeader`/`TooltipRow`/
   `TooltipBody` from `basalt-ui/charts`.
-- **`charts/**`must be Mantine-free** — no`@mantine/\*`imports. Bridge the Mantine color scheme to
-charts in exactly one file (see basalt-mantine.md, the VxBridge pattern); route components import
-chart primitives directly from`basalt-ui/charts`, never from the bridge file.
+- **The `src/charts/` tree must be Mantine-free** — no `@mantine/*` imports. Bridge the Mantine
+  color scheme to charts in exactly one file (see basalt-mantine.md, the VxBridge pattern); route
+  components import chart primitives directly from `basalt-ui/charts`, never from the bridge file.
 
 ## Every chart has
 

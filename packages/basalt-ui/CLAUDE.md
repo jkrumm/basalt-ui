@@ -20,15 +20,28 @@ in `../../docs/archive/BLUEPRINT.md`.
 
 ## Published surface (subpath exports)
 
-| Subpath        | Mantine? | Contents                                                                                                                                                                                    |
-| -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`            | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `ThemeToggle`, shell types |
-| `./charts`     | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                               |
-| `./tokens`     | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                            |
-| `./theme-lab`  | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                                        |
-| `./vite`       | —        | `basaltViteConfig(opts)`                                                                                                                                                                    |
-| `./styles.css` | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                               |
-| `./configs/*`  | —        | raw toolchain presets (real file paths — `extends` needs them)                                                                                                                              |
+| Subpath             | Mantine? | Contents                                                                                                                                                                                            |
+| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `ThemeToggle`, shell types         |
+| `./charts`          | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                                       |
+| `./tokens`          | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                                    |
+| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                                                |
+| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                       |
+| `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                 |
+| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic unwrap, lazy `BasaltQueryDevtools`                                                                                                                    |
+| `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                                                      |
+| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                |
+| `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                      |
+| `./commands`        | coupled  | typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                                                     |
+| `./data`            | coupled  | convenience barrel pulling both TanStack Table + Virtual peer groups: `BasaltDataTable`, `BasaltVirtualList` — prefer `./data/table` or `./data/virtual` for per-feature opt-in                     |
+| `./data/table`      | coupled  | `BasaltDataTable` — a sortable data table over TanStack Table, rendered with Mantine                                                                                                                |
+| `./data/virtual`    | coupled  | `BasaltVirtualList` — a windowed virtual list over TanStack Virtual, rendered with Mantine                                                                                                          |
+| `./agent`           | **free** | headless streaming-chat layer: `useAgentStream`, `edenTransport`, `PartList`, plus the multi-thread `createThreadsStore` + `useAgentThreadRuns` + outcome-resolver seam                             |
+| `./connectivity`    | coupled  | `ConnectivityProvider` (aggregates browser online/offline, React Query `onlineManager`, SSE, and health-check pings), `useConnectivity`, `ConnectivityIndicator` — auto-mounted by `BasaltProvider` |
+| `./vite`            | —        | `basaltViteConfig(opts)`                                                                                                                                                                            |
+| `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                       |
+| `./configs/*`       | —        | raw toolchain presets (real file paths — `extends` needs them)                                                                                                                                      |
+| `./llms.txt`        | —        | machine-readable surface map — one entry per published subpath with import specifier, description, layer, optional peers                                                                            |
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
@@ -83,7 +96,9 @@ false` are required.
 
 - **deps**: 9 `@visx/*` pinned **exact** at stable `4.0.0` (`axis`, `curve`, `event`, `grid`,
   `group`, `responsive`, `scale`, `shape`, `threshold`).
-- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`.
+- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`. Battery
+  subpaths declare their own **optional** peers (e.g. `@tanstack/*`, `@mantine/form|modals|notifications|spotlight`,
+  `vite`, the markdown trio) — see `AGENTS.md`.
 - **`motion`** pinned exact at `12.42.0` — the framework's one animation dependency (bundled
   implementation detail of shipped components, same precedent as `@visx/*`; not a peer). See
   "Motion" below.
@@ -202,7 +217,8 @@ durations/easings scattered per component.
 
 ## CLI (`basalt`)
 
-One bin: `basalt init | sync | check-theme` (Bun runtime).
+One bin: `basalt init | sync | check-theme | check-coverage | info | doctor | guard-hook`
+(Bun runtime).
 
 - `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
   palette. Reads config from the consumer package.json `"basalt"` key
@@ -215,6 +231,14 @@ One bin: `basalt init | sync | check-theme` (Bun runtime).
   `.basalt/manifest.json` via a sha256 three-way diff (copy/block/seed strategies; `--check` is a
   CI drift gate, `--force` overwrites local edits). `init` does NOT write `.claude/settings.json` —
   the plugin installs at user scope, not per project.
+- `check-coverage` — **framework-internal only**, a self-consistency gate for the basalt-ui repo
+  itself (asserts SURFACES ↔ plugin.json ↔ rule files ↔ package.json exports); not a consumer
+  command and skips assertion 3 outside the framework repo.
+- `info` (+ `--json`) — prints the published surface map; `--json` emits a stable JSON form.
+- `doctor` — checks a consumer repo's basalt integration health.
+- `guard-hook` — PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies
+  off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
+  `Write|Edit|MultiEdit` and command `bunx basalt guard-hook`.
 
 ## Toolchain (oxlint + oxfmt — not Biome/Prettier)
 
