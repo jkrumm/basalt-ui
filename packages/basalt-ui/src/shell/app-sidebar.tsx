@@ -53,8 +53,9 @@ export type AppSidebarProps = {
   /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
   footerExtra?: ReactNode
   /**
-   * Optional account row rendered above the settings menu in the sidebar footer (see
-   * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
+   * Optional account row rendered below the settings menu in the sidebar footer (see
+   * `SidebarAccount` / `BasaltAccountProps`), separated by its own top hairline. Omitting it
+   * reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps
 }
@@ -399,7 +400,7 @@ export function AppSidebar({
     ))
 
   // The settings-menu row is unchanged; only its wrapper's class moves onto the outer footer
-  // Stack when `account` is rendered above it, so omitting `account` reproduces today's footer
+  // Stack when `account` is rendered below it, so omitting `account` reproduces today's footer
   // markup byte-for-byte (no extra wrapper element).
   const settingsRow = (
     <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
@@ -506,11 +507,12 @@ export function AppSidebar({
 
       {account ? (
         <Stack gap={0} className={classes.footer}>
+          {settingsRow}
           <SidebarAccount
             state={account.state}
             {...(account.actions !== undefined && { actions: account.actions })}
+            {...(account.showEmail !== undefined && { showEmail: account.showEmail })}
           />
-          {settingsRow}
         </Stack>
       ) : (
         settingsRow

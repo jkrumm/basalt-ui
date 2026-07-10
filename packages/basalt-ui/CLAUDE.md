@@ -220,8 +220,11 @@ over a provider-agnostic contract (`account-types.ts`: `BasaltAccountState` — 
 unauthenticated / authenticated identity+role+plan — plus `BasaltAccountActions`). basalt-ui has
 **no** auth dependency and ships **no** `./auth` subpath — the consumer maps its real auth client
 (Better Auth, Clerk, …) into this shape; the Better-Auth mapping recipe lives as JSDoc on
-`BasaltAccountProps` only. Pass `account` to `BasaltShell`/`AppSidebar` to render it above the
-settings menu; omitting it reproduces the pre-existing footer unchanged.
+`BasaltAccountProps` only. Pass `account` to `BasaltShell`/`AppSidebar` to render it below the
+settings menu (separated by its own top hairline); omitting it reproduces the pre-existing footer
+unchanged. The row shows a generic, non-personalized "person" icon (never an avatar/photo/initials)
+with plan/role badges nested under the name; the email is hidden unless `showEmail` is passed
+(privacy default).
 
 ## CLI (`basalt`)
 

@@ -86,8 +86,9 @@
 
 /*
  * Sidebar account row (SidebarAccount) — mirrors the footer settings row's geometry (padding,
- * icon/avatar gap, neutral hover) so the account row reads as another footer row, not a bolted-on
- * widget.
+ * icon gap, neutral hover) so the account row reads as another footer row, not a bolted-on widget.
+ * The top hairline separates it from the settings row rendered above it (app-sidebar.tsx renders
+ * settingsRow first, SidebarAccount second) — same `--vx-surface-border` token as `.footer`/`.brand`.
  */
 .accountRow {
   flex: 1;
@@ -97,6 +98,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 0;
+  border-top: 1px solid var(--vx-surface-border);
 }
 
 .accountRow:hover {
@@ -109,8 +111,10 @@
   text-align: left;
 }
 
+/* Badges now render as a row inside `.accountText` (below the name/email), not beside the icon —
+ * a small top margin separates them from the text above. */
 .accountBadges {
-  flex: none;
+  margin-top: 2px;
 }
 
 /*
@@ -231,14 +235,13 @@
     display: none;
   }
 
-  /* Account row stays clickable when collapsed (no pointer-events: none) — only its text/badges
-   * hide, the avatar (and the Menu it opens) keeps working. */
+  /* Account row stays clickable when collapsed (no pointer-events: none) — only its text (and the
+   * badges nested inside it) hide, the icon (and the Menu it opens) keeps working. */
   .root[data-collapsed] .accountRow {
     justify-content: center;
   }
 
-  .root[data-collapsed] .accountText,
-  .root[data-collapsed] .accountBadges {
+  .root[data-collapsed] .accountText {
     display: none;
   }
 

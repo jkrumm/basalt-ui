@@ -10,7 +10,9 @@ import type { ReactNode } from 'react'
  * layers, so this is defined locally. */
 export type AccountBadgeTone = 'neutral' | 'brand' | 'success' | 'warn'
 
-/** The signed-in user's identity. `image` is nullable — `SidebarAccount` falls back to initials. */
+/** The signed-in user's identity. `image` is nullable and currently unused by `SidebarAccount`
+ * (which renders a generic, non-personalized icon rather than an avatar/initials) — kept on the
+ * contract for consumers that surface it elsewhere (e.g. an account settings page). */
 export type BasaltIdentity = {
   id: string
   name: string
@@ -109,4 +111,9 @@ export type BasaltAccountActions = {
 export type BasaltAccountProps = {
   state: BasaltAccountState
   actions?: BasaltAccountActions
+  /**
+   * Renders the identity's email beneath the name. Defaults to false — hidden by default since a
+   * consumer app on a shared screen/screenshot may not want the email visible.
+   */
+  showEmail?: boolean
 }
