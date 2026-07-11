@@ -24,6 +24,7 @@ import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
+import { padAutoLower } from '../utils/domain'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 /** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias for back-compat. */
@@ -73,7 +74,9 @@ export type ZonedLineProps<T> = {
    * number (or Infinity to disable) for metrics that can legitimately swing both ways.
    */
   yAutoMinCeil?: number
-  /** Padding multiplier applied to auto-computed bounds (away from zero). Default 1.1. */
+  /** Padding multiplier applied to auto-computed bounds. Default 1.1. The lower bound always pads
+   * DOWN from `min(dataMin, yAutoMinCeil)` (never up, which would clip data) — see
+   * {@link padAutoLower}. */
   yAutoPad?: number
   zones?: ZonedLineZone[]
   thresholds?: ZonedLineThreshold[]
@@ -203,7 +206,7 @@ function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
       const dataMax = ys.length ? Math.max(...ys) : 0
       const dataMin = ys.length ? Math.min(...ys) : 0
       const upper = Math.max(dataMax, yAutoMaxFloor ?? dataMax) * yAutoPad
-      const lower = Math.min(dataMin, yAutoMinCeil) * yAutoPad
+      const lower = padAutoLower(Math.min(dataMin, yAutoMinCeil), yAutoPad)
       return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
     }
     return scaleLinear<number>({ domain: yDomain, range: [yMax, 0] })

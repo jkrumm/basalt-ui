@@ -119,6 +119,12 @@ export const VX = {
   dotStroke: 'var(--vx-dotStroke)',
   legendText: 'var(--vx-legendText)',
 
+  // Tooltip chrome — muted (secondary) text inside a bespoke tooltip. The other tooltip vars
+  // (bg/text/border/shadow) are only exposed via `useVxTheme()` (see `charts/theme.tsx`); this
+  // one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
+  // general ink-ramp muted) instead and got the wrong token — same pattern as `VX.muted` below.
+  tooltipMuted: 'var(--vx-tooltipMuted)',
+
   // Base neutral for hairlines / muted text / overlays — apply opacity via alpha()
   neutral: 'var(--vx-neutral)',
 

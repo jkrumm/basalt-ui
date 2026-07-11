@@ -22,6 +22,7 @@ import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
+import { padAutoLower } from '../utils/domain'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 export type BarsBar = {
@@ -64,7 +65,8 @@ export type BarsRefLine = {
 export type BarsAxisConfig = {
   /** Fixed [min, max] or 'auto' (computed from bars + lines + zones + refLines on this axis). */
   domain: [number, number] | 'auto'
-  /** Auto-domain padding multiplier away from zero. Default 1.1. */
+  /** Auto-domain padding multiplier. Default 1.1. The lower bound always pads DOWN from
+   * `min(dataMin, autoMinCeil)` (never up, which would clip data) — see {@link padAutoLower}. */
   autoPad?: number
   /** Auto-domain lower bound ceiling — never above this. Default 0. */
   autoMinCeil?: number
@@ -322,7 +324,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
       }
       const upper = Math.max(maxSum, leftAxis.autoMaxFloor ?? maxSum) * autoPad
       const ceil = leftAxis.autoMinCeil ?? 0
-      const lower = Math.min(minSum, ceil) * autoPad
+      const lower = padAutoLower(Math.min(minSum, ceil), autoPad)
       return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
     }
     return scaleLinear<number>({ domain: leftAxis.domain, range: [yMax, 0] })
@@ -368,7 +370,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
       const safeMin = Number.isFinite(min) ? min : 0
       const upper = Math.max(safeMax, rightAxis.autoMaxFloor ?? safeMax) * autoPad
       const ceil = rightAxis.autoMinCeil ?? 0
-      const lower = Math.min(safeMin, ceil) * autoPad
+      const lower = padAutoLower(Math.min(safeMin, ceil), autoPad)
       return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
     }
     return scaleLinear<number>({ domain: rightAxis.domain, range: [yMax, 0] })

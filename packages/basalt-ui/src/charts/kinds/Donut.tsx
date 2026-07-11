@@ -9,13 +9,18 @@ import { VX } from '../../tokens'
 import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
 
-export type DonutDatum = { key: SeriesKey; value: number }
+/**
+ * `K` defaults to the registered `SeriesKey` union for ergonomic inference on the common case (one
+ * registered series map) — pass a wider `K` (or let it infer from `data`/`colorForKey`) for a
+ * multi-domain map that isn't the registered slot, no `as DonutDatum[]` cast required.
+ */
+export type DonutDatum<K extends string = SeriesKey> = { key: K; value: number }
 
-export type DonutProps = {
-  data: DonutDatum[]
+export type DonutProps<K extends string = SeriesKey> = {
+  data: DonutDatum<K>[]
   /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
   height?: number
-  colorForKey: (key: SeriesKey) => string
+  colorForKey: (key: K) => string
   formatValue: (v: number) => string
   seriesLabel?: (key: string) => string
   centerLabel?: string
@@ -58,7 +63,7 @@ export type DonutProps = {
  * `HoverContext`: a date-keyed cursor has no counterpart on a donut, and cross-kind category sync
  * (donut ↔ bar, via the generalized key) is a distinct, deliberately deferred feature.
  */
-function DonutInner(props: DonutProps) {
+function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
   const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel } = props
 
   const series: SeriesStyle[] = data.map((d) => ({
@@ -79,13 +84,13 @@ function DonutInner(props: DonutProps) {
   )
 }
 
-type DonutPlotProps = DonutProps & {
+type DonutPlotProps<K extends string = SeriesKey> = DonutProps<K> & {
   plot: { width: number; height: number }
 }
 
 /** The measured plot — split from {@link DonutInner} so it only draws once `ChartFrame` has
  * resolved a non-empty plot rect (radius/center depend on the measured size). */
-function DonutPlot(props: DonutPlotProps) {
+function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
   const {
     data,
     plot,
@@ -102,7 +107,7 @@ function DonutPlot(props: DonutPlotProps) {
 
   const tooltipStyles = useTooltipStyles()
 
-  const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum>()
+  const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum<K>>()
   const hoveredKey = tip?.data.key ?? null
 
   const radius = Math.min(width, height) / 2 - 4
@@ -116,7 +121,7 @@ function DonutPlot(props: DonutPlotProps) {
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
         <Group left={centerX} top={centerY}>
-          <Pie<DonutDatum>
+          <Pie<DonutDatum<K>>
             data={data}
             pieValue={(d) => d.value}
             pieSortValues={() => 0}

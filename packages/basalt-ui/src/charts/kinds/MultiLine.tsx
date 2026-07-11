@@ -22,6 +22,7 @@ import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
+import { padAutoLower } from '../utils/domain'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 export type MultiLineProps<T> = {
@@ -38,9 +39,12 @@ export type MultiLineProps<T> = {
   yDomain: [number, number] | 'auto'
   /** When 'auto': upper bound is at least this value. */
   yAutoMaxFloor?: number
-  /** When 'auto': lower bound is at most this value. Default 0. */
+  /** When 'auto': lower bound is at most this value. Default 0. Pass `Infinity` to disable the
+   * forced zero baseline — the lower bound then pads DOWN from the raw data minimum instead. */
   yAutoMinCeil?: number
-  /** When 'auto': padding multiplier away from zero. Default 1.1. */
+  /** When 'auto': padding multiplier applied away from the domain. Default 1.1. The lower bound
+   * always pads DOWN from `min(dataMin, yAutoMinCeil)` (never up, which would clip data) — see
+   * {@link padAutoLower}. */
   yAutoPad?: number
   /** Horizontal value-range overlays (target zones), rendered behind the lines on the left scale. */
   zones?: ZoneSpec[]
@@ -191,7 +195,7 @@ function MultiLinePlot<T>(props: MultiLinePlotProps<T>) {
       const safeMax = Number.isFinite(dataMax) ? dataMax : 0
       const safeMin = Number.isFinite(dataMin) ? dataMin : 0
       const upper = Math.max(safeMax, yAutoMaxFloor ?? safeMax) * yAutoPad
-      const lower = Math.min(safeMin, yAutoMinCeil) * yAutoPad
+      const lower = padAutoLower(Math.min(safeMin, yAutoMinCeil), yAutoPad)
       return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
     }
     return scaleLinear<number>({ domain: yDomain, range: [yMax, 0] })
