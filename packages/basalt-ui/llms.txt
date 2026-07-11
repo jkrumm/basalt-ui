@@ -19,7 +19,7 @@ Version: 1.0.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, SidebarAccount + the provider-agnostic account contract (BasaltAccountProps/State/Actions), ThemeToggle, ThreadWorkspace + thread-chat components
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard, EmptyState, SettingsSection/SettingsRow/DangerZone)
 Layer: mantine-coupled
 Rule: basalt-mantine
 
