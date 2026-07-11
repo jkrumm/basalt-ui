@@ -61,35 +61,52 @@ A Claude Code plugin cannot write project context (`CLAUDE.md`, `.claude/rules/`
 
 ## Wire the runtime
 
-After `bunx basalt init`, wire the provider, shell, and vite preset:
+After `bunx basalt init`, wire the provider, overlays, and vite preset. This mirrors the canonical
+reference, `apps/playground/src/main.tsx`:
 
 ```tsx
 // main.tsx — plain Vite CSR entry. BasaltProvider defaults to the dark color scheme and reads any
 // stored scheme from localStorage before mount, so a client-only app needs no ColorSchemeScript.
-import { createRoot } from 'react-dom/client'
-import { App } from './App'
-
-createRoot(document.getElementById('root')!).render(<App />)
-```
-
-> Use the **layered** `styles.layer.css` bundle, not the plain `styles.css` — Mantine's unlayered
-> bundle outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless
-> of specificity.
-
-```tsx
-// Provider — wraps MantineProvider, injects the --vx-* palette, bridges the Vx tokens
 import '@mantine/core/styles.layer.css'
+import '@mantine/notifications/styles.layer.css'
+import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'
 import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
+import { BasaltOverlays } from 'basalt-ui/commands'
+import { applyOverrides, loadOverrides } from 'basalt-ui/theme-lab'
+import { createRoot } from 'react-dom/client'
+import { App } from './App'
+import { paletteGroups } from './theme/series'
+
+// The theme lab owns only the editing UI — the host re-applies any persisted overrides at boot, so
+// a tuning session survives a refresh.
+applyOverrides(loadOverrides())
 
 const theme = createBasaltTheme({
   /* app deltas only */
 })
 
-export function App() {
-  return <BasaltProvider theme={theme}>{/* app */}</BasaltProvider>
-}
+createRoot(document.getElementById('root')!).render(
+  <BasaltProvider theme={theme} paletteOptions={{ groups: paletteGroups }}>
+    <BasaltOverlays>
+      <App />
+    </BasaltOverlays>
+  </BasaltProvider>,
+)
 ```
+
+> Use the **layered** `*.layer.css` bundles, never the plain ones — Mantine's unlayered bundle
+> outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless of
+> specificity. Only import `@mantine/notifications/styles.layer.css` /
+> `@mantine/spotlight/styles.layer.css` if you install those optional-peer batteries
+> (`./notifications` / `./commands` — see [Adapter batteries](#adapter-batteries) below).
+
+`BasaltOverlays` (from `basalt-ui/commands`) is the composable overlay mount: it bundles
+`ModalsProvider`, `Spotlight`, and `Notifications` into a single mount point and replaces a
+standalone `<BasaltNotifications />`. `paletteOptions={{ groups: paletteGroups }}` emits your
+app-specific series colors (see
+[Consumer-series extensibility](#consumer-series-extensibility) below) alongside the framework
+palette. Skip both — `BasaltOverlays` and `paletteGroups` — if you don't use those batteries yet.
 
 > **SSR only:** Next.js / React Router (SSR) consumers must additionally render
 > `<ColorSchemeScript defaultColorScheme="dark" />` (matching `BasaltProvider`'s default) in the
@@ -108,6 +125,14 @@ import { basaltViteConfig } from 'basalt-ui/vite'
 
 export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' })
 ```
+
+> **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
+> basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt` always resolves
+> `bin/basalt.mjs` → `dist/cli/index.js`, even though the _runtime_ import can ride
+> `basaltViteConfig`'s `BASALT_LOCAL`/`basaltSrc` source aliasing above. And in a monorepo, add
+> `basalt-ui` as a **root** devDependency (not only a leaf-workspace dep) so its bin hoists into the
+> root `node_modules/.bin` — otherwise `bunx basalt` silently resolves the stale published package
+> from npm instead of your local checkout.
 
 ```ts
 // Lint — theme guard is the teeth behind the token doctrine

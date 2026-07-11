@@ -23,8 +23,9 @@ workflows are in the `basalt` plugin (`/basalt:design`, `/basalt:charts`) — th
 
 **Restraint override (supersedes `/frontend-design`).** This app is a calm, data-dense,
 dark-first professional surface — not a showcase. Ignore `/frontend-design`'s push toward a "BOLD
-aesthetic direction", distinctive display fonts, gradient meshes, noise/grain, decorative
-shadows, and dramatic motion. Here: system-sans by size+weight, mono numbers, hairline elevation
-(no drop shadows), neutral-by-default with color spent only when earned (trend / signal /
-categorical separation). Restraint **is** the identity.
+aesthetic direction", gradient meshes, noise/grain, and dramatic motion. Here: the shipped
+three-font system (Nunito Sans body, Hubot Sans condensed headings, JetBrains Mono for every
+numeral/micro-label), depth via `shadow-card` (a whisper shadow + 1px ring, never a decorative drop
+shadow), neutral zinc-by-default with the single saturated accent spent only when earned (trend /
+signal / categorical separation). Restraint **is** the identity.
 <!-- basalt:end -->
