@@ -2,81 +2,143 @@
  * Neutral nav styling. "Ink earns its color" (DESIGN.md): a nav selection is UI state, not a data
  * signal, so the active item is a quiet neutral surface fill — never the identity accent.
  *
- * The NavLink fill, padding, min-height, radius and active font-weight ALL live in the Mantine
- * theme (`NavLink.extend` in theme/index.ts) so they apply to EVERY render path, including a
+ * The mock sidebar has ZERO horizontal rules — separation comes from SPACING only. The one allowed
+ * line is the child-list left guide (`--vx-divider`). Never reintroduce brand/section/footer
+ * borders.
+ *
+ * The active fill, shadow-card depth and icon-accent color live in the Mantine theme
+ * (`NavLink.extend` + `theme/nav-link.module.css`) so they apply to EVERY render path, including a
  * consumer's router `<Link>` via `renderNavLink` (which never sees this CSS module). This module
- * owns only shell-local trim — font-size, the icon gap, and the collapsed icon-rail layout — and
- * must NOT re-declare the themed geometry (single source = the theme).
+ * owns the shell-local layout (docs/DESIGN-SPEC.md §5) and the INACTIVE state (muted text, faint
+ * icon, ink-6% hover) — the active state is left to the theme.
+ *
+ * `!important` below: these rules compete with Mantine's own compiled NavLink stylesheet and the
+ * theme's inline `styles`, whose cascade position relative to this CSS module isn't guaranteed by
+ * a consuming app's bundler — `!important` makes the override deterministic.
  */
-/* Compact, dense nav rows (Linear/Notion). The row geometry — padding, min-height, radius, active
- * font-weight — is single-sourced in the theme `NavLink.extend` (theme/index.ts) so it reaches
- * EVERY render path, including a consumer's router `<Link>` via `renderNavLink`. This module owns
- * only the shell-local font-size + icon gap on its own fallback `<NavLink>`. */
+
+/* Sidebar frame — the ~10px inner horizontal padding every region (brand/nav/footer) sits in. */
+.root {
+  padding: 0 10px;
+}
+
 .link {
-  font-size: var(--mantine-font-size-sm);
+  font-size: var(--vx-text-md);
+  border-radius: 6px !important;
 }
 
 .link :global(.mantine-NavLink-label) {
-  font-size: var(--mantine-font-size-sm);
+  font-size: var(--vx-text-md);
 }
 
 .link :global(.mantine-NavLink-section[data-position='left']) {
-  margin-inline-end: 8px;
+  margin-inline-end: 10px;
+}
+
+/* Inactive rows: muted text + faint icon. Active rows keep the theme's ink text (via `--nl-color`)
+ * untouched — this selector only ever matches when neither `data-active` nor `aria-current="page"`
+ * is present. */
+.link:not([data-active]):not([aria-current='page']) {
+  color: var(--vx-muted) !important;
+}
+
+.link:not([data-active]):not([aria-current='page'])
+  :global(.mantine-NavLink-section[data-position='left']) {
+  color: var(--vx-faint);
+}
+
+/* Hover — ink-6% tint + ink text, for inactive rows only (an active row already carries the
+ * theme's panel/shadow-card treatment and keeps its own hover via `--nl-hover`). */
+@media (hover: hover) {
+  .link:not([data-active]):not([aria-current='page']):hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+    color: var(--vx-ink) !important;
+  }
+
+  .link:not([data-active]):not([aria-current='page']):hover
+    :global(.mantine-NavLink-section[data-position='left']) {
+    color: var(--vx-ink);
+  }
 }
 
 /*
- * Brand header — a FIXED separator: a bottom hairline (mirrors the footer's `Divider`) delimits the
- * logo from the scrollable nav, so content scrolls cleanly beneath a persistent header rule. Its
- * height is pinned (h={48}) to match the top header bar so the two bottom borders form one continuous
- * line across the shell.
+ * Icon-only ghost buttons in shell chrome (collapse toggle, mobile close) — docs/DESIGN-SPEC.md
+ * §5: transparent, faint icon, hover ink-6% + ink, radius 6. `!important` for the same reason as
+ * the nav-row overrides above: these compete with Mantine's own compiled ActionIcon variant CSS.
+ */
+.ghostIcon {
+  color: var(--vx-faint) !important;
+  border-radius: 6px !important;
+}
+
+.ghostIcon:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+  color: var(--vx-ink) !important;
+}
+
+/*
+ * Brand row — NO border (the mock's brand row has none; the header divider exists only over the
+ * content column). Spacing alone (12px bottom padding) separates it from the nav.
  */
 .brand {
   justify-content: space-between;
-  border-bottom: 1px solid var(--vx-surface-border);
+  padding: 3px 8px 12px;
   flex-shrink: 0;
-}
-
-/*
- * The first section's own top border is redundant — the fixed brand border above already opens the
- * region. Drop it (and its 1px overlap pull) so there's exactly one hairline under the logo.
- */
-.nav > div:first-child .sectionBand {
-  margin-top: 0;
-  border-top: none;
 }
 
 .brandLead {
   min-width: 0;
 }
 
-/*
- * Footer region — a full-bleed top hairline separates it from the nav. NOT a Mantine `Divider`,
- * whose `my` margins wrapped the line in a dark band above the footer; the border sits flush and the
- * footer row's own padding supplies the spacing, so it lines up with the nav rows.
- */
-.footer {
-  flex-shrink: 0;
-  border-top: 1px solid var(--vx-surface-border);
+/* Brand name — head font at stretch 88% (docs/DESIGN-SPEC.md §3); the 18px/550 land as `fz`/`fw`
+ * props (inline, deterministic against Mantine's own Text base rule). */
+.brandName {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+}
+
+/* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand
+ * row's own bottom padding already opens the region). */
+.nav > div + div {
+  margin-top: 15px;
 }
 
 /*
- * Footer settings row — mirrors Mantine's resolved NavLink geometry (padding 8px 12px, 12px icon
- * gap, 18px icon, square corners, 6% neutral hover) so it reads as one of the nav rows rather than a
- * separate control. (The theme's `--nl-*` vars don't drive NavLink padding in v9 — the row renders
- * Mantine's default 8px/12px — so these are matched to the computed values, not the token.)
+ * Footer region — no border; the account row's own top padding supplies the separation.
+ */
+.footer {
+  flex-shrink: 0;
+}
+
+/*
+ * Footer settings row — IDENTICAL geometry to a nav row (padding 6px 10px, radius 6, gap 10,
+ * 13px): muted text + faint icon at rest, ink-6% tint + ink on hover, exactly like an inactive
+ * nav item, so the footer never reads as a separate control family.
  */
 .footerBtn {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 0;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: var(--vx-text-md);
+  color: var(--vx-muted);
+}
+
+.footerBtn > svg {
+  flex: none;
+  color: var(--vx-faint);
 }
 
 .footerBtn:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 6%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+  color: var(--vx-ink);
+}
+
+.footerBtn:hover > svg {
+  color: var(--vx-ink);
 }
 
 .footerText {
@@ -85,10 +147,8 @@
 }
 
 /*
- * Sidebar account row (SidebarAccount) — mirrors the footer settings row's geometry (padding,
- * icon gap, neutral hover) so the account row reads as another footer row, not a bolted-on widget.
- * The top hairline separates it from the settings row rendered above it (app-sidebar.tsx renders
- * settingsRow first, SidebarAccount second) — same `--vx-surface-border` token as `.footer`/`.brand`.
+ * Sidebar account row (SidebarAccount) — mock footer geometry: padding 11px 8px 3px, gap 10, NO
+ * border; hover = the same ink-6% tint as every other row, rounded 6.
  */
 .accountRow {
   flex: 1;
@@ -96,13 +156,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  border-radius: 0;
-  border-top: 1px solid var(--vx-surface-border);
+  padding: 11px 8px 3px;
+  border-radius: 6px;
 }
 
 .accountRow:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 6%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
 }
 
 .accountText {
@@ -111,75 +170,139 @@
   text-align: left;
 }
 
-/* Badges now render as a row inside `.accountText` (below the name/email), not beside the icon —
- * a small top margin separates them from the text above. */
-.accountBadges {
-  margin-top: 2px;
+/*
+ * Identity initials block (docs/DESIGN-SPEC.md §5): 28px, radius 7, ink-10% bg, mono 10.5px
+ * weight 500, muted — replaces the generic person glyph for the authenticated state.
+ */
+.avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
+  color: var(--vx-muted);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+}
+
+/* Identity name — weight 600, ink. */
+.accountName {
+  font-size: var(--vx-text-md);
+  font-weight: 600;
+  color: var(--vx-ink);
+}
+
+/* Meta line under the name (email / "FREE · MEMBER") — mono 9.5px, uppercase, faint, tracked
+ * 0.03em. */
+.accountMeta {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--vx-faint);
 }
 
 /*
- * Framed section band — THE region separator. A full-bleed hairline top/bottom rule (no resting
- * fill) delimits each nav region. Both the static label and the collapsible header button share the
- * frame; only the button (`.sectionHeader`) adds a pointer, a hover lift and a trailing chevron. The
- * SectionLabel inside is rendered `flush` so the band OWNS the padding — the label then lines up with
- * the nav-item icon column.
+ * Section-header micro-label (docs/DESIGN-SPEC.md §3): mono micro step, uppercase, tracked 0.08em,
+ * weight 500, faint.
+ */
+.sectionLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vx-faint);
+}
+
+/*
+ * Section label row — a PLAIN label row: no band, no borders, no background fill. Padding 0 10px
+ * aligns the label with the nav-item icon column; 3px separates it from the first row. The
+ * SectionLabel inside renders `flush` so this row owns the padding.
  */
 .sectionBand {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 9px 8px;
-  /* Pull each band up 1px so its top border overlaps whatever sits directly above it. When a
-   * collapsed section (zero trailing height) is followed by the next band, the two hairlines
-   * coincide into ONE shared border instead of a doubled line. Against an expanded section's items
-   * it just nudges into the padding — no visible effect. */
-  margin-top: -1px;
-  border-top: 1px solid var(--vx-surface-border);
-  border-bottom: 1px solid var(--vx-surface-border);
+  padding: 0 10px;
+  margin-bottom: 3px;
 }
 
 .sectionBand > svg {
   flex: none;
 }
 
-/* Collapsible variant — interactive: dimmed chevron stroke, pointer, a hover lift over the fill. */
+/* Collapsible variant — the label row stays plain but clickable: a small faint trailing chevron
+ * (stroke = currentColor) and a subtle hover that inks the TEXT only — no fill, no band. */
 .sectionHeader {
-  color: var(--mantine-color-dimmed);
+  color: var(--vx-faint);
   cursor: pointer;
 }
 
 .sectionHeader:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 11%, transparent);
+  color: var(--vx-ink);
+}
+
+.sectionHeader:hover .sectionLabel {
+  color: var(--vx-ink);
 }
 
 /*
- * Inline child items — same alignment as parent items, one size smaller. A thin left guide line
- * on each child NavLink replaces indentation so the active-state indicator stays at the root edge.
+ * Inline child items — indent under the parent with the ONE allowed sidebar line: a 1px
+ * `--vx-divider` left guide on the WRAPPER (not per row, so hover tints don't break the line).
  */
 .childList {
-  /* no indent */
+  margin: 2px 0 4px 17px;
+  border-left: 1px solid var(--vx-divider);
 }
 
+/* Child row geometry — one size smaller than a parent row. The theme sets padding inline
+ * (6px 10px), so the child value needs `!important`. */
 .childList :global(.mantine-NavLink-root) {
-  border-left: 2px solid var(--vx-surface-border);
+  padding: 5px 10px 5px 14px !important;
+  border-radius: 6px !important;
 }
 
 .childList :global(.mantine-NavLink-label) {
-  font-size: var(--mantine-font-size-xs);
+  font-size: var(--vx-text-sm);
 }
 
-/* Subnav popover dropdown — match sidebar surface and density. */
+/*
+ * Active child = accent text, weight 600, NO fill (docs/DESIGN-SPEC.md §5) — unlike a top-level
+ * active row (panel + shadow-card). Overrides the `--nl-*` custom properties the theme sets
+ * inline on the SAME NavLink root, so `!important` is required; `box-shadow` cancels the theme
+ * module's active shadow-card.
+ */
+.childList :global(.mantine-NavLink-root[data-active]),
+.childList :global(.mantine-NavLink-root[aria-current='page']) {
+  --nl-color: var(--vx-accent) !important;
+  --nl-bg: transparent !important;
+  --nl-hover: color-mix(in srgb, var(--vx-ink) 5%, transparent) !important;
+  box-shadow: none !important;
+}
+
+/* Child hover (inactive) — ink-5% + ink, one step quieter than the parent rows' 6%. Outranks the
+ * `.link` hover rule above on specificity. */
+@media (hover: hover) {
+  .childList :global(.mantine-NavLink-root:not([data-active]):not([aria-current='page'])):hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 5%, transparent) !important;
+    color: var(--vx-ink) !important;
+  }
+}
+
+/* Subnav popover dropdown — match sidebar density. */
 .subnavDropdown {
   min-width: 180px;
 }
 
-.subnavDropdown :global(.mantine-NavLink-root) {
-  border-radius: 0;
-}
-
 .subnavDropdown :global(.mantine-NavLink-label) {
-  font-size: var(--mantine-font-size-sm);
+  font-size: var(--vx-text-md);
 }
 
 /*
@@ -196,13 +319,12 @@
     display: none;
   }
 
-  /* Region separators in the rail: the band collapses to a full-width hairline (label + chevron
-   * hidden, no padding) so grouped icons stay visually separated without their text headers. The
-   * first band stays borderless via the `.nav > div:first-child` rule, so no line hugs the brand. */
+  /* Section labels vanish in the rail — the 15px section spacing keeps icon groups separated
+   * without any text or rules. */
   .root[data-collapsed] .sectionBand {
     padding: 0;
     min-height: 0;
-    border-bottom: none;
+    margin-bottom: 0;
     pointer-events: none;
   }
 
@@ -235,8 +357,8 @@
     display: none;
   }
 
-  /* Account row stays clickable when collapsed (no pointer-events: none) — only its text (and the
-   * badges nested inside it) hide, the icon (and the Menu it opens) keeps working. */
+  /* Account row stays clickable when collapsed (no pointer-events: none) — only its text hides,
+   * the initials block (and the Menu it opens) keeps working. */
   .root[data-collapsed] .accountRow {
     justify-content: center;
   }

@@ -40,7 +40,7 @@ export function ThreadFeed({ threads, activeId, onSelect }: ThreadFeedProps): JS
   if (reduceMotion) {
     return (
       <ScrollArea style={{ height: '100%' }}>
-        <Stack gap="xs" p="xs">
+        <Stack gap="sm" p="sm">
           {threads.map((thread) => (
             <ThreadOutcomeCard
               key={thread.id}
@@ -56,7 +56,7 @@ export function ThreadFeed({ threads, activeId, onSelect }: ThreadFeedProps): JS
 
   return (
     <ScrollArea style={{ height: '100%' }}>
-      <Stack gap="xs" p="xs">
+      <Stack gap="sm" p="sm">
         <AnimatePresence mode="popLayout" initial={false}>
           {threads.map((thread) => (
             <motion.div

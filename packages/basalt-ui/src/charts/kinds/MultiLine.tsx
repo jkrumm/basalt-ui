@@ -19,7 +19,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows } from '../series'
+import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
@@ -95,9 +95,16 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
   const { series, chartId, height, legend, ariaLabel } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
+  // Default line overlays to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied once
+  // here so the plotted line, the derived legend swatch, and the derived tooltip row all agree.
+  const styledSeries = useMemo<ChartSeries<T>[]>(
+    () => series.map((s) => ({ ...s, strokeWidth: s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH })),
+    [series],
+  )
+
   return (
     <ChartFrame
-      series={series}
+      series={styledSeries}
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
@@ -106,7 +113,14 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
         onHighlight: setHighlightedKey,
       })}
     >
-      {(plot) => <MultiLinePlot {...props} plot={plot} highlightedKey={highlightedKey} />}
+      {(plot) => (
+        <MultiLinePlot
+          {...props}
+          series={styledSeries}
+          plot={plot}
+          highlightedKey={highlightedKey}
+        />
+      )}
     </ChartFrame>
   )
 }

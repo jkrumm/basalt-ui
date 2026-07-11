@@ -32,7 +32,7 @@
  *   )
  * }
  */
-import { Box, Divider, Flex, Paper, Stack, Text } from '@mantine/core'
+import { Box, Divider, Flex, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { JSX, ReactNode } from 'react'
 import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
@@ -125,12 +125,10 @@ export function ThreadWorkspace({
     runs.retry(store.activeId)
   }
 
+  // A plain pane, NOT a card — the feed's own rows carry the card idiom (docs/DESIGN-SPEC.md §5),
+  // so this pane stays flush with the page and the feed/detail split reads via the divider token.
   const feed = (
-    <Paper
-      withBorder
-      radius="md"
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
-    >
+    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <Box style={{ flex: 1, minHeight: 0 }}>
         {store.threads.length === 0 ? (
           (emptyState ?? <FeedEmptyState />)
@@ -138,14 +136,14 @@ export function ThreadWorkspace({
           <ThreadFeed threads={threads} activeId={store.activeId} onSelect={handleSelect} />
         )}
       </Box>
-      <Divider />
+      <Divider color="var(--vx-divider)" />
       <Box p="sm">
         <Composer
           onSubmit={handleNewThread}
           {...(newThreadPlaceholder !== undefined ? { placeholder: newThreadPlaceholder } : {})}
         />
       </Box>
-    </Paper>
+    </Box>
   )
 
   const detail = (
@@ -166,7 +164,15 @@ export function ThreadWorkspace({
 
   return (
     <Flex style={{ height: '100%' }} gap="md">
-      <Box style={{ flex: 1, minWidth: 0 }}>{feed}</Box>
+      <Box
+        style={{
+          flex: 1,
+          minWidth: 0,
+          borderRight: '1px solid var(--vx-divider)',
+        }}
+      >
+        {feed}
+      </Box>
       <Box style={{ width: DETAIL_PANEL_WIDTH, flexShrink: 0 }}>{detail}</Box>
     </Flex>
   )

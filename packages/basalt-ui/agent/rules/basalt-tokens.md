@@ -10,20 +10,40 @@ paths:
 # Basalt Tokens — Color, Spacing, Radius, Type
 
 basalt-ui ships one color/type/spacing/radius identity shared by the Mantine chrome and the visx
-charts. The **identity is Basalt zinc-charcoal** (volcanic basalt) — the **dark surface ramp is a
-lifted neutral/faint-cool zinc** (blue channel a whisper above red), while the **light canvas and the
-chart mid-grey lines stay warm-neutral** (blue ≤ red — never cool/steel/blue-grey) — carrying a
-**single muted slate-blue accent** (deliberately desaturated, calm Notion/Linear, not "Bootstrap
-blue"). Neutrals do ~90% of the surface (60/30/10, pushed toward 90/10); the accent only points —
-primary CTA, focus, links, small status pops — never floods. (Blueprint is the historical hue-tuning
-ancestor; the identity is Basalt zinc-charcoal now.) This rule is the operational checklist; it is enforced
-mechanically by **`basalt check-theme`**
+charts. The **identity is modern zinc** (see `docs/DESIGN-SPEC.md`) — **cool-neutral zinc surfaces**
+(Tailwind zinc family) on both light and dark, low-contrast panel lift on a slightly darker page,
+depth via a whisper shadow + 1px ring (`shadow-card`) rather than a hairline border, carrying
+**one saturated sky-blue accent**, split by ROLE: as INK (links, active-nav icon, chart
+lines, focus ring) it is `#0077bd` light / `#8ec5ff` dark; as a FILLED SURFACE it is
+`#0077bd` in BOTH schemes with a WHITE label (`--vx-accentFill`, never `--vx-accent`). Neutrals do ~90% of the
+surface (60/30/10, pushed toward 90/10); the accent only points — primary CTA, focus, links, small
+status pops — never floods. (Blueprint/Basalt zinc-charcoal are the historical hue-tuning
+ancestors; `docs/DESIGN-SPEC.md` supersedes both — see its "Doctrine inversions" section.) This
+rule is the operational checklist; it is enforced mechanically by **`basalt check-theme`**
 (wire it into `lint`: `oxlint . && basalt check-theme`). A violation fails the build. Escape hatch: a
 `theme-allow` line comment (diff-visible, deliberate).
 
 `check-theme` reads its config from your `package.json` `"basalt"` key
 (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); set `roots` to your source dirs and `exempt`
 to the files that legitimately define palette values.
+
+## Filled surfaces — the fill band
+
+A filled control is a SURFACE, not ink, and it does not invert across schemes. It is squeezed from
+both sides at once: a **white label** needs ≥4.5:1 against the fill, and the control needs ≥3:1
+against the page behind it — on BOTH pages. That leaves one narrow luminance band, so:
+
+- **Every family's fill sits in that band** (`FILL` / `ACCENT` in the palette): the hue varies, the
+  luminance does not. Every filled surface therefore reads WHITE, on either page, at ~4.9:1.
+- **Never fill with the ink accent.** `--vx-accent` is light on dark by design (it is read against
+  the page) — filling with it puts a white label on a light blue button. Fill with
+  `--vx-accentFill` / `--vx-fill-{family}`; label with `--vx-onAccent` / `--vx-on-{family}`.
+- **Never decide a foreground yourself**, and do not trust Mantine's `autoContrast`: it resolves the
+  color once in JS, scheme-blindly, using a brightness heuristic that does not track WCAG contrast.
+  The theme emits `--vx-on-*` per scheme instead, and every filled control is bound to it.
+- Hover is **derived** from the fill in CSS, so retuning a fill carries its hover along.
+
+Retuning a fill OUTSIDE the band breaks its label. `theme/contrast.test.ts` fails the build on it.
 
 ## Color — never a raw literal
 
@@ -34,8 +54,8 @@ to the files that legitimately define palette values.
 - **No off-identity Mantine accents.** `color`/`c`/`bg`/`backgroundColor` must not be
   `teal`/`violet`/`grape`/`indigo`/`pink`. `createBasaltTheme` reskins _every_ Mantine accent to the
   Basalt identity, so those names still render on-palette — but the guard rejects them because they
-  signal off-identity intent. Allowed accents: **`blue`** (the one earned identity hue — the muted
-  slate-blue accent), **`gray`** (neutral), and the status hues **`red`/`green`/`orange`/`yellow`**
+  signal off-identity intent. Allowed accents: **`blue`** (the one earned identity hue — the
+  saturated sky accent), **`gray`** (neutral), and the status hues **`red`/`green`/`orange`/`yellow`**
   (muted/forest, never raw Material/AntD). Categorical/series color goes through series tokens
   (`defineSeries` → `seriesTokens`/`groupTokens`), never a Mantine accent prop. Success-button flips
   and positive deltas use `color="green"` (forest green), not `teal` (vivid turquoise).
@@ -75,7 +95,7 @@ Popover, Accordion, cards) renders one border shade, one card background, and on
   **Use the token**, not the raw number, when a value equals a step: `p="md"` not `p={16}`,
   `gap="sm"` not `gap={12}`, `radius="sm"` not `radius={4}`. The guard flags exact token-equals
   (`p={16}`, any numeric `radius`).
-- **Card radius has one source: `--vx-radius-card` (8px) = `VX.radiusCard` = `radius.md`.** Every
+- **Card radius has one source: `--vx-radius-card` (10px) = `VX.radiusCard` = `radius.md`.** Every
   card corner — the Mantine chrome (`Card`/`Paper`, `radius="md"`) and the Mantine-free `ChartCard`
   (`var(--vx-radius-card)`) — resolves to this single token; cards must never diverge. Don't inline
   a `borderRadius` on a surface (the `raw-surface` guard rejects it).
@@ -89,9 +109,13 @@ Popover, Accordion, cards) renders one border shade, one card background, and on
 
 ## Type
 
-- Type is carried by Mantine's `fontSizes` + `headings` + the named `fontWeights` ladder
-  (`fw="semibold"`, `fw="medium"`, …) and the mono `fontFamilyMonospace` for numbers. Don't hard-code
-  `fontSize` in px on chrome; use `size`/`fz` tokens.
+- A shipped **three-font system**: `Nunito Sans Variable` (body), `Hubot Sans Variable` (headings,
+  brand, card titles — always `font-stretch: 88%`), `JetBrains Mono Variable` (all numerals,
+  micro-labels, kbd/badges, axis ticks). Fonts ship as exact-pinned `@fontsource-variable/*` deps,
+  `@import`ed in `styles.css`; the `--basalt-font-{sans,head,mono}` vars stay the override seam
+  (system-font fallback chains preserved). Type is carried by Mantine's `fontSizes` + `headings` +
+  the named `fontWeights` ladder (`fw="semibold"`, `fw="medium"`, …) and `fontFamilyMonospace` for
+  numbers. Don't hard-code `fontSize` in px on chrome; use `size`/`fz` tokens.
 
 ## When the guard fires
 

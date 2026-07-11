@@ -9,7 +9,7 @@
  *
  * <Composer onSubmit={(text) => send(text)} disabled={streaming} placeholder="Send a message…" />
  */
-import { ActionIcon, Group, Textarea } from '@mantine/core'
+import { ActionIcon, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ComponentProps, JSX, KeyboardEvent } from 'react'
 import { useState } from 'react'
 
@@ -71,28 +71,59 @@ export function Composer({
     autosize: true,
     minRows: 1,
     maxRows: 6,
-    radius: 'md',
     value,
     disabled,
     onChange: (event) => setValue(event.currentTarget.value),
     onKeyDown: handleKeyDown,
+    // Composer input surface (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 8 — the ring
+    // lives in the shadow, so the input carries no separate border.
+    styles: {
+      input: {
+        backgroundColor: 'var(--vx-surface-panel)',
+        boxShadow: 'var(--vx-shadow-card)',
+        borderRadius: 8,
+        border: 'none',
+      },
+    },
   }
   if (placeholder !== undefined) textareaProps.placeholder = placeholder
   if (autoFocus !== undefined) textareaProps.autoFocus = autoFocus
 
   return (
-    <Group gap="xs" align="flex-end" wrap="nowrap">
-      <Textarea {...textareaProps} />
-      <ActionIcon
-        size={42}
-        radius="md"
-        variant="filled"
-        onClick={submit}
-        disabled={disabled || value.trim().length === 0}
-        aria-label="Send message"
-      >
-        <SendGlyph />
-      </ActionIcon>
-    </Group>
+    <Stack gap={6}>
+      <Group gap="xs" align="flex-end" wrap="nowrap">
+        <Textarea {...textareaProps} />
+        <ActionIcon
+          size={42}
+          radius={8}
+          variant="filled"
+          onClick={submit}
+          disabled={disabled || value.trim().length === 0}
+          aria-label="Send message"
+          // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs no color
+          // override — `filled` resolves through the theme to `--vx-accentFill` / `--vx-onAccent`.
+          // (It used to hand-wire those two vars inline, which is why this was the ONLY filled
+          // control that stayed legible while the rest of the chrome went through Mantine's
+          // scheme-blind autoContrast. The theme owns it now, and hover works again — an inline
+          // style can't express a `:hover` state.)
+        >
+          <SendGlyph />
+        </ActionIcon>
+      </Group>
+      <Group gap={4}>
+        <Kbd size="xs">Enter</Kbd>
+        <Text size="xs" c="dimmed" style={{ fontFamily: 'var(--basalt-font-mono)' }}>
+          to send
+        </Text>
+        <Kbd size="xs">Shift</Kbd>
+        <Text size="xs" c="dimmed" style={{ fontFamily: 'var(--basalt-font-mono)' }}>
+          +
+        </Text>
+        <Kbd size="xs">Enter</Kbd>
+        <Text size="xs" c="dimmed" style={{ fontFamily: 'var(--basalt-font-mono)' }}>
+          for a new line
+        </Text>
+      </Group>
+    </Stack>
   )
 }

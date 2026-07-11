@@ -1,12 +1,15 @@
 /**
  * basalt-ui/agent — headless, Mantine-free streaming-chat layer over an injected transport seam.
  *
- * The default transport is Eden-native typed streaming (zero extra deps). Optional peers
- * (react-markdown, remark-gfm, use-stick-to-bottom) are lazily loaded — importing this module
- * does NOT eagerly resolve them.
+ * `aiSdkTransport` (backed by the `ai` npm package) is the RECOMMENDED DEFAULT transport for LLM
+ * chat use cases; `edenTransport` remains the zero-extra-dependency alternative. Optional peers
+ * (ai, react-markdown, remark-gfm, use-stick-to-bottom) are all lazily loaded — importing this
+ * module does NOT eagerly resolve any of them.
  *
- * Install optional peers for markdown + auto-scroll:
- *   bun add react-markdown remark-gfm use-stick-to-bottom
+ * Install optional peers:
+ *   bun add ai                                   # aiSdkTransport
+ *   bun add react-markdown remark-gfm            # StreamingMarkdown
+ *   bun add use-stick-to-bottom                  # BasaltStickToBottom
  *
  * @example
  * import { useAgentStream, edenTransport, PartList, BasaltStickToBottom } from 'basalt-ui/agent'
@@ -30,17 +33,22 @@
 // ── AgentPart discriminated union ─────────────────────────────────────────────
 export type {
   AgentPart,
+  StartPart,
   TextPart,
   ReasoningPart,
   ToolCallPart,
   SourcePart,
   ErrorPart,
 } from './parts'
-export { parseAgentPart } from './parts'
+export { parseAgentPart, isStartPart } from './parts'
 
 // ── AgentTransport + edenTransport ───────────────────────────────────────────
 export type { AgentTransport } from './transport'
 export { edenTransport } from './transport'
+
+// ── aiSdkTransport (recommended default, optional peer: ai) ──────────────────
+export { aiSdkTransport } from './ai-sdk-transport'
+export type { AiSdkTransport, AiSdkTransportOptions } from './ai-sdk-transport'
 
 // ── useAgentStream ────────────────────────────────────────────────────────────
 export { useAgentStream } from './use-agent-stream'

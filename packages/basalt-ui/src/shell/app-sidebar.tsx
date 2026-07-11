@@ -32,6 +32,7 @@ import type { ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
 import { SidebarAccount } from './app-sidebar-account'
 import type { BasaltAccountProps } from './account-types'
+import { VX } from '../tokens'
 import classes from './app-sidebar.module.css'
 
 /** Renders a single nav item. The consumer's router `Link` lives here; `active` is precomputed. */
@@ -48,7 +49,12 @@ export type AppSidebarProps = {
    * flag. When omitted, items fall back to a plain `<a href>` + `item.onClick`.
    */
   renderNavLink?: NavLinkRenderer
-  /** Footer settings-menu entries (theme switcher, devtools, …) — supplied by the consumer. */
+  /**
+   * Footer settings-menu entries (theme switcher, devtools, …) — supplied by the consumer.
+   * The pinned footer "Settings" row renders ONLY when this is a non-empty list — apps that put
+   * Settings in a nav section (the common case) omit this and get no duplicate footer row. The
+   * `brand.version` label renders inside this menu, so it also only shows when the row does.
+   */
   settingsMenuItems?: SettingsMenuItem[]
   /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
   footerExtra?: ReactNode
@@ -84,8 +90,8 @@ function IconCollapse({ collapsed }: { collapsed: boolean }) {
 function IconChevron({ open }: { open: boolean }) {
   return (
     <svg
-      width={14}
-      height={14}
+      width={12}
+      height={12}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -174,22 +180,15 @@ function NavLinkBody({
 }
 
 /**
- * Group label. `flush` drops the intrinsic inset/margin so the collapsible `sectionHeader` can own
- * the padding instead (otherwise the button's hover box double-insets and hugs the text).
+ * Group label — a micro-label (docs/DESIGN-SPEC.md §3: mono, uppercase, tracked, faint). Typography
+ * lives entirely in `.sectionLabel` (app-sidebar.module.css), not Mantine `Text` props, since the
+ * treatment is a shell-specific micro-label rather than a themed primitive. `flush` drops the
+ * intrinsic inset/margin so the collapsible `sectionHeader` can own the padding instead (otherwise
+ * the button's hover box double-insets and hugs the text).
  */
 function SectionLabel({ children, flush }: { children: ReactNode; flush?: boolean }) {
   return (
-    <Text
-      component="div"
-      px={flush ? 0 : 'xs'}
-      mb={flush ? 0 : 4}
-      size="xs"
-      fw={600}
-      c="dimmed"
-      tt="uppercase"
-      className={classes.sectionLabel}
-      style={{ letterSpacing: '0.06em' }}
-    >
+    <Text component="div" px={flush ? 0 : 'xs'} mb={flush ? 0 : 4} className={classes.sectionLabel}>
       {children}
     </Text>
   )
@@ -399,16 +398,34 @@ export function AppSidebar({
       <NavItemRow key={item.key} item={item} collapsed={collapsed} renderNavLink={renderNavLink} />
     ))
 
-  // The settings-menu row is unchanged; only its wrapper's class moves onto the outer footer
-  // Stack when `account` is rendered below it, so omitting `account` reproduces today's footer
-  // markup byte-for-byte (no extra wrapper element).
-  const settingsRow = (
+  // Mobile-only footer controls (close + consumer extras) — must render regardless of whether
+  // the settings row does, or the mobile drawer loses its close affordance.
+  const mobileControls = (
+    <Group gap={2} wrap="nowrap" hiddenFrom="sm">
+      {footerExtra}
+      <ActionIcon
+        variant="subtle"
+        className={classes.ghostIcon}
+        onClick={onClose}
+        aria-label="Close navigation"
+      >
+        <IconClose />
+      </ActionIcon>
+    </Group>
+  )
+
+  // The pinned footer "Settings" row is OPT-IN: it renders only when the consumer supplies
+  // settings-menu entries. Most apps put Settings in a nav section instead — rendering the row
+  // unconditionally produced a duplicate "Settings" the consumer couldn't remove. Without it,
+  // the mobile controls still render standalone (invisible on desktop via hiddenFrom).
+  const hasSettingsMenu = (settingsMenuItems?.length ?? 0) > 0
+  const settingsRow = hasSettingsMenu ? (
     <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
       <Menu position="right-start" withArrow width={200} zIndex={500}>
         <Menu.Target>
           <UnstyledButton className={classes.footerBtn} aria-label="Settings">
             <IconGear />
-            <Text className={classes.footerText} size="sm">
+            <Text className={classes.footerText} fz={VX.text.md}>
               Settings
             </Text>
           </UnstyledButton>
@@ -429,18 +446,22 @@ export function AppSidebar({
           )}
         </Menu.Dropdown>
       </Menu>
-      <Group gap={2} wrap="nowrap" hiddenFrom="sm">
-        {footerExtra}
-        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close navigation">
-          <IconClose />
-        </ActionIcon>
-      </Group>
+      {mobileControls}
+    </Group>
+  ) : (
+    <Group
+      {...(account ? {} : { className: classes.footer })}
+      gap="xs"
+      wrap="nowrap"
+      hiddenFrom="sm"
+    >
+      {mobileControls}
     </Group>
   )
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
-      <Group className={classes.brand} h={48} px={8} gap="sm" wrap="nowrap">
+      <Group className={classes.brand} gap="sm" wrap="nowrap">
         <Group className={classes.brandLead} gap="sm" wrap="nowrap">
           {brand.logoSrc && (
             <img
@@ -451,16 +472,15 @@ export function AppSidebar({
               style={{ display: 'block' }}
             />
           )}
-          <Text fw={700} fz="lg">
+          <Text className={classes.brandName} fz={VX.text.xl} fw={550}>
             {brand.name}
           </Text>
         </Group>
         <ActionIcon
           variant="subtle"
-          color="gray"
           size="md"
           visibleFrom="sm"
-          className={classes.collapseBtn}
+          className={`${classes.collapseBtn} ${classes.ghostIcon}`}
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -476,7 +496,7 @@ export function AppSidebar({
                 <div className={classes.sectionBand}>
                   <SectionLabel flush>{section.label}</SectionLabel>
                 </div>
-                <Stack gap={0}>{renderSectionItems(section)}</Stack>
+                <Stack gap={1}>{renderSectionItems(section)}</Stack>
               </div>
             )
           }
@@ -498,7 +518,7 @@ export function AppSidebar({
                 <IconChevron open={isOpen} />
               </UnstyledButton>
               <Collapse expanded={isOpen}>
-                <Stack gap={0}>{renderSectionItems(section)}</Stack>
+                <Stack gap={1}>{renderSectionItems(section)}</Stack>
               </Collapse>
             </div>
           )

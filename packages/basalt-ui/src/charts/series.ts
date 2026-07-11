@@ -9,6 +9,15 @@
 
 import type { LegendEntry } from './primitives/ChartLegend'
 
+/**
+ * Default stroke width for plotted line overlays in `DualPanel` / `MultiLine` / `ZonedLine` —
+ * thinner than the generic `VX.lineWidth` per the 2026-07 modern-zinc redesign
+ * (`docs/DESIGN-SPEC.md` §5, "tertiary/line overlay ... at 1.9px stroke"). `VX.lineWidth` itself
+ * stays the "one width everywhere" default for `Bars`' line overlays, legend line swatches, and
+ * `TooltipRow`'s generic fallback — this constant only overrides the three kinds it's imported by.
+ */
+export const LINE_OVERLAY_STROKE_WIDTH = 1.9
+
 /** Governs BOTH the plotted mark and the legend swatch shape. */
 export type SeriesMark = 'line' | 'bar' | 'area'
 

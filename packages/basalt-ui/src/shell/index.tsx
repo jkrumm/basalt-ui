@@ -10,7 +10,7 @@
  * renders each nav row. The breadcrumb is derived from the active item across `sections`, not from a
  * router hook. Collapse is persisted via `@mantine/hooks` `useLocalStorage` keyed by `storageKey`.
  */
-import { AppShell, Badge, Divider } from '@mantine/core'
+import { AppShell, Badge } from '@mantine/core'
 import { useDisclosure, useLocalStorage } from '@mantine/hooks'
 import type { MouseEvent, ReactNode } from 'react'
 import { AppSidebar } from './app-sidebar'
@@ -21,6 +21,7 @@ import { AppBreadcrumbs } from './app-breadcrumbs'
 import type { BreadcrumbLinkRenderer } from './app-breadcrumbs'
 import { PageActionsOutlet, PageHeaderProvider } from './page-header'
 import type { BasaltAccountProps } from './account-types'
+import { VX } from '../tokens'
 import headerClasses from './app-header.module.css'
 
 export { AppSidebar, type AppSidebarProps, type NavLinkRenderer } from './app-sidebar'
@@ -131,14 +132,31 @@ export type BasaltShellProps = {
 }
 
 /**
- * Sidebar nav count badge — a neutral transparent pill. Grounded in argo's `navBadge` helper
- * (`<Badge size="sm" variant="transparent" color="gray" radius="sm">`). Returns `null` for a
- * zero/empty count so the badge slot stays clean ("ink earns its color", DESIGN.md).
+ * Sidebar nav count badge (docs/DESIGN-SPEC.md §5): mono 10.5px, ink-8% bg, radius 5, height 16,
+ * padding 0 5px, muted text; `marginLeft: auto` pins it to the row end on any render path.
+ * `styles` (inline) rather than a token color prop, since none of Mantine's variant/color
+ * combinations land on the ink-tint idiom. Returns `null` for a zero/empty count so the badge slot
+ * stays clean ("ink earns its color", DESIGN.md).
  */
 export function NavCountBadge({ count }: { count: number }) {
   if (!count) return null
   return (
-    <Badge size="sm" variant="transparent" color="gray" radius="sm">
+    <Badge
+      size="sm"
+      radius={5}
+      styles={{
+        root: {
+          backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)',
+          color: 'var(--vx-muted)',
+          fontFamily: 'var(--basalt-font-mono)',
+          fontSize: VX.text.micro,
+          fontWeight: 500,
+          height: 16,
+          padding: '0 5px',
+          marginLeft: 'auto',
+        },
+      }}
+    >
       {count}
     </Badge>
   )
@@ -247,33 +265,24 @@ export function BasaltShell({
         layout="alt"
         header={{ height: { base: 96, sm: 48 } }}
         navbar={{
-          width: { base: 224, sm: collapsed ? 48 : 224 },
+          width: { base: 216, sm: collapsed ? 48 : 216 },
           breakpoint: 'sm',
           collapsed: { mobile: !mobileOpened },
         }}
         footer={{ height: { base: 52, sm: 0 } }}
         padding="sm"
       >
-        <AppShell.Header px="md">
+        <AppShell.Header px="md" withBorder={false}>
           <div className={headerClasses.bar}>
             <div className={headerClasses.lead}>
               <AppBreadcrumbs {...activeCrumb} renderBreadcrumbLink={renderBreadcrumbLink} />
             </div>
             <PageActionsOutlet className={headerClasses.pageActions} />
-            {globalActions && (
-              <>
-                <Divider
-                  orientation="vertical"
-                  visibleFrom="sm"
-                  style={{ alignSelf: 'stretch', height: 'auto' }}
-                />
-                <div className={headerClasses.global}>{globalActions}</div>
-              </>
-            )}
+            {globalActions && <div className={headerClasses.global}>{globalActions}</div>}
           </div>
         </AppShell.Header>
 
-        <AppShell.Navbar p={0}>
+        <AppShell.Navbar p={0} withBorder={false}>
           <AppSidebar
             brand={brand}
             sections={sections}

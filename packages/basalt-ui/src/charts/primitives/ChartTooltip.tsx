@@ -1,29 +1,27 @@
 import type { CSSProperties, ReactNode, RefObject } from 'react'
-import { useMemo } from 'react'
-import { useVxTheme } from '../theme'
-import { VX, alpha } from '../../tokens'
+import { VX } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'
+
+// Panel bg + shadow-card, radius 8 (docs/DESIGN-SPEC.md §5's "Tooltip/popover/menu" idiom) — the
+// same depth-via-shadow treatment as ChartCard, never a `border` property. Surfaces resolve per
+// theme via CSS vars, so this is a static object (no useMemo/hook needed).
+const TOOLTIP_STYLES: CSSProperties = {
+  position: 'fixed',
+  pointerEvents: 'none',
+  zIndex: 9999,
+  backgroundColor: VX.surface.panel,
+  borderRadius: 8,
+  padding: '0',
+  fontSize: VX.text.xs,
+  lineHeight: '18px',
+  color: VX.ink,
+  boxShadow: VX.shadowCard,
+  minWidth: 140,
+}
 
 /** Theme-aware tooltip container styles — use with useChartTooltip(). */
 export function useTooltipStyles(): CSSProperties {
-  const { tooltipBg, tooltipText, tooltipBorder, tooltipShadow } = useVxTheme()
-  return useMemo(
-    () => ({
-      position: 'fixed' as const,
-      pointerEvents: 'none' as const,
-      zIndex: 9999,
-      backgroundColor: tooltipBg,
-      borderRadius: 6,
-      padding: '0',
-      fontSize: 12,
-      lineHeight: '18px',
-      color: tooltipText,
-      border: tooltipBorder,
-      boxShadow: tooltipShadow,
-      minWidth: 140,
-    }),
-    [tooltipBg, tooltipText, tooltipBorder, tooltipShadow],
-  )
+  return TOOLTIP_STYLES
 }
 
 /** Outer tooltip shell. Renders nothing when tip is null. */
@@ -56,7 +54,6 @@ export function TooltipHeader({
   label?: string
   labelColor?: string
 }) {
-  const { tooltipText } = useVxTheme()
   return (
     <div
       style={{
@@ -65,14 +62,30 @@ export function TooltipHeader({
         alignItems: 'center',
         gap: 16,
         padding: '6px 10px',
-        borderBottom: `1px solid ${alpha(VX.neutral, 0.2)}`,
+        borderBottom: `1px solid ${VX.divider}`,
       }}
     >
-      <span style={{ fontSize: 11, fontWeight: 600, color: tooltipText }}>
+      <span
+        style={{
+          fontSize: VX.text.micro,
+          fontWeight: 600,
+          fontFamily: 'var(--basalt-font-mono)',
+          color: VX.ink,
+        }}
+      >
         {fmtTooltipDate(date)}
       </span>
       {label !== undefined && (
-        <span style={{ fontSize: 11, fontWeight: 500, color: labelColor }}>{label}</span>
+        <span
+          style={{
+            fontSize: VX.text.micro,
+            fontWeight: 500,
+            fontFamily: 'var(--basalt-font-mono)',
+            color: labelColor,
+          }}
+        >
+          {label}
+        </span>
       )}
     </div>
   )
@@ -133,7 +146,9 @@ export function TooltipRow({
         )}
         {label}
       </span>
-      <span style={{ fontWeight: 400, color: valueColor }}>{value}</span>
+      <span style={{ fontWeight: 400, fontFamily: 'var(--basalt-font-mono)', color: valueColor }}>
+        {value}
+      </span>
     </div>
   )
 }

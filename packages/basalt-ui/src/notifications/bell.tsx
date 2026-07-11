@@ -53,11 +53,18 @@ export function NotificationBell({ label = 'Notifications' }: NotificationBellPr
     <Popover opened={opened} onClose={close} position="bottom-end" withArrow withinPortal>
       <Popover.Target>
         <Indicator
-          color="red"
+          color="color-mix(in srgb, var(--vx-ink) 8%, transparent)"
           size={16}
           label={unreadCount > 9 ? '9+' : String(unreadCount)}
           disabled={unreadCount === 0}
           processing={false}
+          styles={{
+            indicator: {
+              color: 'var(--vx-ink)',
+              fontFamily: 'var(--basalt-font-mono)',
+              fontWeight: 500,
+            },
+          }}
         >
           <ActionIcon
             variant="transparent"

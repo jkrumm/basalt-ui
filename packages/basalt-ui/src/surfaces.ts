@@ -355,8 +355,8 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Headless streaming-chat layer: useAgentStream, edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
-    optionalPeers: ['react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
+      'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
+    optionalPeers: ['ai', 'react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/agent/**'],
@@ -405,7 +405,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      'Mandatory first CSS import — @layer basalt base styles, iOS input safety net, font stack',
+      'Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack',
     forbiddenImports: [],
   },
   './configs/*': {

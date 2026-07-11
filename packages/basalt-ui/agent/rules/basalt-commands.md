@@ -17,10 +17,11 @@ basalt-ui ships `./commands` — a Mantine-coupled command bus + overlay control
 bun add @mantine/modals @mantine/spotlight
 ```
 
-Also import Spotlight styles in `main.tsx`:
+Also import Spotlight styles in `main.tsx` — use the **layered** bundle, since the unlayered one
+outranks basalt's `@layer basalt` styles regardless of specificity:
 
 ```tsx
-import '@mantine/spotlight/styles.css'
+import '@mantine/spotlight/styles.layer.css'
 ```
 
 ## Mount BasaltOverlays
@@ -33,7 +34,7 @@ same tree (that would double-mount `<Notifications />`).
 ```tsx
 import { BasaltOverlays } from 'basalt-ui/commands'
 import { BasaltProvider } from 'basalt-ui'
-import '@mantine/spotlight/styles.css'
+import '@mantine/spotlight/styles.layer.css'
 
 createRoot(root).render(
   <BasaltProvider>

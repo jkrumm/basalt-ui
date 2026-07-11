@@ -71,6 +71,12 @@ export type AgentThread<TPart = AgentPart> = {
   readonly createdAt: number
   readonly updatedAt: number
   /**
+   * Set when the current/most recent run emitted a StartPart with a resumeToken; used by
+   * useAgentThreadRuns to attempt resumption after a disconnected reload. Cleared once the run
+   * finalizes.
+   */
+  readonly resumeToken?: string
+  /**
    * Freeform consumer metadata (e.g. `{ source: 'sidebar' }`, `{ model: 'gpt-5' }`) — set once at
    * `create()` time and otherwise opaque to this store. Intentionally untyped: the framework has
    * no opinion on what a consumer wants to stash per thread, and adding a `TMeta` generic here
@@ -124,6 +130,8 @@ export type ThreadsStore<TPart = AgentPart> = {
   readonly setOutcome: (id: string, outcome: AgentOutcome) => void
   /** Set a thread's lifecycle status. Bumps updatedAt. */
   readonly setStatus: (id: string, status: ThreadStatus) => void
+  /** Set (or clear, with undefined) a thread's resume token. Bumps updatedAt. */
+  readonly setResumeToken: (id: string, token: string | undefined) => void
   /** Mark a thread as read. */
   readonly markRead: (id: string) => void
   /** Remove a thread. Clears activeId if it pointed at the removed thread. */
@@ -246,6 +254,24 @@ export function createThreadsStore<TPart = AgentPart>(
       [commit],
     )
 
+    const setResumeToken = useCallback(
+      (id: string, token: string | undefined): void => {
+        const threads = ref.current.threads.map((thread) => {
+          if (thread.id !== id) return thread
+          // exactOptionalPropertyTypes: drop the key entirely to clear it rather than assigning
+          // `resumeToken: undefined` (which the optional-but-not-nullable type disallows).
+          const { resumeToken: _resumeToken, ...rest } = thread
+          return {
+            ...rest,
+            ...(token !== undefined ? { resumeToken: token } : {}),
+            updatedAt: Date.now(),
+          }
+        })
+        commit({ ...ref.current, threads })
+      },
+      [commit],
+    )
+
     const markRead = useCallback(
       (id: string): void => {
         const threads = ref.current.threads.map((thread) =>
@@ -277,6 +303,7 @@ export function createThreadsStore<TPart = AgentPart>(
       appendMessage,
       setOutcome,
       setStatus,
+      setResumeToken,
       markRead,
       remove,
       clear,

@@ -10,6 +10,7 @@ declare const classes: {
   readonly navItem: string
   readonly brand: string
   readonly brandLead: string
+  readonly brandName: string
   readonly nav: string
   readonly collapseBtn: string
   readonly footer: string
@@ -17,11 +18,14 @@ declare const classes: {
   readonly footerText: string
   readonly accountRow: string
   readonly accountText: string
-  readonly accountBadges: string
+  readonly avatar: string
+  readonly accountName: string
+  readonly accountMeta: string
   readonly sectionLabel: string
   readonly sectionBand: string
   readonly sectionHeader: string
   readonly subnavDropdown: string
   readonly childList: string
+  readonly ghostIcon: string
 }
 export default classes

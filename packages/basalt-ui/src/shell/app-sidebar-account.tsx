@@ -6,20 +6,39 @@
  * mapping recipe.
  *
  * Collapsed-rail behavior mirrors `AppSidebar`'s icon-rail convention: the ancestor `.root
- * [data-collapsed]` selector (app-sidebar.module.css) hides the name/email/badge text (nested
+ * [data-collapsed]` selector (app-sidebar.module.css) hides the name/email/meta text (nested
  * inside `.accountText`) while keeping the icon visible, and — because the collapse rule never
  * sets `pointer-events: none` on this row (unlike the read-only `sectionBand`) — the menu still
  * opens on click when collapsed.
  *
- * The leading glyph is a generic, non-personalized "person" icon — never an avatar/photo or
- * initials derived from the identity — so the row never implies per-user personalization.
+ * The authenticated row leads with an initials block derived from `identity.name`
+ * (docs/DESIGN-SPEC.md §5) — never `identity.image` (basalt-ui ships no avatar/photo rendering).
+ * The unauthenticated "Sign in" row has no identity to derive initials from, so it keeps the
+ * generic person glyph below.
  */
-import { Badge, Group, Menu, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
-import type { AccountBadgeTone, BasaltAccountProps } from './account-types'
+import { Group, Menu, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
+import type { BasaltAccountProps } from './account-types'
 import classes from './app-sidebar.module.css'
 
-/** Generic "person" glyph — matches the inline-SVG icon convention used elsewhere in the shell
- * (`IconGear`/`IconClose` in `app-sidebar.tsx`). Never derived from `identity.name`/`identity.image`. */
+/** First letter of the first + last name parts, uppercased — the sidebar-footer initials block. */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const first = parts[0]?.[0] ?? ''
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : ''
+  return `${first}${last}`.toUpperCase()
+}
+
+/** Identity initials block — 28px, radius 7, ink-10% bg, mono 10.5px (docs/DESIGN-SPEC.md §5). */
+function InitialsBlock({ name }: { name: string }) {
+  return (
+    <div className={classes.avatar} aria-hidden>
+      {getInitials(name)}
+    </div>
+  )
+}
+
+/** Generic "person" glyph for the unauthenticated row — matches the inline-SVG icon convention
+ * used elsewhere in the shell (`IconGear`/`IconClose` in `app-sidebar.tsx`). */
 function IconUser() {
   return (
     <svg
@@ -39,25 +58,10 @@ function IconUser() {
   )
 }
 
-/** Maps the tone union to a Mantine theme color name — never a literal hex/rgb value. `brand` has
- * no entry so the Badge/Menu.Item omits `color` and falls back to the theme's `primaryColor`. */
-const TONE_COLOR: Partial<Record<AccountBadgeTone, string>> = {
-  neutral: 'gray',
-  success: 'teal',
-  warn: 'yellow',
-}
-
-/** `exactOptionalPropertyTypes`-safe prop spread — omits `color` entirely (rather than passing
- * `color={undefined}`) when the tone has no mapped color. */
-function toneColorProp(tone: AccountBadgeTone): { color: string } | Record<string, never> {
-  const color = TONE_COLOR[tone]
-  return color === undefined ? {} : { color }
-}
-
 function AccountSkeleton() {
   return (
     <Group className={classes.accountRow} gap="sm" wrap="nowrap">
-      <Skeleton height={18} width={18} radius="sm" />
+      <Skeleton height={28} width={28} radius={7} />
       <Stack gap={4} className={classes.accountText}>
         <Skeleton height={10} width="70%" radius="sm" />
         <Skeleton height={9} width="50%" radius="sm" />
@@ -89,29 +93,20 @@ export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps
     <Menu position="right-end" withArrow width={220} zIndex={500}>
       <Menu.Target>
         <UnstyledButton className={classes.accountRow} aria-label="Account menu">
-          <IconUser />
+          <InitialsBlock name={identity.name} />
           <Stack gap={2} className={classes.accountText}>
-            <Text size="sm" fw={500} truncate>
+            <Text className={classes.accountName} truncate>
               {identity.name}
             </Text>
             {showEmail && identity.email && (
-              <Text size="xs" c="dimmed" truncate>
+              <Text className={classes.accountMeta} truncate>
                 {identity.email}
               </Text>
             )}
             {(plan || role) && (
-              <Group gap={4} className={classes.accountBadges} wrap="nowrap">
-                {plan && (
-                  <Badge size="xs" variant="light" {...toneColorProp(plan.tone ?? 'neutral')}>
-                    {plan.label}
-                  </Badge>
-                )}
-                {role && (
-                  <Badge size="xs" variant="light" {...toneColorProp(role.tone ?? 'neutral')}>
-                    {role.label}
-                  </Badge>
-                )}
-              </Group>
+              <Text className={classes.accountMeta} truncate>
+                {[plan?.label, role?.label].filter(Boolean).join(' · ')}
+              </Text>
             )}
           </Stack>
         </UnstyledButton>

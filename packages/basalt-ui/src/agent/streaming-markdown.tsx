@@ -33,6 +33,7 @@
  */
 import { lazy, Suspense } from 'react'
 import type { JSX } from 'react'
+import classes from './streaming-markdown.module.css'
 
 // ── Type for react-markdown Components ────────────────────────────────────────
 
@@ -47,9 +48,11 @@ type MarkdownProps = {
 }
 
 /**
- * Default headless component overrides: plain HTML elements with className hooks.
- * Defined at module scope (static JSX data — no closure over dynamic imports).
- * Consumers pass `components` to override individual entries; keys not supplied keep these defaults.
+ * Default component overrides: plain HTML elements carrying className hooks only. All visual
+ * typography lives in `streaming-markdown.module.css` (scoped to the `.root` container), so these
+ * overrides stay style-free — an inline `style` prop would win on specificity and re-introduce the
+ * double-margin bug the module exists to kill. The `a` override adds the `target`/`rel` safety the
+ * default renderer omits; consumers can still replace any entry via the `components` prop.
  * Typed as `Components` (react-markdown's own type) to avoid type-checking friction.
  */
 const DEFAULT_MD_COMPONENTS: Components = {
@@ -131,9 +134,12 @@ export type StreamingMarkdownProps = {
 export function StreamingMarkdown({ children, components }: StreamingMarkdownProps): JSX.Element {
   const lazyProps: MarkdownProps = { children }
   if (components !== undefined) lazyProps.components = components
+  // The `.root` container scopes the chat-density typography module to the markdown subtree.
   return (
-    <Suspense fallback={<span className="basalt-agent-md-fallback">{children}</span>}>
-      <LazyMarkdown {...lazyProps} />
-    </Suspense>
+    <div className={classes.root}>
+      <Suspense fallback={<span className="basalt-agent-md-fallback">{children}</span>}>
+        <LazyMarkdown {...lazyProps} />
+      </Suspense>
+    </div>
   )
 }

@@ -2,7 +2,8 @@
  * ConnectivityIndicator — header ActionIcon + Popover showing per-signal connection detail.
  *
  * Designed for the shell's `globalActions` slot. Shows a wifi icon whose color reflects overall
- * status (teal=online, yellow=degraded, red=offline). Click opens a Popover with per-signal rows.
+ * status (faint=online, status-warn=degraded, status-danger=offline — `docs/DESIGN-SPEC.md` §5's
+ * status tokens, not the Mantine teal/yellow/red ramps). Click opens a Popover with per-signal rows.
  *
  * @example
  * import { ConnectivityIndicator } from 'basalt-ui'
@@ -12,6 +13,7 @@
 import { ActionIcon, Badge, Divider, Group, Popover, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useRef } from 'react'
+import { alpha, VX } from '../tokens'
 import { useConnectivity } from './use-connectivity'
 import type { ConnectivityStatus } from './types'
 
@@ -131,7 +133,7 @@ function SignalRow({
   value: boolean | null
   icon: React.ReactNode
 }) {
-  const color = value === true ? 'teal' : value === false ? 'red' : 'dimmed'
+  const color = value === true ? VX.status.good : value === false ? VX.status.bad : 'dimmed'
   const text = value === true ? 'Connected' : value === false ? 'Disconnected' : 'Not configured'
   return (
     <Group justify="space-between">
@@ -139,7 +141,7 @@ function SignalRow({
         {icon}
         <Text size="sm">{label}</Text>
       </Group>
-      <Text size="sm" c={color === 'dimmed' ? 'dimmed' : color}>
+      <Text size="sm" c={color}>
         {text}
       </Text>
     </Group>
@@ -148,17 +150,20 @@ function SignalRow({
 
 // ── Status badge ──────────────────────────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<ConnectivityStatus, { color: string; label: string }> = {
-  online: { color: 'teal', label: 'Connected' },
-  degraded: { color: 'yellow', label: 'Degraded' },
-  offline: { color: 'red', label: 'Offline' },
+// Status dot/badge colors read the exact spec status tokens (docs/DESIGN-SPEC.md §5: "connectivity
+// indicator: status dot colors from status tokens"), not the Mantine teal/yellow/red theme ramps —
+// those are a different hue family than STATUS.good/warn/bad.
+const STATUS_CONFIG: Record<ConnectivityStatus, { token: string; label: string }> = {
+  online: { token: VX.status.good, label: 'Connected' },
+  degraded: { token: VX.status.warn, label: 'Degraded' },
+  offline: { token: VX.status.bad, label: 'Offline' },
 }
 
 /** Icon color is neutral when online — only degrades when something is wrong. */
 const ICON_COLOR: Record<ConnectivityStatus, string> = {
-  online: 'gray',
-  degraded: 'yellow',
-  offline: 'red',
+  online: VX.faint,
+  degraded: VX.status.warn,
+  offline: VX.status.bad,
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────────────────────────────
@@ -214,7 +219,19 @@ export function ConnectivityIndicator() {
             <Text size="sm" fw={600}>
               Status
             </Text>
-            <Badge color={statusCfg.color} variant="light" size="sm">
+            <Badge
+              size="sm"
+              radius={6}
+              styles={{
+                root: {
+                  backgroundColor: alpha(statusCfg.token, 0.13),
+                  color: statusCfg.token,
+                  fontFamily: 'var(--basalt-font-mono)',
+                  fontWeight: 600,
+                  fontSize: VX.text.xs,
+                },
+              }}
+            >
               {statusCfg.label}
             </Badge>
           </Group>

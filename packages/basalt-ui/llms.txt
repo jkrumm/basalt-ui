@@ -108,10 +108,10 @@ OptionalPeers: @tanstack/react-virtual@>=3 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
-Description: Headless streaming-chat layer: useAgentStream, edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
+Description: Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
 Layer: headless
 Rule: basalt-agent
-OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
+OptionalPeers: ai@^7.0.15, react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
@@ -128,7 +128,7 @@ OptionalPeers: @tanstack/react-query@^5.101.0
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css
-Description: Mandatory first CSS import — @layer basalt base styles, iOS input safety net, font stack
+Description: Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack
 Layer: non-js-asset
 
 ## basalt-ui/configs/*

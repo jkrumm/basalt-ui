@@ -1,6 +1,6 @@
 import { scaleLinear } from '@visx/scale'
 import { useMemo } from 'react'
-import { useVxTheme } from '../theme'
+import { VX } from '../../tokens'
 
 type BarSparklineProps = {
   data: number[]
@@ -11,9 +11,10 @@ type BarSparklineProps = {
   ariaLabel?: string
 }
 
+/** Quiet inline bar trend — defaults to `VX.faint`, matching the sparkline family's restrained
+ * identity (docs/DESIGN-SPEC.md §5). */
 export function BarSparkline({ data, width, height, color, ariaLabel }: BarSparklineProps) {
-  const { line } = useVxTheme()
-  const fillColor = color ?? line
+  const fillColor = color ?? VX.faint
   const a11yProps = ariaLabel !== undefined ? { role: 'img' as const, 'aria-label': ariaLabel } : {}
 
   const yScale = useMemo(() => {

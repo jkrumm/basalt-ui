@@ -7,6 +7,7 @@ declare const classes: {
   readonly tab: string
   readonly label: string
   readonly sheet: string
+  readonly sheetTitle: string
   readonly row: string
   readonly rowLabel: string
 }

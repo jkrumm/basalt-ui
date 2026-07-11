@@ -3,6 +3,11 @@
  * Mobile (< sm): wraps to two rows — lead + global on row 1, the page action row
  * (horizontally scrollable) on row 2. Header height is responsive to match. */
 
+/*
+ * Transparent header (docs/DESIGN-SPEC.md §5): NO bottom rule at all. The header and the page body
+ * share the same page background, so a separator only draws a line across an already-continuous
+ * surface. The AppShell's own built-in border is disabled too (`withBorder={false}` in index.tsx).
+ */
 .bar {
   display: flex;
   align-items: center;

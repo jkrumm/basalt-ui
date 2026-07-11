@@ -1,0 +1,14 @@
+/*
+ * Active-only label color + weight (docs/DESIGN-SPEC.md §5: "active segment = ... ink text weight
+ * 600; inactive = muted, transparent"). Mantine puts Mantine's own `data-active` attribute
+ * directly on the label element, so this targets it in place — same reasoning as NavLink's
+ * active-icon rule: the flat `styles.label` object in theme/index.ts applies to every option
+ * regardless of state, so the active-only rules have to live in a CSS module instead. Mantine's
+ * `--sc-label-color` var is only set per-label when a `color` prop is supplied (SegmentedControl's
+ * `theme.extend` `vars` resolver doesn't expose it), so without this the active label falls back
+ * to raw `--mantine-color-black`/`white` instead of the ink token.
+ */
+.label[data-active] {
+  color: var(--vx-ink);
+  font-weight: 600;
+}

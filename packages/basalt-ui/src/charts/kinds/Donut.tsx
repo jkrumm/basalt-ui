@@ -1,10 +1,10 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
 import { memo, useMemo } from 'react'
+import type { ReactNode } from 'react'
 import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
 import { useChartTooltip } from '../hooks/useChartTooltip'
-import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
 import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
@@ -20,6 +20,30 @@ export type DonutProps = {
   seriesLabel?: (key: string) => string
   centerLabel?: string
   centerSubLabel?: string
+  /**
+   * Arbitrary content rendered in the ring center via an absolutely-positioned overlay, replacing
+   * `centerLabel`/`centerSubLabel` when provided. Plain elements only (Mantine-free boundary) — the
+   * overlay wrapper is `pointer-events: none` so it never steals arc hover, but a consumer can
+   * re-enable pointer events on its own inner element if it needs to be interactive.
+   *
+   * @example
+   * ```tsx
+   * <Donut
+   *   data={data}
+   *   colorForKey={colorForKey}
+   *   formatValue={formatValue}
+   *   centerContent={
+   *     <div style={{ textAlign: 'center' }}>
+   *       <div style={{ fontFamily: 'var(--basalt-font-mono)', fontSize: 20, fontWeight: 600 }}>
+   *         84%
+   *       </div>
+   *       <div style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.7 }}>on track</div>
+   *     </div>
+   *   }
+   * />
+   * ```
+   */
+  centerContent?: ReactNode
   innerRatio?: number
   padAngle?: number
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
@@ -70,12 +94,12 @@ function DonutPlot(props: DonutPlotProps) {
     seriesLabel = (k) => k,
     centerLabel,
     centerSubLabel,
+    centerContent,
     innerRatio = 0.6,
     padAngle = 0.01,
   } = props
   const { width, height } = plot
 
-  const theme = useVxTheme()
   const tooltipStyles = useTooltipStyles()
 
   const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum>()
@@ -121,7 +145,7 @@ function DonutPlot(props: DonutPlotProps) {
                     <path
                       d={pie.path(arc) || ''}
                       fill={colorForKey(key)}
-                      stroke={theme.tooltipBg}
+                      stroke={VX.surface.panel}
                       strokeWidth={1.5}
                       opacity={hoveredKey === null || hoveredKey === key ? 1 : 0.4}
                     />
@@ -131,32 +155,49 @@ function DonutPlot(props: DonutPlotProps) {
             }
           </Pie>
 
-          {centerLabel && (
+          {!centerContent && centerLabel && (
             <text
               textAnchor="middle"
               dominantBaseline="middle"
               y={centerSubLabel ? -8 : 0}
-              fill={theme.tooltipText}
-              fontSize={14}
+              fill={VX.ink}
+              fontSize={VX.text.lg}
               fontWeight={600}
+              fontFamily="var(--basalt-font-mono)"
             >
               {centerLabel}
             </text>
           )}
-          {centerSubLabel && (
+          {!centerContent && centerSubLabel && (
             <text
               textAnchor="middle"
               dominantBaseline="middle"
               y={centerLabel ? 10 : 0}
-              fill={theme.tooltipText}
-              fontSize={11}
+              fill={VX.ink}
+              fontSize={VX.text.micro}
               opacity={0.75}
+              fontFamily="var(--basalt-font-mono)"
             >
               {centerSubLabel}
             </text>
           )}
         </Group>
       </svg>
+
+      {centerContent && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          {centerContent}
+        </div>
+      )}
 
       <ChartTooltip tip={tip} tooltipRef={tooltipRef} styles={tooltipStyles}>
         {tip && (

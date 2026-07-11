@@ -2,8 +2,8 @@
  * thread-message — Mantine-styled AgentPart renderers plus a role-labelled transcript renderer.
  *
  * `threadPartRenderers` overrides the headless `PartList` defaults from `../agent` with Mantine
- * chrome: markdown text, a dimmed collapsible for reasoning ("Thinking"), a compact tool-call
- * Card, a source Anchor, and a red error Alert. `ThreadTranscript` composes those renderers over
+ * chrome: markdown text, a dimmed collapsible for reasoning ("Thinking"), a rail-styled tool-call
+ * block, a source Anchor, and a red error Alert. `ThreadTranscript` composes those renderers over
  * a thread's settled messages plus an optional live (in-flight) assistant turn.
  *
  * This module is Mantine-coupled by design — it lives in `agent-chat/`, the root surface where
@@ -21,7 +21,7 @@
 import {
   Alert,
   Anchor,
-  Card,
+  Box,
   Collapse,
   Group,
   Loader,
@@ -43,62 +43,76 @@ import type {
   ToolCallPart,
 } from '../agent'
 import { PartList, StreamingMarkdown } from '../agent'
+import { alpha, VX } from '../tokens'
+
+/** The mono, uppercase, letter-spaced micro-label idiom (docs/DESIGN-SPEC.md §3) — shared by the
+ * transcript's role labels and the reasoning/tool-call headers below. */
+const MICRO_LABEL_STYLE = {
+  fontFamily: 'var(--basalt-font-mono)',
+  fontSize: VX.text.micro,
+  fontWeight: 500,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: VX.faint,
+} as const
 
 // ── Per-type Mantine renderers ────────────────────────────────────────────────
 
 function TextRenderer({ part }: { part: TextPart; index: number }): JSX.Element {
-  return (
-    <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-      <StreamingMarkdown>{part.text}</StreamingMarkdown>
-    </Text>
-  )
+  // StreamingMarkdown emits block-level HTML in its own `.root` container (which carries the
+  // chat-density typography). It must NOT be wrapped in a Mantine `Text` (renders a `<p>`) — block
+  // elements inside a `<p>` are invalid nesting that the browser auto-closes, scrambling spacing.
+  return <StreamingMarkdown>{part.text}</StreamingMarkdown>
 }
+
+// Tool-call/reasoning parts (docs/DESIGN-SPEC.md §5): a mono micro-label header with a faint left
+// divider rail — quieter than the card idiom, since these are transcript asides, not surfaces.
+const RAIL_STYLE = { borderLeft: `2px solid ${VX.divider}`, paddingLeft: 10 } as const
+const CODE_BLOCK_STYLE = {
+  margin: 0,
+  marginTop: 6,
+  fontFamily: 'var(--basalt-font-mono)',
+  backgroundColor: alpha(VX.ink, 0.06),
+  borderRadius: 8,
+  padding: 8,
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'anywhere',
+} as const
 
 /** A dimmed, collapsed-by-default disclosure for reasoning/thinking fragments. */
 function ReasoningRenderer({ part }: { part: ReasoningPart; index: number }): JSX.Element {
   const [open, { toggle }] = useDisclosure(false)
   return (
-    <Stack gap={4}>
-      <UnstyledButton onClick={toggle}>
-        <Text size="xs" c="dimmed" fw={500}>
-          {open ? 'Hide thinking' : 'Thinking'}
-        </Text>
-      </UnstyledButton>
-      <Collapse expanded={open}>
-        <Text size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>
-          {part.text}
-        </Text>
-      </Collapse>
-    </Stack>
+    <Box style={RAIL_STYLE}>
+      <Stack gap={4}>
+        <UnstyledButton onClick={toggle}>
+          <Text style={MICRO_LABEL_STYLE}>{open ? 'Hide thinking' : 'Thinking'}</Text>
+        </UnstyledButton>
+        <Collapse expanded={open}>
+          <Text size="xs" c="dimmed" style={{ whiteSpace: 'pre-wrap' }}>
+            {part.text}
+          </Text>
+        </Collapse>
+      </Stack>
+    </Box>
   )
 }
 
 function ToolRenderer({ part }: { part: ToolCallPart; index: number }): JSX.Element {
   return (
-    <Card withBorder radius="sm" padding="xs">
+    <Box style={RAIL_STYLE}>
       <Stack gap={4}>
-        <Text size="xs" ff="monospace" fw={600}>
-          {part.toolName}
-        </Text>
-        <Text
-          component="pre"
-          size="10px"
-          c="dimmed"
-          style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
-        >
+        <Text style={MICRO_LABEL_STYLE}>{part.toolName}</Text>
+        <Text component="pre" size="xs" style={CODE_BLOCK_STYLE}>
           {JSON.stringify(part.input, null, 2)}
         </Text>
         {part.output !== undefined && (
-          <Text
-            component="pre"
-            size="10px"
-            style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
-          >
+          <Text component="pre" size="xs" style={CODE_BLOCK_STYLE}>
             {JSON.stringify(part.output, null, 2)}
           </Text>
         )}
       </Stack>
-    </Card>
+    </Box>
   )
 }
 
@@ -168,16 +182,25 @@ function MessageBlock({
   parts: AgentPart[]
   streaming?: boolean
 }): JSX.Element {
+  // Assistant/user surfaces are differentiated by subtle vs panel tokens, radius 10
+  // (docs/DESIGN-SPEC.md §5) — the user's own turn sits a shade quieter than the reply.
   return (
-    <Stack gap={6}>
-      <Group gap={6} align="center">
-        <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-          {ROLE_LABEL[author]}
-        </Text>
-        {streaming && <Loader size="xs" />}
-      </Group>
-      <PartList parts={coalesceParts(parts)} components={threadPartRenderers} />
-    </Stack>
+    <Box
+      style={{
+        padding: '10px 12px',
+        backgroundColor: author === 'user' ? VX.surface.subtle : VX.surface.panel,
+        borderRadius: VX.radiusCard,
+        boxShadow: VX.shadowCard,
+      }}
+    >
+      <Stack gap={6}>
+        <Group gap={6} align="center">
+          <Text style={MICRO_LABEL_STYLE}>{ROLE_LABEL[author]}</Text>
+          {streaming && <Loader size="xs" />}
+        </Group>
+        <PartList parts={coalesceParts(parts)} components={threadPartRenderers} />
+      </Stack>
+    </Box>
   )
 }
 
@@ -205,7 +228,7 @@ export function ThreadTranscript({
   liveStatus,
 }: ThreadTranscriptProps): JSX.Element {
   return (
-    <Stack gap="lg">
+    <Stack gap="sm">
       {messages.map((message) => (
         <MessageBlock key={message.id} author={message.role} parts={message.parts} />
       ))}

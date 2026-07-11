@@ -1,7 +1,8 @@
 /**
  * ThreadDetailPanel — the right-hand pane rendering one open thread's transcript + composer.
  *
- * A plain pane (Paper/Box), NOT a Modal — the composite that wires this up owns responsive
+ * A plain pane (Box), NOT a Modal — the feed/detail split reads via the `divider` token rather
+ * than a card border (docs/DESIGN-SPEC.md §5); the composite that wires this up owns responsive
  * collapse/layout decisions. The header shares a `layoutId` (thread.id) with `ThreadOutcomeCard`
  * so opening a thread reads as one continuous shared-element FLIP transition rather than a swap.
  * Pure and prop-driven: no store, no fetching — `onSend`/`onStop`/`onClose`/`onRetry` are the
@@ -19,7 +20,7 @@
  *   onClose={() => select(null)}
  * />
  */
-import { ActionIcon, Alert, Box, Button, Divider, Paper, Stack, Text } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Divider, Stack, Text } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
 import { motion } from 'motion/react'
 import type { JSX } from 'react'
@@ -28,6 +29,7 @@ import { BasaltStickToBottom } from '../agent'
 import { MOTION_SPRING } from '../motion'
 import { Composer } from './composer'
 import { ThreadTranscript } from './thread-message'
+import { VX } from '../tokens'
 
 function CloseGlyph(): JSX.Element {
   return (
@@ -45,14 +47,16 @@ function CloseGlyph(): JSX.Element {
 
 function EmptyPanel(): JSX.Element {
   return (
-    <Paper radius="md" withBorder p="xl" style={{ height: '100%' }}>
+    <Box p="xl" style={{ height: '100%' }}>
       <Stack align="center" justify="center" gap={4} h="100%">
-        <Text fw={600}>No thread selected</Text>
+        <Text fw={550} style={{ fontFamily: 'var(--basalt-font-head)', fontStretch: '88%' }}>
+          No thread selected
+        </Text>
         <Text size="sm" c="dimmed" ta="center">
           Pick a thread from the feed to see its transcript.
         </Text>
       </Stack>
-    </Paper>
+    </Box>
   )
 }
 
@@ -109,23 +113,27 @@ export function ThreadDetailPanel({
   const streaming = runStatus === 'streaming'
 
   const panel = (
-    <Paper
-      radius="md"
-      withBorder
-      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-    >
+    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box
         p="sm"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
       >
-        <Text fw={600} lineClamp={1}>
+        <Text
+          fw={550}
+          lineClamp={1}
+          style={{
+            fontFamily: 'var(--basalt-font-head)',
+            fontSize: VX.text.lg,
+            fontStretch: '88%',
+          }}
+        >
           {threadLabel(thread)}
         </Text>
         <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close thread">
           <CloseGlyph />
         </ActionIcon>
       </Box>
-      <Divider />
+      <Divider color="var(--vx-divider)" />
       <Box style={{ flex: 1, minHeight: 0 }}>
         <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
           <ThreadTranscript
@@ -152,7 +160,7 @@ export function ThreadDetailPanel({
           )}
         </BasaltStickToBottom>
       </Box>
-      <Divider />
+      <Divider color="var(--vx-divider)" />
       <Box p="sm">
         <Stack gap="xs">
           <Composer onSubmit={onSend} disabled={streaming} />
@@ -163,7 +171,7 @@ export function ThreadDetailPanel({
           )}
         </Stack>
       </Box>
-    </Paper>
+    </Box>
   )
 
   if (reduceMotion) return panel

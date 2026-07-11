@@ -1,0 +1,64 @@
+/*
+ * Control-level state rules the theme's flat `styles` objects can't express. Wired via
+ * `classNames` in theme/index.ts (Input / Accordion), so they reach every render path — same
+ * pattern as nav-link.module.css.
+ */
+
+/*
+ * Field idiom (docs/DESIGN-SPEC.md §5): inputs read slightly inset on the panel — field surface
+ * (white on light, a page-bg step below panel on dark), a 1px hairline, faint placeholder, and an
+ * accent border on focus (Mantine's own `:focus` rule swaps `--input-bd` to `--input-bd-focus`).
+ *
+ * Mantine defines these vars per scheme+variant on the input WRAPPER
+ * (`[data-mantine-color-scheme] .m_*[data-variant='default']`, specificity 0,3,0). The `html`
+ * prefix here lands at 0,3,1 so the override is deterministic regardless of stylesheet order.
+ * Scoped to the `default` variant so `filled`/`unstyled` keep their Mantine semantics; the border
+ * override excludes `[data-error]` so the error border still wins.
+ */
+html[data-mantine-color-scheme] .inputWrapper[data-variant='default'] {
+  --input-bg: var(--vx-surface-field);
+  --input-bd-focus: var(--vx-accent);
+}
+
+html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-error]) {
+  --input-bd: var(--vx-surface-hairline);
+  --input-placeholder-color: var(--vx-faint);
+}
+
+/* Focus = accent border (via --input-bd-focus above) + a subtle accent ring. */
+.input:focus,
+.input:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vx-accent) 15%, transparent);
+}
+
+/*
+ * Accordion (default variant): hairline separators BETWEEN items only — the last item's
+ * border-bottom would read as an outer rule, so it's dropped. Mantine declares
+ * `--item-border-color` on the item via an all-`:where()` scheme rule (0,1,0); the `html` prefix
+ * (0,1,1) outranks it. (Custom properties can't ride `styles` objects — Mantine strips them.)
+ */
+html .accordionItem {
+  --item-border-color: var(--vx-surface-hairline);
+}
+
+.accordionItem:last-of-type {
+  border-bottom: none;
+}
+
+/*
+ * Tabs: the tab-list rule (and the inactive-tab hover underline) is a layout separator — the
+ * divider token, not the heavy gray-3/dark-4 line. Mantine's scheme rules sit at (0,2,0); the
+ * `html[...]` prefix lands (0,2,1). The active underline keeps `--tabs-color` untouched.
+ */
+html[data-mantine-color-scheme] .tabsRoot {
+  --tab-border-color: var(--vx-divider);
+}
+
+/*
+ * Table: `--table-border-color` drives row separators AND the opt-in `withTableBorder` outer
+ * border — both drop to the hairline. Mantine's all-`:where()` scheme rule is (0,1,0); `html`
+ * prefix wins at (0,1,1).
+ */
+html .tableRoot {
+  --table-border-color: var(--vx-surface-hairline);
+}

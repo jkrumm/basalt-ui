@@ -21,49 +21,80 @@
 /* Active = neutral surface fill + plain text color. Never the identity blue (DESIGN.md). */
 .tab[data-active] {
   color: var(--mantine-color-text);
-  background-color: color-mix(in srgb, var(--vx-neutral) 10%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
 }
 
 .label {
-  font-size: 10px;
+  font-size: var(--vx-text-micro);
   line-height: 1;
   font-weight: 500;
 }
 
-/* Bottom sheet: rounded top corners so it reads as a card rising from the footer. */
+/*
+ * Bottom sheet: same idiom as every other floating surface (docs/DESIGN-SPEC.md §5) — panel bg +
+ * shadow-card — with rounded top corners so it reads as a card rising from the footer.
+ */
 .sheet {
+  background-color: var(--vx-surface-panel);
+  box-shadow: var(--vx-shadow-card);
   border-top-left-radius: var(--mantine-radius-lg);
   border-top-right-radius: var(--mantine-radius-lg);
 }
 
-/* Large tap rows inside the group sheet. NavLink rows reuse the sidebar's neutral active fill. */
+/* Sheet title = a micro-label (docs/DESIGN-SPEC.md §3), matching the sidebar's `.sectionLabel`. */
+.sheetTitle {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vx-faint);
+}
+
+/* Large tap rows inside the group sheet. NavLink rows reuse the sidebar's neutral active fill.
+ * `padding` needs `!important`: the theme's `NavLink.extend` forces the dense desktop row padding
+ * (6px 10px) INLINE on every NavLink root, which would shrink these touch targets otherwise. */
 .row {
   display: flex;
   align-items: center;
   gap: var(--mantine-spacing-sm);
   width: 100%;
-  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) !important;
   border-radius: var(--mantine-radius-sm);
   color: var(--mantine-color-text);
 }
 
 .row:hover {
-  background-color: color-mix(in srgb, var(--vx-neutral) 8%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 8%, transparent);
 }
 
 /*
  * Active = neutral surface fill + plain text color. Never the identity blue (DESIGN.md). --nl-color
- * forces NavLink's active text/icon color (otherwise the accent) to the plain text color.
+ * forces NavLink's active text/icon color (otherwise the accent) to the plain text color. The
+ * shared theme's `nav-link.module.css` separately accent-colors any active NavLink's left icon
+ * (docs/DESIGN-SPEC.md §5, sidebar rows) — that rule reaches mobile rows too since the theme
+ * `classNames` are always injected, so the icon needs its own `!important` override here to hold
+ * the mobile-only "never accent" doctrine.
  */
 .row[data-active],
 .row[data-active]:hover {
   --nl-color: var(--mantine-color-text);
   color: var(--mantine-color-text);
-  background-color: color-mix(in srgb, var(--vx-neutral) 13%, transparent);
+  background-color: color-mix(in srgb, var(--vx-ink) 13%, transparent);
   font-weight: 600;
+}
+
+.row[data-active] :global(.mantine-NavLink-section[data-position='left']) {
+  color: var(--mantine-color-text) !important;
 }
 
 .rowLabel {
   font-size: var(--mantine-font-size-md);
   line-height: 1.2;
+}
+
+/* NavLink-rendered rows match `.rowLabel` — the theme pins the label at the dense desktop 13px
+ * INLINE (`styles.label`), so `!important` is required to restore the mobile size. */
+.row :global(.mantine-NavLink-label) {
+  font-size: var(--mantine-font-size-md) !important;
 }

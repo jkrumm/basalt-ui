@@ -72,9 +72,13 @@ import { App } from './App'
 createRoot(document.getElementById('root')!).render(<App />)
 ```
 
+> Use the **layered** `styles.layer.css` bundle, not the plain `styles.css` — Mantine's unlayered
+> bundle outranks basalt's `@layer basalt` styles (including the iOS 16px input floor) regardless
+> of specificity.
+
 ```tsx
 // Provider — wraps MantineProvider, injects the --vx-* palette, bridges the Vx tokens
-import '@mantine/core/styles.css'
+import '@mantine/core/styles.layer.css'
 import 'basalt-ui/styles.css'
 import { BasaltProvider, createBasaltTheme } from 'basalt-ui'
 

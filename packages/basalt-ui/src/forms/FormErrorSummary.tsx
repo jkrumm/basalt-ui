@@ -4,6 +4,7 @@
  */
 import { Alert, List, Text } from '@mantine/core'
 import type { UseFormReturnType } from '@mantine/form'
+import { alpha, VX } from '../tokens'
 
 // ── FormErrorSummary ──────────────────────────────────────────────────────────
 
@@ -42,7 +43,17 @@ export function FormErrorSummary<Values extends Record<string, unknown>>({
   if (errorEntries.length === 0) return null
 
   return (
-    <Alert color="red" role="alert" title={<Text fw={600}>{title}</Text>}>
+    <Alert
+      role="alert"
+      radius={6}
+      title={<Text fw={600}>{title}</Text>}
+      styles={{
+        root: {
+          backgroundColor: alpha(VX.status.bad, 0.13),
+          color: VX.status.bad,
+        },
+      }}
+    >
       <List size="sm" mt={4}>
         {errorEntries.map(([path, message]) => (
           <List.Item key={path}>{String(message)}</List.Item>

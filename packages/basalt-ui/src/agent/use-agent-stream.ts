@@ -27,6 +27,7 @@
  * }
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isStartPart } from './parts'
 import type { AgentPart } from './parts'
 import type { AgentTransport } from './transport'
 
@@ -104,6 +105,9 @@ export function useAgentStream<TPart = AgentPart, TInput = string>({
           // Guard: if a newer send() has superseded this stream, stop updating state.
           if (controllerRef.current !== controller) return
           if (controller.signal.aborted) break
+          // StartPart is a no-op signal (run id + resume token), not renderable content — this
+          // hook has no persistence layer to resume across, so just skip it.
+          if (isStartPart(part)) continue
           setParts((prev) => [...prev, part])
         }
         // Only mark done if this stream is still the current one and wasn't aborted.

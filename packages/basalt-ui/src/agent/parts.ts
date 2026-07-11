@@ -13,6 +13,7 @@
  * import type { AgentPart } from 'basalt-ui/agent'
  * function describe(p: AgentPart): string {
  *   switch (p.type) {
+ *     case 'start':     return `[start] ${p.runId}`
  *     case 'text':      return p.text
  *     case 'reasoning': return `[think] ${p.text}`
  *     case 'tool':      return `[tool] ${p.toolName}`
@@ -25,6 +26,17 @@
 
 // ── AgentPart discriminated union ────────────────────────────────────────────
 
+/**
+ * Emitted once at stream start, carrying the run id and an opaque token a transport can use to
+ * resume this run after a disconnect. Not renderable content — UI code should treat it as a
+ * no-op signal, not conversation content.
+ */
+export type StartPart = {
+  readonly type: 'start'
+  readonly runId: string
+  readonly resumeToken?: string
+}
+
 /** A streamed text fragment from the assistant. */
 export type TextPart = { readonly type: 'text'; readonly text: string }
 
@@ -34,12 +46,17 @@ export type ReasoningPart = { readonly type: 'reasoning'; readonly text: string 
 /**
  * A tool invocation — input is the parameters sent, output (optional) is the result once
  * the tool has completed. Streams arrive with output undefined; it may be appended later.
+ *
+ * `toolCallId` (optional) identifies the specific invocation when a transport's wire format
+ * carries one (e.g. AI SDK's `ToolUIPart`) — useful for consumer-side coalescing of a tool call's
+ * input/output pair by id rather than by array position.
  */
 export type ToolCallPart = {
   readonly type: 'tool'
   readonly toolName: string
   readonly input: unknown
   readonly output?: unknown
+  readonly toolCallId?: string
 }
 
 /** A cited source URL referenced by the assistant. */
@@ -54,7 +71,7 @@ export type ErrorPart = { readonly type: 'error'; readonly message: string }
  * @example
  * const part: AgentPart = { type: 'text', text: 'Hello' }
  */
-export type AgentPart = TextPart | ReasoningPart | ToolCallPart | SourcePart | ErrorPart
+export type AgentPart = StartPart | TextPart | ReasoningPart | ToolCallPart | SourcePart | ErrorPart
 
 // ── parseAgentPart ───────────────────────────────────────────────────────────
 
@@ -73,6 +90,13 @@ export function parseAgentPart(raw: unknown): AgentPart | null {
   if (typeof obj['type'] !== 'string') return null
 
   switch (obj['type']) {
+    case 'start':
+      if (typeof obj['runId'] !== 'string') return null
+      return {
+        type: 'start',
+        runId: obj['runId'],
+        ...(typeof obj['resumeToken'] === 'string' ? { resumeToken: obj['resumeToken'] } : {}),
+      }
     case 'text':
       if (typeof obj['text'] !== 'string') return null
       return { type: 'text', text: obj['text'] }
@@ -87,6 +111,7 @@ export function parseAgentPart(raw: unknown): AgentPart | null {
         toolName: obj['toolName'],
         input: obj['input'],
         ...(obj['output'] !== undefined ? { output: obj['output'] } : {}),
+        ...(typeof obj['toolCallId'] === 'string' ? { toolCallId: obj['toolCallId'] } : {}),
       }
     case 'source':
       if (typeof obj['url'] !== 'string') return null
@@ -101,4 +126,11 @@ export function parseAgentPart(raw: unknown): AgentPart | null {
     default:
       return null
   }
+}
+
+// ── isStartPart ──────────────────────────────────────────────────────────────
+
+/** Type guard: narrows an unknown value to StartPart. */
+export function isStartPart(part: unknown): part is StartPart {
+  return typeof part === 'object' && part !== null && (part as { type?: unknown }).type === 'start'
 }

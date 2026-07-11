@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react'
 import { Box, Group, Kbd, Stack, Text, Title } from '@mantine/core'
 import { toShortcutList } from './projectors'
 import { detectMac, parseShortcut } from './shortcut-format'
+import { VX } from '../tokens'
 
 // ── ShortcutsHelpProps ────────────────────────────────────────────────────────
 
@@ -101,7 +102,14 @@ export function ShortcutsHelp({ title = 'Keyboard shortcuts', maw }: ShortcutsHe
         {[...grouped.entries()].map(([group, entries]) => (
           <Stack key={group} gap={2}>
             {group !== '' && (
-              <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={4}>
+              <Text
+                ff="monospace"
+                tt="uppercase"
+                fw={500}
+                c="var(--vx-faint)"
+                mb={4}
+                style={{ fontSize: VX.text.micro, letterSpacing: '0.06em' }}
+              >
                 {group}
               </Text>
             )}

@@ -67,6 +67,10 @@ function firstSeen<T>(data: T[], get: (d: T) => string): string[] {
 // collides the way a space separator could — e.g. (row "a b", col "c") vs (row "a", col "b c").
 const cellKey = (row: string, col: string): string => `${row}\u0000${col}`
 
+// Category labels read like axis ticks (docs/DESIGN-SPEC.md §5: "ticks mono 10.5px faint") even
+// though Heatmap renders them as plain <text> rather than through the Axis* primitives.
+const LABEL_FONT_FAMILY = 'var(--basalt-font-mono)'
+
 // Left gutter for row labels, bottom gutter for column labels, top breathing room.
 const PAD_LEFT = 44
 const PAD_BOTTOM = 24
@@ -165,7 +169,8 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
               y={ri * cellH + cellH / 2 + 4}
               textAnchor="end"
               fontSize={VX.axisFont}
-              fill={VX.axis}
+              fontFamily={LABEL_FONT_FAMILY}
+              fill={VX.faint}
             >
               {rowLabel(row)}
             </text>
@@ -181,7 +186,8 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
               y={16}
               textAnchor="middle"
               fontSize={VX.axisFont}
-              fill={VX.axis}
+              fontFamily={LABEL_FONT_FAMILY}
+              fill={VX.faint}
             >
               {colLabel(col)}
             </text>
@@ -198,7 +204,14 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
               </linearGradient>
             </defs>
             <rect width={gridW} height={LEGEND_H} rx={2} fill={`url(#${legendGradientId})`} />
-            <text x={0} y={LEGEND_H + 12} textAnchor="start" fontSize={VX.axisFont} fill={VX.axis}>
+            <text
+              x={0}
+              y={LEGEND_H + 12}
+              textAnchor="start"
+              fontSize={VX.axisFont}
+              fontFamily={LABEL_FONT_FAMILY}
+              fill={VX.faint}
+            >
               {legend.min}
             </text>
             <text
@@ -206,7 +219,8 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
               y={LEGEND_H + 12}
               textAnchor="end"
               fontSize={VX.axisFont}
-              fill={VX.axis}
+              fontFamily={LABEL_FONT_FAMILY}
+              fill={VX.faint}
             >
               {legend.max}
             </text>

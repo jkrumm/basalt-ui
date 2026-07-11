@@ -19,7 +19,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows } from '../series'
+import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesStyle } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks } from '../utils/ticks'
@@ -76,15 +76,23 @@ const PANE_GAP = 12
 function DualPanelInner<T>(props: DualPanelProps<T>) {
   const { series, chartId, height, barLabel, barColorPositive, legend, ariaLabel } = props
 
+  // Default the top-pane line overlays to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) —
+  // applied once here so the plotted line, the derived legend swatch, and the derived tooltip row
+  // all agree.
+  const styledSeries = useMemo<ChartSeries<T>[]>(
+    () => series.map((s) => ({ ...s, strokeWidth: s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH })),
+    [series],
+  )
+
   // The bottom pane's signed histogram gets one representative legend entry alongside the top
   // lines — a diverging metric can't express its sign-dependent color as a single SeriesStyle, so
   // `barColorPositive` stands in as the swatch color.
   const legendSeries = useMemo<SeriesStyle[]>(
     () => [
-      ...series,
+      ...styledSeries,
       { key: '__divergence', label: barLabel, color: barColorPositive, mark: 'bar' },
     ],
-    [series, barLabel, barColorPositive],
+    [styledSeries, barLabel, barColorPositive],
   )
 
   return (
@@ -95,7 +103,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
       {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend)}
     >
-      {(plot) => <DualPanelPlot {...props} plot={plot} />}
+      {(plot) => <DualPanelPlot {...props} series={styledSeries} plot={plot} />}
     </ChartFrame>
   )
 }
@@ -340,7 +348,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
                 height={Math.max(Math.abs(yVal - y0), 1)}
                 fill={v >= 0 ? barColorPositive : barColorNegative}
                 fillOpacity={0.7}
-                rx={1}
+                rx={1.4}
               />
             )
           })}

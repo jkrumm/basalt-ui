@@ -26,9 +26,10 @@
  * code. The re-exported `openSpotlight` / `closeSpotlight` helpers delegate to this store.
  *
  * @example
- * // main.tsx — replace <BasaltNotifications /> with <BasaltOverlays>:
+ * // main.tsx — replace <BasaltNotifications /> with <BasaltOverlays>. Use the layered bundle —
+ * // the unlayered one outranks basalt's `@layer basalt` styles regardless of specificity:
  * import { BasaltOverlays } from 'basalt-ui/commands'
- * import '@mantine/spotlight/styles.css'
+ * import '@mantine/spotlight/styles.layer.css'
  *
  * createRoot(root).render(
  *   <BasaltProvider>

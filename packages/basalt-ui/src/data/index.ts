@@ -1,8 +1,9 @@
 /**
  * ./data — TanStack Table + Virtual adapter battery for basalt-ui apps.
  *
- * Provides a sortable data table (BasaltDataTable) and a windowed virtual list
- * (BasaltVirtualList), both rendered with Mantine primitives over headless TanStack logic.
+ * Provides a sortable data table (BasaltDataTable — with opt-in search/facet toolbar, pagination,
+ * and column pinning) and a windowed virtual list (BasaltVirtualList), both rendered with Mantine
+ * primitives over headless TanStack logic.
  *
  * Optional peers:
  *  - @tanstack/react-table  >=8 <9  (BasaltDataTable)

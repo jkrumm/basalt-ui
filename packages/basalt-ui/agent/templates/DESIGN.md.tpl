@@ -20,25 +20,28 @@ law, the law wins.
 
 ## Identity
 
-{{APP_NAME}} inherits the basalt-ui identity verbatim: a calm, dense, dark-first professional
-surface — **warm-neutral charcoal** (volcanic basalt; neutrals are warm, blue channel ≤ red, never
-cool/steel/blue-grey), **one earned accent: a muted slate-blue** (desaturated, calm Notion/Linear —
-not "Bootstrap blue"), neutral grey as the default data ink, hairline elevation, system-sans carried
-by size+weight with mono numbers. Neutrals do ~90% of the surface; the accent only points (primary
-CTA, focus, links, small status pops) — never floods. Active nav is a neutral surface fill, never the
-accent. Light mode is a near-neutral off-white (page `#fafafa`, cards `#ffffff`, hairline `#ededec` —
-only a whisper of warmth, not creamy/yellow) with near-black text; dark mode is warm charcoal (not
-blue-tinted, not pure black). **Dense by default** (compact nav, `sm` gaps/padding); all cards render
-identically — **flat, one border token, one radius token (`--vx-radius-card`)** — never inline-override
-a surface's border/radius/shadow/bg (enforced by `basalt check-theme`). The theme runs a **strict
-surface system**: it collapses Mantine's raw ramp steps onto the `--vx-surface-*` tokens, so every
-component shares one border/bg/radius. **Use Mantine primitives, not raw HTML** (`Box`/`Flex`/`Grid`/
-`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card` over `<div>`/`<span>` with inline `style`) — also enforced
-by `check-theme`. Confirm or restate any
-intentional identity shift here; **silence means "inherits the basalt-ui defaults unchanged."**
+{{APP_NAME}} inherits the basalt-ui identity verbatim: a calm, dense, professional surface —
+**modern zinc** (cool-neutral zinc surfaces, Tailwind zinc family, on both light and dark), **one
+earned accent: a saturated sky-blue** — split by role: as INK (links, icons, chart lines) `#0077bd`
+light / `#8ec5ff` dark; as a FILLED SURFACE `#0077bd` in both schemes with a white label — neutral grey as the
+default data ink, `shadow-card` elevation (a whisper shadow + 1px ring, no plain hairline border on
+cards), a three-font system (Nunito Sans body / Hubot Sans condensed headings / JetBrains Mono for
+all numerals + micro-labels) carried by the shared `--basalt-font-*` vars. Neutrals do ~90% of the
+surface; the accent only points (primary data series, active-nav icons/child labels, links, primary
+buttons, focus rings, meter leader bars) — never floods. Light mode has cards (`#f4f4f5`) lifting
+subtly off a slightly darker page (`#ececee`-ish) with near-black ink text; dark mode is cool zinc
+(not steel-blue, not pure black). **Dense by default** (compact nav, `sm` gaps/padding); all cards
+render identically — **`shadow-card` depth, one radius token (`--vx-radius-card`, 10px)** — never
+inline-override a surface's shadow/radius/bg (enforced by `basalt check-theme`). The theme runs a
+**strict surface system**: it collapses Mantine's raw ramp steps onto the `--vx-surface-*` tokens,
+so every component shares one bg/radius/depth. **Use Mantine primitives, not raw HTML**
+(`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card` over `<div>`/`<span>` with inline
+`style`) — also enforced by `check-theme`. Confirm or restate any intentional identity shift here;
+**silence means "inherits the basalt-ui defaults unchanged."** See `docs/DESIGN-SPEC.md` in the
+basalt-ui repo for the full 2026-07 visual spec this identity is drawn from.
 
-- **Accent hue:** {{ACCENT_HUE}} (default: the muted slate-blue — `var(--vx-line)` neutral is still
-  the default for single-series marks)
+- **Accent hue:** {{ACCENT_HUE}} (default: the saturated sky accent — `var(--vx-line)` neutral is
+  still the default for single-series marks)
 - **Tone deltas:** _(none — inherits)_
 
 ## Series dictionary
@@ -50,7 +53,7 @@ consumer; keep it the single source of truth and never inline a hex elsewhere.
 
 | Series name | Light hex | Dark hex | `defineSeries` key | Role / earned reason |
 |-|-|-|-|-|
-| _e.g. requests_ | `#4f78a4` | `#7099c4` | `requests` | Primary metric (muted slate accent) |
+| _e.g. requests_ | `#4f78a4` | `#7099c4` | `requests` | Primary metric (earned accent hue) |
 | | | | | |
 
 ```ts

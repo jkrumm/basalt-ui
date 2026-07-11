@@ -3,7 +3,7 @@ import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
 import { useMemo } from 'react'
-import { useVxTheme } from '../theme'
+import { VX } from '../../tokens'
 
 type LineSparklineProps = {
   data: number[]
@@ -14,9 +14,12 @@ type LineSparklineProps = {
   ariaLabel?: string
 }
 
+/**
+ * Quiet single-hue trend line (docs/DESIGN-SPEC.md §5: "single 1.6px faint line, no fill, no
+ * axes, no dots"). Sparklines default to `VX.faint`, not the bolder `VX.line` used by full charts.
+ */
 export function LineSparkline({ data, width, height, color, ariaLabel }: LineSparklineProps) {
-  const { line } = useVxTheme()
-  const strokeColor = color ?? line
+  const strokeColor = color ?? VX.faint
   const a11yProps = ariaLabel !== undefined ? { role: 'img' as const, 'aria-label': ariaLabel } : {}
 
   const xScale = useMemo(
@@ -36,7 +39,6 @@ export function LineSparkline({ data, width, height, color, ariaLabel }: LineSpa
   if (data.length < 2) return <svg width={width} height={height} {...a11yProps} />
 
   const indexed = data.map((v, i) => ({ v, i }))
-  const last = indexed[indexed.length - 1]
 
   return (
     <svg width={width} height={height} {...a11yProps}>
@@ -46,12 +48,9 @@ export function LineSparkline({ data, width, height, color, ariaLabel }: LineSpa
           x={(d) => xScale(d.i)}
           y={(d) => yScale(d.v)}
           stroke={strokeColor}
-          strokeWidth={1.5}
+          strokeWidth={1.6}
           curve={curveMonotoneX}
         />
-        {last !== undefined && (
-          <circle cx={xScale(last.i)} cy={yScale(last.v)} r={2.5} fill={strokeColor} />
-        )}
       </Group>
     </svg>
   )

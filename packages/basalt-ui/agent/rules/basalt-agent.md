@@ -18,8 +18,10 @@ transport seam, exhaustive part rendering, optional markdown, auto-scroll, and p
 
 ```ts
 import type { AgentPart } from 'basalt-ui/agent'
-// TextPart | ReasoningPart | ToolCallPart | SourcePart | ErrorPart
+// StartPart | TextPart | ReasoningPart | ToolCallPart | SourcePart | ErrorPart
 ```
+
+`StartPart` is a no-op resumption signal, not renderable content — see "Stream resumption" below.
 
 Every switch over `AgentPart` MUST end with `default: return assertNever(part)`. This is
 enforced by tsc — adding a new variant without a case is a compile error.
@@ -269,32 +271,136 @@ consumer-extended part type. If you need custom rendering for the existing part 
 the headless layer instead: compose your own transcript from `PartList` (`basalt-ui/agent`) with a
 custom `components` renderer map, rather than passing a wider type through `ThreadWorkspace`.
 
-## AI SDK (opt-in, not shipped)
+## Stream resumption — the reconnect seam
 
-`@ai-sdk/react`'s `useChat` is a hook interface, not an async generator — it does not fit the
-`AgentTransport` seam cleanly. basalt does NOT ship an `aiSdkTransport` or declare `ai` /
-`@ai-sdk/react` as peers. To use the AI SDK, implement `AgentTransport` directly:
+basalt-ui ships the CLIENT-SIDE contract for resuming a run after a disconnect (reload, network
+drop) — NOT a concrete backend. A real resumable transport (e.g. Redis-backed run state) is the
+consumer's responsibility; this section documents the seam a consumer transport plugs into.
+
+### StartPart
+
+A sixth `AgentPart` variant, emitted once at the top of a run:
 
 ```ts
-import { type AgentTransport } from 'basalt-ui/agent'
-// Implement the seam with your AI SDK streaming call:
-const aiSdkTransport: AgentTransport = {
-  async *stream(input) {
-    // Call the AI SDK, yield AgentParts from the stream
-  },
+export type StartPart = {
+  readonly type: 'start'
+  readonly runId: string
+  readonly resumeToken?: string
 }
 ```
+
+Not renderable content — `PartList`'s exhaustive switch returns `null` for it, and it's stripped
+before the consumer ever sees it: `useAgentStream` skips it in its accumulation loop; `useAgentThreadRuns`
+skips it too but additionally reads `resumeToken` off it and stashes it on the persisted
+`AgentThread` via `store.setResumeToken`. `parseAgentPart` validates it like every other variant
+(`runId` required string, `resumeToken` optional string).
+
+### AgentTransport.resume
+
+```ts
+export type AgentTransport<TPart = AgentPart, TInput = string> = {
+  stream: (input: TInput, signal?: AbortSignal) => AsyncGenerator<TPart>
+  resume?: (resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>
+}
+```
+
+Optional — a transport that doesn't support resumption simply omits `resume`. `edenTransport`
+takes an optional second `resumeCall` parameter (same shape as `call`, but keyed on `resumeToken`
+instead of the original input) and only adds a `resume` method to the returned transport object
+when `resumeCall` is provided (no `resume: undefined` key otherwise):
+
+```ts
+const transport = edenTransport<AgentPart>(
+  (input, signal) => api.chat.post({ body: { message: input }, fetch: { signal } }),
+  (resumeToken, signal) => api.chat.resume.post({ body: { resumeToken }, fetch: { signal } }),
+)
+```
+
+### ThreadsStore.resumeToken / setResumeToken
+
+`AgentThread` carries an optional `resumeToken?: string`, set from the run's most recent
+`StartPart` and cleared once the run finalizes. `ThreadsStore.setResumeToken(id, token)` is the
+setter — same shape/pattern as `setStatus`/`setOutcome`.
+
+### Mount-time resume-before-interrupted
+
+`useAgentThreadRuns`'s mount-reconciliation effect previously marked every orphaned thread
+(`'pending'`/`'streaming'` with no live controller — e.g. after a reload mid-stream) straight to
+`'interrupted'`. It now attempts a resume first:
+
+1. Find the thread's last `role === 'user'` message (no new user message is created on resume — it
+   was already appended before the disconnect).
+2. If `transport.resume` is defined AND the thread has a `resumeToken` AND that last user message
+   exists, call `transport.resume(resumeToken, signal)` and feed the resulting generator through
+   the SAME accumulate/finalize logic as a fresh `start()` call (both share one internal
+   `consumeAndFinalize` helper). The resumed run occupies the `runs` map exactly like a live turn —
+   reusing the existing `'streaming'` status; there is no separate `'resuming'` ThreadStatus.
+3. Any failure — no `resume()`, no `resumeToken`, no user message, or the resume itself throwing —
+   falls back to `'interrupted'`, exactly as before.
+
+Resumption is strictly additive: a transport that never emits `StartPart` and never implements
+`resume` behaves identically to today (every orphaned thread still lands on `'interrupted'`).
+
+## aiSdkTransport — the RECOMMENDED DEFAULT transport
+
+For LLM chat use cases, `aiSdkTransport` (backed by the `ai` npm package, an OPTIONAL peer) is the
+recommended default — `edenTransport` remains fully supported as the zero-extra-dependency
+alternative (see above); neither is deprecated.
+
+```ts
+import { useAgentStream, aiSdkTransport } from 'basalt-ui/agent'
+
+const transport = aiSdkTransport({ api: '/api/chat' })
+const { parts, status, send } = useAgentStream({ transport })
+```
+
+**Install:** `bun add ai`. Like `StreamingMarkdown`/`BasaltStickToBottom`, `ai` is lazily resolved
+via a memoized dynamic `import()` on first `stream()`/`resume()` — importing `basalt-ui/agent` (or
+calling `aiSdkTransport(...)`) never eagerly resolves it. Unlike those two, there is no "plain
+text" degrade path if `ai` is missing: the rejected import propagates through the async generator
+into the consumer's existing error handling (`useAgentStream` → `status: 'error'`;
+`useAgentThreadRuns` → its `onFailureStatus`).
+
+**Why diffing is needed.** AI SDK's `readUIMessageStream` yields the FULL accumulated `UIMessage`
+snapshot on every update (a growing `parts` array; existing parts' content grows in place) — it is
+not itself a delta stream. basalt-ui's whole part-accumulation model is delta-based, so
+`aiSdkTransport` diffs consecutive snapshots internally and yields only the new `AgentPart` deltas.
+One consequence: `ToolCallPart` gained an optional `toolCallId` field, since AI SDK's tool parts
+carry one and re-emit on every state transition (`input-available` → `output-available`) at the
+SAME array index — a consumer's own coalescing can key on `toolCallId` to update a tool block in
+place instead of rendering a near-duplicate second block.
+
+**Chat id binding.** `aiSdkTransport(options)` mints one stable chat id at construction — the
+returned object is immediately usable with `useAgentStream`. Call `.forThread(threadId)` to bind a
+transport to a caller-supplied id instead — the form `useAgentThreadRuns` expects when `transport`
+is a per-thread factory (see "Multi-thread workspace" above):
+
+```ts
+const transport = aiSdkTransport({ api: '/api/chat' })
+useAgentThreadRuns({
+  transport: (threadId) => transport.forThread(threadId),
+  store,
+  resolveOutcome,
+})
+```
+
+**Scope gaps (v1):** `source-document`, `file`, `reasoning-file`, `data-*`, `step-start`, `custom`,
+and `dynamic-tool` UIMessage parts have no `AgentPart` equivalent yet and are silently skipped by
+the diff — not an oversight, a deliberate v1 boundary (see the code comment in
+`ai-sdk-transport.ts`). Tool parts in the `'input-streaming'` state (partial/`DeepPartial` input)
+are also skipped — only `'input-available'` and later states emit, to avoid flooding the consumer
+with incomplete fragments.
 
 ## Deferred (advisory — not shipped)
 
 The following are explicitly deferred and MUST NOT be scaffolded:
 
 - Voice/audio streaming
-- `aiSdkTransport` adapter
 - `streamdown` integration (Tailwind-only)
 - Elysia stream route scaffold in app code (consumer's responsibility)
 - `agent-parts.ts` helper files beyond the basalt surface
 
 > The full thread-chat composite (`ThreadWorkspace`) is now **shipped** — see "Multi-thread
 > workspace" above. It was previously on this list; a real consumer drove it, so it graduated per
-> the "build-when-driven" rule rather than being scaffolded speculatively.
+> the "build-when-driven" rule rather than being scaffolded speculatively. `aiSdkTransport` graduated
+> the same way — see the section above; it is no longer deferred.

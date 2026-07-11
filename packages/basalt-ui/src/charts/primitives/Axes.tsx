@@ -1,8 +1,14 @@
 import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis'
 import type { AxisScale, TickFormatter } from '@visx/axis'
-import { useVxTheme } from '../theme'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'
+
+/**
+ * Tick label font — mono, per `docs/DESIGN-SPEC.md` §5 ("ticks mono 10.5px faint"). Not a `VX.*`
+ * ref (the token layer is off-limits to font-family additions here) — a plain reference to the
+ * `--basalt-font-mono` var that `styles.css` already defines.
+ */
+const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
 /** Themed left numeric axis — baked-in theme colors + font size. */
 export function AxisLeftNumeric({
@@ -14,15 +20,19 @@ export function AxisLeftNumeric({
   numTicks?: number
   tickFormat?: TickFormatter<number>
 }) {
-  const { axis, axisStroke } = useVxTheme()
   return (
     <AxisLeft
       scale={scale}
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
-      tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: -4 }}
-      stroke={axisStroke}
-      tickStroke={axisStroke}
+      tickLabelProps={{
+        fill: VX.faint,
+        fontFamily: TICK_FONT_FAMILY,
+        fontSize: VX.axisFont,
+        dx: -4,
+      }}
+      stroke={VX.surface.border}
+      tickStroke={VX.surface.border}
     />
   )
 }
@@ -40,16 +50,20 @@ export function AxisRightNumeric({
   numTicks?: number
   tickFormat?: TickFormatter<number>
 }) {
-  const { axis, axisStroke } = useVxTheme()
   return (
     <AxisRight
       left={left}
       scale={scale}
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
-      tickLabelProps={{ fill: axis, fontSize: VX.axisFont, dx: 4 }}
-      stroke={axisStroke}
-      tickStroke={axisStroke}
+      tickLabelProps={{
+        fill: VX.faint,
+        fontFamily: TICK_FONT_FAMILY,
+        fontSize: VX.axisFont,
+        dx: 4,
+      }}
+      stroke={VX.surface.border}
+      tickStroke={VX.surface.border}
     />
   )
 }
@@ -64,16 +78,20 @@ export function AxisBottomDate({
   top: number
   tickValues: string[]
 }) {
-  const { axis, axisStroke } = useVxTheme()
   return (
     <AxisBottom
       top={top}
       scale={scale}
       tickValues={tickValues}
       tickFormat={fmtAxisDate}
-      tickLabelProps={{ fill: axis, fontSize: VX.axisFont, textAnchor: 'middle' }}
-      stroke={axisStroke}
-      tickStroke={axisStroke}
+      tickLabelProps={{
+        fill: VX.faint,
+        fontFamily: TICK_FONT_FAMILY,
+        fontSize: VX.axisFont,
+        textAnchor: 'middle',
+      }}
+      stroke={VX.surface.border}
+      tickStroke={VX.surface.border}
     />
   )
 }

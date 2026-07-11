@@ -30,12 +30,14 @@ renders.
 
 - Use `createBasaltTheme(overrides?)` for the theme — it merges your overrides over `baseTheme`
   (last-wins), so you can retune any field without forking. Don't hand-build `createTheme`.
-- The theme reskins **every** Mantine accent to the Basalt identity — **lifted zinc-charcoal** ramps
-  (volcanic basalt; dark surfaces neutral/faint-cool, the light canvas + chart neutrals warm-neutral)
-  plus a **single muted slate-blue accent** — and binds Mantine's surface vars to the same `--vx-*`
-  tokens the charts use (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so chrome and charts
-  share one scheme-reactive identity. (Blueprint is the historical hue-tuning ancestor; the identity
-  is Basalt zinc-charcoal now.) Don't add a second `cssVariablesResolver`.
+- The theme reskins **every** Mantine accent to the modern-zinc identity (`docs/DESIGN-SPEC.md`) —
+  **cool-neutral zinc** ramps on both light and dark — plus a **single saturated sky-blue accent**
+  — split by role: as INK (links, active-nav icon, chart lines, focus ring) `#0077bd` light /
+  `#8ec5ff` dark; as a FILLED SURFACE `#0077bd` in BOTH schemes with a white label — and binds
+  Mantine's surface vars AND its color families to the same `--vx-*` tokens
+  the charts use (`cssVariablesResolver`, pre-wired in `BasaltProvider`), so chrome and charts share
+  one scheme-reactive identity. (Blueprint / Basalt zinc-charcoal are the historical hue-tuning
+  ancestors; `docs/DESIGN-SPEC.md` supersedes both.) Don't add a second `cssVariablesResolver`.
 - Color scheme: read/write via `useMantineColorScheme()`. **Never** read the color scheme from
   localStorage directly, and never `localStorage.getItem('theme')` — see basalt-state.md.
 - Owned `spacing`/`radius` scales and the `fontWeights` ladder live in the theme — consume them as
@@ -44,29 +46,35 @@ renders.
 ## Color & accent restraint
 
 Restraint is the #1 lever — neutrals carry the surface, the accent only points. The palette is
-**one muted slate-blue accent** over lifted zinc-charcoal; the neutrals do ~90% of the work
+**one saturated sky-blue accent** over cool-neutral zinc; the neutrals do ~90% of the work
 (60/30/10, pushed toward 90/10).
 
-- **The accent appears ONLY on**: the single primary CTA per view, focus rings, links, and small
-  status pops. It does **NOT** appear on active nav, borders, large fills, every icon, or
-  secondary/routine buttons. Don't flood blue — "ink earns its color."
-- **Active nav = neutral surface fill** + plain text + a weight bump, **never the accent**. This is
-  baked into the theme's NavLink defaults (`--nl-*` vars) and holds for _every_ render path,
-  including a consumer's router `<Link>` passed via `renderNavLink` — so "blue active nav
-  everywhere" can't return. Don't re-color the active state back to the accent.
+- **The accent appears ONLY on**: the primary data series, active-nav **icons** and active **child**
+  labels, links, primary buttons, focus rings, and the leader bar in meters. It does **NOT** appear
+  on borders, large fills, every icon, or secondary/routine buttons. Don't flood blue — "ink earns
+  its color."
+- **Active nav = panel bg + `shadow-card`** + an **accent-colored icon** + weight-600 ink text.
+  Inactive = muted text, faint icon; hover = ink-6% tint. This is baked into the theme's NavLink
+  defaults (`--nl-*` vars) and holds for _every_ render path, including a consumer's router `<Link>`
+  passed via `renderNavLink`. Child items indent with a 1px `divider` left border; active child =
+  accent text, weight 600.
 - **Buttons**: the primary action = filled accent (`variant="filled"`), **exactly one per view**.
   Every other/secondary action = `variant="default"` (neutral). Do **not** use a colored
-  `variant="light"` for routine actions — it reads washed-out on the warm light canvas.
+  `variant="light"` for routine actions.
 - **Status hues stay muted/forest.** Positive deltas use `color="green"` (forest green), never
   `color="teal"` (vivid turquoise) or a saturated emerald. Status (`red`/`green`/`orange`/`yellow`)
   is for signal only, kept muted — never raw Material/AntD.
-- **Dark mode** is a lifted neutral/faint-cool zinc-charcoal — not steel-blue, not pure black, and
-  lighter than a near-black so cards/borders separate. Lift elevation via small lightness steps; the
-  accent uses its lighter shade on dark to avoid glow/bleed.
-- **Light mode** is never pure-white page + pure-black text (harsh halation). Page = near-neutral
-  off-white (`#fafafa` — only a whisper of warmth, not a creamy/yellow cast), cards = white
-  (`#ffffff`) that lift above it, soft low-contrast hairline (`#ededec`), text = near-black
-  (`#121110`). Hairline borders; shadows reserved for genuinely floating elements.
+- **Dark mode** is cool-neutral zinc (`#27272a`-family panels on a darker `#18181b`-mixed page) —
+  not steel-blue, not pure black. Lift elevation via `shadow-card`'s whisper shadow + inset ring;
+  the accent uses its lighter shade (`#8ec5ff`) on dark to avoid glow/bleed **as INK** — links,
+  active-nav icons, chart lines, focus ring. A FILLED control is the opposite case: it keeps the
+  deep `#0077bd` fill and a white label in both schemes, because a light fill cannot carry white
+  text and a darker one fades into the dark page (<3:1). Fill with `--vx-accentFill`, never
+  `--vx-accent`.
+- **Light mode** is never pure-white page + pure-black text (harsh halation). Page is a
+  slightly-darker zinc mix (`#ececee`-ish) than the panel (`#f4f4f5`) so cards lift subtly off it;
+  text = near-black ink (`#262626`). Depth comes from `shadow-card` (whisper shadow + 1px ring), not
+  a plain hairline border.
 
 ## Bridging Mantine ↔ charts
 
@@ -133,31 +141,34 @@ inline `border`/`borderRadius`/`backgroundColor`/`boxShadow`, and never a raw Ma
 basalt-ui targets dense, professional surfaces (a terminal, not a marketing page). The depth and
 shape doctrine lives here; the spacing/radius/type **tokens** are in basalt-tokens.md.
 
-- **Density is the point** (Linear/Notion). Sections separate by surface change and hairlines, not
-  by large air — default to the tighter spacing step. The shipped dense defaults: shell header
-  **48px**, navbar width **224** (collapsed **64**) with **`sm` (12px)** padding; sidebar section
+- **Density is the point** (Linear/Notion). Sections separate by surface change and shadow/hairline,
+  not by large air — default to the tighter spacing step. The shipped dense defaults: shell header
+  **48px**, navbar width **216** (collapsed **64**) with **`sm` (12px)** padding; sidebar section
   gap **`sm`**, compact nav rows (`--nl-padding: 6px 8px`, `min-height: 30px`, `sm` font), brand row
-  32px. Pages: KPI/card padding **`sm` (12px)**, page `Stack`/`SimpleGrid` gaps **`sm`**; ChartCard
-  header/body padding stays tight (`8px 12px`).
+  32px. Pages: KPI/card padding **~17–19px**, page `Stack`/`SimpleGrid` gaps **`sm`**; ChartCard
+  header/body padding raised to ~16–18px.
 - **Surface single-source.** All cards — Mantine `Card`/`Paper` **and** the Mantine-free
-  `ChartCard` — resolve to **one border token** (`--vx-surface-border`) and **one radius token**
-  (`--vx-radius-card` = `radius.md` = **8px**), rendered **flat** (no `boxShadow`). Cards must never
-  diverge: same border, same radius, no shadow. Never inline-override `border`/`borderRadius`/
-  `boxShadow`/`backgroundColor` on a surface — use `withBorder` + the radius token (`radius="md"` /
-  `var(--vx-radius-card)`) + `VX.surface.*`. Mechanically enforced by `basalt check-theme`'s
-  `raw-surface` guard. Outer spacing comes from the parent `Stack`/`SimpleGrid` gap, not an
-  intrinsic card margin.
-- **Depth = surface + hairline, never drop shadows** (Linear/Carbon discipline). Elevation tiers:
-  0 flat (no border/shadow — body, page bg); 1 surface (`surface-1` on `canvas` — cards, panels);
-  2 elevated (`surface-2` + 1px hairline — chart areas, tooltips, lifted cards); 3 focus (2px
-  primary outline — focused control). `Card`/`Paper` default to `withBorder` with **no** shadow,
-  and the Mantine-free `ChartCard` matches them (flat, same border + `--vx-radius-card` radius). All
-  cards are flat by design — there is no default card shadow token. (Genuinely floating elements —
-  modals, popovers, menus — get their elevation from Mantine's own shadow scale, not from a card.)
+  `ChartCard` — resolve to **one radius token** (`--vx-radius-card` = `radius.md` = **10px**) and
+  **one depth token** (`shadow-card` — a whisper shadow + 1px ring, the ring lives IN the shadow, no
+  separate `border` property). Cards must never diverge: same radius, same shadow. Never
+  inline-override `border`/`borderRadius`/`boxShadow`/`backgroundColor` on a surface — use the
+  radius token (`radius="md"` / `var(--vx-radius-card)`) + `VX.shadowCard` + `VX.surface.*`.
+  Mechanically enforced by `basalt check-theme`'s `raw-surface` guard. Outer spacing comes from the
+  parent `Stack`/`SimpleGrid` gap, not an intrinsic card margin.
+- **Depth = `shadow-card`, not a plain hairline** (see `docs/DESIGN-SPEC.md` doctrine inversion #1 —
+  this supersedes the old "never a drop shadow" rule). Elevation tiers: 0 flat (no shadow — body,
+  page bg); 1 surface (`shadow-card` on `canvas` — cards, panels, chart cards); 2 elevated (same
+  `shadow-card`, `surface-elevated` bg — tooltips, lifted cards); 3 focus (2px primary outline —
+  focused control). `Card`/`Paper` default to the `shadow-card` shadow (no `withBorder`), and the
+  Mantine-free `ChartCard` matches them (`VX.shadowCard` + `--vx-radius-card` radius). Layout
+  dividers (header bottom border, sidebar section separators) still use plain borders — only card
+  depth moved to shadow. (Genuinely floating elements — modals, popovers, menus — get elevation from
+  Mantine's own shadow scale, not from the card token.)
 - **Tight radii read precise/technical** (Linear): `sm` for controls, `md` for cards, `pill` for
   badges. Consume the token, never a raw number (basalt-tokens.md).
-- **Type is carried by size + weight** — system-sans (no display/body split), numbers in the mono
-  tabular stack so metric columns align (a Coinbase pattern).
+- **Type is carried by the three-font system** (sans body / head condensed headings / mono
+  numerals — basalt-tokens.md), numbers in the mono tabular stack so metric columns align (a
+  Coinbase pattern).
 
 ## Composing the shell from sub-components
 

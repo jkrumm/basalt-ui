@@ -5,23 +5,102 @@
  * deterministically by import order. Carries cross-app safety nets that have no app coupling.
  */
 
+/* Layer order — LOW to HIGH priority. Declared up front (a `@layer` statement is allowed before
+ * `@import`) so it holds no matter which order the consumer's bundler emits the stylesheets in.
+ *
+ * This is load-bearing, not decorative: the consumer MUST import `@mantine/core/styles.layer.css`,
+ * never the plain `@mantine/core/styles.css`. Mantine's default bundle is entirely UNLAYERED, and
+ * unlayered author styles outrank EVERY layered rule regardless of specificity — so with the plain
+ * bundle this whole `@layer basalt` block silently loses to Mantine, including the iOS input floor
+ * below. `basalt doctor` flags the wrong import. */
+@layer mantine, basalt;
+
+/* The three-font system (docs/DESIGN-SPEC.md §3) — exact-pinned @fontsource-variable deps. Bare
+ * specifiers so consumer bundlers resolve them. */
+@import '@fontsource-variable/nunito-sans';
+@import '@fontsource-variable/hubot-sans';
+@import '@fontsource-variable/jetbrains-mono';
+
 /* Font stack — overridable via the --basalt-font-* custom properties. */
 @layer base {
   :root {
     --basalt-font-sans:
-      'Instrument Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+      'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
       Helvetica, Arial, sans-serif;
-    --basalt-font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono Variable', Menlo, monospace;
+    --basalt-font-head:
+      'Hubot Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+      Arial, sans-serif;
+    --basalt-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
   }
 }
 
 @layer basalt {
-  /* iOS input zoom safety net: any input that escapes the theme's `md` (16px) default still
-     renders at 16px, so iOS Safari never zooms the viewport on focus. */
+  /* iOS input-zoom FLOOR. Safari zooms the viewport whenever a focused input computes below 16px,
+     and never zooms back out on blur — the single worst mobile-form defect. 16px is the only clean
+     fix: `maximum-scale=1` / `user-scalable=no` block pinch-zoom on Android (WCAG 1.4.4),
+     `text-size-adjust` governs text inflation rather than focus-zoom, and Safari doesn't support
+     `interactive-widget` at all.
+
+     `max()` makes this a FLOOR, not a pin: a deliberately larger input keeps its own size, and the
+     scale can grow without this rule fighting it. Being a CSS rule on the ELEMENT (rather than
+     per-component `defaultProps`) it reaches every input Mantine ships — Autocomplete, MultiSelect,
+     TagsInput, PinInput, NativeSelect, … — plus any consumer that passes an explicit `size="xs"`.
+     Enumerating components could never cover that; the previous attempt missed seven of them.
+
+     Deliberate side effect: it also overrides Mantine's `[data-monospace]` −2px shrink, which would
+     otherwise drop a mono input back under the threshold. */
   input,
   select,
   textarea {
-    font-size: 16px;
+    font-size: max(16px, var(--input-fz, 1rem));
+  }
+
+  /* Focus ring = the accent as INK, not as a fill. Mantine hardcodes the ring to
+     `var(--mantine-primary-color-filled)` — the SURFACE token, which is deliberately deep in both
+     schemes so a white label sits on it (see ACCENT in tokens/palette.ts). A ring is read against
+     the PAGE, though, so on dark it must be the light ink accent (8.64:1) rather than the deep fill
+     (3.26:1 — legal under WCAG 1.4.11, but a barely-there ring). Same specificity as Mantine's own
+     rule, but `@layer basalt` outranks `@layer mantine`, so this wins. */
+  .mantine-focus-auto:focus-visible,
+  .mantine-focus-always:focus {
+    outline-color: var(--vx-accent);
+  }
+
+  /* Hubot Sans is a condensed display face — the spec pins it at 88% font-stretch everywhere it
+     lands (headings + the Mantine Title component). */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .mantine-Title-root {
+    font-stretch: 88%;
+  }
+
+  /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, hairline thumb (line on hover), radius 6, transparent
+     track. Firefox via scrollbar-width/-color, WebKit/Blink via the ::-webkit-scrollbar family. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--vx-surface-hairline) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--vx-surface-hairline);
+    border-radius: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vx-surface-border);
   }
 }
 

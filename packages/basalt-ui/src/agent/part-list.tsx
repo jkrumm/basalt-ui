@@ -23,6 +23,7 @@
 import { Fragment, useMemo } from 'react'
 import type { JSX } from 'react'
 import { assertNever } from '../register'
+import { alpha, VX } from '../tokens'
 import type {
   AgentPart,
   ErrorPart,
@@ -76,27 +77,75 @@ export type AgentPartRenderers<TPart extends AgentPart = AgentPart> = {
 }
 
 // ── Default headless renderers ────────────────────────────────────────────────
+//
+// Styled inline with `VX.*` / `alpha()` (never raw hex) so a bare consumer — one that renders
+// `PartList` with no `components` override — still gets the on-brand look, not unstyled HTML.
+// className hooks are kept alongside so a consumer's own CSS can still target/override each part.
+
+/** Mono, uppercase, letter-spaced micro-label idiom (docs/DESIGN-SPEC.md §3) — reasoning/tool
+ * headers below. */
+const MICRO_LABEL_STYLE = {
+  fontFamily: 'var(--basalt-font-mono)',
+  fontSize: VX.text.micro,
+  fontWeight: 500,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: VX.faint,
+} as const
+
+/** Faint left divider rail (docs/DESIGN-SPEC.md §5) — reasoning/tool-call parts read as transcript
+ * asides, not surfaces. */
+const RAIL_STYLE = { borderLeft: `2px solid ${VX.divider}`, paddingLeft: 10 } as const
+
+const CODE_BLOCK_STYLE = {
+  marginTop: 6,
+  fontFamily: 'var(--basalt-font-mono)',
+  backgroundColor: alpha(VX.ink, 0.06),
+  borderRadius: 8,
+  padding: 8,
+  overflowX: 'auto',
+} as const
 
 function DefaultText({ part }: { part: TextPart; index: number }): JSX.Element {
-  return <div className="basalt-agent-text">{part.text}</div>
+  return (
+    <div
+      className="basalt-agent-text"
+      style={{ color: VX.ink, fontFamily: 'var(--basalt-font-sans)' }}
+    >
+      {part.text}
+    </div>
+  )
 }
 
 function DefaultReasoning({ part }: { part: ReasoningPart; index: number }): JSX.Element {
   return (
-    <details className="basalt-agent-reasoning">
-      <summary className="basalt-agent-reasoning-summary">Reasoning</summary>
-      <div className="basalt-agent-reasoning-body">{part.text}</div>
+    <details className="basalt-agent-reasoning" style={RAIL_STYLE}>
+      <summary
+        className="basalt-agent-reasoning-summary"
+        style={{ ...MICRO_LABEL_STYLE, cursor: 'pointer' }}
+      >
+        Reasoning
+      </summary>
+      <div className="basalt-agent-reasoning-body" style={{ color: VX.muted, marginTop: 6 }}>
+        {part.text}
+      </div>
     </details>
   )
 }
 
 function DefaultToolCall({ part }: { part: ToolCallPart; index: number }): JSX.Element {
   return (
-    <div className="basalt-agent-tool">
-      <span className="basalt-agent-tool-name">{part.toolName}</span>
-      <pre className="basalt-agent-tool-input">{JSON.stringify(part.input, null, 2)}</pre>
+    <div className="basalt-agent-tool" style={RAIL_STYLE}>
+      <span className="basalt-agent-tool-name" style={MICRO_LABEL_STYLE}>
+        {part.toolName}
+      </span>
+      <pre className="basalt-agent-tool-input" style={CODE_BLOCK_STYLE}>
+        {JSON.stringify(part.input, null, 2)}
+      </pre>
       {part.output !== undefined && (
-        <pre className="basalt-agent-tool-output">{JSON.stringify(part.output, null, 2)}</pre>
+        <pre className="basalt-agent-tool-output" style={CODE_BLOCK_STYLE}>
+          {JSON.stringify(part.output, null, 2)}
+        </pre>
       )}
     </div>
   )
@@ -104,7 +153,13 @@ function DefaultToolCall({ part }: { part: ToolCallPart; index: number }): JSX.E
 
 function DefaultSource({ part }: { part: SourcePart; index: number }): JSX.Element {
   return (
-    <a className="basalt-agent-source" href={part.url} target="_blank" rel="noopener noreferrer">
+    <a
+      className="basalt-agent-source"
+      href={part.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: VX.accent }}
+    >
       {part.title ?? part.url}
     </a>
   )
@@ -112,7 +167,16 @@ function DefaultSource({ part }: { part: SourcePart; index: number }): JSX.Eleme
 
 function DefaultError({ part }: { part: ErrorPart; index: number }): JSX.Element {
   return (
-    <div className="basalt-agent-error" role="alert">
+    <div
+      className="basalt-agent-error"
+      role="alert"
+      style={{
+        backgroundColor: alpha(VX.status.bad, 0.13),
+        color: VX.status.bad,
+        borderRadius: 8,
+        padding: '8px 10px',
+      }}
+    >
       {part.message}
     </div>
   )
@@ -171,6 +235,9 @@ export function PartList<TPart extends AgentPart = AgentPart>({
         // The exhaustive switch: `default: assertNever(part)` is the tsc gate.
         // If a new AgentPart variant is added without a case here, tsc errors.
         switch (part.type) {
+          case 'start':
+            // Not renderable content — a no-op signal (run id + resume token).
+            return null
           case 'text': {
             const Render = renderers.text
             return (

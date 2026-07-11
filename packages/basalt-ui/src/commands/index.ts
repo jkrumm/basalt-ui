@@ -6,7 +6,8 @@
  *   @mantine/notifications ^9.3.0, @tanstack/react-hotkeys 0.10.0.
  *
  * Install with: bun add @mantine/modals @mantine/spotlight @mantine/notifications @tanstack/react-hotkeys
- * Also import the Spotlight styles in main.tsx: import '@mantine/spotlight/styles.css'
+ * Also import the Spotlight styles in main.tsx (the layered bundle — the unlayered one outranks
+ * basalt's `@layer basalt` styles regardless of specificity): import '@mantine/spotlight/styles.layer.css'
  *
  * @example
  * // commands.ts (app-side) — define + augment:
@@ -20,7 +21,7 @@
  *
  * // main.tsx — mount composable overlays (replaces <BasaltNotifications />):
  * import { BasaltOverlays } from 'basalt-ui/commands'
- * import '@mantine/spotlight/styles.css'
+ * import '@mantine/spotlight/styles.layer.css'
  * <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>
  *
  * // usage.ts — run a command:

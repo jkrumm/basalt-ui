@@ -97,7 +97,7 @@ export function MobileNav({
         size="auto"
         padding="md"
         title={openSection?.label}
-        classNames={{ content: classes.sheet }}
+        classNames={{ content: classes.sheet, title: classes.sheetTitle }}
       >
         <Stack gap={2}>
           {openSection?.items.map((item) => {

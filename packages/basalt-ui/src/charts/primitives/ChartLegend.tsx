@@ -77,6 +77,7 @@ function wrapperStyle(placement: LegendPlacement): CSSProperties {
     rowGap: VX.legendGap,
     padding: '8px 0 2px',
     fontSize: VX.legendFontSize,
+    color: VX.muted,
   }
 }
 
@@ -144,8 +145,8 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
     return (
       <span
         style={{
-          width: 14,
-          height: 14,
+          width: 11,
+          height: 11,
           borderRadius: 3,
           backgroundColor: item.color,
           opacity: item.fillOpacity ?? 0.7,
@@ -155,15 +156,18 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
     )
   }
 
+  // Line series — a 16×3px radius-2 pill (docs/DESIGN-SPEC.md §5). A thick, round-capped stroke
+  // reads as a filled pill when solid while still supporting the dashed variant.
   return (
-    <svg width={20} height={14} style={{ flexShrink: 0 }}>
+    <svg width={16} height={6} style={{ flexShrink: 0 }}>
       <line
         x1={0}
-        y1={7}
-        x2={20}
-        y2={7}
+        y1={3}
+        x2={16}
+        y2={3}
         stroke={item.color}
-        strokeWidth={item.strokeWidth ?? 2.5}
+        strokeWidth={item.strokeWidth ?? 3}
+        strokeLinecap="round"
         strokeDasharray={item.dashed ? VX.dashArray : undefined}
       />
     </svg>

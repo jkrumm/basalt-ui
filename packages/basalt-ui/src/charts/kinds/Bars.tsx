@@ -19,7 +19,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows } from '../series'
+import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
@@ -29,7 +29,8 @@ export type BarsBar = {
   key: string
   /** Tooltip + legend label. */
   label: string
-  /** Fill color (a resolved CSS color / token ref). */
+  /** Fill color (a resolved CSS color / token ref). Per `docs/DESIGN-SPEC.md` §5, the primary bar
+   * series should typically resolve to `VX.accent`, a secondary companion to `VX.faint`. */
   color: string
   /** Per-series tooltip value formatter — overrides top-level formatValue. */
   formatValue?: (v: number) => string
@@ -186,7 +187,7 @@ function BarsInner<T>(props: BarsProps<T>) {
         color: ln.color,
         mark: 'line' as const,
         dash: ln.dashed ? ('dashed' as const) : ('solid' as const),
-        ...(ln.strokeWidth !== undefined && { strokeWidth: ln.strokeWidth }),
+        strokeWidth: ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH,
         getValue: (d: T) => getValue(d, ln.key),
         ...(ln.formatValue !== undefined && { formatValue: ln.formatValue }),
       })),
@@ -461,6 +462,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
                     y={yTop}
                     width={groupWidth}
                     height={yBottom - yTop}
+                    rx={1.4}
                     fill={b.color}
                     fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
@@ -481,6 +483,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
                     y={yTop}
                     width={groupWidth}
                     height={yBottom - yTop}
+                    rx={1.4}
                     fill={b.color}
                     fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
@@ -501,6 +504,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
                     y={yTop}
                     width={groupedBarWidths[i] ?? 0}
                     height={yBottom - yTop}
+                    rx={1.4}
                     fill={b.color}
                     fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
                   />,
@@ -527,7 +531,7 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
                 x={(p) => xScale(getX(p.__d)) ?? 0}
                 y={(p) => scale(p.__y)}
                 stroke={ln.color}
-                strokeWidth={ln.strokeWidth ?? VX.lineWidth}
+                strokeWidth={ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
                 strokeDasharray={ln.dashed ? VX.dashArray : undefined}
                 strokeOpacity={dimOpacity(ln.key)}
                 curve={curveMonotoneX}

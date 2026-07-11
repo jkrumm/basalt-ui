@@ -1,0 +1,35 @@
+/*
+ * Floating-layer interaction states that the theme's flat `styles` objects can't express (they
+ * take inline properties only — a `:hover` selector there throws). Wired via `classNames` in
+ * theme/index.ts so they reach every Modal / Drawer render path — same pattern as
+ * nav-link.module.css and segmented-control.module.css. (Menu-item hover needs no rule here:
+ * Mantine's hover rule reads the `--menu-item-hover` var, set inline via `styles.item`.)
+ *
+ * Ghost close button (Modal / Drawer headers) — the ghost-icon idiom (docs/DESIGN-SPEC.md §5):
+ * transparent at rest, faint glyph, hover ink-6% + ink, radius 6. `!important` for the same reason
+ * as the shell's `.ghostIcon`: these compete with Mantine's own compiled CloseButton rules
+ * (`:where(scheme) .m_*` rest color / `:hover` fill) at equal specificity, and the cascade
+ * position of a CSS module relative to Mantine's stylesheet isn't guaranteed by a consumer's
+ * bundler.
+ */
+.closeButton {
+  color: var(--vx-faint) !important;
+  border-radius: 6px !important;
+}
+
+.closeButton:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+  color: var(--vx-ink) !important;
+}
+
+/*
+ * Menu item hover/focus/keyboard-active — the ink-6% ghost tint (docs/DESIGN-SPEC.md §5), replacing
+ * Mantine's grey-step fill. Mantine's own rule is all-`:where()` (specificity 0,1,0), so this
+ * (0,2,0) wins deterministically without `!important`. (An inline `--menu-item-hover` var through
+ * `styles.item` was tried first — Mantine strips custom properties from `styles` objects.)
+ */
+.menuItem:hover:not(:disabled):not([data-disabled]),
+.menuItem:focus:not(:disabled):not([data-disabled]),
+.menuItem[data-menu-active]:not(:disabled):not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+}

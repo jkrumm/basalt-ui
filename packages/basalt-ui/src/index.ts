@@ -67,6 +67,22 @@ export {
   readPersistedValue,
 } from './state'
 
+// ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
+export {
+  DeltaBadge,
+  type DeltaBadgeProps,
+  StatCard,
+  type StatCardProps,
+  EmptyState,
+  type EmptyStateProps,
+  SettingsSection,
+  type SettingsSectionProps,
+  SettingsRow,
+  type SettingsRowProps,
+  DangerZone,
+  type DangerZoneProps,
+} from './dashboard'
+
 // ── Connectivity (auto-mounted by BasaltProvider) ────────────────────────────────────────────────
 export { ConnectivityProvider, ConnectivityIndicator, useConnectivity } from './connectivity'
 export type {

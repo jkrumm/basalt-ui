@@ -1,0 +1,29 @@
+/*
+ * Timeline line + bullet idiom (docs/DESIGN-SPEC.md §5-adjacent activity feed). Custom-property
+ * declarations and state-dependent selectors are stripped from / unreachable through the flat
+ * `styles` object in theme/index.ts (same reasoning as SegmentedControl's active-label rule and
+ * NavLink's active-icon rule), so both live here instead.
+ */
+
+/* The connecting line reads `--item-border-color`, which Mantine's own CSS only ever sets to a
+ * raw gray-3/dark-4 step per scheme — retune it to the layout-divider token so the line stays a
+ * quiet hairline rather than the heavy default. */
+.item {
+  --item-border-color: var(--vx-divider);
+}
+
+/* Default bullet: panel surface + a hairline ring, matching the shared card-adjacent surface
+ * idiom rather than Mantine's raw gray-3/dark-4 border + page-body fill. */
+.itemBullet {
+  background-color: var(--vx-surface-panel);
+  border-color: var(--vx-surface-hairline);
+}
+
+/* Active bullet: solid accent fill + accent ring, text/icon in `on-accent` — regardless of
+ * whether the bullet carries child content (Mantine's own `[data-active]` rule only fills solid
+ * when a bullet child is present; a plain dot would otherwise render a white fill). */
+.itemBullet[data-active] {
+  background-color: var(--vx-accentFill);
+  border-color: var(--vx-accentFill);
+  color: var(--vx-onAccent);
+}

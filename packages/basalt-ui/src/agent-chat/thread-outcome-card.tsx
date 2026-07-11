@@ -22,16 +22,17 @@ import { Badge, Group, Skeleton, Stack, Text, UnstyledButton } from '@mantine/co
 import { useHover } from '@mantine/hooks'
 import type { JSX } from 'react'
 import type { AgentThread, ThreadStatus } from '../agent'
+import { alpha, VX } from '../tokens'
 
 // ── Status badge — shown ONLY for states that need a glance (attention/error). ────
 // done/pending/streaming stay badge-free: a settled feed shouldn't be a wall of green chips —
 // read/unread title weight + the timestamp already carry the rest.
 
 const STATUS_BADGE: Partial<
-  Record<ThreadStatus, { readonly label: string; readonly color: string }>
+  Record<ThreadStatus, { readonly label: string; readonly statusToken: string }>
 > = {
-  attention: { label: 'Needs review', color: 'yellow' },
-  error: { label: 'Failed', color: 'red' },
+  attention: { label: 'Needs review', statusToken: VX.status.warn },
+  error: { label: 'Failed', statusToken: VX.status.bad },
 }
 
 // ── Dependency-free relative-time helper (no date-fns) ────────────────────────
@@ -88,13 +89,41 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
   const summary =
     thread.outcome?.summary ?? (thread.status === 'error' ? 'This run didn’t finish.' : '')
   return (
-    <Stack gap={2}>
+    <Stack gap={4}>
       <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
-        <Text size="sm" fw={thread.read ? 400 : 700} lineClamp={1} style={{ flex: 1 }}>
+        <Text
+          fw={550}
+          {...(thread.read ? { c: 'dimmed' } : {})}
+          lineClamp={1}
+          style={{
+            flex: 1,
+            fontFamily: 'var(--basalt-font-head)',
+            fontSize: VX.text.lg,
+            fontStretch: '88%',
+          }}
+        >
           {title}
         </Text>
         {badge !== undefined && (
-          <Badge size="xs" color={badge.color} variant="light">
+          <Badge
+            size="xs"
+            radius={6}
+            styles={{
+              root: {
+                backgroundColor: alpha(badge.statusToken, 0.13),
+                padding: '2px 7px',
+                height: 'auto',
+              },
+              label: {
+                fontFamily: 'var(--basalt-font-mono)',
+                fontSize: VX.text.xs,
+                fontWeight: 600,
+                textTransform: 'none',
+                letterSpacing: 'normal',
+                color: badge.statusToken,
+              },
+            }}
+          >
             {badge.label}
           </Badge>
         )}
@@ -102,7 +131,9 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
       <Text size="xs" c="dimmed" lineClamp={1}>
         {summary}
       </Text>
-      <Text size="10px" c="dimmed">
+      <Text
+        style={{ fontFamily: 'var(--basalt-font-mono)', fontSize: VX.text.micro, color: VX.faint }}
+      >
         {formatRelativeTime(thread.updatedAt)}
       </Text>
     </Stack>
@@ -136,19 +167,27 @@ export function ThreadOutcomeCard({
   const isPreviewing =
     thread.outcome === null && (thread.status === 'pending' || thread.status === 'streaming')
 
+  // Card idiom (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 10, 17-19px padding — each
+  // outcome row reads as its own card lifted off the feed pane, not a flat highlighted list row.
   const background = selected
-    ? 'var(--mantine-color-default-hover)'
+    ? VX.surface.elevated
     : hovered
-      ? 'var(--mantine-color-default-light)'
-      : 'transparent'
+      ? VX.surface.panelHover
+      : VX.surface.panel
 
   return (
     <UnstyledButton
       ref={ref}
       onClick={onSelect}
-      p="sm"
       w="100%"
-      style={{ display: 'block', borderRadius: 'var(--mantine-radius-md)', background }}
+      style={{
+        display: 'block',
+        padding: '17px 18px',
+        borderRadius: VX.radiusCard,
+        boxShadow: VX.shadowCard,
+        backgroundColor: background,
+        transition: 'background-color 120ms ease',
+      }}
     >
       {isPreviewing ? <OutcomeSkeleton /> : <OutcomeBody thread={thread} />}
     </UnstyledButton>

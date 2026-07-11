@@ -1,12 +1,67 @@
 /*
- * Active nav row = heavier weight, applied at the THEME level via `classNames` so it reaches EVERY
- * NavLink render path — including a consumer's router `<Link>` mounted through `renderNavLink`,
- * which a shell-scoped CSS module never sees. Mantine's `styles` prop only takes flat inline
- * properties (a nested `&[data-active]` there throws a React warning), so the state selector lives
- * here. React Router's NavLink marks the active item via `aria-current` rather than the `active`
- * prop's `data-active`, so both states are matched.
+ * Active nav row = heavier weight + card depth, applied at the THEME level via `classNames` so it
+ * reaches EVERY NavLink render path — including a consumer's router `<Link>` mounted through
+ * `renderNavLink`, which a shell-scoped CSS module never sees. Mantine's `styles` prop only takes
+ * flat inline properties (a nested `&[data-active]` there throws a React warning), so the state
+ * selectors live here. React Router's NavLink marks the active item via `aria-current` rather than
+ * the `active` prop's `data-active`, so both states are matched.
+ *
+ * The row's background comes from `--nl-bg` (set in theme/index.ts, applies unconditionally via
+ * Mantine's own `[data-active]` CSS) — `shadow-card` is added here because there's no `--nl-*` var
+ * for depth.
  */
 .root[data-active],
 .root[aria-current='page'] {
   font-weight: 600;
+  box-shadow: var(--vx-shadow-card);
+}
+
+/*
+ * Active-icon accent: only the leftSection (the icon, `data-position="left"`) turns accent-colored
+ * — the label stays ink (via `--nl-color`). Targets Mantine's own `data-position` attribute rather
+ * than a custom class, so the rightSection (child-expand chevron) is untouched.
+ */
+.root[data-active] [data-position='left'],
+.root[aria-current='page'] [data-position='left'] {
+  color: var(--vx-accent);
+}
+
+/*
+ * Inactive rows: muted text, faint icon (docs/DESIGN-SPEC.md §5 Sidebar — "inactive = muted text,
+ * faint icon"). Mantine's own NavLink.css never sets a color on the base rule — it only colors the
+ * label under `[data-active]`/`[aria-current='page']` — so an inactive row otherwise falls through
+ * to the ambient `--mantine-color-text` (ink), same reasoning as the active-icon rule above.
+ */
+.root:not([data-active]):not([aria-current='page']) {
+  color: var(--vx-muted);
+}
+
+.root:not([data-active]):not([aria-current='page']) [data-position='left'] {
+  color: var(--vx-faint);
+}
+
+/*
+ * Inactive hover — the ink-6% ghost tint + ink text/icon (docs/DESIGN-SPEC.md §5). Lives here (not
+ * only in the shell module) so a consumer's `renderNavLink` path gets the same hover; Mantine's own
+ * hover fill uses `:where(scheme) .m_*:hover` (gray-0/dark-6), which this outranks on specificity.
+ * Active rows keep their panel fill + `--nl-hover` untouched.
+ */
+@media (hover: hover) {
+  .root:not([data-active]):not([aria-current='page']):hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+    color: var(--vx-ink);
+  }
+
+  .root:not([data-active]):not([aria-current='page']):hover [data-position='left'] {
+    color: var(--vx-ink);
+  }
+}
+
+/*
+ * Icon gap (docs/DESIGN-SPEC.md §5: "icon gap 10px") — Mantine pins the leftSection margin at
+ * `--mantine-spacing-sm` (12px) via a zero-specificity `:where()` rule; this lands the spec gap on
+ * every render path.
+ */
+.root [data-position='left'] {
+  margin-inline-end: 10px;
 }

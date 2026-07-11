@@ -1,11 +1,17 @@
 /**
  * Theme lab — DEV-only live tuning of the `--vx-*` palette.
  *
- * Charts (and the Mantine chrome bridged to the same vars) read their colors from `--vx-*` CSS
- * custom properties (see the token layer). This module writes overrides for those vars as inline
- * styles on `<html>`, which beats the stylesheet's per-scheme rules, so everything restyles
- * instantly with NO React re-render. Overrides persist to localStorage and re-apply on load, so a
- * tuning session survives a refresh.
+ * Charts AND the Mantine chrome read their colors from `--vx-*` CSS custom properties (see the
+ * token layer). This module writes overrides for those vars as inline styles on `<html>`, which
+ * beats the stylesheet's per-scheme rules, so everything restyles instantly with NO React
+ * re-render. Overrides persist to localStorage and re-apply on load, so a tuning session survives
+ * a refresh.
+ *
+ * The chrome follows because `theme/index.ts` bridges Mantine's surface vars AND its primary-color
+ * vars onto these same tokens — retuning `--vx-accentFill` restyles every Button/Switch/Checkbox
+ * live. (It did NOT before: the accent was dual-sourced, so the lab moved the charts and left the
+ * chrome alone.) Known limit: only the PRIMARY Mantine color is bridged. A `color="red"` filled
+ * badge still reads Mantine's JS ramp and will not follow a lab override.
  *
  * It is a tuning sandbox, not a prod theme editor: inline overrides apply to whatever scheme is on
  * screen (they win over both light and dark rules). Use "Copy JSON" to hand off values for baking
@@ -31,7 +37,10 @@ import {
 } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { BP } from '../tokens'
+import { BP, FILL, VX } from '../tokens'
+
+/** The bridged Mantine families, in palette order — the source for the `Fills` group below. */
+const FILL_FAMILIES = Object.keys(FILL)
 
 export type ColorTunable = { var: string; label: string }
 export type ColorGroup = { title: string; items: ColorTunable[] }
@@ -49,6 +58,42 @@ export const AREA_BOTTOM_VAR = '--vx-area-bottom'
  * consumer passes its own series groups to {@link ThemeLabControls} via the `groups` prop.
  */
 export const COLOR_GROUPS: ColorGroup[] = [
+  {
+    // The accent, split by ROLE (see `ACCENT` in tokens/palette.ts): `Accent` is the INK (links,
+    // active-nav icon, chart lines, focus ring) and inverts across schemes; `Fill` is the SURFACE
+    // of every filled control and is the same hex in both. Retuning `Fill` live-restyles every
+    // Button/Switch/Checkbox/Tab, because Mantine's `--mantine-color-<primary>-filled` is bridged
+    // onto it (theme/index.ts). `On accent` is the label ON that fill — the theme cannot recompute
+    // contrast in CSS, so if you tune `Fill` light, drop `On accent` to a dark ink yourself.
+    title: 'Accent',
+    items: [
+      { var: '--vx-accent', label: 'Accent (ink)' },
+      { var: '--vx-accentHover', label: 'Accent hover' },
+      { var: '--vx-accentFill', label: 'Fill' },
+      { var: '--vx-accentFillHover', label: 'Fill hover' },
+      { var: '--vx-onAccent', label: 'On accent' },
+    ],
+  },
+  {
+    // Every filled surface in the Mantine chrome, single-sourced (theme/index.ts bridges
+    // `--mantine-color-{family}-filled` onto these). They all sit in ONE luminance band so a white
+    // label always works — retune within it, or you break the label. Hover is derived from the
+    // fill, so it follows automatically and is not listed. `blue` lives under Accent → Fill.
+    title: 'Fills',
+    items: FILL_FAMILIES.map((name) => ({
+      var: `--vx-fill-${name}`,
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+    })),
+  },
+  {
+    title: 'Ink',
+    items: [
+      { var: '--vx-ink', label: 'Ink' },
+      { var: '--vx-ink2', label: 'Ink 2' },
+      { var: '--vx-muted', label: 'Muted' },
+      { var: '--vx-faint', label: 'Faint' },
+    ],
+  },
   {
     title: 'Semantic',
     items: [
@@ -81,7 +126,11 @@ export const COLOR_GROUPS: ColorGroup[] = [
     items: [
       { var: '--vx-surface-bg', label: 'Background' },
       { var: '--vx-surface-panel', label: 'Panel' },
+      { var: '--vx-surface-panelHover', label: 'Panel hover' },
       { var: '--vx-surface-elevated', label: 'Elevated' },
+      { var: '--vx-surface-subtle', label: 'Subtle' },
+      { var: '--vx-surface-overlay', label: 'Overlay' },
+      { var: '--vx-surface-field', label: 'Field' },
       { var: '--vx-surface-border', label: 'Border' },
     ],
   },
@@ -118,9 +167,35 @@ export function applyOverrides(o: Overrides): void {
   }
 }
 
-/** Current resolved value of a var (reflects any active override or the stylesheet default). */
+/**
+ * Current value of a color var as a hex `ColorInput` can display (reflects any active override or
+ * the stylesheet default).
+ *
+ * Reading the custom property directly is not enough: an UNREGISTERED custom property computes to
+ * its literal source text, so a `color-mix()`-derived token (every surface — see `SURFACE` in
+ * tokens/palette.ts) comes back as the string `"color-mix(in srgb, #3f3f46 50%, #27272a)"`, which
+ * ColorInput cannot parse — it renders an empty swatch. Painting the var onto a probe element and
+ * reading a real COLOR property instead forces the browser to resolve it to an rgb triple.
+ */
 export function readVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  if (raw.startsWith('#')) return raw
+  if (!raw) return ''
+
+  const probe = document.createElement('span')
+  probe.style.display = 'none'
+  probe.style.color = `var(${name})`
+  document.body.appendChild(probe)
+  const computed = getComputedStyle(probe).color
+  probe.remove()
+
+  const channels = computed.match(/[\d.]+/g)
+  if (!channels || channels.length < 3) return raw
+  const hex = channels
+    .slice(0, 3)
+    .map((c) => Math.round(Number(c)).toString(16).padStart(2, '0'))
+    .join('')
+  return `#${hex}`
 }
 
 /** Quick-pick Blueprint swatches (mid stop of each family) for the color inputs. */
@@ -253,7 +328,7 @@ export function ThemeLabControls({
               <Divider
                 label={g.title.toUpperCase()}
                 labelPosition="left"
-                styles={{ label: { fontWeight: 600, fontSize: 10 } }}
+                styles={{ label: { fontWeight: 600, fontSize: VX.text.micro } }}
               />
               <SimpleGrid cols={2} spacing={6} verticalSpacing={6}>
                 {g.items.map((item) => (
@@ -266,7 +341,7 @@ export function ThemeLabControls({
                     onChange={(v) => setVar(item.var, v)}
                     swatches={SWATCHES}
                     swatchesPerRow={7}
-                    styles={{ label: { fontSize: 11 } }}
+                    styles={{ label: { fontSize: VX.text.micro } }}
                   />
                 ))}
               </SimpleGrid>

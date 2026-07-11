@@ -26,6 +26,7 @@
  */
 import { lazy, Suspense } from 'react'
 import type { CSSProperties, JSX, ReactNode } from 'react'
+import { VX } from '../tokens'
 
 // ── Lazy-loaded StickToBottom ─────────────────────────────────────────────────
 
@@ -68,6 +69,22 @@ const LazyStickToBottom = lazy(() =>
                 className="basalt-agent-scroll-to-bottom"
                 onClick={() => scrollToBottom()}
                 aria-label="Scroll to bottom"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 30,
+                  height: 30,
+                  margin: '8px auto 0',
+                  borderRadius: 999,
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--vx-surface-panel)',
+                  boxShadow: 'var(--vx-shadow-card)',
+                  color: 'var(--vx-faint)',
+                  fontFamily: 'var(--basalt-font-mono)',
+                  fontSize: VX.text.md,
+                }}
               >
                 ↓
               </button>

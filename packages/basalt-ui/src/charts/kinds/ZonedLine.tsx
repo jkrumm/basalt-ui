@@ -21,7 +21,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows } from '../series'
+import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
@@ -115,15 +115,22 @@ export type ZonedLineProps<T> = {
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
   const { series, chartId, height, legend, ariaLabel } = props
 
+  // Default the line overlay to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied
+  // once here so the plotted line, the derived legend swatch, and the derived tooltip row agree.
+  const styledSeries = useMemo<ChartSeries<T>[]>(
+    () => series.map((s) => ({ ...s, strokeWidth: s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH })),
+    [series],
+  )
+
   return (
     <ChartFrame
-      series={series}
+      series={styledSeries}
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       legend={resolveLegend(legend)}
     >
-      {(plot) => <ZonedLinePlot {...props} plot={plot} />}
+      {(plot) => <ZonedLinePlot {...props} series={styledSeries} plot={plot} />}
     </ChartFrame>
   )
 }

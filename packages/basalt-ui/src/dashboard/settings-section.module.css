@@ -1,0 +1,23 @@
+/*
+ * Row separators for SettingsSection/DangerZone (docs/DESIGN-SPEC.md §5): each row gets ~10px
+ * vertical padding and a 1px `--vx-divider` rule below it, EXCEPT the last row in the section —
+ * `:not(:last-child)` strips the divider there so the section doesn't end on a trailing line.
+ */
+.rows > * {
+  padding: 10px 0;
+}
+
+.rows > *:not(:last-child) {
+  border-bottom: 1px solid var(--vx-divider);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.control {
+  flex-shrink: 0;
+}

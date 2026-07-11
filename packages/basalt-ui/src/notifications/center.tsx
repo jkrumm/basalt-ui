@@ -25,6 +25,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
+import { VX } from '../tokens'
 import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
 import type { NotificationHistoryItem, NotificationIntent } from './store'
@@ -42,13 +43,23 @@ function relativeTime(createdAt: number): string {
   return `${days}d ago`
 }
 
-// ── Intent → Mantine color ────────────────────────────────────────────────────
+// ── Intent → Mantine color (drives the action Button's own `light`-variant tint) ──────────────
 
 const INTENT_COLOR: Record<NotificationIntent, string> = {
   success: 'green',
   error: 'red',
   warning: 'yellow',
   info: 'blue',
+}
+
+// ── Intent → status token (docs/DESIGN-SPEC.md §5: "severity accents via status tokens") — the
+// exact spec success/warning/danger hex, used for the item's left-border accent. `info` has no
+// status tone, so it reads the neutral accent instead.
+const INTENT_STATUS: Record<NotificationIntent, string> = {
+  success: VX.status.good,
+  error: VX.status.bad,
+  warning: VX.status.warn,
+  info: VX.accent,
 }
 
 type CenterView = 'inbox' | 'all'
@@ -71,6 +82,7 @@ function NotificationItem({
   const isUnread = item.readAt === undefined
   const isDismissed = item.dismissedAt !== undefined
   const color = INTENT_COLOR[item.intent]
+  const statusAccent = INTENT_STATUS[item.intent]
   const resolved = item.action !== undefined ? resolveAction(item.action) : undefined
 
   function handleAction(e: MouseEvent): void {
@@ -92,7 +104,7 @@ function NotificationItem({
       onClick={isUnread ? () => onMarkRead(item.id) : undefined}
       style={{
         cursor: isUnread ? 'pointer' : 'default',
-        borderInlineStart: `3px solid var(--mantine-color-${color}-6)`,
+        borderInlineStart: `3px solid ${statusAccent}`,
         borderRadius: 'var(--mantine-radius-sm)',
         background: isUnread ? 'var(--mantine-color-default-hover)' : 'transparent',
         opacity: isDismissed ? 0.55 : 1,
@@ -114,7 +126,7 @@ function NotificationItem({
             {item.message}
           </Text>
           <Group gap="xs" align="center" mt={2} wrap="nowrap">
-            <Text size="xs" c="dimmed">
+            <Text ff="monospace" c="var(--vx-faint)" style={{ fontSize: VX.text.micro }}>
               {relativeTime(item.createdAt)}
             </Text>
             {resolved !== undefined && (
