@@ -6,6 +6,18 @@ query/forms/notifications/commands batteries, plus `basalt init` + `basalt check
 argo's local guard. This is the distilled feedback from that run — the first real external
 consumer exercise. Items are ordered by how much they'd help the next consumer, not severity.
 
+> **Same-night fixes (2026-07-12, this branch):** items 1 (doctor version warn + README note),
+> 3 (init scaffolds `.oxfmtrc.json` + sync migration), 4 (check-theme fails loud on zero-file
+> scans), 5 (init first-run hint), 6 (`p`/`ACCENT`/`INK`/`FILL`/`SHADOW` re-exported from
+> `./charts`), 9 (`VX.tooltipMuted`), 13 (migration note in basalt-charts.md), 15 (auto-domain
+> lower bound fixed in MultiLine/ZonedLine/Bars via `padAutoLower`), 8 (Donut generic keys),
+> 18–20 (nav-link class seam, controlled collapse, drawer close-on-nav), 23–25 docs notes,
+> 28–30 (template/README/spec sync). Two bonus finds fixed along the way: the
+> `chartMissingAriaLabel` tag scan choked on JSX generics and arrow-fn props (regex hardened +
+> tests), and `raw-radius` had no config toggle (added `rawRadius`; the framework repo now
+> actually self-scans — its lefthook check-theme had been silently scanning zero files).
+> Still open: 2, 7, 10–12, 14, 16–17, 21–22, 26–27.
+
 ## Packaging / CLI
 
 1. **`bunx basalt` resolves from the npm registry, not the workspace.** With basalt-ui only a

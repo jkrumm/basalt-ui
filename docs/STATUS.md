@@ -48,10 +48,10 @@ that language is historical; see the banner on each.
   `@tanstack/react-hotkeys@0.10.0` optional peer (live keybinding) shipped; `createForm` →
   `useBasaltForm` rename.
 - **Maturation review executed** (see `MATURATION-REVIEW.md`) — the `./data` split (`./data/table`
-  + `./data/virtual`), `./connectivity` registered in `SURFACES`, an accessibility wave (keyboard-
-  operable chart legend, `DataTable` sort, mobile-nav `aria-current`, streaming `aria-live`), agent
-  `retry(threadId)` + orphaned-in-flight-thread reconcile, and a documentation cleanup (10 planning
-  docs archived to `docs/archive/`, 7 marketing orphans deleted).
+  - `./data/virtual`), `./connectivity` registered in `SURFACES`, an accessibility wave (keyboard-
+    operable chart legend, `DataTable` sort, mobile-nav `aria-current`, streaming `aria-live`), agent
+    `retry(threadId)` + orphaned-in-flight-thread reconcile, and a documentation cleanup (10 planning
+    docs archived to `docs/archive/`, 7 marketing orphans deleted).
 - **Sidebar account** — `SidebarAccount` (a presentational footer row) + a provider-agnostic
   account contract (`BasaltAccountProps`/`State`/`Actions`) threaded optionally through
   `AppSidebar`/`BasaltShell`'s `account` prop. No better-auth dependency, no `./auth` subpath — the
@@ -94,8 +94,14 @@ Intentional cut-line calls, not gaps:
 ## Not part of this refactor
 
 **argo consumer-side migration is a separate repo task** (`~/SourceRoot/argo`) and is **not done**.
-This refactor only extracted read-only *from* argo *into* basalt-ui. The BLUEPRINT S0–S5 argo plan
+This refactor only extracted read-only _from_ argo _into_ basalt-ui. The BLUEPRINT S0–S5 argo plan
 is superseded as basalt-ui's roadmap — do not execute it here.
+
+**Update 2026-07-11:** the argo consumer migration referenced above has since run to completion,
+end-to-end, against this branch (`file:`-linked, unpublished) — provider/theme/series foundation,
+all chart features, the app shell, and the query/forms/notifications/commands batteries. Distilled
+feedback from that run lives in `docs/ARGO-MIGRATION-LEARNINGS.md`; consult it before touching CLI
+packaging, the charts/tokens API, the shell, or the batteries above.
 
 ## Doc map (post-reconciliation)
 

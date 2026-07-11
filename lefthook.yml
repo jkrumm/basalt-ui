@@ -17,7 +17,9 @@ pre-commit:
 
     check-theme:
       glob: "packages/basalt-ui/src/**"
-      run: bun packages/basalt-ui/bin/basalt.mjs check-theme
+      # Run inside the package so its own `basalt` config (roots: ["src"] + framework-internal
+      # rule opt-outs) applies — from the repo root the CLI sees no config and scans nothing.
+      run: cd packages/basalt-ui && bun bin/basalt.mjs check-theme
 
     oxlint:
       glob: "*.{js,jsx,ts,tsx,cjs,mjs}"
