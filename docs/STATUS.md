@@ -26,8 +26,16 @@ that language is historical; see the banner on each.
   `./data/virtual`) — plus `./guard`, `./state`, `./connectivity`, `./llms.txt`. All 18 subpaths
   (incl. `./connectivity`) resolve in the pack-test.
 - **Charts / tokens** — config-driven chart system (legend/tooltip/crosshair), `ResponsiveChart` +
-  `useChartSize`, the semantic-tier `--vx-*` token keystone, zinc-charcoal palette, motion
-  discipline (oxlint + `check-theme` enforced).
+  `useChartSize`, the semantic-tier `--vx-*` token keystone, the modern-zinc palette (see
+  `docs/DESIGN-SPEC.md`), motion discipline (oxlint + `check-theme` enforced).
+- **Design overhaul (2026-07-11)** — the shell, charts, components (`data-table`, notifications
+  bell/center), and agent-chat surfaces were restyled to `docs/DESIGN-SPEC.md`: cool zinc surfaces,
+  a single saturated sky accent, split by role (ink `#0077bd`/`#8ec5ff`; fill `#0077bd` both schemes, white label), `shadow-card` depth (whisper shadow + ring,
+  no plain hairline), 10px card radius, and the three-font system (Nunito Sans / Hubot Sans /
+  JetBrains Mono, shipped via exact-pinned `@fontsource-variable/*` deps). `DESIGN-SPEC.md` is the
+  ground truth for all visual doctrine going forward; older doctrine comments describing warm-neutral
+  zinc-charcoal, a muted slate-blue accent, flat/no-shadow cards, or 8px radii are superseded — see
+  its "Doctrine inversions" section.
 - **Enforcement** — `SURFACES` projects `gen-oxlint` + `gen-llms`; `check-coverage` (8 assertions);
   Mantine-free boundary enforced on headless surfaces; `@visx/*`-only-in-`charts` boundary.
 - **Release gates** (`scripts/pack-test.sh`) — `publint --strict` + `attw` (esm-only) +
@@ -92,7 +100,9 @@ is superseded as basalt-ui's roadmap — do not execute it here.
 ## Doc map (post-reconciliation)
 
 - **Living reference** (current, maintained alongside the code) — **`STATUS.md`** (this file,
-  single source of truth), `DESIGN-CORE.md`, `MANTINE-THEMING.md`, `MATURATION-REVIEW.md`.
+  single source of truth), `DESIGN-SPEC.md` (2026-07 visual identity, supersedes older doctrine —
+  see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`,
+  `MATURATION-REVIEW.md`.
 - **`docs/archive/`** — superseded scope ledgers and historical process artifacts, kept for
   provenance only:
   - Superseded scope ledgers — `MATURATION-ROADMAP.md`, `ENFORCEMENT-HARDENING.md`,

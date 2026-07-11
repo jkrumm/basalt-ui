@@ -329,7 +329,7 @@ function HistoryPanel() {
           </Badge>
         )}
       </Group>
-      <Paper p="sm" radius="sm" withBorder>
+      <Paper p="sm">
         <NotificationCenter maxHeight={260} />
       </Paper>
     </Stack>
@@ -359,7 +359,7 @@ export function NotificationsDemoPage() {
         </Text>
       </div>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             Behaviour
@@ -374,7 +374,7 @@ export function NotificationsDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="md">
           <ToastButtons />
           <Divider />
@@ -384,7 +384,7 @@ export function NotificationsDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="md">
           <HistoryMutationSection />
           <Divider />

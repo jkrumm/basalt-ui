@@ -9,7 +9,7 @@ export type SubPageProps = {
 export function SubPage({ title, description, range }: SubPageProps) {
   return (
     <Stack gap="md">
-      <Paper p="md" withBorder>
+      <Paper p="md">
         <Group justify="space-between" mb="xs">
           <Text fw={600} fz="lg">
             {title}
@@ -24,7 +24,7 @@ export function SubPage({ title, description, range }: SubPageProps) {
           {description}
         </Text>
       </Paper>
-      <Paper p="md" withBorder>
+      <Paper p="md">
         <Text size="sm" c="dimmed">
           Placeholder content for {title.toLowerCase()}. This sub-route demonstrates the sidebar
           sub-navigation — hover &quot;Dashboard&quot; in the sidebar to see the popover, or

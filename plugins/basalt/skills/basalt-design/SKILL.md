@@ -17,9 +17,9 @@ one that exists. Lower layers fill gaps; they never override a higher layer.
    confirmation, the series dictionary, app deviations. **This wins on every conflict.** It is the
    Google-spec convention (YAML token front matter + Markdown prose, sibling to `CLAUDE.md`).
 2. **Shipped `basalt-*` rules** (`.claude/rules/basalt-{tokens,charts,mantine,state}.md`) — the
-   universal law AND its enforcement: the Basalt zinc-charcoal palette + single muted slate accent,
+   universal law AND its enforcement: the Basalt modern-zinc palette + saturated sky accent,
    one-hue-per-metric, neutral structure, gradient defaults, the three-tier token contract, the
-   elevation/density doctrine.
+   shadow-card elevation/density doctrine.
 3. **This skill** — only the loop and the judgment, where the above are silent.
 
 If a consumer `DESIGN.md` does not exist yet, the app has not been scaffolded — run `/basalt:app`
@@ -32,7 +32,7 @@ This is the same restraint `frontend-design` calls for, applied to data: intenti
 intensity. The `basalt init` CLAUDE block sets a restraint override for exactly this reason — in a
 dashboard the bold move is calm.
 
-- **One muted hue family, reused everywhere.** The Basalt zinc-charcoal identity (below), never raw
+- **One muted hue family, reused everywhere.** The Basalt modern-zinc identity (below), never raw
   Material / AntD / Tailwind primaries (they read childish and clash). A small harmonious subset
   across every page so tabs feel like one app.
 - **Single hue per metric.** Each metric owns ONE color, stable across all views (HRV always
@@ -57,74 +57,84 @@ dashboard the bold move is calm.
 
 ## Color identity & accent restraint (the #1 lever)
 
-The Basalt identity is **lifted zinc-charcoal + a single muted slate accent** — dark surfaces are a
-lifted neutral/faint-cool zinc, the light canvas stays a warm-neutral off-white; NOT a saturated
-steel-blue "Blueprint" identity (that framing is obsolete). Restraint on the accent is the single
-biggest difference between premium and AI-default.
+The Basalt identity is **modern zinc + a saturated sky accent** — cool-neutral zinc surfaces
+(Tailwind zinc family) on both schemes, a slightly darker page with panels lifting off it via depth
+(a whisper shadow + 1px ring, `shadow-card` — never a bare border), and one saturated sky-blue
+accent. Restraint is now about *placement*, not *saturation* — the accent is louder than the old
+muted-slate identity, so the discipline below (where it appears / where it never appears) carries
+more of the weight.
 
-**Neutrals carry the surface (~90/10, not 60/30/10).** Dark is a lifted zinc-charcoal (blue a whisper
-above red, light enough that cards/borders separate); light is a clean warm-neutral off-white (blue ≤
-red, last-digit — **not** a creamy/yellow cast):
+**Neutrals carry the surface — cool zinc on both schemes**, never warm-neutral/off-white, never
+steel-blue, never pure black/white:
 
-- **Dark:** bg `#212126`, panel `#27272d`, elevated `#323239`, subtle `#323239` (hover/striped,
-  above panel), hairline `#3a3a42`. Lifted zinc-charcoal — neutral/faint-cool, never steel-blue,
-  never pure black, lighter than a near-black so cards/borders separate. Small elevation steps for
-  depth; dimmed text `#b6b6bc`.
-- **Light:** page `#fafafa` (near-neutral off-white, no yellow), cards `#ffffff` lifting above it,
-  subtle `#f2f2f1` (hover/striped, a step below white), soft low-contrast hairline `#ededec`.
-  Near-black text `#121110`, dimmed text `#5e5e64` — never pure `#000` on pure `#fff`.
+- **Dark:** bg `color-mix(in srgb, #27272a 70%, #18181b)` (#232326), panel `#27272a`, panel-hover
+  `color-mix(in srgb, #3f3f46 50%, #27272a)` (#333338), hairline (card ring)
+  `color-mix(in srgb, #52525c 50%, #3f3f46)` (#494951), line (strong border) `#3f3f46`. Ink
+  `#e5e5e5`, muted `#d4d4d4`, faint `#a1a1a1`.
+- **Light:** bg `color-mix(in srgb, #f4f4f5 50%, #e4e4e7)` (#ececee), panel `#f4f4f5`, panel-hover
+  `#fafafa`, hairline `#e5e5e5`, line (strong border) `color-mix(in srgb, #e4e4e7 50%, #d4d4d8)`
+  (#dcdce0). Ink `#262626`, muted `#525252`, faint `#737373`.
 
-The surface token set is `bg` (page) · `panel` (card) · `elevated` (lifted) · `subtle`
-(hover/striped/track) · `border` (hairline). `--vx-surface-subtle` backs Table hover/striped, `Code`,
-the `SegmentedControl` track, and Tabs/Accordion/Menu hover.
+The surface token set is `bg` (page) · `panel` (cards, controls) · `panel-hover` · `line` (strong
+border) · `hairline` (card ring, lives inside `shadow-card`, never rendered as a bare `border`) ·
+`divider` (layout separators).
 
-**One accent, muted slate-blue** (~50% saturation, Notion/Linear-calm — NOT a saturated Bootstrap
-blue): family `['#324a66','#3c5b7e','#4f78a4','#7099c4','#a5c1dd']`.
+**One accent, saturated sky-blue — split by ROLE.** As **ink** (links, active-nav icon, chart lines,
+focus ring) it is read against the page, so it inverts: `#0077bd` light / `#8ec5ff` dark. As a
+**filled surface** it carries a label, so it is squeezed between that label (≥4.5:1) and the page
+behind it (≥3:1) — which leaves one luminance band, the same on both pages: `#0077bd` with a WHITE
+label, in BOTH schemes. Fill with `--vx-accentFill` / `--vx-fill-{family}`, never with `--vx-accent`
+(a light fill cannot carry white text). Every Mantine family's fill sits in that same band, so a
+filled surface always reads white. With `accent-hover` (derived from the fill) and `on-accent`
+companions (NOT the old ~50%-saturation muted slate).
 
-The accent appears **only** on: the single primary CTA per view, focus rings, links, small status
-pops. It appears **never** on: active nav, borders, large fills, every icon, secondary buttons.
-"Ink earns its color" — neutral does the structure, the accent only points.
+The accent appears on: the primary data series, active-nav **icons** and active **child** labels,
+links, primary buttons, focus rings, and the leader bar in meters. It stays off: general chrome,
+borders, large fills, every icon, secondary buttons. "Ink earns its color" — neutral does the
+structure, the accent only points.
 
-- **Active nav = neutral surface fill + plain text + a weight bump, never the accent.** The theme
-  bakes this into `NavLink` for every render path — don't re-color it.
+- **Active nav = panel bg + `shadow-card` + accent-colored icon + weight-600 ink text**, never a
+  full accent fill. The theme bakes this into `NavLink` for every render path — don't re-color it.
 - **Buttons:** exactly one filled-accent primary CTA per view; every other action is
-  `variant="default"` (neutral). Avoid colored `variant="light"` for routine actions — washed-out,
-  especially on the warm light canvas.
+  `variant="default"` (neutral). Avoid colored `variant="light"` for routine actions.
 - **Status:** positive deltas `color="green"` (forest), never `teal`/turquoise/saturated emerald.
-- **Dark done right:** lifted zinc-charcoal, neutral/faint-cool (not steel-blue), not pure black;
-  keep the accent muted so it doesn't glow/bleed.
-- **Light done right:** near-neutral off-white page (`#fafafa`, no yellow) + white cards that lift;
-  soft low-contrast hairline (`#ededec`); shadows only for genuinely floating elements.
+- **Dark done right:** cool zinc, neutral/faint-cool, never steel-blue, never pure black; the
+  dark-scheme accent (`#8ec5ff`) is lighter/less saturated than its light counterpart so it doesn't
+  glow/bleed.
+- **Light done right:** cool zinc page + panel lift (never warm/off-white); depth comes from
+  `shadow-card`, not a bare hairline border.
 
 ### Density & surface consistency
 
 - **Dense by default** (Linear/Notion): compact nav rows, `sm` (12px) gaps and card padding, a
-  48px shell header. Separate by surface + hairline, not by large air — default to the tighter step.
+  48px shell header. Separate by surface + `shadow-card`, not by large air — default to the
+  tighter step.
 - **All cards render identically:** Mantine `Card`/`Paper` **and** the Mantine-free `ChartCard`
-  resolve to **one border token** + **one radius token** (`--vx-radius-card` = `radius.md` = 8px),
-  **flat** (no drop shadow — depth is the 1px hairline). Never inline-override a surface's
-  `border`/`borderRadius`/`boxShadow`/`backgroundColor` — use `withBorder` + the radius token +
-  `VX.surface.*`. Mechanically enforced by `basalt check-theme`'s `raw-surface` guard.
+  resolve to **one radius token** (`--vx-radius-card` = 10px) and **`shadow-card`** — a whisper
+  shadow with the 1px ring baked into the shadow itself, **no `border` property**. Never
+  inline-override a surface's `border`/`borderRadius`/`boxShadow`/`backgroundColor` — use the
+  radius token + `VX.surface.*` / the shadow-card token. Mechanically enforced by
+  `basalt check-theme`'s `raw-surface` guard.
 - **Strict surfaces & primitives.** The theme runs a strict surface system: Mantine components read
   raw ramp steps directly, so `cssVariablesResolver` **collapses the ramp steps onto the
-  `--vx-surface-*` tokens** — one border, one card bg, one radius across every component (AppShell,
-  Table, Input, Divider, Tabs, Popover, Accordion, cards). Consumer code must **use Mantine layout
-  primitives** (`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card`), not raw
-  `<div>`/`<span>` with inline `style`. `check-theme` adds four guard kinds to enforce this
+  `--vx-surface-*` tokens** — one `shadow-card` treatment, one card bg, one radius across every
+  component (AppShell, Table, Input, Divider, Tabs, Popover, Accordion, cards). Consumer code must
+  **use Mantine layout primitives** (`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card`),
+  not raw `<div>`/`<span>` with inline `style`. `check-theme` adds four guard kinds to enforce this
   (default ON, `theme-allow` escape): `off-system-surface-var` (raw ramp-step vars),
   `raw-html-layout`, `inline-spacing`, `inline-display`. Only the Mantine-free `src/charts/**` may
   use raw `<div>` (still with `VX.*` tokens).
 
 **Anti-slop checklist:** no pure `#000`/`#fff`; one accent locked page-wide; neutral does the
 structure, accent only points; don't flood blue; hierarchy via scale/weight/contrast/space, not
-color; depth = surface + hairline, not drop-shadow.
+color; depth = `shadow-card` (whisper shadow + ring), never a bare hairline border on cards.
 
 ## The three-tier token system (centralize + enforce)
 
 Aesthetics only survive if they cannot be bypassed. basalt-ui ships this as the `./tokens` and
 `./charts` surfaces:
 
-1. **Palette data** — the Basalt zinc-charcoal ramps + the single muted slate accent family, plus
+1. **Palette data** — the Basalt modern-zinc ramps + the saturated sky accent family, plus
    every semantic/status/neutral/surface entry as a per-theme `{ light, dark }` pair. Pure data: no
    React, no `@mantine/*`, no browser API.
 2. **CSS variables** — `buildPaletteCss(opts)` emits the pairs as `--vx-*` custom properties under

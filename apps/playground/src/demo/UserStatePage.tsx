@@ -54,7 +54,7 @@ export function UserStatePage() {
         react live — including the Account/Billing drawers behind its menu.
       </Text>
 
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Stack gap="xs">
           <Text size="sm" fw={500}>
             Session
@@ -84,7 +84,7 @@ export function UserStatePage() {
         </Stack>
       </Paper>
 
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Stack gap="xs">
           <Text size="sm" fw={500}>
             Plan
@@ -115,7 +115,7 @@ export function UserStatePage() {
         </Stack>
       </Paper>
 
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Stack gap="xs">
           <Text size="sm" fw={500}>
             Identity
@@ -144,7 +144,7 @@ export function UserStatePage() {
 
       <Divider />
 
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Text size="sm" fw={500} mb="xs">
           Derived BasaltAccountState
         </Text>

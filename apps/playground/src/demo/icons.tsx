@@ -157,6 +157,27 @@ export function IconCurrency() {
   )
 }
 
+/** Search glyph for the header search trigger. */
+export function IconSearch() {
+  return (
+    <Glyph size={16}>
+      <path d="M10 10m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0" />
+      <path d="M20 20l-4.35 -4.35" />
+    </Glyph>
+  )
+}
+
+/** Horizontal ellipsis for ghost "more actions" menus (KPI cards, chart card headers). */
+export function IconDots() {
+  return (
+    <Glyph size={16}>
+      <path d="M5 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M19 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    </Glyph>
+  )
+}
+
 /** Subtle wifi icon for the online-status indicator. */
 export function IconWifi() {
   return (

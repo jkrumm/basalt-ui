@@ -121,19 +121,24 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
 ## Layout, elevation, shapes
 
 - **Density is the point.** This is a terminal, not a marketing page — sections separate by surface
-  change and hairlines, not by large air. Card interior padding defaults to the `md` spacing step.
-- **Depth = surface + hairline, never drop shadows** (Linear/Carbon discipline). Elevation tiers:
+  change and shadow-carried depth, not by large air. Card interior padding defaults to the `md`
+  spacing step.
+- **Depth = a whisper shadow + ring, not a bare hairline border** (see
+  `docs/DESIGN-SPEC.md` §8 inversion #1 — this supersedes the older "surface + hairline, never a
+  drop shadow" framing below the ring; when this section and that spec disagree on a concrete
+  value, the spec wins). Elevation tiers:
 
-  | Level        | Treatment                                  | Use                                |
-  | ------------ | ------------------------------------------ | ---------------------------------- |
-  | 0 (flat)     | No border, no shadow                       | Body text, page background         |
-  | 1 (surface)  | `surface-1` on `canvas`                     | Cards, panels                      |
-  | 2 (elevated) | `surface-2` + 1px hairline                  | Chart area, tooltips, lifted cards |
-  | 3 (focus)    | 2px primary outline                         | Focused input / control            |
+  | Level        | Treatment                                        | Use                                |
+  | ------------ | ------------------------------------------------- | ----------------------------------- |
+  | 0 (flat)     | No border, no shadow                               | Body text, page background         |
+  | 1 (surface)  | `surface-1` on `canvas`                            | Cards, panels                      |
+  | 2 (elevated) | `surface-2` + `shadow-card` (whisper shadow + ring) | Chart area, tooltips, lifted cards |
+  | 3 (focus)    | 2px primary outline                                | Focused input / control             |
 
-  `Card`/`Paper` default to `withBorder` and stay flat — depth comes from the 1px hairline, not a
-  drop shadow. There is no card-shadow token; if a lifted surface genuinely needs one, reach for a
-  Mantine `shadow` prop deliberately, never as a default.
+  `Card`/`Paper` default to the `shadow-card` token (a low-opacity shadow with the 1px ring baked
+  into the shadow itself, no `border` property) — depth comes from that whisper shadow, not a bare
+  hairline. There **is** a card-shadow token (`--vx-shadow-card`); reach for a plain Mantine
+  `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
 - **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: default `sm` for
   controls, cards at `md`, pills/badges at `pill`. Owned in the theme, not inherited.
 - **Type carried by size + weight.** System-sans, no display/body family split. Numbers render in a
@@ -240,7 +245,8 @@ series map in one guard-exempt file and feeds it through `defineSeries` / `group
 - Don't spend the identity hue on UI selection state (active nav item, selected tab) — that's not a
   data signal; keep it a neutral fill.
 - Don't branch on colour scheme in JS or read the theme from `localStorage`.
-- Don't carry depth with drop shadows; use surface change + hairlines.
+- Don't carry depth with a bare hairline border; use the `shadow-card` whisper-shadow-plus-ring
+  token (see `docs/DESIGN-SPEC.md` §8 inversion #1).
 - Don't enumerate per-metric colours in this file or in a consumer's `DESIGN.md` prose — that's the
   palette data's job.
 

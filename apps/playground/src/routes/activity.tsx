@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { DashboardPage } from '../demo/DashboardPage'
+import { ActivityPage } from '../demo/ActivityPage'
 
-// Activity reuses the dashboard surface (as the pre-router playground did) — it exists to exercise
-// a second Overview destination and the mobile bottom-nav.
+// A small activity-feed recipe exercising Mantine's centrally-themed Timeline (see
+// ActivityPage's own JSDoc) — previously this route just reused DashboardPage as a stub.
 export const Route = createFileRoute('/activity')({
   staticData: { title: 'Activity' },
-  component: DashboardPage,
+  component: ActivityPage,
 })

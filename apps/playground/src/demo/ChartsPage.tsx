@@ -24,6 +24,7 @@
  * alpha() · ChartFrame + useHoverSync + Crosshair/SeriesDot (bespoke dual-axis + high-cardinality
  * composition — the escape hatch).
  */
+import type { CSSProperties } from 'react'
 import { useMemo } from 'react'
 import { SimpleGrid, Stack } from '@mantine/core'
 import {
@@ -86,6 +87,25 @@ const zoneLabel = (v: number): { text: string; color: string } => {
   if (v >= 75) return { text: 'Healthy', color: VX.goodSolid }
   if (v >= 50) return { text: 'Watch', color: VX.warnSolid }
   return { text: 'At risk', color: VX.badSolid }
+}
+
+// Donut `centerContent` demo (docs/DESIGN-SPEC.md §3): mono KPI value + a mono micro-label below,
+// replacing the plain `centerLabel`/`centerSubLabel` text-only slots with real chrome.
+const donutCenterValueStyle: CSSProperties = {
+  fontFamily: 'var(--basalt-font-mono)',
+  fontSize: 16,
+  fontWeight: 600,
+  color: VX.ink,
+  lineHeight: 1.1,
+}
+
+const donutCenterLabelStyle: CSSProperties = {
+  fontFamily: 'var(--basalt-font-mono)',
+  fontSize: 9.5,
+  fontWeight: 500,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: VX.faint,
 }
 
 const STACK_GROUPS = ['sessions', 'signups', 'revenue'] as const
@@ -654,8 +674,14 @@ export function ChartsPage() {
             colorForKey={demoColor}
             seriesLabel={(k) => CHANNEL_MIX.find((c) => c.key === k)?.label ?? k}
             formatValue={(v) => fmtInt(v)}
-            centerLabel={fmtInt(CHANNEL_MIX.reduce((s, c) => s + c.value, 0))}
-            centerSubLabel="total"
+            centerContent={
+              <div style={{ textAlign: 'center' }}>
+                <div style={donutCenterValueStyle}>
+                  {fmtInt(CHANNEL_MIX.reduce((s, c) => s + c.value, 0))}
+                </div>
+                <div style={donutCenterLabelStyle}>Total</div>
+              </div>
+            }
           />
         </ChartCard>
       </SimpleGrid>

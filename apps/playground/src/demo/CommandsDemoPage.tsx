@@ -1,20 +1,21 @@
 /**
  * CommandsDemoPage — exercises basalt-ui/commands:
- * defineCommands, runCommand, defineOverlays, overlays.open, toSpotlightActions,
+ * runCommand, defineOverlays, overlays.open, toSpotlightActions,
  * ShortcutsHelp, BasaltOverlays, useCommandHotkeys (live keybindings), openSpotlight.
  *
- * Commands + overlays are defined here inline for demo. The BasaltRegister augment at the top
- * of this file shows exactly how a real app wires its commands.ts / overlays.ts — with it, every
- * runCommand / overlays.open call uses the literal-key union (no casts).
+ * The commands themselves (including this page's `demo:*` showcase set) are registered once, at
+ * app boot, in `./commands.ts` — see that file's header for why: `defineCommands`'s own contract
+ * is "call it once, the last call wins", so a real app's whole registry lives in one dedicated
+ * file, imported eagerly by main.tsx. This page only *exercises* that shared registry (runCommand,
+ * useCommandHotkeys, ShortcutsHelp) and augments `BasaltRegister.overlays` for its demo overlay.
  *
  * LIVE KEYBINDINGS PROOF: Pressing Mod+G greets, Mod+L logs to console, Mod+T toggles
  * the highlight box below. useCommandHotkeys() is called here so the shortcuts are active
  * while this page is rendered.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Badge, Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import {
-  defineCommands,
   defineOverlays,
   openSpotlight,
   overlays,
@@ -24,73 +25,16 @@ import {
   toSpotlightActions,
   useCommandHotkeys,
 } from 'basalt-ui/commands'
-
-// ── Shared state for the toggle demo ─────────────────────────────────────────
-
-// Module-level mutable ref so the toggle command can update React state.
-// In a real app this would be Zustand / a context signal / a query mutation.
-let toggledSetter: ((v: (prev: boolean) => boolean) => void) | null = null
+import { registerDemoToggleSetter } from './commands'
 
 // ── Typed registry augmentation ───────────────────────────────────────────────
-// The augment below mirrors how a real app wires its commands.ts. With it, every
-// runCommand / overlays.open call below uses the literal-key union — no casts required.
-// (The augment cannot appear after the value it references, so it lives above defineCommands.)
+// commands.ts owns the `commands` slot augmentation (it's the single defineCommands call); this
+// page only adds its own demo overlay to the `overlays` slot.
 declare module 'basalt-ui' {
   interface BasaltRegister {
-    commands: typeof DEMO_COMMANDS
     overlays: typeof DEMO_OVERLAYS
   }
 }
-
-// ── Demo command registry ─────────────────────────────────────────────────────
-
-// NOTE: in a real app, call defineCommands once in a dedicated commands.ts file
-// and augment BasaltRegister.commands there. This page-local call is demo-only.
-const DEMO_COMMANDS = defineCommands({
-  'demo:greet': {
-    label: 'Greet user',
-    group: 'Demo',
-    shortcut: 'Mod+G',
-    run: () => {
-      // eslint-disable-next-line no-alert
-      alert('Hello from the command bus!')
-    },
-  },
-  'demo:log': {
-    label: 'Log to console',
-    group: 'Demo',
-    shortcut: 'Mod+L',
-    run: () => {
-      // oxlint-disable-next-line no-console
-      console.log('[basalt commands] runCommand demo triggered')
-    },
-  },
-  'demo:toggle': {
-    label: 'Toggle highlight box',
-    group: 'Demo',
-    shortcut: 'Mod+T',
-    run: () => {
-      toggledSetter?.((prev) => !prev)
-    },
-  },
-  'demo:overlay': {
-    label: 'Open demo overlay',
-    group: 'Demo',
-    shortcut: 'Mod+Shift+O',
-    run: () => {
-      overlays.open('demo:info', { message: 'Opened from the command bus!' })
-    },
-  },
-  'demo:async': {
-    label: 'Async command (1s delay)',
-    group: 'Demo',
-    run: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      // oxlint-disable-next-line no-console
-      console.log('[basalt commands] async command finished')
-    },
-  },
-})
 
 // ── Demo overlay registry ─────────────────────────────────────────────────────
 
@@ -152,7 +96,7 @@ function LiveHotkeysSection({ toggled }: { toggled: boolean }) {
         Press <kbd>Mod+T</kbd> to toggle this box. Each press runs the <code>demo:toggle</code>{' '}
         command via live keybinding.
       </Alert>
-      <Paper p="sm" radius="sm" withBorder>
+      <Paper p="sm">
         <Stack gap={4}>
           <Text size="xs" fw={600} c="dimmed" tt="uppercase" mb={4}>
             Active shortcuts ({shortcuts.length}) · Spotlight actions ({spotlightActions.length})
@@ -233,7 +177,7 @@ function ShortcutsSection() {
         Renders all commands with a <code>shortcut</code> field, grouped by group. Platform-aware: ⌘
         on macOS, Ctrl on other platforms.
       </Text>
-      <Paper p="sm" radius="sm" withBorder>
+      <Paper p="sm">
         <ShortcutsHelp title="Demo shortcuts" />
       </Paper>
     </Stack>
@@ -245,8 +189,12 @@ function ShortcutsSection() {
 export function CommandsDemoPage() {
   const [toggled, setToggled] = useState(false)
 
-  // Wire the module-level setter so the toggle command can update this component's state
-  toggledSetter = setToggled
+  // Wire commands.ts's demo:toggle target to this component's state while mounted; clear it on
+  // unmount so a stray Mod+T elsewhere in the app is a safe no-op.
+  useEffect(() => {
+    registerDemoToggleSetter(setToggled)
+    return () => registerDemoToggleSetter(null)
+  }, [])
 
   // LIVE KEYBINDINGS: activate all registered command shortcuts for this page.
   // useCommandHotkeys() degrades to a no-op when @tanstack/react-hotkeys is absent.
@@ -262,7 +210,7 @@ export function CommandsDemoPage() {
         </Text>
       </div>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             About
@@ -277,7 +225,7 @@ export function CommandsDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="md">
           <LiveHotkeysSection toggled={toggled} />
           <Divider />

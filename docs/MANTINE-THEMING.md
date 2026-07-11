@@ -78,8 +78,8 @@ What basalt sets, and why. Full surface: <https://mantine.dev/theming/theme-obje
 | Field                                 | Basalt value                                       | Rationale                                                       |
 | ------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------- |
 | `primaryColor`                        | the one earned identity hue                        | the single brand voltage (`DESIGN-CORE.md`)                     |
-| `primaryShade`                        | `{ light: deeper, dark: lighter }`                 | deeper on light, lighter on dark (no glow)                      |
-| `autoContrast` + `luminanceThreshold` | `true`, ~`0.45`                                    | auto black/white text on filled accents                         |
+| `primaryShade`                        | `6` (one shade, both schemes)                      | a fill is a SURFACE — it does not invert; see the fill band below |
+| `autoContrast` + `luminanceThreshold` | `true`, ~`0.45`                                    | left on for Mantine internals, but NOT trusted — the foreground is decided in CSS (`--vx-on-*`), because Mantine's pick is scheme-blind AND brightness-based |
 | `colors`                              | every Mantine accent overridden via a `ramp10()`   | `color="teal"` etc. become on-palette with zero call-site edits |
 | `white` / `black`                     | match the palette endpoints                        | endpoints consistent with the palette                           |
 | `defaultRadius`                       | tight (`sm`/4px), cards at `md`                     | v9 default changed `sm`→`md`; basalt leans tight (Linear)       |
@@ -218,11 +218,13 @@ Three escalating levers, cheapest first. **Always prefer the cheapest that does 
 
 1. **Default props** — set a prop once, globally:
    ```ts
-   Card: Card.extend({ defaultProps: { withBorder: true, radius: 'md', shadow: undefined } }),
-   Paper: Paper.extend({ defaultProps: { withBorder: true } }),
    Badge: Badge.extend({ defaultProps: { radius: 'sm', variant: 'light' } }),
    NavLink: NavLink.extend({ defaultProps: { variant: 'light' } }),
    ```
+   > `Card`/`Paper` are **not** themed via `defaultProps` — depth comes from `styles.root` forcing
+   > `boxShadow: 'var(--vx-shadow-card)'` + `borderRadius: 'var(--vx-radius-card)'`, no
+   > `withBorder` (`docs/DESIGN-SPEC.md` §8 inversions #1 and #5 supersede the `withBorder`/`radius:
+   > 'md'` shape shown above for a generic default-props example).
 2. **`vars`** — compute CSS variables from `(theme, props)`; the mantinehub technique for routing a
    component's fill/text to `*-filled`/`*-contrast` per `color` prop (see §7). Surgical, no CSS file.
 3. **`classNames` + CSS modules** — when structure/state styling is needed. Style by **data
@@ -274,10 +276,14 @@ The chrome advances in lockstep with `createBasaltTheme` and `DESIGN-CORE.md` so
 
 - Add the `cssVariablesResolver` of §4 (surfaces/border/dimmed ← `--vx-*`). _Highest-value,
   lowest-risk step — do first._ `BasaltProvider` pre-wires it.
-- Decide `defaultRadius`. The v9 default is `md`/8px; basalt leans tight/precise (Linear) →
-  **`defaultRadius: 'sm'` (4px)** with cards at `md` (8px).
-- Add `fontFamilyMonospace`, `fontWeights`, and `Card`/`Paper` `withBorder: true` + drop the card
-  shadow on dark (depth = surface + hairline, not shadow — `DESIGN-CORE.md` Elevation).
+- Decide `defaultRadius`. Basalt keeps the v9 default **`defaultRadius: 'md'`** (8px) for controls;
+  cards/panels bypass the radius scale entirely and resolve straight to `--vx-radius-card` (10px —
+  `docs/DESIGN-SPEC.md` §8 inversion #5 supersedes the earlier `sm`/4px-controls, `md`/8px-cards
+  split described here).
+- Add `fontFamilyMonospace`, `fontWeights`, and force `Card`/`Paper` `styles.root` to
+  `boxShadow: 'var(--vx-shadow-card)'` (no `withBorder`) — depth is a whisper shadow + ring baked
+  into that one token, not a bare hairline (`docs/DESIGN-SPEC.md` §8 inversion #1 supersedes the
+  older surface-+-hairline framing).
 - `variantColorResolver` (§5): **optional**, defer until a variant visibly needs it.
 
 ### 8.2 The shell: sidebar + breadcrumb
@@ -349,7 +355,11 @@ uses the lighter surface ramp instead of the muddy mid-gray default):
 
 Every Mantine accent (`blue`/`red`/`teal`/…) is overridden with a designed family via `ramp10()`, so
 `color="blue"`-style props are on-palette with zero call-site changes. `primaryColor: blue`;
-`primaryShade { light: 6, dark: 4 }`; `autoContrast: true`. Mantine has **no** `gold`/`vermilion`
+`primaryShade: 6` — one shade in BOTH schemes, because a filled surface does not invert: it is
+squeezed between its white label (≥4.5:1) and the page behind it (≥3:1), and only one luminance band
+satisfies both on both pages. Shade 6 of every family is pinned to that band (`FILL` / `ACCENT` in
+`tokens/palette.ts`), and `--mantine-color-{family}-filled` is bridged onto the `--vx-*` tokens, so
+the chrome is single-sourced and the theme lab can retune it live. Mantine has **no** `gold`/`vermilion`
 name — map to the nearest accent (`yellow`, `red`, `orange`, `green`, `blue`, `gray`). Off-identity
 accent names that resolve to non-identity hues should be rejected by the guard (see `DESIGN-CORE.md`
 guardrails) — use a status hue or a series token instead.

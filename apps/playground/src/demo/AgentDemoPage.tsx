@@ -77,6 +77,8 @@ function coalesce(parts: AgentPart[]): Block[] {
     } else if (part.type === 'source') {
       if (last?.kind === 'sources') last.parts.push(part)
       else blocks.push({ kind: 'sources', key: `b${i}`, parts: [part] })
+    } else if (part.type === 'start') {
+      // No-op: a resumption signal, not renderable content (see basalt-ui/agent's StartPart doc).
     } else {
       blocks.push({ kind: 'error', key: `b${i}`, part })
     }
@@ -132,7 +134,7 @@ function ReasoningBlock({ text }: { text: string }) {
 function ToolBlock({ part }: { part: ToolCallPart }) {
   const [open, { toggle }] = useDisclosure(false)
   return (
-    <Paper withBorder radius="sm" p="xs" bg="var(--mantine-color-default-hover)">
+    <Paper p="xs" bg="var(--mantine-color-default-hover)">
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <Group gap={6} wrap="nowrap">
           <Badge size="xs" variant="light" color="grape">
@@ -195,7 +197,7 @@ function SourcesBlock({ parts }: { parts: SourcePart[] }) {
 
 function ErrorBlock({ part }: { part: ErrorPart }) {
   return (
-    <Paper withBorder radius="sm" p="xs" bg="var(--mantine-color-red-light)">
+    <Paper p="xs" bg="var(--mantine-color-red-light)">
       <Group gap={6} wrap="nowrap" align="flex-start">
         <Badge size="xs" color="red" variant="light">
           error
@@ -462,11 +464,7 @@ export function AgentDemoPage() {
       </div>
 
       {/* ── Chat surface ──────────────────────────────────────────────────────── */}
-      <Paper
-        radius="md"
-        withBorder
-        style={{ display: 'flex', flexDirection: 'column', height: 560 }}
-      >
+      <Paper style={{ display: 'flex', flexDirection: 'column', height: 560 }}>
         <Box style={{ flex: 1, minHeight: 0, position: 'relative' }}>
           {isEmpty ? (
             <EmptyState onPick={sendText} />
@@ -523,7 +521,7 @@ export function AgentDemoPage() {
       </Paper>
 
       {/* ── Simulation & dev panel ────────────────────────────────────────────── */}
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Group justify="space-between" align="center">
           <Group gap="xs">
             <Text size="xs" tt="uppercase" fw={600} c="dimmed">

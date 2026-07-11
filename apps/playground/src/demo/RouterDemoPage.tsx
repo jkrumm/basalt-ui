@@ -62,7 +62,7 @@ function DemoNav() {
   const router = useRouter()
 
   return (
-    <Paper p="sm" radius="md" withBorder>
+    <Paper p="sm">
       <Stack gap="xs">
         <Text size="xs" tt="uppercase" fw={600} c="dimmed">
           useBasaltNav
@@ -96,7 +96,7 @@ function DemoBreadcrumbs() {
   const crumbs = useRouterBreadcrumbs()
 
   return (
-    <Paper p="sm" radius="md" withBorder>
+    <Paper p="sm">
       <Stack gap="xs">
         <Text size="xs" tt="uppercase" fw={600} c="dimmed">
           useRouterBreadcrumbs

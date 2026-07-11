@@ -12,6 +12,8 @@ import type { AgentPart } from 'basalt-ui/agent'
 
 export function describeKnownPart(part: AgentPart): string {
   switch (part.type) {
+    case 'start':
+      return `[start] ${part.runId}`
     case 'text':
       return part.text
     case 'reasoning':

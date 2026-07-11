@@ -22,7 +22,7 @@ function ConnectivityPreview() {
         </Text>
         <ConnectivityIndicator />
       </Group>
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Text size="sm" fw={500} mb="xs">
           Current Snapshot
         </Text>
@@ -95,7 +95,7 @@ export function ConnectivityDemoPage() {
         <Code>ConnectivityProvider</Code> shadows the shell&apos;s auto-mounted one.
       </Text>
 
-      <Paper withBorder p="md">
+      <Paper p="md">
         <Stack gap="xs">
           <Text size="sm" fw={500}>
             Signal Overrides

@@ -12,8 +12,7 @@
  *     free.
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { NavLink as MantineNavLink, Text } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { Kbd, NavLink as MantineNavLink, Text, UnstyledButton } from '@mantine/core'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from 'basalt-ui'
 import type {
@@ -24,20 +23,52 @@ import type {
 } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
+import { openSpotlight } from 'basalt-ui/commands'
+import { VX } from 'basalt-ui/tokens'
 import { useCallback, useMemo } from 'react'
-import { AccountDrawer } from '../demo/AccountDrawer'
-import { BillingDrawer } from '../demo/BillingDrawer'
+import { DashboardDateFilter } from '../demo/DashboardDateFilter'
 import {
   IconActivity,
   IconChart,
   IconComponents,
-  IconCurrency,
   IconDashboard,
-  IconPalette,
+  IconSearch,
   IconSettings,
   IconUser,
 } from '../demo/icons'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
+
+/**
+ * Header search trigger (docs/DESIGN-SPEC.md §5 "Header"): panel + shadow-card, radius 8, faint
+ * label, mono ⌘K chip. Opens the same Spotlight the `./commands` battery wires up in main.tsx
+ * (`CommandsDemoPage` registers the demo command palette while it's mounted).
+ */
+function SearchTrigger() {
+  return (
+    <UnstyledButton
+      onClick={() => openSpotlight()}
+      aria-label="Search (Mod+K)"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 30,
+        minWidth: 220,
+        padding: '0 10px',
+        borderRadius: VX.radiusCtrl,
+        backgroundColor: VX.surface.panel,
+        boxShadow: VX.shadowCard,
+        color: VX.faint,
+      }}
+    >
+      <IconSearch />
+      <Text size="sm" style={{ color: VX.faint, flex: 1, textAlign: 'left' }}>
+        Search
+      </Text>
+      <Kbd size="xs">⌘K</Kbd>
+    </UnstyledButton>
+  )
+}
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -48,16 +79,14 @@ function RootLayout() {
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
   const [scenario, setScenario] = useUserScenario()
-  const [accountOpened, accountHandlers] = useDisclosure(false)
-  const [billingOpened, billingHandlers] = useDisclosure(false)
 
   const accountState = scenarioToAccountState(scenario)
   const accountActions: BasaltAccountActions = {
     onSignIn: () => setScenario({ ...scenario, auth: 'signed-in' }),
     onSignOut: () => setScenario({ ...scenario, auth: 'signed-out' }),
     onUpgrade: () => setScenario({ ...scenario, plan: 'pro' }),
-    onManageAccount: accountHandlers.open,
-    onManageBilling: billingHandlers.open,
+    onManageAccount: () => navigate({ to: '/settings', hash: 'account' }),
+    onManageBilling: () => navigate({ to: '/settings', hash: 'billing' }),
   }
 
   /** Renders breadcrumb parent segments as client-side TanStack Links. */
@@ -108,25 +137,28 @@ function RootLayout() {
             href: '/dashboard',
             active: isActive('/dashboard'),
             badge: <NavCountBadge count={4} />,
+            // Child items render text-only against the left rail (no icon) — SidebarItem.icon is
+            // a required ReactNode slot, so `undefined` opts out of rendering a left section
+            // (see AppSidebar's `leftSection={child.icon}`) rather than omitting the key.
             children: [
               {
                 key: 'dashboard-sessions',
                 label: 'Sessions',
-                icon: <IconUser />,
+                icon: undefined,
                 href: '/dashboard/sessions',
                 active: isActive('/dashboard/sessions'),
               },
               {
                 key: 'dashboard-traffic',
                 label: 'Traffic',
-                icon: <IconChart />,
+                icon: undefined,
                 href: '/dashboard/traffic',
                 active: isActive('/dashboard/traffic'),
               },
               {
                 key: 'dashboard-revenue',
                 label: 'Revenue',
-                icon: <IconCurrency />,
+                icon: undefined,
                 href: '/dashboard/revenue',
                 active: isActive('/dashboard/revenue'),
               },
@@ -232,6 +264,14 @@ function RootLayout() {
             active: isActive('/agent'),
           },
           {
+            key: 'agent-ai-sdk',
+            label: 'Agent (AI SDK)',
+            mobile: true,
+            icon: <IconActivity />,
+            href: '/agent-ai-sdk',
+            active: isActive('/agent-ai-sdk'),
+          },
+          {
             key: 'threads',
             label: 'Threads',
             mobile: true,
@@ -283,19 +323,13 @@ function RootLayout() {
       renderBreadcrumbLink={renderBreadcrumbLink}
       globalActions={
         <>
+          <SearchTrigger />
+          <DashboardDateFilter />
           <ConnectivityIndicator />
           <NotificationBell />
           <ThemeToggle />
         </>
       }
-      settingsMenuItems={[
-        {
-          key: 'theme',
-          label: 'Theme lab',
-          icon: <IconPalette />,
-          onClick: () => navigate({ to: '/settings' }),
-        },
-      ]}
       sidebarFooterExtra={
         <Text size="xs" c="dimmed" ta="center" py={4}>
           basalt-ui playground
@@ -304,8 +338,6 @@ function RootLayout() {
       account={{ state: accountState, actions: accountActions }}
     >
       <Outlet />
-      <AccountDrawer opened={accountOpened} onClose={accountHandlers.close} />
-      <BillingDrawer opened={billingOpened} onClose={billingHandlers.close} />
     </BasaltShell>
   )
 }

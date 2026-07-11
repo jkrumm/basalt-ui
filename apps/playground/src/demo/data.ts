@@ -80,11 +80,63 @@ function dayLabel(offset: number): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+/**
+ * Hand-tuned 30-day shape for the redesigned dashboard mock: an elevated start, a mid-month
+ * valley, then a strong late-month recovery — mirrors the "Acquisition" chart in the design-spec
+ * handoff. Deterministic (no runtime randomness), same discipline as `dayWave`/`hourlyWave` above.
+ */
+const DASHBOARD_30D_WEIGHT = [
+  1.05, 1.1, 1.15, 1.08, 1.02, 0.95, 0.88, 0.8, 0.72, 0.65, 0.6, 0.58, 0.62, 0.7, 0.8, 0.9, 1.0,
+  1.1, 1.2, 1.28, 1.35, 1.4, 1.45, 1.5, 1.52, 1.5, 1.48, 1.45, 1.42, 1.4,
+]
+
+/**
+ * Scale a weight shape to an EXACT target sum: rounds every value to `decimals` places, then
+ * dumps the rounding drift into the last element. Keeps the per-day shape deterministic while the
+ * headline total matches a pinned KPI figure exactly (the design-spec mock's Sessions 31,306 /
+ * Signups 1,849 / Revenue $85.4k row).
+ */
+function scaleToExactSum(weights: readonly number[], targetSum: number, decimals = 0): number[] {
+  const pow = 10 ** decimals
+  const factor = targetSum / weights.reduce((s, w) => s + w, 0)
+  const rounded = weights.map((w) => Math.round(w * factor * pow) / pow)
+  const drift = targetSum - rounded.reduce((s, v) => s + v, 0)
+  const last = rounded.length - 1
+  rounded[last] = Math.round((rounded[last]! + drift) * pow) / pow
+  return rounded
+}
+
+/** The 30-day dashboard series — KPI totals pinned exactly to the handoff mock. */
+function generateDashboard30d(): {
+  series: DayPoint[]
+  sparks: { sessions: number[]; signups: number[]; revenue: number[] }
+} {
+  const sessions = scaleToExactSum(DASHBOARD_30D_WEIGHT, 31306)
+  const signups = scaleToExactSum(DASHBOARD_30D_WEIGHT, 1849)
+  const revenue = scaleToExactSum(DASHBOARD_30D_WEIGHT, 85.4, 1)
+  // Churn moves inversely to the session/signup wave — dips when acquisition peaks.
+  const churn = DASHBOARD_30D_WEIGHT.map((w) => Math.round(4.5 * (2 - w)))
+  const health = DASHBOARD_30D_WEIGHT.map((w) => Math.round(Math.min(60 + w * 22, 96)))
+
+  const series: DayPoint[] = DASHBOARD_30D_WEIGHT.map((_, i) => ({
+    date: dayLabel(DASHBOARD_30D_WEIGHT.length - 1 - i),
+    sessions: sessions[i] ?? 0,
+    signups: signups[i] ?? 0,
+    revenue: revenue[i] ?? 0,
+    churn: churn[i] ?? 0,
+    health: health[i] ?? 0,
+  }))
+
+  return { series, sparks: { sessions, signups, revenue } }
+}
+
 export function generateDashboardData(range: DateRange): {
   series: DayPoint[]
   sparks: { sessions: number[]; signups: number[]; revenue: number[] }
 } {
-  const count = range === '1d' ? 24 : range === '7d' ? 7 : 30
+  if (range === '30d') return generateDashboard30d()
+
+  const count = range === '1d' ? 24 : 7
   const isHourly = range === '1d'
 
   const series: DayPoint[] = []

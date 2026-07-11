@@ -138,7 +138,7 @@ function ProjectForm() {
           <Text size="sm" fw={600} c="teal">
             Submitted values (draft cleared):
           </Text>
-          <Paper p="xs" radius="sm" withBorder>
+          <Paper p="xs">
             <pre style={{ margin: 0, fontSize: 12 }}>{JSON.stringify(submitted, null, 2)}</pre>
           </Paper>
         </>
@@ -160,7 +160,7 @@ export function FormsDemoPage() {
         </Text>
       </div>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             Behaviour
@@ -172,7 +172,7 @@ export function FormsDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper p="sm" radius="md" withBorder>
+      <Paper p="sm">
         <Stack gap="xs">
           <Text size="xs" tt="uppercase" fw={600} c="dimmed">
             Project entry form

@@ -1,9 +1,10 @@
 /**
  * Components page — a dense showcase of the surface-bearing Mantine components, used to
- * screenshot-verify that the theme's surface enforcement holds: every border resolves to
- * `--vx-surface-border`, every card/panel/dropdown background to `--vx-surface-panel`, hover/subtle
- * to `--vx-surface-subtle`, and the page to `--vx-surface-bg`. One border + background + radius
- * across all of them.
+ * screenshot-verify that the theme's surface enforcement holds: every card/panel/dropdown's depth
+ * comes from `shadow-card` (a whisper shadow with the ring baked in via `--vx-surface-hairline`),
+ * background resolves to `--vx-surface-panel`, hover/subtle to `--vx-surface-subtle`, and the page
+ * to `--vx-surface-bg`. `--vx-surface-border`/`line` is reserved for layout dividers, not the
+ * card/panel edge.
  *
  * Pure Mantine: only components and layout primitives (Stack / Group / SimpleGrid / Box) — no raw
  * <div>, no inline-styled layout.
@@ -33,13 +34,14 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { PageActions } from 'basalt-ui'
+import { EmptyState, PageActions } from 'basalt-ui'
 import type { ReactNode } from 'react'
+import { IconSearch } from './icons'
 
 /** A titled surface section — every component group sits inside one of these so its surface shows. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Paper p="md" radius="md" withBorder>
+    <Paper p="md">
       <Title order={5} mb="sm">
         {title}
       </Title>
@@ -49,9 +51,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const TABLE_ROWS = [
-  { name: 'Sessions', value: '12,480', delta: '+12.4%' },
-  { name: 'Signups', value: '3,210', delta: '+8.1%' },
-  { name: 'Revenue', value: '$48.9k', delta: '+18.9%' },
+  { name: 'Sessions', value: '12,480', delta: '12.4%' },
+  { name: 'Signups', value: '3,210', delta: '8.1%' },
+  { name: 'Revenue', value: '$48.9k', delta: '18.9%' },
   { name: 'Churn', value: '2.3%', delta: '-0.4%' },
 ]
 
@@ -234,9 +236,24 @@ export function ComponentsPage() {
         </Section>
       </SimpleGrid>
 
-      <Card withBorder radius="md" p="md">
+      <Section title="Empty state">
+        <EmptyState
+          icon={<IconSearch />}
+          title="No results"
+          description="Try adjusting your filters or search terms."
+          action={
+            <Button size="xs" variant="default">
+              Clear filters
+            </Button>
+          }
+          variant="section"
+        />
+      </Section>
+
+      <Card p="md">
         <Text size="sm" c="dimmed">
-          A <Code>Card</Code> surface — same border, background, and radius as every Paper above.
+          A <Code>Card</Code> surface — same shadow-card, background, and radius as every Paper
+          above.
         </Text>
       </Card>
     </Stack>
