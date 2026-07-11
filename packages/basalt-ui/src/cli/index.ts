@@ -55,6 +55,12 @@ export type BasaltConfig = {
    * that bypasses the `withBorder` + radius-token + `VX.surface.*` system. Default: `true` (ON).
    * Set `false` to disable the `raw-surface` check.
    */
+  /**
+   * Flag any numeric radius prop literal (radius={6}) — use the radius token scale instead.
+   * Default: `true` (ON). Set `false` to disable the `raw-radius` check (e.g. a repo that DEFINES
+   * the radius primitives).
+   */
+  rawRadius?: boolean
   rawSurface?: boolean
   /**
    * Flag references to a raw Mantine ramp step used for surface color
@@ -170,6 +176,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
 
   const guardCfg: GuardConfig = {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
+    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
@@ -1321,6 +1328,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
   const cfg = readBasaltConfig(cwd)
   const guardCfg: GuardConfig = {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
+    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,

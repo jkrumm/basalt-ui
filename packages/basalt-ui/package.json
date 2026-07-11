@@ -237,6 +237,8 @@
     "rawSurface": false,
     "rawHtmlLayout": false,
     "inlineSpacing": false,
-    "inlineDisplay": false
+    "inlineDisplay": false,
+    "rawRadius": false,
+    "spacingSteps": []
   }
 }
