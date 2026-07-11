@@ -547,6 +547,58 @@ describe('unframed-chart', () => {
   })
 })
 
+// ── 15. chart-missing-aria-label ─────────────────────────────────────────────
+
+describe('chart-missing-aria-label', () => {
+  it('flags a chart kind tag without ariaLabel', () => {
+    const f = find(`<ZonedLine data={points} height={240} chartId="x" />`)
+    expect(kinds(f)).toContain('chart-missing-aria-label')
+  })
+
+  it('does NOT flag a tag carrying ariaLabel', () => {
+    const f = find(`<ZonedLine ariaLabel="HRV trend" data={points} height={240} />`)
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  it('sees ariaLabel PAST an arrow function in an earlier prop (=> must not end the tag)', () => {
+    const f = find(`<ZonedLine data={points} getX={(d) => d.date} ariaLabel="HRV trend" />`)
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  it('sees ariaLabel past an explicit JSX generic argument', () => {
+    const text = [
+      '<MultiLine<ChartPoint>',
+      '  data={points}',
+      '  getX={(d) => d.date}',
+      '  ariaLabel="Body weight trend"',
+      '/>',
+    ].join('\n')
+    const f = find(text)
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  it('still flags a generic + arrow-function tag genuinely missing ariaLabel', () => {
+    const f = find(`<MultiLine<ChartPoint> data={points} getX={(d) => d.date} />`)
+    expect(kinds(f)).toContain('chart-missing-aria-label')
+  })
+
+  it('does NOT flag raw-radius when rawRadius is false (framework-internal repos)', () => {
+    const f = checkSource(`<Paper radius={6} />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      rawRadius: false,
+    })
+    expect(kinds(f)).not.toContain('raw-radius')
+  })
+
+  it('does NOT flag when chartMissingAriaLabel is false', () => {
+    const f = checkSource(`<ZonedLine data={points} />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      chartMissingAriaLabel: false,
+    })
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+})
+
 // ── theme-allow skip ─────────────────────────────────────────────────────────
 
 describe('theme-allow skip', () => {

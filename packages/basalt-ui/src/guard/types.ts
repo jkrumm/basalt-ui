@@ -50,6 +50,8 @@ export type Finding = {
 export type GuardConfig = {
   /** Named spacing-scale steps (px) flagged when used as a raw spacing prop. Default [10,12,16,20,32]. */
   readonly spacingSteps: readonly number[]
+  /** Flag any numeric radius prop literal (radius={6}). Default true. */
+  readonly rawRadius: boolean
   /** Off-identity Mantine accent families forbidden as chrome accents. */
   readonly forbiddenAccents: readonly string[]
   /** Flag ad-hoc inline surface styling (border/borderRadius/boxShadow literals). Default true. */

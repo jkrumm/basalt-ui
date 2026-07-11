@@ -61,9 +61,13 @@ const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
 // A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — full opening/self-closing tag,
 // scanned for a missing `ariaLabel` prop (an accessible text alternative for the SVG graphic).
 // Bounded, full-text scan (like RAW_CHART_LEGEND_ARRAY above) so a multi-line-formatted tag still
-// resolves to one match.
+// resolves to one match. The scan must survive two `>` decoys inside an opening tag: an explicit
+// JSX generic argument (`<MultiLine<Point>`) — consumed by the optional `<[^<>]*>` group — and
+// arrow functions in prop expressions (`getX={(d) => d.date}`) — consumed atomically by the `=>`
+// alternative so their `>` never terminates the tag early. A bare `>` comparison inside a prop
+// expression still ends the match (accepted limitation of the bounded scan).
 const CHART_ENTRY_POINT_TAG =
-  /<(?:MultiLine|Bars|Donut|DualPanel|Heatmap|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b[^>]*?>/g
+  /<(?:MultiLine|Bars|Donut|DualPanel|Heatmap|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
 
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
@@ -76,6 +80,7 @@ const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape',
 /** Shared default config — CLI and tests import this to avoid duplication. */
 export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   spacingSteps: DEFAULT_SPACING_STEPS,
+  rawRadius: true,
   forbiddenAccents: DEFAULT_FORBIDDEN_ACCENTS,
   rawSurface: true,
   offSystemSurfaceVar: true,
@@ -153,6 +158,7 @@ export const GUARD_RULES = {
   'raw-radius': {
     kind: 'raw-radius',
     pattern: RADIUS_PROP_RE,
+    enabled: (cfg: GuardConfig) => cfg.rawRadius,
     message: 'Use the radius token (radius="md") instead of a numeric literal.',
   },
   'raw-surface': {
@@ -272,8 +278,10 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     for (const m of line.matchAll(spacingPropRe)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
     }
-    for (const m of line.matchAll(radiusPropRe)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
+    if (GUARD_RULES['raw-radius'].enabled!(cfg)) {
+      for (const m of line.matchAll(radiusPropRe)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
+      }
     }
 
     // raw-surface: 3 separate regex checks, one kind — gated via GUARD_RULES entry.

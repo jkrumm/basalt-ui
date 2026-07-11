@@ -20,7 +20,15 @@
  * argo's hardcoded values are the DEFAULTS.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -190,11 +198,22 @@ export function checkTheme(cwd: string = process.cwd()): number {
   }
 
   if (scannedCount === 0) {
-    console.warn(
-      `⚠ basalt check-theme: 0 files scanned across configured roots (${roots.join(', ')}) — ` +
-        'set "basalt": { "roots": [...] } in package.json to point at your source directories.',
-    )
-    return 0
+    // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
+    // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
+    // consumer — both cases fail loud instead of warn-plus-green.
+    if (cfg.roots === undefined) {
+      console.error(
+        `✖ basalt check-theme: 0 files scanned — no "basalt.roots" configured in package.json, and ` +
+          `the built-in default roots (${DEFAULT_ROOTS.join(', ')}) matched zero files. ` +
+          'Set "basalt": { "roots": [...] } in package.json to point at your source directories.',
+      )
+    } else {
+      console.error(
+        `✖ basalt check-theme: 0 files scanned — the configured "basalt.roots" (${roots.join(', ')}) ` +
+          'matched zero files. Check the paths in "basalt.roots" in package.json.',
+      )
+    }
+    return 1
   }
 
   if (findings.length === 0) {
@@ -448,8 +467,10 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
     },
   }
 
+  // Scaffold destination is `.oxfmtrc.json` — oxfmt auto-discovers that filename, not `oxfmt.json`
+  // (the pre-rename scaffold; see migrateLegacyOxfmt for the one-time cleanup of the old dest).
   const oxfmt: ManagedFile = {
-    dest: 'oxfmt.json',
+    dest: '.oxfmtrc.json',
     strategy: 'copy',
     source: 'configs/oxfmt.json',
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/oxfmt.json'),
@@ -532,6 +553,26 @@ function readManifest(cwd: string): Manifest {
   } catch {
     return { version: 1, files: {} }
   }
+}
+
+/** The pre-rename oxfmt scaffold dest, superseded by `.oxfmtrc.json` (oxfmt's auto-discovered name). */
+const LEGACY_OXFMT_DEST = 'oxfmt.json'
+
+/**
+ * One-time cleanup for consumers who ran `init`/`sync` before the `.oxfmtrc.json` rename: drops the
+ * stale `oxfmt.json` manifest entry so it stops being reconciled/recreated forever, and deletes the
+ * on-disk file when it still byte-matches the shipped default (untouched since the last sync). A
+ * locally-edited copy is left in place — the manifest entry alone determines "was basalt tracking
+ * this", so a fresh consumer (no legacy entry) is a no-op.
+ */
+function migrateLegacyOxfmt(cwd: string, pkgRoot: string, manifest: Manifest): void {
+  if (!(LEGACY_OXFMT_DEST in manifest.files)) return
+  delete manifest.files[LEGACY_OXFMT_DEST]
+  const legacyAbs = resolve(cwd, LEGACY_OXFMT_DEST)
+  const onDisk = readIfExists(legacyAbs)
+  if (onDisk === null) return
+  const shipped = readSource(pkgRoot, 'configs/oxfmt.json')
+  if (shipped !== null && onDisk === shipped) unlinkSync(legacyAbs)
 }
 
 function writeFileEnsuringDir(abs: string, content: string): void {
@@ -622,6 +663,7 @@ function renderContext(cwd: string): RenderContext {
 export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
+  migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
   const peers = resolvePeerFlags(cwd, scaffoldFlags)
   const files = managedFiles(peers)
 
@@ -696,6 +738,12 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       `    ]\n` +
       `  }`,
   )
+  // First adoption on a previously guard-clean repo can surface a wall of findings (the 1.0 guard
+  // adds several rule kinds beyond a legacy local guard) — steer toward tuning config, not mass-allow.
+  console.log(
+    '\nFirst run: run `basalt check-theme` next, then tune the per-rule `basalt.*` config keys ' +
+      'in package.json for anything that fires — do not mass-`theme-allow` findings.',
+  )
   return 0
 }
 
@@ -711,6 +759,7 @@ type SyncOptions = { force?: boolean; check?: boolean }
 export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): number {
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
+  if (!opts.check) migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
   const peers = resolvePeerFlags(cwd, {})
   const files = managedFiles(peers)
 
@@ -992,6 +1041,8 @@ type DoctorResult = {
  *   2. CLAUDE.md contains the basalt managed block (<!-- basalt:begin marker).
  *   3. All 11 basalt-*.md rule files exist under .claude/rules/.
  *   4. The basalt plugin appears to be installed (best-effort ~/.claude/settings.json check).
+ *   5. The running CLI's own version matches the basalt-ui version resolved in the consumer's
+ *      node_modules (catches a stale `bunx basalt` npm fetch; best-effort, skipped if absent).
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
@@ -1061,6 +1112,29 @@ export function doctor(cwd: string = process.cwd()): number {
     }
   } catch {
     warn('could not read ~/.claude/settings.json — plugin install status unknown')
+  }
+
+  // ── Warn check 5: running CLI version matches the consumer's installed basalt-ui ────
+  // Catches the `bunx basalt` failure mode where bunx fetches a stale published package instead of
+  // the workspace `file:` dep — the CLI that ran doctor and the package resolved from the
+  // consumer's node_modules silently disagree.
+  const cliVersion = readFrameworkVersion(packageRoot())
+  const consumerPkgRaw = readIfExists(resolve(cwd, 'node_modules', 'basalt-ui', 'package.json'))
+  if (consumerPkgRaw !== null) {
+    try {
+      const consumerPkg = JSON.parse(consumerPkgRaw) as { version?: string }
+      if (consumerPkg.version !== undefined && consumerPkg.version !== cliVersion) {
+        warn(
+          `running CLI version (${cliVersion}) differs from the installed basalt-ui version in ` +
+            `node_modules (${consumerPkg.version}) — likely a stale \`bunx basalt\` fetch from npm; ` +
+            'add basalt-ui as a root devDependency so the bin hoists from your workspace.',
+        )
+      } else {
+        pass(`CLI version (${cliVersion}) matches the installed basalt-ui in node_modules`)
+      }
+    } catch {
+      warn('could not parse node_modules/basalt-ui/package.json — CLI version check skipped')
+    }
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────

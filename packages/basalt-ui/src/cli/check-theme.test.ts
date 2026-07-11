@@ -472,6 +472,33 @@ describe('check-theme unframed-chart', () => {
   })
 })
 
+describe('check-theme roots fail-loud', () => {
+  it('exits non-zero when the built-in default roots match zero files', () => {
+    // No "basalt.roots" in package.json — falls back to the built-in defaults
+    // (apps/dashboard/src, packages/charts/src), which don't exist under this fixture at all.
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'fixture' }))
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('basalt.roots')
+  })
+
+  it('exits non-zero when explicitly configured roots match zero files', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ name: 'fixture', basalt: { roots: ['nonexistent-dir'] } }),
+    )
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('nonexistent-dir')
+  })
+
+  it('stays green when the configured roots match at least one file', () => {
+    fixture(`export const C = () => <Box p="md" />\n`)
+    const { code } = run()
+    expect(code).toBe(0)
+  })
+})
+
 describe('check-theme comment skipping', () => {
   it('does NOT flag a banned element mentioned in a pure line comment', () => {
     fixtureAt(
