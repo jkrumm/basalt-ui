@@ -119,8 +119,21 @@ export type BasaltShellProps = {
    * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps
-  /** localStorage key for the persisted sidebar-collapsed flag. */
+  /** localStorage key for the persisted sidebar-collapsed flag. Ignored when `collapsed` is set. */
   storageKey?: string
+  /**
+   * Controlled desktop-collapse value. When provided, the shell no longer owns the
+   * `useLocalStorage`-persisted collapse state — the consumer does (e.g. to drive it from its own
+   * `Cmd+B` hotkey). Pair with `onCollapsedChange` to receive toggle events; omitting both
+   * reproduces today's internal, persisted collapse behavior unchanged.
+   */
+  collapsed?: boolean
+  /**
+   * Called with the next collapsed value whenever the desktop collapse toggle fires (button click
+   * or a future consumer-driven trigger). Required to actually move `collapsed` when controlled;
+   * a no-op when omitted.
+   */
+  onCollapsedChange?: (collapsed: boolean) => void
   /**
    * Optional router link renderer for the breadcrumb parent segment. When provided, the parent
    * breadcrumb label is rendered through this callback (e.g. a TanStack `<Link>`) instead of a
@@ -243,17 +256,27 @@ export function BasaltShell({
   sidebarFooterExtra,
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
+  collapsed: collapsedProp,
+  onCollapsedChange,
   renderBreadcrumbLink,
   account,
   children,
 }: BasaltShellProps) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
-  const [collapsed, setCollapsed] = useLocalStorage({
+  const [storedCollapsed, setStoredCollapsed] = useLocalStorage({
     key: storageKey,
     defaultValue: false,
     getInitialValueInEffect: false,
   })
-  const toggleCollapse = () => setCollapsed((c) => !c)
+  // Controlled/uncontrolled seam (item 19): an explicit `collapsed` prop overrides the internal
+  // localStorage-persisted state entirely — the consumer becomes the source of truth.
+  const isCollapseControlled = collapsedProp !== undefined
+  const collapsed = isCollapseControlled ? collapsedProp : storedCollapsed
+  const toggleCollapse = () => {
+    const next = !collapsed
+    if (!isCollapseControlled) setStoredCollapsed(next)
+    onCollapsedChange?.(next)
+  }
 
   const activeCrumb = findActiveCrumb(sections)
   const mobileSections = toMobileSections(sections, closeMobile)

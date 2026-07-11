@@ -28,15 +28,34 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
 import { SidebarAccount } from './app-sidebar-account'
 import type { BasaltAccountProps } from './account-types'
 import { VX } from '../tokens'
 import classes from './app-sidebar.module.css'
 
-/** Renders a single nav item. The consumer's router `Link` lives here; `active` is precomputed. */
-export type NavLinkRenderer = (item: SidebarItem, opts: { active: boolean }) => ReactNode
+/**
+ * Renders a single nav item. The consumer's router `Link` lives here; `active` is precomputed.
+ *
+ * `opts.close` (item 20) is the mobile "More" drawer's close handle — invoke-safe when absent, a
+ * no-op on desktop. Call it from the rendered link's own `onClick` (e.g. before/after navigating)
+ * so tapping a nav row in the mobile drawer also closes it; the built-in fallback `<a>` path does
+ * this automatically.
+ *
+ * `opts.navLinkClassName` (item 18) is the internal `.link` CSS-module class the fallback `<a>`
+ * path uses for inactive/hover treatment — present whenever `AppSidebar` renders this callback.
+ * Apply it to the rendered link's `className` to match that styling exactly instead of
+ * re-deriving it.
+ */
+export type NavLinkRenderer = (
+  item: SidebarItem,
+  opts: {
+    active: boolean
+    close?: (() => void) | undefined
+    navLinkClassName?: string | undefined
+  },
+) => ReactNode
 
 export type AppSidebarProps = {
   brand: BrandConfig
@@ -152,18 +171,24 @@ function hasActiveDescendant(item: SidebarItem): boolean {
   return item.children?.some((c) => hasActiveDescendant(c)) ?? false
 }
 
-/** Renders a nav link body without the Tooltip/Box wrapper. */
+/**
+ * Renders a nav link body without the Tooltip/Box wrapper. `close` (item 20) closes the mobile
+ * "More" drawer; forwarded to `renderNavLink` for the consumer to invoke, and wired directly into
+ * the fallback `<a>` path's own click so it closes without any consumer wiring.
+ */
 function NavLinkBody({
   item,
   active,
   renderNavLink,
+  close,
 }: {
   item: SidebarItem
   active: boolean
   renderNavLink?: NavLinkRenderer | undefined
+  close?: (() => void) | undefined
 }) {
   if (renderNavLink) {
-    return <>{renderNavLink(item, { active })}</>
+    return <>{renderNavLink(item, { active, close, navLinkClassName: classes.link })}</>
   }
   return (
     <NavLink
@@ -174,7 +199,10 @@ function NavLinkBody({
       rightSection={item.badge}
       active={active}
       {...(item.href !== undefined && { href: item.href })}
-      {...(item.onClick !== undefined && { onClick: item.onClick })}
+      onClick={(e: MouseEvent) => {
+        item.onClick?.(e)
+        close?.()
+      }}
     />
   )
 }
@@ -198,10 +226,13 @@ function NavItemRow({
   item,
   collapsed,
   renderNavLink,
+  closeMobile,
 }: {
   item: SidebarItem
   collapsed: boolean
   renderNavLink?: NavLinkRenderer | undefined
+  /** Closes the mobile "More" drawer (item 20) — forwarded to `NavLinkBody` as `close`. */
+  closeMobile?: (() => void) | undefined
 }) {
   const [opened, { open, close }] = useDisclosure(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -239,7 +270,12 @@ function NavItemRow({
     return (
       <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
         <Box className={classes.navItem}>
-          <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+          <NavLinkBody
+            item={item}
+            active={active}
+            renderNavLink={renderNavLink}
+            close={closeMobile}
+          />
         </Box>
       </Tooltip>
     )
@@ -254,7 +290,12 @@ function NavItemRow({
       <Box key={item.key}>
         <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
           <Box className={classes.navItem}>
-            <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+            <NavLinkBody
+              item={item}
+              active={active}
+              renderNavLink={renderNavLink}
+              close={closeMobile}
+            />
           </Box>
         </Tooltip>
         <Stack gap={0} className={classes.childList}>
@@ -276,7 +317,12 @@ function NavItemRow({
             const childActive = Boolean(child.active)
             return (
               <Box key={child.key}>
-                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+                <NavLinkBody
+                  item={child}
+                  active={childActive}
+                  renderNavLink={renderNavLink}
+                  close={closeMobile}
+                />
               </Box>
             )
           })}
@@ -306,7 +352,12 @@ function NavItemRow({
             onFocus={scheduleOpen}
             onBlur={scheduleClose}
           >
-            <NavLinkBody item={item} active={active} renderNavLink={renderNavLink} />
+            <NavLinkBody
+              item={item}
+              active={active}
+              renderNavLink={renderNavLink}
+              close={closeMobile}
+            />
           </Box>
         </Tooltip>
       </Popover.Target>
@@ -338,7 +389,12 @@ function NavItemRow({
             const childActive = Boolean(child.active)
             return (
               <Box key={child.key}>
-                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+                <NavLinkBody
+                  item={child}
+                  active={childActive}
+                  renderNavLink={renderNavLink}
+                  close={closeMobile}
+                />
               </Box>
             )
           })}
@@ -366,7 +422,12 @@ function NavItemRow({
             const childActive = Boolean(child.active)
             return (
               <Box key={child.key}>
-                <NavLinkBody item={child} active={childActive} renderNavLink={renderNavLink} />
+                <NavLinkBody
+                  item={child}
+                  active={childActive}
+                  renderNavLink={renderNavLink}
+                  close={closeMobile}
+                />
               </Box>
             )
           })}
@@ -395,7 +456,13 @@ export function AppSidebar({
 
   const renderSectionItems = (section: SidebarSection) =>
     section.items.map((item) => (
-      <NavItemRow key={item.key} item={item} collapsed={collapsed} renderNavLink={renderNavLink} />
+      <NavItemRow
+        key={item.key}
+        item={item}
+        collapsed={collapsed}
+        renderNavLink={renderNavLink}
+        closeMobile={onClose}
+      />
     ))
 
   // Mobile-only footer controls (close + consumer extras) — must render regardless of whether
