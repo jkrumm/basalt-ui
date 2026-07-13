@@ -139,6 +139,13 @@ specificity — with the plain bundle the floor (and the rest of `@layer basalt`
 (WCAG 1.4.4), `text-size-adjust` governs text *inflation* rather than focus-zoom, and Safari does
 not support `interactive-widget`.
 
+The floor is `!important` — the one deliberate use of it in the framework. An inline `style`
+attribute outranks every stylesheet rule, so without it a consumer's `style={{ fontSize: 13 }}` on
+a raw `<input>` silently re-opens the zoom bug. Two `check-theme` guard kinds back this at build
+time: `raw-form-control` flags any raw `<input>`/`<select>`/`<textarea>` (which also bypasses the
+rest of the theme entirely), and `sub-16-input-font` flags a sub-16 `fontSize` on a form control as
+dead code against the `!important` floor.
+
 ## 4. Radii & shape
 
 | Surface | Radius |
@@ -152,6 +159,13 @@ not support `interactive-widget`.
 
 ## 5. Component idioms
 
+- **The ring lives IN the shadow — apply it to the box that carries the surface's `border-radius`.**
+  `shadow-card`/`shadow-ctrl` bakes a 1px ring into the shadow value itself; the ring follows the
+  shadowed box's OWN corners, so it only renders correctly there — never on a bare layout wrapper
+  whose radius doesn't match the rounded surface it wraps. Background usually sits on the same box
+  too, but it's the radius the ring is bound to, not the background (a shadowed box with a separate,
+  identically-rounded background box, like `ChartCard`, is legal). Mechanically enforced by
+  `src/theme/shadow-surfaces.test.ts`.
 - **Card**: panel bg + `shadow-card` (ring lives IN the shadow — no `border` property), radius
   10px, padding ~17–19px. Cards lift subtly off a slightly darker page.
 - **Sidebar**: transparent (page bg, no panel, no border), ~216px. Section headers are
@@ -202,8 +216,13 @@ the discipline is unchanged even though the hue is louder.
   the top of `styles.css` (bare `@import` specifiers — consumer bundlers resolve them).
 - Mantine-free boundary unchanged: `src/charts/**` and `src/tokens/**` never import `@mantine/*`.
 - The Mantine theme must make a consumer app look like this spec **by default** — zero call-site
-  work: Card/Paper, NavLink, SegmentedControl, Badge, Progress, Table, Tooltip, Menu, Modal,
-  Notification, Kbd, Code, Breadcrumbs all themed centrally.
+  work: Card/Paper, Button, ActionIcon, CheckboxCard, RadioCard, Chip, PillsInput, NavLink,
+  SegmentedControl, Badge, Progress, Table, Tooltip, Menu, Modal, Notification, Kbd, Code,
+  Breadcrumbs all themed centrally.
+- A dedicated test (`src/theme/border-coverage.test.ts`) mechanically enumerates every
+  `@mantine/core` component whose shipped CSS declares a border and asserts each one is either a
+  themed `baseTheme.components` key or a reasoned `BORDER_ALLOWLIST` entry — closing the gap a
+  regex-based consumer-source guard can never see (a theme block that was never written).
 
 ## 8. Doctrine inversions (this spec supersedes)
 
