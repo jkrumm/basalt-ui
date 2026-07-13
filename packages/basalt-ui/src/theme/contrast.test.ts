@@ -275,3 +275,32 @@ describe('the variant resolver hands off to CSS, never to a baked color', () => 
     expect(color).toBe('var(--mantine-color-white)')
   })
 })
+
+describe('doctrine inversion #1 reaches every default-variant CONTROL, not just Card/Paper', () => {
+  // `defaultVariantColorsResolver`'s `variant === 'default'` branch draws its border from this ONE
+  // var (`border: 1px solid var(--mantine-color-default-border)`) for every component that uses
+  // it — Button, ActionIcon, Chip, CheckboxCard, RadioCard, … A future edit that re-points this at
+  // a hairline token would silently reintroduce the stock 1px border on all of them at once; this
+  // is the seam that catches it, since none of those components render their border any other way.
+  for (const scheme of SCHEMES) {
+    test(`--mantine-color-default-border is transparent (${scheme})`, () => {
+      const vars = cssVariablesResolver(theme)[scheme]
+      expect(vars['--mantine-color-default-border']).toBe('transparent')
+    })
+  }
+
+  test('a default-variant control resolves through the transparent border, not a hairline', () => {
+    // The variant resolver itself doesn't special-case `default` (see the `basaltVariantColorResolver`
+    // early return above) — it hands off to `defaultVariantColorsResolver`, which is what actually
+    // reads the var. Assert the var is what a `default`-variant Button/ActionIcon border resolves
+    // through, closing the loop from token to the real render-path seam.
+    const { border } = theme.variantColorResolver({
+      color: theme.primaryColor,
+      theme,
+      variant: 'default',
+      gradient: undefined,
+    })
+    expect(border).toContain('solid var(--mantine-color-default-border)')
+    expect(border).not.toContain('surface-border')
+  })
+})

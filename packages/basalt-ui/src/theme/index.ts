@@ -17,10 +17,14 @@
  */
 import {
   Accordion,
+  ActionIcon,
   Badge,
   Breadcrumbs,
+  Button,
   Card,
   Checkbox,
+  CheckboxCard,
+  Chip,
   Code,
   Combobox,
   createTheme,
@@ -39,9 +43,11 @@ import {
   Pagination,
   Paper,
   PasswordInput,
+  PillsInput,
   Popover,
   Progress,
   Radio,
+  RadioCard,
   rem,
   Select,
   SegmentedControl,
@@ -435,10 +441,13 @@ export const baseTheme: MantineThemeOverride = createTheme({
         label: { fontSize: VX.text.md, lineHeight: '1.35' },
       },
     }),
-    // Field idiom (docs/DESIGN-SPEC.md §5): field surface + 1px hairline + faint placeholder,
-    // accent border + subtle accent ring on focus — see controls.module.css. Theming the base
-    // `Input` covers TextInput/NumberInput/PasswordInput/Select/Textarea, which all render it
-    // internally (only `size` needs per-component defaults, since each resolves its own).
+    // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-card` depth + faint placeholder,
+    // accent border + subtle accent ring on focus — see controls.module.css. The two slots carry
+    // different halves of it: the `wrapper` is where Mantine declares the `--input-*` vars, the
+    // `input` is the box that actually paints the surface (bg + radius) and therefore the only
+    // legal home for the shadow's ring. Theming the base `Input` covers
+    // TextInput/NumberInput/PasswordInput/Select/Textarea, which all render it internally (only
+    // `size` needs per-component defaults, since each resolves its own).
     Input: Input.extend({
       defaultProps: { size: 'md' },
       classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
@@ -448,6 +457,55 @@ export const baseTheme: MantineThemeOverride = createTheme({
     PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
     Select: Select.extend({ defaultProps: { size: 'md' } }),
     Textarea: Textarea.extend({ defaultProps: { size: 'md' } }),
+    // PillsInput (MultiSelect/TagsInput's outer field) renders `InputBase` internally but under
+    // its OWN `__staticSelector: 'PillsInput'`, so it never reads `theme.components.Input` — the
+    // field idiom above never reached it. `PillsInput.classes === InputBase.classes`, so the SAME
+    // part names apply here; reusing both control classes picks up the exact `[data-variant]` rules
+    // in controls.module.css for free, no new CSS needed. Both slots are required — `wrapper` alone
+    // would land the vars but leave the field flat, since the depth lives on `input`.
+    PillsInput: PillsInput.extend({
+      classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
+    }),
+    // Button / ActionIcon (`default` variant): same `shadow-card` depth as every other control
+    // surface (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
+    // panel + shadow-card"; doctrine inversion #1). Background already resolves through the shared
+    // `--mantine-color-default` var (→ `--vx-surface-panel`, see cssVariablesResolver below) and
+    // the border through `--mantine-color-default-border` (→ transparent, same resolver) — neither
+    // component had a `.extend()` block at all before this, which is why they never picked up
+    // either. Only the shadow needs adding here, in controls.module.css: Mantine's own
+    // `[data-variant='default']` rule never declares a `box-shadow`, so no specificity fight is
+    // needed to win one. `filled`/`subtle`/`light` variants are untouched — scoped by attribute
+    // selector in the CSS, not here.
+    Button: Button.extend({ classNames: { root: controlsClasses.buttonRoot } }),
+    ActionIcon: ActionIcon.extend({ classNames: { root: controlsClasses.actionIconRoot } }),
+    // CheckboxCard / RadioCard (`withBorder`, true by default): same live regression as Button/
+    // ActionIcon before this pass — Mantine ships `border: 1px solid transparent` as the BASE
+    // `[data-with-border]` declaration, but its own `:where([data-mantine-color-scheme=…])` block
+    // re-colors that to gray-3/dark-4 (pinned to `--vx-surface-border` by the strict-surface lever
+    // below), landing a real, flat hairline with no shadow at all — the exact "flat and edgeless"
+    // symptom, just via a different mechanism (`[data-with-border]`, not the `default`-variant
+    // border var). `.checkboxCardRoot[data-with-border]` / `.radioCardRoot[data-with-border]` are
+    // real attribute selectors ((0,2,0)) — Mantine's own rule wraps the same attribute in `:where()`
+    // (0 specificity, landing at (0,1,0) total), so no `html[…]` prefix fight is needed here either.
+    // Neither component sets a background of its own, so panel bg is added alongside the shadow —
+    // the same panel-bg + shadow-card + no-border triad as Card/Paper.
+    CheckboxCard: CheckboxCard.extend({
+      classNames: { card: controlsClasses.checkboxCardRoot },
+    }),
+    RadioCard: RadioCard.extend({
+      classNames: { card: controlsClasses.radioCardRoot },
+    }),
+    // Chip: unlike Button/Input, Chip has no literal `variant="default"` — its OWN default (no
+    // `variant` prop passed) resolves internally to `variant: 'filled'` (Chip's neutral/unselected
+    // look, NOT a "loud" filled color — `light`/`outline` are the other two Chip variants). The
+    // unchecked `filled`-variant label already ships a transparent border (`gray-1`/`dark-5` tint,
+    // no shadow) — borderless but flat, the same symptom as CheckboxCard/RadioCard above. The class
+    // is wired conditionally (function-form `classNames`, same pattern as the `vars` on-color
+    // re-points below) so it NEVER reaches a consumer-chosen `light`/`outline` Chip.
+    Chip: Chip.extend({
+      classNames: (_theme, props) =>
+        (props.variant ?? 'filled') === 'filled' ? { label: controlsClasses.chipLabel } : {},
+    }),
     // Track = ink-6% tint, radius 7, 2px padding; active segment = panel bg + `shadow-ctrl`,
     // radius 5. `--sc-radius`/`--sc-color` don't reach the root track background (Mantine
     // hardcodes that to a raw gray step), so it's forced via `styles.root` same as Card/Paper.
@@ -805,7 +863,14 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.light})`, // page background
     '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.light})`, // cards / default controls
     '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.light})`,
-    '--mantine-color-default-border': `var(--vx-surface-border, ${SURFACE.border.light})`, // "line"
+    // THE central lever for doctrine inversion #1 on CONTROLS (docs/DESIGN-SPEC.md §8): depth is
+    // `shadow-card`, never a hairline, for every `variant="default"` control — not just Card/Paper.
+    // `defaultVariantColorsResolver`'s `variant === 'default'` branch reads this ONE var for every
+    // component that uses it (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), so pointing it
+    // at `transparent` kills the stock 1px hairline everywhere at once. `transparent`, not `border:
+    // none` — the 1px border BOX stays, so focus/error can recolor the same box with no layout
+    // shift and `[data-error]` still wins a visible border.
+    '--mantine-color-default-border': 'transparent',
     '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
     '--mantine-color-text': `var(--vx-ink, ${INK.ink.light})`, // primary body/heading text
     '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.light})`,
@@ -831,7 +896,8 @@ export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
     '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.dark})`,
     '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.dark})`,
     '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.dark})`,
-    '--mantine-color-default-border': `var(--vx-surface-border, ${SURFACE.border.dark})`,
+    // See the light block above — same lever, both schemes.
+    '--mantine-color-default-border': 'transparent',
     '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
     '--mantine-color-text': `var(--vx-ink, ${INK.ink.dark})`,
     '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.dark})`,

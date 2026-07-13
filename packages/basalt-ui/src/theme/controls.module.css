@@ -1,13 +1,17 @@
 /*
  * Control-level state rules the theme's flat `styles` objects can't express. Wired via
- * `classNames` in theme/index.ts (Input / Accordion), so they reach every render path — same
- * pattern as nav-link.module.css.
+ * `classNames` in theme/index.ts (Input / Button / ActionIcon / Accordion), so they reach every
+ * render path — same pattern as nav-link.module.css.
  */
 
 /*
  * Field idiom (docs/DESIGN-SPEC.md §5): inputs read slightly inset on the panel — field surface
- * (white on light, a page-bg step below panel on dark), a 1px hairline, faint placeholder, and an
+ * (white on light, a page-bg step below panel on dark), depth via `shadow-card` (a whisper shadow
+ * + ring baked into the one value — DESIGN-SPEC doctrine inversion #1: depth is `shadow-card`, not
+ * a hairline; borders-as-borders stay reserved for layout dividers), faint placeholder, and an
  * accent border on focus (Mantine's own `:focus` rule swaps `--input-bd` to `--input-bd-focus`).
+ * The `--input-bd` box itself stays a TRANSPARENT 1px border (not `border: none`) so focus can
+ * recolor the same box with no layout shift, and `[data-error]` still wins a real red border.
  *
  * Mantine defines these vars per scheme+variant on the input WRAPPER
  * (`[data-mantine-color-scheme] .m_*[data-variant='default']`, specificity 0,3,0). The `html`
@@ -21,14 +25,89 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default'] {
 }
 
 html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-error]) {
-  --input-bd: var(--vx-surface-hairline);
+  --input-bd: transparent;
   --input-placeholder-color: var(--vx-faint);
 }
 
-/* Focus = accent border (via --input-bd-focus above) + a subtle accent ring. */
+/*
+ * Depth lands on the INPUT ELEMENT, never on the wrapper above — `--vx-shadow-card` bakes a 1px
+ * ring into the shadow, and the ring follows the shadowed box's OWN `border-radius`, not any other
+ * element's. Mantine's input wrapper (`.m_6c018570`) is a bare `position: relative` box with
+ * `border-radius: 0`; the ring drawn there squares off around the rounded input inside it and leaks
+ * visible corner nubs. The input element itself carries `border-radius: var(--input-radius)`
+ * (Input.css), so the ring follows the rounded edge exactly. This is the general rule for the token
+ * — see shadow-surfaces.test.ts.
+ *
+ * Mantine never declares a `box-shadow` on the input at any specificity, so a plain `.input` class
+ * (0,1,0) wins uncontested. `--field-depth` carries the resting shadow so the `:focus` rule below
+ * can layer the accent ring ON TOP of it (box-shadow replaces, it never merges) without restating
+ * the value or depending on source order; it is a no-op shadow for the `filled`/`unstyled` variants,
+ * which keep their Mantine semantics and take the focus ring alone.
+ */
+.input {
+  --field-depth: 0 0 #0000;
+
+  box-shadow: var(--field-depth);
+}
+
+.input[data-variant='default'] {
+  --field-depth: var(--vx-shadow-card);
+}
+
+/*
+ * Button / ActionIcon (`default` variant): the SAME shadow-card depth as the field above and as
+ * Card/Paper (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
+ * panel + shadow-card"). Background and border already resolve centrally, through
+ * `--mantine-color-default`/`-border` (theme/index.ts's `cssVariablesResolver`) — the
+ * `default-border` var is pinned to `transparent` there, which is what kills the stock 1px
+ * hairline `defaultVariantColorsResolver`'s `variant === 'default'` branch draws for EVERY
+ * default-variant control (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), not just these
+ * two. Only the shadow is a fresh declaration (Mantine never sets one for `default`), so no
+ * `html[...]` specificity fight is needed to win it — a plain module-class + attribute selector is
+ * deterministic. `filled`/`subtle`/`light` variants are untouched by the attribute scope.
+ */
+.buttonRoot[data-variant='default'] {
+  box-shadow: var(--vx-shadow-card);
+}
+
+.actionIconRoot[data-variant='default'] {
+  box-shadow: var(--vx-shadow-card);
+}
+
+/*
+ * CheckboxCard / RadioCard (`withBorder`, the default): panel bg + `shadow-card`, no border — the
+ * same triad as Card/Paper. Mantine's own border-color rule wraps `[data-with-border]` in
+ * `:where()` (0 specificity), so a plain class + real attribute selector ((0,2,0)) already wins;
+ * no `html[…]` prefix fight needed, same reasoning as Button/ActionIcon above.
+ */
+.checkboxCardRoot[data-with-border],
+.radioCardRoot[data-with-border] {
+  background-color: var(--vx-surface-panel);
+  border-color: transparent;
+  box-shadow: var(--vx-shadow-card);
+}
+
+/*
+ * Chip (`filled` variant, Chip's own default — see theme/index.ts for why there's no literal
+ * `variant="default"` here). Unchecked, non-disabled state only — checked stays the accent fill,
+ * disabled keeps Mantine's own disabled treatment. `:not([data-checked]):not([data-disabled])`
+ * lands (0,3,0), above Mantine's own unchecked-background rule at (0,2,0), so this wins on
+ * specificity alone.
+ */
+.chipLabel:not([data-checked]):not([data-disabled]) {
+  background-color: var(--vx-surface-panel);
+  box-shadow: var(--vx-shadow-card);
+}
+
+/*
+ * Focus = accent border (via --input-bd-focus above) + a subtle accent ring layered over the
+ * resting `--field-depth`, so the field keeps its shadow-card depth while focused.
+ */
 .input:focus,
 .input:focus-within {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vx-accent) 15%, transparent);
+  box-shadow:
+    var(--field-depth),
+    0 0 0 3px color-mix(in srgb, var(--vx-accent) 15%, transparent);
 }
 
 /*
