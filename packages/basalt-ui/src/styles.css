@@ -48,11 +48,19 @@
      Enumerating components could never cover that; the previous attempt missed seven of them.
 
      Deliberate side effect: it also overrides Mantine's `[data-monospace]` −2px shrink, which would
-     otherwise drop a mono input back under the threshold. */
+     otherwise drop a mono input back under the threshold.
+
+     `!important` is deliberate and singular — the one legitimate use of it in this framework. An
+     inline `style` attribute outranks EVERY stylesheet rule regardless of layer or specificity, so
+     without `!important` a consumer's `style={{ fontSize: 13 }}` on a raw `<input>` silently wins
+     and re-opens the zoom bug — a floor a `style` prop can override is not a floor, it's a
+     suggestion. `check-theme`'s `raw-form-control` + `sub-16-input-font` guard kinds catch the
+     authoring mistake at build time; this `!important` is the runtime backstop that makes it
+     un-defeatable even when a violation slips through. */
   input,
   select,
   textarea {
-    font-size: max(16px, var(--input-fz, 1rem));
+    font-size: max(16px, var(--input-fz, 1rem)) !important;
   }
 
   /* Focus ring = the accent as INK, not as a fill. Mantine hardcodes the ring to
