@@ -51,17 +51,25 @@ export type BasaltConfig = {
   /** Earned accent hue recorded in DESIGN.md `{{ACCENT_HUE}}`. Default: `blue`. */
   accentHue?: string
   /**
-   * Flag ad-hoc inline surface styling (`border`/`borderRadius`/`boxShadow` literals in a `style={{}}`)
-   * that bypasses the `withBorder` + radius-token + `VX.surface.*` system. Default: `true` (ON).
-   * Set `false` to disable the `raw-surface` check.
-   */
-  /**
    * Flag any numeric radius prop literal (radius={6}) — use the radius token scale instead.
    * Default: `true` (ON). Set `false` to disable the `raw-radius` check (e.g. a repo that DEFINES
    * the radius primitives).
    */
   rawRadius?: boolean
+  /**
+   * Flag ad-hoc inline surface styling (`border`/`borderRadius`/`boxShadow` literals in a `style={{}}`)
+   * that bypasses the radius-token + `VX.surface.*` + `VX.shadowCard` system. Default: `true` (ON).
+   * Set `false` to disable the `raw-surface` check.
+   */
   rawSurface?: boolean
+  /**
+   * Flag `withBorder` on a `Card` / `Paper`. Card depth is `--vx-shadow-card` — a whisper shadow
+   * with the 1px ring baked into the SAME value — so `withBorder` draws a SECOND, real border over
+   * that ring and the card reads heavy/boxed (docs/DESIGN-SPEC.md doctrine inversion #1).
+   * `withBorder={false}` and `<Card.Section withBorder>` (a section divider) both pass.
+   * Default: `true` (ON). Set `false` to disable the `card-with-border` check.
+   */
+  cardWithBorder?: boolean
   /**
    * Flag references to a raw Mantine ramp step used for surface color
    * (`var(--mantine-color-gray-N)` / `var(--mantine-color-dark-N)`) — these bypass the basalt
@@ -113,6 +121,20 @@ export type BasaltConfig = {
    * (ON). Set `false` to disable the `chart-missing-aria-label` check.
    */
   chartMissingAriaLabel?: boolean
+  /**
+   * Flag a raw lowercase `<input>`/`<select>`/`<textarea>` JSX element — it bypasses the entire
+   * theme, not just the iOS font-size floor. Use the Mantine equivalents (`TextInput`,
+   * `NumberInput`, `Select`, `Textarea`, …) instead. Default: `true` (ON). Set `false` to disable
+   * the `raw-form-control` check.
+   */
+  rawFormControl?: boolean
+  /**
+   * Flag a `fontSize`/`font-size` literal below 16 inside a `style={{…}}` on a raw form control,
+   * or a Mantine `styles={{ input: {…} }}` per-part style — the `styles.css` iOS floor is
+   * `!important`, so the override is dead code. Default: `true` (ON). Set `false` to disable the
+   * `sub-16-input-font` check.
+   */
+  sub16InputFont?: boolean
   /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
   seriesModulePath?: string
   /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
@@ -179,6 +201,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
+    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
     rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
     inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
@@ -187,6 +210,8 @@ export function checkTheme(cwd: string = process.cwd()): number {
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
+    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
+    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
   }
 
@@ -245,8 +270,10 @@ export function checkTheme(cwd: string = process.cwd()): number {
   console.error(
     'Fix: route color through VX.* / the Mantine theme; for an off-identity accent use blue/gray or ' +
       'a status hue (red/green/orange/yellow); for raw spacing/radius use the scale token; for ' +
-      'raw-surface use `withBorder` + a `radius` token / `VX.surface.*` / `var(--vx-radius-card)` ' +
-      'instead of inline border/radius/shadow. ' +
+      'raw-surface use `VX.surface.*` / a `radius` token / `var(--vx-radius-card)` instead of an ' +
+      'inline border/radius/shadow. ' +
+      'card-with-border: `withBorder` on a Card/Paper double-draws the edge — card depth is ' +
+      '`--vx-shadow-card`, which already bakes a 1px ring into the shadow. Drop the prop. ' +
       'off-system-surface-var: raw Mantine ramp step bypasses the basalt surface tokens — use ' +
       'VX.surface.* / --vx-surface-* (border/panel/subtle/bg) instead. ' +
       'raw-html-layout: raw HTML element with inline layout/surface styling — use a Mantine layout ' +
@@ -260,6 +287,10 @@ export function checkTheme(cwd: string = process.cwd()): number {
       'MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD instead. ' +
       'unframed-chart: hand-rolled ChartLegend built from an inline array literal — pass a ' +
       'derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you. ' +
+      'raw-form-control: raw <input>/<select>/<textarea> bypasses the entire theme — use ' +
+      'TextInput / NumberInput / Select / Textarea from @mantine/core. ' +
+      'sub-16-input-font: fontSize below 16 on a form control is dead code against the ' +
+      '`!important` iOS floor in styles.css — drop the override or be honest about 16px. ' +
       'Add a `theme-allow` comment for a deliberate exception.',
   )
   return 1
@@ -1331,6 +1362,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
+    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
     rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
     inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
@@ -1339,6 +1371,8 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
     unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
+    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
+    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
   }
 

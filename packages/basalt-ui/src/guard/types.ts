@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 15 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 18 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 15 theme-guard violation kinds. */
+/** The 18 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -15,6 +15,7 @@ export type GuardKind =
   | 'raw-spacing'
   | 'raw-radius'
   | 'raw-surface'
+  | 'card-with-border'
   | 'off-system-surface-var'
   | 'raw-html-layout'
   | 'inline-spacing'
@@ -23,6 +24,8 @@ export type GuardKind =
   | 'raw-motion-value'
   | 'unframed-chart'
   | 'chart-missing-aria-label'
+  | 'raw-form-control'
+  | 'sub-16-input-font'
 
 /**
  * A structured finding — the chosen testable surface (§C.4). Replaces the old `Violation` type.
@@ -56,6 +59,14 @@ export type GuardConfig = {
   readonly forbiddenAccents: readonly string[]
   /** Flag ad-hoc inline surface styling (border/borderRadius/boxShadow literals). Default true. */
   readonly rawSurface: boolean
+  /**
+   * Flag `withBorder` on a `Card` / `Paper` — card depth is `--vx-shadow-card` (a whisper shadow
+   * with the 1px ring baked into the SAME value), so `withBorder` lands a SECOND, real border on
+   * top of that ring and the card reads heavy/boxed (docs/DESIGN-SPEC.md doctrine inversion #1).
+   * `withBorder={false}` and `Card.Section withBorder` (a legitimate section divider) both pass.
+   * Default true.
+   */
+  readonly cardWithBorder: boolean
   /** Flag raw Mantine ramp steps used for surface color (var(--mantine-color-gray|dark-N)). Default true. */
   readonly offSystemSurfaceVar: boolean
   /** Flag raw lowercase JSX layout/surface elements with inline layout/surface styles. Default true. */
@@ -82,6 +93,22 @@ export type GuardConfig = {
    * `false` to disable the `chart-missing-aria-label` check.
    */
   readonly chartMissingAriaLabel: boolean
+  /**
+   * Flag a raw lowercase `<input>` / `<select>` / `<textarea>` JSX element — it bypasses the
+   * ENTIRE theme (no field surface, no `shadow-card` depth, no focus ring, no `--input-*` vars),
+   * not just the iOS font-size floor. Use the Mantine equivalents (`TextInput`, `NumberInput`,
+   * `Select`, `Textarea`, …) — or `variant="unstyled"` for a genuinely bespoke/borderless look.
+   * Default `true` (ON). Set `false` to disable the `raw-form-control` check.
+   */
+  readonly rawFormControl: boolean
+  /**
+   * Flag a `fontSize`/`font-size` literal below 16 inside a `style={{…}}` on a raw form control,
+   * or a `styles={{ input: {…} }}` Mantine per-part style — the `styles.css` iOS floor is
+   * `!important`, so such a declaration is now DEAD CODE that silently does nothing. Scoped to
+   * form controls only (a `<Text>`/`<span>`/chart-label `fontSize` below 16 is legitimate and
+   * never flagged). Default `true` (ON). Set `false` to disable the `sub-16-input-font` check.
+   */
+  readonly sub16InputFont: boolean
   /**
    * Allow-comment policy: a line containing this substring is skipped entirely.
    * Default 'theme-allow'. Pure-comment lines (// * /\*) are always skipped.

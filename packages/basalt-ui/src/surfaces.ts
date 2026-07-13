@@ -182,7 +182,7 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'mantine',
     skill: ['basalt-app', 'basalt-design'],
-    guardKinds: ['raw-motion-value'],
+    guardKinds: ['raw-motion-value', 'card-with-border', 'raw-form-control', 'sub-16-input-font'],
     description:
       'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard, EmptyState, SettingsSection/SettingsRow/DangerZone)',
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin

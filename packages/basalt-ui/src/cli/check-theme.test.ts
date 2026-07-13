@@ -117,7 +117,7 @@ describe('check-theme raw-surface', () => {
   })
 
   it('does NOT flag a Mantine radius="md" prop (not inline surface styling)', () => {
-    fixture(`export const C = () => <Card withBorder radius="md" />\n`)
+    fixture(`export const C = () => <Card radius="md" />\n`)
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('raw-surface')
@@ -144,6 +144,32 @@ describe('check-theme raw-surface', () => {
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('raw-surface')
+  })
+})
+
+describe('check-theme card-with-border', () => {
+  it('fails the build on withBorder on a Card', () => {
+    fixture(`export const C = () => <Card padding="md" withBorder />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('card-with-border')
+  })
+
+  it('does NOT flag a Card that takes its depth from the theme', () => {
+    fixture(`export const C = () => <Card padding="md" />\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('card-with-border')
+  })
+
+  it('respects the cardWithBorder:false config knob', () => {
+    fixture(`export const C = () => <Card withBorder />\n`, {
+      roots: ['src'],
+      cardWithBorder: false,
+    })
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('card-with-border')
   })
 })
 
@@ -469,6 +495,107 @@ describe('check-theme unframed-chart', () => {
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('unframed-chart')
+  })
+})
+
+describe('check-theme raw-form-control', () => {
+  it('fails the build on a raw <input>', () => {
+    fixture(`export const C = () => <input type="text" value={v} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-form-control')
+  })
+
+  it('fails the build on a raw <select>', () => {
+    fixture(`export const C = () => <select value={v}><option>A</option></select>\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-form-control')
+  })
+
+  it('fails the build on a raw <textarea>', () => {
+    fixture(`export const C = () => <textarea value={v} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-form-control')
+  })
+
+  it('does NOT flag a Mantine TextInput', () => {
+    fixture(`export const C = () => <TextInput value={v} onChange={onChange} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('raw-form-control')
+  })
+
+  it('respects the rawFormControl:false config knob', () => {
+    fixture(`export const C = () => <input type="text" />\n`, {
+      roots: ['src'],
+      rawFormControl: false,
+    })
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('raw-form-control')
+  })
+
+  it('does NOT flag a line carrying a theme-allow comment', () => {
+    fixture(`export const C = () => <input type="text" /> // theme-allow: legacy widget\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('raw-form-control')
+  })
+})
+
+describe('check-theme sub-16-input-font', () => {
+  it('fails the build on a sub-16 inline fontSize on a raw <input>', () => {
+    fixture(`export const C = () => <input style={{ fontSize: 13, border: 'none' }} />\n`, {
+      roots: ['src'],
+      rawFormControl: false,
+    })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('sub-16-input-font')
+  })
+
+  it('fails the build on a Mantine styles={{ input: { fontSize } }} override', () => {
+    fixture(`export const C = () => <TextInput styles={{ input: { fontSize: 12 } }} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize below 16 on a <Text> (not a form control)', () => {
+    fixture(`export const C = () => <Text style={{ fontSize: 12 }}>caption</Text>\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize below 16 on a <span> (not a form control)', () => {
+    fixture(`export const C = () => <span style={{ fontSize: 11 }}>micro</span>\n`)
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('sub-16-input-font')
+  })
+
+  it('respects the sub16InputFont:false config knob', () => {
+    fixture(`export const C = () => <input style={{ fontSize: 12 }} />\n`, {
+      roots: ['src'],
+      rawFormControl: false,
+      sub16InputFont: false,
+    })
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a line carrying a theme-allow comment', () => {
+    fixture(
+      `export const C = () => <input style={{ fontSize: 12 }} /> // theme-allow: legacy widget\n`,
+      { roots: ['src'], rawFormControl: false },
+    )
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('sub-16-input-font')
   })
 })
 

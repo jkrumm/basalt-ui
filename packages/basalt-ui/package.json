@@ -232,7 +232,9 @@
     "exempt": [
       "src/tokens/palette.ts",
       "src/tokens/index.ts",
-      "src/theme/index.ts"
+      "src/theme/index.ts",
+      "src/guard/index.ts",
+      "src/cli/index.ts"
     ],
     "rawSurface": false,
     "rawHtmlLayout": false,

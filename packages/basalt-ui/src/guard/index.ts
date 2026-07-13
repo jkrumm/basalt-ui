@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 15 violation kinds.
+ * GUARD_RULES: the closed registry of all 18 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind } from './types'
@@ -20,6 +20,20 @@ const SURFACE_BORDER =
   /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
 const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
 const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+
+// A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
+// ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
+// on top of it (the theme's `styles.root` pins bg/shadow/radius but never clears `border`), and the
+// card reads heavy/boxed. Bounded full-text tag scan, same shape as CHART_ENTRY_POINT_TAG below, so
+// a multi-line-formatted tag still resolves to one match.
+//
+// Two deliberate non-matches:
+//   • `<Card.Section withBorder>` — a section DIVIDER, not card depth. Excluded by the `(?![\w.])`
+//     lookahead, which also rejects `<CardHeader>`-style names.
+//   • `withBorder={false}` — an explicit opt-out (what the shell's AppShell parts do). Excluded by
+//     the lookahead on WITH_BORDER_PROP.
+const CARD_SURFACE_TAG = /<(?:Card|Paper)(?![\w.])(?:=>|[^>])*?>/g
+const WITH_BORDER_PROP = /\bwithBorder\b(?!\s*=\s*\{\s*false\s*\})/
 
 // Raw Mantine ramp step used for surface color — gray/dark + a step digit.
 const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
@@ -70,6 +84,29 @@ const CHART_ENTRY_POINT_TAG =
   /<(?:MultiLine|Bars|Donut|DualPanel|Heatmap|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
 
+// Raw lowercase form-control element — line-scoped, same shape as RAW_VISX_AXIS. `\b` after the
+// tag name rejects a same-prefixed custom component (`<inputRef`, `<selectAll`).
+const RAW_FORM_CONTROL = /<(?:input|select|textarea)\b/g
+
+// A raw form-control's own opening tag — bounded full-text scan (same shape as CARD_SURFACE_TAG /
+// CHART_ENTRY_POINT_TAG), used ONLY by sub-16-input-font to search the tag's own inline `style`
+// for a sub-floor fontSize.
+const RAW_FORM_CONTROL_TAG = /<(?:input|select|textarea)\b(?:=>|[^>])*?>/g
+
+// A Mantine `styles={{ input: {...} }}` per-part style — the `input` key specifically targets the
+// rendered <input>/<textarea> part of TextInput/Select/Textarea/etc. Requires `input` be the FIRST
+// key in the styles object (see the sub-16-input-font doc comment for the scoping trade-off this
+// implies) so an unrelated object that happens to carry an `input` key elsewhere in consumer code
+// is never mistaken for a Mantine per-part style. `[^}]*` stops at the first `}`, i.e. the close of
+// the `input` sub-object (or its first nested object) — either way any fontSize inside is still
+// genuinely part of the input's own styling.
+const STYLES_INPUT_PART = /\bstyles\s*=\s*\{\{\s*input\s*:\s*\{([^}]*)\}/g
+
+// A fontSize/font-size value below the 16px floor. Unitless numbers and an explicit `px` suffix
+// both count as px (React inline-style convention); any other unit (rem/em/%) is deliberately NOT
+// matched — ambiguous relative to a *px* floor, and matching it would risk a false positive.
+const SUB_16_FONT_SIZE = /font-?[Ss]ize\s*:\s*['"]?(-?\d+(?:\.\d+)?)(?:px)?['"]?(?=[,\s}]|$)/g
+
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
@@ -83,6 +120,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawRadius: true,
   forbiddenAccents: DEFAULT_FORBIDDEN_ACCENTS,
   rawSurface: true,
+  cardWithBorder: true,
   offSystemSurfaceVar: true,
   rawHtmlLayout: true,
   inlineSpacing: true,
@@ -91,6 +129,8 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawMotionValue: true,
   unframedChart: true,
   chartMissingAriaLabel: true,
+  rawFormControl: true,
+  sub16InputFont: true,
   allowComment: 'theme-allow',
 }
 
@@ -98,6 +138,17 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
 
 function isChartFile(relPath: string): boolean {
   return relPath.includes('/charts/') && !AXIS_WRAPPER_FILE.test(relPath)
+}
+
+/**
+ * The skip policy the per-line loop applies inline, reused by the full-text tag-scoped scans
+ * (which resolve their own report line and so must re-check it): a line carrying the allow-comment,
+ * or a pure-comment line, is never a violation.
+ */
+function isSkippedLine(line: string, cfg: GuardConfig): boolean {
+  if (line.includes(cfg.allowComment)) return true
+  const trimmed = line.trimStart()
+  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')
 }
 
 // ── GUARD_RULES registry ─────────────────────────────────────────────────────────────────────────
@@ -115,11 +166,19 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 15 guard kinds. The triad test asserts
+ * The closed registry of all 18 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
- * raw-surface and raw-html-layout are handled inline in checkSource (multi-regex / multi-condition);
- * all other kinds map to a single pattern entry.
+ * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
+ * (multi-regex / multi-condition / full-text tag-scoped); all other kinds map to a single pattern
+ * entry.
+ *
+ * This file and `src/cli/index.ts` are `exempt` in the package's own `basalt` config, and must
+ * stay that way: a rule's `pattern` and its `message` both spell the anti-pattern out literally
+ * (`'Raw <input>/<select>/<textarea> …'`), so the guard flags its own definitions when the package
+ * self-scans. Any kind matching a literal tag hits this — `raw-visx-axis` only escaped it by
+ * accident, via an `appliesTo` that happens to exclude non-chart files. Fixture files are already
+ * covered by the scanner's own `SKIP` (`*.test.ts`), for the same reason.
  */
 export const GUARD_RULES = {
   'raw-hex': {
@@ -166,7 +225,14 @@ export const GUARD_RULES = {
     pattern: SURFACE_BORDER, // handled inline; this entry exists so the registry is complete
     enabled: (cfg: GuardConfig) => cfg.rawSurface,
     message:
-      'Use withBorder + a radius token / VX.surface.* / var(--vx-radius-card) instead of inline border/radius/shadow.',
+      'Inline border/radius/shadow on a surface — a card already carries its depth (VX.shadowCard) and shape (var(--vx-radius-card)) from the theme; use VX.surface.* / a radius token instead.',
+  },
+  'card-with-border': {
+    kind: 'card-with-border',
+    pattern: CARD_SURFACE_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.cardWithBorder,
+    message:
+      'withBorder on a Card/Paper double-draws the edge — card depth is --vx-shadow-card, which already bakes a 1px ring into the shadow. Drop the prop (docs/DESIGN-SPEC.md doctrine inversion #1).',
   },
   'off-system-surface-var': {
     kind: 'off-system-surface-var',
@@ -222,6 +288,20 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
     message:
       'Chart has no accessible text alternative — pass ariaLabel="…" so screen readers get more than an unlabeled graphic.',
+  },
+  'raw-form-control': {
+    kind: 'raw-form-control',
+    pattern: RAW_FORM_CONTROL,
+    enabled: (cfg: GuardConfig) => cfg.rawFormControl,
+    message:
+      'Raw <input>/<select>/<textarea> bypasses the ENTIRE theme, not just the font-size floor — no field surface, no shadow-card depth, no focus ring, no --input-* vars. Use TextInput / NumberInput / Select / Textarea from @mantine/core, or variant="unstyled" for a genuinely borderless/bespoke look.',
+  },
+  'sub-16-input-font': {
+    kind: 'sub-16-input-font',
+    pattern: SUB_16_FONT_SIZE, // handled inline (full-text tag-scoped scan); entry keeps registry complete
+    enabled: (cfg: GuardConfig) => cfg.sub16InputFont,
+    message:
+      'fontSize below 16 on a form control is dead code — the styles.css iOS floor is `!important` and always wins. Either drop the override, or be honest about 16px in the design.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
 
@@ -347,6 +427,13 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
       }
     }
+
+    // raw-form-control — pattern + gating from GUARD_RULES.
+    if (GUARD_RULES['raw-form-control'].enabled!(cfg)) {
+      for (const m of line.matchAll(GUARD_RULES['raw-form-control'].pattern as RegExp)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-form-control' })
+      }
+    }
   }
 
   // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
@@ -355,15 +442,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   if (GUARD_RULES['unframed-chart'].enabled!(cfg)) {
     for (const m of text.matchAll(RAW_CHART_LEGEND_ARRAY)) {
       const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
-      const targetLine = lines[lineNo - 1] ?? ''
-      if (targetLine.includes(cfg.allowComment)) continue
-      const trimmedTarget = targetLine.trimStart()
-      if (
-        trimmedTarget.startsWith('//') ||
-        trimmedTarget.startsWith('*') ||
-        trimmedTarget.startsWith('/*')
-      )
-        continue
+      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
     }
   }
@@ -375,21 +454,55 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       const tagText = m[0]
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
       const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
-      const targetLine = lines[lineNo - 1] ?? ''
-      if (targetLine.includes(cfg.allowComment)) continue
-      const trimmedTarget = targetLine.trimStart()
-      if (
-        trimmedTarget.startsWith('//') ||
-        trimmedTarget.startsWith('*') ||
-        trimmedTarget.startsWith('/*')
-      )
-        continue
+      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({
         relPath,
         line: lineNo,
         token: tagText.slice(0, 40),
         kind: 'chart-missing-aria-label',
       })
+    }
+  }
+
+  // card-with-border — full-text tag-scoped scan (same shape as the two above). Reports at the line
+  // of the `withBorder` token itself (not the end of the tag) so a multi-line-formatted Card points
+  // the fix at the prop to delete.
+  if (GUARD_RULES['card-with-border'].enabled!(cfg)) {
+    for (const m of text.matchAll(CARD_SURFACE_TAG)) {
+      const withBorder = WITH_BORDER_PROP.exec(m[0])
+      if (withBorder === null) continue
+      const lineNo = text.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
+      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
+      findings.push({ relPath, line: lineNo, token: 'withBorder', kind: 'card-with-border' })
+    }
+  }
+
+  // sub-16-input-font — two full-text scans (same shape as the tag-scoped scans above): (a) a raw
+  // form-control's own inline `style={{ fontSize: N }}`, (b) a Mantine `styles={{ input: { fontSize:
+  // N } }}` per-part style. Either shape is now DEAD CODE against the `!important` floor in
+  // styles.css — see the guard's doc comment for exactly which shapes this covers.
+  if (GUARD_RULES['sub-16-input-font'].enabled!(cfg)) {
+    for (const m of text.matchAll(RAW_FORM_CONTROL_TAG)) {
+      const tagText = m[0]
+      if (!INLINE_STYLE.test(tagText)) continue
+      const fontSizeMatch = [...tagText.matchAll(SUB_16_FONT_SIZE)][0]
+      if (fontSizeMatch === undefined) continue
+      const value = Number.parseFloat(fontSizeMatch[1] ?? '')
+      if (!Number.isFinite(value) || value >= 16) continue
+      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
+      findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
+    }
+
+    for (const m of text.matchAll(STYLES_INPUT_PART)) {
+      const inputBody = m[1] ?? ''
+      const fontSizeMatch = [...inputBody.matchAll(SUB_16_FONT_SIZE)][0]
+      if (fontSizeMatch === undefined) continue
+      const value = Number.parseFloat(fontSizeMatch[1] ?? '')
+      if (!Number.isFinite(value) || value >= 16) continue
+      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
+      findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
     }
   }
 

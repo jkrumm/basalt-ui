@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 14 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 18 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -596,6 +596,178 @@ describe('chart-missing-aria-label', () => {
       chartMissingAriaLabel: false,
     })
     expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+})
+
+// ── 16. card-with-border ─────────────────────────────────────────────────────
+
+describe('card-with-border', () => {
+  it('flags withBorder on a Card', () => {
+    const f = find(`<Card padding="md" withBorder h="100%">{children}</Card>`)
+    expect(kinds(f)).toContain('card-with-border')
+  })
+
+  it('flags withBorder on a Paper', () => {
+    const f = find(`<Paper withBorder p="sm" />`)
+    expect(kinds(f)).toContain('card-with-border')
+  })
+
+  it('flags withBorder in a multi-line-formatted tag, reporting the prop line', () => {
+    const f = find(`<Card\n  padding="md"\n  withBorder\n  h="100%"\n>`)
+    const finding = f.find((v) => v.kind === 'card-with-border')
+    expect(finding?.line).toBe(3)
+  })
+
+  it('does NOT flag a Card with no withBorder', () => {
+    const f = find(`<Card padding="md" h="100%">{children}</Card>`)
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+
+  it('does NOT flag an explicit withBorder={false} opt-out', () => {
+    const f = find(`<Paper withBorder={false} p="sm" />`)
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+
+  it('does NOT flag Card.Section withBorder (a section divider, not card depth)', () => {
+    const f = find(`<Card.Section withBorder inheritPadding py="xs">{header}</Card.Section>`)
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+
+  it('does NOT flag withBorder on a non-card surface (Table keeps its own borders)', () => {
+    const f = find(`<Table withBorder striped />`)
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+
+  it('does NOT flag a component whose name merely starts with Card', () => {
+    const f = find(`<CardHeader withBorder />`)
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+
+  it('does NOT flag when cardWithBorder is false', () => {
+    const f = checkSource(`<Card withBorder />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      cardWithBorder: false,
+    })
+    expect(kinds(f)).not.toContain('card-with-border')
+  })
+})
+
+// ── 17. raw-form-control ─────────────────────────────────────────────────────
+
+describe('raw-form-control', () => {
+  it('flags a raw <input>', () => {
+    const f = find(`<input type="text" value={v} onChange={onChange} />`)
+    expect(kinds(f)).toContain('raw-form-control')
+  })
+
+  it('flags a raw <select>', () => {
+    const f = find(`<select value={v}><option value="a">A</option></select>`)
+    expect(kinds(f)).toContain('raw-form-control')
+  })
+
+  it('flags a raw <textarea>', () => {
+    const f = find(`<textarea value={v} onChange={onChange} />`)
+    expect(kinds(f)).toContain('raw-form-control')
+  })
+
+  it('does NOT flag a Mantine <TextInput>', () => {
+    const f = find(`<TextInput label="Name" value={v} onChange={onChange} />`)
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+
+  it('does NOT flag a Mantine <Select>', () => {
+    const f = find(`<Select data={options} value={v} />`)
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+
+  it('does NOT flag a component whose name merely starts with the tag name (inputRef)', () => {
+    const f = find(`<inputRef.current.focus() />`)
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(`<input type="text" /> // theme-allow: legacy widget`)
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+
+  it('does NOT flag when rawFormControl is false', () => {
+    const f = checkSource(`<input type="text" />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      rawFormControl: false,
+    })
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+})
+
+// ── 18. sub-16-input-font ────────────────────────────────────────────────────
+
+describe('sub-16-input-font', () => {
+  it('flags a sub-16 fontSize inline style on a raw <input>', () => {
+    const f = find(`<input style={{ fontSize: 13, border: 'none' }} />`)
+    expect(kinds(f)).toContain('sub-16-input-font')
+  })
+
+  it('flags a sub-16 fontSize inline style on a raw <textarea>', () => {
+    const f = find(`<textarea style={{ fontSize: 12 }} />`)
+    expect(kinds(f)).toContain('sub-16-input-font')
+  })
+
+  it('flags a quoted "12px" fontSize value', () => {
+    const f = find(`<input style={{ fontSize: '12px' }} />`)
+    expect(kinds(f)).toContain('sub-16-input-font')
+  })
+
+  it('flags a Mantine styles={{ input: { fontSize } }} per-part override', () => {
+    const f = find(`<TextInput styles={{ input: { fontSize: 12 } }} />`)
+    expect(kinds(f)).toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize of 16 or above on a raw input (already at/above the floor)', () => {
+    const f = find(`<input style={{ fontSize: 16 }} />`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize below 16 on a <Text> (not a form control)', () => {
+    const f = find(`<Text style={{ fontSize: 12 }}>caption</Text>`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize below 16 on a <span> (not a form control)', () => {
+    const f = find(`<span style={{ fontSize: 11 }}>micro-label</span>`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a fontSize below 16 on a <Code> chart label (not a form control)', () => {
+    const f = find(`<Code style={{ fontSize: 10 }}>{value}</Code>`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a rem-unit fontSize (ambiguous relative to a px floor, deliberately not matched)', () => {
+    const f = find(`<input style={{ fontSize: '0.8rem' }} />`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a raw <input> with no style at all', () => {
+    const f = find(`<input type="text" value={v} />`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a Mantine styles={{ root: {...} }} override (targets the wrapper, not the input)', () => {
+    const f = find(`<TextInput styles={{ root: { fontSize: 12 } }} />`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(`<input style={{ fontSize: 12 }} /> // theme-allow: legacy widget`)
+    expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+
+  it('does NOT flag when sub16InputFont is false', () => {
+    const f = checkSource(`<input style={{ fontSize: 12 }} />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      sub16InputFont: false,
+    })
+    expect(kinds(f)).not.toContain('sub-16-input-font')
   })
 })
 
