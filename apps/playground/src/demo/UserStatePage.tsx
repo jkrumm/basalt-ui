@@ -1,44 +1,29 @@
-import {
-  Code,
-  Divider,
-  Group,
-  Paper,
-  SegmentedControl,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Code, Divider, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core'
+import { SettingsRow, SettingsSection } from 'basalt-ui'
 import { scenarioToAccountState, useUserScenario } from './user-scenario-store'
 import type { UserScenario } from './user-scenario-store'
 
-/** A labeled `SegmentedControl` row bound directly to one scenario field — no local state, the
- * store is the single source of truth so the sidebar footer re-renders live on every change. */
+/** A `SegmentedControl` bound directly to one scenario field — no local state, the store is the
+ * single source of truth so the sidebar footer re-renders live on every change. Rendered as a
+ * `SettingsRow` control by the call sites below. */
 function ScenarioToggle<K extends keyof UserScenario>({
-  label,
   field,
   data,
   scenario,
   setScenario,
 }: {
-  label: string
   field: K
   data: Array<{ label: string; value: UserScenario[K] & string }>
   scenario: UserScenario
   setScenario: (next: UserScenario) => void
 }) {
   return (
-    <Group justify="space-between" wrap="nowrap">
-      <Text size="sm" style={{ minWidth: 120 }}>
-        {label}
-      </Text>
-      <SegmentedControl
-        size="xs"
-        data={data}
-        value={scenario[field] as string}
-        onChange={(value) => setScenario({ ...scenario, [field]: value })}
-      />
-    </Group>
+    <SegmentedControl
+      size="xs"
+      data={data}
+      value={scenario[field] as string}
+      onChange={(value) => setScenario({ ...scenario, [field]: value })}
+    />
   )
 }
 
@@ -54,72 +39,75 @@ export function UserStatePage() {
         react live — including the Account/Billing drawers behind its menu.
       </Text>
 
-      <Paper p="md">
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            Session
-          </Text>
-          <ScenarioToggle
-            label="Auth"
-            field="auth"
-            scenario={scenario}
-            setScenario={setScenario}
-            data={[
-              { label: 'Loading', value: 'loading' },
-              { label: 'Signed out', value: 'signed-out' },
-              { label: 'Signed in', value: 'signed-in' },
-            ]}
-          />
-          <ScenarioToggle
-            label="Role"
-            field="role"
-            scenario={scenario}
-            setScenario={setScenario}
-            data={[
-              { label: 'User', value: 'user' },
-              { label: 'Admin', value: 'admin' },
-              { label: 'Owner', value: 'owner' },
-            ]}
-          />
-        </Stack>
-      </Paper>
+      <SettingsSection title="Session">
+        <SettingsRow
+          label="Auth"
+          control={
+            <ScenarioToggle
+              field="auth"
+              scenario={scenario}
+              setScenario={setScenario}
+              data={[
+                { label: 'Loading', value: 'loading' },
+                { label: 'Signed out', value: 'signed-out' },
+                { label: 'Signed in', value: 'signed-in' },
+              ]}
+            />
+          }
+        />
+        <SettingsRow
+          label="Role"
+          control={
+            <ScenarioToggle
+              field="role"
+              scenario={scenario}
+              setScenario={setScenario}
+              data={[
+                { label: 'User', value: 'user' },
+                { label: 'Admin', value: 'admin' },
+                { label: 'Owner', value: 'owner' },
+              ]}
+            />
+          }
+        />
+      </SettingsSection>
 
-      <Paper p="md">
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            Plan
-          </Text>
-          <ScenarioToggle
-            label="Plan"
-            field="plan"
-            scenario={scenario}
-            setScenario={setScenario}
-            data={[
-              { label: 'Free', value: 'free' },
-              { label: 'Pro', value: 'pro' },
-              { label: 'Team', value: 'team' },
-            ]}
-          />
-          <ScenarioToggle
-            label="Plan status"
-            field="planStatus"
-            scenario={scenario}
-            setScenario={setScenario}
-            data={[
-              { label: 'Active', value: 'active' },
-              { label: 'Trialing', value: 'trialing' },
-              { label: 'Past due', value: 'past_due' },
-              { label: 'Canceled', value: 'canceled' },
-            ]}
-          />
-        </Stack>
-      </Paper>
+      <SettingsSection title="Plan">
+        <SettingsRow
+          label="Plan"
+          control={
+            <ScenarioToggle
+              field="plan"
+              scenario={scenario}
+              setScenario={setScenario}
+              data={[
+                { label: 'Free', value: 'free' },
+                { label: 'Pro', value: 'pro' },
+                { label: 'Team', value: 'team' },
+              ]}
+            />
+          }
+        />
+        <SettingsRow
+          label="Plan status"
+          control={
+            <ScenarioToggle
+              field="planStatus"
+              scenario={scenario}
+              setScenario={setScenario}
+              data={[
+                { label: 'Active', value: 'active' },
+                { label: 'Trialing', value: 'trialing' },
+                { label: 'Past due', value: 'past_due' },
+                { label: 'Canceled', value: 'canceled' },
+              ]}
+            />
+          }
+        />
+      </SettingsSection>
 
-      <Paper p="md">
+      <SettingsSection title="Identity">
         <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            Identity
-          </Text>
           <TextInput
             size="xs"
             label="Name"
@@ -140,16 +128,13 @@ export function UserStatePage() {
             onChange={(e) => setScenario({ ...scenario, image: e.currentTarget.value })}
           />
         </Stack>
-      </Paper>
+      </SettingsSection>
 
       <Divider />
 
-      <Paper p="md">
-        <Text size="sm" fw={500} mb="xs">
-          Derived BasaltAccountState
-        </Text>
+      <SettingsSection title="Derived BasaltAccountState">
         <Code block>{JSON.stringify(accountState, null, 2)}</Code>
-      </Paper>
+      </SettingsSection>
     </Stack>
   )
 }

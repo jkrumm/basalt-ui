@@ -93,7 +93,7 @@ const zoneLabel = (v: number): { text: string; color: string } => {
 // replacing the plain `centerLabel`/`centerSubLabel` text-only slots with real chrome.
 const donutCenterValueStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
-  fontSize: 16,
+  fontSize: VX.text.lg,
   fontWeight: 600,
   color: VX.ink,
   lineHeight: 1.1,
@@ -101,6 +101,7 @@ const donutCenterValueStyle: CSSProperties = {
 
 const donutCenterLabelStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
+  // theme-allow: bespoke mono micro-label under the donut's center value, no matching token
   fontSize: 9.5,
   fontWeight: 500,
   letterSpacing: '0.06em',

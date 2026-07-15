@@ -39,6 +39,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { EmptyState } from 'basalt-ui'
 import {
   aiSdkTransport,
   createThreadsStore,
@@ -230,13 +231,7 @@ function MessageBubble({ author, parts }: { author: 'user' | 'assistant'; parts:
         </ThemeIcon>
       )}
       {isUser ? (
-        <Paper
-          radius="md"
-          px="sm"
-          py={8}
-          bg="var(--mantine-color-default-hover)"
-          style={{ maxWidth: '78%' }}
-        >
+        <Paper px="sm" py="xs" bg="var(--mantine-color-default-hover)" style={{ maxWidth: '78%' }}>
           <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
             {userText}
           </Text>
@@ -322,17 +317,15 @@ export function AgentAiSdkDemoPage() {
         </Text>
       </div>
 
-      <Paper p="md" style={{ minHeight: 220 }}>
+      <Paper py="xs" px="sm" style={{ minHeight: 220 }}>
         {thread === undefined ? (
-          <Stack align="center" justify="center" gap="sm" py="xl">
-            <ThemeIcon radius="xl" size={52} variant="light" color="gray">
-              <IconSparkle />
-            </ThemeIcon>
-            <Text fw={600}>Ask one question to start</Text>
-            <Text size="sm" c="dimmed" ta="center" maw={420}>
-              The reply streams for a few seconds, then the demo backend deliberately abandons the
-              connection partway through — watch the panel below, then reload this tab.
-            </Text>
+          <Stack align="center" justify="center" mih={200}>
+            <EmptyState
+              icon={<IconSparkle />}
+              title="Ask one question to start"
+              description="The reply streams for a few seconds, then the demo backend deliberately abandons the connection partway through — watch the panel below, then reload this tab."
+              variant="section"
+            />
           </Stack>
         ) : (
           <Stack gap="lg">

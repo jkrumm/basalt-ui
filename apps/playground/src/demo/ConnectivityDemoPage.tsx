@@ -1,4 +1,10 @@
-import { ConnectivityIndicator, ConnectivityProvider, useConnectivity } from 'basalt-ui'
+import {
+  ConnectivityIndicator,
+  ConnectivityProvider,
+  SettingsRow,
+  SettingsSection,
+  useConnectivity,
+} from 'basalt-ui'
 import type { ConnectivityOverride } from 'basalt-ui'
 import { useState } from 'react'
 import { Code, Divider, Group, Paper, SegmentedControl, Stack, Text, Title } from '@mantine/core'
@@ -22,7 +28,7 @@ function ConnectivityPreview() {
         </Text>
         <ConnectivityIndicator />
       </Group>
-      <Paper p="md">
+      <Paper py="xs" px="sm">
         <Text size="sm" fw={500} mb="xs">
           Current Snapshot
         </Text>
@@ -32,31 +38,24 @@ function ConnectivityPreview() {
   )
 }
 
-function SignalToggle({
-  label,
+function SignalControl({
   value,
   onChange,
 }: {
-  label: string
   value: SignalState
   onChange: (value: SignalState) => void
 }) {
   return (
-    <Group justify="space-between" wrap="nowrap">
-      <Text size="sm" style={{ minWidth: 120 }}>
-        {label}
-      </Text>
-      <SegmentedControl
-        size="xs"
-        data={[
-          { label: 'Live', value: 'live' },
-          { label: 'Online', value: 'online' },
-          { label: 'Offline', value: 'offline' },
-        ]}
-        value={value}
-        onChange={(v) => onChange(v as SignalState)}
-      />
-    </Group>
+    <SegmentedControl
+      size="xs"
+      data={[
+        { label: 'Live', value: 'live' },
+        { label: 'Online', value: 'online' },
+        { label: 'Offline', value: 'offline' },
+      ]}
+      value={value}
+      onChange={(v) => onChange(v as SignalState)}
+    />
   )
 }
 
@@ -95,21 +94,30 @@ export function ConnectivityDemoPage() {
         <Code>ConnectivityProvider</Code> shadows the shell&apos;s auto-mounted one.
       </Text>
 
-      <Paper p="md">
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            Signal Overrides
-          </Text>
-          <Text size="xs" c="dimmed" mb="xs">
-            Set each signal to &quot;Live&quot; (use real value from browser/RQ/SSE/health),
-            &quot;Online&quot; (force connected), or &quot;Offline&quot; (force disconnected).
-          </Text>
-          <SignalToggle label="Browser Online" value={browserState} onChange={setBrowserState} />
-          <SignalToggle label="React Query Online" value={queryState} onChange={setQueryState} />
-          <SignalToggle label="SSE Open" value={sseState} onChange={setSseState} />
-          <SignalToggle label="Health Passing" value={healthState} onChange={setHealthState} />
-        </Stack>
-      </Paper>
+      <SettingsSection
+        title="Signal Overrides"
+        description={
+          'Set each signal to "Live" (use real value from browser/RQ/SSE/health), "Online" ' +
+          '(force connected), or "Offline" (force disconnected).'
+        }
+      >
+        <SettingsRow
+          label="Browser Online"
+          control={<SignalControl value={browserState} onChange={setBrowserState} />}
+        />
+        <SettingsRow
+          label="React Query Online"
+          control={<SignalControl value={queryState} onChange={setQueryState} />}
+        />
+        <SettingsRow
+          label="SSE Open"
+          control={<SignalControl value={sseState} onChange={setSseState} />}
+        />
+        <SettingsRow
+          label="Health Passing"
+          control={<SignalControl value={healthState} onChange={setHealthState} />}
+        />
+      </SettingsSection>
 
       <Divider />
 

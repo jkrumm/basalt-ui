@@ -34,6 +34,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import { EmptyState } from 'basalt-ui'
 import {
   BasaltStickToBottom,
   createChatHistoryStore,
@@ -261,13 +262,7 @@ function MessageBubble({
       )}
       {isUser ? (
         // User: a subtle neutral bubble (no blue), right-aligned.
-        <Paper
-          radius="md"
-          px="sm"
-          py={8}
-          bg="var(--mantine-color-default-hover)"
-          style={{ maxWidth: '78%' }}
-        >
+        <Paper px="sm" py="xs" bg="var(--mantine-color-default-hover)" style={{ maxWidth: '78%' }}>
           <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
             {userText}
           </Text>
@@ -318,25 +313,30 @@ const SUGGESTIONS = [
   'When should I extract a chart kind?',
 ]
 
-function EmptyState({ onPick }: { onPick: (text: string) => void }) {
+function ChatEmptyState({ onPick }: { onPick: (text: string) => void }) {
   return (
-    <Stack align="center" justify="center" gap="md" h="100%" py="xl">
-      <ThemeIcon radius="xl" size={52} variant="light" color="gray">
-        <IconSparkle />
-      </ThemeIcon>
-      <Stack gap={2} align="center">
-        <Text fw={600}>Start a conversation</Text>
-        <Text size="sm" c="dimmed" ta="center" maw={340}>
-          A streaming chat over basalt-ui/agent. Pick a simulation below, or try a prompt:
-        </Text>
-      </Stack>
-      <Group gap="xs" justify="center" maw={460}>
-        {SUGGESTIONS.map((s) => (
-          <Button key={s} size="compact-sm" variant="default" radius="xl" onClick={() => onPick(s)}>
-            {s}
-          </Button>
-        ))}
-      </Group>
+    <Stack align="center" justify="center" h="100%">
+      <EmptyState
+        icon={<IconSparkle />}
+        title="Start a conversation"
+        description="A streaming chat over basalt-ui/agent. Pick a simulation below, or try a prompt:"
+        variant="section"
+        action={
+          <Group gap="xs" justify="center" maw={460}>
+            {SUGGESTIONS.map((s) => (
+              <Button
+                key={s}
+                size="compact-sm"
+                variant="default"
+                radius="xl"
+                onClick={() => onPick(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </Group>
+        }
+      />
     </Stack>
   )
 }
@@ -467,7 +467,7 @@ export function AgentDemoPage() {
       <Paper style={{ display: 'flex', flexDirection: 'column', height: 560 }}>
         <Box style={{ flex: 1, minHeight: 0, position: 'relative' }}>
           {isEmpty ? (
-            <EmptyState onPick={sendText} />
+            <ChatEmptyState onPick={sendText} />
           ) : (
             <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
               <Stack gap="lg">

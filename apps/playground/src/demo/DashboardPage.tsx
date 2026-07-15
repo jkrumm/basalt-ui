@@ -21,7 +21,7 @@ import {
   Text,
 } from '@mantine/core'
 import { StatCard } from 'basalt-ui'
-import { alpha, Bars, LineSparkline, useChartSize, VX } from 'basalt-ui/charts'
+import { alpha, Bars, ChartCard, LineSparkline, useChartSize, VX } from 'basalt-ui/charts'
 import { useMemo, useState } from 'react'
 import { generateDashboardData } from './data'
 import type { DateRange, DayPoint } from './data'
@@ -34,30 +34,40 @@ const fmtMoney = (v: number) => `$${v.toFixed(1)}k`
 // The KPI micro-label + value styles now live inside the shipped `StatCard` — only the styles
 // this page still hand-renders (card titles, subtitles, stat/meter numerals) stay local.
 
+// Matches the shipped ChartCard title exactly (head font, 88% stretch, weight 550, VX.text.md) so
+// the non-chart list cards below read as the SAME card chrome as the ChartCard-based ones.
 const cardTitleStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-head)',
   fontStretch: '88%',
   fontWeight: 550,
-  fontSize: 14.5,
+  fontSize: VX.text.md,
   color: VX.ink,
 }
 
-const subtitleStyle: CSSProperties = { fontSize: 13, color: VX.muted }
-
 const monoNumeralStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
-  fontSize: 12.5,
+  fontSize: VX.text.xs,
   fontWeight: 500,
   color: VX.ink,
 }
 
 // "Progress/meter row" idiom (DESIGN-SPEC.md §5) — distinct from the "Stat list row" idiom above:
-// mono 12px faint, not mono 12.5px ink.
+// mono 12px faint, not mono 12.5px ink. 12px has no exact VX.text.* step (xs is 12.5), so it stays
+// a literal — collapsing it onto xs would erase the deliberate size distinction from monoNumeralStyle.
 const meterValueStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
+  // theme-allow: DESIGN-SPEC.md §5 "Progress/meter row" pins this at exactly 12px, no matching token
   fontSize: 12,
   fontWeight: 500,
   color: VX.faint,
+}
+
+// Row-label idiom (DESIGN-SPEC.md §5 "Progress/meter row" + "Stat list row") — 13px, no exact
+// VX.text.* step (sm is 13.5). Hoisted so the literal + its escape live in one place; the two call
+// sites differ only in color (ink-2 vs muted), spread on top.
+const rowLabelStyle: CSSProperties = {
+  // theme-allow: DESIGN-SPEC.md §5 row labels sit at exactly 13px, no matching token
+  fontSize: 13,
 }
 
 // ── Shared bits (ghost menu, delta badge) ───────────────────────────────────────────────────────
@@ -79,33 +89,6 @@ function CardMenu({ label }: { label: string }) {
   )
 }
 
-/** Small "i" affordance — ink-7% circular bg, per the spec's info-dot tint idiom. */
-function InfoDot({ label }: { label: string }) {
-  return (
-    <span
-      title={label}
-      aria-label={label}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 14,
-        height: 14,
-        borderRadius: '50%',
-        backgroundColor: alpha(VX.ink, 0.07),
-        color: VX.faint,
-        fontSize: 9,
-        fontWeight: 700,
-        fontStyle: 'italic',
-        cursor: 'help',
-        flexShrink: 0,
-      }}
-    >
-      i
-    </span>
-  )
-}
-
 // ── KPI row ──────────────────────────────────────────────────────────────────────────────────────
 
 type Kpi = { key: string; label: string; value: string; delta: number; spark: number[] }
@@ -121,12 +104,17 @@ function KpiSparkline({ data }: { data: number[] }) {
   )
 }
 
-function KpiCard({ kpi }: { kpi: Kpi }) {
+// Comparison timeframe shown after each delta — the delta is measured against the prior equivalent
+// period, so a day range reads day-over-day, a week week-over-week, a month month-over-month.
+const DELTA_PERIOD: Record<DateRange, string> = { '1d': 'DoD', '7d': 'WoW', '30d': 'MoM' }
+
+function KpiCard({ kpi, period }: { kpi: Kpi; period: string }) {
   return (
     <StatCard
       label={kpi.label}
       value={kpi.value}
       delta={kpi.delta}
+      deltaPeriod={period}
       menu={<CardMenu label={`${kpi.label} actions`} />}
       sparkline={<KpiSparkline data={kpi.spark} />}
     />
@@ -162,17 +150,11 @@ function AcquisitionCard({ series }: { series: DayPoint[] }) {
   )
 
   return (
-    <Paper p="md">
-      <Group justify="space-between" align="flex-start" wrap="nowrap" mb="sm">
-        <Stack gap={2}>
-          <Group gap={6} align="center" wrap="nowrap">
-            <Text style={cardTitleStyle}>Acquisition</Text>
-            <InfoDot label="Grouped bars share the left axis; the churn line reads against the right axis." />
-          </Group>
-          <Text style={subtitleStyle}>
-            Daily sessions and signups, with churn % on the right axis
-          </Text>
-        </Stack>
+    <ChartCard
+      title="Acquisition"
+      subtitle="Daily sessions and signups, with churn % on the right axis"
+      tooltip="Grouped bars share the left axis; the churn line reads against the right axis."
+      extra={
         <Group gap="xs" wrap="nowrap">
           <SegmentedControl
             size="xs"
@@ -185,8 +167,8 @@ function AcquisitionCard({ series }: { series: DayPoint[] }) {
           />
           <CardMenu label="Acquisition chart actions" />
         </Group>
-      </Group>
-
+      }
+    >
       <Bars<DayPoint>
         data={displaySeries}
         height={300}
@@ -212,7 +194,7 @@ function AcquisitionCard({ series }: { series: DayPoint[] }) {
         rightAxis={{ domain: [0, 10], formatTick: (v) => `${v}%`, numTicks: 6 }}
         formatValue={(v) => fmtInt(v)}
       />
-    </Paper>
+    </ChartCard>
   )
 }
 
@@ -230,15 +212,16 @@ const TRAFFIC_MIXES = [1, 0.8, 0.55, 0.4]
 
 function TrafficSourcesCard() {
   return (
-    <Paper p="md">
-      <Text style={cardTitleStyle} mb="md">
+    <Paper py="xs" px="sm">
+      <Text style={cardTitleStyle} mb="xs">
         Traffic sources
       </Text>
       <Stack gap={14}>
         {TRAFFIC_SOURCES.map((source, i) => (
           <div key={source.label}>
             <Group justify="space-between" mb={6}>
-              <Text style={{ fontSize: 13, color: VX.ink2 }}>{source.label}</Text>
+              {/* theme-allow: DESIGN-SPEC.md §5 "Progress/meter row" label pinned at 13px, no matching token */}
+              <Text style={{ ...rowLabelStyle, color: VX.ink2 }}>{source.label}</Text>
               <Text style={meterValueStyle}>{source.value}%</Text>
             </Group>
             <Progress
@@ -261,14 +244,15 @@ const MONTH_STATS: { label: string; value: string }[] = [
 
 function ThisMonthCard() {
   return (
-    <Paper p="md">
+    <Paper py="xs" px="sm">
       <Text style={cardTitleStyle} mb="xs">
         This month
       </Text>
       <Stack gap={0}>
         {MONTH_STATS.map((stat) => (
           <Group key={stat.label} justify="space-between" py={9}>
-            <Text style={{ fontSize: 13, color: VX.muted }}>{stat.label}</Text>
+            {/* theme-allow: DESIGN-SPEC.md §5 "Stat list row" label pinned at 13px, no matching token */}
+            <Text style={{ ...rowLabelStyle, color: VX.muted }}>{stat.label}</Text>
             <Text style={monoNumeralStyle}>{stat.value}</Text>
           </Group>
         ))}
@@ -314,7 +298,7 @@ export function DashboardPage({ range }: { range?: DateRange }) {
     <Stack gap={14} maw={1560} mx="auto">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {kpis.map((kpi) => (
-          <KpiCard key={kpi.key} kpi={kpi} />
+          <KpiCard key={kpi.key} kpi={kpi} period={DELTA_PERIOD[resolved]} />
         ))}
       </div>
 

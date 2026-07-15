@@ -11,6 +11,7 @@ import { VX } from 'basalt-ui/tokens'
 
 const timestampStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
+  // theme-allow: bespoke mono micro-timestamp condensed for a feed row, no matching token
   fontSize: 10.5,
   color: VX.faint,
 }
@@ -67,7 +68,7 @@ export function ActivityPage() {
         </Text>
       </div>
 
-      <Paper p="md">
+      <Paper py="xs" px="sm">
         <Timeline active={0}>
           {ACTIVITY_EVENTS.map((event) => (
             <Timeline.Item key={event.id} title={event.title}>

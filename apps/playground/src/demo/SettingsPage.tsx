@@ -64,7 +64,7 @@ const identityNameStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-head)',
   fontStretch: '88%',
   fontWeight: 550,
-  fontSize: 15,
+  fontSize: VX.text.md,
   color: VX.ink,
 }
 
@@ -72,10 +72,14 @@ const identityNameStyle: CSSProperties = {
 // theme's `variant="light"` resolver already supplies the status-13% tint + radius 6 (see
 // `basaltVariantColorResolver` in the package theme), so only the mono font needs a call-site
 // override.
-const statusBadgeStyles = { label: { fontFamily: 'var(--basalt-font-mono)', fontSize: 11 } }
+const statusBadgeStyles = {
+  label: { fontFamily: 'var(--basalt-font-mono)', fontSize: VX.text.micro },
+}
 
 const identityMetaStyle: CSSProperties = {
   fontFamily: 'var(--basalt-font-mono)',
+  // Mono account-meta line kept at 12px (not bumped onto xs=12.5), matching the "12px stays a
+  // theme-allow: literal" convention (see DashboardPage meterValueStyle) — no matching VX.text step.
   fontSize: 12,
   color: VX.faint,
 }
@@ -90,7 +94,7 @@ const initialsBlockStyle: CSSProperties = {
   borderRadius: 7,
   backgroundColor: alpha(VX.ink, 0.1),
   fontFamily: 'var(--basalt-font-mono)',
-  fontSize: 15,
+  fontSize: VX.text.md,
   fontWeight: 600,
   color: VX.ink,
 }

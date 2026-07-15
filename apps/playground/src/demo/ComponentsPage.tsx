@@ -19,7 +19,6 @@ import {
   Divider,
   Group,
   Menu,
-  Paper,
   Popover,
   Radio,
   SegmentedControl,
@@ -32,22 +31,14 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
 } from '@mantine/core'
-import { EmptyState, PageActions } from 'basalt-ui'
+import { EmptyState, PageActions, SettingsSection } from 'basalt-ui'
 import type { ReactNode } from 'react'
 import { IconSearch } from './icons'
 
 /** A titled surface section — every component group sits inside one of these so its surface shows. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Paper p="md">
-      <Title order={5} mb="sm">
-        {title}
-      </Title>
-      {children}
-    </Paper>
-  )
+  return <SettingsSection title={title}>{children}</SettingsSection>
 }
 
 const TABLE_ROWS = [
@@ -250,7 +241,7 @@ export function ComponentsPage() {
         />
       </Section>
 
-      <Card p="md">
+      <Card py="xs" px="sm">
         <Text size="sm" c="dimmed">
           A <Code>Card</Code> surface — same shadow-card, background, and radius as every Paper
           above.

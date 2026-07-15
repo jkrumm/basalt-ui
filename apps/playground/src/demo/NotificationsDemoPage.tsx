@@ -50,6 +50,7 @@ import {
   useNotificationHistory,
   NotificationCenter,
 } from 'basalt-ui/notifications'
+import { VX } from 'basalt-ui/tokens'
 import { useEffect } from 'react'
 
 // ── Action bridge ─────────────────────────────────────────────────────────────
@@ -195,7 +196,7 @@ function TypedRegistrySection() {
       <Text size="xs" tt="uppercase" fw={600} c="dimmed">
         defineNotifications + emit() (typed registry + actions)
       </Text>
-      <Code block style={{ fontSize: 11 }}>{`// notifications.ts
+      <Code block style={{ fontSize: VX.text.micro }}>{`// notifications.ts
 const NOTIFS = defineNotifications({
   'demo:upload-success': { intent: 'success', toMessage: (p) => \`Uploaded \${p.name}\` },
   'demo:save-error':     { intent: 'error',   toMessage: () => 'Failed to save',

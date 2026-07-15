@@ -11,6 +11,7 @@ const RANGE_OPTIONS: { label: string; value: DateRange }[] = [
 
 /** Numeric segment labels read mono per docs/DESIGN-SPEC.md §5 ("Segmented control"). */
 const monoLabelStyles = {
+  // theme-allow: DESIGN-SPEC.md §5 "Segmented control" pins numeric segment labels at 11.5px
   label: { fontFamily: 'var(--basalt-font-mono)', fontSize: 11.5 },
 }
 
