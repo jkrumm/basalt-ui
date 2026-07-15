@@ -268,6 +268,24 @@ oxfmt style: single quotes, **no semicolons**, `printWidth` 100, `trailingComma`
 indent. The `configs/` presets (`oxlint.json`, `oxfmt.json`, `tsconfig.{base,react-app,node}.json`,
 `lefthook.yml`, `check.yml`) ship raw for consumer `extends` / scaffolding.
 
+### The `basalt` oxlint plugin (`configs/oxlint-plugin.js`)
+
+A custom oxlint JS plugin (alpha `jsPlugins`, ESLint-v9-compatible `create(context)` API) shipping
+three design-guard AST rules `src/guard`'s regex scan can't reach. It ships inside `configs/` and
+`configs/oxlint.json` wires `jsPlugins: ["./oxlint-plugin.js"]` — a consumer that `extends` the
+shipped preset inherits it automatically, path resolved relative to the preset file.
+
+- `basalt/no-raw-font-size` — flags a hardcoded numeric font size (`fz`/`fontSize` JSX attribute or
+  a `fontSize` style/object property) instead of `VX.text.*` / `--vx-text-*`.
+- `basalt/card-inset` — flags a `Card`/`Paper` carrying an explicit `p`/`padding`/`radius`, or a
+  `py`/`px` off the `xs`/`sm` inset idiom.
+- `basalt/chart-in-raw-surface` — flags a chart-kind element (`Bars`, `Donut`, `DualPanel`,
+  `Heatmap`, `MultiLine`, `StackedArea`, `ZonedLine`, `BarSparkline`, `LineSparkline`) rendered
+  inside a raw `Card`/`Paper` instead of the shipped `ChartCard` wrapper.
+
+Every rule supports the same `theme-allow` escape as `src/guard`: a line comment containing
+`theme-allow` on the flagged node's own line, or the line above it, suppresses the finding.
+
 ## Development Guidelines
 
 - Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early

@@ -1,6 +1,7 @@
 {
-  "//": "basalt-ui shipped oxlint preset. Consumers extend this from their own .oxlintrc.json via the node_modules-relative path: { \"extends\": [\"./node_modules/basalt-ui/configs/oxlint.json\"] }. oxlint rejects bare specifiers, so the relative ./node_modules path is required. NOTE: oxlint `extends` is per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an override glob, so any ban that must also hold inside an override is duplicated into that override below.",
+  "//": "basalt-ui shipped oxlint preset. Consumers extend this from their own .oxlintrc.json via the node_modules-relative path: { \"extends\": [\"./node_modules/basalt-ui/configs/oxlint.json\"] }. oxlint rejects bare specifiers, so the relative ./node_modules path is required. NOTE: oxlint `extends` is per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an override glob, so any ban that must also hold inside an override is duplicated into that override below. Also ships the `basalt` custom JS plugin (jsPlugins, alpha) — three design-guard AST rules (no-raw-font-size, card-inset, chart-in-raw-surface) resolved relative to THIS file, inherited by any consumer that extends this preset.",
   "plugins": ["react", "typescript", "import", "unicorn", "jsx-a11y", "promise", "oxc"],
+  "jsPlugins": ["./oxlint-plugin.js"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -15,7 +16,10 @@
     "react/react-in-jsx-scope": "off",
     "typescript/no-explicit-any": "warn",
     "import/no-duplicates": "error",
-    "import/no-unassigned-import": "off"
+    "import/no-unassigned-import": "off",
+    "basalt/no-raw-font-size": "error",
+    "basalt/card-inset": "error",
+    "basalt/chart-in-raw-surface": "error"
   },
   "overrides": [
     {
