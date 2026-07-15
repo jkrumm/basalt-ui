@@ -236,6 +236,12 @@ the discipline is unchanged even though the hue is louder.
   `@mantine/core` component whose shipped CSS declares a border and asserts each one is either a
   themed `baseTheme.components` key or a reasoned `BORDER_ALLOWLIST` entry — closing the gap a
   regex-based consumer-source guard can never see (a theme block that was never written).
+- The shipped **`basalt` oxlint plugin** (`configs/oxlint-plugin.js`, inherited via `extends`)
+  enforces three idioms the regex `check-theme` guard cannot see from raw text: `no-raw-font-size`
+  (numeric `fz`/`fontSize` → `VX.text.*`), `card-inset` (Card/Paper off the `py="xs" px="sm"` inset
+  or carrying an explicit `radius`), and `chart-in-raw-surface` (a chart kind in a raw Card/Paper →
+  `ChartCard`). Each honors the same `theme-allow` line-comment escape, reserved for genuinely
+  bespoke optical values.
 
 ## 8. Doctrine inversions (this spec supersedes)
 
