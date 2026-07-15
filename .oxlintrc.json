@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "import", "unicorn", "jsx-a11y", "promise", "oxc"],
+  "jsPlugins": ["./packages/basalt-ui/configs/oxlint-plugin.js"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -18,7 +19,10 @@
     "import/no-unassigned-import": "off",
     "import/no-default-export": "error",
     "import/consistent-type-specifier-style": "error",
-    "react/hook-use-state": "warn"
+    "react/hook-use-state": "warn",
+    "basalt/no-raw-font-size": "error",
+    "basalt/card-inset": "error",
+    "basalt/chart-in-raw-surface": "error"
   },
   "ignorePatterns": [
     "dist",
