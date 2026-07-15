@@ -23,11 +23,19 @@ export type DeltaBadgeProps = {
   format?: (value: number) => string
   /** Render the ▲/▼ direction glyph. Defaults to `true`; a zero value never shows a glyph. */
   withGlyph?: boolean
+  /** Optional comparison timeframe rendered directly after the value in a dimmer shade of the same
+   * tone (e.g. `MoM`, `WoW`, `YTD`) — states what the delta is measured against without a hover. */
+  period?: string | undefined
 }
 
 const defaultFormat = (value: number): string => `${Math.abs(value).toFixed(1)}%`
 
-export function DeltaBadge({ value, format = defaultFormat, withGlyph = true }: DeltaBadgeProps) {
+export function DeltaBadge({
+  value,
+  format = defaultFormat,
+  withGlyph = true,
+  period,
+}: DeltaBadgeProps) {
   const tone = value > 0 ? VX.status.good : value < 0 ? VX.status.bad : VX.faint
   const glyph = value > 0 ? '▲' : value < 0 ? '▼' : undefined
   const showGlyph = withGlyph && glyph !== undefined
@@ -56,6 +64,7 @@ export function DeltaBadge({ value, format = defaultFormat, withGlyph = true }: 
       {/* optical glyph ratio relative to the label, not a scale step */}
       {showGlyph && <span style={{ fontSize: '0.8em' }}>{glyph}</span>}
       {format(value)}
+      {period && <span style={{ marginLeft: 4, fontWeight: 500, opacity: 0.6 }}>{period}</span>}
     </Badge>
   )
 }

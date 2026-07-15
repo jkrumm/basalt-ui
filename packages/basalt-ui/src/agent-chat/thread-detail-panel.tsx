@@ -123,7 +123,7 @@ export function ThreadDetailPanel({
           lineClamp={1}
           style={{
             fontFamily: 'var(--basalt-font-head)',
-            fontSize: VX.text.lg,
+            fontSize: VX.text.md,
             fontStretch: '88%',
           }}
         >

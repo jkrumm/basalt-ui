@@ -33,7 +33,7 @@ import classes from './settings-section.module.css'
 const titleStyle = {
   fontFamily: 'var(--basalt-font-head)',
   fontStretch: '88%' as const,
-  fontSize: VX.text.xl,
+  fontSize: VX.text.md,
   fontWeight: 550,
   color: VX.ink,
 }
@@ -58,11 +58,11 @@ export type SettingsSectionProps = {
 
 export function SettingsSection({ title, description, children }: SettingsSectionProps) {
   return (
-    <Card style={{ padding: '17px 19px' }}>
+    <Card style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)' }}>
       <Stack gap={2} mb={12}>
         <span style={titleStyle}>{title}</span>
         {description && (
-          <span style={{ fontSize: VX.text.md, color: VX.muted }}>{description}</span>
+          <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
         )}
       </Stack>
       <div className={classes.rows}>{children}</div>
@@ -101,7 +101,7 @@ export function DangerZone({ title, description, children }: DangerZoneProps) {
   return (
     <Card
       style={{
-        padding: '17px 19px',
+        padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
       }}
     >
@@ -109,7 +109,7 @@ export function DangerZone({ title, description, children }: DangerZoneProps) {
         <span style={eyebrowStyle}>Danger Zone</span>
         <span style={titleStyle}>{title}</span>
         {description && (
-          <span style={{ fontSize: VX.text.md, color: VX.muted }}>{description}</span>
+          <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
         )}
       </Stack>
       <div className={classes.rows}>{children}</div>

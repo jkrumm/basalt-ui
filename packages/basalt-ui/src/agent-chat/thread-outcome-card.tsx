@@ -98,7 +98,7 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
           style={{
             flex: 1,
             fontFamily: 'var(--basalt-font-head)',
-            fontSize: VX.text.lg,
+            fontSize: VX.text.md,
             fontStretch: '88%',
           }}
         >
@@ -167,8 +167,9 @@ export function ThreadOutcomeCard({
   const isPreviewing =
     thread.outcome === null && (thread.status === 'pending' || thread.status === 'streaming')
 
-  // Card idiom (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 10, 17-19px padding — each
-  // outcome row reads as its own card lifted off the feed pane, not a flat highlighted list row.
+  // Card idiom (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 7 (VX.radiusCard), xs/sm
+  // inset — each outcome row reads as its own card lifted off the feed pane, not a flat
+  // highlighted list row.
   const background = selected
     ? VX.surface.elevated
     : hovered
@@ -182,7 +183,7 @@ export function ThreadOutcomeCard({
       w="100%"
       style={{
         display: 'block',
-        padding: '17px 18px',
+        padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         borderRadius: VX.radiusCard,
         boxShadow: VX.shadowCard,
         backgroundColor: background,

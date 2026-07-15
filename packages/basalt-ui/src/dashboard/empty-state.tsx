@@ -22,9 +22,9 @@ import { VX } from '../tokens'
 export type EmptyStateProps = {
   /** Optional glyph slot, rendered faint at ~28-32px. No shipped illustration assets. */
   icon?: ReactNode
-  /** Head-font title (15px, weight 550, ink). */
+  /** Head-font title (18px, weight 550, ink). */
   title: string
-  /** Muted 13px description, capped at ~360px so it reads as a short explanation. */
+  /** Muted 15px description, capped at ~360px so it reads as a short explanation. */
   description: string
   /** Optional call-to-action rendered below the description. */
   action?: ReactNode

@@ -8,12 +8,11 @@
  * box's own corners, not any other element's. We shipped a bug where `box-shadow: var(--vx-shadow-
  * card)` landed on Mantine's Input WRAPPER, a bare `position: relative` box with `border-radius: 0`
  * against an 8px rounded `<input>` inside it. The ring rendered square around a rounded corner,
- * leaking visible grey nubs — a radius mismatch, not a missing background. (A shadowed box with no
- * background at all is legal and shipped: see ChartCard.tsx below, where the shadow's own box stays
- * transparent by design and a separate inner box — sharing its EXACT radius — paints the fill, so
- * radius alignment holds even though background does not co-locate. Background usually DOES
- * co-locate with the radius, since most surfaces declare both on the same box — but it is the
- * radius, not the background, that the ring is contractually bound to.) Nothing short of a
+ * leaking visible grey nubs — a radius mismatch, not a missing background. (A shadowed box need not
+ * paint its OWN background: the ring is bound to the box's RADIUS, not its background — a transparent
+ * shadow box whose fill lives on a separate, identically-rounded box is legal as long as the two
+ * radii match. Background usually DOES co-locate, since most surfaces declare both on the same box —
+ * but it is the radius, not the background, that the ring is contractually bound to.) Nothing short of a
  * mechanical inventory of every site that APPLIES the token would have caught it: a source-level
  * guard can only flag a bad value, never a bad ELEMENT.
  *
@@ -39,6 +38,13 @@
  * point. Do NOT "fix" a future failure by loosening the scan or bulk-registering with a placeholder
  * reason; open the file, find the element the shadow is declared on, prove (or fix) that IT carries
  * the surface's own border-radius, and write down where that radius comes from.
+ *
+ * NOTE — `overflow: hidden` does NOT threaten a box's own ring. An element's own outset `box-shadow`
+ * is painted outside its border box and is NOT clipped by that element's own `overflow` (only an
+ * ANCESTOR's overflow clips a descendant's shadow — verified in a browser). So a surface may safely
+ * carry `--vx-shadow-card` AND `overflow: hidden` on the SAME box (e.g. StatCard clipping a full-bleed
+ * sparkline). The outer/inner split some surfaces use (ChartCard) is about letting a DESCENDANT — an
+ * info-tooltip bubble — escape the clip, not about protecting the ring.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
@@ -286,8 +292,8 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     file: 'theme/index.ts',
     site: 'Notification.styles.root',
     roundedBy:
-      '--notification-radius (defaultProps: { radius: 10 } on the same Notification.extend feeds ' +
-      "Mantine's own varsResolver — Notification.mjs sets `--notification-radius: getRadius(10)` " +
+      '--notification-radius (defaultProps: { radius: 8 } on the same Notification.extend feeds ' +
+      "Mantine's own varsResolver — Notification.mjs sets `--notification-radius: getRadius(8)` " +
       "on the root part; Mantine's own Notification.css declares `border-radius: var(--" +
       'notification-radius)` on that same root element the styles.root boxShadow targets).',
   },
@@ -296,12 +302,14 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     file: 'charts/primitives/ChartCard.tsx',
     site: 'default',
     roundedBy:
-      'borderRadius: VX.radiusCard (co-declared in cardStyle, the same object that carries ' +
-      'boxShadow — the ring is bound to THIS radius, and it matches). The background is split onto ' +
-      'a separate inner clipStyle box (an IDENTICAL VX.radiusCard) purely because overflow:hidden ' +
-      "(needed to clip square-edged children to the rounded corners) can't live on the same box as " +
-      "the shadow without clipping the shadow itself — background/radius co-location isn't required " +
-      'by the invariant, only radius correctness on the shadowed box itself, which cardStyle has.',
+      'Two shadowed boxes in this file, each co-declaring borderRadius: VX.radiusCard with its own ' +
+      'boxShadow (both fall back to the file-level default label). (1) cardStyle — the outer card box ' +
+      'co-declares borderRadius + boxShadow + backgroundColor, so the ring is bound to THIS radius and ' +
+      'matches. It carries NO overflow: the chart body clips itself on a separate inner box ' +
+      '(bodyClipStyle, identical bottom-corner radius, no shadow) so the header — and its info-tooltip ' +
+      'bubble — can escape the clip; the ring is safe on the outer box either way (an element’s own ' +
+      'overflow never clips its own shadow). (2) bubbleStyle — the info-tooltip bubble, a floating panel ' +
+      'surface whose ring likewise follows its co-declared card radius.',
   },
   {
     file: 'charts/primitives/ChartTooltip.tsx',

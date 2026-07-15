@@ -615,7 +615,7 @@ export function BasaltDataTable<T>({
             {enableGlobalFilter && (
               <TextInput
                 size="xs"
-                radius={8}
+                radius="md"
                 placeholder={globalFilterPlaceholder}
                 leftSection={searchIcon}
                 value={globalFilter}
@@ -632,7 +632,7 @@ export function BasaltDataTable<T>({
                   <MultiSelect
                     key={facet.columnId}
                     size="xs"
-                    radius={8}
+                    radius="md"
                     placeholder={facet.label}
                     data={facet.options}
                     value={value}
@@ -647,7 +647,7 @@ export function BasaltDataTable<T>({
                 <Select
                   key={facet.columnId}
                   size="xs"
-                  radius={8}
+                  radius="md"
                   placeholder={facet.label}
                   data={facet.options}
                   value={value}
@@ -670,7 +670,7 @@ export function BasaltDataTable<T>({
           <Group gap="xs" align="center">
             <Select
               size="xs"
-              radius={8}
+              radius="md"
               data={pageSizeOptions.map((size) => ({
                 value: String(size),
                 label: `${size} / page`,
@@ -682,7 +682,7 @@ export function BasaltDataTable<T>({
             />
             <Pagination
               size="sm"
-              radius={8}
+              radius="md"
               total={Math.max(table.getPageCount(), 1)}
               value={paginationState.pageIndex + 1}
               onChange={(page) => table.setPageIndex(page - 1)}

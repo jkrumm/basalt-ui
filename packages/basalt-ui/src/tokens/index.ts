@@ -55,13 +55,13 @@ export const alpha = (token: string, a: number): string =>
  * the iOS input floor (see the `styles.css` floor — Safari zooms the viewport on focus below 16px).
  */
 const TEXT = {
-  micro: 11, // mono uppercase micro-label (table th, Menu.Label, KPI label, axis ticks)
-  xs: 12.5, // delta badges, tooltip meta, dense chrome
+  micro: 11, // mono uppercase micro-label (table th, Menu.Label, sidebar/section headers, axis ticks)
+  xs: 12.5, // delta badges, tooltip meta, dense chrome, StatCard labels
   sm: 13.5, // table/stat numerals, chart tooltip, legend
-  md: 15, // BODY — nav rows, menu items, timeline, labels, prose
-  lg: 16, // card titles, breadcrumb current — ALSO the iOS input floor (do not lower)
+  md: 15, // BODY — nav rows, menu items, timeline, labels, prose; chart/card titles
+  lg: 16, // breadcrumb current — ALSO the iOS input floor (do not lower)
   xl: 18, // section titles
-  kpi: 31, // the StatCard hero numeral
+  kpi: 24, // the StatCard hero numeral (density pass: 31 → 24, tighter/less shouty)
 } as const
 
 export const VX = {
@@ -255,8 +255,8 @@ function frameworkPrimitives(side: Side): string {
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
 const FRAMEWORK_DERIVED = [
-  decl('radius-card', '10px'),
-  decl('radius-ctrl', '8px'),
+  decl('radius-card', '7px'),
+  decl('radius-ctrl', '6px'),
   // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
   // is the same hex in both, which is the whole point: it is squeezed between its white label and
   // the page behind it, and only one luminance band satisfies both on both pages.

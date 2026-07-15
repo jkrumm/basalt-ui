@@ -18,6 +18,7 @@
 import {
   Accordion,
   ActionIcon,
+  Alert,
   Badge,
   Breadcrumbs,
   Button,
@@ -317,10 +318,10 @@ export const baseTheme: MantineThemeOverride = createTheme({
     fontWeight: '550',
   },
   // Control radius tier (docs/DESIGN-SPEC.md §4: inputs, search, buttons, segmented track, icon
-  // buttons ≥28px sit at 7-8px). `radius.md` = 0.5rem = 8px, matching `--vx-radius-ctrl` — every
+  // buttons ≥28px sit at ~6px). `radius.md` = 0.375rem = 6px, mirrored by `--vx-radius-ctrl` — every
   // control without its own explicit `radius` prop (Button, ActionIcon, TextInput, NumberInput,
   // PasswordInput, Select, Textarea) falls back to this default. Card/Paper bypass this scale
-  // entirely — they resolve straight to `var(--vx-radius-card)` (10px, see the
+  // entirely — they resolve straight to `var(--vx-radius-card)` (7px, see the
   // `components.Card`/`Paper` overrides below).
   defaultRadius: 'md',
   // Named weight ladder (v9 fontWeights).
@@ -339,12 +340,12 @@ export const baseTheme: MantineThemeOverride = createTheme({
     xl: rem(VX.text.xl),
   },
   // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
-  // defaults. Values match Mantine v9 today (a zero-pixel ownership step). 10 12 16 20 32.
-  spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.25rem', xl: '2rem' },
-  // 2 4 8 16 32 — the size scale for components still using the `radius='md'/'sm'` prop
-  // convention (inputs, buttons). Card/Paper/Popover/Modal/Notification read `--vx-radius-*`
-  // directly instead (10px cards / 8px controls), so this scale no longer mirrors either token.
-  radius: { xs: '0.125rem', sm: '0.25rem', md: '0.5rem', lg: '1rem', xl: '2rem' },
+  // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
+  spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
+  // 2 4 6 16 32 — the size scale; `md` (6px) is the control-radius default (`defaultRadius: 'md'`,
+  // inputs/buttons). Card/Paper/Popover/Modal/Notification read `--vx-radius-*` directly instead
+  // (7px cards / 6px controls), so the larger steps of this scale no longer mirror either token.
+  radius: { xs: '0.125rem', sm: '0.25rem', md: '0.375rem', lg: '1rem', xl: '2rem' },
   // Shade 6 (= `primaryShade`) is pinned to the FILL BAND for every family, so the JS ramp and the
   // `--vx-fill-*` tokens hold the SAME hex. That keeps `-filled` / `-text`(light) / `-outline`
   // internally consistent, and lets the on-color be measured straight off the tuple (below).
@@ -398,6 +399,19 @@ export const baseTheme: MantineThemeOverride = createTheme({
     // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
     // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
     Badge: Badge.extend({ defaultProps: { radius: 6 } }),
+    // Alert renders its title in the body font by default; bring it onto the head-font idiom
+    // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
+    // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
+    // the title font is overridden.
+    Alert: Alert.extend({
+      styles: {
+        title: {
+          fontFamily: 'var(--basalt-font-head)',
+          fontWeight: 550,
+          fontStretch: '88%',
+        },
+      },
+    }),
     // "Ink earns its color" — a nav selection is UI state, not the identity accent on the LABEL.
     // The active item is panel bg + `shadow-card` (forced here at the THEME level via NavLink's
     // `--nl-*` vars, so it holds for every render path — including a consumer's router `<Link>`
@@ -590,7 +604,7 @@ export const baseTheme: MantineThemeOverride = createTheme({
     // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
     // internally with no `radius`/`shadow` of its own), so theming it here covers both.
     Popover: Popover.extend({
-      defaultProps: { radius: 10 },
+      defaultProps: { radius: 8 },
       styles: {
         dropdown: {
           backgroundColor: 'var(--vx-surface-overlay)',
@@ -638,7 +652,7 @@ export const baseTheme: MantineThemeOverride = createTheme({
     // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
     // surface. Title = head font; close button = the ghost idiom (floating.module.css).
     Modal: Modal.extend({
-      defaultProps: { radius: 10 },
+      defaultProps: { radius: 8 },
       classNames: { close: floatingClasses.closeButton },
       styles: {
         content: {
@@ -775,7 +789,7 @@ export const baseTheme: MantineThemeOverride = createTheme({
     }),
     // Card idiom — same panel + shadow-card as every other surface.
     Notification: Notification.extend({
-      defaultProps: { radius: 10 },
+      defaultProps: { radius: 8 },
       styles: {
         root: {
           backgroundColor: 'var(--vx-surface-panel)',

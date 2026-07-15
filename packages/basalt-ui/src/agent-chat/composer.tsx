@@ -12,6 +12,7 @@
 import { ActionIcon, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ComponentProps, JSX, KeyboardEvent } from 'react'
 import { useState } from 'react'
+import { VX } from '../tokens'
 
 /** A minimal, dependency-free send-arrow glyph (icons are passed in as ReactNode elsewhere; this
  * one is inline since Composer has no icon prop in its contract). */
@@ -75,13 +76,14 @@ export function Composer({
     disabled,
     onChange: (event) => setValue(event.currentTarget.value),
     onKeyDown: handleKeyDown,
-    // Composer input surface (docs/DESIGN-SPEC.md §5): panel + shadow-card, radius 8 — the ring
+    // Composer input surface (docs/DESIGN-SPEC.md §5): panel + shadow-card, control radius (6px,
+    // VX.radiusCtrl) — the ring
     // lives in the shadow, so the input carries no separate border.
     styles: {
       input: {
         backgroundColor: 'var(--vx-surface-panel)',
         boxShadow: 'var(--vx-shadow-card)',
-        borderRadius: 8,
+        borderRadius: VX.radiusCtrl,
         border: 'none',
       },
     },
@@ -95,7 +97,7 @@ export function Composer({
         <Textarea {...textareaProps} />
         <ActionIcon
           size={42}
-          radius={8}
+          radius="md"
           variant="filled"
           onClick={submit}
           disabled={disabled || value.trim().length === 0}

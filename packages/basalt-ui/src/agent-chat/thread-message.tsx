@@ -182,8 +182,8 @@ function MessageBlock({
   parts: AgentPart[]
   streaming?: boolean
 }): JSX.Element {
-  // Assistant/user surfaces are differentiated by subtle vs panel tokens, radius 10
-  // (docs/DESIGN-SPEC.md §5) — the user's own turn sits a shade quieter than the reply.
+  // Assistant/user surfaces are differentiated by subtle vs panel tokens, radius 7
+  // (VX.radiusCard, docs/DESIGN-SPEC.md §5) — the user's own turn sits a shade quieter than the reply.
   return (
     <Box
       style={{
