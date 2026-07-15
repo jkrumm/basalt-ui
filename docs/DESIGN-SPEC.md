@@ -107,13 +107,13 @@ also honors the user's browser font-size and `--mantine-scale`.
 
 | Step | Size | Used for |
 |-|-|-|
-| `micro` | 11px | mono uppercase micro-labels — KPI card labels, sidebar/section headers, table headers, axis ticks |
-| `xs` | 12.5px | delta badges, tooltip meta, dense chrome |
+| `micro` | 11px | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks |
+| `xs` | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px) |
 | `sm` | 13.5px | stat/table numerals, chart tooltip, chart legend |
-| `md` | 15px | **body** — nav rows, menu items, timeline, labels, prose |
-| `lg` | 16px | card titles, breadcrumb current page — **also the iOS input floor** |
+| `md` | 15px | **body** — nav rows, menu items, timeline, labels, prose; **chart card titles** (density pass moved these 16px → 15px) |
+| `lg` | 16px | breadcrumb current page — **also the iOS input floor** |
 | `xl` | 18px | section titles, brand |
-| `kpi` | 31px | the StatCard hero numeral (weight 600, letter-spacing −0.02em) |
+| `kpi` | 24px | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24) |
 
 Weights and fonts stay as above: card titles and section titles take the head font at 88% stretch,
 weight ~550; every numeral and micro-label takes mono.
@@ -150,8 +150,8 @@ dead code against the `!important` floor.
 
 | Surface | Radius |
 |-|-|
-| cards / panels | **10px** (`--vx-radius-card` moves 8px → 10px) |
-| controls (inputs, search, buttons, segmented track, icon buttons ≥28px) | 7–8px |
+| cards / panels | **7px** (`--vx-radius-card`; the 2026-07 density pass moves 10px → 7px for a sharper, data-driven edge) |
+| controls (inputs, search, buttons, segmented track, icon buttons ≥28px) | **6px** (`radius.md` = 0.375rem, mirrored by `--vx-radius-ctrl`; density pass moves 8px → 6px) |
 | segmented active thumb, small ghost buttons, kbd badges, nav rows | 5–6px |
 | progress bars | 4px (6px height) |
 | avatar block | 7px |
@@ -167,7 +167,7 @@ dead code against the `!important` floor.
   identically-rounded background box, like `ChartCard`, is legal). Mechanically enforced by
   `src/theme/shadow-surfaces.test.ts`.
 - **Card**: panel bg + `shadow-card` (ring lives IN the shadow — no `border` property), radius
-  10px, padding ~17–19px. Cards lift subtly off a slightly darker page.
+  7px, padding ~14–16px. Cards lift subtly off a slightly darker page.
 - **Sidebar**: transparent (page bg, no panel, no border), ~216px. Section headers are
   micro-labels. Active item = panel bg + `shadow-card` + **accent-colored icon** + weight 600 ink
   text; inactive = muted text, faint icon; hover = ink-6% tint. Child items indent with a 1px
@@ -184,7 +184,16 @@ dead code against the `!important` floor.
   segment labels (1D/7D/30D) are mono 11.5px; word labels are sans 12px.
 - **Ghost icon button**: transparent, faint icon, hover ink-6% + ink icon, radius 6.
 - **Delta/status badge**: mono 11.5px weight 600, status-color text on status-13% tint, radius 6,
-  2px 7px padding, optional ▲/▼ glyph at 9px.
+  2px 7px padding, optional ▲/▼ glyph at 9px, optional comparison-period suffix (`MoM`/`WoW`/`YTD`)
+  in a dimmer shade of the same tone directly after the value.
+- **Stat card**: card-radius panel, spacing xs/sm inset, mono xs uppercase label + mono ~24px hero
+  numeral + delta badge; optional sparkline runs full-bleed to the card's L/R/bottom edges (card
+  clips to the corner radius; the shadow ring is unaffected).
+- **Settings section**: card-radius panel + shadow-card, spacing xs/sm inset, head-font 15px title
+  + 13px muted description, rows split by a 1px `--vx-divider` rule; the `DangerZone` variant adds
+  a mono danger eyebrow + a danger-tinted ring layered over the shadow.
+- **Alert**: Mantine `Alert` on the card tint idiom — title in head font (88% stretch, ~550);
+  color tint comes from the variant color resolver; control-tier radius.
 - **Progress/meter row**: 13px label (ink-2) + mono 12px faint value; 6px track (ink-8%, radius
   4); leader fill = accent, others = faint at 80/55/40% mix.
 - **Stat list row**: 13px muted label / mono 12.5px weight 500 ink value, ~9px vertical padding.
@@ -193,7 +202,11 @@ dead code against the `!important` floor.
   status-warning at 1.9px stroke; bar pairs 6.4px wide, rx 1.4; legend centered below — 11px
   radius-3 square swatches (16×3px radius-2 pill for line series), 12.5px muted labels, 22px gap.
 - **Sparklines**: single 1.6px faint line, no fill, no axes.
-- **Tooltip/popover/menu**: panel bg + shadow-card, radius 8–10px.
+- **Tooltip/popover/menu**: panel bg + shadow-card, radius 7–8px (cards 7px; floating surfaces 8px).
+  The chart info-tooltip (`ChartCard`'s `i`) is a Mantine-free hover/focus/tap bubble in the same
+  idiom; it dismisses on Escape, blur, or an outside click. Its trigger lives in the card header,
+  which sits OUTSIDE the chart body's clip box, so the bubble can overhang the card edge and is never
+  clipped.
 - **Scrollbars**: 9px, hairline thumb (line on hover), radius 6, transparent track.
 
 ## 6. Accent discipline (updated)
@@ -234,7 +247,8 @@ encountered; never "correct" code back toward them:
 2. ~~Warm-neutral greys (blue channel ≤ red)~~ → cool zinc neutrals.
 3. ~~Muted slate-blue accent (~50% sat)~~ → saturated sky accent (#0077bd / #8ec5ff).
 4. ~~Panels are white on light~~ → panels are zinc-100 (#f4f4f5) on a slightly darker page.
-5. ~~Cards at 8px radius~~ → 10px.
+5. ~~Cards at 8px radius~~ → ~~10px~~ → **7px** (2026-07 density pass: sharper, more data-driven;
+   controls likewise 8px → 6px).
 6. ~~System-font stack only~~ → shipped three-font system (Nunito Sans / Hubot Sans / JetBrains
    Mono).
 7. Active nav stays a quiet fill (unchanged), but the active **icon** is now accent-colored and
