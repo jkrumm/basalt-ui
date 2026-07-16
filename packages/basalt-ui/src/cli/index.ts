@@ -1461,15 +1461,35 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
   return 0
 }
 
+/** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
+const USAGE =
+  'Usage: basalt <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
+  'check-theme | check-coverage | info [--json] | doctor | guard-hook | help>\n\n' +
+  'Every subcommand accepts --help / -h to print this message and exit without running.'
+
 /**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
  * entry is the ONLY caller that translates this to process.exit, so init/sync/checkTheme stay free
  * of process side effects and are safe to import and call from tests.
  *
+ * `--help` / `-h` (on ANY subcommand) and the bare `help` command short-circuit BEFORE dispatch —
+ * checked first, so a mutating command (`sync`, `init`) never runs just because the caller only
+ * asked to read about it.
+ *
  * The `guard-hook` subcommand is async (reads stdin); all others are synchronous.
  */
 export function run(argv: string[], cwd: string = process.cwd()): number | Promise<number> {
   const [cmd, ...flags] = argv
+  if (
+    cmd === 'help' ||
+    cmd === '--help' ||
+    cmd === '-h' ||
+    flags.includes('--help') ||
+    flags.includes('-h')
+  ) {
+    console.log(USAGE)
+    return 0
+  }
   switch (cmd) {
     case 'init':
       return init(cwd, {
@@ -1489,9 +1509,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'guard-hook':
       return guardHook(cwd)
     default:
-      console.error(
-        'Usage: basalt <init [--with-router] [--with-query] | sync [--force] [--check] | check-theme | check-coverage | info [--json] | doctor | guard-hook>',
-      )
+      console.error(USAGE)
       return 1
   }
 }
