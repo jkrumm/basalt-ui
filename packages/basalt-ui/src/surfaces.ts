@@ -272,7 +272,8 @@ export const SURFACES = {
     rule: 'router',
     skill: ['basalt-app'],
     guardKinds: [],
-    description: 'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs',
+    description:
+      'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createMultiSearchParamStore (multi-select URL-state store)',
     optionalPeers: ['@tanstack/react-router'],
     globs: {
       shipped: [],
@@ -374,8 +375,14 @@ export const SURFACES = {
     skill: ['basalt-design'],
     guardKinds: [],
     description:
-      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
-    optionalPeers: ['shiki', 'beautiful-mermaid', 'react-markdown', 'remark-gfm'],
+      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
+    optionalPeers: [
+      'shiki',
+      'beautiful-mermaid',
+      'react-markdown',
+      'remark-gfm',
+      '@mantine/spotlight',
+    ],
     forbiddenImports: [],
   },
   './state': {

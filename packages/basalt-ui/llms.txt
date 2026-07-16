@@ -59,7 +59,7 @@ OptionalPeers: @tanstack/react-query@^5.101.0, @tanstack/react-query-devtools@^5
 
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
-Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs
+Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createMultiSearchParamStore (multi-select URL-state store)
 Layer: headless
 Rule: basalt-router
 OptionalPeers: @tanstack/react-router@^1.170.0
@@ -115,10 +115,10 @@ OptionalPeers: ai@^7.0.15, react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
-Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
+Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
 Layer: mantine-coupled
 Rule: basalt-content
-OptionalPeers: shiki@^4.3.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1
+OptionalPeers: shiki@^4.3.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, @mantine/spotlight@^9.3.0
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'

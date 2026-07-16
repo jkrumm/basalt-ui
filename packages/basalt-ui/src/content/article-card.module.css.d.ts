@@ -9,6 +9,8 @@ declare const classes: {
   readonly icon: string
   readonly title: string
   readonly description: string
+  readonly tags: string
+  readonly tag: string
   readonly meta: string
 }
 export default classes

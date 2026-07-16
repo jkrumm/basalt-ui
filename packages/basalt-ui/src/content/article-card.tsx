@@ -16,7 +16,10 @@
  *   <ArticleCard
  *     title="Reading dashboards"
  *     description="Why most internal dashboards fail the five-second glance test."
- *     meta="6 min read · guide"
+ *     date="2026-07-16"
+ *     readingTime={6}
+ *     category="guide"
+ *     tags={['dashboards', 'ux']}
  *     href="/content"
  *     renderLink={(target, node) => <Link to={target.href}>{node}</Link>}
  *   />
@@ -25,14 +28,22 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Card, SimpleGrid } from '@mantine/core'
 import classes from './article-card.module.css'
+import { formatArticleDate } from './article-model'
 import type { ArticleNavTarget } from './article-layout'
 
 export type ArticleCardProps = {
   readonly title: string
   readonly description?: string
   readonly icon?: ReactNode
-  /** Preformatted meta string, e.g. `'6 min read · guide'`. */
-  readonly meta?: string
+  /** ISO 8601 — rendered via `formatArticleDate`. */
+  readonly date?: string
+  readonly category?: string
+  readonly tags?: readonly string[]
+  /** Minutes; rendered as `"N min read"`. */
+  readonly readingTime?: number
+  /** Locale passed to `formatArticleDate`. Default `'en-US'` — see its JSDoc for why this is
+   * pinned rather than defaulting to the runtime locale. */
+  readonly locale?: string
   readonly href?: string
   /** Router bridge — when given alongside `href`, the card is handed to it instead of rendering a
    * plain anchor itself. */
@@ -50,7 +61,11 @@ export function ArticleCard({
   title,
   description,
   icon,
-  meta,
+  date,
+  category,
+  tags,
+  readingTime,
+  locale = 'en-US',
   href,
   renderLink,
   onClick,
@@ -66,12 +81,31 @@ export function ArticleCard({
     .join(' ')
   const mergedStyle: CSSProperties = { ...CARD_STYLE, ...style }
 
+  // Derived, not passed in — the card owns the meta line's shape so callers hand it structured
+  // fields instead of a preformatted string.
+  const meta = [
+    date !== undefined ? formatArticleDate(date, locale) : undefined,
+    readingTime !== undefined ? `${readingTime} min read` : undefined,
+    category,
+  ]
+    .filter((part) => part !== undefined)
+    .join(' · ')
+
   const body = (
     <>
       {icon !== undefined && <span className={classes.icon}>{icon}</span>}
       <span className={classes.title}>{title}</span>
       {description !== undefined && <span className={classes.description}>{description}</span>}
-      {meta !== undefined && <span className={classes.meta}>{meta}</span>}
+      {tags !== undefined && tags.length > 0 && (
+        <span className={classes.tags}>
+          {tags.map((tag) => (
+            <span key={tag} className={classes.tag}>
+              {tag}
+            </span>
+          ))}
+        </span>
+      )}
+      {meta !== '' && <span className={classes.meta}>{meta}</span>}
     </>
   )
 

@@ -13,7 +13,7 @@
  * import { Link } from '@tanstack/react-router'
  *
  * <ArticleLayout
- *   meta={{ title: 'Reading dashboards', description: '…', date: 'Jul 16, 2026', readingTime: 6 }}
+ *   meta={{ title: 'Reading dashboards', description: '…', date: '2026-07-16', readingTime: 6 }}
  *   readingProgress
  *   next={{ label: 'Chart guide', href: '/guides/charts' }}
  *   renderLink={(target, node) => <Link to={target.href}>{node}</Link>}
@@ -26,6 +26,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useRef } from 'react'
 import { ScrollArea } from '@mantine/core'
 import classes from './article-layout.module.css'
+import { formatArticleDate } from './article-model'
 import type { ProseDensity } from './prose'
 import { Prose } from './prose'
 import { ReadingProgress } from './reading-progress'
@@ -34,7 +35,7 @@ import { TableOfContents } from './toc'
 export type ArticleLayoutMeta = {
   readonly title: string
   readonly description?: string
-  /** Preformatted display string (e.g. `'Jul 16, 2026'`) — no date library. */
+  /** ISO 8601 — rendered via `formatArticleDate`. No date library: `Intl` is a native API. */
   readonly date?: string
   /** Minutes; rendered as `"N min read"`. */
   readonly readingTime?: number
@@ -60,6 +61,9 @@ export type ArticleLayoutProps = {
   readonly renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
   /** `Prose` density passthrough. Default `'article'`. */
   readonly density?: ProseDensity
+  /** Locale passed to `formatArticleDate` for `meta.date`. Default `'en-US'` — see its JSDoc for
+   * why this is pinned rather than defaulting to the runtime locale. */
+  readonly locale?: string
   readonly className?: string
   readonly style?: CSSProperties
 }
@@ -104,6 +108,7 @@ export function ArticleLayout({
   next,
   renderLink = defaultRenderLink,
   density = 'article',
+  locale = 'en-US',
   className,
   style,
 }: ArticleLayoutProps) {
@@ -123,7 +128,7 @@ export function ArticleLayout({
           )}
           {hasMetaRow && (
             <div className={classes.metaRow}>
-              {meta.date !== undefined && <span>{meta.date}</span>}
+              {meta.date !== undefined && <span>{formatArticleDate(meta.date, locale)}</span>}
               {meta.date !== undefined && meta.readingTime !== undefined && <span>·</span>}
               {meta.readingTime !== undefined && <span>{meta.readingTime} min read</span>}
             </div>

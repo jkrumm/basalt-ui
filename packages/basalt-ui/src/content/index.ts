@@ -47,5 +47,14 @@ export type { ArticleLayoutMeta, ArticleLayoutProps, ArticleNavTarget } from './
 export { ArticleCard, ArticleGrid } from './article-card'
 export type { ArticleCardProps, ArticleGridProps } from './article-card'
 
+export { filterArticles, formatArticleDate, sortArticles } from './article-model'
+export type { Article, ArticleFilterQuery, ArticleOrder } from './article-model'
+
+export { toArticleActions } from './article-actions'
+export type { ToArticleActionsOptions } from './article-actions'
+
+export { ArticleFilterBar } from './article-filter-bar'
+export type { ArticleFilterBarProps } from './article-filter-bar'
+
 export { GuideDrawer, GuideLink } from './guide'
 export type { GuideDrawerProps, GuideLinkProps } from './guide'

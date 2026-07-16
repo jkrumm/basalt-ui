@@ -10,6 +10,11 @@ export {
   type SearchParamStore,
   type SearchParamStoreOptions,
 } from './search-param-store'
+export {
+  createMultiSearchParamStore,
+  type MultiSearchParamStore,
+  type MultiSearchParamStoreOptions,
+} from './multi-search-param-store'
 import type { ReactNode } from 'react'
 import { useLocation, useMatches } from '@tanstack/react-router'
 

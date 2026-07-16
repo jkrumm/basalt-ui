@@ -168,6 +168,86 @@ import { Link } from '@tanstack/react-router'
 </ArticleGrid>
 ```
 
+## Article model — classification, sorting, filtering, search
+
+`Article<C, T>` (`basalt-ui/content`) is the structured data model behind `ArticleCard`/
+`ArticleLayout`: pure data + pure operators (`sortArticles`, `filterArticles`,
+`formatArticleDate`), no React, no `@mantine/*`. It is GENERIC over the taxonomy — the framework
+ships the shape and the operators; _which_ categories/tags exist is domain data the consumer
+declares. This is the `VX.series` doctrine (see `packages/basalt-ui/CLAUDE.md` "Consumer-series
+extensibility") applied to content instead of chart series. Reference implementation:
+`apps/playground/src/demo/articles.ts` (`ARTICLE_CATEGORIES`, `ARTICLE_TAGS`, `ARTICLES satisfies
+readonly Article<ArticleCategory, ArticleTag>[]`).
+
+There is deliberately NO `defineArticles` factory. `satisfies readonly Article<Cat, Tag>[]` gives
+identical inference with no import — contrast `defineSeries`, which earns its place because
+`buildPaletteCss`/`seriesTokens` actually consume the map it returns; a plain article list has no
+such consumer, so a factory would be a config bag with no payoff.
+
+`date` is ISO 8601 (`'2026-07-16'`). Rendering always goes through `formatArticleDate`, which pins
+BOTH `locale` (`'en-US'`) and `timeZone` (`'UTC'`) — both load-bearing against SSR/client hydration
+mismatch: an unpinned zone shifts a date-only ISO string by a day depending on the runtime's UTC
+offset, the same failure mode an unpinned locale causes on the string shape. "No date library"
+still holds — `Intl` is a native API.
+
+**Filter semantics** (`filterArticles`): `category` is exact-match; `tags` is ANY-OF (OR); the two
+axes AND together — matching the existing multi-facet `filterFn` semantics in
+`data/data-table.tsx`. An empty query returns the list unchanged.
+
+**Filter state is URL state.** Single-select axes (category) use `createSearchParamStore`;
+multi-select axes (tags) use `createMultiSearchParamStore` — both from `basalt-ui/router-tanstack`.
+Two stores compose on one route by spreading both `validateSearch` results:
+
+```ts
+// apps/playground/src/demo/article-filter-stores.ts
+export const articleCategory = createSearchParamStore({
+  key: 'article-category',
+  param: 'category',
+  values: ['all', ...ARTICLE_CATEGORIES] as const,
+  fallback: 'all',
+})
+
+export const articleTags = createMultiSearchParamStore({
+  key: 'article-tags',
+  param: 'tags',
+  values: ARTICLE_TAGS,
+})
+
+// routes/content-overview.tsx
+export const Route = createFileRoute('/content-overview')({
+  validateSearch: (search) => ({
+    ...articleCategory.validateSearch(search),
+    ...articleTags.validateSearch(search),
+  }),
+})
+```
+
+The `'all'` sentinel is a UI concern added by the consumer, NOT an `Article`/`filterArticles`
+concept — `filterArticles` treats `undefined`/`''` as "no constraint" and deliberately does NOT
+special-case the string `'all'` (a consumer could legitimately have a category literally named
+`'all'`), so the page maps `category === 'all' ? undefined : category` before calling it.
+
+**The store/UI split is a LAYER boundary, not a style choice.** `basalt-ui/router-tanstack` is
+headless (`@mantine/*` banned by the Mantine-free boundary), so the store itself cannot render.
+`ArticleFilterBar` (`basalt-ui/content`) is the Mantine half: a fully controlled component wired to
+the store pair per `createSearchParamStore`'s 5-step JSDoc recipe (the filter bar is that recipe's
+step 3).
+
+**`toArticleActions`** is a pure in-memory PROJECTOR into the already-shipped Spotlight command
+surface (`basalt-ui/commands`) — the same tier as `toRouteActions`. It joins title, description,
+category, tags, and slug into a `keywords` string for substring search; it does not tokenize, rank,
+index, or persist. An app that outgrows substring matching over a client-side array brings its own
+search index — see docs/CONTENT-SPEC.md §9 (Non-goals).
+
+`ArticleGrid` stays a dumb layout wrapper — deliberate, so callers keep composition (sorting,
+filtering, and pagination all happen above it, not inside it).
+
+**Mobile.** `ArticleFilterBar`'s category control renders a `SegmentedControl` above the `sm`
+breakpoint and a `Select` below it, switched via Mantine's CSS-based `visibleFrom`/`hiddenFrom`
+props — NOT `useMediaQuery`. A JS media-query hook renders differently on the server than on the
+first client paint (the server has no viewport to query), which trips a React hydration mismatch;
+the CSS-based switch has no such server/client branch.
+
 ## GuideLink / GuideDrawer — contextual help
 
 The "this chart has a guide" pattern (GitLab Pajamas / Stripe-dashboard style): `GuideDrawer` is a

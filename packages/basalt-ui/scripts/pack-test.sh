@@ -93,6 +93,7 @@ const subpaths = [
   'basalt-ui/data/virtual',
   'basalt-ui/agent',
   'basalt-ui/connectivity',
+  'basalt-ui/content',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -121,7 +122,13 @@ if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAge
 if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
-console.log('scratch resolution OK (18 subpaths)')
+const routerTanstackMod = await import('basalt-ui/router-tanstack')
+if (typeof routerTanstackMod.createMultiSearchParamStore !== 'function') {
+  throw new Error('router-tanstack.createMultiSearchParamStore missing')
+}
+console.log('smoke: basalt-ui/router-tanstack OK')
+
+console.log('scratch resolution OK (19 subpaths)')
 JS
 node test.mjs
 
