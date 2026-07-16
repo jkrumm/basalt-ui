@@ -1,4 +1,5 @@
 <!-- basalt:begin {{BASALT_VERSION}} -->
+
 ## basalt-ui (managed — do not hand-edit)
 
 Scaffolded by `bunx basalt init` and refreshed by `bunx basalt sync` (run it after a basalt-ui
@@ -32,4 +33,5 @@ three-font system (Nunito Sans body, Hubot Sans condensed headings, JetBrains Mo
 numeral/micro-label), depth via `shadow-card` (a whisper shadow + 1px ring, never a decorative drop
 shadow), neutral zinc-by-default with the single saturated accent spent only when earned (trend /
 signal / categorical separation). Restraint **is** the identity.
+
 <!-- basalt:end -->
