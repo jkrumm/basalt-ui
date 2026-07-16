@@ -37,7 +37,8 @@ import {
 } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { BP, FILL, VX } from '../tokens'
+import { BP, FILL } from '../tokens/palette'
+import { VX } from '../tokens'
 
 /** The bridged Mantine families, in palette order — the source for the `Fills` group below. */
 const FILL_FAMILIES = Object.keys(FILL)

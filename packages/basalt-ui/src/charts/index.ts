@@ -20,16 +20,6 @@ export {
   seriesTokens,
   defineSeries,
   groupTokens,
-  ACCENT,
-  BP,
-  FILL,
-  INK,
-  SEMANTIC,
-  SHADOW,
-  STATUS,
-  NEUTRAL,
-  SURFACE,
-  p,
 } from '../tokens'
 
 // ── Design seam type (type-only; erased at runtime — no @mantine value) ─

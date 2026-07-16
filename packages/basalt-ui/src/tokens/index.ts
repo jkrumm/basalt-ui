@@ -9,16 +9,13 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { ACCENT, BP, FILL, INK, NEUTRAL, p, SEMANTIC, SHADOW, STATUS, SURFACE } from './palette'
+import { ACCENT, FILL, INK, NEUTRAL, SEMANTIC, SHADOW, STATUS, SURFACE } from './palette'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
 
 /** A map of token name → per-theme color pair (the input shape for series/group builders). */
 export type SeriesMap = Record<string, ColorPair>
-
-/** Framework palette data — Basalt families, the shade-pair helper, and the generic pairs. */
-export { ACCENT, BP, FILL, INK, NEUTRAL, p, SEMANTIC, SHADOW, STATUS, SURFACE }
 
 /**
  * Apply opacity to any palette token, theme-aware. Use instead of raw `rgba()` so the

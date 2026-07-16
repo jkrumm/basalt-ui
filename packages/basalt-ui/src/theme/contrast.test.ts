@@ -24,7 +24,7 @@
 import { DEFAULT_THEME, getPrimaryShade, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { ACCENT, FILL } from '../tokens'
+import { ACCENT, FILL } from '../tokens/palette'
 import { baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)

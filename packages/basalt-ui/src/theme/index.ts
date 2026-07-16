@@ -68,7 +68,8 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { ACCENT, BP, FILL, INK, NEUTRAL, SURFACE, VX } from '../tokens'
+import { ACCENT, BP, FILL, INK, NEUTRAL, SURFACE } from '../tokens/palette'
+import { VX } from '../tokens'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
