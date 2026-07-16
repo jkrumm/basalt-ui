@@ -13,6 +13,10 @@
  * chat. That keeps the resumption mechanics legible; a real app would extend the mock/backend
  * design to key buffers per turn too.
  *
+ * This is the "raw parts, build-your-own" path: it composes `AssistantBlocks`/`MessageBubble` from
+ * `./agent-blocks` by hand over the raw `AgentPart[]`, instead of the shipped `PartList` (see
+ * `/agent`, the recommended default — this page exists to prove the bespoke path still works).
+ *
  * The three things this page proves:
  *   (a) a normal turn streams through the real AI-SDK wire shape (SSE UIMessageChunks, diffed into
  *       AgentParts) and renders correctly — intro text, a tool call, a cited source, an answer;
@@ -22,23 +26,7 @@
  *   (c) reloading the actual browser tab resumes the SAME thread via useAgentThreadRuns' mount-time
  *       reconciliation, replays the full turn, and completes — without resending the question.
  */
-import {
-  Alert,
-  Anchor,
-  Badge,
-  Box,
-  Button,
-  Code,
-  Collapse,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  Textarea,
-  ThemeIcon,
-  Title,
-} from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { Alert, Button, Code, Group, Paper, Stack, Text, Textarea, Title } from '@mantine/core'
 import { EmptyState } from 'basalt-ui'
 import {
   aiSdkTransport,
@@ -46,11 +34,11 @@ import {
   heuristicOutcome,
   useAgentThreadRuns,
 } from 'basalt-ui/agent'
-import type { AgentPart, ErrorPart, SourcePart, ToolCallPart } from 'basalt-ui/agent'
-import { Markdown } from 'basalt-ui/content'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { AgentPart } from 'basalt-ui/agent'
+import { useCallback, useEffect, useState } from 'react'
 import { createMockAiSdkFetch, getBufferSnapshot, MOCK_API_PATH } from './mock-ai-sdk-backend'
-import { IconReset, IconSend, IconSparkle, IconUser } from './icons'
+import { AssistantBlocks, MessageBubble } from './agent-blocks'
+import { IconReset, IconSend, IconSparkle } from './icons'
 
 // ── Persisted single-thread store + transport ─────────────────────────────────
 // Both module-scope: createThreadsStore must be called ONCE per key (mirrors every other demo's
@@ -59,203 +47,6 @@ import { IconReset, IconSend, IconSparkle, IconUser } from './icons'
 // survive.
 const useAiSdkThreads = createThreadsStore({ key: 'agent-ai-sdk-demo', version: 1 })
 const transport = aiSdkTransport<AgentPart>({ api: MOCK_API_PATH, fetch: createMockAiSdkFetch() })
-
-// ── Tool-call-id aware block coalescing ───────────────────────────────────────
-// Like /agent's coalesce(), but a 'tool' part with a toolCallId matching an EXISTING tool block
-// updates that block in place (e.g. output-available arriving after input-available) instead of
-// pushing a second near-duplicate block — this transport's diffing yields exactly that pattern.
-
-type Block =
-  | { kind: 'text'; key: string; text: string }
-  | { kind: 'tool'; key: string; part: ToolCallPart }
-  | { kind: 'sources'; key: string; parts: SourcePart[] }
-  | { kind: 'error'; key: string; part: ErrorPart }
-
-function coalesce(parts: AgentPart[]): Block[] {
-  const blocks: Block[] = []
-  const toolBlockIndexByCallId = new Map<string, number>()
-
-  parts.forEach((part, i) => {
-    const last = blocks.at(-1)
-    if (part.type === 'text' || part.type === 'reasoning') {
-      if (last?.kind === 'text') last.text += part.text
-      else blocks.push({ kind: 'text', key: `b${i}`, text: part.text })
-      return
-    }
-    if (part.type === 'tool') {
-      const existingIndex =
-        part.toolCallId !== undefined ? toolBlockIndexByCallId.get(part.toolCallId) : undefined
-      if (existingIndex !== undefined) {
-        const existing = blocks[existingIndex]
-        if (existing?.kind === 'tool') blocks[existingIndex] = { ...existing, part }
-        return
-      }
-      if (part.toolCallId !== undefined) toolBlockIndexByCallId.set(part.toolCallId, blocks.length)
-      blocks.push({ kind: 'tool', key: `b${i}`, part })
-      return
-    }
-    if (part.type === 'source') {
-      if (last?.kind === 'sources') last.parts.push(part)
-      else blocks.push({ kind: 'sources', key: `b${i}`, parts: [part] })
-      return
-    }
-    if (part.type === 'start') return // no-op resumption signal, never rendered
-    blocks.push({ kind: 'error', key: `b${i}`, part })
-  })
-
-  return blocks
-}
-
-// ── Block renderers ───────────────────────────────────────────────────────────
-
-function TextBlock({ text }: { text: string }) {
-  // Prose (via Markdown density="chat") owns the chat typography — no wrapper sizing needed.
-  return (
-    <Markdown streaming density="chat">
-      {text}
-    </Markdown>
-  )
-}
-
-function ToolBlock({ part }: { part: ToolCallPart }) {
-  const [open, { toggle }] = useDisclosure(false)
-  return (
-    <Paper p="xs" bg="var(--mantine-color-default-hover)">
-      <Group gap="xs" justify="space-between" wrap="nowrap">
-        <Group gap={6} wrap="nowrap">
-          <Badge size="xs" variant="light" color="grape">
-            tool
-          </Badge>
-          <Text size="xs" ff="monospace" fw={600}>
-            {part.toolName}
-          </Text>
-          <Badge size="xs" variant="outline" color={part.output !== undefined ? 'teal' : 'gray'}>
-            {part.output !== undefined ? 'done' : 'running'}
-          </Badge>
-        </Group>
-        <Button size="compact-xs" variant="subtle" color="gray" onClick={toggle}>
-          {open ? 'Hide' : 'Details'}
-        </Button>
-      </Group>
-      <Collapse expanded={open}>
-        <Stack gap={4} mt={6}>
-          <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-            Input
-          </Text>
-          <Code block fz="11px">
-            {JSON.stringify(part.input, null, 2)}
-          </Code>
-          {part.output !== undefined && (
-            <>
-              <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-                Output
-              </Text>
-              <Code block fz="11px">
-                {JSON.stringify(part.output, null, 2)}
-              </Code>
-            </>
-          )}
-        </Stack>
-      </Collapse>
-    </Paper>
-  )
-}
-
-function SourcesBlock({ parts }: { parts: SourcePart[] }) {
-  return (
-    <Group gap={6} wrap="wrap">
-      <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-        Sources
-      </Text>
-      {parts.map((source, i) => (
-        <Anchor
-          key={i}
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          underline="never"
-        >
-          <Badge size="sm" variant="outline" color="gray" style={{ cursor: 'pointer' }}>
-            {source.title ?? source.url}
-          </Badge>
-        </Anchor>
-      ))}
-    </Group>
-  )
-}
-
-function ErrorBlock({ part }: { part: ErrorPart }) {
-  return (
-    <Paper p="xs" bg="var(--mantine-color-red-light)">
-      <Text size="xs" c="red">
-        {part.message}
-      </Text>
-    </Paper>
-  )
-}
-
-function AssistantBlocks({ parts }: { parts: AgentPart[] }) {
-  const blocks = useMemo(() => coalesce(parts), [parts])
-  return (
-    <Stack gap="xs">
-      {blocks.map((block) => {
-        switch (block.kind) {
-          case 'text':
-            return <TextBlock key={block.key} text={block.text} />
-          case 'tool':
-            return <ToolBlock key={block.key} part={block.part} />
-          case 'sources':
-            return <SourcesBlock key={block.key} parts={block.parts} />
-          case 'error':
-            return <ErrorBlock key={block.key} part={block.part} />
-        }
-      })}
-    </Stack>
-  )
-}
-
-// ── Message bubble ────────────────────────────────────────────────────────────
-
-function MessageBubble({ author, parts }: { author: 'user' | 'assistant'; parts: AgentPart[] }) {
-  const isUser = author === 'user'
-  const userText = isUser
-    ? parts
-        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-        .map((p) => p.text)
-        .join('')
-    : ''
-  return (
-    <Group align="flex-start" wrap="nowrap" gap="sm" justify={isUser ? 'flex-end' : 'flex-start'}>
-      {!isUser && (
-        <ThemeIcon radius="xl" size="md" variant="light" color="gray">
-          <IconSparkle />
-        </ThemeIcon>
-      )}
-      {isUser ? (
-        <Paper px="sm" py="xs" bg="var(--mantine-color-default-hover)" style={{ maxWidth: '78%' }}>
-          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-            {userText}
-          </Text>
-        </Paper>
-      ) : (
-        <Box pt={2} style={{ maxWidth: '86%', overflowWrap: 'anywhere' }}>
-          {parts.length > 0 ? (
-            <AssistantBlocks parts={parts} />
-          ) : (
-            <Text size="sm" c="dimmed">
-              …
-            </Text>
-          )}
-        </Box>
-      )}
-      {isUser && (
-        <ThemeIcon radius="xl" size="md" variant="default">
-          <IconUser />
-        </ThemeIcon>
-      )}
-    </Group>
-  )
-}
 
 // ── Live buffer poll (debug panel) ────────────────────────────────────────────
 
@@ -331,9 +122,15 @@ export function AgentAiSdkDemoPage() {
         ) : (
           <Stack gap="lg">
             {thread.messages.map((m) => (
-              <MessageBubble key={m.id} author={m.role} parts={m.parts} />
+              <MessageBubble key={m.id} author={m.role} parts={m.parts}>
+                <AssistantBlocks parts={m.parts} />
+              </MessageBubble>
             ))}
-            {run !== undefined && <MessageBubble author="assistant" parts={run.parts} />}
+            {run !== undefined && (
+              <MessageBubble author="assistant" parts={run.parts}>
+                <AssistantBlocks parts={run.parts} />
+              </MessageBubble>
+            )}
           </Stack>
         )}
       </Paper>

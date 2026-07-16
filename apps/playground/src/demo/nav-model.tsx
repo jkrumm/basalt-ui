@@ -6,6 +6,7 @@ import {
   IconComponents,
   IconDashboard,
   IconSettings,
+  IconSparkle,
   IconUser,
 } from './icons'
 
@@ -61,7 +62,7 @@ export const NAV_MODEL: SidebarSection[] = [
     ],
   },
   {
-    label: 'Insights',
+    label: 'Charts & components',
     icon: <IconChart />,
     collapsible: true,
     items: [
@@ -80,19 +81,6 @@ export const NAV_MODEL: SidebarSection[] = [
         href: '/components',
       },
       {
-        key: 'content',
-        label: 'Content',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/content',
-      },
-      {
-        key: 'content-overview',
-        label: 'Content overview',
-        icon: <IconActivity />,
-        href: '/content-overview',
-      },
-      {
         key: 'reports',
         label: 'Reports',
         icon: <IconActivity />,
@@ -101,7 +89,7 @@ export const NAV_MODEL: SidebarSection[] = [
     ],
   },
   {
-    label: 'Data',
+    label: 'Batteries',
     icon: <IconActivity />,
     items: [
       {
@@ -146,6 +134,31 @@ export const NAV_MODEL: SidebarSection[] = [
         icon: <IconActivity />,
         href: '/data',
       },
+    ],
+  },
+  {
+    label: 'Content',
+    icon: <IconActivity />,
+    items: [
+      {
+        key: 'content',
+        label: 'Content',
+        mobile: true,
+        icon: <IconActivity />,
+        href: '/content',
+      },
+      {
+        key: 'content-overview',
+        label: 'Content overview',
+        icon: <IconActivity />,
+        href: '/content-overview',
+      },
+    ],
+  },
+  {
+    label: 'Agent',
+    icon: <IconSparkle />,
+    items: [
       {
         key: 'agent',
         label: 'Agent',
@@ -167,13 +180,6 @@ export const NAV_MODEL: SidebarSection[] = [
         icon: <IconActivity />,
         href: '/threads',
       },
-      {
-        key: 'user',
-        label: 'User',
-        icon: <IconUser />,
-        href: '/user',
-        mobile: true,
-      },
     ],
   },
   {
@@ -193,6 +199,13 @@ export const NAV_MODEL: SidebarSection[] = [
         mobile: true,
         icon: <IconSettings />,
         href: '/settings',
+      },
+      {
+        key: 'user',
+        label: 'User',
+        icon: <IconUser />,
+        href: '/user',
+        mobile: true,
       },
     ],
   },

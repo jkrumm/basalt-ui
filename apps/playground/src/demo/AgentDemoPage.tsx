@@ -4,9 +4,13 @@
  * This is the mature counterpart to the old "battery": a usable conversation, not a primitive
  * exerciser. The persisted thread (createChatHistoryStore) is the source of truth for settled
  * turns; the live streaming turn (useAgentStream) renders at the tail and is committed to the
- * thread when it resolves (done OR error). Consecutive `text` deltas are coalesced into a single
- * markdown block before rendering, so token-by-token streams render as one document — the way a
- * real agent UI must.
+ * thread when it resolves (done OR error).
+ *
+ * Doctrine: `PartList` (basalt-ui/agent) is the RECOMMENDED renderer for an assistant turn's
+ * `AgentPart[]` — see `/agent-ai-sdk` for the fully bespoke, hand-rolled composition. `AssistantParts`
+ * below coalesces consecutive text/reasoning deltas into single parts first (so token-by-token
+ * streams still render as one markdown document), then hands the result to `PartList` with
+ * `basalt-ui/content`'s `Markdown` wired in as the text slot — the JSDoc'd recommended usage.
  *
  * The simulation/dev affordances are preserved (the user wants to keep testing the package): a
  * scenario picker, a stream-speed toggle, a raw-parts inspector, regenerate, and clear all live in
@@ -15,7 +19,6 @@
  */
 import {
   ActionIcon,
-  Anchor,
   Badge,
   Box,
   Button,
@@ -29,261 +32,105 @@ import {
   Stack,
   Text,
   Textarea,
-  ThemeIcon,
   Title,
   Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { EmptyState } from 'basalt-ui'
-import { BasaltStickToBottom, createChatHistoryStore, useAgentStream } from 'basalt-ui/agent'
-import type { AgentPart, ErrorPart, SourcePart, ToolCallPart } from 'basalt-ui/agent'
-import { Markdown } from 'basalt-ui/content'
+import {
+  BasaltStickToBottom,
+  createChatHistoryStore,
+  PartList,
+  useAgentStream,
+} from 'basalt-ui/agent'
+import type { AgentPart, AgentPartRenderers, SourcePart, SourcePartRenderer } from 'basalt-ui/agent'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENT_SCENARIOS, scenarioTransport } from './agent-scenarios'
 import type { StreamSpeed } from './agent-scenarios'
-import { IconSend, IconSparkle, IconStop, IconTrash, IconUser } from './icons'
+import {
+  ErrorBlock,
+  MessageBubble,
+  ReasoningBlock,
+  SourcesBlock,
+  TextBlock,
+  ToolBlock,
+} from './agent-blocks'
+import { IconSend, IconSparkle, IconStop, IconTrash } from './icons'
 
 // ── Persisted conversation thread ─────────────────────────────────────────────
 // One stable store at module scope. Survives navigate-away/back and reloads (cross-tab too).
 const useConversation = createChatHistoryStore({ key: 'agent-demo-chat', version: 1 })
 
-// ── Part coalescing ────────────────────────────────────────────────────────────
-// A streamed turn is a flat list of parts where text arrives as many small deltas. For rendering
-// we merge consecutive text (and consecutive reasoning / source) runs into single blocks, so the
-// markdown renders as one document and sources group into one row.
-
-type Block =
-  | { kind: 'text'; key: string; text: string }
-  | { kind: 'reasoning'; key: string; text: string }
-  | { kind: 'tool'; key: string; part: ToolCallPart }
-  | { kind: 'sources'; key: string; parts: SourcePart[] }
-  | { kind: 'error'; key: string; part: ErrorPart }
-
-function coalesce(parts: AgentPart[]): Block[] {
-  const blocks: Block[] = []
-  parts.forEach((part, i) => {
-    const last = blocks.at(-1)
-    if (part.type === 'text') {
-      if (last?.kind === 'text') last.text += part.text
-      else blocks.push({ kind: 'text', key: `b${i}`, text: part.text })
-    } else if (part.type === 'reasoning') {
-      if (last?.kind === 'reasoning') last.text += part.text
-      else blocks.push({ kind: 'reasoning', key: `b${i}`, text: part.text })
-    } else if (part.type === 'tool') {
-      blocks.push({ kind: 'tool', key: `b${i}`, part })
-    } else if (part.type === 'source') {
-      if (last?.kind === 'sources') last.parts.push(part)
-      else blocks.push({ kind: 'sources', key: `b${i}`, parts: [part] })
-    } else if (part.type === 'start') {
-      // No-op: a resumption signal, not renderable content (see basalt-ui/agent's StartPart doc).
-    } else {
-      blocks.push({ kind: 'error', key: `b${i}`, part })
+// ── PartList feed: coalesce consecutive text/reasoning runs ────────────────────
+// `useAgentStream` accumulates one AgentPart per delta — PartList renders each part it's given, so
+// without this merge a token-by-token stream would render as many tiny Markdown blocks instead of
+// one document. Tool/source/error parts pass through unchanged.
+function coalesceRuns(parts: AgentPart[]): AgentPart[] {
+  const merged: AgentPart[] = []
+  for (const part of parts) {
+    const last = merged.at(-1)
+    if (part.type === 'text' && last?.type === 'text') {
+      merged[merged.length - 1] = { type: 'text', text: last.text + part.text }
+      continue
     }
-  })
-  return blocks
+    if (part.type === 'reasoning' && last?.type === 'reasoning') {
+      merged[merged.length - 1] = { type: 'reasoning', text: last.text + part.text }
+      continue
+    }
+    merged.push(part)
+  }
+  return merged
 }
 
-// ── Block renderers (module scope — no inline components) ──────────────────────
+/** PartList's `source` slot fires once per part — groups consecutive `source` parts into one
+ * `SourcesBlock` row, matching `/agent-ai-sdk`'s hand-coalesced grouping. Only the first source
+ * in a run renders; the rest no-op (already rendered as part of that row).
+ *
+ * PartList uses `components.source` as a JSX element TYPE (`<Render part={..} index={..} />`).
+ * A fresh function value on every render — as the previous `makeSourceRenderer(coalesced)` inside
+ * a `useMemo` keyed on `coalesced` produced — is a NEW component type to React on essentially
+ * every streamed delta (coalesced changes on nearly every token), so PartList's rendered source
+ * blocks would unmount/remount every stream tick. The fix: build the renderer function ONCE per
+ * `AssistantParts` instance (via `useRef`, so its identity never changes across re-renders) and
+ * let it read the live parts through a ref that's kept current on every render, instead of
+ * closing over `parts` directly. */
+function useSourceRenderer(parts: AgentPart[]): SourcePartRenderer {
+  const partsRef = useRef(parts)
+  partsRef.current = parts
 
-function TextBlock({ text }: { text: string }) {
-  // basalt-ui/content's Markdown (density="chat") owns the chat typography via Prose — headings,
-  // blockquotes, and code all land at the compact chat body size. We deliberately do NOT wrap in
-  // Mantine's <Typography>: it sizes blockquotes at --mantine-font-size-lg and headings at full
-  // h1/h2/h3 sizes, which reads far too large inside a chat bubble.
-  return (
-    <Markdown streaming density="chat">
-      {text}
-    </Markdown>
+  const rendererRef = useRef<SourcePartRenderer | null>(null)
+  if (rendererRef.current === null) {
+    rendererRef.current = function SourceGroup({ part, index }) {
+      const live = partsRef.current
+      if (live[index - 1]?.type === 'source') return null
+      const group: SourcePart[] = [part]
+      for (let i = index + 1; i < live.length && live[i]?.type === 'source'; i++) {
+        group.push(live[i] as SourcePart)
+      }
+      return <SourcesBlock parts={group} />
+    }
+  }
+  return rendererRef.current
+}
+
+/** Renders an assistant turn via the shipped `PartList` — the recommended path (see module doc). */
+function AssistantParts({ parts }: { parts: AgentPart[] }) {
+  const coalesced = useMemo(() => coalesceRuns(parts), [parts])
+  const sourceRenderer = useSourceRenderer(coalesced)
+  const components = useMemo<Partial<AgentPartRenderers>>(
+    () => ({
+      text: TextBlock,
+      reasoning: ReasoningBlock,
+      tool: ToolBlock,
+      source: sourceRenderer,
+      error: ErrorBlock,
+    }),
+    [sourceRenderer],
   )
-}
-
-function ReasoningBlock({ text }: { text: string }) {
-  const [open, { toggle }] = useDisclosure(false)
-  return (
-    <Box>
-      <Button
-        size="compact-xs"
-        variant="subtle"
-        color="gray"
-        onClick={toggle}
-        leftSection={<IconSparkle />}
-      >
-        {open ? 'Hide reasoning' : 'Show reasoning'}
-      </Button>
-      <Collapse expanded={open}>
-        <Text
-          size="xs"
-          c="dimmed"
-          mt={6}
-          pl="sm"
-          style={{
-            whiteSpace: 'pre-wrap',
-            borderLeft: '2px solid var(--mantine-color-default-border)',
-          }}
-        >
-          {text}
-        </Text>
-      </Collapse>
-    </Box>
-  )
-}
-
-function ToolBlock({ part }: { part: ToolCallPart }) {
-  const [open, { toggle }] = useDisclosure(false)
-  return (
-    <Paper p="xs" bg="var(--mantine-color-default-hover)">
-      <Group gap="xs" justify="space-between" wrap="nowrap">
-        <Group gap={6} wrap="nowrap">
-          <Badge size="xs" variant="light" color="grape">
-            tool
-          </Badge>
-          <Text size="xs" ff="monospace" fw={600}>
-            {part.toolName}
-          </Text>
-        </Group>
-        <Button size="compact-xs" variant="subtle" color="gray" onClick={toggle}>
-          {open ? 'Hide' : 'Details'}
-        </Button>
-      </Group>
-      <Collapse expanded={open}>
-        <Stack gap={4} mt={6}>
-          <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-            Input
-          </Text>
-          <Code block fz="11px">
-            {JSON.stringify(part.input, null, 2)}
-          </Code>
-          {part.output !== undefined && (
-            <>
-              <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-                Output
-              </Text>
-              <Code block fz="11px">
-                {JSON.stringify(part.output, null, 2)}
-              </Code>
-            </>
-          )}
-        </Stack>
-      </Collapse>
-    </Paper>
-  )
-}
-
-function SourcesBlock({ parts }: { parts: SourcePart[] }) {
-  return (
-    <Group gap={6} wrap="wrap">
-      <Text size="10px" tt="uppercase" fw={700} c="dimmed">
-        Sources
-      </Text>
-      {parts.map((source, i) => (
-        <Anchor
-          key={i}
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          underline="never"
-        >
-          <Badge size="sm" variant="outline" color="gray" style={{ cursor: 'pointer' }}>
-            {source.title ?? source.url}
-          </Badge>
-        </Anchor>
-      ))}
-    </Group>
-  )
-}
-
-function ErrorBlock({ part }: { part: ErrorPart }) {
-  return (
-    <Paper p="xs" bg="var(--mantine-color-red-light)">
-      <Group gap={6} wrap="nowrap" align="flex-start">
-        <Badge size="xs" color="red" variant="light">
-          error
-        </Badge>
-        <Text size="xs" c="red" style={{ flex: 1 }}>
-          {part.message}
-        </Text>
-      </Group>
-    </Paper>
-  )
-}
-
-function AssistantBlocks({ parts }: { parts: AgentPart[] }) {
-  const blocks = useMemo(() => coalesce(parts), [parts])
   return (
     <Stack gap="xs">
-      {blocks.map((block) => {
-        switch (block.kind) {
-          case 'text':
-            return <TextBlock key={block.key} text={block.text} />
-          case 'reasoning':
-            return <ReasoningBlock key={block.key} text={block.text} />
-          case 'tool':
-            return <ToolBlock key={block.key} part={block.part} />
-          case 'sources':
-            return <SourcesBlock key={block.key} parts={block.parts} />
-          case 'error':
-            return <ErrorBlock key={block.key} part={block.part} />
-        }
-      })}
+      <PartList parts={coalesced} components={components} />
     </Stack>
-  )
-}
-
-// ── Message bubble ──────────────────────────────────────────────────────────────
-
-/** A single turn. `streaming` adds a typing indicator and is only set on the live assistant turn. */
-function MessageBubble({
-  author,
-  parts,
-  streaming = false,
-}: {
-  author: 'user' | 'assistant'
-  parts: AgentPart[]
-  streaming?: boolean
-}) {
-  const isUser = author === 'user'
-  const userText = isUser
-    ? parts
-        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-        .map((p) => p.text)
-        .join('')
-    : ''
-
-  return (
-    <Group align="flex-start" wrap="nowrap" gap="sm" justify={isUser ? 'flex-end' : 'flex-start'}>
-      {!isUser && (
-        <ThemeIcon radius="xl" size="md" variant="light" color="gray">
-          <IconSparkle />
-        </ThemeIcon>
-      )}
-      {isUser ? (
-        // User: a subtle neutral bubble (no blue), right-aligned.
-        <Paper px="sm" py="xs" bg="var(--mantine-color-default-hover)" style={{ maxWidth: '78%' }}>
-          <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {userText}
-          </Text>
-        </Paper>
-      ) : (
-        // Assistant: no bubble — reads as flowing text beside the avatar.
-        <Box pt={2} style={{ maxWidth: '86%', overflowWrap: 'anywhere' }}>
-          <Stack gap="xs">
-            {parts.length > 0 && <AssistantBlocks parts={parts} />}
-            {streaming && (
-              <Group gap={5} align="center" aria-label="Assistant is typing">
-                <TypingDot delay={0} />
-                <TypingDot delay={160} />
-                <TypingDot delay={320} />
-              </Group>
-            )}
-          </Stack>
-        </Box>
-      )}
-      {isUser && (
-        <ThemeIcon radius="xl" size="md" variant="default">
-          <IconUser />
-        </ThemeIcon>
-      )}
-    </Group>
   )
 }
 
@@ -449,10 +296,21 @@ export function AgentDemoPage() {
             <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
               <Stack gap="lg">
                 {messages.map((m) => (
-                  <MessageBubble key={m.id} author={m.role} parts={m.parts} />
+                  <MessageBubble key={m.id} author={m.role} parts={m.parts}>
+                    {m.parts.length > 0 && <AssistantParts parts={m.parts} />}
+                  </MessageBubble>
                 ))}
                 {showLive && (
-                  <MessageBubble author="assistant" parts={parts} streaming={streaming} />
+                  <MessageBubble author="assistant" parts={parts}>
+                    {parts.length > 0 && <AssistantParts parts={parts} />}
+                    {streaming && (
+                      <Group gap={5} align="center" mt="xs" aria-label="Assistant is typing">
+                        <TypingDot delay={0} />
+                        <TypingDot delay={160} />
+                        <TypingDot delay={320} />
+                      </Group>
+                    )}
+                  </MessageBubble>
                 )}
               </Stack>
             </BasaltStickToBottom>

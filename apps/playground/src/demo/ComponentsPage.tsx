@@ -173,6 +173,8 @@ export function ComponentsPage() {
 
         <Section title="Dropdown surfaces">
           <Group gap="sm">
+            {/* defaultOpened is showcase-only — kept open so the overlay styling is visible on this
+                gallery page; real apps open on trigger, not on mount. */}
             <Menu defaultOpened position="bottom-start" withinPortal={false}>
               <Menu.Target>
                 <Button variant="default">Menu</Button>
@@ -184,6 +186,8 @@ export function ComponentsPage() {
                 <Menu.Item color="red">Delete</Menu.Item>
               </Menu.Dropdown>
             </Menu>
+            {/* defaultOpened is showcase-only — kept open so the overlay styling is visible on this
+                gallery page; real apps open on trigger, not on mount. */}
             <Popover defaultOpened position="bottom-start" withArrow withinPortal={false}>
               <Popover.Target>
                 <Button variant="default">Popover</Button>

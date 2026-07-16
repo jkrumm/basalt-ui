@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Stack, Text, Paper, Group, Badge } from '@mantine/core'
+import { StatCard } from 'basalt-ui'
 import { VX } from 'basalt-ui/tokens'
 
 // Matches the shipped ChartCard/SettingsSection title style (head font, 88% stretch, weight 550,
@@ -12,13 +13,23 @@ const titleStyle: CSSProperties = {
   color: VX.ink,
 }
 
+export type SubPageStat = {
+  key: string
+  label: string
+  value: string
+  delta?: number
+}
+
 export type SubPageProps = {
   title: string
   description: string
   range?: string | undefined
+  /** A small, real KPI panel (via the shipped `StatCard`) — proves the sub-route renders live
+   * data, not a placeholder. Keep it to a couple of stats; this is not a second dashboard. */
+  stats: readonly SubPageStat[]
 }
 
-export function SubPage({ title, description, range }: SubPageProps) {
+export function SubPage({ title, description, range, stats }: SubPageProps) {
   return (
     <Stack gap="md">
       <Paper py="xs" px="sm">
@@ -34,13 +45,16 @@ export function SubPage({ title, description, range }: SubPageProps) {
           {description}
         </Text>
       </Paper>
-      <Paper py="xs" px="sm">
-        <Text size="sm" c="dimmed">
-          Placeholder content for {title.toLowerCase()}. This sub-route demonstrates the sidebar
-          sub-navigation — hover &quot;Dashboard&quot; in the sidebar to see the popover, or
-          navigate here to see inline children.
-        </Text>
-      </Paper>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.key}
+            label={stat.label}
+            value={stat.value}
+            {...(stat.delta !== undefined && { delta: stat.delta })}
+          />
+        ))}
+      </div>
     </Stack>
   )
 }
