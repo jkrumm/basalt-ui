@@ -204,6 +204,48 @@ const chartInRawSurface = {
   },
 }
 
+// ── Rule 4 — raw-scroll-container ───────────────────────────────────────────────────────────────
+
+const RAW_SCROLL_CONTAINER_MESSAGE =
+  'Raw overflow: auto/scroll — use Mantine ScrollArea so the bar floats instead of reserving ' +
+  'gutter width (AppSidebar nav is the reference). Legitimate where a library owns the scroll ' +
+  'node (BasaltStickToBottom, BasaltVirtualList) — add a theme-allow comment there. ' +
+  '(basalt/raw-scroll-container)'
+
+// `overflowX` is deliberately absent: a horizontal bar doesn't reserve gutter width in a chrome
+// column, so a horizontally-scrolling code block or pinned-column table is its own legitimate
+// pattern, not a ScrollArea candidate. Only the vertical axis carries the doctrine.
+const OVERFLOW_KEYS = new Set(['overflow', 'overflowY'])
+const SCROLLING_VALUES = new Set(['auto', 'scroll'])
+
+/**
+ * Reports a `style` object property that turns a node into its own scroll container. Warning-level
+ * by design: whether a raw scroll box is wrong depends on who owns the scroll node, which no AST
+ * check can see — so this steers rather than blocks, and `theme-allow` opts out.
+ */
+const rawScrollContainer = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Steer scroll regions onto Mantine ScrollArea instead of raw overflow.',
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      Property(node) {
+        const key = node.key
+        const keyName =
+          key.type === 'Identifier' ? key.name : key.type === 'Literal' ? key.value : undefined
+        if (typeof keyName !== 'string' || !OVERFLOW_KEYS.has(keyName)) return
+        if (!isStringLiteral(node.value) || !SCROLLING_VALUES.has(node.value.value)) return
+        if (hasThemeAllow(context, node)) return
+        context.report({ node, message: RAW_SCROLL_CONTAINER_MESSAGE })
+      },
+    }
+  },
+}
+
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 
 export default {
@@ -212,5 +254,6 @@ export default {
     'no-raw-font-size': noRawFontSize,
     'card-inset': cardInset,
     'chart-in-raw-surface': chartInRawSurface,
+    'raw-scroll-container': rawScrollContainer,
   },
 }

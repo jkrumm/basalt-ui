@@ -39,6 +39,7 @@ type WrapperProps = {
 /** Plain scrollable container rendered when use-stick-to-bottom peer is absent. */
 function PlainContainerFallback({ children, className, style }: WrapperProps): JSX.Element {
   const props: { className?: string; style?: CSSProperties } = {
+    // theme-allow — scroll anchoring needs a real scrollable node it owns, not a ScrollArea.
     style: { overflowY: 'auto', ...style },
   }
   if (className !== undefined) props.className = className
