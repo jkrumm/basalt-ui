@@ -469,6 +469,7 @@ export function AgentDemoPage() {
           {isEmpty ? (
             <ChatEmptyState onPick={sendText} />
           ) : (
+            // theme-allow — BasaltStickToBottom owns this scroll node for scroll anchoring.
             <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
               <Stack gap="lg">
                 {messages.map((m) => (
@@ -597,6 +598,7 @@ export function AgentDemoPage() {
               <Text size="10px" tt="uppercase" fw={700} c="dimmed" mb={4}>
                 Live parts (raw)
               </Text>
+              {/* theme-allow — a raw debug Code block, not app chrome. */}
               <Code block fz="11px" mah={160} style={{ overflow: 'auto' }}>
                 {parts.length === 0
                   ? '(empty — the last turn settled into the thread above)'
