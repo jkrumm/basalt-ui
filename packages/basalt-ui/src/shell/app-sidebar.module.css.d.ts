@@ -11,6 +11,7 @@ declare const classes: {
   readonly brand: string
   readonly brandLead: string
   readonly brandName: string
+  readonly searchSlot: string
   readonly nav: string
   readonly collapseBtn: string
   readonly footer: string

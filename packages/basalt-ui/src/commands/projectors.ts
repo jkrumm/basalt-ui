@@ -18,6 +18,7 @@
  * useHotkeys(bindings)
  */
 import type { SpotlightActionData } from '@mantine/spotlight'
+import type { ReactNode } from 'react'
 import { getActiveCommands, runCommand } from './define-commands'
 import type { CommandId } from './define-commands'
 import { formatShortcutDisplay, detectMac } from './shortcut-format'
@@ -90,6 +91,91 @@ export function toSpotlightActions(onTrigger?: (id: CommandId) => void): Spotlig
     actions.push(action)
   }
 
+  return actions
+}
+
+// ── toRouteActions ────────────────────────────────────────────────────────────
+
+export type RouteActionItem = {
+  label: string
+  href?: string
+  icon?: ReactNode
+  disabled?: boolean
+  children?: RouteActionItem[]
+}
+
+export type RouteActionSection = {
+  /** Section label — the root segment of each item's breadcrumb-trail label. */
+  label: string
+  /** Section icon — inherited as the leftSection by items/children that have no icon of their own. */
+  icon?: ReactNode
+  items: RouteActionItem[]
+}
+
+export type ToRouteActionsOptions = {
+  /** Navigate to a route href — e.g. `(href) => router.navigate({ to: href })`. */
+  onNavigate: (href: string) => void
+  /** Prefix for generated action ids so they never collide with command ids. Default 'route:'. */
+  idPrefix?: string
+  /**
+   * Spotlight group for every produced action (e.g. 'Pages'). Omit for an ungrouped, flat list.
+   * Unlike the nav section (which becomes part of the breadcrumb label), this is a single kind
+   * bucket across all routes.
+   */
+  group?: string
+  /** Separator between breadcrumb segments in the action label. Default ' › '. */
+  separator?: string
+  /**
+   * Node rendered on the right of every action — e.g. a kind badge (`<Badge>Page</Badge>`). Lets
+   * the palette distinguish pages from commands at a glance regardless of grouping.
+   */
+  rightSection?: ReactNode
+}
+
+/**
+ * Project a nav model (sections → items → nested children) into Mantine Spotlight
+ * page-navigation actions. Pass the result to <BasaltOverlays spotlightActions={…}> so the palette
+ * lists Pages alongside Commands.
+ *
+ * Each action's label is the full breadcrumb trail from the section down to the item
+ * (e.g. `Overview › Dashboard › Sessions`), so a result is self-describing. Disabled items and
+ * items without an href are skipped. An item/child without its own icon inherits the nearest
+ * ancestor's (section → parent item), so sub-routes carry the parent's icon in the palette while
+ * staying icon-less in a sidebar that renders them against a rail. Optionally assign one `group`
+ * (a kind bucket like 'Pages') and a `rightSection` (a kind badge) to every action. Reads a static
+ * snapshot — routes are static, so build it once.
+ *
+ * Structurally compatible with the shell's SidebarSection[] — pass your existing nav model directly.
+ */
+export function toRouteActions(
+  sections: RouteActionSection[],
+  options: ToRouteActionsOptions,
+): SpotlightActionData[] {
+  const { onNavigate, idPrefix = 'route:', separator = ' › ', group, rightSection } = options
+  const actions: SpotlightActionData[] = []
+
+  const walk = (items: RouteActionItem[], trail: string[], inheritedIcon?: ReactNode): void => {
+    for (const item of items) {
+      const itemTrail = [...trail, item.label]
+      const icon = item.icon ?? inheritedIcon
+      if (!item.disabled && item.href !== undefined) {
+        const href = item.href
+        const action: SpotlightActionData = {
+          id: `${idPrefix}${href}`,
+          label: itemTrail.join(separator),
+          leftSection: icon,
+          keywords: [...itemTrail, href].join(' '),
+          onClick: () => onNavigate(href),
+        }
+        if (group !== undefined) action.group = group
+        if (rightSection !== undefined) action.rightSection = rightSection
+        actions.push(action)
+      }
+      if (item.children !== undefined) walk(item.children, itemTrail, icon)
+    }
+  }
+
+  for (const section of sections) walk(section.items, [section.label], section.icon)
   return actions
 }
 

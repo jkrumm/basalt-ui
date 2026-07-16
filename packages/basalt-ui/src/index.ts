@@ -19,6 +19,8 @@ export {
   BasaltShell,
   NavCountBadge,
   AppSidebar,
+  SidebarSearch,
+  type SidebarSearchConfig,
   SidebarAccount,
   MobileNav,
   AppBreadcrumbs,

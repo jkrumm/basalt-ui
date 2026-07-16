@@ -32,6 +32,8 @@ import type { MouseEvent, ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
 import { SidebarAccount } from './app-sidebar-account'
 import type { BasaltAccountProps } from './account-types'
+import { SidebarSearch } from './sidebar-search'
+import type { SidebarSearchConfig } from './sidebar-search'
 import { VX } from '../tokens'
 import classes from './app-sidebar.module.css'
 
@@ -83,6 +85,11 @@ export type AppSidebarProps = {
    * reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps
+  /**
+   * Optional search field rendered directly below the brand and ABOVE the nav scroll region — a
+   * fixed, non-scrolling row. Pair with basalt-ui/commands' openSpotlight.
+   */
+  search?: SidebarSearchConfig
 }
 
 /** Inline collapse/expand chevrons — keeps the shell icon-dependency-free. */
@@ -447,6 +454,7 @@ export function AppSidebar({
   settingsMenuItems,
   footerExtra,
   account,
+  search,
 }: AppSidebarProps) {
   // Desktop collapsible-section state, keyed by section label. Seeded once from each section's
   // `defaultCollapsed`; non-collapsible sections are simply never read here.
@@ -554,6 +562,12 @@ export function AppSidebar({
           <IconCollapse collapsed={collapsed} />
         </ActionIcon>
       </Group>
+
+      {search && (
+        <div className={classes.searchSlot}>
+          <SidebarSearch {...search} collapsed={collapsed} />
+        </div>
+      )}
 
       <Stack gap={0} className={classes.nav} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {sections.map((section) => {

@@ -52,6 +52,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { lazy, Suspense } from 'react'
 import type { ModalsProviderProps } from '@mantine/modals'
 import type { NotificationsProps } from '@mantine/notifications'
+import type { SpotlightActionData } from '@mantine/spotlight'
 import { runCommand } from './define-commands'
 import type { CommandId } from './define-commands'
 import { toSpotlightActions } from './projectors'
@@ -132,6 +133,18 @@ export type BasaltOverlaysProps = {
   hotkeys?: boolean
   /** Override or extend the Notifications props (position, autoClose, limit, etc.). Defaults: position="bottom-right", autoClose=4000, limit=5. */
   notificationsProps?: Omit<NotificationsProps, 'children'>
+  /**
+   * Extra Spotlight actions merged with the command-projected actions — e.g.
+   * toRouteActions(nav, { onNavigate }) for page navigation. Rendered BEFORE the command actions
+   * and grouped by each action's `group`. A static snapshot, same as the command projection.
+   */
+  spotlightActions?: SpotlightActionData[]
+  /**
+   * Auto-project the registered command bus into Spotlight actions. Default: true. Set false when
+   * the app supplies the FULL action list itself via `spotlightActions` (e.g. to decorate commands
+   * with kind badges built from `toSpotlightActions()`) — this avoids the commands appearing twice.
+   */
+  projectCommands?: boolean
   /** App content (required). */
   children: ReactNode
 }
@@ -161,7 +174,9 @@ function NullFallback(): ReactNode {
  * Actions are a snapshot at render time — sufficient because commands are registered at module
  * load before BasaltOverlays mounts. A future reactive stash can add a version counter here.
  */
-const LazySpotlightMount = lazy(() =>
+const LazySpotlightMount = lazy<
+  ComponentType<{ extraActions?: SpotlightActionData[]; projectCommands?: boolean }>
+>(() =>
   Promise.all([import('@mantine/spotlight'), loadSpotlightHandle()])
     .then(([{ Spotlight }, handle]) => {
       if (handle === undefined) return { default: NullFallback }
@@ -169,13 +184,31 @@ const LazySpotlightMount = lazy(() =>
       // nested closure below (TS does not carry a parameter narrowing into nested functions).
       const spotlightHandle: SpotlightHandle = handle
 
-      function SpotlightMountInner(): ReactNode {
-        const actions = toSpotlightActions((id) => {
-          spotlightHandle.actions.close()
-          void runCommand(id as CommandId)
-        })
+      function SpotlightMountInner({
+        extraActions,
+        projectCommands = true,
+      }: {
+        extraActions?: SpotlightActionData[]
+        projectCommands?: boolean
+      }): ReactNode {
+        const commandActions = projectCommands
+          ? toSpotlightActions((id) => {
+              spotlightHandle.actions.close()
+              void runCommand(id as CommandId)
+            })
+          : []
+        const actions = [...(extraActions ?? []), ...commandActions]
 
-        return <Spotlight store={spotlightHandle.store} actions={actions} shortcut="mod + K" />
+        // maxHeight bounds the results ScrollArea so the palette has ONE inner scroller — without it
+        // a long action list overflows the modal content box too, producing a double scrollbar.
+        return (
+          <Spotlight
+            store={spotlightHandle.store}
+            actions={actions}
+            shortcut="mod + K"
+            maxHeight={420}
+          />
+        )
       }
 
       return { default: SpotlightMountInner }
@@ -227,13 +260,18 @@ export function BasaltOverlays({
   notifications: enableNotifications = true,
   hotkeys: enableHotkeys = true,
   notificationsProps,
+  spotlightActions,
+  projectCommands = true,
   children,
 }: BasaltOverlaysProps) {
   const content = (
     <>
       {enableSpotlight && (
         <Suspense fallback={null}>
-          <LazySpotlightMount />
+          <LazySpotlightMount
+            projectCommands={projectCommands}
+            {...(spotlightActions !== undefined && { extraActions: spotlightActions })}
+          />
         </Suspense>
       )}
       {enableNotifications && (

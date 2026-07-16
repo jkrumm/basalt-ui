@@ -90,6 +90,18 @@
   min-width: 0;
 }
 
+/*
+ * Search slot — fixed row between the brand and the nav scroll region. Horizontal padding aligns
+ * the field with the brand lead / nav column; the bottom gap opens the nav region the same way the
+ * brand row's own bottom padding does.
+ */
+/* No horizontal padding — the field spans the same width as the nav rows below it (both sit at the
+ * `.root` 10px inset), so the search box edge-aligns with the nav column. */
+.searchSlot {
+  padding: 0 0 12px;
+  flex-shrink: 0;
+}
+
 /* Brand name — head font at stretch 88% (docs/DESIGN-SPEC.md §3); the 18px/550 land as `fz`/`fw`
  * props (inline, deterministic against Mantine's own Text base rule). */
 .brandName {
@@ -317,6 +329,12 @@
 
   .root[data-collapsed] .brandLead {
     display: none;
+  }
+
+  .root[data-collapsed] .searchSlot {
+    padding: 0 0 12px;
+    display: flex;
+    justify-content: center;
   }
 
   /* Section labels vanish in the rail — the 15px section spacing keeps icon groups separated

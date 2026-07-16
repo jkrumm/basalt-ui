@@ -21,10 +21,12 @@ import { AppBreadcrumbs } from './app-breadcrumbs'
 import type { BreadcrumbLinkRenderer } from './app-breadcrumbs'
 import { PageActionsOutlet, PageHeaderProvider } from './page-header'
 import type { BasaltAccountProps } from './account-types'
+import type { SidebarSearchConfig } from './sidebar-search'
 import { VX } from '../tokens'
 import headerClasses from './app-header.module.css'
 
 export { AppSidebar, type AppSidebarProps, type NavLinkRenderer } from './app-sidebar'
+export { SidebarSearch, type SidebarSearchConfig } from './sidebar-search'
 export { SidebarAccount } from './app-sidebar-account'
 export type {
   AccountBadgeTone,
@@ -119,6 +121,11 @@ export type BasaltShellProps = {
    * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps
+  /**
+   * Optional search field below the brand in the sidebar (fixed, above the nav scroll). Supply
+   * `onOpen`, e.g. `() => openSpotlight()` from basalt-ui/commands.
+   */
+  search?: SidebarSearchConfig
   /** localStorage key for the persisted sidebar-collapsed flag. Ignored when `collapsed` is set. */
   storageKey?: string
   /**
@@ -260,6 +267,7 @@ export function BasaltShell({
   onCollapsedChange,
   renderBreadcrumbLink,
   account,
+  search,
   children,
 }: BasaltShellProps) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
@@ -316,6 +324,7 @@ export function BasaltShell({
             {...(renderNavLink !== undefined && { renderNavLink })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
             {...(account !== undefined && { account })}
+            {...(search !== undefined && { search })}
           />
         </AppShell.Navbar>
 

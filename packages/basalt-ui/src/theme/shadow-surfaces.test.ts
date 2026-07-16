@@ -270,6 +270,15 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       'border-top-left-radius / border-top-right-radius: var(--mantine-radius-lg) (co-declared in ' +
       'the same rule).',
   },
+  // ── shell/sidebar-search.module.css ──────────────────────────────────────────────────────────
+  {
+    file: 'shell/sidebar-search.module.css',
+    site: '.trigger',
+    roundedBy:
+      'border-radius: var(--vx-radius-ctrl) (co-declared in the same .trigger rule, on the same ' +
+      "UnstyledButton root the box-shadow lands on — the ring follows this box's own corners). " +
+      'The collapsed `.railBtn` in the same file carries no shadow (radius only), so it is not a site.',
+  },
   // ── theme/index.ts (baseTheme.components) ───────────────────────────────────────────────────
   {
     file: 'theme/index.ts',

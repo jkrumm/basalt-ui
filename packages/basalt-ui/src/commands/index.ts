@@ -57,8 +57,12 @@ export {
 // ── Projectors ────────────────────────────────────────────────────────────────
 export {
   toSpotlightActions,
+  toRouteActions,
   toShortcutList,
   toHotkeyBindings,
+  type RouteActionItem,
+  type RouteActionSection,
+  type ToRouteActionsOptions,
   type ShortcutEntry,
   type HotkeyBinding,
 } from './projectors'

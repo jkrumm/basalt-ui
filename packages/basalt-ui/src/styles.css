@@ -110,6 +110,19 @@
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--vx-surface-border);
   }
+
+  /* Mantine ScrollArea draws its OWN overlay scrollbars and hides the native one on its viewport
+     (which is `overflow: scroll`). The `*` rules above re-expose that native bar, so a ScrollArea
+     shows TWO bars — plus an always-on native gutter on both axes even when nothing overflows (the
+     white bars seen inside Spotlight). Re-hide the native bar on ScrollArea viewports so only
+     Mantine's styled overlay bar remains. */
+  .mantine-ScrollArea-viewport {
+    scrollbar-width: none;
+  }
+
+  .mantine-ScrollArea-viewport::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Print: hide the BasaltShell chrome so only page content prints.
