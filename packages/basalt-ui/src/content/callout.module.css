@@ -60,11 +60,15 @@
   color: var(--vx-ink2);
 }
 
-.body > :first-child {
+/* Scoped under `.root` to reach (0,3,0): a Callout rendered inside `Prose` is also matched by
+ * `.root.article p` (0,2,1) from prose.module.css, which out-specifies a bare `.body > :last-child`
+ * and re-asserted a 14px bottom margin on the last paragraph — 24px of padding under the text where
+ * the panel specifies 10px. */
+.root .body > :first-child {
   margin-top: 0;
 }
 
-.body > :last-child {
+.root .body > :last-child {
   margin-bottom: 0;
 }
 

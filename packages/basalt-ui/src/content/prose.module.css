@@ -17,12 +17,20 @@
   max-width: var(--vx-prose-measure);
 }
 
-/* Collapse the outer block's own edge margins — the container/page padding is the only gap. */
-.root > :first-child {
+/* Collapse the outer block's own edge margins — the container/page padding is the only gap.
+ *
+ * These MUST out-specify the per-density element rules further down (`.root.article p`, `h2`, `>
+ * div`, … all (0,2,1)). A bare `.root > :first-child` ties or loses and, being earlier in the file,
+ * silently does nothing: the first heading kept its 30px top margin (58px of air under the article
+ * meta header) and a trailing block kept its bottom margin. Density-scoping these lands them at
+ * (0,3,0), which the density rules cannot tie. Same reasoning for every reset below. */
+.root.article > :first-child,
+.root.chat > :first-child {
   margin-top: 0;
 }
 
-.root > :last-child {
+.root.article > :last-child,
+.root.chat > :last-child {
   margin-bottom: 0;
 }
 
@@ -53,11 +61,16 @@
   color: var(--vx-muted);
 }
 
-.root blockquote > :first-child {
+/* The rail owns its padding; the quoted paragraph must not add to it (see the edge-margin note at
+ * the top — without the density scope the last paragraph kept 14px, printing phantom space under
+ * the quote). */
+.root.article blockquote > :first-child,
+.root.chat blockquote > :first-child {
   margin-top: 0;
 }
 
-.root blockquote > :last-child {
+.root.article blockquote > :last-child,
+.root.chat blockquote > :last-child {
   margin-bottom: 0;
 }
 
