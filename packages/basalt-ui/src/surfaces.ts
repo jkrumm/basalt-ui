@@ -186,6 +186,7 @@ export const SURFACES = {
     guardKinds: ['raw-motion-value', 'card-with-border', 'raw-form-control', 'sub-16-input-font'],
     description:
       'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard, EmptyState, SettingsSection/SettingsRow/DangerZone)',
+    optionalPeers: ['react-markdown', 'remark-gfm', 'shiki', 'beautiful-mermaid'],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -358,7 +359,7 @@ export const SURFACES = {
     guardKinds: [],
     description:
       'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
-    optionalPeers: ['ai', 'react-markdown', 'remark-gfm', 'use-stick-to-bottom'],
+    optionalPeers: ['ai', 'use-stick-to-bottom'],
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/agent/**'],

@@ -50,16 +50,18 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 
 `./agent` ships the headless streaming layer (Mantine-free): `useAgentStream`, `AgentPart` +
 `parseAgentPart`, `AgentTransport` / `aiSdkTransport` (recommended default, optional peer: `ai`) /
-`edenTransport` (zero-dep alternative), `PartList`, `StreamingMarkdown`,
+`edenTransport` (zero-dep alternative), `PartList`,
 `BasaltStickToBottom`, `createChatHistoryStore`, plus the multi-thread primitives
 `createThreadsStore`, `useAgentThreadRuns` (N concurrent per-thread runs), and the `AgentOutcome` /
 `OutcomeResolver` / `heuristicOutcome` summarize-to-outcome seam, plus a client-side stream-resumption
 seam (`StartPart`, `AgentTransport.resume`, `ThreadsStore.resumeToken`) — a mount-time reconnect
-attempt before an orphaned thread falls back to `'interrupted'`. The root `.` entry adds the
-Mantine chrome: **`ThreadWorkspace`** — the flagship "many short chats" composite (a distilled
-outcome feed + a detail panel) — plus `ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`,
-`Composer`, `ThreadTranscript`, and `threadPartRenderers`. Full doctrine + usage:
-`agent/rules/basalt-agent.md`.
+attempt before an orphaned thread falls back to `'interrupted'`. `./agent` ships no markdown
+renderer of its own — `agent/** -> content` is lint-blocked by design, so `PartList` takes a
+consumer-supplied `components.text`. The root `.` entry adds the Mantine chrome:
+**`ThreadWorkspace`** — the flagship "many short chats" composite (a distilled outcome feed + a
+detail panel) — plus `ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`, `Composer`,
+`ThreadTranscript`, and `threadPartRenderers` (wires `./content`'s `Markdown` in as the text
+renderer). Full doctrine + usage: `agent/rules/basalt-agent.md`.
 
 ## Layering: Mantine-coupled vs Mantine-free
 

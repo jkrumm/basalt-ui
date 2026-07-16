@@ -3,12 +3,13 @@
  *
  * `aiSdkTransport` (backed by the `ai` npm package) is the RECOMMENDED DEFAULT transport for LLM
  * chat use cases; `edenTransport` remains the zero-extra-dependency alternative. Optional peers
- * (ai, react-markdown, remark-gfm, use-stick-to-bottom) are all lazily loaded — importing this
- * module does NOT eagerly resolve any of them.
+ * (ai, use-stick-to-bottom) are all lazily loaded — importing this module does NOT eagerly resolve
+ * either of them. This module ships no markdown renderer — `agent/** -> content` is lint-blocked
+ * by design, so `PartList` takes a consumer-supplied `components.text`; basalt's own is
+ * `basalt-ui/content`'s `Markdown`.
  *
  * Install optional peers:
  *   bun add ai                                   # aiSdkTransport
- *   bun add react-markdown remark-gfm            # StreamingMarkdown
  *   bun add use-stick-to-bottom                  # BasaltStickToBottom
  *
  * @example
@@ -73,10 +74,6 @@ export type {
   SourcePartRenderer,
   ErrorPartRenderer,
 } from './part-list'
-
-// ── StreamingMarkdown (lazy, optional peer: react-markdown + remark-gfm) ──────
-export { StreamingMarkdown } from './streaming-markdown'
-export type { StreamingMarkdownProps } from './streaming-markdown'
 
 // ── BasaltStickToBottom (lazy, optional peer: use-stick-to-bottom) ────────────
 export { BasaltStickToBottom } from './stick-to-bottom'

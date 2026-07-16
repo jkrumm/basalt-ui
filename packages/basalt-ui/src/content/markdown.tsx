@@ -1,8 +1,9 @@
 /**
  * Markdown — react-markdown over `Prose`, with a streaming-repair pipeline for AI-streamed output
- * (docs/CONTENT-SPEC.md §2/§3/§6). The successor surface to `basalt-ui/agent`'s `StreamingMarkdown`
- * (`density="chat"` reproduces its typography) — see `agent/rules/basalt-content.md` for the
- * migration note; `StreamingMarkdown` is unaffected and keeps shipping.
+ * (docs/CONTENT-SPEC.md §2/§3/§6). This is the package's ONLY markdown renderer — pass
+ * `streaming density="chat"` to render agent/chat text (see `agent/rules/basalt-content.md`);
+ * `agent/**` deliberately ships no renderer of its own, since `agent/** -> content` is
+ * lint-blocked by design.
  *
  * LAZY-LOADED: react-markdown and remark-gfm are OPTIONAL peers, loaded via `React.lazy` + dynamic
  * `import()` (mirrors `agent/streaming-markdown.tsx` and `./highlighter`) — importing

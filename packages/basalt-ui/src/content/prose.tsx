@@ -2,9 +2,9 @@
  * Prose — the ONE typography wrapper for long-form content (docs/CONTENT-SPEC.md §2/§5).
  *
  * `density='article'` (default) is the long-form reading density — 16px body, 1.7 leading, a 72ch
- * measure, and the wider `h1`/`h2` ladder steps. `density='chat'` is byte-equivalent to
- * `basalt-ui/agent`'s `StreamingMarkdown` typography (15px/1.55) — reach for it when composing
- * Prose around chat-density content instead of the agent module's own container.
+ * measure, and the wider `h1`/`h2` ladder steps. `density='chat'` is the compact chat density
+ * (15px/1.55) — reach for it when composing Prose around chat-density content, e.g. via
+ * `Markdown`'s own `density="chat"` prop.
  *
  * @example
  * import { Prose } from 'basalt-ui/content'

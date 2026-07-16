@@ -22,6 +22,7 @@ Import: import { ... } from 'basalt-ui'
 Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard, EmptyState, SettingsSection/SettingsRow/DangerZone)
 Layer: mantine-coupled
 Rule: basalt-mantine
+OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, beautiful-mermaid@^1.1.0
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
@@ -111,7 +112,7 @@ Import: import { ... } from 'basalt-ui/agent'
 Description: Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
 Layer: headless
 Rule: basalt-agent
-OptionalPeers: ai@^7.0.15, react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
+OptionalPeers: ai@^7.0.15, use-stick-to-bottom@^1.1.6
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'

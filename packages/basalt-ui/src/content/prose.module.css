@@ -1,10 +1,8 @@
 /*
  * Prose typography — docs/CONTENT-SPEC.md §2/§5, docs/DESIGN-SPEC.md §3. ONE CSS module driving
- * both densities: `.chat` is byte-equivalent to `../agent/streaming-markdown.module.css` (the
- * successor relationship — `agent/rules/basalt-agent.md` documents the migration note); `.article`
- * is the long-form reading density (16px/1.7, generous block spacing, a wider type ladder).
- * Every color/font routes through `--vx-*` / `--basalt-font-*` tokens, so both schemes resolve
- * from one ruleset — see `../agent/streaming-markdown.module.css` for the idiom this mirrors.
+ * both densities: `.chat` is the compact chat density; `.article` is the long-form reading
+ * density (16px/1.7, generous block spacing, a wider type ladder). Every color/font routes
+ * through `--vx-*` / `--basalt-font-*` tokens, so both schemes resolve from one ruleset.
  */
 
 .root {
@@ -202,7 +200,7 @@
   color: inherit;
 }
 
-/* ── Chat density — byte-equivalent to agent/streaming-markdown.module.css ─────────────────────── */
+/* ── Chat density — the compact chat/agent typography ──────────────────────────────────────────── */
 
 .root.chat {
   font-size: var(--vx-text-md);

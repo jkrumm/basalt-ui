@@ -364,11 +364,40 @@ bun add @tanstack/react-virtual
 import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 ```
 
+### `./content` — prose + markdown
+
+````bash
+bun add react-markdown remark-gfm   # Markdown
+bun add shiki                       # CodeBlock / fenced-code highlighting
+bun add beautiful-mermaid           # MermaidDiagram / ```mermaid fences
+````
+
+Every peer is lazily imported and degrades gracefully when absent (markdown falls back to plain
+text, fences to plain mono, mermaid renders nothing). `Markdown` is the package's **only** markdown
+renderer — it backs long-form content and AI chat alike:
+
+```tsx
+import { Markdown, Prose, CodeBlock, TableOfContents } from 'basalt-ui/content'
+
+// Long-form: 72ch measure, article typography, heading anchors + slug dedup.
+<Markdown>{article.body}</Markdown>
+
+// AI output: chat density, block-split + memoized, `remend`-repaired in-flight tail.
+<Markdown streaming density="chat">{part.text}</Markdown>
+```
+
+`streaming` also tightens image URLs to same-origin — LLM-authored markdown can otherwise exfiltrate
+via a remote image URL. Full doctrine: `agent/rules/basalt-content.md`.
+
 ### `./agent` — streaming-chat layer
 
 ```bash
-bun add react-markdown remark-gfm use-stick-to-bottom
+bun add ai use-stick-to-bottom
 ```
+
+Ships no markdown renderer — `agent/** -> content` is lint-blocked by design, so `PartList` takes
+a consumer-supplied `components.text`. Basalt's own is [`./content`](#content--prose--markdown)'s
+`Markdown`, already wired in by `ThreadWorkspace`.
 
 Single conversation — headless streaming primitives:
 

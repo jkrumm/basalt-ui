@@ -6,8 +6,8 @@
  * OPTIONAL PEER: `ai` is not a required dependency. Importing 'basalt-ui/agent' (and calling this
  * factory) does NOT eagerly resolve it — the package is loaded via a memoized dynamic import()
  * only when the first stream()/resume() call actually runs, mirroring the lazy-optional-peer
- * contract used by StreamingMarkdown/BasaltStickToBottom. Unlike those, there is no meaningful
- * "plain text" fallback for a missing transport: if 'ai' is not installed, the dynamic import
+ * contract used by BasaltStickToBottom. Unlike that, there is no meaningful "plain text" fallback
+ * for a missing transport: if 'ai' is not installed, the dynamic import
  * rejects and the error propagates through the async generator to the consumer's EXISTING error
  * handling (useAgentStream sets status: 'error'; useAgentThreadRuns falls back to its
  * onFailureStatus) — no separate crash path is introduced.

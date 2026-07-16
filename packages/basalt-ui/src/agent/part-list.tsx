@@ -5,18 +5,21 @@
  * AgentPart variant without updating this file (or the consumer's override map) is a tsc error.
  *
  * All default renderers are headless — plain HTML elements with className hooks, zero Mantine.
- * Consumers can override any or all renderers via the `components` prop.
+ * Consumers can override any or all renderers via the `components` prop. `PartList` itself stays
+ * headless — the markdown renderer is the consumer's choice; basalt's own is `basalt-ui/content`'s
+ * `Markdown`.
  *
- * The text renderer defaults to plain text (className="basalt-agent-text"). To use
- * StreamingMarkdown for rich markdown, pass a custom text renderer:
+ * The text renderer defaults to plain text (className="basalt-agent-text"). To render rich
+ * markdown, pass a custom text renderer:
  *
  * @example
- * import { PartList, StreamingMarkdown } from 'basalt-ui/agent'
+ * import { PartList } from 'basalt-ui/agent'
+ * import { Markdown } from 'basalt-ui/content'
  *
  * <PartList
  *   parts={parts}
  *   components={{
- *     text: ({ part }) => <StreamingMarkdown>{part.text}</StreamingMarkdown>,
+ *     text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown>,
  *   }}
  * />
  */
@@ -65,7 +68,7 @@ export type ErrorPartRenderer<TPart extends AgentPart = AgentPart> = (props: {
  *
  * @example
  * const renderers: Partial<AgentPartRenderers> = {
- *   text: ({ part }) => <StreamingMarkdown>{part.text}</StreamingMarkdown>,
+ *   text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown>,
  * }
  */
 export type AgentPartRenderers<TPart extends AgentPart = AgentPart> = {
@@ -197,7 +200,7 @@ export type PartListProps<TPart extends AgentPart = AgentPart> = {
   readonly parts: TPart[]
   /**
    * Override individual part renderers. Omitted keys fall back to the headless defaults.
-   * Pass `{ text: ({ part }) => <StreamingMarkdown>{part.text}</StreamingMarkdown> }` to
+   * Pass `{ text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown> }` to
    * enable rich markdown rendering.
    */
   readonly components?: Partial<AgentPartRenderers<TPart>>
@@ -214,9 +217,10 @@ export type PartListProps<TPart extends AgentPart = AgentPart> = {
  * <PartList parts={parts} />
  *
  * @example
- * // With StreamingMarkdown for the text renderer:
- * import { PartList, StreamingMarkdown } from 'basalt-ui/agent'
- * <PartList parts={parts} components={{ text: ({ part }) => <StreamingMarkdown>{part.text}</StreamingMarkdown> }} />
+ * // With basalt's own Markdown for the text renderer:
+ * import { PartList } from 'basalt-ui/agent'
+ * import { Markdown } from 'basalt-ui/content'
+ * <PartList parts={parts} components={{ text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown> }} />
  */
 export function PartList<TPart extends AgentPart = AgentPart>({
   parts,

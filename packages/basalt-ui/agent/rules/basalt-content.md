@@ -29,10 +29,8 @@ yourself, or reach for `ArticleLayout` (below), which wraps it for you.
 ## Density
 
 `density='article'` (default) — 16px body, 1.7 leading, a 72ch measure (`VX.text.h1`/`h2` + the
-`--vx-prose-measure` token), generous block spacing. `density='chat'` — byte-equivalent to
-`basalt-ui/agent`'s `StreamingMarkdown` typography (15px/1.55). Use `chat` density only when
-composing `Prose` around chat-density content; `StreamingMarkdown` still owns its own container for
-the agent surface itself.
+`--vx-prose-measure` token), generous block spacing. `density='chat'` — the compact chat typography
+(15px/1.55). Use `chat` density for agent/chat text, e.g. `<Markdown streaming density="chat">`.
 
 **The type-ladder rule applies here too**: never a literal font-size in JSX or a bespoke CSS value
 — every size in `Prose`/`CodeBlock`/`Callout`/`ArticleLayout`/`ArticleCard`/`GuideDrawer` resolves
@@ -89,9 +87,10 @@ token, no debouncing needed.
   (a shared tracker would have to live across memoized blocks that never re-render) — a heading
   text repeated across two DIFFERENT blocks will NOT get a deduped suffix. Streamed chat content
   doesn't drive a `TableOfContents`, so this is an accepted tradeoff, not a bug.
-- `StreamingMarkdown` (`basalt-ui/agent`) is unaffected and keeps shipping — `<Markdown
-streaming density="chat">` is its successor surface for new code; migrate opportunistically, not
-  urgently.
+- `StreamingMarkdown` is DELETED — `Markdown` is the package's only markdown renderer. Render
+  agent/chat text via `<Markdown streaming density="chat">`. `agent/** -> content` is lint-blocked
+  by design, so `./agent` deliberately ships NO renderer — `PartList` takes a consumer-supplied
+  `components.text` instead.
 
 ## MermaidDiagram — support matrix
 

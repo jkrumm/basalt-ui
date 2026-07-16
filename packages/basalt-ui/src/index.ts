@@ -104,8 +104,10 @@ export type { GuardKind } from './guard/types'
 // Everything from `./agent-chat` (Mantine-styled thread-chat components + the flagship
 // ThreadWorkspace) belongs at the root. From the headless `./agent` layer, SELECTIVELY re-export
 // only the pieces a ThreadWorkspace consumer needs — NOT an export-star — so the optional-peer
-// components (StreamingMarkdown, BasaltStickToBottom) and the rest of `./agent` stay off the root
-// entry; `edenTransport` stays out too, sourced from `basalt-ui/agent` instead.
+// BasaltStickToBottom and the rest of `./agent` stay off the root entry; `edenTransport` stays out
+// too, sourced from `basalt-ui/agent` instead. `agent-chat/thread-message.tsx` DOES reach
+// `./content`'s `Markdown` for its text renderer — root's markdown/shiki/mermaid optional peers
+// come from that path, not from `./agent`.
 export {
   ThreadWorkspace,
   ThreadFeed,

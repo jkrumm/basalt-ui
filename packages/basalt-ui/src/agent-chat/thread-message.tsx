@@ -42,7 +42,8 @@ import type {
   TextPart,
   ToolCallPart,
 } from '../agent'
-import { PartList, StreamingMarkdown } from '../agent'
+import { PartList } from '../agent'
+import { Markdown } from '../content/markdown'
 import { alpha, VX } from '../tokens'
 
 /** The mono, uppercase, letter-spaced micro-label idiom (docs/DESIGN-SPEC.md §3) — shared by the
@@ -59,10 +60,14 @@ const MICRO_LABEL_STYLE = {
 // ── Per-type Mantine renderers ────────────────────────────────────────────────
 
 function TextRenderer({ part }: { part: TextPart; index: number }): JSX.Element {
-  // StreamingMarkdown emits block-level HTML in its own `.root` container (which carries the
-  // chat-density typography). It must NOT be wrapped in a Mantine `Text` (renders a `<p>`) — block
-  // elements inside a `<p>` are invalid nesting that the browser auto-closes, scrambling spacing.
-  return <StreamingMarkdown>{part.text}</StreamingMarkdown>
+  // Markdown wraps its output in Prose (a div carrying chat-density typography). It must NOT be
+  // wrapped in a Mantine `Text` (renders a `<p>`) — block elements inside a `<p>` are invalid
+  // nesting that the browser auto-closes, scrambling spacing.
+  return (
+    <Markdown streaming density="chat">
+      {part.text}
+    </Markdown>
+  )
 }
 
 // Tool-call/reasoning parts (docs/DESIGN-SPEC.md §5): a mono micro-label header with a faint left
