@@ -1,7 +1,8 @@
 /*
  * MermaidDiagram chrome — mirrors the CodeBlock surface idiom (docs/CONTENT-SPEC.md §2 decision 4):
  * a subtle ink-tinted panel the SVG sits on, X-axis scroll as the sanctioned overflow exception for
- * a diagram wider than its column.
+ * a diagram wider than its column. Block rhythm (the outer margin) is Prose's to own, not ours —
+ * see `prose.module.css`, which spaces every block object on one ladder.
  */
 
 .container {
@@ -11,7 +12,6 @@
   background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
   padding: 16px;
   overflow-x: auto;
-  margin: 14px 0;
 }
 
 .container :global(svg) {

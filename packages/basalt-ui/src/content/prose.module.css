@@ -233,15 +233,11 @@
   font-size: var(--vx-text-md);
 }
 
-.root.chat blockquote {
-  margin: 8px 0;
-}
-
-.root.chat pre {
-  margin: 8px 0;
-}
-
-.root.chat table {
+/* Same single-owner block rhythm as `.article` above, at chat's tighter step. */
+.root.chat blockquote,
+.root.chat pre,
+.root.chat table,
+.root.chat > div {
   margin: 8px 0;
 }
 
@@ -299,16 +295,17 @@
   margin: 30px 0 10px;
 }
 
-.root.article blockquote {
-  margin: 14px 0;
-}
-
-.root.article pre {
-  margin: 14px 0;
-}
-
-.root.article table {
-  margin: 14px 0;
+/* Block objects — code blocks, callouts, diagrams, tables, quotes — interrupt the paragraph flow
+ * rather than joining it, so they carry more air than the 14px paragraph gap. Prose is the SINGLE
+ * owner of that rhythm: the component blocks (CodeBlock/Callout/MermaidDiagram/nested Markdown)
+ * render a `div` and own no margin, so without this they inherit only the *preceding* paragraph's
+ * margin-bottom — nothing follows a block correctly and two stacked blocks collapse to touching.
+ * Sibling margins collapse, so one value per edge yields one uniform gap on every edge. */
+.root.article blockquote,
+.root.article pre,
+.root.article table,
+.root.article > div {
+  margin: 18px 0;
 }
 
 .root.article hr {
