@@ -152,6 +152,28 @@ describe('oxlint preset sync contract', () => {
     expect(hasMantineGroupBan).toBe(true)
   })
 
+  it('the broad **/*.{ts,tsx} base-ban override sits before the narrower boundary overrides (shipped)', () => {
+    // oxlint resolves per-glob no-restricted-imports last-writer-wins — a later matching block
+    // REPLACES an earlier one. The broad base-ban block must therefore come FIRST so the
+    // narrower, re-allowing blocks (charts/tokens/agent) win for the files they match. Today
+    // this holds by generator emit order (gen-oxlint.ts) but was previously unasserted.
+    const overrides = readOverrides(SHIPPED_CONFIG_PATH) as { files: string[] }[]
+    const baseIndex = overrides.findIndex((block) => block.files.includes('**/*.{ts,tsx}'))
+    expect(baseIndex).toBe(0)
+
+    const boundaryGlobs = ['**/charts/**', '**/tokens/**', '**/agent/**']
+    const boundaryIndices = boundaryGlobs
+      .map((glob) => overrides.findIndex((block) => block.files.includes(glob)))
+      .filter((index) => index !== -1)
+
+    // Shipped today only carries charts + tokens boundaries (agent's shipped globs are empty),
+    // so at least one boundary override must exist — otherwise this assertion is vacuous.
+    expect(boundaryIndices.length).toBeGreaterThan(0)
+    for (const boundaryIndex of boundaryIndices) {
+      expect(baseIndex).toBeLessThan(boundaryIndex)
+    }
+  })
+
   it('shipped configs/oxlint.json actually parses in oxlint (not just JSON.parse)', () => {
     const result = Bun.spawnSync([OXLINT_BIN, '--config', SHIPPED_CONFIG_PATH, FIXTURE_PATH])
     const output = `${result.stdout}${result.stderr}`

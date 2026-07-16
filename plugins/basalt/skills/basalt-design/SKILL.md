@@ -110,7 +110,7 @@ structure, the accent only points.
   48px shell header. Separate by surface + `shadow-card`, not by large air — default to the
   tighter step.
 - **All cards render identically:** Mantine `Card`/`Paper` **and** the Mantine-free `ChartCard`
-  resolve to **one radius token** (`--vx-radius-card` = 10px) and **`shadow-card`** — a whisper
+  resolve to **one radius token** (`--vx-radius-card` = 7px) and **`shadow-card`** — a whisper
   shadow with the 1px ring baked into the shadow itself, **no `border` property**. Never
   inline-override a surface's `border`/`borderRadius`/`boxShadow`/`backgroundColor` — use the
   radius token + `VX.surface.*` / the shadow-card token. Mechanically enforced by
@@ -156,10 +156,11 @@ Hard rules (the guard enforces these, not just prose):
 
 ```ts
 import { VX, alpha } from 'basalt-ui/tokens'
+import { SERIES } from '../theme/series' // consumer-owned — see /basalt:charts
 
-const stroke = VX.series.hrv          // app-side series ref (consumer-defined — see /basalt:charts)
-const fill = alpha(VX.series.hrv, 0.12) // theme-aware soft area, NOT rgba()
-const grid = VX.grid                   // framework neutral
+const stroke = SERIES.hrv          // app-side series ref (consumer-defined — see /basalt:charts)
+const fill = alpha(SERIES.hrv, 0.12) // theme-aware soft area, NOT rgba()
+const grid = VX.grid               // framework neutral
 ```
 
 ## Drive the theme-lab loop (tune by eye, then bake)

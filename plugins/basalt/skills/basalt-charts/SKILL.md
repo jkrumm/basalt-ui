@@ -59,6 +59,9 @@ const HEALTH = defineSeries({
   hrv: { light: '#634DBF', dark: '#7C6BD6' },        // violet — lighter on dark to avoid glow
   restingHr: { light: '#C22762', dark: '#E0639A' },
 })
+const WALKING = defineSeries({
+  intensityMin: { light: '#3F7D4F', dark: '#5FA372' }, // forest green — muted status hue
+})
 
 // 2. Turn the maps into namespaced token refs (var(--vx-health-hrv), ...).
 //    seriesTokens(map, prefix?) for a flat namespace; groupTokens(name, map) namespaces under name.
