@@ -560,16 +560,20 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/oxfmt.json'),
   }
 
+  // `seed` (write-once, then consumer-owned) — CI/hooks are inherently repo-shaped (a monorepo's
+  // check.yml needs its own `src/**` globs and package.json scripts; the shipped defaults are a
+  // starting point, not a mirror everyone can obey verbatim). `copy` would keep `sync --check`
+  // permanently red the moment a consumer adapts the template, which is every consumer.
   const lefthook: ManagedFile = {
     dest: 'lefthook.yml',
-    strategy: 'copy',
+    strategy: 'seed',
     source: 'configs/lefthook.yml',
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/lefthook.yml'),
   }
 
   const ci: ManagedFile = {
     dest: '.github/workflows/check.yml',
-    strategy: 'copy',
+    strategy: 'seed',
     source: 'configs/check.yml',
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/check.yml'),
   }
