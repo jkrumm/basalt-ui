@@ -11,6 +11,7 @@ import { createRoot } from 'react-dom/client'
 // Side-effect import: registers the app's global command registry (basalt-ui/commands'
 // defineCommands) before BasaltOverlays mounts, so Spotlight/ShortcutsHelp see it from boot.
 import './demo/commands'
+import { buildPaletteActions } from './demo/palette-actions'
 import { demoPaletteGroups } from './demo/series'
 import { routeTree } from './routeTree.gen'
 
@@ -61,6 +62,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// The full palette action list — Pages (nav model → breadcrumb trails) + the command bus, each
+// with a kind badge. `projectCommands={false}` below hands the whole list here so nothing is
+// projected twice. `as never` mirrors the typed-router cast `renderNavLink` uses for `to`.
+const spotlightActions = buildPaletteActions((href) => void router.navigate({ to: href as never }))
+
 const root = document.getElementById('root')
 if (!root) throw new Error('root element not found')
 
@@ -79,7 +85,7 @@ createRoot(root).render(
       {/* hotkeys={false}: the demo commands are registered page-locally in CommandsDemoPage, which
           binds them itself via useCommandHotkeys(). A real app registers commands app-wide and keeps
           the default (hotkeys enabled) so BasaltOverlays binds them globally. */}
-      <BasaltOverlays hotkeys={false}>
+      <BasaltOverlays hotkeys={false} projectCommands={false} spotlightActions={spotlightActions}>
         <RouterProvider router={router} />
       </BasaltOverlays>
     </BasaltProvider>

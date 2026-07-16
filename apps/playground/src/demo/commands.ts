@@ -23,12 +23,36 @@ export function registerDemoToggleSetter(
   demoToggleSetter = setter
 }
 
+type ColorSchemeControl = { setColorScheme: (value: 'light' | 'dark' | 'auto') => void }
+
+let colorSchemeControl: ColorSchemeControl | null = null
+
+/** Wired by RootLayout (and cleared on unmount) so the Appearance commands can set the scheme. */
+export function registerColorSchemeControl(control: ColorSchemeControl | null): void {
+  colorSchemeControl = control
+}
+
 export const COMMANDS = defineCommands({
   'nav:search': {
     label: 'Open search',
     group: 'Navigation',
     shortcut: 'Mod+K',
     run: () => openSpotlight(),
+  },
+  'appearance:light': {
+    label: 'Switch to light theme',
+    group: 'Appearance',
+    run: () => colorSchemeControl?.setColorScheme('light'),
+  },
+  'appearance:dark': {
+    label: 'Switch to dark theme',
+    group: 'Appearance',
+    run: () => colorSchemeControl?.setColorScheme('dark'),
+  },
+  'appearance:system': {
+    label: 'Match system theme',
+    group: 'Appearance',
+    run: () => colorSchemeControl?.setColorScheme('auto'),
   },
   'demo:greet': {
     label: 'Greet user',

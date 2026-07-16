@@ -12,63 +12,18 @@
  *     free.
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { Kbd, NavLink as MantineNavLink, Text, UnstyledButton } from '@mantine/core'
+import { NavLink as MantineNavLink, Text, useMantineColorScheme } from '@mantine/core'
 import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
-import { BasaltShell, ConnectivityIndicator, NavCountBadge, ThemeToggle } from 'basalt-ui'
-import type {
-  BasaltAccountActions,
-  BreadcrumbLinkRenderer,
-  NavLinkRenderer,
-  SidebarSection,
-} from 'basalt-ui'
+import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
+import type { BasaltAccountActions, BreadcrumbLinkRenderer, NavLinkRenderer } from 'basalt-ui'
 import { useBasaltNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { openSpotlight } from 'basalt-ui/commands'
-import { VX } from 'basalt-ui/tokens'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { DashboardDateFilter } from '../demo/DashboardDateFilter'
-import {
-  IconActivity,
-  IconChart,
-  IconComponents,
-  IconDashboard,
-  IconSearch,
-  IconSettings,
-  IconUser,
-} from '../demo/icons'
+import { registerColorSchemeControl } from '../demo/commands'
+import { NAV_MODEL, withActive } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
-
-/**
- * Header search trigger (docs/DESIGN-SPEC.md §5 "Header"): panel + shadow-card, radius 8, faint
- * label, mono ⌘K chip. Opens the same Spotlight the `./commands` battery wires up in main.tsx
- * (`CommandsDemoPage` registers the demo command palette while it's mounted).
- */
-function SearchTrigger() {
-  return (
-    <UnstyledButton
-      onClick={() => openSpotlight()}
-      aria-label="Search (Mod+K)"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        height: 30,
-        minWidth: 220,
-        padding: '0 10px',
-        borderRadius: VX.radiusCtrl,
-        backgroundColor: VX.surface.panel,
-        boxShadow: VX.shadowCard,
-        color: VX.faint,
-      }}
-    >
-      <IconSearch />
-      <Text size="sm" style={{ color: VX.faint, flex: 1, textAlign: 'left' }}>
-        Search
-      </Text>
-      <Kbd size="xs">⌘K</Kbd>
-    </UnstyledButton>
-  )
-}
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
@@ -79,6 +34,12 @@ function RootLayout() {
   const { isActive } = useBasaltNav()
   const navigate = useNavigate()
   const [scenario, setScenario] = useUserScenario()
+  const { setColorScheme } = useMantineColorScheme()
+
+  useEffect(() => {
+    registerColorSchemeControl({ setColorScheme })
+    return () => registerColorSchemeControl(null)
+  }, [setColorScheme])
 
   const accountState = scenarioToAccountState(scenario)
   const accountActions: BasaltAccountActions = {
@@ -122,208 +83,17 @@ function RootLayout() {
     )
   }, [])
 
-  const sections = useMemo<SidebarSection[]>(
-    () => [
-      {
-        label: 'Overview',
-        icon: <IconDashboard />,
-        items: [
-          {
-            key: 'dashboard',
-            label: 'Dashboard',
-            short: 'Home',
-            mobile: true,
-            icon: <IconDashboard />,
-            href: '/dashboard',
-            active: isActive('/dashboard'),
-            badge: <NavCountBadge count={4} />,
-            // Child items render text-only against the left rail (no icon) — SidebarItem.icon is
-            // a required ReactNode slot, so `undefined` opts out of rendering a left section
-            // (see AppSidebar's `leftSection={child.icon}`) rather than omitting the key.
-            children: [
-              {
-                key: 'dashboard-sessions',
-                label: 'Sessions',
-                icon: undefined,
-                href: '/dashboard/sessions',
-                active: isActive('/dashboard/sessions'),
-              },
-              {
-                key: 'dashboard-traffic',
-                label: 'Traffic',
-                icon: undefined,
-                href: '/dashboard/traffic',
-                active: isActive('/dashboard/traffic'),
-              },
-              {
-                key: 'dashboard-revenue',
-                label: 'Revenue',
-                icon: undefined,
-                href: '/dashboard/revenue',
-                active: isActive('/dashboard/revenue'),
-              },
-            ],
-          },
-          {
-            key: 'activity',
-            label: 'Activity',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/activity',
-            active: isActive('/activity'),
-          },
-        ],
-      },
-      {
-        label: 'Insights',
-        icon: <IconChart />,
-        collapsible: true,
-        items: [
-          {
-            key: 'charts',
-            label: 'Charts',
-            mobile: true,
-            icon: <IconChart />,
-            href: '/charts',
-            active: isActive('/charts'),
-          },
-          {
-            key: 'components',
-            label: 'Components',
-            mobile: true,
-            icon: <IconComponents />,
-            href: '/components',
-            active: isActive('/components'),
-          },
-          {
-            key: 'reports',
-            label: 'Reports',
-            icon: <IconActivity />,
-            disabled: true, // renders the "Coming soon" tooltip path
-          },
-        ],
-      },
-      {
-        label: 'Data',
-        icon: <IconActivity />,
-        items: [
-          {
-            key: 'query',
-            label: 'Query',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/query',
-            active: isActive('/query'),
-          },
-          {
-            key: 'router',
-            label: 'Router',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/router',
-            active: isActive('/router'),
-          },
-          {
-            key: 'forms',
-            label: 'Forms',
-            mobile: true,
-            icon: <IconComponents />,
-            href: '/forms',
-            active: isActive('/forms'),
-          },
-          {
-            key: 'notifications',
-            label: 'Notifications',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/notifications',
-            active: isActive('/notifications'),
-          },
-          {
-            key: 'commands',
-            label: 'Commands',
-            mobile: true,
-            icon: <IconComponents />,
-            href: '/commands',
-            active: isActive('/commands'),
-          },
-          {
-            key: 'data',
-            label: 'Data',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/data',
-            active: isActive('/data'),
-          },
-          {
-            key: 'agent',
-            label: 'Agent',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/agent',
-            active: isActive('/agent'),
-          },
-          {
-            key: 'agent-ai-sdk',
-            label: 'Agent (AI SDK)',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/agent-ai-sdk',
-            active: isActive('/agent-ai-sdk'),
-          },
-          {
-            key: 'threads',
-            label: 'Threads',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/threads',
-            active: isActive('/threads'),
-          },
-          {
-            key: 'user',
-            label: 'User',
-            icon: <IconUser />,
-            href: '/user',
-            active: isActive('/user'),
-            mobile: true,
-          },
-        ],
-      },
-      {
-        label: 'System',
-        icon: <IconSettings />,
-        items: [
-          {
-            key: 'connectivity',
-            label: 'Connectivity',
-            mobile: true,
-            icon: <IconActivity />,
-            href: '/connectivity',
-            active: isActive('/connectivity'),
-          },
-          {
-            key: 'settings',
-            label: 'Settings',
-            mobile: true,
-            icon: <IconSettings />,
-            href: '/settings',
-            active: isActive('/settings'),
-          },
-        ],
-      },
-    ],
-    [isActive],
-  )
+  const sections = useMemo(() => withActive(NAV_MODEL, isActive), [isActive])
 
   return (
     <BasaltShell
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
       sections={sections}
+      search={{ onOpen: () => openSpotlight() }}
       renderNavLink={renderNavLink}
       renderBreadcrumbLink={renderBreadcrumbLink}
       globalActions={
         <>
-          <SearchTrigger />
           <DashboardDateFilter />
           <ConnectivityIndicator />
           <NotificationBell />
