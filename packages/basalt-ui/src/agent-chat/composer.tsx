@@ -5,7 +5,7 @@
  * fetching coupling — the caller owns wiring `onSubmit` to whatever sends the message.
  *
  * @example
- * import { Composer } from 'basalt-ui/agent-chat'
+ * import { Composer } from 'basalt-ui'
  *
  * <Composer onSubmit={(text) => send(text)} disabled={streaming} placeholder="Send a message…" />
  */

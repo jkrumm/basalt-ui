@@ -257,7 +257,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
-    optionalPeers: ['@tanstack/react-query', '@tanstack/react-query-devtools'],
+    optionalPeers: ['@tanstack/react-query-devtools'],
     globs: {
       shipped: [],
       repo: ['packages/basalt-ui/src/query/**'],
@@ -274,7 +274,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createMultiSearchParamStore (multi-select URL-state store)',
+      'TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createSearchParamStore (single-select URL-state store) + createMultiSearchParamStore (multi-select URL-state store)',
     optionalPeers: ['@tanstack/react-router'],
     globs: {
       shipped: [],
@@ -303,7 +303,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell',
+      'Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter',
     optionalPeers: ['@mantine/notifications'],
     forbiddenImports: [],
   },
@@ -416,7 +416,7 @@ export const SURFACES = {
     guardKinds: [],
     description:
       'ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider',
-    optionalPeers: ['@tanstack/react-query'],
+    optionalPeers: [],
     forbiddenImports: [],
   },
 
@@ -452,7 +452,11 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     globs: {
-      shipped: ['src/**', 'app/**'],
+      // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
+      // features/, etc. is also covered — the narrower re-allow overrides (./tokens, ./charts,
+      // ./agent) still win for their globs because oxlint overrides are last-writer-wins and
+      // EMIT_ORDER places #app first (see projectBanList doc comment in gen-oxlint.ts).
+      shipped: ['**/*.{ts,tsx}'],
       repo: ['packages/basalt-ui/src/**', 'apps/playground/src/**'],
     },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
@@ -469,7 +473,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'state'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'content', 'state'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

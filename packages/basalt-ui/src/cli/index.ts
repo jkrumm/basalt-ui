@@ -1077,7 +1077,7 @@ type DoctorResult = {
  *
  * Warnings (non-fatal):
  *   2. CLAUDE.md contains the basalt managed block (<!-- basalt:begin marker).
- *   3. All 11 basalt-*.md rule files exist under .claude/rules/.
+ *   3. All 12 basalt-*.md rule files exist under .claude/rules/.
  *   4. The basalt plugin appears to be installed (best-effort ~/.claude/settings.json check).
  *   5. The running CLI's own version matches the basalt-ui version resolved in the consumer's
  *      node_modules (catches a stale `bunx basalt` npm fetch; best-effort, skipped if absent).

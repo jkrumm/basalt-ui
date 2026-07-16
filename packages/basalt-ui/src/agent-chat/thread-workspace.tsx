@@ -12,7 +12,7 @@
  * owns that module-scope call and passes the resulting hook in here.
  *
  * @example
- * import { ThreadWorkspace } from 'basalt-ui/agent-chat'
+ * import { ThreadWorkspace } from 'basalt-ui'
  * import { createThreadsStore, edenTransport, heuristicOutcome } from 'basalt-ui/agent'
  *
  * // Module scope — called ONCE:

@@ -20,25 +20,12 @@ law, the law wins.
 
 ## Identity
 
-{{APP_NAME}} inherits the basalt-ui identity verbatim: a calm, dense, professional surface —
-**modern zinc** (cool-neutral zinc surfaces, Tailwind zinc family, on both light and dark), **one
-earned accent: a saturated sky-blue** — split by role: as INK (links, icons, chart lines) `#0077bd`
-light / `#8ec5ff` dark; as a FILLED SURFACE `#0077bd` in both schemes with a white label — neutral grey as the
-default data ink, `shadow-card` elevation (a whisper shadow + 1px ring, no plain hairline border on
-cards), a three-font system (Nunito Sans body / Hubot Sans condensed headings / JetBrains Mono for
-all numerals + micro-labels) carried by the shared `--basalt-font-*` vars. Neutrals do ~90% of the
-surface; the accent only points (primary data series, active-nav icons/child labels, links, primary
-buttons, focus rings, meter leader bars) — never floods. Light mode has cards (`#f4f4f5`) lifting
-subtly off a slightly darker page (`#ececee`-ish) with near-black ink text; dark mode is cool zinc
-(not steel-blue, not pure black). **Dense by default** (compact nav, `sm` gaps/padding); all cards
-render identically — **`shadow-card` depth, one radius token (`--vx-radius-card`, 10px)** — never
-inline-override a surface's shadow/radius/bg (enforced by `basalt check-theme`). The theme runs a
-**strict surface system**: it collapses Mantine's raw ramp steps onto the `--vx-surface-*` tokens,
-so every component shares one bg/radius/depth. **Use Mantine primitives, not raw HTML**
-(`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card` over `<div>`/`<span>` with inline
-`style`) — also enforced by `check-theme`. Confirm or restate any intentional identity shift here;
-**silence means "inherits the basalt-ui defaults unchanged."** See `docs/DESIGN-SPEC.md` in the
-basalt-ui repo for the full 2026-07 visual spec this identity is drawn from.
+{{APP_NAME}} inherits the basalt-ui identity verbatim: modern zinc surfaces, one earned saturated
+sky-blue accent, `shadow-card` elevation, dense-by-default spacing, and the three-font system. The
+law itself — every hex, role split, and enforcement rule — lives in the `basalt-tokens` and
+`basalt-mantine` rules (`.claude/rules/basalt-{tokens,mantine}.md`) and `docs/DESIGN-SPEC.md` in
+the basalt-ui repo; it is **not** restated here. Confirm or restate any intentional identity shift
+below; **silence means "inherits the basalt-ui defaults unchanged."**
 
 - **Accent hue:** {{ACCENT_HUE}} (default: the saturated sky accent — `var(--vx-line)` neutral is
   still the default for single-series marks)

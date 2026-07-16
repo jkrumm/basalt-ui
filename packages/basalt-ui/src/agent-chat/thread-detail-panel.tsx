@@ -9,7 +9,7 @@
  * only seams.
  *
  * @example
- * import { ThreadDetailPanel } from 'basalt-ui/agent-chat'
+ * import { ThreadDetailPanel } from 'basalt-ui'
  *
  * <ThreadDetailPanel
  *   thread={activeThread}

@@ -7,7 +7,7 @@
  * on `useReducedMotion` for a plain, unanimated `Stack`.
  *
  * @example
- * import { ThreadFeed } from 'basalt-ui/agent-chat'
+ * import { ThreadFeed } from 'basalt-ui'
  *
  * <ThreadFeed threads={threads} activeId={activeId} onSelect={select} />
  */

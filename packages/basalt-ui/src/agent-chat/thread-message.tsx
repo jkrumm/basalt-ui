@@ -10,7 +10,7 @@
  * Mantine is allowed (unlike the Mantine-free `agent/` headless layer it renders on top of).
  *
  * @example
- * import { ThreadTranscript } from 'basalt-ui/agent-chat'
+ * import { ThreadTranscript } from 'basalt-ui'
  *
  * <ThreadTranscript
  *   messages={thread.messages}
@@ -143,7 +143,7 @@ function ErrorRenderer({ part }: { part: ErrorPart; index: number }): JSX.Elemen
  *
  * @example
  * import { PartList } from 'basalt-ui/agent'
- * import { threadPartRenderers } from 'basalt-ui/agent-chat'
+ * import { threadPartRenderers } from 'basalt-ui'
  * <PartList parts={parts} components={threadPartRenderers} />
  */
 export const threadPartRenderers: Partial<AgentPartRenderers> = {
@@ -224,7 +224,7 @@ export type ThreadTranscriptProps = {
  * assistant block is appended at the tail.
  *
  * @example
- * import { ThreadTranscript } from 'basalt-ui/agent-chat'
+ * import { ThreadTranscript } from 'basalt-ui'
  * <ThreadTranscript messages={thread.messages} liveParts={liveParts} liveStatus={runStatus} />
  */
 export function ThreadTranscript({

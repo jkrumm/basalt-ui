@@ -56,11 +56,11 @@ Import: import { ... } from 'basalt-ui/query'
 Description: createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools
 Layer: headless
 Rule: basalt-query
-OptionalPeers: @tanstack/react-query@^5.101.0, @tanstack/react-query-devtools@^5.101.0
+OptionalPeers: @tanstack/react-query-devtools@^5.101.0
 
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
-Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createMultiSearchParamStore (multi-select URL-state store)
+Description: TanStack Router bridge: useBasaltNav (active route) + useRouterBreadcrumbs + createSearchParamStore (single-select URL-state store) + createMultiSearchParamStore (multi-select URL-state store)
 Layer: headless
 Rule: basalt-router
 OptionalPeers: @tanstack/react-router@^1.170.0
@@ -74,7 +74,7 @@ OptionalPeers: @mantine/form@^9.3.0
 
 ## basalt-ui/notifications
 Import: import { ... } from 'basalt-ui/notifications'
-Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell
+Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter
 Layer: mantine-coupled
 Rule: basalt-notifications
 OptionalPeers: @mantine/notifications@^9.3.0
@@ -132,7 +132,6 @@ Import: import { ... } from 'basalt-ui/connectivity'
 Description: ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider
 Layer: mantine-coupled
 Rule: basalt-mantine
-OptionalPeers: @tanstack/react-query@^5.101.0
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css

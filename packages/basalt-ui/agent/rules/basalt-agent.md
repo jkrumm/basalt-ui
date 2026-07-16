@@ -161,8 +161,8 @@ import { Markdown } from 'basalt-ui/content'
 
 `./agent` deliberately ships no markdown renderer of its own — `agent/** -> content` is
 lint-blocked by design (the Mantine-free boundary). The package's only markdown renderer is
-`basalt-ui/content`'s `Markdown`; `threadPartRenderers` (`basalt-ui/agent-chat`, re-exported from
-the root entry) already wires it in as the `text` renderer for `ThreadTranscript`/`ThreadWorkspace`.
+`basalt-ui/content`'s `Markdown`; `threadPartRenderers` (re-exported from the root `basalt-ui`
+entry) already wires it in as the `text` renderer for `ThreadTranscript`/`ThreadWorkspace`.
 
 ## BasaltStickToBottom (optional peer)
 

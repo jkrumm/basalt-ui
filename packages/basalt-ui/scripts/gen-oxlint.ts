@@ -1,7 +1,9 @@
 /**
  * Generates the no-restricted-imports overrides for both oxlint configs from SURFACES.
- * The hand-maintained base (plugins, categories, rules, ignorePatterns, doc comment key) is
- * read from the current files and spliced in unchanged — only the overrides array is replaced.
+ * The hand-maintained base (plugins, categories, rules, ignorePatterns) is read from the
+ * current files and spliced in unchanged — only the overrides array is replaced. Unknown
+ * top-level keys are stripped on read: oxlint hard-errors on any field outside its known
+ * schema (e.g. a doc-comment `"//"` key), so the base must be whitelisted before re-emitting.
  *
  * Usage: bun packages/basalt-ui/scripts/gen-oxlint.ts
  *        bun packages/basalt-ui/scripts/gen-oxlint.ts --check  (CI drift gate)
@@ -10,6 +12,32 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ForbiddenImport, RuleOverride } from '../src/surfaces'
 import { SURFACES } from '../src/surfaces'
+
+// The exact set oxlint's own config parser accepts at the top level (per oxlint 1.68.0's
+// "unknown field" parse error) — anything else (e.g. a doc-comment `"//"` key) is stripped
+// before re-emitting so the shipped/repo configs stay parseable by oxlint itself.
+const ALLOWED_TOP_LEVEL_KEYS: ReadonlySet<string> = new Set([
+  '$schema',
+  'plugins',
+  'jsPlugins',
+  'categories',
+  'rules',
+  'settings',
+  'env',
+  'globals',
+  'overrides',
+  'options',
+  'ignorePatterns',
+  'extends',
+])
+
+function stripUnknownTopLevelKeys(base: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(base)) {
+    if (ALLOWED_TOP_LEVEL_KEYS.has(key)) result[key] = value
+  }
+  return result
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────────────────────────
 
@@ -159,9 +187,14 @@ function generate(): {
   shippedResult: Record<string, unknown>
   repoResult: Record<string, unknown>
 } {
-  // Read and parse the hand-maintained base (preserves all keys except overrides)
-  const shippedBase = JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>
-  const repoBase = JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>
+  // Read and parse the hand-maintained base (preserves all known keys except overrides;
+  // unknown top-level keys — e.g. a stray doc-comment key — are dropped, never re-emitted)
+  const shippedBase = stripUnknownTopLevelKeys(
+    JSON.parse(readFileSync(shippedPath, 'utf8')) as Record<string, unknown>,
+  )
+  const repoBase = stripUnknownTopLevelKeys(
+    JSON.parse(readFileSync(repoPath, 'utf8')) as Record<string, unknown>,
+  )
 
   return {
     shippedResult: { ...shippedBase, overrides: projectBanList('shipped') },

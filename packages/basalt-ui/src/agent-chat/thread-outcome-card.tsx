@@ -10,7 +10,7 @@
  * this row stays a plain button with no motion wrapper of its own.
  *
  * @example
- * import { ThreadOutcomeCard } from 'basalt-ui/agent-chat'
+ * import { ThreadOutcomeCard } from 'basalt-ui'
  *
  * <ThreadOutcomeCard
  *   thread={thread}

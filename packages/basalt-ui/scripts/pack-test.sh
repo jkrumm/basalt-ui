@@ -132,6 +132,27 @@ console.log('scratch resolution OK (19 subpaths)')
 JS
 node test.mjs
 
+echo "==> scratch-consumer oxlint preset contract (extends the shipped preset for real)"
+# Exercises the real consumer contract against the tarball: a fresh .oxlintrc.json that
+# extends the shipped preset via the documented node_modules-relative path, linted for real.
+# A config PARSE failure (e.g. an unknown top-level key) must fail the pack test; ordinary
+# lint findings on the trivial fixture below are expected and must NOT fail it.
+cat >.oxlintrc.json <<'JSON'
+{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }
+JSON
+cat >lint-fixture.ts <<'TS'
+export const scratchLintFixture = 1
+TS
+set +e
+OXLINT_OUTPUT=$(bunx oxlint lint-fixture.ts 2>&1)
+set -e
+echo "$OXLINT_OUTPUT"
+if echo "$OXLINT_OUTPUT" | grep -qi "failed to parse"; then
+  echo "FAILED: shipped oxlint preset does not parse for a real consumer (config parse failure)"
+  exit 1
+fi
+echo "scratch-consumer oxlint preset contract OK"
+
 echo "==> dist-vantage tsc assertion (catches .d.ts declaration-emit regressions)"
 # Write a strict tsconfig matching the package's own flags — the .d.ts vantage only
 # catches a declaration-emit regression under the same strict flags.

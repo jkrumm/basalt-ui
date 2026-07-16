@@ -10,6 +10,16 @@
  *
  * Every rule supports the same `theme-allow` escape as `src/guard`: skip a reported node if a line
  * comment containing `theme-allow` sits on the node's own line or the line immediately above it.
+ *
+ * ── About the shipped `configs/oxlint.json` preset ────────────────────────────────────────────
+ * Consumers extend it from their own `.oxlintrc.json` via the node_modules-relative path:
+ * `{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }` — oxlint rejects bare
+ * specifiers, so the relative `./node_modules` path is required. NOTE: oxlint `extends` is
+ * per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an
+ * override glob, so any ban that must also hold inside an override is duplicated into that
+ * override. `configs/oxlint.json` is generated from `SURFACES` by `scripts/gen-oxlint.ts`
+ * (`--check` is the CI drift gate) — its top-level keys are limited to what oxlint's own parser
+ * accepts (see `ALLOWED_TOP_LEVEL_KEYS` in that script); do not add ad hoc keys to that file.
  */
 
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────

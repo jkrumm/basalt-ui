@@ -11,7 +11,7 @@
     "theme",
     "visx"
   ],
-  "homepage": "https://basalt-ui.com?utm_source=npm_package",
+  "homepage": "https://github.com/jkrumm/basalt-ui/tree/master/packages/basalt-ui#readme",
   "bugs": {
     "url": "https://github.com/jkrumm/basalt-ui/issues"
   },
@@ -204,9 +204,6 @@
       "optional": true
     },
     "@mantine/spotlight": {
-      "optional": true
-    },
-    "@tanstack/react-query": {
       "optional": true
     },
     "@tanstack/react-query-devtools": {

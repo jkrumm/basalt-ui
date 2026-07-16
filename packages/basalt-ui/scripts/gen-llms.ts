@@ -4,6 +4,7 @@
  * subpath with import specifier, description, layer, and optional peers.
  *
  * Usage: bun packages/basalt-ui/scripts/gen-llms.ts
+ *        bun packages/basalt-ui/scripts/gen-llms.ts --check  (CI drift gate)
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -123,9 +124,27 @@ export function generateLlmsTxt(): string {
   return lines.join('\n')
 }
 
-// Only run when executed directly (not when imported by the test suite)
-if (import.meta.path === Bun.main) {
+function main(): void {
+  const args = process.argv.slice(2)
+  const checkMode = args.includes('--check')
   const content = generateLlmsTxt()
+
+  if (checkMode) {
+    const committed = readFileSync(outPath, 'utf8')
+    if (content !== committed) {
+      console.error('✖ gen-llms --check: packages/basalt-ui/llms.txt is out of sync.')
+      console.error('  Run: bun packages/basalt-ui/scripts/gen-llms.ts')
+      process.exit(1)
+    }
+    console.log('✓ gen-llms --check: llms.txt is in sync with SURFACES.')
+    return
+  }
+
   writeFileSync(outPath, content, 'utf8')
   console.log(`wrote ${outPath}`)
+}
+
+// Only run when executed directly (not when imported by the test suite)
+if (import.meta.path === Bun.main) {
+  main()
 }

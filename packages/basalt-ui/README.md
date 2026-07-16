@@ -5,7 +5,7 @@
 
 > Opinionated framework for Mantine v9 + visx React apps — theme, app shell, chart system, and the agentic layer to drive them.
 
-**[Documentation](https://basalt-ui.com?utm_source=basalt_ui_readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
+**[Documentation](#quick-start)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
 Building a dashboard app means wiring a Mantine theme, a visx chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other.
 
@@ -32,7 +32,7 @@ bunx basalt init
 
 Writes into the consumer repo:
 
-- `.claude/rules/basalt-*.md` — eleven Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`)
+- `.claude/rules/basalt-*.md` — twelve Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`)
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
 - Toolchain templates: `oxfmt.json`, `lefthook.yml`, `check.yml`
@@ -165,7 +165,7 @@ configured roots resolve to zero scanned files. Other `"basalt"` config keys (`e
 | `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThreadWorkspace` + thread-chat components, shell types |
 | `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                                                                                                                                                                               |
 | `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                  |
-| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                                               |
+| `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `loadOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                              |
 | `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps                                                                                                                                                                                                                                                           |
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                                                                                                                                |
 | `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                                                                                                                                                                           |
@@ -179,6 +179,7 @@ configured roots resolve to zero scanned files. Other `"basalt"` config keys (`e
 | `./agent`           | **free** | Headless streaming layer (`useAgentStream`, `PartList`) + multi-thread `createThreadsStore` / `useAgentThreadRuns` / outcome seam                                                                                                                                                                                            |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                                                                                                                          |
 | `./connectivity`    | coupled  | `ConnectivityProvider` (aggregates browser/React-Query/SSE/health-check status), `useConnectivity`, `ConnectivityIndicator` — auto-mounted by `BasaltProvider`                                                                                                                                                               |
+| `./content`         | coupled  | `Prose`, `CodeBlock`, `Callout`, `TableOfContents`, `ReadingProgress`, `Markdown`, `MermaidDiagram`, `ArticleLayout`, `ArticleCard` / `ArticleGrid`, `GuideLink` / `GuideDrawer`, `mdxComponents`                                                                                                                            |
 | `./styles.css`      | —        | `@layer basalt` base styles, iOS input safety net, font stack                                                                                                                                                                                                                                                                |
 | `./configs/*`       | —        | Raw toolchain presets — oxlint, oxfmt, tsconfig (base/react-app/node), lefthook                                                                                                                                                                                                                                              |
 | `./llms.txt`        | —        | Machine-readable surface map — one entry per published subpath with import specifier, description, layer, and optional peers                                                                                                                                                                                                 |
@@ -399,14 +400,13 @@ Ships no markdown renderer — `agent/** -> content` is lint-blocked by design, 
 a consumer-supplied `components.text`. Basalt's own is [`./content`](#content--prose--markdown)'s
 `Markdown`, already wired in by `ThreadWorkspace`.
 
-Single conversation — headless streaming primitives:
+Single conversation — headless streaming primitives, `aiSdkTransport` (recommended default, optional
+peer: `ai`):
 
 ```tsx
-import { useAgentStream, edenTransport, PartList } from 'basalt-ui/agent'
+import { useAgentStream, aiSdkTransport, PartList } from 'basalt-ui/agent'
 
-const transport = edenTransport((input, signal) =>
-  api.chat.post({ body: { message: input }, fetch: { signal } }),
-)
+const transport = aiSdkTransport({ api: '/api/chat' })
 const { parts, send, status } = useAgentStream({ transport })
 ```
 
