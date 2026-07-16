@@ -1,0 +1,5 @@
+# Generated files — owned by their generator, not by oxfmt.
+# semantic-release rewrites CHANGELOG.md on every release; formatting it here
+# means the formatter and the generator fight, and the gate goes red on every
+# release commit (which carries [skip ci], so it surfaces on the next PR instead).
+**/CHANGELOG.md
