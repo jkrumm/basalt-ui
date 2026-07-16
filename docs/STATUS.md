@@ -56,6 +56,12 @@ that language is historical; see the banner on each.
   account contract (`BasaltAccountProps`/`State`/`Actions`) threaded optionally through
   `AppSidebar`/`BasaltShell`'s `account` prop. No better-auth dependency, no `./auth` subpath — the
   Better-Auth mapping recipe ships as JSDoc only.
+- **Content surface** (`./content`, `docs/CONTENT-SPEC.md`) — complete: `Prose`/`CodeBlock`/
+  `Callout`/`TableOfContents`/`ReadingProgress`/`Markdown`/`MermaidDiagram`/`mdxComponents` (stages
+  1+2) plus the docs-framing layer (stage 3) — `ArticleLayout` (meta header + sticky TOC rail +
+  prev/next footer), `ArticleCard`/`ArticleGrid` (overview cards), `GuideLink`/`GuideDrawer`
+  (contextual help drawer), and the content-collections + TanStack Start recipe in
+  `agent/rules/basalt-content.md`.
 
 ## Open — the finish line (owner-gated, cannot be closed from source)
 
