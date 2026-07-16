@@ -113,6 +113,13 @@ Layer: headless
 Rule: basalt-agent
 OptionalPeers: ai@^7.0.15, react-markdown@^10.1.0, remark-gfm@^4.0.1, use-stick-to-bottom@^1.1.6
 
+## basalt-ui/content
+Import: import { ... } from 'basalt-ui/content'
+Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
+Layer: mantine-coupled
+Rule: basalt-content
+OptionalPeers: shiki@^4.3.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1
+
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives

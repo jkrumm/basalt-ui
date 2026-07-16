@@ -9,7 +9,7 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 11 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 12 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
@@ -27,6 +27,7 @@ export type RuleName =
   | 'commands'
   | 'data'
   | 'agent'
+  | 'content'
 
 /** The 3 plugin skill names (plugins/basalt/skills/basalt-{name}/).
  *
@@ -365,6 +366,17 @@ export const SURFACES = {
       ...MANTINE_BANS,
       vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
     ],
+  },
+  './content': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'content',
+    skill: ['basalt-design'],
+    guardKinds: [],
+    description:
+      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
+    optionalPeers: ['shiki', 'beautiful-mermaid', 'react-markdown', 'remark-gfm'],
+    forbiddenImports: [],
   },
   './state': {
     kind: 'doctrine',

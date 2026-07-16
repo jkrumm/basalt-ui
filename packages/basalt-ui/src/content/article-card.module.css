@@ -1,0 +1,86 @@
+/*
+ * ArticleCard — the docs-landing overview building block (docs/CONTENT-SPEC.md §3/§7): panel bg +
+ * shadow-card + card-radius (inherited from the shipped `Card` theme, same as StatCard/
+ * SettingsSection), a clickable whole-card affordance when `href`/`onClick` is given.
+ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The `renderLink` router bridge renders a consumer anchor around the card — neutralize the
+ * browser anchor defaults it brings, and keep the grid cell's full height flowing through. */
+.linkWrap {
+  display: block;
+  height: 100%;
+}
+
+.linkWrap a {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.clickable {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+  /* Native-`<button>` reset — ArticleCard's `onClick`-only variant renders `Card component="button"`
+   * for real keyboard/AT semantics. The browser's UA-origin button chrome (border, font, text-align)
+   * always loses to Card's own authored background/shadow/radius, but these three properties are
+   * NOT set by Card itself, so the button's UA defaults would otherwise leak through. */
+  width: 100%;
+  border: none;
+  font: inherit;
+  text-align: inherit;
+}
+
+.clickable:hover,
+.clickable:focus-visible {
+  background-color: var(--vx-surface-panelHover);
+}
+
+.clickable:hover .title,
+.clickable:focus-visible .title {
+  color: var(--vx-accent);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: flex;
+  color: var(--vx-muted);
+}
+
+.title {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+  transition: color 120ms ease;
+}
+
+.description {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-ink2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}

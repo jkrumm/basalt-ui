@@ -1,0 +1,131 @@
+/*
+ * ArticleLayout — the docs-page frame (docs/CONTENT-SPEC.md §3/§7): a content column CENTERED in
+ * the available width, an optional sticky TOC rail, a meta header, and a prev/next footer. The
+ * header/content/footer all sit in grid-column 1, so they share the SAME width regardless of
+ * whether the TOC rail is visible — this is what fixes the old "content hugs the left, huge gulf
+ * to the far-right TOC" imbalance.
+ */
+
+.root {
+  display: grid;
+  grid-template-columns: minmax(0, var(--vx-prose-measure)) 220px;
+  justify-content: center;
+  column-gap: 56px;
+}
+
+.root.noToc {
+  grid-template-columns: minmax(0, var(--vx-prose-measure));
+}
+
+@media (max-width: 1200px) {
+  .root {
+    grid-template-columns: minmax(0, var(--vx-prose-measure));
+  }
+
+  .tocRail {
+    display: none;
+  }
+}
+
+.header {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--vx-divider);
+}
+
+.title {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-h1);
+  color: var(--vx-ink);
+  margin: 0;
+}
+
+.description {
+  font-size: var(--vx-text-lg);
+  color: var(--vx-ink2);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+.content {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.tocRail {
+  grid-column: 2;
+  position: sticky;
+  top: 84px;
+  align-self: start;
+}
+
+.footer {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--vx-divider);
+}
+
+/* A consumer `renderLink` bridge wraps the cell in its own anchor — neutralize the browser anchor
+ * defaults it brings (same treatment as ArticleCard's linkWrap). */
+.footer a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.navCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.navCellNext {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.navLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+.navTarget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+  transition: color 120ms ease;
+}
+
+.navCell:hover .navTarget {
+  color: var(--vx-accent);
+}

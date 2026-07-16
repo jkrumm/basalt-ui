@@ -1,0 +1,167 @@
+/**
+ * GuideDrawer / GuideLink — contextual in-app help (docs/CONTENT-SPEC.md §2 decision 8 / §3): the
+ * "this chart has a guide" pattern (GitLab Pajamas / Stripe-dashboard style). `GuideDrawer` is the
+ * controlled right-side drawer rendering an article via `Markdown`/`Prose` at article density with
+ * an "open full page" escape hatch; `GuideLink` is the uncontrolled quiet trigger + drawer pair —
+ * mount it next to whatever it explains (a chart, a StatCard, a settings row).
+ *
+ * @example
+ * import { GuideLink } from 'basalt-ui/content'
+ *
+ * <GuideLink
+ *   title="How p95 latency is measured"
+ *   markdown={p95GuideMarkdown}
+ *   fullPageHref="/guides/p95-latency"
+ * />
+ */
+import type { ReactNode } from 'react'
+import { ActionIcon, Button, Drawer } from '@mantine/core'
+import type { DrawerProps } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import classes from './guide.module.css'
+import type { ArticleNavTarget } from './article-layout'
+import { Markdown } from './markdown'
+import { Prose } from './prose'
+
+function defaultRenderLink(target: ArticleNavTarget, node: ReactNode): ReactNode {
+  return <a href={target.href}>{node}</a>
+}
+
+/** Small inline open-book glyph — the framework ships no icon dependency. */
+function GuideGlyph() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 6a2 2 0 0 1 2 -2h5v16h-5a2 2 0 0 1 -2 -2z" />
+      <path d="M20 6a2 2 0 0 0 -2 -2h-5v16h5a2 2 0 0 0 2 -2z" />
+    </svg>
+  )
+}
+
+export type GuideDrawerProps = {
+  readonly opened: boolean
+  readonly onClose: () => void
+  readonly title: string
+  /** React-children body — mutually exclusive with `markdown` (`markdown` wins if both given). */
+  readonly children?: ReactNode
+  /** Markdown-string body, rendered via `Markdown` at article density. */
+  readonly markdown?: string
+  /** When given, renders an "Open full page" footer link. */
+  readonly fullPageHref?: string
+  /** Router bridge for the "Open full page" link. Default renders a plain `<a href>`. */
+  readonly renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
+  readonly size?: DrawerProps['size']
+}
+
+export function GuideDrawer({
+  opened,
+  onClose,
+  title,
+  children,
+  markdown,
+  fullPageHref,
+  renderLink = defaultRenderLink,
+  size = 440,
+}: GuideDrawerProps) {
+  return (
+    <Drawer
+      opened={opened}
+      onClose={onClose}
+      position="right"
+      size={size}
+      title={<span className={classes.drawerTitle}>{title}</span>}
+    >
+      <div className={classes.body}>
+        {markdown !== undefined ? (
+          <Markdown density="article" measure={false}>
+            {markdown}
+          </Markdown>
+        ) : (
+          <Prose density="article" measure={false}>
+            {children}
+          </Prose>
+        )}
+      </div>
+
+      {fullPageHref !== undefined && (
+        <div className={classes.footer}>
+          {renderLink(
+            { label: 'Open full page', href: fullPageHref },
+            <span className={classes.footerLink}>Open full page →</span>,
+          )}
+        </div>
+      )}
+    </Drawer>
+  )
+}
+
+export type GuideLinkProps = {
+  /** Trigger label. Default `'Guide'`. */
+  readonly label?: string
+  readonly title: string
+  readonly children?: ReactNode
+  readonly markdown?: string
+  readonly fullPageHref?: string
+  readonly renderLink?: (target: ArticleNavTarget, node: ReactNode) => ReactNode
+  /** Render the trigger as an icon-only `ActionIcon` instead of a labeled button. Default `false`. */
+  readonly iconOnly?: boolean
+}
+
+export function GuideLink({
+  label = 'Guide',
+  title,
+  children,
+  markdown,
+  fullPageHref,
+  renderLink,
+  iconOnly = false,
+}: GuideLinkProps) {
+  const [opened, { open, close }] = useDisclosure(false)
+
+  return (
+    <>
+      {iconOnly ? (
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          className={classes.trigger}
+          onClick={open}
+          aria-label={label}
+        >
+          <GuideGlyph />
+        </ActionIcon>
+      ) : (
+        <Button
+          variant="subtle"
+          color="gray"
+          size="compact-xs"
+          className={classes.trigger}
+          leftSection={<GuideGlyph />}
+          onClick={open}
+        >
+          <span className={classes.triggerLabel}>{label}</span>
+        </Button>
+      )}
+
+      <GuideDrawer
+        opened={opened}
+        onClose={close}
+        title={title}
+        {...(children !== undefined && { children })}
+        {...(markdown !== undefined && { markdown })}
+        {...(fullPageHref !== undefined && { fullPageHref })}
+        {...(renderLink !== undefined && { renderLink })}
+      />
+    </>
+  )
+}

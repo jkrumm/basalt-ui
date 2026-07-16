@@ -1,0 +1,51 @@
+/*
+ * TableOfContents — scroll-spy rail. Sticky positioning is the CONSUMER's job (docs/CONTENT-SPEC.md
+ * §3); this module is just the rail itself.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--vx-divider);
+  display: flex;
+  flex-direction: column;
+}
+
+.link {
+  display: block;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+  text-decoration: none;
+  padding: 4px 0 4px 12px;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  transition: color 120ms ease;
+}
+
+.link:hover {
+  color: var(--vx-ink2);
+}
+
+.sub {
+  padding-left: 24px;
+}
+
+.active {
+  color: var(--vx-ink);
+  border-left-color: var(--vx-accent);
+}

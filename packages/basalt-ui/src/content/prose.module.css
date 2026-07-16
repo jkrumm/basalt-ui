@@ -1,0 +1,316 @@
+/*
+ * Prose typography — docs/CONTENT-SPEC.md §2/§5, docs/DESIGN-SPEC.md §3. ONE CSS module driving
+ * both densities: `.chat` is byte-equivalent to `../agent/streaming-markdown.module.css` (the
+ * successor relationship — `agent/rules/basalt-agent.md` documents the migration note); `.article`
+ * is the long-form reading density (16px/1.7, generous block spacing, a wider type ladder).
+ * Every color/font routes through `--vx-*` / `--basalt-font-*` tokens, so both schemes resolve
+ * from one ruleset — see `../agent/streaming-markdown.module.css` for the idiom this mirrors.
+ */
+
+.root {
+  font-family: var(--basalt-font-sans);
+  color: var(--vx-ink);
+  overflow-wrap: anywhere;
+}
+
+.measure {
+  max-width: var(--vx-prose-measure);
+}
+
+/* Collapse the outer block's own edge margins — the container/page padding is the only gap. */
+.root > :first-child {
+  margin-top: 0;
+}
+
+.root > :last-child {
+  margin-bottom: 0;
+}
+
+/* Fixed-header clearance so an anchor-jumped/TOC-navigated heading isn't hidden under a sticky header. */
+.root h2,
+.root h3,
+.root h4 {
+  scroll-margin-top: 84px;
+}
+
+/* Headings share family/weight/color across densities; size + margin differ below. */
+.root h1,
+.root h2,
+.root h3,
+.root h4,
+.root h5,
+.root h6 {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  color: var(--vx-ink);
+}
+
+/* Blockquote — quiet left rail, shared across densities; margin differs below. */
+.root blockquote {
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--vx-divider);
+  color: var(--vx-muted);
+}
+
+.root blockquote > :first-child {
+  margin-top: 0;
+}
+
+.root blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* Inline code chip — em-relative, so it tracks whatever step the parent lands on. */
+.root code {
+  font-family: var(--basalt-font-mono);
+  font-size: 0.85em;
+  background-color: color-mix(in srgb, var(--vx-ink) 7%, transparent);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  color: var(--vx-ink2);
+}
+
+/* Fenced code block (hand-authored JSX `<pre>` inside Prose — CodeBlock owns its own chrome). */
+.root pre {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-sm);
+  line-height: 1.5;
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+.root pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Links */
+.root a {
+  color: var(--vx-accent);
+  text-decoration: none;
+}
+
+.root a:hover {
+  color: var(--vx-accentHover);
+  text-decoration: underline;
+}
+
+/* Images — never overflow the measure column. */
+.root img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Heading anchor links (stage 2 — Markdown/MDX slugged headings, docs/CONTENT-SPEC.md §7). Hover
+ * on the heading reveals a quiet `#` link; chat density never shows one (no TOC to link into). */
+.root h1 .headingAnchor,
+.root h2 .headingAnchor,
+.root h3 .headingAnchor,
+.root h4 .headingAnchor,
+.root h5 .headingAnchor,
+.root h6 .headingAnchor {
+  margin-left: 8px;
+  color: var(--vx-faint);
+  text-decoration: none;
+  opacity: 0;
+  transition:
+    opacity 120ms ease,
+    color 120ms ease;
+}
+
+.root h1:hover .headingAnchor,
+.root h2:hover .headingAnchor,
+.root h3:hover .headingAnchor,
+.root h4:hover .headingAnchor,
+.root h5:hover .headingAnchor,
+.root h6:hover .headingAnchor,
+.headingAnchor:focus-visible {
+  opacity: 1;
+}
+
+.headingAnchor:hover {
+  color: var(--vx-accent);
+}
+
+.root.chat .headingAnchor {
+  display: none;
+}
+
+/* Rule */
+.root hr {
+  border: none;
+  border-top: 1px solid var(--vx-divider);
+}
+
+/* Tables — hairline grid, mono micro-label header idiom. X-axis scroll is the sanctioned
+ * overflow exception (docs/DESIGN-SPEC.md §5) for a table wider than its column. */
+.root table {
+  display: block;
+  overflow-x: auto;
+  font-size: var(--vx-text-sm);
+  border-collapse: collapse;
+}
+
+.root th,
+.root td {
+  border: 1px solid var(--vx-surface-border);
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.root th {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+/* Emphasis */
+.root strong {
+  font-weight: 600;
+}
+
+.root em {
+  font-style: italic;
+  color: inherit;
+}
+
+/* ── Chat density — byte-equivalent to agent/streaming-markdown.module.css ─────────────────────── */
+
+.root.chat {
+  font-size: var(--vx-text-md);
+  line-height: 1.55;
+}
+
+.root.chat p {
+  margin: 0 0 8px;
+}
+
+.root.chat ul,
+.root.chat ol {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+
+.root.chat li {
+  margin: 3px 0;
+}
+
+.root.chat li > ul,
+.root.chat li > ol {
+  margin: 2px 0;
+}
+
+.root.chat h1,
+.root.chat h2,
+.root.chat h3,
+.root.chat h4,
+.root.chat h5,
+.root.chat h6 {
+  margin: 14px 0 6px;
+}
+
+.root.chat h1 {
+  font-size: var(--vx-text-xl);
+}
+
+.root.chat h2 {
+  font-size: var(--vx-text-lg);
+}
+
+.root.chat h3,
+.root.chat h4,
+.root.chat h5,
+.root.chat h6 {
+  font-size: var(--vx-text-md);
+}
+
+.root.chat blockquote {
+  margin: 8px 0;
+}
+
+.root.chat pre {
+  margin: 8px 0;
+}
+
+.root.chat table {
+  margin: 8px 0;
+}
+
+.root.chat hr {
+  margin: 12px 0;
+}
+
+/* ── Article density — the long-form reading density (default) ────────────────────────────────── */
+
+.root.article {
+  font-size: var(--vx-text-lg);
+  line-height: 1.7;
+}
+
+.root.article p {
+  margin: 0 0 14px;
+}
+
+.root.article ul,
+.root.article ol {
+  margin: 6px 0 14px;
+  padding-left: 22px;
+}
+
+.root.article li {
+  margin: 4px 0;
+}
+
+.root.article li > ul,
+.root.article li > ol {
+  margin: 4px 0;
+}
+
+.root.article h1 {
+  font-size: var(--vx-text-h1);
+  margin: 6px 0 14px;
+}
+
+.root.article h2 {
+  font-size: var(--vx-text-h2);
+  margin: 30px 0 10px;
+  border-bottom: 1px solid var(--vx-divider);
+  padding-bottom: 6px;
+}
+
+.root.article h3 {
+  font-size: var(--vx-text-xl);
+  margin: 30px 0 10px;
+}
+
+.root.article h4,
+.root.article h5,
+.root.article h6 {
+  font-size: var(--vx-text-lg);
+  margin: 30px 0 10px;
+}
+
+.root.article blockquote {
+  margin: 14px 0;
+}
+
+.root.article pre {
+  margin: 14px 0;
+}
+
+.root.article table {
+  margin: 14px 0;
+}
+
+.root.article hr {
+  margin: 24px 0;
+}

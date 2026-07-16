@@ -61,7 +61,9 @@ const TEXT = {
   md: 15, // BODY — nav rows, menu items, timeline, labels, prose; chart/card titles
   lg: 16, // breadcrumb current — ALSO the iOS input floor (do not lower)
   xl: 18, // section titles
+  h2: 21, // article-density Prose h2 (docs/CONTENT-SPEC.md §5)
   kpi: 24, // the StatCard hero numeral (density pass: 31 → 24, tighter/less shouty)
+  h1: 26, // article-density Prose h1 (docs/CONTENT-SPEC.md §5)
 } as const
 
 export const VX = {
@@ -257,6 +259,8 @@ function frameworkPrimitives(side: Side): string {
 const FRAMEWORK_DERIVED = [
   decl('radius-card', '7px'),
   decl('radius-ctrl', '6px'),
+  // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
+  decl('prose-measure', '72ch'),
   // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
   // is the same hex in both, which is the whole point: it is squeezed between its white label and
   // the page behind it, and only one luminance band satisfies both on both pages.

@@ -1,0 +1,73 @@
+/*
+ * Callout — a soft tinted panel with a left rail, keyed to one of the four semantic tokens.
+ * `--callout-ink` is set per kind below and consumed by both the rail/bg tint and the title/icon
+ * color — one custom property, no per-kind duplication.
+ */
+
+.root {
+  border-radius: var(--vx-radius-card);
+  padding: 10px 14px;
+  border-left: 2px solid var(--callout-ink);
+  background: color-mix(in srgb, var(--callout-ink) 8%, transparent);
+}
+
+.root > :first-child {
+  margin-top: 0;
+}
+
+.root > :last-child {
+  margin-bottom: 0;
+}
+
+.info {
+  --callout-ink: var(--vx-accent);
+}
+
+.good {
+  --callout-ink: var(--vx-goodSolid);
+}
+
+.warn {
+  --callout-ink: var(--vx-warnSolid);
+}
+
+.bad {
+  --callout-ink: var(--vx-badSolid);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--callout-ink);
+}
+
+.title {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-md);
+  color: var(--callout-ink);
+}
+
+.body {
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink2);
+}
+
+.body > :first-child {
+  margin-top: 0;
+}
+
+.body > :last-child {
+  margin-bottom: 0;
+}
+
+.body p {
+  margin: 0 0 8px;
+}

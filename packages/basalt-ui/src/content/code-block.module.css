@@ -1,0 +1,86 @@
+/*
+ * CodeBlock chrome. The OUTER container owns the surface (bg/radius/border); shiki's own
+ * `<pre class="shiki">` (when highlighting resolved) has its margin/padding/background reset so it
+ * never fights the container for the surface — see `.body :global(pre.shiki)` below.
+ */
+
+.container {
+  position: relative;
+  border-radius: 8px;
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px 6px 14px;
+  border-bottom: 1px solid var(--vx-divider);
+}
+
+.title {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+  color: var(--vx-ink2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.langBadge {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vx-faint);
+}
+
+/* Body — shared padding/font/scroll treatment across both the plain `<pre>` fallback and the
+ * shiki-highlighted `<div>` wrapper (X-axis scroll is the sanctioned overflow exception). */
+.body {
+  margin: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-sm);
+  line-height: 1.6;
+  padding: 10px 14px;
+  overflow-x: auto;
+}
+
+.body :global(pre.shiki) {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+}
+
+/* Dual-theme activation — shiki's `defaultColor: false` emits `--shiki-{light,dark}` vars only;
+ * dark is the basalt default, light activates under the Mantine light scheme attribute. */
+.body :global(.shiki span) {
+  color: var(--shiki-dark);
+}
+
+html[data-mantine-color-scheme='light'] .body :global(.shiki span) {
+  color: var(--shiki-light);
+}
+
+/* Floating copy button — shown only when there is no header (no title), revealed on hover/focus. */
+.floatingCopy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.container:hover .floatingCopy,
+.container:focus-within .floatingCopy {
+  opacity: 1;
+}

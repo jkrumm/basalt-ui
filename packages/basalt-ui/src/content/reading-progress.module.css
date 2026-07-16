@@ -1,0 +1,22 @@
+/*
+ * ReadingProgress — a fixed 2px top bar. The outer bar stays transparent; `.fill` carries the
+ * `--vx-accentFill` band token (the FILL surface, never the ink `--vx-accent` — docs/DESIGN-SPEC.md
+ * §7's fill-band rule) and is scaled via `transform: scaleX()` from JS.
+ */
+
+.root {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: transparent;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.fill {
+  height: 100%;
+  width: 100%;
+  background: var(--vx-accentFill);
+  transform-origin: left;
+  will-change: transform;
+}

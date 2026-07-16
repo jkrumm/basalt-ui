@@ -1,0 +1,62 @@
+/*
+ * GuideDrawer / GuideLink — contextual in-app docs (docs/CONTENT-SPEC.md §2 decision 8 / §3). The
+ * trigger must read as QUIET (faint ink, accent on hover) — never a loud button, this is a
+ * "there's more context here" affordance, not a primary action.
+ */
+
+.drawerTitle {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+}
+
+.body {
+  padding-bottom: 8px;
+}
+
+.footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--vx-divider);
+}
+
+/* Consumer `renderLink` anchors inside the footer inherit the quiet footer-link treatment instead
+ * of browser anchor defaults. */
+.footer a {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.footer a:hover {
+  color: var(--vx-accent);
+}
+
+.footerLink {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.footerLink:hover {
+  color: var(--vx-accent);
+}
+
+.trigger {
+  color: var(--vx-faint) !important;
+}
+
+.trigger:hover {
+  color: var(--vx-accent) !important;
+}
+
+.triggerLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
