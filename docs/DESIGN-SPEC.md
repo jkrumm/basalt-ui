@@ -207,14 +207,22 @@ dead code against the `!important` floor.
   idiom; it dismisses on Escape, blur, or an outside click. Its trigger lives in the card header,
   which sits OUTSIDE the chart body's clip box, so the bubble can overhang the card edge and is never
   clipped.
-- **Scrollbars**: 9px, hairline thumb (line on hover), radius 6, transparent track. A scroll region
+- **Scrollbars**: 9px, radius 6, transparent track; thumb = `--vx-ink` at 25% (40% on hover), via the
+  `--basalt-scrollbar-thumb{,-hover}` pair. ONE treatment drives both the native page bar and
+  Mantine's ScrollArea overlay bar, so a page and a sidebar never read as two scrollbar languages —
+  Mantine's own thumb (hardcoded `rgba(0,0,0,.4)`) and its gray-0 track hover are both overridden in
+  `styles.css`. The thumb is an ink %-mix, NOT `--vx-surface-hairline`: hairline is the card-ring
+  token (`#e5e5e5`), which scores 1.07:1 on the light page — invisible. Ink inverts across schemes,
+  so one expression stays visible on both. A scroll region
   in app chrome is a Mantine `ScrollArea` (`type="hover"`, `scrollbarSize={9}`), never a raw
   `overflow: auto` box — its bar floats over the content instead of reserving gutter width and
   reflowing the column. Exactly ONE bar shows: `styles.css` re-hides the native bar on
   `.mantine-ScrollArea-viewport`, which the global `*::-webkit-scrollbar` theming would otherwise
   re-expose on top of Mantine's overlay. `AppSidebar`'s nav is the reference pattern; raw
   `overflow: auto` stays correct only where a library owns the scroll node (`BasaltStickToBottom`,
-  `BasaltVirtualList`). Documented, not lint-enforced — the exceptions are context-dependent.
+  `BasaltVirtualList`). `basalt/raw-scroll-container` steers this at **warning** level (vertical axis
+  only) with the usual `theme-allow` escape — a warning, not an error, because whether a raw scroll
+  box is wrong depends on who owns the scroll node, which no AST check can see.
 
 ## 6. Accent discipline (updated)
 
