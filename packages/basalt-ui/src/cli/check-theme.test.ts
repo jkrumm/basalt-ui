@@ -601,8 +601,8 @@ describe('check-theme sub-16-input-font', () => {
 
 describe('check-theme roots fail-loud', () => {
   it('exits non-zero when the built-in default roots match zero files', () => {
-    // No "basalt.roots" in package.json — falls back to the built-in defaults
-    // (apps/dashboard/src, packages/charts/src), which don't exist under this fixture at all.
+    // No "basalt.roots" in package.json — falls back to the built-in default (`src`), which
+    // doesn't exist under this fixture at all (the fixture dir has no src/ of its own here).
     writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'fixture' }))
     const { code, err } = run()
     expect(code).toBe(1)
@@ -621,6 +621,16 @@ describe('check-theme roots fail-loud', () => {
 
   it('stays green when the configured roots match at least one file', () => {
     fixture(`export const C = () => <Box p="md" />\n`)
+    const { code } = run()
+    expect(code).toBe(0)
+  })
+
+  it('scans a plain src/ layout by default with no "basalt.roots" configured', () => {
+    // The built-in default root is `src` (a generic single-app layout), not an argo-shaped path
+    // like `apps/dashboard/src` — a bare consumer with a normal src/ tree scans out of the box.
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'fixture' }))
+    mkdirSync(resolve(dir, 'src'), { recursive: true })
+    writeFileSync(resolve(dir, 'src', 'Card.tsx'), `export const C = () => <Box p="md" />\n`)
     const { code } = run()
     expect(code).toBe(0)
   })
