@@ -35,13 +35,9 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { EmptyState } from 'basalt-ui'
-import {
-  BasaltStickToBottom,
-  createChatHistoryStore,
-  StreamingMarkdown,
-  useAgentStream,
-} from 'basalt-ui/agent'
+import { BasaltStickToBottom, createChatHistoryStore, useAgentStream } from 'basalt-ui/agent'
 import type { AgentPart, ErrorPart, SourcePart, ToolCallPart } from 'basalt-ui/agent'
+import { Markdown } from 'basalt-ui/content'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENT_SCENARIOS, scenarioTransport } from './agent-scenarios'
 import type { StreamSpeed } from './agent-scenarios'
@@ -90,14 +86,14 @@ function coalesce(parts: AgentPart[]): Block[] {
 // ── Block renderers (module scope — no inline components) ──────────────────────
 
 function TextBlock({ text }: { text: string }) {
-  // Own the markdown styling via the package's `basalt-agent-md-*` class hooks (styled in the
-  // page-level <style> below). We deliberately do NOT wrap in Mantine's <Typography>: it sizes
-  // blockquotes at --mantine-font-size-lg and headings at full h1/h2/h3 sizes, which reads far too
-  // large inside a chat bubble. This keeps every element at the compact chat body size.
+  // basalt-ui/content's Markdown (density="chat") owns the chat typography via Prose — headings,
+  // blockquotes, and code all land at the compact chat body size. We deliberately do NOT wrap in
+  // Mantine's <Typography>: it sizes blockquotes at --mantine-font-size-lg and headings at full
+  // h1/h2/h3 sizes, which reads far too large inside a chat bubble.
   return (
-    <div className="basalt-chat-md">
-      <StreamingMarkdown>{text}</StreamingMarkdown>
-    </div>
+    <Markdown streaming density="chat">
+      {text}
+    </Markdown>
   )
 }
 
@@ -342,25 +338,10 @@ function ChatEmptyState({ onPick }: { onPick: (text: string) => void }) {
 }
 
 // ── Page-scoped styles ──────────────────────────────────────────────────────────
-// Typing-indicator keyframes + compact chat prose for the `basalt-agent-md-*` hooks. Scoped under
-// `.basalt-chat-md` so it only touches the streamed assistant markdown. Everything resolves to the
-// chat body size (sm) — headings stay slightly emphasized, blockquote becomes a quiet rule, code
-// gets a subtle surface — instead of Mantine Typography's article scaling.
-const CHAT_STYLES = `
+// Typing-indicator keyframes only. The streamed assistant markdown is styled by basalt-ui/content's
+// Prose (density="chat"), so this page owns no markdown CSS.
+const TYPING_STYLES = `
 @keyframes basalt-typing{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
-.basalt-chat-md{font-size:var(--mantine-font-size-sm);line-height:1.6;overflow-wrap:anywhere}
-.basalt-chat-md>:first-child{margin-top:0}
-.basalt-chat-md>:last-child{margin-bottom:0}
-.basalt-agent-md-p{margin:0 0 .6em}
-.basalt-agent-md-h1,.basalt-agent-md-h2,.basalt-agent-md-h3{font-size:var(--mantine-font-size-md);font-weight:700;line-height:1.35;margin:1em 0 .4em}
-.basalt-agent-md-ul,.basalt-agent-md-ol{margin:0 0 .6em;padding-left:1.4em}
-.basalt-agent-md-li{margin:.15em 0}
-.basalt-agent-md-li::marker{color:var(--mantine-color-dimmed)}
-.basalt-agent-md-a{color:var(--mantine-color-anchor);text-decoration:underline;text-underline-offset:2px}
-.basalt-agent-md-code{font-family:var(--mantine-font-family-monospace);font-size:.85em;padding:.1em .35em;border-radius:var(--mantine-radius-sm);background:var(--mantine-color-default-hover);border:1px solid var(--mantine-color-default-border)}
-.basalt-agent-md-pre{margin:0 0 .6em;padding:.7em .85em;border-radius:var(--mantine-radius-sm);background:var(--mantine-color-default-hover);border:1px solid var(--mantine-color-default-border);overflow-x:auto}
-.basalt-agent-md-pre .basalt-agent-md-code{padding:0;background:none;border:0;font-size:.8rem}
-.basalt-agent-md-blockquote{margin:.6em 0;padding:.15em 0 .15em .8em;border-left:2px solid var(--mantine-color-default-border);color:var(--mantine-color-dimmed);font-style:normal;font-size:inherit}
 `
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -446,13 +427,8 @@ export function AgentDemoPage() {
 
   return (
     <Stack gap="md" p="md">
-      {/*
-        Page-scoped styles: the typing-indicator keyframes, plus compact chat prose for the
-        streamed markdown. StreamingMarkdown tags every element with a `basalt-agent-md-*` class
-        hook (and ships no default CSS), so styling them here is the intended consumer pattern —
-        and it keeps headings/blockquote/code at the chat body size instead of article scale.
-      */}
-      <style>{CHAT_STYLES}</style>
+      {/* Typing-indicator keyframes. Markdown typography comes from content's Prose, not from here. */}
+      <style>{TYPING_STYLES}</style>
 
       <div>
         <Title order={3}>Agent chat</Title>

@@ -44,10 +44,10 @@ import {
   aiSdkTransport,
   createThreadsStore,
   heuristicOutcome,
-  StreamingMarkdown,
   useAgentThreadRuns,
 } from 'basalt-ui/agent'
 import type { AgentPart, ErrorPart, SourcePart, ToolCallPart } from 'basalt-ui/agent'
+import { Markdown } from 'basalt-ui/content'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createMockAiSdkFetch, getBufferSnapshot, MOCK_API_PATH } from './mock-ai-sdk-backend'
 import { IconReset, IconSend, IconSparkle, IconUser } from './icons'
@@ -109,10 +109,11 @@ function coalesce(parts: AgentPart[]): Block[] {
 // ── Block renderers ───────────────────────────────────────────────────────────
 
 function TextBlock({ text }: { text: string }) {
+  // Prose (via Markdown density="chat") owns the chat typography — no wrapper sizing needed.
   return (
-    <div style={{ fontSize: 'var(--mantine-font-size-sm)', lineHeight: 1.6 }}>
-      <StreamingMarkdown>{text}</StreamingMarkdown>
-    </div>
+    <Markdown streaming density="chat">
+      {text}
+    </Markdown>
   )
 }
 

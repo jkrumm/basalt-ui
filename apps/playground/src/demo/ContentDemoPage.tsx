@@ -113,7 +113,7 @@ Once the diagram above settles, this closing line proves the stream finished cle
 const STREAM_CHUNK_SIZE = 8
 const STREAM_INTERVAL_MS = 40
 
-function StreamingMarkdownDemo() {
+function StreamingDemo() {
   const [text, setText] = useState('')
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -313,7 +313,7 @@ export function ContentDemoPage() {
         Replay a simulated AI stream — watch the bold word repair itself, the code fence render
         plain while in flight, and the mermaid fence upgrade to a diagram once it settles.
       </p>
-      <StreamingMarkdownDemo />
+      <StreamingDemo />
     </ArticleLayout>
   )
 }

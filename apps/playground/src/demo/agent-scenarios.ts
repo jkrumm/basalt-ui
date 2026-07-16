@@ -71,6 +71,38 @@ export type AgentScenario = {
 
 export const AGENT_SCENARIOS = [
   {
+    value: 'rich',
+    label: 'Rich markdown (code + mermaid + alert)',
+    hint: 'Exercises what `basalt-ui/content` renders that a plain markdown pass does not: a shiki-highlighted fence, a mermaid diagram, and a GFM alert as a Callout.',
+    parts: (input: string) => [
+      {
+        type: 'reasoning',
+        text: `"${input}" is best answered with a snippet and a diagram — streaming both now.`,
+      },
+      ...tokens(
+        `## Rendering "${input}"\n\n` +
+          `Chat markdown resolves to the same renderer as long-form content, so a fence gets real ` +
+          `syntax highlighting once the block settles:\n\n` +
+          '```ts\n' +
+          `export function render(text: string) {\n` +
+          `  // one renderer, chat density\n` +
+          `  return <Markdown streaming density="chat">{text}</Markdown>\n` +
+          `}\n` +
+          '```\n\n' +
+          `The flow through the thread surface:\n\n` +
+          '```mermaid\n' +
+          `flowchart LR\n` +
+          `  A[AgentPart] --> B[thread-message]\n` +
+          `  B --> C[content Markdown]\n` +
+          `  C --> D[Prose density=chat]\n` +
+          '```\n\n' +
+          `> [!NOTE]\n` +
+          `> GFM alerts render as a semantic Callout — one of the things the old chat renderer ` +
+          `silently dropped.\n`,
+      ),
+    ],
+  },
+  {
     value: 'answer',
     label: 'General answer',
     hint: 'Reasoning + a streamed markdown reply (headings, list, inline code, quote).',

@@ -168,8 +168,8 @@ raw stream text
 - Code fences highlight per-block on settle (not per token); the in-flight fence renders plain
   mono until closed, then upgrades — no flicker, no wasted highlight passes.
 - Mermaid fences render as code until closed; then hash-keyed diagram render.
-- `agent-chat`'s `StreamingMarkdown` remains; `Markdown streaming density="chat"` is its
-  successor surface — migration note in the rule file, no breaking change now.
+- `StreamingMarkdown` is deleted; `agent-chat/thread-message.tsx` renders chat text via
+  `Markdown streaming density="chat"` — the package's only markdown renderer.
 
 ## 7. Docs framing patterns (from the UX survey)
 
