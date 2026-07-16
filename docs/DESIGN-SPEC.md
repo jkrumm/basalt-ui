@@ -207,7 +207,14 @@ dead code against the `!important` floor.
   idiom; it dismisses on Escape, blur, or an outside click. Its trigger lives in the card header,
   which sits OUTSIDE the chart body's clip box, so the bubble can overhang the card edge and is never
   clipped.
-- **Scrollbars**: 9px, hairline thumb (line on hover), radius 6, transparent track.
+- **Scrollbars**: 9px, hairline thumb (line on hover), radius 6, transparent track. A scroll region
+  in app chrome is a Mantine `ScrollArea` (`type="hover"`, `scrollbarSize={9}`), never a raw
+  `overflow: auto` box — its bar floats over the content instead of reserving gutter width and
+  reflowing the column. Exactly ONE bar shows: `styles.css` re-hides the native bar on
+  `.mantine-ScrollArea-viewport`, which the global `*::-webkit-scrollbar` theming would otherwise
+  re-expose on top of Mantine's overlay. `AppSidebar`'s nav is the reference pattern; raw
+  `overflow: auto` stays correct only where a library owns the scroll node (`BasaltStickToBottom`,
+  `BasaltVirtualList`). Documented, not lint-enforced — the exceptions are context-dependent.
 
 ## 6. Accent discipline (updated)
 
