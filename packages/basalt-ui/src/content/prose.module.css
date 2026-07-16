@@ -107,21 +107,23 @@
   height: auto;
 }
 
-/* Heading anchor links (stage 2 — Markdown/MDX slugged headings, docs/CONTENT-SPEC.md §7). Hover
- * on the heading reveals a quiet `#` link; chat density never shows one (no TOC to link into). */
+/* Heading anchor (docs/CONTENT-SPEC.md §7): hovering a heading reveals a copy-link button — the
+ * same `CopyAction` affordance CodeBlock's copy button renders, so the surface has ONE copy
+ * language. This rule owns only placement + the reveal; the button's own chrome, tooltip and
+ * copied/teal state are CopyAction's. Chat density never shows one (no TOC to link into).
+ * `:focus-within`, not `:focus-visible` — the focusable node is the button INSIDE this span, so
+ * keyboard users must still be able to reveal it. */
 .root h1 .headingAnchor,
 .root h2 .headingAnchor,
 .root h3 .headingAnchor,
 .root h4 .headingAnchor,
 .root h5 .headingAnchor,
 .root h6 .headingAnchor {
-  margin-left: 8px;
-  color: var(--vx-faint);
-  text-decoration: none;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
   opacity: 0;
-  transition:
-    opacity 120ms ease,
-    color 120ms ease;
+  transition: opacity 120ms ease;
 }
 
 .root h1:hover .headingAnchor,
@@ -130,12 +132,8 @@
 .root h4:hover .headingAnchor,
 .root h5:hover .headingAnchor,
 .root h6:hover .headingAnchor,
-.headingAnchor:focus-visible {
+.headingAnchor:focus-within {
   opacity: 1;
-}
-
-.headingAnchor:hover {
-  color: var(--vx-accent);
 }
 
 .root.chat .headingAnchor {

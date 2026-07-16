@@ -14,8 +14,8 @@
  */
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
-import { ActionIcon, CopyButton, Tooltip } from '@mantine/core'
 import classes from './code-block.module.css'
+import { CopyAction } from './copy-action'
 import { highlightCode } from './highlighter'
 
 export type CodeBlockProps = {
@@ -26,46 +26,6 @@ export type CodeBlockProps = {
   readonly showCopy?: boolean
   readonly className?: string
   readonly style?: CSSProperties
-}
-
-function CopyGlyph() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-      <path
-        d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"
-        strokeWidth={2}
-      />
-      <path d="M16 8V6a2 2 0 0 0 -2 -2H6a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" strokeWidth={2} />
-    </svg>
-  )
-}
-
-function CheckGlyph() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-      <path d="M5 12l5 5l10 -10" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function CopyAction({ code }: { code: string }) {
-  return (
-    <CopyButton value={code} timeout={1500}>
-      {({ copied, copy }) => (
-        <Tooltip label={copied ? 'Copied' : 'Copy'} withArrow position="left">
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            color={copied ? 'teal' : 'gray'}
-            onClick={copy}
-            aria-label="Copy code"
-          >
-            {copied ? <CheckGlyph /> : <CopyGlyph />}
-          </ActionIcon>
-        </Tooltip>
-      )}
-    </CopyButton>
-  )
 }
 
 export function CodeBlock({
@@ -101,7 +61,7 @@ export function CodeBlock({
           <span className={classes.title}>{title}</span>
           <div className={classes.headerRight}>
             {language !== undefined && <span className={classes.langBadge}>{language}</span>}
-            {showCopy && <CopyAction code={code} />}
+            {showCopy && <CopyAction value={code} ariaLabel="Copy code" />}
           </div>
         </div>
       )}
@@ -114,7 +74,7 @@ export function CodeBlock({
       )}
       {title === undefined && showCopy && (
         <div className={classes.floatingCopy}>
-          <CopyAction code={code} />
+          <CopyAction value={code} ariaLabel="Copy code" />
         </div>
       )}
     </div>

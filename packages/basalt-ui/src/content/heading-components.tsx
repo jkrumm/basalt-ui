@@ -13,7 +13,7 @@ import type { JSX, ReactNode } from 'react'
 import { isValidElement } from 'react'
 import type { Components, ExtraProps } from 'react-markdown'
 import type { SlugTracker } from './slug'
-import classes from './prose.module.css'
+import { HeadingAnchor } from './heading-anchor'
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
 type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
@@ -43,14 +43,7 @@ function createHeadingRenderer(level: HeadingLevel, tracker: SlugTracker) {
     return (
       <Tag id={id}>
         {children}
-        <a
-          className={classes.headingAnchor}
-          href={`#${id}`}
-          aria-label="Link to section"
-          data-heading-anchor
-        >
-          #
-        </a>
+        <HeadingAnchor id={id} />
       </Tag>
     )
   }

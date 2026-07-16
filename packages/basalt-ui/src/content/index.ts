@@ -27,6 +27,9 @@ export type { ReadingProgressProps } from './reading-progress'
 export { headingSlug, readingTime, SlugTracker } from './slug'
 export type { ReadingTime } from './slug'
 
+export { HeadingAnchor } from './heading-anchor'
+export type { HeadingAnchorProps } from './heading-anchor'
+
 export { Markdown } from './markdown'
 export type { MarkdownComponents, MarkdownProps } from './markdown'
 
