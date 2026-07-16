@@ -97,29 +97,51 @@ export function TableOfContents({
 
     const intersecting = new Set<string>()
 
+    const resolve = () => {
+      // Bottom edge: the last sections are usually shorter than the observer's 70% dead zone, so
+      // their headings can NEVER reach the activation band — the rail would stall on whichever
+      // section last made it in. Once the page bottoms out, the final item is the honest answer.
+      const doc = document.documentElement
+      if (window.innerHeight + window.scrollY >= doc.scrollHeight - 2) {
+        const last = elements[elements.length - 1]
+        if (last) setActiveId(last.id)
+        return
+      }
+
+      if (intersecting.size > 0) {
+        const topmost = elements.find((el) => intersecting.has(el.id))
+        if (topmost) setActiveId(topmost.id)
+        return
+      }
+
+      // Nothing intersecting — the last heading already scrolled past, or (above the first one,
+      // i.e. at the very top of the article) the first heading, so the rail always marks where the
+      // reader actually is instead of showing nothing until the first heading reaches the band.
+      const passed = elements.filter((el) => el.getBoundingClientRect().top < 0)
+      const current = passed[passed.length - 1] ?? elements[0]
+      if (current) setActiveId(current.id)
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) intersecting.add(entry.target.id)
           else intersecting.delete(entry.target.id)
         }
-
-        if (intersecting.size > 0) {
-          const topmost = elements.find((el) => intersecting.has(el.id))
-          if (topmost) setActiveId(topmost.id)
-          return
-        }
-
-        // Nothing intersecting — fall back to the last heading already scrolled past.
-        const passed = elements.filter((el) => el.getBoundingClientRect().top < 0)
-        const last = passed[passed.length - 1]
-        if (last) setActiveId(last.id)
+        resolve()
       },
       { rootMargin: '-80px 0px -70% 0px' },
     )
 
     for (const el of elements) observer.observe(el)
-    return () => observer.disconnect()
+    // The observer only fires when an intersection CHANGES; the bottom edge above resolves on
+    // scroll position alone, so it needs a scroll signal too. Re-setting the same id is a no-op
+    // for React, so this stays free on every frame that doesn't move the rail.
+    window.addEventListener('scroll', resolve, { passive: true })
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', resolve)
+    }
   }, [resolvedItems])
 
   if (resolvedItems.length === 0) return null
