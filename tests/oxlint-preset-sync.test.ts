@@ -4,6 +4,9 @@ import { join } from 'node:path'
 import { projectBanList } from '../packages/basalt-ui/scripts/gen-oxlint'
 
 const root = join(import.meta.dir, '..')
+const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
+const SHIPPED_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint.json')
+const FIXTURE_PATH = join(root, 'tests/fixtures/oxlint-parse-fixture.ts')
 
 function readOverrides(path: string): unknown[] {
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as { overrides?: unknown[] }
@@ -147,5 +150,15 @@ describe('oxlint preset sync contract', () => {
     expect(hasMantineCoreBan).toBe(true)
     expect(hasMantineHooksBan).toBe(true)
     expect(hasMantineGroupBan).toBe(true)
+  })
+
+  it('shipped configs/oxlint.json actually parses in oxlint (not just JSON.parse)', () => {
+    const result = Bun.spawnSync([OXLINT_BIN, '--config', SHIPPED_CONFIG_PATH, FIXTURE_PATH])
+    const output = `${result.stdout}${result.stderr}`
+    expect(output).not.toContain('Failed to parse')
+    expect(output).not.toContain('unknown field')
+    // A config-parse failure exits non-zero before any lint findings are produced; a clean
+    // config run may still exit non-zero on lint findings, which is fine — only the parse
+    // failure text above is the actual gate here.
   })
 })

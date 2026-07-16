@@ -31,6 +31,9 @@ jobs:
       - name: oxlint config sync check
         run: bun packages/basalt-ui/scripts/gen-oxlint.ts --check
 
+      - name: llms.txt sync check
+        run: bun packages/basalt-ui/scripts/gen-llms.ts --check
+
       - name: Lint (oxlint)
         run: bun run lint
 
