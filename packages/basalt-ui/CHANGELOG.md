@@ -1,3 +1,38 @@
+# basalt-ui 1.0 — the Mantine pivot
+
+> The 1.0.0 entry above this block is the generated commit record; this is the story.
+
+basalt-ui 1.0 is a ground-up rebuild. The 0.x line was a Tailwind CSS design system; 1.0 replaces
+it with an opinionated framework for **Mantine v9 + React 19** apps, extracted from a production
+dashboard. Same npm name, clean break: the `./css` and `./starlight` exports are gone, and nothing
+from 0.x carries over.
+
+### What you get
+
+- **One provider, one shell.** `BasaltProvider` wires the theme, palette injection, error
+  boundary, connectivity, and overlays; `BasaltShell` is a router-agnostic app frame with sidebar,
+  mobile nav, breadcrumbs, page header, and an account slot.
+- **Charts without Mantine.** A visx chart system (`ZonedLine`, `Bars`, `StackedArea`, `Donut`,
+  `MultiLine`, `DualPanel`, `Heatmap`, sparklines) behind the three-tier `--vx-*` token system —
+  the `./charts` and `./tokens` subpaths are Mantine-free by machine-enforced boundary.
+- **Seven batteries** as opt-in subpaths with their own optional peers: `./query`,
+  `./router-tanstack`, `./forms`, `./notifications`, `./commands`, `./data`, `./agent` — plus the
+  `./content` prose/docs surface (markdown, code blocks, TOC, article layouts) and a headless
+  AI-chat runtime with multi-thread support and a shipped `ThreadWorkspace`.
+- **Doctrine as code.** `basalt check-theme`, a shipped oxlint preset with custom design-guard AST
+  rules, and a `basalt guard-hook` PreToolUse adapter all share one guard registry — the design
+  system says no _before_ review does.
+- **Built for coding agents.** `basalt init` scaffolds twelve path-scoped rules, a managed CLAUDE.md
+  block, and a `DESIGN.md` seed; the package ships `llms.txt`, `AGENTS.md`, and `basalt info --json`
+  so an agent resolves real imports instead of guessing; `basalt sync --check` keeps it all fresh
+  in CI.
+
+### Breaking
+
+Everything, deliberately: 0.4.2 had no external consumers. Treat 1.0 as a new library — start from
+the README quick-start (`BasaltProvider` + `createBasaltTheme` + the `styles.layer.css` import
+order) and let `basalt init` lay down the doctrine.
+
 ## [0.4.2](https://github.com/jkrumm/basalt-ui/compare/v0.4.1...v0.4.2) (2026-03-12)
 
 ### Bug Fixes
