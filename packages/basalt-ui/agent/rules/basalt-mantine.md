@@ -148,6 +148,27 @@ section divider, not card depth) are both fine.
   (inline `display` literals). The Mantine-free `src/charts/**` is the only place raw `<div>` is
   allowed — and it must still use `VX.*` tokens.
 
+## Scroll regions
+
+**A scroll region inside app chrome is a Mantine `ScrollArea`, not a raw `overflow: auto` box.**
+ScrollArea draws its own bar absolutely inside a `position: relative; overflow: hidden` root, so the
+bar floats over the content; a native bar reserves gutter width and reflows the column the moment
+the content overflows. `AppSidebar`'s nav is the reference pattern — `<ScrollArea type="hover"
+scrollbars="y" scrollbarSize={9}>` with the flex fill (`flex: 1; min-height: 0`) on the ScrollArea
+root and the content classes on the inner `Stack`, so child-combinator spacing rules still see the
+content's own children through the wrapper.
+
+`styles.css` re-hides the native bar on `.mantine-ScrollArea-viewport`: basalt's global
+`*::-webkit-scrollbar` theming otherwise re-exposes the bar ScrollArea hides, yielding two bars plus
+an always-on gutter. That fix makes **one overlay bar** the framework-wide outcome for every
+ScrollArea consumer — do not undo it, and do not re-theme the viewport's native bar.
+
+A raw `overflow: auto` element is still correct where a library owns the scroll container and needs
+a real scrollable node: `BasaltStickToBottom` (scroll anchoring) and `BasaltVirtualList` (TanStack
+Virtual measures the scroll element). That is why this is a documented standard rather than a lint
+rule — the legitimate exceptions are context-dependent, not syntactic. Prefer ScrollArea for
+everything else: sidebars, panels, menus, palettes, and any chrome that scrolls.
+
 ## Elevation, density & shape
 
 basalt-ui targets dense, professional surfaces (a terminal, not a marketing page). The depth and
