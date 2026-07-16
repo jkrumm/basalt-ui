@@ -80,6 +80,19 @@ export const NAV_MODEL: SidebarSection[] = [
         href: '/components',
       },
       {
+        key: 'content',
+        label: 'Content',
+        mobile: true,
+        icon: <IconActivity />,
+        href: '/content',
+      },
+      {
+        key: 'content-overview',
+        label: 'Content overview',
+        icon: <IconActivity />,
+        href: '/content-overview',
+      },
+      {
         key: 'reports',
         label: 'Reports',
         icon: <IconActivity />,
