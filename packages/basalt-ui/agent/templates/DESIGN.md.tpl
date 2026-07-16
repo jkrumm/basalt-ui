@@ -45,15 +45,16 @@ consumer; keep it the single source of truth and never inline a hex elsewhere.
 
 ```ts
 // {{SERIES_MODULE_PATH}} — the app's guard-exempt series file
-import { buildPaletteCss, defineSeries, seriesTokens } from 'basalt-ui/tokens'
+import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
 const SERIES_MAP = defineSeries({
   // requests: { light: '#4f78a4', dark: '#7099c4' },
 })
 
-export const series = seriesTokens(SERIES_MAP) // { requests: 'var(--vx-requests)', ... }
-export const SERIES_CSS = buildPaletteCss({ groups: { '': SERIES_MAP } })
-// feed SERIES_CSS to BasaltProvider's palette; read `series.requests` in charts.
+export const series = groupTokens('app', SERIES_MAP) // { requests: 'var(--vx-app-requests)', ... }
+export const paletteGroups = { 'app-': SERIES_MAP }
+// wire into the provider: <BasaltProvider paletteOptions={{ groups: paletteGroups }} .../>
+// (paletteOptions takes the group map directly — not a CSS string; read `series.requests` in charts)
 ```
 
 Rules for this table (from the `basalt-tokens` / `basalt-charts` rules — do not relax):

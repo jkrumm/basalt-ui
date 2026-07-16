@@ -1,8 +1,10 @@
-# basalt-ui consumer CI template.
-# Copy to your repo as .github/workflows/check.yml. Mirrors the basalt-ui gate
-# order: frozen install -> lint + theme guard -> format check -> typecheck -> tests.
+# basalt-ui consumer CI template — placed at .github/workflows/check.yml by `basalt init`
+# (kept fresh by `basalt sync`). Mirrors the basalt-ui gate order: frozen install ->
+# lint + theme guard -> format check -> doctrine drift gate.
 # `basalt check-theme` is the palette guard shipped by basalt-ui (fails on raw
 # color literals / off-identity accents that bypass the --vx-* token system).
+# `basalt sync --check` fails when the basalt-managed files (rules, CLAUDE block,
+# toolchain templates) have drifted from the installed basalt-ui version.
 name: check
 on:
   pull_request:
@@ -20,6 +22,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx oxlint .
       - run: bunx basalt check-theme
+      - run: bunx basalt sync --check
       - run: bunx oxfmt 'src/**' '!**/dist/**' --check
-      - run: bun run typecheck
-      - run: bun run test
+      # Enable once your app defines these package.json scripts:
+      # - run: bun run typecheck
+      # - run: bun run test

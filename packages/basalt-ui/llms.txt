@@ -119,7 +119,7 @@ Import: import { ... } from 'basalt-ui/content'
 Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
 Layer: mantine-coupled
 Rule: basalt-content
-OptionalPeers: shiki@^4.3.0, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, @mantine/spotlight@^9.3.0
+OptionalPeers: shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, @mantine/spotlight@^9.3.0
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'

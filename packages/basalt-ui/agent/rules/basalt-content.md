@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Content/prose surface from basalt-ui/content — Prose, CodeBlock, Callout, TableOfContents, ReadingProgress, Markdown (streaming-aware), MermaidDiagram, MDX component map, ArticleLayout, ArticleCard/Grid, GuideLink/GuideDrawer, and the content-collections + TanStack Start recipe. Mantine-coupled (docs/CONTENT-SPEC.md).
+description: Content/prose surface from basalt-ui/content — Prose, CodeBlock, Callout, TableOfContents, ReadingProgress, Markdown (streaming-aware), MermaidDiagram, MDX component map, ArticleLayout, ArticleCard/Grid, GuideLink/GuideDrawer, and the content-collections + TanStack Start recipe. Mantine-coupled (docs/CONTENT-SPEC.md in the basalt-ui repo).
 paths:
   - 'src/content/**'
   - 'apps/**/src/**/*content*'
@@ -198,7 +198,7 @@ multi-select axes (tags) use `createMultiSearchParamStore` — both from `basalt
 Two stores compose on one route by spreading both `validateSearch` results:
 
 ```ts
-// apps/playground/src/demo/article-filter-stores.ts
+// apps/playground/src/demo/article-filter-stores.ts (reference implementation in the basalt-ui repo)
 export const articleCategory = createSearchParamStore({
   key: 'article-category',
   param: 'category',
@@ -236,7 +236,7 @@ step 3).
 surface (`basalt-ui/commands`) — the same tier as `toRouteActions`. It joins title, description,
 category, tags, and slug into a `keywords` string for substring search; it does not tokenize, rank,
 index, or persist. An app that outgrows substring matching over a client-side array brings its own
-search index — see docs/CONTENT-SPEC.md §9 (Non-goals).
+search index — see docs/CONTENT-SPEC.md §9 (Non-goals) in the basalt-ui repo.
 
 `ArticleGrid` stays a dumb layout wrapper — deliberate, so callers keep composition (sorting,
 filtering, and pagination all happen above it, not inside it).
@@ -387,4 +387,4 @@ const articleActions = toRouteActions(
 
 KaTeX/math, full mermaid grammar bundling (d2, pintora), Vega-Lite streamed specs, versioned docs/
 i18n routing, and a `create-basalt-docs` scaffold are all out of scope for 1.0 — see
-`docs/CONTENT-SPEC.md` §9 for the full non-goals list and rationale.
+`docs/CONTENT-SPEC.md` §9 in the basalt-ui repo for the full non-goals list and rationale.

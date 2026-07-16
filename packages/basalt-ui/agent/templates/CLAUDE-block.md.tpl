@@ -14,6 +14,10 @@ are Mantine-free — never import `@mantine/*` under `**/charts/**`, never impor
 charts. Toolchain is oxlint + oxfmt (no ESLint/Biome/Prettier) and `basalt check-theme` guards the
 palette. Runtime is Bun.
 
+**Before guessing an import, check the installed package's machine docs**:
+`node_modules/basalt-ui/llms.txt` (per-subpath import map), `node_modules/basalt-ui/AGENTS.md`, or
+run `bunx basalt info --json`.
+
 **DESIGN.md is law.** `./DESIGN.md` (imported below) records this app's palette identity and series
 dictionary. Precedence: **DESIGN.md > `basalt-*` rules > skills.** When building or restyling any
 UI, that law wins over habit, over library defaults, and over a skill's instinct. The design/charts

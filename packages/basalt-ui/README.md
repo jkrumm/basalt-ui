@@ -19,10 +19,15 @@ Basalt UI is the extraction of that setup from a production app. Install once, g
 
 ```bash
 bun add basalt-ui
-bun add react react-dom @mantine/core @mantine/hooks
+bun add react react-dom @mantine/core @mantine/hooks @tanstack/react-query
 ```
 
-Peer requirements: `react` / `react-dom` `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`.
+Peer requirements: `react` / `react-dom` `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`,
+`@tanstack/react-query` (`BasaltProvider` hard-requires it at build time). Bun auto-installs
+peers, but pnpm/npm consumers must add it explicitly or hit an unexplained build failure.
+
+A real app also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`
+for `tsc --noEmit` to pass.
 
 ### 2. Scaffold the repo doctrine (`basalt init`)
 
@@ -35,7 +40,7 @@ Writes into the consumer repo:
 - `.claude/rules/basalt-*.md` — twelve Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`)
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
-- Toolchain templates: `oxfmt.json`, `lefthook.yml`, `check.yml`
+- Toolchain templates: `.oxfmtrc.json`, `lefthook.yml`, `.github/workflows/check.yml`
 - `.oxlintrc.json` with `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`
 - `.basalt/manifest.json` — sha256 per managed file for `sync` three-way diff
 
@@ -369,7 +374,7 @@ import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 
 ````bash
 bun add react-markdown remark-gfm   # Markdown
-bun add shiki                       # CodeBlock / fenced-code highlighting
+bun add shiki                       # CodeBlock / fenced-code highlighting (brings @shikijs/langs, @shikijs/themes as optional peers)
 bun add beautiful-mermaid           # MermaidDiagram / ```mermaid fences
 ````
 
@@ -507,11 +512,12 @@ Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
 
 ## Requirements
 
-| Peer                  | Version | Notes    |
-| --------------------- | ------- | -------- |
-| `react` / `react-dom` | `^19`   | required |
-| `@mantine/core`       | `^9.3`  | required |
-| `@mantine/hooks`      | `^9.3`  | required |
+| Peer                    | Version | Notes                                                      |
+| ----------------------- | ------- | ---------------------------------------------------------- |
+| `react` / `react-dom`   | `^19`   | required                                                   |
+| `@mantine/core`         | `^9.3`  | required                                                   |
+| `@mantine/hooks`        | `^9.3`  | required                                                   |
+| `@tanstack/react-query` | —       | required — `BasaltProvider` hard-requires it at build time |
 
 Optional peer batteries and their packages are listed per battery above.
 

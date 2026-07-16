@@ -33,7 +33,7 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
-import type { Finding, GuardConfig } from '../guard'
+import type { Finding, GuardConfig, GuardKind } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
 import { RULE_NAMES, SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
@@ -142,15 +142,20 @@ export type BasaltConfig = {
 }
 
 const DEFAULT_ROOTS = ['apps/dashboard/src', 'packages/charts/src']
-const DEFAULT_EXEMPT = [
-  'packages/charts/src/palette.ts',
-  'packages/charts/src/theme-vars.ts',
-  'packages/charts/src/tokens.ts',
-  'packages/charts/src/utils/color.ts',
-  'apps/dashboard/src/theme.ts',
-]
+
+/**
+ * Default scan exemption — a bare consumer's only palette source is its configured series module
+ * (the doctrine directs every consumer to put raw hex series colors in `seriesModulePath`; default
+ * `src/theme/series.ts`). Derived from the same config resolution `buildTemplateVars` uses for
+ * `{{SERIES_MODULE_PATH}}`, so overriding `seriesModulePath` keeps the exemption in sync.
+ */
+function defaultExempt(cfg: BasaltConfig): string[] {
+  return [cfg.seriesModulePath ?? 'src/theme/series.ts']
+}
 
 const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
+/** Filenames that look like they ARE the palette source, for the check-theme escape-hatch hint. */
+const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
 
 function readBasaltConfig(cwd: string): BasaltConfig {
   try {
@@ -187,6 +192,54 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
 }
 
 /**
+ * One-line fix guidance per guard kind, printed in the check-theme "Fix:" epilogue — only for the
+ * kinds actually present in a given run's findings, so the epilogue never dumps all 16+ rules on a
+ * single-kind violation. Kinds without an entry here (e.g. `localstorage-theme`,
+ * `chart-missing-aria-label`) fall back to the generic `theme-allow` closer only.
+ */
+const GUARD_KIND_EXPLANATIONS: Partial<Record<GuardKind, string>> = {
+  'raw-hex':
+    'raw-hex: route color through VX.* / the Mantine theme instead of a hardcoded hex literal.',
+  'raw-color-fn':
+    'raw-color-fn: route color through VX.* / the Mantine theme instead of a hardcoded rgb()/hsl() literal.',
+  'off-identity-accent':
+    'off-identity-accent: use blue/gray or a status hue (red/green/orange/yellow) instead.',
+  'raw-spacing': 'raw-spacing: use the spacing scale token instead of a raw literal.',
+  'raw-radius': 'raw-radius: use the radius scale token instead of a raw literal.',
+  'raw-surface':
+    'raw-surface: use `VX.surface.*` / a `radius` token / `var(--vx-radius-card)` instead of an ' +
+    'inline border/radius/shadow.',
+  'card-with-border':
+    'card-with-border: `withBorder` on a Card/Paper double-draws the edge — card depth is ' +
+    '`--vx-shadow-card`, which already bakes a 1px ring into the shadow. Drop the prop.',
+  'off-system-surface-var':
+    'off-system-surface-var: raw Mantine ramp step bypasses the basalt surface tokens — use ' +
+    'VX.surface.* / --vx-surface-* (border/panel/subtle/bg) instead.',
+  'raw-html-layout':
+    'raw-html-layout: raw HTML element with inline layout/surface styling — use a Mantine layout ' +
+    'primitive (Box/Flex/Grid/Stack/Group).',
+  'inline-spacing':
+    'inline-spacing: inline spacing literal — use the Mantine spacing prop/token (p/m/gap with xs..xl).',
+  'inline-display':
+    'inline-display: use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
+  'raw-visx-axis':
+    'raw-visx-axis: raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use ' +
+    'AxisLeftNumeric / AxisBottomDate / AxisRightNumeric from the charts primitives.',
+  'raw-motion-value':
+    'raw-motion-value: hardcoded duration/spring/ease in `transition={{...}}` — use ' +
+    'MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD instead.',
+  'unframed-chart':
+    'unframed-chart: hand-rolled ChartLegend built from an inline array literal — pass a derived ' +
+    'legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
+  'raw-form-control':
+    'raw-form-control: raw <input>/<select>/<textarea> bypasses the entire theme — use ' +
+    'TextInput / NumberInput / Select / Textarea from @mantine/core.',
+  'sub-16-input-font':
+    'sub-16-input-font: fontSize below 16 on a form control is dead code against the `!important` ' +
+    'iOS floor in styles.css — drop the override or be honest about 16px.',
+}
+
+/**
  * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
  * GuardConfig, walks roots, calls checkSource per file, collects Finding[], groups/reports, returns
  * 0 (clean) / 1 (violations). A `theme-allow` comment exempts a line.
@@ -194,7 +247,7 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
 export function checkTheme(cwd: string = process.cwd()): number {
   const cfg = readBasaltConfig(cwd)
   const roots = cfg.roots ?? DEFAULT_ROOTS
-  const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
+  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
 
   const guardCfg: GuardConfig = {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
@@ -267,32 +320,25 @@ export function checkTheme(cwd: string = process.cwd()): number {
     }
     console.error('')
   }
-  console.error(
-    'Fix: route color through VX.* / the Mantine theme; for an off-identity accent use blue/gray or ' +
-      'a status hue (red/green/orange/yellow); for raw spacing/radius use the scale token; for ' +
-      'raw-surface use `VX.surface.*` / a `radius` token / `var(--vx-radius-card)` instead of an ' +
-      'inline border/radius/shadow. ' +
-      'card-with-border: `withBorder` on a Card/Paper double-draws the edge — card depth is ' +
-      '`--vx-shadow-card`, which already bakes a 1px ring into the shadow. Drop the prop. ' +
-      'off-system-surface-var: raw Mantine ramp step bypasses the basalt surface tokens — use ' +
-      'VX.surface.* / --vx-surface-* (border/panel/subtle/bg) instead. ' +
-      'raw-html-layout: raw HTML element with inline layout/surface styling — use a Mantine layout ' +
-      'primitive (Box/Flex/Grid/Stack/Group). ' +
-      'inline-spacing: inline spacing literal — use the Mantine spacing prop/token (p/m/gap with ' +
-      'xs..xl). ' +
-      'inline-display: use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid. ' +
-      'raw-visx-axis: raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use ' +
-      'AxisLeftNumeric / AxisBottomDate / AxisRightNumeric from the charts primitives. ' +
-      'raw-motion-value: hardcoded duration/spring/ease in `transition={{...}}` — use ' +
-      'MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD instead. ' +
-      'unframed-chart: hand-rolled ChartLegend built from an inline array literal — pass a ' +
-      'derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you. ' +
-      'raw-form-control: raw <input>/<select>/<textarea> bypasses the entire theme — use ' +
-      'TextInput / NumberInput / Select / Textarea from @mantine/core. ' +
-      'sub-16-input-font: fontSize below 16 on a form control is dead code against the ' +
-      '`!important` iOS floor in styles.css — drop the override or be honest about 16px. ' +
-      'Add a `theme-allow` comment for a deliberate exception.',
-  )
+  const presentKinds = new Set(findings.map((f) => f.kind))
+  const explanations = (Object.keys(GUARD_KIND_EXPLANATIONS) as GuardKind[])
+    .filter((kind) => presentKinds.has(kind))
+    .map((kind) => GUARD_KIND_EXPLANATIONS[kind])
+  const fixLine = [
+    'Fix:',
+    ...explanations,
+    'Add a `theme-allow` comment for a deliberate exception.',
+  ]
+  console.error(fixLine.join(' '))
+
+  // A violation in a file that looks like the palette source itself is likely intentional — point
+  // at the exempt escape hatch instead of leaving the author to search for it.
+  if ([...byFile.keys()].some((f) => SERIES_MODULE_HINT_RE.test(f))) {
+    console.error(
+      'Hint: if a flagged file IS your palette/series source, exempt it via ' +
+        '"basalt": { "exempt": ["<path>"] } in package.json.',
+    )
+  }
   return 1
 }
 
@@ -884,7 +930,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
  * Assert the 8 SURFACES invariants against the live SURFACES + GUARD_RULES + plugin.json.
  * Returns 0 when all pass; 1 when any fail (console.error each failure).
  *
- * Six assertions:
+ * Eight assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
  *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills.
@@ -1121,7 +1167,7 @@ export function doctor(cwd: string = process.cwd()): number {
     )
   }
 
-  // ── Warn check 3: all 11 rule files exist ──────────────────────────────────
+  // ── Warn check 3: all 12 rule files exist ──────────────────────────────────
   const missingRules: string[] = []
   for (const name of RULE_NAMES) {
     const ruleAbs = resolve(cwd, `.claude/rules/basalt-${name}.md`)
@@ -1379,7 +1425,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
   // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
   // palette source or files outside the guarded roots (mirrors checkTheme's file-walk scoping).
   const roots = cfg.roots ?? DEFAULT_ROOTS
-  const exempt = new Set(cfg.exempt ?? DEFAULT_EXEMPT)
+  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
   const isInScope = (filePath: string): boolean => {
     const abs = isAbsolute(filePath) ? filePath : resolve(cwd, filePath)
     const rel = relative(cwd, abs).replace(/\\/g, '/')

@@ -173,7 +173,7 @@ const MANTINE_BANS = [
  *   guarantees it is never mistaken for an export path.
  *
  * @example
- * import { SURFACES } from 'basalt-ui/src/surfaces'
+ * import { SURFACES } from './surfaces' // internal module — not a published subpath
  * const doctrines = Object.values(SURFACES).filter((s): s is DoctrineSpec => s.kind === 'doctrine')
  */
 export const SURFACES = {
@@ -379,6 +379,8 @@ export const SURFACES = {
       'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
     optionalPeers: [
       'shiki',
+      '@shikijs/langs',
+      '@shikijs/themes',
       'beautiful-mermaid',
       'react-markdown',
       'remark-gfm',
