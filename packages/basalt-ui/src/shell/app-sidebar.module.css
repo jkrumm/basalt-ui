@@ -109,6 +109,18 @@
   font-stretch: 88%;
 }
 
+/*
+ * Nav scroll region — a Mantine ScrollArea, whose overlay scrollbar is absolutely positioned inside
+ * the (position: relative; overflow: hidden) root, so it floats over the rows instead of reserving
+ * gutter width and reflowing the nav column the way a native `overflow-y: auto` bar does. The root
+ * carries the flex fill; `.nav` stays on the inner Stack so the section-spacing rule below still
+ * sees the section divs as its own children.
+ */
+.navScroll {
+  flex: 1;
+  min-height: 0;
+}
+
 /* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand
  * row's own bottom padding already opens the region). */
 .nav > div + div {

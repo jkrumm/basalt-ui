@@ -21,6 +21,7 @@ import {
   Menu,
   NavLink,
   Popover,
+  ScrollArea,
   Stack,
   Text,
   Tooltip,
@@ -569,42 +570,44 @@ export function AppSidebar({
         </div>
       )}
 
-      <Stack gap={0} className={classes.nav} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {sections.map((section) => {
-          if (!section.collapsible) {
+      <ScrollArea type="hover" scrollbars="y" scrollbarSize={9} className={classes.navScroll}>
+        <Stack gap={0} className={classes.nav}>
+          {sections.map((section) => {
+            if (!section.collapsible) {
+              return (
+                <div key={section.label}>
+                  <div className={classes.sectionBand}>
+                    <SectionLabel flush>{section.label}</SectionLabel>
+                  </div>
+                  <Stack gap={1}>{renderSectionItems(section)}</Stack>
+                </div>
+              )
+            }
+
+            const isOpen = !collapsedSections[section.label]
             return (
               <div key={section.label}>
-                <div className={classes.sectionBand}>
+                <UnstyledButton
+                  className={`${classes.sectionBand} ${classes.sectionHeader}`}
+                  onClick={() =>
+                    setCollapsedSections((prev) => ({
+                      ...prev,
+                      [section.label]: !prev[section.label],
+                    }))
+                  }
+                  aria-expanded={isOpen}
+                >
                   <SectionLabel flush>{section.label}</SectionLabel>
-                </div>
-                <Stack gap={1}>{renderSectionItems(section)}</Stack>
+                  <IconChevron open={isOpen} />
+                </UnstyledButton>
+                <Collapse expanded={isOpen}>
+                  <Stack gap={1}>{renderSectionItems(section)}</Stack>
+                </Collapse>
               </div>
             )
-          }
-
-          const isOpen = !collapsedSections[section.label]
-          return (
-            <div key={section.label}>
-              <UnstyledButton
-                className={`${classes.sectionBand} ${classes.sectionHeader}`}
-                onClick={() =>
-                  setCollapsedSections((prev) => ({
-                    ...prev,
-                    [section.label]: !prev[section.label],
-                  }))
-                }
-                aria-expanded={isOpen}
-              >
-                <SectionLabel flush>{section.label}</SectionLabel>
-                <IconChevron open={isOpen} />
-              </UnstyledButton>
-              <Collapse expanded={isOpen}>
-                <Stack gap={1}>{renderSectionItems(section)}</Stack>
-              </Collapse>
-            </div>
-          )
-        })}
-      </Stack>
+          })}
+        </Stack>
+      </ScrollArea>
 
       {account ? (
         <Stack gap={0} className={classes.footer}>
