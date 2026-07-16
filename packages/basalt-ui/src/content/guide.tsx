@@ -27,7 +27,13 @@ function defaultRenderLink(target: ArticleNavTarget, node: ReactNode): ReactNode
   return <a href={target.href}>{node}</a>
 }
 
-/** Small inline open-book glyph — the framework ships no icon dependency. */
+/**
+ * Small inline help glyph — the framework ships no icon dependency.
+ *
+ * A question mark, not an `i`: DESIGN-SPEC §5 already spends `i` on ChartCard's info tooltip, and
+ * two different affordances behind one glyph teaches the reader nothing. Not the open book it
+ * replaced either — at 14px that read as an anonymous panel rather than a book.
+ */
 function GuideGlyph() {
   return (
     <svg
@@ -41,8 +47,9 @@ function GuideGlyph() {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M4 6a2 2 0 0 1 2 -2h5v16h-5a2 2 0 0 1 -2 -2z" />
-      <path d="M20 6a2 2 0 0 0 -2 -2h-5v16h5a2 2 0 0 0 2 -2z" />
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+      <path d="M12 17l0 .01" />
+      <path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4" />
     </svg>
   )
 }
