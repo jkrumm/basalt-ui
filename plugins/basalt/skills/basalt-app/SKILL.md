@@ -39,9 +39,10 @@ command away. Do both: plugin once, `init` per repo.
 
 `init` writes the repo-side doctrine and toolchain into a consumer (monorepo globs supported):
 
-- `.claude/rules/basalt-*.md` — the six shipped rules (`basalt-tokens`, `basalt-charts`,
-  `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`), whole-file managed with a
-  `source: basalt-ui@<version>` header and parameterized `paths:`.
+- `.claude/rules/basalt-*.md` — the twelve shipped rules (`basalt-tokens`, `basalt-charts`,
+  `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`,
+  `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`),
+  whole-file managed and copied verbatim with a `source: basalt-ui` header (no version).
 - A managed `<!-- basalt:begin --> ... <!-- basalt:end -->` block in `CLAUDE.md`: stack facts, the
   **DESIGN.md-is-law** pointer, and the **frontend-design restraint override** (in a dashboard, the
   bold move is calm — defer to `/basalt:design`, not generic "make it striking" instincts).
@@ -82,7 +83,7 @@ import 'basalt-ui/styles.css'   // @layer basalt base styles, iOS input safety n
 
 Lint wires as `oxlint . && basalt check-theme` — the theme guard is the teeth behind the token
 doctrine. The consumer series
-file (`lib/series.ts`) is the single guard-exempt palette source — see `/basalt:charts`.
+file (`src/theme/series.ts`) is the single guard-exempt palette source — see `/basalt:charts`.
 
 ## Refresh: `bunx basalt sync`
 
@@ -115,8 +116,8 @@ both.
 - `BasaltProvider` wraps the app; `createBasaltTheme` used for theme deltas; `basalt-ui/styles.css`
   imported.
 - `basaltViteConfig` adopted; `oxlint . && basalt check-theme` is the lint command.
-- A thin `DESIGN.md` (deltas) + the six `basalt-*` rules + the managed CLAUDE block are present.
-- `lib/series.ts` exists as the one guard-exempt series source (for any app metric colors).
+- A thin `DESIGN.md` (deltas) + the twelve `basalt-*` rules + the managed CLAUDE block are present.
+- `src/theme/series.ts` exists as the one guard-exempt series source (for any app metric colors).
 - `basalt sync --check` wired in CI (recommended) to catch drift on future upgrades.
 
 ## Notes

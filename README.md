@@ -5,7 +5,7 @@
 
 > Opinionated framework for Mantine v9 + visx React apps — theme, app shell, chart system, and the agentic layer to drive them.
 
-**[Documentation](https://basalt-ui.com?utm_source=root_readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
+**[Documentation](https://github.com/jkrumm/basalt-ui/tree/master/packages/basalt-ui#readme)** · **[GitHub](https://github.com/jkrumm/basalt-ui)** · **[npm](https://www.npmjs.com/package/basalt-ui)**
 
 Building a dashboard app means wiring a Mantine theme, a visx chart system, a typed token layer, and an app shell — each with its own opinions, and none of them talking to each other. Basalt UI is the extraction of that setup from a production app: install once, get a coherent system.
 

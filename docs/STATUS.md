@@ -1,6 +1,6 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-07-07**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-07-16**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
 **Branch:** `feat/s0-mantine-pivot` (PR-required, unmerged, pushed to
@@ -23,15 +23,16 @@ that language is historical; see the banner on each.
   `onError` + CSP nonce).
 - **Seven batteries** ship as runtime subpaths: `./query`, `./router-tanstack`, `./agent`,
   `./commands`, `./forms`, `./notifications`, `./data` (split into `./data/table` +
-  `./data/virtual`) — plus `./guard`, `./state`, `./connectivity`, `./llms.txt`. All 18 subpaths
-  (incl. `./connectivity`) resolve in the pack-test.
+  `./data/virtual`) — plus `./guard`, `./state`, `./connectivity`, `./llms.txt`. All 19 subpaths
+  (incl. `./connectivity` and `./content`) resolve in the pack-test.
 - **Charts / tokens** — config-driven chart system (legend/tooltip/crosshair), `ResponsiveChart` +
   `useChartSize`, the semantic-tier `--vx-*` token keystone, the modern-zinc palette (see
   `docs/DESIGN-SPEC.md`), motion discipline (oxlint + `check-theme` enforced).
 - **Design overhaul (2026-07-11)** — the shell, charts, components (`data-table`, notifications
   bell/center), and agent-chat surfaces were restyled to `docs/DESIGN-SPEC.md`: cool zinc surfaces,
   a single saturated sky accent, split by role (ink `#0077bd`/`#8ec5ff`; fill `#0077bd` both schemes, white label), `shadow-card` depth (whisper shadow + ring,
-  no plain hairline), 10px card radius, and the three-font system (Nunito Sans / Hubot Sans /
+  no plain hairline), 7px card radius (6px controls, after the 2026-07-15 density pass), and the
+  three-font system (Nunito Sans / Hubot Sans /
   JetBrains Mono, shipped via exact-pinned `@fontsource-variable/*` deps). `DESIGN-SPEC.md` is the
   ground truth for all visual doctrine going forward; older doctrine comments describing warm-neutral
   zinc-charcoal, a muted slate-blue accent, flat/no-shadow cards, or 8px radii are superseded — see
@@ -39,7 +40,7 @@ that language is historical; see the banner on each.
 - **Enforcement** — `SURFACES` projects `gen-oxlint` + `gen-llms`; `check-coverage` (8 assertions);
   Mantine-free boundary enforced on headless surfaces; `@visx/*`-only-in-`charts` boundary.
 - **Release gates** (`scripts/pack-test.sh`) — `publint --strict` + `attw` (esm-only) +
-  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 18-subpath resolution.
+  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 19-subpath resolution.
 - **CLI** — `init` · `sync` (+ `--check` drift gate) · `check-theme` · `check-coverage` · `info`
   (+ `--json`) · `doctor` · `guard-hook`.
 - **Agent-DX** — `llms.txt`, `AGENTS.md`, `basalt info --json`, `basalt doctor`; the `basalt`
@@ -47,7 +48,7 @@ that language is historical; see the banner on each.
 - **Resolved owner decisions** — `@visx/*` bumped alpha.11 → **4.0.0 stable** (+ `@visx/responsive`);
   `@tanstack/react-hotkeys@0.10.0` optional peer (live keybinding) shipped; `createForm` →
   `useBasaltForm` rename.
-- **Maturation review executed** (see `MATURATION-REVIEW.md`) — the `./data` split (`./data/table`
+- **Maturation review executed** (see `docs/archive/MATURATION-REVIEW.md`) — the `./data` split (`./data/table`
   - `./data/virtual`), `./connectivity` registered in `SURFACES`, an accessibility wave (keyboard-
     operable chart legend, `DataTable` sort, mobile-nav `aria-current`, streaming `aria-live`), agent
     `retry(threadId)` + orphaned-in-flight-thread reconcile, and a documentation cleanup (10 planning
@@ -68,16 +69,20 @@ that language is historical; see the banner on each.
 1. **Push** the outstanding commits to `origin/feat/s0-mantine-pivot` (pushed to `origin` on
    2026-06-11; many maturation commits have landed since — see `git log`).
 2. **Open the PR** (basalt-ui is PR-required).
-3. **npm Trusted Publisher** — configure `jkrumm/basalt-ui` → `publish.yml`, then **delete the
-   `NPM_TOKEN` GitHub secret**. Without this the OIDC publish 403s.
+3. **npm Trusted Publisher** — `publish.yml` is already OIDC-ready (`id-token: write`); configure
+   `jkrumm/basalt-ui` → `publish.yml` on the npm side, then **delete the `NPM_TOKEN` GitHub
+   secret**. Without this the OIDC publish 403s.
 4. **`/code-review ultra`** at the finish line (billed).
 5. **Merge**, then trigger the release workflow (semantic-release-monorepo, npm provenance).
+   `release.yml` is `workflow_dispatch`-only — merging to `master` does NOT auto-release.
 
 ## Validation
 
-Last verified green **2026-07-07** — `bun run pre` (fmt/lint/typecheck), 164 tests, build,
-`check-coverage` (8/8), and pack-test (18 subpaths) all pass on the maturation + docs-cleanup tip.
-**Re-run `bun run pre` + pack-test before shipping** if further commits land.
+Last verified green **2026-07-16**, on the release-hardening wave following `aa64af6` — `bun test`:
+560 pass / 22 files. Also green on that tree: `bun run pre` (fmt/lint/typecheck), build,
+`check-coverage`, and pack-test (19 subpaths, now including the scratch-consumer oxlint-preset
+`extends` contract). **A final re-verification (`bun run pre` + `bun test` + pack-test) runs before
+ship** if further commits land.
 
 ## Deferred by design — do NOT build for 1.0
 
@@ -113,10 +118,11 @@ packaging, the charts/tokens API, the shell, or the batteries above.
 
 - **Living reference** (current, maintained alongside the code) — **`STATUS.md`** (this file,
   single source of truth), `DESIGN-SPEC.md` (2026-07 visual identity, supersedes older doctrine —
-  see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`,
-  `MATURATION-REVIEW.md`.
+  see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`.
 - **`docs/archive/`** — superseded scope ledgers and historical process artifacts, kept for
   provenance only:
+  - Executed ledger — `MATURATION-REVIEW.md` (the maturation quality ledger; its phases are
+    executed, kept for provenance).
   - Superseded scope ledgers — `MATURATION-ROADMAP.md`, `ENFORCEMENT-HARDENING.md`,
     `INTEGRATION-DX.md`. Their phases are built except the finish line above; per-phase
     "proposal/remaining" language is historical.

@@ -17,7 +17,7 @@ Astro docs is obsolete — that doctrine no longer applies.
 The full S0→S5 argo extraction is **implemented** on `feat/s0-mantine-pivot` — `packages/basalt-ui/src/**`
 is real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). The historical plan
 lives in `docs/archive/BLUEPRINT.md`. `docs/STATUS.md` is the live single-source-of-truth for
-current state; `docs/MATURATION-REVIEW.md` is the (now-executed) quality ledger. Do what is
+current state; `docs/archive/MATURATION-REVIEW.md` is the (now-executed) quality ledger. Do what is
 explicitly requested — don't autonomously execute large roadmap phases.
 
 ## Critical Rules (READ FIRST)
@@ -149,14 +149,22 @@ fails a mixed staging set.
 ?utm_source={file_location}
 ```
 
-**Defined sources**: `root_readme`, `basalt_ui_readme`, `brand_voice`, `npm_package`.
+**Defined sources**: `root_readme`, `basalt_ui_readme`. (`brand_voice` dropped — its source doc was
+deleted; `npm_package` dropped — `package.json`'s `homepage` now points to GitHub, not
+`basalt-ui.com`.)
 
 **Why**: the analytics already tracks referrers (github.com, npmjs.com), there are no active
 campaigns, and one consistent parameter answers the only question that matters — "which document
 did they click from?". We don't track `utm_medium` / `utm_campaign` / `utm_content` / `utm_term`.
 
+Applies only to links that actually target `basalt-ui.com` (Umami only sees traffic on that
+domain). Both READMEs' "Documentation" links currently point off-domain (GitHub / an in-page
+anchor) until `apps/marketing` is rebuilt on Mantine (see "Structure" above), so
+neither carries a live `utm_source` today; the convention stays defined for the next doc that
+links to `basalt-ui.com` from that source:
+
 ```markdown
-[Documentation](https://basalt-ui.com?utm_source=root_readme)
+[Some page](https://basalt-ui.com?utm_source=root_readme)
 ```
 
 ## Key Principles

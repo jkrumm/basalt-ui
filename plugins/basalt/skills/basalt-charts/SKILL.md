@@ -47,11 +47,11 @@ hatches (`renderExtraTooltipRows`) are fine; they must not grow into a god-objec
 The framework ships generic primitives and the framework palette (semantic / status / neutral /
 surface) — **but not a domain series tree.** `VX.series` does not exist in basalt-ui; argo's
 `SERIES`/`ACTIVITY`/`USAGE_*` maps stayed app-side. Each consumer rebuilds its own series in **one
-guard-exempt file** (e.g. `lib/series.ts`), using the shipped extensibility helpers from
+guard-exempt file** (e.g. `src/theme/series.ts`), using the shipped extensibility helpers from
 `basalt-ui/tokens`:
 
 ```ts
-// lib/series.ts  — the ONE file exempt from `basalt check-theme` (it IS the palette source)
+// src/theme/series.ts  — the ONE file exempt from `basalt check-theme` (it IS the palette source)
 import { defineSeries, groupTokens, seriesTokens, buildPaletteCss } from 'basalt-ui/tokens'
 
 // 1. Author the per-theme pairs (hue keeps identity, shifts shade across schemes).
@@ -98,7 +98,7 @@ import {
   useChartTooltip, useHoverSync,
   VX, alpha,
 } from 'basalt-ui/charts'        // ./charts re-exports the token layer too
-import { SERIES } from '../lib/series'
+import { SERIES } from '../theme/series'
 
 function HrvChart({ data, width, height }: HrvChartProps) {
   const tip = useChartTooltip<HrvPoint>()

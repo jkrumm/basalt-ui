@@ -37,7 +37,7 @@ dashboard the bold move is calm.
   across every page so tabs feel like one app.
 - **Single hue per metric.** Each metric owns ONE color, stable across all views (HRV always
   violet, bench always amber). Series colors are app-side and distinct from the UI accent — don't
-  reuse the slate accent as a metric hue. Multiple colors only for genuinely categorical data
+  reuse the sky accent as a metric hue. Multiple colors only for genuinely categorical data
   (sleep stages, source breakdown). A line chart almost never needs more than one hue plus neutrals.
 - **Neutral structure, colored signal.** Lines/axes/grids in muted neutrals; color is the data and
   status (good/warn/bad). A single neutral line with a soft tinted area reads more premium than a
