@@ -16,7 +16,7 @@
  * <TableOfContents containerRef={articleRef} />
  */
 import type { MouseEvent, RefObject } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@mantine/hooks'
 import classes from './toc.module.css'
 
@@ -41,6 +41,12 @@ export type TableOfContentsProps = {
 
 const DEFAULT_LEVELS: readonly [number, number] = [2, 3]
 const DEFAULT_TITLE = 'On this page'
+
+/**
+ * Ceiling on how long a clicked item holds the rail: released on `scrollend` where supported, so
+ * this only covers browsers without it — and a smooth scroll that never settles.
+ */
+const CLICK_PIN_MAX_MS = 1000
 
 /** Heading text without the hover-anchor `#` glyph the markdown/MDX heading renderers append. */
 function headingLabel(node: HTMLElement): string {
@@ -70,6 +76,13 @@ export function TableOfContents({
   const [collected, setCollected] = useState<TocItem[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const reduceMotion = useReducedMotion()
+  // Set while a clicked item owns the rail; `resolve` stands down until it's released.
+  const pinnedRef = useRef<string | null>(null)
+  const releasePinRef = useRef<(() => void) | null>(null)
+
+  useEffect(() => {
+    return () => releasePinRef.current?.()
+  }, [])
 
   // Auto-collection: re-scan on mount + on any childList mutation under the container.
   useEffect(() => {
@@ -98,6 +111,10 @@ export function TableOfContents({
     const intersecting = new Set<string>()
 
     const resolve = () => {
+      // A clicked item is the reader SAYING where they are; everything below only infers it. Stand
+      // down until the scroll they asked for has settled.
+      if (pinnedRef.current !== null) return
+
       // Bottom edge: the last sections are usually shorter than the observer's 70% dead zone, so
       // their headings can NEVER reach the activation band — the rail would stall on whichever
       // section last made it in. Once the page bottoms out, the final item is the honest answer.
@@ -146,10 +163,34 @@ export function TableOfContents({
 
   if (resolvedItems.length === 0) return null
 
+  /**
+   * Hold the rail on the clicked item until its scroll settles. Without this the spy overwrites the
+   * choice mid-flight — most visibly for a section near the end, where the page bottoms out before
+   * the heading can reach the activation band, so the bottom pin would answer with the LAST item
+   * instead of the one that was asked for.
+   */
+  const pinActive = (id: string) => {
+    releasePinRef.current?.()
+    setActiveId(id)
+    pinnedRef.current = id
+
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const release = () => {
+      pinnedRef.current = null
+      if (timer !== null) clearTimeout(timer)
+      window.removeEventListener('scrollend', release)
+      releasePinRef.current = null
+    }
+    timer = setTimeout(release, CLICK_PIN_MAX_MS)
+    window.addEventListener('scrollend', release, { once: true })
+    releasePinRef.current = release
+  }
+
   const handleClick = (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
     const el = document.getElementById(id)
     if (el) {
+      pinActive(id)
       el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })
       history.replaceState(null, '', `#${id}`)
     }
