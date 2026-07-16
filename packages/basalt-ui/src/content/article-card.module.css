@@ -77,7 +77,13 @@
   overflow: hidden;
 }
 
+/* Pinned to the card's floor, not floated up behind a short description: the grid stretches every
+ * card in a row to one height, so a content-following meta line lands at a different y in each
+ * card and the row reads ragged. `margin-top: auto` in the card's flex column gives the row one
+ * meta baseline regardless of how many lines each description clamps to. */
 .meta {
+  margin-top: auto;
+  padding-top: 2px;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   letter-spacing: 0.06em;
