@@ -54,11 +54,19 @@
   color: var(--vx-ink);
 }
 
-/* Blockquote — quiet left rail, shared across densities; margin differs below. */
+/* Blockquote — quiet left rail, shared across densities; margin differs below. Italic is the
+ * conventional voice for a quotation and separates it from body copy without spending weight or
+ * another color on it. */
 .root blockquote {
   padding: 2px 0 2px 12px;
   border-left: 2px solid var(--vx-divider);
   color: var(--vx-muted);
+  font-style: italic;
+}
+
+/* Emphasis inside an already-italic quote flips upright — otherwise the `em` reads as nothing. */
+.root blockquote em {
+  font-style: normal;
 }
 
 /* The rail owns its padding; the quoted paragraph must not add to it (see the edge-margin note at
