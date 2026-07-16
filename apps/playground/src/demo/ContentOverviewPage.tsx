@@ -1,14 +1,32 @@
 /**
  * ContentOverviewPage — a docs-landing demo exercising the docs-framing layer of
- * `basalt-ui/content`: `ArticleGrid`/`ArticleCard` (the overview card grid) and
- * `GuideLink`/`GuideDrawer` (the contextual-help pattern), mounted next to a couple of `StatCard`s
+ * `basalt-ui/content`: `ArticleFilterBar` + `filterArticles`/`sortArticles` over the fixture
+ * article list (`ARTICLES`), rendered through the shipped `ArticleGrid`/`ArticleCard`, plus
+ * `GuideLink`/`GuideDrawer` (the contextual-help pattern) mounted next to a couple of `StatCard`s
  * the way a real dashboard would use them ("this metric has a guide").
  */
 import { Group, Stack, Text, Title } from '@mantine/core'
-import { Link } from '@tanstack/react-router'
-import { StatCard } from 'basalt-ui'
-import { ArticleCard, ArticleGrid, GuideLink } from 'basalt-ui/content'
-import { IconActivity, IconChart, IconSearch } from './icons'
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
+import { EmptyState, StatCard } from 'basalt-ui'
+import {
+  ArticleCard,
+  ArticleFilterBar,
+  ArticleGrid,
+  filterArticles,
+  GuideLink,
+  sortArticles,
+} from 'basalt-ui/content'
+import type { ArticleNavTarget } from 'basalt-ui/content'
+import type { ReactNode } from 'react'
+import { articleCategory, articleTags } from './article-filter-stores'
+import { ARTICLE_CATEGORIES, ARTICLE_TAGS, ARTICLES, articleHref } from './articles'
+import type { ArticleCategory } from './articles'
+import { IconSearch } from './icons'
+
+// getRouteApi (not `Route.useSearch()`) sidesteps a circular import between this file and
+// routes/content-overview.tsx (which imports THIS component) — same route, same search schema,
+// no Route binding to import back.
+const route = getRouteApi('/content-overview')
 
 const GUIDE_MARKDOWN_FIXTURE = `## How this metric is measured
 
@@ -29,7 +47,37 @@ export function p95(samples: number[]): number {
 > threshold and response.
 `
 
+const CATEGORY_LABELS: Record<ArticleCategory, string> = {
+  guide: 'Guide',
+  reference: 'Reference',
+  pattern: 'Pattern',
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'all', label: 'All' },
+  ...ARTICLE_CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] })),
+]
+
 export function ContentOverviewPage() {
+  // route.useSearch() is safe here (unlike the sibling-route hazard `createSearchParamStore`'s
+  // JSDoc warns about) because ContentOverviewPage IS this route's own `component` — not a page
+  // rendered from a sibling route.
+  const { category, tags } = route.useSearch()
+  const [, persistCategory] = articleCategory.useStore()
+  const [, persistTags] = articleTags.useStore()
+  const navigate = useNavigate()
+
+  // 'all' is a UI sentinel added by the filter bar, not an `Article` model concept —
+  // filterArticles treats undefined/'' as "no constraint" and deliberately does NOT special-case
+  // 'all' (a consumer could legitimately have a category literally named 'all').
+  const effectiveCategory = category === 'all' ? undefined : category
+  const articles = sortArticles(
+    filterArticles(ARTICLES, {
+      ...(effectiveCategory !== undefined && { category: effectiveCategory }),
+      tags,
+    }),
+  )
+
   return (
     <Stack gap="xl" p="md">
       <div>
@@ -40,48 +88,55 @@ export function ContentOverviewPage() {
         </Text>
       </div>
 
-      <ArticleGrid>
-        <ArticleCard
-          title="Reading dashboards"
-          description="Why most internal dashboards fail the five-second glance test."
-          meta="6 min read · guide"
-          icon={<IconActivity />}
-          href="/content"
-          renderLink={(target, node) => <Link to={target.href as never}>{node}</Link>}
-        />
-        <ArticleCard
-          title="Chart guide"
-          description="Picking chart kinds, series colors, and when to go bespoke."
-          meta="5 min read · guide"
-          icon={<IconChart />}
-          href="#"
-        />
-        <ArticleCard
-          title="Streaming markdown"
-          description="Rendering AI-streamed prose safely, block by block."
-          meta="4 min read · guide"
-          href="#"
-        />
-        <ArticleCard
-          title="Theming"
-          description="Tuning the --vx-* token system for light and dark."
-          meta="7 min read · guide"
-          href="#"
-        />
-        <ArticleCard
-          title="Search & commands"
-          description="Wiring Spotlight search over your own route/article list."
-          meta="3 min read · guide"
+      <ArticleFilterBar
+        categories={CATEGORY_OPTIONS}
+        category={category}
+        onCategoryChange={(next) => {
+          const value = next as typeof category
+          persistCategory(value)
+          navigate({ to: '.', search: (prev) => ({ ...prev, category: value }) })
+        }}
+        tags={ARTICLE_TAGS}
+        selectedTags={tags}
+        onTagsChange={(next) => {
+          const value = next as typeof tags
+          persistTags(value)
+          navigate({ to: '.', search: (prev) => ({ ...prev, tags: value }) })
+        }}
+      />
+
+      {articles.length === 0 ? (
+        <EmptyState
           icon={<IconSearch />}
-          href="#"
+          title="No matching guides"
+          description="Try a different category or clear the selected tags."
+          variant="section"
         />
-        <ArticleCard
-          title="Deployment"
-          description="Shipping a TanStack Start app with content-collections."
-          meta="5 min read · guide"
-          href="#"
-        />
-      </ArticleGrid>
+      ) : (
+        <ArticleGrid>
+          {articles.map((article) => {
+            const href = articleHref(article)
+            const isRealRoute = href !== '#'
+            return (
+              <ArticleCard
+                key={article.slug}
+                title={article.title}
+                description={article.description}
+                date={article.date}
+                category={article.category}
+                tags={article.tags}
+                readingTime={article.readingTime}
+                href={href}
+                {...(isRealRoute && {
+                  renderLink: (target: ArticleNavTarget, node: ReactNode) => (
+                    <Link to={target.href as never}>{node}</Link>
+                  ),
+                })}
+              />
+            )
+          })}
+        </ArticleGrid>
+      )}
 
       <div>
         <Title order={3}>Contextual guides</Title>

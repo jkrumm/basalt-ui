@@ -1,13 +1,15 @@
 /**
  * Builds the full Spotlight action list for the playground palette — Pages (from the nav model, as
- * breadcrumb trails) plus the command bus, each decorated with a right-side kind badge so a result
- * is self-describing regardless of its group. Passed to `<BasaltOverlays projectCommands={false}
- * spotlightActions={…}>`, which then renders exactly this list (no internal command projection, so
- * nothing appears twice).
+ * breadcrumb trails), the command bus, and Guides (from the article fixture), each decorated with
+ * a right-side kind badge so a result is self-describing regardless of its group. Passed to
+ * `<BasaltOverlays projectCommands={false} spotlightActions={…}>`, which then renders exactly this
+ * list (no internal command projection, so nothing appears twice).
  */
 import type { SpotlightActionData } from '@mantine/spotlight'
 import { Badge } from '@mantine/core'
 import { closeSpotlight, runCommand, toRouteActions, toSpotlightActions } from 'basalt-ui/commands'
+import { toArticleActions } from 'basalt-ui/content'
+import { ARTICLES, articleHref } from './articles'
 import { NAV_MODEL } from './nav-model'
 
 /** Neutral kind tag (Page / Command / Setting) — no identity color, per the restraint doctrine. */
@@ -19,8 +21,9 @@ function KindBadge({ children }: { children: string }) {
   )
 }
 
-/** Assemble the palette in group order Commands → Settings → Pages. The command bus splits by kind
- *  (Appearance → Settings, everything else → Commands); pages come from the nav model as trails. */
+/** Assemble the palette in group order Commands → Settings → Pages → Guides. The command bus
+ *  splits by kind (Appearance → Settings, everything else → Commands); pages come from the nav
+ *  model as trails; guides come from the article fixture (`ARTICLES`). */
 export function buildPaletteActions(onNavigate: (href: string) => void): SpotlightActionData[] {
   const decorated = toSpotlightActions((id) => {
     closeSpotlight()
@@ -42,5 +45,12 @@ export function buildPaletteActions(onNavigate: (href: string) => void): Spotlig
     rightSection: <KindBadge>Page</KindBadge>,
   })
 
-  return [...commands, ...settings, ...pages]
+  const guides = toArticleActions(ARTICLES, {
+    onNavigate,
+    href: articleHref,
+    group: 'Guides',
+    rightSection: <KindBadge>Guide</KindBadge>,
+  })
+
+  return [...commands, ...settings, ...pages, ...guides]
 }

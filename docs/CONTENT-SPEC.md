@@ -2,6 +2,14 @@
 
 > Status: IMPLEMENTED (2026-07-16, all three stages) — `packages/basalt-ui/src/content/` ships the
 > full surface below; playground demos at `/content` + `/content-overview`.
+> **Amendment (2026-07-16):** the article model (`Article<C, T>`, `sortArticles`, `filterArticles`,
+> `formatArticleDate`), `ArticleFilterBar`, and `toArticleActions` (a Spotlight projector) shipped —
+> see §2 decision 7, §3, and §9 below for the doctrine record. `ArticleCard`/`ArticleLayout` moved
+> from a preformatted `meta` string to structured fields (`date`/`category`/`tags`/`readingTime`,
+> `date` as ISO 8601). Not a breaking change: `./content` is new in 1.0 and 1.0 is still being built
+> on this branch, so there is no published surface carrying the old props — these commits are `feat:`,
+> not `feat!:` (the branch's one legitimate `feat!:` is the Tailwind→Mantine pivot itself, which
+> breaks against the published v0.4.2).
 > Ground truth for typography doctrine remains `docs/DESIGN-SPEC.md` §3; this spec extends it to
 > long-form reading surfaces. Research basis: July 2026 ecosystem survey (streamdown v2/remend,
 > shiki 4.x, content-collections 0.15, mermaid 11.16/beautiful-mermaid, Fumadocs/Starlight/
@@ -76,10 +84,20 @@ indistinguishable and all obey the `--vx-*` token system in both color schemes.
 7. **content-collections is a recipe, not a dependency.** Build-time tooling belongs to the
    consumer (`@content-collections/core` 0.15 + `/vite` 0.3 + `/mdx` 0.2 as devDeps, Standard
    Schema). We ship: the `mdxComponents` map that makes `<MDXContent components={mdxComponents}>`
-   land on basalt primitives, a `defineArticleSchema`-style zod-free frontmatter shape (plain
-   Standard Schema object the consumer spreads), docs in the rule file, and a playground/docs
-   demo. The TanStack Start wiring (vite plugin order, tsconfig path alias) is documented in
+   land on basalt primitives, docs in the rule file, and a playground/docs demo. The TanStack
+   Start wiring (vite plugin order, tsconfig path alias) is documented in
    `agent/rules/basalt-content.md`.
+
+   **Amendment:** the frontmatter SHAPE now ships as a real type — `Article<C, T>` (generic over
+   consumer-declared categories/tags) plus the `sortArticles`/`filterArticles`/`formatArticleDate`
+   operators in `article-model.ts`. The originally planned `defineArticleSchema`-style "plain
+   Standard Schema object the consumer spreads" is RETIRED — it was never built, it contradicted
+   the shipped `basalt-content.md` (which documents a plain zod schema for the content-collections
+   recipe, not a basalt-owned Standard Schema seam), and as specified it would have been a config
+   bag, which the canonical `defineX` factory contract (`packages/basalt-ui/CLAUDE.md`) forbids.
+   Runtime re-validation of frontmatter that content-collections already validated at build time
+   buys nothing, so no Standard Schema seam ships for content. `StandardSchemaV1` in `register.ts`
+   stays what it always was — a forms/state validation seam, unrelated to content.
 8. **Contextual help is a first-class component.** The pattern the user cares about — "this chart
    has a guide" — ships as `GuideLink` (an unobtrusive trigger) + `GuideDrawer` (a right-side
    Drawer rendering any article via `<Markdown>`/`<MDXContent>` at chat density, with an "open
@@ -102,6 +120,12 @@ ReadingProgress       opt-in 2px top bar (aria-hidden), scroll-driven
 ArticleLayout         content + sticky TOC rail + optional breadcrumbs/meta header
                       (title, description, date, readingTime) + PrevNext footer; responsive
 ArticleCard/Grid      overview/index pages (docs landing) — StatCard-family aesthetics
+Article<C, T>         the article data model, generic over consumer-declared categories/tags
+sortArticles          pure sort ('date-desc' | 'date-asc' | 'title'); missing dates sort last
+filterArticles        pure filter — category exact-match, tags ANY-OF, AND between axes
+formatArticleDate     Intl.DateTimeFormat wrapper — locale + timeZone both pinned (hydration-safe)
+ArticleFilterBar      fully controlled category/tags filter UI over the router-tanstack stores
+toArticleActions      pure in-memory projector into Spotlight actions (same tier as toRouteActions)
 GuideLink/GuideDrawer contextual help: in-app docs drawer
 mdxComponents         the element map for MDX runtimes / content-collections MDXContent
 headingSlug, readingTime   small utils (own, no deps)
@@ -155,11 +179,15 @@ raw stream text
 - **Reading progress**: opt-in thin bar, top of the content column, `aria-hidden`.
 - **Anchor links**: heading hover reveals `#` link; click copies URL (Starlight pattern).
 - **Prev/Next**: footer pagination cells with directional arrows, title + optional section.
-- **Overview**: `ArticleGrid` of `ArticleCard`s (icon/title/description/meta) — the established
+- **Overview**: `ArticleGrid` of `ArticleCard`s (icon/title/description/date/category/tags/
+  readingTime — structured fields, not a preformatted `meta` string) — the established
   docs-landing card grid, styled like the dashboard composites (panel bg, 7px radius, hairline).
+  `sortArticles`/`filterArticles` compose above the grid; `ArticleFilterBar` renders the
+  category/tags controls.
 - **Breadcrumbs**: reuse `AppBreadcrumbs`/`useRouterBreadcrumbs` — already shipped.
-- **Search**: articles project into the existing command system via `toRouteActions`/Spotlight;
-  recipe in the rule file (content-collections gives the typed article list to map over).
+- **Search**: articles project into the existing command system via `toArticleActions`/Spotlight
+  (same tier as `toRouteActions`); recipe in the rule file (content-collections gives the typed
+  article list to map over).
 - **Code UX**: copy button always; filename/title tab; language badge; horizontal scroll (X-axis
   scroll is the sanctioned exception per `raw-scroll-container`); optional line highlighting later.
 
@@ -181,5 +209,9 @@ raw stream text
 - Full mermaid grammar bundling, d2 (59 MB WASM), pintora (stale) — escape hatches only.
 - Vega-Lite streamed chart specs — revisit only with a real consumer need; visx stays the chart
   system.
-- Versioned docs, i18n routing, search indexing service — consumer concerns.
+- Versioned docs, i18n routing — consumer concerns.
+- A search *index* or indexing service (Pagefind, Algolia, server-side search) — consumer concern. The framework ships `toArticleActions`, a pure in-memory **projector** into the already-shipped Spotlight command surface (the same tier as `toRouteActions`); it does not tokenize, rank, index, or persist. An app that outgrows substring matching over a client-side array brings its own index.
+- A taxonomy vocabulary. The framework ships `Article<C, T>` generic over categories/tags and the operators over them; *which* categories and tags exist is domain data, declared consumer-side — the `VX.series` doctrine applied to content.
+- Grouping/pagination UI. Sorting and filtering ship. Grouped section rendering and pagination await a real consumer need.
+- A list/grid view toggle. Six cards fit one screen and a list re-renders identical content narrower — it is a control that exists to look configurable.
 - A `create-basalt-docs` scaffold — deferred with the rest of the create-* family.
