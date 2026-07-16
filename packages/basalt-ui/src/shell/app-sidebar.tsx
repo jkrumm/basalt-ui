@@ -570,7 +570,13 @@ export function AppSidebar({
         </div>
       )}
 
-      <ScrollArea type="hover" scrollbars="y" scrollbarSize={9} className={classes.navScroll}>
+      <ScrollArea
+        type="hover"
+        scrollbars="y"
+        scrollbarSize={9}
+        className={classes.navScroll}
+        classNames={{ viewport: classes.navViewport }}
+      >
         <Stack gap={0} className={classes.nav}>
           {sections.map((section) => {
             if (!section.collapsible) {

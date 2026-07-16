@@ -119,6 +119,17 @@
 .navScroll {
   flex: 1;
   min-height: 0;
+  /* Bleed the scroll root across `.root`'s right inset so the overlay bar draws in that 10px
+   * gutter instead of on top of the rows (it anchors to the root's right edge, which otherwise
+   * lands exactly on the row's own right padding — the bar then crowds the badge column). */
+  margin-right: -10px;
+}
+
+/* Re-apply the bled inset INSIDE the viewport, so rows keep their exact 10px/10px column while the
+ * bar floats clear of them in the gutter. Static padding, not Mantine's `offsetScrollbars`: the
+ * latter pads only while overflowing, which reflows the rows the moment a section expands. */
+.navViewport {
+  padding-inline-end: 10px;
 }
 
 /* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand

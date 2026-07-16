@@ -13,6 +13,7 @@ declare const classes: {
   readonly brandName: string
   readonly searchSlot: string
   readonly navScroll: string
+  readonly navViewport: string
   readonly nav: string
   readonly collapseBtn: string
   readonly footer: string

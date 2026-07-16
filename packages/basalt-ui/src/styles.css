@@ -86,11 +86,23 @@
     font-stretch: 88%;
   }
 
-  /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, hairline thumb (line on hover), radius 6, transparent
-     track. Firefox via scrollbar-width/-color, WebKit/Blink via the ::-webkit-scrollbar family. */
+  /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, ink-mix thumb (stronger on hover), radius 6,
+     transparent track.
+
+     ONE thumb treatment drives BOTH bars — the native page bar below and Mantine's ScrollArea
+     overlay bar further down — so a page and a sidebar never read as two different scrollbar
+     languages. Defined as ink %-mixes (the same idiom as the ink-6% hover tints) rather than a
+     surface token: ink inverts across schemes, so one expression stays visible on both pages.
+     `--vx-surface-hairline` is NOT usable here — it's the card-ring token (`#e5e5e5` on light),
+     which all but vanishes against the light page. */
+  :root {
+    --basalt-scrollbar-thumb: color-mix(in srgb, var(--vx-ink) 25%, transparent);
+    --basalt-scrollbar-thumb-hover: color-mix(in srgb, var(--vx-ink) 40%, transparent);
+  }
+
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--vx-surface-hairline) transparent;
+    scrollbar-color: var(--basalt-scrollbar-thumb) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -103,12 +115,12 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: var(--vx-surface-hairline);
+    background-color: var(--basalt-scrollbar-thumb);
     border-radius: 6px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--vx-surface-border);
+    background-color: var(--basalt-scrollbar-thumb-hover);
   }
 
   /* Mantine ScrollArea draws its OWN overlay scrollbars and hides the native one on its viewport
@@ -122,6 +134,24 @@
 
   .mantine-ScrollArea-viewport::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Re-point Mantine's overlay bar at the same treatment. Its own thumb is a hardcoded
+     rgba(0,0,0,0.4) / rgba(255,255,255,0.4) and its track picks up a gray-0/dark-8 fill on hover —
+     both off-palette, and visibly heavier than the native bar they sit beside. No `!important`:
+     Mantine ships layered CSS (`@mantine/core/styles.layer.css`) and `@layer basalt` is declared
+     after `@layer mantine`, so this layer wins on order regardless of specificity. */
+  .mantine-ScrollArea-scrollbar {
+    background-color: transparent;
+  }
+
+  .mantine-ScrollArea-thumb {
+    background-color: var(--basalt-scrollbar-thumb);
+  }
+
+  .mantine-ScrollArea-scrollbar:hover .mantine-ScrollArea-thumb,
+  .mantine-ScrollArea-scrollbar:active .mantine-ScrollArea-thumb {
+    background-color: var(--basalt-scrollbar-thumb-hover);
   }
 }
 
