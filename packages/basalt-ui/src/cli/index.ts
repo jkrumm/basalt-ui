@@ -40,7 +40,7 @@ import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
-  /** Source roots to scan. Default: argo's `['apps/dashboard/src', 'packages/charts/src']`. */
+  /** Source roots to scan. Default: `['src']`. Set explicitly for a monorepo layout. */
   roots?: string[]
   /** Files exempt from the scan (they ARE the palette source). Default: argo's exempt set. */
   exempt?: string[]
@@ -141,7 +141,7 @@ export type BasaltConfig = {
   marketplace?: { owner?: string; repo?: string }
 }
 
-const DEFAULT_ROOTS = ['apps/dashboard/src', 'packages/charts/src']
+const DEFAULT_ROOTS = ['src']
 
 /**
  * Default scan exemption — a bare consumer's only palette source is its configured series module
