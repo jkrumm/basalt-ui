@@ -48,9 +48,10 @@ command away. Do both: plugin once, `init` per repo.
   bold move is calm — defer to `/basalt:design`, not generic "make it striking" instincts).
 - A **thin** `DESIGN.md` seed (deltas only on top of the `basalt-*` rules): identity confirmation,
   the series dictionary, app deviations. The CLAUDE block `@`-imports it, so it auto-loads.
-- Toolchain templates with no `extends` mechanism: `oxfmt.json`, `lefthook.yml`, `check.yml`. (The
-  oxlint preset is consumed via `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`, not
-  copied.)
+- Toolchain templates with no `extends` mechanism: `.oxfmtrc.json` (reconciled by every `sync`),
+  and `lefthook.yml` / `check.yml` (seeded once, then yours — CI and hooks are inherently
+  repo-shaped, so `sync` never overwrites your edits or reports them as drift). (The oxlint preset
+  is consumed via `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`, not copied.)
 - `.basalt/manifest.json` — a sha256 per managed file, so `sync` can do a three-way diff later.
 
 After `init`, do the runtime wiring (the CLI scaffolds files, not your app's composition):
@@ -96,8 +97,10 @@ file (`src/theme/series.ts`) is the single guard-exempt palette source — see `
 - `sync --check` makes no changes and exits non-zero on drift — wire it as a CI freshness gate so a
   consumer can't silently fall behind the shipped rules.
 
-The thin `DESIGN.md` is yours to edit (deltas only) and `sync` respects local edits there; the
-`basalt-*` rules and the managed CLAUDE block are framework-owned and meant to be overwritten.
+The thin `DESIGN.md` is yours to edit (deltas only), and so are `lefthook.yml` / `check.yml` —
+all three are seeded once by `init` and never reconciled or drift-reported by `sync`. The
+`basalt-*` rules, the managed CLAUDE block, and `.oxfmtrc.json` are framework-owned and meant to be
+overwritten.
 
 ## Precedence the scaffold establishes
 
