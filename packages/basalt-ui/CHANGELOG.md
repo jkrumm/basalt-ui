@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/jkrumm/basalt-ui/compare/v1.1.0...v1.1.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* derive consumer seeds from basalt.roots, relax eqeqeq to smart ([b598112](https://github.com/jkrumm/basalt-ui/commit/b5981124b5758cca421164037d4f320ed65af362))
+
 # [1.1.0](https://github.com/jkrumm/basalt-ui/compare/v1.0.2...v1.1.0) (2026-07-17)
 
 
