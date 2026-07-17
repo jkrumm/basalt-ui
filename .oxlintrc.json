@@ -33,6 +33,7 @@
     "node_modules",
     "apps/marketing/**",
     "examples/**",
+    "tests/fixtures/**",
     "**/*.module.css.d.ts"
   ],
   "overrides": [

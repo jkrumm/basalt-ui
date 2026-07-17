@@ -8,6 +8,7 @@ const root = join(import.meta.dir, '..')
 const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
 const SHIPPED_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint.json')
 const FIXTURE_PATH = join(root, 'tests/fixtures/oxlint-parse-fixture.ts')
+const EQEQEQ_FIXTURE_PATH = join(root, 'tests/fixtures/eqeqeq-smart-fixture.ts')
 
 type OverrideBlock = { files: string[]; rules: Record<string, unknown> }
 type NoRestrictedImportsValue = [
@@ -171,5 +172,23 @@ describe('oxlint preset sync contract', () => {
     // A config-parse failure exits non-zero before any lint findings are produced; a clean
     // config run may still exit non-zero on lint findings, which is fine — only the parse
     // failure text above is the actual gate here.
+  })
+})
+
+describe('shipped preset — eqeqeq smart mode', () => {
+  // `eqeqeq: "error"` (bare) flags the deliberate `x != null` nullish idiom, which cost a real
+  // consumer 4 false positives. "smart" allows it while still catching a genuine loose compare.
+  // Asserted against oxlint's ACTUAL output, since this hinges on oxlint's option semantics.
+  const output = (): string => {
+    const result = Bun.spawnSync([OXLINT_BIN, '--config', SHIPPED_CONFIG_PATH, EQEQEQ_FIXTURE_PATH])
+    return `${result.stdout}${result.stderr}`
+  }
+
+  it('allows `!= null`', () => {
+    expect(output()).not.toContain('Expected !== and instead saw !=')
+  })
+
+  it('still flags a genuine loose comparison', () => {
+    expect(output()).toContain('Expected === and instead saw ==')
   })
 })
