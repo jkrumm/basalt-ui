@@ -11,8 +11,8 @@
  * optionalPeers peerDependencies/peerDependenciesMeta presence.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
- * Claude Code rules, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain templates
- * (oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
+ * Claude Code rules + skills, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain
+ * seeds (oxlint / oxfmt / lefthook / CI). Both are sha256-manifest driven for safe,
  * idempotent three-way reconciliation. Dependency-free — Node/Bun built-ins only.
  *
  * Runtime-agnostic (Node or Bun) — built-ins only, no `bun`-module import, so the exported API is
@@ -35,7 +35,7 @@ import { fileURLToPath } from 'node:url'
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
 import type { Finding, GuardConfig, GuardKind } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import { RULE_NAMES, SURFACES } from '../surfaces'
+import { RULE_NAMES, SKILL_NAMES, SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
@@ -135,22 +135,27 @@ export type BasaltConfig = {
    * `sub-16-input-font` check.
    */
   sub16InputFont?: boolean
-  /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/theme/series.ts`. */
+  /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/lib/series.ts`. */
   seriesModulePath?: string
-  /** Claude Code marketplace coordinates for the settings stanza `{{MARKETPLACE_OWNER}}/{{MARKETPLACE_REPO}}`. Default: `jkrumm/basalt-ui`. */
-  marketplace?: { owner?: string; repo?: string }
 }
 
 const DEFAULT_ROOTS = ['src']
 
 /**
+ * The one default consumer series path — the DESIGN.md template's `{{SERIES_MODULE_PATH}}`, the
+ * default scan exemption, and the skills' prose all point at this same file, so it lives in a
+ * single constant (argo's convention: `<root>/lib/series.ts`).
+ */
+const DEFAULT_SERIES_MODULE_PATH = 'src/lib/series.ts'
+
+/**
  * Default scan exemption — a bare consumer's only palette source is its configured series module
  * (the doctrine directs every consumer to put raw hex series colors in `seriesModulePath`; default
- * `src/theme/series.ts`). Derived from the same config resolution `buildTemplateVars` uses for
+ * `src/lib/series.ts`). Derived from the same config resolution `buildTemplateVars` uses for
  * `{{SERIES_MODULE_PATH}}`, so overriding `seriesModulePath` keeps the exemption in sync.
  */
 function defaultExempt(cfg: BasaltConfig): string[] {
-  return [cfg.seriesModulePath ?? 'src/theme/series.ts']
+  return [cfg.seriesModulePath ?? DEFAULT_SERIES_MODULE_PATH]
 }
 
 const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
@@ -288,13 +293,13 @@ export function checkTheme(cwd: string = process.cwd()): number {
     // consumer — both cases fail loud instead of warn-plus-green.
     if (cfg.roots === undefined) {
       console.error(
-        `✖ basalt check-theme: 0 files scanned — no "basalt.roots" configured in package.json, and ` +
+        `✖ basalt-ui check-theme: 0 files scanned — no "basalt.roots" configured in package.json, and ` +
           `the built-in default roots (${DEFAULT_ROOTS.join(', ')}) matched zero files. ` +
           'Set "basalt": { "roots": [...] } in package.json to point at your source directories.',
       )
     } else {
       console.error(
-        `✖ basalt check-theme: 0 files scanned — the configured "basalt.roots" (${roots.join(', ')}) ` +
+        `✖ basalt-ui check-theme: 0 files scanned — the configured "basalt.roots" (${roots.join(', ')}) ` +
           'matched zero files. Check the paths in "basalt.roots" in package.json.',
       )
     }
@@ -347,22 +352,37 @@ export function checkTheme(cwd: string = process.cwd()): number {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * How a managed file is reconciled with its shipped source.
+ * How a file the framework writes into a consumer repo is owned. Two modes, one question:
+ * **does Claude read this file?**
  *
- * - `copy`  : verbatim asset. init skips if the dest already exists; sync three-way reconciles it.
- * - `block` : a `<!-- basalt:begin -->…<!-- basalt:end -->` region inside a host file (CLAUDE.md).
- *             The rest of the host file is owned by the consumer; only the block is managed.
- * - `seed`  : written once if absent, then owned entirely by the consumer. sync never overwrites it
- *             and never reports drift (it is a starting point, not a managed mirror).
+ * - `managed` : basalt owns it. sync refreshes it to the shipped version; a local edit is skipped
+ *               and reported (`--force` overwrites); `--check` exits 1 on drift. Applies to exactly
+ *               what Claude reads (.claude/rules/*, .claude/skills/*, the CLAUDE.md block) —
+ *               Claude Code cannot load rules or skills from node_modules, and that platform limit
+ *               is the only reason anything is copied at all. The sync diff is the review gate.
+ * - `seed`    : written once if absent, then owned entirely by the consumer. sync never overwrites
+ *               it and never reports drift (a starting point, not a managed mirror). Everything a
+ *               machine reads is a seed, and a good seed's content is a REFERENCE (`extends` into
+ *               node_modules/basalt-ui/configs/*), not a copy, so the toolchain auto-updates with
+ *               the package while the consumer still owns the file.
+ *
+ * A managed file with `markers: true` is spliced as a `<!-- basalt:begin -->…<!-- basalt:end -->`
+ * region inside a host file the consumer otherwise owns (CLAUDE.md) — not a third mode, just
+ * managed ownership scoped to a region.
  */
-type Strategy = 'copy' | 'block' | 'seed'
+type Mode = 'managed' | 'seed'
 
 /** A single file the framework writes into a consumer repo. */
 type ManagedFile = {
   /** Path of the produced file, relative to the consumer repo root. Stable manifest key. */
   dest: string
-  /** Reconciliation strategy. */
-  strategy: Strategy
+  /** Ownership mode. */
+  mode: Mode
+  /**
+   * `managed` only: the file is a marker-delimited region spliced into a consumer-owned host file
+   * rather than a whole file. `render()` returns the region INCLUDING its begin/end markers.
+   */
+  markers?: true
   /** Path of the shipped source asset, relative to the package root. */
   source: string
   /**
@@ -389,8 +409,6 @@ type TemplateVars = {
   BASALT_VERSION: string
   ACCENT_HUE: string
   SERIES_MODULE_PATH: string
-  MARKETPLACE_OWNER: string
-  MARKETPLACE_REPO: string
 }
 
 // The block markers the CLAUDE.md template emits. The begin marker carries the framework version
@@ -441,9 +459,7 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     APP_NAME: readPackageName(cwd),
     BASALT_VERSION: readFrameworkVersion(pkgRoot),
     ACCENT_HUE: cfg.accentHue ?? 'blue',
-    SERIES_MODULE_PATH: cfg.seriesModulePath ?? 'src/theme/series.ts',
-    MARKETPLACE_OWNER: cfg.marketplace?.owner ?? 'jkrumm',
-    MARKETPLACE_REPO: cfg.marketplace?.repo ?? 'basalt-ui',
+    SERIES_MODULE_PATH: cfg.seriesModulePath ?? DEFAULT_SERIES_MODULE_PATH,
   }
 }
 
@@ -455,10 +471,21 @@ function fillTemplate(tpl: string, vars: TemplateVars): string {
   })
 }
 
-/** The character span of the managed `basalt:begin … basalt:end` region, or null if absent. */
+/**
+ * The character span of the managed `basalt:begin … basalt:end` region, or null if absent.
+ * Duplicate begin markers are an error, loudly — silently picking one region would splice into the
+ * wrong place and leave the other stale forever.
+ */
 function findBlockRegion(host: string): { start: number; end: number } | null {
   const start = host.indexOf(BLOCK_BEGIN_PREFIX)
   if (start === -1) return null
+  const duplicate = host.indexOf(BLOCK_BEGIN_PREFIX, start + BLOCK_BEGIN_PREFIX.length)
+  if (duplicate !== -1) {
+    throw new Error(
+      `duplicate \`${BLOCK_BEGIN_PREFIX}\` markers found in the host file — remove the stale ` +
+        'basalt block by hand, then re-run.',
+    )
+  }
   const endMarker = host.indexOf(BLOCK_END, start)
   if (endMarker === -1) return null
   return { start, end: endMarker + BLOCK_END.length }
@@ -507,8 +534,8 @@ function hasDependency(cwd: string, pkgName: string): boolean {
 
 /**
  * Resolves whether the consumer has the optional TanStack router/query peers — auto-detected from
- * package.json, or forced via `--with-router` / `--with-query`. Both `basalt init` (for gating
- * which seed scaffolds to write) and `basalt sync` (so it doesn't silently re-seed a scaffold whose
+ * package.json, or forced via `--with-router` / `--with-query`. Both `basalt-ui init` (for gating
+ * which seed scaffolds to write) and `basalt-ui sync` (so it doesn't silently re-seed a scaffold whose
  * peer was never installed) call this once, up front.
  */
 function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
@@ -520,19 +547,31 @@ function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
 
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
 function managedFiles(peers: PeerFlags): ManagedFile[] {
+  // ── managed: exactly what Claude reads ──────────────────────────────────────
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
-    strategy: 'copy' as const,
+    mode: 'managed' as const,
     source: `agent/rules/basalt-${name}.md`,
     render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/rules/basalt-${name}.md`),
   }))
 
+  // Skills take the same managed path the rules do — Claude Code cannot load skills from
+  // node_modules, and a plugin cannot ship rules, so init/sync is the one delivery channel for the
+  // whole agentic layer. The `basalt-` filename prefix keeps the /basalt-design ergonomics.
+  const skills: ManagedFile[] = SKILL_NAMES.map((name) => ({
+    dest: `.claude/skills/${name}/SKILL.md`,
+    mode: 'managed' as const,
+    source: `agent/skills/${name}/SKILL.md`,
+    render: (ctx: RenderContext) => readSource(ctx.pkgRoot, `agent/skills/${name}/SKILL.md`),
+  }))
+
   const claudeBlock: ManagedFile = {
     dest: 'CLAUDE.md',
-    strategy: 'block',
+    mode: 'managed',
+    markers: true,
     source: 'agent/templates/CLAUDE-block.md.tpl',
-    // For block, render() returns the fully-rendered block INCLUDING its begin/end markers — the
-    // managed region. The writer splices it into the consumer's host CLAUDE.md at apply time.
+    // With markers, render() returns the fully-rendered region INCLUDING its begin/end markers.
+    // The writer splices it into the consumer's host CLAUDE.md at apply time.
     render: (ctx) => {
       const tpl = readSource(ctx.pkgRoot, 'agent/templates/CLAUDE-block.md.tpl')
       if (tpl === null) return null
@@ -540,9 +579,10 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
     },
   }
 
+  // ── seed: everything a machine reads — written once, then consumer-owned ────
   const design: ManagedFile = {
     dest: 'DESIGN.md',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'agent/templates/DESIGN.md.tpl',
     render: (ctx) => {
       const tpl = readSource(ctx.pkgRoot, 'agent/templates/DESIGN.md.tpl')
@@ -553,37 +593,44 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
 
   // Scaffold destination is `.oxfmtrc.json` — oxfmt auto-discovers that filename, not `oxfmt.json`
   // (the pre-rename scaffold; see migrateLegacyOxfmt for the one-time cleanup of the old dest).
+  // Content is a starting copy, not a reference — oxfmt has no `extends` mechanism.
   const oxfmt: ManagedFile = {
     dest: '.oxfmtrc.json',
-    strategy: 'copy',
+    mode: 'seed',
     source: 'configs/oxfmt.json',
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/oxfmt.json'),
   }
 
-  // `seed` (write-once, then consumer-owned) — CI/hooks are inherently repo-shaped (a monorepo's
-  // check.yml needs its own `src/**` globs and package.json scripts; the shipped defaults are a
-  // starting point, not a mirror everyone can obey verbatim). `copy` would keep `sync --check`
-  // permanently red the moment a consumer adapts the template, which is every consumer.
+  // Seed a lefthook.yml that `extends` the shipped preset — the consumer owns the file (their own
+  // commands merge alongside), while the preset's oxlint/oxfmt/check-theme jobs auto-update with
+  // the package. `source` names the preset the stub references; the stub itself is emitted inline.
   const lefthook: ManagedFile = {
     dest: 'lefthook.yml',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'configs/lefthook.yml',
-    render: (ctx) => readSource(ctx.pkgRoot, 'configs/lefthook.yml'),
+    render: () =>
+      '# Seeded by basalt-ui init — you own this file; sync never touches it again.\n' +
+      '# The extends target supplies oxlint + oxfmt + check-theme pre-commit jobs and\n' +
+      '# auto-updates with the basalt-ui package. Add your own commands alongside.\n' +
+      'extends:\n' +
+      '  - node_modules/basalt-ui/configs/lefthook.yml\n',
   }
 
+  // CI is inherently repo-shaped (a monorepo's check.yml needs its own globs and scripts), and
+  // GitHub Actions has no in-repo `extends` — so the workflow seeds as an explicit starting copy.
   const ci: ManagedFile = {
     dest: '.github/workflows/check.yml',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'configs/check.yml',
     render: (ctx) => readSource(ctx.pkgRoot, 'configs/check.yml'),
   }
 
   // Seed an `.oxlintrc.json` that extends the shipped preset (written once, then consumer-owned).
   // `render` emits the stub inline rather than copying `source`; `source` names the preset the stub
-  // extends, and the `seed` strategy never reports drift, so it is not read back at sync time.
+  // extends, and the `seed` mode never reports drift, so it is not read back at sync time.
   const oxlintrc: ManagedFile = {
     dest: '.oxlintrc.json',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'configs/oxlint.json',
     render: () => '{\n  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"]\n}\n',
   }
@@ -594,7 +641,7 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
   /** TanStack Query client bootstrap (seed — consumer-owned after init). */
   const queryClient: ManagedFile = {
     dest: 'src/query-client.ts',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'agent/templates/query-client.ts.tpl',
     render: (ctx) => {
       const tpl = readSource(ctx.pkgRoot, 'agent/templates/query-client.ts.tpl')
@@ -606,7 +653,7 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
   /** TanStack Router root route with QueryClient context wiring (seed — consumer-owned after init). */
   const rootRoute: ManagedFile = {
     dest: 'src/routes/__root.tsx',
-    strategy: 'seed',
+    mode: 'seed',
     source: 'agent/templates/__root.tpl',
     render: (ctx) => {
       const tpl = readSource(ctx.pkgRoot, 'agent/templates/__root.tpl')
@@ -623,11 +670,13 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
   if (peers.hasQuery) scaffolds.push(queryClient)
   if (peers.hasRouter && peers.hasQuery) scaffolds.push(rootRoute)
 
-  return [...rules, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, ...scaffolds]
+  return [...rules, ...skills, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, ...scaffolds]
 }
 
 type Manifest = {
   version: 1
+  /** The basalt-ui version that last wrote this manifest — `doctor`'s one reconciliation axis. */
+  basaltVersion?: string
   /** dest path → sha256 of the managed unit (file bytes, block body, or stanza) at last write. */
   files: Record<string, string>
 }
@@ -637,7 +686,9 @@ function readManifest(cwd: string): Manifest {
   if (raw === null) return { version: 1, files: {} }
   try {
     const parsed = JSON.parse(raw) as Partial<Manifest>
-    return { version: 1, files: parsed.files ?? {} }
+    const manifest: Manifest = { version: 1, files: parsed.files ?? {} }
+    if (typeof parsed.basaltVersion === 'string') manifest.basaltVersion = parsed.basaltVersion
+    return manifest
   } catch {
     return { version: 1, files: {} }
   }
@@ -674,9 +725,9 @@ function packageRoot(): string {
 }
 
 /**
- * The current on-disk state of a managed unit, plus the version the framework wants. For `block`
- * the "current" unit is the existing region (markers included); for `copy`/`seed` it is the whole
- * file.
+ * The current on-disk state of a managed unit, plus the version the framework wants. For a
+ * marker-spliced file the "current" unit is the existing region (markers included); otherwise it
+ * is the whole file.
  */
 type UnitState = {
   /** The managed unit's current bytes on disk (block region / whole file). */
@@ -698,16 +749,16 @@ function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitStat
   const desired = file.render(ctx)
   const destAbs = resolve(cwd, file.dest)
   const onDisk = readIfExists(destAbs)
-  if (file.strategy === 'block') {
+  if (file.markers) {
     return { current: extractBlockRegion(onDisk), desired }
   }
   return { current: onDisk, desired }
 }
 
-/** Write a managed unit to disk according to its strategy. Returns the hash of the written unit. */
+/** Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash. */
 function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   const destAbs = resolve(cwd, file.dest)
-  if (file.strategy === 'block') {
+  if (file.markers) {
     const host = readIfExists(destAbs) ?? ''
     writeFileEnsuringDir(destAbs, applyBlock(host, desired))
     return sha256(desired)
@@ -766,9 +817,10 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       continue
     }
 
-    // `seed` + `copy` are skip-if-exists on init. `block` always inserts/updates its region;
+    // Whole files (managed + seed) are skip-if-exists on init; a marker-spliced region always
+    // inserts/updates itself inside its host file.
     const destExists = existsSync(resolve(cwd, file.dest))
-    if ((file.strategy === 'copy' || file.strategy === 'seed') && destExists) {
+    if (!file.markers && destExists) {
       // Already present — keep the consumer's copy untouched. Record the SHIPPED hash so a later
       // sync treats a pre-existing-but-different file as locally drifted (skip unless --force),
       // never silently clobbering a file the consumer authored before init.
@@ -782,37 +834,29 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     written++
   }
 
+  manifest.basaltVersion = ctx.vars.BASALT_VERSION
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
-  console.log(`basalt init: ${written} written, ${skipped} kept, manifest at ${MANIFEST_PATH}`)
+  console.log(`basalt-ui init: ${written} written, ${skipped} kept, manifest at ${MANIFEST_PATH}`)
   if (missingSources.length > 0) {
     console.log(
-      `basalt init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
+      `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
   }
   // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
   // without the peer installed would ship an unresolved import. Hint how to opt in instead.
   if (!peers.hasQuery) {
     console.log(
-      'basalt init: skipped src/query-client.ts (no @tanstack/react-query dependency detected) — ' +
+      'basalt-ui init: skipped src/query-client.ts (no @tanstack/react-query dependency detected) — ' +
         'install it, or re-run with --with-query, to scaffold it.',
     )
   }
   if (!peers.hasRouter || !peers.hasQuery) {
     console.log(
-      'basalt init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +
+      'basalt-ui init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +
         '@tanstack/react-query) — install both, or re-run with --with-router --with-query, to scaffold it.',
     )
   }
-  // Skills ship via the basalt plugin, not init (a plugin can't write repo doctrine, and project
-  // settings can't auto-install a plugin). Install it once at user scope — applies to every project
-  // and auto-updates — so per-project setup stays just `basalt init`.
-  const mp = `${ctx.vars.MARKETPLACE_OWNER}/${ctx.vars.MARKETPLACE_REPO}`
-  console.log(
-    `\nSkills: install the basalt plugin once (user scope → all projects, then auto-updates):\n` +
-      `  claude plugin marketplace add ${mp}\n` +
-      `  claude plugin install basalt@${ctx.vars.MARKETPLACE_REPO}   (enable auto-update when prompted)`,
-  )
   // The guard-hook PreToolUse registration is NOT written automatically — add it manually to
   // .claude/settings.json so every Write/Edit/MultiEdit goes through the theme guard.
   console.log(
@@ -821,7 +865,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       `    "PreToolUse": [\n` +
       `      {\n` +
       `        "matcher": "Write|Edit|MultiEdit",\n` +
-      `        "hooks": [{ "type": "command", "command": "bunx basalt guard-hook" }]\n` +
+      `        "hooks": [{ "type": "command", "command": "bunx basalt-ui guard-hook" }]\n` +
       `      }\n` +
       `    ]\n` +
       `  }`,
@@ -829,7 +873,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   // First adoption on a previously guard-clean repo can surface a wall of findings (the 1.0 guard
   // adds several rule kinds beyond a legacy local guard) — steer toward tuning config, not mass-allow.
   console.log(
-    '\nFirst run: run `basalt check-theme` next, then tune the per-rule `basalt.*` config keys ' +
+    '\nFirst run: run `basalt-ui check-theme` next, then tune the per-rule `basalt.*` config keys ' +
       'in package.json for anything that fires — do not mass-`theme-allow` findings.',
   )
   return 0
@@ -866,7 +910,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
     }
 
     // `seed` is written once, then owned by the consumer — never reconciled, never reported.
-    if (file.strategy === 'seed') {
+    if (file.mode === 'seed') {
       if (state.current === null && !opts.check) {
         manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
         recreated++
@@ -898,21 +942,22 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
 
   if (opts.check) {
     if (driftLines.length > 0) {
-      console.error('basalt sync --check: locally-drifted managed files:')
+      console.error('basalt-ui sync --check: locally-drifted managed files:')
       for (const l of driftLines) console.error(l)
     }
     if (staleForCheck > 0) {
-      console.error(`basalt sync --check: ${staleForCheck} managed file(s) out of date.`)
+      console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
       return 1
     }
-    console.log('✓ basalt sync --check: all managed files current.')
+    console.log('✓ basalt-ui sync --check: all managed files current.')
     return 0
   }
 
+  manifest.basaltVersion = ctx.vars.BASALT_VERSION
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
   console.log(
-    `basalt sync: ${updated} updated, ${recreated} recreated, ${skippedDrift} skipped (drift).`,
+    `basalt-ui sync: ${updated} updated, ${recreated} recreated, ${skippedDrift} skipped (drift).`,
   )
   if (driftLines.length > 0) {
     console.log('Locally-edited files were skipped (run with --force to overwrite):')
@@ -920,7 +965,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   }
   if (missingSources.length > 0) {
     console.log(
-      `basalt sync: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
+      `basalt-ui sync: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
   }
   return 0
@@ -937,7 +982,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
  * Eight assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
- *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills.
+ *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
@@ -948,7 +993,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
  * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
  * via the deduped skill union (no independent per-#-surface skill row).
  */
-export function checkCoverage(cwd: string = process.cwd()): number {
+export function checkCoverage(): number {
   const pkgRoot = packageRoot()
   const failures: string[] = []
 
@@ -980,30 +1025,15 @@ export function checkCoverage(cwd: string = process.cwd()): number {
     }
   }
 
-  // ── Assertion 3: deduped union of doctrine skill[] ⊆ plugin.json skills ────
-  // Skipped gracefully when plugin.json is absent (non-framework-repo context).
-  const pluginJsonPath = resolve(cwd, 'plugins/basalt/.claude-plugin/plugin.json')
-  if (!existsSync(pluginJsonPath)) {
-    console.log(
-      `  (assertion 3 skipped: plugin.json not found — not in the basalt-ui framework repo, skipping the plugin-skills check)`,
-    )
-  } else {
-    let pluginSkillNames: Set<string> = new Set()
-    try {
-      const pluginJson = JSON.parse(readFileSync(pluginJsonPath, 'utf8')) as { skills?: string[] }
-      // skills are path references like './skills/basalt-app'; extract the last path segment
-      pluginSkillNames = new Set((pluginJson.skills ?? []).map((s) => s.split('/').pop() ?? s))
-    } catch {
-      failures.push(`Cannot read plugin.json at ${pluginJsonPath}`)
-    }
-
-    const doctrineSkillUnion = new Set(doctrineSpecs.flatMap((s) => [...s.skill]))
-    for (const skill of doctrineSkillUnion) {
-      if (!pluginSkillNames.has(skill)) {
-        failures.push(
-          `SURFACES doctrine skill '${skill}' is not listed in plugins/basalt/.claude-plugin/plugin.json skills`,
-        )
-      }
+  // ── Assertion 3: every doctrine skill (deduped) → agent/skills/{skill}/SKILL.md ──
+  // Mirrors assertion 2's shape — skills ship in the npm package and are placed by init/sync,
+  // so a skill referenced by SURFACES must exist as a shipped asset at the package root.
+  for (const skill of SKILL_NAMES) {
+    const skillPath = resolve(pkgRoot, `agent/skills/${skill}/SKILL.md`)
+    if (!existsSync(skillPath)) {
+      failures.push(
+        `Missing skill file: agent/skills/${skill}/SKILL.md (derived from SURFACES doctrine skills)`,
+      )
     }
   }
 
@@ -1122,21 +1152,26 @@ type DoctorResult = {
 /**
  * Check a consumer repo's basalt integration and print a pass/warn report.
  *
+ * With the plugin retired there is exactly ONE version axis — the npm package — so doctor verifies
+ * one thing: the basalt-ui resolved in the consumer's node_modules against the version recorded in
+ * .basalt/manifest.json at the last init/sync. File-level drift is `sync --check`'s job, not
+ * doctor's.
+ *
  * Hard failures (exit non-zero):
  *   1. .basalt/manifest.json exists (init was run).
  *
  * Warnings (non-fatal):
- *   2. CLAUDE.md contains the basalt managed block (<!-- basalt:begin marker).
- *   3. All 12 basalt-*.md rule files exist under .claude/rules/.
- *   4. The basalt plugin appears to be installed (best-effort ~/.claude/settings.json check).
- *   5. The running CLI's own version matches the basalt-ui version resolved in the consumer's
- *      node_modules (catches a stale `bunx basalt` npm fetch; best-effort, skipped if absent).
+ *   2. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
+ *      (a mismatch means the package was upgraded but `sync` never ran — the placed doctrine is
+ *      stale).
+ *   3. The running CLI's own version matches the installed basalt-ui (catches a stale
+ *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
 export function doctor(cwd: string = process.cwd()): number {
   const result: DoctorResult = { hardFailures: 0, warnings: 0 }
-  const lines: string[] = [`\nbasalt doctor — ${cwd}\n`]
+  const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
 
   function pass(msg: string): void {
     lines.push(`  ✓ ${msg}`)
@@ -1152,76 +1187,57 @@ export function doctor(cwd: string = process.cwd()): number {
 
   // ── Hard check 1: manifest exists ──────────────────────────────────────────
   const manifestAbs = resolve(cwd, MANIFEST_PATH)
-  if (existsSync(manifestAbs)) {
+  const manifestExists = existsSync(manifestAbs)
+  if (manifestExists) {
     pass(`${MANIFEST_PATH} exists`)
   } else {
-    fail(`${MANIFEST_PATH} missing — run \`basalt init\` to scaffold the consumer repo`)
+    fail(`${MANIFEST_PATH} missing — run \`basalt-ui init\` to scaffold the consumer repo`)
   }
 
-  // ── Warn check 2: CLAUDE.md contains the basalt managed block ──────────────
-  const claudeMdAbs = resolve(cwd, 'CLAUDE.md')
-  const claudeMdContent = readIfExists(claudeMdAbs)
-  if (claudeMdContent !== null && claudeMdContent.includes(BLOCK_BEGIN_PREFIX)) {
-    pass('CLAUDE.md contains the basalt managed block')
-  } else if (claudeMdContent === null) {
-    warn('CLAUDE.md not found — run `basalt init` to scaffold the basalt block')
-  } else {
-    warn(
-      `CLAUDE.md does not contain the basalt managed block (expected marker: ${BLOCK_BEGIN_PREFIX}) — run \`basalt sync\``,
-    )
-  }
-
-  // ── Warn check 3: all 12 rule files exist ──────────────────────────────────
-  const missingRules: string[] = []
-  for (const name of RULE_NAMES) {
-    const ruleAbs = resolve(cwd, `.claude/rules/basalt-${name}.md`)
-    if (!existsSync(ruleAbs)) missingRules.push(`basalt-${name}.md`)
-  }
-  if (missingRules.length === 0) {
-    pass(`all ${RULE_NAMES.length} basalt-*.md rule files present under .claude/rules/`)
-  } else {
-    warn(
-      `missing rule files under .claude/rules/: ${missingRules.join(', ')} — run \`basalt sync\` to restore`,
-    )
-  }
-
-  // ── Warn check 4: basalt plugin appears installed (best-effort) ─────────────
-  const settingsPath = resolve(process.env['HOME'] ?? '~', '.claude', 'settings.json')
-  try {
-    const settingsContent = readIfExists(settingsPath)
-    if (settingsContent !== null && settingsContent.includes('basalt')) {
-      pass('basalt plugin appears installed in ~/.claude/settings.json')
-    } else {
-      warn(
-        'basalt plugin not detected in ~/.claude/settings.json — install once at user scope:\n' +
-          '    claude plugin marketplace add jkrumm/basalt-ui\n' +
-          '    claude plugin install basalt@basalt-ui',
-      )
-    }
-  } catch {
-    warn('could not read ~/.claude/settings.json — plugin install status unknown')
-  }
-
-  // ── Warn check 5: running CLI version matches the consumer's installed basalt-ui ────
-  // Catches the `bunx basalt` failure mode where bunx fetches a stale published package instead of
-  // the workspace `file:` dep — the CLI that ran doctor and the package resolved from the
-  // consumer's node_modules silently disagree.
-  const cliVersion = readFrameworkVersion(packageRoot())
+  // ── Warn check 2: installed basalt-ui version matches the manifest ─────────
+  // THE one version axis. The manifest records the version whose init/sync placed the doctrine;
+  // node_modules is what the app actually resolves. A mismatch means "upgrade landed, sync didn't".
   const consumerPkgRaw = readIfExists(resolve(cwd, 'node_modules', 'basalt-ui', 'package.json'))
+  let installedVersion: string | null = null
   if (consumerPkgRaw !== null) {
     try {
       const consumerPkg = JSON.parse(consumerPkgRaw) as { version?: string }
-      if (consumerPkg.version !== undefined && consumerPkg.version !== cliVersion) {
-        warn(
-          `running CLI version (${cliVersion}) differs from the installed basalt-ui version in ` +
-            `node_modules (${consumerPkg.version}) — likely a stale \`bunx basalt\` fetch from npm; ` +
-            'add basalt-ui as a root devDependency so the bin hoists from your workspace.',
-        )
-      } else {
-        pass(`CLI version (${cliVersion}) matches the installed basalt-ui in node_modules`)
-      }
+      installedVersion = consumerPkg.version ?? null
     } catch {
-      warn('could not parse node_modules/basalt-ui/package.json — CLI version check skipped')
+      warn('could not parse node_modules/basalt-ui/package.json — version checks skipped')
+    }
+  }
+  if (manifestExists && installedVersion !== null) {
+    const manifestVersion = readManifest(cwd).basaltVersion
+    if (manifestVersion === undefined) {
+      warn(
+        `${MANIFEST_PATH} records no basaltVersion (written by an older basalt-ui) — run ` +
+          '`basalt-ui sync` to refresh the doctrine and stamp the manifest.',
+      )
+    } else if (manifestVersion !== installedVersion) {
+      warn(
+        `installed basalt-ui (${installedVersion}) differs from the version that last synced ` +
+          `(${manifestVersion}) — the placed doctrine is stale; run \`basalt-ui sync\`.`,
+      )
+    } else {
+      pass(`installed basalt-ui (${installedVersion}) matches the manifest's basaltVersion`)
+    }
+  }
+
+  // ── Warn check 3: running CLI version matches the consumer's installed basalt-ui ────
+  // Catches the failure mode where bunx fetches a stale published package instead of the local
+  // install — the CLI that ran doctor and the package resolved from the consumer's node_modules
+  // silently disagree.
+  const cliVersion = readFrameworkVersion(packageRoot())
+  if (installedVersion !== null) {
+    if (installedVersion !== cliVersion) {
+      warn(
+        `running CLI version (${cliVersion}) differs from the installed basalt-ui version in ` +
+          `node_modules (${installedVersion}) — likely a stale \`bunx basalt-ui\` fetch from npm; ` +
+          'add basalt-ui as a root devDependency so the bin hoists from your workspace.',
+      )
+    } else {
+      pass(`CLI version (${cliVersion}) matches the installed basalt-ui in node_modules`)
     }
   }
 
@@ -1463,7 +1479,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 const USAGE =
-  'Usage: basalt <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
+  'Usage: basalt-ui <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
   'check-theme | check-coverage | info [--json] | doctor | guard-hook | help>\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
@@ -1501,7 +1517,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'check-theme':
       return checkTheme(cwd)
     case 'check-coverage':
-      return checkCoverage(cwd)
+      return checkCoverage()
     case 'info':
       return info(flags)
     case 'doctor':
@@ -1515,5 +1531,5 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
 }
 
 // Re-export the managed-file manifest for testing / introspection (no default export).
-export { managedFiles, MANIFEST_PATH, RULE_NAMES }
+export { managedFiles, MANIFEST_PATH, RULE_NAMES, SKILL_NAMES }
 export type { ManagedFile, Manifest, SyncOptions, DoctorResult }

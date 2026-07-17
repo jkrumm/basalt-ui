@@ -5,7 +5,7 @@
 The only published package (npm: `basalt-ui`; the breaking 1.0 ships from this branch). An opinionated framework for Mantine-based
 React apps, extracted from argo: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an
 app shell, a visx chart system, a three-tier `--vx-*` token system, a theme-lab, a Vite preset,
-raw toolchain config presets, and a `basalt` CLI.
+raw toolchain config presets, and a `basalt-ui` CLI.
 
 > The old Tailwind CSS theme (OKLCH foundation palette, ShadCN/Tremor/Starlight compat,
 > typography plugin, spacing-restriction strategy) is **gone**. Breaking 1.0 (`feat!:`), same npm
@@ -24,7 +24,7 @@ in `../../docs/archive/BLUEPRINT.md`.
 | ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `SidebarSearch` + `SidebarSearchConfig` (the sidebar search field), `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThemeToggle`, shell types, dashboard composites (`DeltaBadge`, `StatCard`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`)                                                                                                                                                                                                                                                                                                                                                                             |
 | `./charts`          | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `./tokens`          | **free** | `VX`, `alpha`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `./tokens`          | **free** | `VX`, `alpha`, `BP` + `p` (raw hue families + pair-picker), `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -240,30 +240,33 @@ unchanged. The row shows a generic, non-personalized "person" icon (never an ava
 with plan/role badges nested under the name; the email is hidden unless `showEmail` is passed
 (privacy default).
 
-## CLI (`basalt`)
+## CLI (`basalt-ui`)
 
-One bin: `basalt init | sync | check-theme | check-coverage | info | doctor | guard-hook`
-(Bun runtime).
+One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger's package (an
+unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
+`basalt-ui init | sync | check-theme | check-coverage | info | doctor | guard-hook` (Bun runtime).
 
 - `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
   palette. Reads config from the consumer package.json `"basalt"` key
-  (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); argo's hardcoded values are the
-  defaults. Ships as `bunx basalt check-theme`. Consumer lint = `oxlint . && basalt check-theme`.
-- `init` / `sync` — **real**. `init` scaffolds the repo doctrine (`.claude/rules/basalt-*.md`, the
-  managed CLAUDE.md block, a `DESIGN.md` seed, oxfmt/lefthook/CI templates, an `.oxlintrc.json`
-  extends-stub) and prints a one-time
-  hint to install the `basalt` plugin (skills) at user scope. `sync` reconciles them against
-  `.basalt/manifest.json` via a sha256 three-way diff (copy/block/seed strategies; `--check` is a
-  CI drift gate, `--force` overwrites local edits). `init` does NOT write `.claude/settings.json` —
-  the plugin installs at user scope, not per project.
+  (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); default root is `src`, and a scan that
+  matches zero files fails loudly. Consumer lint = `oxlint . && basalt-ui check-theme`.
+- `init` / `sync` — **real**. Two ownership modes, decided by one question — _does Claude read this
+  file?_ **managed** (three-way reconciled; local edits skipped unless `--force`; the CLAUDE block
+  is managed with markers): `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*/SKILL.md`, the
+  CLAUDE.md block. **seed** (written once, then consumer-owned; recreated only when missing):
+  `DESIGN.md`, `.oxlintrc.json` + `lefthook.yml` (extends-stubs into
+  `node_modules/basalt-ui/configs/`), `.oxfmtrc.json`, `.github/workflows/check.yml`, optional
+  scaffolds. Reconciled against `.basalt/manifest.json` (sha256 per managed unit + basaltVersion);
+  `--check` is the CI drift gate. Contract tests: `src/cli/placement-engine.test.ts`.
 - `check-coverage` — **framework-internal only**, a self-consistency gate for the basalt-ui repo
-  itself (asserts SURFACES ↔ plugin.json ↔ rule files ↔ package.json exports); not a consumer
-  command and skips assertion 3 outside the framework repo.
+  itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports); not a consumer
+  command.
 - `info` (+ `--json`) — prints the published surface map; `--json` emits a stable JSON form.
-- `doctor` — checks a consumer repo's basalt integration health.
+- `doctor` — verifies the one version axis: installed `node_modules/basalt-ui` vs the manifest's
+  `basaltVersion` (plus manifest presence and a stale-`bunx` CLI-version warning).
 - `guard-hook` — PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies
   off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
-  `Write|Edit|MultiEdit` and command `bunx basalt guard-hook`.
+  `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook`.
 
 ## Toolchain (oxlint + oxfmt — not Biome/Prettier)
 
