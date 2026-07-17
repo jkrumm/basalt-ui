@@ -1,3 +1,15 @@
+## [1.0.1](https://github.com/jkrumm/basalt-ui/compare/v1.0.0...v1.0.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* collapse delivery to one package, one command, one version ([94de69c](https://github.com/jkrumm/basalt-ui/commit/94de69c80b4369265e72bf375839d145ec1cf954))
+* drop argo-shaped CLI defaults ([cd911d2](https://github.com/jkrumm/basalt-ui/commit/cd911d2f2756b678d65c3b65da8f6fbacd4096c1))
+* export the BP hue families and p pair-picker from the tokens entry ([a9b34c5](https://github.com/jkrumm/basalt-ui/commit/a9b34c51dbab3c960c389bda24b10a67dba254e2))
+* let consumers own their CI and git hooks ([15232df](https://github.com/jkrumm/basalt-ui/commit/15232df84ee04e47d2b913ba6bd489542685b67a))
+* make the managed CLAUDE block oxfmt-clean ([8300ea6](https://github.com/jkrumm/basalt-ui/commit/8300ea6e4b06ce6d3a24fcfae22e846299ece829))
+* print help instead of running the command ([a7a866c](https://github.com/jkrumm/basalt-ui/commit/a7a866c9677b71c3b35983fe93262204464f879d))
+
 # [1.0.0](https://github.com/jkrumm/basalt-ui/compare/v0.4.2...v1.0.0) (2026-07-16)
 
 
