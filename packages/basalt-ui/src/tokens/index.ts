@@ -11,6 +11,12 @@
 
 import { ACCENT, FILL, INK, NEUTRAL, SEMANTIC, SHADOW, STATUS, SURFACE } from './palette'
 
+// The raw hue families + pair-picker — the building blocks a consumer's series module composes
+// (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
+// palette internals; dropping them from this barrel hard-fails the consumer's build (1.0.0 bug,
+// pinned by scripts/export-surface.json).
+export { BP, p } from './palette'
+
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
 
