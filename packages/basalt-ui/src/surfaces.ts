@@ -449,7 +449,14 @@ export const SURFACES = {
       // so the bans left below (antd, framer-motion) are plain global bans with no narrower
       // override to out-order.
       shipped: ['**/*.{ts,tsx}'],
-      repo: ['packages/basalt-ui/src/**', 'apps/playground/src/**'],
+      // Repo is packages/basalt-ui/src/** ONLY. apps/playground is deliberately absent: it
+      // dogfoods the shipped consumer preset through its own apps/playground/.oxlintrc.json
+      // (`extends: ["./node_modules/basalt-ui/configs/oxlint.json"]`, resolved via the workspace
+      // symlink), which oxlint honours as a nested config — the nearest config REPLACES this one
+      // for that subtree, so listing playground here would be dead glob. That indirection is the
+      // point: the playground sees exactly what a real consumer sees, including NOT receiving
+      // `basalt/token-layer-boundary` (repo-local by design — see TOKEN_LAYER_BOUNDARY_SURFACES).
+      repo: ['packages/basalt-ui/src/**'],
     },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
     forbiddenImports: [
