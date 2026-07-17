@@ -4,7 +4,7 @@ An opinionated framework for **Mantine-based React apps**, extracted from argo (
 consumer app instantly gets: a Mantine theme + `cssVariablesResolver`, a `BasaltProvider`, an app
 shell (`BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header), a visx chart system, a
 three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain config presets, and a
-`basalt` CLI.
+`basalt-ui` CLI (bin named like the package — never `bunx basalt`).
 
 **Breaking 1.0** (`feat!:`, same npm name `basalt-ui`): the package pivoted from the old Tailwind
 CSS theme into the Mantine framework above. v0.4.2 had zero external consumers, so the pivot ships

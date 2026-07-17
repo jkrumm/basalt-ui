@@ -16,10 +16,10 @@ bun add basalt-ui
 bun add react react-dom @mantine/core @mantine/hooks
 ```
 
-Scaffold the repo doctrine (Claude Code rules, `CLAUDE.md` block, `DESIGN.md` seed, toolchain templates):
+Scaffold the repo doctrine (Claude Code rules + skills, `CLAUDE.md` block, `DESIGN.md` seed, toolchain seeds):
 
 ```bash
-bunx basalt init
+bunx basalt-ui init
 ```
 
 **Full docs, subpath export table, token system, and adapter batteries:** see the

@@ -1,12 +1,12 @@
 /**
- * Surfaces coverage + plugin-version lockstep.
+ * Surfaces coverage.
  *
  * Asserts:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped via RULE_NAMES) maps to an on-disk agent/rules/basalt-{rule}.md.
- *  3. Deduped union of doctrine skill[] ⊆ plugin.json skills (CHECK, not derive).
+ *  3. Every doctrine skill (deduped via SKILL_NAMES) maps to an on-disk
+ *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
- *  5. plugin.json and package.json share a major version (lockstep assertion from legacy test).
  *  6. Every surface with non-empty forbiddenImports has a globs field.
  *  7. Every headless surface carries all 3 Mantine bans (Mantine-free boundary).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
@@ -19,27 +19,18 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { GUARD_RULES } from '../packages/basalt-ui/src/guard'
-import { RULE_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
+import { RULE_NAMES, SKILL_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
 import { checkCoverage } from '../packages/basalt-ui/src/cli'
 
 const root = join(import.meta.dir, '..')
 const pkgRoot = join(root, 'packages/basalt-ui')
 
-const major = (version: string): string => version.split('.')[0] ?? ''
-
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 const doctrineSpecs = (Object.values(SURFACES) as { kind: string }[]).filter(
   (s): s is DoctrineSpec => s.kind === 'doctrine',
 )
-
-function pluginSkillNames(): Set<string> {
-  const pluginJson = JSON.parse(
-    readFileSync(join(root, 'plugins/basalt/.claude-plugin/plugin.json'), 'utf8'),
-  ) as { skills?: string[] }
-  return new Set((pluginJson.skills ?? []).map((s) => s.split('/').pop() ?? s))
-}
 
 function packageExports(): Set<string> {
   const pkg = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
@@ -52,8 +43,7 @@ function packageExports(): Set<string> {
 
 describe('check-coverage gate', () => {
   it('checkCoverage() returns 0 (all 8 assertions pass)', () => {
-    // Pass root as cwd so plugin.json is found at <root>/plugins/basalt/.claude-plugin/plugin.json
-    expect(checkCoverage(root)).toBe(0)
+    expect(checkCoverage()).toBe(0)
   })
 })
 
@@ -95,14 +85,18 @@ describe('rule file coverage', () => {
   }
 })
 
-// ── Assertion 3: doctrine skill union ⊆ plugin.json skills ──────────────────
+// ── Assertion 3: doctrine skills → on-disk agent/skills/{skill}/SKILL.md ────
 
-describe('plugin skill coverage', () => {
-  it('deduped doctrine skill union ⊆ plugin.json skills', () => {
-    const skills = pluginSkillNames()
+describe('skill file coverage', () => {
+  for (const skill of SKILL_NAMES) {
+    it(`agent/skills/${skill}/SKILL.md exists on disk`, () => {
+      expect(existsSync(join(pkgRoot, `agent/skills/${skill}/SKILL.md`))).toBe(true)
+    })
+  }
+
+  it('SKILL_NAMES covers the deduped doctrine skill union', () => {
     const skillUnion = new Set(doctrineSpecs.flatMap((s) => [...s.skill]))
-    const missing = [...skillUnion].filter((s) => !skills.has(s))
-    expect(missing).toEqual([])
+    expect([...skillUnion].toSorted()).toEqual([...SKILL_NAMES].toSorted())
   })
 })
 
@@ -164,26 +158,5 @@ describe('optionalPeers peerDependencies coverage', () => {
       }
     }
     expect(missing).toEqual([])
-  })
-})
-
-// ── Assertion 5: plugin-version lockstep (migrated from plugin-version-lockstep.test.ts) ──
-
-describe('plugin version lockstep', () => {
-  it('plugin.json and package.json share a major version (one doctrine generation)', () => {
-    const pluginJson = JSON.parse(
-      readFileSync(join(root, 'plugins/basalt/.claude-plugin/plugin.json'), 'utf8'),
-    ) as { version?: string }
-    const packageJson = JSON.parse(readFileSync(join(pkgRoot, 'package.json'), 'utf8')) as {
-      version?: string
-    }
-
-    // Major-version, NOT exact: semantic-release bumps packages/basalt-ui/package.json on every
-    // patch/minor release and commits it back (.releaserc.json exec + git), but the
-    // isolated-basalt-ui lefthook guard forbids that release commit from also staging the
-    // non-package plugin.json. Exact lockstep would therefore break CI on the second release.
-    // Majors are rare and bumped by hand, so a shared major still answers "which doctrine
-    // generation am I on?" without coupling the plugin manifest to every npm patch.
-    expect(major(pluginJson.version ?? '0.0.0')).toBe(major(packageJson.version ?? '0.0.0'))
   })
 })

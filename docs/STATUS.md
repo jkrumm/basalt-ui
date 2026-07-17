@@ -40,11 +40,12 @@ that language is historical; see the banner on each.
 - **Enforcement** — `SURFACES` projects `gen-oxlint` + `gen-llms`; `check-coverage` (8 assertions);
   Mantine-free boundary enforced on headless surfaces; `@visx/*`-only-in-`charts` boundary.
 - **Release gates** (`scripts/pack-test.sh`) — `publint --strict` + `attw` (esm-only) +
-  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 19-subpath resolution.
+  `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 19-subpath resolution +
+  tarball parity (every CLI-read source ships) + export-surface snapshot (named-export completeness).
 - **CLI** — `init` · `sync` (+ `--check` drift gate) · `check-theme` · `check-coverage` · `info`
   (+ `--json`) · `doctor` · `guard-hook`.
-- **Agent-DX** — `llms.txt`, `AGENTS.md`, `basalt info --json`, `basalt doctor`; the `basalt`
-  plugin (skills) + `basalt init` (rules + CLAUDE block + DESIGN.md seed).
+- **Agent-DX** — `llms.txt`, `AGENTS.md`, `basalt-ui info --json`, `basalt-ui doctor`; rules +
+  skills + CLAUDE block placed by `basalt-ui init`/`sync` (plugin/marketplace retired in 1.0.1).
 - **Resolved owner decisions** — `@visx/*` bumped alpha.11 → **4.0.0 stable** (+ `@visx/responsive`);
   `@tanstack/react-hotkeys@0.10.0` optional peer (live keybinding) shipped; `createForm` →
   `useBasaltForm` rename.
