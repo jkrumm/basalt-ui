@@ -9,8 +9,9 @@
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
  *  7. Every headless surface is Mantine-free — via all 3 forbiddenImports bans, OR (for
- *     MANTINE_FREE_VIA_IMPORT_BOUNDARY members) the basalt/import-boundary plugin rule actually
- *     registered as 'error' in the shipped config.
+ *     TOKEN_LAYER_BOUNDARY_SURFACES members, ./charts/./tokens) exemption backed by the repo-
+ *     local-only basalt/token-layer-boundary plugin rule's LIVE registration — verified here, not
+ *     in checkCoverage() itself (see cli/index.ts's assertion-7 comment for why it can't).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
@@ -22,11 +23,11 @@ import { join } from 'node:path'
 
 import { GUARD_RULES } from '../packages/basalt-ui/src/guard'
 import {
-  hasImportBoundaryRuleRegistered,
-  MANTINE_FREE_VIA_IMPORT_BOUNDARY,
+  hasTokenLayerBoundaryRegistered,
   RULE_NAMES,
   SKILL_NAMES,
   SURFACES,
+  TOKEN_LAYER_BOUNDARY_SURFACES,
 } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
 import { checkCoverage } from '../packages/basalt-ui/src/cli'
@@ -122,34 +123,52 @@ describe('subpath export coverage', () => {
 
 // ── Assertion 7: every headless surface is Mantine-free ─────────────────────
 // Coverage is either all 3 forbiddenImports bans, or — for the two surfaces the
-// `basalt/import-boundary` plugin rule actually fires on (charts/tokens path segments) — that rule
-// registered as 'error' in the shipped config. Membership in MANTINE_FREE_VIA_IMPORT_BOUNDARY alone
-// is NOT enough: both tests below read the rule's LIVE registration, so a future removal of
-// `basalt/import-boundary` from configs/oxlint.json turns both red instead of silently passing.
+// `basalt/token-layer-boundary` plugin rule actually fires on (charts/tokens path segments) —
+// exemption backed by that rule's LIVE registration in the repo-local `.oxlintrc.json`. It is
+// deliberately registered repo-local ONLY (never the shipped consumer preset): it protects two
+// things — layering (tokens is pure data that `cssVariablesResolver` reads to bind Mantine's
+// surfaces to the same `--vx-*` vars charts reads — an `@mantine/*` import in either would cycle
+// back through the theme layer or let a chart bypass `--vx-*` and fork chrome/charts apart) and
+// packaging (`./charts`/`./tokens` resolve and render with no `@mantine/*` installed, CI-tested via
+// `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`). The LAYER is Mantine-free — the
+// FRAMEWORK is not (`.` requires Mantine as a non-optional peer). Both are a basalt-internal
+// invariant, not a consumer contract. This describe block is basalt's own CI guarantee that a
+// future removal of the rule fails loudly — `checkCoverage()` (a shipped CLI subcommand) cannot
+// verify this itself, since it must run from inside a consumer's node_modules, where the
+// repo-local `.oxlintrc.json` path resolves to the CONSUMER's own config.
 
 describe('headless Mantine-ban coverage', () => {
   const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+  const repoConfig = JSON.parse(readFileSync(join(root, '.oxlintrc.json'), 'utf8')) as {
+    rules?: Record<string, unknown>
+  }
   const shippedConfig = JSON.parse(readFileSync(join(pkgRoot, 'configs/oxlint.json'), 'utf8')) as {
     rules?: Record<string, unknown>
   }
-  const importBoundaryRegistered = hasImportBoundaryRuleRegistered(shippedConfig.rules)
+  const tokenLayerBoundaryRegistered = hasTokenLayerBoundaryRegistered(repoConfig.rules)
 
-  it('the basalt/import-boundary plugin rule is registered as error in the shipped config', () => {
-    // Load-bearing for the assertion below: if this ever goes false, ./charts and ./tokens have
+  it('the basalt/token-layer-boundary plugin rule is registered as error in the repo-local config', () => {
+    // Load-bearing for the exemption below: if this ever goes false, ./charts and ./tokens have
     // NO Mantine-free coverage at all (their forbiddenImports are intentionally empty).
-    expect(importBoundaryRegistered).toBe(true)
+    expect(tokenLayerBoundaryRegistered).toBe(true)
   })
 
-  it('every headless surface is Mantine-free (forbiddenImports, or the registered plugin rule for MANTINE_FREE_VIA_IMPORT_BOUNDARY members)', () => {
+  it('the shipped consumer preset does NOT register basalt/token-layer-boundary (deliberately absent)', () => {
+    // This governs basalt's own internal layering (tokens upstream of Mantine), not a consumer
+    // contract — it must never leak into the shipped preset.
+    expect(hasTokenLayerBoundaryRegistered(shippedConfig.rules)).toBe(false)
+  })
+
+  it('every member of TOKEN_LAYER_BOUNDARY_SURFACES is thereby covered', () => {
+    expect(tokenLayerBoundaryRegistered).toBe(true)
+    expect([...TOKEN_LAYER_BOUNDARY_SURFACES].toSorted()).toEqual(['./charts', './tokens'])
+  })
+
+  it('every headless surface is Mantine-free (forbiddenImports, or exemption for TOKEN_LAYER_BOUNDARY_SURFACES members)', () => {
     const missing: string[] = []
     for (const [key, spec] of Object.entries(SURFACES)) {
       if (spec.layer !== 'headless') continue
-      if (MANTINE_FREE_VIA_IMPORT_BOUNDARY.has(key)) {
-        if (!importBoundaryRegistered) {
-          missing.push(`${key} relies on basalt/import-boundary, which is not registered`)
-        }
-        continue
-      }
+      if (TOKEN_LAYER_BOUNDARY_SURFACES.has(key)) continue
       for (const required of REQUIRED_MANTINE_BANS) {
         const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
         if (!hasBan) missing.push(`${key} missing ban for '${required}'`)

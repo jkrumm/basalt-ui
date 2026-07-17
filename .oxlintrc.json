@@ -24,7 +24,9 @@
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
     "basalt/raw-scroll-container": "warn",
-    "basalt/import-boundary": "error"
+    "basalt/visx-boundary": "error",
+    "basalt/visx-tooltip": "error",
+    "basalt/token-layer-boundary": "error"
   },
   "ignorePatterns": [
     "dist",
