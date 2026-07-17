@@ -57,8 +57,8 @@ type OverrideBlock = {
 function resolveCtx(spec: string, surfaceName: string): string {
   // @mantine/* paths and groups: ctx is the surface name (the boundary being protected). The
   // @visx/tooltip and @visx/* boundaries used to resolve a {ctx} here too, but they're enforced
-  // by the `basalt/import-boundary` plugin rule now (see surfaces.ts's ./charts comment) — no
-  // ForbiddenImport in SURFACES carries those specs any more.
+  // by the `basalt/visx-boundary` and `basalt/visx-tooltip` plugin rules now (see surfaces.ts's
+  // ./charts comment) — no ForbiddenImport in SURFACES carries those specs any more.
   if (spec.startsWith('@mantine/') || spec === '@mantine/*') return surfaceName
   // antd, framer-motion, and others carry no {ctx} placeholder; return empty string (no substitution needed)
   return ''
@@ -79,9 +79,10 @@ function fillCtx(message: string, ctx: string): string {
  * last-writer-wins (a later matching block REPLACES an earlier one). The broad `#app` (src/**)
  * block must come FIRST so narrower overrides win for files they match. The @visx/*-only-in-charts
  * and Mantine-free charts/tokens boundaries no longer depend on this ordering at all — they're
- * enforced by the `basalt/import-boundary` plugin rule, which is immune to override-clobbering by
- * construction. `#app`'s remaining bans (antd, framer-motion) have no narrower re-allow to out-order,
- * but #app is still emitted first, both for readability and in case a future ban needs it.
+ * enforced by the `basalt/visx-boundary` and `basalt/token-layer-boundary` plugin rules, which are
+ * immune to override-clobbering by construction. `#app`'s remaining bans (antd, framer-motion)
+ * have no narrower re-allow to out-order, but #app is still emitted first, both for readability
+ * and in case a future ban needs it.
  *
  * The SURFACES insertion order already reflects this: #app is last in the dict but first in
  * EMIT_ORDER. We derive EMIT_ORDER from SURFACES key order, but move #app to the front.
@@ -89,8 +90,9 @@ function fillCtx(message: string, ctx: string): string {
 /**
  * True when `surface` carries a non-no-console ruleOverride that applies to `target` — the signal
  * a candidate surface needs an override block even with empty forbiddenImports (e.g. `./charts`'s
- * repo-only `no-underscore-dangle: off`, now that its import bans moved to the `basalt/import-
- * boundary` plugin rule instead of no-restricted-imports).
+ * repo-only `no-underscore-dangle: off`, now that its import bans moved to the
+ * `basalt/visx-boundary`/`basalt/token-layer-boundary` plugin rules instead of
+ * no-restricted-imports).
  */
 function hasRelevantRuleOverride(
   ruleOverrides: readonly RuleOverride[] | undefined,
@@ -167,8 +169,8 @@ export function projectBanList(target: Target): OverrideBlock[] {
     }
 
     // Nothing left to enforce for this surface/target (e.g. ./charts under 'shipped', now that its
-    // import bans moved to the basalt/import-boundary plugin rule) — skip rather than emit a
-    // vestigial empty override block.
+    // import bans moved to the basalt/visx-boundary and basalt/token-layer-boundary plugin rules) — skip
+    // rather than emit a vestigial empty override block.
     if (Object.keys(rules).length === 0) continue
 
     blocks.push({ files, rules })

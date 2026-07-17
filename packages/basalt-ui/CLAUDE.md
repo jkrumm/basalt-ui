@@ -67,10 +67,16 @@ renderer). Full doctrine + usage: `agent/rules/basalt-agent.md`.
 
 - `src/charts/**` and `src/tokens/**` are **Mantine-free** — zero `@mantine/*` imports.
 - `@visx/*` may **only** be imported inside `src/charts/**`.
-- Both rules are enforced by oxlint `no-restricted-imports` — repo-local AND in the shipped
-  consumer oxlint preset, so the boundary holds for downstream apps too.
-- The root barrel (`.`) does **not** re-export `./tokens` / `./charts`, so a charts/tokens-only
-  consumer never pulls in `@mantine/*`.
+- Enforced by three independent oxlint plugin rules — `basalt/visx-boundary` and
+  `basalt/visx-tooltip` (repo-local AND shipped consumer preset, so the `@visx/*` boundary holds
+  for downstream apps too) plus `basalt/token-layer-boundary` (repo-local **only** — protects two
+  things: layering, the token layer's position UPSTREAM of Mantine, and packaging, `./charts`/
+  `./tokens` resolving with no `@mantine/*` installed; see "Mantine-Free Boundary" in the root
+  CLAUDE.md for both).
+- The root barrel (`.`) does **not** re-export `./tokens` / `./charts` — it keeps the arrow pointing
+  one way (root reads tokens via `cssVariablesResolver`, tokens never re-broadcasts through root),
+  the same direction the token-layer boundary protects, AND it means a charts/tokens-only consumer
+  never pulls Mantine into their bundle by importing the root barrel.
 
 ## Build (dist-first, unbundled)
 
@@ -288,19 +294,36 @@ shipped preset inherits it automatically, path resolved relative to the preset f
 - `basalt/chart-in-raw-surface` — flags a chart-kind element (`Bars`, `Donut`, `DualPanel`,
   `Heatmap`, `MultiLine`, `StackedArea`, `ZonedLine`, `BarSparkline`, `LineSparkline`) rendered
   inside a raw `Card`/`Paper` instead of the shipped `ChartCard` wrapper.
-- `basalt/import-boundary` — enforces the architecture boundaries: `@visx/*` only inside a
-  `charts/` path segment, `@mantine/*` banned inside `charts/` and `tokens/` segments, and
-  `@visx/tooltip` banned everywhere (use `ChartTooltip` + the `TooltipHeader`/`Row`/`Body` family
-  instead). It's a plugin rule rather than `no-restricted-imports` because oxlint's
-  `no-restricted-imports` is last-writer-wins per glob — a consumer's own override on an
-  overlapping glob would silently replace the boundary instead of merging with it, whereas a
-  plugin rule can only be turned off explicitly, by name.
+- `basalt/visx-boundary` — flags a `@visx/*` import outside a `charts/` path segment. Shipped in
+  the consumer preset AND repo-local.
+- `basalt/visx-tooltip` — flags `@visx/tooltip` everywhere, including inside charts (use
+  `ChartTooltip` + the `TooltipHeader`/`Row`/`Body` family instead). Shipped AND repo-local.
+- `basalt/token-layer-boundary` — flags `@mantine/*` inside `charts/` or `tokens/` path segments.
+  **Repo-local only**, deliberately absent from the shipped consumer preset — it protects two
+  things. **Layering**: `src/tokens/**` is pure data that `cssVariablesResolver` (Mantine-coupled)
+  reads to bind Mantine's surfaces to the same `--vx-*` vars `src/charts/**` reads (chrome and
+  charts, one source); an `@mantine/*` import in `tokens` would cycle back through the theme layer,
+  and one in `charts` would let a chart bypass `--vx-*` and read Mantine's theme directly, forking
+  chrome and charts apart. **Packaging**: `./charts` and `./tokens` resolve and render with **no
+  `@mantine/*` installed** — real and CI-tested (`scripts/pack-test.sh`'s "charts/tokens-only
+  (no-Mantine) resolution + render" step; `scripts/check-dist-layering.mjs`'s dist-graph walk; the
+  root barrel not re-exporting them). The LAYER is Mantine-free — the FRAMEWORK is not: `.` requires
+  Mantine (`@mantine/core`/`@mantine/hooks` are required peers); `./charts`/`./tokens` don't. Both
+  are invariants internal to this repo, not a consumer contract — a consumer's own
+  `charts/`/`tokens/`-named directories carry no such obligation.
+
+These three used to be one bundled `import-boundary` rule sharing a single on/off toggle, so a
+consumer disabling the one check they disagreed with silently dropped the other two — each is now
+its own rule id for that reason. They're plugin rules rather than `no-restricted-imports` because
+oxlint's `no-restricted-imports` is last-writer-wins per glob — a consumer's own override on an
+overlapping glob would silently replace the boundary instead of merging with it, whereas a plugin
+rule can only be turned off explicitly, by name.
 
 The four design-guard rules support the same `theme-allow` escape as `src/guard`: a line comment
 containing `theme-allow` on the flagged node's own line, or the line above it, suppresses the
-finding. `basalt/import-boundary` deliberately does **not** — an architecture boundary a stray
-comment can switch off is the silent bypass the rule exists to prevent. Turn it off by name or
-not at all.
+finding. The three boundary rules above deliberately do **not** — an architecture boundary a stray
+comment can switch off is the silent bypass they exist to prevent. Turn one off by name or not
+at all.
 
 ## Development Guidelines
 

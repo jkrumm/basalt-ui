@@ -20,7 +20,8 @@
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
     "basalt/raw-scroll-container": "off",
-    "basalt/import-boundary": "error"
+    "basalt/visx-boundary": "error",
+    "basalt/visx-tooltip": "error"
   },
   "overrides": [
     {

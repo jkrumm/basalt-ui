@@ -35,13 +35,7 @@ import { fileURLToPath } from 'node:url'
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
 import type { Finding, GuardConfig, GuardKind } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import {
-  hasImportBoundaryRuleRegistered,
-  MANTINE_FREE_VIA_IMPORT_BOUNDARY,
-  RULE_NAMES,
-  SKILL_NAMES,
-  SURFACES,
-} from '../surfaces'
+import { RULE_NAMES, SKILL_NAMES, SURFACES, TOKEN_LAYER_BOUNDARY_SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
@@ -1070,8 +1064,11 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
  *  7. Every headless surface is Mantine-free — via all 3 `forbiddenImports` bans, OR (for
- *     `MANTINE_FREE_VIA_IMPORT_BOUNDARY` members) the `basalt/import-boundary` plugin rule actually
- *     registered as `'error'` in the shipped config.
+ *     `TOKEN_LAYER_BOUNDARY_SURFACES` members, `./charts`/`./tokens`) exemption, since their
+ *     Mantine-free guarantee is covered by the repo-local-only `basalt/token-layer-boundary`
+ *     plugin rule instead — this assertion cannot verify that rule's live registration itself (see
+ *     the assertion's own comment below for why); basalt's own CI does
+ *     (`tests/surfaces-coverage.test.ts`).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
@@ -1166,32 +1163,23 @@ export function checkCoverage(): number {
 
   // ── Assertion 7: every headless surface is Mantine-free ──────────────────────
   // Guarantees the Mantine-free boundary — a future headless surface without coverage fails here.
-  // Coverage is either all 3 forbiddenImports bans, OR (for `./charts`/`./tokens`, the surfaces the
-  // `basalt/import-boundary` plugin rule fires on) that rule actually registered as 'error' in the
-  // shipped config — membership in MANTINE_FREE_VIA_IMPORT_BOUNDARY alone does NOT pass this; the
-  // registration must be live, so a future removal of the rule fails loudly instead of silently.
+  // Coverage is either all 3 forbiddenImports bans, OR membership in
+  // `TOKEN_LAYER_BOUNDARY_SURFACES` (`./charts`/`./tokens`), whose Mantine-free guarantee comes
+  // from the `basalt/token-layer-boundary` plugin rule instead — protects both layering (tokens
+  // upstream of Mantine) and packaging (those two subpaths resolve with no `@mantine/*` installed,
+  // CI-tested via `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`; see surfaces.ts's
+  // `TOKEN_LAYER_BOUNDARY_SURFACES` doc comment). This assertion CANNOT also verify
+  // that rule's live registration: `check-coverage` is a shipped CLI subcommand whose assertions
+  // must all read pkgRoot-relative paths so it works from inside a consumer's node_modules — and a
+  // repo-local `.oxlintrc.json` read from an installed package path-resolves to the CONSUMER's own
+  // config, not basalt's. That "fails loudly if enforcement is removed" guarantee lives in
+  // basalt's own CI instead (`tests/surfaces-coverage.test.ts`, via
+  // `hasTokenLayerBoundaryRegistered` against `.oxlintrc.json`).
   const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
-  let shippedRules: Record<string, unknown> | undefined
-  try {
-    const shippedConfig = JSON.parse(
-      readFileSync(resolve(pkgRoot, 'configs/oxlint.json'), 'utf8'),
-    ) as { rules?: Record<string, unknown> }
-    shippedRules = shippedConfig.rules
-  } catch {
-    failures.push(`Cannot read configs/oxlint.json at ${pkgRoot} to verify basalt/import-boundary`)
-  }
-  const importBoundaryRegistered = hasImportBoundaryRuleRegistered(shippedRules)
 
   for (const [key, spec] of allSpecs) {
     if (spec.layer !== 'headless') continue
-    if (MANTINE_FREE_VIA_IMPORT_BOUNDARY.has(key)) {
-      if (importBoundaryRegistered) continue
-      failures.push(
-        `SURFACES['${key}'] relies on the basalt/import-boundary plugin rule for Mantine-free ` +
-          `coverage, but that rule is not registered as 'error' in configs/oxlint.json`,
-      )
-      continue
-    }
+    if (TOKEN_LAYER_BOUNDARY_SURFACES.has(key)) continue
     for (const required of REQUIRED_MANTINE_BANS) {
       const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
       if (!hasBan) {
