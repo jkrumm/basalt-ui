@@ -2,7 +2,7 @@
  * Basalt query client — configure once, share via router context.
  * Extend staleTime / gcTime defaults and add per-query error handling here.
  *
- * Scaffold written by `basalt init`. This file is yours — `basalt sync` will not overwrite it.
+ * Scaffold written by `basalt-ui init`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
 import { createBasaltQueryClient } from 'basalt-ui/query'
 

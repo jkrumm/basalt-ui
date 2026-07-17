@@ -35,7 +35,13 @@ import { fileURLToPath } from 'node:url'
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
 import type { Finding, GuardConfig, GuardKind } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import { RULE_NAMES, SKILL_NAMES, SURFACES } from '../surfaces'
+import {
+  hasImportBoundaryRuleRegistered,
+  MANTINE_FREE_VIA_IMPORT_BOUNDARY,
+  RULE_NAMES,
+  SKILL_NAMES,
+  SURFACES,
+} from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
@@ -755,32 +761,105 @@ function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitStat
   return { current: onDisk, desired }
 }
 
-/** Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash. */
+type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
+
+/**
+ * Normalize a managed unit's rendered bytes for the ledger comparison below — makes a delta that is
+ * PURELY formatting or a version bump invisible to drift detection, while a real prose/content edit
+ * stays fully visible:
+ *
+ *  - Blank out the per-release `BASALT_VERSION` token in a marker's begin line
+ *    (`<!-- basalt:begin 1.0.1 -->` → `<!-- basalt:begin -->`). It changes on every release and is
+ *    the only per-release variable that lands INSIDE the hashed region (the rest of
+ *    `CLAUDE-block.md.tpl` has no other `{{…}}` placeholders today), so stripping it is what lets
+ *    one normalized rendering stand in for every version of a given template body instead of
+ *    needing one ledger entry per release. If a future marker template interpolates another
+ *    per-release var inside its region, extend this normalization the same way.
+ *  - Trim trailing whitespace per line and collapse every run of blank lines to none. This is the
+ *    fix for the actual argo repro: lefthook's oxfmt reformats a spliced block (or a whole managed
+ *    file) AFTER `writeUnit` has already exited and the manifest hash was recorded, so the manifest
+ *    can never account for the reformat up front — normalizing it away here is the only place that
+ *    can.
+ *
+ * Deliberately whitespace-only — word content is untouched, so a genuine hand-edit inside the block
+ * still changes the normalized text and still classifies `drifted`.
+ */
+function normalizeForLedger(text: string): string {
+  return text
+    .replace(/(<!-- basalt:begin)\s+\S+(\s*-->)/, '$1$2')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .replace(/\n{2,}/g, '\n')
+    .trim()
+}
+
+/**
+ * Write a managed unit to disk (whole file, or marker-spliced region). Returns the unit's hash —
+ * `sha256(normalizeForLedger(desired))`, NOT the raw bytes.
+ *
+ * This is the ledger: the manifest already records "what basalt shipped last sync", one entry per
+ * dest — a stored NORMALIZED hash makes that same single entry survive both a downstream formatter
+ * (the consumer's own lefthook oxfmt reformatting the written file/block after this function has
+ * already returned) and a version bump that changed the template's own words since the recorded
+ * entry — the argo cross-version case: current is v1.0.0's block, post-oxfmt; desired is v1.0.1's
+ * (different words, e.g. the CLI bin rename). Recording the raw hash can never reconcile that;
+ * recording the normalized hash lets `classify()` normalize `state.current` the same way and
+ * compare directly against it, no separate historical-hash storage required.
+ */
 function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   const destAbs = resolve(cwd, file.dest)
   if (file.markers) {
     const host = readIfExists(destAbs) ?? ''
     writeFileEnsuringDir(destAbs, applyBlock(host, desired))
-    return sha256(desired)
+  } else {
+    writeFileEnsuringDir(destAbs, desired)
   }
-  writeFileEnsuringDir(destAbs, desired)
-  return sha256(desired)
+  return sha256(normalizeForLedger(desired))
 }
-
-type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
 
 /**
  * Classify a managed file against the manifest for a sync run.
  * - missing  : the managed unit is absent on disk → recreate.
  * - current  : on disk == desired → nothing to do.
- * - unchanged: on disk == manifest hash (untouched since last sync) but != desired → safe overwrite.
- * - drifted  : on disk != manifest hash AND != desired (locally edited) → skip unless --force.
+ * - unchanged: on disk matches a KNOWN-SHIPPED rendering of this template, checked three ways (any
+ *              one is sufficient) — but != desired as-is → safe overwrite:
+ *              1. `sha256(current) === manifestHash` — legacy raw-hash path. An existing consumer
+ *                 manifest (written before this fix, or by a still-running older CLI) holds the RAW
+ *                 hash of what was written, not the normalized one; keep matching it directly so an
+ *                 upgrade never mass-classifies a pristine tree as drifted.
+ *                 Residual transitional gap: a manifest written by a pre-1.0.2 CLI holds a raw hash
+ *                 of the exact old bytes, so if the on-disk block was ALSO reformatted by a
+ *                 downstream formatter AND the template body changed cross-version in the same
+ *                 upgrade, none of the three paths above match and it classifies `drifted`, needing
+ *                 one `--force`. Once any sync since writes a normalized entry (path 2/3 or a
+ *                 healed write), the gap is closed for good for that file. Deliberately not solved
+ *                 by keeping a historical per-version ledger — that's a real but bounded tradeoff.
+ *              2. `sha256(normalizeForLedger(current)) === manifestHash` — the ledger proper.
+ *                 `manifestHash` normally holds `sha256(normalizeForLedger(<bytes written at the
+ *                 last sync>))` (see `writeUnit`); normalizing `current` the same way and comparing
+ *                 survives a downstream formatter reformatting the file AND a version bump that
+ *                 changed the template's own words between the sync that wrote this manifest entry
+ *                 and the version being synced now — the argo cross-version false positive.
+ *              3. `normalizeForLedger(current) === normalizeForLedger(desired)` — same-version
+ *                 fallback for when there is no manifest entry to compare against at all (e.g. it
+ *                 was dropped), but the on-disk bytes still match today's rendering modulo
+ *                 formatting noise.
+ * - drifted  : on disk matches NONE of the above (a real, word-level local edit) → skip unless
+ *              --force.
  */
 function classify(state: UnitState, manifestHash: string | undefined): Classification {
   if (state.current === null) return 'missing'
   if (state.desired !== null && state.current === state.desired) return 'current'
   const currentHash = sha256(state.current)
   if (currentHash === manifestHash) return 'unchanged'
+  if (sha256(normalizeForLedger(state.current)) === manifestHash) return 'unchanged'
+  if (
+    state.desired !== null &&
+    normalizeForLedger(state.current) === normalizeForLedger(state.desired)
+  ) {
+    return 'unchanged'
+  }
   return 'drifted'
 }
 
@@ -821,10 +900,11 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     // inserts/updates itself inside its host file.
     const destExists = existsSync(resolve(cwd, file.dest))
     if (!file.markers && destExists) {
-      // Already present — keep the consumer's copy untouched. Record the SHIPPED hash so a later
-      // sync treats a pre-existing-but-different file as locally drifted (skip unless --force),
-      // never silently clobbering a file the consumer authored before init.
-      manifest.files[file.dest] = sha256(state.desired)
+      // Already present — keep the consumer's copy untouched. Record the SHIPPED hash (normalized,
+      // same ledger form `writeUnit` uses) so a later sync treats a pre-existing-but-different file
+      // as locally drifted (skip unless --force), never silently clobbering a file the consumer
+      // authored before init.
+      manifest.files[file.dest] = sha256(normalizeForLedger(state.desired))
       skipped++
       continue
     }
@@ -921,7 +1001,10 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
     const kind = classify(state, manifest.files[file.dest])
 
     if (kind === 'current') {
-      manifest.files[file.dest] = sha256(state.desired)
+      // On-disk bytes already equal `desired` exactly — record the ledger's normalized form
+      // (not the raw bytes) so this entry keeps behaving like every other `writeUnit`-recorded
+      // hash for a future classify() call.
+      manifest.files[file.dest] = sha256(normalizeForLedger(state.desired))
       continue
     }
 
@@ -986,7 +1069,9 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  5. Every real package.json exports key has a SURFACES entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. Every headless surface carries all 3 Mantine bans (Mantine-free boundary).
+ *  7. Every headless surface is Mantine-free — via all 3 `forbiddenImports` bans, OR (for
+ *     `MANTINE_FREE_VIA_IMPORT_BOUNDARY` members) the `basalt/import-boundary` plugin rule actually
+ *     registered as `'error'` in the shipped config.
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
@@ -1079,11 +1164,34 @@ export function checkCoverage(): number {
     }
   }
 
-  // ── Assertion 7: every headless surface carries all 3 Mantine bans ───────────
-  // Guarantees the Mantine-free boundary — a future headless surface without bans fails here.
+  // ── Assertion 7: every headless surface is Mantine-free ──────────────────────
+  // Guarantees the Mantine-free boundary — a future headless surface without coverage fails here.
+  // Coverage is either all 3 forbiddenImports bans, OR (for `./charts`/`./tokens`, the surfaces the
+  // `basalt/import-boundary` plugin rule fires on) that rule actually registered as 'error' in the
+  // shipped config — membership in MANTINE_FREE_VIA_IMPORT_BOUNDARY alone does NOT pass this; the
+  // registration must be live, so a future removal of the rule fails loudly instead of silently.
   const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+  let shippedRules: Record<string, unknown> | undefined
+  try {
+    const shippedConfig = JSON.parse(
+      readFileSync(resolve(pkgRoot, 'configs/oxlint.json'), 'utf8'),
+    ) as { rules?: Record<string, unknown> }
+    shippedRules = shippedConfig.rules
+  } catch {
+    failures.push(`Cannot read configs/oxlint.json at ${pkgRoot} to verify basalt/import-boundary`)
+  }
+  const importBoundaryRegistered = hasImportBoundaryRuleRegistered(shippedRules)
+
   for (const [key, spec] of allSpecs) {
     if (spec.layer !== 'headless') continue
+    if (MANTINE_FREE_VIA_IMPORT_BOUNDARY.has(key)) {
+      if (importBoundaryRegistered) continue
+      failures.push(
+        `SURFACES['${key}'] relies on the basalt/import-boundary plugin rule for Mantine-free ` +
+          `coverage, but that rule is not registered as 'error' in configs/oxlint.json`,
+      )
+      continue
+    }
     for (const required of REQUIRED_MANTINE_BANS) {
       const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
       if (!hasBan) {
@@ -1531,5 +1639,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
 }
 
 // Re-export the managed-file manifest for testing / introspection (no default export).
-export { managedFiles, MANIFEST_PATH, RULE_NAMES, SKILL_NAMES }
+// `normalizeForLedger` is exported so tests can compute a fixture's expected ledger hash without
+// duplicating the normalization algorithm — it stays call-site-internal to writeUnit/classify.
+export { managedFiles, MANIFEST_PATH, normalizeForLedger, RULE_NAMES, SKILL_NAMES }
 export type { ManagedFile, Manifest, SyncOptions, DoctorResult }

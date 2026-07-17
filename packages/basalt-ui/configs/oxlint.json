@@ -19,7 +19,8 @@
     "basalt/no-raw-font-size": "error",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
-    "basalt/raw-scroll-container": "off"
+    "basalt/raw-scroll-container": "off",
+    "basalt/import-boundary": "error"
   },
   "overrides": [
     {
@@ -34,78 +35,8 @@
                 "message": "Use Mantine — antd is not part of the basalt-ui stack."
               },
               {
-                "name": "@visx/tooltip",
-                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
-              },
-              {
                 "name": "framer-motion",
                 "message": "Import from 'motion/react', not the raw framer-motion package."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**)."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["**/charts/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@visx/tooltip",
-                "message": "Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["**/tokens/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**)."
               }
             ]
           }
