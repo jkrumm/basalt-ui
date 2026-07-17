@@ -1,0 +1,44 @@
+name: Deploy
+
+# Continuous deployment of the marketing site (basalt-ui.com) to the VPS via RollHook.
+#
+# Auth: GitHub OIDC → RollHook exchanges for short-lived registry creds.
+# No secrets in CI. RollHook authorizes by reading the rollhook.allowed_repos
+# label off the running container (see vps/apps/basalt-ui-marketing/compose.yml).
+#
+# Deliberately decoupled from Make Release: semantic-release is path-filtered to
+# packages/basalt-ui/, so marketing changes never produce a version. Gating this
+# on a release would mean the site never updates.
+#
+# Every master push, not just apps/marketing/** — the image also bakes root
+# package.json, bun.lock and tsconfig.json, so a dependency change alters the
+# built site with no marketing diff. Release commits carry [skip ci].
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  marketing:
+    name: Deploy basalt-ui-marketing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: jkrumm/rollhook-action@v1
+        with:
+          url: https://rollhook.jkrumm.com
+          image_name: basalt-ui-marketing
+          dockerfile: apps/marketing/Dockerfile
+          context: .
