@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { projectBanList } from '../packages/basalt-ui/scripts/gen-oxlint'
+import { hasTokenLayerBoundaryRegistered } from '../packages/basalt-ui/src/surfaces'
 
 const root = join(import.meta.dir, '..')
 const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
@@ -127,6 +128,39 @@ describe('oxlint preset sync contract', () => {
     const nri = noRestrictedImportsOf(overrides[0])
     const paths = nri?.[1].paths ?? []
     expect(paths.map((p) => p.name).toSorted()).toEqual(['antd', 'framer-motion'])
+  })
+
+  // ── Playground dogfooding: it consumes the SHIPPED preset, not the repo-local config ──────────
+  // apps/playground is the model consumer, so it must see exactly what argo sees. It gets there
+  // via its own nested apps/playground/.oxlintrc.json (oxlint resolves the nearest config and it
+  // REPLACES the root one for that subtree — verified against oxlint 1.68.0). These assertions
+  // lock the config-level chain; the preset's runtime behaviour is covered by pack-test.sh's
+  // scratch-consumer step.
+
+  it('#app repo globs exclude apps/playground (it is governed by its own nested config)', () => {
+    const block = findBlock(projectBanList('repo'), 'packages/basalt-ui/src/**')
+    expect(block).toBeDefined()
+    expect(block?.files.some((f) => f.startsWith('apps/playground'))).toBe(false)
+  })
+
+  it('apps/playground extends the shipped preset via the documented node_modules path', () => {
+    const parsed = JSON.parse(
+      readFileSync(join(root, 'apps/playground/.oxlintrc.json'), 'utf8'),
+    ) as { extends?: string[] }
+    expect(parsed.extends).toEqual(['./node_modules/basalt-ui/configs/oxlint.json'])
+  })
+
+  it('the preset the playground extends carries the visx boundaries but NOT token-layer-boundary', () => {
+    const rules = (
+      JSON.parse(readFileSync(SHIPPED_CONFIG_PATH, 'utf8')) as {
+        rules?: Record<string, unknown>
+      }
+    ).rules
+    expect(rules?.['basalt/visx-boundary']).toBe('error')
+    expect(rules?.['basalt/visx-tooltip']).toBe('error')
+    // Repo-local by design — guards basalt's internal layering, never a consumer contract.
+    // surfaces-coverage.test.ts asserts the mirror image against the repo-local config.
+    expect(hasTokenLayerBoundaryRegistered(rules)).toBe(false)
   })
 
   it('shipped configs/oxlint.json actually parses in oxlint (not just JSON.parse)', () => {

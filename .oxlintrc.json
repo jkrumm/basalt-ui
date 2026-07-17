@@ -37,7 +37,7 @@
   ],
   "overrides": [
     {
-      "files": ["packages/basalt-ui/src/**", "apps/playground/src/**"],
+      "files": ["packages/basalt-ui/src/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
