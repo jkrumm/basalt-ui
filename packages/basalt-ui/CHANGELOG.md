@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/jkrumm/basalt-ui/compare/v1.0.2...v1.1.0) (2026-07-17)
+
+
+### Features
+
+* split the import boundary into three independent rules ([784b673](https://github.com/jkrumm/basalt-ui/commit/784b6739367a25b9ffe379603c02322896e43658))
+
 ## [1.0.2](https://github.com/jkrumm/basalt-ui/compare/v1.0.1...v1.0.2) (2026-07-17)
 
 
