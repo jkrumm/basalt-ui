@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/jkrumm/basalt-ui/compare/v1.0.1...v1.0.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* make the import boundary unclobberable and stop false drift on sync ([98aba84](https://github.com/jkrumm/basalt-ui/commit/98aba8497eb359cbc86e3bee289d21d3e2dbd099))
+
 ## [1.0.1](https://github.com/jkrumm/basalt-ui/compare/v1.0.0...v1.0.1) (2026-07-17)
 
 
