@@ -7,13 +7,17 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/basalt-ui/package.json','utf8'));p.version='${nextRelease.version}';fs.writeFileSync('packages/basalt-ui/package.json',JSON.stringify(p,null,2)+'\\n');\""
+        "prepareCmd": "node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/basalt-ui/package.json','utf8'));p.version='${nextRelease.version}';fs.writeFileSync('packages/basalt-ui/package.json',JSON.stringify(p,null,2)+'\\n');\" && bun packages/basalt-ui/scripts/gen-llms.ts"
       }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["packages/basalt-ui/CHANGELOG.md", "packages/basalt-ui/package.json"],
+        "assets": [
+          "packages/basalt-ui/CHANGELOG.md",
+          "packages/basalt-ui/package.json",
+          "packages/basalt-ui/llms.txt"
+        ],
         "message": "chore: release ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
