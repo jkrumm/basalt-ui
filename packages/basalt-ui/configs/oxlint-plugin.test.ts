@@ -4,8 +4,8 @@
  *
  * Each fixture repo gets a minimal `.oxlintrc.json` pointing `jsPlugins` at the plugin (absolute
  * path — verified to resolve the same as the relative path the shipped/repo configs use) and
- * enabling all three rules. `runOxlint` shells the workspace-root `node_modules/.bin/oxlint` binary
- * and returns the parsed set of `basalt/<rule>` diagnostics it printed.
+ * enabling every rule this file tests. `run` shells the workspace-root `node_modules/.bin/oxlint`
+ * binary and returns the parsed set of `basalt/<rule>` diagnostics it printed.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -28,7 +28,9 @@ beforeEach(() => {
         'basalt/no-raw-font-size': 'error',
         'basalt/card-inset': 'error',
         'basalt/chart-in-raw-surface': 'error',
-        'basalt/import-boundary': 'error',
+        'basalt/visx-boundary': 'error',
+        'basalt/visx-tooltip': 'error',
+        'basalt/token-layer-boundary': 'error',
       },
     }),
   )
@@ -109,43 +111,25 @@ describe('basalt/chart-in-raw-surface', () => {
   })
 })
 
-// ── import-boundary ────────────────────────────────────────────────────────────
+// ── visx-boundary ────────────────────────────────────────────────────────────
 
-describe('basalt/import-boundary', () => {
+describe('basalt/visx-boundary', () => {
   it('flags a @visx/* import outside charts', () => {
     const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
     expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
+    expect(rules).toContain('visx-boundary')
   })
 
   it('does NOT flag a @visx/* import inside charts', () => {
     const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'charts/lib.ts')
     expect(code).toBe(0)
-    expect(rules).not.toContain('import-boundary')
+    expect(rules).not.toContain('visx-boundary')
   })
 
-  it('flags a @mantine/* import inside charts (Mantine-free)', () => {
-    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'charts/lib.tsx')
-    expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
-  })
-
-  it('does NOT flag a @mantine/* import outside charts/tokens', () => {
+  it('does NOT flag a @mantine/* import (out of scope for this rule)', () => {
     const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'lib.tsx')
     expect(code).toBe(0)
-    expect(rules).not.toContain('import-boundary')
-  })
-
-  it('flags @visx/tooltip even inside charts', () => {
-    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'charts/lib.tsx')
-    expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
-  })
-
-  it('flags a @mantine/* import inside tokens (Mantine-free)', () => {
-    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'tokens/lib.ts')
-    expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
+    expect(rules).not.toContain('visx-boundary')
   })
 
   it('still flags a @visx/* import outside charts carrying a theme-allow comment (no escape hatch)', () => {
@@ -154,24 +138,97 @@ describe('basalt/import-boundary', () => {
       'lib.ts',
     )
     expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
+    expect(rules).toContain('visx-boundary')
   })
 
   it('flags a source-bearing named re-export of @visx/* outside charts', () => {
     const { code, rules } = run(`export { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
     expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
+    expect(rules).toContain('visx-boundary')
   })
 
   it('flags a wildcard re-export of @visx/* outside charts', () => {
     const { code, rules } = run(`export * from '@visx/scale'\n`, 'lib.ts')
     expect(code).toBe(1)
-    expect(rules).toContain('import-boundary')
+    expect(rules).toContain('visx-boundary')
   })
 
   it('does NOT flag a plain local named export (no source)', () => {
     const { code, rules } = run(`const x = 1\nexport { x }\n`, 'lib.ts')
     expect(code).toBe(0)
-    expect(rules).not.toContain('import-boundary')
+    expect(rules).not.toContain('visx-boundary')
+  })
+})
+
+// ── visx-tooltip ─────────────────────────────────────────────────────────────
+
+describe('basalt/visx-tooltip', () => {
+  it('flags @visx/tooltip even inside charts', () => {
+    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'charts/lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('visx-tooltip')
+  })
+
+  it('flags @visx/tooltip outside charts too', () => {
+    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('visx-tooltip')
+  })
+
+  it('takes precedence over basalt/visx-boundary for @visx/tooltip specifically', () => {
+    const { rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'lib.tsx')
+    expect(rules).toContain('visx-tooltip')
+    expect(rules).not.toContain('visx-boundary')
+  })
+})
+
+// ── token-layer-boundary ─────────────────────────────────────────────────────
+
+describe('basalt/token-layer-boundary', () => {
+  it('flags a @mantine/* import inside charts', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'charts/lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('token-layer-boundary')
+  })
+
+  it('flags a @mantine/* import inside tokens', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'tokens/lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('token-layer-boundary')
+  })
+
+  it('does NOT flag a @mantine/* import outside charts/tokens', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'lib.tsx')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('token-layer-boundary')
+  })
+})
+
+// ── rule independence ──────────────────────────────────────────────────────────
+// The three rules used to be one bundled `import-boundary` rule with a single on/off toggle — a
+// consumer disabling the one check they disagreed with silently dropped the other two. Proves
+// disabling one of the three leaves the other two enforced.
+
+describe('rule independence', () => {
+  it('disabling basalt/visx-boundary leaves basalt/visx-tooltip enforced', () => {
+    writeFileSync(
+      resolve(dir, '.oxlintrc.json'),
+      JSON.stringify({
+        plugins: [],
+        jsPlugins: [PLUGIN_PATH],
+        rules: {
+          'basalt/visx-boundary': 'off',
+          'basalt/visx-tooltip': 'error',
+          'basalt/token-layer-boundary': 'error',
+        },
+      }),
+    )
+    const { code, rules } = run(
+      `import { scaleLinear } from '@visx/scale'\nimport { Tooltip } from '@visx/tooltip'\n`,
+      'lib.ts',
+    )
+    expect(code).toBe(1)
+    expect(rules).not.toContain('visx-boundary')
+    expect(rules).toContain('visx-tooltip')
   })
 })

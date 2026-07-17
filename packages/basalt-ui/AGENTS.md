@@ -31,8 +31,24 @@ Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `mas
 
 **Mantine-free boundary**: `basalt-ui/charts`, `basalt-ui/tokens`, `basalt-ui/guard`,
 `basalt-ui/query`, `basalt-ui/router-tanstack`, `basalt-ui/agent`, and `basalt-ui/state` must
-import zero `@mantine/*`. `@visx/*` is permitted only inside `src/charts/**`. Both rules are
-enforced by oxlint `no-restricted-imports` (repo-local and in the shipped consumer preset).
+import zero `@mantine/*`. `@visx/*` is permitted only inside `src/charts/**`. `@visx/*`
+(`basalt/visx-boundary`) is enforced by an oxlint plugin rule in both the repo and the shipped
+consumer preset.
+
+The Mantine-free boundary protects two things: **layering** (keeps the token layer upstream of
+Mantine — `cssVariablesResolver` reads `--vx-*` tokens to bind Mantine's surfaces to them, so an
+`@mantine/*` import here would cycle back through the theme layer or let a chart bypass `--vx-*`
+and fork chrome/charts apart) and **packaging** (each of these seven dist entries resolves with
+**no `@mantine/*` installed** — `scripts/check-dist-layering.mjs` walks the built dist graph of all
+seven and fails if any reaches `@mantine/*`; `scripts/pack-test.sh`'s "charts/tokens-only
+(no-Mantine) resolution + render" step additionally scratch-installs the tarball with only
+`react`/`react-dom` and SSR-renders `basalt-ui/charts` + `basalt-ui/tokens` live). The LAYER is
+Mantine-free — the FRAMEWORK is not: `.` requires Mantine (`@mantine/core`/`@mantine/hooks` are
+required, non-optional peers); these seven subpaths don't.
+
+Enforcement is repo-local ONLY for the Mantine-free side, not in the shipped preset:
+`./charts`/`./tokens` via the `basalt/token-layer-boundary` plugin rule, `guard`/`query`/
+`router-tanstack`/`agent`/`state` via a plain `no-restricted-imports` ban.
 
 **No raw hex or raw color functions**: route every color through `VX.*` tokens or the Mantine
 theme. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style code. Use
