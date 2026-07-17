@@ -259,8 +259,12 @@ The teeth that keep the law from drifting:
   Configurable per consumer via the package.json `"basalt"` key
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`). Exempts the palette/token-definition
   files; escape hatch is a `theme-allow` line comment.
-- **oxlint `no-restricted-imports`** — bans `@visx/tooltip` in chart files (use `ChartTooltip`);
-  keeps `src/charts/**` and `src/tokens/**` Mantine-free and `@visx/*` confined to charts.
+- **The `basalt` oxlint plugin rules** — `basalt/visx-tooltip` bans `@visx/tooltip` everywhere (use
+  `ChartTooltip`); `basalt/visx-boundary` confines `@visx/*` to `charts/` directories (shipped in
+  the consumer preset too); `basalt/token-layer-boundary` keeps `src/charts/**` and `src/tokens/**`
+  Mantine-free — upstream of Mantine in the layering (repo-local only, a basalt-internal invariant,
+  not a consumer contract) AND resolving/rendering with no `@mantine/*` installed (CI-tested via
+  `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`).
 - **The `ChartCard`/`ChartLegend`/`ChartTooltip` contract is social** — it's easier to compose the
   primitives than to work around them. A markdown rule alone drifts; the colour/spacing guard is the
   failing build that makes the rest stick.

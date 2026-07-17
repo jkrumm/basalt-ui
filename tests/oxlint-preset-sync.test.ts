@@ -42,16 +42,17 @@ describe('oxlint preset sync contract', () => {
     expect(committed).toEqual(projected)
   })
 
-  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/import-boundary ────────
+  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/visx-boundary + ────────
+  // ── basalt/token-layer-boundary ──────────────────────────────────────────────────────────────
   // These boundaries used to live in per-glob no-restricted-imports overrides, with the charts
   // block's implicit OMISSION of the @visx/* ban acting as the "re-allow" — an artifact of oxlint's
   // last-writer-wins override resolution, which a consumer's own no-restricted-imports override on
-  // an overlapping glob could silently clobber. They're now enforced by the `basalt/import-boundary`
-  // oxlint plugin rule instead (configs/oxlint-plugin.js), which a consumer can only disable
-  // explicitly, by name — never silently. The generator therefore no longer emits a
-  // no-restricted-imports override for charts/tokens at all.
+  // an overlapping glob could silently clobber. They're now enforced by the `basalt/visx-boundary`
+  // and `basalt/token-layer-boundary` oxlint plugin rules instead (configs/oxlint-plugin.js), each
+  // of which a consumer can only disable explicitly, by name — never silently. The generator
+  // therefore no longer emits a no-restricted-imports override for charts/tokens at all.
 
-  it('shipped no longer carries a charts override (boundary moved to basalt/import-boundary)', () => {
+  it('shipped no longer carries a charts override (boundary moved to basalt/visx-boundary)', () => {
     const projected = projectBanList('shipped')
     expect(findBlock(projected, '**/charts/**')).toBeUndefined()
   })
@@ -63,20 +64,21 @@ describe('oxlint preset sync contract', () => {
     expect(chartsBlock?.rules).toEqual({ 'no-underscore-dangle': 'off' })
   })
 
-  it('shipped no longer carries a tokens override (boundary moved to basalt/import-boundary)', () => {
+  it('shipped no longer carries a tokens override (boundary moved to basalt/token-layer-boundary)', () => {
     const projected = projectBanList('shipped')
     expect(findBlock(projected, '**/tokens/**')).toBeUndefined()
   })
 
-  it('repo no longer carries a tokens override (boundary moved to basalt/import-boundary)', () => {
+  it('repo no longer carries a tokens override (boundary moved to basalt/token-layer-boundary)', () => {
     const projected = projectBanList('repo')
     expect(findBlock(projected, 'packages/basalt-ui/src/tokens/**')).toBeUndefined()
   })
 
-  // ── Surfaces the plugin rule does NOT cover keep their Mantine-free no-restricted-imports ban ──
-  // The plugin only fires on charts/tokens path segments (see oxlint-plugin.js's import-boundary
-  // rule), so guard/query/router-tanstack/agent/state stay enforced the old way — minus the now-
-  // redundant @visx/* pattern, since the plugin bans @visx/* outside charts universally.
+  // ── Surfaces the plugin rules do NOT cover keep their Mantine-free no-restricted-imports ban ──
+  // The plugins only fire on charts/tokens path segments (see oxlint-plugin.js's visx-boundary and
+  // token-layer-boundary rules), so guard/query/router-tanstack/agent/state stay enforced the old
+  // way — minus the now-redundant @visx/* pattern, since basalt/visx-boundary bans @visx/* outside
+  // charts universally.
 
   it('repo headless surfaces outside charts/tokens still ban @mantine/* but no longer @visx/*', () => {
     const projected = projectBanList('repo')
@@ -106,7 +108,7 @@ describe('oxlint preset sync contract', () => {
     }
   })
 
-  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/import-boundary)', () => {
+  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/visx-boundary)', () => {
     for (const target of ['shipped', 'repo'] as const) {
       const projected = projectBanList(target)
       for (const block of projected as OverrideBlock[]) {

@@ -89,10 +89,27 @@ artifact resolves.
 
 ## Mantine-Free Boundary (enforced)
 
-`src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`. `@visx/*` may **only** be
-imported inside `src/charts/**`. Enforced by the `basalt/import-boundary` oxlint plugin rule —
-repo-local AND in the shipped consumer oxlint preset. This keeps the `./charts` and `./tokens`
-subpath exports Mantine-free, so a charts/tokens-only consumer never pulls in Mantine.
+`src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`; `@visx/*` may **only** be
+imported inside `src/charts/**`. Enforced by three independent oxlint plugin rules (each its own
+rule id — disabling one never silently drops the other two):
+
+- `basalt/visx-boundary` — `@visx/*` only inside a `charts/` path segment. Shipped in the consumer
+  preset AND repo-local.
+- `basalt/visx-tooltip` — `@visx/tooltip` banned everywhere, including inside charts. Shipped AND
+  repo-local.
+- `basalt/token-layer-boundary` — `@mantine/*` banned inside `charts/`/`tokens/` path segments.
+  **Repo-local only** — it is deliberately absent from the shipped consumer preset. It protects two
+  things. **Layering**: `src/tokens/**` is pure data that `cssVariablesResolver` (Mantine-coupled)
+  reads to bind Mantine's surfaces to the same `--vx-*` vars `src/charts/**` reads, so an
+  `@mantine/*` import in either would cycle back through the theme layer or let a chart bypass
+  `--vx-*` and fork chrome/charts apart. **Packaging**: `./charts` and `./tokens` resolve and
+  render with **no `@mantine/*` installed** — real and CI-tested (`scripts/pack-test.sh`'s
+  "charts/tokens-only (no-Mantine) resolution + render" step, `scripts/check-dist-layering.mjs`'s
+  dist-graph walk, and the root barrel's non-re-export of them). The LAYER is Mantine-free — the
+  FRAMEWORK is not: the root `.` entry requires Mantine (`@mantine/core`/`@mantine/hooks` are
+  required, non-optional peers); it's just `./charts`/`./tokens` that don't. Both consequences are
+  invariants internal to this repo, not a consumer contract — a consumer's own
+  `charts/`/`tokens/`-named directories carry no such obligation.
 
 ## Validation & Quality Workflow
 
