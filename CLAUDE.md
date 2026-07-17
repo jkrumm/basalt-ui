@@ -90,9 +90,9 @@ artifact resolves.
 ## Mantine-Free Boundary (enforced)
 
 `src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`. `@visx/*` may **only** be
-imported inside `src/charts/**`. Enforced by oxlint `no-restricted-imports` — both repo-local AND
-in the shipped consumer oxlint preset. This keeps the `./charts` and `./tokens` subpath exports
-Mantine-free, so a charts/tokens-only consumer never pulls in Mantine.
+imported inside `src/charts/**`. Enforced by the `basalt/import-boundary` oxlint plugin rule —
+repo-local AND in the shipped consumer oxlint preset. This keeps the `./charts` and `./tokens`
+subpath exports Mantine-free, so a charts/tokens-only consumer never pulls in Mantine.
 
 ## Validation & Quality Workflow
 

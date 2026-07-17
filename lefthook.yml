@@ -4,11 +4,14 @@ min_version: 1.7.0
 pre-commit:
   parallel: true
   commands:
+    # Keeps the npm-published package's commits free of consumer-app changes (apps/playground,
+    # apps/marketing) so the release path filter + changelog stay clean. .oxlintrc.json and tests/
+    # are the package's own generated output/drift-gates, so they're allowed alongside it.
     isolated-basalt-ui:
       run: |
         STAGED=$(git diff --cached --name-only)
         HAS_BASALT=$(echo "$STAGED" | grep -q '^packages/basalt-ui/' && echo 1 || echo 0)
-        HAS_OTHER=$(echo "$STAGED" | grep -v '^packages/basalt-ui/' | grep -v '^$' | head -1)
+        HAS_OTHER=$(echo "$STAGED" | grep -v '^packages/basalt-ui/' | grep -v '^\.oxlintrc\.json$' | grep -v '^tests/' | grep -v '^$' | head -1)
         if [ "$HAS_BASALT" = "1" ] && [ -n "$HAS_OTHER" ]; then
           echo "❌ packages/basalt-ui must be committed separately from other changes"
           echo "   Found: $HAS_OTHER"
