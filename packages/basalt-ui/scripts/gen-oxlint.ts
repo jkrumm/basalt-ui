@@ -54,14 +54,13 @@ type OverrideBlock = {
 
 // ── Context resolution — fills the {ctx} placeholder per import spec + target ────────────────────
 
-function resolveCtx(spec: string, surfaceName: string, target: Target): string {
-  const chartsGlob = target === 'shipped' ? '**/charts/**' : 'packages/basalt-ui/src/charts/**'
-  const chartsCtx = target === 'shipped' ? 'basalt-ui charts primitives' : 'charts primitives'
-  if (spec === '@visx/tooltip') return chartsCtx
-  if (spec === '@visx/*') return chartsGlob
-  // @mantine/* paths and groups: ctx is the surface name (the boundary being protected)
+function resolveCtx(spec: string, surfaceName: string): string {
+  // @mantine/* paths and groups: ctx is the surface name (the boundary being protected). The
+  // @visx/tooltip and @visx/* boundaries used to resolve a {ctx} here too, but they're enforced
+  // by the `basalt/import-boundary` plugin rule now (see surfaces.ts's ./charts comment) — no
+  // ForbiddenImport in SURFACES carries those specs any more.
   if (spec.startsWith('@mantine/') || spec === '@mantine/*') return surfaceName
-  // antd and others carry no {ctx} placeholder; return empty string (no substitution needed)
+  // antd, framer-motion, and others carry no {ctx} placeholder; return empty string (no substitution needed)
   return ''
 }
 
@@ -73,27 +72,49 @@ function fillCtx(message: string, ctx: string): string {
 
 /**
  * Derives the `overrides` array for the given target from SURFACES.
- * Only surfaces with both a `globs` field and non-empty forbiddenImports emit a block.
+ * A surface emits a block when it has a `globs` field AND (non-empty forbiddenImports OR a
+ * ruleOverride relevant to `target` — see `hasRelevantRuleOverride`).
  *
  * Emission order is LOAD-BEARING — oxlint resolves per-glob `no-restricted-imports`
  * last-writer-wins (a later matching block REPLACES an earlier one). The broad `#app` (src/**)
- * block must come FIRST so the narrower, re-allowing blocks (`./tokens`, then `./charts`,
- * then `./agent`) win for files they match. In particular `./charts` (which OMITS the @visx/*
- * ban = the re-allow) must be LAST among the chart/token/agent trio, or the `#app` @visx/* ban
- * leaks into the charts boundary.
+ * block must come FIRST so narrower overrides win for files they match. The @visx/*-only-in-charts
+ * and Mantine-free charts/tokens boundaries no longer depend on this ordering at all — they're
+ * enforced by the `basalt/import-boundary` plugin rule, which is immune to override-clobbering by
+ * construction. `#app`'s remaining bans (antd, framer-motion) have no narrower re-allow to out-order,
+ * but #app is still emitted first, both for readability and in case a future ban needs it.
  *
  * The SURFACES insertion order already reflects this: #app is last in the dict but first in
  * EMIT_ORDER. We derive EMIT_ORDER from SURFACES key order, but move #app to the front.
  */
+/**
+ * True when `surface` carries a non-no-console ruleOverride that applies to `target` — the signal
+ * a candidate surface needs an override block even with empty forbiddenImports (e.g. `./charts`'s
+ * repo-only `no-underscore-dangle: off`, now that its import bans moved to the `basalt/import-
+ * boundary` plugin rule instead of no-restricted-imports).
+ */
+function hasRelevantRuleOverride(
+  ruleOverrides: readonly RuleOverride[] | undefined,
+  target: Target,
+): boolean {
+  return (ruleOverrides ?? []).some(
+    (ro) => ro.rule !== 'no-console' && (ro.target === undefined || ro.target === target),
+  )
+}
+
 export function projectBanList(target: Target): OverrideBlock[] {
   const blocks: OverrideBlock[] = []
 
-  // Build the ordered emit list from SURFACES: surfaces with globs + non-empty forbiddenImports.
+  // Build the ordered emit list from SURFACES: surfaces with globs, and either non-empty
+  // forbiddenImports or a ruleOverride relevant to this target (see hasRelevantRuleOverride).
   // #app is moved to the front (it is the broad src/** override that must come first).
   const candidates = (
     Object.entries(SURFACES) as [string, (typeof SURFACES)[keyof typeof SURFACES]][]
   )
-    .filter(([, spec]) => spec.globs !== undefined && spec.forbiddenImports.length > 0)
+    .filter(
+      ([, spec]) =>
+        spec.globs !== undefined &&
+        (spec.forbiddenImports.length > 0 || hasRelevantRuleOverride(spec.ruleOverrides, target)),
+    )
     .map(([key]) => key)
 
   const appIdx = candidates.indexOf('#app')
@@ -105,7 +126,6 @@ export function projectBanList(target: Target): OverrideBlock[] {
   for (const key of candidates) {
     const surface = SURFACES[key as keyof typeof SURFACES]
     if (!surface.globs) continue
-    if (surface.forbiddenImports.length === 0) continue
 
     const files = [...surface.globs[target]]
     if (files.length === 0) continue
@@ -120,7 +140,7 @@ export function projectBanList(target: Target): OverrideBlock[] {
       if (fi.shippedOnly === true && target === 'repo') continue
       if (fi.repoOnly === true && target === 'shipped') continue
 
-      const ctx = resolveCtx(fi.spec, surfaceName, target)
+      const ctx = resolveCtx(fi.spec, surfaceName)
       const message = fillCtx(fi.message, ctx)
 
       if (fi.match === 'path') {
@@ -130,10 +150,6 @@ export function projectBanList(target: Target): OverrideBlock[] {
       }
     }
 
-    const nriValue: NoRestrictedImports = {}
-    if (paths.length > 0) nriValue.paths = paths
-    if (patterns.length > 0) nriValue.patterns = patterns
-
     // Collect rule overrides scoped to this target, excluding no-console (handled separately below)
     const extraRules: Record<string, unknown> = {}
     for (const ro of (surface.ruleOverrides ?? []) as readonly RuleOverride[]) {
@@ -142,13 +158,20 @@ export function projectBanList(target: Target): OverrideBlock[] {
       extraRules[ro.rule] = ro.level
     }
 
-    blocks.push({
-      files,
-      rules: {
-        ...extraRules,
-        'no-restricted-imports': ['error', nriValue],
-      },
-    })
+    const rules: Record<string, unknown> = { ...extraRules }
+    if (paths.length > 0 || patterns.length > 0) {
+      const nriValue: NoRestrictedImports = {}
+      if (paths.length > 0) nriValue.paths = paths
+      if (patterns.length > 0) nriValue.patterns = patterns
+      rules['no-restricted-imports'] = ['error', nriValue]
+    }
+
+    // Nothing left to enforce for this surface/target (e.g. ./charts under 'shipped', now that its
+    // import bans moved to the basalt/import-boundary plugin rule) — skip rather than emit a
+    // vestigial empty override block.
+    if (Object.keys(rules).length === 0) continue
+
+    blocks.push({ files, rules })
   }
 
   // Repo-local only: emit the cli/bin/scripts no-console:off block.

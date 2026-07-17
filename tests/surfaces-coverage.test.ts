@@ -8,7 +8,9 @@
  *     agent/skills/{skill}/SKILL.md (skills ship in the npm package, placed by init/sync).
  *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
  *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. Every headless surface carries all 3 Mantine bans (Mantine-free boundary).
+ *  7. Every headless surface is Mantine-free — via all 3 forbiddenImports bans, OR (for
+ *     MANTINE_FREE_VIA_IMPORT_BOUNDARY members) the basalt/import-boundary plugin rule actually
+ *     registered as 'error' in the shipped config.
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
@@ -19,7 +21,13 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { GUARD_RULES } from '../packages/basalt-ui/src/guard'
-import { RULE_NAMES, SKILL_NAMES, SURFACES } from '../packages/basalt-ui/src/surfaces'
+import {
+  hasImportBoundaryRuleRegistered,
+  MANTINE_FREE_VIA_IMPORT_BOUNDARY,
+  RULE_NAMES,
+  SKILL_NAMES,
+  SURFACES,
+} from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
 import { checkCoverage } from '../packages/basalt-ui/src/cli'
 
@@ -112,15 +120,36 @@ describe('subpath export coverage', () => {
   })
 })
 
-// ── Assertion 7: every headless surface carries all 3 Mantine bans ─────────
+// ── Assertion 7: every headless surface is Mantine-free ─────────────────────
+// Coverage is either all 3 forbiddenImports bans, or — for the two surfaces the
+// `basalt/import-boundary` plugin rule actually fires on (charts/tokens path segments) — that rule
+// registered as 'error' in the shipped config. Membership in MANTINE_FREE_VIA_IMPORT_BOUNDARY alone
+// is NOT enough: both tests below read the rule's LIVE registration, so a future removal of
+// `basalt/import-boundary` from configs/oxlint.json turns both red instead of silently passing.
 
 describe('headless Mantine-ban coverage', () => {
   const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
+  const shippedConfig = JSON.parse(readFileSync(join(pkgRoot, 'configs/oxlint.json'), 'utf8')) as {
+    rules?: Record<string, unknown>
+  }
+  const importBoundaryRegistered = hasImportBoundaryRuleRegistered(shippedConfig.rules)
 
-  it('every headless surface has all 3 Mantine bans in forbiddenImports', () => {
+  it('the basalt/import-boundary plugin rule is registered as error in the shipped config', () => {
+    // Load-bearing for the assertion below: if this ever goes false, ./charts and ./tokens have
+    // NO Mantine-free coverage at all (their forbiddenImports are intentionally empty).
+    expect(importBoundaryRegistered).toBe(true)
+  })
+
+  it('every headless surface is Mantine-free (forbiddenImports, or the registered plugin rule for MANTINE_FREE_VIA_IMPORT_BOUNDARY members)', () => {
     const missing: string[] = []
     for (const [key, spec] of Object.entries(SURFACES)) {
       if (spec.layer !== 'headless') continue
+      if (MANTINE_FREE_VIA_IMPORT_BOUNDARY.has(key)) {
+        if (!importBoundaryRegistered) {
+          missing.push(`${key} relies on basalt/import-boundary, which is not registered`)
+        }
+        continue
+      }
       for (const required of REQUIRED_MANTINE_BANS) {
         const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
         if (!hasBan) missing.push(`${key} missing ban for '${required}'`)

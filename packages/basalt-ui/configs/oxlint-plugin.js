@@ -1,15 +1,17 @@
 // oxlint-disable import/no-default-export -- oxlint's JS plugin loader requires a default export
 /**
  * basalt — the shipped oxlint JS plugin (alpha `jsPlugins`, ESLint-v9-compatible `create(context)`
- * API). Three design-guard AST rules steering consumers onto the token/idiom system that
- * `src/guard` (the regex-based `check-theme` CLI) cannot see from a raw-text scan alone.
+ * API). Design-guard AST rules steering consumers onto the token/idiom system that `src/guard`
+ * (the regex-based `check-theme` CLI) cannot see from a raw-text scan alone, plus the
+ * `import-boundary` rule enforcing basalt's architecture boundaries (see below).
  *
  * Ships inside `configs/` so the shipped preset (`configs/oxlint.json`) can reference it as
  * `./oxlint-plugin.js` — a consumer `extends`-ing that preset inherits `jsPlugins` too, and the
  * path resolves relative to the preset file, not the consumer's own config.
  *
- * Every rule supports the same `theme-allow` escape as `src/guard`: skip a reported node if a line
- * comment containing `theme-allow` sits on the node's own line or the line immediately above it.
+ * The four design-guard rules below support the same `theme-allow` escape as `src/guard`: skip a
+ * reported node if a line comment containing `theme-allow` sits on the node's own line or the line
+ * immediately above it. `import-boundary` deliberately does NOT — see its own comment for why.
  *
  * ── About the shipped `configs/oxlint.json` preset ────────────────────────────────────────────
  * Consumers extend it from their own `.oxlintrc.json` via the node_modules-relative path:
@@ -17,9 +19,14 @@
  * specifiers, so the relative `./node_modules` path is required. NOTE: oxlint `extends` is
  * per-glob last-writer-wins for `no-restricted-imports` — a base ban does NOT merge into an
  * override glob, so any ban that must also hold inside an override is duplicated into that
- * override. `configs/oxlint.json` is generated from `SURFACES` by `scripts/gen-oxlint.ts`
- * (`--check` is the CI drift gate) — its top-level keys are limited to what oxlint's own parser
- * accepts (see `ALLOWED_TOP_LEVEL_KEYS` in that script); do not add ad hoc keys to that file.
+ * override, AND a consumer's own `no-restricted-imports` override on an overlapping glob silently
+ * REPLACES basalt's ban rather than merging with it. That is exactly why the `@visx/*`-only-in-
+ * charts and Mantine-free charts/tokens boundaries live in the `import-boundary` rule below instead
+ * of `no-restricted-imports`: a jsPlugin rule has its own rule id, so a consumer can only turn it
+ * off explicitly, by name — never silently. `configs/oxlint.json` is generated from `SURFACES` by
+ * `scripts/gen-oxlint.ts` (`--check` is the CI drift gate) — its top-level keys are limited to what
+ * oxlint's own parser accepts (see `ALLOWED_TOP_LEVEL_KEYS` in that script); do not add ad hoc keys
+ * to that file.
  */
 
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
@@ -256,6 +263,110 @@ const rawScrollContainer = {
   },
 }
 
+// ── Rule 5 — import-boundary ────────────────────────────────────────────────────────────────────
+
+// Message bodies mirror the wording that used to live in the shipped `no-restricted-imports`
+// overrides (configs/oxlint.json) verbatim, so the DX doesn't regress.
+const IMPORT_BOUNDARY_MESSAGES = {
+  visxOutsideCharts:
+    'Direct @visx/* imports are only allowed inside the charts boundary (**/charts/**). ' +
+    '(basalt/import-boundary)',
+  visxTooltip:
+    'Use ChartTooltip + TooltipHeader/Row/Body from basalt-ui charts primitives. ' +
+    '(basalt/import-boundary)',
+  mantineInCharts:
+    'charts must be Mantine-free — no Mantine imports allowed. (basalt/import-boundary)',
+  mantineInTokens:
+    'tokens must be Mantine-free — no Mantine imports allowed. (basalt/import-boundary)',
+}
+
+/** True when any path segment of `filename` equals `segment` (POSIX or Windows separators). */
+function hasPathSegment(filename, segment) {
+  return filename.split(/[\\/]/).includes(segment)
+}
+
+/** Import specifier for an ImportDeclaration or a dynamic `import()` call; undefined otherwise. */
+function importSource(node) {
+  if (node.type === 'ImportDeclaration') return node.source?.value
+  if (node.type === 'ImportExpression' && node.source?.type === 'Literal') {
+    return node.source.value
+  }
+  return undefined
+}
+
+/**
+ * Import specifier for a source-bearing export (`export { x } from '…'` / `export * from '…'`);
+ * undefined for a plain local `export { x }` (no `source`) or any other node shape.
+ */
+function exportSource(node) {
+  if (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') {
+    return node.source?.value
+  }
+  return undefined
+}
+
+const importBoundary = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Enforce the @visx/*-only-in-charts and Mantine-free charts/tokens import boundaries.',
+    },
+    schema: [],
+  },
+  create(context) {
+    const filename = getFilename(context)
+    const inCharts = hasPathSegment(filename, 'charts')
+    const inTokens = hasPathSegment(filename, 'tokens')
+
+    // Deliberately NO `hasThemeAllow` escape here (unlike the four design-guard rules above).
+    // `theme-allow` exists so the theme/palette source can opt out of DESIGN guidance (raw font
+    // sizes, raw colors) — it is not a license to punch through an ARCHITECTURE boundary. The whole
+    // point of moving this check into a plugin rule instead of `no-restricted-imports` was that it
+    // can only be turned off explicitly, by rule id (see the file-header comment); a stray
+    // `theme-allow` comment (which also matches the line above the flagged node) must not silently
+    // bypass it. Do not "restore consistency" by adding it back.
+    function reportFor(node, source) {
+      if (typeof source !== 'string') return
+
+      if (source === '@visx/tooltip') {
+        context.report({ node, message: IMPORT_BOUNDARY_MESSAGES.visxTooltip })
+        return
+      }
+      if (source.startsWith('@visx/')) {
+        if (!inCharts) context.report({ node, message: IMPORT_BOUNDARY_MESSAGES.visxOutsideCharts })
+        return
+      }
+      if (
+        source === '@mantine/core' ||
+        source === '@mantine/hooks' ||
+        source.startsWith('@mantine/')
+      ) {
+        if (inCharts) {
+          context.report({ node, message: IMPORT_BOUNDARY_MESSAGES.mantineInCharts })
+        } else if (inTokens) {
+          context.report({ node, message: IMPORT_BOUNDARY_MESSAGES.mantineInTokens })
+        }
+      }
+    }
+
+    return {
+      ImportDeclaration(node) {
+        reportFor(node, importSource(node))
+      },
+      ImportExpression(node) {
+        reportFor(node, importSource(node))
+      },
+      ExportNamedDeclaration(node) {
+        reportFor(node, exportSource(node))
+      },
+      ExportAllDeclaration(node) {
+        reportFor(node, exportSource(node))
+      },
+    }
+  },
+}
+
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 
 export default {
@@ -265,5 +376,6 @@ export default {
     'card-inset': cardInset,
     'chart-in-raw-surface': chartInRawSurface,
     'raw-scroll-container': rawScrollContainer,
+    'import-boundary': importBoundary,
   },
 }

@@ -23,7 +23,8 @@
     "basalt/no-raw-font-size": "error",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
-    "basalt/raw-scroll-container": "warn"
+    "basalt/raw-scroll-container": "warn",
+    "basalt/import-boundary": "error"
   },
   "ignorePatterns": [
     "dist",
@@ -41,18 +42,8 @@
           {
             "paths": [
               {
-                "name": "@visx/tooltip",
-                "message": "Use ChartTooltip + TooltipHeader/Row/Body from charts primitives."
-              },
-              {
                 "name": "framer-motion",
                 "message": "Import from 'motion/react', not the raw framer-motion package."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -62,62 +53,7 @@
     {
       "files": ["packages/basalt-ui/src/charts/**"],
       "rules": {
-        "no-underscore-dangle": "off",
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@visx/tooltip",
-                "message": "Use ChartTooltip + TooltipHeader/Row/Body from charts primitives."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "charts must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["packages/basalt-ui/src/tokens/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "tokens must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
-              }
-            ]
-          }
-        ]
+        "no-underscore-dangle": "off"
       }
     },
     {
@@ -140,10 +76,6 @@
               {
                 "group": ["@mantine/*"],
                 "message": "guard must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -170,10 +102,6 @@
               {
                 "group": ["@mantine/*"],
                 "message": "query must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -200,10 +128,6 @@
               {
                 "group": ["@mantine/*"],
                 "message": "router-tanstack must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -230,10 +154,6 @@
               {
                 "group": ["@mantine/*"],
                 "message": "agent must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }
@@ -260,10 +180,6 @@
               {
                 "group": ["@mantine/*"],
                 "message": "state must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "group": ["@visx/*"],
-                "message": "Direct @visx/* imports are only allowed inside the charts boundary (packages/basalt-ui/src/charts/**)."
               }
             ]
           }

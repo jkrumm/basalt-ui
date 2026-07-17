@@ -8,9 +8,25 @@ const OXLINT_BIN = join(root, 'node_modules', '.bin', 'oxlint')
 const SHIPPED_CONFIG_PATH = join(root, 'packages/basalt-ui/configs/oxlint.json')
 const FIXTURE_PATH = join(root, 'tests/fixtures/oxlint-parse-fixture.ts')
 
+type OverrideBlock = { files: string[]; rules: Record<string, unknown> }
+type NoRestrictedImportsValue = [
+  string,
+  { paths?: Array<{ name: string }>; patterns?: Array<{ group: string[] }> },
+]
+
 function readOverrides(path: string): unknown[] {
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as { overrides?: unknown[] }
   return parsed.overrides ?? []
+}
+
+function findBlock(blocks: readonly unknown[], glob: string): OverrideBlock | undefined {
+  return (blocks as OverrideBlock[]).find((b) => b.files.includes(glob))
+}
+
+function noRestrictedImportsOf(
+  block: OverrideBlock | undefined,
+): NoRestrictedImportsValue | undefined {
+  return block?.rules['no-restricted-imports'] as NoRestrictedImportsValue | undefined
 }
 
 describe('oxlint preset sync contract', () => {
@@ -26,152 +42,89 @@ describe('oxlint preset sync contract', () => {
     expect(committed).toEqual(projected)
   })
 
-  it('charts override permits @visx/* (the re-allow holds in shipped)', () => {
-    const projected = projectBanList('shipped')
-    const chartsBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('**/charts/**')
-    }) as
-      | {
-          files: string[]
-          rules: { 'no-restricted-imports': [string, { patterns?: Array<{ group: string[] }> }] }
-        }
-      | undefined
+  // ── @visx/*-only-in-charts + Mantine-free charts/tokens: moved to basalt/import-boundary ────────
+  // These boundaries used to live in per-glob no-restricted-imports overrides, with the charts
+  // block's implicit OMISSION of the @visx/* ban acting as the "re-allow" — an artifact of oxlint's
+  // last-writer-wins override resolution, which a consumer's own no-restricted-imports override on
+  // an overlapping glob could silently clobber. They're now enforced by the `basalt/import-boundary`
+  // oxlint plugin rule instead (configs/oxlint-plugin.js), which a consumer can only disable
+  // explicitly, by name — never silently. The generator therefore no longer emits a
+  // no-restricted-imports override for charts/tokens at all.
 
+  it('shipped no longer carries a charts override (boundary moved to basalt/import-boundary)', () => {
+    const projected = projectBanList('shipped')
+    expect(findBlock(projected, '**/charts/**')).toBeUndefined()
+  })
+
+  it('repo charts override keeps only its non-import rule, no no-restricted-imports', () => {
+    const projected = projectBanList('repo')
+    const chartsBlock = findBlock(projected, 'packages/basalt-ui/src/charts/**')
     expect(chartsBlock).toBeDefined()
-    const nri = chartsBlock?.rules['no-restricted-imports'][1]
-    const hasVsixGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@visx/*'))
-    expect(hasVsixGroupBan).toBe(false)
+    expect(chartsBlock?.rules).toEqual({ 'no-underscore-dangle': 'off' })
   })
 
-  it('charts override permits @visx/* (the re-allow holds in repo)', () => {
-    const projected = projectBanList('repo')
-    const chartsBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('packages/basalt-ui/src/charts/**')
-    }) as
-      | {
-          files: string[]
-          rules: { 'no-restricted-imports': [string, { patterns?: Array<{ group: string[] }> }] }
-        }
-      | undefined
-
-    expect(chartsBlock).toBeDefined()
-    const nri = chartsBlock?.rules['no-restricted-imports'][1]
-    const hasVsixGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@visx/*'))
-    expect(hasVsixGroupBan).toBe(false)
-  })
-
-  it('tokens override bans @visx/* in shipped (D2 closure)', () => {
+  it('shipped no longer carries a tokens override (boundary moved to basalt/import-boundary)', () => {
     const projected = projectBanList('shipped')
-    const tokensBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('**/tokens/**')
-    }) as
-      | {
-          files: string[]
-          rules: { 'no-restricted-imports': [string, { patterns?: Array<{ group: string[] }> }] }
-        }
-      | undefined
-
-    expect(tokensBlock).toBeDefined()
-    const nri = tokensBlock?.rules['no-restricted-imports'][1]
-    const hasVsixGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@visx/*'))
-    expect(hasVsixGroupBan).toBe(true)
+    expect(findBlock(projected, '**/tokens/**')).toBeUndefined()
   })
 
-  it('tokens override bans @visx/* in repo (D2 closure)', () => {
+  it('repo no longer carries a tokens override (boundary moved to basalt/import-boundary)', () => {
     const projected = projectBanList('repo')
-    const tokensBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('packages/basalt-ui/src/tokens/**')
-    }) as
-      | {
-          files: string[]
-          rules: { 'no-restricted-imports': [string, { patterns?: Array<{ group: string[] }> }] }
-        }
-      | undefined
-
-    expect(tokensBlock).toBeDefined()
-    const nri = tokensBlock?.rules['no-restricted-imports'][1]
-    const hasVsixGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@visx/*'))
-    expect(hasVsixGroupBan).toBe(true)
+    expect(findBlock(projected, 'packages/basalt-ui/src/tokens/**')).toBeUndefined()
   })
 
-  it('tokens override bans @mantine/* in shipped (D2 closure)', () => {
-    const projected = projectBanList('shipped')
-    const tokensBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('**/tokens/**')
-    }) as
-      | {
-          files: string[]
-          rules: {
-            'no-restricted-imports': [
-              string,
-              { paths?: Array<{ name: string }>; patterns?: Array<{ group: string[] }> },
-            ]
-          }
-        }
-      | undefined
+  // ── Surfaces the plugin rule does NOT cover keep their Mantine-free no-restricted-imports ban ──
+  // The plugin only fires on charts/tokens path segments (see oxlint-plugin.js's import-boundary
+  // rule), so guard/query/router-tanstack/agent/state stay enforced the old way — minus the now-
+  // redundant @visx/* pattern, since the plugin bans @visx/* outside charts universally.
 
-    expect(tokensBlock).toBeDefined()
-    const nri = tokensBlock?.rules['no-restricted-imports'][1]
-    const hasMantineCoreBan = (nri?.paths ?? []).some((p) => p.name === '@mantine/core')
-    const hasMantineHooksBan = (nri?.paths ?? []).some((p) => p.name === '@mantine/hooks')
-    const hasMantineGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@mantine/*'))
-    expect(hasMantineCoreBan).toBe(true)
-    expect(hasMantineHooksBan).toBe(true)
-    expect(hasMantineGroupBan).toBe(true)
-  })
-
-  it('tokens override bans @mantine/* in repo (D2 closure)', () => {
+  it('repo headless surfaces outside charts/tokens still ban @mantine/* but no longer @visx/*', () => {
     const projected = projectBanList('repo')
-    const tokensBlock = projected.find((b) => {
-      const block = b as { files: string[] }
-      return block.files.includes('packages/basalt-ui/src/tokens/**')
-    }) as
-      | {
-          files: string[]
-          rules: {
-            'no-restricted-imports': [
-              string,
-              { paths?: Array<{ name: string }>; patterns?: Array<{ group: string[] }> },
-            ]
-          }
-        }
-      | undefined
+    const globs = [
+      'packages/basalt-ui/src/guard/**',
+      'packages/basalt-ui/src/query/**',
+      'packages/basalt-ui/src/router-tanstack/**',
+      'packages/basalt-ui/src/agent/**',
+      'packages/basalt-ui/src/state.ts',
+    ]
 
-    expect(tokensBlock).toBeDefined()
-    const nri = tokensBlock?.rules['no-restricted-imports'][1]
-    const hasMantineCoreBan = (nri?.paths ?? []).some((p) => p.name === '@mantine/core')
-    const hasMantineHooksBan = (nri?.paths ?? []).some((p) => p.name === '@mantine/hooks')
-    const hasMantineGroupBan = (nri?.patterns ?? []).some((p) => p.group.includes('@mantine/*'))
-    expect(hasMantineCoreBan).toBe(true)
-    expect(hasMantineHooksBan).toBe(true)
-    expect(hasMantineGroupBan).toBe(true)
-  })
-
-  it('the broad **/*.{ts,tsx} base-ban override sits before the narrower boundary overrides (shipped)', () => {
-    // oxlint resolves per-glob no-restricted-imports last-writer-wins — a later matching block
-    // REPLACES an earlier one. The broad base-ban block must therefore come FIRST so the
-    // narrower, re-allowing blocks (charts/tokens/agent) win for the files they match. Today
-    // this holds by generator emit order (gen-oxlint.ts) but was previously unasserted.
-    const overrides = readOverrides(SHIPPED_CONFIG_PATH) as { files: string[] }[]
-    const baseIndex = overrides.findIndex((block) => block.files.includes('**/*.{ts,tsx}'))
-    expect(baseIndex).toBe(0)
-
-    const boundaryGlobs = ['**/charts/**', '**/tokens/**', '**/agent/**']
-    const boundaryIndices = boundaryGlobs
-      .map((glob) => overrides.findIndex((block) => block.files.includes(glob)))
-      .filter((index) => index !== -1)
-
-    // Shipped today only carries charts + tokens boundaries (agent's shipped globs are empty),
-    // so at least one boundary override must exist — otherwise this assertion is vacuous.
-    expect(boundaryIndices.length).toBeGreaterThan(0)
-    for (const boundaryIndex of boundaryIndices) {
-      expect(baseIndex).toBeLessThan(boundaryIndex)
+    for (const glob of globs) {
+      const block = findBlock(projected, glob)
+      expect(block).toBeDefined()
+      const nri = noRestrictedImportsOf(block)
+      expect(nri).toBeDefined()
+      const hasMantineCoreBan = (nri?.[1].paths ?? []).some((p) => p.name === '@mantine/core')
+      const hasMantineHooksBan = (nri?.[1].paths ?? []).some((p) => p.name === '@mantine/hooks')
+      const hasMantineGroupBan = (nri?.[1].patterns ?? []).some((p) =>
+        p.group.includes('@mantine/*'),
+      )
+      const hasVisxGroupBan = (nri?.[1].patterns ?? []).some((p) => p.group.includes('@visx/*'))
+      expect(hasMantineCoreBan).toBe(true)
+      expect(hasMantineHooksBan).toBe(true)
+      expect(hasMantineGroupBan).toBe(true)
+      expect(hasVisxGroupBan).toBe(false)
     }
+  })
+
+  it('no override anywhere still bans the @visx/* pattern (fully superseded by basalt/import-boundary)', () => {
+    for (const target of ['shipped', 'repo'] as const) {
+      const projected = projectBanList(target)
+      for (const block of projected as OverrideBlock[]) {
+        const nri = noRestrictedImportsOf(block)
+        const hasVisxGroupBan = (nri?.[1].patterns ?? []).some((p) => p.group.includes('@visx/*'))
+        expect(hasVisxGroupBan).toBe(false)
+      }
+    }
+  })
+
+  it('shipped overrides carry exactly the #app catch-all block (no narrower boundary overrides remain)', () => {
+    const overrides = readOverrides(SHIPPED_CONFIG_PATH) as OverrideBlock[]
+    expect(overrides).toHaveLength(1)
+    expect(overrides[0]?.files).toEqual(['**/*.{ts,tsx}'])
+
+    const nri = noRestrictedImportsOf(overrides[0])
+    const paths = nri?.[1].paths ?? []
+    expect(paths.map((p) => p.name).toSorted()).toEqual(['antd', 'framer-motion'])
   })
 
   it('shipped configs/oxlint.json actually parses in oxlint (not just JSON.parse)', () => {

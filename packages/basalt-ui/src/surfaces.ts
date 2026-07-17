@@ -83,13 +83,6 @@ type BaseSurface = {
   readonly forbiddenImports: readonly ForbiddenImport[]
   readonly ruleOverrides?: readonly RuleOverride[]
   /**
-   * REPLACE-not-inherit-and-add. When true, this surface's forbiddenImports are the COMPLETE ban
-   * set for its glob — the generator MUST NOT inherit-and-add the parent (src/**) bans. Charts sets
-   * this so the @visx/* ban from src/** does NOT leak into the charts override (which would re-ban
-   * visx). The projection emits the full list.
-   */
-  readonly replaceBans?: true
-  /**
    * Human-readable description of this surface — single source for llms.txt and info output.
    * Optional on tooling surfaces (they have no llms.txt row).
    */
@@ -159,6 +152,10 @@ const vg = (spec: string, message: string, extra?: Partial<ForbiddenImport>): Fo
   ...extra,
 })
 
+// Mantine-free ban for headless surfaces the `basalt/import-boundary` plugin rule does NOT cover
+// (it only enforces charts/tokens path segments — see oxlint-plugin.js). `./charts` and `./tokens`
+// no longer use this: their Mantine-free + @visx/* boundaries are enforced by that plugin rule
+// instead, so duplicating the ban here would be redundant no-restricted-imports config.
 const MANTINE_BANS = [
   v('@mantine/core', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
   v('@mantine/hooks', '{ctx} must be Mantine-free — no Mantine imports allowed.'),
@@ -201,12 +198,10 @@ export const SURFACES = {
       shipped: ['**/charts/**'],
       repo: ['packages/basalt-ui/src/charts/**'],
     },
-    replaceBans: true, // @visx/* MUST NOT inherit from src/** (the re-allow). Full list emitted.
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      v('@visx/tooltip', 'Use ChartTooltip + TooltipHeader/Row/Body from {ctx}.'),
-      // LOAD-BEARING ABSENCE: no @visx/* group ban here — charts uniquely permits @visx/*.
-    ],
+    // The @visx/*-only-in-charts and Mantine-free boundaries are enforced by the
+    // `basalt/import-boundary` oxlint plugin rule (configs/oxlint-plugin.js), not
+    // no-restricted-imports — see that file's header comment for why.
+    forbiddenImports: [],
     ruleOverrides: [{ rule: 'no-underscore-dangle', level: 'off', target: 'repo' }],
   },
   './tokens': {
@@ -221,10 +216,8 @@ export const SURFACES = {
       shipped: ['**/tokens/**'],
       repo: ['packages/basalt-ui/src/tokens/**'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ], // shipped tokens override is MISSING today → this projection EMITS it (closes D2)
+    // Mantine-free + @visx/* boundaries enforced by `basalt/import-boundary` (see ./charts above).
+    forbiddenImports: [],
   },
   './theme-lab': {
     kind: 'tooling',
@@ -246,10 +239,8 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/guard/**'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ],
+    // @visx/* ban dropped — `basalt/import-boundary` now bans it universally outside charts.
+    forbiddenImports: [...MANTINE_BANS],
   }, // 6th JS subpath
   './query': {
     kind: 'doctrine',
@@ -263,10 +254,8 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/query/**'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ],
+    // @visx/* ban dropped — `basalt/import-boundary` now bans it universally outside charts.
+    forbiddenImports: [...MANTINE_BANS],
   },
   './router-tanstack': {
     kind: 'doctrine',
@@ -281,10 +270,8 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/router-tanstack/**'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ],
+    // @visx/* ban dropped — `basalt/import-boundary` now bans it universally outside charts.
+    forbiddenImports: [...MANTINE_BANS],
   },
   './forms': {
     kind: 'doctrine',
@@ -365,10 +352,8 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/agent/**'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ],
+    // @visx/* ban dropped — `basalt/import-boundary` now bans it universally outside charts.
+    forbiddenImports: [...MANTINE_BANS],
   },
   './content': {
     kind: 'doctrine',
@@ -405,10 +390,8 @@ export const SURFACES = {
       shipped: [],
       repo: ['packages/basalt-ui/src/state.ts'],
     },
-    forbiddenImports: [
-      ...MANTINE_BANS,
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
-    ],
+    // @visx/* ban dropped — `basalt/import-boundary` now bans it universally outside charts.
+    forbiddenImports: [...MANTINE_BANS],
   },
 
   './connectivity': {
@@ -456,17 +439,17 @@ export const SURFACES = {
     guardKinds: [],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
-      // features/, etc. is also covered — the narrower re-allow overrides (./tokens, ./charts,
-      // ./agent) still win for their globs because oxlint overrides are last-writer-wins and
-      // EMIT_ORDER places #app first (see projectBanList doc comment in gen-oxlint.ts).
+      // features/, etc. is also covered. The @visx/*-only-in-charts and Mantine-free charts/tokens
+      // boundaries used to live here too and need last-writer-wins EMIT_ORDER games against the
+      // narrower ./tokens/./charts overrides — they're now enforced by `basalt/import-boundary`
+      // (a plugin rule, immune to that class of clobbering) instead, so the bans left below (antd,
+      // framer-motion) are plain global bans with no narrower override to out-order.
       shipped: ['**/*.{ts,tsx}'],
       repo: ['packages/basalt-ui/src/**', 'apps/playground/src/**'],
     },
     ruleOverrides: [{ rule: 'no-console', level: 'off', target: 'repo' }], // cli/bin/scripts, repo-local only
     forbiddenImports: [
       v('antd', 'Use Mantine — antd is not part of the basalt-ui stack.', { shippedOnly: true }),
-      v('@visx/tooltip', 'Use ChartTooltip + TooltipHeader/Row/Body from {ctx}.'),
-      vg('@visx/*', 'Direct @visx/* imports are only allowed inside the charts boundary ({ctx}).'),
       v('framer-motion', "Import from 'motion/react', not the raw framer-motion package."),
     ],
   },
@@ -506,3 +489,36 @@ export const SKILL_NAMES = [
       .flatMap((s) => [...s.skill]),
   ),
 ] as const satisfies readonly SkillName[]
+
+// ── Mantine-free-via-plugin membership ────────────────────────────────────────────────────────────
+
+/**
+ * Headless SURFACES keys whose Mantine-free guarantee is enforced by the `basalt/import-boundary`
+ * oxlint plugin rule (`configs/oxlint-plugin.js`) instead of a `forbiddenImports` no-restricted-
+ * imports ban — the rule fires on `charts`/`tokens` path segments only, so ONLY these two surfaces
+ * qualify (every other headless surface still carries its Mantine ban in `forbiddenImports`).
+ *
+ * Membership alone does NOT satisfy the coverage check — `checkCoverage()`'s assertion 7 (and its
+ * test mirror) also require `hasImportBoundaryRuleRegistered` to hold, so a future removal of the
+ * plugin rule's registration still fails loudly instead of silently passing.
+ */
+export const MANTINE_FREE_VIA_IMPORT_BOUNDARY: ReadonlySet<string> = new Set([
+  './charts',
+  './tokens',
+])
+
+/**
+ * True when a parsed oxlint config's `rules` object registers `basalt/import-boundary` as `'error'`
+ * — the live signal (not just a hardcoded assumption) that `MANTINE_FREE_VIA_IMPORT_BOUNDARY`
+ * surfaces are actually enforced. Pure — callers read + JSON.parse the config file themselves
+ * (surfaces.ts stays dependency-free, no fs access here).
+ *
+ * @example
+ * hasImportBoundaryRuleRegistered({ 'basalt/import-boundary': 'error' }) // true
+ * hasImportBoundaryRuleRegistered({}) // false
+ */
+export function hasImportBoundaryRuleRegistered(
+  rules: Record<string, unknown> | undefined,
+): boolean {
+  return rules?.['basalt/import-boundary'] === 'error'
+}

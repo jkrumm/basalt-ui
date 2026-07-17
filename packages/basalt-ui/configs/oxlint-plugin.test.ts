@@ -8,9 +8,9 @@
  * and returns the parsed set of `basalt/<rule>` diagnostics it printed.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
 const OXLINT_BIN = resolve(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'oxlint')
@@ -28,6 +28,7 @@ beforeEach(() => {
         'basalt/no-raw-font-size': 'error',
         'basalt/card-inset': 'error',
         'basalt/chart-in-raw-surface': 'error',
+        'basalt/import-boundary': 'error',
       },
     }),
   )
@@ -39,7 +40,9 @@ afterEach(() => {
 
 /** Writes `source` as the sole fixture file and runs oxlint against the temp fixture repo. */
 function run(source: string, filename = 'fixture.tsx'): { code: number; rules: Set<string> } {
-  writeFileSync(resolve(dir, filename), source)
+  const filePath = resolve(dir, filename)
+  mkdirSync(dirname(filePath), { recursive: true })
+  writeFileSync(filePath, source)
   const result = Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', filename], { cwd: dir })
   const output = `${result.stdout}${result.stderr}`
   const rules = new Set(
@@ -103,5 +106,72 @@ describe('basalt/chart-in-raw-surface', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('chart-in-raw-surface')
+  })
+})
+
+// ── import-boundary ────────────────────────────────────────────────────────────
+
+describe('basalt/import-boundary', () => {
+  it('flags a @visx/* import outside charts', () => {
+    const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('does NOT flag a @visx/* import inside charts', () => {
+    const { code, rules } = run(`import { scaleLinear } from '@visx/scale'\n`, 'charts/lib.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('import-boundary')
+  })
+
+  it('flags a @mantine/* import inside charts (Mantine-free)', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'charts/lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('does NOT flag a @mantine/* import outside charts/tokens', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'lib.tsx')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('import-boundary')
+  })
+
+  it('flags @visx/tooltip even inside charts', () => {
+    const { code, rules } = run(`import { Tooltip } from '@visx/tooltip'\n`, 'charts/lib.tsx')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('flags a @mantine/* import inside tokens (Mantine-free)', () => {
+    const { code, rules } = run(`import { Button } from '@mantine/core'\n`, 'tokens/lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('still flags a @visx/* import outside charts carrying a theme-allow comment (no escape hatch)', () => {
+    const { code, rules } = run(
+      `// theme-allow: legacy\nimport { scaleLinear } from '@visx/scale'\n`,
+      'lib.ts',
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('flags a source-bearing named re-export of @visx/* outside charts', () => {
+    const { code, rules } = run(`export { scaleLinear } from '@visx/scale'\n`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('flags a wildcard re-export of @visx/* outside charts', () => {
+    const { code, rules } = run(`export * from '@visx/scale'\n`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('import-boundary')
+  })
+
+  it('does NOT flag a plain local named export (no source)', () => {
+    const { code, rules } = run(`const x = 1\nexport { x }\n`, 'lib.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('import-boundary')
   })
 })

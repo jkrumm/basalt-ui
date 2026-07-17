@@ -41,7 +41,7 @@ theme. Never write `#rrggbb`, `rgb(…)`, or `hsl(…)` in component or style co
 **Motion discipline**: import animation from `motion/react`, never the raw `framer-motion`
 package (enforced by oxlint `no-restricted-imports`). Route transition timing through the shared
 `MOTION_DURATION` / `MOTION_SPRING` / `MOTION_EASE_STANDARD` tokens — never a hardcoded
-duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt check-theme`).
+duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt-ui check-theme`).
 
 ## Key commands
 

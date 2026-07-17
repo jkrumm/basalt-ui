@@ -217,7 +217,7 @@ durations/easings scattered per component.
     shipped consumer preset (`#app` synthetic surface in `surfaces.ts`) — must import from
     `motion/react`. Regenerate via `bun packages/basalt-ui/scripts/gen-oxlint.ts` after any
     `SURFACES` edit (`--check` is the CI drift gate).
-  - `basalt check-theme`'s 13th guard kind, `raw-motion-value`, fails the build on a hardcoded
+  - `basalt-ui check-theme`'s 13th guard kind, `raw-motion-value`, fails the build on a hardcoded
     duration/spring/ease literal inline in a `transition={{...}}` prop — route it through the
     tokens above instead (`theme-allow` escape same as every other guard kind).
 
@@ -277,7 +277,7 @@ indent. The `configs/` presets (`oxlint.json`, `oxfmt.json`, `tsconfig.{base,rea
 ### The `basalt` oxlint plugin (`configs/oxlint-plugin.js`)
 
 A custom oxlint JS plugin (alpha `jsPlugins`, ESLint-v9-compatible `create(context)` API) shipping
-three design-guard AST rules `src/guard`'s regex scan can't reach. It ships inside `configs/` and
+design-guard AST rules `src/guard`'s regex scan can't reach. It ships inside `configs/` and
 `configs/oxlint.json` wires `jsPlugins: ["./oxlint-plugin.js"]` — a consumer that `extends` the
 shipped preset inherits it automatically, path resolved relative to the preset file.
 
@@ -288,9 +288,19 @@ shipped preset inherits it automatically, path resolved relative to the preset f
 - `basalt/chart-in-raw-surface` — flags a chart-kind element (`Bars`, `Donut`, `DualPanel`,
   `Heatmap`, `MultiLine`, `StackedArea`, `ZonedLine`, `BarSparkline`, `LineSparkline`) rendered
   inside a raw `Card`/`Paper` instead of the shipped `ChartCard` wrapper.
+- `basalt/import-boundary` — enforces the architecture boundaries: `@visx/*` only inside a
+  `charts/` path segment, `@mantine/*` banned inside `charts/` and `tokens/` segments, and
+  `@visx/tooltip` banned everywhere (use `ChartTooltip` + the `TooltipHeader`/`Row`/`Body` family
+  instead). It's a plugin rule rather than `no-restricted-imports` because oxlint's
+  `no-restricted-imports` is last-writer-wins per glob — a consumer's own override on an
+  overlapping glob would silently replace the boundary instead of merging with it, whereas a
+  plugin rule can only be turned off explicitly, by name.
 
-Every rule supports the same `theme-allow` escape as `src/guard`: a line comment containing
-`theme-allow` on the flagged node's own line, or the line above it, suppresses the finding.
+The four design-guard rules support the same `theme-allow` escape as `src/guard`: a line comment
+containing `theme-allow` on the flagged node's own line, or the line above it, suppresses the
+finding. `basalt/import-boundary` deliberately does **not** — an architecture boundary a stray
+comment can switch off is the silent bypass the rule exists to prevent. Turn it off by name or
+not at all.
 
 ## Development Guidelines
 
