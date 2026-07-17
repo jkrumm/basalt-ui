@@ -1,6 +1,6 @@
 {
   "name": "basalt-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets",
   "keywords": [
     "charts",
@@ -26,7 +26,7 @@
     "directory": "packages/basalt-ui"
   },
   "bin": {
-    "basalt": "./bin/basalt.mjs"
+    "basalt-ui": "./bin/basalt-ui.mjs"
   },
   "files": [
     "dist/",

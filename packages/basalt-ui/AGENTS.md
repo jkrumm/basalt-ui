@@ -46,22 +46,22 @@ duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt
 ## Key commands
 
 ```bash
-bunx basalt init              # FIRST STEP: scaffold .claude/rules/basalt-*.md, managed CLAUDE.md block, DESIGN.md seed, oxfmt/lefthook/CI templates
-bunx basalt check-theme       # fail on off-palette colors in consumer source
-bunx basalt sync              # reconcile managed files (.claude/rules/, CLAUDE.md block)
-bunx basalt sync --check      # CI freshness gate — exits non-zero if any managed file drifted
-bunx basalt doctor            # check consumer repo basalt integration health
-bunx basalt info              # print published surface map
-bunx basalt info --json       # stable JSON surface map
-bunx basalt guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
+bunx basalt-ui init              # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed CLAUDE.md block, DESIGN.md seed, toolchain seeds
+bunx basalt-ui check-theme       # fail on off-palette colors in consumer source
+bunx basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block)
+bunx basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted
+bunx basalt-ui doctor            # check consumer repo basalt integration health
+bunx basalt-ui info              # print published surface map
+bunx basalt-ui info --json       # stable JSON surface map
+bunx basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
 ```
 
 Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with matcher
-`Write|Edit|MultiEdit` and command `bunx basalt guard-hook` so the agent can't write off-palette
+`Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook` so the agent can't write off-palette
 colors without a `theme-allow` comment.
 
-> **Framework-internal only** — `bunx basalt check-coverage` is a self-consistency gate for the
-> basalt-ui repo itself (asserts SURFACES ↔ plugin.json ↔ rule files ↔ package.json exports). It
+> **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the
+> basalt-ui repo itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports). It
 > is not a consumer command and will skip assertion 3 outside the framework repo.
 
 ## Machine-readable surface map

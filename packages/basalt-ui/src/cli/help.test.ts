@@ -1,6 +1,6 @@
 /**
  * `--help` / `-h` / `help` must short-circuit BEFORE any subcommand dispatch — a read request must
- * never mutate. Regression: `bunx basalt sync --help` used to run `sync` in full (the switch
+ * never mutate. Regression: `bunx basalt-ui sync --help` used to run `sync` in full (the switch
  * matched `cmd === 'sync'` first and `--help` was just another item in `flags`, ignored).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'

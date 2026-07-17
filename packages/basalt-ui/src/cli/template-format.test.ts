@@ -1,8 +1,8 @@
 /**
- * Format-idempotency for every shipped template that lands in a consumer VERBATIM — the `copy` and
- * `block` managed-file strategies (see `./index.ts`'s `managedFiles()`). `seed` templates are
- * excluded: they are a one-time starting point the consumer immediately owns and may reformat
- * however they like, so their shipped formatting is not load-bearing.
+ * Format-idempotency for every shipped template that lands in a consumer VERBATIM — the `managed`
+ * files (rules, skills, the marker-spliced CLAUDE block; see `./index.ts`'s `managedFiles()`).
+ * `seed` templates are excluded: they are a one-time starting point the consumer immediately owns
+ * and may reformat however they like, so their shipped formatting is not load-bearing.
  *
  * basalt-ui itself MANDATES oxfmt in the shipped lefthook/CI templates — so if a shipped `copy`/
  * `block` template's bytes are not already oxfmt-clean, the first thing a consumer does (run
@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 
-import { RULE_NAMES } from './index'
+import { RULE_NAMES, SKILL_NAMES } from './index'
 
 const PKG_ROOT = resolve(import.meta.dir, '../..')
 const REPO_ROOT = resolve(PKG_ROOT, '../..')
@@ -37,8 +37,8 @@ function expectOxfmtNoop(fileName: string, content: string): void {
   expect(result.stdout).toBe(content)
 }
 
-describe('shipped copy/block templates are oxfmt-clean', () => {
-  it('CLAUDE-block.md.tpl (block strategy) round-trips unchanged with placeholders filled', () => {
+describe('shipped managed templates are oxfmt-clean', () => {
+  it('CLAUDE-block.md.tpl (managed, marker-spliced) round-trips unchanged with placeholders filled', () => {
     const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/CLAUDE-block.md.tpl'), 'utf8')
     const filled = tpl
       .replace(/\{\{BASALT_VERSION\}\}/g, '1.0.0')
@@ -46,12 +46,18 @@ describe('shipped copy/block templates are oxfmt-clean', () => {
     expectOxfmtNoop('CLAUDE.md', filled)
   })
 
-  it.each(RULE_NAMES)('agent/rules/basalt-%s.md (copy strategy) round-trips unchanged', (name) => {
+  it.each(RULE_NAMES)('agent/rules/basalt-%s.md (managed) round-trips unchanged', (name) => {
     const content = readFileSync(resolve(PKG_ROOT, `agent/rules/basalt-${name}.md`), 'utf8')
     expectOxfmtNoop(`basalt-${name}.md`, content)
   })
 
-  it('configs/oxfmt.json (copy strategy, scaffolded as .oxfmtrc.json) round-trips unchanged', () => {
+  it.each(SKILL_NAMES)('agent/skills/%s/SKILL.md (managed) round-trips unchanged', (name) => {
+    const content = readFileSync(resolve(PKG_ROOT, `agent/skills/${name}/SKILL.md`), 'utf8')
+    expectOxfmtNoop('SKILL.md', content)
+  })
+
+  it('configs/oxfmt.json (seeded verbatim as .oxfmtrc.json) round-trips unchanged', () => {
+    // A seed, but its bytes land verbatim and oxfmt itself reads the result — keep it clean too.
     const content = readFileSync(resolve(PKG_ROOT, 'configs/oxfmt.json'), 'utf8')
     expectOxfmtNoop('.oxfmtrc.json', content)
   })

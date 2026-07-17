@@ -41,13 +41,21 @@ for f in \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-charts.md \
   agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl \
+  agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
+  agent/skills/basalt-design/SKILL.md \
   llms.txt \
-  bin/basalt.mjs; do require "$f"; done
+  bin/basalt-ui.mjs; do require "$f"; done
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
 for f in src/index.css src/starlight.css tailwind.config.js \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
 echo "tarball contents OK"
+
+echo "==> tarball parity (every CLI-read source ships in the artifact)"
+LISTFILE=$(mktemp)
+echo "$LIST" >"$LISTFILE"
+node scripts/check-tarball-parity.mjs "$LISTFILE"
+rm -f "$LISTFILE"
 
 echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
 node scripts/check-dist-layering.mjs
@@ -68,6 +76,7 @@ bun add "$ABS_TGZ" \
   "@tanstack/react-table@>=8" "@tanstack/react-virtual@>=3" \
   "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
   "use-stick-to-bottom@^1.1.6" \
+  vite \
   typescript >/dev/null 2>&1
 cat >test.mjs <<'JS'
 import { readFileSync } from 'node:fs'
@@ -131,6 +140,14 @@ console.log('smoke: basalt-ui/router-tanstack OK')
 console.log('scratch resolution OK (19 subpaths)')
 JS
 node test.mjs
+
+echo "==> export-surface snapshot (named-export completeness per subpath)"
+# publint/attw validate the export MAP, not named-export completeness — a barrel that drops a
+# named export (BP/p at 1.0.0) passes both and still hard-fails the consumer's build. Import the
+# INSTALLED package's dist per subpath and diff Object.keys() against the committed snapshot.
+PKGDIR="$(dirname "$ABS_TGZ")"
+node --import "$PKGDIR/scripts/css-noop-register.mjs" "$PKGDIR/scripts/export-surface.mjs" \
+  --base "$SCRATCH/node_modules/basalt-ui"
 
 echo "==> scratch-consumer oxlint preset contract (extends the shipped preset for real)"
 # Exercises the real consumer contract against the tarball: a fresh .oxlintrc.json that

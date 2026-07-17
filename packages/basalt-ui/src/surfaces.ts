@@ -29,7 +29,8 @@ export type RuleName =
   | 'agent'
   | 'content'
 
-/** The 3 plugin skill names (plugins/basalt/skills/basalt-{name}/).
+/** The 3 shipped skill names (agent/skills/basalt-{name}/SKILL.md, placed into a consumer's
+ * .claude/skills/ by `basalt-ui init`/`sync` — the same managed path the rules take).
  *
  * @example
  * const s: SkillName = 'basalt-app'
@@ -487,3 +488,21 @@ export const RULE_NAMES = [
       .map((s) => s.rule),
   ),
 ] as const satisfies readonly RuleName[]
+
+// ── PROJECTION 1b — SKILL_NAMES ───────────────────────────────────────────────────────────────────
+
+/**
+ * Derived, deduped set of doctrine skill names. Same projection shape as RULE_NAMES — the CLI's
+ * managed-file manifest and check-coverage both consume it, so a skill referenced by any doctrine
+ * surface is guaranteed a `agent/skills/{name}/SKILL.md` placement path.
+ *
+ * @example
+ * SKILL_NAMES.includes('basalt-design') // true
+ */
+export const SKILL_NAMES = [
+  ...new Set(
+    (Object.values(SURFACES) as readonly SurfaceSpec[])
+      .filter((s): s is DoctrineSpec => s.kind === 'doctrine')
+      .flatMap((s) => [...s.skill]),
+  ),
+] as const satisfies readonly SkillName[]

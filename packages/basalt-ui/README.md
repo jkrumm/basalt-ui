@@ -29,44 +29,31 @@ peers, but pnpm/npm consumers must add it explicitly or hit an unexplained build
 A real app also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`
 for `tsc --noEmit` to pass.
 
-### 2. Scaffold the repo doctrine (`basalt init`)
+### 2. Scaffold the repo doctrine (`basalt-ui init`)
 
 ```bash
-bunx basalt init
+bunx basalt-ui init
 ```
 
-Writes into the consumer repo:
+That's the whole install — there is no plugin, no marketplace, and no second version to track.
+`init` writes into the consumer repo:
 
 - `.claude/rules/basalt-*.md` — twelve Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`)
+- `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
-- Toolchain templates: `.oxfmtrc.json`, `lefthook.yml`, `.github/workflows/check.yml`
-- `.oxlintrc.json` with `"extends": ["./node_modules/basalt-ui/configs/oxlint.json"]`
-- `.basalt/manifest.json` — sha256 per managed file for `sync` three-way diff
+- Toolchain seeds: `.oxlintrc.json` and `lefthook.yml` as `extends` stubs into `node_modules/basalt-ui/configs/` (the presets auto-update with the package), plus `.oxfmtrc.json` and `.github/workflows/check.yml` as starting copies
+- `.basalt/manifest.json` — sha256 per managed file + the basalt-ui version, for `sync` three-way diff and `doctor`
 
-### 3. Install the plugin (skills)
-
-```bash
-claude plugin marketplace add jkrumm/basalt-ui
-claude plugin install basalt@basalt-ui     # enable auto-update when prompted
-```
-
-Gives you `/basalt:app`, `/basalt:design`, `/basalt:charts` in every Claude Code session.
-
-### The plugin and `basalt init` are a pair
-
-| Channel           | Ships                                                                | Scope                                                   |
-| ----------------- | -------------------------------------------------------------------- | ------------------------------------------------------- |
-| **Plugin**        | The three skills (`/basalt:app`, `/basalt:design`, `/basalt:charts`) | User scope — installed once, available in every project |
-| **`basalt init`** | The repo doctrine (rules, CLAUDE block, DESIGN.md, toolchain)        | Per repo — run once per consumer                        |
-
-A Claude Code plugin cannot write project context (`CLAUDE.md`, `.claude/rules/`, `DESIGN.md`) — that is why doctrine is a separate per-repo `init`. And `init` cannot auto-install a plugin at user scope — that is why the plugin is a one-time separate step. Skills without `init` degrade to generic advice. `init` without the plugin still loads the rules as context, but the design and charts workflows are not a slash command away. Do both.
+Every file is either **managed** (basalt owns it, `sync` refreshes it, local edits are skipped and
+reported — exactly the files Claude reads, which cannot load from `node_modules`) or a **seed**
+(written once, then yours forever). One rule decides which: does Claude read the file?
 
 ---
 
 ## Wire the runtime
 
-After `bunx basalt init`, wire the provider, overlays, and vite preset. This mirrors the canonical
+After `bunx basalt-ui init`, wire the provider, overlays, and vite preset. This mirrors the canonical
 reference, `apps/playground/src/main.tsx`:
 
 ```tsx
@@ -132,21 +119,21 @@ export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000'
 ```
 
 > **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
-> basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt` always resolves
-> `bin/basalt.mjs` → `dist/cli/index.js`, even though the _runtime_ import can ride
+> basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt-ui` always resolves
+> `bin/basalt-ui.mjs` → `dist/cli/index.js`, even though the _runtime_ import can ride
 > `basaltViteConfig`'s `BASALT_LOCAL`/`basaltSrc` source aliasing above. And in a monorepo, add
 > `basalt-ui` as a **root** devDependency (not only a leaf-workspace dep) so its bin hoists into the
-> root `node_modules/.bin` — otherwise `bunx basalt` silently resolves the stale published package
-> from npm instead of your local checkout.
+> root `node_modules/.bin` — otherwise `bunx basalt-ui` silently resolves the stale published
+> package from npm instead of your local checkout.
 
 ```ts
 // Lint — theme guard is the teeth behind the token doctrine
 // package.json scripts:
-"lint": "oxlint . && basalt check-theme"
+"lint": "oxlint . && basalt-ui check-theme"
 ```
 
-`check-theme` scans your own source roots, not basalt's — point it at them via a `"basalt"` key
-in your `package.json` (defaults are argo's own paths and will scan 0 files in any other repo):
+`check-theme` scans `src/` by default — a monorepo points it at its real roots via a `"basalt"`
+key in your `package.json`:
 
 ```json
 // package.json
@@ -157,8 +144,8 @@ in your `package.json` (defaults are argo's own paths and will scan 0 files in a
 }
 ```
 
-`roots` is required for a real scan. `check-theme` warns (instead of a false `✓`) when the
-configured roots resolve to zero scanned files. Other `"basalt"` config keys (`exempt`,
+`check-theme` fails loudly (instead of a false `✓`) when the configured roots resolve to zero
+scanned files. Other `"basalt"` config keys (`exempt`,
 `spacingSteps`, `forbiddenAccents`, …) are documented on the `BasaltConfig` type.
 
 ---
@@ -469,13 +456,13 @@ Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `
 ## CLI
 
 ```bash
-bunx basalt init              # scaffold doctrine into a consumer repo
-bunx basalt sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
-bunx basalt sync --check      # CI drift gate — non-zero exit on any managed-file drift
-bunx basalt check-theme       # palette guard — fails on colors that bypass the central --vx-* system
-bunx basalt doctor            # check consumer repo basalt integration health (manifest, CLAUDE.md block, rules, plugin)
-bunx basalt info              # human-readable surface map: subpath, layer, rule, skills, optional peers
-bunx basalt info --json       # same map as stable JSON (InfoOutput shape)
+bunx basalt-ui init              # scaffold doctrine into a consumer repo
+bunx basalt-ui sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
+bunx basalt-ui sync --check      # CI drift gate — non-zero exit on any managed-file drift
+bunx basalt-ui check-theme       # palette guard — fails on colors that bypass the central --vx-* system
+bunx basalt-ui doctor            # check consumer repo basalt integration health (manifest + one version axis: node_modules vs manifest)
+bunx basalt-ui info              # human-readable surface map: subpath, layer, rule, skills, optional peers
+bunx basalt-ui info --json       # same map as stable JSON (InfoOutput shape)
 ```
 
 `sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff); missing → recreate. `--force` overwrites local edits.
@@ -490,7 +477,7 @@ bunx basalt info --json       # same map as stable JSON (InfoOutput shape)
 - **TypeScript**: strict mode throughout
 - **Tarball ships `src/`** alongside `dist/` — go-to-definition lands in real source, not compiled output
 
-The `./configs/*` export gives consumer apps raw presets to `extends` or copy via `basalt init`:
+The `./configs/*` export gives consumer apps raw presets to `extends` or copy via `basalt-ui init`:
 
 ```json
 // .oxlintrc.json
@@ -499,13 +486,13 @@ The `./configs/*` export gives consumer apps raw presets to `extends` or copy vi
 
 ---
 
-## `basalt sync` in CI
+## `basalt-ui sync` in CI
 
 Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
 
 ```yaml
-# .github/workflows/check.yml (scaffolded by basalt init)
-- run: bunx basalt sync --check
+# .github/workflows/check.yml (seeded by basalt-ui init)
+- run: bunx basalt-ui sync --check
 ```
 
 ---

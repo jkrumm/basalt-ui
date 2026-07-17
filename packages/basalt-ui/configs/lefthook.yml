@@ -1,7 +1,11 @@
-# basalt-ui consumer lefthook template.
-# Copy to your repo root as lefthook.yml. Runs oxlint + oxfmt on staged files and the
-# theme guard on the whole tree, pre-commit. Assumes oxlint/oxfmt are installed and your
-# .oxlintrc.json extends ./node_modules/basalt-ui/configs/oxlint.json.
+# basalt-ui consumer lefthook preset — an `extends` target, not a copy.
+# `basalt-ui init` seeds a lefthook.yml that references this file:
+#   extends:
+#     - node_modules/basalt-ui/configs/lefthook.yml
+# lefthook merges these commands with the consumer's own, so this preset auto-updates
+# with the package. Runs oxlint + oxfmt on staged files and the theme guard on the whole
+# tree, pre-commit. Assumes oxlint/oxfmt are installed and your .oxlintrc.json extends
+# ./node_modules/basalt-ui/configs/oxlint.json.
 pre-commit:
   parallel: true
   commands:
@@ -18,4 +22,4 @@ pre-commit:
     # ran are indistinguishable from the kinds that found nothing.
     check-theme:
       glob: '*.{ts,tsx}'
-      run: bunx basalt check-theme
+      run: bunx basalt-ui check-theme
