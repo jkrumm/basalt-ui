@@ -158,3 +158,71 @@ describe('init — first-run hint', () => {
     expect(log.toLowerCase()).toContain('basalt.*')
   })
 })
+
+describe('seeds derive from basalt.roots', () => {
+  // A monorepo sets `roots` because it has no top-level `src/`. Both the CI oxfmt globs and the
+  // DESIGN.md series path used to hardcode `src`, so a consumer that configured roots CORRECTLY
+  // still got a CI run that matched zero files (oxfmt exits 2) and a series path that can't exist.
+  const MONOREPO = { name: 'fixture', basalt: { roots: ['apps/web/src'] } }
+
+  it('renders the CI oxfmt globs from roots', () => {
+    writeFixture('package.json', JSON.stringify(MONOREPO))
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain("bunx oxfmt 'apps/web/src/**' '!**/dist/**' --check")
+    expect(ci).not.toContain('{{ROOTS_GLOBS}}')
+  })
+
+  it('renders every root, not just the first', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'f', basalt: { roots: ['a/src', 'b/src'] } }),
+    )
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain("bunx oxfmt 'a/src/**' 'b/src/**' '!**/dist/**' --check")
+  })
+
+  it("falls back to 'src/**' when roots is unset", () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain("bunx oxfmt 'src/**' '!**/dist/**' --check")
+  })
+
+  it('seeds DESIGN.md with a series path under the first root', () => {
+    writeFixture('package.json', JSON.stringify(MONOREPO))
+    init(dir)
+    const design = readFileSync(resolve(dir, 'DESIGN.md'), 'utf8')
+    expect(design).toContain('apps/web/src/lib/series.ts')
+  })
+
+  it('falls back to the default root when roots is an explicit empty array', () => {
+    // `[]` is nonsense config, but a bare `??` would let it through and render an empty oxfmt glob
+    // into CI — the exact "matches zero files" break this derivation exists to prevent.
+    writeFixture('package.json', JSON.stringify({ name: 'f', basalt: { roots: [] } }))
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain("bunx oxfmt 'src/**' '!**/dist/**' --check")
+    expect(readFileSync(resolve(dir, 'DESIGN.md'), 'utf8')).toContain('src/lib/series.ts')
+  })
+
+  it('POSIX-escapes a quote in a root instead of breaking out of the CI shell quoting', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'f', basalt: { roots: ["it's/src"] } }))
+    init(dir)
+    const ci = readFileSync(resolve(dir, '.github/workflows/check.yml'), 'utf8')
+    expect(ci).toContain("'it'\\''s/src/**'")
+  })
+
+  it('lets seriesModulePath override the roots-derived default', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'f',
+        basalt: { roots: ['apps/web/src'], seriesModulePath: 'custom/p.ts' },
+      }),
+    )
+    init(dir)
+    expect(readFileSync(resolve(dir, 'DESIGN.md'), 'utf8')).toContain('custom/p.ts')
+  })
+})

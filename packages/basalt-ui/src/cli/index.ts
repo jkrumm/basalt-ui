@@ -135,27 +135,59 @@ export type BasaltConfig = {
    * `sub-16-input-font` check.
    */
   sub16InputFont?: boolean
-  /** Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`. Default: `src/lib/series.ts`. */
+  /**
+   * Path of the consumer's guard-exempt series file, for DESIGN.md `{{SERIES_MODULE_PATH}}`.
+   * Default: `<first basalt.root>/lib/series.ts` — see `resolveSeriesModulePath`.
+   */
   seriesModulePath?: string
 }
 
-const DEFAULT_ROOTS = ['src']
+const DEFAULT_ROOT = 'src'
+const DEFAULT_ROOTS = [DEFAULT_ROOT]
 
 /**
- * The one default consumer series path — the DESIGN.md template's `{{SERIES_MODULE_PATH}}`, the
- * default scan exemption, and the skills' prose all point at this same file, so it lives in a
- * single constant (argo's convention: `<root>/lib/series.ts`).
+ * The configured source roots, or the built-in default. The ONE resolution every roots-derived seed
+ * reads — an empty `roots: []` falls back rather than resolving to nothing, because a bare `??`
+ * would let `[]` through and render an empty oxfmt glob into the seeded CI, reproducing the exact
+ * "matches zero files" break this derivation exists to prevent.
  */
-const DEFAULT_SERIES_MODULE_PATH = 'src/lib/series.ts'
+function resolveRoots(cfg: BasaltConfig): string[] {
+  return cfg.roots?.length ? cfg.roots : DEFAULT_ROOTS
+}
 
 /**
- * Default scan exemption — a bare consumer's only palette source is its configured series module
- * (the doctrine directs every consumer to put raw hex series colors in `seriesModulePath`; default
- * `src/lib/series.ts`). Derived from the same config resolution `buildTemplateVars` uses for
- * `{{SERIES_MODULE_PATH}}`, so overriding `seriesModulePath` keeps the exemption in sync.
+ * The one consumer series path — the DESIGN.md template's `{{SERIES_MODULE_PATH}}`, the default
+ * scan exemption, and the skills' prose all resolve through this single function.
+ *
+ * Derived from the FIRST configured root (argo's convention: `<root>/lib/series.ts`), not a fixed
+ * `src/lib/series.ts` — a monorepo that correctly sets `roots: ['apps/web/src']` has no top-level
+ * `src/`, so a hardcoded default would seed a DESIGN.md pointing at a path that cannot exist and
+ * silently exempt nothing. `seriesModulePath` still overrides for a layout that isn't `<root>/lib/`.
+ */
+function resolveSeriesModulePath(cfg: BasaltConfig): string {
+  if (cfg.seriesModulePath !== undefined) return cfg.seriesModulePath
+  const [firstRoot = DEFAULT_ROOT] = resolveRoots(cfg)
+  return `${firstRoot}/lib/series.ts`
+}
+
+/**
+ * A root as a single-quoted oxfmt glob for the seeded CI `run:` step. POSIX-escapes any embedded
+ * quote (`'` → `'\''`) — `roots` is consumer-authored, and an unescaped apostrophe would break out
+ * of the quoting and emit a workflow that fails on a syntax error the consumer can't trace back
+ * here. Not a privilege boundary (it's their own config rendering into their own CI), just a file
+ * this CLI generates and therefore owes valid quoting.
+ */
+function toRootGlob(root: string): string {
+  return `'${root.replace(/'/g, `'\\''`)}/**'`
+}
+
+/**
+ * Default scan exemption — a bare consumer's only palette source is its series module (the doctrine
+ * directs every consumer to put raw hex series colors there). Shares `resolveSeriesModulePath` with
+ * `buildTemplateVars`'s `{{SERIES_MODULE_PATH}}`, so the seeded path and the exemption can't drift.
  */
 function defaultExempt(cfg: BasaltConfig): string[] {
-  return [cfg.seriesModulePath ?? DEFAULT_SERIES_MODULE_PATH]
+  return [resolveSeriesModulePath(cfg)]
 }
 
 const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
@@ -409,6 +441,8 @@ type TemplateVars = {
   BASALT_VERSION: string
   ACCENT_HUE: string
   SERIES_MODULE_PATH: string
+  /** The consumer's configured roots as space-separated quoted oxfmt globs, e.g. `'apps/web/src/**'`. */
+  ROOTS_GLOBS: string
 }
 
 // The block markers the CLAUDE.md template emits. The begin marker carries the framework version
@@ -459,7 +493,8 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     APP_NAME: readPackageName(cwd),
     BASALT_VERSION: readFrameworkVersion(pkgRoot),
     ACCENT_HUE: cfg.accentHue ?? 'blue',
-    SERIES_MODULE_PATH: cfg.seriesModulePath ?? DEFAULT_SERIES_MODULE_PATH,
+    SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
+    ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
   }
 }
 
@@ -616,13 +651,20 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
       '  - node_modules/basalt-ui/configs/lefthook.yml\n',
   }
 
-  // CI is inherently repo-shaped (a monorepo's check.yml needs its own globs and scripts), and
-  // GitHub Actions has no in-repo `extends` — so the workflow seeds as an explicit starting copy.
+  // CI is inherently repo-shaped (a monorepo's check.yml needs its own scripts), and GitHub Actions
+  // has no in-repo `extends` — so the workflow seeds as an explicit starting copy. Its oxfmt globs
+  // come from `{{ROOTS_GLOBS}}` rather than a hardcoded `src/**`: on a monorepo the latter matches
+  // nothing and oxfmt exits 2, breaking the consumer's very first CI run for a reason that reads
+  // like a basalt bug.
   const ci: ManagedFile = {
     dest: '.github/workflows/check.yml',
     mode: 'seed',
     source: 'configs/check.yml',
-    render: (ctx) => readSource(ctx.pkgRoot, 'configs/check.yml'),
+    render: (ctx) => {
+      const tpl = readSource(ctx.pkgRoot, 'configs/check.yml')
+      if (tpl === null) return null
+      return fillTemplate(tpl, ctx.vars)
+    },
   }
 
   // Seed an `.oxlintrc.json` that extends the shipped preset (written once, then consumer-owned).

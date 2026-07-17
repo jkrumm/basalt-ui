@@ -5,6 +5,8 @@
 # color literals / off-identity accents that bypass the --vx-* token system).
 # `basalt-ui sync --check` fails when the basalt-managed files (rules, skills, the
 # CLAUDE block) have drifted from the installed basalt-ui version.
+# The oxfmt globs below are rendered from `basalt.roots` at init time — this file is a
+# template, not a raw copy, so a monorepo doesn't seed a `src/**` that matches nothing.
 name: check
 on:
   pull_request:
@@ -23,7 +25,7 @@ jobs:
       - run: bunx oxlint .
       - run: bunx basalt-ui check-theme
       - run: bunx basalt-ui sync --check
-      - run: bunx oxfmt 'src/**' '!**/dist/**' --check
+      - run: bunx oxfmt {{ROOTS_GLOBS}} '!**/dist/**' --check
       # Enable once your app defines these package.json scripts:
       # - run: bun run typecheck
       # - run: bun run test
