@@ -1,15 +1,17 @@
 FROM oven/bun:1.3.9-slim AS builder
 WORKDIR /app
 
+# Every workspace member (packages/*, apps/*) must be present or bun re-resolves
+# the tree and drifts from bun.lock — marketing itself needs neither playground
+# nor the package source, only their manifests.
 COPY package.json bun.lock ./
 COPY apps/marketing/package.json ./apps/marketing/package.json
+COPY apps/playground/package.json ./apps/playground/package.json
 COPY packages/basalt-ui/package.json ./packages/basalt-ui/package.json
-COPY examples/react/package.json ./examples/react/package.json
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --ignore-scripts
+    bun install --frozen-lockfile --ignore-scripts
 
 COPY tsconfig.json ./
-COPY packages/basalt-ui ./packages/basalt-ui
 COPY apps/marketing ./apps/marketing
 
 RUN cd apps/marketing && bun run build
