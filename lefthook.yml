@@ -19,7 +19,7 @@ pre-commit:
       glob: "packages/basalt-ui/src/**"
       # Run inside the package so its own `basalt` config (roots: ["src"] + framework-internal
       # rule opt-outs) applies — from the repo root the CLI sees no config and scans nothing.
-      run: cd packages/basalt-ui && bun bin/basalt.mjs check-theme
+      run: cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme
 
     oxlint:
       glob: "*.{js,jsx,ts,tsx,cjs,mjs}"

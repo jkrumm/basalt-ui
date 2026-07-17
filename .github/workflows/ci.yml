@@ -51,10 +51,10 @@ jobs:
 
       - name: Theme guard (dogfood check-theme on basalt's own src)
         working-directory: packages/basalt-ui
-        run: bun ./bin/basalt.mjs check-theme
+        run: bun ./bin/basalt-ui.mjs check-theme
 
       - name: Coverage check (SURFACES projection gate)
-        run: bun ./packages/basalt-ui/bin/basalt.mjs check-coverage
+        run: bun ./packages/basalt-ui/bin/basalt-ui.mjs check-coverage
 
       - name: Pack test (dist resolution gate)
         run: bun --filter basalt-ui pack-test

@@ -5,7 +5,7 @@ and reasoning behind it. It governs the chart system, the token architecture, an
 colour/elevation discipline that make a basalt app read as a calm, professional terminal.
 
 **It is NOT shipped to consumers.** The consumer-facing, enforceable subset is distilled into the
-shipped `basalt-*` agent rules (which `basalt init` writes into each repo) and the `/basalt:design`
+shipped `basalt-*` agent rules (which `basalt-ui init` writes into each repo) and the `/basalt-design`
 skill. This file is the source those are kept in sync with — a developer reference for building
 basalt-ui, not a file an agent loads in a consumer.
 
