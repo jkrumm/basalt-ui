@@ -7,7 +7,7 @@
   },
   "rules": {
     "no-var": "error",
-    "eqeqeq": "error",
+    "eqeqeq": ["error", "smart"],
     "no-console": "warn",
     "no-shadow": "off",
     "react/rules-of-hooks": "error",
