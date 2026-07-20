@@ -43,8 +43,9 @@ Layer: mantine-coupled
 
 ## basalt-ui/vite
 Import: import { ... } from 'basalt-ui/vite'
-Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps
+Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette
 Layer: mantine-coupled
+OptionalPeers: vite-plugin-pwa@^1.3.0
 
 ## basalt-ui/guard
 Import: import { ... } from 'basalt-ui/guard'

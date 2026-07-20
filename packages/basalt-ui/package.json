@@ -165,7 +165,8 @@
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "use-stick-to-bottom": "^1.1.6",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vite-plugin-pwa": "^1.3.0"
   },
   "peerDependencies": {
     "@mantine/core": "^9.3.0",
@@ -190,7 +191,8 @@
     "remark-gfm": "^4.0.1",
     "shiki": "^4.3.0",
     "use-stick-to-bottom": "^1.1.6",
-    "vite": "^7 || ^8"
+    "vite": "^7 || ^8",
+    "vite-plugin-pwa": "^1.3.0"
   },
   "peerDependenciesMeta": {
     "@mantine/form": {
@@ -245,6 +247,9 @@
       "optional": true
     },
     "vite": {
+      "optional": true
+    },
+    "vite-plugin-pwa": {
       "optional": true
     }
   },

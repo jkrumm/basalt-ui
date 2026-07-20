@@ -95,6 +95,14 @@ type BaseSurface = {
     readonly shipped: readonly string[]
     readonly repo: readonly string[]
   }
+  /**
+   * Optional peer package names this surface depends on (e.g. '@tanstack/react-query').
+   * Single source of truth — read by gen-llms.ts and cli/index.ts; versions resolved from package.json.
+   *
+   * Lives on the base, not the doctrine triad: an optional peer is a PACKAGING fact, so a tooling
+   * surface can carry one too (`./vite` → `vite-plugin-pwa`).
+   */
+  readonly optionalPeers?: readonly string[]
 }
 
 /**
@@ -112,11 +120,6 @@ export type DoctrineSpec = BaseSurface & {
   readonly skill: readonly SkillName[]
   /** Required, but [] is legal for advisory surfaces (router/query: rule only, no guard). */
   readonly guardKinds: readonly GuardKind[]
-  /**
-   * Optional peer package names this surface depends on (e.g. '@tanstack/react-query').
-   * Single source of truth — read by gen-llms.ts and cli/index.ts; versions resolved from package.json.
-   */
-  readonly optionalPeers?: readonly string[]
 }
 
 /**
@@ -231,7 +234,9 @@ export const SURFACES = {
   './vite': {
     kind: 'tooling',
     layer: 'mantine-coupled',
-    description: 'basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps',
+    description:
+      'basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette',
+    optionalPeers: ['vite-plugin-pwa'],
     forbiddenImports: [],
   },
   './guard': {

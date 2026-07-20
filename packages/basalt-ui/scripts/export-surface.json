@@ -132,7 +132,7 @@
     "readVar",
     "saveOverrides"
   ],
-  "./vite": ["basaltViteConfig"],
+  "./vite": ["basaltAppPlugin", "basaltViteConfig"],
   "./guard": ["DEFAULT_GUARD_CONFIG", "GUARD_RULES", "checkSource"],
   "./forms": [
     "FormErrorSummary",

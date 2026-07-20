@@ -1304,6 +1304,8 @@ type DoctorResult = {
  *      stale).
  *   3. The running CLI's own version matches the installed basalt-ui (catches a stale
  *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
+ *   4. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
+ *      a public/ dir exists at all — skipped otherwise).
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
@@ -1376,6 +1378,32 @@ export function doctor(cwd: string = process.cwd()): number {
       )
     } else {
       pass(`CLI version (${cliVersion}) matches the installed basalt-ui in node_modules`)
+    }
+  }
+
+  // ── Warn check 4: basaltAppPlugin's default icon files exist in public/ ────
+  // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references these filenames by
+  // default (the realfavicongenerator convention). Only runs when a public/ dir exists at all —
+  // apps that don't use the plugin, or don't use Vite's public-dir convention, get no false
+  // warning. Best-effort: a custom `icons.dir` isn't visible here, so this checks the root only.
+  const publicDir = resolve(cwd, 'public')
+  if (existsSync(publicDir)) {
+    const iconFiles = [
+      'favicon.ico',
+      'favicon.svg',
+      'favicon-96x96.png',
+      'apple-touch-icon.png',
+      'web-app-manifest-192x192.png',
+      'web-app-manifest-512x512.png',
+    ]
+    const missingIcons = iconFiles.filter((f) => !existsSync(resolve(publicDir, f)))
+    if (missingIcons.length > 0) {
+      warn(
+        `public/ is missing basaltAppPlugin icon file(s): ${missingIcons.join(', ')} — generate ` +
+          'them (e.g. via realfavicongenerator.net) and place them at the public/ root.',
+      )
+    } else {
+      pass("public/ has all of basaltAppPlugin's default icon files")
     }
   }
 
