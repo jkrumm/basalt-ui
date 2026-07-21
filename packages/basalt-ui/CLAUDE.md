@@ -148,12 +148,33 @@ lightLevel, darkLevel, vibrancy, accentBrightness } })` — the ONE production e
 knobs fall back to the shipped default per-knob. The same options object carries the non-color
 dimensions (never a second config surface): `fonts: { sans?, head?, mono? }` (pure pass-through to
 the `--basalt-font-*` vars — the single font entry point, enforced by the `raw-font-family` guard
-kind) and `radius` (integer −5..+5; law: card = 7 + level, ctrl = 6 + level, clamped ≥ 0, offset
+kind), `radius` (integer −5..+5; law: card = 7 + level, ctrl = 6 + level, clamped ≥ 0, offset
 tiers and the anchored Mantine scale stops follow — `deriveRadius(level)` in `tokens/palette.ts`,
-level 0 = today's values, locked by `theme/radius.test.ts`). `theme-lab`'s `DeriveControls` is the
-DEV-tool analog (live-tweak the color knobs + radius by eye, persisted to localStorage) — never the
-production path. See `docs/STATUS.md`'s "Derive engine" section for what shipped and known
-limitations.
+level 0 = today's values, locked by `theme/radius.test.ts`), and `density` (integer −3..+3 —
+narrower than `radius`'s −5..+5 on purpose, see `deriveSpacing`'s JSDoc for why; law: a multiplier
+`1 + 0.1 * level` over every spacing anchor/scale-stop/one-off (rounded, floored at 1
+unconditionally — a future base under 1 can never round down to 0), plus an independent, gentler
+additive law for the NavLink row line-height, plus two relation-preserving special cases: the 4px
+stack rhythm rebuilds from one shared unit (not five independently-rounded values) so its
+documented 2:1 pairs hold at every level, and the sidebar search trigger height floors at 24px
+(WCAG 2.5.8) — `deriveSpacing(level)` in `tokens/palette.ts`, level 0 = today's values, locked by
+`theme/spacing.test.ts` and by cross-level relation tests in `theme/density-relations.test.ts`.
+`theme-lab`'s `DeriveControls` is the DEV-tool analog (live-tweak the color knobs + radius + density
+by eye, persisted to localStorage) — never the production path; its `<style>` override only moves
+CSS vars, so numeric `defaultProps` baked into the theme object (Timeline's `bulletSize`,
+Progress's `size`) — and `theme.spacing` itself, the generic Mantine scale, baked into the theme
+object the same way — don't visibly follow the Radius/Density sliders there, while
+`createBasaltTheme` rebuilds them correctly. Input's/Button's/ActionIcon's `size="md"` height is
+NOT in that bucket
+despite reading like the same shape of gap: it resolves through a CSS custom property
+(`--vx-space-input-height`/`--vx-space-control-height`, read via each component's `vars`, not a
+numeric `defaultProps` literal), so it DOES visibly follow the Density slider in the dev tool too,
+not only in production. One piece of the gap is bigger than the `defaultProps` case and NOT
+theme-lab-only: `tokens/index.ts`'s `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap,
+plot-area margins, marker radius) are frozen at module load from the level-0 snapshot and never
+re-derive from a `density` option even on the PRODUCTION `createBasaltTheme` path — see
+`deriveSpacing`'s JSDoc for the full accounting of what tracks density end to end and what doesn't.
+See `docs/STATUS.md`'s "Derive engine" section for what shipped and known limitations.
 
 ### Consumer-series extensibility (`./tokens`)
 
@@ -204,9 +225,10 @@ Rules that apply to every factory, without exception:
   owned spacing/radius scales, named `fontWeights` ladder, mono font).
 - `createBasaltTheme(overrides?, options?)` = `mergeThemeOverrides(baseTheme, overrides)` by
   default; `options.derive` (`tokens/derive.ts`'s `DeriveConfig`, partial) retunes the palette
-  identity from a seed + knobs, `options.fonts` sets the `--basalt-font-*` stacks, and
-  `options.radius` shifts the corner-radius law by an integer level — see "Token system" above.
-  Every non-default option rides `theme.other.basalt*` and the provider's injected `<style>`.
+  identity from a seed + knobs, `options.fonts` sets the `--basalt-font-*` stacks, `options.radius`
+  shifts the corner-radius law by an integer level, and `options.density` shifts the spacing law by
+  an integer level — see "Token system" above. Every non-default option rides `theme.other.basalt*`
+  and the provider's injected `<style>`.
 - `cssVariablesResolver` — binds Mantine's surfaces AND its color families to the same `--vx-*` vars
   the charts use, so chrome and charts are ONE source. Exported and pre-wired in `BasaltProvider`.
   Two rules live here, both enforced by `theme/contrast.test.ts`:
