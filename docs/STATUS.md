@@ -95,6 +95,16 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
 - **`DeriveControls`** (`theme-lab`) — the DEV-tool live-tuning panel for the same six knobs,
   persisted to its own localStorage key, applied via a cascade-winning `<style>` tag. Not the
   production path — that's `createBasaltTheme`'s `derive` option.
+- **Non-color dimensions (step 2)** — the same options object (never a second config surface)
+  gained `fonts: { sans?, head?, mono? }` (pure pass-through to the `--basalt-font-*` vars,
+  enforced by the new `raw-font-family` guard kind) and `radius` (integer −5..+5; law: card =
+  7 + level, ctrl = 6 + level, clamped ≥ 0, offset tiers + anchored Mantine scale stops follow —
+  `deriveRadius(level)`, level 0 byte-identical to the pre-knob values, locked by
+  `theme/radius.test.ts`). Every theme/component/CSS-module radius literal was tokenized onto
+  `--vx-radius-{card,ctrl,tight,fine,floating}` first (no-visual-change refactor), then the knob
+  landed; `basalt.rawRadius` guard is ON. `legendText`'s light value now derives from the ink hex
+  like the sibling chart-chrome ramps. `DeriveControls` gained a Radius slider (persisted-state
+  v2).
 - **Enforcement** — `basalt-ui check-theme` wired into the repo's own `bun run pre` (root
   `package.json`) and into `lefthook.yml`'s staged pre-commit (`packages/basalt-ui/src/**` glob);
   `tokens/derive.ts` + `tokens/hct.ts` are in the package's `basalt.exempt` list (they ARE the
