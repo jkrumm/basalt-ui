@@ -93,7 +93,7 @@ site-wide OG/Twitter defaults from `options.seo`.
 Icons are **bring-your-own** — basalt-ui takes no `sharp`/image-processing dependency. The plugin
 expects these filenames under `public/` (or `icons.dir` if customized):
 
-```
+```text
 favicon.ico
 favicon.svg
 favicon-96x96.png
