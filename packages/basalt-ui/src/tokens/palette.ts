@@ -115,37 +115,89 @@ export const SHADOW = {
 } as const
 
 /**
+ * The resolved shape {@link deriveRadius} returns — the two anchors plus every offset that tracks
+ * one of them. The independent Mantine-scale stops (`scaleXs`/`scaleLg`/`scaleXl`) are NOT part of
+ * this shape — they never move with the knob (see `RADIUS_STEP` below).
+ */
+export type RadiusValues = {
+  card: number
+  ctrl: number
+  floating: number
+  tight: number
+  fine: number
+}
+
+/** Clamp a derived radius number at zero — a corner radius can't go negative. */
+function clampRadius(n: number): number {
+  return Math.max(0, n)
+}
+
+/**
+ * Derive the two radius anchors (`card`/`ctrl`) and their dependent offsets from a single integer
+ * `level` (`docs/DESIGN-SPEC.md` §4) — the radius analog of `deriveTokens`'s color knobs. `level: 0`
+ * reproduces the shipped identity exactly (`card: 7, ctrl: 6, floating: 8, tight: 5, fine: 4`,
+ * locked by `theme/radius.test.ts`).
+ *
+ * The law: `card = 7 + level`, `ctrl = 6 + level`, both clamped to `≥ 0`; every offset then follows
+ * its anchor — `floating = card + 1`, `tight = ctrl - 1`, `fine = ctrl - 2` — each ALSO clamped to
+ * `≥ 0` (so an aggressive negative level flattens the smaller tiers to square before the larger
+ * ones). The three independent Mantine-scale stops (`RADIUS_STEP.scaleXs/scaleLg/scaleXl`) are not
+ * part of this law — they stay fixed regardless of `level`.
+ *
+ * Throws on a non-integer or out-of-range (`[-5, 5]`) level — same throw-and-propagate discipline
+ * as `deriveTokens`'s accent-seed validation.
+ */
+export function deriveRadius(level: number): RadiusValues {
+  if (!Number.isInteger(level) || level < -5 || level > 5) {
+    throw new Error(`deriveRadius: level must be an integer in [-5, 5], got ${level}`)
+  }
+  const card = clampRadius(7 + level)
+  const ctrl = clampRadius(6 + level)
+  return {
+    card,
+    ctrl,
+    floating: card + 1,
+    tight: clampRadius(ctrl - 1),
+    fine: clampRadius(ctrl - 2),
+  }
+}
+
+/** `deriveRadius(0)` — the shipped identity's radius values, computed once. `RADIUS`/`RADIUS_STEP`
+ * below are defined FROM this so the two can never drift apart. */
+const DEFAULT_RADIUS_VALUES = deriveRadius(0)
+
+/**
  * Corner-radius anchors (`docs/DESIGN-SPEC.md` §4) — the two independent tiers the Mantine theme
  * (`theme/index.ts`) resolves every component radius to. `card` mirrors the `--vx-radius-card` CSS
  * var, `ctrl` mirrors `--vx-radius-ctrl` (`tokens/index.ts`'s `frameworkDerived` emits both from
  * these SAME numbers), so the var and every JS `defaultProps.radius` in the theme read one source
- * instead of two that can drift apart. Structural — independent of the derive config, unlike
- * everything `buildPaletteData` computes. Values are UNCHANGED from the shipped identity (locked
- * by `theme/radius.test.ts`).
+ * instead of two that can drift apart. `deriveRadius(0)`'s output — structural, independent of the
+ * derive config. Values are UNCHANGED from the shipped identity (locked by `theme/radius.test.ts`).
  */
 export const RADIUS = {
   /** Card / Paper / `ChartCard` (Mantine-free chart chrome shares this token too). */
-  card: 7,
+  card: DEFAULT_RADIUS_VALUES.card,
   /** Inputs, buttons, segmented-control track — also `defaultRadius: 'md'` in the Mantine `radius`
    * size-scale below. */
-  ctrl: 6,
+  ctrl: DEFAULT_RADIUS_VALUES.ctrl,
 } as const
 
 /**
  * Every OTHER radius number the Mantine theme resolves to a literal, named instead of bare. Each
- * key is either an explicit offset from a `RADIUS` anchor (named for what tier it belongs to — a
- * future retune of `card`/`ctrl` carries these along) or, where no such relation exists, its own
- * independent constant (the Mantine `radius` scale predates the card/ctrl split). Values are
- * UNCHANGED from the shipped identity (locked by `theme/radius.test.ts`).
+ * key is either an explicit offset from a `RADIUS` anchor (named for what tier it belongs to — see
+ * `deriveRadius` for the law that carries a retune along) or, where no such relation exists, its own
+ * independent constant (the Mantine `radius` scale predates the card/ctrl split). `deriveRadius(0)`'s
+ * output for the anchor-derived keys — UNCHANGED from the shipped identity (locked by
+ * `theme/radius.test.ts`).
  */
 export const RADIUS_STEP = {
   /** Tooltip / Popover / Modal / Notification (`docs/DESIGN-SPEC.md` §5 floating tier) — one step
    * above the card radius. */
-  floating: RADIUS.card + 1, // 8
+  floating: DEFAULT_RADIUS_VALUES.floating, // 8
   /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
-  tight: RADIUS.ctrl - 1, // 5
+  tight: DEFAULT_RADIUS_VALUES.tight, // 5
   /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. */
-  fine: RADIUS.ctrl - 2, // 4
+  fine: DEFAULT_RADIUS_VALUES.fine, // 4
   /** The Mantine `radius` scale's `xs` step — independent of both anchors. */
   scaleXs: 2,
   /** The Mantine `radius` scale's `lg` step — independent of both anchors. */

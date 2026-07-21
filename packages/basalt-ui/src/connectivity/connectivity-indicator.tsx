@@ -221,7 +221,6 @@ export function ConnectivityIndicator() {
             </Text>
             <Badge
               size="sm"
-              radius={6}
               styles={{
                 root: {
                   backgroundColor: alpha(statusCfg.token, 0.13),
@@ -229,6 +228,7 @@ export function ConnectivityIndicator() {
                   fontFamily: 'var(--basalt-font-mono)',
                   fontWeight: 600,
                   fontSize: VX.text.xs,
+                  borderRadius: 'var(--vx-radius-ctrl)',
                 },
               }}
             >

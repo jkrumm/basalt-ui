@@ -53,7 +53,7 @@
  */
 .railBtn {
   color: var(--vx-faint) !important;
-  border-radius: 6px !important;
+  border-radius: var(--vx-radius-ctrl) !important;
 }
 
 .railBtn:hover {

@@ -24,7 +24,7 @@
 
 .link {
   font-size: var(--vx-text-md);
-  border-radius: 6px !important;
+  border-radius: var(--vx-radius-ctrl) !important;
 }
 
 .link :global(.mantine-NavLink-label) {
@@ -68,7 +68,7 @@
  */
 .ghostIcon {
   color: var(--vx-faint) !important;
-  border-radius: 6px !important;
+  border-radius: var(--vx-radius-ctrl) !important;
 }
 
 .ghostIcon:hover {
@@ -157,7 +157,7 @@
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--vx-radius-ctrl);
   font-size: var(--vx-text-md);
   color: var(--vx-muted);
 }
@@ -192,7 +192,7 @@
   align-items: center;
   gap: 10px;
   padding: 11px 8px 3px;
-  border-radius: 6px;
+  border-radius: var(--vx-radius-ctrl);
 }
 
 .accountRow:hover {
@@ -216,7 +216,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: var(--vx-radius-card);
   background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
   color: var(--vx-muted);
   font-family: var(--basalt-font-mono);
@@ -301,7 +301,7 @@
  * (6px 10px), so the child value needs `!important`. */
 .childList :global(.mantine-NavLink-root) {
   padding: 5px 10px 5px 14px !important;
-  border-radius: 6px !important;
+  border-radius: var(--vx-radius-ctrl) !important;
 }
 
 .childList :global(.mantine-NavLink-label) {

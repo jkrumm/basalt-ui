@@ -1,12 +1,17 @@
 /**
  * DeriveControls — DEV-tool live tuning of the six-knob derive config (`tokens/derive.ts`): accent
- * seed, neutral family, light/dark surface levels, vibrancy, and accent brightness.
+ * seed, neutral family, light/dark surface levels, vibrancy, and accent brightness — plus a
+ * seventh, color-independent "Radius" level (`tokens/palette.ts`'s `deriveRadius`).
  *
- * This is the DEV-tool path — for a PRODUCTION theme, pass `{ derive }` to `createBasaltTheme`
- * instead (see its JSDoc in `../theme`); that is the one place a consumer sets the palette
- * identity for real, and everything else (Mantine color ramps, on-color contrast, the CSS
- * variables resolver, `BasaltProvider`'s injected stylesheet) follows automatically. This
- * component is for live-tweaking a config by eye during development, not for shipping one.
+ * This is the DEV-tool path — for a PRODUCTION theme, pass `{ derive }` / `{ radius }` to
+ * `createBasaltTheme` instead (see its JSDoc in `../theme`); that is the one place a consumer sets
+ * the palette identity for real, and everything else (Mantine color ramps, on-color contrast, the
+ * CSS variables resolver, `BasaltProvider`'s injected stylesheet, AND the Mantine `defaultProps`
+ * numbers baked into the theme object) follows automatically. This component is for live-tweaking a
+ * config by eye during development, not for shipping one — its `<style>` override can only move the
+ * `--vx-radius-*` CSS vars, so a component's own hardcoded `defaultProps.radius` (e.g. Tooltip's 8)
+ * will NOT visibly follow the radius slider here; `createBasaltTheme({ radius })` is what covers
+ * both.
  *
  * Overrides apply through a `<style>` tag appended to the END of `<body>`, using the exact same
  * per-scheme selectors `buildPaletteCss` emits (`html[data-mantine-color-scheme='light'|'dark']`)
@@ -31,14 +36,17 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPersistedState, readPersistedValue } from '../state'
-import { buildPaletteCss } from '../tokens'
+import { buildPaletteCss, buildRadiusCss } from '../tokens'
 import { DEFAULT_DERIVE_CONFIG, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
-import { buildPaletteData } from '../tokens/palette'
+import { buildPaletteData, deriveRadius } from '../tokens/palette'
 
 const STYLE_TAG_ID = 'basalt-derive-controls-style'
 const STORAGE_KEY = 'theme-lab-derive'
-const STORAGE_VERSION = 1
+// v2: added the `radius` level (deriveRadius) alongside the six color knobs — bumped so a v1
+// envelope (no `radius` key) fails validation and falls back to the default state instead of
+// silently reading `radius: undefined` into the slider.
+const STORAGE_VERSION = 2
 
 const NEUTRAL_OPTIONS = [
   { label: 'Zinc', value: 'zinc' },
@@ -55,17 +63,30 @@ const LEVEL_SLIDERS = [
   ['darkLevel', 'Dark level'],
   ['vibrancy', 'Vibrancy'],
   ['accentBrightness', 'Brightness'],
+  ['radius', 'Radius'],
 ] as const
 
-type PersistedDeriveState = DeriveConfig & { applied: boolean }
+/** Exported for `derive-controls.test.ts` — the v1→v2 migration test needs the shape + default. */
+export type PersistedDeriveState = DeriveConfig & { applied: boolean; radius: number }
 
-const DEFAULT_STATE: PersistedDeriveState = { ...DEFAULT_DERIVE_CONFIG, applied: false }
+export const DEFAULT_STATE: PersistedDeriveState = {
+  ...DEFAULT_DERIVE_CONFIG,
+  applied: false,
+  radius: 0,
+}
 
 const isLevel = (v: unknown): v is number =>
   typeof v === 'number' && Number.isInteger(v) && v >= -5 && v <= 5
 
-/** Validate + normalize a persisted envelope, or return null if it is unusable. */
-function parsePersistedDeriveState(value: unknown): PersistedDeriveState | null {
+/**
+ * Validate + normalize a persisted envelope, or return null if it is unusable. Exported for
+ * `derive-controls.test.ts` — the pure, headless seam to test the v1→v2 migration through: no DOM
+ * render harness is configured in this package (see `../provider/build-fonts-css.test.ts`), so
+ * `createPersistedState`'s full localStorage round-trip isn't reachable from a unit test, but this
+ * is exactly the validator `parseStorage` (`../state`) falls back to `initial` from on a rejection
+ * (this module passes no `migrate`, so a v1 envelope — pre-radius — hits this same rejection path).
+ */
+export function parsePersistedDeriveState(value: unknown): PersistedDeriveState | null {
   if (typeof value !== 'object' || value === null) return null
   const v = value as Record<string, unknown>
   const valid =
@@ -77,6 +98,7 @@ function parsePersistedDeriveState(value: unknown): PersistedDeriveState | null 
     isLevel(v['darkLevel']) &&
     isLevel(v['vibrancy']) &&
     isLevel(v['accentBrightness']) &&
+    isLevel(v['radius']) &&
     typeof v['applied'] === 'boolean'
   if (!valid) return null
   return {
@@ -86,6 +108,7 @@ function parsePersistedDeriveState(value: unknown): PersistedDeriveState | null 
     darkLevel: v['darkLevel'] as number,
     vibrancy: v['vibrancy'] as number,
     accentBrightness: v['accentBrightness'] as number,
+    radius: v['radius'] as number,
     applied: v['applied'] as boolean,
   }
 }
@@ -108,9 +131,13 @@ const useDeriveControlsState = createPersistedState<PersistedDeriveState>({
   },
 })
 
-/** Inject (or remove) the override `<style>` tag for a resolved config. `null` removes it. */
-function applyDeriveOverride(config: DeriveConfig | null): void {
-  if (config === null) {
+/** The bundle {@link applyDeriveOverride} needs to build both halves of the override CSS. */
+type DeriveOverride = { config: DeriveConfig; radiusLevel: number }
+
+/** Inject (or remove) the override `<style>` tag for a resolved config + radius level. `null`
+ * removes it. */
+function applyDeriveOverride(override: DeriveOverride | null): void {
+  if (override === null) {
     document.getElementById(STYLE_TAG_ID)?.remove()
     return
   }
@@ -123,7 +150,9 @@ function applyDeriveOverride(config: DeriveConfig | null): void {
     // equal-specificity cascade tiebreak — the override would silently never apply.
     document.body.appendChild(styleEl)
   }
-  styleEl.textContent = buildPaletteCss(undefined, buildPaletteData(config))
+  const paletteCss = buildPaletteCss(undefined, buildPaletteData(override.config))
+  const radiusCss = buildRadiusCss(deriveRadius(override.radiusLevel))
+  styleEl.textContent = `${paletteCss}\n${radiusCss}`
 }
 
 // Chunk-load re-apply: re-inject a persisted `applied` override as soon as this module evaluates,
@@ -131,7 +160,12 @@ function applyDeriveOverride(config: DeriveConfig | null): void {
 // below runs. Inputs are fully validated by `parsePersistedDeriveState`, so this cannot throw.
 if (typeof document !== 'undefined') {
   const persisted = parsePersistedDeriveState(readPersistedValue(STORAGE_KEY, STORAGE_VERSION))
-  if (persisted !== null && persisted.applied) applyDeriveOverride(resolveDeriveConfig(persisted))
+  if (persisted !== null && persisted.applied) {
+    applyDeriveOverride({
+      config: resolveDeriveConfig(persisted),
+      radiusLevel: persisted.radius,
+    })
+  }
 }
 
 export type DeriveControlsProps = {
@@ -186,8 +220,8 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
   // down while `applied` stays true — only this effect re-running with `applied === false` (toggle
   // off, or Reset) removes it.
   useEffect(() => {
-    applyDeriveOverride(state.applied ? config : null)
-  }, [state.applied, config])
+    applyDeriveOverride(state.applied ? { config, radiusLevel: state.radius } : null)
+  }, [state.applied, config, state.radius])
 
   const reset = () => setState(DEFAULT_STATE)
 

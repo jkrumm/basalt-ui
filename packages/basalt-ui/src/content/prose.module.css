@@ -86,7 +86,7 @@
   font-size: 0.85em;
   background-color: color-mix(in srgb, var(--vx-ink) 7%, transparent);
   padding: 1.5px 5px;
-  border-radius: 4px;
+  border-radius: var(--vx-radius-fine);
   color: var(--vx-ink2);
 }
 
@@ -96,7 +96,7 @@
   font-size: var(--vx-text-sm);
   line-height: 1.5;
   background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
-  border-radius: 8px;
+  border-radius: var(--vx-radius-floating);
   padding: 10px 12px;
   overflow-x: auto;
 }

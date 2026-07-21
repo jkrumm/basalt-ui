@@ -163,7 +163,6 @@ export function NavCountBadge({ count }: { count: number }) {
   return (
     <Badge
       size="sm"
-      radius={5}
       styles={{
         root: {
           backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)',
@@ -174,6 +173,7 @@ export function NavCountBadge({ count }: { count: number }) {
           height: 16,
           padding: '0 5px',
           marginLeft: 'auto',
+          borderRadius: 'var(--vx-radius-tight)',
         },
       }}
     >

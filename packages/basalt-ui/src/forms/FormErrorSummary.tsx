@@ -45,12 +45,12 @@ export function FormErrorSummary<Values extends Record<string, unknown>>({
   return (
     <Alert
       role="alert"
-      radius={6}
       title={<Text fw={600}>{title}</Text>}
       styles={{
         root: {
           backgroundColor: alpha(VX.status.bad, 0.13),
           color: VX.status.bad,
+          borderRadius: 'var(--vx-radius-ctrl)',
         },
       }}
     >

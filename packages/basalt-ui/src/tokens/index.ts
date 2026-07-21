@@ -9,8 +9,8 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { buildPaletteData, RADIUS, SHADOW } from './palette'
-import type { PaletteData } from './palette'
+import { buildPaletteData, RADIUS, RADIUS_STEP, SHADOW } from './palette'
+import type { PaletteData, RadiusValues } from './palette'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -25,6 +25,13 @@ export { BP, p } from './palette'
 // building `--vx-*` CSS for a custom config directly.
 export { DEFAULT_DERIVE_CONFIG, deriveTokens, resolveDeriveConfig } from './derive'
 export type { DeriveConfig, DerivedPalette } from './derive'
+
+// The radius analog of the derive engine — the law behind `createBasaltTheme(overrides, { radius })`
+// (see `../theme`). `RADIUS`/`RADIUS_STEP` stay internal to the theme layer; a consumer retunes the
+// two anchors through `createBasaltTheme`, not by calling `deriveRadius` directly (it is exposed for
+// the law itself to be inspectable/testable, same rationale as `deriveTokens`).
+export { deriveRadius } from './palette'
+export type { RadiusValues } from './palette'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
@@ -272,6 +279,13 @@ function frameworkDerived(data: PaletteData): string {
   return [
     decl('radius-card', `${RADIUS.card}px`),
     decl('radius-ctrl', `${RADIUS.ctrl}px`),
+    // The two offset tiers (SegmentedControl indicator/Kbd/Code, Progress/scale-sm) — added so a
+    // component's inline `styles`/`style` can read the SAME source as `RADIUS_STEP.tight`/`.fine`
+    // instead of a hand-typed literal (see `theme/index.ts`'s component sweep).
+    decl('radius-tight', `${RADIUS_STEP.tight}px`),
+    decl('radius-fine', `${RADIUS_STEP.fine}px`),
+    // The floating tier (Modal/Tooltip/Popover/Notification, content code/mermaid blocks).
+    decl('radius-floating', `${RADIUS_STEP.floating}px`),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
     // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
@@ -385,5 +399,73 @@ ${side('dark')}
 }
 html[data-mantine-color-scheme='light'] {
 ${side('light')}
+}`
+}
+
+/**
+ * The `fonts` option's resolved shape — a full CSS font-family stack string per slot (with its own
+ * fallback chain), riding the `--basalt-font-sans/head/mono` override seam `styles.css` ships
+ * fallbacks for. Omitted keys keep the shipped fallback untouched. Lives here (not in `../theme`,
+ * which only RE-EXPORTS it) because its builder `buildFontsCss` below is a pure, Mantine-free
+ * string builder that belongs in the tokens layer — see `../theme`'s
+ * `CreateBasaltThemeOptions.fonts` for the production entry point that sets it.
+ */
+export type BasaltFontsConfig = {
+  sans?: string
+  head?: string
+  mono?: string
+}
+
+/** `{ basaltFonts key → --basalt-font-* var name }` — the one place the mapping is spelled out. */
+const FONT_VAR_NAMES = {
+  sans: '--basalt-font-sans',
+  head: '--basalt-font-head',
+  mono: '--basalt-font-mono',
+} as const satisfies Record<keyof BasaltFontsConfig, string>
+
+/**
+ * Build the `:root` block of `--basalt-font-*` declarations for a resolved `basaltFonts` config —
+ * only for the keys the consumer actually set (`createBasaltTheme(overrides, { fonts })`); an
+ * omitted key keeps the shipped `styles.css` fallback chain untouched. Empty string when `fonts` is
+ * absent or every key is omitted, so callers can unconditionally concatenate the result. Importable
+ * from `basalt-ui/tokens` — `BasaltProvider`'s bridge (`../provider`) calls this directly to append
+ * declarations to its injected `<style>`; an SSR/custom-injection consumer with
+ * `injectPalette={false}` calls it themselves (see the JSDoc on that prop).
+ */
+export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
+  if (!fonts) return ''
+  const decls = (Object.keys(FONT_VAR_NAMES) as (keyof BasaltFontsConfig)[])
+    .filter((key) => fonts[key] !== undefined)
+    .map((key) => {
+      const value = fonts[key] as string
+      // A font stack is a plain declaration value — `{`/`}`/`;`/comment openers would let a
+      // config string break out of the emitted `<style>` declaration. Throw, don't sanitize,
+      // per the repo's validation convention (see `deriveTokens`'s accent-hex assert).
+      if (/[{};]|\/\*/.test(value)) {
+        throw new Error(
+          `Invalid fonts.${key}: a font-family stack must not contain "{", "}", ";" or "/*" — got ${JSON.stringify(value)}`,
+        )
+      }
+      return `  ${FONT_VAR_NAMES[key]}: ${value};`
+    })
+  if (decls.length === 0) return ''
+  return `:root {\n${decls.join('\n')}\n}`
+}
+
+/**
+ * Build the `:root` block of overriding `--vx-radius-*` declarations for a resolved
+ * `basaltRadius` value (`createBasaltTheme(overrides, { radius })`) — analog of {@link buildFontsCss}.
+ * Empty string when `radius` is absent (the default level-0 path never sets `theme.other.basaltRadius`
+ * in the first place), so callers can unconditionally concatenate the result. Importable from
+ * `basalt-ui/tokens`, same SSR/custom-injection use as `buildFontsCss` above.
+ */
+export function buildRadiusCss(radius: RadiusValues | undefined): string {
+  if (!radius) return ''
+  return `:root {
+  --vx-radius-card: ${radius.card}px;
+  --vx-radius-ctrl: ${radius.ctrl}px;
+  --vx-radius-tight: ${radius.tight}px;
+  --vx-radius-fine: ${radius.fine}px;
+  --vx-radius-floating: ${radius.floating}px;
 }`
 }

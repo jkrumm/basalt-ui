@@ -13,6 +13,7 @@ export {
   type BasaltErrorContext,
 } from './provider'
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
+export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {

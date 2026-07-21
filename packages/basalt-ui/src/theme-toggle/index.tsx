@@ -146,7 +146,7 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
         <ActionIcon
           variant="subtle"
           color="gray"
-          radius={6}
+          style={{ borderRadius: 'var(--vx-radius-ctrl)' }}
           aria-label={`Theme: ${LABEL[colorScheme]}. Click to cycle, hover to pick directly.`}
           onClick={() => setColorScheme(nextScheme(colorScheme))}
           onMouseEnter={scheduleOpen}
