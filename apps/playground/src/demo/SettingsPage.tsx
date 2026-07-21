@@ -49,7 +49,7 @@ import type { AccountBadgeTone } from 'basalt-ui'
 import { ShortcutsHelp } from 'basalt-ui/commands'
 import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
-import { COLOR_GROUPS, ThemeLabControls } from 'basalt-ui/theme-lab'
+import { COLOR_GROUPS, DeriveControls, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { alpha, VX } from 'basalt-ui/tokens'
 import { IconCopy, IconReset } from './icons'
 import { DEMO_SERIES } from './series'
@@ -363,6 +363,17 @@ function AppearanceSection() {
         />
 
         <Accordion variant="separated">
+          <Accordion.Item value="derive">
+            <Accordion.Control>Derive</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                Retune the whole palette from one accent seed + a neutral family + four level knobs
+                (`basalt-ui/tokens`'s `deriveTokens`). This is the dev-tuning path — bake a config
+                into production via `createBasaltTheme`'s `derive` option instead.
+              </Text>
+              <DeriveControls resetIcon={<IconReset />} />
+            </Accordion.Panel>
+          </Accordion.Item>
           <Accordion.Item value="theme-lab">
             <Accordion.Control>Theme lab</Accordion.Control>
             <Accordion.Panel>
