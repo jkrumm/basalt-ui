@@ -9,7 +9,7 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { buildPaletteData, SHADOW } from './palette'
+import { buildPaletteData, RADIUS, SHADOW } from './palette'
 import type { PaletteData } from './palette'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
@@ -270,8 +270,8 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
  */
 function frameworkDerived(data: PaletteData): string {
   return [
-    decl('radius-card', '7px'),
-    decl('radius-ctrl', '6px'),
+    decl('radius-card', `${RADIUS.card}px`),
+    decl('radius-ctrl', `${RADIUS.ctrl}px`),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
     // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface

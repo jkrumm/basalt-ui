@@ -115,6 +115,46 @@ export const SHADOW = {
 } as const
 
 /**
+ * Corner-radius anchors (`docs/DESIGN-SPEC.md` §4) — the two independent tiers the Mantine theme
+ * (`theme/index.ts`) resolves every component radius to. `card` mirrors the `--vx-radius-card` CSS
+ * var, `ctrl` mirrors `--vx-radius-ctrl` (`tokens/index.ts`'s `frameworkDerived` emits both from
+ * these SAME numbers), so the var and every JS `defaultProps.radius` in the theme read one source
+ * instead of two that can drift apart. Structural — independent of the derive config, unlike
+ * everything `buildPaletteData` computes. Values are UNCHANGED from the shipped identity (locked
+ * by `theme/radius.test.ts`).
+ */
+export const RADIUS = {
+  /** Card / Paper / `ChartCard` (Mantine-free chart chrome shares this token too). */
+  card: 7,
+  /** Inputs, buttons, segmented-control track — also `defaultRadius: 'md'` in the Mantine `radius`
+   * size-scale below. */
+  ctrl: 6,
+} as const
+
+/**
+ * Every OTHER radius number the Mantine theme resolves to a literal, named instead of bare. Each
+ * key is either an explicit offset from a `RADIUS` anchor (named for what tier it belongs to — a
+ * future retune of `card`/`ctrl` carries these along) or, where no such relation exists, its own
+ * independent constant (the Mantine `radius` scale predates the card/ctrl split). Values are
+ * UNCHANGED from the shipped identity (locked by `theme/radius.test.ts`).
+ */
+export const RADIUS_STEP = {
+  /** Tooltip / Popover / Modal / Notification (`docs/DESIGN-SPEC.md` §5 floating tier) — one step
+   * above the card radius. */
+  floating: RADIUS.card + 1, // 8
+  /** SegmentedControl's active indicator, Kbd, Code — one step below the control radius. */
+  tight: RADIUS.ctrl - 1, // 5
+  /** Progress bar, and the Mantine scale's `sm` step — two steps below the control radius. */
+  fine: RADIUS.ctrl - 2, // 4
+  /** The Mantine `radius` scale's `xs` step — independent of both anchors. */
+  scaleXs: 2,
+  /** The Mantine `radius` scale's `lg` step — independent of both anchors. */
+  scaleLg: 16,
+  /** The Mantine `radius` scale's `xl` step — independent of both anchors. */
+  scaleXl: 32,
+} as const
+
+/**
  * Assemble every derive-config-dependent palette family from a resolved {@link DeriveConfig},
  * merged with the structural hand-authored tokens (neutrals' chart-chrome rgba()s, the floating
  * overlay surface, the divider fade) that never vary with the config. Pure function of `config` —
