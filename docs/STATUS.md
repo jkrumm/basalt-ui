@@ -105,6 +105,48 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   landed; `basalt.rawRadius` guard is ON. `legendText`'s light value now derives from the ink hex
   like the sibling chart-chrome ramps. `DeriveControls` gained a Radius slider (persisted-state
   v2).
+- **Density dimension (step 3)** — a fourth, non-color dimension joins the options object:
+  `createBasaltTheme(overrides?, { derive, fonts, radius, density })`. `density` is an integer
+  −3..+3 (level 0 = today's values, byte-identical, with ONE deliberate exception — see below) —
+  narrower than `radius`'s −5..+5 on purpose: it retunes every spacing token together via
+  `deriveSpacing(level)`, a multiplier law (`1 + 0.1 * level`, rounded, floored at 1) for
+  anchors/scale-stops/one-offs, plus an independent, gentler additive law — its OWN hand-picked
+  coefficient (`ROW_LINE_HEIGHT_STEP`), not derived from the multiplier's own coefficient, which a
+  prior version of this law incorrectly claimed — for the NavLink row line-height, which would
+  overshoot the readable range under the multiplier. The ±3/0.1 range reproduces the exact same
+  `0.7..1.30` multiplier envelope as an earlier ±5/0.06 shape at fewer, more meaningful notches — the
+  wider range left 41-43 of the 108 spacing values byte-identical to level 0 at one notch of movement
+  (uniform over-quantization, not a single dead zone), which the narrower range corrects; see
+  `deriveSpacing`'s JSDoc (`tokens/palette.ts`) and the "Fix 7" relation tests in
+  `theme/density-relations.test.ts`. Landed in
+  two prep commits first (no-visual-change refactors, byte-identical, locked by
+  `theme/spacing.test.ts`): `tokens/palette.ts` gained `SPACE` (semantic anchors — the `6px 10px`
+  row inset, the 4px vertical rhythm, input height), `SPACE_SCALE` (the Mantine `xs`/`sm`/`md`/
+  `lg`/`xl` spacing scale, kept independent of `SPACE` even where a level-0 number coincides — an
+  anchor is one component's inset, a scale stop is the app-wide generic rhythm), `SPACE_STEP`
+  (named one-offs, including six chart-chrome constants — legend gap, the four plot-area margins,
+  dot radius — that track density; stroke weights don't), and `SPACE_FIXED` (density-EXEMPT
+  structurals — hairlines, the reading-progress bar height — deliberately never emitted as a
+  `--vx-*` var). A CSS-module sweep then routed 114 hardcoded spacing declarations across 15 files
+  (prose and the app sidebar accounting for nearly half) onto `--vx-space-*`, one named token per
+  site, byte-identical. `DeriveControls` gained a Density slider (persisted-state v4 — bumped from
+  v3 when `deriveSpacing`'s accepted range narrowed to `[-3, 3]`, so a stale out-of-range `density`
+  from an earlier session falls back to the default state instead of reaching `deriveSpacing` and
+  throwing at render). **The one level-0 exception**: `SPACE_STEP.stickyHeaderClearance` is
+  RESPONSIVE, not a single value — a desktop (`>= sm`) value (`appShellHeaderHeight + stackMd`, 60
+  at level 0) and a mobile (`< sm`) `stickyHeaderClearanceMobile` sibling
+  (`appShellHeaderMobileHeight + stackMd`, 108 at level 0), each clearing only its own AppShell
+  header instead of one value tuned against either the wrong header or an over-cleared common
+  (desktop) path — see `deriveSpacing`'s JSDoc (third bullet) and `docs/CONTENT-SPEC.md` §5 for the
+  full rationale and the `./content` ↔ `BasaltShell` coupling this creates.
+- **Theme-lab prune** — `COLOR_GROUPS` used to expose a swatch for every derived color, which is
+  dead weight now the palette is generated: hand-tuning a hex the derive engine owns and
+  regenerates on the next config change. Classified against `buildPaletteData` rather than by group
+  name: Accent/Fills/Ink/Semantic (wholly derived) were dropped; Status/Neutral/Surface keep only
+  their hand-authored members (status `excellent`/`neutral`, `line`/`line2`/`dotStroke`, surface
+  `overlay`). `COLOR_GROUPS` is now a six-token structural inspector, not an identity tuner —
+  identity/color tuning lives in `DeriveControls` alone. Export surface unchanged (same name, same
+  subpath); the playground's Theme-lab panel copy was updated to match.
 - **Enforcement** — `basalt-ui check-theme` wired into the repo's own `bun run pre` (root
   `package.json`) and into `lefthook.yml`'s staged pre-commit (`packages/basalt-ui/src/**` glob);
   `tokens/derive.ts` + `tokens/hct.ts` are in the package's `basalt.exempt` list (they ARE the
@@ -127,6 +169,19 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
 - `stone`/`slate`/`neutral` are spec'd `NEUTRAL_PRESETS` entries (hue/chroma pairs) but have no
   calibration data behind them — only `zinc` is calibrated against the framework's original
   hand-tuned identity.
+- `DeriveControls`'s dev-tool `<style>` override can only move CSS vars, so numeric Mantine
+  `defaultProps` baked into the theme object (Timeline's `bulletSize`, Progress's `size`) — and
+  `theme.spacing` itself, the generic Mantine `xs`/`sm`/`md`/`lg`/`xl` scale, baked in the same
+  way — don't follow the Radius/Density sliders; production `createBasaltTheme({ radius, density
+  })` rebuilds all of those numbers correctly from the same law.
+- Chart constants (`VX.legendGap`/`margin`/`dotR`) are single-sourced off `SPACE_STEP`'s
+  `chartLegendGap`/`chartMargin*`/`chartDotR` keys, but — unlike every other density-tracking
+  one-off — deliberately have NO `--vx-space-*` CSS var (visx SVG props read plain JS numbers, not
+  `var()` strings, so a declaration would have zero consumers). `VX` is built ONCE at module load
+  from the frozen level-0 `SPACE_STEP` snapshot, so it never re-reads a `density` option at all —
+  this is the one case that fails BOTH paths, including the PRODUCTION `createBasaltTheme({
+  density })` one, not merely the dev slider (see `deriveSpacing`'s JSDoc, `tokens/palette.ts`, for
+  the full accounting of what tracks density end to end and what doesn't).
 
 ## Open — the finish line (owner-gated, cannot be closed from source)
 

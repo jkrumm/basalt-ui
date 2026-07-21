@@ -152,6 +152,14 @@ react-markdown → plain text (existing pattern).
 - `--vx-prose-measure: 72ch`.
 - No `--vx-code-*` color axis — shiki dual themes carry token colors (see decision 3); the code
   block *surface* (bg, border, header) stays on existing `--vx-*` tokens.
+- `--vx-space-sticky-header-clearance` (desktop, `>= sm`) / `--vx-space-sticky-header-clearance-mobile`
+  (mobile, `< sm`) — Prose's heading `scroll-margin-top` and ArticleLayout's TOC-rail sticky `top`.
+  **Coupled to `BasaltShell` on purpose**: both values are sized to clear `BasaltShell`'s own
+  AppShell header at its own breakpoint (`shell/index.tsx`'s `header={{ height: { base, sm } }}`),
+  not a generic "some header" number — see `deriveSpacing`'s JSDoc (`tokens/palette.ts`) for the
+  exact law. A consumer using `./content` **standalone**, without `BasaltShell` (or with a
+  differently-sized header of its own), gets clearance numbers tuned for a header it doesn't have;
+  override `--vx-space-sticky-header-clearance`/`-mobile` directly in that case.
 
 ## 6. Streaming architecture (the `streaming` prop)
 
