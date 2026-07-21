@@ -154,11 +154,18 @@ export type BasaltAppOptions = {
   backgroundColor?: string
   /** Manifest `display` mode. Default: `'standalone'`. */
   display?: 'standalone' | 'minimal-ui' | 'fullscreen' | 'browser'
-  /** Manifest `start_url`. Default: `'/'`. */
+  /**
+   * Manifest `start_url`. Defaults to Vite's resolved `base` (so a non-root deploy — e.g. GitHub
+   * Pages' `/repo/` — gets a correct value with zero config). An explicit value is used verbatim:
+   * it is NOT re-prefixed with `base`, so pass the fully base-aware path yourself if you set it.
+   */
   startUrl?: string
-  /** Manifest `scope`. Default: `'/'`. */
+  /**
+   * Manifest `scope`. Defaults to Vite's resolved `base`. An explicit value is used verbatim (not
+   * re-prefixed with `base`) — same rule as `startUrl`.
+   */
   scope?: string
-  /** Manifest `id`. Default: `startUrl`. */
+  /** Manifest `id`. Default: the resolved `startUrl` (default- or explicitly-derived, per above). */
   id?: string
   /** Icon links + manifest icon paths. `false` skips the head `<link>` icons entirely. */
   icons?: false | { dir?: string }
@@ -232,6 +239,16 @@ function withIconPath(dir: string | undefined, file: string): string {
   return trimmed ? `/${trimmed}/${file}` : `/${file}`
 }
 
+/**
+ * Joins Vite's resolved `base` (always leading+trailing slash — `'/'` or e.g. `'/myapp/'`) with a
+ * root-relative path (leading slash, e.g. `/favicon.ico`) without doubling or dropping the slash
+ * between them. `base === '/'` is a no-op (`'/' + path.slice(1)` reconstructs `path` verbatim),
+ * which is what keeps default-base output byte-identical to the pre-base-aware behavior.
+ */
+function withBase(base: string, path: string): string {
+  return base + path.slice(1)
+}
+
 function hasViewportMeta(html: string): boolean {
   return /<meta\s+[^>]*name=["']viewport["']/i.test(html)
 }
@@ -301,6 +318,8 @@ function buildStaticTags(input: {
   iconsDir: string | undefined
   darkreader: 'lock' | false
   manifestEnabled: boolean
+  base: string
+  manifestHref: string
 }): HtmlTagDescriptor[] {
   const {
     options,
@@ -311,6 +330,8 @@ function buildStaticTags(input: {
     iconsDir,
     darkreader,
     manifestEnabled,
+    base,
+    manifestHref,
   } = input
   const tags: HtmlTagDescriptor[] = []
 
@@ -346,22 +367,33 @@ function buildStaticTags(input: {
     tags.push(
       {
         tag: 'link',
-        attrs: { rel: 'shortcut icon', href: withIconPath(iconsDir, ICON_FILES.favicon) },
+        attrs: {
+          rel: 'shortcut icon',
+          href: withBase(base, withIconPath(iconsDir, ICON_FILES.favicon)),
+        },
       },
       {
         tag: 'link',
-        attrs: { rel: 'icon', type: 'image/svg+xml', href: withIconPath(iconsDir, ICON_FILES.svg) },
+        attrs: {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: withBase(base, withIconPath(iconsDir, ICON_FILES.svg)),
+        },
       },
       {
         tag: 'link',
-        attrs: { rel: 'icon', sizes: '96x96', href: withIconPath(iconsDir, ICON_FILES.png96) },
+        attrs: {
+          rel: 'icon',
+          sizes: '96x96',
+          href: withBase(base, withIconPath(iconsDir, ICON_FILES.png96)),
+        },
       },
       {
         tag: 'link',
         attrs: {
           rel: 'apple-touch-icon',
           sizes: '180x180',
-          href: withIconPath(iconsDir, ICON_FILES.appleTouch),
+          href: withBase(base, withIconPath(iconsDir, ICON_FILES.appleTouch)),
         },
       },
     )
@@ -379,7 +411,7 @@ function buildStaticTags(input: {
   }
 
   if (manifestEnabled) {
-    tags.push({ tag: 'link', attrs: { rel: 'manifest', href: '/site.webmanifest' } })
+    tags.push({ tag: 'link', attrs: { rel: 'manifest', href: manifestHref } })
   }
 
   tags.push(
@@ -399,6 +431,7 @@ function buildManifestJson(input: {
   themeColor: { light: string; dark: string }
   backgroundColor: string
   iconsDir: string | undefined
+  base: string
 }): string {
   const {
     options,
@@ -410,6 +443,7 @@ function buildManifestJson(input: {
     themeColor,
     backgroundColor,
     iconsDir,
+    base,
   } = input
   const manifest = {
     id,
@@ -423,12 +457,12 @@ function buildManifestJson(input: {
     background_color: backgroundColor,
     icons: [
       {
-        src: withIconPath(iconsDir, ICON_FILES.manifest192),
+        src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest192)),
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: withIconPath(iconsDir, ICON_FILES.manifest512),
+        src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest512)),
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any maskable',
@@ -441,9 +475,6 @@ function buildManifestJson(input: {
 function createMainPlugin(options: BasaltAppOptions): Plugin {
   const shortName = options.shortName ?? options.name
   const display = options.display ?? 'standalone'
-  const startUrl = options.startUrl ?? '/'
-  const scope = options.scope ?? '/'
-  const id = options.id ?? startUrl
   const darkreader = options.darkreader ?? 'lock'
   const iconsEnabled = options.icons !== false
   const iconsDir = options.icons === false ? undefined : options.icons?.dir
@@ -452,31 +483,50 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
   const themeColor = resolveThemeColors(options.themeColor)
   const backgroundColor = options.backgroundColor ?? themeColor.dark
 
-  const manifestJson = buildManifestJson({
-    options,
-    shortName,
-    startUrl,
-    scope,
-    id,
-    display,
-    themeColor,
-    backgroundColor,
-    iconsDir,
-  })
-
-  const staticTags = buildStaticTags({
-    options,
-    shortName,
-    themeColor,
-    backgroundColor,
-    iconsEnabled,
-    iconsDir,
-    darkreader,
-    manifestEnabled,
-  })
+  // Icon hrefs, the manifest link, and the manifest's start_url/scope/icon src all depend on
+  // Vite's resolved `base`, which is only known once `configResolved` fires — so manifestJson and
+  // staticTags are computed there instead of at plugin-construction time. The pre-configResolved
+  // values below are never actually served or rendered from.
+  let manifestJson = ''
+  let manifestHref = '/site.webmanifest'
+  let staticTags: HtmlTagDescriptor[] = []
 
   return {
     name: 'basalt:app',
+    configResolved(config) {
+      const base = config.base
+      const startUrl = options.startUrl ?? base
+      const scope = options.scope ?? base
+      const id = options.id ?? startUrl
+
+      manifestHref = withBase(base, '/site.webmanifest')
+
+      manifestJson = buildManifestJson({
+        options,
+        shortName,
+        startUrl,
+        scope,
+        id,
+        display,
+        themeColor,
+        backgroundColor,
+        iconsDir,
+        base,
+      })
+
+      staticTags = buildStaticTags({
+        options,
+        shortName,
+        themeColor,
+        backgroundColor,
+        iconsEnabled,
+        iconsDir,
+        darkreader,
+        manifestEnabled,
+        base,
+        manifestHref,
+      })
+    },
     transformIndexHtml(html) {
       const tags = hasViewportMeta(html) ? staticTags : [VIEWPORT_TAG, ...staticTags]
       return { html, tags }
@@ -488,7 +538,14 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
     configureServer(server) {
       if (!manifestEnabled) return
       server.middlewares.use((req, res, next) => {
-        if (req.url === '/site.webmanifest') {
+        // Vite adds its own base-stripping middleware (`viteBaseMiddleware`) AFTER plugin
+        // `configureServer` hooks push middleware directly onto the stack (confirmed against this
+        // repo's installed vite: configureServer hooks run first, then
+        // `if (config.base !== '/') middlewares.use(baseMiddleware(...))`), so `req.url` here still
+        // carries the raw, un-stripped base prefix rather than the stripped path. Match both the
+        // base-prefixed and bare path defensively so this keeps working regardless of that
+        // internal ordering.
+        if (req.url === manifestHref || req.url === '/site.webmanifest') {
           res.setHeader('Content-Type', 'application/manifest+json')
           res.end(manifestJson)
           return
