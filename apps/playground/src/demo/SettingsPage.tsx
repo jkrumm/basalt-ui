@@ -326,7 +326,7 @@ function BillingSection() {
 
 // ── Appearance ────────────────────────────────────────────────────────────────────────────────
 
-/** Consumer-augmented theme-lab groups: framework chrome + the app's own Demo series. */
+/** Consumer-augmented theme-lab groups: structural framework chrome + the app's own Demo series. */
 const LAB_GROUPS = [
   ...COLOR_GROUPS,
   {
@@ -344,7 +344,10 @@ function AppearanceSection() {
 
   return (
     <div id="appearance">
-      <SettingsSection title="Appearance" description="Color scheme and the live theme-tuning lab.">
+      <SettingsSection
+        title="Appearance"
+        description="Color scheme, palette derivation, and low-level token inspection."
+      >
         <SettingsRow
           label="Color scheme"
           description="Charts and chrome share one --vx-* identity — toggling restyles both with no React re-render."
@@ -379,8 +382,10 @@ function AppearanceSection() {
             <Accordion.Control>Theme lab</Accordion.Control>
             <Accordion.Panel>
               <Text size="sm" c="dimmed" mb="sm">
-                Live-tune the palette. Overrides are written as inline `--vx-*` styles on
-                &lt;html&gt; and persist to localStorage.
+                Low-level inspector for the structural `--vx-*` vars the derive engine doesn't own
+                (chart-only status hues, chart line/dot chrome, the overlay surface) plus this app's
+                own Demo series — not an identity tuner (use Derive above for that). Overrides are
+                written as inline styles on &lt;html&gt; and persist to localStorage.
               </Text>
               <ThemeLabControls
                 groups={LAB_GROUPS}
