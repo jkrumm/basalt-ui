@@ -6,8 +6,10 @@
  * drift silently into tuning dead variables, or into tuning live ones that no component consumes.
  * Both failure modes look identical to the user: "the theme lab does nothing".
  *
- * These tests tie the three together: every tunable var must be emitted by `buildPaletteCss`, and
- * the accent tunables must be the ones the Mantine chrome is actually bridged to.
+ * `COLOR_GROUPS` is now a structural-token inspector ONLY (identity/color tuning moved to
+ * `DeriveControls`) — this test ties the remaining vars to `buildPaletteCss`'s actual output, so a
+ * var in `COLOR_GROUPS` that is secretly DERIVED (and would drift the moment the derive config
+ * changes) never sneaks back in undetected.
  */
 import { describe, expect, test } from 'bun:test'
 import { buildPaletteCss } from '../tokens'
@@ -22,22 +24,6 @@ describe('every tunable var is really emitted by the palette', () => {
   for (const name of [...TUNABLES, AREA_TOP_VAR, AREA_BOTTOM_VAR]) {
     test(name, () => {
       expect(css).toContain(`${name}:`)
-    })
-  }
-})
-
-describe('the tunables cover the accent — the token most worth tuning', () => {
-  // The lab shipped WITHOUT any accent knob at all (Semantic / Status / Neutral / Surface only),
-  // which is why tuning it never touched the brand color.
-  for (const name of [
-    '--vx-accent',
-    '--vx-accentHover',
-    '--vx-accentFill',
-    '--vx-accentFillHover',
-    '--vx-onAccent',
-  ]) {
-    test(name, () => {
-      expect(TUNABLES).toContain(name)
     })
   }
 })
