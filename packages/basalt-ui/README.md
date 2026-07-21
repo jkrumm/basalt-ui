@@ -38,7 +38,7 @@ bunx basalt-ui init
 That's the whole install — there is no plugin, no marketplace, and no second version to track.
 `init` writes into the consumer repo:
 
-- `.claude/rules/basalt-*.md` — twelve Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`)
+- `.claude/rules/basalt-*.md` — thirteen Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`, `basalt-app`)
 - `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
@@ -93,6 +93,24 @@ createRoot(document.getElementById('root')!).render(
 > `@mantine/spotlight/styles.layer.css` if you install those optional-peer batteries
 > (`./notifications` / `./commands` — see [Adapter batteries](#adapter-batteries) below).
 
+### Theming
+
+The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
+bounded knobs, with contrast guaranteed by derivation rather than hand-tuning:
+
+```ts
+const theme = createBasaltTheme(
+  {
+    /* app deltas only */
+  },
+  { derive: { accent: '#7c3aed', neutral: 'zinc', vibrancy: 1 } },
+)
+```
+
+`derive` accepts `accent` (hex seed), `neutral` (`'zinc' | 'neutral' | 'stone' | 'slate'`), and
+`lightLevel` / `darkLevel` / `vibrancy` / `accentBrightness` (`-5..5`, all optional — omitted knobs
+keep the shipped default). Never hand-edit a palette hex to retune the identity.
+
 `BasaltOverlays` (from `basalt-ui/commands`) is the composable overlay mount: it bundles
 `ModalsProvider`, `Spotlight`, and `Notifications` into a single mount point and replaces a
 standalone `<BasaltNotifications />`. `paletteOptions={{ groups: paletteGroups }}` emits your
@@ -113,10 +131,18 @@ import type { SidebarSection } from 'basalt-ui'
 
 ```ts
 // vite.config.ts
-import { basaltViteConfig } from 'basalt-ui/vite'
+import react from '@vitejs/plugin-react'
+import { basaltAppPlugin, basaltViteConfig } from 'basalt-ui/vite'
+import { defineConfig } from 'vite'
 
-export default basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' })
+export default defineConfig({
+  ...basaltViteConfig({ port: 5173, apiTarget: 'http://localhost:3000' }),
+  plugins: [react(), ...basaltAppPlugin({ name: 'MyApp', description: '…' })],
+})
 ```
+
+`basaltViteConfig` stays config-only (no `plugins`, by contract); `basaltAppPlugin` is the plugin
+half — see the `./vite` adapter battery under [Adapter batteries](#adapter-batteries) below.
 
 > **Local consumption (sibling checkouts).** Developing against an unpublished / `file:`-linked
 > basalt-ui from a sibling repo? Build `dist/` first — `bunx basalt-ui` always resolves
@@ -158,7 +184,7 @@ scanned files. Other `"basalt"` config keys (`exempt`,
 | `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                                                                                                                                                                               |
 | `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                  |
 | `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `loadOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                              |
-| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps                                                                                                                                                                                                                                                           |
+| `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps; `basaltAppPlugin(opts)` — PWA head, manifest, and icon metadata derived from the token palette                                                                                                                                                           |
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                                                                                                                                |
 | `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                                                                                                                                                                           |
 | `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                                                                                                                                                                               |
@@ -428,6 +454,22 @@ function Inbox() {
 distilled `{ title, summary }` outcome, never the raw prompt or thinking. See
 `agent/rules/basalt-agent.md` for the full doctrine.
 
+### `./vite` — PWA / head metadata (optional peer)
+
+`basaltAppPlugin` (see [Wire the runtime](#wire-the-runtime) above) needs no install by default —
+its `serviceWorker` option is the only part with an optional peer, and it's `false` unless you opt
+in:
+
+```bash
+bun add -D vite-plugin-pwa workbox-build workbox-window   # only if serviceWorker is enabled
+```
+
+Without the peer installed, `serviceWorker: true` degrades to a one-line console warning (no
+service worker, no crash) — everything else (theme-color meta, anti-FOUC background,
+`site.webmanifest`, favicon/apple-touch-icon links, OG/Twitter defaults) works with zero extra
+dependencies. Full doctrine, plugin ordering, and the bring-your-own icon filenames:
+`agent/rules/basalt-app.md`.
+
 ---
 
 ## Type seam (`BasaltRegister`)
@@ -460,7 +502,7 @@ bunx basalt-ui init              # scaffold doctrine into a consumer repo
 bunx basalt-ui sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
 bunx basalt-ui sync --check      # CI drift gate — non-zero exit on any managed-file drift
 bunx basalt-ui check-theme       # palette guard — fails on colors that bypass the central --vx-* system
-bunx basalt-ui doctor            # check consumer repo basalt integration health (manifest + one version axis: node_modules vs manifest)
+bunx basalt-ui doctor            # check consumer repo basalt integration health (manifest + one version axis: node_modules vs manifest) + warn on missing basaltAppPlugin icon files under public/
 bunx basalt-ui info              # human-readable surface map: subpath, layer, rule, skills, optional peers
 bunx basalt-ui info --json       # same map as stable JSON (InfoOutput shape)
 ```

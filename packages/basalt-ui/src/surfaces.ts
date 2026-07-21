@@ -9,7 +9,7 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 12 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 13 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
@@ -28,6 +28,7 @@ export type RuleName =
   | 'data'
   | 'agent'
   | 'content'
+  | 'app'
 
 /** The 3 shipped skill names (agent/skills/basalt-{name}/SKILL.md, placed into a consumer's
  * .claude/skills/ by `basalt-ui init`/`sync` — the same managed path the rules take).
@@ -442,7 +443,7 @@ export const SURFACES = {
     // synthetic global app-wide ban layer — the src/**+app/** glob
     kind: 'doctrine',
     layer: 'app-global',
-    rule: 'mantine',
+    rule: 'app',
     skill: ['basalt-app'],
     guardKinds: [],
     globs: {
@@ -475,7 +476,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'content', 'state'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'content', 'state', 'app'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true
