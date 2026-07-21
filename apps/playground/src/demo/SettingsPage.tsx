@@ -368,8 +368,9 @@ function AppearanceSection() {
             <Accordion.Panel>
               <Text size="sm" c="dimmed" mb="sm">
                 Retune the whole palette from one accent seed + a neutral family + four level knobs
-                (`basalt-ui/tokens`'s `deriveTokens`). This is the dev-tuning path — bake a config
-                into production via `createBasaltTheme`'s `derive` option instead.
+                (`basalt-ui/tokens`'s `deriveTokens`), plus a fifth, color-independent radius level
+                (`deriveRadius`). This is the dev-tuning path — bake a config into production via
+                `createBasaltTheme`'s `derive`/`radius` options instead.
               </Text>
               <DeriveControls resetIcon={<IconReset />} />
             </Accordion.Panel>
