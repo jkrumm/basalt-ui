@@ -132,11 +132,22 @@ keeps its hue identity but shifts shade across schemes. Apply opacity with `alph
 
 **The shipped default palette is GENERATED, not hand-authored.** `tokens/derive.ts` (ported from
 the `apps/playground` HCT-derivation POC) computes the accent family, the 12 categorical fills, the
-surface stops, the ink ramp, and the status solids from one seed + a handful of knobs;
-`tokens/palette.ts` builds `ACCENT`/`FILL`/`SURFACE`/`INK`/the status hues from
-`deriveTokens(DEFAULT_DERIVE_CONFIG)` once at module load. Never hand-edit one of those hexes —
-retune `DEFAULT_DERIVE_CONFIG` or the calibrated constants in `derive.ts` instead. Structural,
-non-derived tokens (shadows, dividers, tooltip chrome, the raw `BP` hue ramps) stay hand-authored.
+surface stops, the ink ramp, and the status solids from `DEFAULT_DERIVE_CONFIG` — seed `#0077bd`,
+`neutral: 'zinc'`, `lightLevel`/`darkLevel`/`vibrancy`/`accentBrightness` all at `0` (vibrancy
+centers on `×0.72` calibrated chroma); `tokens/palette.ts` builds `ACCENT`/`FILL`/`SURFACE`/`INK`/
+the status hues from `deriveTokens(DEFAULT_DERIVE_CONFIG)` once at module load, and the chart-chrome
+opacity ramps (`NEUTRAL.axis`/`grid`/`crosshair`/`tooltip*`) key off the same derived light `ink`
+hex. Never hand-edit one of those hexes — retune `DEFAULT_DERIVE_CONFIG` or the calibrated
+constants in `derive.ts` instead; `tokens/derive.ts` and `tokens/hct.ts` are themselves exempt from
+`check-theme`'s `raw-hex` guard (alongside `palette.ts`/`theme/index.ts`) since they ARE that
+source. Structural, non-derived tokens (shadows, the overlay surface, dividers, the raw `BP` hue
+ramps) stay hand-authored.
+
+A consumer retunes the identity via `createBasaltTheme(overrides?, { derive: { accent, neutral,
+lightLevel, darkLevel, vibrancy, accentBrightness } })` — the ONE production entry point; omitted
+knobs fall back to the shipped default per-knob. `theme-lab`'s `DeriveControls` is the DEV-tool
+analog (live-tweak the same six knobs by eye, persisted to localStorage) — never the production
+path. See `docs/STATUS.md`'s "Derive engine" section for what shipped and known limitations.
 
 ### Consumer-series extensibility (`./tokens`)
 
@@ -185,13 +196,16 @@ Rules that apply to every factory, without exception:
 
 - `baseTheme` — Mantine `createTheme` base (Blueprint-anchored: `primaryColor`, `primaryShade: 6`,
   owned spacing/radius scales, named `fontWeights` ladder, mono font).
-- `createBasaltTheme(overrides?)` = `mergeThemeOverrides(baseTheme, overrides)`.
+- `createBasaltTheme(overrides?, options?)` = `mergeThemeOverrides(baseTheme, overrides)` by
+  default; pass `options.derive` (`tokens/derive.ts`'s `DeriveConfig`, partial) to retune the
+  palette identity from a seed + knobs instead — see "Token system" above.
 - `cssVariablesResolver` — binds Mantine's surfaces AND its color families to the same `--vx-*` vars
   the charts use, so chrome and charts are ONE source. Exported and pre-wired in `BasaltProvider`.
   Two rules live here, both enforced by `theme/contrast.test.ts`:
   - **The fill band.** A filled control does not invert across schemes, so its color must clear a
-    white label (≥4.5:1) AND stay visible on both pages (≥3:1). That pins every fill into one narrow
-    luminance band (`FILL` / `ACCENT` in `tokens/palette.ts`) — hue varies, luminance does not. Never
+    white label (≥3.0:1, the derivation's UI-component contrast floor) AND stay visible on both
+    pages (≥3:1). That pins every fill into one narrow luminance band (Y=0.165, `FILL` / `ACCENT`
+    in `tokens/palette.ts`, computed by `tokens/derive.ts`) — hue varies, luminance does not. Never
     fill with the ink accent (`--vx-accent`); fill with `--vx-accentFill` / `--vx-fill-{family}`.
   - **On-color in CSS, never in JS.** Mantine resolves a filled foreground once, scheme-blindly, via
     a brightness heuristic that does not track WCAG contrast. Basalt emits `--vx-on-{color}` per

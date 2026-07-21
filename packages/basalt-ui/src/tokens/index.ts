@@ -9,13 +9,22 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { ACCENT, FILL, INK, NEUTRAL, SEMANTIC, SHADOW, STATUS, SURFACE } from './palette'
+import { buildPaletteData, SHADOW } from './palette'
+import type { PaletteData } from './palette'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
 // palette internals; dropping them from this barrel hard-fails the consumer's build (1.0.0 bug,
 // pinned by scripts/export-surface.json).
 export { BP, p } from './palette'
+
+// The six-knob derive engine — the generator behind the shipped default palette. Exposed so a
+// consumer can retune the palette identity via `createBasaltTheme(overrides, { derive })` (see
+// `../theme`) without hand-picking hexes. `buildPaletteData`/`PaletteData` stay internal (not
+// re-exported here) — a consumer reaches a derived palette through `createBasaltTheme`, not by
+// building `--vx-*` CSS for a custom config directly.
+export { DEFAULT_DERIVE_CONFIG, deriveTokens, resolveDeriveConfig } from './derive'
+export type { DeriveConfig, DerivedPalette } from './derive'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
@@ -203,14 +212,14 @@ const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
  * neutral line/axis/grid/tooltip chrome, legend text, and the surface ramp. Domain series
  * (SERIES/ACTIVITY/USAGE) are NOT shipped — apps append them via `opts.groups`.
  */
-function frameworkPrimitives(side: Side): string {
-  const n = NEUTRAL
-  const s = SEMANTIC
-  const su = SURFACE
-  const ink = INK
-  const ac = ACCENT
+function frameworkPrimitives(side: Side, data: PaletteData): string {
+  const n = data.NEUTRAL
+  const s = data.SEMANTIC
+  const su = data.SURFACE
+  const ink = data.INK
+  const ac = data.ACCENT
   return [
-    groupSide('status-', STATUS as SeriesMap, side),
+    groupSide('status-', data.STATUS as SeriesMap, side),
     decl('goodSolid', s.good[side]),
     decl('badSolid', s.bad[side]),
     decl('warnSolid', s.warn[side]),
@@ -259,34 +268,36 @@ function frameworkPrimitives(side: Side): string {
  * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
-const FRAMEWORK_DERIVED = [
-  decl('radius-card', '7px'),
-  decl('radius-ctrl', '6px'),
-  // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
-  decl('prose-measure', '72ch'),
-  // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
-  // is the same hex in both, which is the whole point: it is squeezed between its white label and
-  // the page behind it, and only one luminance band satisfies both on both pages.
-  ...Object.entries(FILL).map(([name, hex]) => decl(`fill-${name}`, hex)),
-  // Hover is DERIVED from the fill, so retuning a fill (in the theme lab, or here) carries its
-  // hover along instead of leaving a stale pair. 88% of the fill over black lands ~0.128 luminance:
-  // a visible press-darkening that still clears AA for the white label (~5.9:1).
-  ...Object.keys(FILL).map((name) =>
-    decl(`fillHover-${name}`, `color-mix(in srgb, var(--vx-fill-${name}) 88%, #000)`),
-  ),
-  // The type scale, emitted from the SAME `TEXT` object `VX.text` reads — CSS modules and the
-  // Mantine theme consume these; inline styles / visx read the numbers. One ladder, two forms.
-  ...Object.entries(TEXT).map(([step, px]) => decl(`text-${step}`, `${px}px`)),
-  decl('area-top', '22%'),
-  decl('area-bottom', '1%'),
-  decl('good', 'color-mix(in srgb, var(--vx-goodSolid) 18%, transparent)'),
-  decl('goodSoft', 'color-mix(in srgb, var(--vx-goodSolid) 8%, transparent)'),
-  decl('bad', 'color-mix(in srgb, var(--vx-badSolid) 18%, transparent)'),
-  decl('warn', 'color-mix(in srgb, var(--vx-warnSolid) 8%, transparent)'),
-  decl('goodRef', 'color-mix(in srgb, var(--vx-goodSolid) 30%, transparent)'),
-  decl('badRef', 'color-mix(in srgb, var(--vx-badSolid) 30%, transparent)'),
-  decl('warnRef', 'color-mix(in srgb, var(--vx-warnSolid) 20%, transparent)'),
-].join('\n')
+function frameworkDerived(data: PaletteData): string {
+  return [
+    decl('radius-card', '7px'),
+    decl('radius-ctrl', '6px'),
+    // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
+    decl('prose-measure', '72ch'),
+    // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
+    // is the same hex in both, which is the whole point: it is squeezed between its white label and
+    // the page behind it, and only one luminance band satisfies both on both pages.
+    ...Object.entries(data.FILL).map(([name, hex]) => decl(`fill-${name}`, hex)),
+    // Hover is DERIVED from the fill, so retuning a fill (in the theme lab, or here) carries its
+    // hover along instead of leaving a stale pair. 88% of the fill over black lands ~0.128 luminance:
+    // a visible press-darkening that still clears AA for the white label (~5.9:1).
+    ...Object.keys(data.FILL).map((name) =>
+      decl(`fillHover-${name}`, `color-mix(in srgb, var(--vx-fill-${name}) 88%, #000)`),
+    ),
+    // The type scale, emitted from the SAME `TEXT` object `VX.text` reads — CSS modules and the
+    // Mantine theme consume these; inline styles / visx read the numbers. One ladder, two forms.
+    ...Object.entries(TEXT).map(([step, px]) => decl(`text-${step}`, `${px}px`)),
+    decl('area-top', '22%'),
+    decl('area-bottom', '1%'),
+    decl('good', 'color-mix(in srgb, var(--vx-goodSolid) 18%, transparent)'),
+    decl('goodSoft', 'color-mix(in srgb, var(--vx-goodSolid) 8%, transparent)'),
+    decl('bad', 'color-mix(in srgb, var(--vx-badSolid) 18%, transparent)'),
+    decl('warn', 'color-mix(in srgb, var(--vx-warnSolid) 8%, transparent)'),
+    decl('goodRef', 'color-mix(in srgb, var(--vx-goodSolid) 30%, transparent)'),
+    decl('badRef', 'color-mix(in srgb, var(--vx-badSolid) 30%, transparent)'),
+    decl('warnRef', 'color-mix(in srgb, var(--vx-warnSolid) 20%, transparent)'),
+  ].join('\n')
+}
 
 /**
  * Wrap a map of `{ name: ColorPair }` into `var(--vx-<prefix><name>)` token refs — the runtime
@@ -342,18 +353,27 @@ export type BuildPaletteOpts = {
  * built in, so an empty `buildPaletteCss()` already emits every framework var. Consumer
  * `opts.groups` / `opts.derived` append on top (e.g. argo's domain SERIES/ACTIVITY/USAGE).
  *
+ * `data` defaults to the static, shipped palette (`buildPaletteData()` at `DEFAULT_DERIVE_CONFIG`)
+ * — pass the result of `buildPaletteData(config)` to emit CSS for a retuned derive config instead
+ * (this is how `BasaltProvider` follows `createBasaltTheme`'s `{ derive }` option; see `../theme`
+ * and `../provider`).
+ *
  * Dark is the default (`:root`) since the framework defaults to dark; the
  * `[data-mantine-color-scheme]` selectors track Mantine's toggle on `<html>`.
  */
-export function buildPaletteCss(opts: BuildPaletteOpts = {}): string {
+export function buildPaletteCss(
+  opts: BuildPaletteOpts = {},
+  data: PaletteData = buildPaletteData(),
+): string {
   const groups = opts.groups ?? {}
   const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const derived = extraDerived ? `${FRAMEWORK_DERIVED}\n${extraDerived}` : FRAMEWORK_DERIVED
+  const derivedBlock = frameworkDerived(data)
+  const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = Object.entries(groups)
       .map(([prefix, map]) => groupSide(prefix, map, s))
       .join('\n')
-    const framework = frameworkPrimitives(s)
+    const framework = frameworkPrimitives(s, data)
     return extra ? `${framework}\n${extra}` : framework
   }
   return `:root {
