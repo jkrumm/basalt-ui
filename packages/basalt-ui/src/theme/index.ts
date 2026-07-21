@@ -68,8 +68,17 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { BP, buildPaletteData, deriveRadius, RADIUS_STEP } from '../tokens/palette'
-import type { PaletteData, RadiusValues } from '../tokens/palette'
+import {
+  BP,
+  buildPaletteData,
+  deriveRadius,
+  RADIUS_STEP,
+  SPACE,
+  SPACE_FIXED,
+  SPACE_SCALE,
+  SPACE_STEP,
+} from '../tokens/palette'
+import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { VX } from '../tokens'
@@ -167,6 +176,11 @@ const DEFAULT_PALETTE_DATA = buildPaletteData(DEFAULT_DERIVE_CONFIG)
 
 /** The shipped, level-0 radius values — `buildTheme`'s default `radius` param. */
 const DEFAULT_RADIUS_VALUES: RadiusValues = deriveRadius(0)
+
+/** The shipped, level-0 spacing values — `buildTheme`'s default `spacing` param. No
+ * `deriveSpacing` function exists yet (a later commit adds the density knob); `{ anchors: SPACE,
+ * scale: SPACE_SCALE }` itself IS the level-0 identity. */
+const DEFAULT_SPACE_VALUES: SpaceValues = { anchors: SPACE, scale: SPACE_SCALE }
 
 /**
  * Build the dark Mantine tuple for `data` at 10 fixed indices:
@@ -356,10 +370,16 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
  * `radius` defaults to `DEFAULT_RADIUS_VALUES` (`deriveRadius(0)`, the shipped identity) — pass a
  * different `RadiusValues` to rebuild every radius-anchored `defaultProps`/`styles` number AND the
  * `radius` size-scale from a retuned level instead (`createBasaltTheme`'s `{ radius }` option).
+ *
+ * `spacing` defaults to `DEFAULT_SPACE_VALUES` (`{ anchors: SPACE, scale: SPACE_SCALE }`, the
+ * shipped identity) — pass a different `SpaceValues` to rebuild the `spacing` size-scale from a
+ * retuned density level instead. No such knob exists yet (a later commit adds it); the param is
+ * threaded now so that commit only has to change the value it passes, not this function's shape.
  */
 function buildTheme(
   data: PaletteData,
   radius: RadiusValues = DEFAULT_RADIUS_VALUES,
+  spacing: SpaceValues = DEFAULT_SPACE_VALUES,
 ): MantineThemeOverride {
   const { ACCENT, FILL } = data
   return createTheme({
@@ -407,7 +427,16 @@ function buildTheme(
     },
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
-    spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
+    // Reads `spacing.scale`, NOT `spacing.anchors` — a scale stop tracks density independently of
+    // any component anchor even where the level-0 numbers coincide (see `SPACE_SCALE`'s doc in
+    // `tokens/palette.ts`).
+    spacing: {
+      xs: pxRem(spacing.scale.xs),
+      sm: pxRem(spacing.scale.sm),
+      md: pxRem(spacing.scale.md),
+      lg: pxRem(spacing.scale.lg),
+      xl: pxRem(spacing.scale.xl),
+    },
     // 2 4 6 16 32 — the size scale; `md` = `radius.ctrl` (6px at level 0) is the control-radius
     // default (`defaultRadius: 'md'`, inputs/buttons). Card/Paper/Popover/Modal/Notification read
     // `--vx-radius-*` directly instead (7px cards / 6px controls at level 0), so the larger steps of
@@ -516,7 +545,7 @@ function buildTheme(
             // v9 hardcodes NavLink padding (`8px var(--mantine-spacing-sm)` — there is NO
             // `--nl-padding` var), so the spec padding is forced inline here, where it wins
             // deterministically on every render path.
-            padding: '6px 10px',
+            padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
             // The body step on the ROOT, not just the label: the body element sizes itself from the
             // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
             // ~37px). The tightened 1.35 keeps rows compact as the scale grows.
@@ -607,7 +636,7 @@ function buildTheme(
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
-            padding: 2,
+            padding: 'var(--vx-space-segmented-track-inset)',
           },
           indicator: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -634,7 +663,11 @@ function buildTheme(
       // style context (`ctx.getStyles`), so `item`/`itemBullet`/`itemTitle`/`itemContent` are all
       // themed from this ONE extend — no separate `TimelineItem` override needed.
       Timeline: Timeline.extend({
-        defaultProps: { bulletSize: 22, lineWidth: 1 },
+        // NUMBERS, not `var()` strings: `bulletSize`/`lineWidth` land through Timeline's own
+        // `rem()` conversion (`@mantine/core/esm/core/utils/units-converters/rem.mjs` splits on `,`
+        // and ` ` before checking numerics), which passes a bare `var(--x)` through intact but
+        // silently mangles a `var(--x, <fallback>)` into garbage CSS — never add a fallback here.
+        defaultProps: { bulletSize: SPACE_STEP.timelineBullet, lineWidth: SPACE_FIXED.hairline },
         // The active bullet's icon sits on the accent fill — on-color, not a baked white (see above).
         vars: (theme, props) => ({ root: { '--tl-icon-color': onColorFor(theme, props) } }),
         classNames: {
@@ -703,7 +736,7 @@ function buildTheme(
           item: {
             fontSize: VX.text.md,
             borderRadius: 'var(--vx-radius-ctrl)',
-            padding: '6px 10px',
+            padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
           },
           label: {
             fontFamily: 'var(--basalt-font-mono)',
