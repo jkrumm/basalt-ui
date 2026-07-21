@@ -132,6 +132,12 @@ function clampRadius(n: number): number {
   return Math.max(0, n)
 }
 
+/** `deriveRadius`'s accepted level range — exported (not through the `./tokens` barrel, same
+ * precedent as {@link scaleSpace}) so a cross-level test can derive the levels it loops over from
+ * the SAME bound `deriveRadius` enforces, instead of a hardcoded literal that silently stops
+ * covering the real range if the range ever changes again. */
+export const RADIUS_LEVEL_RANGE = { min: -5, max: 5 } as const
+
 /**
  * Derive the two radius anchors (`card`/`ctrl`) and their dependent offsets from a single integer
  * `level` (`docs/DESIGN-SPEC.md` §4) — the radius analog of `deriveTokens`'s color knobs. `level: 0`
@@ -148,8 +154,14 @@ function clampRadius(n: number): number {
  * as `deriveTokens`'s accent-seed validation.
  */
 export function deriveRadius(level: number): RadiusValues {
-  if (!Number.isInteger(level) || level < -5 || level > 5) {
-    throw new Error(`deriveRadius: level must be an integer in [-5, 5], got ${level}`)
+  if (
+    !Number.isInteger(level) ||
+    level < RADIUS_LEVEL_RANGE.min ||
+    level > RADIUS_LEVEL_RANGE.max
+  ) {
+    throw new Error(
+      `deriveRadius: level must be an integer in [${RADIUS_LEVEL_RANGE.min}, ${RADIUS_LEVEL_RANGE.max}], got ${level}`,
+    )
   }
   const card = clampRadius(7 + level)
   const ctrl = clampRadius(6 + level)
@@ -207,49 +219,73 @@ export const RADIUS_STEP = {
 } as const
 
 /**
- * Density-tracking semantic spacing anchors — the values a future density knob retunes together,
- * the spacing analog of `RADIUS` above. Frequency-audited from the component sweep: `rowInsetX`/
- * `rowInsetY` are the `6px 10px` row inset that appears verbatim in 4 places (NavLink root, Menu
- * item), and `stackXs`..`stackXl` are the 4px vertical rhythm. `tokens/index.ts`'s
- * `frameworkDerived` emits each of these as a `--vx-space-*` CSS var from these SAME numbers, and
- * `theme/index.ts` re-points its NavLink/Menu row padding onto that var, so the var and every JS
- * default read one source instead of two that can drift apart. No density law exists yet — these
- * are the raw shipped numbers (a later commit adds `deriveSpacing`); UNCHANGED from the shipped
- * identity (locked by `theme/spacing.test.ts`).
+ * The shared level-0 control-height number — Mantine's own `--input-height-md`/`--button-height-md`
+ * both resolve to `2.625rem` (42px at the 16px root), and `--ai-size-input-md` matches too. `SPACE_
+ * ANCHORS_BASE.controlHeight`/`.inputHeight` below both read THIS one constant (not two independent
+ * literals) so a control paired with a `size="md"` Input can never drift from it, no matter how
+ * either key is retuned later — see `controlHeight`'s doc for the anchor this fixes.
  */
-export const SPACE = {
+const CONTROL_HEIGHT_BASE = 42
+
+/**
+ * Density-tracking semantic spacing anchors — the values {@link deriveSpacing}'s `level` knob
+ * retunes together, the spacing analog of `RADIUS` above. Frequency-audited from the component
+ * sweep: `rowInsetX`/`rowInsetY` are the `6px 10px` row inset that appears verbatim in 4 places
+ * (NavLink root, Menu item), `stackXs`..`stackXl` are the 4px vertical rhythm (rebuilt from ONE
+ * scaled unit at non-zero levels — see {@link deriveSpacing}'s doc for why), and `inputHeight`/
+ * `controlHeight` are a `size: 'md'` Mantine Input's/Button's/ActionIcon's resolved height
+ * (Mantine's own default: `2.625rem` = 42px at the 16px root) — re-pointed onto `--vx-space-input-
+ * height`/`--vx-space-control-height` by `theme/index.ts`'s `Input.extend`/`Button.extend`/
+ * `ActionIcon.extend` `vars` (see `Input.extend`'s doc comment for why `--input-height`/`--button-
+ * height`/`--ai-size`, not `size`, is the override point). `tokens/index.ts`'s `frameworkDerived`
+ * emits each of these as a `--vx-space-*` CSS var from these SAME numbers, and `theme/index.ts`
+ * re-points its NavLink/Menu/Input/Button/ActionIcon geometry onto that var, so the var and every
+ * JS default read one source instead of two that can drift apart. This is the BASE (level-0) table
+ * {@link deriveSpacing} scales from.
+ */
+const SPACE_ANCHORS_BASE = {
   /** Horizontal inset of a nav/menu row (NavLink root, Menu item). */
   rowInsetX: 10,
   /** Vertical inset of a nav/menu row (NavLink root, Menu item). */
   rowInsetY: 6,
-  /** The 4px vertical rhythm's tightest step. */
+  /** The 4px vertical rhythm's tightest step. Rebuilt from a single scaled unit at non-zero levels
+   * (see {@link deriveSpacing}'s doc) — this literal is the level-0 reference only. */
   stackXs: 4,
-  /** The 4px vertical rhythm, 2nd step. */
+  /** The 4px vertical rhythm, 2nd step — always `2 * stackXs` (see {@link deriveSpacing}'s doc). */
   stackSm: 8,
-  /** The 4px vertical rhythm, 3rd step — coincides with `SPACE_SCALE.sm` at level 0 (see that
-   * constant's doc for why the two stay independent regardless). */
+  /** The 4px vertical rhythm, 3rd step — always `3 * stackXs`; coincides with `SPACE_SCALE.sm` at
+   * level 0 (see that constant's doc for why the two stay independent regardless). */
   stackMd: 12,
-  /** The 4px vertical rhythm, 4th step — coincides with `SPACE_SCALE.md` at level 0. */
+  /** The 4px vertical rhythm, 4th step — always `4 * stackXs`; coincides with `SPACE_SCALE.md` at
+   * level 0. */
   stackLg: 16,
-  /** The 4px vertical rhythm's widest step — coincides with `SPACE_SCALE.xl` at level 0. */
+  /** The 4px vertical rhythm's widest step — always `6 * stackXs`; coincides with `SPACE_SCALE.xl`
+   * at level 0. */
   stackXl: 24,
+  /** A `size: 'md'` Mantine Input's resolved height (see the group doc above). */
+  inputHeight: CONTROL_HEIGHT_BASE,
+  /** A `size: 'md'` Mantine Button's/ActionIcon's resolved height — the SAME number as `inputHeight`
+   * (both read {@link CONTROL_HEIGHT_BASE}), so a Button/ActionIcon placed beside a `size="md"`
+   * Input tracks it at every density level instead of only coinciding at level 0 (the defect this
+   * anchor fixes — Mantine's own `--button-height-md`/`--ai-size` are static, density-blind). */
+  controlHeight: CONTROL_HEIGHT_BASE,
 } as const
 
 /**
  * The Mantine `spacing` size-scale (`xs`/`sm`/`md`/`lg`/`xl`) — the app-wide generic rhythm every
- * `p=`/`m=`/`gap=` prop in every consumer resolves through. Density-tracking, like `SPACE` above,
- * but deliberately a SEPARATE group even where a level-0 number coincides with a `SPACE` anchor
- * (today `xs`/`sm`/`md`/`xl` happen to equal `rowInsetX`/`stackMd`/`stackLg`/`stackXl` — a past
- * density pass landed there, not a law). An anchor is a SPECIFIC component's inset (NavLink/Menu
- * row padding); a scale stop is the GENERIC scale every layout call site reads. Coupling them would
- * mean retuning a nav row's inset silently reshapes every `p="xs"` app-wide, and a future density
- * law could never move the two at different rates — the same reason `RADIUS_STEP.scaleXs`/
- * `scaleLg`/`scaleXl` stay independent of `RADIUS` even though `radius.md` happens to also equal
- * `RADIUS.ctrl` (that one IS a documented law: the control tier IS the `md` stop, hence
- * `defaultRadius: 'md'` — no such relation exists here). UNCHANGED from the shipped identity
- * (locked by `theme/spacing.test.ts`).
+ * `p=`/`m=`/`gap=` prop in every consumer resolves through. Density-tracking, like
+ * `SPACE_ANCHORS_BASE` above, but deliberately a SEPARATE group even where a level-0 number
+ * coincides with an anchor (today `xs`/`sm`/`md`/`xl` happen to equal `rowInsetX`/`stackMd`/
+ * `stackLg`/`stackXl` — a past density pass landed there, not a law). An anchor is a SPECIFIC
+ * component's inset (NavLink/Menu row padding); a scale stop is the GENERIC scale every layout call
+ * site reads. Coupling them would mean retuning a nav row's inset silently reshapes every `p="xs"`
+ * app-wide, and {@link deriveSpacing} could never move the two at different rates if they were
+ * merged — the same reason `RADIUS_STEP.scaleXs`/`scaleLg`/`scaleXl` stay independent of `RADIUS`
+ * even though `radius.md` happens to also equal `RADIUS.ctrl` (that one IS a documented law: the
+ * control tier IS the `md` stop, hence `defaultRadius: 'md'` — no such relation exists here). Base
+ * table for {@link deriveSpacing}.
  */
-export const SPACE_SCALE = {
+const SPACE_SCALE_BASE = {
   xs: 10,
   sm: 12,
   md: 16,
@@ -258,23 +294,11 @@ export const SPACE_SCALE = {
 } as const
 
 /**
- * The resolved shape a future `deriveSpacing(level)` will return — every density-tracking spacing
- * number, kept as the two groups above (`anchors` = `SPACE`, `scale` = `SPACE_SCALE`) rather than
- * flattened into one object: the law must be free to move an anchor and a scale stop at different
- * rates (see `SPACE_SCALE`'s doc), so the shape that carries them stays split too. The spacing
- * analog of {@link RadiusValues}. No `deriveSpacing` function exists yet; `{ anchors: SPACE, scale:
- * SPACE_SCALE }` itself is the level-0 identity.
- */
-export type SpaceValues = {
-  anchors: typeof SPACE
-  scale: typeof SPACE_SCALE
-}
-
-/**
- * Density-tracking, genuine one-offs — named insets that fit neither the `SPACE` vertical rhythm/
- * row inset nor the `SPACE_SCALE` generic rhythm. Unlike `RADIUS_STEP`'s independent scale stops,
+ * Density-tracking, genuine one-offs — named insets that fit neither the anchor vertical rhythm/
+ * row inset nor the generic scale rhythm above. Unlike `RADIUS_STEP`'s independent scale stops,
  * these DO track density; they are simply each their own single-use anchor, not part of either
- * group above. UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`).
+ * group above. Base table for {@link deriveSpacing} — level 0 is UNCHANGED from the shipped
+ * identity (locked by `theme/spacing.test.ts`).
  *
  * Extended by the CSS-module spacing sweep (`docs/STATUS.md`) — every hardcoded spacing literal in
  * `src/**\/*.module.css` now resolves through one of these named one-offs (or a `SPACE`/`SPACE_SCALE`
@@ -284,17 +308,27 @@ export type SpaceValues = {
  * more sites sharing one entry below means they must render at the SAME value for a structural
  * reason (documented per group); a value that merely coincides with another site's number gets its
  * own entry instead — see `docs/STATUS.md`'s spacing-sweep note for the specific coincidental calls.
+ *
+ * Extended again by the density pass (this commit) with the STRUCTURAL chart constants
+ * `tokens/index.ts`'s `VX` object used to hardcode directly (`legendGap`/`margin`/`dotR` — see the
+ * "charts" group below) plus `progressBarSize` (the Progress bar's numeric `defaultProps.size`,
+ * previously an untokenized literal `6`) — both are numeric Mantine `defaultProps`/SVG-prop sites
+ * with the SAME "dev slider can't reach it" limitation as `timelineBullet` (see `deriveSpacing`'s
+ * doc and the `theme-lab` "known constraint" note).
  */
-export const SPACE_STEP = {
-  /** SegmentedControl track's optical inset (`styles.root` padding). */
-  segmentedTrackInset: 2,
+const SPACE_STEP_BASE = {
   /** Timeline `defaultProps.bulletSize`. */
   timelineBullet: 22,
 
   // ── Shared across ≥2 sites (structural — must render at the same value) ──────────────────────
-  /** Sticky-header clearance: Prose's heading `scroll-margin-top` AND ArticleLayout's `.tocRail`
-   * sticky `top` — both must clear the SAME fixed header, so a retune of one must retune the other. */
-  stickyHeaderClearance: 84,
+  // `stickyHeaderClearance`/`stickyHeaderClearanceMobile` USED to live here as ONE independent base
+  // literal (84) — they don't any more. Both are DERIVED, post-`step`, from their OWN AppShell
+  // header (`appShellHeaderHeight` / `appShellHeaderMobileHeight` below) instead (see
+  // {@link deriveSpacing}'s doc for why): an independent literal could drift from the header it's
+  // supposed to clear, which is exactly what happened (84 < 96, under-clearing the mobile header at
+  // every level before this fix) — and a SINGLE derived value still over-cleared the desktop header
+  // by 60px, since the desktop header is less than half the mobile one's height. `SpaceValues.step`
+  // still carries both keys — see that type's own doc — they're just not part of this BASE table.
   /** NavLink leftSection icon-to-label gap — shared by `theme/nav-link.module.css` (every render
    * path) and `shell/app-sidebar.module.css`'s own `.link` rule (belt-and-suspenders on the same
    * DOM), and reused verbatim for `.footerBtn`/`.accountRow`'s icon gap (their own doc comments call
@@ -359,8 +393,21 @@ export const SPACE_STEP = {
   proseArticleBlockGap: 18,
 
   // ── content/article-layout.module.css ─────────────────────────────────────────────────────────
-  /** Content-column-to-TOC-rail column gap. */
+  /** Content-column-to-TOC-rail column gap. The governing `@media (max-width: 1200px)` breakpoint
+   *  (`article-layout.module.css`) is deliberately NOT density-coupled — it is a viewport-comfort
+   *  threshold for showing the TOC rail at all, not a sum of the column tracks: the grid's first
+   *  column is `minmax(0, var(--vx-prose-measure))`, a FLEXIBLE track that shrinks to fit rather
+   *  than a fixed width the breakpoint would need to sum. A gap and a responsive breakpoint are
+   *  different concepts — forcing them to move together would be the coincidence-not-law trap in
+   *  reverse (see `articleTocRailWidth` below for the track this gap sits beside, which — unlike
+   *  the breakpoint — IS a genuine density-tracking dimension). */
   articleColumnGap: 56,
+  /** TOC rail's own grid-column track width (`.root`'s `grid-template-columns` second track). The
+   *  rail's contents (`content/toc.module.css`'s link rows) already track density via
+   *  `tocLinkInsetY`/`tocLinkIndent`/`tocSubIndent`, so a fixed-width raw literal here would squeeze
+   *  those rows' available space as density rises instead of growing with them — the inverse of the
+   *  AppShell navbar/rail-width tokenization, same rationale. */
+  articleTocRailWidth: 220,
   /** Meta header's own vertical stack gap (title/description/metaRow). */
   articleHeaderGap: 10,
   /** Meta header's bottom padding (above its divider). */
@@ -434,7 +481,9 @@ export const SPACE_STEP = {
   // ── shell/sidebar-search.module.css ───────────────────────────────────────────────────────────
   /** Trigger's icon-to-label gap. */
   sidebarSearchGap: 8,
-  /** Trigger's fixed height. */
+  /** Trigger's height — floored at 24px in {@link deriveSpacing} (WCAG 2.5.8 minimum target size);
+   * the collapsed rail's `ActionIcon` variant reads the SAME resolved value (`shell/sidebar-
+   * search.module.css`'s `.railBtn`), so both states of the control stay consistent at every level. */
   sidebarSearchTriggerHeight: 32,
 
   // ── dashboard/settings-section.module.css ─────────────────────────────────────────────────────
@@ -475,19 +524,76 @@ export const SPACE_STEP = {
   /** Child NavLink row's extra left indent (past the rail guide). */
   sidebarChildRowIndent: 14,
 
+  // ── shell/app-sidebar.tsx & app-sidebar-account.tsx (Mantine `<Menu width={…}>` props) ────────
+  // Both are FIXED dropdown widths (a JSX number prop, not CSS — same "JS-consumed, no --vx-* var"
+  // shape as `appShellNavbarWidth` etc.) holding `Menu.Item` rows padded by `rowInsetX`/`rowInsetY`
+  // (`theme/index.ts`'s `Menu.extend`). Unlike `.subnavDropdown`'s `min-width: 180px`
+  // (`app-sidebar.module.css`, deliberately left a raw literal — a `min-width` only floors the box
+  // and it grows with content, so it can never squeeze), a `width` prop caps the dropdown exactly:
+  // as density rises the row's padding/line-height need more room than a frozen width can give,
+  // squeezing the label text — the same rationale `articleTocRailWidth` documents for its own
+  // fixed-width track.
+  /** Account-menu `<Menu width={…}>` (`app-sidebar-account.tsx`). */
+  sidebarAccountMenuWidth: 220,
+  /** Settings-menu `<Menu width={…}>` (`app-sidebar.tsx`). */
+  sidebarSettingsMenuWidth: 200,
+
   // ── shell/app-header.module.css ───────────────────────────────────────────────────────────────
   /** Mobile two-row header's page-actions row height. */
   appHeaderMobileActionsHeight: 52,
 
+  // ── shell/index.tsx (AppShell dimensions) ──────────────────────────────────────────────
+  /** AppShell desktop header bar height — sized to hold one row of `size="md"` controls, so it
+   *  tracks `controlHeight`. Its level-0 coincidence with `appShellNavbarRailWidth` below is a
+   *  coincidence, not a law: this is a horizontal bar's HEIGHT (governed by control height), that
+   *  is a vertical rail's WIDTH (governed by icon footprint). They stay separate entries. */
+  appShellHeaderHeight: 48,
+  /** AppShell mobile (two-row) header height. Not one concept but a sum: row 1 + `app-header.
+   *  module.css`'s wrap row-gap (`--mantine-spacing-sm`) + `appHeaderMobileActionsHeight`. Two of
+   *  those three addends already track density, so the container must too — held fixed, row 1's
+   *  budget collapses 52px -> 12px across the level range. */
+  appShellHeaderMobileHeight: 96,
+  /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile drawer) and the
+   *  expanded `sm` value: the same `.root` at full width, genuinely one concept. */
+  appShellNavbarWidth: 216,
+  /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above
+   *  despite sharing 48 at level 0 (see that entry's note). */
+  appShellNavbarRailWidth: 48,
+
   // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
   /** Tab's icon-to-label gap. */
   mobileNavTabGap: 3,
+
+  // ── charts (tokens/index.ts's `VX` object — structural, tracks density) ──────────────────────
+  // `VX.lineWidth`/`VX.line2Width` are DELIBERATELY absent here — they are stroke WEIGHTS (line
+  // thickness), not spacing/gaps/sizes, so they stay fixed regardless of density (see `VX` in
+  // `tokens/index.ts`). The six below are gaps/margins/a marker footprint — genuinely spacing.
+  /** `ChartLegend`'s column/row gap (`VX.legendGap`). */
+  chartLegendGap: 22,
+  /** Chart plot-area margin, top (`VX.margin.top`). */
+  chartMarginTop: 12,
+  /** Chart plot-area margin, right (`VX.margin.right`). */
+  chartMarginRight: 16,
+  /** Chart plot-area margin, bottom (`VX.margin.bottom`). */
+  chartMarginBottom: 30,
+  /** Chart plot-area margin, left (`VX.margin.left`). */
+  chartMarginLeft: 44,
+  /** Data-point marker radius (`VX.dotR`) — a discrete visual footprint, not a stroke weight, so
+   * (unlike `lineWidth`/`line2Width`) it tracks density: a judgment call, made this way because it
+   * reads as a "size" (closer to `sidebarAvatarSize` above) rather than a line thickness. */
+  chartDotR: 5,
+
+  // ── theme/index.ts's Progress `defaultProps.size` (previously an untokenized literal `6`) ──────
+  /** Progress bar thickness (`components.Progress.defaultProps.size`) — a numeric Mantine size prop,
+   * same "dev slider can't reach it, production `{ density }` rebuilds it" limitation as
+   * `timelineBullet` above (see `deriveSpacing`'s doc). */
+  progressBarSize: 6,
 } as const
 
 /**
- * Density-EXEMPT structurals — unlike `SPACE`/`SPACE_STEP` above, these never move with a future
- * density knob. `tokens/index.ts` does NOT emit these as `--vx-*` CSS vars (see the comment there
- * for why: a var would only invite someone to think they move).
+ * Density-EXEMPT structurals — unlike `SPACE`/`SPACE_STEP` above, these never move with the density
+ * knob. `tokens/index.ts` does NOT emit these as `--vx-*` CSS vars (see the comment there for why: a
+ * var would only invite someone to think they move).
  */
 export const SPACE_FIXED = {
   /** Timeline `defaultProps.lineWidth`; also used for 1px borders. */
@@ -496,7 +602,299 @@ export const SPACE_FIXED = {
    * §7), not a spacing gap that should thicken with density. Stays a literal at its one call site
    * (`content/reading-progress.module.css`), same as `hairline`. */
   readingProgressHeight: 2,
+  /** SegmentedControl track's optical inset (`styles.root` padding) — moved OUT of `SPACE_STEP` and
+   * exempted from the density knob because it is load-bearing for the nested-corner law
+   * (docs/DESIGN-SPEC.md §4): `RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset` (`7 = 5 +
+   * 2`). `RADIUS.card`/`RADIUS_STEP.tight` both shift together under the RADIUS knob (`card = 7 +
+   * level`, `tight = ctrl - 1 = 5 + level`), so their difference is ALWAYS exactly 2 regardless of
+   * that knob — a density-tracking inset would break concentricity in both directions (verified: this
+   * inset's own value, HAD it stayed density-tracking, resolves via `scaleSpace(2, level, multiplier)`
+   * to 1 at density's floor level -3 and 3 at its ceiling level +3 — the widest swing `deriveSpacing`'s
+   * `[-3, 3]` range can produce) for no compensating benefit, since the two radii it sits between
+   * never move independently of each other. */
+  segmentedTrackInset: 2,
 } as const
+
+/**
+ * The resolved shape {@link deriveSpacing} returns — the two anchor/scale base groups above (as
+ * `anchors`/`scale`) PLUS every `SPACE_STEP_BASE` one-off (as `step`) and the NavLink row
+ * line-height (as `rowLineHeight`), all scaled together from one integer `level`. Kept as separate
+ * groups rather than flattened into one object for the same reason `SPACE_SCALE_BASE`'s doc gives:
+ * the law must be free to move an anchor and a scale stop at different rates. The spacing analog of
+ * {@link RadiusValues}.
+ */
+export type SpaceValues = {
+  anchors: { [K in keyof typeof SPACE_ANCHORS_BASE]: number }
+  scale: { [K in keyof typeof SPACE_SCALE_BASE]: number }
+  /** `SPACE_STEP_BASE`'s one-offs PLUS `stickyHeaderClearance`/`stickyHeaderClearanceMobile`, NEITHER
+   * of which is in that base table — both are computed after the rest of `step`, one from
+   * `appShellHeaderHeight` (desktop) and one from `appShellHeaderMobileHeight` (mobile), see
+   * {@link deriveSpacing}'s doc. Kept on this same `step` object (not split into a third group)
+   * because every consumer reads them exactly like any other one-off — only their DERIVATION
+   * differs. Two keys, not one, because the clearance is RESPONSIVE (Decision 3): a consumer picks
+   * whichever one matches the breakpoint it's rendering at — see `docs/CONTENT-SPEC.md` §5 and
+   * `content/prose.module.css`/`content/article-layout.module.css` for the CSS-side split. */
+  step: { [K in keyof typeof SPACE_STEP_BASE]: number } & {
+    stickyHeaderClearance: number
+    stickyHeaderClearanceMobile: number
+  }
+  /** NavLink row line-height (`theme/index.ts`'s row-geometry styles) — additive, not
+   * multiplicative; see {@link deriveSpacing}'s doc for why. */
+  rowLineHeight: number
+}
+
+/**
+ * Scale one density-tracking spacing number by `multiplier`, rounding to the nearest integer and
+ * clamping at an UNCONDITIONAL floor of 1 (an aggressive negative level can never collapse a real
+ * inset to 0 or below).
+ *
+ * At `level === 0` the multiplier is exactly 1 — return `value` verbatim instead of routing it
+ * through `Math.round`, so a non-integer base (`proseInlineCodeInsetY: 1.5`) stays byte-identical
+ * rather than rounding to `2` (`Math.round(1.5 * 1)` rounds half-up) — the level-0 acceptance gate
+ * (`theme/spacing.test.ts`) requires the EXACT shipped number, not merely an equal one.
+ *
+ * The floor is UNREACHABLE through {@link deriveSpacing}'s public `[-3, 3]` level range TODAY: every
+ * `SPACE_ANCHORS_BASE`/`SPACE_SCALE_BASE`/`SPACE_STEP_BASE` value is an integer `>= 1`, the
+ * shallowest multiplier `deriveSpacing` ever passes is `0.7` (level `-3`), and `round(v * 0.7)` is
+ * already `>= 1` for every `v >= 1` (`round(1 * 0.7)` is `1`, the smallest case) — so the clamp
+ * never changes the result on that path YET. It is applied unconditionally (not gated behind
+ * `value >= 1`) precisely so a FUTURE base `< 1` doesn't silently round to 0: a gated floor only
+ * protects inputs that could never reach 0 in the first place and skips the one case that could
+ * (`round(0.5 * 0.7) = round(0.35) = 0` for a hypothetical `0.5` base at level `-3`, unguarded by a
+ * `value >= 1` gate). Exported (not re-exported by the `./tokens` barrel — this stays outside the
+ * published surface, `scripts/export-surface.json`) purely so `palette.test.ts` can drive the clamp
+ * directly with a `multiplier`/`value` pair `deriveSpacing` itself can never produce, and prove the
+ * floor still holds if a base or the level range ever changes.
+ */
+export function scaleSpace(value: number, level: number, multiplier: number): number {
+  if (level === 0) return value
+  const scaled = Math.round(value * multiplier)
+  return Math.max(1, scaled)
+}
+
+/** Apply {@link scaleSpace} across every value of a base table, preserving its exact key set (a
+ * mapped type, not `Record<string, number>`, so a renamed/removed key still fails `tsc` downstream). */
+function mapSpaceGroup<T extends Record<string, number>>(
+  base: T,
+  level: number,
+  multiplier: number,
+): { -readonly [K in keyof T]: number } {
+  const out = {} as { -readonly [K in keyof T]: number }
+  for (const key of Object.keys(base) as (keyof T)[])
+    out[key] = scaleSpace(base[key]!, level, multiplier)
+  return out
+}
+
+/**
+ * `rowLineHeight`'s own additive per-level step — see {@link deriveSpacing}'s doc for why it is a
+ * SEPARATE, explicitly hand-tuned constant rather than something computed from `deriveSpacing`'s
+ * own `multiplier`. A prior version of this law computed it as `(multiplier - 1) / 3` and
+ * documented that as "derived from `multiplier` itself... so retuning the multiplier's step can
+ * never desync this from it" — that claim was false: `/ 3` was itself a second hand-tuned
+ * coefficient (reverse-engineered to reproduce the old `1.25`/`1.45` endpoints), and worse, it
+ * silently coupled a unitless typographic ratio (line-height) to a px spacing scale factor, so a
+ * future purely-spatial retune of `multiplier`'s own coefficient would have moved NavLink row
+ * line-height with no typography decision made anywhere. This constant is the honest version of
+ * the same idea: still hand-picked to land on the identical `1.25`..`1.45` envelope the old
+ * `1.35 + 0.02 * level` law produced at the pre-narrowing `[-5, 5]` range (`0.02 * 5 ===
+ * ROW_LINE_HEIGHT_STEP * 3`), but as its own named number — a future edit to the spacing
+ * multiplier's `0.1` cannot silently drag this along with it, and a future edit to typography
+ * (this constant) cannot silently distort spacing.
+ */
+const ROW_LINE_HEIGHT_STEP = 1 / 30
+
+/**
+ * Derive every density-tracking spacing number (anchors, scale stops, one-offs, row line-height)
+ * from a single integer `level` (`docs/DESIGN-SPEC.md` §4-adjacent) — the spacing analog of
+ * {@link deriveRadius}. `level: 0` reproduces the shipped identity exactly (locked by
+ * `theme/spacing.test.ts` and `tokens/density.test.ts`) for every value EXCEPT
+ * `step.stickyHeaderClearance`/`step.stickyHeaderClearanceMobile` — see the third bullet below for
+ * why those are a deliberate exception.
+ *
+ * The law: a MULTIPLIER, `1 + 0.1 * level`, applied to every `SPACE_ANCHORS_BASE`/
+ * `SPACE_SCALE_BASE`/`SPACE_STEP_BASE` constant, then rounded (see {@link scaleSpace}) — a
+ * multiplier rather than an additive step because these values span 1px to 180px; an additive
+ * constant would distort small and large insets by wildly different proportions.
+ *
+ * Three groups deviate from the plain per-value multiplier above:
+ *
+ *  - `stackXs`..`stackXl` (the 4px vertical rhythm) are rebuilt from ONE scaled unit —
+ *    `unit = scaleSpace(4, level, multiplier)`, then `stackXs = unit`, `stackSm = 2 * unit`,
+ *    `stackMd = 3 * unit`, `stackLg = 4 * unit`, `stackXl = 6 * unit` — instead of each step
+ *    independently rounding its own base. Independent rounding breaks the rhythm at non-zero levels
+ *    (level +1 used to land 4/8/13/17/25, no common factor) and silently drifts the documented 2:1
+ *    pairs (`stackXl`:`stackMd`, `stackLg`:`stackSm`) by a px at almost every level; the shared-unit
+ *    rebuild keeps every step an exact multiple of `unit` and both pairs exactly 2:1, at every level
+ *    including 0 (`unit` is 4 there, reproducing 4/8/12/16/24 verbatim). `SPACE_SCALE_BASE`'s own
+ *    `xs`/`sm`/`md`/`lg`/`xl` stops do NOT get this treatment — that group's `sm`:`xl` 1:2 coincidence
+ *    is documented as incidental (a past density pass landed there), not a law like the stack rhythm's,
+ *    so it keeps the plain per-value multiplier.
+ *  - `step.sidebarSearchTriggerHeight` is floored at 24px after scaling — WCAG 2.5.8's minimum
+ *    interactive-target size. Without the floor, a negative level shrinks the sidebar search trigger
+ *    (and, transitively, the collapsed rail's `ActionIcon` variant, which reads this same resolved
+ *    value) below the accessible floor (22px at level -3) while also crowding out its fixed-size icon
+ *    and `Kbd` chip.
+ *  - `step.stickyHeaderClearance` (desktop) and `step.stickyHeaderClearanceMobile` (mobile) are not
+ *    scaled off their own base AT ALL — `SPACE_STEP_BASE` has no such key any more (see that table's
+ *    doc). Both are computed AFTER the rest of `step`, RESPONSIVELY, one per AppShell breakpoint:
+ *    `stickyHeaderClearance = step.appShellHeaderHeight + anchors.stackMd` (desktop, `>= sm`) and
+ *    `stickyHeaderClearanceMobile = step.appShellHeaderMobileHeight + anchors.stackMd` (mobile,
+ *    `< sm` — the SAME `sm`/48em breakpoint the AppShell header itself switches on, `shell/index.tsx`).
+ *    A SINGLE clearance value (this law's own prior shape) can only be tuned against ONE header, and
+ *    whichever one it under-shoots stays broken: the original independent literal (84) was tuned only
+ *    against the desktop header (48) and under-cleared the mobile header (96) by 12px at level 0
+ *    already, before density entered the picture; deriving ONE value off the taller mobile header
+ *    fixed that under-clear but then OVER-cleared the desktop header by 60px (108 vs. the 48px header
+ *    needs) — dead space above every anchored heading and a TOC rail shoved down on the common
+ *    (desktop) path. Splitting into two responsive values fixes both directions at once: each clears
+ *    ONLY its own header, with the SAME `anchors.stackMd` breathing room (not a bare `+ 0`) so a
+ *    scrolled-to heading doesn't sit flush against the header's bottom edge — density-tracking, like
+ *    the header height it's added to, so the margin itself never freezes at one notch. Level 0:
+ *    desktop `48 + 12 = 60` (a deliberate BREAK from the pre-split 84/108 — see `theme/spacing.test.ts`
+ *    for why `stickyHeaderClearance` alone is exempt from the byte-identity gate every other spacing
+ *    token is held to), mobile `96 + 12 = 108` (unchanged from the pre-split single-value law).
+ *    **Consumer coupling (accepted, not hidden):** both values assume `BasaltShell`'s own AppShell
+ *    header heights — a `./content` consumer NOT rendering inside `BasaltShell` (e.g. `Prose`/
+ *    `ArticleLayout` standalone) gets clearance numbers tuned for a header it may not have, and must
+ *    override `--vx-space-sticky-header-clearance`/`--vx-space-sticky-header-clearance-mobile`
+ *    itself. Documented on the `./content` surface too (`docs/CONTENT-SPEC.md` §5), not only here.
+ *
+ * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.35 + ROW_LINE_HEIGHT_STEP *
+ * level`, ADDITIVE, its own gentler, INDEPENDENT coefficient (see {@link ROW_LINE_HEIGHT_STEP}'s own
+ * doc for why it must stay independent of `multiplier`). It carries the NavLink row's
+ * `lineHeight: '1.35'` (`theme/index.ts`, load-bearing for row height) along with the row's padding,
+ * but the multiplier law would overshoot it — `1.35 * 1.3` at level +3 is already a much larger
+ * relative move than the padding it accompanies, well past the readable line-height range. The
+ * additive step instead lands `1.25`..`1.45` across the full range, a proportionate nudge. Rounded
+ * to 2 decimals (`Math.round(x * 100) / 100`) to avoid floating-point noise (`1.35 +
+ * ROW_LINE_HEIGHT_STEP * 3` is not exactly `1.45` in raw IEEE-754 arithmetic).
+ *
+ * `SPACE_FIXED` is NEVER part of this law — see that constant's own doc for why.
+ *
+ * **What actually tracks a retuned `level`, end to end, and what doesn't** (the real scope of the
+ * "dev slider gap" — bigger than "a few numeric `defaultProps`", but ALSO narrower than it looks at
+ * first glance — see the Input/Button/ActionIcon note below):
+ *  - `createBasaltTheme({ density })` (`../theme`) rebuilds `theme.spacing` (the generic Mantine
+ *    scale) AND every density-anchored `defaultProps`/`styles` number (Timeline's `bulletSize`,
+ *    Progress's `size`) from THIS function's output — this is the one production entry point, and it
+ *    is complete for all of those.
+ *  - `theme-lab/DeriveControls` (the DEV-tool slider) can only move `--vx-*` CSS custom properties
+ *    via an injected `<style>` — it CANNOT reach a numeric `defaultProps`/SVG-prop value baked into
+ *    the theme object at all, so Timeline's `bulletSize` and Progress's `size` stay visibly static
+ *    there. The SAME limitation applies to `theme.spacing` itself (the generic Mantine `xs`/`sm`/
+ *    `md`/`lg`/`xl` scale): `createBasaltTheme({ density })` bakes it into the theme object as
+ *    rem strings (`theme/index.ts`'s `buildTheme`), and `spaceDecls` (`tokens/index.ts`) deliberately
+ *    emits no `--vx-space-scale-*`/`--mantine-spacing-*` var for it (see that function's own doc) —
+ *    so the dev slider's injected `<style>` cannot reach it either, and a component reading
+ *    `var(--mantine-spacing-sm)` (e.g. `shell/app-header.module.css`) stays at its level-0 value
+ *    under the dev slider even though it correctly retunes on the production path. Input's/Button's/
+ *    ActionIcon's `size="md"` height is NOT in this bucket, despite reading
+ *    like the same shape of gap: `theme/index.ts`'s `Input.extend`/`Button.extend`/`ActionIcon.extend`
+ *    resolve their height through `vars` (`--input-height`/`--button-height`/`--ai-size`, each wrapping
+ *    `var(--vx-space-input-height)`/`var(--vx-space-control-height)` in a `calc(...)`), not a numeric
+ *    `defaultProps` literal — a CSS custom property the dev slider's injected `<style>` CAN reach, so
+ *    it DOES visibly follow the Density slider there too, not only in production.
+ *  - `tokens/index.ts`'s `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap, plot-area margins,
+ *    marker radius) are the ONE case that fails BOTH paths — including the PRODUCTION one. `VX` is
+ *    built once at module load from the frozen level-0 `SPACE_STEP` snapshot (visx SVG props read
+ *    plain JS numbers, not `var()` strings), so it never re-reads a `density` option passed to
+ *    `createBasaltTheme` at all — a genuine, currently-unfixed production gap, not merely a
+ *    dev-tool-only limitation like the `defaultProps` above.
+ *
+ * Throws on a non-integer or out-of-range (`[-3, 3]`) level — same throw-and-propagate discipline as
+ * `deriveRadius`/`deriveTokens`'s accent-seed validation.
+ *
+ * The range is `[-3, 3]`, not `[-5, 5]` like `deriveRadius` — a DELIBERATE, narrower range with a
+ * steeper per-notch coefficient (`0.1`, not `0.06`) chosen so the two endpoints reproduce the exact
+ * SAME multiplier envelope (`0.7`..`1.3`, `3 * 0.1 === 5 * 0.06`) at fewer, more meaningful notches.
+ * At `0.06`/±5, an integer base `v <= 8` (41 of the 108 spacing values, including the entire 4px
+ * stack rhythm) is BYTE-IDENTICAL to level 0 at one notch of movement (`0.06 * v < 0.5` rounds back
+ * to `v`) — not a dead zone at one notch, but uniform over-quantization across the whole range: the
+ * knob advertised more resolution than integer-px rounding could carry. `0.1`/±3 keeps the identical
+ * expressive envelope (nothing about how compact/spacious the knob can go changes) while dropping
+ * the frozen-at-one-notch count from 43 (at ±1) to 18/22 — see `Fix 7` in
+ * `theme/density-relations.test.ts` for the regression guards that pin this down.
+ */
+/** `deriveSpacing`'s accepted level range — exported (not through the `./tokens` barrel, same
+ * precedent as {@link scaleSpace}) so `density-relations.test.ts`'s `ALL_LEVELS` can derive the
+ * levels it loops over from the SAME bound `deriveSpacing` enforces, instead of a hardcoded literal
+ * that silently stops covering the real range if the range ever changes again (as it already has
+ * once, `[-5, 5]` -> `[-3, 3]` — see this function's own doc above). */
+export const DENSITY_LEVEL_RANGE = { min: -3, max: 3 } as const
+
+export function deriveSpacing(level: number): SpaceValues {
+  if (
+    !Number.isInteger(level) ||
+    level < DENSITY_LEVEL_RANGE.min ||
+    level > DENSITY_LEVEL_RANGE.max
+  ) {
+    throw new Error(
+      `deriveSpacing: level must be an integer in [${DENSITY_LEVEL_RANGE.min}, ${DENSITY_LEVEL_RANGE.max}], got ${level}`,
+    )
+  }
+  const multiplier = 1 + 0.1 * level
+  const anchors = mapSpaceGroup(SPACE_ANCHORS_BASE, level, multiplier)
+  // Rebuild the 4px stack rhythm from one scaled unit so the documented 2:1 pairs hold exactly at
+  // every level, not just level 0 (see this function's doc for why independent rounding broke it).
+  const stackUnit = scaleSpace(4, level, multiplier)
+  anchors.stackXs = stackUnit
+  anchors.stackSm = stackUnit * 2
+  anchors.stackMd = stackUnit * 3
+  anchors.stackLg = stackUnit * 4
+  anchors.stackXl = stackUnit * 6
+
+  const mappedStep = mapSpaceGroup(SPACE_STEP_BASE, level, multiplier)
+  // WCAG 2.5.8 minimum interactive-target size — see this function's doc for why the trigger's
+  // density-tracking height alone can't be trusted to stay accessible at a negative level.
+  mappedStep.sidebarSearchTriggerHeight = Math.max(24, mappedStep.sidebarSearchTriggerHeight)
+  const step: SpaceValues['step'] = {
+    ...mappedStep,
+    // RESPONSIVE, one per AppShell breakpoint — each DERIVED from its own header, plus
+    // density-tracking breathing room — see this function's doc (third bullet, Decision 3) for the
+    // full rationale, and `theme/spacing.test.ts` for why `stickyHeaderClearance` alone is exempt
+    // from the level-0 byte-identity gate.
+    stickyHeaderClearance: mappedStep.appShellHeaderHeight + anchors.stackMd,
+    stickyHeaderClearanceMobile: mappedStep.appShellHeaderMobileHeight + anchors.stackMd,
+  }
+
+  return {
+    anchors,
+    scale: mapSpaceGroup(SPACE_SCALE_BASE, level, multiplier),
+    step,
+    // Additive, gentler, INDEPENDENT law than the multiplier — see `ROW_LINE_HEIGHT_STEP`'s own doc
+    // for why it must NOT be computed from `multiplier`.
+    rowLineHeight: Math.round((1.35 + ROW_LINE_HEIGHT_STEP * level) * 100) / 100,
+  }
+}
+
+/** `deriveSpacing(0)` — the shipped identity's spacing values, computed once. `SPACE`/`SPACE_SCALE`/
+ * `SPACE_STEP`/`ROW_LINE_HEIGHT` below are defined FROM this, the same way `RADIUS`/`RADIUS_STEP`
+ * are defined from `DEFAULT_RADIUS_VALUES = deriveRadius(0)` — one source, so the two can never
+ * drift. Exported so `theme/use-basalt-spacing.ts`'s `useBasaltSpacing` can fall back to it when
+ * `theme.other.basaltDensity` is absent (the level-0 case — `createBasaltTheme` deliberately omits
+ * that key at level 0, see `theme/index.ts`'s `isDefaultDensity` short-circuit). */
+export const DEFAULT_SPACE_VALUES = deriveSpacing(0)
+
+/** Density-tracking semantic spacing anchors at the shipped identity — see `SPACE_ANCHORS_BASE`'s
+ * doc for what each key means. `deriveSpacing(0)`'s `anchors`, UNCHANGED from the pre-density-knob
+ * shipped identity (locked by `theme/spacing.test.ts`). */
+export const SPACE = DEFAULT_SPACE_VALUES.anchors
+
+/** The Mantine `spacing` size-scale at the shipped identity — see `SPACE_SCALE_BASE`'s doc.
+ * `deriveSpacing(0)`'s `scale`, UNCHANGED from the shipped identity (locked by
+ * `theme/spacing.test.ts`). */
+export const SPACE_SCALE = DEFAULT_SPACE_VALUES.scale
+
+/** Density-tracking one-offs at the shipped identity — see `SPACE_STEP_BASE`'s doc. `deriveSpacing(0)`'s
+ * `step`, UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`) EXCEPT
+ * `stickyHeaderClearance` (originally 84, then a single derived 108, now the desktop half of the
+ * Decision-3 responsive split at 60) and its new `stickyHeaderClearanceMobile` sibling (108) — the
+ * deliberate level-0 breaks in the density work; see `deriveSpacing`'s doc (third bullet) for why. */
+export const SPACE_STEP = DEFAULT_SPACE_VALUES.step
+
+/** NavLink row line-height at the shipped identity (`1.35`) — `deriveSpacing(0)`'s `rowLineHeight`,
+ * UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`). */
+export const ROW_LINE_HEIGHT = DEFAULT_SPACE_VALUES.rowLineHeight
 
 /**
  * Assemble every derive-config-dependent palette family from a resolved {@link DeriveConfig},

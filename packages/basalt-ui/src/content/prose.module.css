@@ -32,11 +32,37 @@
   margin-bottom: 0;
 }
 
-/* Fixed-header clearance so an anchor-jumped/TOC-navigated heading isn't hidden under a sticky header. */
+/* Fixed-header clearance so an anchor-jumped/TOC-navigated heading isn't hidden under a sticky
+ * header. RESPONSIVE (docs/CONTENT-SPEC.md §5): BasaltShell's AppShell header itself switches
+ * height at the `sm` breakpoint (`shell/index.tsx`'s `header={{ height: { base, sm } }}`), so the
+ * clearance must too — the default below is the DESKTOP value (`>= sm`, the common path); the
+ * `max-width: 47.99375em` override below swaps in the MOBILE value. `47.99375em` is Mantine's own
+ * complement of a `min-width: 48em` breakpoint (`em(px - 0.1)` — verified against the installed
+ * `@mantine/core`'s `MantineClasses.mjs`, the same formula behind `visibleFrom`/`hiddenFrom`), NOT
+ * an independently hand-picked value — a plain `47.99em` leaves a viewport band (`47.99em` to just
+ * under `48em`) matched by NEITHER this rule nor AppShell's own `(min-width: 48em)` override.
+ * `48em` is a STATIC assumption, not a value this CSS module can read live: it is Mantine's default
+ * `theme.breakpoints.sm` (unmodified by `baseTheme`, `theme/index.ts`), and `shell/index.tsx` reads
+ * that theme value directly for its own `min-width` media query — but a media query condition
+ * cannot resolve a CSS custom property (`@media (min-width: var(--x))` is not valid CSS), so this
+ * static module has no way to follow a consumer's `createBasaltTheme(overrides)` that overrides
+ * `breakpoints.sm`. A consumer doing so desyncs this file's breakpoint from AppShell's actual
+ * header-switch point — the failure mode is a heading that scrolls to a clearance tuned for the
+ * WRONG header on the mismatched viewport band, not a total breakage. Both values also assume
+ * BasaltShell's own AppShell header heights — a `./content` consumer rendering Prose standalone (no
+ * BasaltShell) overrides `--vx-space-sticky-header-clearance`/`-mobile` itself. */
 .root h2,
 .root h3,
 .root h4 {
   scroll-margin-top: var(--vx-space-sticky-header-clearance);
+}
+
+@media (max-width: 47.99375em) {
+  .root h2,
+  .root h3,
+  .root h4 {
+    scroll-margin-top: var(--vx-space-sticky-header-clearance-mobile);
+  }
 }
 
 /* Headings share family/weight/color across densities; size + margin differ below. */

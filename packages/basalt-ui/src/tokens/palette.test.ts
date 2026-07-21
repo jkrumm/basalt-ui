@@ -5,7 +5,17 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { DEFAULT_DERIVE_CONFIG } from './derive'
-import { ACCENT, buildPaletteData, FILL, INK, NEUTRAL, SEMANTIC, STATUS, SURFACE } from './palette'
+import {
+  ACCENT,
+  buildPaletteData,
+  FILL,
+  INK,
+  NEUTRAL,
+  scaleSpace,
+  SEMANTIC,
+  STATUS,
+  SURFACE,
+} from './palette'
 
 describe('buildPaletteData(DEFAULT_DERIVE_CONFIG) deep-equals the static exports', () => {
   const data = buildPaletteData(DEFAULT_DERIVE_CONFIG)
@@ -79,5 +89,26 @@ describe('onAccent stays white under the fill-page contrast clamp', () => {
   test('a high accentBrightness still keeps onAccent white', () => {
     const data = buildPaletteData({ ...DEFAULT_DERIVE_CONFIG, accentBrightness: 5 })
     expect(data.ACCENT.onAccent.light).toBe('#ffffff')
+  })
+})
+
+describe('scaleSpace floors a base >= 1 at 1, never lets it round down to 0', () => {
+  // No shipped base/level combination reaches this branch — `deriveSpacing`'s shallowest
+  // multiplier is 0.7 (level -5), and every current base is an integer >= 1, so
+  // `round(value * multiplier)` never drops below 1 on that path (see `scaleSpace`'s doc in
+  // `palette.ts`). Drive the clamp directly with a multiplier `deriveSpacing` can never produce,
+  // to prove the floor still holds if a base or the level range ever changes.
+  test('a value of 1 at a multiplier of 0.3 would round to 0 without the floor', () => {
+    expect(scaleSpace(1, -5, 0.3)).toBe(1)
+  })
+
+  test('a larger value at a more aggressive multiplier still floors at 1, not its raw round', () => {
+    // round(2 * 0.1) = round(0.2) = 0 without the floor — proves the clamp for a value > 1 too,
+    // not just the value-of-1 edge case above.
+    expect(scaleSpace(2, -5, 0.1)).toBe(1)
+  })
+
+  test('level 0 bypasses scaling (and therefore the floor) entirely, returning value verbatim', () => {
+    expect(scaleSpace(0.4, 0, 0.1)).toBe(0.4)
   })
 })
