@@ -145,9 +145,15 @@ ramps) stay hand-authored.
 
 A consumer retunes the identity via `createBasaltTheme(overrides?, { derive: { accent, neutral,
 lightLevel, darkLevel, vibrancy, accentBrightness } })` — the ONE production entry point; omitted
-knobs fall back to the shipped default per-knob. `theme-lab`'s `DeriveControls` is the DEV-tool
-analog (live-tweak the same six knobs by eye, persisted to localStorage) — never the production
-path. See `docs/STATUS.md`'s "Derive engine" section for what shipped and known limitations.
+knobs fall back to the shipped default per-knob. The same options object carries the non-color
+dimensions (never a second config surface): `fonts: { sans?, head?, mono? }` (pure pass-through to
+the `--basalt-font-*` vars — the single font entry point, enforced by the `raw-font-family` guard
+kind) and `radius` (integer −5..+5; law: card = 7 + level, ctrl = 6 + level, clamped ≥ 0, offset
+tiers and the anchored Mantine scale stops follow — `deriveRadius(level)` in `tokens/palette.ts`,
+level 0 = today's values, locked by `theme/radius.test.ts`). `theme-lab`'s `DeriveControls` is the
+DEV-tool analog (live-tweak the color knobs + radius by eye, persisted to localStorage) — never the
+production path. See `docs/STATUS.md`'s "Derive engine" section for what shipped and known
+limitations.
 
 ### Consumer-series extensibility (`./tokens`)
 
@@ -197,8 +203,10 @@ Rules that apply to every factory, without exception:
 - `baseTheme` — Mantine `createTheme` base (Blueprint-anchored: `primaryColor`, `primaryShade: 6`,
   owned spacing/radius scales, named `fontWeights` ladder, mono font).
 - `createBasaltTheme(overrides?, options?)` = `mergeThemeOverrides(baseTheme, overrides)` by
-  default; pass `options.derive` (`tokens/derive.ts`'s `DeriveConfig`, partial) to retune the
-  palette identity from a seed + knobs instead — see "Token system" above.
+  default; `options.derive` (`tokens/derive.ts`'s `DeriveConfig`, partial) retunes the palette
+  identity from a seed + knobs, `options.fonts` sets the `--basalt-font-*` stacks, and
+  `options.radius` shifts the corner-radius law by an integer level — see "Token system" above.
+  Every non-default option rides `theme.other.basalt*` and the provider's injected `<style>`.
 - `cssVariablesResolver` — binds Mantine's surfaces AND its color families to the same `--vx-*` vars
   the charts use, so chrome and charts are ONE source. Exported and pre-wired in `BasaltProvider`.
   Two rules live here, both enforced by `theme/contrast.test.ts`:
