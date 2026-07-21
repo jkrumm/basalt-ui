@@ -63,5 +63,5 @@
  * every render path.
  */
 .root [data-position='left'] {
-  margin-inline-end: 10px;
+  margin-inline-end: var(--vx-space-nav-icon-gap);
 }

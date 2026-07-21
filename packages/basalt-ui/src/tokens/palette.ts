@@ -275,12 +275,213 @@ export type SpaceValues = {
  * row inset nor the `SPACE_SCALE` generic rhythm. Unlike `RADIUS_STEP`'s independent scale stops,
  * these DO track density; they are simply each their own single-use anchor, not part of either
  * group above. UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`).
+ *
+ * Extended by the CSS-module spacing sweep (`docs/STATUS.md`) — every hardcoded spacing literal in
+ * `src/**\/*.module.css` now resolves through one of these named one-offs (or a `SPACE`/`SPACE_SCALE`
+ * anchor above, reused where a site is genuinely that concept — e.g. `SPACE.rowInsetX` reused for
+ * the sidebar frame/search/section-band/footer-row horizontal inset, `SPACE.stackXs/Sm/Md/Xl` reused
+ * for Prose/Callout/ArticleCard vertical-rhythm margins that land exactly on the 4px grid). Two or
+ * more sites sharing one entry below means they must render at the SAME value for a structural
+ * reason (documented per group); a value that merely coincides with another site's number gets its
+ * own entry instead — see `docs/STATUS.md`'s spacing-sweep note for the specific coincidental calls.
  */
 export const SPACE_STEP = {
   /** SegmentedControl track's optical inset (`styles.root` padding). */
   segmentedTrackInset: 2,
   /** Timeline `defaultProps.bulletSize`. */
   timelineBullet: 22,
+
+  // ── Shared across ≥2 sites (structural — must render at the same value) ──────────────────────
+  /** Sticky-header clearance: Prose's heading `scroll-margin-top` AND ArticleLayout's `.tocRail`
+   * sticky `top` — both must clear the SAME fixed header, so a retune of one must retune the other. */
+  stickyHeaderClearance: 84,
+  /** NavLink leftSection icon-to-label gap — shared by `theme/nav-link.module.css` (every render
+   * path) and `shell/app-sidebar.module.css`'s own `.link` rule (belt-and-suspenders on the same
+   * DOM), and reused verbatim for `.footerBtn`/`.accountRow`'s icon gap (their own doc comments call
+   * out "IDENTICAL geometry to a nav row"). */
+  navIconGap: 10,
+  /** Sidebar region-to-region gap: `.brand`'s bottom padding and `.searchSlot`'s bottom padding (in
+   * both the expanded and collapsed rail variants) — the searchSlot comment explicitly says its gap
+   * opens the nav region "the same way the brand row's own bottom padding does". */
+  sidebarRegionGap: 12,
+
+  // ── content/prose.module.css ──────────────────────────────────────────────────────────────────
+  /** Blockquote rail's own vertical inset. */
+  proseQuoteInsetY: 2,
+  /** Blockquote text indent past the rail. */
+  proseQuoteIndent: 12,
+  /** Inline code chip vertical inset. */
+  proseInlineCodeInsetY: 1.5,
+  /** Inline code chip horizontal inset. */
+  proseInlineCodeInsetX: 5,
+  /** Raw `<pre>` fallback block vertical inset. */
+  proseCodeBlockInsetY: 10,
+  /** Raw `<pre>` fallback block horizontal inset. */
+  proseCodeBlockInsetX: 12,
+  /** Heading copy-link anchor's gap from the heading text. */
+  proseHeadingAnchorGap: 6,
+  /** Table cell vertical inset. */
+  proseTableCellInsetY: 5,
+  /** Table cell horizontal inset. */
+  proseTableCellInsetX: 8,
+  /** Chat-density list's bottom margin (top margin reuses `SPACE.stackXs`). */
+  proseChatListGapBottom: 10,
+  /** Chat-density list indent. */
+  proseChatListIndent: 20,
+  /** Chat-density list-item vertical margin. */
+  proseChatListItemGap: 3,
+  /** Chat-density nested-list vertical margin. */
+  proseChatNestedListGap: 2,
+  /** Chat-density heading top margin. */
+  proseChatHeadingGapTop: 14,
+  /** Chat-density heading bottom margin. */
+  proseChatHeadingGapBottom: 6,
+  /** Article-density paragraph bottom margin. */
+  proseArticleParagraphGap: 14,
+  /** Article-density list top margin. */
+  proseArticleListGapTop: 6,
+  /** Article-density list bottom margin. */
+  proseArticleListGapBottom: 14,
+  /** Article-density list indent. */
+  proseArticleListIndent: 22,
+  /** Article-density `h1` top margin. */
+  proseArticleH1GapTop: 6,
+  /** Article-density `h1` bottom margin. */
+  proseArticleH1GapBottom: 14,
+  /** Article-density `h2`/`h3`/`h4`-`h6` shared top margin — one heading-rhythm law repeated
+   * verbatim across all three selectors, not a coincidence. */
+  proseArticleHeadingGapTop: 30,
+  /** Article-density `h2`/`h3`/`h4`-`h6` shared bottom margin (see `proseArticleHeadingGapTop`). */
+  proseArticleHeadingGapBottom: 10,
+  /** Article-density `h2`'s bottom-rule padding. */
+  proseArticleH2RuleGap: 6,
+  /** Article-density block-object (blockquote/pre/table/embedded div) margin. */
+  proseArticleBlockGap: 18,
+
+  // ── content/article-layout.module.css ─────────────────────────────────────────────────────────
+  /** Content-column-to-TOC-rail column gap. */
+  articleColumnGap: 56,
+  /** Meta header's own vertical stack gap (title/description/metaRow). */
+  articleHeaderGap: 10,
+  /** Meta header's bottom padding (above its divider). */
+  articleHeaderPaddingBottom: 20,
+  /** Meta header's bottom margin (below its divider). */
+  articleHeaderMarginBottom: 28,
+  /** Meta-row icon-to-text gap. */
+  articleMetaRowGap: 6,
+  /** Prev/next footer's column gap. */
+  articleFooterGap: 12,
+  /** Prev/next footer's top margin (above its divider). */
+  articleFooterMarginTop: 40,
+  /** Prev/next footer's top padding (below its divider). */
+  articleFooterPaddingTop: 20,
+  /** Prev/next nav-target icon-to-text gap. */
+  articleNavTargetGap: 6,
+
+  // ── content/code-block.module.css ─────────────────────────────────────────────────────────────
+  /** Header's title-to-controls gap. */
+  codeBlockHeaderGap: 8,
+  /** Header's vertical inset. */
+  codeBlockHeaderInsetY: 6,
+  /** Header's right inset (before the header-right control cluster). */
+  codeBlockHeaderInsetRight: 10,
+  /** Content-column left edge — shared by the header's left inset and the body's horizontal inset,
+   * so the header title and the code text line up on the same left edge. */
+  codeBlockContentInsetX: 14,
+  /** Header-right control cluster's own gap. */
+  codeBlockHeaderRightGap: 6,
+  /** Body's vertical inset. */
+  codeBlockBodyInsetY: 10,
+  /** Floating copy button's corner offset — one value reused for both `top` and `right`. */
+  codeBlockFloatingCopyOffset: 6,
+
+  // ── content/callout.module.css ────────────────────────────────────────────────────────────────
+  /** Panel vertical inset. */
+  calloutInsetY: 10,
+  /** Panel horizontal inset. */
+  calloutInsetX: 14,
+  /** Title row's icon-to-text gap. */
+  calloutTitleRowGap: 8,
+
+  // ── content/toc.module.css ────────────────────────────────────────────────────────────────────
+  /** Rail's own vertical stack gap (header-to-list). */
+  tocRootGap: 6,
+  /** Link row's vertical inset. */
+  tocLinkInsetY: 4,
+  /** Link row's text indent past the rail guide. */
+  tocLinkIndent: 12,
+  /** Nested (sub-heading) link's extra indent. */
+  tocSubIndent: 24,
+
+  // ── content/article-card.module.css ───────────────────────────────────────────────────────────
+  /** Tag row's own gap. */
+  articleCardTagsGap: 4,
+  /** Tag chip's vertical inset. */
+  articleCardTagInsetY: 1,
+  /** Tag chip's horizontal inset. */
+  articleCardTagInsetX: 6,
+  /** Meta line's top gap. */
+  articleCardMetaGapTop: 2,
+
+  // ── content/guide.module.css ──────────────────────────────────────────────────────────────────
+  /** Drawer body's bottom gap (before the footer). */
+  guideBodyGapBottom: 8,
+  /** Footer's top margin (above its divider). */
+  guideFooterGapTop: 20,
+  /** Footer's top inset (below its divider). */
+  guideFooterInsetTop: 16,
+
+  // ── shell/sidebar-search.module.css ───────────────────────────────────────────────────────────
+  /** Trigger's icon-to-label gap. */
+  sidebarSearchGap: 8,
+  /** Trigger's fixed height. */
+  sidebarSearchTriggerHeight: 32,
+
+  // ── dashboard/settings-section.module.css ─────────────────────────────────────────────────────
+  /** Row's vertical inset. */
+  settingsRowInsetY: 10,
+  /** Row's own gap (label cluster to control). */
+  settingsRowGap: 16,
+
+  // ── content/mermaid.module.css ────────────────────────────────────────────────────────────────
+  /** Diagram container's inset (all sides). */
+  mermaidContainerInset: 16,
+
+  // ── shell/app-sidebar.module.css (beyond the shared/reused anchors above) ────────────────────
+  /** Brand row's top inset. */
+  sidebarBrandInsetTop: 3,
+  /** Brand row's horizontal inset. */
+  sidebarBrandInsetX: 8,
+  /** Gap between nav sections. */
+  sidebarSectionGap: 15,
+  /** Account row's top inset. */
+  sidebarAccountInsetTop: 11,
+  /** Account row's horizontal inset. */
+  sidebarAccountInsetX: 8,
+  /** Account row's bottom inset. */
+  sidebarAccountInsetBottom: 3,
+  /** Identity-initials avatar block's fixed size (width and height). */
+  sidebarAvatarSize: 28,
+  /** Section-label row's bottom gap (before the first nav row). */
+  sidebarSectionLabelGap: 3,
+  /** Collapsible child-list wrapper's top margin. */
+  sidebarChildListGapTop: 2,
+  /** Collapsible child-list wrapper's bottom margin. */
+  sidebarChildListGapBottom: 4,
+  /** Collapsible child-list wrapper's left indent. */
+  sidebarChildListIndent: 17,
+  /** Child NavLink row's vertical inset. */
+  sidebarChildRowInsetY: 5,
+  /** Child NavLink row's extra left indent (past the rail guide). */
+  sidebarChildRowIndent: 14,
+
+  // ── shell/app-header.module.css ───────────────────────────────────────────────────────────────
+  /** Mobile two-row header's page-actions row height. */
+  appHeaderMobileActionsHeight: 52,
+
+  // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
+  /** Tab's icon-to-label gap. */
+  mobileNavTabGap: 3,
 } as const
 
 /**
@@ -291,6 +492,10 @@ export const SPACE_STEP = {
 export const SPACE_FIXED = {
   /** Timeline `defaultProps.lineWidth`; also used for 1px borders. */
   hairline: 1,
+  /** ReadingProgress's fixed top-bar height — a hairline-like indicator line (docs/CONTENT-SPEC.md
+   * §7), not a spacing gap that should thicken with density. Stays a literal at its one call site
+   * (`content/reading-progress.module.css`), same as `hairline`. */
+  readingProgressHeight: 2,
 } as const
 
 /**

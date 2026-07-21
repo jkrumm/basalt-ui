@@ -4,7 +4,7 @@
  * `:not(:last-child)` strips the divider there so the section doesn't end on a trailing line.
  */
 .rows > * {
-  padding: 10px 0;
+  padding: var(--vx-space-settings-row-inset-y) 0;
 }
 
 .rows > *:not(:last-child) {
@@ -15,7 +15,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--vx-space-settings-row-gap);
 }
 
 .control {
