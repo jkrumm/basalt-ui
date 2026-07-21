@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 18 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 19 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 18 theme-guard violation kinds. */
+/** The 19 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -26,6 +26,7 @@ export type GuardKind =
   | 'chart-missing-aria-label'
   | 'raw-form-control'
   | 'sub-16-input-font'
+  | 'raw-font-family'
 
 /**
  * A structured finding — the chosen testable surface (§C.4). Replaces the old `Violation` type.

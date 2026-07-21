@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 18 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 19 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -768,6 +768,85 @@ describe('sub-16-input-font', () => {
       sub16InputFont: false,
     })
     expect(kinds(f)).not.toContain('sub-16-input-font')
+  })
+})
+
+// ── 19. raw-font-family ──────────────────────────────────────────────────────
+
+describe('raw-font-family', () => {
+  it('flags a quoted fontFamily object property', () => {
+    const f = find(`const s = { fontFamily: 'Inter, sans-serif' }`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('flags a quoted fontFamily JSX prop', () => {
+    const f = find(`<Text style={{ fontFamily: "Arial" }}>hi</Text>`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('flags a bare kebab-case font-family CSS declaration', () => {
+    const f = find(`font-family: Inter;`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('does NOT flag a fontFamily bound to a var(--basalt-font-…) reference', () => {
+    const f = find(`fontFamily: 'var(--basalt-font-sans, ui-sans-serif, system-ui, sans-serif)',`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag a kebab-case font-family bound to var(…)', () => {
+    const f = find(`font-family: var(--basalt-font-mono);`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag an unquoted fontFamily identifier reference (a token ref, not a literal)', () => {
+    const f = find(`fontFamily: LABEL_FONT_FAMILY,`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(`fontFamily: 'Inter, sans-serif', // theme-allow: legacy widget`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('flags a quoted kebab-case font-family CSS value (the (a) bypass)', () => {
+    const f = find(`font-family: 'Inter', sans-serif;`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('flags a fontFamily bound to a var(...) reference OUTSIDE the two allowed prefixes (the (b) bypass)', () => {
+    const f = find(`fontFamily: 'var(--some-other-var)'`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('flags a kebab-case font-family bound to a var(...) reference outside the allowed prefixes', () => {
+    const f = find(`font-family: var(--some-other-var);`)
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('does NOT flag a kebab-case font-family bound to var(--mantine-font-family-…)', () => {
+    const f = find(`fontFamily: 'var(--mantine-font-family-monospace)',`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag the CSS-wide keyword inherit (camelCase, quoted)', () => {
+    const f = find(`fontFamily: 'inherit'`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag the CSS-wide keyword initial (kebab-case, bare)', () => {
+    const f = find(`font-family: initial;`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag the CSS-wide keyword unset', () => {
+    const f = find(`font-family: unset;`)
+    expect(kinds(f)).not.toContain('raw-font-family')
+  })
+
+  it('does NOT flag the CSS-wide keyword revert', () => {
+    const f = find(`font-family: revert;`)
+    expect(kinds(f)).not.toContain('raw-font-family')
   })
 })
 

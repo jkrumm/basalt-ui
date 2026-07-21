@@ -194,6 +194,9 @@ function buildPaletteDataUncached(config: DeriveConfig) {
       light: `0 2px 8px ${inkRgba(inkLight, 0.1)}`,
       dark: '0 2px 8px rgba(0,0,0,0.35)',
     },
+    // Chart legend text — same DERIVED-ink treatment as axis/grid/tooltip* above (light keys off
+    // `inkLight`; dark stays flat white like every other neutral chart-chrome pair here).
+    legendText: { light: inkRgba(inkLight, 0.82), dark: 'rgba(255,255,255,0.92)' },
     // Base neutral for hairlines / muted / DIMMED text / overlays — apply opacity via alpha().
     // Binds to --mantine-color-dimmed, so it is THE dimmed-text lever. Equal to `INK.muted` (the
     // spec's "muted (secondary text)" row) — kept as its own pair for the pre-existing `--vx-neutral`

@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 18 violation kinds.
+ * GUARD_RULES: the closed registry of all 19 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind } from './types'
@@ -13,6 +13,21 @@ export type { Finding, GuardConfig, GuardKind }
 const HEX = /#[0-9a-fA-F]{3,8}\b/g
 const FUNC = /\b(?:rgba?|hsla?)\(/g
 const LOCALSTORAGE_THEME = /localStorage\s*\.\s*getItem\s*\(\s*['"]theme['"]\s*\)/g
+
+// A hardcoded fontFamily/font-family literal — camelCase (JSX prop / object property, quoted
+// value) or kebab-case (CSS text in a template literal, quoted OR bare value — kebab-case is never
+// a valid unquoted JS identifier, so a bare `font-family: Inter` can only be literal CSS text).
+// The escape is a `var(...)` reference restricted to the two entry-point prefixes
+// (`--basalt-font-*` / `--mantine-font-family-*`) — any OTHER var() reference still flags, so the
+// single-entry-point invariant holds. A CSS-wide keyword (inherit/initial/unset/revert) never
+// flags either: it defers to the cascade rather than hardcoding a font.
+const RAW_FONT_FAMILY_VAR_ESCAPE = /var\(\s*--(?:basalt-font-|mantine-font-family-)/.source
+const RAW_FONT_FAMILY_KEYWORD = /(?:inherit|initial|unset|revert)\b/.source
+const RAW_FONT_FAMILY = new RegExp(
+  `\\bfontFamily\\s*[:=]\\s*\\{?(?!['"\`]?\\s*${RAW_FONT_FAMILY_VAR_ESCAPE})(?!['"\`]?\\s*${RAW_FONT_FAMILY_KEYWORD})['"\`][^'"\`]+['"\`]` +
+    `|\\bfont-family\\s*:\\s*(?!['"\`]?\\s*${RAW_FONT_FAMILY_VAR_ESCAPE})(?!['"\`]?\\s*${RAW_FONT_FAMILY_KEYWORD})(?:['"\`][^'"\`]+['"\`]|[A-Za-z][\\w-]*)`,
+  'g',
+)
 
 // Ad-hoc inline surface styling — border* / borderRadius / boxShadow with literal values.
 // A var(--…) reference inside the quoted value passes (the system itself).
@@ -166,7 +181,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 18 guard kinds. The triad test asserts
+ * The closed registry of all 19 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -195,6 +210,12 @@ export const GUARD_RULES = {
     kind: 'localstorage-theme',
     pattern: LOCALSTORAGE_THEME,
     message: 'Theme must resolve via the Mantine color scheme + --vx-* vars.',
+  },
+  'raw-font-family': {
+    kind: 'raw-font-family',
+    pattern: RAW_FONT_FAMILY,
+    message:
+      'Route the font stack through createBasaltTheme(overrides, { fonts }) / the shipped --basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal.',
   },
   'off-identity-accent': {
     kind: 'off-identity-accent',
@@ -349,6 +370,9 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
     for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+    }
+    for (const m of line.matchAll(GUARD_RULES['raw-font-family'].pattern as RegExp)) {
+      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-font-family' })
     }
 
     // Dynamic-regex kinds — patterns already resolved above.

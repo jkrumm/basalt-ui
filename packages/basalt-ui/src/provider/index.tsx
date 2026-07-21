@@ -22,10 +22,33 @@ import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
+import type { BasaltFontsConfig } from '../theme'
 import { buildPaletteCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
+
+/** `{ basaltFonts key → --basalt-font-* var name }` — the one place the mapping is spelled out. */
+const FONT_VAR_NAMES = {
+  sans: '--basalt-font-sans',
+  head: '--basalt-font-head',
+  mono: '--basalt-font-mono',
+} as const satisfies Record<keyof BasaltFontsConfig, string>
+
+/**
+ * Build the `:root` block of `--basalt-font-*` declarations for a resolved `basaltFonts` config —
+ * only for the keys the consumer actually set (`createBasaltTheme(overrides, { fonts })`); an
+ * omitted key keeps the shipped `styles.css` fallback chain untouched. Empty string when `fonts` is
+ * absent or every key is omitted, so callers can unconditionally concatenate the result.
+ */
+export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
+  if (!fonts) return ''
+  const decls = (Object.keys(FONT_VAR_NAMES) as (keyof BasaltFontsConfig)[])
+    .filter((key) => fonts[key] !== undefined)
+    .map((key) => `  ${FONT_VAR_NAMES[key]}: ${fonts[key]};`)
+  if (decls.length === 0) return ''
+  return `:root {\n${decls.join('\n')}\n}`
+}
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -50,6 +73,10 @@ export type BasaltProviderProps = {
   /**
    * Inject the `--vx-*` palette stylesheet once via an inline `<style>`. Default `true`. Set
    * `false` to skip it (SSR / head injection — emit `buildPaletteCss(paletteOptions)` yourself).
+   * A `{ fonts }` config passed to `createBasaltTheme` rides this SAME injection (its
+   * `--basalt-font-*` declarations are appended to the same `<style>`), so `injectPalette={false}`
+   * opts fonts out too — emit `buildFontsCss(theme.other.basaltFonts)` yourself alongside the
+   * palette CSS in that case.
    */
   injectPalette?: boolean
   /**
@@ -162,20 +189,25 @@ function BasaltBridge({
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
 
-  // `createBasaltTheme`'s non-default `{ derive }` path stashes the resolved config on
-  // `theme.other.basaltDerive` — read it here (INSIDE MantineProvider, so `useMantineTheme` sees
-  // the fully-merged runtime theme) to decide whether the pre-baked static palette CSS still
-  // applies or a re-derived one is needed. Default/absent config -> zero extra derivation work.
-  const deriveConfig = useMantineTheme().other?.basaltDerive
+  // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` paths stash the resolved values on
+  // `theme.other.basaltDerive` / `theme.other.basaltFonts` — read them here (INSIDE MantineProvider,
+  // so `useMantineTheme` sees the fully-merged runtime theme) to decide whether the pre-baked static
+  // palette CSS still applies or a re-derived one is needed, and whether any `--basalt-font-*`
+  // declarations must ride along. Default/absent config -> zero extra derivation work.
+  const theme = useMantineTheme()
+  const deriveConfig = theme.other?.basaltDerive
+  const fontsConfig = theme.other?.basaltFonts
   const paletteCss = useMemo(() => {
     if (!injectPalette) return ''
-    if (deriveConfig === undefined || isDefaultDeriveConfig(deriveConfig)) {
-      return buildPaletteCss(paletteOptions)
-    }
-    // Memoized by `buildPaletteData` (keyed on the config value), so retuning is never a
-    // per-render re-derivation once a given config has been built once.
-    return buildPaletteCss(paletteOptions, buildPaletteData(deriveConfig))
-  }, [injectPalette, deriveConfig, paletteOptions])
+    const base =
+      deriveConfig === undefined || isDefaultDeriveConfig(deriveConfig)
+        ? buildPaletteCss(paletteOptions)
+        : // Memoized by `buildPaletteData` (keyed on the config value), so retuning is never a
+          // per-render re-derivation once a given config has been built once.
+          buildPaletteCss(paletteOptions, buildPaletteData(deriveConfig))
+    const fontsCss = buildFontsCss(fontsConfig)
+    return fontsCss ? `${base}\n${fontsCss}` : base
+  }, [injectPalette, deriveConfig, fontsConfig, paletteOptions])
 
   useEffect(() => {
     // SSR guard — window is not available in server contexts

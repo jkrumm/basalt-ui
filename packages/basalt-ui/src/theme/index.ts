@@ -79,13 +79,27 @@ import navLinkClasses from './nav-link.module.css'
 import segmentedControlClasses from './segmented-control.module.css'
 import timelineClasses from './timeline.module.css'
 
-// Typed `theme.other.basaltDerive` read (Mantine's `MantineThemeOther` ships an index signature,
-// so this merge is additive — no widening of the existing `[key: string]: any`). Set by
-// `createBasaltTheme`'s non-default `{ derive }` path; `BasaltProvider` reads it to decide whether
-// to inject the pre-baked static palette CSS or a re-derived one for the resolved config.
+/**
+ * The `fonts` option's resolved shape — a full CSS font-family stack string per slot (with its own
+ * fallback chain), riding the same `--basalt-font-sans/head/mono` override seam `styles.css` already
+ * ships fallbacks for. Omitted keys keep the shipped fallback untouched. See
+ * {@link CreateBasaltThemeOptions.fonts}.
+ */
+export type BasaltFontsConfig = {
+  sans?: string
+  head?: string
+  mono?: string
+}
+
+// Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` reads (Mantine's `MantineThemeOther`
+// ships an index signature, so this merge is additive — no widening of the existing
+// `[key: string]: any`). Set by `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` paths;
+// `BasaltProvider` reads them to decide whether to inject the pre-baked static palette CSS or a
+// re-derived one for the resolved config, and to emit the matching `--basalt-font-*` declarations.
 declare module '@mantine/core' {
   interface MantineThemeOther {
     basaltDerive?: DeriveConfig
+    basaltFonts?: BasaltFontsConfig
   }
 }
 
@@ -1003,6 +1017,25 @@ export type CreateBasaltThemeOptions = {
    * `DeriveControls` (`basalt-ui/theme-lab`).
    */
   derive?: Partial<DeriveConfig>
+
+  /**
+   * Retune the three-font system (`docs/DESIGN-SPEC.md` §3: Nunito Sans body / Hubot Sans
+   * condensed headings / JetBrains Mono numerals + micro-labels) instead of the shipped stacks.
+   * THIS is the font entry point — a consumer must not set `fontFamily` literals in component code
+   * (enforced by the `raw-font-family` guard kind, `./guard`); overriding Mantine's `fontFamily` via
+   * `overrides` is unnecessary because the theme already reads `--basalt-font-sans/head/mono`.
+   *
+   * Each value is a FULL CSS font-family stack string (bring your own fallback chain) —
+   * an omitted key keeps the shipped `styles.css` fallback untouched. The resolved value is
+   * stashed on `theme.other.basaltFonts` so `BasaltProvider` can inject the matching
+   * `--basalt-font-*` declarations — it rides the SAME `<style>` injection as the palette CSS, so
+   * `injectPalette={false}` (SSR/head injection) also opts fonts out; a consumer taking over
+   * injection must then emit those declarations itself.
+   *
+   * @example
+   * createBasaltTheme(undefined, { fonts: { sans: 'Inter, sans-serif' } })
+   */
+  fonts?: BasaltFontsConfig
 }
 
 /**
@@ -1010,15 +1043,16 @@ export type CreateBasaltThemeOptions = {
  * (Mantine `mergeThemeOverrides` is last-wins), so a consumer can retune any field without
  * forking the base.
  *
- * Pass `{ derive }` to retune the palette identity instead of the shipped default (see
- * {@link CreateBasaltThemeOptions}); the default (no `options`, or a `derive` that resolves back to
- * {@link DEFAULT_DERIVE_CONFIG}) stays on the pre-baked static `baseTheme` — zero extra derivation
- * work, byte-identical to the shipped identity.
+ * Pass `{ derive }` to retune the palette identity instead of the shipped default, and/or `{ fonts }`
+ * to retune the three-font system (see {@link CreateBasaltThemeOptions}); the default (no `options`,
+ * or a `derive`/`fonts` that resolve back to nothing non-default) stays on the pre-baked static
+ * `baseTheme` — zero extra derivation work, byte-identical to the shipped identity.
  *
- * Call this at MODULE scope, not inline in a component's render — the non-default `{ derive }` path
- * builds a fresh `MantineThemeOverride` object on every call (`mergeThemeOverrides(buildTheme(...), ...)`),
- * so calling it per-render would hand `MantineProvider` a new `theme` reference every render and
- * churn Mantine's theme context (and every consumer subscribed to it) for no reason.
+ * Call this at MODULE scope, not inline in a component's render — the non-default `{ derive }` /
+ * `{ fonts }` paths build a fresh `MantineThemeOverride` object on every call
+ * (`mergeThemeOverrides(...)`), so calling it per-render would hand `MantineProvider` a new `theme`
+ * reference every render and churn Mantine's theme context (and every consumer subscribed to it)
+ * for no reason.
  *
  * `overrides.other` deep-merges onto the derive-produced `other` (Mantine's `mergeThemeOverrides` /
  * `deepMerge` recurse into plain-object values rather than replacing them wholesale), so passing
@@ -1030,10 +1064,13 @@ export function createBasaltTheme(
   options?: CreateBasaltThemeOptions,
 ): MantineThemeOverride {
   const resolvedConfig = resolveDeriveConfig(options?.derive)
-  const theme = isDefaultDeriveConfig(resolvedConfig)
+  let theme = isDefaultDeriveConfig(resolvedConfig)
     ? baseTheme
     : mergeThemeOverrides(buildTheme(buildPaletteData(resolvedConfig)), {
         other: { basaltDerive: resolvedConfig },
       })
+  if (options?.fonts !== undefined) {
+    theme = mergeThemeOverrides(theme, { other: { basaltFonts: options.fonts } })
+  }
   return overrides ? mergeThemeOverrides(theme, overrides) : theme
 }

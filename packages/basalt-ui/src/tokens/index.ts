@@ -236,7 +236,7 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
     decl('tooltipMuted', n.tooltipMuted[side]),
     decl('tooltipBorder', n.tooltipBorder[side]),
     decl('tooltipShadow', n.tooltipShadow[side]),
-    decl('legendText', side === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(38,38,38,0.82)'),
+    decl('legendText', n.legendText[side]),
     decl('ink', ink.ink[side]),
     decl('ink2', ink.ink2[side]),
     decl('muted', ink.muted[side]),
