@@ -39,4 +39,13 @@ describe('buildFontsCss', () => {
     expect(css).toContain('--basalt-font-head: Poppins, sans-serif;')
     expect(css).toContain('--basalt-font-mono: Fira Code, monospace;')
   })
+
+  test('throws on values that could break out of the emitted declaration', () => {
+    expect(() => buildFontsCss({ sans: 'Inter; } body { color: red' })).toThrow(
+      /Invalid fonts.sans/,
+    )
+    expect(() => buildFontsCss({ head: 'Poppins }' })).toThrow(/Invalid fonts.head/)
+    expect(() => buildFontsCss({ mono: 'Fira /* x */ Code' })).toThrow(/Invalid fonts.mono/)
+    expect(() => buildFontsCss({ sans: "'Segoe UI', system-ui, sans-serif" })).not.toThrow()
+  })
 })

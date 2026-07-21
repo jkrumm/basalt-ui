@@ -270,7 +270,7 @@
     "rawHtmlLayout": false,
     "inlineSpacing": false,
     "inlineDisplay": false,
-    "rawRadius": false,
+    "rawRadius": true,
     "spacingSteps": []
   }
 }

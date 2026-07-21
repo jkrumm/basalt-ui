@@ -4,7 +4,7 @@
  * equivalent this mirrors.
  */
 import { describe, expect, test } from 'bun:test'
-import { createBasaltTheme } from './index'
+import { baseTheme, createBasaltTheme } from './index'
 
 describe('the default path carries no theme.other.basaltFonts', () => {
   test('createBasaltTheme() carries no basaltFonts', () => {
@@ -13,6 +13,22 @@ describe('the default path carries no theme.other.basaltFonts', () => {
 
   test('createBasaltTheme(undefined, {}) carries no basaltFonts', () => {
     expect(createBasaltTheme(undefined, {}).other?.['basaltFonts']).toBeUndefined()
+  })
+})
+
+describe('an empty fonts object is treated as absent — stays on the static baseTheme fast path', () => {
+  test('createBasaltTheme(undefined, { fonts: {} }) returns the identical baseTheme reference', () => {
+    expect(createBasaltTheme(undefined, { fonts: {} })).toBe(baseTheme)
+  })
+
+  test('carries no theme.other.basaltFonts', () => {
+    expect(createBasaltTheme(undefined, { fonts: {} }).other?.['basaltFonts']).toBeUndefined()
+  })
+
+  test('an all-undefined-keys fonts object is also treated as absent', () => {
+    const theme = createBasaltTheme(undefined, { fonts: { sans: undefined } })
+    expect(theme).toBe(baseTheme)
+    expect(theme.other?.['basaltFonts']).toBeUndefined()
   })
 })
 

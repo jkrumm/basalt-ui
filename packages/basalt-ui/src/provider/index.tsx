@@ -22,33 +22,10 @@ import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
-import type { BasaltFontsConfig } from '../theme'
-import { buildPaletteCss } from '../tokens'
+import { buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
-
-/** `{ basaltFonts key → --basalt-font-* var name }` — the one place the mapping is spelled out. */
-const FONT_VAR_NAMES = {
-  sans: '--basalt-font-sans',
-  head: '--basalt-font-head',
-  mono: '--basalt-font-mono',
-} as const satisfies Record<keyof BasaltFontsConfig, string>
-
-/**
- * Build the `:root` block of `--basalt-font-*` declarations for a resolved `basaltFonts` config —
- * only for the keys the consumer actually set (`createBasaltTheme(overrides, { fonts })`); an
- * omitted key keeps the shipped `styles.css` fallback chain untouched. Empty string when `fonts` is
- * absent or every key is omitted, so callers can unconditionally concatenate the result.
- */
-export function buildFontsCss(fonts: BasaltFontsConfig | undefined): string {
-  if (!fonts) return ''
-  const decls = (Object.keys(FONT_VAR_NAMES) as (keyof BasaltFontsConfig)[])
-    .filter((key) => fonts[key] !== undefined)
-    .map((key) => `  ${FONT_VAR_NAMES[key]}: ${fonts[key]};`)
-  if (decls.length === 0) return ''
-  return `:root {\n${decls.join('\n')}\n}`
-}
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -72,11 +49,17 @@ export type BasaltProviderProps = {
   theme?: MantineProviderProps['theme']
   /**
    * Inject the `--vx-*` palette stylesheet once via an inline `<style>`. Default `true`. Set
-   * `false` to skip it (SSR / head injection — emit `buildPaletteCss(paletteOptions)` yourself).
+   * `false` to skip it (SSR / head injection — emit `buildPaletteCss(paletteOptions)` yourself, all
+   * three builders importable from `basalt-ui/tokens`).
    * A `{ fonts }` config passed to `createBasaltTheme` rides this SAME injection (its
    * `--basalt-font-*` declarations are appended to the same `<style>`), so `injectPalette={false}`
    * opts fonts out too — emit `buildFontsCss(theme.other.basaltFonts)` yourself alongside the
    * palette CSS in that case.
+   * A `{ radius }` config rides the SAME injection too (its `--vx-radius-*` override declarations
+   * are appended alongside), so `injectPalette={false}` opts radius out just the same — an SSR
+   * consumer disabling injection must also emit `buildRadiusCss(theme.other.basaltRadius)`
+   * themselves, or `var(--vx-radius-*)` consumers render at their defaults instead of the retuned
+   * level.
    */
   injectPalette?: boolean
   /**
@@ -189,14 +172,16 @@ function BasaltBridge({
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
 
-  // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` paths stash the resolved values on
-  // `theme.other.basaltDerive` / `theme.other.basaltFonts` — read them here (INSIDE MantineProvider,
-  // so `useMantineTheme` sees the fully-merged runtime theme) to decide whether the pre-baked static
-  // palette CSS still applies or a re-derived one is needed, and whether any `--basalt-font-*`
+  // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` / `{ radius }` paths stash the
+  // resolved values on `theme.other.basaltDerive` / `theme.other.basaltFonts` /
+  // `theme.other.basaltRadius` — read them here (INSIDE MantineProvider, so `useMantineTheme` sees
+  // the fully-merged runtime theme) to decide whether the pre-baked static palette CSS still applies
+  // or a re-derived one is needed, and whether any `--basalt-font-*` / `--vx-radius-*` override
   // declarations must ride along. Default/absent config -> zero extra derivation work.
   const theme = useMantineTheme()
   const deriveConfig = theme.other?.basaltDerive
   const fontsConfig = theme.other?.basaltFonts
+  const radiusConfig = theme.other?.basaltRadius
   const paletteCss = useMemo(() => {
     if (!injectPalette) return ''
     const base =
@@ -206,8 +191,9 @@ function BasaltBridge({
           // per-render re-derivation once a given config has been built once.
           buildPaletteCss(paletteOptions, buildPaletteData(deriveConfig))
     const fontsCss = buildFontsCss(fontsConfig)
-    return fontsCss ? `${base}\n${fontsCss}` : base
-  }, [injectPalette, deriveConfig, fontsConfig, paletteOptions])
+    const radiusCss = buildRadiusCss(radiusConfig)
+    return [base, fontsCss, radiusCss].filter(Boolean).join('\n')
+  }, [injectPalette, deriveConfig, fontsConfig, radiusConfig, paletteOptions])
 
   useEffect(() => {
     // SSR guard — window is not available in server contexts

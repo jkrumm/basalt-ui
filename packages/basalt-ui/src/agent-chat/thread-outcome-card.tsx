@@ -107,12 +107,12 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
         {badge !== undefined && (
           <Badge
             size="xs"
-            radius={6}
             styles={{
               root: {
                 backgroundColor: alpha(badge.statusToken, 0.13),
                 padding: '2px 7px',
                 height: 'auto',
+                borderRadius: 'var(--vx-radius-ctrl)',
               },
               label: {
                 fontFamily: 'var(--basalt-font-mono)',

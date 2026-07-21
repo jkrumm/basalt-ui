@@ -68,11 +68,12 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { BP, buildPaletteData, RADIUS, RADIUS_STEP } from '../tokens/palette'
-import type { PaletteData } from '../tokens/palette'
+import { BP, buildPaletteData, deriveRadius, RADIUS_STEP } from '../tokens/palette'
+import type { PaletteData, RadiusValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { VX } from '../tokens'
+import type { BasaltFontsConfig } from '../tokens'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
@@ -80,26 +81,24 @@ import segmentedControlClasses from './segmented-control.module.css'
 import timelineClasses from './timeline.module.css'
 
 /**
- * The `fonts` option's resolved shape — a full CSS font-family stack string per slot (with its own
- * fallback chain), riding the same `--basalt-font-sans/head/mono` override seam `styles.css` already
- * ships fallbacks for. Omitted keys keep the shipped fallback untouched. See
+ * The `fonts` option's resolved shape — defined in `basalt-ui/tokens` (`BasaltFontsConfig`,
+ * paired with its pure builder `buildFontsCss` there); re-exported here since
+ * `CreateBasaltThemeOptions.fonts` below is its primary production entry point. See
  * {@link CreateBasaltThemeOptions.fonts}.
  */
-export type BasaltFontsConfig = {
-  sans?: string
-  head?: string
-  mono?: string
-}
+export type { BasaltFontsConfig } from '../tokens'
 
-// Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` reads (Mantine's `MantineThemeOther`
-// ships an index signature, so this merge is additive — no widening of the existing
-// `[key: string]: any`). Set by `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` paths;
-// `BasaltProvider` reads them to decide whether to inject the pre-baked static palette CSS or a
-// re-derived one for the resolved config, and to emit the matching `--basalt-font-*` declarations.
+// Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` reads
+// (Mantine's `MantineThemeOther` ships an index signature, so this merge is additive — no widening
+// of the existing `[key: string]: any`). Set by `createBasaltTheme`'s non-default `{ derive }` /
+// `{ fonts }` / `{ radius }` paths; `BasaltProvider` reads them to decide whether to inject the
+// pre-baked static palette CSS or a re-derived one for the resolved config, and to emit the
+// matching `--basalt-font-*` / `--vx-radius-*` override declarations.
 declare module '@mantine/core' {
   interface MantineThemeOther {
     basaltDerive?: DeriveConfig
     basaltFonts?: BasaltFontsConfig
+    basaltRadius?: RadiusValues
   }
 }
 
@@ -165,6 +164,9 @@ function pinShades(
 /** The shipped, config-independent palette data — `baseTheme` / `cssVariablesResolver` below are
  * built from this once, at module load. */
 const DEFAULT_PALETTE_DATA = buildPaletteData(DEFAULT_DERIVE_CONFIG)
+
+/** The shipped, level-0 radius values — `buildTheme`'s default `radius` param. */
+const DEFAULT_RADIUS_VALUES: RadiusValues = deriveRadius(0)
 
 /**
  * Build the dark Mantine tuple for `data` at 10 fixed indices:
@@ -350,8 +352,15 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
  * `defaultProps` — it covers every input Mantine ships (Autocomplete, MultiSelect, TagsInput,
  * PinInput, …) plus any consumer that passes an explicit `size="xs"`. Enumerating components in
  * `defaultProps` could never do that; the previous attempt missed seven of them.
+ *
+ * `radius` defaults to `DEFAULT_RADIUS_VALUES` (`deriveRadius(0)`, the shipped identity) — pass a
+ * different `RadiusValues` to rebuild every radius-anchored `defaultProps`/`styles` number AND the
+ * `radius` size-scale from a retuned level instead (`createBasaltTheme`'s `{ radius }` option).
  */
-function buildTheme(data: PaletteData): MantineThemeOverride {
+function buildTheme(
+  data: PaletteData,
+  radius: RadiusValues = DEFAULT_RADIUS_VALUES,
+): MantineThemeOverride {
   const { ACCENT, FILL } = data
   return createTheme({
     primaryColor: 'blue',
@@ -399,15 +408,16 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
     spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
-    // 2 4 6 16 32 — the size scale; `md` = `RADIUS.ctrl` (6px) is the control-radius default
-    // (`defaultRadius: 'md'`, inputs/buttons). Card/Paper/Popover/Modal/Notification read
-    // `--vx-radius-*` directly instead (7px cards / 6px controls), so the larger steps of this
-    // scale no longer mirror either token — `xs`/`lg`/`xl` are independent `RADIUS_STEP` constants,
-    // `sm` shares `RADIUS_STEP.fine` with the Progress bar (see below).
+    // 2 4 6 16 32 — the size scale; `md` = `radius.ctrl` (6px at level 0) is the control-radius
+    // default (`defaultRadius: 'md'`, inputs/buttons). Card/Paper/Popover/Modal/Notification read
+    // `--vx-radius-*` directly instead (7px cards / 6px controls at level 0), so the larger steps of
+    // this scale no longer mirror either anchor — `xs`/`lg`/`xl` are independent `RADIUS_STEP`
+    // constants (fixed regardless of the radius knob), `sm` shares `radius.fine` with the Progress
+    // bar (see below).
     radius: {
       xs: pxRem(RADIUS_STEP.scaleXs),
-      sm: pxRem(RADIUS_STEP.fine),
-      md: pxRem(RADIUS.ctrl),
+      sm: pxRem(radius.fine),
+      md: pxRem(radius.ctrl),
       lg: pxRem(RADIUS_STEP.scaleLg),
       xl: pxRem(RADIUS_STEP.scaleXl),
     },
@@ -439,7 +449,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // resolves to the SAME three tokens:
       //   • background → `--vx-surface-panel` (the panel surface, NOT the page body).
       //   • depth      → `--vx-shadow-card` (whisper shadow + ring, replaces `withBorder`).
-      //   • radius     → `--vx-radius-card` (10px).
+      //   • radius     → `--vx-radius-card` (7px).
       // This is the single source the user's "strict surface across components" demands; the
       // `raw-surface` guard then stops consumers re-overriding any of it inline.
       Card: Card.extend({
@@ -463,7 +473,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
       // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
       // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
-      Badge: Badge.extend({ defaultProps: { radius: RADIUS.ctrl } }),
+      Badge: Badge.extend({ defaultProps: { radius: radius.ctrl } }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom
       // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
       // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
@@ -513,7 +523,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             fontSize: VX.text.md,
             lineHeight: '1.35',
             // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
-            borderRadius: RADIUS.ctrl,
+            borderRadius: radius.ctrl,
           },
           // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
           // doesn't reach it.
@@ -592,7 +602,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // (applies to every option regardless of state), so it's in segmented-control.module.css
       // instead — same pattern as NavLink's active-icon accent.
       SegmentedControl: SegmentedControl.extend({
-        defaultProps: { radius: RADIUS.card },
+        defaultProps: { radius: radius.card },
         classNames: { label: segmentedControlClasses.label },
         styles: {
           root: {
@@ -602,13 +612,13 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
           indicator: {
             backgroundColor: 'var(--vx-surface-panel)',
             boxShadow: 'var(--vx-shadow-ctrl)',
-            borderRadius: RADIUS_STEP.tight,
+            borderRadius: radius.tight,
           },
         },
       }),
       // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
       Progress: Progress.extend({
-        defaultProps: { size: 6, radius: RADIUS_STEP.fine },
+        defaultProps: { size: 6, radius: radius.fine },
         styles: {
           root: { backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)' },
         },
@@ -655,7 +665,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Tooltip is a standalone floating primitive (not Popover-based) — themed directly. Its arrow
       // ships border-less (`border: 0`), so the same edge is applied inline to keep the ring closed.
       Tooltip: Tooltip.extend({
-        defaultProps: { radius: RADIUS_STEP.floating },
+        defaultProps: { radius: radius.floating },
         styles: {
           tooltip: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -669,7 +679,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
       // internally with no `radius`/`shadow` of its own), so theming it here covers both.
       Popover: Popover.extend({
-        defaultProps: { radius: RADIUS_STEP.floating },
+        defaultProps: { radius: radius.floating },
         styles: {
           dropdown: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -690,7 +700,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             border: '1px solid var(--vx-surface-border)',
             boxShadow: 'var(--vx-shadow-overlay)',
           },
-          item: { fontSize: VX.text.md, borderRadius: RADIUS.ctrl, padding: '6px 10px' },
+          item: { fontSize: VX.text.md, borderRadius: radius.ctrl, padding: '6px 10px' },
           label: {
             fontFamily: 'var(--basalt-font-mono)',
             fontSize: VX.text.micro,
@@ -717,7 +727,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
       // surface. Title = head font; close button = the ghost idiom (floating.module.css).
       Modal: Modal.extend({
-        defaultProps: { radius: RADIUS_STEP.floating },
+        defaultProps: { radius: radius.floating },
         classNames: { close: floatingClasses.closeButton },
         styles: {
           content: {
@@ -757,7 +767,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
             border: 'none',
             color: 'var(--vx-ink2)',
-            borderRadius: RADIUS_STEP.tight,
+            borderRadius: radius.tight,
           },
         },
       }),
@@ -765,7 +775,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-            borderRadius: RADIUS_STEP.tight,
+            borderRadius: radius.tight,
           },
         },
       }),
@@ -854,7 +864,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       }),
       // Card idiom — same panel + shadow-card as every other surface.
       Notification: Notification.extend({
-        defaultProps: { radius: RADIUS_STEP.floating },
+        defaultProps: { radius: radius.floating },
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -1055,6 +1065,35 @@ export type CreateBasaltThemeOptions = {
    * createBasaltTheme(undefined, { fonts: { sans: 'Inter, sans-serif' } })
    */
   fonts?: BasaltFontsConfig
+
+  /**
+   * Retune the two radius anchors (`card`/`ctrl`, `docs/DESIGN-SPEC.md` §4) and their dependent
+   * offsets from a single integer level in `[-5, 5]` (default `0` = the shipped identity: card 7,
+   * ctrl 6) — see `deriveRadius` (`basalt-ui/tokens`) for the exact law. Rebuilds every
+   * radius-anchored `defaultProps`/`styles` number in the Mantine theme AND the `radius` size-scale
+   * from the level's values. The resolved {@link RadiusValues} is stashed on
+   * `theme.other.basaltRadius` (only when non-default) so `BasaltProvider` can emit the matching
+   * `--vx-radius-*` override declarations — it rides the SAME `<style>` injection as the palette
+   * CSS, so `injectPalette={false}` also opts the radius override out.
+   *
+   * For live DEV-time tuning instead of a fixed production identity, see the "Radius" slider on
+   * `DeriveControls` (`basalt-ui/theme-lab`) — that dev-tool path can only move the CSS vars, not
+   * the defaultProps numbers baked into the theme object; this option covers both.
+   *
+   * @example
+   * createBasaltTheme(undefined, { radius: 2 })
+   */
+  radius?: number
+}
+
+/**
+ * `true` when `fonts` sets at least one slot — an empty object (or one whose every key is
+ * `undefined`) configures nothing, so `createBasaltTheme` must treat it as absent and stay on the
+ * static `baseTheme` fast path rather than paying for a `mergeThemeOverrides` call that would only
+ * stash an empty `basaltFonts: {}` on `theme.other`.
+ */
+function hasFontsConfig(fonts: BasaltFontsConfig | undefined): fonts is BasaltFontsConfig {
+  return fonts !== undefined && Object.values(fonts).some((value) => value !== undefined)
 }
 
 /**
@@ -1062,34 +1101,50 @@ export type CreateBasaltThemeOptions = {
  * (Mantine `mergeThemeOverrides` is last-wins), so a consumer can retune any field without
  * forking the base.
  *
- * Pass `{ derive }` to retune the palette identity instead of the shipped default, and/or `{ fonts }`
- * to retune the three-font system (see {@link CreateBasaltThemeOptions}); the default (no `options`,
- * or a `derive`/`fonts` that resolve back to nothing non-default) stays on the pre-baked static
- * `baseTheme` — zero extra derivation work, byte-identical to the shipped identity.
+ * Pass `{ derive }` to retune the palette identity instead of the shipped default, `{ fonts }` to
+ * retune the three-font system, and/or `{ radius }` to retune the two radius anchors (see
+ * {@link CreateBasaltThemeOptions}); the default (no `options`, or `derive`/`radius` that resolve
+ * back to nothing non-default and a `fonts` that sets no slot — an omitted, empty, or
+ * all-`undefined`-keys object) stays on the pre-baked static `baseTheme` — zero extra derivation
+ * work, byte-identical to the shipped identity.
  *
  * Call this at MODULE scope, not inline in a component's render — the non-default `{ derive }` /
- * `{ fonts }` paths build a fresh `MantineThemeOverride` object on every call
+ * `{ fonts }` / `{ radius }` paths build a fresh `MantineThemeOverride` object on every call
  * (`mergeThemeOverrides(...)`), so calling it per-render would hand `MantineProvider` a new `theme`
  * reference every render and churn Mantine's theme context (and every consumer subscribed to it)
  * for no reason.
  *
  * `overrides.other` deep-merges onto the derive-produced `other` (Mantine's `mergeThemeOverrides` /
  * `deepMerge` recurse into plain-object values rather than replacing them wholesale), so passing
- * `{ other: { myFlag: true } }` alongside a non-default `derive` still leaves `other.basaltDerive`
- * intact — it is only lost if a consumer's own `overrides.other` explicitly sets that same key.
+ * `{ other: { myFlag: true } }` alongside a non-default `derive`/`fonts`/`radius` still leaves
+ * `other.basaltDerive`/`other.basaltFonts`/`other.basaltRadius` intact — it is only lost if a
+ * consumer's own `overrides.other` explicitly sets that same key.
  */
 export function createBasaltTheme(
   overrides?: MantineThemeOverride,
   options?: CreateBasaltThemeOptions,
 ): MantineThemeOverride {
   const resolvedConfig = resolveDeriveConfig(options?.derive)
-  let theme = isDefaultDeriveConfig(resolvedConfig)
-    ? baseTheme
-    : mergeThemeOverrides(buildTheme(buildPaletteData(resolvedConfig)), {
-        other: { basaltDerive: resolvedConfig },
-      })
-  if (options?.fonts !== undefined) {
-    theme = mergeThemeOverrides(theme, { other: { basaltFonts: options.fonts } })
+  const radiusLevel = options?.radius ?? 0
+  const radiusValues = deriveRadius(radiusLevel)
+  const isDefaultRadius = radiusLevel === 0
+  const isDefaultDerive = isDefaultDeriveConfig(resolvedConfig)
+
+  let theme: MantineThemeOverride
+  if (isDefaultDerive && isDefaultRadius) {
+    theme = baseTheme
+  } else {
+    const paletteData = isDefaultDerive ? DEFAULT_PALETTE_DATA : buildPaletteData(resolvedConfig)
+    theme = mergeThemeOverrides(buildTheme(paletteData, radiusValues), {
+      other: {
+        ...(isDefaultDerive ? {} : { basaltDerive: resolvedConfig }),
+        ...(isDefaultRadius ? {} : { basaltRadius: radiusValues }),
+      },
+    })
+  }
+  const fontsConfig = options?.fonts
+  if (hasFontsConfig(fontsConfig)) {
+    theme = mergeThemeOverrides(theme, { other: { basaltFonts: fontsConfig } })
   }
   return overrides ? mergeThemeOverrides(theme, overrides) : theme
 }

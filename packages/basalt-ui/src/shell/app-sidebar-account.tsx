@@ -61,7 +61,7 @@ function IconUser() {
 function AccountSkeleton() {
   return (
     <Group className={classes.accountRow} gap="sm" wrap="nowrap">
-      <Skeleton height={28} width={28} radius={7} />
+      <Skeleton height={28} width={28} style={{ borderRadius: 'var(--vx-radius-card)' }} />
       <Stack gap={4} className={classes.accountText}>
         <Skeleton height={10} width="70%" radius="sm" />
         <Skeleton height={9} width="50%" radius="sm" />
