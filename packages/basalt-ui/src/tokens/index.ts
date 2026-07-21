@@ -9,7 +9,15 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { buildPaletteData, RADIUS, RADIUS_STEP, SHADOW } from './palette'
+import {
+  buildPaletteData,
+  RADIUS,
+  RADIUS_STEP,
+  SHADOW,
+  SPACE,
+  SPACE_SCALE,
+  SPACE_STEP,
+} from './palette'
 import type { PaletteData, RadiusValues } from './palette'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
@@ -286,6 +294,27 @@ function frameworkDerived(data: PaletteData): string {
     decl('radius-fine', `${RADIUS_STEP.fine}px`),
     // The floating tier (Modal/Tooltip/Popover/Notification, content code/mermaid blocks).
     decl('radius-floating', `${RADIUS_STEP.floating}px`),
+    // Every `SPACE` anchor + `SPACE_SCALE` stop + `SPACE_STEP` one-off — same single-source
+    // reasoning as the radii above, so `theme/index.ts`'s NavLink/Menu/SegmentedControl re-points
+    // and this emission read one number instead of two that can drift apart (Timeline's
+    // `bulletSize` still reads the raw number this commit — see the `rem()` comma-trap comment at
+    // its `defaultProps` site — but the var is emitted regardless, for anything else that wants
+    // it). `SPACE_FIXED` (Timeline `lineWidth`, 1px borders) is deliberately NOT emitted here — it
+    // never moves, so a var would only invite someone to think it does.
+    decl('space-row-inset-x', `${SPACE.rowInsetX}px`),
+    decl('space-row-inset-y', `${SPACE.rowInsetY}px`),
+    decl('space-stack-xs', `${SPACE.stackXs}px`),
+    decl('space-stack-sm', `${SPACE.stackSm}px`),
+    decl('space-stack-md', `${SPACE.stackMd}px`),
+    decl('space-stack-lg', `${SPACE.stackLg}px`),
+    decl('space-stack-xl', `${SPACE.stackXl}px`),
+    decl('space-scale-xs', `${SPACE_SCALE.xs}px`),
+    decl('space-scale-sm', `${SPACE_SCALE.sm}px`),
+    decl('space-scale-md', `${SPACE_SCALE.md}px`),
+    decl('space-scale-lg', `${SPACE_SCALE.lg}px`),
+    decl('space-scale-xl', `${SPACE_SCALE.xl}px`),
+    decl('space-segmented-track-inset', `${SPACE_STEP.segmentedTrackInset}px`),
+    decl('space-timeline-bullet', `${SPACE_STEP.timelineBullet}px`),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
     // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface

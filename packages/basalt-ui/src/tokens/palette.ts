@@ -207,6 +207,93 @@ export const RADIUS_STEP = {
 } as const
 
 /**
+ * Density-tracking semantic spacing anchors — the values a future density knob retunes together,
+ * the spacing analog of `RADIUS` above. Frequency-audited from the component sweep: `rowInsetX`/
+ * `rowInsetY` are the `6px 10px` row inset that appears verbatim in 4 places (NavLink root, Menu
+ * item), and `stackXs`..`stackXl` are the 4px vertical rhythm. `tokens/index.ts`'s
+ * `frameworkDerived` emits each of these as a `--vx-space-*` CSS var from these SAME numbers, and
+ * `theme/index.ts` re-points its NavLink/Menu row padding onto that var, so the var and every JS
+ * default read one source instead of two that can drift apart. No density law exists yet — these
+ * are the raw shipped numbers (a later commit adds `deriveSpacing`); UNCHANGED from the shipped
+ * identity (locked by `theme/spacing.test.ts`).
+ */
+export const SPACE = {
+  /** Horizontal inset of a nav/menu row (NavLink root, Menu item). */
+  rowInsetX: 10,
+  /** Vertical inset of a nav/menu row (NavLink root, Menu item). */
+  rowInsetY: 6,
+  /** The 4px vertical rhythm's tightest step. */
+  stackXs: 4,
+  /** The 4px vertical rhythm, 2nd step. */
+  stackSm: 8,
+  /** The 4px vertical rhythm, 3rd step — coincides with `SPACE_SCALE.sm` at level 0 (see that
+   * constant's doc for why the two stay independent regardless). */
+  stackMd: 12,
+  /** The 4px vertical rhythm, 4th step — coincides with `SPACE_SCALE.md` at level 0. */
+  stackLg: 16,
+  /** The 4px vertical rhythm's widest step — coincides with `SPACE_SCALE.xl` at level 0. */
+  stackXl: 24,
+} as const
+
+/**
+ * The Mantine `spacing` size-scale (`xs`/`sm`/`md`/`lg`/`xl`) — the app-wide generic rhythm every
+ * `p=`/`m=`/`gap=` prop in every consumer resolves through. Density-tracking, like `SPACE` above,
+ * but deliberately a SEPARATE group even where a level-0 number coincides with a `SPACE` anchor
+ * (today `xs`/`sm`/`md`/`xl` happen to equal `rowInsetX`/`stackMd`/`stackLg`/`stackXl` — a past
+ * density pass landed there, not a law). An anchor is a SPECIFIC component's inset (NavLink/Menu
+ * row padding); a scale stop is the GENERIC scale every layout call site reads. Coupling them would
+ * mean retuning a nav row's inset silently reshapes every `p="xs"` app-wide, and a future density
+ * law could never move the two at different rates — the same reason `RADIUS_STEP.scaleXs`/
+ * `scaleLg`/`scaleXl` stay independent of `RADIUS` even though `radius.md` happens to also equal
+ * `RADIUS.ctrl` (that one IS a documented law: the control tier IS the `md` stop, hence
+ * `defaultRadius: 'md'` — no such relation exists here). UNCHANGED from the shipped identity
+ * (locked by `theme/spacing.test.ts`).
+ */
+export const SPACE_SCALE = {
+  xs: 10,
+  sm: 12,
+  md: 16,
+  lg: 18,
+  xl: 24,
+} as const
+
+/**
+ * The resolved shape a future `deriveSpacing(level)` will return — every density-tracking spacing
+ * number, kept as the two groups above (`anchors` = `SPACE`, `scale` = `SPACE_SCALE`) rather than
+ * flattened into one object: the law must be free to move an anchor and a scale stop at different
+ * rates (see `SPACE_SCALE`'s doc), so the shape that carries them stays split too. The spacing
+ * analog of {@link RadiusValues}. No `deriveSpacing` function exists yet; `{ anchors: SPACE, scale:
+ * SPACE_SCALE }` itself is the level-0 identity.
+ */
+export type SpaceValues = {
+  anchors: typeof SPACE
+  scale: typeof SPACE_SCALE
+}
+
+/**
+ * Density-tracking, genuine one-offs — named insets that fit neither the `SPACE` vertical rhythm/
+ * row inset nor the `SPACE_SCALE` generic rhythm. Unlike `RADIUS_STEP`'s independent scale stops,
+ * these DO track density; they are simply each their own single-use anchor, not part of either
+ * group above. UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`).
+ */
+export const SPACE_STEP = {
+  /** SegmentedControl track's optical inset (`styles.root` padding). */
+  segmentedTrackInset: 2,
+  /** Timeline `defaultProps.bulletSize`. */
+  timelineBullet: 22,
+} as const
+
+/**
+ * Density-EXEMPT structurals — unlike `SPACE`/`SPACE_STEP` above, these never move with a future
+ * density knob. `tokens/index.ts` does NOT emit these as `--vx-*` CSS vars (see the comment there
+ * for why: a var would only invite someone to think they move).
+ */
+export const SPACE_FIXED = {
+  /** Timeline `defaultProps.lineWidth`; also used for 1px borders. */
+  hairline: 1,
+} as const
+
+/**
  * Assemble every derive-config-dependent palette family from a resolved {@link DeriveConfig},
  * merged with the structural hand-authored tokens (neutrals' chart-chrome rgba()s, the floating
  * overlay surface, the divider fade) that never vary with the config. Pure function of `config` —
