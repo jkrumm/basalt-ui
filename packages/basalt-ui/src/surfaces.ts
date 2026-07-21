@@ -229,7 +229,8 @@ export const SURFACES = {
   './theme-lab': {
     kind: 'tooling',
     layer: 'mantine-coupled',
-    description: 'ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection',
+    description:
+      'ThemeLabControls, applyOverrides, COLOR_GROUPS — a low-level inspector for the non-derived structural tokens; identity/color tuning lives in DeriveControls',
     forbiddenImports: [],
   },
   './vite': {
