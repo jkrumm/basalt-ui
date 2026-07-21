@@ -71,6 +71,53 @@ that language is historical; see the banner on each.
   (contextual help drawer), and the content-collections + TanStack Start recipe in
   `agent/rules/basalt-content.md`.
 
+## Derive engine — "one accent in, calculated palette out" (stages 1-3, done)
+
+The shipped palette is GENERATED, not hand-authored. `tokens/derive.ts` (a ported, calibration-
+checked HCT derivation) computes the accent family, the 12 categorical fills, the surface stops,
+the ink ramp, and the status solids from one seed hex + five bounded knobs; `tokens/palette.ts`
+builds `ACCENT`/`FILL`/`SURFACE`/`INK`/the status hues from `deriveTokens(DEFAULT_DERIVE_CONFIG)`
+once at module load (seed `#0077bd`, `neutral: 'zinc'`, all level knobs at 0; vibrancy centers on
+`x0.72` chroma — one step above the original muted `x0.6` center). Shipped:
+
+- **Generator** — `tokens/{derive,hct}.ts`: the HCT math (zero-dependency sRGB↔HCT + a 16-iteration
+  gamut-mapping chroma search) and the derivation laws (the Y=0.165 fill-luminance band, the
+  3.0:1 `onAccent` contrast floor, the vibrancy/brightness/surface-level knob mappings).
+- **Generated palette** — `tokens/palette.ts` computes `ACCENT`/`FILL`/`SURFACE`/`INK`/status from
+  the generator at the new baseline (e.g. `ACCENT.accentFill` = `#4374a6`, `SURFACE.bg` =
+  `#f2f2f5`/`#27272a`) instead of hand-picked hexes; the chart-chrome opacity ramps
+  (`NEUTRAL.axis`/`grid`/`tooltip*`) now key off the derived ink hex too, not a frozen pre-
+  derivation approximation.
+- **Consumer API** — `createBasaltTheme(overrides?, { derive: { accent, neutral, lightLevel,
+darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the shipped default per-
+  knob; the default (or a `derive` that resolves back to it) stays on the pre-baked static
+  `baseTheme` — zero extra derivation work.
+- **`DeriveControls`** (`theme-lab`) — the DEV-tool live-tuning panel for the same six knobs,
+  persisted to its own localStorage key, applied via a cascade-winning `<style>` tag. Not the
+  production path — that's `createBasaltTheme`'s `derive` option.
+- **Enforcement** — `basalt-ui check-theme` wired into the repo's own `bun run pre` (root
+  `package.json`) and into `lefthook.yml`'s staged pre-commit (`packages/basalt-ui/src/**` glob);
+  `tokens/derive.ts` + `tokens/hct.ts` are in the package's `basalt.exempt` list (they ARE the
+  generator/calibrated-constant source, alongside `palette.ts`/`theme/index.ts`) so the `raw-hex`
+  guard rule doesn't fire on their calibrated literals.
+
+**Known limitations:**
+
+- `accentHover`'s dark-mode hue drifts from the legacy hand-tuned value by ΔE≈5.9 (perceptible but
+  minor) — a calibration gap, not a regression, tracked for a future re-tune.
+- A handful of structural tokens stay non-derived by design: `SHADOW.*`, `SURFACE.overlay`/
+  `divider`, the raw `BP` hue ramps, and `STATUS.excellent`/`neutral`.
+- Mantine's `theme.colors.dark` tuple is generator-derived (`buildDarkTuple`, `theme/index.ts`) for
+  every config, including the shipped default — the previous pinned `basaltDark` literal (hand-
+  tuned, pre-derive-engine) is gone; a small visible dark-mode shift is expected and accepted.
+- The accent fill's page-contrast floor (3.0:1 against BOTH derived page backgrounds) is now a
+  clamped law: `derive.ts`'s `clampFillTone` steps the `accentBrightness`-shifted fill tone back
+  toward the band centre until it clears the floor on both schemes, so the knob saturates rather
+  than violating 3.0:1 at the extremes.
+- `stone`/`slate`/`neutral` are spec'd `NEUTRAL_PRESETS` entries (hue/chroma pairs) but have no
+  calibration data behind them — only `zinc` is calibrated against the framework's original
+  hand-tuned identity.
+
 ## Open — the finish line (owner-gated, cannot be closed from source)
 
 1. **Push** the outstanding commits to `origin/feat/s0-mantine-pivot` (pushed to `origin` on

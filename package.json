@@ -16,7 +16,8 @@
     "lint": "oxlint",
     "typecheck": "bun --filter basalt-ui --filter @basalt-ui/playground typecheck",
     "test": "bun test",
-    "pre": "bun run fmt:check && bun run lint && bun run typecheck",
+    "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme",
+    "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
     "hooks:uninstall": "lefthook uninstall"
