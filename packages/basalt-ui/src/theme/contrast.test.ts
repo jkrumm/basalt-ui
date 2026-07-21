@@ -24,7 +24,7 @@
 import { DEFAULT_THEME, getPrimaryShade, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { ACCENT, FILL } from '../tokens/palette'
+import { ACCENT, FILL, SURFACE } from '../tokens/palette'
 import { baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
@@ -159,8 +159,9 @@ describe('the accent is split by role: ink inverts, surface does not', () => {
   for (const scheme of SCHEMES) {
     test(`the accent surface stays visible AGAINST the ${scheme} page`, () => {
       // The reason the fill is not simply darkened until white text is comfortable: at 3:1 (WCAG
-      // non-text) the control must be distinguishable from the page. `#0069a8` would score 2.68:1
-      // on dark — a button fading into the background.
+      // non-text) the control must be distinguishable from the page. Darkening the fill further
+      // buys white-text contrast but can drop this ratio below 3 — a button fading into the
+      // background.
       const ratio = contrastRatio(filledBackground(theme.primaryColor, scheme), PAGE[scheme])
       expect(ratio).toBeGreaterThanOrEqual(3)
     })
@@ -302,5 +303,20 @@ describe('doctrine inversion #1 reaches every default-variant CONTROL, not just 
     })
     expect(border).toContain('solid var(--mantine-color-default-border)')
     expect(border).not.toContain('surface-border')
+  })
+})
+
+describe('the shipped palette is the generator output at DEFAULT_DERIVE_CONFIG', () => {
+  // A handful of exact hexes from `deriveTokens(DEFAULT_DERIVE_CONFIG)` (`tokens/derive.ts`) — the
+  // shipped default identity (seed #0077bd, zinc, all four knobs at level 0). Drift here means
+  // either the derive constants moved or `palette.ts` stopped reading the generator's output.
+  test('accentFill (light + dark, same hex)', () => {
+    expect(ACCENT.accentFill.light).toBe('#4374a6')
+    expect(ACCENT.accentFill.dark).toBe('#4374a6')
+  })
+
+  test('surface-bg', () => {
+    expect(SURFACE.bg.light).toBe('#f2f2f5')
+    expect(SURFACE.bg.dark).toBe('#27272a')
   })
 })

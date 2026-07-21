@@ -40,6 +40,9 @@ import type { ReactNode } from 'react'
 import { BP, FILL } from '../tokens/palette'
 import { VX } from '../tokens'
 
+export { DeriveControls } from './derive-controls'
+export type { DeriveControlsProps } from './derive-controls'
+
 /** The bridged Mantine families, in palette order — the source for the `Fills` group below. */
 const FILL_FAMILIES = Object.keys(FILL)
 

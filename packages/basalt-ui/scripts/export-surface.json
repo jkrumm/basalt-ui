@@ -114,18 +114,22 @@
   ],
   "./tokens": [
     "BP",
+    "DEFAULT_DERIVE_CONFIG",
     "VX",
     "alpha",
     "buildPaletteCss",
     "defineSeries",
+    "deriveTokens",
     "groupTokens",
     "p",
+    "resolveDeriveConfig",
     "seriesTokens"
   ],
   "./theme-lab": [
     "AREA_BOTTOM_VAR",
     "AREA_TOP_VAR",
     "COLOR_GROUPS",
+    "DeriveControls",
     "ThemeLabControls",
     "applyOverrides",
     "loadOverrides",

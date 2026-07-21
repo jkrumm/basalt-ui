@@ -68,13 +68,26 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { ACCENT, BP, FILL, INK, NEUTRAL, SURFACE } from '../tokens/palette'
+import { BP, buildPaletteData } from '../tokens/palette'
+import type { PaletteData } from '../tokens/palette'
+import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
+import type { DeriveConfig } from '../tokens/derive'
 import { VX } from '../tokens'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
 import navLinkClasses from './nav-link.module.css'
 import segmentedControlClasses from './segmented-control.module.css'
 import timelineClasses from './timeline.module.css'
+
+// Typed `theme.other.basaltDerive` read (Mantine's `MantineThemeOther` ships an index signature,
+// so this merge is additive — no widening of the existing `[key: string]: any`). Set by
+// `createBasaltTheme`'s non-default `{ derive }` path; `BasaltProvider` reads it to decide whether
+// to inject the pre-baked static palette CSS or a re-derived one for the resolved config.
+declare module '@mantine/core' {
+  interface MantineThemeOther {
+    basaltDerive?: DeriveConfig
+  }
+}
 
 // Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
 function hexToRgb(h: string): [number, number, number] {
@@ -105,12 +118,13 @@ function ramp10(stops: readonly string[]): MantineColorsTuple {
  *
  * `ramp10` linearly interpolates a 5-stop family across 10 fractional positions — that can only
  * land EXACTLY on a raw family stop at the two extremes (index 0 / 9), never at an arbitrary
- * middle index. Two indices of the blue family must be EXACT spec hexes, so both are pinned after
- * the ramp is built (the rest still reads as one coherent sky-blue scale):
+ * middle index. Two indices of the blue family must be EXACT, GENERATED accent hexes (see
+ * `ACCENT` in `tokens/palette.ts` — computed from `tokens/derive.ts`, not hand-picked), so both
+ * are pinned after the ramp is built (the rest still reads as one coherent sky-blue scale):
  *
- *  • index 6 = `primaryShade` → `ACCENT.accentFill` (`#0077bd`). Mantine derives
+ *  • index 6 = `primaryShade` → `ACCENT.accentFill`. Mantine derives
  *    `--mantine-color-blue-filled` from it, i.e. every filled control's surface.
- *  • index 4 → `ACCENT.accent.dark` (`#8ec5ff`). Mantine HARDCODES the dark-scheme
+ *  • index 4 → `ACCENT.accent.dark`. Mantine HARDCODES the dark-scheme
  *    `--mantine-color-{c}-text` to shade 4 (not to `primaryShade`), so this is what keeps the
  *    accent LIGHT when it is used as ink on dark — the other half of the ink/surface split.
  */
@@ -123,22 +137,33 @@ function pinShades(
   return out as unknown as MantineColorsTuple
 }
 
-// Basalt zinc dark-surface ramp at the indices Mantine reads:
-// text=dark[0], dimmed=dark[2], border=dark[4], hover=dark[5], surface=dark[6], body=dark[7].
-// Mirrors tokens `INK.*.dark` (text ramp) + `SURFACE.*.dark` (surfaces) — keep in lockstep. The
-// resolver re-pins dark-4 to --vx-surface-border, so [4] is the strong-hairline ("line") fallback.
-const basaltDark: MantineColorsTuple = [
-  '#e5e5e5', // text (= INK.ink.dark)
-  '#dddddd', // emphasis body (= INK.ink2.dark)
-  '#d4d4d4', // dimmed (= INK.muted.dark = NEUTRAL.neutral.dark)
-  '#a1a1a1', // faint (= INK.faint.dark)
-  '#3f3f46', // border fallback ("line"; resolver pins dark-4 → --vx-surface-border)
-  '#333338', // hover (= SURFACE.panelHover.dark)
-  '#27272a', // surface (panel) (= SURFACE.panel.dark)
-  '#232326', // body (page bg) (= SURFACE.bg.dark)
-  '#18181b', // deeper than body (= BP.darkGray[0])
-  '#09090b', // darkest extreme
-]
+/** The shipped, config-independent palette data — `baseTheme` / `cssVariablesResolver` below are
+ * built from this once, at module load. */
+const DEFAULT_PALETTE_DATA = buildPaletteData(DEFAULT_DERIVE_CONFIG)
+
+/**
+ * Build the dark Mantine tuple for `data` at 10 fixed indices:
+ * text=dark[0], dimmed=dark[2], border=dark[4], hover=dark[5], surface=dark[6], body=dark[7].
+ * Generator-derived — `data.INK` / `data.SURFACE`'s own dark stops, for the shipped default config
+ * as much as for any other `neutral`/level configuration, so a palette retune (including the
+ * default identity) always tracks the generator's current dark output with no separately-pinned
+ * literal to drift out of sync. Indices 8-9 (below-body / darkest extreme) stay the structural
+ * `BP.darkGray[0]` / near-black constant — they are not part of the generator's surface-stop set.
+ */
+function buildDarkTuple(data: PaletteData): MantineColorsTuple {
+  return [
+    data.INK.ink.dark,
+    data.INK.ink2.dark,
+    data.INK.muted.dark,
+    data.INK.faint.dark,
+    data.SURFACE.border.dark,
+    data.SURFACE.panelHover.dark,
+    data.SURFACE.panel.dark,
+    data.SURFACE.bg.dark,
+    BP.darkGray[0],
+    '#09090b',
+  ] as unknown as MantineColorsTuple
+}
 
 /**
  * ON-COLOR: the foreground for a filled surface, decided in CSS. THE fix for Mantine's
@@ -224,7 +249,11 @@ function legibleOn(background: string, theme: MantineTheme): string {
 }
 
 /** The `--vx-on-*` block for one scheme: contrast-picked against the shade THAT scheme fills with. */
-function onColorVars(theme: MantineTheme, colorScheme: 'light' | 'dark'): Record<string, string> {
+function onColorVars(
+  theme: MantineTheme,
+  colorScheme: 'light' | 'dark',
+  data: PaletteData,
+): Record<string, string> {
   const shade = getPrimaryShade(theme, colorScheme)
   const vars: Record<string, string> = {}
   for (const [name, tuple] of Object.entries(theme.colors)) {
@@ -236,7 +265,7 @@ function onColorVars(theme: MantineTheme, colorScheme: 'light' | 'dark'): Record
     // chrome with it. Everything else is a generic surface with no declared foreground: measure it.
     vars[`--vx-on-${name}`] =
       name === theme.primaryColor
-        ? `var(--vx-onAccent, ${ACCENT.onAccent[colorScheme]})`
+        ? `var(--vx-onAccent, ${data.ACCENT.onAccent[colorScheme]})`
         : legibleOn(filled, theme)
   }
   return vars
@@ -297,509 +326,516 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
  * PinInput, …) plus any consumer that passes an explicit `size="xs"`. Enumerating components in
  * `defaultProps` could never do that; the previous attempt missed seven of them.
  */
-export const baseTheme: MantineThemeOverride = createTheme({
-  primaryColor: 'blue',
-  // ONE shade in both schemes — a filled control is a SURFACE, and the accent surface is the same
-  // hex either way (see `ACCENT.accentFill`). The scheme-inverting half of the accent lives in
-  // Mantine's dark `--mantine-color-{c}-text`, which is hardcoded to shade 4 = `ACCENT.accent.dark`.
-  primaryShade: 6,
-  autoContrast: true,
-  luminanceThreshold: 0.45,
-  // Force the `light` variant to a faint, AA-legible tint in both schemes (see resolver above).
-  variantColorResolver: basaltVariantColorResolver,
-  white: '#ffffff',
-  black: '#18181b',
-  // The three-font system (docs/DESIGN-SPEC.md §3): Nunito Sans body / Hubot Sans condensed
-  // headings / JetBrains Mono for numerals + micro-labels. The `--basalt-font-*` vars stay the
-  // override seam (shipped in styles.css, with system-font fallback chains).
-  fontFamily: 'var(--basalt-font-sans, ui-sans-serif, system-ui, sans-serif)',
-  fontFamilyMonospace: "var(--basalt-font-mono, ui-monospace, 'SF Mono', Menlo, monospace)",
-  headings: {
-    fontFamily: 'var(--basalt-font-head, var(--basalt-font-sans, ui-sans-serif, sans-serif))',
-    fontWeight: '550',
-  },
-  // Control radius tier (docs/DESIGN-SPEC.md §4: inputs, search, buttons, segmented track, icon
-  // buttons ≥28px sit at ~6px). `radius.md` = 0.375rem = 6px, mirrored by `--vx-radius-ctrl` — every
-  // control without its own explicit `radius` prop (Button, ActionIcon, TextInput, NumberInput,
-  // PasswordInput, Select, Textarea) falls back to this default. Card/Paper bypass this scale
-  // entirely — they resolve straight to `var(--vx-radius-card)` (7px, see the
-  // `components.Card`/`Paper` overrides below).
-  defaultRadius: 'md',
-  // Named weight ladder (v9 fontWeights).
-  fontWeights: { regular: '400', medium: '500', semibold: '600', bold: '700' },
-  // The OWNED type scale — Mantine's xs…xl re-expressed from the single `VX.text` ladder
-  // (`tokens/index.ts`), so `<Text size="sm">` and a `--vx-text-sm` CSS module read the same step.
-  // Passed through Mantine's `rem()` (→ `calc(Xrem * var(--mantine-scale))`) rather than raw px, so
-  // the component surface honors the user's browser font-size and Mantine's own scale factor —
-  // the px numbers in `VX.text` exist only for inline styles and visx SVG, which can't take `var()`.
-  // `md` is the body step. Mantine's default ladder (12/14/16/18/20) is now fully replaced.
-  fontSizes: {
-    xs: rem(VX.text.xs),
-    sm: rem(VX.text.sm),
-    md: rem(VX.text.md),
-    lg: rem(VX.text.lg),
-    xl: rem(VX.text.xl),
-  },
-  // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
-  // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
-  spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
-  // 2 4 6 16 32 — the size scale; `md` (6px) is the control-radius default (`defaultRadius: 'md'`,
-  // inputs/buttons). Card/Paper/Popover/Modal/Notification read `--vx-radius-*` directly instead
-  // (7px cards / 6px controls), so the larger steps of this scale no longer mirror either token.
-  radius: { xs: '0.125rem', sm: '0.25rem', md: '0.375rem', lg: '1rem', xl: '2rem' },
-  // Shade 6 (= `primaryShade`) is pinned to the FILL BAND for every family, so the JS ramp and the
-  // `--vx-fill-*` tokens hold the SAME hex. That keeps `-filled` / `-text`(light) / `-outline`
-  // internally consistent, and lets the on-color be measured straight off the tuple (below).
-  colors: {
-    dark: basaltDark,
-    gray: pinShades(ramp10(BP.gray), { 6: FILL.gray }),
-    blue: pinShades(ramp10(BP.blue), { 4: ACCENT.accent.dark, 6: ACCENT.accentFill.light }),
-    cyan: pinShades(ramp10(BP.cerulean), { 6: FILL.cyan }),
-    teal: pinShades(ramp10(BP.turquoise), { 6: FILL.teal }),
-    green: pinShades(ramp10(BP.forest), { 6: FILL.green }),
-    lime: pinShades(ramp10(BP.lime), { 6: FILL.lime }),
-    yellow: pinShades(ramp10(BP.gold), { 6: FILL.yellow }),
-    orange: pinShades(ramp10(BP.orange), { 6: FILL.orange }),
-    red: pinShades(ramp10(BP.red), { 6: FILL.red }),
-    pink: pinShades(ramp10(BP.rose), { 6: FILL.pink }),
-    grape: pinShades(ramp10(BP.violet), { 6: FILL.grape }),
-    violet: pinShades(ramp10(BP.violet), { 6: FILL.violet }),
-    indigo: pinShades(ramp10(BP.indigo), { 6: FILL.indigo }),
-  },
-  components: {
-    // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the SAME value) — never a
-    // separate `border` property (docs/DESIGN-SPEC.md doctrine inversion #1). Cards carry no
-    // `withBorder` at all; the ring lives inside `--vx-shadow-card`.
-    // ONE card identity, enforced at the theme so NO component can diverge. Every card-like
-    // surface — Mantine `Card`, a bare `Paper` used as a card, and the Mantine-free `ChartCard` —
-    // resolves to the SAME three tokens:
-    //   • background → `--vx-surface-panel` (the panel surface, NOT the page body).
-    //   • depth      → `--vx-shadow-card` (whisper shadow + ring, replaces `withBorder`).
-    //   • radius     → `--vx-radius-card` (10px).
-    // This is the single source the user's "strict surface across components" demands; the
-    // `raw-surface` guard then stops consumers re-overriding any of it inline.
-    Card: Card.extend({
-      styles: {
-        root: {
-          backgroundColor: 'var(--vx-surface-panel)',
-          boxShadow: 'var(--vx-shadow-card)',
-          borderRadius: 'var(--vx-radius-card)',
+function buildTheme(data: PaletteData): MantineThemeOverride {
+  const { ACCENT, FILL } = data
+  return createTheme({
+    primaryColor: 'blue',
+    // ONE shade in both schemes — a filled control is a SURFACE, and the accent surface is the same
+    // hex either way (see `ACCENT.accentFill`). The scheme-inverting half of the accent lives in
+    // Mantine's dark `--mantine-color-{c}-text`, which is hardcoded to shade 4 = `ACCENT.accent.dark`.
+    primaryShade: 6,
+    autoContrast: true,
+    luminanceThreshold: 0.45,
+    // Force the `light` variant to a faint, AA-legible tint in both schemes (see resolver above).
+    variantColorResolver: basaltVariantColorResolver,
+    white: '#ffffff',
+    black: '#18181b',
+    // The three-font system (docs/DESIGN-SPEC.md §3): Nunito Sans body / Hubot Sans condensed
+    // headings / JetBrains Mono for numerals + micro-labels. The `--basalt-font-*` vars stay the
+    // override seam (shipped in styles.css, with system-font fallback chains).
+    fontFamily: 'var(--basalt-font-sans, ui-sans-serif, system-ui, sans-serif)',
+    fontFamilyMonospace: "var(--basalt-font-mono, ui-monospace, 'SF Mono', Menlo, monospace)",
+    headings: {
+      fontFamily: 'var(--basalt-font-head, var(--basalt-font-sans, ui-sans-serif, sans-serif))',
+      fontWeight: '550',
+    },
+    // Control radius tier (docs/DESIGN-SPEC.md §4: inputs, search, buttons, segmented track, icon
+    // buttons ≥28px sit at ~6px). `radius.md` = 0.375rem = 6px, mirrored by `--vx-radius-ctrl` — every
+    // control without its own explicit `radius` prop (Button, ActionIcon, TextInput, NumberInput,
+    // PasswordInput, Select, Textarea) falls back to this default. Card/Paper bypass this scale
+    // entirely — they resolve straight to `var(--vx-radius-card)` (7px, see the
+    // `components.Card`/`Paper` overrides below).
+    defaultRadius: 'md',
+    // Named weight ladder (v9 fontWeights).
+    fontWeights: { regular: '400', medium: '500', semibold: '600', bold: '700' },
+    // The OWNED type scale — Mantine's xs…xl re-expressed from the single `VX.text` ladder
+    // (`tokens/index.ts`), so `<Text size="sm">` and a `--vx-text-sm` CSS module read the same step.
+    // Passed through Mantine's `rem()` (→ `calc(Xrem * var(--mantine-scale))`) rather than raw px, so
+    // the component surface honors the user's browser font-size and Mantine's own scale factor —
+    // the px numbers in `VX.text` exist only for inline styles and visx SVG, which can't take `var()`.
+    // `md` is the body step. Mantine's default ladder (12/14/16/18/20) is now fully replaced.
+    fontSizes: {
+      xs: rem(VX.text.xs),
+      sm: rem(VX.text.sm),
+      md: rem(VX.text.md),
+      lg: rem(VX.text.lg),
+      xl: rem(VX.text.xl),
+    },
+    // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
+    // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
+    spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
+    // 2 4 6 16 32 — the size scale; `md` (6px) is the control-radius default (`defaultRadius: 'md'`,
+    // inputs/buttons). Card/Paper/Popover/Modal/Notification read `--vx-radius-*` directly instead
+    // (7px cards / 6px controls), so the larger steps of this scale no longer mirror either token.
+    radius: { xs: '0.125rem', sm: '0.25rem', md: '0.375rem', lg: '1rem', xl: '2rem' },
+    // Shade 6 (= `primaryShade`) is pinned to the FILL BAND for every family, so the JS ramp and the
+    // `--vx-fill-*` tokens hold the SAME hex. That keeps `-filled` / `-text`(light) / `-outline`
+    // internally consistent, and lets the on-color be measured straight off the tuple (below).
+    colors: {
+      dark: buildDarkTuple(data),
+      gray: pinShades(ramp10(BP.gray), { 6: FILL.gray }),
+      blue: pinShades(ramp10(BP.blue), { 4: ACCENT.accent.dark, 6: ACCENT.accentFill.light }),
+      cyan: pinShades(ramp10(BP.cerulean), { 6: FILL.cyan }),
+      teal: pinShades(ramp10(BP.turquoise), { 6: FILL.teal }),
+      green: pinShades(ramp10(BP.forest), { 6: FILL.green }),
+      lime: pinShades(ramp10(BP.lime), { 6: FILL.lime }),
+      yellow: pinShades(ramp10(BP.gold), { 6: FILL.yellow }),
+      orange: pinShades(ramp10(BP.orange), { 6: FILL.orange }),
+      red: pinShades(ramp10(BP.red), { 6: FILL.red }),
+      pink: pinShades(ramp10(BP.rose), { 6: FILL.pink }),
+      grape: pinShades(ramp10(BP.violet), { 6: FILL.grape }),
+      violet: pinShades(ramp10(BP.violet), { 6: FILL.violet }),
+      indigo: pinShades(ramp10(BP.indigo), { 6: FILL.indigo }),
+    },
+    components: {
+      // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the SAME value) — never a
+      // separate `border` property (docs/DESIGN-SPEC.md doctrine inversion #1). Cards carry no
+      // `withBorder` at all; the ring lives inside `--vx-shadow-card`.
+      // ONE card identity, enforced at the theme so NO component can diverge. Every card-like
+      // surface — Mantine `Card`, a bare `Paper` used as a card, and the Mantine-free `ChartCard` —
+      // resolves to the SAME three tokens:
+      //   • background → `--vx-surface-panel` (the panel surface, NOT the page body).
+      //   • depth      → `--vx-shadow-card` (whisper shadow + ring, replaces `withBorder`).
+      //   • radius     → `--vx-radius-card` (10px).
+      // This is the single source the user's "strict surface across components" demands; the
+      // `raw-surface` guard then stops consumers re-overriding any of it inline.
+      Card: Card.extend({
+        styles: {
+          root: {
+            backgroundColor: 'var(--vx-surface-panel)',
+            boxShadow: 'var(--vx-shadow-card)',
+            borderRadius: 'var(--vx-radius-card)',
+          },
         },
-      },
-    }),
-    Paper: Paper.extend({
-      styles: {
-        root: {
-          backgroundColor: 'var(--vx-surface-panel)',
-          boxShadow: 'var(--vx-shadow-card)',
-          borderRadius: 'var(--vx-radius-card)',
-        },
-      },
-    }),
-    // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
-    // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
-    // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
-    Badge: Badge.extend({ defaultProps: { radius: 6 } }),
-    // Alert renders its title in the body font by default; bring it onto the head-font idiom
-    // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
-    // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
-    // the title font is overridden.
-    Alert: Alert.extend({
-      styles: {
-        title: {
-          fontFamily: 'var(--basalt-font-head)',
-          fontWeight: 550,
-          fontStretch: '88%',
-        },
-      },
-    }),
-    // "Ink earns its color" — a nav selection is UI state, not the identity accent on the LABEL.
-    // The active item is panel bg + `shadow-card` (forced here at the THEME level via NavLink's
-    // `--nl-*` vars, so it holds for every render path — including a consumer's router `<Link>`
-    // via `renderNavLink`, which never sees the shell CSS module); the active ICON is
-    // accent-colored via `nav-link.module.css` (targets the `[data-position='left']` leftSection,
-    // which the flat `vars`/`styles` API can't express conditionally on `[data-active]`).
-    NavLink: NavLink.extend({
-      vars: () => ({
-        root: {
-          '--nl-bg': 'var(--vx-surface-panel)',
-          '--nl-color': 'var(--vx-ink)',
-          '--nl-hover': 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
-        },
-        children: {},
       }),
-      // Dense, rounded nav rows — applied at the THEME level so they survive EVERY render path,
-      // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
-      // module (the module's `.link` only reaches the shell's own fallback `<NavLink>`). Same
-      // reasoning as the `--nl-*` fill above: layout is single-sourced here, not in two places.
-      // The active-weight/shadow/icon-accent state selectors can't live in `styles` (flat inline
-      // props only) — they're in nav-link.module.css, wired via `classNames` so they reach the
-      // same every-render-path scope.
-      classNames: { root: navLinkClasses.root },
-      styles: {
-        root: {
-          // Row geometry (docs/DESIGN-SPEC.md §5): 6px 10px padding lands ~29-30px rows. Mantine
-          // v9 hardcodes NavLink padding (`8px var(--mantine-spacing-sm)` — there is NO
-          // `--nl-padding` var), so the spec padding is forced inline here, where it wins
-          // deterministically on every render path.
-          padding: '6px 10px',
-          // The body step on the ROOT, not just the label: the body element sizes itself from the
-          // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
-          // ~37px). The tightened 1.35 keeps rows compact as the scale grows.
-          fontSize: VX.text.md,
-          lineHeight: '1.35',
-          // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
-          borderRadius: 6,
+      Paper: Paper.extend({
+        styles: {
+          root: {
+            backgroundColor: 'var(--vx-surface-panel)',
+            boxShadow: 'var(--vx-shadow-card)',
+            borderRadius: 'var(--vx-radius-card)',
+          },
         },
-        // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
-        // doesn't reach it.
-        label: { fontSize: VX.text.md, lineHeight: '1.35' },
-      },
-    }),
-    // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-card` depth + faint placeholder,
-    // accent border + subtle accent ring on focus — see controls.module.css. The two slots carry
-    // different halves of it: the `wrapper` is where Mantine declares the `--input-*` vars, the
-    // `input` is the box that actually paints the surface (bg + radius) and therefore the only
-    // legal home for the shadow's ring. Theming the base `Input` covers
-    // TextInput/NumberInput/PasswordInput/Select/Textarea, which all render it internally (only
-    // `size` needs per-component defaults, since each resolves its own).
-    Input: Input.extend({
-      defaultProps: { size: 'md' },
-      classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
-    }),
-    TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
-    NumberInput: NumberInput.extend({ defaultProps: { size: 'md' } }),
-    PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
-    Select: Select.extend({ defaultProps: { size: 'md' } }),
-    Textarea: Textarea.extend({ defaultProps: { size: 'md' } }),
-    // PillsInput (MultiSelect/TagsInput's outer field) renders `InputBase` internally but under
-    // its OWN `__staticSelector: 'PillsInput'`, so it never reads `theme.components.Input` — the
-    // field idiom above never reached it. `PillsInput.classes === InputBase.classes`, so the SAME
-    // part names apply here; reusing both control classes picks up the exact `[data-variant]` rules
-    // in controls.module.css for free, no new CSS needed. Both slots are required — `wrapper` alone
-    // would land the vars but leave the field flat, since the depth lives on `input`.
-    PillsInput: PillsInput.extend({
-      classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
-    }),
-    // Button / ActionIcon (`default` variant): same `shadow-card` depth as every other control
-    // surface (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
-    // panel + shadow-card"; doctrine inversion #1). Background already resolves through the shared
-    // `--mantine-color-default` var (→ `--vx-surface-panel`, see cssVariablesResolver below) and
-    // the border through `--mantine-color-default-border` (→ transparent, same resolver) — neither
-    // component had a `.extend()` block at all before this, which is why they never picked up
-    // either. Only the shadow needs adding here, in controls.module.css: Mantine's own
-    // `[data-variant='default']` rule never declares a `box-shadow`, so no specificity fight is
-    // needed to win one. `filled`/`subtle`/`light` variants are untouched — scoped by attribute
-    // selector in the CSS, not here.
-    Button: Button.extend({ classNames: { root: controlsClasses.buttonRoot } }),
-    ActionIcon: ActionIcon.extend({ classNames: { root: controlsClasses.actionIconRoot } }),
-    // CheckboxCard / RadioCard (`withBorder`, true by default): same live regression as Button/
-    // ActionIcon before this pass — Mantine ships `border: 1px solid transparent` as the BASE
-    // `[data-with-border]` declaration, but its own `:where([data-mantine-color-scheme=…])` block
-    // re-colors that to gray-3/dark-4 (pinned to `--vx-surface-border` by the strict-surface lever
-    // below), landing a real, flat hairline with no shadow at all — the exact "flat and edgeless"
-    // symptom, just via a different mechanism (`[data-with-border]`, not the `default`-variant
-    // border var). `.checkboxCardRoot[data-with-border]` / `.radioCardRoot[data-with-border]` are
-    // real attribute selectors ((0,2,0)) — Mantine's own rule wraps the same attribute in `:where()`
-    // (0 specificity, landing at (0,1,0) total), so no `html[…]` prefix fight is needed here either.
-    // Neither component sets a background of its own, so panel bg is added alongside the shadow —
-    // the same panel-bg + shadow-card + no-border triad as Card/Paper.
-    CheckboxCard: CheckboxCard.extend({
-      classNames: { card: controlsClasses.checkboxCardRoot },
-    }),
-    RadioCard: RadioCard.extend({
-      classNames: { card: controlsClasses.radioCardRoot },
-    }),
-    // Chip: unlike Button/Input, Chip has no literal `variant="default"` — its OWN default (no
-    // `variant` prop passed) resolves internally to `variant: 'filled'` (Chip's neutral/unselected
-    // look, NOT a "loud" filled color — `light`/`outline` are the other two Chip variants). The
-    // unchecked `filled`-variant label already ships a transparent border (`gray-1`/`dark-5` tint,
-    // no shadow) — borderless but flat, the same symptom as CheckboxCard/RadioCard above. The class
-    // is wired conditionally (function-form `classNames`, same pattern as the `vars` on-color
-    // re-points below) so it NEVER reaches a consumer-chosen `light`/`outline` Chip.
-    Chip: Chip.extend({
-      classNames: (_theme, props) =>
-        (props.variant ?? 'filled') === 'filled' ? { label: controlsClasses.chipLabel } : {},
-    }),
-    // Track = ink-6% tint, radius 7, 2px padding; active segment = panel bg + `shadow-ctrl`,
-    // radius 5. `--sc-radius`/`--sc-color` don't reach the root track background (Mantine
-    // hardcodes that to a raw gray step), so it's forced via `styles.root` same as Card/Paper.
-    // The active-only ink label color + weight can't live in the flat `styles.label` object
-    // (applies to every option regardless of state), so it's in segmented-control.module.css
-    // instead — same pattern as NavLink's active-icon accent.
-    SegmentedControl: SegmentedControl.extend({
-      defaultProps: { radius: 7 },
-      classNames: { label: segmentedControlClasses.label },
-      styles: {
-        root: {
-          backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
-          padding: 2,
+      }),
+      // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
+      // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
+      // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
+      Badge: Badge.extend({ defaultProps: { radius: 6 } }),
+      // Alert renders its title in the body font by default; bring it onto the head-font idiom
+      // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
+      // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
+      // the title font is overridden.
+      Alert: Alert.extend({
+        styles: {
+          title: {
+            fontFamily: 'var(--basalt-font-head)',
+            fontWeight: 550,
+            fontStretch: '88%',
+          },
         },
-        indicator: {
-          backgroundColor: 'var(--vx-surface-panel)',
-          boxShadow: 'var(--vx-shadow-ctrl)',
-          borderRadius: 5,
+      }),
+      // "Ink earns its color" — a nav selection is UI state, not the identity accent on the LABEL.
+      // The active item is panel bg + `shadow-card` (forced here at the THEME level via NavLink's
+      // `--nl-*` vars, so it holds for every render path — including a consumer's router `<Link>`
+      // via `renderNavLink`, which never sees the shell CSS module); the active ICON is
+      // accent-colored via `nav-link.module.css` (targets the `[data-position='left']` leftSection,
+      // which the flat `vars`/`styles` API can't express conditionally on `[data-active]`).
+      NavLink: NavLink.extend({
+        vars: () => ({
+          root: {
+            '--nl-bg': 'var(--vx-surface-panel)',
+            '--nl-color': 'var(--vx-ink)',
+            '--nl-hover': 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
+          },
+          children: {},
+        }),
+        // Dense, rounded nav rows — applied at the THEME level so they survive EVERY render path,
+        // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
+        // module (the module's `.link` only reaches the shell's own fallback `<NavLink>`). Same
+        // reasoning as the `--nl-*` fill above: layout is single-sourced here, not in two places.
+        // The active-weight/shadow/icon-accent state selectors can't live in `styles` (flat inline
+        // props only) — they're in nav-link.module.css, wired via `classNames` so they reach the
+        // same every-render-path scope.
+        classNames: { root: navLinkClasses.root },
+        styles: {
+          root: {
+            // Row geometry (docs/DESIGN-SPEC.md §5): 6px 10px padding lands ~29-30px rows. Mantine
+            // v9 hardcodes NavLink padding (`8px var(--mantine-spacing-sm)` — there is NO
+            // `--nl-padding` var), so the spec padding is forced inline here, where it wins
+            // deterministically on every render path.
+            padding: '6px 10px',
+            // The body step on the ROOT, not just the label: the body element sizes itself from the
+            // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
+            // ~37px). The tightened 1.35 keeps rows compact as the scale grows.
+            fontSize: VX.text.md,
+            lineHeight: '1.35',
+            // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
+            borderRadius: 6,
+          },
+          // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
+          // doesn't reach it.
+          label: { fontSize: VX.text.md, lineHeight: '1.35' },
         },
-      },
-    }),
-    // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
-    Progress: Progress.extend({
-      defaultProps: { size: 6, radius: 4 },
-      styles: {
-        root: { backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)' },
-      },
-    }),
-    // Activity-feed idiom: 20-24px bullet, hairline connecting line (not Mantine's heavy default),
-    // head-weight title, muted body — zero call-site work for an on-spec Timeline. `bulletSize`/
-    // `lineWidth` land through Timeline's OWN `varsResolver` (real component vars, not our `styles`
-    // object), so they aren't subject to the custom-property stripping below. The bullet's
-    // panel/hairline/accent-active treatment and the line's divider color ARE custom-property
-    // declarations / state-selectors — both unreachable from a flat `styles` object (same
-    // reasoning as SegmentedControl's active-label rule and NavLink's active-icon rule) — so they
-    // live in `timeline.module.css` instead. `TimelineItem` renders through the PARENT Timeline's
-    // style context (`ctx.getStyles`), so `item`/`itemBullet`/`itemTitle`/`itemContent` are all
-    // themed from this ONE extend — no separate `TimelineItem` override needed.
-    Timeline: Timeline.extend({
-      defaultProps: { bulletSize: 22, lineWidth: 1 },
-      // The active bullet's icon sits on the accent fill — on-color, not a baked white (see above).
-      vars: (theme, props) => ({ root: { '--tl-icon-color': onColorFor(theme, props) } }),
-      classNames: {
-        item: timelineClasses.item,
-        itemBullet: timelineClasses.itemBullet,
-      },
-      styles: {
-        itemTitle: {
-          fontSize: VX.text.md,
-          fontWeight: 600,
-          color: 'var(--vx-ink)',
+      }),
+      // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-card` depth + faint placeholder,
+      // accent border + subtle accent ring on focus — see controls.module.css. The two slots carry
+      // different halves of it: the `wrapper` is where Mantine declares the `--input-*` vars, the
+      // `input` is the box that actually paints the surface (bg + radius) and therefore the only
+      // legal home for the shadow's ring. Theming the base `Input` covers
+      // TextInput/NumberInput/PasswordInput/Select/Textarea, which all render it internally (only
+      // `size` needs per-component defaults, since each resolves its own).
+      Input: Input.extend({
+        defaultProps: { size: 'md' },
+        classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
+      }),
+      TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
+      NumberInput: NumberInput.extend({ defaultProps: { size: 'md' } }),
+      PasswordInput: PasswordInput.extend({ defaultProps: { size: 'md' } }),
+      Select: Select.extend({ defaultProps: { size: 'md' } }),
+      Textarea: Textarea.extend({ defaultProps: { size: 'md' } }),
+      // PillsInput (MultiSelect/TagsInput's outer field) renders `InputBase` internally but under
+      // its OWN `__staticSelector: 'PillsInput'`, so it never reads `theme.components.Input` — the
+      // field idiom above never reached it. `PillsInput.classes === InputBase.classes`, so the SAME
+      // part names apply here; reusing both control classes picks up the exact `[data-variant]` rules
+      // in controls.module.css for free, no new CSS needed. Both slots are required — `wrapper` alone
+      // would land the vars but leave the field flat, since the depth lives on `input`.
+      PillsInput: PillsInput.extend({
+        classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
+      }),
+      // Button / ActionIcon (`default` variant): same `shadow-card` depth as every other control
+      // surface (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
+      // panel + shadow-card"; doctrine inversion #1). Background already resolves through the shared
+      // `--mantine-color-default` var (→ `--vx-surface-panel`, see cssVariablesResolver below) and
+      // the border through `--mantine-color-default-border` (→ transparent, same resolver) — neither
+      // component had a `.extend()` block at all before this, which is why they never picked up
+      // either. Only the shadow needs adding here, in controls.module.css: Mantine's own
+      // `[data-variant='default']` rule never declares a `box-shadow`, so no specificity fight is
+      // needed to win one. `filled`/`subtle`/`light` variants are untouched — scoped by attribute
+      // selector in the CSS, not here.
+      Button: Button.extend({ classNames: { root: controlsClasses.buttonRoot } }),
+      ActionIcon: ActionIcon.extend({ classNames: { root: controlsClasses.actionIconRoot } }),
+      // CheckboxCard / RadioCard (`withBorder`, true by default): same live regression as Button/
+      // ActionIcon before this pass — Mantine ships `border: 1px solid transparent` as the BASE
+      // `[data-with-border]` declaration, but its own `:where([data-mantine-color-scheme=…])` block
+      // re-colors that to gray-3/dark-4 (pinned to `--vx-surface-border` by the strict-surface lever
+      // below), landing a real, flat hairline with no shadow at all — the exact "flat and edgeless"
+      // symptom, just via a different mechanism (`[data-with-border]`, not the `default`-variant
+      // border var). `.checkboxCardRoot[data-with-border]` / `.radioCardRoot[data-with-border]` are
+      // real attribute selectors ((0,2,0)) — Mantine's own rule wraps the same attribute in `:where()`
+      // (0 specificity, landing at (0,1,0) total), so no `html[…]` prefix fight is needed here either.
+      // Neither component sets a background of its own, so panel bg is added alongside the shadow —
+      // the same panel-bg + shadow-card + no-border triad as Card/Paper.
+      CheckboxCard: CheckboxCard.extend({
+        classNames: { card: controlsClasses.checkboxCardRoot },
+      }),
+      RadioCard: RadioCard.extend({
+        classNames: { card: controlsClasses.radioCardRoot },
+      }),
+      // Chip: unlike Button/Input, Chip has no literal `variant="default"` — its OWN default (no
+      // `variant` prop passed) resolves internally to `variant: 'filled'` (Chip's neutral/unselected
+      // look, NOT a "loud" filled color — `light`/`outline` are the other two Chip variants). The
+      // unchecked `filled`-variant label already ships a transparent border (`gray-1`/`dark-5` tint,
+      // no shadow) — borderless but flat, the same symptom as CheckboxCard/RadioCard above. The class
+      // is wired conditionally (function-form `classNames`, same pattern as the `vars` on-color
+      // re-points below) so it NEVER reaches a consumer-chosen `light`/`outline` Chip.
+      Chip: Chip.extend({
+        classNames: (_theme, props) =>
+          (props.variant ?? 'filled') === 'filled' ? { label: controlsClasses.chipLabel } : {},
+      }),
+      // Track = ink-6% tint, radius 7, 2px padding; active segment = panel bg + `shadow-ctrl`,
+      // radius 5. `--sc-radius`/`--sc-color` don't reach the root track background (Mantine
+      // hardcodes that to a raw gray step), so it's forced via `styles.root` same as Card/Paper.
+      // The active-only ink label color + weight can't live in the flat `styles.label` object
+      // (applies to every option regardless of state), so it's in segmented-control.module.css
+      // instead — same pattern as NavLink's active-icon accent.
+      SegmentedControl: SegmentedControl.extend({
+        defaultProps: { radius: 7 },
+        classNames: { label: segmentedControlClasses.label },
+        styles: {
+          root: {
+            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
+            padding: 2,
+          },
+          indicator: {
+            backgroundColor: 'var(--vx-surface-panel)',
+            boxShadow: 'var(--vx-shadow-ctrl)',
+            borderRadius: 5,
+          },
         },
-        itemContent: {
-          fontSize: VX.text.md,
-          color: 'var(--vx-muted)',
+      }),
+      // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
+      Progress: Progress.extend({
+        defaultProps: { size: 6, radius: 4 },
+        styles: {
+          root: { backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)' },
         },
-      },
-    }),
-    // ── Floating layer (docs/DESIGN-SPEC.md §5) ─────────────────────────────────────────────
-    // ONE idiom for every detached surface: overlay surface + a REAL 1px `--vx-surface-border`
-    // border + the overlay elevation shadow. The border must be a real `border` property (never
-    // "ring in the shadow" like cards): Mantine's arrow is a rotated square that draws
-    // `1px solid var(--popover-border-color)` and inherits the dropdown's background — with
-    // `border: 'none'` on the dropdown the arrow rendered as a broken floating diamond edge.
-    // (`--popover-border-color` resolves to gray-2/dark-4, both pinned to `--vx-surface-border`
-    // by the resolver below, so dropdown and arrow always share the same edge color.)
+      }),
+      // Activity-feed idiom: 20-24px bullet, hairline connecting line (not Mantine's heavy default),
+      // head-weight title, muted body — zero call-site work for an on-spec Timeline. `bulletSize`/
+      // `lineWidth` land through Timeline's OWN `varsResolver` (real component vars, not our `styles`
+      // object), so they aren't subject to the custom-property stripping below. The bullet's
+      // panel/hairline/accent-active treatment and the line's divider color ARE custom-property
+      // declarations / state-selectors — both unreachable from a flat `styles` object (same
+      // reasoning as SegmentedControl's active-label rule and NavLink's active-icon rule) — so they
+      // live in `timeline.module.css` instead. `TimelineItem` renders through the PARENT Timeline's
+      // style context (`ctx.getStyles`), so `item`/`itemBullet`/`itemTitle`/`itemContent` are all
+      // themed from this ONE extend — no separate `TimelineItem` override needed.
+      Timeline: Timeline.extend({
+        defaultProps: { bulletSize: 22, lineWidth: 1 },
+        // The active bullet's icon sits on the accent fill — on-color, not a baked white (see above).
+        vars: (theme, props) => ({ root: { '--tl-icon-color': onColorFor(theme, props) } }),
+        classNames: {
+          item: timelineClasses.item,
+          itemBullet: timelineClasses.itemBullet,
+        },
+        styles: {
+          itemTitle: {
+            fontSize: VX.text.md,
+            fontWeight: 600,
+            color: 'var(--vx-ink)',
+          },
+          itemContent: {
+            fontSize: VX.text.md,
+            color: 'var(--vx-muted)',
+          },
+        },
+      }),
+      // ── Floating layer (docs/DESIGN-SPEC.md §5) ─────────────────────────────────────────────
+      // ONE idiom for every detached surface: overlay surface + a REAL 1px `--vx-surface-border`
+      // border + the overlay elevation shadow. The border must be a real `border` property (never
+      // "ring in the shadow" like cards): Mantine's arrow is a rotated square that draws
+      // `1px solid var(--popover-border-color)` and inherits the dropdown's background — with
+      // `border: 'none'` on the dropdown the arrow rendered as a broken floating diamond edge.
+      // (`--popover-border-color` resolves to gray-2/dark-4, both pinned to `--vx-surface-border`
+      // by the resolver below, so dropdown and arrow always share the same edge color.)
 
-    // Tooltip is a standalone floating primitive (not Popover-based) — themed directly. Its arrow
-    // ships border-less (`border: 0`), so the same edge is applied inline to keep the ring closed.
-    Tooltip: Tooltip.extend({
-      defaultProps: { radius: 8 },
-      styles: {
-        tooltip: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          color: 'var(--vx-ink)',
-          border: '1px solid var(--vx-surface-border)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      // Tooltip is a standalone floating primitive (not Popover-based) — themed directly. Its arrow
+      // ships border-less (`border: 0`), so the same edge is applied inline to keep the ring closed.
+      Tooltip: Tooltip.extend({
+        defaultProps: { radius: 8 },
+        styles: {
+          tooltip: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            color: 'var(--vx-ink)',
+            border: '1px solid var(--vx-surface-border)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
+          arrow: { border: '1px solid var(--vx-surface-border)' },
         },
-        arrow: { border: '1px solid var(--vx-surface-border)' },
-      },
-    }),
-    // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
-    // internally with no `radius`/`shadow` of its own), so theming it here covers both.
-    Popover: Popover.extend({
-      defaultProps: { radius: 8 },
-      styles: {
-        dropdown: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          border: '1px solid var(--vx-surface-border)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      }),
+      // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
+      // internally with no `radius`/`shadow` of its own), so theming it here covers both.
+      Popover: Popover.extend({
+        defaultProps: { radius: 8 },
+        styles: {
+          dropdown: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            border: '1px solid var(--vx-surface-border)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
         },
-      },
-    }),
-    // Menu rows: 13px, radius 6, ghost ink-6% hover (floating.module.css — custom properties are
-    // stripped from `styles` objects, and Menu's internal Popover does NOT consume
-    // `components.Popover.styles`, so the dropdown surface is repeated here). Menu.Label = the
-    // mono micro-label idiom; dividers use the layout-divider token.
-    Menu: Menu.extend({
-      classNames: { item: floatingClasses.menuItem },
-      styles: {
-        dropdown: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          border: '1px solid var(--vx-surface-border)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      }),
+      // Menu rows: 13px, radius 6, ghost ink-6% hover (floating.module.css — custom properties are
+      // stripped from `styles` objects, and Menu's internal Popover does NOT consume
+      // `components.Popover.styles`, so the dropdown surface is repeated here). Menu.Label = the
+      // mono micro-label idiom; dividers use the layout-divider token.
+      Menu: Menu.extend({
+        classNames: { item: floatingClasses.menuItem },
+        styles: {
+          dropdown: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            border: '1px solid var(--vx-surface-border)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
+          item: { fontSize: VX.text.md, borderRadius: 6, padding: '6px 10px' },
+          label: {
+            fontFamily: 'var(--basalt-font-mono)',
+            fontSize: VX.text.micro,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--vx-faint)',
+          },
+          divider: { borderColor: 'var(--vx-divider)' },
         },
-        item: { fontSize: VX.text.md, borderRadius: 6, padding: '6px 10px' },
-        label: {
-          fontFamily: 'var(--basalt-font-mono)',
-          fontSize: VX.text.micro,
-          fontWeight: 500,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'var(--vx-faint)',
+      }),
+      // Combobox is the floating primitive underneath Select/Autocomplete/MultiSelect — like Menu,
+      // it doesn't consume `components.Popover.styles`, so the overlay dropdown idiom is repeated.
+      Combobox: Combobox.extend({
+        styles: {
+          dropdown: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            border: '1px solid var(--vx-surface-border)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
         },
-        divider: { borderColor: 'var(--vx-divider)' },
-      },
-    }),
-    // Combobox is the floating primitive underneath Select/Autocomplete/MultiSelect — like Menu,
-    // it doesn't consume `components.Popover.styles`, so the overlay dropdown idiom is repeated.
-    Combobox: Combobox.extend({
-      styles: {
-        dropdown: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          border: '1px solid var(--vx-surface-border)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      }),
+      // Modal/Drawer: overlay surface + overlay shadow on the content. The header goes transparent —
+      // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
+      // surface. Title = head font; close button = the ghost idiom (floating.module.css).
+      Modal: Modal.extend({
+        defaultProps: { radius: 8 },
+        classNames: { close: floatingClasses.closeButton },
+        styles: {
+          content: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
+          header: { backgroundColor: 'transparent' },
+          title: {
+            fontFamily: 'var(--basalt-font-head)',
+            fontWeight: 550,
+            fontStretch: '88%',
+          },
         },
-      },
-    }),
-    // Modal/Drawer: overlay surface + overlay shadow on the content. The header goes transparent —
-    // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
-    // surface. Title = head font; close button = the ghost idiom (floating.module.css).
-    Modal: Modal.extend({
-      defaultProps: { radius: 8 },
-      classNames: { close: floatingClasses.closeButton },
-      styles: {
-        content: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      }),
+      Drawer: Drawer.extend({
+        classNames: { close: floatingClasses.closeButton },
+        styles: {
+          content: {
+            backgroundColor: 'var(--vx-surface-overlay)',
+            boxShadow: 'var(--vx-shadow-overlay)',
+          },
+          header: { backgroundColor: 'transparent' },
+          title: {
+            fontFamily: 'var(--basalt-font-head)',
+            fontWeight: 550,
+            fontStretch: '88%',
+          },
         },
-        header: { backgroundColor: 'transparent' },
-        title: {
-          fontFamily: 'var(--basalt-font-head)',
-          fontWeight: 550,
-          fontStretch: '88%',
+      }),
+      // Kbd/Code share the ink-tint idiom (docs/DESIGN-SPEC.md §2: "segmented-control track /
+      // count-badge bg: ink 6–8%") — mono, ink-7% bg, radius 5.
+      // Flat mono chip (mock's ⌘K badge) — Mantine's default Kbd draws a 3px "keyboard key" bottom
+      // border that reads as a heavy off-system rule, so the border goes entirely.
+      Kbd: Kbd.extend({
+        styles: {
+          root: {
+            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
+            border: 'none',
+            color: 'var(--vx-ink2)',
+            borderRadius: 5,
+          },
         },
-      },
-    }),
-    Drawer: Drawer.extend({
-      classNames: { close: floatingClasses.closeButton },
-      styles: {
-        content: {
-          backgroundColor: 'var(--vx-surface-overlay)',
-          boxShadow: 'var(--vx-shadow-overlay)',
+      }),
+      Code: Code.extend({
+        styles: {
+          root: {
+            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
+            borderRadius: 5,
+          },
         },
-        header: { backgroundColor: 'transparent' },
-        title: {
-          fontFamily: 'var(--basalt-font-head)',
-          fontWeight: 550,
-          fontStretch: '88%',
+      }),
+      // Header cells become a micro-label (mono, uppercase, faint) — numeral/tabular styling for
+      // body cells is a per-table call-site concern, left to consumers. `--table-border-color`
+      // drives row separators AND the opt-in `withTableBorder` outer border — both drop to the
+      // hairline (Mantine's default reads gray-3/dark-4 = the STRONG line, too heavy in a card).
+      Table: Table.extend({
+        classNames: { table: controlsClasses.tableRoot },
+        styles: {
+          th: {
+            fontFamily: 'var(--basalt-font-mono)',
+            fontSize: VX.text.micro,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--vx-faint)',
+          },
         },
-      },
-    }),
-    // Kbd/Code share the ink-tint idiom (docs/DESIGN-SPEC.md §2: "segmented-control track /
-    // count-badge bg: ink 6–8%") — mono, ink-7% bg, radius 5.
-    // Flat mono chip (mock's ⌘K badge) — Mantine's default Kbd draws a 3px "keyboard key" bottom
-    // border that reads as a heavy off-system rule, so the border goes entirely.
-    Kbd: Kbd.extend({
-      styles: {
-        root: {
-          backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-          border: 'none',
-          color: 'var(--vx-ink2)',
-          borderRadius: 5,
-        },
-      },
-    }),
-    Code: Code.extend({
-      styles: {
-        root: {
-          backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-          borderRadius: 5,
-        },
-      },
-    }),
-    // Header cells become a micro-label (mono, uppercase, faint) — numeral/tabular styling for
-    // body cells is a per-table call-site concern, left to consumers. `--table-border-color`
-    // drives row separators AND the opt-in `withTableBorder` outer border — both drop to the
-    // hairline (Mantine's default reads gray-3/dark-4 = the STRONG line, too heavy in a card).
-    Table: Table.extend({
-      classNames: { table: controlsClasses.tableRoot },
-      styles: {
-        th: {
-          fontFamily: 'var(--basalt-font-mono)',
-          fontSize: VX.text.micro,
-          fontWeight: 500,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'var(--vx-faint)',
-        },
-      },
-    }),
-    // The v9 thumb indicator is a center dot painted in the TRACK color — over the remapped
-    // neutral track it read as an artifact, so it's disabled: clean track, plain thumb, accent
-    // fill when checked (`--switch-color` defaults to the primary filled shade = the accent).
-    Switch: Switch.extend({ defaultProps: { withThumbIndicator: false } }),
-    // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
-    // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
-    // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
-    // underline keeps `--tabs-color` (accent) untouched.
-    Tabs: Tabs.extend({
-      classNames: { root: controlsClasses.tabsRoot },
-      // The on-color re-point (see below). Cast: Mantine's `TabsCssVariables` type declares only
-      // `--tabs-color` / `--tabs-radius`, yet Tabs' OWN varsResolver writes `--tabs-text-color` —
-      // an upstream type gap, so the var it actually paints the active tab with is otherwise
-      // unreachable from the theme.
-      vars: (theme, props) =>
-        ({ root: { '--tabs-text-color': onColorFor(theme, props) } }) as unknown as {
-          root: Record<'--tabs-color' | '--tabs-radius', string | undefined>
-        },
-    }),
+      }),
+      // The v9 thumb indicator is a center dot painted in the TRACK color — over the remapped
+      // neutral track it read as an artifact, so it's disabled: clean track, plain thumb, accent
+      // fill when checked (`--switch-color` defaults to the primary filled shade = the accent).
+      Switch: Switch.extend({ defaultProps: { withThumbIndicator: false } }),
+      // The tab-list bottom rule (and the inactive-tab hover underline) is a layout separator, not
+      // control chrome — it reads the divider token instead of the heavy gray-3/dark-4 line
+      // (controls.module.css; custom properties are stripped from `styles` objects). The active tab
+      // underline keeps `--tabs-color` (accent) untouched.
+      Tabs: Tabs.extend({
+        classNames: { root: controlsClasses.tabsRoot },
+        // The on-color re-point (see below). Cast: Mantine's `TabsCssVariables` type declares only
+        // `--tabs-color` / `--tabs-radius`, yet Tabs' OWN varsResolver writes `--tabs-text-color` —
+        // an upstream type gap, so the var it actually paints the active tab with is otherwise
+        // unreachable from the theme.
+        vars: (theme, props) =>
+          ({ root: { '--tabs-text-color': onColorFor(theme, props) } }) as unknown as {
+            root: Record<'--tabs-color' | '--tabs-radius', string | undefined>
+          },
+      }),
 
-    // ── ON-COLOR re-points (see the ON-COLOR doctrine above) ────────────────────────────────
-    // These components never reach `variantColorResolver` — each calls Mantine's `getContrastColor`
-    // straight from its own `varsResolver`, so each bakes the same scheme-blind white into its ONE
-    // foreground var. Theme `vars` merge AFTER a component's own `varsResolver` (Mantine
-    // `useStyles`), so re-pointing that var here wins on every render path. Without this, a dark-mode
-    // Checkbox/Radio paints a white checkmark on the light accent fill — invisible.
-    Checkbox: Checkbox.extend({
-      vars: (theme, props) => ({
-        root: {
-          // `iconColor` is an explicit call-site override, and `outline` paints the mark in the
-          // color itself on a transparent box — neither is an on-color surface.
-          '--checkbox-icon-color':
-            props.iconColor || props.variant === 'outline' ? undefined : onColorFor(theme, props),
+      // ── ON-COLOR re-points (see the ON-COLOR doctrine above) ────────────────────────────────
+      // These components never reach `variantColorResolver` — each calls Mantine's `getContrastColor`
+      // straight from its own `varsResolver`, so each bakes the same scheme-blind white into its ONE
+      // foreground var. Theme `vars` merge AFTER a component's own `varsResolver` (Mantine
+      // `useStyles`), so re-pointing that var here wins on every render path. Without this, a dark-mode
+      // Checkbox/Radio paints a white checkmark on the light accent fill — invisible.
+      Checkbox: Checkbox.extend({
+        vars: (theme, props) => ({
+          root: {
+            // `iconColor` is an explicit call-site override, and `outline` paints the mark in the
+            // color itself on a transparent box — neither is an on-color surface.
+            '--checkbox-icon-color':
+              props.iconColor || props.variant === 'outline' ? undefined : onColorFor(theme, props),
+          },
+        }),
+      }),
+      Radio: Radio.extend({
+        vars: (theme, props) => ({
+          root: {
+            '--radio-icon-color':
+              props.iconColor || props.variant === 'outline' ? undefined : onColorFor(theme, props),
+          },
+        }),
+      }),
+      Pagination: Pagination.extend({
+        vars: (theme, props) => ({
+          root: { '--pagination-active-color': onColorFor(theme, props) },
+        }),
+      }),
+      Stepper: Stepper.extend({
+        vars: (theme, props) => ({ root: { '--stepper-icon-color': onColorFor(theme, props) } }),
+      }),
+      Indicator: Indicator.extend({
+        vars: (theme, props) => ({ root: { '--indicator-text-color': onColorFor(theme, props) } }),
+      }),
+      // Accordion (default variant): hairline separators between items only — the color retune AND
+      // the last item's outer border-bottom drop both live in controls.module.css.
+      Accordion: Accordion.extend({ classNames: { item: controlsClasses.accordionItem } }),
+      // Parents faint, separator line-colored — the current-page treatment (head font, weight) is a
+      // shell-level concern (AppBreadcrumbs), not this generic Mantine primitive.
+      Breadcrumbs: Breadcrumbs.extend({
+        styles: {
+          breadcrumb: { color: 'var(--vx-faint)' },
+          separator: { color: 'var(--vx-surface-border)' },
         },
       }),
-    }),
-    Radio: Radio.extend({
-      vars: (theme, props) => ({
-        root: {
-          '--radio-icon-color':
-            props.iconColor || props.variant === 'outline' ? undefined : onColorFor(theme, props),
+      // Card idiom — same panel + shadow-card as every other surface.
+      Notification: Notification.extend({
+        defaultProps: { radius: 8 },
+        styles: {
+          root: {
+            backgroundColor: 'var(--vx-surface-panel)',
+            boxShadow: 'var(--vx-shadow-card)',
+          },
         },
       }),
-    }),
-    Pagination: Pagination.extend({
-      vars: (theme, props) => ({
-        root: { '--pagination-active-color': onColorFor(theme, props) },
-      }),
-    }),
-    Stepper: Stepper.extend({
-      vars: (theme, props) => ({ root: { '--stepper-icon-color': onColorFor(theme, props) } }),
-    }),
-    Indicator: Indicator.extend({
-      vars: (theme, props) => ({ root: { '--indicator-text-color': onColorFor(theme, props) } }),
-    }),
-    // Accordion (default variant): hairline separators between items only — the color retune AND
-    // the last item's outer border-bottom drop both live in controls.module.css.
-    Accordion: Accordion.extend({ classNames: { item: controlsClasses.accordionItem } }),
-    // Parents faint, separator line-colored — the current-page treatment (head font, weight) is a
-    // shell-level concern (AppBreadcrumbs), not this generic Mantine primitive.
-    Breadcrumbs: Breadcrumbs.extend({
-      styles: {
-        breadcrumb: { color: 'var(--vx-faint)' },
-        separator: { color: 'var(--vx-surface-border)' },
-      },
-    }),
-    // Card idiom — same panel + shadow-card as every other surface.
-    Notification: Notification.extend({
-      defaultProps: { radius: 8 },
-      styles: {
-        root: {
-          backgroundColor: 'var(--vx-surface-panel)',
-          boxShadow: 'var(--vx-shadow-card)',
-        },
-      },
-    }),
-  },
-})
+    },
+  })
+}
+
+/** The static, shipped-identity theme — `buildTheme` evaluated once at
+ * `DEFAULT_DERIVE_CONFIG` (memoized by `buildPaletteData`), not per import. */
+export const baseTheme: MantineThemeOverride = buildTheme(DEFAULT_PALETTE_DATA)
 
 /**
  * Bind Mantine's surface system to the SAME `--vx-*` variables the charts use, so chrome and
@@ -837,8 +873,13 @@ export const baseTheme: MantineThemeOverride = createTheme({
  * emits, so they cannot drift, and they cover the window before the palette <style> lands
  * (`injectPalette={false}`).
  */
-function accentBridge(theme: MantineTheme, side: 'light' | 'dark'): Record<string, string> {
+function accentBridge(
+  theme: MantineTheme,
+  side: 'light' | 'dark',
+  data: PaletteData,
+): Record<string, string> {
   const c = theme.primaryColor
+  const { ACCENT } = data
   return {
     [`--mantine-color-${c}-filled`]: `var(--vx-accentFill, ${ACCENT.accentFill[side]})`,
     [`--mantine-color-${c}-filled-hover`]: `var(--vx-accentFillHover, ${ACCENT.accentFillHover[side]})`,
@@ -859,9 +900,9 @@ function accentBridge(theme: MantineTheme, side: 'light' | 'dark'): Record<strin
  * `dark` is deliberately not a member — `color="dark"` is a near-black surface by intent, not a
  * band color, and forcing it into the band would turn it into a mid grey.
  */
-function familyBridge(): Record<string, string> {
+function familyBridge(data: PaletteData): Record<string, string> {
   const vars: Record<string, string> = {}
-  for (const [name, hex] of Object.entries(FILL)) {
+  for (const [name, hex] of Object.entries(data.FILL)) {
     vars[`--mantine-color-${name}-filled`] = `var(--vx-fill-${name}, ${hex})`
     vars[`--mantine-color-${name}-filled-hover`] =
       `var(--vx-fillHover-${name}, color-mix(in srgb, ${hex} 88%, #000))`
@@ -869,65 +910,130 @@ function familyBridge(): Record<string, string> {
   return vars
 }
 
-export const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
-  variables: {},
-  light: {
-    ...onColorVars(theme, 'light'),
-    ...familyBridge(),
-    ...accentBridge(theme, 'light'),
-    '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.light})`, // page background
-    '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.light})`, // cards / default controls
-    '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.light})`,
-    // THE central lever for doctrine inversion #1 on CONTROLS (docs/DESIGN-SPEC.md §8): depth is
-    // `shadow-card`, never a hairline, for every `variant="default"` control — not just Card/Paper.
-    // `defaultVariantColorsResolver`'s `variant === 'default'` branch reads this ONE var for every
-    // component that uses it (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), so pointing it
-    // at `transparent` kills the stock 1px hairline everywhere at once. `transparent`, not `border:
-    // none` — the 1px border BOX stays, so focus/error can recolor the same box with no layout
-    // shift and `[data-error]` still wins a visible border.
-    '--mantine-color-default-border': 'transparent',
-    '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
-    '--mantine-color-text': `var(--vx-ink, ${INK.ink.light})`, // primary body/heading text
-    '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.light})`,
-    // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
-    // `--mantine-color-default-*`; each hardcodes a RAW ramp step (`--mantine-color-gray-{2,3,4}`
-    // on light) directly — which is why AppShell/Table/Input/Divider/Tabs/Popover/Accordion borders
-    // render an off-system color while cards use the hairline. Collapse the border-class ramp
-    // steps onto the ONE "line" token so EVERY component's border is identical and the agent
-    // cannot reintroduce a divergent border. (Hover/subtle BG steps are handled below.)
-    '--mantine-color-gray-2': `var(--vx-surface-border, ${SURFACE.border.light})`,
-    '--mantine-color-gray-3': `var(--vx-surface-border, ${SURFACE.border.light})`,
-    '--mantine-color-gray-4': `var(--vx-surface-border, ${SURFACE.border.light})`,
-    // Hover/subtle/striped/track surfaces read `gray-0/1` raw → the dedicated subtle token (a faint
-    // step below panel, so hover is actually visible). Dark hover uses the `basaltDark` dark-5/6/7
-    // steps, already on-identity.
-    '--mantine-color-gray-0': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
-    '--mantine-color-gray-1': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
-  },
-  dark: {
-    ...onColorVars(theme, 'dark'),
-    ...familyBridge(),
-    ...accentBridge(theme, 'dark'),
-    '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.dark})`,
-    '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.dark})`,
-    '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.dark})`,
-    // See the light block above — same lever, both schemes.
-    '--mantine-color-default-border': 'transparent',
-    '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
-    '--mantine-color-text': `var(--vx-ink, ${INK.ink.dark})`,
-    '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.dark})`,
-    // Dark components read `--mantine-color-dark-4` (border) raw. The `basaltDark` tuple already
-    // sets dark-4, but to a slightly lighter step than the hairline token, so layout borders read
-    // marginally heavier than card borders. Pin dark-4 to the SAME "line" token for parity.
-    '--mantine-color-dark-4': `var(--vx-surface-border, ${SURFACE.border.dark})`,
-  },
-})
+/**
+ * Build the `cssVariablesResolver` bound to a given palette `data` — the derive-config-dependent
+ * half of the fallback hexes below (see `buildTheme` above for the same split on `theme.colors`).
+ * `cssVariablesResolver` (the static, shipped export) is `buildCssVariablesResolver(DEFAULT_PALETTE_DATA)`
+ * evaluated ONCE below — and that is the ONLY resolver instance `BasaltProvider` ever wires in,
+ * unconditionally, regardless of derive config. `createBasaltTheme`'s non-default `{ derive }` path
+ * does NOT call this function: it rebuilds `theme.colors` (via `buildTheme`) but leaves the CSS
+ * variables resolver at its shipped default. A retuned identity instead reaches paint time through
+ * `BasaltBridge`'s injected `<style>` (the palette CSS built from the SAME resolved config, keyed
+ * by `theme.other.basaltDerive`), which wins the cascade over the resolver's inline fallback hexes.
+ * Limitation: `injectPalette={false}` combined with a custom `derive` therefore leaves the
+ * resolver's fallback hexes at the shipped defaults — a consumer taking over palette injection
+ * (SSR/head) with a non-default derive config must also emit `buildPaletteCss(opts, buildPaletteData(config))`
+ * themselves, or those fallbacks silently mismatch the intended identity.
+ */
+function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
+  const { INK, NEUTRAL, SURFACE } = data
+  return (theme) => ({
+    variables: {},
+    light: {
+      ...onColorVars(theme, 'light', data),
+      ...familyBridge(data),
+      ...accentBridge(theme, 'light', data),
+      '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.light})`, // page background
+      '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.light})`, // cards / default controls
+      '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.light})`,
+      // THE central lever for doctrine inversion #1 on CONTROLS (docs/DESIGN-SPEC.md §8): depth is
+      // `shadow-card`, never a hairline, for every `variant="default"` control — not just Card/Paper.
+      // `defaultVariantColorsResolver`'s `variant === 'default'` branch reads this ONE var for every
+      // component that uses it (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), so pointing it
+      // at `transparent` kills the stock 1px hairline everywhere at once. `transparent`, not `border:
+      // none` — the 1px border BOX stays, so focus/error can recolor the same box with no layout
+      // shift and `[data-error]` still wins a visible border.
+      '--mantine-color-default-border': 'transparent',
+      '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
+      '--mantine-color-text': `var(--vx-ink, ${INK.ink.light})`, // primary body/heading text
+      '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.light})`,
+      // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
+      // `--mantine-color-default-*`; each hardcodes a RAW ramp step (`--mantine-color-gray-{2,3,4}`
+      // on light) directly — which is why AppShell/Table/Input/Divider/Tabs/Popover/Accordion borders
+      // render an off-system color while cards use the hairline. Collapse the border-class ramp
+      // steps onto the ONE "line" token so EVERY component's border is identical and the agent
+      // cannot reintroduce a divergent border. (Hover/subtle BG steps are handled below.)
+      '--mantine-color-gray-2': `var(--vx-surface-border, ${SURFACE.border.light})`,
+      '--mantine-color-gray-3': `var(--vx-surface-border, ${SURFACE.border.light})`,
+      '--mantine-color-gray-4': `var(--vx-surface-border, ${SURFACE.border.light})`,
+      // Hover/subtle/striped/track surfaces read `gray-0/1` raw → the dedicated subtle token (a faint
+      // step below panel, so hover is actually visible). Dark hover uses the generator-derived
+      // dark-5/6/7 steps (`buildDarkTuple`), already on-identity.
+      '--mantine-color-gray-0': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
+      '--mantine-color-gray-1': `var(--vx-surface-subtle, ${SURFACE.subtle.light})`,
+    },
+    dark: {
+      ...onColorVars(theme, 'dark', data),
+      ...familyBridge(data),
+      ...accentBridge(theme, 'dark', data),
+      '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.dark})`,
+      '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.dark})`,
+      '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.dark})`,
+      // See the light block above — same lever, both schemes.
+      '--mantine-color-default-border': 'transparent',
+      '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
+      '--mantine-color-text': `var(--vx-ink, ${INK.ink.dark})`,
+      '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.dark})`,
+      // Dark components read `--mantine-color-dark-4` (border) raw. `buildDarkTuple` already sets
+      // dark-4, but to a slightly lighter step than the hairline token, so layout borders read
+      // marginally heavier than card borders. Pin dark-4 to the SAME "line" token for parity.
+      '--mantine-color-dark-4': `var(--vx-surface-border, ${SURFACE.border.dark})`,
+    },
+  })
+}
+
+/** The static, shipped-identity resolver — `buildCssVariablesResolver` evaluated once at
+ * `DEFAULT_DERIVE_CONFIG`. Unchanged call signature (`cssVariablesResolver(theme)`), so it drops
+ * straight into `<MantineProvider cssVariablesResolver={cssVariablesResolver}>` as before. */
+export const cssVariablesResolver: CSSVariablesResolver =
+  buildCssVariablesResolver(DEFAULT_PALETTE_DATA)
+
+/** Options for {@link createBasaltTheme}'s derive-config path. */
+export type CreateBasaltThemeOptions = {
+  /**
+   * Retune the shipped palette identity from the six-knob derive engine (`basalt-ui/tokens`'s
+   * `DeriveConfig`) instead of the shipped `#0077bd` zinc default. Omitted knobs fall back to
+   * {@link DEFAULT_DERIVE_CONFIG}'s value for that knob (`resolveDeriveConfig`).
+   *
+   * This is the ONE place a consumer sets the palette identity — everything else follows: the
+   * Mantine color ramps, the on-color contrast measurements, and the CSS-variables resolver
+   * fallbacks are all rebuilt from the SAME resolved config, and the config itself is stashed on
+   * `theme.other.basaltDerive` so `BasaltProvider` can inject the matching `--vx-*` stylesheet
+   * automatically. For live DEV-time tuning instead of a fixed production identity, see
+   * `DeriveControls` (`basalt-ui/theme-lab`).
+   */
+  derive?: Partial<DeriveConfig>
+}
 
 /**
  * Build the Basalt theme, optionally merged with consumer overrides. Overrides win on conflict
  * (Mantine `mergeThemeOverrides` is last-wins), so a consumer can retune any field without
  * forking the base.
+ *
+ * Pass `{ derive }` to retune the palette identity instead of the shipped default (see
+ * {@link CreateBasaltThemeOptions}); the default (no `options`, or a `derive` that resolves back to
+ * {@link DEFAULT_DERIVE_CONFIG}) stays on the pre-baked static `baseTheme` — zero extra derivation
+ * work, byte-identical to the shipped identity.
+ *
+ * Call this at MODULE scope, not inline in a component's render — the non-default `{ derive }` path
+ * builds a fresh `MantineThemeOverride` object on every call (`mergeThemeOverrides(buildTheme(...), ...)`),
+ * so calling it per-render would hand `MantineProvider` a new `theme` reference every render and
+ * churn Mantine's theme context (and every consumer subscribed to it) for no reason.
+ *
+ * `overrides.other` deep-merges onto the derive-produced `other` (Mantine's `mergeThemeOverrides` /
+ * `deepMerge` recurse into plain-object values rather than replacing them wholesale), so passing
+ * `{ other: { myFlag: true } }` alongside a non-default `derive` still leaves `other.basaltDerive`
+ * intact — it is only lost if a consumer's own `overrides.other` explicitly sets that same key.
  */
-export function createBasaltTheme(overrides?: MantineThemeOverride): MantineThemeOverride {
-  return overrides ? mergeThemeOverrides(baseTheme, overrides) : baseTheme
+export function createBasaltTheme(
+  overrides?: MantineThemeOverride,
+  options?: CreateBasaltThemeOptions,
+): MantineThemeOverride {
+  const resolvedConfig = resolveDeriveConfig(options?.derive)
+  const theme = isDefaultDeriveConfig(resolvedConfig)
+    ? baseTheme
+    : mergeThemeOverrides(buildTheme(buildPaletteData(resolvedConfig)), {
+        other: { basaltDerive: resolvedConfig },
+      })
+  return overrides ? mergeThemeOverrides(theme, overrides) : theme
 }

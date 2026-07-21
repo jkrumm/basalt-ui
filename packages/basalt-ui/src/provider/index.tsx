@@ -15,15 +15,17 @@
  *
  * Mantine usage is allowed in this `./` root layer (unlike `src/charts/**` and `src/tokens/**`).
  */
-import { MantineProvider, useComputedColorScheme } from '@mantine/core'
+import { MantineProvider, useComputedColorScheme, useMantineTheme } from '@mantine/core'
 import type { MantineProviderProps } from '@mantine/core'
-import { Component, useEffect } from 'react'
+import { Component, useEffect, useMemo } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
 import { buildPaletteCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
+import { isDefaultDeriveConfig } from '../tokens/derive'
+import { buildPaletteData } from '../tokens/palette'
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -160,6 +162,21 @@ function BasaltBridge({
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
 
+  // `createBasaltTheme`'s non-default `{ derive }` path stashes the resolved config on
+  // `theme.other.basaltDerive` — read it here (INSIDE MantineProvider, so `useMantineTheme` sees
+  // the fully-merged runtime theme) to decide whether the pre-baked static palette CSS still
+  // applies or a re-derived one is needed. Default/absent config -> zero extra derivation work.
+  const deriveConfig = useMantineTheme().other?.basaltDerive
+  const paletteCss = useMemo(() => {
+    if (!injectPalette) return ''
+    if (deriveConfig === undefined || isDefaultDeriveConfig(deriveConfig)) {
+      return buildPaletteCss(paletteOptions)
+    }
+    // Memoized by `buildPaletteData` (keyed on the config value), so retuning is never a
+    // per-render re-derivation once a given config has been built once.
+    return buildPaletteCss(paletteOptions, buildPaletteData(deriveConfig))
+  }, [injectPalette, deriveConfig, paletteOptions])
+
   useEffect(() => {
     // SSR guard — window is not available in server contexts
     if (typeof window === 'undefined') return
@@ -183,7 +200,7 @@ function BasaltBridge({
 
   return (
     <VxThemeProvider colorScheme={resolved}>
-      {injectPalette ? <style nonce={nonce}>{buildPaletteCss(paletteOptions)}</style> : null}
+      {injectPalette ? <style nonce={nonce}>{paletteCss}</style> : null}
       {children}
     </VxThemeProvider>
   )
