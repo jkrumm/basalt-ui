@@ -274,6 +274,9 @@ const GUARD_KIND_EXPLANATIONS: Partial<Record<GuardKind, string>> = {
   'sub-16-input-font':
     'sub-16-input-font: fontSize below 16 on a form control is dead code against the `!important` ' +
     'iOS floor in styles.css — drop the override or be honest about 16px.',
+  'raw-font-family':
+    'raw-font-family: route the font stack through createBasaltTheme(overrides, { fonts }) / the ' +
+    '--basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal.',
 }
 
 /**
