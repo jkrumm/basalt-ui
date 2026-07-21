@@ -1,17 +1,32 @@
 /**
  * DeriveControls — DEV-tool live tuning of the six-knob derive config (`tokens/derive.ts`): accent
  * seed, neutral family, light/dark surface levels, vibrancy, and accent brightness — plus a
- * seventh, color-independent "Radius" level (`tokens/palette.ts`'s `deriveRadius`).
+ * seventh, color-independent "Radius" level (`tokens/palette.ts`'s `deriveRadius`) and an eighth,
+ * "Density" level (`tokens/palette.ts`'s `deriveSpacing`).
  *
- * This is the DEV-tool path — for a PRODUCTION theme, pass `{ derive }` / `{ radius }` to
- * `createBasaltTheme` instead (see its JSDoc in `../theme`); that is the one place a consumer sets
+ * This is the DEV-tool path — for a PRODUCTION theme, pass `{ derive }` / `{ radius }` / `{ density }`
+ * to `createBasaltTheme` instead (see its JSDoc in `../theme`); that is the one place a consumer sets
  * the palette identity for real, and everything else (Mantine color ramps, on-color contrast, the
  * CSS variables resolver, `BasaltProvider`'s injected stylesheet, AND the Mantine `defaultProps`
  * numbers baked into the theme object) follows automatically. This component is for live-tweaking a
  * config by eye during development, not for shipping one — its `<style>` override can only move the
- * `--vx-radius-*` CSS vars, so a component's own hardcoded `defaultProps.radius` (e.g. Tooltip's 8)
- * will NOT visibly follow the radius slider here; `createBasaltTheme({ radius })` is what covers
- * both.
+ * `--vx-radius-*`/`--vx-space-*` CSS vars, so a component's own hardcoded numeric `defaultProps`
+ * (e.g. Tooltip's `radius: 8`, Timeline's `bulletSize`, Progress's `size`) will NOT visibly follow
+ * the Radius/Density sliders here — neither will `theme.spacing` itself (the generic Mantine
+ * `xs`/`sm`/`md`/`lg`/`xl` scale, baked into the theme object as rem strings, with no
+ * `--vx-space-scale-*`/`--mantine-spacing-*` var for this `<style>` override to reach); `createBasaltTheme({
+ * radius, density })` is what covers all of it.
+ *
+ * The gap is BIGGER than that handful of `defaultProps`, and one piece of it is NOT theme-lab-only.
+ * `tokens/index.ts`'s `VX` object (`VX.legendGap`/`VX.margin`/`VX.dotR` — chart legend gap, plot-area
+ * margins, data-point marker radius) is computed ONCE at module load from the STATIC level-0
+ * `SPACE_STEP` snapshot, not re-derived per `SpaceValues`. That means chart geometry fails to follow
+ * a retuned density BOTH here (this dev slider, expected — it only moves CSS vars) AND on the
+ * PRODUCTION `createBasaltTheme({ density })` path (NOT expected — every other density-anchored
+ * number on that path, including the `defaultProps` above, DOES rebuild correctly; `VX.*` is the one
+ * exception, because visx SVG props read it as a plain JS number at import time, before any
+ * `density` option exists to retune it against). See `deriveSpacing`'s JSDoc (`tokens/palette.ts`)
+ * for the full accounting of what tracks density and what doesn't, and why.
  *
  * Overrides apply through a `<style>` tag appended to the END of `<body>`, using the exact same
  * per-scheme selectors `buildPaletteCss` emits (`html[data-mantine-color-scheme='light'|'dark']`)
@@ -36,17 +51,18 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPersistedState, readPersistedValue } from '../state'
-import { buildPaletteCss, buildRadiusCss } from '../tokens'
+import { buildDensityCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import { DEFAULT_DERIVE_CONFIG, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
-import { buildPaletteData, deriveRadius } from '../tokens/palette'
+import { buildPaletteData, deriveRadius, deriveSpacing } from '../tokens/palette'
 
 const STYLE_TAG_ID = 'basalt-derive-controls-style'
 const STORAGE_KEY = 'theme-lab-derive'
-// v2: added the `radius` level (deriveRadius) alongside the six color knobs — bumped so a v1
-// envelope (no `radius` key) fails validation and falls back to the default state instead of
-// silently reading `radius: undefined` into the slider.
-const STORAGE_VERSION = 2
+// v4: `deriveSpacing`'s accepted range narrowed from [-5, 5] to [-3, 3] (see that function's JSDoc,
+// tokens/palette.ts) — bumped so a v3 envelope holding an out-of-range `density` (e.g. 4 or -5) from
+// an earlier session fails validation and falls back to the default state instead of reaching
+// `deriveSpacing` at render and throwing (a live crash path, not a nicety).
+const STORAGE_VERSION = 4
 
 const NEUTRAL_OPTIONS = [
   { label: 'Zinc', value: 'zinc' },
@@ -56,6 +72,9 @@ const NEUTRAL_OPTIONS = [
 ]
 const NEUTRAL_VALUES = new Set(NEUTRAL_OPTIONS.map((o) => o.value))
 const LEVEL_MARKS = [-5, 0, 5].map((v) => ({ value: v, label: String(v) }))
+// Density's own, narrower range — see `deriveSpacing`'s JSDoc (`tokens/palette.ts`) for why it's
+// [-3, 3] while radius and the four color knobs stay [-5, 5].
+const DENSITY_LEVEL_MARKS = [-3, 0, 3].map((v) => ({ value: v, label: String(v) }))
 const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 
 const LEVEL_SLIDERS = [
@@ -64,19 +83,31 @@ const LEVEL_SLIDERS = [
   ['vibrancy', 'Vibrancy'],
   ['accentBrightness', 'Brightness'],
   ['radius', 'Radius'],
+  ['density', 'Density'],
 ] as const
 
-/** Exported for `derive-controls.test.ts` — the v1→v2 migration test needs the shape + default. */
-export type PersistedDeriveState = DeriveConfig & { applied: boolean; radius: number }
+/** Exported for `derive-controls.test.ts` — the v2→v3 migration test needs the shape + default. */
+export type PersistedDeriveState = DeriveConfig & {
+  applied: boolean
+  radius: number
+  density: number
+}
 
 export const DEFAULT_STATE: PersistedDeriveState = {
   ...DEFAULT_DERIVE_CONFIG,
   applied: false,
   radius: 0,
+  density: 0,
 }
 
 const isLevel = (v: unknown): v is number =>
   typeof v === 'number' && Number.isInteger(v) && v >= -5 && v <= 5
+
+// Density's own validator — narrower than `isLevel` above (see `DENSITY_LEVEL_MARKS`'s doc). Kept
+// separate rather than narrowing `isLevel` itself: radius and the four color knobs legitimately
+// still need the full [-5, 5] range.
+const isDensityLevel = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= -3 && v <= 3
 
 /**
  * Validate + normalize a persisted envelope, or return null if it is unusable. Exported for
@@ -99,6 +130,7 @@ export function parsePersistedDeriveState(value: unknown): PersistedDeriveState 
     isLevel(v['vibrancy']) &&
     isLevel(v['accentBrightness']) &&
     isLevel(v['radius']) &&
+    isDensityLevel(v['density']) &&
     typeof v['applied'] === 'boolean'
   if (!valid) return null
   return {
@@ -109,6 +141,7 @@ export function parsePersistedDeriveState(value: unknown): PersistedDeriveState 
     vibrancy: v['vibrancy'] as number,
     accentBrightness: v['accentBrightness'] as number,
     radius: v['radius'] as number,
+    density: v['density'] as number,
     applied: v['applied'] as boolean,
   }
 }
@@ -131,11 +164,11 @@ const useDeriveControlsState = createPersistedState<PersistedDeriveState>({
   },
 })
 
-/** The bundle {@link applyDeriveOverride} needs to build both halves of the override CSS. */
-type DeriveOverride = { config: DeriveConfig; radiusLevel: number }
+/** The bundle {@link applyDeriveOverride} needs to build all three halves of the override CSS. */
+type DeriveOverride = { config: DeriveConfig; radiusLevel: number; densityLevel: number }
 
-/** Inject (or remove) the override `<style>` tag for a resolved config + radius level. `null`
- * removes it. */
+/** Inject (or remove) the override `<style>` tag for a resolved config + radius level + density
+ * level. `null` removes it. */
 function applyDeriveOverride(override: DeriveOverride | null): void {
   if (override === null) {
     document.getElementById(STYLE_TAG_ID)?.remove()
@@ -152,7 +185,8 @@ function applyDeriveOverride(override: DeriveOverride | null): void {
   }
   const paletteCss = buildPaletteCss(undefined, buildPaletteData(override.config))
   const radiusCss = buildRadiusCss(deriveRadius(override.radiusLevel))
-  styleEl.textContent = `${paletteCss}\n${radiusCss}`
+  const densityCss = buildDensityCss(deriveSpacing(override.densityLevel))
+  styleEl.textContent = `${paletteCss}\n${radiusCss}\n${densityCss}`
 }
 
 // Chunk-load re-apply: re-inject a persisted `applied` override as soon as this module evaluates,
@@ -164,6 +198,7 @@ if (typeof document !== 'undefined') {
     applyDeriveOverride({
       config: resolveDeriveConfig(persisted),
       radiusLevel: persisted.radius,
+      densityLevel: persisted.density,
     })
   }
 }
@@ -220,8 +255,10 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
   // down while `applied` stays true — only this effect re-running with `applied === false` (toggle
   // off, or Reset) removes it.
   useEffect(() => {
-    applyDeriveOverride(state.applied ? { config, radiusLevel: state.radius } : null)
-  }, [state.applied, config, state.radius])
+    applyDeriveOverride(
+      state.applied ? { config, radiusLevel: state.radius, densityLevel: state.density } : null,
+    )
+  }, [state.applied, config, state.radius, state.density])
 
   const reset = () => setState(DEFAULT_STATE)
 
@@ -249,23 +286,28 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
           data={NEUTRAL_OPTIONS}
         />
       </div>
-      {LEVEL_SLIDERS.map(([key, label]) => (
-        <div key={key}>
-          <Text size="xs" fw={500} mb={4}>
-            {label} ({state[key]})
-          </Text>
-          <Slider
-            size="xs"
-            min={-5}
-            max={5}
-            step={1}
-            aria-label={label}
-            value={state[key]}
-            onChange={(v) => setState({ ...state, [key]: v })}
-            marks={LEVEL_MARKS}
-          />
-        </div>
-      ))}
+      {LEVEL_SLIDERS.map(([key, label]) => {
+        // Density's slider range is narrower than the others (see `DENSITY_LEVEL_MARKS`'s doc) —
+        // `isLevel`/the shared `-5..5` marks still apply to radius and the four color knobs.
+        const isDensity = key === 'density'
+        return (
+          <div key={key}>
+            <Text size="xs" fw={500} mb={4}>
+              {label} ({state[key]})
+            </Text>
+            <Slider
+              size="xs"
+              min={isDensity ? -3 : -5}
+              max={isDensity ? 3 : 5}
+              step={1}
+              aria-label={label}
+              value={state[key]}
+              onChange={(v) => setState({ ...state, [key]: v })}
+              marks={isDensity ? DENSITY_LEVEL_MARKS : LEVEL_MARKS}
+            />
+          </div>
+        )
+      })}
       <Group justify="space-between" mt="xs">
         <Switch
           size="sm"

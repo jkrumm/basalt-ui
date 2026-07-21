@@ -195,7 +195,13 @@ export function ConnectivityIndicator() {
         <ActionIcon
           variant="transparent"
           color={ICON_COLOR[status]}
-          size="md"
+          // A numeric size, not the named `"md"` — the theme's `ActionIcon.extend` `vars` (see
+          // `theme/index.ts`) now re-points a `size="md"` ActionIcon at the density-tracking control-
+          // height anchor (for a `size="md"` ActionIcon meant to match a `size="md"` Input/Button), so
+          // this plain toolbar icon must opt OUT with an explicit number to keep Mantine's own static
+          // `--ai-size-md` (28px at the 16px root) — unaffected by that override (`props.size` is a
+          // number here, never the literal string `'md'`) and by the density knob.
+          size={28}
           onClick={toggle}
           onMouseEnter={scheduleOpen}
           onMouseLeave={scheduleClose}

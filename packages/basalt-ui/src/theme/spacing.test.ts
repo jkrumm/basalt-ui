@@ -6,11 +6,25 @@
  * exact values as the acceptance baseline — a future change to `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/
  * `SPACE_FIXED` that moves one of these numbers is a deliberate visual change, not a silent
  * regression, and must update this file in the same commit.
+ *
+ * ONE exception: `SPACE_STEP.stickyHeaderClearance` moved from 84 (the original literal) through an
+ * intermediate single derived value of 108, to its FINAL shape — a responsive PAIR (Decision 3):
+ * `stickyHeaderClearance` (desktop, `>= sm`) now 60, plus a new `stickyHeaderClearanceMobile`
+ * (mobile, `< sm`) at 108. Both are DERIVED from their own AppShell header (`appShellHeaderHeight`/
+ * `appShellHeaderMobileHeight`) instead of one independent literal, which fixed two bugs at once:
+ * the original 84 under-cleared the 96px mobile header at level 0 (before density entered the
+ * picture at all), and a single derived value tuned against the mobile header over-cleared the 48px
+ * desktop header by 60px on the common (desktop) path. See `deriveSpacing`'s doc in
+ * `tokens/palette.ts` for the full rationale. Every other value in this file stays byte-identical.
  */
+import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
+import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
 import { buildPaletteCss } from '../tokens'
 import { SPACE, SPACE_FIXED, SPACE_SCALE, SPACE_STEP } from '../tokens/palette'
 import { baseTheme } from './index'
+
+const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
 
 describe('SPACE anchors match the shipped identity', () => {
   test('rowInsetX is 10, rowInsetY is 6', () => {
@@ -25,6 +39,11 @@ describe('SPACE anchors match the shipped identity', () => {
     expect(SPACE.stackLg).toBe(16)
     expect(SPACE.stackXl).toBe(24)
   })
+
+  test('inputHeight and controlHeight are both 42 (the shared control-height anchor)', () => {
+    expect(SPACE.inputHeight).toBe(42)
+    expect(SPACE.controlHeight).toBe(42)
+  })
 })
 
 describe('SPACE_SCALE matches the shipped identity — independent of SPACE even where it coincides', () => {
@@ -38,10 +57,6 @@ describe('SPACE_SCALE matches the shipped identity — independent of SPACE even
 })
 
 describe('SPACE_STEP one-offs match the shipped identity', () => {
-  test('segmentedTrackInset is 2', () => {
-    expect(SPACE_STEP.segmentedTrackInset).toBe(2)
-  })
-
   test('timelineBullet is 22', () => {
     expect(SPACE_STEP.timelineBullet).toBe(22)
   })
@@ -54,6 +69,10 @@ describe('SPACE_FIXED structurals match the shipped identity', () => {
 
   test('readingProgressHeight is 2 (not emitted as a var — see the assertion below)', () => {
     expect(SPACE_FIXED.readingProgressHeight).toBe(2)
+  })
+
+  test('segmentedTrackInset is 2 (not emitted as a var — see the assertion below)', () => {
+    expect(SPACE_FIXED.segmentedTrackInset).toBe(2)
   })
 })
 
@@ -82,16 +101,73 @@ describe('every re-pointed component styles/defaultProps spacing value matches i
     )
   })
 
-  test('SegmentedControl root padding = 2', () => {
-    expect(baseTheme.components?.['SegmentedControl']?.styles?.['root']?.['padding']).toBe(
-      'var(--vx-space-segmented-track-inset)',
-    )
+  test('SegmentedControl root padding = 2 (a density-exempt SPACE_FIXED literal, not a var)', () => {
+    expect(baseTheme.components?.['SegmentedControl']?.styles?.['root']?.['padding']).toBe('2px')
   })
 
   test('Timeline defaultProps stays bulletSize: 22, lineWidth: 1', () => {
     const tl = baseTheme.components?.['Timeline']
     expect(tl?.defaultProps?.['bulletSize']).toBe(22)
     expect(tl?.defaultProps?.['lineWidth']).toBe(1)
+  })
+
+  test('Progress defaultProps stays size: 6', () => {
+    expect(baseTheme.components?.['Progress']?.defaultProps?.['size']).toBe(6)
+  })
+
+  test('NavLink root/label lineHeight reads the density-tracking var', () => {
+    const nl = baseTheme.components?.['NavLink']
+    expect(nl?.styles?.['root']?.['lineHeight']).toBe('var(--vx-space-row-line-height)')
+    expect(nl?.styles?.['label']?.['lineHeight']).toBe('var(--vx-space-row-line-height)')
+  })
+
+  test('Input --input-height reconstructs BOTH the rem half and the --mantine-scale half', () => {
+    // Mantine's own `--input-height-md` is `calc(2.625rem * var(--mantine-scale))` — rem-relative
+    // to the root font size AND scale-aware. The override must reconstruct both, not flatten either
+    // into a bare px value (see the `Input.extend` `vars` doc comment for why).
+    const vars = baseTheme.components?.['Input']?.vars
+    // Test-only stub props/ctx — the callback only reads `size`.
+    const mdResult = vars?.(theme, { size: 'md' } as never, {} as never)
+    expect(mdResult?.wrapper?.['--input-height']).toBe(
+      'calc(var(--vx-space-input-height) * var(--mantine-scale))',
+    )
+  })
+
+  test('Input --input-height leaves a non-md size on Mantine own static height', () => {
+    const vars = baseTheme.components?.['Input']?.vars
+    const xsResult = vars?.(theme, { size: 'xs' } as never, {} as never)
+    expect(xsResult?.wrapper?.['--input-height']).toBeUndefined()
+  })
+
+  test('Button --button-height reconstructs BOTH the rem half and the --mantine-scale half', () => {
+    // Same reconstruction as Input above — Mantine's own `--button-height-md` is also
+    // `calc(2.625rem * var(--mantine-scale))`. Single-sourced from the SAME `controlHeight` anchor
+    // `--vx-space-input-height` reads (see `Button.extend`'s doc comment).
+    const vars = baseTheme.components?.['Button']?.vars
+    const mdResult = vars?.(theme, { size: 'md' } as never, {} as never)
+    expect(mdResult?.root?.['--button-height']).toBe(
+      'calc(var(--vx-space-control-height) * var(--mantine-scale))',
+    )
+  })
+
+  test('Button --button-height leaves a non-md size on Mantine own static height', () => {
+    const vars = baseTheme.components?.['Button']?.vars
+    const smResult = vars?.(theme, { size: 'sm' } as never, {} as never)
+    expect(smResult?.root?.['--button-height']).toBeUndefined()
+  })
+
+  test('ActionIcon --ai-size reconstructs BOTH the rem half and the --mantine-scale half', () => {
+    const vars = baseTheme.components?.['ActionIcon']?.vars
+    const mdResult = vars?.(theme, { size: 'md' } as never, {} as never)
+    expect(mdResult?.root?.['--ai-size']).toBe(
+      'calc(var(--vx-space-control-height) * var(--mantine-scale))',
+    )
+  })
+
+  test('ActionIcon --ai-size leaves a non-md size on Mantine own static height', () => {
+    const vars = baseTheme.components?.['ActionIcon']?.vars
+    const smResult = vars?.(theme, { size: 'sm' } as never, {} as never)
+    expect(smResult?.root?.['--ai-size']).toBeUndefined()
   })
 })
 
@@ -108,35 +184,69 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
     expect(css).toContain('--vx-space-stack-xl: 24px;')
   })
 
-  test('emits every SPACE_SCALE stop, unchanged', () => {
-    expect(css).toContain('--vx-space-scale-xs: 10px;')
-    expect(css).toContain('--vx-space-scale-sm: 12px;')
-    expect(css).toContain('--vx-space-scale-md: 16px;')
-    expect(css).toContain('--vx-space-scale-lg: 18px;')
-    expect(css).toContain('--vx-space-scale-xl: 24px;')
-  })
-
-  test('emits every SPACE_STEP one-off, unchanged', () => {
-    expect(css).toContain('--vx-space-segmented-track-inset: 2px;')
-    expect(css).toContain('--vx-space-timeline-bullet: 22px;')
-  })
-
   test('does NOT emit SPACE_FIXED as a var', () => {
     expect(css).not.toContain('--vx-space-hairline')
     expect(css).not.toContain('--vx-space-reading-progress-height')
+    expect(css).not.toContain('--vx-space-segmented-track-inset')
+  })
+
+  test('does NOT emit the dead numbers-only vars (JS-consumed, zero var() reads)', () => {
+    // `SPACE_SCALE` (the generic Mantine spacing scale) already reaches production through
+    // `theme.spacing` -> `--mantine-spacing-*`, not a `--vx-space-scale-*` var nobody read — and
+    // `timelineBullet`/`chart*`/`progressBarSize` are JS-number-only (`Timeline`'s
+    // `defaultProps.bulletSize`, `VX.legendGap`/`VX.margin`/`VX.dotR`, `Progress`'s
+    // `defaultProps.size`). See `spaceDecls`'s doc in `tokens/index.ts`.
+    expect(css).not.toContain('--vx-space-scale-xs')
+    expect(css).not.toContain('--vx-space-scale-sm')
+    expect(css).not.toContain('--vx-space-scale-md')
+    expect(css).not.toContain('--vx-space-scale-lg')
+    expect(css).not.toContain('--vx-space-scale-xl')
+    expect(css).not.toContain('--vx-space-timeline-bullet')
+    expect(css).not.toContain('--vx-space-chart-legend-gap')
+    expect(css).not.toContain('--vx-space-chart-margin-top')
+    expect(css).not.toContain('--vx-space-chart-margin-right')
+    expect(css).not.toContain('--vx-space-chart-margin-bottom')
+    expect(css).not.toContain('--vx-space-chart-margin-left')
+    expect(css).not.toContain('--vx-space-chart-dot-r')
+    expect(css).not.toContain('--vx-space-progress-bar-size')
+  })
+
+  test('emits the density pass additions: row line-height, input height, control height', () => {
+    expect(css).toContain('--vx-space-row-line-height: 1.35;')
+    // REM, not px — Mantine's own `--input-height-md`/`--button-height-md` are both
+    // `calc(2.625rem * var(--mantine-scale))` (identical in `styles.css` and the `styles.layer.css`
+    // variant consumers load), so flattening this into a flat px value would desync those heights
+    // from the root font size AND `--mantine-scale`. See `tokens/index.ts`'s `spaceDecls` and
+    // `theme/index.ts`'s `Input.extend`/`Button.extend`/`ActionIcon.extend` `vars` for the halves
+    // of the fix.
+    expect(css).toContain('--vx-space-input-height: 2.625rem;')
+    expect(css).not.toContain('--vx-space-input-height: 42px;')
+    expect(css).toContain('--vx-space-control-height: 2.625rem;')
+    expect(css).not.toContain('--vx-space-control-height: 42px;')
   })
 })
 
 /**
  * The CSS-module spacing sweep (`docs/STATUS.md`) — every new `SPACE_STEP` one-off it introduced,
- * locked to its shipped literal AND to the exact `--vx-space-*` declaration `buildPaletteCss()`
- * emits for it. Table-driven (one row per constant) instead of one `test()` per constant — this
- * table is the single place a future retune of one of these has to touch.
+ * locked to its shipped literal AND, for the ones with a real `var()` consumer, to the exact
+ * `--vx-space-*` declaration `buildPaletteCss()` emits for it. Table-driven (one row per constant)
+ * instead of one `test()` per constant — this table is the single place a future retune of one of
+ * these has to touch. `cssVar: null` marks a JS-number-only constant (no `var()` consumer anywhere —
+ * `Timeline`'s `defaultProps.bulletSize`, `VX.legendGap`/`VX.margin`/`VX.dotR`, `Progress`'s
+ * `defaultProps.size`) that deliberately has NO `--vx-space-*` declaration (see `spaceDecls`'s doc
+ * in `tokens/index.ts`).
  */
 const SPACE_STEP_SWEEP: ReadonlyArray<
-  readonly [key: keyof typeof SPACE_STEP, value: number, cssVar: string]
+  readonly [key: keyof typeof SPACE_STEP, value: number, cssVar: string | null]
 > = [
-  ['stickyHeaderClearance', 84, 'space-sticky-header-clearance'],
+  // DERIVED, not an independent literal — see `deriveSpacing`'s doc (`tokens/palette.ts`, third
+  // bullet, Decision 3) for why 60/108 (not 84) are the level-0 values: the ONE responsive PAIR
+  // deliberately exempt from the "every SPACE_STEP number is byte-identical at level 0" invariant
+  // this file otherwise enforces (locked here, not skipped, precisely so a future regression back to
+  // 84, or back to a single shared value, shows up as a failing assertion rather than a silent
+  // revert).
+  ['stickyHeaderClearance', 60, 'space-sticky-header-clearance'],
+  ['stickyHeaderClearanceMobile', 108, 'space-sticky-header-clearance-mobile'],
   ['navIconGap', 10, 'space-nav-icon-gap'],
   ['sidebarRegionGap', 12, 'space-sidebar-region-gap'],
   ['proseQuoteInsetY', 2, 'space-prose-quote-inset-y'],
@@ -165,6 +275,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['proseArticleH2RuleGap', 6, 'space-prose-article-h2-rule-gap'],
   ['proseArticleBlockGap', 18, 'space-prose-article-block-gap'],
   ['articleColumnGap', 56, 'space-article-column-gap'],
+  ['articleTocRailWidth', 220, 'space-article-toc-rail-width'],
   ['articleHeaderGap', 10, 'space-article-header-gap'],
   ['articleHeaderPaddingBottom', 20, 'space-article-header-padding-bottom'],
   ['articleHeaderMarginBottom', 28, 'space-article-header-margin-bottom'],
@@ -212,8 +323,27 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['sidebarChildListIndent', 17, 'space-sidebar-child-list-indent'],
   ['sidebarChildRowInsetY', 5, 'space-sidebar-child-row-inset-y'],
   ['sidebarChildRowIndent', 14, 'space-sidebar-child-row-indent'],
+  // JS-number-only (`app-sidebar-account.tsx`/`app-sidebar.tsx` read both via `useBasaltSpacing()` —
+  // Mantine's `<Menu width={…}>` also takes a number, not a `var()` string).
+  ['sidebarAccountMenuWidth', 220, null],
+  ['sidebarSettingsMenuWidth', 200, null],
   ['appHeaderMobileActionsHeight', 52, 'space-app-header-mobile-actions-height'],
+  // JS-number-only (`shell/index.tsx` reads all four via `useBasaltSpacing()` — Mantine's AppShell
+  // `header`/`navbar` props take numbers, not `var()` strings) — see `spaceDecls`'s doc in
+  // `tokens/index.ts` for why a `--vx-space-app-shell-*` declaration would have zero consumers.
+  ['appShellHeaderHeight', 48, null],
+  ['appShellHeaderMobileHeight', 96, null],
+  ['appShellNavbarWidth', 216, null],
+  ['appShellNavbarRailWidth', 48, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
+  ['chartLegendGap', 22, null],
+  ['chartMarginTop', 12, null],
+  ['chartMarginRight', 16, null],
+  ['chartMarginBottom', 30, null],
+  ['chartMarginLeft', 44, null],
+  ['chartDotR', 5, null],
+  ['progressBarSize', 6, null],
+  ['timelineBullet', 22, null],
 ]
 
 describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identity', () => {
@@ -223,18 +353,49 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
     }
   })
 
-  test('every constant is emitted as its own --vx-space-* declaration, unchanged', () => {
+  test('every constant with a cssVar is emitted as its own --vx-space-* declaration, unchanged', () => {
     const css = buildPaletteCss()
     for (const [, value, cssVar] of SPACE_STEP_SWEEP) {
+      if (cssVar === null) continue
       expect(css).toContain(`--vx-${cssVar}: ${value}px;`)
     }
   })
 
-  test('the sweep table covers every SPACE_STEP key beyond the two pre-existing ones', () => {
-    const preExisting = new Set(['segmentedTrackInset', 'timelineBullet'])
+  test('every cssVar: null constant is NOT emitted as a --vx-space-* declaration', () => {
+    const css = buildPaletteCss()
+    const jsOnlyKeys = SPACE_STEP_SWEEP.filter(([, , cssVar]) => cssVar === null).map(
+      ([key]) => key,
+    )
+    expect(jsOnlyKeys).toEqual([
+      'sidebarAccountMenuWidth',
+      'sidebarSettingsMenuWidth',
+      'appShellHeaderHeight',
+      'appShellHeaderMobileHeight',
+      'appShellNavbarWidth',
+      'appShellNavbarRailWidth',
+      'chartLegendGap',
+      'chartMarginTop',
+      'chartMarginRight',
+      'chartMarginBottom',
+      'chartMarginLeft',
+      'chartDotR',
+      'progressBarSize',
+      'timelineBullet',
+    ])
+    expect(css).not.toContain('--vx-space-sidebar-account-menu-width')
+    expect(css).not.toContain('--vx-space-sidebar-settings-menu-width')
+    expect(css).not.toContain('--vx-space-app-shell-header-height')
+    expect(css).not.toContain('--vx-space-app-shell-header-mobile-height')
+    expect(css).not.toContain('--vx-space-app-shell-navbar-width')
+    expect(css).not.toContain('--vx-space-app-shell-navbar-rail-width')
+    expect(css).not.toContain('--vx-space-chart-legend-gap')
+    expect(css).not.toContain('--vx-space-progress-bar-size')
+    expect(css).not.toContain('--vx-space-timeline-bullet')
+  })
+
+  test('the sweep table covers every SPACE_STEP key', () => {
     const tableKeys = new Set(SPACE_STEP_SWEEP.map(([key]) => key))
     for (const key of Object.keys(SPACE_STEP)) {
-      if (preExisting.has(key)) continue
       expect(tableKeys.has(key as keyof typeof SPACE_STEP)).toBe(true)
     }
   })
