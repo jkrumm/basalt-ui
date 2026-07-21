@@ -68,7 +68,7 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { BP, buildPaletteData } from '../tokens/palette'
+import { BP, buildPaletteData, RADIUS, RADIUS_STEP } from '../tokens/palette'
 import type { PaletteData } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
@@ -101,6 +101,17 @@ declare module '@mantine/core' {
     basaltDerive?: DeriveConfig
     basaltFonts?: BasaltFontsConfig
   }
+}
+
+/**
+ * A pixel radius expressed as the plain rem STRING literal the Mantine `radius` size-scale has
+ * always shipped (NOT Mantine's own `rem()` helper, which instead emits a `calc(...)` expression
+ * bound to `--mantine-scale` — a different value). Lets the scale's steps derive from the shared
+ * `RADIUS`/`RADIUS_STEP` constants below instead of a hand-typed rem string per step, while
+ * staying byte-identical to the literals it replaces (16px base: `pxRem(6)` → `'0.375rem'`).
+ */
+function pxRem(px: number): string {
+  return `${px / 16}rem`
 }
 
 // Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
@@ -388,10 +399,18 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
     spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
-    // 2 4 6 16 32 — the size scale; `md` (6px) is the control-radius default (`defaultRadius: 'md'`,
-    // inputs/buttons). Card/Paper/Popover/Modal/Notification read `--vx-radius-*` directly instead
-    // (7px cards / 6px controls), so the larger steps of this scale no longer mirror either token.
-    radius: { xs: '0.125rem', sm: '0.25rem', md: '0.375rem', lg: '1rem', xl: '2rem' },
+    // 2 4 6 16 32 — the size scale; `md` = `RADIUS.ctrl` (6px) is the control-radius default
+    // (`defaultRadius: 'md'`, inputs/buttons). Card/Paper/Popover/Modal/Notification read
+    // `--vx-radius-*` directly instead (7px cards / 6px controls), so the larger steps of this
+    // scale no longer mirror either token — `xs`/`lg`/`xl` are independent `RADIUS_STEP` constants,
+    // `sm` shares `RADIUS_STEP.fine` with the Progress bar (see below).
+    radius: {
+      xs: pxRem(RADIUS_STEP.scaleXs),
+      sm: pxRem(RADIUS_STEP.fine),
+      md: pxRem(RADIUS.ctrl),
+      lg: pxRem(RADIUS_STEP.scaleLg),
+      xl: pxRem(RADIUS_STEP.scaleXl),
+    },
     // Shade 6 (= `primaryShade`) is pinned to the FILL BAND for every family, so the JS ramp and the
     // `--vx-fill-*` tokens hold the SAME hex. That keeps `-filled` / `-text`(light) / `-outline`
     // internally consistent, and lets the on-color be measured straight off the tuple (below).
@@ -444,7 +463,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Mantine's default Badge radius is a full 1000px pill; the spec's delta/status badges sit at
       // radius 6 (docs/DESIGN-SPEC.md §4/§5). Count badges (radius 5) are a distinct, smaller-radius
       // usage left to the call site (`radius={5}` prop) since Badge has no state to key off here.
-      Badge: Badge.extend({ defaultProps: { radius: 6 } }),
+      Badge: Badge.extend({ defaultProps: { radius: RADIUS.ctrl } }),
       // Alert renders its title in the body font by default; bring it onto the head-font idiom
       // (docs/DESIGN-SPEC.md §5) like every other titled surface. Radius/padding/color tint are
       // already on-system (defaultRadius 'md' control tier + the variant color resolver), so only
@@ -494,7 +513,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             fontSize: VX.text.md,
             lineHeight: '1.35',
             // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
-            borderRadius: 6,
+            borderRadius: RADIUS.ctrl,
           },
           // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
           // doesn't reach it.
@@ -573,7 +592,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // (applies to every option regardless of state), so it's in segmented-control.module.css
       // instead — same pattern as NavLink's active-icon accent.
       SegmentedControl: SegmentedControl.extend({
-        defaultProps: { radius: 7 },
+        defaultProps: { radius: RADIUS.card },
         classNames: { label: segmentedControlClasses.label },
         styles: {
           root: {
@@ -583,13 +602,13 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
           indicator: {
             backgroundColor: 'var(--vx-surface-panel)',
             boxShadow: 'var(--vx-shadow-ctrl)',
-            borderRadius: 5,
+            borderRadius: RADIUS_STEP.tight,
           },
         },
       }),
       // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
       Progress: Progress.extend({
-        defaultProps: { size: 6, radius: 4 },
+        defaultProps: { size: 6, radius: RADIUS_STEP.fine },
         styles: {
           root: { backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)' },
         },
@@ -636,7 +655,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Tooltip is a standalone floating primitive (not Popover-based) — themed directly. Its arrow
       // ships border-less (`border: 0`), so the same edge is applied inline to keep the ring closed.
       Tooltip: Tooltip.extend({
-        defaultProps: { radius: 8 },
+        defaultProps: { radius: RADIUS_STEP.floating },
         styles: {
           tooltip: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -650,7 +669,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Popover is the shared floating primitive underneath Menu (Menu renders `<Popover>`
       // internally with no `radius`/`shadow` of its own), so theming it here covers both.
       Popover: Popover.extend({
-        defaultProps: { radius: 8 },
+        defaultProps: { radius: RADIUS_STEP.floating },
         styles: {
           dropdown: {
             backgroundColor: 'var(--vx-surface-overlay)',
@@ -671,7 +690,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             border: '1px solid var(--vx-surface-border)',
             boxShadow: 'var(--vx-shadow-overlay)',
           },
-          item: { fontSize: VX.text.md, borderRadius: 6, padding: '6px 10px' },
+          item: { fontSize: VX.text.md, borderRadius: RADIUS.ctrl, padding: '6px 10px' },
           label: {
             fontFamily: 'var(--basalt-font-mono)',
             fontSize: VX.text.micro,
@@ -698,7 +717,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
       // surface. Title = head font; close button = the ghost idiom (floating.module.css).
       Modal: Modal.extend({
-        defaultProps: { radius: 8 },
+        defaultProps: { radius: RADIUS_STEP.floating },
         classNames: { close: floatingClasses.closeButton },
         styles: {
           content: {
@@ -738,7 +757,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
             border: 'none',
             color: 'var(--vx-ink2)',
-            borderRadius: 5,
+            borderRadius: RADIUS_STEP.tight,
           },
         },
       }),
@@ -746,7 +765,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-            borderRadius: 5,
+            borderRadius: RADIUS_STEP.tight,
           },
         },
       }),
@@ -835,7 +854,7 @@ function buildTheme(data: PaletteData): MantineThemeOverride {
       }),
       // Card idiom — same panel + shadow-card as every other surface.
       Notification: Notification.extend({
-        defaultProps: { radius: 8 },
+        defaultProps: { radius: RADIUS_STEP.floating },
         styles: {
           root: {
             backgroundColor: 'var(--vx-surface-panel)',
