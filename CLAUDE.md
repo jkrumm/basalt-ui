@@ -30,6 +30,9 @@ explicitly requested — don't autonomously execute large roadmap phases.
   hex; retune the derive config/constants instead. A consumer retunes the identity via
   `createBasaltTheme(overrides?, { derive: { accent, neutral, lightLevel, darkLevel, vibrancy,
 accentBrightness } })` — one accent seed + five bounded knobs, contrast guaranteed by derivation.
+  The same options object also carries `fonts: { sans?, head?, mono? }` (the single font entry
+  point → `--basalt-font-*` vars) and `radius` (integer −5..+5 shifting the corner-radius law;
+  level 0 = today's values) — one config surface for every theme dimension.
 - **Lint**: oxlint (NOT Biome). **Format**: oxfmt (NOT Prettier). No ESLint, no Biome, no Prettier.
 - **TypeScript**: strict mode, no `any`, type inference preferred, explicit types on public exports
 - **Git**: conventional commits, **empty scope** (commitlint `scope-empty: always`), `master` branch
