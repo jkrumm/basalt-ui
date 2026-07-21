@@ -66,7 +66,7 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
   test('SegmentedControl root = 7, indicator = 5', () => {
     const sc = baseTheme.components?.['SegmentedControl']
     expect(sc?.defaultProps?.['radius']).toBe(7)
-    expect(sc?.styles?.['indicator']?.['borderRadius']).toBe(5)
+    expect(sc?.styles?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-tight)')
   })
 
   test('Progress = 4', () => {
@@ -90,19 +90,27 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
   })
 
   test('NavLink root = 6', () => {
-    expect(baseTheme.components?.['NavLink']?.styles?.['root']?.['borderRadius']).toBe(6)
+    expect(baseTheme.components?.['NavLink']?.styles?.['root']?.['borderRadius']).toBe(
+      'var(--vx-radius-ctrl)',
+    )
   })
 
   test('Menu item = 6', () => {
-    expect(baseTheme.components?.['Menu']?.styles?.['item']?.['borderRadius']).toBe(6)
+    expect(baseTheme.components?.['Menu']?.styles?.['item']?.['borderRadius']).toBe(
+      'var(--vx-radius-ctrl)',
+    )
   })
 
   test('Kbd = 5', () => {
-    expect(baseTheme.components?.['Kbd']?.styles?.['root']?.['borderRadius']).toBe(5)
+    expect(baseTheme.components?.['Kbd']?.styles?.['root']?.['borderRadius']).toBe(
+      'var(--vx-radius-tight)',
+    )
   })
 
   test('Code = 5', () => {
-    expect(baseTheme.components?.['Code']?.styles?.['root']?.['borderRadius']).toBe(5)
+    expect(baseTheme.components?.['Code']?.styles?.['root']?.['borderRadius']).toBe(
+      'var(--vx-radius-tight)',
+    )
   })
 })
 

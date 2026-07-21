@@ -523,7 +523,7 @@ function buildTheme(
             fontSize: VX.text.md,
             lineHeight: '1.35',
             // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
-            borderRadius: radius.ctrl,
+            borderRadius: 'var(--vx-radius-ctrl)',
           },
           // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
           // doesn't reach it.
@@ -612,7 +612,7 @@ function buildTheme(
           indicator: {
             backgroundColor: 'var(--vx-surface-panel)',
             boxShadow: 'var(--vx-shadow-ctrl)',
-            borderRadius: radius.tight,
+            borderRadius: 'var(--vx-radius-tight)',
           },
         },
       }),
@@ -700,7 +700,11 @@ function buildTheme(
             border: '1px solid var(--vx-surface-border)',
             boxShadow: 'var(--vx-shadow-overlay)',
           },
-          item: { fontSize: VX.text.md, borderRadius: radius.ctrl, padding: '6px 10px' },
+          item: {
+            fontSize: VX.text.md,
+            borderRadius: 'var(--vx-radius-ctrl)',
+            padding: '6px 10px',
+          },
           label: {
             fontFamily: 'var(--basalt-font-mono)',
             fontSize: VX.text.micro,
@@ -767,7 +771,7 @@ function buildTheme(
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
             border: 'none',
             color: 'var(--vx-ink2)',
-            borderRadius: radius.tight,
+            borderRadius: 'var(--vx-radius-tight)',
           },
         },
       }),
@@ -775,7 +779,7 @@ function buildTheme(
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 7%, transparent)',
-            borderRadius: radius.tight,
+            borderRadius: 'var(--vx-radius-tight)',
           },
         },
       }),
