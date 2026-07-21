@@ -17,6 +17,7 @@
  * generic person glyph below.
  */
 import { Group, Menu, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
+import { useBasaltSpacing } from '../theme'
 import type { BasaltAccountProps } from './account-types'
 import classes from './app-sidebar.module.css'
 
@@ -71,6 +72,12 @@ function AccountSkeleton() {
 }
 
 export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps) {
+  // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarAccountMenuWidth`) — read the ACTIVE
+  // resolved level, not the frozen level-0 constant, so the dropdown widens with its rows as density
+  // rises (see that constant's own doc in `tokens/palette.ts`). Called unconditionally, ahead of the
+  // early returns below (rules-of-hooks).
+  const { step } = useBasaltSpacing()
+
   if (state.status === 'loading') {
     return <AccountSkeleton />
   }
@@ -90,7 +97,7 @@ export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps
   const canUpgrade = Boolean(plan?.isFree && actions?.onUpgrade)
 
   return (
-    <Menu position="right-end" withArrow width={220} zIndex={500}>
+    <Menu position="right-end" withArrow width={step.sidebarAccountMenuWidth} zIndex={500}>
       <Menu.Target>
         <UnstyledButton className={classes.accountRow} aria-label="Account menu">
           <InitialsBlock name={identity.name} />

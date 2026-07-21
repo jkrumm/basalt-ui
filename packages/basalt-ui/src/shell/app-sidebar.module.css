@@ -337,7 +337,11 @@
   }
 }
 
-/* Subnav popover dropdown — match sidebar density. */
+/* Subnav popover dropdown — match sidebar density. A `min-width`, not a `width`: it only floors the
+ * box and grows with content, so — unlike a fixed `width` (see the account/settings `<Menu
+ * width={…}>` props in app-sidebar.tsx/app-sidebar-account.tsx, tokenized onto
+ * `SPACE_STEP.sidebarAccountMenuWidth`/`.sidebarSettingsMenuWidth`) — a rising density can never
+ * squeeze it, so it stays a raw literal on purpose. */
 .subnavDropdown {
   min-width: 180px;
 }

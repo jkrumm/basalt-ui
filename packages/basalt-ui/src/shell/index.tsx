@@ -23,6 +23,7 @@ import { PageActionsOutlet, PageHeaderProvider } from './page-header'
 import type { BasaltAccountProps } from './account-types'
 import type { SidebarSearchConfig } from './sidebar-search'
 import { VX } from '../tokens'
+import { useBasaltSpacing } from '../theme'
 import headerClasses from './app-header.module.css'
 
 export { AppSidebar, type AppSidebarProps, type NavLinkRenderer } from './app-sidebar'
@@ -270,6 +271,11 @@ export function BasaltShell({
   search,
   children,
 }: BasaltShellProps) {
+  // The active density level's resolved spacing — the AppShell dimensions below must track it
+  // (see `SPACE_STEP_BASE`'s "shell/index.tsx" group doc in `tokens/palette.ts`): their contents
+  // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal
+  // container squeezes progressively worse as density rises.
+  const { step } = useBasaltSpacing()
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
   const [storedCollapsed, setStoredCollapsed] = useLocalStorage({
     key: storageKey,
@@ -294,9 +300,14 @@ export function BasaltShell({
       <AppShell
         h="100dvh"
         layout="alt"
-        header={{ height: { base: 96, sm: 48 } }}
+        header={{
+          height: { base: step.appShellHeaderMobileHeight, sm: step.appShellHeaderHeight },
+        }}
         navbar={{
-          width: { base: 216, sm: collapsed ? 48 : 216 },
+          width: {
+            base: step.appShellNavbarWidth,
+            sm: collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth,
+          },
           breakpoint: 'sm',
           collapsed: { mobile: !mobileOpened },
         }}

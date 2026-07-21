@@ -8,7 +8,7 @@
 
 .root {
   display: grid;
-  grid-template-columns: minmax(0, var(--vx-prose-measure)) 220px;
+  grid-template-columns: minmax(0, var(--vx-prose-measure)) var(--vx-space-article-toc-rail-width);
   justify-content: center;
   column-gap: var(--vx-space-article-column-gap);
 }
@@ -72,6 +72,10 @@
 .tocRail {
   grid-column: 2;
   position: sticky;
+  /* DESKTOP-only value on purpose (no `< sm` override needed): the rail is already `display: none`
+   * below the 1200px `@media` breakpoint just above, well above the `sm` (48em/768px) breakpoint
+   * that switches BasaltShell's header — and, by extension, this clearance — to its mobile value
+   * (see `content/prose.module.css` for the responsive split; docs/CONTENT-SPEC.md §5). */
   top: var(--vx-space-sticky-header-clearance);
   align-self: start;
 }
