@@ -10,7 +10,7 @@
   display: grid;
   grid-template-columns: minmax(0, var(--vx-prose-measure)) 220px;
   justify-content: center;
-  column-gap: 56px;
+  column-gap: var(--vx-space-article-column-gap);
 }
 
 .root.noToc {
@@ -31,9 +31,9 @@
   grid-column: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-bottom: 20px;
-  margin-bottom: 28px;
+  gap: var(--vx-space-article-header-gap);
+  padding-bottom: var(--vx-space-article-header-padding-bottom);
+  margin-bottom: var(--vx-space-article-header-margin-bottom);
   border-bottom: 1px solid var(--vx-divider);
 }
 
@@ -56,7 +56,7 @@
 .metaRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--vx-space-article-meta-row-gap);
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-micro);
   letter-spacing: 0.06em;
@@ -72,7 +72,7 @@
 .tocRail {
   grid-column: 2;
   position: sticky;
-  top: 84px;
+  top: var(--vx-space-sticky-header-clearance);
   align-self: start;
 }
 
@@ -80,9 +80,9 @@
   grid-column: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 40px;
-  padding-top: 20px;
+  gap: var(--vx-space-article-footer-gap);
+  margin-top: var(--vx-space-article-footer-margin-top);
+  padding-top: var(--vx-space-article-footer-padding-top);
   border-top: 1px solid var(--vx-divider);
 }
 
@@ -96,7 +96,7 @@
 .navCell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--vx-space-stack-xs);
   text-decoration: none;
   color: inherit;
 }
@@ -117,7 +117,7 @@
 .navTarget {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--vx-space-article-nav-target-gap);
   font-family: var(--basalt-font-head);
   font-stretch: 88%;
   font-weight: 550;

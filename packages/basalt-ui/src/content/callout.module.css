@@ -6,7 +6,7 @@
 
 .root {
   border-radius: var(--vx-radius-card);
-  padding: 10px 14px;
+  padding: var(--vx-space-callout-inset-y) var(--vx-space-callout-inset-x);
   border-left: 2px solid var(--callout-ink);
   background: color-mix(in srgb, var(--callout-ink) 8%, transparent);
 }
@@ -38,8 +38,8 @@
 .titleRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: var(--vx-space-callout-title-row-gap);
+  margin-bottom: var(--vx-space-stack-xs);
 }
 
 .icon {
@@ -73,5 +73,5 @@
 }
 
 .body p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--vx-space-stack-sm);
 }

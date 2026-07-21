@@ -15,8 +15,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 10px 6px 14px;
+  gap: var(--vx-space-code-block-header-gap);
+  padding: var(--vx-space-code-block-header-inset-y) var(--vx-space-code-block-header-inset-right)
+    var(--vx-space-code-block-header-inset-y) var(--vx-space-code-block-content-inset-x);
   border-bottom: 1px solid var(--vx-divider);
 }
 
@@ -32,7 +33,7 @@
 .headerRight {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--vx-space-code-block-header-right-gap);
   flex-shrink: 0;
 }
 
@@ -51,7 +52,7 @@
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-sm);
   line-height: 1.6;
-  padding: 10px 14px;
+  padding: var(--vx-space-code-block-body-inset-y) var(--vx-space-code-block-content-inset-x);
   overflow-x: auto;
 }
 
@@ -74,8 +75,8 @@ html[data-mantine-color-scheme='light'] .body :global(.shiki span) {
 /* Floating copy button — shown only when there is no header (no title), revealed on hover/focus. */
 .floatingCopy {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: var(--vx-space-code-block-floating-copy-offset);
+  right: var(--vx-space-code-block-floating-copy-offset);
   opacity: 0;
   transition: opacity 120ms ease;
 }
