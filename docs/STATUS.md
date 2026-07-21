@@ -43,7 +43,13 @@ that language is historical; see the banner on each.
   `check-dist-layering.mjs` (7 Mantine-free subpaths + root-barrel) + 19-subpath resolution +
   tarball parity (every CLI-read source ships) + export-surface snapshot (named-export completeness).
 - **CLI** — `init` · `sync` (+ `--check` drift gate) · `check-theme` · `check-coverage` · `info`
-  (+ `--json`) · `doctor` · `guard-hook`.
+  (+ `--json`) · `doctor` (+ a 4th, warn-only check for `basaltAppPlugin`'s icon files under
+  `public/`) · `guard-hook`.
+- **App bootstrap** (`./vite`) — `basaltAppPlugin` joins `basaltViteConfig`: dual `theme-color` +
+  anti-FOUC background derived from `SURFACE.bg`, bring-your-own icon links, `site.webmanifest`
+  (served in dev too), site-wide OG/Twitter defaults, and an opt-in `serviceWorker` that lazily
+  composes the optional peer `vite-plugin-pwa` and degrades to a warning when it's absent. New
+  `agent/rules/basalt-app.md` covers vite-config composition and plugin ordering.
 - **Agent-DX** — `llms.txt`, `AGENTS.md`, `basalt-ui info --json`, `basalt-ui doctor`; rules +
   skills + CLAUDE block placed by `basalt-ui init`/`sync` (plugin/marketplace retired in 1.0.1).
 - **Resolved owner decisions** — `@visx/*` bumped alpha.11 → **4.0.0 stable** (+ `@visx/responsive`);
@@ -91,9 +97,9 @@ Intentional cut-line calls, not gaps:
 
 - **tsdown migration** — NO-GO for 1.0 (swapping the tsc declaration emitter on a type-spine
   package; owner may override).
-- **Phase-5 kill-list** — bottom-sheet, PWA vite helper + runtime hooks, canvas-line-kind,
-  appshell-aside-slot, `create-basalt-app`, dtcg-interchange, `@mantine/dropzone`, full
-  `<Chat>`/voice. Advisory-only.
+- **Phase-5 kill-list** — bottom-sheet, runtime hooks, canvas-line-kind, appshell-aside-slot,
+  `create-basalt-app`, dtcg-interchange, `@mantine/dropzone`, full `<Chat>`/voice. Advisory-only.
+  (The PWA vite helper on this list shipped — see `basaltAppPlugin` in the "Built" section above.)
 - **`no-explicit-any` → error escalation**, **`./state` static-lint globs** (would over-reach into
   consumer state files), **controlled `DataTable` sorting** prop.
 - **`@example` JSDoc markdown-compile harness** (the playground demos already are canonical
