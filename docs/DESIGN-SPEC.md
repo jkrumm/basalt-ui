@@ -8,6 +8,15 @@ Values are exact — taken from the handoff prototype's token block. `color-mix(
 be kept as-is in emitted CSS or precomputed to the hex given in parentheses; the resolved color
 must match.
 
+> **Post-derive-engine note.** The hexes below were this spec's hand-tuned calibration TARGET. The
+> shipped defaults are now COMPUTED by `tokens/derive.ts` from one seed + five bounded knobs (see
+> `docs/STATUS.md`'s "Derive engine" section) and approximate this table rather than reproduce it
+> byte-for-byte — the generator's actual output at `DEFAULT_DERIVE_CONFIG` is the new ground truth
+> (e.g. `accentFill` is `#4374a6`, page `bg` is `#f2f2f5`/`#27272a`), not the literals below. Never
+> hand-edit a color hex in `palette.ts` or here to "fix" a drift — retune `DEFAULT_DERIVE_CONFIG` or
+> the calibrated constants in `derive.ts` instead; a handful of small gaps (e.g. `accentHover`'s
+> dark-mode hue, ΔE≈5.9 off this table) are tracked as known limitations, not bugs.
+
 ## 1. Identity
 
 Modern zinc. Cool-neutral zinc surfaces (Tailwind zinc family), low-contrast panel lift on a
@@ -41,18 +50,25 @@ carry the character.
 
 **The accent has two roles, and they are different colors.** As **ink** it is read against the page,
 so it inverts across schemes (light on dark, deep on light). As a **surface** it carries a label, so
-it is squeezed from both sides at once — white text needs ≥4.5:1 against the fill, and the control
-needs ≥3:1 against the page behind it. On the dark page those two constraints leave one narrow
-window, so the fill is the *same* hex in both schemes and its label is white in both. Darkening the
-fill further (`#0069a8`, `#04669b`) buys text contrast but drops the button to 2.5–2.7:1 against the
-dark page — it fades into the background. Never fill with the ink token.
+it is squeezed from both sides at once — white text needs to clear a floor against the fill, and the
+control needs ≥3:1 against the page behind it. On the dark page those two constraints leave one
+narrow window, so the fill is the *same* hex in both schemes and its label is white in both.
+Darkening the fill further (`#0069a8`, `#04669b`) buys text contrast but drops the button below the
+page floor — it fades into the background. Never fill with the ink token.
 
-**THE FILL BAND — this generalizes to every family.** The constraint above has nothing to do with
-blue: any filled surface faces it. So every Mantine family's fill is its own hue placed at the *same
-luminance* (~0.165, the band's centre) — hue varies, luminance does not. Each is its shade-6 scaled
-uniformly in linear-light space, which lands on the target luminance exactly while preserving hue and
-saturation exactly. The result: **every filled surface reads white, on either page, at ~4.9:1 / ~3.2:1.**
-Untuned, five families sat below the 3:1 page floor (grape 2.17:1) and three needed black labels.
+**THE FILL BAND — this generalizes to every family, and is now a derivation LAW, not a hand-picked
+hex.** `tokens/derive.ts` places every filled surface's relative luminance at exactly **Y=0.165**
+(`FILL_LUMINANCE`) — hue varies, luminance does not — and picks the label (`onAccent`) by measuring
+contrast: white wins whenever it clears a **3.0:1** floor against the fill (`ON_ACCENT_WHITE_CONTRAST_MIN`
+— the WCAG 1.4.11 UI-component/large-text level; the originally-targeted 4.5:1 proved too strict, since
+it flipped several fills to a dark-ink label even though white still read fine there), a near-black
+ink otherwise. The 12 categorical fills' saturation is additionally scaled by the `vibrancy` knob,
+centered at **×0.72** of calibrated chroma (`VIBRANCY_CENTER_CHROMA_MULT`) — one step above the
+original muted ×0.6 center — so the shipped hexes are this law's OUTPUT at the default knobs, not
+independent hand picks (see the post-derive-engine note above: the table below is the calibration
+target the law approximates, not necessarily byte-identical to the generator's live output).
+Untuned, five families sat below the 3:1 page floor (grape 2.17:1) and three needed black labels;
+the law fixes all twelve at once.
 
 | Family | Fill (both schemes) | | Family | Fill (both schemes) |
 |-|-|-|-|-|
