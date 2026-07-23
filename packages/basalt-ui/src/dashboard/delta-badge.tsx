@@ -49,7 +49,7 @@ export function DeltaBadge({
           height: 'auto',
         },
         label: {
-          display: 'inline-flex',
+          display: 'inline-flex', // theme-allow: Mantine Badge styles.label part — CSS-in-JS, not a layout node
           alignItems: 'center',
           gap: 3, // theme-allow: sub-scale badge glyph-to-label gap, below the token scale
           fontFamily: 'var(--basalt-font-mono)',
