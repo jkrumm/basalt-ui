@@ -59,7 +59,7 @@ export type SettingsSectionProps = {
 export function SettingsSection({ title, description, children }: SettingsSectionProps) {
   return (
     <Card style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)' }}>
-      <Stack gap={2} mb={12}>
+      <Stack gap={2} mb="sm">
         <span style={titleStyle}>{title}</span>
         {description && (
           <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
@@ -105,7 +105,7 @@ export function DangerZone({ title, description, children }: DangerZoneProps) {
         boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
       }}
     >
-      <Stack gap={2} mb={12}>
+      <Stack gap={2} mb="sm">
         <span style={eyebrowStyle}>Danger Zone</span>
         <span style={titleStyle}>{title}</span>
         {description && (
