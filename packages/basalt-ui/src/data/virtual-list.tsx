@@ -130,7 +130,11 @@ export function BasaltVirtualList<T>({
         {Array.from({ length: skeletonRows }, (_, i) => (
           <div
             key={`skeleton-${i}`}
-            style={{ height: estimateSize, padding: '8px 12px', boxSizing: 'border-box' }}
+            style={{
+              height: estimateSize,
+              padding: 'var(--vx-space-virtual-row-inset-y) var(--vx-space-virtual-row-inset-x)',
+              boxSizing: 'border-box',
+            }}
           >
             <Skeleton height={estimateSize - 16} radius="sm" />
           </div>

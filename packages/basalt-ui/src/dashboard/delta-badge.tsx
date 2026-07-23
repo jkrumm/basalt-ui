@@ -45,13 +45,13 @@ export function DeltaBadge({
       styles={{
         root: {
           backgroundColor: alpha(tone, 0.13),
-          padding: '2px 7px',
+          padding: 'var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x)',
           height: 'auto',
         },
         label: {
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 3,
+          gap: 3, // theme-allow: sub-scale badge glyph-to-label gap, below the token scale
           fontFamily: 'var(--basalt-font-mono)',
           fontSize: VX.text.xs,
           fontWeight: 600,
@@ -64,7 +64,13 @@ export function DeltaBadge({
       {/* optical glyph ratio relative to the label, not a scale step */}
       {showGlyph && <span style={{ fontSize: '0.8em' }}>{glyph}</span>}
       {format(value)}
-      {period && <span style={{ marginLeft: 4, fontWeight: 500, opacity: 0.6 }}>{period}</span>}
+      {period && (
+        <span
+          style={{ marginLeft: 4, fontWeight: 500, opacity: 0.6 }} // theme-allow: sub-scale optical period offset, below the token scale
+        >
+          {period}
+        </span>
+      )}
     </Badge>
   )
 }
