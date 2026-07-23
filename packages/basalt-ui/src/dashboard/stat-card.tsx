@@ -54,7 +54,7 @@ export function StatCard({ label, value, delta, deltaPeriod, sparkline, menu }: 
         minHeight: 118,
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
+        gap: 'var(--vx-space-stat-card-gap)',
         overflow: 'hidden',
       }}
     >

@@ -135,8 +135,14 @@ export function ThreadDetailPanel({
       </Box>
       <Divider color="var(--vx-divider)" />
       <Box style={{ flex: 1, minHeight: 0 }}>
-        {/* theme-allow — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx). */}
-        <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
+        <BasaltStickToBottom
+          style={{
+            height: '100%',
+            // theme-allow — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx).
+            overflowY: 'auto',
+            padding: 'var(--vx-space-agent-transcript-inset)',
+          }}
+        >
           <ThreadTranscript
             messages={thread.messages}
             {...(liveParts !== undefined ? { liveParts } : {})}

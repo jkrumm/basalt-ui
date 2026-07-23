@@ -76,7 +76,7 @@ const LazyStickToBottom = lazy(() =>
                   justifyContent: 'center',
                   width: 30,
                   height: 30,
-                  margin: '8px auto 0',
+                  margin: 'var(--vx-space-agent-scroll-button-gap-top) auto 0',
                   borderRadius: 'var(--vx-radius-pill)',
                   border: 'none',
                   cursor: 'pointer',
