@@ -156,14 +156,229 @@ function isChartFile(relPath: string): boolean {
 }
 
 /**
- * The skip policy the per-line loop applies inline, reused by the full-text tag-scoped scans
- * (which resolve their own report line and so must re-check it): a line carrying the allow-comment,
- * or a pure-comment line, is never a violation.
+ * The allow-comment skip the full-text tag-scoped scans re-apply on their own resolved report
+ * line: a line carrying the allow-comment is never a violation. Pure-comment lines need no
+ * special case here anymore — they are handled upstream by `stripComments` (matches simply can't
+ * land on blanked-out comment text), so this only ever runs against the ORIGINAL (unstripped)
+ * line, since the allow-comment annotation itself lives inside a comment.
  */
 function isSkippedLine(line: string, cfg: GuardConfig): boolean {
-  if (line.includes(cfg.allowComment)) return true
-  const trimmed = line.trimStart()
-  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')
+  return line.includes(cfg.allowComment)
+}
+
+/** The 2 comment/regex dialects the stripper understands, resolved from the file's own extension. */
+type GuardSyntax = 'ts' | 'css'
+
+/**
+ * CSS (including `.module.css`) has no `//` line-comment syntax at all — an unquoted `//`, e.g.
+ * inside `url(https://…)`, is real CSS text, never a comment opener. Match on the `.css` suffix
+ * (not a naive `split('.')`) so `foo.module.css` resolves the same as `foo.css`.
+ */
+function guardSyntaxFor(relPath: string): GuardSyntax {
+  return relPath.endsWith('.css') ? 'css' : 'ts'
+}
+
+// A `/` opens a regex literal (not division) when the previous significant token is one of these
+// punctuation marks, or one of the REGEX_PRECEDING_KEYWORDS below, or nothing has been scanned yet
+// (start of input) — the standard JS lexer disambiguation. `ts`-syntax only; CSS has no regexes.
+const REGEX_PRECEDING_PUNCT = new Set([
+  '=',
+  '(',
+  ',',
+  '[',
+  ':',
+  '!',
+  '&',
+  '|',
+  '?',
+  '{',
+  '}',
+  ';',
+  '+',
+  '-',
+  '*',
+  '%',
+  '~',
+  '^',
+  '<',
+])
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return',
+  'typeof',
+  'case',
+  'in',
+  'of',
+  'delete',
+  'void',
+  'throw',
+  'do',
+  'else',
+])
+const WORD_CHAR = /[A-Za-z0-9_$]/
+
+/**
+ * Strip comments out of source text, leaving real comment-awareness in place of the old per-line
+ * prefix heuristic (which only caught a comment when ITS OWN line happened to start with `//` /
+ * `*` / `/*` — a block-comment continuation line that didn't start with `*` slipped straight
+ * through as if it were code).
+ *
+ * Stripped characters are replaced 1:1 with a space (newlines are preserved verbatim), so the
+ * output is the SAME LENGTH as the input and every remaining token keeps its exact original line
+ * number and character offset — callers can keep using `text.slice(0, i).split('\n').length` for
+ * line numbers exactly as before.
+ *
+ * Deliberately does NOT touch string literals (`'`, `"`, backtick, backslash-escaped): a raw hex
+ * or a `//` inside a string is real source text, not a comment, and must still be scanned as-is
+ * (e.g. a URL like `'https://x.com/#abc'` must not have its `//` treated as a line comment).
+ *
+ * `syntax === 'css'` disables `//` line-comment handling entirely (CSS only has `/* *\/`) — an
+ * unquoted `url(https://…)` must never have its rest-of-line blanked (that was the BUG 2 false
+ * negative: a real violation on the same line silently disappearing behind a bogus "comment").
+ *
+ * `syntax === 'ts'` additionally recognizes regex literals (`/…/flags`) via
+ * `REGEX_PRECEDING_PUNCT` / `REGEX_PRECEDING_KEYWORDS` and consumes them VERBATIM — a `/*` or `//`
+ * shaped sequence inside a regex body (e.g. a character class `/[/*]/`) is real regex source, not
+ * a comment opener, and must not open a block comment that then runs away to EOF eating every
+ * subsequent line unrecoverably (that was the BUG 1 false negative — total loss of guard coverage
+ * for the rest of the file). The heuristic is inherently imperfect (full disambiguation needs a
+ * real parser), so it is DELIBERATELY biased toward treating an ambiguous `/` as division, i.e.
+ * NOT a regex, i.e. NOT specially protected: an under-strip here just leaves a `/` as an ordinary
+ * character (worst case a spurious finding a human can `theme-allow`), whereas an over-eager
+ * regex-open would swallow real code as "protected regex content" and could hide a genuine
+ * violation — the failure mode BUG 1 already showed is unacceptable.
+ */
+function stripComments(text: string, syntax: GuardSyntax): string {
+  const out: string[] = Array.from<string>({ length: text.length })
+  let inLineComment = false
+  let inBlockComment = false
+  let stringQuote: string | null = null
+  let currentWord = ''
+  let lastUnitType: 'word' | 'punct' | 'none' = 'none'
+  let lastWord = ''
+  let lastPunct = ''
+  let i = 0
+
+  function flushWord(): void {
+    if (currentWord === '') return
+    lastUnitType = 'word'
+    lastWord = currentWord
+    currentWord = ''
+  }
+
+  function canPrecedeRegex(): boolean {
+    if (lastUnitType === 'none') return true
+    if (lastUnitType === 'word') return REGEX_PRECEDING_KEYWORDS.has(lastWord)
+    return REGEX_PRECEDING_PUNCT.has(lastPunct)
+  }
+
+  while (i < text.length) {
+    const ch = text[i] ?? ''
+
+    if (inLineComment) {
+      out[i] = ch === '\n' ? '\n' : ' '
+      if (ch === '\n') inLineComment = false
+      i++
+      continue
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && text[i + 1] === '/') {
+        out[i] = ' '
+        out[i + 1] = ' '
+        i += 2
+        inBlockComment = false
+        continue
+      }
+      out[i] = ch === '\n' ? '\n' : ' '
+      i++
+      continue
+    }
+
+    if (stringQuote !== null) {
+      out[i] = ch
+      if (ch === '\\' && i + 1 < text.length) {
+        out[i + 1] = text[i + 1] ?? ''
+        i += 2
+        continue
+      }
+      if (ch === stringQuote) stringQuote = null
+      i++
+      continue
+    }
+
+    if (WORD_CHAR.test(ch)) {
+      currentWord += ch
+      out[i] = ch
+      i++
+      continue
+    }
+    flushWord()
+
+    if (ch === "'" || ch === '"' || ch === '`') {
+      stringQuote = ch
+      out[i] = ch
+      lastUnitType = 'punct'
+      lastPunct = ch
+      i++
+      continue
+    }
+
+    if (ch === '/' && text[i + 1] === '*') {
+      inBlockComment = true
+      out[i] = ' '
+      i++
+      continue
+    }
+
+    if (syntax === 'ts' && ch === '/' && text[i + 1] === '/') {
+      inLineComment = true
+      out[i] = ' '
+      i++
+      continue
+    }
+
+    if (syntax === 'ts' && ch === '/' && canPrecedeRegex()) {
+      // Consume the regex literal VERBATIM: backslash escapes and `[...]` character classes never
+      // close it early. A raw newline before the closing `/` means this was never a valid regex
+      // (JS disallows a literal line terminator inside one) — bail out of regex mode right there;
+      // every character up to the newline was already copied through unchanged either way, so
+      // bailing loses nothing.
+      out[i] = ch
+      let j = i + 1
+      let inClass = false
+      while (j < text.length) {
+        const rc = text[j] ?? ''
+        if (rc === '\n') break
+        out[j] = rc
+        if (rc === '\\' && j + 1 < text.length) {
+          out[j + 1] = text[j + 1] ?? ''
+          j += 2
+          continue
+        }
+        if (rc === '[') inClass = true
+        else if (rc === ']') inClass = false
+        else if (rc === '/' && !inClass) {
+          j++
+          break
+        }
+        j++
+      }
+      i = j
+      lastUnitType = 'punct'
+      lastPunct = '/'
+      continue
+    }
+
+    // Plain `/` (division, or any bare `/` in CSS syntax) — or any other punctuation/whitespace.
+    out[i] = ch
+    if (!/\s/.test(ch)) {
+      lastUnitType = 'punct'
+      lastPunct = ch
+    }
+    i++
+  }
+
+  return out.join('')
 }
 
 // ── GUARD_RULES registry ─────────────────────────────────────────────────────────────────────────
@@ -352,14 +567,19 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     (GUARD_RULES['raw-radius'].pattern as RegExp).flags,
   )
 
+  // Comment-stripped text drives every match below; `lines` (the ORIGINAL, unstripped split) is
+  // kept only to resolve the allow-comment escape, since that annotation lives inside a comment
+  // the stripped text has already blanked out. Same length / same newline positions as `text`, so
+  // line numbers computed off either one agree.
   const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
+  const codeText = stripComments(text, guardSyntaxFor(relPath))
+  const codeLines = codeText.split('\n')
 
-    // Skip lines with the allow-comment or pure-comment lines.
-    if (line.includes(cfg.allowComment)) continue
-    const trimmed = line.trimStart()
-    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
+  for (let i = 0; i < lines.length; i++) {
+    const line = codeLines[i] ?? ''
+
+    // Skip lines with the allow-comment (checked against the ORIGINAL line text).
+    if ((lines[i] ?? '').includes(cfg.allowComment)) continue
 
     // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme) — patterns from GUARD_RULES.
     for (const m of line.matchAll(GUARD_RULES['raw-hex'].pattern as RegExp)) {
@@ -461,11 +681,12 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   }
 
   // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
-  // Reports at the line of the `items={[` token itself; honors the same theme-allow / pure-comment
-  // skip as every per-line kind by checking that reported line directly.
+  // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
+  // at the line of the `items={[` token itself, honoring the same allow-comment escape as every
+  // per-line kind by checking the ORIGINAL reported line directly.
   if (GUARD_RULES['unframed-chart'].enabled!(cfg)) {
-    for (const m of text.matchAll(RAW_CHART_LEGEND_ARRAY)) {
-      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+    for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
+      const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
     }
@@ -474,10 +695,10 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
   // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
   if (GUARD_RULES['chart-missing-aria-label'].enabled!(cfg)) {
-    for (const m of text.matchAll(CHART_ENTRY_POINT_TAG)) {
+    for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
       const tagText = m[0]
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({
         relPath,
@@ -492,10 +713,10 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // of the `withBorder` token itself (not the end of the tag) so a multi-line-formatted Card points
   // the fix at the prop to delete.
   if (GUARD_RULES['card-with-border'].enabled!(cfg)) {
-    for (const m of text.matchAll(CARD_SURFACE_TAG)) {
+    for (const m of codeText.matchAll(CARD_SURFACE_TAG)) {
       const withBorder = WITH_BORDER_PROP.exec(m[0])
       if (withBorder === null) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: 'withBorder', kind: 'card-with-border' })
     }
@@ -506,25 +727,25 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // N } }}` per-part style. Either shape is now DEAD CODE against the `!important` floor in
   // styles.css — see the guard's doc comment for exactly which shapes this covers.
   if (GUARD_RULES['sub-16-input-font'].enabled!(cfg)) {
-    for (const m of text.matchAll(RAW_FORM_CONTROL_TAG)) {
+    for (const m of codeText.matchAll(RAW_FORM_CONTROL_TAG)) {
       const tagText = m[0]
       if (!INLINE_STYLE.test(tagText)) continue
       const fontSizeMatch = [...tagText.matchAll(SUB_16_FONT_SIZE)][0]
       if (fontSizeMatch === undefined) continue
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
     }
 
-    for (const m of text.matchAll(STYLES_INPUT_PART)) {
+    for (const m of codeText.matchAll(STYLES_INPUT_PART)) {
       const inputBody = m[1] ?? ''
       const fontSizeMatch = [...inputBody.matchAll(SUB_16_FONT_SIZE)][0]
       if (fontSizeMatch === undefined) continue
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
     }
