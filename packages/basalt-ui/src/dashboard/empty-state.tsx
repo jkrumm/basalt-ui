@@ -42,7 +42,7 @@ export function EmptyState({
   return (
     <Stack
       align="center"
-      gap={10}
+      gap="xs"
       style={{
         padding: variant === 'page' ? '64px 24px' : '32px 20px',
         textAlign: 'center',
