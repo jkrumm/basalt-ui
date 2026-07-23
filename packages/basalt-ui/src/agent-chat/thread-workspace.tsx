@@ -128,7 +128,7 @@ export function ThreadWorkspace({
   // A plain pane, NOT a card — the feed's own rows carry the card idiom (docs/DESIGN-SPEC.md §5),
   // so this pane stays flush with the page and the feed/detail split reads via the divider token.
   const feed = (
-    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <Flex direction="column" h="100%" style={{ overflow: 'hidden' }}>
       <Box style={{ flex: 1, minHeight: 0 }}>
         {store.threads.length === 0 ? (
           (emptyState ?? <FeedEmptyState />)
@@ -143,7 +143,7 @@ export function ThreadWorkspace({
           {...(newThreadPlaceholder !== undefined ? { placeholder: newThreadPlaceholder } : {})}
         />
       </Box>
-    </Box>
+    </Flex>
   )
 
   const detail = (

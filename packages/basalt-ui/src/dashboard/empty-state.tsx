@@ -15,7 +15,7 @@
  *   variant="section"
  * />
  */
-import { Stack } from '@mantine/core'
+import { Center, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { VX } from '../tokens'
 
@@ -48,20 +48,7 @@ export function EmptyState({
         textAlign: 'center',
       }}
     >
-      {icon && (
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: VX.faint,
-          }}
-        >
-          {icon}
-        </div>
-      )}
+      {icon && <Center style={{ width: 32, height: 32, color: VX.faint }}>{icon}</Center>}
       <span
         style={{
           fontFamily: 'var(--basalt-font-head)',
