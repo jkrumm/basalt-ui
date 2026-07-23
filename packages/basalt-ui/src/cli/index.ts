@@ -140,6 +140,18 @@ export type BasaltConfig = {
    * Default: `<first basalt.root>/lib/series.ts` — see `resolveSeriesModulePath`.
    */
   seriesModulePath?: string
+  /**
+   * Per-rule, per-path exemptions — complements whole-file `exempt` (which skips ALL rules for a
+   * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-visx-axis` → chart files
+   * only). Each value is a list of path-segment patterns matched against a finding's relative
+   * path: a pattern matches when the path split on `/` includes it as a WHOLE segment (`'agent'`
+   * matches `src/agent/x.tsx` but not `src/agenting.ts`; a trailing `/` is stripped, so `'agent'`
+   * and `'agent/'` are equivalent). Default: `{}` (no exemptions).
+   *
+   * @example
+   * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
+   */
+  exemptRules?: Partial<Record<GuardKind, string[]>>
 }
 
 const DEFAULT_ROOT = 'src'
@@ -311,6 +323,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
+    exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
   }
 
   const findings: Finding[] = []
@@ -1614,6 +1627,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
+    exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
   }
 
   // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
