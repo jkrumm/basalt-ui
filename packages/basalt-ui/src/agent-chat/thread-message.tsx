@@ -78,7 +78,7 @@ const CODE_BLOCK_STYLE = {
   marginTop: 6,
   fontFamily: 'var(--basalt-font-mono)',
   backgroundColor: alpha(VX.ink, 0.06),
-  borderRadius: 8,
+  borderRadius: 'var(--vx-radius-card)',
   padding: 8,
   whiteSpace: 'pre-wrap',
   overflowWrap: 'anywhere',

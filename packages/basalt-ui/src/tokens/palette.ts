@@ -216,6 +216,9 @@ export const RADIUS_STEP = {
   scaleLg: 16,
   /** The Mantine `radius` scale's `xl` step — independent of both anchors. */
   scaleXl: 32,
+  /** Fully-rounded pill affordance (scroll-to-bottom button, chips). Fixed — a pill reads round at
+   * any radius level, so it does not track the knob (like the scale stops above). */
+  pill: 9999,
 } as const
 
 /**

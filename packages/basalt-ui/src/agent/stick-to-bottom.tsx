@@ -77,7 +77,7 @@ const LazyStickToBottom = lazy(() =>
                   width: 30,
                   height: 30,
                   margin: '8px auto 0',
-                  borderRadius: 999,
+                  borderRadius: 'var(--vx-radius-pill)',
                   border: 'none',
                   cursor: 'pointer',
                   backgroundColor: 'var(--vx-surface-panel)',

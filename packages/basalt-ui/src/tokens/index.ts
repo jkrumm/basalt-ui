@@ -132,6 +132,9 @@ export const VX = {
   radiusCard: 'var(--vx-radius-card)',
   // Single source for the control corner radius (inputs, search, buttons, segmented track).
   radiusCtrl: 'var(--vx-radius-ctrl)',
+  // Fully-rounded pill affordance (scroll-to-bottom button, chips) — fixed, does not track the
+  // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
+  radiusPill: 'var(--vx-radius-pill)',
 
   // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
   line2Dark: 'var(--vx-line2)',
@@ -492,6 +495,10 @@ function frameworkDerived(data: PaletteData): string {
     decl('radius-fine', `${RADIUS_STEP.fine}px`),
     // The floating tier (Modal/Tooltip/Popover/Notification, content code/mermaid blocks).
     decl('radius-floating', `${RADIUS_STEP.floating}px`),
+    // The pill affordance (scroll-to-bottom button, chips) — fixed, level-invariant, so it lives
+    // only in this static block, never in `buildRadiusCss`'s dynamic override (see
+    // `RADIUS_STEP.pill`'s doc).
+    decl('radius-pill', `${RADIUS_STEP.pill}px`),
     ...spaceDecls(DEFAULT_SPACE_VALUES),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),

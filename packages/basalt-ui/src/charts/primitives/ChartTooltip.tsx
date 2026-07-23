@@ -10,7 +10,7 @@ const TOOLTIP_STYLES: CSSProperties = {
   pointerEvents: 'none',
   zIndex: 9999,
   backgroundColor: VX.surface.panel,
-  borderRadius: 8,
+  borderRadius: 'var(--vx-radius-floating)',
   padding: '0',
   fontSize: VX.text.xs,
   lineHeight: '18px',
@@ -138,7 +138,7 @@ export function TooltipRow({
             style={{
               width: 8,
               height: 8,
-              borderRadius: 2,
+              borderRadius: 2, // theme-allow: sub-scale tooltip micro-corner, below the 4px radius floor
               backgroundColor: color,
               flexShrink: 0,
             }}
