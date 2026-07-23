@@ -233,6 +233,32 @@ describe('raw-surface', () => {
     expect(kinds(f)).not.toContain('raw-surface')
   })
 
+  it('does NOT flag a ${…}-composed border (token-driven, e.g. VX.divider)', () => {
+    const f = find('const s = { borderLeft: `2px solid ${VX.divider}` }')
+    expect(kinds(f)).not.toContain('raw-surface')
+  })
+
+  it('does NOT flag a ${…}-composed boxShadow (VX.shadowCard + a token ring)', () => {
+    const f = find(
+      'const s = { boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}` }',
+    )
+    expect(kinds(f)).not.toContain('raw-surface')
+  })
+
+  it('does NOT flag a border reset keyword (none/transparent)', () => {
+    expect(kinds(find(`<button style={{ border: 'none' }} />`))).not.toContain('raw-surface')
+    expect(kinds(find(`<div style={{ border: 'transparent' }} />`))).not.toContain('raw-surface')
+  })
+
+  it('STILL flags a genuinely raw ${…}-free literal border/shadow', () => {
+    // A template literal escapes only because its color is separately caught by raw-hex/raw-color-fn;
+    // a plain quoted literal has no such backstop, so it must still fire.
+    expect(kinds(find(`<div style={{ border: '2px solid red' }} />`))).toContain('raw-surface')
+    expect(kinds(find(`<div style={{ boxShadow: '0 2px 4px rgba(0,0,0,.1)' }} />`))).toContain(
+      'raw-surface',
+    )
+  })
+
   it('does NOT flag when rawSurface is false', () => {
     const f = checkSource(`<div style={{ borderRadius: 8 }} />`, PATH, {
       ...DEFAULT_GUARD_CONFIG,
