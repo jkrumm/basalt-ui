@@ -104,7 +104,7 @@ const CODE_BLOCK_STYLE = {
   marginTop: 6,
   fontFamily: 'var(--basalt-font-mono)',
   backgroundColor: alpha(VX.ink, 0.06),
-  borderRadius: 8,
+  borderRadius: 'var(--vx-radius-card)',
   padding: 8,
   overflowX: 'auto',
 } as const
@@ -176,7 +176,7 @@ function DefaultError({ part }: { part: ErrorPart; index: number }): JSX.Element
       style={{
         backgroundColor: alpha(VX.status.bad, 0.13),
         color: VX.status.bad,
-        borderRadius: 8,
+        borderRadius: 'var(--vx-radius-card)',
         padding: '8px 10px',
       }}
     >
