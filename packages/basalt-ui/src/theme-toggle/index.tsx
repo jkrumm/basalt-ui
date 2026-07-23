@@ -14,6 +14,7 @@
  */
 import {
   ActionIcon,
+  Center,
   Popover,
   SegmentedControl,
   useComputedColorScheme,
@@ -72,14 +73,18 @@ function MoonGlyph() {
 /** The animated sun/moon glyph — crossfades + rotates between the two on scheme change. */
 function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: boolean }) {
   if (reduceMotion) {
-    return <span style={{ display: 'inline-flex' }}>{dark ? <MoonGlyph /> : <SunGlyph />}</span>
+    return (
+      <Center component="span" inline>
+        {dark ? <MoonGlyph /> : <SunGlyph />}
+      </Center>
+    )
   }
   return (
     <AnimatePresence mode="wait" initial={false}>
       {dark ? (
         <motion.span
           key="moon"
-          style={{ display: 'inline-flex' }}
+          style={{ display: 'inline-flex' }} // theme-allow: framer-motion element — inline-flex glyph wrapper, not a Mantine node
           initial={{ opacity: 0, scale: 0.6, rotate: 30 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.6, rotate: -30 }}
@@ -90,7 +95,7 @@ function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: bool
       ) : (
         <motion.span
           key="sun"
-          style={{ display: 'inline-flex' }}
+          style={{ display: 'inline-flex' }} // theme-allow: framer-motion element — inline-flex glyph wrapper, not a Mantine node
           initial={{ opacity: 0, scale: 0.6, rotate: -30 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.6, rotate: 30 }}
