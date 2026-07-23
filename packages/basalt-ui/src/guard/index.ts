@@ -152,12 +152,31 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawFormControl: true,
   sub16InputFont: true,
   allowComment: 'theme-allow',
+  exemptRules: {},
 }
 
 // ── Path predicate ────────────────────────────────────────────────────────────────────────────────
 
 function isChartFile(relPath: string): boolean {
   return relPath.includes('/charts/') && !AXIS_WRAPPER_FILE.test(relPath)
+}
+
+/**
+ * Whether `kind` is exempted at `relPath` via `cfg.exemptRules` — the config-driven, per-rule
+ * counterpart to `isChartFile`'s hardcoded path scoping. A pattern matches when `relPath` split on
+ * `/` includes it as a WHOLE segment (a trailing `/` is stripped first, so `'agent'` and `'agent/'`
+ * are equivalent); a substring match against one longer segment (e.g. `'age'` against `agent`)
+ * never counts.
+ */
+function isRuleExempt(
+  kind: GuardKind,
+  relPath: string,
+  exemptRules: GuardConfig['exemptRules'],
+): boolean {
+  const patterns = exemptRules?.[kind]
+  if (patterns === undefined || patterns.length === 0) return false
+  const segments = relPath.split('/')
+  return patterns.some((pattern) => segments.includes(pattern.replace(/\/$/, '')))
 }
 
 /**
@@ -806,5 +825,8 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
   }
 
-  return findings
+  // Per-rule, per-path exemption post-filter (§exemptRules) — applied once here so it uniformly
+  // covers every kind regardless of whether it was emitted via the GUARD_RULES registry loop above
+  // or one of the inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+  return findings.filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
 }
