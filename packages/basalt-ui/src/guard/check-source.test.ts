@@ -1180,3 +1180,66 @@ describe('CSS applicability', () => {
     expect(kinds(f)).not.toContain('localstorage-theme')
   })
 })
+
+// ── exemptRules — per-rule, per-path guard exemptions ────────────────────────
+
+describe('exemptRules', () => {
+  const TEXT = `<div style={{ display: 'flex' }} />`
+
+  it('drops a finding of an exempted kind at a matching path', () => {
+    const f = checkSource(TEXT, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['agent'] },
+    })
+    expect(kinds(f)).not.toContain('inline-display')
+  })
+
+  it('still fires at a non-matching path (path-scoped, not global)', () => {
+    const f = checkSource(TEXT, 'src/dashboard/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['agent'] },
+    })
+    expect(kinds(f)).toContain('inline-display')
+  })
+
+  it('a trailing-slash pattern matches identically to the bare segment', () => {
+    const f = checkSource(TEXT, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['agent/'] },
+    })
+    expect(kinds(f)).not.toContain('inline-display')
+  })
+
+  it('does NOT match a substring of a segment (not a whole-segment match)', () => {
+    const f = checkSource(TEXT, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['age'] },
+    })
+    expect(kinds(f)).toContain('inline-display')
+  })
+
+  it('does NOT suppress a different kind on the same line/path', () => {
+    const f = checkSource(`const c = '#ff0000'; ${TEXT}`, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-display': ['agent'] },
+    })
+    expect(kinds(f)).not.toContain('inline-display')
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('exempts raw-html-layout, an INLINE-handled kind — proves the post-filter covers those too', () => {
+    const f = checkSource(TEXT, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'raw-html-layout': ['agent'] },
+    })
+    expect(kinds(f)).not.toContain('raw-html-layout')
+    // inline-display isn't exempted here, so it still fires from the same text.
+    expect(kinds(f)).toContain('inline-display')
+  })
+
+  it('default (no exemptRules) behavior is unchanged', () => {
+    const f = find(TEXT, 'src/agent/x.tsx')
+    expect(kinds(f)).toContain('inline-display')
+    expect(kinds(f)).toContain('raw-html-layout')
+  })
+})
