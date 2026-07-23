@@ -82,8 +82,8 @@ describe('raw-color-fn', () => {
     expect(kinds(f)).not.toContain('raw-color-fn')
   })
 
-  it('does NOT flag a pure block comment line', () => {
-    const f = find(`* use rgba() for opacity`)
+  it('does NOT flag rgba() mentioned inside a real block comment', () => {
+    const f = find('/*\n * use rgba() for opacity\n */')
     expect(kinds(f)).not.toContain('raw-color-fn')
   })
 })
@@ -881,8 +881,8 @@ describe('pure-comment skip', () => {
     expect(kinds(f)).not.toContain('raw-hex')
   })
 
-  it('skips a * JSDoc body line', () => {
-    const f = find(` * Use rgba() for opacity, not raw hex`)
+  it('skips a JSDoc body line that is genuinely inside a block comment', () => {
+    const f = find('/**\n * Use rgba() for opacity, not raw hex\n */')
     expect(kinds(f)).not.toContain('raw-color-fn')
   })
 
@@ -895,6 +895,155 @@ describe('pure-comment skip', () => {
     const text = `// this is a comment\nconst c = '#ff0000'`
     const f = find(text)
     expect(kinds(f)).toContain('raw-hex')
+  })
+})
+
+// ── stripComments pre-pass: real block/line-comment awareness ───────────────────
+//
+// checkSource used to decide "is this a comment?" per line, from that line's OWN leading prefix
+// (`//` / `*` / `/*`). A block-comment CONTINUATION line that didn't happen to start with `*` (the
+// common "wrapped prose" style, e.g. styles.css) slipped straight through as code — a real
+// false-positive, not a hypothetical one (see the 3 real sites this fixed, asserted in
+// index.test.ts / reproduced below). These cases prove the replacement — an actual comment-
+// stripping pre-pass — neither under- nor over-strips.
+
+describe('stripComments pre-pass', () => {
+  it('does NOT flag a hex on a block-comment CONTINUATION line with no leading *', () => {
+    // This is exactly the styles.css shape: a /* ... */ block whose middle lines are wrapped
+    // prose, not `* `-prefixed. The old per-line prefix heuristic missed this entirely.
+    const text = ['/* line one', '   #e5e5e5 in the middle, no leading star', 'line three */'].join(
+      '\n',
+    )
+    const f = find(text)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('flags a real hex that follows a same-line /* */ comment', () => {
+    const f = find(`/* note */ const c = '#ff0000'`)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('flags a hex inside a single-quoted string with a trailing // comment', () => {
+    const f = find(`const c = '#ff0000' // trailing note`)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+    expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+  })
+
+  it('does not mangle a URL hash-fragment inside a quoted string via // handling', () => {
+    // The `//` in `https://` sits INSIDE a single-quoted string, so it must not be treated as a
+    // line-comment opener. The guard's raw-hex regex has no URL awareness (never did — that's
+    // unrelated to this fix), so it still matches the `#aabbcc` fragment literally: the real-code
+    // semantics here are "1 finding", proving the string content survived the strip untouched
+    // rather than being blanked out by an over-eager `//` rule.
+    const f = find(`const u = 'https://example.com/#aabbcc'`)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('preserves the exact original line number across a preceding multi-line block comment', () => {
+    const text = ['/*', 'line2', 'line3', 'line4', 'end */', '', "const c = '#ff0000'"].join('\n')
+    const f = find(text)
+    const hit = f.find((x) => x.kind === 'raw-hex')
+    expect(hit?.line).toBe(7)
+  })
+
+  it('still honors the theme-allow escape on a code line', () => {
+    const f = find(`const c = '#ff0000' // theme-allow: legacy`)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('does not crash on an unterminated block comment at EOF, and strips everything after it', () => {
+    const text = `const before = '#ff0000'\n/* unterminated\nconst c = '#00ff00'`
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+    expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+  })
+
+  it('still finds a hex inside a backtick template literal containing ${}', () => {
+    const f = find('const s = `value ${x} is #ff0000`')
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('CSS-shaped input: flags only the real declaration, not the comment mention', () => {
+    const text = '/* comment with #e5e5e5 */\n.a { color: #ff0000; }'
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+    expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+  })
+
+  // ── regex-literal disambiguation (BUG 1: a `/*`- or `//`-shaped sequence INSIDE a regex body
+  // must never be misread as opening a comment — the char-class case ran away to EOF and silently
+  // deleted guard coverage for the rest of the file) ──────────────────────────────────────────────
+
+  it('does not treat a `/*` inside a regex character class as a block-comment opener (BUG 1 repro)', () => {
+    const text = "const RE = /[/*]/\nconst c = '#ff0000'"
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('does not treat two `/` inside a regex character class as a line-comment opener', () => {
+    const text = "const RE = /[//]/\nconst c = '#ff0000'"
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('treats a `/` between identifiers as division, not a regex open', () => {
+    const text = "const a = x / y\nconst c = '#ff0000'"
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('treats a `/` as division and still finds a REAL // comment later on the same line', () => {
+    const text = "const a = x / y // #aabbcc\nconst c = '#ff0000'"
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('consumes a regex literal with an escaped slash without closing early', () => {
+    const text = "const RE = /a\\/b/\nconst c = '#ff0000'"
+    const f = find(text)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('still recognizes a real block comment right after a regex literal (regex handling did not break comment handling)', () => {
+    const text = 'const RE = /abc/\n/* #ff0000 */'
+    const f = find(text)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  // ── CSS vs TS syntax split (BUG 2: an unquoted `//` in CSS, e.g. inside `url(https://…)`,
+  // is real CSS text, not a comment opener — CSS has no `//` comment syntax at all) ───────────────
+
+  it('does not treat an unquoted "//" inside a CSS url() as a comment opener (BUG 2 repro)', () => {
+    const f = checkSource(
+      '.a { background: url(https://x.com/a.png); color: #ff0000; }',
+      'src/styles.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('still strips a real /* */ block comment in a .css file alongside an unquoted url()', () => {
+    const f = checkSource(
+      '.a { background: url(https://x.com/a.png); /* #aabbcc */ color: #ff0000; }',
+      'src/styles.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+    expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+  })
+
+  it('resolves a .module.css path to CSS syntax too (suffix match, not a naive split)', () => {
+    const f = checkSource(
+      '.a { background: url(https://x.com/a.png); color: #ff0000; }',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('a .ts file still strips a real // line comment (the CSS/TS syntax split did not disable TS)', () => {
+    const f = checkSource('// #ff0000\nconst ok = 1', 'src/x.ts', DEFAULT_GUARD_CONFIG)
+    expect(kinds(f)).not.toContain('raw-hex')
   })
 })
 
