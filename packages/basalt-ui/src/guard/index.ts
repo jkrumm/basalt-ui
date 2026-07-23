@@ -30,11 +30,16 @@ const RAW_FONT_FAMILY = new RegExp(
 )
 
 // Ad-hoc inline surface styling — border* / borderRadius / boxShadow with literal values.
-// A var(--…) reference inside the quoted value passes (the system itself).
+// Three escapes pass (the value is already system-routed, not a hardcoded surface literal):
+//   • a `var(--…)` reference — the CSS-var system itself;
+//   • a `${…}` template-literal interpolation — the value is JS-composed, typically from `VX.*`
+//     tokens; any raw color inside it is separately caught by raw-hex / raw-color-fn;
+//   • for `border*` only, a bare `none`/`transparent`/`inherit`/`unset`/`revert` keyword — a reset,
+//     not a surface definition.
 const SURFACE_BORDER =
-  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))(?!['"`]?(?:none|transparent|inherit|unset|revert)\b)['"`][^'"`]+['"`]/g
 const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
-const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))['"`][^'"`]+['"`]/g
 
 // A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
 // ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
