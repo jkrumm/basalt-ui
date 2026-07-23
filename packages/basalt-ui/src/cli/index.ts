@@ -205,8 +205,13 @@ function readBasaltConfig(cwd: string): BasaltConfig {
   }
 }
 
-/** Recursively collect .ts/.tsx files under a root, skipping dependency/build dirs. Node+Bun-safe. */
-function walkTsFiles(dir: string, out: string[] = []): string[] {
+/**
+ * Recursively collect .ts/.tsx/.css files under a root, skipping dependency/build dirs.
+ * Node+Bun-safe. `.css` is included so the theme guard reaches CSS modules / `styles.css` —
+ * `checkSource` is already syntax-aware per extension (`guardSyntaxFor`); the walker was the only
+ * gap.
+ */
+function walkSourceFiles(dir: string, out: string[] = []): string[] {
   let entries: string[]
   try {
     entries = readdirSync(dir)
@@ -222,8 +227,8 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
     } catch {
       continue
     }
-    if (isDir) walkTsFiles(abs, out)
-    else if (/\.tsx?$/.test(name)) out.push(abs)
+    if (isDir) walkSourceFiles(abs, out)
+    else if (/\.(?:tsx?|css)$/.test(name)) out.push(abs)
   }
   return out
 }
@@ -311,7 +316,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
   const findings: Finding[] = []
   let scannedCount = 0
   for (const root of roots) {
-    for (const f of walkTsFiles(resolve(cwd, root))) {
+    for (const f of walkSourceFiles(resolve(cwd, root))) {
       // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
       // identical on Windows (where `relative` yields backslashes) and POSIX.
       const rel = relative(cwd, f).replace(/\\/g, '/')

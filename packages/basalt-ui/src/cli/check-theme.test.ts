@@ -636,6 +636,24 @@ describe('check-theme roots fail-loud', () => {
   })
 })
 
+describe('check-theme scans .css', () => {
+  it('flags a raw hex in a CSS module the walker collects', () => {
+    fixtureAt('theme/controls.module.css', '.input {\n  color: #ff0000;\n}\n')
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-hex')
+    expect(err).toContain('controls.module.css')
+  })
+
+  it('does NOT false-positive a JSX-shaped rule on genuine CSS', () => {
+    fixtureAt('theme/controls.module.css', '.foo {\n  display: flex;\n  border-radius: 8px;\n}\n')
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).not.toContain('inline-display')
+    expect(err).not.toContain('raw-html-layout')
+  })
+})
+
 describe('check-theme comment skipping', () => {
   it('does NOT flag a banned element mentioned in a pure line comment', () => {
     fixtureAt(
