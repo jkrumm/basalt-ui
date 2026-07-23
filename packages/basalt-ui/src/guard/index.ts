@@ -424,6 +424,8 @@ export const GUARD_RULES = {
   'localstorage-theme': {
     kind: 'localstorage-theme',
     pattern: LOCALSTORAGE_THEME,
+    // JS-call-shaped (`localStorage.getItem('theme')`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Theme must resolve via the Mantine color scheme + --vx-* vars.',
   },
   'raw-font-family': {
@@ -439,6 +441,10 @@ export const GUARD_RULES = {
         `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${cfg.forbiddenAccents.join('|')})['"]`,
         'g',
       ),
+    // JSX-prop-shaped (`color={"teal"}`) — CSS declares `color: teal;` with a bare keyword and
+    // `:`, which the pattern's `=` anchor can never match; gated off explicitly so a future regex
+    // tweak can't silently start false-positiving on consumer CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'For an off-identity accent use blue/gray or a status hue (red/green/orange/yellow).',
   },
   'raw-spacing': {
@@ -448,12 +454,17 @@ export const GUARD_RULES = {
         `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${cfg.spacingSteps.join('|')})\\}`,
         'g',
       ),
+    // JSX-prop-shaped (`p={16}`) — CSS has no `=`/`{}` prop syntax; gated off explicitly (see
+    // off-identity-accent above for why "never matches today" still gets an explicit gate).
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use the Mantine spacing prop/token (p/m/gap with xs..xl).',
   },
   'raw-radius': {
     kind: 'raw-radius',
     pattern: RADIUS_PROP_RE,
     enabled: (cfg: GuardConfig) => cfg.rawRadius,
+    // JSX-prop-shaped (`radius={6}`) — CSS declares `border-radius: 6px;`, never `radius=`.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use the radius token (radius="md") instead of a numeric literal.',
   },
   'raw-surface': {
@@ -467,6 +478,8 @@ export const GUARD_RULES = {
     kind: 'card-with-border',
     pattern: CARD_SURFACE_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.cardWithBorder,
+    // JSX-tag-shaped (`<Card withBorder>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'withBorder on a Card/Paper double-draws the edge — card depth is --vx-shadow-card, which already bakes a 1px ring into the shadow. Drop the prop (docs/DESIGN-SPEC.md doctrine inversion #1).',
   },
@@ -481,6 +494,8 @@ export const GUARD_RULES = {
     kind: 'raw-html-layout',
     pattern: RAW_HTML_TAG, // handled inline (3-condition conjunction); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
+    // JSX-tag-shaped (`<div style={{...}}>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Raw HTML element with inline layout/surface styling — use a Mantine layout primitive (Box/Flex/Grid/Stack/Group).',
   },
@@ -494,13 +509,18 @@ export const GUARD_RULES = {
     kind: 'inline-display',
     pattern: INLINE_DISPLAY,
     enabled: (cfg: GuardConfig) => cfg.inlineDisplay,
+    // JSX-object-shaped (`display: 'flex'`, quoted value) — CSS never quotes a keyword value
+    // (`display: flex;` is bare), so the pattern's quote anchor can never match real CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
   },
   'raw-visx-axis': {
     kind: 'raw-visx-axis',
     pattern: RAW_VISX_AXIS,
     enabled: (cfg: GuardConfig) => cfg.rawVisxAxis,
-    appliesTo: isChartFile,
+    // Compose the existing chart-file scope with the CSS gate — a chart-file CSS module (none
+    // exist today, but the boundary should hold regardless) still can't carry a JSX axis tag.
+    appliesTo: (relPath) => isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
       'Raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use AxisLeftNumeric / AxisBottomDate / AxisRightNumeric.',
   },
@@ -508,6 +528,9 @@ export const GUARD_RULES = {
     kind: 'raw-motion-value',
     pattern: MOTION_TRANSITION_NUMERIC, // handled inline (2-regex kind); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawMotionValue,
+    // JSX-prop-shaped (`transition={{ duration: … }}`) — CSS's `transition:` property has no `=`
+    // or `{{`.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
   },
@@ -515,6 +538,8 @@ export const GUARD_RULES = {
     kind: 'unframed-chart',
     pattern: RAW_CHART_LEGEND_ARRAY, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.unframedChart,
+    // JSX-tag-shaped (`<ChartLegend items={[…]}>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Hand-rolled ChartLegend built from an inline array literal — pass a derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
   },
@@ -522,6 +547,8 @@ export const GUARD_RULES = {
     kind: 'chart-missing-aria-label',
     pattern: CHART_ENTRY_POINT_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
+    // JSX-tag-shaped (`<MultiLine …>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Chart has no accessible text alternative — pass ariaLabel="…" so screen readers get more than an unlabeled graphic.',
   },
@@ -529,6 +556,9 @@ export const GUARD_RULES = {
     kind: 'raw-form-control',
     pattern: RAW_FORM_CONTROL,
     enabled: (cfg: GuardConfig) => cfg.rawFormControl,
+    // JSX-tag-shaped (`<input …>`) — a CSS element selector (`input, select {…}`) has no leading
+    // `<`, so the pattern's anchor can never match real CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Raw <input>/<select>/<textarea> bypasses the ENTIRE theme, not just the font-size floor — no field surface, no shadow-card depth, no focus ring, no --input-* vars. Use TextInput / NumberInput / Select / Textarea from @mantine/core, or variant="unstyled" for a genuinely borderless/bespoke look.',
   },
@@ -536,10 +566,19 @@ export const GUARD_RULES = {
     kind: 'sub-16-input-font',
     pattern: SUB_16_FONT_SIZE, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.sub16InputFont,
+    // Only ever fires nested inside a raw-form-control JSX tag or a `styles={{ input: {…} }}`
+    // object literal — both JSX-shaped, neither appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'fontSize below 16 on a form control is dead code — the styles.css iOS floor is `!important` and always wins. Either drop the override, or be honest about 16px in the design.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
+
+/** Whether `kind`'s rule fires for `relPath` — `appliesTo` is opt-in; absent means always applies. */
+function ruleApplies(kind: GuardKind, relPath: string): boolean {
+  const appliesTo = (GUARD_RULES[kind] as GuardRule).appliesTo
+  return appliesTo === undefined || appliesTo(relPath)
+}
 
 // ── checkSource ───────────────────────────────────────────────────────────────────────────────────
 
@@ -588,21 +627,27 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     for (const m of line.matchAll(GUARD_RULES['raw-color-fn'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-color-fn' })
     }
-    for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+    if (ruleApplies('localstorage-theme', relPath)) {
+      for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+      }
     }
     for (const m of line.matchAll(GUARD_RULES['raw-font-family'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-font-family' })
     }
 
     // Dynamic-regex kinds — patterns already resolved above.
-    for (const m of line.matchAll(forbiddenAccentRe)) {
-      findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+    if (ruleApplies('off-identity-accent', relPath)) {
+      for (const m of line.matchAll(forbiddenAccentRe)) {
+        findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+      }
     }
-    for (const m of line.matchAll(spacingPropRe)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
+    if (ruleApplies('raw-spacing', relPath)) {
+      for (const m of line.matchAll(spacingPropRe)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
+      }
     }
-    if (GUARD_RULES['raw-radius'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-radius'].enabled!(cfg) && ruleApplies('raw-radius', relPath)) {
       for (const m of line.matchAll(radiusPropRe)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
       }
@@ -631,6 +676,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     // raw-html-layout: 3-condition conjunction on the same line — gated via GUARD_RULES entry.
     if (
       GUARD_RULES['raw-html-layout'].enabled!(cfg) &&
+      ruleApplies('raw-html-layout', relPath) &&
       RAW_HTML_TAG.test(line) &&
       INLINE_STYLE.test(line) &&
       LAYOUT_SURFACE_PROP.test(line)
@@ -646,13 +692,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // inline-display — pattern + gating from GUARD_RULES.
-    if (GUARD_RULES['inline-display'].enabled!(cfg)) {
+    if (GUARD_RULES['inline-display'].enabled!(cfg) && ruleApplies('inline-display', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['inline-display'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-display' })
       }
     }
 
-    // raw-visx-axis — pattern + gating + path applicability from GUARD_RULES.
+    // raw-visx-axis — pattern + gating + path applicability (chart-file scope AND CSS gate,
+    // composed on the registry's own appliesTo) from GUARD_RULES.
     if (
       GUARD_RULES['raw-visx-axis'].enabled!(cfg) &&
       GUARD_RULES['raw-visx-axis'].appliesTo!(relPath)
@@ -663,7 +710,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // raw-motion-value: 2 separate regex checks, one kind — gated via GUARD_RULES entry.
-    if (GUARD_RULES['raw-motion-value'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-motion-value'].enabled!(cfg) && ruleApplies('raw-motion-value', relPath)) {
       for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
       }
@@ -673,7 +720,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // raw-form-control — pattern + gating from GUARD_RULES.
-    if (GUARD_RULES['raw-form-control'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-form-control'].enabled!(cfg) && ruleApplies('raw-form-control', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['raw-form-control'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-form-control' })
       }
@@ -684,7 +731,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
   // at the line of the `items={[` token itself, honoring the same allow-comment escape as every
   // per-line kind by checking the ORIGINAL reported line directly.
-  if (GUARD_RULES['unframed-chart'].enabled!(cfg)) {
+  if (GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)) {
     for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
       const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
@@ -694,7 +741,10 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
   // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
-  if (GUARD_RULES['chart-missing-aria-label'].enabled!(cfg)) {
+  if (
+    GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
+    ruleApplies('chart-missing-aria-label', relPath)
+  ) {
     for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
       const tagText = m[0]
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
@@ -712,7 +762,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // card-with-border — full-text tag-scoped scan (same shape as the two above). Reports at the line
   // of the `withBorder` token itself (not the end of the tag) so a multi-line-formatted Card points
   // the fix at the prop to delete.
-  if (GUARD_RULES['card-with-border'].enabled!(cfg)) {
+  if (GUARD_RULES['card-with-border'].enabled!(cfg) && ruleApplies('card-with-border', relPath)) {
     for (const m of codeText.matchAll(CARD_SURFACE_TAG)) {
       const withBorder = WITH_BORDER_PROP.exec(m[0])
       if (withBorder === null) continue
@@ -726,7 +776,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // form-control's own inline `style={{ fontSize: N }}`, (b) a Mantine `styles={{ input: { fontSize:
   // N } }}` per-part style. Either shape is now DEAD CODE against the `!important` floor in
   // styles.css — see the guard's doc comment for exactly which shapes this covers.
-  if (GUARD_RULES['sub-16-input-font'].enabled!(cfg)) {
+  if (GUARD_RULES['sub-16-input-font'].enabled!(cfg) && ruleApplies('sub-16-input-font', relPath)) {
     for (const m of codeText.matchAll(RAW_FORM_CONTROL_TAG)) {
       const tagText = m[0]
       if (!INLINE_STYLE.test(tagText)) continue

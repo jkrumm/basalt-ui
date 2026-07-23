@@ -1060,3 +1060,97 @@ describe('isChartFile path gate', () => {
     expect(kinds(f)).not.toContain('raw-visx-axis')
   })
 })
+
+// ── CSS applicability — the CLI walker now scans .css, so checkSource's per-kind gating over
+// CSS-shaped input matters for real: color-meaningful kinds must still fire, JSX/tag-shaped kinds
+// must not false-positive on genuine CSS syntax ──────────────────────────────────────────────────
+
+describe('CSS applicability', () => {
+  it('flags a raw hex in a real CSS declaration (proves .css is genuinely scanned)', () => {
+    const f = checkSource(
+      '.input {\n  color: #ff0000;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('does NOT false-positive inline-display/raw-html-layout/raw-surface on genuine CSS shapes', () => {
+    const f = checkSource(
+      '.foo {\n  display: flex;\n  padding: 8px;\n  border-radius: 8px;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('inline-display')
+    expect(kinds(f)).not.toContain('raw-html-layout')
+    expect(kinds(f)).not.toContain('raw-surface')
+  })
+
+  it('still flags off-system-surface-var on a raw Mantine ramp step inside CSS', () => {
+    const f = checkSource(
+      '.foo {\n  background: var(--mantine-color-gray-3);\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).toContain('off-system-surface-var')
+  })
+
+  it('still flags raw-font-family on a kebab-case CSS font-family declaration', () => {
+    const f = checkSource(
+      '.foo {\n  font-family: system-ui;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).toContain('raw-font-family')
+  })
+
+  it('still flags inline-spacing on a genuine CSS padding/margin/gap declaration (the pattern is CSS-shaped, not JSX-only, despite the name)', () => {
+    const f = checkSource(
+      '.foo {\n  padding: 8px;\n  margin: 4px;\n  gap: 8px;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f).filter((k) => k === 'inline-spacing')).toHaveLength(3)
+  })
+
+  it('does NOT false-positive raw-form-control on a CSS element selector (input, select, textarea)', () => {
+    const f = checkSource(
+      'input, select, textarea {\n  color: red;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('raw-form-control')
+  })
+
+  it('does NOT false-positive raw-spacing/raw-radius/off-identity-accent/raw-motion-value on CSS property syntax', () => {
+    const f = checkSource(
+      '.foo {\n  border-radius: 6px;\n  transition: all 0.3s ease;\n  color: teal;\n  gap: 16px;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('raw-radius')
+    expect(kinds(f)).not.toContain('raw-motion-value')
+    expect(kinds(f)).not.toContain('off-identity-accent')
+  })
+
+  it('does NOT false-positive card-with-border/unframed-chart/chart-missing-aria-label/raw-visx-axis on CSS class selectors that echo JSX names', () => {
+    const f = checkSource(
+      '.Card {\n  border: 1px solid red;\n}\n.ChartLegend {\n  display: flex;\n}\n.AxisLeft {\n  color: red;\n}\n',
+      'src/charts/kinds/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('card-with-border')
+    expect(kinds(f)).not.toContain('unframed-chart')
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+    expect(kinds(f)).not.toContain('raw-visx-axis')
+  })
+
+  it('does NOT false-positive localstorage-theme on CSS text', () => {
+    const f = checkSource(
+      "/* localStorage.getItem('theme') example */\n.foo { color: red; }\n",
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('localstorage-theme')
+  })
+})
