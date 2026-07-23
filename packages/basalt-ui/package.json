@@ -269,7 +269,6 @@
     "rawHtmlLayout": false,
     "inlineSpacing": false,
     "inlineDisplay": false,
-    "rawRadius": true,
-    "spacingSteps": []
+    "rawRadius": true
   }
 }
