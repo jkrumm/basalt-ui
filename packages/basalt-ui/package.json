@@ -267,8 +267,12 @@
       "src/cli/index.ts"
     ],
     "rawHtmlLayout": false,
-    "inlineSpacing": false,
     "inlineDisplay": false,
-    "rawRadius": true
+    "rawRadius": true,
+    "exemptRules": {
+      "inline-spacing": [
+        "charts"
+      ]
+    }
   }
 }

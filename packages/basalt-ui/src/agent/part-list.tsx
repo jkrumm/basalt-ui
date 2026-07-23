@@ -98,14 +98,17 @@ const MICRO_LABEL_STYLE = {
 
 /** Faint left divider rail (docs/DESIGN-SPEC.md §5) — reasoning/tool-call parts read as transcript
  * asides, not surfaces. */
-const RAIL_STYLE = { borderLeft: `2px solid ${VX.divider}`, paddingLeft: 10 } as const
+const RAIL_STYLE = {
+  borderLeft: `2px solid ${VX.divider}`,
+  paddingLeft: 'var(--vx-space-agent-rail-inset-x)',
+} as const
 
 const CODE_BLOCK_STYLE = {
-  marginTop: 6,
+  marginTop: 'var(--vx-space-agent-part-gap-top)',
   fontFamily: 'var(--basalt-font-mono)',
   backgroundColor: alpha(VX.ink, 0.06),
   borderRadius: 'var(--vx-radius-card)',
-  padding: 8,
+  padding: 'var(--vx-space-agent-code-inset)',
   overflowX: 'auto',
 } as const
 
@@ -129,7 +132,10 @@ function DefaultReasoning({ part }: { part: ReasoningPart; index: number }): JSX
       >
         Reasoning
       </summary>
-      <div className="basalt-agent-reasoning-body" style={{ color: VX.muted, marginTop: 6 }}>
+      <div
+        className="basalt-agent-reasoning-body"
+        style={{ color: VX.muted, marginTop: 'var(--vx-space-agent-part-gap-top)' }}
+      >
         {part.text}
       </div>
     </details>
@@ -177,7 +183,7 @@ function DefaultError({ part }: { part: ErrorPart; index: number }): JSX.Element
         backgroundColor: alpha(VX.status.bad, 0.13),
         color: VX.status.bad,
         borderRadius: 'var(--vx-radius-card)',
-        padding: '8px 10px',
+        padding: 'var(--vx-space-agent-error-inset-y) var(--vx-space-agent-error-inset-x)',
       }}
     >
       {part.message}

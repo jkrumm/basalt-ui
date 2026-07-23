@@ -591,6 +591,37 @@ const SPACE_STEP_BASE = {
    * same "dev slider can't reach it, production `{ density }` rebuilds it" limitation as
    * `timelineBullet` above (see `deriveSpacing`'s doc). */
   progressBarSize: 6,
+
+  // ── Agent transcript / chat inline spacings — routed from the agent + agent-chat renderers and
+  // the dashboard/data inline styles that were raw px (the inline-spacing guard sweep) ───────────
+  /** `agent/part-list.tsx` + `agent-chat/thread-message.tsx` reasoning/tool-call rail's left inset. */
+  agentRailInsetX: 10,
+  /** `agent/part-list.tsx`'s `DefaultReasoning` body / both rail code blocks' top gap. */
+  agentPartGapTop: 6,
+  /** Both rail code blocks' own inset (all sides). */
+  agentCodeInset: 8,
+  /** `agent/part-list.tsx`'s `DefaultError` vertical inset. */
+  agentErrorInsetY: 8,
+  /** `agent/part-list.tsx`'s `DefaultError` horizontal inset. */
+  agentErrorInsetX: 10,
+  /** `agent/stick-to-bottom.tsx`'s scroll-to-bottom button top gap. */
+  agentScrollButtonGapTop: 8,
+  /** `agent-chat/thread-message.tsx`'s message bubble vertical inset. */
+  agentMessageInsetY: 10,
+  /** `agent-chat/thread-message.tsx`'s message bubble horizontal inset. */
+  agentMessageInsetX: 12,
+  /** `agent-chat/thread-detail-panel.tsx`'s transcript scroll container's own inset (all sides). */
+  agentTranscriptInset: 16,
+  /** `agent-chat/thread-outcome-card.tsx` + `dashboard/delta-badge.tsx`'s status badge vertical inset. */
+  badgeInsetY: 2,
+  /** `agent-chat/thread-outcome-card.tsx` + `dashboard/delta-badge.tsx`'s status badge horizontal inset. */
+  badgeInsetX: 7,
+  /** `dashboard/stat-card.tsx`'s header/value/sparkline stack gap. */
+  statCardGap: 8,
+  /** `data/virtual-list.tsx`'s skeleton row vertical inset. */
+  virtualRowInsetY: 8,
+  /** `data/virtual-list.tsx`'s skeleton row horizontal inset. */
+  virtualRowInsetX: 12,
 } as const
 
 /**

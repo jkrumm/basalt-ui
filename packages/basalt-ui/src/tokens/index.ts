@@ -455,6 +455,20 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-sidebar-child-row-indent', `${space.step.sidebarChildRowIndent}px`),
     decl('space-app-header-mobile-actions-height', `${space.step.appHeaderMobileActionsHeight}px`),
     decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
+    decl('space-agent-rail-inset-x', `${space.step.agentRailInsetX}px`),
+    decl('space-agent-part-gap-top', `${space.step.agentPartGapTop}px`),
+    decl('space-agent-code-inset', `${space.step.agentCodeInset}px`),
+    decl('space-agent-error-inset-y', `${space.step.agentErrorInsetY}px`),
+    decl('space-agent-error-inset-x', `${space.step.agentErrorInsetX}px`),
+    decl('space-agent-scroll-button-gap-top', `${space.step.agentScrollButtonGapTop}px`),
+    decl('space-agent-message-inset-y', `${space.step.agentMessageInsetY}px`),
+    decl('space-agent-message-inset-x', `${space.step.agentMessageInsetX}px`),
+    decl('space-agent-transcript-inset', `${space.step.agentTranscriptInset}px`),
+    decl('space-badge-inset-y', `${space.step.badgeInsetY}px`),
+    decl('space-badge-inset-x', `${space.step.badgeInsetX}px`),
+    decl('space-stat-card-gap', `${space.step.statCardGap}px`),
+    decl('space-virtual-row-inset-y', `${space.step.virtualRowInsetY}px`),
+    decl('space-virtual-row-inset-x', `${space.step.virtualRowInsetX}px`),
     // `chartLegendGap`/`chartMarginTop`/`chartMarginRight`/`chartMarginBottom`/`chartMarginLeft`/
     // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
     // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/
