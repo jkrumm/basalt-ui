@@ -147,7 +147,7 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
         style={{
           width: 11,
           height: 11,
-          borderRadius: 3,
+          borderRadius: 3, // theme-allow: sub-scale legend-swatch corner, below the 4px radius floor
           backgroundColor: item.color,
           opacity: item.fillOpacity ?? 0.7,
           flexShrink: 0,
@@ -192,7 +192,7 @@ function LegendChildSwatch({ item }: { item: LegendEntry }) {
         style={{
           width: 10,
           height: 10,
-          borderRadius: 2,
+          borderRadius: 2, // theme-allow: sub-scale legend-swatch corner, below the 4px radius floor
           backgroundColor: item.color,
           opacity: item.fillOpacity ?? 0.7,
           flexShrink: 0,

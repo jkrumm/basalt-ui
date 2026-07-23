@@ -38,7 +38,7 @@ Rule: basalt-tokens
 
 ## basalt-ui/theme-lab
 Import: import { ... } from 'basalt-ui/theme-lab'
-Description: ThemeLabControls, applyOverrides, COLOR_GROUPS for live theme inspection
+Description: ThemeLabControls, applyOverrides, COLOR_GROUPS — a low-level inspector for the non-derived structural tokens; identity/color tuning lives in DeriveControls
 Layer: mantine-coupled
 
 ## basalt-ui/vite

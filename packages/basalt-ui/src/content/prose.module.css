@@ -32,11 +32,37 @@
   margin-bottom: 0;
 }
 
-/* Fixed-header clearance so an anchor-jumped/TOC-navigated heading isn't hidden under a sticky header. */
+/* Fixed-header clearance so an anchor-jumped/TOC-navigated heading isn't hidden under a sticky
+ * header. RESPONSIVE (docs/CONTENT-SPEC.md §5): BasaltShell's AppShell header itself switches
+ * height at the `sm` breakpoint (`shell/index.tsx`'s `header={{ height: { base, sm } }}`), so the
+ * clearance must too — the default below is the DESKTOP value (`>= sm`, the common path); the
+ * `max-width: 47.99375em` override below swaps in the MOBILE value. `47.99375em` is Mantine's own
+ * complement of a `min-width: 48em` breakpoint (`em(px - 0.1)` — verified against the installed
+ * `@mantine/core`'s `MantineClasses.mjs`, the same formula behind `visibleFrom`/`hiddenFrom`), NOT
+ * an independently hand-picked value — a plain `47.99em` leaves a viewport band (`47.99em` to just
+ * under `48em`) matched by NEITHER this rule nor AppShell's own `(min-width: 48em)` override.
+ * `48em` is a STATIC assumption, not a value this CSS module can read live: it is Mantine's default
+ * `theme.breakpoints.sm` (unmodified by `baseTheme`, `theme/index.ts`), and `shell/index.tsx` reads
+ * that theme value directly for its own `min-width` media query — but a media query condition
+ * cannot resolve a CSS custom property (`@media (min-width: var(--x))` is not valid CSS), so this
+ * static module has no way to follow a consumer's `createBasaltTheme(overrides)` that overrides
+ * `breakpoints.sm`. A consumer doing so desyncs this file's breakpoint from AppShell's actual
+ * header-switch point — the failure mode is a heading that scrolls to a clearance tuned for the
+ * WRONG header on the mismatched viewport band, not a total breakage. Both values also assume
+ * BasaltShell's own AppShell header heights — a `./content` consumer rendering Prose standalone (no
+ * BasaltShell) overrides `--vx-space-sticky-header-clearance`/`-mobile` itself. */
 .root h2,
 .root h3,
 .root h4 {
-  scroll-margin-top: 84px;
+  scroll-margin-top: var(--vx-space-sticky-header-clearance);
+}
+
+@media (max-width: 47.99375em) {
+  .root h2,
+  .root h3,
+  .root h4 {
+    scroll-margin-top: var(--vx-space-sticky-header-clearance-mobile);
+  }
 }
 
 /* Headings share family/weight/color across densities; size + margin differ below. */
@@ -56,7 +82,8 @@
  * conventional voice for a quotation and separates it from body copy without spending weight or
  * another color on it. */
 .root blockquote {
-  padding: 2px 0 2px 12px;
+  padding: var(--vx-space-prose-quote-inset-y) 0 var(--vx-space-prose-quote-inset-y)
+    var(--vx-space-prose-quote-indent);
   border-left: 2px solid var(--vx-divider);
   color: var(--vx-muted);
   font-style: italic;
@@ -85,7 +112,7 @@
   font-family: var(--basalt-font-mono);
   font-size: 0.85em;
   background-color: color-mix(in srgb, var(--vx-ink) 7%, transparent);
-  padding: 1.5px 5px;
+  padding: var(--vx-space-prose-inline-code-inset-y) var(--vx-space-prose-inline-code-inset-x);
   border-radius: var(--vx-radius-fine);
   color: var(--vx-ink2);
 }
@@ -97,7 +124,7 @@
   line-height: 1.5;
   background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
   border-radius: var(--vx-radius-floating);
-  padding: 10px 12px;
+  padding: var(--vx-space-prose-code-block-inset-y) var(--vx-space-prose-code-block-inset-x);
   overflow-x: auto;
 }
 
@@ -140,7 +167,7 @@
 .root h6 .headingAnchor {
   display: inline-flex;
   vertical-align: middle;
-  margin-left: 6px;
+  margin-left: var(--vx-space-prose-heading-anchor-gap);
   opacity: 0;
   transition: opacity 120ms ease;
 }
@@ -177,7 +204,7 @@
 .root th,
 .root td {
   border: 1px solid var(--vx-surface-border);
-  padding: 5px 8px;
+  padding: var(--vx-space-prose-table-cell-inset-y) var(--vx-space-prose-table-cell-inset-x);
   text-align: left;
 }
 
@@ -208,22 +235,22 @@
 }
 
 .root.chat p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--vx-space-stack-sm);
 }
 
 .root.chat ul,
 .root.chat ol {
-  margin: 4px 0 10px;
-  padding-left: 20px;
+  margin: var(--vx-space-stack-xs) 0 var(--vx-space-prose-chat-list-gap-bottom);
+  padding-left: var(--vx-space-prose-chat-list-indent);
 }
 
 .root.chat li {
-  margin: 3px 0;
+  margin: var(--vx-space-prose-chat-list-item-gap) 0;
 }
 
 .root.chat li > ul,
 .root.chat li > ol {
-  margin: 2px 0;
+  margin: var(--vx-space-prose-chat-nested-list-gap) 0;
 }
 
 .root.chat h1,
@@ -232,7 +259,7 @@
 .root.chat h4,
 .root.chat h5,
 .root.chat h6 {
-  margin: 14px 0 6px;
+  margin: var(--vx-space-prose-chat-heading-gap-top) 0 var(--vx-space-prose-chat-heading-gap-bottom);
 }
 
 .root.chat h1 {
@@ -255,11 +282,11 @@
 .root.chat pre,
 .root.chat table,
 .root.chat > div {
-  margin: 8px 0;
+  margin: var(--vx-space-stack-sm) 0;
 }
 
 .root.chat hr {
-  margin: 12px 0;
+  margin: var(--vx-space-stack-md) 0;
 }
 
 /* ── Article density — the long-form reading density (default) ────────────────────────────────── */
@@ -270,46 +297,49 @@
 }
 
 .root.article p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--vx-space-prose-article-paragraph-gap);
 }
 
 .root.article ul,
 .root.article ol {
-  margin: 6px 0 14px;
-  padding-left: 22px;
+  margin: var(--vx-space-prose-article-list-gap-top) 0 var(--vx-space-prose-article-list-gap-bottom);
+  padding-left: var(--vx-space-prose-article-list-indent);
 }
 
 .root.article li {
-  margin: 4px 0;
+  margin: var(--vx-space-stack-xs) 0;
 }
 
 .root.article li > ul,
 .root.article li > ol {
-  margin: 4px 0;
+  margin: var(--vx-space-stack-xs) 0;
 }
 
 .root.article h1 {
   font-size: var(--vx-text-h1);
-  margin: 6px 0 14px;
+  margin: var(--vx-space-prose-article-h1-gap-top) 0 var(--vx-space-prose-article-h1-gap-bottom);
 }
 
 .root.article h2 {
   font-size: var(--vx-text-h2);
-  margin: 30px 0 10px;
+  margin: var(--vx-space-prose-article-heading-gap-top) 0
+    var(--vx-space-prose-article-heading-gap-bottom);
   border-bottom: 1px solid var(--vx-divider);
-  padding-bottom: 6px;
+  padding-bottom: var(--vx-space-prose-article-h2-rule-gap);
 }
 
 .root.article h3 {
   font-size: var(--vx-text-xl);
-  margin: 30px 0 10px;
+  margin: var(--vx-space-prose-article-heading-gap-top) 0
+    var(--vx-space-prose-article-heading-gap-bottom);
 }
 
 .root.article h4,
 .root.article h5,
 .root.article h6 {
   font-size: var(--vx-text-lg);
-  margin: 30px 0 10px;
+  margin: var(--vx-space-prose-article-heading-gap-top) 0
+    var(--vx-space-prose-article-heading-gap-bottom);
 }
 
 /* Block objects — code blocks, callouts, diagrams, tables, quotes — interrupt the paragraph flow
@@ -322,9 +352,9 @@
 .root.article pre,
 .root.article table,
 .root.article > div {
-  margin: 18px 0;
+  margin: var(--vx-space-prose-article-block-gap) 0;
 }
 
 .root.article hr {
-  margin: 24px 0;
+  margin: var(--vx-space-stack-xl) 0;
 }

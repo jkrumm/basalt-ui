@@ -18,9 +18,12 @@
  * into `palette.ts` permanently.
  *
  * Grounded in argo `apps/dashboard/src/lib/theme-lab.ts` + `components/theme-lab-panel.tsx`.
- * Argo's domain series groups (Health / Strength / Walking) are DROPPED — the framework ships
- * generic token groups (Semantic / Status / Neutral / Surface) as the default, and a consumer
- * passes its own series groups via `ThemeLabControls`'s `groups` prop.
+ * Identity/color tuning now lives exclusively in `DeriveControls` (one accent seed + bounded
+ * knobs) — the `ThemeLabControls` default {@link COLOR_GROUPS} below is a low-level inspector for
+ * the few `--vx-*` vars that stay hand-authored (chart-only status hues, chart line/dot chrome,
+ * the floating overlay surface), not an identity tuner. Argo's domain series groups (Health /
+ * Strength / Walking) are DROPPED — a consumer passes its own series groups via
+ * `ThemeLabControls`'s `groups` prop.
  */
 import {
   ActionIcon,
@@ -37,14 +40,11 @@ import {
 } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { BP, FILL } from '../tokens/palette'
+import { BP } from '../tokens/palette'
 import { VX } from '../tokens'
 
 export { DeriveControls } from './derive-controls'
 export type { DeriveControlsProps } from './derive-controls'
-
-/** The bridged Mantine families, in palette order — the source for the `Fills` group below. */
-const FILL_FAMILIES = Object.keys(FILL)
 
 export type ColorTunable = { var: string; label: string }
 export type ColorGroup = { title: string; items: ColorTunable[] }
@@ -55,88 +55,46 @@ export const AREA_TOP_VAR = '--vx-area-top'
 export const AREA_BOTTOM_VAR = '--vx-area-bottom'
 
 /**
- * Framework color groups — solid-hex `--vx-*` vars worth tuning by eye (ColorInput is hex-only,
- * so `rgba()`/`color-mix()` chrome vars like `--vx-axis` / `--vx-grid` are intentionally omitted).
+ * Structural `--vx-*` vars worth tuning by eye — the ones `tokens/palette.ts` hand-authors and
+ * that never move with the derive config (ColorInput is hex-only, so `rgba()`/`color-mix()` chrome
+ * vars like `--vx-axis` / `--vx-grid` are intentionally omitted regardless).
+ *
+ * Identity/color tuning lives exclusively in {@link DeriveControls} (one accent seed + bounded
+ * knobs, `tokens/derive.ts`) — every `--vx-*` var GENERATED from that config (the accent family,
+ * the 12 categorical fills, the ink ramp, most of the surface stops, the `good`/`warn`/`bad`
+ * status/semantic hues) has been pruned from here on purpose: hand-tuning a hex the derive engine
+ * regenerates on every render is a dead knob. What remains is a low-level inspector for the
+ * genuinely NON-derived structural tokens only.
  *
  * Generic by design: argo's domain series (Health / Strength / Walking) are NOT shipped — a
  * consumer passes its own series groups to {@link ThemeLabControls} via the `groups` prop.
  */
 export const COLOR_GROUPS: ColorGroup[] = [
   {
-    // The accent, split by ROLE (see `ACCENT` in tokens/palette.ts): `Accent` is the INK (links,
-    // active-nav icon, chart lines, focus ring) and inverts across schemes; `Fill` is the SURFACE
-    // of every filled control and is the same hex in both. Retuning `Fill` live-restyles every
-    // Button/Switch/Checkbox/Tab, because Mantine's `--mantine-color-<primary>-filled` is bridged
-    // onto it (theme/index.ts). `On accent` is the label ON that fill — the theme cannot recompute
-    // contrast in CSS, so if you tune `Fill` light, drop `On accent` to a dark ink yourself.
-    title: 'Accent',
-    items: [
-      { var: '--vx-accent', label: 'Accent (ink)' },
-      { var: '--vx-accentHover', label: 'Accent hover' },
-      { var: '--vx-accentFill', label: 'Fill' },
-      { var: '--vx-accentFillHover', label: 'Fill hover' },
-      { var: '--vx-onAccent', label: 'On accent' },
-    ],
-  },
-  {
-    // Every filled surface in the Mantine chrome, single-sourced (theme/index.ts bridges
-    // `--mantine-color-{family}-filled` onto these). They all sit in ONE luminance band so a white
-    // label always works — retune within it, or you break the label. Hover is derived from the
-    // fill, so it follows automatically and is not listed. `blue` lives under Accent → Fill.
-    title: 'Fills',
-    items: FILL_FAMILIES.map((name) => ({
-      var: `--vx-fill-${name}`,
-      label: name.charAt(0).toUpperCase() + name.slice(1),
-    })),
-  },
-  {
-    title: 'Ink',
-    items: [
-      { var: '--vx-ink', label: 'Ink' },
-      { var: '--vx-ink2', label: 'Ink 2' },
-      { var: '--vx-muted', label: 'Muted' },
-      { var: '--vx-faint', label: 'Faint' },
-    ],
-  },
-  {
-    title: 'Semantic',
-    items: [
-      { var: '--vx-goodSolid', label: 'Good' },
-      { var: '--vx-warnSolid', label: 'Warn' },
-      { var: '--vx-badSolid', label: 'Bad' },
-    ],
-  },
-  {
-    title: 'Status',
+    // `excellent` (top-of-scale grade) and `neutral` (mid-scale) keep their own hand-authored BP
+    // families (`p(BP.forest)` / `p(BP.gray, 1, 2)`) — unlike `good`/`warn`/`bad`, which are the
+    // SAME derived hues as `Semantic` and are not independently tunable here.
+    title: 'Status (chart-only)',
     items: [
       { var: '--vx-status-excellent', label: 'Excellent' },
-      { var: '--vx-status-good', label: 'Good' },
-      { var: '--vx-status-warn', label: 'Warn' },
-      { var: '--vx-status-bad', label: 'Bad' },
       { var: '--vx-status-neutral', label: 'Neutral' },
     ],
   },
   {
-    title: 'Neutral',
+    // Chart line/dot chrome — hand-authored off the zinc `BP.gray`/`BP.white`/`BP.darkGray`
+    // families, independent of the derive config.
+    title: 'Chart chrome',
     items: [
       { var: '--vx-line', label: 'Line' },
       { var: '--vx-line2', label: 'Line 2' },
-      { var: '--vx-neutral', label: 'Neutral' },
       { var: '--vx-dotStroke', label: 'Dot stroke' },
     ],
   },
   {
+    // The floating-layer surface (menus, popovers, tooltips, modals, drawers) — the one SURFACE
+    // stop the derive engine has no law for, so it stays a hand-picked hex/color-mix().
     title: 'Surface',
-    items: [
-      { var: '--vx-surface-bg', label: 'Background' },
-      { var: '--vx-surface-panel', label: 'Panel' },
-      { var: '--vx-surface-panelHover', label: 'Panel hover' },
-      { var: '--vx-surface-elevated', label: 'Elevated' },
-      { var: '--vx-surface-subtle', label: 'Subtle' },
-      { var: '--vx-surface-overlay', label: 'Overlay' },
-      { var: '--vx-surface-field', label: 'Field' },
-      { var: '--vx-surface-border', label: 'Border' },
-    ],
+    items: [{ var: '--vx-surface-overlay', label: 'Overlay' }],
   },
 ]
 

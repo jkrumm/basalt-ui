@@ -20,7 +20,7 @@
  *   onClose={() => select(null)}
  * />
  */
-import { ActionIcon, Alert, Box, Button, Divider, Stack, Text } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Divider, Flex, Stack, Text } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
 import { motion } from 'motion/react'
 import type { JSX } from 'react'
@@ -113,11 +113,8 @@ export function ThreadDetailPanel({
   const streaming = runStatus === 'streaming'
 
   const panel = (
-    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box
-        p="sm"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-      >
+    <Flex direction="column" h="100%">
+      <Flex p="sm" align="center" justify="space-between">
         <Text
           fw={550}
           lineClamp={1}
@@ -132,11 +129,17 @@ export function ThreadDetailPanel({
         <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close thread">
           <CloseGlyph />
         </ActionIcon>
-      </Box>
+      </Flex>
       <Divider color="var(--vx-divider)" />
       <Box style={{ flex: 1, minHeight: 0 }}>
-        {/* theme-allow — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx). */}
-        <BasaltStickToBottom style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
+        <BasaltStickToBottom
+          style={{
+            height: '100%',
+            // theme-allow — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx).
+            overflowY: 'auto',
+            padding: 'var(--vx-space-agent-transcript-inset)',
+          }}
+        >
           <ThreadTranscript
             messages={thread.messages}
             {...(liveParts !== undefined ? { liveParts } : {})}
@@ -172,7 +175,7 @@ export function ThreadDetailPanel({
           )}
         </Stack>
       </Box>
-    </Box>
+    </Flex>
   )
 
   if (reduceMotion) return panel

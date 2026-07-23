@@ -9,8 +9,17 @@
  * Grounded in argo `packages/charts/src/{tokens,palette,theme-vars,utils/color}.ts`.
  */
 
-import { buildPaletteData, RADIUS, RADIUS_STEP, SHADOW } from './palette'
-import type { PaletteData, RadiusValues } from './palette'
+import {
+  buildPaletteData,
+  RADIUS,
+  RADIUS_STEP,
+  ROW_LINE_HEIGHT,
+  SHADOW,
+  SPACE,
+  SPACE_SCALE,
+  SPACE_STEP,
+} from './palette'
+import type { PaletteData, RadiusValues, SpaceValues } from './palette'
 
 // The raw hue families + pair-picker — the building blocks a consumer's series module composes
 // (`hrv: p(BP.blue)`). The doctrine sends every consumer here, so they are public surface, not
@@ -32,6 +41,14 @@ export type { DeriveConfig, DerivedPalette } from './derive'
 // the law itself to be inspectable/testable, same rationale as `deriveTokens`).
 export { deriveRadius } from './palette'
 export type { RadiusValues } from './palette'
+
+// The density analog of the derive engine — the law behind `createBasaltTheme(overrides, {
+// density })` (see `../theme`). `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/`ROW_LINE_HEIGHT` stay internal
+// to the theme layer; a consumer retunes them through `createBasaltTheme`, not by calling
+// `deriveSpacing` directly (it is exposed for the law itself to be inspectable/testable, same
+// rationale as `deriveRadius`).
+export { deriveSpacing } from './palette'
+export type { SpaceValues } from './palette'
 
 /** A per-theme color pair: a hue keeps its identity but shifts shade across schemes. */
 export type ColorPair = { light: string; dark: string }
@@ -87,14 +104,23 @@ const TEXT = {
 
 export const VX = {
   // Non-color sizing constants
+  // Stroke WEIGHTS, not spacing — deliberately fixed, never density-tracking (see
+  // `SPACE_STEP_BASE`'s "charts" group doc in tokens/palette.ts).
   lineWidth: 2.5,
   line2Width: 2,
   axisFont: TEXT.micro,
-  dotR: 5,
+  // A discrete visual footprint (not a stroke weight), so — unlike `lineWidth`/`line2Width` above —
+  // it DOES track density; single-sourced from `SPACE_STEP.chartDotR` (see that constant's doc).
+  dotR: SPACE_STEP.chartDotR,
   // The ONE dashed pattern — plotted stroke, legend swatch, tooltip swatch all read this.
   dashArray: '6 4' as const,
-  // Legend layout — replaces the hardcoded 18/13 in ChartLegend.
-  legendGap: 22,
+  // Legend layout — single-sourced from `SPACE_STEP.chartLegendGap` (density-tracking; see that
+  // constant's doc). Still a raw number here (not `var()`) — ChartLegend applies it via inline
+  // `style`, and this is the one static (level-0) value; `createBasaltTheme({ density })` has no
+  // wiring into chart render props yet, so this number does NOT move live with the knob (same
+  // "dev slider/production JS defaultProps" gap as Timeline's `bulletSize` — see `deriveSpacing`'s
+  // doc in tokens/palette.ts).
+  legendGap: SPACE_STEP.chartLegendGap,
   legendFontSize: TEXT.sm,
 
   // The type scale (px numbers — see TEXT above). Use in inline styles and visx SVG props;
@@ -106,6 +132,9 @@ export const VX = {
   radiusCard: 'var(--vx-radius-card)',
   // Single source for the control corner radius (inputs, search, buttons, segmented track).
   radiusCtrl: 'var(--vx-radius-ctrl)',
+  // Fully-rounded pill affordance (scroll-to-bottom button, chips) — fixed, does not track the
+  // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
+  radiusPill: 'var(--vx-radius-pill)',
 
   // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
   line2Dark: 'var(--vx-line2)',
@@ -198,8 +227,14 @@ export const VX = {
     neutral: 'var(--vx-status-neutral)',
   },
 
-  // Shared sizing
-  margin: { top: 12, right: 16, bottom: 30, left: 44 },
+  // Shared sizing — single-sourced from `SPACE_STEP.chartMargin*` (density-tracking; same
+  // static-value/no-live-wiring note as `legendGap` above).
+  margin: {
+    top: SPACE_STEP.chartMarginTop,
+    right: SPACE_STEP.chartMarginRight,
+    bottom: SPACE_STEP.chartMarginBottom,
+    left: SPACE_STEP.chartMarginLeft,
+  },
   minPxPerTick: 55,
 } as const
 
@@ -207,6 +242,19 @@ type Side = 'light' | 'dark'
 
 /** A CSS declaration line for a single `--vx-*` custom property. */
 const decl = (name: string, value: string): string => `  --vx-${name}: ${value};`
+
+/**
+ * A px number expressed as the plain rem STRING literal (16px base: `pxRem(6)` → `'0.375rem'`) —
+ * NOT Mantine's own `rem()` helper, which instead emits a `calc(...)` expression bound to
+ * `--mantine-scale` (a different value; that scaling happens at the Mantine-coupled call site
+ * instead — see `theme/index.ts`'s `Input.extend` `vars` for why `--vx-space-input-height` needs
+ * both halves). The SINGLE source for this conversion — `theme/index.ts` imports this instead of
+ * keeping its own copy, so the radius/spacing size-scale steps and this module's own rem-emitting
+ * vars (`--vx-space-input-height`) can never compute the conversion two different ways.
+ */
+export function pxRem(px: number): string {
+  return `${px / 16}rem`
+}
 
 /** Emit one prefixed group of pairs for a given scheme side. */
 const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
@@ -270,6 +318,181 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
 }
 
 /**
+ * The `--vx-space-*` declaration list for a resolved {@link SpaceValues} — every anchor and one-off
+ * that has at least one real `var()` consumer, plus the row line-height. Shared by
+ * `frameworkDerived` (emits the shipped defaults unconditionally, called with `DEFAULT_SPACE_
+ * VALUES`) and {@link buildDensityCss} (emits an OVERRIDING block for a retuned density level), so
+ * the two lists can never drift apart — mirrors `frameworkDerived`'s own single-source reasoning for
+ * the radii.
+ *
+ * `SPACE_FIXED` (Timeline `lineWidth`, 1px borders, the ReadingProgress bar height, SegmentedControl's
+ * `segmentedTrackInset`) is deliberately NEVER part of this list — it never moves, so a var would
+ * only invite someone to think it does.
+ *
+ * Deliberately DOES NOT emit a var for every `SpaceValues` number — `space.scale.*` (the generic
+ * Mantine spacing scale) and `space.step.{timelineBullet,progressBarSize,chartLegendGap,
+ * chartMarginTop,chartMarginRight,chartMarginBottom,chartMarginLeft,chartDotR}` have ZERO `var()`
+ * consumers anywhere in the framework or its tests beyond the CSS-emission test itself — each is
+ * read straight off the resolved `SpaceValues` as a JS NUMBER instead (`theme/index.ts`'s Timeline/
+ * Progress `defaultProps`, and `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object),
+ * so a `--vx-space-*` declaration for one of them was dead weight that only looked like the fix for
+ * the dev-slider/production gap those JS reads actually have (see `deriveSpacing`'s JSDoc in
+ * `tokens/palette.ts` for the real scope of that gap — it is materially bigger than "a var these
+ * numbers could round-trip through"). `theme.spacing` (the generic scale, JS) already resolves
+ * through `--mantine-spacing-*` on the PRODUCTION `createBasaltTheme({ density })` path
+ * (`theme/index.ts`'s `buildTheme`), so nothing downstream of the generic scale actually needed
+ * `--vx-space-scale-*` either — deleted along with the rest rather than kept as an unread alias.
+ */
+function spaceDecls(space: SpaceValues): string[] {
+  return [
+    decl('space-row-inset-x', `${space.anchors.rowInsetX}px`),
+    decl('space-row-inset-y', `${space.anchors.rowInsetY}px`),
+    // Additive law, not the multiplier — see `deriveSpacing`'s doc in `tokens/palette.ts`. No unit:
+    // `line-height` is a unitless CSS value.
+    decl('space-row-line-height', `${space.rowLineHeight}`),
+    // A `size: 'md'` Input's resolved height. Mantine's own `--input-height-md` is
+    // `calc(2.625rem * var(--mantine-scale))` (BOTH `styles.css` and `styles.layer.css`, verified
+    // in the installed package) — REM-relative to the root font size AND scale-aware, not a flat
+    // px. Emitting this in REM (via `pxRem`, not a bare `${…}px`) preserves the rem half; the
+    // `* var(--mantine-scale))` half is reconstructed at the Mantine-coupled call site
+    // (`theme/index.ts`'s `Input.extend` `vars`, which wraps this var in the matching `calc(...)`)
+    // — this module stays Mantine-free, so it cannot reference `--mantine-scale` itself. Flattening
+    // either half into a flat px would desync input height from the user's root font size (an
+    // accessibility regression) and from Mantine's global `--mantine-scale` knob.
+    decl('space-input-height', pxRem(space.anchors.inputHeight)),
+    // A `size: 'md'` Button's/ActionIcon's resolved height — SAME rem-plus-scale reasoning and
+    // reconstruction as `space-input-height` above (`theme/index.ts`'s `Button.extend`/
+    // `ActionIcon.extend` `vars`), single-sourced from the SAME `controlHeight` anchor
+    // `space-input-height` reads from (`SPACE_ANCHORS_BASE`'s doc in `tokens/palette.ts`).
+    decl('space-control-height', pxRem(space.anchors.controlHeight)),
+    decl('space-stack-xs', `${space.anchors.stackXs}px`),
+    decl('space-stack-sm', `${space.anchors.stackSm}px`),
+    decl('space-stack-md', `${space.anchors.stackMd}px`),
+    decl('space-stack-lg', `${space.anchors.stackLg}px`),
+    decl('space-stack-xl', `${space.anchors.stackXl}px`),
+    // The CSS-module spacing sweep's one-offs (docs/STATUS.md) — same single-source reasoning,
+    // grouped to match `SPACE_STEP_BASE`'s own grouping in tokens/palette.ts.
+    // Responsive pair (Decision 3) — `stickyHeaderClearance` is the desktop (`>= sm`) value,
+    // `stickyHeaderClearanceMobile` the mobile (`< sm`) override; a consumer CSS module picks
+    // whichever matches its own breakpoint (see `content/prose.module.css`).
+    decl('space-sticky-header-clearance', `${space.step.stickyHeaderClearance}px`),
+    decl('space-sticky-header-clearance-mobile', `${space.step.stickyHeaderClearanceMobile}px`),
+    decl('space-nav-icon-gap', `${space.step.navIconGap}px`),
+    decl('space-sidebar-region-gap', `${space.step.sidebarRegionGap}px`),
+    decl('space-prose-quote-inset-y', `${space.step.proseQuoteInsetY}px`),
+    decl('space-prose-quote-indent', `${space.step.proseQuoteIndent}px`),
+    decl('space-prose-inline-code-inset-y', `${space.step.proseInlineCodeInsetY}px`),
+    decl('space-prose-inline-code-inset-x', `${space.step.proseInlineCodeInsetX}px`),
+    decl('space-prose-code-block-inset-y', `${space.step.proseCodeBlockInsetY}px`),
+    decl('space-prose-code-block-inset-x', `${space.step.proseCodeBlockInsetX}px`),
+    decl('space-prose-heading-anchor-gap', `${space.step.proseHeadingAnchorGap}px`),
+    decl('space-prose-table-cell-inset-y', `${space.step.proseTableCellInsetY}px`),
+    decl('space-prose-table-cell-inset-x', `${space.step.proseTableCellInsetX}px`),
+    decl('space-prose-chat-list-gap-bottom', `${space.step.proseChatListGapBottom}px`),
+    decl('space-prose-chat-list-indent', `${space.step.proseChatListIndent}px`),
+    decl('space-prose-chat-list-item-gap', `${space.step.proseChatListItemGap}px`),
+    decl('space-prose-chat-nested-list-gap', `${space.step.proseChatNestedListGap}px`),
+    decl('space-prose-chat-heading-gap-top', `${space.step.proseChatHeadingGapTop}px`),
+    decl('space-prose-chat-heading-gap-bottom', `${space.step.proseChatHeadingGapBottom}px`),
+    decl('space-prose-article-paragraph-gap', `${space.step.proseArticleParagraphGap}px`),
+    decl('space-prose-article-list-gap-top', `${space.step.proseArticleListGapTop}px`),
+    decl('space-prose-article-list-gap-bottom', `${space.step.proseArticleListGapBottom}px`),
+    decl('space-prose-article-list-indent', `${space.step.proseArticleListIndent}px`),
+    decl('space-prose-article-h1-gap-top', `${space.step.proseArticleH1GapTop}px`),
+    decl('space-prose-article-h1-gap-bottom', `${space.step.proseArticleH1GapBottom}px`),
+    decl('space-prose-article-heading-gap-top', `${space.step.proseArticleHeadingGapTop}px`),
+    decl('space-prose-article-heading-gap-bottom', `${space.step.proseArticleHeadingGapBottom}px`),
+    decl('space-prose-article-h2-rule-gap', `${space.step.proseArticleH2RuleGap}px`),
+    decl('space-prose-article-block-gap', `${space.step.proseArticleBlockGap}px`),
+    decl('space-article-column-gap', `${space.step.articleColumnGap}px`),
+    decl('space-article-toc-rail-width', `${space.step.articleTocRailWidth}px`),
+    decl('space-article-header-gap', `${space.step.articleHeaderGap}px`),
+    decl('space-article-header-padding-bottom', `${space.step.articleHeaderPaddingBottom}px`),
+    decl('space-article-header-margin-bottom', `${space.step.articleHeaderMarginBottom}px`),
+    decl('space-article-meta-row-gap', `${space.step.articleMetaRowGap}px`),
+    decl('space-article-footer-gap', `${space.step.articleFooterGap}px`),
+    decl('space-article-footer-margin-top', `${space.step.articleFooterMarginTop}px`),
+    decl('space-article-footer-padding-top', `${space.step.articleFooterPaddingTop}px`),
+    decl('space-article-nav-target-gap', `${space.step.articleNavTargetGap}px`),
+    decl('space-code-block-header-gap', `${space.step.codeBlockHeaderGap}px`),
+    decl('space-code-block-header-inset-y', `${space.step.codeBlockHeaderInsetY}px`),
+    decl('space-code-block-header-inset-right', `${space.step.codeBlockHeaderInsetRight}px`),
+    decl('space-code-block-content-inset-x', `${space.step.codeBlockContentInsetX}px`),
+    decl('space-code-block-header-right-gap', `${space.step.codeBlockHeaderRightGap}px`),
+    decl('space-code-block-body-inset-y', `${space.step.codeBlockBodyInsetY}px`),
+    decl('space-code-block-floating-copy-offset', `${space.step.codeBlockFloatingCopyOffset}px`),
+    decl('space-callout-inset-y', `${space.step.calloutInsetY}px`),
+    decl('space-callout-inset-x', `${space.step.calloutInsetX}px`),
+    decl('space-callout-title-row-gap', `${space.step.calloutTitleRowGap}px`),
+    decl('space-toc-root-gap', `${space.step.tocRootGap}px`),
+    decl('space-toc-link-inset-y', `${space.step.tocLinkInsetY}px`),
+    decl('space-toc-link-indent', `${space.step.tocLinkIndent}px`),
+    decl('space-toc-sub-indent', `${space.step.tocSubIndent}px`),
+    decl('space-article-card-tags-gap', `${space.step.articleCardTagsGap}px`),
+    decl('space-article-card-tag-inset-y', `${space.step.articleCardTagInsetY}px`),
+    decl('space-article-card-tag-inset-x', `${space.step.articleCardTagInsetX}px`),
+    decl('space-article-card-meta-gap-top', `${space.step.articleCardMetaGapTop}px`),
+    decl('space-guide-body-gap-bottom', `${space.step.guideBodyGapBottom}px`),
+    decl('space-guide-footer-gap-top', `${space.step.guideFooterGapTop}px`),
+    decl('space-guide-footer-inset-top', `${space.step.guideFooterInsetTop}px`),
+    decl('space-sidebar-search-gap', `${space.step.sidebarSearchGap}px`),
+    decl('space-sidebar-search-trigger-height', `${space.step.sidebarSearchTriggerHeight}px`),
+    decl('space-settings-row-inset-y', `${space.step.settingsRowInsetY}px`),
+    decl('space-settings-row-gap', `${space.step.settingsRowGap}px`),
+    decl('space-mermaid-container-inset', `${space.step.mermaidContainerInset}px`),
+    decl('space-sidebar-brand-inset-top', `${space.step.sidebarBrandInsetTop}px`),
+    decl('space-sidebar-brand-inset-x', `${space.step.sidebarBrandInsetX}px`),
+    decl('space-sidebar-section-gap', `${space.step.sidebarSectionGap}px`),
+    decl('space-sidebar-account-inset-top', `${space.step.sidebarAccountInsetTop}px`),
+    decl('space-sidebar-account-inset-x', `${space.step.sidebarAccountInsetX}px`),
+    decl('space-sidebar-account-inset-bottom', `${space.step.sidebarAccountInsetBottom}px`),
+    decl('space-sidebar-avatar-size', `${space.step.sidebarAvatarSize}px`),
+    decl('space-sidebar-section-label-gap', `${space.step.sidebarSectionLabelGap}px`),
+    decl('space-sidebar-child-list-gap-top', `${space.step.sidebarChildListGapTop}px`),
+    decl('space-sidebar-child-list-gap-bottom', `${space.step.sidebarChildListGapBottom}px`),
+    decl('space-sidebar-child-list-indent', `${space.step.sidebarChildListIndent}px`),
+    decl('space-sidebar-child-row-inset-y', `${space.step.sidebarChildRowInsetY}px`),
+    decl('space-sidebar-child-row-indent', `${space.step.sidebarChildRowIndent}px`),
+    decl('space-app-header-mobile-actions-height', `${space.step.appHeaderMobileActionsHeight}px`),
+    decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
+    decl('space-agent-rail-inset-x', `${space.step.agentRailInsetX}px`),
+    decl('space-agent-part-gap-top', `${space.step.agentPartGapTop}px`),
+    decl('space-agent-code-inset', `${space.step.agentCodeInset}px`),
+    decl('space-agent-error-inset-y', `${space.step.agentErrorInsetY}px`),
+    decl('space-agent-error-inset-x', `${space.step.agentErrorInsetX}px`),
+    decl('space-agent-scroll-button-gap-top', `${space.step.agentScrollButtonGapTop}px`),
+    decl('space-agent-message-inset-y', `${space.step.agentMessageInsetY}px`),
+    decl('space-agent-message-inset-x', `${space.step.agentMessageInsetX}px`),
+    decl('space-agent-transcript-inset', `${space.step.agentTranscriptInset}px`),
+    decl('space-badge-inset-y', `${space.step.badgeInsetY}px`),
+    decl('space-badge-inset-x', `${space.step.badgeInsetX}px`),
+    decl('space-stat-card-gap', `${space.step.statCardGap}px`),
+    decl('space-virtual-row-inset-y', `${space.step.virtualRowInsetY}px`),
+    decl('space-virtual-row-inset-x', `${space.step.virtualRowInsetX}px`),
+    // `chartLegendGap`/`chartMarginTop`/`chartMarginRight`/`chartMarginBottom`/`chartMarginLeft`/
+    // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
+    // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/
+    // `appShellHeaderMobileHeight`/`appShellNavbarWidth`/`appShellNavbarRailWidth` join that list —
+    // `shell/index.tsx` reads all four as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
+    // `header`/`navbar` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*` decl
+    // here would have had zero consumers, framework-wide, the same dead-weight shape this function's
+    // doc already calls out for the chart/Progress/Timeline group. `sidebarAccountMenuWidth`/
+    // `sidebarSettingsMenuWidth` join it too — `app-sidebar-account.tsx`/`app-sidebar.tsx` read both
+    // as JS numbers via `useBasaltSpacing()` (Mantine's `<Menu width={…}>` also takes a number).
+  ]
+}
+
+/** The shipped, level-0 spacing values — `frameworkDerived`'s `spaceDecls(...)` call below. No
+ * `createBasaltTheme({ density })` retuning applies here; that path calls `buildDensityCss` with a
+ * different resolved {@link SpaceValues} instead (see `../theme` and `../provider`). */
+const DEFAULT_SPACE_VALUES: SpaceValues = {
+  anchors: SPACE,
+  scale: SPACE_SCALE,
+  step: SPACE_STEP,
+  rowLineHeight: ROW_LINE_HEIGHT,
+}
+
+/**
  * Theme-independent scalars + semantic fills, defined once on `:root`.
  *
  * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
@@ -286,6 +509,11 @@ function frameworkDerived(data: PaletteData): string {
     decl('radius-fine', `${RADIUS_STEP.fine}px`),
     // The floating tier (Modal/Tooltip/Popover/Notification, content code/mermaid blocks).
     decl('radius-floating', `${RADIUS_STEP.floating}px`),
+    // The pill affordance (scroll-to-bottom button, chips) — fixed, level-invariant, so it lives
+    // only in this static block, never in `buildRadiusCss`'s dynamic override (see
+    // `RADIUS_STEP.pill`'s doc).
+    decl('radius-pill', `${RADIUS_STEP.pill}px`),
+    ...spaceDecls(DEFAULT_SPACE_VALUES),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
     // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
@@ -468,4 +696,18 @@ export function buildRadiusCss(radius: RadiusValues | undefined): string {
   --vx-radius-fine: ${radius.fine}px;
   --vx-radius-floating: ${radius.floating}px;
 }`
+}
+
+/**
+ * Build the `:root` block of overriding `--vx-space-*` declarations for a resolved `basaltDensity`
+ * value (`createBasaltTheme(overrides, { density })`) — analog of {@link buildRadiusCss}, reusing
+ * the SAME `spaceDecls` list `frameworkDerived` emits the shipped defaults from (so the two can
+ * never drift). Empty string when `space` is absent (the default level-0 path never sets
+ * `theme.other.basaltDensity` in the first place), so callers can unconditionally concatenate the
+ * result. Importable from `basalt-ui/tokens`, same SSR/custom-injection use as `buildRadiusCss`
+ * above.
+ */
+export function buildDensityCss(space: SpaceValues | undefined): string {
+  if (!space) return ''
+  return `:root {\n${spaceDecls(space).join('\n')}\n}`
 }

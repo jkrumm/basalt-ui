@@ -110,7 +110,7 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
             styles={{
               root: {
                 backgroundColor: alpha(badge.statusToken, 0.13),
-                padding: '2px 7px',
+                padding: 'var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x)',
                 height: 'auto',
                 borderRadius: 'var(--vx-radius-ctrl)',
               },

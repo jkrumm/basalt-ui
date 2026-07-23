@@ -17,9 +17,11 @@
  * a consuming app's bundler — `!important` makes the override deterministic.
  */
 
-/* Sidebar frame — the ~10px inner horizontal padding every region (brand/nav/footer) sits in. */
+/* Sidebar frame — the ~10px inner horizontal padding every region (brand/nav/footer) sits in.
+ * Reuses `SPACE.rowInsetX` (the same horizontal inset a nav/menu row carries) since this IS the
+ * master column every region aligns to — see the several `--vx-space-row-inset-x` reuses below. */
 .root {
-  padding: 0 10px;
+  padding: 0 var(--vx-space-row-inset-x);
 }
 
 .link {
@@ -32,7 +34,7 @@
 }
 
 .link :global(.mantine-NavLink-section[data-position='left']) {
-  margin-inline-end: 10px;
+  margin-inline-end: var(--vx-space-nav-icon-gap);
 }
 
 /* Inactive rows: muted text + faint icon. Active rows keep the theme's ink text (via `--nl-color`)
@@ -82,7 +84,8 @@
  */
 .brand {
   justify-content: space-between;
-  padding: 3px 8px 12px;
+  padding: var(--vx-space-sidebar-brand-inset-top) var(--vx-space-sidebar-brand-inset-x)
+    var(--vx-space-sidebar-region-gap);
   flex-shrink: 0;
 }
 
@@ -98,7 +101,7 @@
 /* No horizontal padding — the field spans the same width as the nav rows below it (both sit at the
  * `.root` 10px inset), so the search box edge-aligns with the nav column. */
 .searchSlot {
-  padding: 0 0 12px;
+  padding: 0 0 var(--vx-space-sidebar-region-gap);
   flex-shrink: 0;
 }
 
@@ -122,20 +125,20 @@
   /* Bleed the scroll root across `.root`'s right inset so the overlay bar draws in that 10px
    * gutter instead of on top of the rows (it anchors to the root's right edge, which otherwise
    * lands exactly on the row's own right padding — the bar then crowds the badge column). */
-  margin-right: -10px;
+  margin-right: calc(-1 * var(--vx-space-row-inset-x));
 }
 
 /* Re-apply the bled inset INSIDE the viewport, so rows keep their exact 10px/10px column while the
  * bar floats clear of them in the gutter. Static padding, not Mantine's `offsetScrollbars`: the
  * latter pads only while overflowing, which reflows the rows the moment a section expands. */
 .navViewport {
-  padding-inline-end: 10px;
+  padding-inline-end: var(--vx-space-row-inset-x);
 }
 
 /* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand
  * row's own bottom padding already opens the region). */
 .nav > div + div {
-  margin-top: 15px;
+  margin-top: var(--vx-space-sidebar-section-gap);
 }
 
 /*
@@ -155,8 +158,8 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: var(--vx-space-nav-icon-gap);
+  padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-ctrl);
   font-size: var(--vx-text-md);
   color: var(--vx-muted);
@@ -190,8 +193,9 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 8px 3px;
+  gap: var(--vx-space-nav-icon-gap);
+  padding: var(--vx-space-sidebar-account-inset-top) var(--vx-space-sidebar-account-inset-x)
+    var(--vx-space-sidebar-account-inset-bottom);
   border-radius: var(--vx-radius-ctrl);
 }
 
@@ -214,8 +218,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--vx-space-sidebar-avatar-size);
+  height: var(--vx-space-sidebar-avatar-size);
   border-radius: var(--vx-radius-card);
   background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
   color: var(--vx-muted);
@@ -265,8 +269,8 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0 10px;
-  margin-bottom: 3px;
+  padding: 0 var(--vx-space-row-inset-x);
+  margin-bottom: var(--vx-space-sidebar-section-label-gap);
 }
 
 .sectionBand > svg {
@@ -293,14 +297,16 @@
  * `--vx-divider` left guide on the WRAPPER (not per row, so hover tints don't break the line).
  */
 .childList {
-  margin: 2px 0 4px 17px;
+  margin: var(--vx-space-sidebar-child-list-gap-top) 0 var(--vx-space-sidebar-child-list-gap-bottom)
+    var(--vx-space-sidebar-child-list-indent);
   border-left: 1px solid var(--vx-divider);
 }
 
 /* Child row geometry — one size smaller than a parent row. The theme sets padding inline
  * (6px 10px), so the child value needs `!important`. */
 .childList :global(.mantine-NavLink-root) {
-  padding: 5px 10px 5px 14px !important;
+  padding: var(--vx-space-sidebar-child-row-inset-y) var(--vx-space-row-inset-x)
+    var(--vx-space-sidebar-child-row-inset-y) var(--vx-space-sidebar-child-row-indent) !important;
   border-radius: var(--vx-radius-ctrl) !important;
 }
 
@@ -331,7 +337,11 @@
   }
 }
 
-/* Subnav popover dropdown — match sidebar density. */
+/* Subnav popover dropdown — match sidebar density. A `min-width`, not a `width`: it only floors the
+ * box and grows with content, so — unlike a fixed `width` (see the account/settings `<Menu
+ * width={…}>` props in app-sidebar.tsx/app-sidebar-account.tsx, tokenized onto
+ * `SPACE_STEP.sidebarAccountMenuWidth`/`.sidebarSettingsMenuWidth`) — a rising density can never
+ * squeeze it, so it stays a raw literal on purpose. */
 .subnavDropdown {
   min-width: 180px;
 }
@@ -355,7 +365,7 @@
   }
 
   .root[data-collapsed] .searchSlot {
-    padding: 0 0 12px;
+    padding: 0 0 var(--vx-space-sidebar-region-gap);
     display: flex;
     justify-content: center;
   }

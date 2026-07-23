@@ -68,11 +68,18 @@ import type {
   MantineThemeOverride,
   VariantColorsResolver,
 } from '@mantine/core'
-import { BP, buildPaletteData, deriveRadius, RADIUS_STEP } from '../tokens/palette'
-import type { PaletteData, RadiusValues } from '../tokens/palette'
+import {
+  BP,
+  buildPaletteData,
+  deriveRadius,
+  deriveSpacing,
+  RADIUS_STEP,
+  SPACE_FIXED,
+} from '../tokens/palette'
+import type { PaletteData, RadiusValues, SpaceValues } from '../tokens/palette'
 import { DEFAULT_DERIVE_CONFIG, isDefaultDeriveConfig, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
-import { VX } from '../tokens'
+import { pxRem, VX } from '../tokens'
 import type { BasaltFontsConfig } from '../tokens'
 import controlsClasses from './controls.module.css'
 import floatingClasses from './floating.module.css'
@@ -88,30 +95,32 @@ import timelineClasses from './timeline.module.css'
  */
 export type { BasaltFontsConfig } from '../tokens'
 
-// Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` reads
-// (Mantine's `MantineThemeOther` ships an index signature, so this merge is additive — no widening
-// of the existing `[key: string]: any`). Set by `createBasaltTheme`'s non-default `{ derive }` /
-// `{ fonts }` / `{ radius }` paths; `BasaltProvider` reads them to decide whether to inject the
-// pre-baked static palette CSS or a re-derived one for the resolved config, and to emit the
-// matching `--basalt-font-*` / `--vx-radius-*` override declarations.
+// The active resolved SpaceValues off the running theme (as opposed to the static level-0
+// snapshot) — see its own doc comment for why it lives here rather than in `tokens/`.
+export { useBasaltSpacing } from './use-basalt-spacing'
+
+// Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` /
+// `theme.other.basaltDensity` reads (Mantine's `MantineThemeOther` ships an index signature, so
+// this merge is additive — no widening of the existing `[key: string]: any`). Set by
+// `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` / `{ radius }` / `{ density }` paths;
+// `BasaltProvider` reads them to decide whether to inject the pre-baked static palette CSS or a
+// re-derived one for the resolved config, and to emit the matching `--basalt-font-*` /
+// `--vx-radius-*` / `--vx-space-*` override declarations.
 declare module '@mantine/core' {
   interface MantineThemeOther {
     basaltDerive?: DeriveConfig
     basaltFonts?: BasaltFontsConfig
     basaltRadius?: RadiusValues
+    basaltDensity?: SpaceValues
   }
 }
 
-/**
- * A pixel radius expressed as the plain rem STRING literal the Mantine `radius` size-scale has
- * always shipped (NOT Mantine's own `rem()` helper, which instead emits a `calc(...)` expression
- * bound to `--mantine-scale` — a different value). Lets the scale's steps derive from the shared
- * `RADIUS`/`RADIUS_STEP` constants below instead of a hand-typed rem string per step, while
- * staying byte-identical to the literals it replaces (16px base: `pxRem(6)` → `'0.375rem'`).
- */
-function pxRem(px: number): string {
-  return `${px / 16}rem`
-}
+// `pxRem` (px → plain rem STRING literal, e.g. `pxRem(6)` → `'0.375rem'`) is imported from
+// `../tokens` — single-sourced there so `tokens/index.ts`'s own rem-emitting vars
+// (`--vx-space-input-height`) and this module's radius/spacing scale steps can never compute the
+// px→rem conversion two different ways. NOT Mantine's own `rem()` helper, which instead emits a
+// `calc(...)` expression bound to `--mantine-scale` — a different value (see the `Input.extend`
+// `vars` override below for where that scaling is reconstructed).
 
 // Basalt families are 5 stops dark→light. Expand to a 10-shade Mantine tuple (light→dark).
 function hexToRgb(h: string): [number, number, number] {
@@ -167,6 +176,9 @@ const DEFAULT_PALETTE_DATA = buildPaletteData(DEFAULT_DERIVE_CONFIG)
 
 /** The shipped, level-0 radius values — `buildTheme`'s default `radius` param. */
 const DEFAULT_RADIUS_VALUES: RadiusValues = deriveRadius(0)
+
+/** The shipped, level-0 spacing values — `buildTheme`'s default `spacing` param. */
+const DEFAULT_SPACE_VALUES: SpaceValues = deriveSpacing(0)
 
 /**
  * Build the dark Mantine tuple for `data` at 10 fixed indices:
@@ -341,6 +353,27 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
   }
 }
 
+/** Options for {@link buildTheme} — the radius/spacing dimensions, collapsed into one typed
+ * object per the repo's "typed objects as function arguments" rule rather than positional params
+ * (a third dimension made positional transposition a real risk). */
+type BuildThemeOptions = {
+  /**
+   * Defaults to `DEFAULT_RADIUS_VALUES` (`deriveRadius(0)`, the shipped identity) — pass a
+   * different `RadiusValues` to rebuild every radius-anchored `defaultProps`/`styles` number AND
+   * the `radius` size-scale from a retuned level instead (`createBasaltTheme`'s `{ radius }`
+   * option).
+   */
+  radius?: RadiusValues
+
+  /**
+   * Defaults to `DEFAULT_SPACE_VALUES` (`deriveSpacing(0)`, the shipped identity) — pass a
+   * different `SpaceValues` to rebuild the `spacing` size-scale AND every density-anchored
+   * `defaultProps` number (Timeline's `bulletSize`, Progress's `size`) from a retuned level
+   * instead (`createBasaltTheme`'s `{ density }` option).
+   */
+  spacing?: SpaceValues
+}
+
 /**
  * Basalt base theme — Mantine `createTheme` bound to the Basalt zinc palette.
  *
@@ -353,14 +386,10 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
  * PinInput, …) plus any consumer that passes an explicit `size="xs"`. Enumerating components in
  * `defaultProps` could never do that; the previous attempt missed seven of them.
  *
- * `radius` defaults to `DEFAULT_RADIUS_VALUES` (`deriveRadius(0)`, the shipped identity) — pass a
- * different `RadiusValues` to rebuild every radius-anchored `defaultProps`/`styles` number AND the
- * `radius` size-scale from a retuned level instead (`createBasaltTheme`'s `{ radius }` option).
+ * See {@link BuildThemeOptions} for what `radius`/`spacing` default to and rebuild.
  */
-function buildTheme(
-  data: PaletteData,
-  radius: RadiusValues = DEFAULT_RADIUS_VALUES,
-): MantineThemeOverride {
+function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): MantineThemeOverride {
+  const { radius = DEFAULT_RADIUS_VALUES, spacing = DEFAULT_SPACE_VALUES } = options
   const { ACCENT, FILL } = data
   return createTheme({
     primaryColor: 'blue',
@@ -407,7 +436,16 @@ function buildTheme(
     },
     // Deliberate, OWNED spacing + radius scales — the single edit point, not inherited Mantine
     // defaults. Denser than Mantine's stock lg/xl for a tighter, data-driven surface. 10 12 16 18 24.
-    spacing: { xs: '0.625rem', sm: '0.75rem', md: '1rem', lg: '1.125rem', xl: '1.5rem' },
+    // Reads `spacing.scale`, NOT `spacing.anchors` — a scale stop tracks density independently of
+    // any component anchor even where the level-0 numbers coincide (see `SPACE_SCALE`'s doc in
+    // `tokens/palette.ts`).
+    spacing: {
+      xs: pxRem(spacing.scale.xs),
+      sm: pxRem(spacing.scale.sm),
+      md: pxRem(spacing.scale.md),
+      lg: pxRem(spacing.scale.lg),
+      xl: pxRem(spacing.scale.xl),
+    },
     // 2 4 6 16 32 — the size scale; `md` = `radius.ctrl` (6px at level 0) is the control-radius
     // default (`defaultRadius: 'md'`, inputs/buttons). Card/Paper/Popover/Modal/Notification read
     // `--vx-radius-*` directly instead (7px cards / 6px controls at level 0), so the larger steps of
@@ -516,18 +554,20 @@ function buildTheme(
             // v9 hardcodes NavLink padding (`8px var(--mantine-spacing-sm)` — there is NO
             // `--nl-padding` var), so the spec padding is forced inline here, where it wins
             // deterministically on every render path.
-            padding: '6px 10px',
+            padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
             // The body step on the ROOT, not just the label: the body element sizes itself from the
             // root's inherited line-height (which, left at the default 1.55, alone pushed rows to
-            // ~37px). The tightened 1.35 keeps rows compact as the scale grows.
+            // ~37px). The tightened 1.35 keeps rows compact as the scale grows. Reads
+            // `--vx-space-row-line-height` (density-tracking, ADDITIVE law — see `deriveSpacing`'s
+            // doc in `tokens/palette.ts` for why this one differs from the padding's multiplier).
             fontSize: VX.text.md,
-            lineHeight: '1.35',
+            lineHeight: 'var(--vx-space-row-line-height)',
             // Nav rows sit in the 5-6px radius tier (docs/DESIGN-SPEC.md §4), not square.
             borderRadius: 'var(--vx-radius-ctrl)',
           },
           // Mantine pins the label at `font-size-sm` explicitly, so the root value alone
           // doesn't reach it.
-          label: { fontSize: VX.text.md, lineHeight: '1.35' },
+          label: { fontSize: VX.text.md, lineHeight: 'var(--vx-space-row-line-height)' },
         },
       }),
       // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-card` depth + faint placeholder,
@@ -539,6 +579,36 @@ function buildTheme(
       // `size` needs per-component defaults, since each resolves its own).
       Input: Input.extend({
         defaultProps: { size: 'md' },
+        // Density coupling: Input's OWN `varsResolver` sets `--input-height` to
+        // `getSize(props.size, 'input-height')` (`@mantine/core/esm/components/Input/Input.mjs`),
+        // which resolves to Mantine's global, non-retunable
+        // `--input-height-md: calc(2.625rem * var(--mantine-scale))` — IDENTICAL in both
+        // `styles.css` and the `styles.layer.css` variant Basalt consumers actually load (verified
+        // in the installed package, not assumed). It is rem-relative to the root font size AND
+        // scale-aware, not a flat px — so the override must reconstruct BOTH halves, not just the
+        // number: `--vx-space-input-height` (`tokens/index.ts`) already carries the rem half (via
+        // `pxRem`, the same conversion the `spacing`/`radius` scales use), and the
+        // `calc(... * var(--mantine-scale))` wrapper here supplies the scale half — the tokens
+        // layer stays Mantine-free, so it cannot reference `--mantine-scale` itself; this
+        // Mantine-coupled call site is where that coupling is legitimate. Flattening either half into a bare px value
+        // would desync input height from a user's root-font-size accessibility setting and from
+        // Mantine's global `--mantine-scale` knob — a real regression, not a cosmetic one. Theme
+        // `vars` here merges AFTER a component's own `varsResolver` (Mantine `useStyles`'s
+        // `mergeVars`, confirmed in `core/styles-api/use-styles/use-styles.mjs`), so re-pointing
+        // `--input-height` here wins on every render path — same established pattern as NavLink's
+        // `--nl-*` fill / Checkbox's `--checkbox-icon-color` above. Scoped to `size === 'md'` (the
+        // framework's own default, set by `defaultProps` above): a caller that explicitly requests a
+        // different size (e.g. `size="xs"`, see the iOS-floor note above) keeps Mantine's own static
+        // height for that size — `undefined` here means "leave Mantine's value alone" (`mergeVars`
+        // strips it before merging).
+        vars: (_theme, props) => ({
+          wrapper: {
+            '--input-height':
+              props.size === 'md'
+                ? 'calc(var(--vx-space-input-height) * var(--mantine-scale))'
+                : undefined,
+          },
+        }),
         classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
       }),
       TextInput: TextInput.extend({ defaultProps: { size: 'md' } }),
@@ -565,8 +635,40 @@ function buildTheme(
       // `[data-variant='default']` rule never declares a `box-shadow`, so no specificity fight is
       // needed to win one. `filled`/`subtle`/`light` variants are untouched — scoped by attribute
       // selector in the CSS, not here.
-      Button: Button.extend({ classNames: { root: controlsClasses.buttonRoot } }),
-      ActionIcon: ActionIcon.extend({ classNames: { root: controlsClasses.actionIconRoot } }),
+      //
+      // Density coupling: mirrors Input's `--input-height` override above — Mantine's OWN
+      // `--button-height-md`/`--ai-size` (via `--ai-size-md`) are global, non-retunable statics
+      // (`getSize(size, 'button-height'/'ai-size')`, `@mantine/core/esm/components/{Button,
+      // ActionIcon}/{Button,ActionIcon}.mjs`), so a `size="md"` Button/ActionIcon placed beside a
+      // `size="md"` Input (the framework's own default, set by `defaultProps` above) only matched the
+      // Input's height at density level 0 — every other level left the two heights diverging by as
+      // much as 13px. `--vx-space-control-height` (`tokens/index.ts`) is single-sourced from the
+      // SAME `SPACE_ANCHORS_BASE.controlHeight` anchor `--vx-space-input-height` reads (see that
+      // anchor's doc in `tokens/palette.ts`), so the two can never drift. Scoped to `size === 'md'`,
+      // same rationale as Input's override: `undefined` leaves an explicitly different size (e.g.
+      // `size="xs"`) on Mantine's own static height.
+      Button: Button.extend({
+        classNames: { root: controlsClasses.buttonRoot },
+        vars: (_theme, props) => ({
+          root: {
+            '--button-height':
+              props.size === 'md'
+                ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
+                : undefined,
+          },
+        }),
+      }),
+      ActionIcon: ActionIcon.extend({
+        classNames: { root: controlsClasses.actionIconRoot },
+        vars: (_theme, props) => ({
+          root: {
+            '--ai-size':
+              props.size === 'md'
+                ? 'calc(var(--vx-space-control-height) * var(--mantine-scale))'
+                : undefined,
+          },
+        }),
+      }),
       // CheckboxCard / RadioCard (`withBorder`, true by default): same live regression as Button/
       // ActionIcon before this pass — Mantine ships `border: 1px solid transparent` as the BASE
       // `[data-with-border]` declaration, but its own `:where([data-mantine-color-scheme=…])` block
@@ -601,13 +703,20 @@ function buildTheme(
       // The active-only ink label color + weight can't live in the flat `styles.label` object
       // (applies to every option regardless of state), so it's in segmented-control.module.css
       // instead — same pattern as NavLink's active-icon accent.
+      //
+      // The track's padding is `SPACE_FIXED.segmentedTrackInset`, a plain literal — NOT a
+      // `--vx-space-*` var — because it is density-EXEMPT: it is load-bearing for the nested-corner
+      // law (`RADIUS.card === RADIUS_STEP.tight + segmentedTrackInset`, see that constant's doc in
+      // `tokens/palette.ts`), and `radius.card`/`RADIUS_STEP.tight` two lines below already track the
+      // RADIUS knob together, so the inset between them must stay fixed at exactly 2 regardless of
+      // density.
       SegmentedControl: SegmentedControl.extend({
         defaultProps: { radius: radius.card },
         classNames: { label: segmentedControlClasses.label },
         styles: {
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
-            padding: 2,
+            padding: `${SPACE_FIXED.segmentedTrackInset}px`,
           },
           indicator: {
             backgroundColor: 'var(--vx-surface-panel)',
@@ -618,7 +727,10 @@ function buildTheme(
       }),
       // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
       Progress: Progress.extend({
-        defaultProps: { size: 6, radius: radius.fine },
+        // `size` is a NUMBER, not a `var()` string — same rem()-comma-trap reasoning as Timeline's
+        // `bulletSize`/`lineWidth` below, so it reads the resolved `spacing.step.progressBarSize`
+        // (density-tracking) rather than a hand-typed literal.
+        defaultProps: { size: spacing.step.progressBarSize, radius: radius.fine },
         styles: {
           root: { backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)' },
         },
@@ -634,7 +746,11 @@ function buildTheme(
       // style context (`ctx.getStyles`), so `item`/`itemBullet`/`itemTitle`/`itemContent` are all
       // themed from this ONE extend — no separate `TimelineItem` override needed.
       Timeline: Timeline.extend({
-        defaultProps: { bulletSize: 22, lineWidth: 1 },
+        // NUMBERS, not `var()` strings: `bulletSize`/`lineWidth` land through Timeline's own
+        // `rem()` conversion (`@mantine/core/esm/core/utils/units-converters/rem.mjs` splits on `,`
+        // and ` ` before checking numerics), which passes a bare `var(--x)` through intact but
+        // silently mangles a `var(--x, <fallback>)` into garbage CSS — never add a fallback here.
+        defaultProps: { bulletSize: spacing.step.timelineBullet, lineWidth: SPACE_FIXED.hairline },
         // The active bullet's icon sits on the accent fill — on-color, not a baked white (see above).
         vars: (theme, props) => ({ root: { '--tl-icon-color': onColorFor(theme, props) } }),
         classNames: {
@@ -703,7 +819,7 @@ function buildTheme(
           item: {
             fontSize: VX.text.md,
             borderRadius: 'var(--vx-radius-ctrl)',
-            padding: '6px 10px',
+            padding: 'var(--vx-space-row-inset-y) var(--vx-space-row-inset-x)',
           },
           label: {
             fontFamily: 'var(--basalt-font-mono)',
@@ -1088,6 +1204,29 @@ export type CreateBasaltThemeOptions = {
    * createBasaltTheme(undefined, { radius: 2 })
    */
   radius?: number
+
+  /**
+   * Retune spacing DENSITY from a single integer level in `[-3, 3]` (default `0` = the shipped
+   * identity) — narrower than `radius`'s `[-5, 5]` on purpose (see `deriveSpacing`'s JSDoc,
+   * `basalt-ui/tokens`, for why: the same `0.7..1.30` multiplier envelope at fewer, more meaningful
+   * notches). The law: a multiplier, `1 + 0.1 * level`, applied to every density-tracking anchor/
+   * scale-stop/one-off (rounded, floored at 1), plus an independent additive law for the NavLink row
+   * line-height. Rebuilds every
+   * density-anchored `defaultProps`/`styles` number in the Mantine theme (Timeline's `bulletSize`,
+   * Progress's `size`) AND the `spacing` size-scale from the level's values. The resolved
+   * {@link SpaceValues} is stashed on `theme.other.basaltDensity` (only when non-default) so
+   * `BasaltProvider` can emit the matching `--vx-space-*` override declarations — it rides the SAME
+   * `<style>` injection as the palette CSS, so `injectPalette={false}` also opts the density
+   * override out.
+   *
+   * For live DEV-time tuning instead of a fixed production identity, see the "Density" slider on
+   * `DeriveControls` (`basalt-ui/theme-lab`) — that dev-tool path can only move the CSS vars, not
+   * the defaultProps numbers baked into the theme object; this option covers both.
+   *
+   * @example
+   * createBasaltTheme(undefined, { density: -2 })
+   */
+  density?: number
 }
 
 /**
@@ -1106,23 +1245,23 @@ function hasFontsConfig(fonts: BasaltFontsConfig | undefined): fonts is BasaltFo
  * forking the base.
  *
  * Pass `{ derive }` to retune the palette identity instead of the shipped default, `{ fonts }` to
- * retune the three-font system, and/or `{ radius }` to retune the two radius anchors (see
- * {@link CreateBasaltThemeOptions}); the default (no `options`, or `derive`/`radius` that resolve
- * back to nothing non-default and a `fonts` that sets no slot — an omitted, empty, or
- * all-`undefined`-keys object) stays on the pre-baked static `baseTheme` — zero extra derivation
- * work, byte-identical to the shipped identity.
+ * retune the three-font system, `{ radius }` to retune the two radius anchors, and/or `{ density }`
+ * to retune spacing density (see {@link CreateBasaltThemeOptions}); the default (no `options`, or
+ * `derive`/`radius`/`density` that resolve back to nothing non-default and a `fonts` that sets no
+ * slot — an omitted, empty, or all-`undefined`-keys object) stays on the pre-baked static
+ * `baseTheme` — zero extra derivation work, byte-identical to the shipped identity.
  *
  * Call this at MODULE scope, not inline in a component's render — the non-default `{ derive }` /
- * `{ fonts }` / `{ radius }` paths build a fresh `MantineThemeOverride` object on every call
- * (`mergeThemeOverrides(...)`), so calling it per-render would hand `MantineProvider` a new `theme`
- * reference every render and churn Mantine's theme context (and every consumer subscribed to it)
- * for no reason.
+ * `{ fonts }` / `{ radius }` / `{ density }` paths build a fresh `MantineThemeOverride` object on
+ * every call (`mergeThemeOverrides(...)`), so calling it per-render would hand `MantineProvider` a
+ * new `theme` reference every render and churn Mantine's theme context (and every consumer
+ * subscribed to it) for no reason.
  *
  * `overrides.other` deep-merges onto the derive-produced `other` (Mantine's `mergeThemeOverrides` /
  * `deepMerge` recurse into plain-object values rather than replacing them wholesale), so passing
- * `{ other: { myFlag: true } }` alongside a non-default `derive`/`fonts`/`radius` still leaves
- * `other.basaltDerive`/`other.basaltFonts`/`other.basaltRadius` intact — it is only lost if a
- * consumer's own `overrides.other` explicitly sets that same key.
+ * `{ other: { myFlag: true } }` alongside a non-default `derive`/`fonts`/`radius`/`density` still
+ * leaves `other.basaltDerive`/`other.basaltFonts`/`other.basaltRadius`/`other.basaltDensity` intact
+ * — it is only lost if a consumer's own `overrides.other` explicitly sets that same key.
  */
 export function createBasaltTheme(
   overrides?: MantineThemeOverride,
@@ -1132,19 +1271,26 @@ export function createBasaltTheme(
   const radiusLevel = options?.radius ?? 0
   const radiusValues = deriveRadius(radiusLevel)
   const isDefaultRadius = radiusLevel === 0
+  const densityLevel = options?.density ?? 0
+  const spaceValues = deriveSpacing(densityLevel)
+  const isDefaultDensity = densityLevel === 0
   const isDefaultDerive = isDefaultDeriveConfig(resolvedConfig)
 
   let theme: MantineThemeOverride
-  if (isDefaultDerive && isDefaultRadius) {
+  if (isDefaultDerive && isDefaultRadius && isDefaultDensity) {
     theme = baseTheme
   } else {
     const paletteData = isDefaultDerive ? DEFAULT_PALETTE_DATA : buildPaletteData(resolvedConfig)
-    theme = mergeThemeOverrides(buildTheme(paletteData, radiusValues), {
-      other: {
-        ...(isDefaultDerive ? {} : { basaltDerive: resolvedConfig }),
-        ...(isDefaultRadius ? {} : { basaltRadius: radiusValues }),
+    theme = mergeThemeOverrides(
+      buildTheme(paletteData, { radius: radiusValues, spacing: spaceValues }),
+      {
+        other: {
+          ...(isDefaultDerive ? {} : { basaltDerive: resolvedConfig }),
+          ...(isDefaultRadius ? {} : { basaltRadius: radiusValues }),
+          ...(isDefaultDensity ? {} : { basaltDensity: spaceValues }),
+        },
       },
-    })
+    )
   }
   const fontsConfig = options?.fonts
   if (hasFontsConfig(fontsConfig)) {

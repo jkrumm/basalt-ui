@@ -6,7 +6,7 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--vx-space-toc-root-gap);
 }
 
 .header {
@@ -31,7 +31,10 @@
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
   text-decoration: none;
-  padding: 4px 0 4px 12px;
+  padding: var(--vx-space-toc-link-inset-y) 0 var(--vx-space-toc-link-inset-y)
+    var(--vx-space-toc-link-indent);
+  /* Cancels the 1px hairline `.list` border-left so this row's own (transparent) border-left below
+   * lands flush with it — tied to that border WIDTH, not a spacing value, so it stays a literal. */
   margin-left: -1px;
   border-left: 2px solid transparent;
   transition: color 120ms ease;
@@ -42,7 +45,7 @@
 }
 
 .sub {
-  padding-left: 24px;
+  padding-left: var(--vx-space-toc-sub-indent);
 }
 
 .active {

@@ -52,9 +52,9 @@ export function StatCard({ label, value, delta, deltaPeriod, sparkline, menu }: 
         // explicit for intent.
         padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         minHeight: 118,
-        display: 'flex',
+        display: 'flex', // theme-allow: Card root as a flex column — Mantine Card takes no layout props
         flexDirection: 'column',
-        gap: 8,
+        gap: 'var(--vx-space-stat-card-gap)',
         overflow: 'hidden',
       }}
     >

@@ -36,6 +36,7 @@ import type { BasaltAccountProps } from './account-types'
 import { SidebarSearch } from './sidebar-search'
 import type { SidebarSearchConfig } from './sidebar-search'
 import { VX } from '../tokens'
+import { useBasaltSpacing } from '../theme'
 import classes from './app-sidebar.module.css'
 
 /**
@@ -457,6 +458,11 @@ export function AppSidebar({
   account,
   search,
 }: AppSidebarProps) {
+  // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarSettingsMenuWidth`) — read the ACTIVE
+  // resolved level, not the frozen level-0 constant (see that constant's own doc in
+  // `tokens/palette.ts`).
+  const { step } = useBasaltSpacing()
+
   // Desktop collapsible-section state, keyed by section label. Seeded once from each section's
   // `defaultCollapsed`; non-collapsible sections are simply never read here.
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() =>
@@ -497,7 +503,7 @@ export function AppSidebar({
   const hasSettingsMenu = (settingsMenuItems?.length ?? 0) > 0
   const settingsRow = hasSettingsMenu ? (
     <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
-      <Menu position="right-start" withArrow width={200} zIndex={500}>
+      <Menu position="right-start" withArrow width={step.sidebarSettingsMenuWidth} zIndex={500}>
         <Menu.Target>
           <UnstyledButton className={classes.footerBtn} aria-label="Settings">
             <IconGear />
@@ -554,7 +560,11 @@ export function AppSidebar({
         </Group>
         <ActionIcon
           variant="subtle"
-          size="md"
+          // A numeric size, not the named `"md"` — same opt-out as `connectivity-indicator.tsx`'s
+          // toolbar icon (see that comment): this is a plain collapse-toggle icon, not a control meant
+          // to match a `size="md"` Input/Button, so it must not pick up the theme's `ActionIcon.extend`
+          // control-height override. Reproduces Mantine's own static `--ai-size-md` (28px).
+          size={28}
           visibleFrom="sm"
           className={`${classes.collapseBtn} ${classes.ghostIcon}`}
           onClick={onToggleCollapse}

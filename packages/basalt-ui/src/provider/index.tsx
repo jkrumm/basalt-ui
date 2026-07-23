@@ -22,7 +22,7 @@ import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
 import { createBasaltTheme, cssVariablesResolver } from '../theme'
-import { buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
+import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
@@ -59,6 +59,11 @@ export type BasaltProviderProps = {
    * are appended alongside), so `injectPalette={false}` opts radius out just the same — an SSR
    * consumer disabling injection must also emit `buildRadiusCss(theme.other.basaltRadius)`
    * themselves, or `var(--vx-radius-*)` consumers render at their defaults instead of the retuned
+   * level.
+   * A `{ density }` config rides the SAME injection too (its `--vx-space-*` override declarations
+   * are appended alongside), so `injectPalette={false}` opts density out just the same — an SSR
+   * consumer disabling injection must also emit `buildDensityCss(theme.other.basaltDensity)`
+   * themselves, or `var(--vx-space-*)` consumers render at their defaults instead of the retuned
    * level.
    */
   injectPalette?: boolean
@@ -148,6 +153,28 @@ export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState>
   }
 }
 
+/**
+ * Compose the four independently-built override CSS blocks into ONE injected `<style>` body, in
+ * cascade-winning order. Every builder (`buildPaletteCss`/`buildFontsCss`/`buildRadiusCss`/
+ * `buildDensityCss`) emits its declarations under a bare `:root { ... }` block — EQUAL selector
+ * specificity across all four — so nothing but DOCUMENT ORDER decides which value a browser paints
+ * when two blocks declare the same custom property. `density` must come LAST (its `--vx-space-*`
+ * overrides must out-cascade the base palette's own defaults), `radius` after `fonts`, `fonts` after
+ * `base` — reorder this array and the density/radius/fonts knobs silently stop working, with every
+ * OTHER existing test still green (each builder is tested for its OWN output in isolation, not for
+ * where it lands in the concatenated string). Exported as a pure function (not inlined in
+ * `BasaltBridge`'s `useMemo`) purely so `provider/index.test.ts` can assert the ORDER holds without
+ * rendering a React tree.
+ */
+export function composeInjectedCss(
+  base: string,
+  fontsCss: string,
+  radiusCss: string,
+  densityCss: string,
+): string {
+  return [base, fontsCss, radiusCss, densityCss].filter(Boolean).join('\n')
+}
+
 // ── Inner bridge ──────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -172,16 +199,18 @@ function BasaltBridge({
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
 
-  // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` / `{ radius }` paths stash the
-  // resolved values on `theme.other.basaltDerive` / `theme.other.basaltFonts` /
-  // `theme.other.basaltRadius` — read them here (INSIDE MantineProvider, so `useMantineTheme` sees
-  // the fully-merged runtime theme) to decide whether the pre-baked static palette CSS still applies
-  // or a re-derived one is needed, and whether any `--basalt-font-*` / `--vx-radius-*` override
-  // declarations must ride along. Default/absent config -> zero extra derivation work.
+  // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` / `{ radius }` / `{ density }`
+  // paths stash the resolved values on `theme.other.basaltDerive` / `theme.other.basaltFonts` /
+  // `theme.other.basaltRadius` / `theme.other.basaltDensity` — read them here (INSIDE
+  // MantineProvider, so `useMantineTheme` sees the fully-merged runtime theme) to decide whether the
+  // pre-baked static palette CSS still applies or a re-derived one is needed, and whether any
+  // `--basalt-font-*` / `--vx-radius-*` / `--vx-space-*` override declarations must ride along.
+  // Default/absent config -> zero extra derivation work.
   const theme = useMantineTheme()
   const deriveConfig = theme.other?.basaltDerive
   const fontsConfig = theme.other?.basaltFonts
   const radiusConfig = theme.other?.basaltRadius
+  const densityConfig = theme.other?.basaltDensity
   const paletteCss = useMemo(() => {
     if (!injectPalette) return ''
     const base =
@@ -192,8 +221,9 @@ function BasaltBridge({
           buildPaletteCss(paletteOptions, buildPaletteData(deriveConfig))
     const fontsCss = buildFontsCss(fontsConfig)
     const radiusCss = buildRadiusCss(radiusConfig)
-    return [base, fontsCss, radiusCss].filter(Boolean).join('\n')
-  }, [injectPalette, deriveConfig, fontsConfig, radiusConfig, paletteOptions])
+    const densityCss = buildDensityCss(densityConfig)
+    return composeInjectedCss(base, fontsCss, radiusCss, densityCss)
+  }, [injectPalette, deriveConfig, fontsConfig, radiusConfig, densityConfig, paletteOptions])
 
   useEffect(() => {
     // SSR guard — window is not available in server contexts

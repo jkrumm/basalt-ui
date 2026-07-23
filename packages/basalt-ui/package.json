@@ -266,11 +266,19 @@
       "src/guard/index.ts",
       "src/cli/index.ts"
     ],
-    "rawSurface": false,
-    "rawHtmlLayout": false,
-    "inlineSpacing": false,
-    "inlineDisplay": false,
     "rawRadius": true,
-    "spacingSteps": []
+    "exemptRules": {
+      "inline-spacing": [
+        "charts"
+      ],
+      "inline-display": [
+        "agent",
+        "charts"
+      ],
+      "raw-html-layout": [
+        "agent",
+        "charts"
+      ]
+    }
   }
 }

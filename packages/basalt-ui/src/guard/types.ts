@@ -115,4 +115,25 @@ export type GuardConfig = {
    * Default 'theme-allow'. Pure-comment lines (// * /\*) are always skipped.
    */
   readonly allowComment: string
+  /**
+   * Per-rule, per-path exemptions — complements whole-file `exempt` (BasaltConfig, which skips
+   * ALL rules for a file) and code-level `appliesTo` (hardcoded per-kind path scoping, e.g.
+   * raw-visx-axis → chart files only). This is the config-driven counterpart: a consumer can say
+   * "kind K does not apply under path P" without exempting the whole file or forking the rule.
+   *
+   * Each value is a list of path-segment patterns matched against a finding's `relPath`. A pattern
+   * matches when `relPath.split('/')` includes it as a WHOLE segment — `'agent'` matches
+   * `src/agent/part-list.tsx` but not `src/agenting.ts`. A trailing `/` is stripped before
+   * matching, so `'agent'` and `'agent/'` behave identically. Applied as a post-filter over the
+   * final findings, so it uniformly covers every kind — both the GUARD_RULES registry loop and the
+   * inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+   *
+   * Required (like every other GuardConfig field, defaulted via DEFAULT_GUARD_CONFIG to `{}`) —
+   * `exactOptionalPropertyTypes` rejects the `?? DEFAULT_GUARD_CONFIG.x` pattern used to build a
+   * GuardConfig from BasaltConfig (where the field IS optional) if this were optional too.
+   *
+   * @example
+   * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
+   */
+  readonly exemptRules: Partial<Record<GuardKind, string[]>>
 }

@@ -45,7 +45,7 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
  * which keep their Mantine semantics and take the focus ring alone.
  */
 .input {
-  --field-depth: 0 0 #0000;
+  --field-depth: 0 0 transparent;
 
   box-shadow: var(--field-depth);
 }

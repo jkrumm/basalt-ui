@@ -30,11 +30,16 @@ const RAW_FONT_FAMILY = new RegExp(
 )
 
 // Ad-hoc inline surface styling — border* / borderRadius / boxShadow with literal values.
-// A var(--…) reference inside the quoted value passes (the system itself).
+// Three escapes pass (the value is already system-routed, not a hardcoded surface literal):
+//   • a `var(--…)` reference — the CSS-var system itself;
+//   • a `${…}` template-literal interpolation — the value is JS-composed, typically from `VX.*`
+//     tokens; any raw color inside it is separately caught by raw-hex / raw-color-fn;
+//   • for `border*` only, a bare `none`/`transparent`/`inherit`/`unset`/`revert` keyword — a reset,
+//     not a surface definition.
 const SURFACE_BORDER =
-  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+  /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))(?!['"`]?(?:none|transparent|inherit|unset|revert)\b)['"`][^'"`]+['"`]/g
 const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
-const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*var\()['"`][^'"`]+['"`]/g
+const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))['"`][^'"`]+['"`]/g
 
 // A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
 // ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
@@ -147,6 +152,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   rawFormControl: true,
   sub16InputFont: true,
   allowComment: 'theme-allow',
+  exemptRules: {},
 }
 
 // ── Path predicate ────────────────────────────────────────────────────────────────────────────────
@@ -156,14 +162,247 @@ function isChartFile(relPath: string): boolean {
 }
 
 /**
- * The skip policy the per-line loop applies inline, reused by the full-text tag-scoped scans
- * (which resolve their own report line and so must re-check it): a line carrying the allow-comment,
- * or a pure-comment line, is never a violation.
+ * Whether `kind` is exempted at `relPath` via `cfg.exemptRules` — the config-driven, per-rule
+ * counterpart to `isChartFile`'s hardcoded path scoping. A pattern matches when `relPath` split on
+ * `/` includes it as a WHOLE segment (a trailing `/` is stripped first, so `'agent'` and `'agent/'`
+ * are equivalent); a substring match against one longer segment (e.g. `'age'` against `agent`)
+ * never counts.
+ */
+function isRuleExempt(
+  kind: GuardKind,
+  relPath: string,
+  exemptRules: GuardConfig['exemptRules'],
+): boolean {
+  const patterns = exemptRules?.[kind]
+  if (patterns === undefined || patterns.length === 0) return false
+  const segments = relPath.split('/')
+  return patterns.some((pattern) => segments.includes(pattern.replace(/\/$/, '')))
+}
+
+/**
+ * The allow-comment skip the full-text tag-scoped scans re-apply on their own resolved report
+ * line: a line carrying the allow-comment is never a violation. Pure-comment lines need no
+ * special case here anymore — they are handled upstream by `stripComments` (matches simply can't
+ * land on blanked-out comment text), so this only ever runs against the ORIGINAL (unstripped)
+ * line, since the allow-comment annotation itself lives inside a comment.
  */
 function isSkippedLine(line: string, cfg: GuardConfig): boolean {
-  if (line.includes(cfg.allowComment)) return true
-  const trimmed = line.trimStart()
-  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')
+  return line.includes(cfg.allowComment)
+}
+
+/** The 2 comment/regex dialects the stripper understands, resolved from the file's own extension. */
+type GuardSyntax = 'ts' | 'css'
+
+/**
+ * CSS (including `.module.css`) has no `//` line-comment syntax at all — an unquoted `//`, e.g.
+ * inside `url(https://…)`, is real CSS text, never a comment opener. Match on the `.css` suffix
+ * (not a naive `split('.')`) so `foo.module.css` resolves the same as `foo.css`.
+ */
+function guardSyntaxFor(relPath: string): GuardSyntax {
+  return relPath.endsWith('.css') ? 'css' : 'ts'
+}
+
+// A `/` opens a regex literal (not division) when the previous significant token is one of these
+// punctuation marks, or one of the REGEX_PRECEDING_KEYWORDS below, or nothing has been scanned yet
+// (start of input) — the standard JS lexer disambiguation. `ts`-syntax only; CSS has no regexes.
+const REGEX_PRECEDING_PUNCT = new Set([
+  '=',
+  '(',
+  ',',
+  '[',
+  ':',
+  '!',
+  '&',
+  '|',
+  '?',
+  '{',
+  '}',
+  ';',
+  '+',
+  '-',
+  '*',
+  '%',
+  '~',
+  '^',
+  '<',
+])
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return',
+  'typeof',
+  'case',
+  'in',
+  'of',
+  'delete',
+  'void',
+  'throw',
+  'do',
+  'else',
+])
+const WORD_CHAR = /[A-Za-z0-9_$]/
+
+/**
+ * Strip comments out of source text, leaving real comment-awareness in place of the old per-line
+ * prefix heuristic (which only caught a comment when ITS OWN line happened to start with `//` /
+ * `*` / `/*` — a block-comment continuation line that didn't start with `*` slipped straight
+ * through as if it were code).
+ *
+ * Stripped characters are replaced 1:1 with a space (newlines are preserved verbatim), so the
+ * output is the SAME LENGTH as the input and every remaining token keeps its exact original line
+ * number and character offset — callers can keep using `text.slice(0, i).split('\n').length` for
+ * line numbers exactly as before.
+ *
+ * Deliberately does NOT touch string literals (`'`, `"`, backtick, backslash-escaped): a raw hex
+ * or a `//` inside a string is real source text, not a comment, and must still be scanned as-is
+ * (e.g. a URL like `'https://x.com/#abc'` must not have its `//` treated as a line comment).
+ *
+ * `syntax === 'css'` disables `//` line-comment handling entirely (CSS only has `/* *\/`) — an
+ * unquoted `url(https://…)` must never have its rest-of-line blanked (that was the BUG 2 false
+ * negative: a real violation on the same line silently disappearing behind a bogus "comment").
+ *
+ * `syntax === 'ts'` additionally recognizes regex literals (`/…/flags`) via
+ * `REGEX_PRECEDING_PUNCT` / `REGEX_PRECEDING_KEYWORDS` and consumes them VERBATIM — a `/*` or `//`
+ * shaped sequence inside a regex body (e.g. a character class `/[/*]/`) is real regex source, not
+ * a comment opener, and must not open a block comment that then runs away to EOF eating every
+ * subsequent line unrecoverably (that was the BUG 1 false negative — total loss of guard coverage
+ * for the rest of the file). The heuristic is inherently imperfect (full disambiguation needs a
+ * real parser), so it is DELIBERATELY biased toward treating an ambiguous `/` as division, i.e.
+ * NOT a regex, i.e. NOT specially protected: an under-strip here just leaves a `/` as an ordinary
+ * character (worst case a spurious finding a human can `theme-allow`), whereas an over-eager
+ * regex-open would swallow real code as "protected regex content" and could hide a genuine
+ * violation — the failure mode BUG 1 already showed is unacceptable.
+ */
+function stripComments(text: string, syntax: GuardSyntax): string {
+  const out: string[] = Array.from<string>({ length: text.length })
+  let inLineComment = false
+  let inBlockComment = false
+  let stringQuote: string | null = null
+  let currentWord = ''
+  let lastUnitType: 'word' | 'punct' | 'none' = 'none'
+  let lastWord = ''
+  let lastPunct = ''
+  let i = 0
+
+  function flushWord(): void {
+    if (currentWord === '') return
+    lastUnitType = 'word'
+    lastWord = currentWord
+    currentWord = ''
+  }
+
+  function canPrecedeRegex(): boolean {
+    if (lastUnitType === 'none') return true
+    if (lastUnitType === 'word') return REGEX_PRECEDING_KEYWORDS.has(lastWord)
+    return REGEX_PRECEDING_PUNCT.has(lastPunct)
+  }
+
+  while (i < text.length) {
+    const ch = text[i] ?? ''
+
+    if (inLineComment) {
+      out[i] = ch === '\n' ? '\n' : ' '
+      if (ch === '\n') inLineComment = false
+      i++
+      continue
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && text[i + 1] === '/') {
+        out[i] = ' '
+        out[i + 1] = ' '
+        i += 2
+        inBlockComment = false
+        continue
+      }
+      out[i] = ch === '\n' ? '\n' : ' '
+      i++
+      continue
+    }
+
+    if (stringQuote !== null) {
+      out[i] = ch
+      if (ch === '\\' && i + 1 < text.length) {
+        out[i + 1] = text[i + 1] ?? ''
+        i += 2
+        continue
+      }
+      if (ch === stringQuote) stringQuote = null
+      i++
+      continue
+    }
+
+    if (WORD_CHAR.test(ch)) {
+      currentWord += ch
+      out[i] = ch
+      i++
+      continue
+    }
+    flushWord()
+
+    if (ch === "'" || ch === '"' || ch === '`') {
+      stringQuote = ch
+      out[i] = ch
+      lastUnitType = 'punct'
+      lastPunct = ch
+      i++
+      continue
+    }
+
+    if (ch === '/' && text[i + 1] === '*') {
+      inBlockComment = true
+      out[i] = ' '
+      i++
+      continue
+    }
+
+    if (syntax === 'ts' && ch === '/' && text[i + 1] === '/') {
+      inLineComment = true
+      out[i] = ' '
+      i++
+      continue
+    }
+
+    if (syntax === 'ts' && ch === '/' && canPrecedeRegex()) {
+      // Consume the regex literal VERBATIM: backslash escapes and `[...]` character classes never
+      // close it early. A raw newline before the closing `/` means this was never a valid regex
+      // (JS disallows a literal line terminator inside one) — bail out of regex mode right there;
+      // every character up to the newline was already copied through unchanged either way, so
+      // bailing loses nothing.
+      out[i] = ch
+      let j = i + 1
+      let inClass = false
+      while (j < text.length) {
+        const rc = text[j] ?? ''
+        if (rc === '\n') break
+        out[j] = rc
+        if (rc === '\\' && j + 1 < text.length) {
+          out[j + 1] = text[j + 1] ?? ''
+          j += 2
+          continue
+        }
+        if (rc === '[') inClass = true
+        else if (rc === ']') inClass = false
+        else if (rc === '/' && !inClass) {
+          j++
+          break
+        }
+        j++
+      }
+      i = j
+      lastUnitType = 'punct'
+      lastPunct = '/'
+      continue
+    }
+
+    // Plain `/` (division, or any bare `/` in CSS syntax) — or any other punctuation/whitespace.
+    out[i] = ch
+    if (!/\s/.test(ch)) {
+      lastUnitType = 'punct'
+      lastPunct = ch
+    }
+    i++
+  }
+
+  return out.join('')
 }
 
 // ── GUARD_RULES registry ─────────────────────────────────────────────────────────────────────────
@@ -209,6 +448,8 @@ export const GUARD_RULES = {
   'localstorage-theme': {
     kind: 'localstorage-theme',
     pattern: LOCALSTORAGE_THEME,
+    // JS-call-shaped (`localStorage.getItem('theme')`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Theme must resolve via the Mantine color scheme + --vx-* vars.',
   },
   'raw-font-family': {
@@ -224,6 +465,10 @@ export const GUARD_RULES = {
         `\\b(?:color|c|bg|backgroundColor)\\s*=\\s*\\{?\\s*['"](${cfg.forbiddenAccents.join('|')})['"]`,
         'g',
       ),
+    // JSX-prop-shaped (`color={"teal"}`) — CSS declares `color: teal;` with a bare keyword and
+    // `:`, which the pattern's `=` anchor can never match; gated off explicitly so a future regex
+    // tweak can't silently start false-positiving on consumer CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'For an off-identity accent use blue/gray or a status hue (red/green/orange/yellow).',
   },
   'raw-spacing': {
@@ -233,12 +478,17 @@ export const GUARD_RULES = {
         `\\b(?:p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)=\\{(?:${cfg.spacingSteps.join('|')})\\}`,
         'g',
       ),
+    // JSX-prop-shaped (`p={16}`) — CSS has no `=`/`{}` prop syntax; gated off explicitly (see
+    // off-identity-accent above for why "never matches today" still gets an explicit gate).
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use the Mantine spacing prop/token (p/m/gap with xs..xl).',
   },
   'raw-radius': {
     kind: 'raw-radius',
     pattern: RADIUS_PROP_RE,
     enabled: (cfg: GuardConfig) => cfg.rawRadius,
+    // JSX-prop-shaped (`radius={6}`) — CSS declares `border-radius: 6px;`, never `radius=`.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use the radius token (radius="md") instead of a numeric literal.',
   },
   'raw-surface': {
@@ -252,6 +502,8 @@ export const GUARD_RULES = {
     kind: 'card-with-border',
     pattern: CARD_SURFACE_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.cardWithBorder,
+    // JSX-tag-shaped (`<Card withBorder>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'withBorder on a Card/Paper double-draws the edge — card depth is --vx-shadow-card, which already bakes a 1px ring into the shadow. Drop the prop (docs/DESIGN-SPEC.md doctrine inversion #1).',
   },
@@ -266,6 +518,8 @@ export const GUARD_RULES = {
     kind: 'raw-html-layout',
     pattern: RAW_HTML_TAG, // handled inline (3-condition conjunction); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
+    // JSX-tag-shaped (`<div style={{...}}>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Raw HTML element with inline layout/surface styling — use a Mantine layout primitive (Box/Flex/Grid/Stack/Group).',
   },
@@ -279,13 +533,18 @@ export const GUARD_RULES = {
     kind: 'inline-display',
     pattern: INLINE_DISPLAY,
     enabled: (cfg: GuardConfig) => cfg.inlineDisplay,
+    // JSX-object-shaped (`display: 'flex'`, quoted value) — CSS never quotes a keyword value
+    // (`display: flex;` is bare), so the pattern's quote anchor can never match real CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'Use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
   },
   'raw-visx-axis': {
     kind: 'raw-visx-axis',
     pattern: RAW_VISX_AXIS,
     enabled: (cfg: GuardConfig) => cfg.rawVisxAxis,
-    appliesTo: isChartFile,
+    // Compose the existing chart-file scope with the CSS gate — a chart-file CSS module (none
+    // exist today, but the boundary should hold regardless) still can't carry a JSX axis tag.
+    appliesTo: (relPath) => isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
       'Raw <AxisLeft>/<AxisBottom>/<AxisRight> in a chart file — use AxisLeftNumeric / AxisBottomDate / AxisRightNumeric.',
   },
@@ -293,6 +552,9 @@ export const GUARD_RULES = {
     kind: 'raw-motion-value',
     pattern: MOTION_TRANSITION_NUMERIC, // handled inline (2-regex kind); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawMotionValue,
+    // JSX-prop-shaped (`transition={{ duration: … }}`) — CSS's `transition:` property has no `=`
+    // or `{{`.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
   },
@@ -300,6 +562,8 @@ export const GUARD_RULES = {
     kind: 'unframed-chart',
     pattern: RAW_CHART_LEGEND_ARRAY, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.unframedChart,
+    // JSX-tag-shaped (`<ChartLegend items={[…]}>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Hand-rolled ChartLegend built from an inline array literal — pass a derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
   },
@@ -307,6 +571,8 @@ export const GUARD_RULES = {
     kind: 'chart-missing-aria-label',
     pattern: CHART_ENTRY_POINT_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
+    // JSX-tag-shaped (`<MultiLine …>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Chart has no accessible text alternative — pass ariaLabel="…" so screen readers get more than an unlabeled graphic.',
   },
@@ -314,6 +580,9 @@ export const GUARD_RULES = {
     kind: 'raw-form-control',
     pattern: RAW_FORM_CONTROL,
     enabled: (cfg: GuardConfig) => cfg.rawFormControl,
+    // JSX-tag-shaped (`<input …>`) — a CSS element selector (`input, select {…}`) has no leading
+    // `<`, so the pattern's anchor can never match real CSS.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Raw <input>/<select>/<textarea> bypasses the ENTIRE theme, not just the font-size floor — no field surface, no shadow-card depth, no focus ring, no --input-* vars. Use TextInput / NumberInput / Select / Textarea from @mantine/core, or variant="unstyled" for a genuinely borderless/bespoke look.',
   },
@@ -321,10 +590,19 @@ export const GUARD_RULES = {
     kind: 'sub-16-input-font',
     pattern: SUB_16_FONT_SIZE, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.sub16InputFont,
+    // Only ever fires nested inside a raw-form-control JSX tag or a `styles={{ input: {…} }}`
+    // object literal — both JSX-shaped, neither appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'fontSize below 16 on a form control is dead code — the styles.css iOS floor is `!important` and always wins. Either drop the override, or be honest about 16px in the design.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
+
+/** Whether `kind`'s rule fires for `relPath` — `appliesTo` is opt-in; absent means always applies. */
+function ruleApplies(kind: GuardKind, relPath: string): boolean {
+  const appliesTo = (GUARD_RULES[kind] as GuardRule).appliesTo
+  return appliesTo === undefined || appliesTo(relPath)
+}
 
 // ── checkSource ───────────────────────────────────────────────────────────────────────────────────
 
@@ -352,14 +630,19 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     (GUARD_RULES['raw-radius'].pattern as RegExp).flags,
   )
 
+  // Comment-stripped text drives every match below; `lines` (the ORIGINAL, unstripped split) is
+  // kept only to resolve the allow-comment escape, since that annotation lives inside a comment
+  // the stripped text has already blanked out. Same length / same newline positions as `text`, so
+  // line numbers computed off either one agree.
   const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
+  const codeText = stripComments(text, guardSyntaxFor(relPath))
+  const codeLines = codeText.split('\n')
 
-    // Skip lines with the allow-comment or pure-comment lines.
-    if (line.includes(cfg.allowComment)) continue
-    const trimmed = line.trimStart()
-    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue
+  for (let i = 0; i < lines.length; i++) {
+    const line = codeLines[i] ?? ''
+
+    // Skip lines with the allow-comment (checked against the ORIGINAL line text).
+    if ((lines[i] ?? '').includes(cfg.allowComment)) continue
 
     // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme) — patterns from GUARD_RULES.
     for (const m of line.matchAll(GUARD_RULES['raw-hex'].pattern as RegExp)) {
@@ -368,21 +651,27 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     for (const m of line.matchAll(GUARD_RULES['raw-color-fn'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-color-fn' })
     }
-    for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+    if (ruleApplies('localstorage-theme', relPath)) {
+      for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+      }
     }
     for (const m of line.matchAll(GUARD_RULES['raw-font-family'].pattern as RegExp)) {
       findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-font-family' })
     }
 
     // Dynamic-regex kinds — patterns already resolved above.
-    for (const m of line.matchAll(forbiddenAccentRe)) {
-      findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+    if (ruleApplies('off-identity-accent', relPath)) {
+      for (const m of line.matchAll(forbiddenAccentRe)) {
+        findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+      }
     }
-    for (const m of line.matchAll(spacingPropRe)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
+    if (ruleApplies('raw-spacing', relPath)) {
+      for (const m of line.matchAll(spacingPropRe)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
+      }
     }
-    if (GUARD_RULES['raw-radius'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-radius'].enabled!(cfg) && ruleApplies('raw-radius', relPath)) {
       for (const m of line.matchAll(radiusPropRe)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
       }
@@ -411,6 +700,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     // raw-html-layout: 3-condition conjunction on the same line — gated via GUARD_RULES entry.
     if (
       GUARD_RULES['raw-html-layout'].enabled!(cfg) &&
+      ruleApplies('raw-html-layout', relPath) &&
       RAW_HTML_TAG.test(line) &&
       INLINE_STYLE.test(line) &&
       LAYOUT_SURFACE_PROP.test(line)
@@ -426,13 +716,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // inline-display — pattern + gating from GUARD_RULES.
-    if (GUARD_RULES['inline-display'].enabled!(cfg)) {
+    if (GUARD_RULES['inline-display'].enabled!(cfg) && ruleApplies('inline-display', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['inline-display'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-display' })
       }
     }
 
-    // raw-visx-axis — pattern + gating + path applicability from GUARD_RULES.
+    // raw-visx-axis — pattern + gating + path applicability (chart-file scope AND CSS gate,
+    // composed on the registry's own appliesTo) from GUARD_RULES.
     if (
       GUARD_RULES['raw-visx-axis'].enabled!(cfg) &&
       GUARD_RULES['raw-visx-axis'].appliesTo!(relPath)
@@ -443,7 +734,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // raw-motion-value: 2 separate regex checks, one kind — gated via GUARD_RULES entry.
-    if (GUARD_RULES['raw-motion-value'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-motion-value'].enabled!(cfg) && ruleApplies('raw-motion-value', relPath)) {
       for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
       }
@@ -453,7 +744,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
 
     // raw-form-control — pattern + gating from GUARD_RULES.
-    if (GUARD_RULES['raw-form-control'].enabled!(cfg)) {
+    if (GUARD_RULES['raw-form-control'].enabled!(cfg) && ruleApplies('raw-form-control', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['raw-form-control'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-form-control' })
       }
@@ -461,11 +752,12 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   }
 
   // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
-  // Reports at the line of the `items={[` token itself; honors the same theme-allow / pure-comment
-  // skip as every per-line kind by checking that reported line directly.
-  if (GUARD_RULES['unframed-chart'].enabled!(cfg)) {
-    for (const m of text.matchAll(RAW_CHART_LEGEND_ARRAY)) {
-      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+  // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
+  // at the line of the `items={[` token itself, honoring the same allow-comment escape as every
+  // per-line kind by checking the ORIGINAL reported line directly.
+  if (GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)) {
+    for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
+      const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
     }
@@ -473,11 +765,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
   // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
-  if (GUARD_RULES['chart-missing-aria-label'].enabled!(cfg)) {
-    for (const m of text.matchAll(CHART_ENTRY_POINT_TAG)) {
+  if (
+    GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
+    ruleApplies('chart-missing-aria-label', relPath)
+  ) {
+    for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
       const tagText = m[0]
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({
         relPath,
@@ -491,11 +786,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // card-with-border — full-text tag-scoped scan (same shape as the two above). Reports at the line
   // of the `withBorder` token itself (not the end of the tag) so a multi-line-formatted Card points
   // the fix at the prop to delete.
-  if (GUARD_RULES['card-with-border'].enabled!(cfg)) {
-    for (const m of text.matchAll(CARD_SURFACE_TAG)) {
+  if (GUARD_RULES['card-with-border'].enabled!(cfg) && ruleApplies('card-with-border', relPath)) {
+    for (const m of codeText.matchAll(CARD_SURFACE_TAG)) {
       const withBorder = WITH_BORDER_PROP.exec(m[0])
       if (withBorder === null) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: 'withBorder', kind: 'card-with-border' })
     }
@@ -505,30 +800,33 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // form-control's own inline `style={{ fontSize: N }}`, (b) a Mantine `styles={{ input: { fontSize:
   // N } }}` per-part style. Either shape is now DEAD CODE against the `!important` floor in
   // styles.css — see the guard's doc comment for exactly which shapes this covers.
-  if (GUARD_RULES['sub-16-input-font'].enabled!(cfg)) {
-    for (const m of text.matchAll(RAW_FORM_CONTROL_TAG)) {
+  if (GUARD_RULES['sub-16-input-font'].enabled!(cfg) && ruleApplies('sub-16-input-font', relPath)) {
+    for (const m of codeText.matchAll(RAW_FORM_CONTROL_TAG)) {
       const tagText = m[0]
       if (!INLINE_STYLE.test(tagText)) continue
       const fontSizeMatch = [...tagText.matchAll(SUB_16_FONT_SIZE)][0]
       if (fontSizeMatch === undefined) continue
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
     }
 
-    for (const m of text.matchAll(STYLES_INPUT_PART)) {
+    for (const m of codeText.matchAll(STYLES_INPUT_PART)) {
       const inputBody = m[1] ?? ''
       const fontSizeMatch = [...inputBody.matchAll(SUB_16_FONT_SIZE)][0]
       if (fontSizeMatch === undefined) continue
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
-      const lineNo = text.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
+      const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
       findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
     }
   }
 
-  return findings
+  // Per-rule, per-path exemption post-filter (§exemptRules) — applied once here so it uniformly
+  // covers every kind regardless of whether it was emitted via the GUARD_RULES registry loop above
+  // or one of the inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+  return findings.filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
 }

@@ -72,14 +72,17 @@ function TextRenderer({ part }: { part: TextPart; index: number }): JSX.Element 
 
 // Tool-call/reasoning parts (docs/DESIGN-SPEC.md §5): a mono micro-label header with a faint left
 // divider rail — quieter than the card idiom, since these are transcript asides, not surfaces.
-const RAIL_STYLE = { borderLeft: `2px solid ${VX.divider}`, paddingLeft: 10 } as const
+const RAIL_STYLE = {
+  borderLeft: `2px solid ${VX.divider}`,
+  paddingLeft: 'var(--vx-space-agent-rail-inset-x)',
+} as const
 const CODE_BLOCK_STYLE = {
   margin: 0,
-  marginTop: 6,
+  marginTop: 'var(--vx-space-agent-part-gap-top)',
   fontFamily: 'var(--basalt-font-mono)',
   backgroundColor: alpha(VX.ink, 0.06),
-  borderRadius: 8,
-  padding: 8,
+  borderRadius: 'var(--vx-radius-card)',
+  padding: 'var(--vx-space-agent-code-inset)',
   whiteSpace: 'pre-wrap',
   overflowWrap: 'anywhere',
 } as const
@@ -192,7 +195,7 @@ function MessageBlock({
   return (
     <Box
       style={{
-        padding: '10px 12px',
+        padding: 'var(--vx-space-agent-message-inset-y) var(--vx-space-agent-message-inset-x)',
         backgroundColor: author === 'user' ? VX.surface.subtle : VX.surface.panel,
         borderRadius: VX.radiusCard,
         boxShadow: VX.shadowCard,
