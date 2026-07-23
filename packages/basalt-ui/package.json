@@ -266,7 +266,6 @@
       "src/guard/index.ts",
       "src/cli/index.ts"
     ],
-    "rawSurface": false,
     "rawHtmlLayout": false,
     "inlineSpacing": false,
     "inlineDisplay": false,

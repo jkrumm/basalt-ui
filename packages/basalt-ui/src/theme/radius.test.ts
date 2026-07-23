@@ -40,6 +40,10 @@ describe('every derived/independent step reproduces its exact shipped number', (
     expect(RADIUS_STEP.scaleLg).toBe(16)
     expect(RADIUS_STEP.scaleXl).toBe(32)
   })
+
+  test('the pill affordance is fixed at 9999, independent of the radius knob', () => {
+    expect(RADIUS_STEP.pill).toBe(9999)
+  })
 })
 
 describe('the Mantine radius size-scale is byte-identical to the pre-tokenization literals', () => {
@@ -120,5 +124,9 @@ describe('--vx-radius-card / --vx-radius-ctrl are emitted from the SAME constant
   test('emits 7px / 6px, unchanged', () => {
     expect(css).toContain('--vx-radius-card: 7px;')
     expect(css).toContain('--vx-radius-ctrl: 6px;')
+  })
+
+  test('emits the fixed pill radius', () => {
+    expect(css).toContain('--vx-radius-pill: 9999px;')
   })
 })
