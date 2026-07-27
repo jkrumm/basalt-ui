@@ -1,19 +1,19 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-07-16**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-07-27**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `feat/s0-mantine-pivot` (PR-required, unmerged, pushed to
-`origin/feat/s0-mantine-pivot` on 2026-06-11; many maturation commits have landed since — see
-`git log`).
-**Version:** `1.0.0` in `package.json`, **unpublished** (last npm tag: `v0.4.2`).
+**Branch:** `master` is the released 1.x line; `feat/density-tokens` (PR #23) carries the density
+dimension and the guard wave below it.
+**Version:** `1.1.1` on `master`, **published** to npm (tags through `v1.1.1`, Trusted Publisher
+OIDC).
 
 ## TL;DR
 
-The 1.0 Mantine pivot is **functionally complete**. No feature work remains for the 1.0 cut
-line. What's left is the owner-gated **ship sequence** (push → PR → npm Trusted Publisher →
-review → release). The June-era roadmap/handover docs still phrase built work as "remaining" —
-that language is historical; see the banner on each.
+The 1.0 Mantine pivot shipped and the 1.x line is live on npm. Current work is the theme-config
+surface: `createBasaltTheme`'s four dimensions (`derive`, `fonts`, `radius`, `density`) — the first
+three released, `density` in review on PR #23. The June-era roadmap/handover docs still phrase built
+work as "remaining"; that language is historical, see the banner on each.
 
 ## Built (verified as-built, 2026-07-07)
 
@@ -105,10 +105,12 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   landed; `basalt.rawRadius` guard is ON. `legendText`'s light value now derives from the ink hex
   like the sibling chart-chrome ramps. `DeriveControls` gained a Radius slider (persisted-state
   v2).
-- **Density dimension (step 3)** — a fourth, non-color dimension joins the options object:
+- **Density dimension (step 3)** — a fourth theme dimension (the third non-color one) joins the
+  options object:
   `createBasaltTheme(overrides?, { derive, fonts, radius, density })`. `density` is an integer
   −3..+3 (level 0 = today's values, byte-identical, with ONE deliberate exception — see below) —
-  narrower than `radius`'s −5..+5 on purpose: it retunes every spacing token together via
+  narrower than `radius`'s −5..+5 on purpose: it retunes every density-TRACKING spacing token
+  together (the `SPACE_FIXED` structurals below are exempt by design) via
   `deriveSpacing(level)`, a multiplier law (`1 + 0.1 * level`, rounded, floored at 1) for
   anchors/scale-stops/one-offs, plus an independent, gentler additive law — its OWN hand-picked
   coefficient (`ROW_LINE_HEIGHT_STEP`), not derived from the multiplier's own coefficient, which a
@@ -152,6 +154,22 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   `tokens/derive.ts` + `tokens/hct.ts` are in the package's `basalt.exempt` list (they ARE the
   generator/calibrated-constant source, alongside `palette.ts`/`theme/index.ts`) so the `raw-hex`
   guard rule doesn't fire on their calibrated literals.
+- **Guard dogfooding wave (rides with the density PR)** — the package now runs four guard kinds it
+  previously exempted itself from: `raw-surface`, `raw-spacing`, `inline-spacing`, and the
+  `inline-display`/`raw-html-layout` layout-primitive pair. No new rule kinds — these already
+  shipped; what changed is that basalt-ui itself is now scanned by them, which surfaced and cleared
+  the last raw literals in its own source. Two things fell out of it: **`exemptRules`**
+  (`Partial<Record<GuardKind, string[]>>` on `GuardConfig`) — the missing seam between whole-file
+  `exempt` (skips every rule) and hardcoded `appliesTo` (per-kind path scoping in the registry),
+  applied as one post-filter so it covers the inline-handled kinds too, empty by default; and **15
+  new tokens** — 14 `--vx-space-*` one-offs (agent rail/code/error/message/transcript insets, badge
+  inset, stat-card gap, virtual-list row inset), each seeded into `SPACE_STEP_BASE` at its shipped
+  px so level 0 is byte-identical and the value now tracks density instead of freezing, plus a fixed
+  `--vx-radius-pill` (9999px, level-invariant). The headless layers (`agent/`, `charts/`) declare
+  themselves exempt from the layout-primitive rules via `exemptRules` — their remedy points at a
+  Mantine `<Flex>`/`<Center>` they cannot import under the Mantine-free contract. A handful of
+  irreducible sites (sub-scale opticals below the token floor, a Badge `styles.label` part, two
+  `motion.span` glyph wrappers) keep a documented `theme-allow`.
 
 **Known limitations:**
 
@@ -183,25 +201,24 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   density })` one, not merely the dev slider (see `deriveSpacing`'s JSDoc, `tokens/palette.ts`, for
   the full accounting of what tracks density end to end and what doesn't).
 
-## Open — the finish line (owner-gated, cannot be closed from source)
+## Open — PR #23 (`feat/density-tokens`)
 
-1. **Push** the outstanding commits to `origin/feat/s0-mantine-pivot` (pushed to `origin` on
-   2026-06-11; many maturation commits have landed since — see `git log`).
-2. **Open the PR** (basalt-ui is PR-required).
-3. **npm Trusted Publisher** — `publish.yml` is already OIDC-ready (`id-token: write`); configure
-   `jkrumm/basalt-ui` → `publish.yml` on the npm side, then **delete the `NPM_TOKEN` GitHub
-   secret**. Without this the OIDC publish 403s.
-4. **`/code-review ultra`** at the finish line (billed).
-5. **Merge**, then trigger the release workflow (semantic-release-monorepo, npm provenance).
+The 1.0 ship sequence is closed: the pivot merged, npm Trusted Publisher (OIDC) is configured, and
+`v1.0.2`/`v1.1.0`/`v1.1.1` published. What's open is one PR:
+
+1. **PR #23** — the density dimension, the theme-lab prune, and the guard wave above. Mergeable, no
+   conflicts.
+2. **`/code-review ultra`** before merge (billed).
+3. **Merge**, then trigger the release workflow (semantic-release-monorepo, npm provenance).
    `release.yml` is `workflow_dispatch`-only — merging to `master` does NOT auto-release.
 
 ## Validation
 
-Last verified green **2026-07-16**, on the release-hardening wave following `aa64af6` — `bun test`:
-560 pass / 22 files. Also green on that tree: `bun run pre` (fmt/lint/typecheck), build,
-`check-coverage`, and pack-test (19 subpaths, now including the scratch-consumer oxlint-preset
-`extends` contract). **A final re-verification (`bun run pre` + `bun test` + pack-test) runs before
-ship** if further commits land.
+Last verified green **2026-07-27** on `feat/density-tokens` — `bun test`: 905 pass / 49 files, and
+`bun run pre` (fmt/lint/typecheck/check-theme). The pack-test's export-surface snapshot was updated
+in the same pass for `./tokens`'s three new exports (`deriveSpacing`, `buildDensityCss`, `pxRem`).
+**A final re-verification (`bun run pre` + `bun test` + pack-test) runs before ship** if further
+commits land.
 
 ## Deferred by design — do NOT build for 1.0
 
