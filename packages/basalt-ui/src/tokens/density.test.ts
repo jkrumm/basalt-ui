@@ -186,6 +186,10 @@ describe('deriveSpacing rejects a malformed level', () => {
   })
 })
 
+/** `SpaceValues` key → the `--vx-` suffix `spaceDecls` emits for it (`rowInsetX` → `space-row-inset-x`). */
+const kebab = (key: string): string =>
+  `space-${key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`
+
 describe('buildDensityCss', () => {
   test('returns empty string when space is undefined', () => {
     expect(buildDensityCss(undefined)).toBe('')
@@ -209,6 +213,47 @@ describe('buildDensityCss', () => {
     expect(css).not.toContain('--vx-space-timeline-bullet')
     expect(css).not.toContain('--vx-space-chart-legend-gap')
     expect(css).not.toContain('--vx-space-progress-bar-size')
+  })
+
+  // The spot-checks above lock VALUES; this locks the declaration SET. Without it, `spaceDecls`
+  // could silently drop a var the migrated CSS modules consume — density would stop applying there
+  // and every value-assertion above would still pass. Derived from the `SpaceValues` keys rather
+  // than a hand-listed 104-name snapshot, so a newly added anchor/one-off has to be either emitted
+  // or explicitly declared JS-number-only here.
+  test('emits exactly one var per SpaceValues key, minus the documented JS-number-only reads', () => {
+    const space = deriveSpacing(0)
+    const emitted = new Set(
+      [...buildDensityCss(space).matchAll(/--vx-(space-[a-z0-9-]+):/g)].map((m) => m[1] as string),
+    )
+    // Read straight off the resolved `SpaceValues` as a JS number instead of through a var — each
+    // has zero `var()` consumers, so a declaration would be dead weight. See `spaceDecls`'s doc in
+    // `tokens/index.ts` for why, and `deriveSpacing`'s JSDoc for the runtime gap the chart six have.
+    const jsNumberOnly = [
+      'space-timeline-bullet', // Timeline defaultProps.bulletSize
+      'space-progress-bar-size', // Progress defaultProps.size
+      'space-sidebar-account-menu-width', // Menu width prop
+      'space-sidebar-settings-menu-width', // Menu width prop
+      'space-app-shell-header-height', // AppShell header/navbar props
+      'space-app-shell-header-mobile-height',
+      'space-app-shell-navbar-width',
+      'space-app-shell-navbar-rail-width',
+      'space-chart-legend-gap', // VX.legendGap / VX.margin / VX.dotR — visx SVG props
+      'space-chart-margin-top',
+      'space-chart-margin-right',
+      'space-chart-margin-bottom',
+      'space-chart-margin-left',
+      'space-chart-dot-r',
+    ]
+
+    // `space.scale.*` (the generic Mantine scale) resolves through `--mantine-spacing-*`, not a
+    // `--vx-space-*` var, so it is not part of this contract at all.
+    const expected = [
+      ...Object.keys(space.anchors).map(kebab),
+      ...Object.keys(space.step).map(kebab),
+      'space-row-line-height',
+    ].filter((name) => !jsNumberOnly.includes(name))
+
+    expect([...emitted].toSorted()).toEqual(expected.toSorted())
   })
 })
 
