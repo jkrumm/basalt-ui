@@ -1,3 +1,33 @@
+# [1.2.0](https://github.com/jkrumm/basalt-ui/compare/v1.1.1...v1.2.0) (2026-07-27)
+
+
+### Bug Fixes
+
+* let styles-block radii follow the dev radius slider ([81f0318](https://github.com/jkrumm/basalt-ui/commit/81f0318ede0fe60f8f95c89481090c7de990bfe2))
+* make the raw-surface guard token-aware ([0deab9a](https://github.com/jkrumm/basalt-ui/commit/0deab9a24fcaae643419f89d075a103e6c078b97))
+* make the virtual-list skeleton density-aware and lock the space var set ([f6fbde6](https://github.com/jkrumm/basalt-ui/commit/f6fbde634d2b1795d3a3f5cf3d3149b1eadac793))
+* respect Vite's base when emitting app URLs ([488fe0c](https://github.com/jkrumm/basalt-ui/commit/488fe0cb39fa7dbd3d29d985aa264767fb952a0d))
+* strip comments before the theme guard scans ([ac5e81d](https://github.com/jkrumm/basalt-ui/commit/ac5e81d414d7cfb290bd598f60bed1335f86234c))
+
+
+### Features
+
+* add basaltAppPlugin for PWA head, manifest, and icon metadata ([cef0114](https://github.com/jkrumm/basalt-ui/commit/cef0114e85f7d2107c640bdfb24978e6b0d29d40))
+* add fonts option and derive legendText ([82a6af3](https://github.com/jkrumm/basalt-ui/commit/82a6af3eaba65ad86dcf18ec3aa94f8d798b3d4e))
+* add per-rule path exemptions to the theme guard ([5f085bb](https://github.com/jkrumm/basalt-ui/commit/5f085bb2ae919f09fafac473818cb3874704d5b1))
+* add the density knob to the theme config ([e992638](https://github.com/jkrumm/basalt-ui/commit/e992638b5897b8a7a12d4c142aad513bff6d0ca9))
+* add the radius knob to the theme config ([3207e8a](https://github.com/jkrumm/basalt-ui/commit/3207e8a8b3e4c718e815fa9a1dd5f2540f88ffbc))
+* derive the palette from one accent seed ([bc6fe31](https://github.com/jkrumm/basalt-ui/commit/bc6fe31e892f626e48f3dc60ff5351fa5805ace1))
+* dogfood the inline-display and raw-html-layout guards ([4844f62](https://github.com/jkrumm/basalt-ui/commit/4844f62db7a2762c2c40973c2b612fecc33031b9))
+* dogfood the inline-spacing guard on the package ([583e18c](https://github.com/jkrumm/basalt-ui/commit/583e18c21c12ba0858b9d31ef7fc433c127bc2fd))
+* dogfood the raw-spacing guard on the package ([c9a2cf9](https://github.com/jkrumm/basalt-ui/commit/c9a2cf9f7bfd6cfd2a284cf1ec57295c55ad6f14))
+* dogfood the raw-surface guard on the package ([b70a29a](https://github.com/jkrumm/basalt-ui/commit/b70a29aa048227fa048c0acdfc0847a69d9f9f5b))
+* embed DeriveControls in playground settings ([8439aa1](https://github.com/jkrumm/basalt-ui/commit/8439aa1b8b94409d2c1047ccf697aceec4068b40))
+* make the theme lab move the theme object, not just CSS vars ([1eb4257](https://github.com/jkrumm/basalt-ui/commit/1eb4257a9525094b386f80699e8282c53982e974))
+* mention the radius knob in the Derive panel copy ([7a1b064](https://github.com/jkrumm/basalt-ui/commit/7a1b064c548f98143350d366696eb1f7ab8e6b6f))
+* scan CSS modules in the theme guard ([2b0d9d4](https://github.com/jkrumm/basalt-ui/commit/2b0d9d433917ef5bcc55d0400e76de50f622c526))
+* tighten the sidebar, open up components — retune the level-0 spacing bases ([8b6119a](https://github.com/jkrumm/basalt-ui/commit/8b6119aa601793f8947302288d02cfb1803dc1b8))
+
 ## [1.1.1](https://github.com/jkrumm/basalt-ui/compare/v1.1.0...v1.1.1) (2026-07-17)
 
 
