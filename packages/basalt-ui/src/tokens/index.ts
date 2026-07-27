@@ -488,6 +488,28 @@ function spaceDecls(space: SpaceValues): string[] {
   ]
 }
 
+/**
+ * The `--vx-space-*` names that survive `only: 'core'` — DERIVED from the `SPACE` anchor keys, never
+ * hand-listed, so a new `SPACE_STEP` one-off is excluded the moment it is added and a renamed anchor
+ * follows automatically. `SPACE` is the generic ladder (the stack rhythm, the two control heights,
+ * the row insets); everything else `spaceDecls` emits is named for a basalt COMPONENT and is dead
+ * weight outside this framework — including `--vx-space-row-line-height`, which is the NavLink row's
+ * line-height rather than a general anchor and so is (deliberately) in neither set.
+ */
+const CORE_SPACE_VARS = new Set(
+  Object.keys(SPACE).map((key) => `space-${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`),
+)
+
+/**
+ * Does this `spaceDecls` line declare a core anchor? The name is read back out of the emitted line
+ * because {@link decl} is the single formatter for every one of them — the shape is fixed at one
+ * call site, so parsing it cannot drift, whereas tagging 104 declarations by hand could.
+ */
+function isCoreSpaceDecl(line: string): boolean {
+  const name = /^ {2}--vx-([\w-]+):/.exec(line)?.[1]
+  return name !== undefined && CORE_SPACE_VARS.has(name)
+}
+
 /** The shipped, level-0 spacing values — `frameworkDerived`'s `spaceDecls(...)` call below. No
  * `createBasaltTheme({ density })` retuning applies here; that path calls `buildDensityCss` with a
  * different resolved {@link SpaceValues} instead (see `../theme` and `../provider`). */
@@ -504,7 +526,8 @@ const DEFAULT_SPACE_VALUES: SpaceValues = {
  * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
-function frameworkDerived(data: PaletteData): string {
+function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
+  const space = spaceDecls(DEFAULT_SPACE_VALUES)
   return [
     decl('radius-card', `${RADIUS.card}px`),
     decl('radius-ctrl', `${RADIUS.ctrl}px`),
@@ -519,7 +542,7 @@ function frameworkDerived(data: PaletteData): string {
     // only in this static block, never in `buildRadiusCss`'s dynamic override (see
     // `RADIUS_STEP.pill`'s doc).
     decl('radius-pill', `${RADIUS_STEP.pill}px`),
-    ...spaceDecls(DEFAULT_SPACE_VALUES),
+    ...(only === 'core' ? space.filter(isCoreSpaceDecl) : space),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),
     // The fill band (see FILL in palette.ts). Emitted on `:root`, NOT per scheme — a filled surface
@@ -641,6 +664,21 @@ export type BuildPaletteOpts = {
    * it regardless of source order — the OS preference is a fallback, never an override.
    */
   mediaFallback?: boolean
+  /**
+   * How much of the SPACING set to emit. Default: `'all'` (every one of the 104 `--vx-space-*`
+   * declarations the framework's own components read).
+   *
+   * `'core'` keeps the 9 generic anchors — the stack rhythm, the two control heights, the row
+   * insets — and drops the 95 named for a specific basalt component
+   * (`--vx-space-agent-transcript-inset`, `--vx-space-toc-sub-indent`, …), taking the emitted set
+   * from 197 variables to 102. Nothing outside basalt's own React components reads those, so a
+   * framework-free consumer is carrying them for nothing.
+   *
+   * This is a SPACING filter only: color, radius, shadow, type and status variables are identical
+   * in both modes. The partition is derived from the `SPACE` key set rather than a maintained list
+   * — see {@link CORE_SPACE_VARS}.
+   */
+  only?: 'core' | 'all'
 }
 
 /** Mantine's own color-scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
@@ -683,7 +721,7 @@ export function buildPaletteCss(
 ): string {
   const groups = opts.groups ?? {}
   const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const derivedBlock = frameworkDerived(data)
+  const derivedBlock = frameworkDerived(data, opts.only ?? 'all')
   const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = Object.entries(groups)

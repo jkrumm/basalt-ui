@@ -1599,10 +1599,16 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
   const lightValue = flagValue(flags, '--light-value')
   const defaultScheme = flagValue(flags, '--default-scheme')
 
+  const only = flagValue(flags, '--only')
+
   if (defaultScheme !== undefined && !['dark', 'light', 'none'].includes(defaultScheme)) {
     console.error(
       `tokens:css: --default-scheme must be dark, light or none (got '${defaultScheme}')`,
     )
+    return 1
+  }
+  if (only !== undefined && !['core', 'all'].includes(only)) {
+    console.error(`tokens:css: --only must be core or all (got '${only}')`)
     return 1
   }
 
@@ -1618,6 +1624,7 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
       ? {}
       : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
     ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
+    ...(only === undefined ? {} : { only: only as 'core' | 'all' }),
   })
 
   const out = flagValue(flags, '--out')
@@ -1731,7 +1738,7 @@ const USAGE =
   'Usage: basalt-ui <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
   'check-theme | check-coverage | info [--json] | doctor | guard-hook | tokens:css | help>\n\n' +
   'tokens:css [--out <path>] [--selector-attribute <attr>] [--dark-value <v>] [--light-value <v>]\n' +
-  '           [--default-scheme <dark|light|none>] [--media-fallback]\n' +
+  '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
