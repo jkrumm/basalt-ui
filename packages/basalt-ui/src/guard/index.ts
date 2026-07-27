@@ -64,9 +64,37 @@ const INLINE_STYLE = /style=\{\{/
 const LAYOUT_SURFACE_PROP =
   /\b(?:display|padding|margin|gap|flex|grid|border|background|width|height)\b/
 
-// Spacing/sizing literals in inline style={{}} — anchored on property name; var() or 0 pass.
-const INLINE_SPACING =
-  /\b(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap)\s*:\s*(?!var\()['"]?-?(?!0\b)\d/g
+// Spacing/sizing literals — anchored on the property name; `var()` and a plain `0` pass.
+//
+// Composed rather than written out because it must cover BOTH spellings of the same property: the
+// camelCase form a TSX inline style uses (`paddingInlineStart`) and the kebab form CSS uses
+// (`padding-inline-start`). Enumerating one and not the other is how `padding: 18px` came to flag in
+// a CSS module while `padding-top: 18px` beside it did not — a distinction shaped by regex history
+// rather than by any decision, and invisible from the author's seat.
+//
+// Case-insensitivity would be the short way to unify them and is deliberately not used: it would
+// also match `Padding`/`PADDING`, neither of which is a property in either dialect.
+const BOX_SIDE = '(?:Top|Bottom|Left|Right|Block|Inline)(?:Start|End)?'
+const BOX_SIDE_KEBAB = '(?:top|bottom|left|right|block|inline)(?:-(?:start|end))?'
+const SPACING_PROP = `(?:padding|margin)(?:${BOX_SIDE}|-${BOX_SIDE_KEBAB})?|gap|rowGap|columnGap|row-gap|column-gap`
+// A bare `0` needs no unit and no token, so it is never a finding — but the guard for it has to
+// stop at the zero ITSELF. `(?!0\b)` did not: `\b` sits between `0` and `.`, so every value
+// starting `0.` matched the guard and dropped out of the scan entirely. `0.75rem` is 12px, a real
+// spacing value, and it was invisible. `(?!0(?![.\d]))` excuses only a zero that ends there.
+//
+// The number itself is `[-+]?(?:\d|\.\d)`, not `-?\d`: CSS lets a value carry an explicit `+` and
+// omit the integer part, so `.75rem` and `+12px` are the same spacing as `0.75rem` and `12px`.
+// Requiring a leading digit skipped both — the same silent-skip the zero guard above was fixed for,
+// one spelling over.
+//
+// The property is preceded by `(?<![\w-])`, not `\b`: a `\b` boundary sits inside a hyphenated
+// identifier, so every custom property whose NAME ends in a spacing word — the token layer's own
+// `--vx-space-article-header-padding-bottom`, a consumer's `--card-padding-inline` — matched as if
+// it were a declaration. A custom property is a definition, not a rendered spacing decision.
+const INLINE_SPACING = new RegExp(
+  `(?<![\\w-])(?:${SPACING_PROP})\\s*:\\s*(?!var\\()['"]?[-+]?(?!0(?![.\\d]))(?:\\d|\\.\\d)`,
+  'g',
+)
 
 /**
  * The sub-scale micro-spacing ceiling, in px — the largest literal `inline-spacing` tolerates in a
@@ -86,6 +114,9 @@ const INLINE_SPACING =
  */
 const MICRO_SPACING_CEILING_PX = 10
 
+/** The root font size `rem` values resolve against — the same 16 the token layer's `pxRem` uses. */
+const ROOT_FONT_SIZE_PX = 16
+
 /**
  * Is this CSS declaration entirely sub-scale? True when every literal in the value is a bare px (or
  * unitless) number at or below {@link MICRO_SPACING_CEILING_PX}. `var(...)` components are dropped
@@ -93,8 +124,13 @@ const MICRO_SPACING_CEILING_PX = 10
  * already tokenized where it counts.
  *
  * Multi-value shorthands are judged as a whole: `padding: 4px 8px` passes, `padding: 4px 16px` does
- * not — the 16 has a scale stop and should use it. Any other unit (`rem`, `em`, `%`) fails, because
- * the doctrine is stated in px and a rem value is a different axis, not a micro-spacing one.
+ * not — the 16 has a scale stop and should use it.
+ *
+ * `rem` is resolved against the 16px root, the same conversion `pxRem` in the token layer applies,
+ * so `0.25rem` and `4px` get the same answer. Writing the identical spacing two ways and having the
+ * guard accept one is the same arbitrariness the kebab gap produced. Units that cannot be resolved
+ * to px without layout context — `em`, `%`, `ch`, `vw` — are not micro-spacing claims and still
+ * flag.
  */
 function isSubScaleCssSpacing(line: string, matchIndex: number): boolean {
   const colon = line.indexOf(':', matchIndex)
@@ -104,8 +140,10 @@ function isSubScaleCssSpacing(line: string, matchIndex: number): boolean {
   const value = (end === -1 ? rest : rest.slice(0, end)).replace(/var\([^)]*\)/g, ' ').trim()
   if (value === '') return true
   return value.split(/\s+/).every((part) => {
-    const literal = /^-?(\d+(?:\.\d+)?)(?:px)?$/.exec(part)
-    return literal !== null && Number(literal[1]) <= MICRO_SPACING_CEILING_PX
+    const literal = /^[-+]?(\d+(?:\.\d+)?|\.\d+)(px|rem)?$/.exec(part)
+    if (literal === null) return false
+    const px = literal[2] === 'rem' ? Number(literal[1]) * ROOT_FONT_SIZE_PX : Number(literal[1])
+    return px <= MICRO_SPACING_CEILING_PX
   })
 }
 
