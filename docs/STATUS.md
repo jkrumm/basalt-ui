@@ -93,8 +93,10 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   knob; the default (or a `derive` that resolves back to it) stays on the pre-baked static
   `baseTheme` — zero extra derivation work.
 - **`DeriveControls`** (`theme-lab`) — the DEV-tool live-tuning panel for the same six knobs,
-  persisted to its own localStorage key, applied via a cascade-winning `<style>` tag. Not the
-  production path — that's `createBasaltTheme`'s `derive` option.
+  persisted to its own localStorage key. Not the production path — that's `createBasaltTheme`'s
+  `derive` option — but a faithful one: it applies a config through BOTH halves of the theme (a
+  cascade-winning `<style>` tag for the `--vx-*` vars, plus a real rebuilt theme object; see
+  "Honest theme lab" below).
 - **Non-color dimensions (step 2)** — the same options object (never a second config surface)
   gained `fonts: { sans?, head?, mono? }` (pure pass-through to the `--basalt-font-*` vars,
   enforced by the new `raw-font-family` guard kind) and `radius` (integer −5..+5; law: card =
@@ -154,9 +156,10 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   `tokens/derive.ts` + `tokens/hct.ts` are in the package's `basalt.exempt` list (they ARE the
   generator/calibrated-constant source, alongside `palette.ts`/`theme/index.ts`) so the `raw-hex`
   guard rule doesn't fire on their calibrated literals.
-- **Guard dogfooding wave (rides with the density PR)** — the package now runs four guard kinds it
+- **Guard dogfooding wave (rides with the density PR)** — the package now runs five guard kinds it
   previously exempted itself from: `raw-surface`, `raw-spacing`, `inline-spacing`, and the
-  `inline-display`/`raw-html-layout` layout-primitive pair. No new rule kinds — these already
+  `inline-display`/`raw-html-layout` layout-primitive pair (two kinds, one category — they share an
+  `exemptRules` opt-out below). No new rule kinds — these already
   shipped; what changed is that basalt-ui itself is now scanned by them, which surfaced and cleared
   the last raw literals in its own source. Two things fell out of it: **`exemptRules`**
   (`Partial<Record<GuardKind, string[]>>` on `GuardConfig`) — the missing seam between whole-file
@@ -170,6 +173,73 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
   Mantine `<Flex>`/`<Center>` they cannot import under the Mantine-free contract. A handful of
   irreducible sites (sub-scale opticals below the token floor, a Badge `styles.label` part, two
   `motion.span` glyph wrappers) keep a documented `theme-allow`.
+- **Honest theme lab (rides with the density PR)** — `DeriveControls` applied a config through an
+  injected `<style>` tag alone, which can only reach CSS custom properties. The Radius/Density knobs
+  also control plain numbers baked into the theme OBJECT by `buildTheme`: `theme.radius` and
+  `theme.spacing` (the generic Mantine `xs`..`xl` scales — every `p="md"`/`gap="sm"` in an app) plus
+  `defaultProps.radius` on Badge/SegmentedControl/Progress/Tooltip/Popover/Modal/Notification,
+  `Progress.size` and `Timeline.bulletSize`. A `<style>` tag cannot reach a number inside a JS object,
+  so the sliders moved the CSS-var surfaces (the CSS-module-heavy app sidebar most of all) and left
+  plain Mantine layout at level 0 — the tool under-reported its own knobs UNEVENLY across surfaces,
+  which is exactly the reading a retune is judged by, so any by-eye measurement taken through it was
+  half blind (a `-2` radius read on the sidebar alone, a sidebar-wants-`-1`/rest-wants-`+1` density
+  split that may be the instrument rather than the design). `BasaltProvider` now reads the same
+  persisted store and rebuilds a real theme via `createBasaltTheme(undefined, { derive, radius,
+density })`. Three pieces: the state moved to `theme-lab/derive-state.ts` (deliberately Mantine-free
+  — the root layer must not pull the panel UI into every consumer's chunk for six lines of state, and
+  one store instance means the CSS half and the object half can never disagree);
+  `provider/lab-theme.ts` merges only the config's DELTA against the shipped base
+  (`themeOverrideDelta`), because `BasaltProvider`'s contract is consumer-overrides-win-last and the
+  documented mount hands it a COMPLETE `createBasaltTheme()` carrying every level-0 number — a
+  whole-theme merge would clobber the lab back to level 0 in one direction and eat the consumer's own
+  overrides in the other; function-valued fields are skipped (`buildTheme` allocates fresh
+  `vars`/`classNames` closures per call and none of them closes over a radius/spacing value). The
+  delta also carries `other.basaltDerive`/`basaltRadius`/`basaltDensity`, so `BasaltBridge`'s existing
+  injection emits the matching `--vx-*` CSS off the running theme. **No shipped default moved, and the
+  production path pays nothing**: the store subscription is gated to DEV builds at module scope
+  (`process.env.NODE_ENV !== 'production'` picking one of two `use*` implementations — a per-render
+  ternary would be a `react/rules-of-hooks` error), since `BasaltProvider` is the mandatory `.` entry
+  and must not cost every consumer a localStorage read plus a permanent `storage` listener to answer a
+  question that is always "no" there; a bundler drops the dev implementation and its
+  `theme-lab/derive-state` import outright. Even in a dev build, with the "Apply" switch off — or in
+  any app that never mounts the panel, since nothing else writes that key — the provider returns
+  `createBasaltTheme(theme)` verbatim, and an active override at level 0 yields an empty delta. The
+  cost of the gate: the sliders are inert in a production BUILD of a dev app (`vite build && vite
+preview`) — run the playground through its dev server. Two things previously documented as part of the gap never were: Card/Paper resolve their
+  radius through `var(--vx-radius-card)` in `styles.root`, and the Input/Button/ActionIcon `size="md"`
+  heights read `--vx-space-*-height` via each component's `vars` — the CSS half always covered both.
+  Pinned by `provider/lab-theme.test.ts` (16 tests) + `theme-lab/derive-state.test.ts` (6, for the
+  store-to-override projection both halves share — the `applied` gate the "production untouched" claim
+  rests on, and that no state-only key leaks into `theme.other.basaltDerive`).
+- **Level-0 spacing retune (rides with the density PR)** — the first retune taken with a trustworthy
+  instrument, applied to the BASE tables so level 0 stays the shipped identity and the knob keeps its
+  full ±3 travel around it. No default level, no second knob — the knob's zero IS the identity.
+  Components roomier: `SPACE_SCALE_BASE` 10/12/16/18/24 → **11/13/18/20/26** (~+10%), the app-wide
+  rhythm every `p=`/`m=`/`gap=` resolves through, including the Card/Paper `p="xs"`/`p="sm"` inset
+  idiom. Sidebar tighter (~−15%) across 13 gap/inset one-offs (`sidebarRegionGap` 12→10,
+  `sidebarSectionGap` 15→12, `sidebarChildListIndent` 17→15, …). Three deliberate exclusions: sidebar
+  SIZES are not spacing (`sidebarAvatarSize`, `sidebarSearchTriggerHeight`, the two Menu widths stay —
+  shrinking them is a dimension change); the 4px stack rhythm stays 4/8/12/16/24, being the grid the
+  scale sits on (moving it reshapes every Prose/Callout/ArticleCard margin); and `SPACE.rowInsetX`/
+  `rowInsetY` stay 10/6, since that anchor is shared by the sidebar NavLink AND every Menu item, so
+  tightening it for the sidebar tightens menus app-wide — the opposite direction from the rest. If the
+  sidebar still reads loose, that anchor is the next lever, and the honest conclusion then is that the
+  NavLink row inset is wrong everywhere rather than that the sidebar needs a private copy. Two
+  consequences, both recorded at the source rather than papered over. `SPACE_SCALE` no longer coincides
+  with the anchor group at level 0 (`xs`/`sm`/`md`/`xl` used to equal `rowInsetX`/`stackMd`/`stackLg`/
+  `stackXl`) — always a coincidence, never a law, and this is what proves the two groups move
+  independently, so the doc comments and `tokens/density.test.ts`'s independence assertion are updated
+  to the stronger form. And `appShellHeaderMobileHeight` went 96 → **97**: it is documented as a SUM
+  (row 1 + `SPACE_SCALE.sm` + `appHeaderMobileActionsHeight`), so raising the `sm` addend without
+  raising the total took the pixel out of row 1 instead — surfacing as row 1's WCAG 2.5.8 target-size
+  budget at density −3 going flush against its 22px floor. Restoring the sum restores the 1px margin
+  (budgets 23/26/28/32/36/38/41 across the range). Both that constant's JSDoc and the assertion that
+  measures it now name the real fix: compute the header from its addends the way
+  `stickyHeaderClearance*` already is, so the drift becomes impossible rather than re-tuned — a
+  follow-up only because it moves every non-zero level's value. `theme/spacing.test.ts`'s doc header
+  was rewritten to match its actual job: it locks the CURRENT identity, updating it is how a deliberate
+  retune lands AND how a regression would hide, so a diff to it must be a decision taken on purpose in
+  the same commit as the base-table edit.
 
 **Known limitations:**
 
@@ -187,11 +257,6 @@ darkLevel, vibrancy, accentBrightness } })`. Omitted knobs fall back to the ship
 - `stone`/`slate`/`neutral` are spec'd `NEUTRAL_PRESETS` entries (hue/chroma pairs) but have no
   calibration data behind them — only `zinc` is calibrated against the framework's original
   hand-tuned identity.
-- `DeriveControls`'s dev-tool `<style>` override can only move CSS vars, so numeric Mantine
-  `defaultProps` baked into the theme object (Timeline's `bulletSize`, Progress's `size`) — and
-  `theme.spacing` itself, the generic Mantine `xs`/`sm`/`md`/`lg`/`xl` scale, baked in the same
-  way — don't follow the Radius/Density sliders; production `createBasaltTheme({ radius, density
-  })` rebuilds all of those numbers correctly from the same law.
 - Chart constants (`VX.legendGap`/`margin`/`dotR`) are single-sourced off `SPACE_STEP`'s
   `chartLegendGap`/`chartMargin*`/`chartDotR` keys, but — unlike every other density-tracking
   one-off — deliberately have NO `--vx-space-*` CSS var (visx SVG props read plain JS numbers, not
