@@ -170,4 +170,34 @@ describe('evaluateGuardHook', () => {
     )
     expect(result.permissionDecision).toBe('deny')
   })
+
+  it('allows a write whose only findings are warnings', () => {
+    // A grace-minor kind must not block an edit, or the grace period would be the STRICTEST gate
+    // in the toolchain: CI green, hook refusing the write.
+    const result = evaluateGuardHook(
+      {
+        tool_name: 'Write',
+        tool_input: { file_path: 'src/Page.tsx', file_text: "const c = '#abc123'" },
+      },
+      { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' } },
+    )
+    expect(result.permissionDecision).toBe('allow')
+  })
+
+  it('denies on the error when a payload mixes warn and error kinds, listing only the error', () => {
+    const result = evaluateGuardHook(
+      {
+        tool_name: 'Write',
+        tool_input: {
+          file_path: 'src/Page.tsx',
+          file_text: "const C = () => <div style={{ color: '#abc123', gap: 12 }} />",
+        },
+      },
+      { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' } },
+    )
+    expect(result.permissionDecision).toBe('deny')
+    expect(result.reason).toContain('inline-spacing')
+    // The warn-tier kind is absent from the deny reason — it is not what blocked the write.
+    expect(result.reason).not.toContain('raw-hex')
+  })
 })

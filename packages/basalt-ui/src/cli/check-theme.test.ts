@@ -684,3 +684,42 @@ describe('check-theme comment skipping', () => {
     expect(err).toContain('raw-visx-axis')
   })
 })
+
+describe('severity — warnings report, errors fail', () => {
+  const RAW_HEX = `export const C = () => <div style={{ color: '#ff0000' }} />`
+
+  it('exits 1 on an error kind (the default)', () => {
+    fixture(RAW_HEX)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('✖ Theme guard')
+    expect(err).toContain('raw-hex')
+  })
+
+  it('exits 0 when the only findings are warnings, and still prints them', () => {
+    // The whole point of the grace minor: the consumer takes the upgrade on a green build and
+    // schedules the fix, rather than the release scheduling it for them. This case is the OTHER
+    // origin of a warning — a consumer override — so the heading must not promise promotion.
+    fixture(RAW_HEX, { roots: ['src'], severity: { 'raw-hex': 'warn' } })
+    const { code, err } = run()
+    expect(code).toBe(0)
+    expect(err).toContain('⚠ Theme guard')
+    expect(err).toContain('reported, not fatal')
+    expect(err).toContain('raw-hex')
+    expect(err).not.toContain('✖ Theme guard')
+  })
+
+  it('still fails when errors accompany warnings, and reports both blocks', () => {
+    fixture(`export const C = () => <div style={{ color: '#ff0000' }} p={18} />`, {
+      roots: ['src'],
+      spacingSteps: [18],
+      severity: { 'raw-hex': 'warn' },
+    })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('⚠ Theme guard')
+    expect(err).toContain('✖ Theme guard')
+    // Warnings first — "what will break later" is the less urgent read.
+    expect(err.indexOf('⚠ Theme guard')).toBeLessThan(err.indexOf('✖ Theme guard'))
+  })
+})
