@@ -1,3 +1,19 @@
+# [1.3.0](https://github.com/jkrumm/basalt-ui/compare/v1.2.0...v1.3.0) (2026-07-27)
+
+
+### Bug Fixes
+
+* realign the spacing guard with the retuned scale and CSS reality ([dc6918a](https://github.com/jkrumm/basalt-ui/commit/dc6918a8e5753ce6b5ebb187ccc97421293a0014))
+* stop styles.css reaching past the framework's own chrome ([24f66dc](https://github.com/jkrumm/basalt-ui/commit/24f66dc0e0bb9bd8386235ee3a9e2974eb6b452c))
+
+
+### Features
+
+* add a core-only spacing emission mode to buildPaletteCss ([1a3d59b](https://github.com/jkrumm/basalt-ui/commit/1a3d59bb1558bb66771d3a51295993ab18084015))
+* let buildPaletteCss target a custom color-scheme selector ([944a674](https://github.com/jkrumm/basalt-ui/commit/944a674c02a47b32c6badf7a2e000e4b0ccb26b3))
+* make the react and mantine peers optional ([841f88f](https://github.com/jkrumm/basalt-ui/commit/841f88fdfed2ba946a72921b231bcdc427af173c))
+* ship a prebuilt tokens.css and a tokens:css subcommand ([b23aca3](https://github.com/jkrumm/basalt-ui/commit/b23aca32b81cf4c9d580562cfc46b89a9c5a38da))
+
 # [1.2.0](https://github.com/jkrumm/basalt-ui/compare/v1.1.1...v1.2.0) (2026-07-27)
 
 
