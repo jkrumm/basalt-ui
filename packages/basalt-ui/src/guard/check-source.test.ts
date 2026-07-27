@@ -8,6 +8,7 @@
  * src/cli/check-theme.test.ts (temp-dir + exit-code contract).
  */
 import { describe, expect, it } from 'bun:test'
+import { pxRem } from '../tokens'
 import { SPACE_SCALE } from '../tokens/palette'
 import { checkSource, DEFAULT_GUARD_CONFIG } from './index'
 import type { Finding, GuardKind } from './types'
@@ -1172,12 +1173,53 @@ describe('CSS applicability', () => {
     expect(cssSpacing('padding: 2em')).toEqual(['inline-spacing'])
   })
 
+  it('reads a CSS number without its integer part, and one carrying an explicit +', () => {
+    // `.75rem` IS `0.75rem` and `+12px` IS `12px`. Requiring a leading digit skipped both — the
+    // same silent skip the `0.` guard was fixed for, one spelling over.
+    expect(cssSpacing('padding: .75rem')).toEqual(['inline-spacing'])
+    expect(cssSpacing('padding: +12px')).toEqual(['inline-spacing'])
+    // …and the sub-scale escape resolves them the same way: .5rem is 8px, below the floor.
+    expect(cssSpacing('padding: .5rem')).toEqual([])
+  })
+
+  it('does NOT read a custom property whose NAME ends in a spacing word', () => {
+    // A `\b` boundary sits inside a hyphenated identifier, so these matched as declarations. The
+    // first is real generated output from the token layer; the second is the shape a consumer
+    // writes. A custom property is a definition, not a rendered spacing decision.
+    expect(cssSpacing('--vx-space-article-header-padding-bottom: 20px')).toEqual([])
+    expect(cssSpacing('--card-padding-inline: 20px')).toEqual([])
+    expect(cssSpacing('--card-gap: 20px')).toEqual([])
+    // The declaration itself still flags — the fix narrows the boundary, it does not disarm it.
+    expect(cssSpacing('padding-bottom: 20px')).toEqual(['inline-spacing'])
+    expect(cssSpacing('padding-inline: 20px')).toEqual(['inline-spacing'])
+  })
+
+  it('stays case-sensitive — neither dialect spells a property `Padding-Top`', () => {
+    // Pins the decision documented above BOX_SIDE_KEBAB: unifying the two spellings with an `i`
+    // flag would be the short way and would also match casings that are not properties at all.
+    expect(cssSpacing('Padding-Top: 18px')).toEqual([])
+    expect(cssSpacing('PADDING: 18px')).toEqual([])
+  })
+
   it('keeps the default spacing steps in lockstep with the real scale', () => {
     // The guard's copy of the xs..xl ladder drifted once already (it still read 10/12/16/20/32
     // after the level-0 retune, so `p={16}` was flagged in favour of a `p="md"` worth 18, and the
     // genuine `p={18}` went unflagged). The copy exists to keep the headless core one file; this
     // asserts it stays honest.
     expect(DEFAULT_GUARD_CONFIG.spacingSteps).toEqual(Object.values(SPACE_SCALE))
+  })
+
+  it('resolves rem against the same root the token layer converts against', () => {
+    // The guard keeps its own copy of the 16px root to stay dependency-free. The spacing-steps copy
+    // beside it drifted in production once; this pins the relationship rather than the number, so a
+    // token layer that ever moved off a 16px root would fail here instead of silently disagreeing.
+    // 10px is the ceiling; 12px is the first value above it. Expressed through `pxRem` so the
+    // literals here follow the token layer's conversion rather than restating it.
+    expect(cssSpacing(`padding: ${pxRem(10)}`)).toEqual([])
+    expect(cssSpacing(`padding: ${pxRem(12)}`)).toEqual(['inline-spacing'])
+    // The px spellings of the same two values must land identically.
+    expect(cssSpacing('padding: 10px')).toEqual([])
+    expect(cssSpacing('padding: 12px')).toEqual(['inline-spacing'])
   })
 
   it('keeps the ceiling below the smallest scale stop, so it can never strand a real token', () => {
@@ -1235,6 +1277,79 @@ describe('CSS applicability', () => {
       DEFAULT_GUARD_CONFIG,
     )
     expect(kinds(f)).not.toContain('localstorage-theme')
+  })
+
+  // ── Kebab longhands and logical properties ──────────────────────────────────
+  //
+  // The alternation was camelCase-only, so a CSS module got the scan for `padding` and not for
+  // `padding-top` beside it. Nothing decided that; it fell out of a pattern written for TSX inline
+  // styles. Logical properties are included because that is what modern CSS in this repo writes.
+
+  it('flags kebab longhands at scale values', () => {
+    expect(cssSpacing(`padding-top: ${SPACE_SCALE.md}px`)).toEqual(['inline-spacing'])
+    expect(cssSpacing(`margin-bottom: ${SPACE_SCALE.lg}px`)).toEqual(['inline-spacing'])
+    expect(cssSpacing(`row-gap: ${SPACE_SCALE.lg}px`)).toEqual(['inline-spacing'])
+    expect(cssSpacing(`column-gap: ${SPACE_SCALE.xl}px`)).toEqual(['inline-spacing'])
+  })
+
+  it('flags logical properties, including the -start/-end forms', () => {
+    for (const prop of [
+      'padding-block',
+      'padding-inline',
+      'margin-block',
+      'margin-inline',
+      'padding-inline-start',
+      'margin-block-end',
+    ]) {
+      expect(cssSpacing(`${prop}: ${SPACE_SCALE.xl}px`)).toEqual(['inline-spacing'])
+    }
+  })
+
+  it('extends the sub-scale escape to the longhands too — same rule, both spellings', () => {
+    expect(cssSpacing('padding-top: 4px')).toEqual([])
+    expect(cssSpacing('margin-inline: 8px')).toEqual([])
+  })
+
+  it('flags the camelCase logical properties in a TSX inline style', () => {
+    expect(
+      kinds(checkSource('<Box style={{ paddingInlineStart: 18 }} />', PATH, DEFAULT_GUARD_CONFIG)),
+    ).toContain('inline-spacing')
+  })
+
+  // ── The `0.` blind spot ─────────────────────────────────────────────────────
+  //
+  // The zero-guard was `(?!0\b)`, and `\b` sits between `0` and `.` — so every value starting `0.`
+  // matched the guard meant for a bare zero and dropped out of the scan entirely.
+
+  it('sees values starting `0.` at all', () => {
+    // 12px — a real spacing value that was previously invisible, not merely tolerated.
+    expect(cssSpacing('padding: 0.75rem')).toEqual(['inline-spacing'])
+  })
+
+  it('still excuses a genuine zero', () => {
+    expect(cssSpacing('padding: 0')).toEqual([])
+    expect(cssSpacing('padding: 0px')).toEqual([])
+  })
+
+  it('resolves rem against the 16px root, so both spellings of one value agree', () => {
+    // 0.25rem IS 4px. Accepting one spelling and flagging the other is the same arbitrariness the
+    // kebab gap produced.
+    expect(cssSpacing('padding: 0.25rem')).toEqual([])
+    expect(cssSpacing('padding: 4px')).toEqual([])
+    // The ceiling lands in the same place either way: 0.625rem = 10px, 0.75rem = 12px.
+    expect(cssSpacing('padding: 0.625rem')).toEqual([])
+    expect(cssSpacing('padding: 0.75rem')).toEqual(['inline-spacing'])
+  })
+
+  it('leaves units it cannot resolve without layout context alone', () => {
+    for (const value of ['2em', '5%', '3ch', '2vw']) {
+      expect(cssSpacing(`padding: ${value}`)).toEqual(['inline-spacing'])
+    }
+  })
+
+  it('keeps the mixed-value and var() rules unchanged under the wider pattern', () => {
+    expect(cssSpacing('padding: 4px 16px')).toEqual(['inline-spacing'])
+    expect(cssSpacing('padding-inline: 4px var(--vx-space-stack-xs)')).toEqual([])
   })
 })
 

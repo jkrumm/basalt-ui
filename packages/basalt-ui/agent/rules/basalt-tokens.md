@@ -111,11 +111,13 @@ Popover, Accordion, cards) renders one border shade, one card background, and on
   micro-tokens or pepper `theme-allow`. One-off layout dims (`h={36}`, `w={64}`) are also fine raw.
   **The same permission holds in CSS modules**, where it has to be enforced differently: there is no
   prop form to prefer, so `inline-spacing` simply does not fire on a declaration whose every literal
-  is ≤ 10px (`gap: 2px`, `padding: 4px 8px`). A `var()` component is dropped before that judgement;
-  one non-micro value makes the whole declaration a finding (`padding: 4px 16px` flags). Other units
-  are out — the doctrine is px, so `padding: 1.5rem` still flags. An inline style OBJECT in TSX
-  (`style={{ padding: 4 }}`) also still flags: there the Mantine prop exists and should have been
-  used.
+  is ≤ 10px (`gap: 2px`, `padding: 4px 8px`). It reads longhands and logical properties too
+  (`padding-top`, `margin-inline`, `row-gap`, `padding-inline-start`), not just the shorthands.
+  `rem` resolves against the 16px root, so `0.25rem` and `4px` get the same answer; units that need
+  layout context (`em`, `%`, `ch`, `vw`) are not micro-spacing claims and flag. A `var()` component
+  is dropped before that judgement; one non-micro value makes the whole declaration a finding
+  (`padding: 4px 16px` flags). An inline style OBJECT in TSX (`style={{ padding: 4 }}`) also still
+  flags: there the Mantine prop exists and should have been used.
 - **Icons** size via the icon's own `size` prop (`size={16}`), not spacing tokens — that's not spacing.
 
 ## Type
