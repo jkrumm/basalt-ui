@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { buildPaletteCss } from '../src/tokens'
+import { SPACE, SPACE_STEP } from '../src/tokens/palette'
 
 const FIXTURE = join(import.meta.dir, 'fixtures', 'palette-default.css')
 
@@ -115,6 +116,10 @@ describe('buildPaletteCss color-scheme selector', () => {
     expect(css).toContain('@media (prefers-color-scheme: light) {')
   })
 
+  it('leaves the legacy selector alone — `only` is orthogonal to the scheme options', () => {
+    expect(buildPaletteCss({ only: 'core' })).toContain("html[data-mantine-color-scheme='dark']")
+  })
+
   it('carries consumer `groups` into every emitted scheme block', () => {
     const css = buildPaletteCss({
       scheme: { attribute: 'data-theme' },
@@ -123,5 +128,46 @@ describe('buildPaletteCss color-scheme selector', () => {
       groups: { '': { hrv: { light: '#111111', dark: '#eeeeee' } } },
     })
     expect([...css.matchAll(/--vx-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
+  })
+})
+
+/** Every distinct `--vx-*` name in an emitted stylesheet. */
+function varNames(css: string): Set<string> {
+  return new Set([...css.matchAll(/--vx-([\w-]+):/g)].map((m) => m[1] as string))
+}
+
+/** camelCase key → the `--vx-space-*` suffix `spaceDecls` emits for it. */
+const spaceVar = (key: string): string =>
+  `space-${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`
+
+describe('buildPaletteCss core-only spacing', () => {
+  const all = varNames(buildPaletteCss())
+  const core = varNames(buildPaletteCss({ only: 'core' }))
+
+  it("`only: 'all'` is the default and changes nothing", () => {
+    expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
+  })
+
+  it('drops 95 of the 104 spacing variables, taking the set from 197 to 102', () => {
+    expect(all.size).toBe(197)
+    expect(core.size).toBe(102)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(104)
+    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(9)
+  })
+
+  it('keeps exactly the SPACE anchors — the partition tracks the constants, not a list', () => {
+    const kept = [...core].filter((n) => n.startsWith('space-')).toSorted()
+    expect(kept).toEqual(Object.keys(SPACE).map(spaceVar).toSorted())
+  })
+
+  it('drops every SPACE_STEP one-off, so a new one is excluded the day it is added', () => {
+    const stepVars = new Set(Object.keys(SPACE_STEP).map(spaceVar))
+    expect([...core].filter((n) => stepVars.has(n))).toEqual([])
+  })
+
+  it('touches spacing only — color, radius, type and status are identical', () => {
+    const dropped = [...all].filter((n) => !core.has(n))
+    expect(dropped.every((n) => n.startsWith('space-'))).toBe(true)
+    expect(dropped).toHaveLength(95)
   })
 })

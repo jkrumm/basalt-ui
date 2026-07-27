@@ -53,6 +53,15 @@ describe('tokens:css', () => {
     )
   })
 
+  it('forwards --only core', () => {
+    expect(emit(['--only', 'core'])).toBe(buildPaletteCss({ only: 'core' }))
+  })
+
+  it('rejects an unknown --only instead of silently emitting everything', () => {
+    expect(tokensCss(['--only', 'spacing', '--out', 'out.css'], dir)).toBe(1)
+    expect(existsSync(resolve(dir, 'out.css'))).toBe(false)
+  })
+
   it('creates the parent directory of --out', () => {
     const css = emit([], 'nested/deep/tokens.css')
     expect(css.startsWith(':root {')).toBe(true)
