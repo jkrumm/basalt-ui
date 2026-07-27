@@ -8,6 +8,7 @@
  * src/cli/check-theme.test.ts (temp-dir + exit-code contract).
  */
 import { describe, expect, it } from 'bun:test'
+import { SPACE_SCALE } from '../tokens/palette'
 import { checkSource, DEFAULT_GUARD_CONFIG } from './index'
 import type { Finding, GuardKind } from './types'
 
@@ -155,17 +156,15 @@ describe('off-identity-accent', () => {
 // ── 5. raw-spacing ───────────────────────────────────────────────────────────
 
 describe('raw-spacing', () => {
-  it('flags p={16} (default spacing step)', () => {
-    const f = find(`<Box p={16} />`)
-    expect(kinds(f)).toContain('raw-spacing')
+  // Interpolated from the real scale, never typed as literals: the previous versions of these tests
+  // hardcoded 16 and 12 and so PASSED against a guard whose step list had gone stale — they encoded
+  // the drift instead of catching it.
+  it('flags a prop value equal to a scale step', () => {
+    expect(kinds(find(`<Box p={${SPACE_SCALE.md}} />`))).toContain('raw-spacing')
+    expect(kinds(find(`<Stack gap={${SPACE_SCALE.sm}} />`))).toContain('raw-spacing')
   })
 
-  it('flags gap={12}', () => {
-    const f = find(`<Stack gap={12} />`)
-    expect(kinds(f)).toContain('raw-spacing')
-  })
-
-  it('does NOT flag p={8} (not a default step)', () => {
+  it('does NOT flag p={8} (sub-scale micro-spacing, no token to prefer)', () => {
     const f = find(`<Box p={8} />`)
     expect(kinds(f)).not.toContain('raw-spacing')
   })
@@ -176,7 +175,7 @@ describe('raw-spacing', () => {
   })
 
   it('does NOT flag a theme-allow line', () => {
-    const f = find(`<Box p={16} /> // theme-allow`)
+    const f = find(`<Box p={${SPACE_SCALE.md}} /> // theme-allow`)
     expect(kinds(f)).not.toContain('raw-spacing')
   })
 })
@@ -1132,11 +1131,69 @@ describe('CSS applicability', () => {
 
   it('still flags inline-spacing on a genuine CSS padding/margin/gap declaration (the pattern is CSS-shaped, not JSX-only, despite the name)', () => {
     const f = checkSource(
-      '.foo {\n  padding: 8px;\n  margin: 4px;\n  gap: 8px;\n}\n',
+      '.foo {\n  padding: 18px;\n  margin: 13px;\n  gap: 26px;\n}\n',
       'src/Card.module.css',
       DEFAULT_GUARD_CONFIG,
     )
     expect(kinds(f).filter((k) => k === 'inline-spacing')).toHaveLength(3)
+  })
+
+  // ── The CSS-only sub-scale escape ───────────────────────────────────────────
+  //
+  // basalt-tokens.md blesses 2-8px micro-spacing raw, but that permission only ever held for JSX
+  // PROPS: `pl={4}` is not a `prop: value` pair and never matched the pattern. In CSS every
+  // declaration is `prop: value`, so a consumer's 4px cluster gap was flagged with nothing legal to
+  // do about it — no token exists below the scale floor, and `exemptRules` matches whole path
+  // segments so it cannot express `*.module.css`.
+
+  const cssSpacing = (decl: string): GuardKind[] =>
+    kinds(
+      checkSource(`.foo {\n  ${decl};\n}\n`, 'src/Card.module.css', DEFAULT_GUARD_CONFIG),
+    ).filter((k) => k === 'inline-spacing')
+
+  it('does NOT flag sub-scale micro-spacing in CSS — there is no token to prefer below the floor', () => {
+    for (const decl of ['gap: 2px', 'padding: 4px', 'margin-bottom: 6px', 'padding: 8px']) {
+      expect(cssSpacing(decl)).toEqual([])
+    }
+  })
+
+  it('judges a multi-value shorthand as a whole', () => {
+    expect(cssSpacing('padding: 4px 8px')).toEqual([])
+    // 16px has a scale stop; one non-micro component makes the whole declaration a finding.
+    expect(cssSpacing('padding: 4px 16px')).toEqual(['inline-spacing'])
+  })
+
+  it('drops var() components before judging — a mixed value is already tokenized where it counts', () => {
+    expect(cssSpacing('padding: 4px var(--vx-space-stack-xs)')).toEqual([])
+  })
+
+  it('does not extend the escape to other units — the doctrine is stated in px', () => {
+    expect(cssSpacing('padding: 1.5rem')).toEqual(['inline-spacing'])
+    expect(cssSpacing('padding: 2em')).toEqual(['inline-spacing'])
+  })
+
+  it('keeps the default spacing steps in lockstep with the real scale', () => {
+    // The guard's copy of the xs..xl ladder drifted once already (it still read 10/12/16/20/32
+    // after the level-0 retune, so `p={16}` was flagged in favour of a `p="md"` worth 18, and the
+    // genuine `p={18}` went unflagged). The copy exists to keep the headless core one file; this
+    // asserts it stays honest.
+    expect(DEFAULT_GUARD_CONFIG.spacingSteps).toEqual(Object.values(SPACE_SCALE))
+  })
+
+  it('keeps the ceiling below the smallest scale stop, so it can never strand a real token', () => {
+    // The relationship, not the number: if a density retune moves SPACE_SCALE.xs, this still holds.
+    expect(cssSpacing(`gap: ${SPACE_SCALE.xs}px`)).toEqual(['inline-spacing'])
+    expect(cssSpacing(`gap: ${SPACE_SCALE.xs - 1}px`)).toEqual([])
+  })
+
+  it('leaves TSX untouched — an inline style object still has a prop form to prefer', () => {
+    // `pl={4}` is a prop and never matched; `style={{ padding: 4 }}` did, and still should.
+    expect(
+      kinds(checkSource('<Box style={{ padding: 4 }} />', PATH, DEFAULT_GUARD_CONFIG)),
+    ).toContain('inline-spacing')
+    expect(kinds(checkSource('<Box pl={4} />', PATH, DEFAULT_GUARD_CONFIG))).not.toContain(
+      'inline-spacing',
+    )
   })
 
   it('does NOT false-positive raw-form-control on a CSS element selector (input, select, textarea)', () => {
