@@ -49,3 +49,79 @@ describe('buildPaletteCss default output', () => {
     expect(buildPaletteCss({ groups: {}, derived: [] })).toBe(fixture)
   })
 })
+
+/** Every `--vx-*` name declared inside the block a selector opens, in source order. */
+function blockOf(css: string, selector: string): string {
+  const start = css.indexOf(`${selector} {`)
+  expect(start).toBeGreaterThanOrEqual(0)
+  return css.slice(start, css.indexOf('\n}', start))
+}
+
+describe('buildPaletteCss color-scheme selector', () => {
+  it('switches to `:root[…]` and honours a custom attribute', () => {
+    const css = buildPaletteCss({ scheme: { attribute: 'data-theme' } })
+    expect(css).toContain(":root[data-theme='dark']")
+    expect(css).toContain(":root[data-theme='light']")
+    expect(css).not.toContain('html[')
+  })
+
+  it('honours custom attribute VALUES', () => {
+    const css = buildPaletteCss({ scheme: { attribute: 'data-mode', darkValue: 'night' } })
+    expect(css).toContain(":root[data-mode='night']")
+    // An unset value keeps its default rather than inheriting the other one.
+    expect(css).toContain(":root[data-mode='light']")
+  })
+
+  it("defaults to Mantine's attribute at `:root` specificity when only `defaultScheme` is set", () => {
+    const css = buildPaletteCss({ defaultScheme: 'light' })
+    expect(css).toContain(":root[data-mantine-color-scheme='light']")
+    expect(css).not.toContain('html[')
+  })
+
+  it('`defaultScheme: "light"` puts light on the bare `:root`', () => {
+    const css = buildPaletteCss({ scheme: { attribute: 'data-theme' }, defaultScheme: 'light' })
+    // The light block absorbs the bare `:root`; dark is attribute-only.
+    expect(css).toContain(":root,\n:root[data-theme='light'] {")
+    expect(css).toContain(":root[data-theme='dark'] {")
+    expect(css).not.toContain(":root,\n:root[data-theme='dark']")
+    // …and it wins: light's surface value is what an unattributed document resolves.
+    expect(blockOf(css, ":root,\n:root[data-theme='light']")).toContain('--vx-surface-bg')
+  })
+
+  it('`defaultScheme: "none"` leaves the bare `:root` carrying only the scalars', () => {
+    const css = buildPaletteCss({ scheme: { attribute: 'data-theme' }, defaultScheme: 'none' })
+    expect(css).not.toContain(':root,\n')
+    expect(css).toContain(":root[data-theme='dark'] {")
+    expect(css).toContain(":root[data-theme='light'] {")
+    // The theme-independent scalars stay on `:root`; no per-scheme primitive joins them.
+    const root = blockOf(css, ':root')
+    expect(root).toContain('--vx-radius-card')
+    expect(root).not.toContain('--vx-surface-bg')
+  })
+
+  it('emits an OS fallback for every non-default scheme, ahead of its attribute block', () => {
+    const css = buildPaletteCss({ defaultScheme: 'dark', mediaFallback: true })
+    // Dark rides `:root`, so the fallback covers light only.
+    expect(css).toContain('@media (prefers-color-scheme: light) {')
+    expect(css).not.toContain('@media (prefers-color-scheme: dark) {')
+    expect(css.indexOf('@media')).toBeLessThan(
+      css.indexOf(":root[data-mantine-color-scheme='light'] {"),
+    )
+  })
+
+  it('`defaultScheme: "none"` + `mediaFallback` covers both schemes', () => {
+    const css = buildPaletteCss({ defaultScheme: 'none', mediaFallback: true })
+    expect(css).toContain('@media (prefers-color-scheme: dark) {')
+    expect(css).toContain('@media (prefers-color-scheme: light) {')
+  })
+
+  it('carries consumer `groups` into every emitted scheme block', () => {
+    const css = buildPaletteCss({
+      scheme: { attribute: 'data-theme' },
+      defaultScheme: 'none',
+      mediaFallback: true,
+      groups: { '': { hrv: { light: '#111111', dark: '#eeeeee' } } },
+    })
+    expect([...css.matchAll(/--vx-hrv:/g)]).toHaveLength(4) // 2 attribute blocks + 2 media blocks
+  })
+})
