@@ -108,9 +108,17 @@ false` are required.
 
 - **deps**: 9 `@visx/*` pinned **exact** at stable `4.0.0` (`axis`, `curve`, `event`, `grid`,
   `group`, `responsive`, `scale`, `shape`, `threshold`).
-- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`. Battery
-  subpaths declare their own **optional** peers (e.g. `@tanstack/*`, `@mantine/form|modals|notifications|spotlight`,
-  `vite`, the markdown trio) — see `AGENTS.md`.
+- **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
+  `@tanstack/react-query` `^5.101`. Battery subpaths declare their own peers (e.g. `@tanstack/*`,
+  `@mantine/form|modals|notifications|spotlight`, `vite`, the markdown trio) — see `AGENTS.md`.
+- **Every peer is `optional` in `peerDependenciesMeta`**, including the five the root `.` entry
+  hard-requires at build time. npm expresses optionality per PACKAGE, never per SUBPATH, and
+  `./tokens` / `./charts` / `./state` / `./guard` really do resolve with none of them installed — so
+  requiring them would charge a framework-free consumer ~79 packages it never loads. The trade: a
+  `.` consumer missing one gets a bundler resolution error instead of an install-time warning.
+  Version-mismatch warnings are unaffected and must stay that way — `optional` only suppresses the
+  MISSING-peer check, so every one of the five stays listed in `peerDependencies`
+  (`tests/required-peers.test.ts` pins both halves).
 - **`motion`** pinned exact at `12.42.0` — the framework's one animation dependency (bundled
   implementation detail of shipped components, same precedent as `@visx/*`; not a peer). See
   "Motion" below.
