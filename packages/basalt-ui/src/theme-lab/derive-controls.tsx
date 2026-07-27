@@ -6,29 +6,34 @@
  *
  * This is the DEV-tool path — for a PRODUCTION theme, pass `{ derive }` / `{ radius }` / `{ density }`
  * to `createBasaltTheme` instead (see its JSDoc in `../theme`); that is the one place a consumer sets
- * the palette identity for real, and everything else (Mantine color ramps, on-color contrast, the
- * CSS variables resolver, `BasaltProvider`'s injected stylesheet, AND the Mantine `defaultProps`
- * numbers baked into the theme object) follows automatically. This component is for live-tweaking a
- * config by eye during development, not for shipping one — its `<style>` override can only move the
- * `--vx-radius-*`/`--vx-space-*` CSS vars, so a component's own hardcoded numeric `defaultProps`
- * (e.g. Tooltip's `radius: 8`, Timeline's `bulletSize`, Progress's `size`) will NOT visibly follow
- * the Radius/Density sliders here — neither will `theme.spacing` itself (the generic Mantine
- * `xs`/`sm`/`md`/`lg`/`xl` scale, baked into the theme object as rem strings, with no
- * `--vx-space-scale-*`/`--mantine-spacing-*` var for this `<style>` override to reach); `createBasaltTheme({
- * radius, density })` is what covers all of it.
+ * the palette identity for real. This component is for live-tweaking a config by eye during
+ * development, not for shipping one.
  *
- * The gap is BIGGER than that handful of `defaultProps`, and one piece of it is NOT theme-lab-only.
+ * It applies a config through BOTH halves of the theme, because a knob's reach spans both:
+ *
+ * 1. **CSS vars** — a `<style>` tag (see {@link applyDeriveOverride} below) for every `--vx-*` the
+ *    palette / radius / density builders emit.
+ * 2. **The theme OBJECT** — `BasaltProvider` reads this same persisted store and rebuilds a real
+ *    theme via `createBasaltTheme(undefined, { derive, radius, density })`, so `theme.radius` /
+ *    `theme.spacing` (the generic Mantine `xs`..`xl` scales — every `p="md"` / `gap="sm"` in the app)
+ *    and the numeric `defaultProps` baked in by `buildTheme` (Badge / SegmentedControl / Progress /
+ *    Tooltip / Popover / Modal / Notification `radius`, Progress's `size`, Timeline's `bulletSize`)
+ *    follow the sliders too. See `../provider/lab-theme.ts` — it merges only the DELTA the config
+ *    makes against the shipped base, so a consumer's own theme overrides survive. A `<style>` tag
+ *    alone could never reach a number inside a JS object: the sliders used to move the CSS-var
+ *    surfaces and leave the generic Mantine scales at level 0, which made the tool under-report its
+ *    own knobs unevenly across surfaces (the CSS-module-heavy app sidebar moved most, plain Mantine
+ *    layout not at all) — precisely the reading a retune is judged by.
+ *
+ * ONE gap remains, and it is NOT theme-lab-only — it fails the PRODUCTION path identically.
  * `tokens/index.ts`'s `VX` object (`VX.legendGap`/`VX.margin`/`VX.dotR` — chart legend gap, plot-area
  * margins, data-point marker radius) is computed ONCE at module load from the STATIC level-0
- * `SPACE_STEP` snapshot, not re-derived per `SpaceValues`. That means chart geometry fails to follow
- * a retuned density BOTH here (this dev slider, expected — it only moves CSS vars) AND on the
- * PRODUCTION `createBasaltTheme({ density })` path (NOT expected — every other density-anchored
- * number on that path, including the `defaultProps` above, DOES rebuild correctly; `VX.*` is the one
- * exception, because visx SVG props read it as a plain JS number at import time, before any
- * `density` option exists to retune it against). See `deriveSpacing`'s JSDoc (`tokens/palette.ts`)
- * for the full accounting of what tracks density and what doesn't, and why.
+ * `SPACE_STEP` snapshot, not re-derived per `SpaceValues`, because visx SVG props read it as a plain
+ * JS number at import time, before any `density` option exists to retune it against. So chart
+ * geometry follows neither this slider nor `createBasaltTheme({ density })`. See `deriveSpacing`'s
+ * JSDoc (`tokens/palette.ts`) for the full accounting of what tracks density and what doesn't, and why.
  *
- * Overrides apply through a `<style>` tag appended to the END of `<body>`, using the exact same
+ * The CSS half applies through a `<style>` tag appended to the END of `<body>`, using the exact same
  * per-scheme selectors `buildPaletteCss` emits (`html[data-mantine-color-scheme='light'|'dark']`)
  * — equal CSS specificity, later in document order, so it wins the cascade tiebreak over
  * `BasaltProvider`'s own injected palette `<style>` (also rendered in `<body>`) without
@@ -36,7 +41,13 @@
  * mechanism (a head-appended tag loses the tiebreak — it sits earlier in document order).
  *
  * Persisted to its own localStorage key/version, Standard-Schema-guarded so a corrupt envelope can
- * never throw during render (falls back to the default config instead).
+ * never throw during render (falls back to the default config instead) — see `./derive-state`, the
+ * Mantine-free module that owns the store both halves above read.
+ *
+ * Now that the provider re-derives the palette from the same store, its injected `<style>` is a
+ * superset of this one (it also carries a consumer's `paletteOptions` groups) — this tag is kept
+ * because it is the only half that can apply BEFORE React mounts, which is what keeps a page reload
+ * from flashing the stock palette. Both emit the same values, so the tiebreak is a no-op.
  */
 import {
   Button,
@@ -48,34 +59,32 @@ import {
   Switch,
   Text,
 } from '@mantine/core'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { createPersistedState, readPersistedValue } from '../state'
 import { buildDensityCss, buildPaletteCss, buildRadiusCss } from '../tokens'
-import { DEFAULT_DERIVE_CONFIG, resolveDeriveConfig } from '../tokens/derive'
 import type { DeriveConfig } from '../tokens/derive'
 import { buildPaletteData, deriveRadius, deriveSpacing } from '../tokens/palette'
+import {
+  DEFAULT_STATE,
+  NEUTRAL_OPTIONS,
+  isAccentHex,
+  readAppliedDeriveOverride,
+  toDeriveOverride,
+  useDeriveControlsState,
+} from './derive-state'
+import type { DeriveOverride } from './derive-state'
+
+// The persisted state itself lives in `./derive-state` (Mantine-free) — `BasaltProvider` reads the
+// same store to rebuild the theme object. Re-exported here so this module stays the one public entry
+// point for the panel and its state shape.
+export { DEFAULT_STATE, parsePersistedDeriveState, type PersistedDeriveState } from './derive-state'
 
 const STYLE_TAG_ID = 'basalt-derive-controls-style'
-const STORAGE_KEY = 'theme-lab-derive'
-// v4: `deriveSpacing`'s accepted range narrowed from [-5, 5] to [-3, 3] (see that function's JSDoc,
-// tokens/palette.ts) — bumped so a v3 envelope holding an out-of-range `density` (e.g. 4 or -5) from
-// an earlier session fails validation and falls back to the default state instead of reaching
-// `deriveSpacing` at render and throwing (a live crash path, not a nicety).
-const STORAGE_VERSION = 4
 
-const NEUTRAL_OPTIONS = [
-  { label: 'Zinc', value: 'zinc' },
-  { label: 'Neutral', value: 'neutral' },
-  { label: 'Stone', value: 'stone' },
-  { label: 'Slate', value: 'slate' },
-]
-const NEUTRAL_VALUES = new Set(NEUTRAL_OPTIONS.map((o) => o.value))
 const LEVEL_MARKS = [-5, 0, 5].map((v) => ({ value: v, label: String(v) }))
 // Density's own, narrower range — see `deriveSpacing`'s JSDoc (`tokens/palette.ts`) for why it's
 // [-3, 3] while radius and the four color knobs stay [-5, 5].
 const DENSITY_LEVEL_MARKS = [-3, 0, 3].map((v) => ({ value: v, label: String(v) }))
-const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 
 const LEVEL_SLIDERS = [
   ['lightLevel', 'Light level'],
@@ -85,87 +94,6 @@ const LEVEL_SLIDERS = [
   ['radius', 'Radius'],
   ['density', 'Density'],
 ] as const
-
-/** Exported for `derive-controls.test.ts` — the v2→v3 migration test needs the shape + default. */
-export type PersistedDeriveState = DeriveConfig & {
-  applied: boolean
-  radius: number
-  density: number
-}
-
-export const DEFAULT_STATE: PersistedDeriveState = {
-  ...DEFAULT_DERIVE_CONFIG,
-  applied: false,
-  radius: 0,
-  density: 0,
-}
-
-const isLevel = (v: unknown): v is number =>
-  typeof v === 'number' && Number.isInteger(v) && v >= -5 && v <= 5
-
-// Density's own validator — narrower than `isLevel` above (see `DENSITY_LEVEL_MARKS`'s doc). Kept
-// separate rather than narrowing `isLevel` itself: radius and the four color knobs legitimately
-// still need the full [-5, 5] range.
-const isDensityLevel = (v: unknown): v is number =>
-  typeof v === 'number' && Number.isInteger(v) && v >= -3 && v <= 3
-
-/**
- * Validate + normalize a persisted envelope, or return null if it is unusable. Exported for
- * `derive-controls.test.ts` — the pure, headless seam to test the v1→v2 migration through: no DOM
- * render harness is configured in this package (see `../provider/build-fonts-css.test.ts`), so
- * `createPersistedState`'s full localStorage round-trip isn't reachable from a unit test, but this
- * is exactly the validator `parseStorage` (`../state`) falls back to `initial` from on a rejection
- * (this module passes no `migrate`, so a v1 envelope — pre-radius — hits this same rejection path).
- */
-export function parsePersistedDeriveState(value: unknown): PersistedDeriveState | null {
-  if (typeof value !== 'object' || value === null) return null
-  const v = value as Record<string, unknown>
-  const valid =
-    typeof v['accent'] === 'string' &&
-    HEX_RE.test(v['accent']) &&
-    typeof v['neutral'] === 'string' &&
-    NEUTRAL_VALUES.has(v['neutral']) &&
-    isLevel(v['lightLevel']) &&
-    isLevel(v['darkLevel']) &&
-    isLevel(v['vibrancy']) &&
-    isLevel(v['accentBrightness']) &&
-    isLevel(v['radius']) &&
-    isDensityLevel(v['density']) &&
-    typeof v['applied'] === 'boolean'
-  if (!valid) return null
-  return {
-    accent: v['accent'] as string,
-    neutral: v['neutral'] as DeriveConfig['neutral'],
-    lightLevel: v['lightLevel'] as number,
-    darkLevel: v['darkLevel'] as number,
-    vibrancy: v['vibrancy'] as number,
-    accentBrightness: v['accentBrightness'] as number,
-    radius: v['radius'] as number,
-    density: v['density'] as number,
-    applied: v['applied'] as boolean,
-  }
-}
-
-const useDeriveControlsState = createPersistedState<PersistedDeriveState>({
-  key: STORAGE_KEY,
-  version: STORAGE_VERSION,
-  initial: DEFAULT_STATE,
-  schema: {
-    '~standard': {
-      version: 1,
-      vendor: 'basalt-derive-controls',
-      validate: (value) => {
-        const parsed = parsePersistedDeriveState(value)
-        return parsed !== null
-          ? { value: parsed }
-          : { issues: [{ message: 'invalid persisted derive-controls state' }] }
-      },
-    },
-  },
-})
-
-/** The bundle {@link applyDeriveOverride} needs to build all three halves of the override CSS. */
-type DeriveOverride = { config: DeriveConfig; radiusLevel: number; densityLevel: number }
 
 /** Inject (or remove) the override `<style>` tag for a resolved config + radius level + density
  * level. `null` removes it. */
@@ -192,15 +120,10 @@ function applyDeriveOverride(override: DeriveOverride | null): void {
 // Chunk-load re-apply: re-inject a persisted `applied` override as soon as this module evaluates,
 // before React mounts, so a full page reload doesn't flash the stock palette before the effect
 // below runs. Inputs are fully validated by `parsePersistedDeriveState`, so this cannot throw.
+// (The theme-object half needs no such pre-pass — `BasaltProvider` reads the same store during its
+// FIRST render, so the numeric `defaultProps`/`spacing` are already at the right level.)
 if (typeof document !== 'undefined') {
-  const persisted = parsePersistedDeriveState(readPersistedValue(STORAGE_KEY, STORAGE_VERSION))
-  if (persisted !== null && persisted.applied) {
-    applyDeriveOverride({
-      config: resolveDeriveConfig(persisted),
-      radiusLevel: persisted.radius,
-      densityLevel: persisted.density,
-    })
-  }
+  applyDeriveOverride(readAppliedDeriveOverride())
 }
 
 export type DeriveControlsProps = {
@@ -228,37 +151,17 @@ export function DeriveControls({ resetIcon }: DeriveControlsProps) {
 
   const handleAccentChange = (value: string) => {
     setAccentDraft(value)
-    if (HEX_RE.test(value)) setState({ ...state, accent: value })
+    if (isAccentHex(value)) setState({ ...state, accent: value })
   }
-
-  const config = useMemo<DeriveConfig>(
-    () => ({
-      accent: state.accent,
-      neutral: state.neutral,
-      lightLevel: state.lightLevel,
-      darkLevel: state.darkLevel,
-      vibrancy: state.vibrancy,
-      accentBrightness: state.accentBrightness,
-    }),
-    [
-      state.accent,
-      state.neutral,
-      state.lightLevel,
-      state.darkLevel,
-      state.vibrancy,
-      state.accentBrightness,
-    ],
-  )
 
   // Owns exactly one DOM node (#basalt-derive-controls-style). No cleanup function on purpose:
   // unmounting this component (e.g. collapsing an accordion around it) must not tear the override
   // down while `applied` stays true — only this effect re-running with `applied === false` (toggle
-  // off, or Reset) removes it.
+  // off, or Reset) removes it. `state` is a referentially stable snapshot (see `../state`'s
+  // `createPersistedState`), so this runs once per write, not once per render.
   useEffect(() => {
-    applyDeriveOverride(
-      state.applied ? { config, radiusLevel: state.radius, densityLevel: state.density } : null,
-    )
-  }, [state.applied, config, state.radius, state.density])
+    applyDeriveOverride(toDeriveOverride(state))
+  }, [state])
 
   const reset = () => setState(DEFAULT_STATE)
 

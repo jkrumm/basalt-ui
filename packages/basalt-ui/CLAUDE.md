@@ -160,21 +160,34 @@ documented 2:1 pairs hold at every level, and the sidebar search trigger height 
 (WCAG 2.5.8) — `deriveSpacing(level)` in `tokens/palette.ts`, level 0 = today's values, locked by
 `theme/spacing.test.ts` and by cross-level relation tests in `theme/density-relations.test.ts`.
 `theme-lab`'s `DeriveControls` is the DEV-tool analog (live-tweak the color knobs + radius + density
-by eye, persisted to localStorage) — never the production path; its `<style>` override only moves
-CSS vars, so numeric `defaultProps` baked into the theme object (Timeline's `bulletSize`,
-Progress's `size`) — and `theme.spacing` itself, the generic Mantine scale, baked into the theme
-object the same way — don't visibly follow the Radius/Density sliders there, while
-`createBasaltTheme` rebuilds them correctly. Input's/Button's/ActionIcon's `size="md"` height is
-NOT in that bucket
-despite reading like the same shape of gap: it resolves through a CSS custom property
-(`--vx-space-input-height`/`--vx-space-control-height`, read via each component's `vars`, not a
-numeric `defaultProps` literal), so it DOES visibly follow the Density slider in the dev tool too,
-not only in production. One piece of the gap is bigger than the `defaultProps` case and NOT
-theme-lab-only: `tokens/index.ts`'s `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap,
-plot-area margins, marker radius) are frozen at module load from the level-0 snapshot and never
-re-derive from a `density` option even on the PRODUCTION `createBasaltTheme` path — see
-`deriveSpacing`'s JSDoc for the full accounting of what tracks density end to end and what doesn't.
-See `docs/STATUS.md`'s "Derive engine" section for what shipped and known limitations.
+by eye, persisted to localStorage) — never the production path, but a FAITHFUL one: it applies a
+config through both halves of the theme, so what you read off a slider is what
+`createBasaltTheme({ radius, density })` will ship. The CSS half is its own cascade-winning
+`<style>` tag; the theme-OBJECT half is `provider/lab-theme.ts` — `BasaltProvider` reads the same
+persisted store (`theme-lab/derive-state.ts`, deliberately Mantine-free so the root layer doesn't
+pull the panel UI) and rebuilds a real theme via `createBasaltTheme(undefined, { derive, radius,
+density })`. That subscription is **gated to DEV builds** at module scope
+(`process.env.NODE_ENV !== 'production'`, one of two `use*` implementations bound once — a per-render
+ternary would be a `react/rules-of-hooks` error): `BasaltProvider` is the mandatory `.` entry, so a
+production app must not pay a localStorage read and a permanent `storage` listener to answer a
+question that is always "no" there. Consequence to know: the sliders are inert in a production BUILD
+of a dev app (`vite build && vite preview`) — run the playground through its dev server. It merges only that config's DELTA against the shipped base (`themeOverrideDelta`),
+never the whole theme: `BasaltProvider`'s contract is consumer-overrides-win-last, and the
+documented mount hands it a COMPLETE `createBasaltTheme()` carrying every level-0 number, so a
+whole-theme merge would clobber the lab straight back to level 0 — while a whole-theme merge in the
+other direction would eat the consumer's own overrides. What the object half covers, and nothing
+else: `theme.radius`/`theme.spacing` (the generic Mantine `xs`..`xl` scales — every `p="md"` /
+`gap="sm"`) plus `defaultProps.radius` on Badge/SegmentedControl/Progress/Tooltip/Popover/Modal/
+Notification, `Progress.size`, `Timeline.bulletSize` (pinned by `provider/lab-theme.test.ts`).
+Card/Paper are NOT in that set — their radius resolves through `var(--vx-radius-card)` in
+`styles.root`; nor are Input's/Button's/ActionIcon's `size="md"` heights, which read
+`--vx-space-input-height`/`--vx-space-control-height` via each component's `vars`. Those were always
+covered by the CSS half. ONE gap remains and it is NOT theme-lab-only — it fails the PRODUCTION path
+identically: `tokens/index.ts`'s `VX.legendGap`/`VX.margin`/`VX.dotR` (chart legend gap, plot-area
+margins, marker radius) are frozen at module load from the level-0 snapshot and never re-derive from
+a `density` option even under `createBasaltTheme` — see `deriveSpacing`'s JSDoc for the full
+accounting of what tracks density end to end and what doesn't. See `docs/STATUS.md`'s "Derive
+engine" section for what shipped and known limitations.
 
 ### Consumer-series extensibility (`./tokens`)
 

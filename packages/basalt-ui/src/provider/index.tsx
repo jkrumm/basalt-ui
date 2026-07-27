@@ -21,7 +21,8 @@ import { Component, useEffect, useMemo } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
-import { createBasaltTheme, cssVariablesResolver } from '../theme'
+import { cssVariablesResolver } from '../theme'
+import { useLabTheme } from './lab-theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
@@ -271,9 +272,15 @@ export function BasaltProvider({
 }: BasaltProviderProps) {
   const errorHandler = onError ?? defaultOnError
 
+  // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its
+  // persisted config, so the dev tool moves the numeric `defaultProps` and `theme.spacing` a `<style>`
+  // tag cannot reach. No lab override (every production app) → the consumer theme merged onto the
+  // Basalt base and nothing else. See `./lab-theme.ts`.
+  const resolvedTheme = useLabTheme(theme)
+
   return (
     <MantineProvider
-      theme={createBasaltTheme(theme)}
+      theme={resolvedTheme}
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme={defaultColorScheme}
       {...rest}
