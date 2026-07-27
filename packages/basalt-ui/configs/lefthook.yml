@@ -12,14 +12,21 @@ pre-commit:
     oxlint:
       glob: '*.{ts,tsx,js,jsx}'
       run: bunx oxlint {staged_files}
+    # `css` is load-bearing, not tidiness: oxfmt formats stylesheets, so without it a CSS-only
+    # commit passes the hook and then fails the same check in CI. `oxlint` above deliberately
+    # stops at JS — it has nothing to say about CSS.
     oxfmt:
-      glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
+      glob: '*.{ts,tsx,js,jsx,css,json,md,yml,yaml}'
       run: bunx oxfmt --check {staged_files}
 
-    # Scans the configured `basalt.roots`, not {staged_files}. A guard that only runs when
-    # someone remembers to run it is not a guard: without this, a consumer can accumulate
-    # violations indefinitely while `check-theme` is never invoked, and the kinds it never
-    # ran are indistinguishable from the kinds that found nothing.
+    # NO glob, deliberately. This command scans the configured `basalt.roots` — it never reads
+    # {staged_files} — so any glob here is a gate on WHETHER the guard runs, decided by the file
+    # extensions that happen to be in one commit. It shipped as `*.{ts,tsx}`, which meant a commit
+    # touching only CSS modules skipped the guard entirely; the guard reads CSS (raw-hex,
+    # inline-spacing, raw-font-family and the surface kinds all fire there), so the rule was
+    # invisible to the hook meant to enforce it. That is precisely the failure the next sentence
+    # was written against: a guard that only runs when someone remembers to run it is not a guard.
+    # Without this, a consumer accumulates violations indefinitely while `check-theme` is never
+    # invoked, and the kinds it never ran are indistinguishable from the kinds that found nothing.
     check-theme:
-      glob: '*.{ts,tsx}'
       run: bunx basalt-ui check-theme
