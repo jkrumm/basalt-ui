@@ -22,12 +22,25 @@ bun add basalt-ui
 bun add react react-dom @mantine/core @mantine/hooks @tanstack/react-query
 ```
 
-Peer requirements: `react` / `react-dom` `^19`, `@mantine/core` + `@mantine/hooks` `^9.3`,
-`@tanstack/react-query` (`BasaltProvider` hard-requires it at build time). Bun auto-installs
-peers, but pnpm/npm consumers must add it explicitly or hit an unexplained build failure.
+The root `.` entry needs all five: `react` / `react-dom` `^19`, `@mantine/core` +
+`@mantine/hooks` `^9.3`, and `@tanstack/react-query` (`BasaltProvider` hard-requires it at build
+time). **Install them yourself — every peer is declared `optional`**, so no package manager adds
+them for you and a missing one surfaces as an unresolved import when you build, not as a warning
+when you install. That optionality is what lets the Mantine-free subpaths cost nothing (below);
+version mismatches on an installed peer still warn.
 
 A real app also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`
 for `tsc --noEmit` to pass.
+
+**No React?** `./tokens`, `./charts`, `./state` and `./guard` resolve with none of the five
+installed, and the token system is consumable with no package at all:
+
+```bash
+bunx basalt-ui tokens:css --selector-attribute data-theme --only core --out src/tokens.css
+```
+
+See [`docs/FRAMEWORK-FREE.md`](https://github.com/jkrumm/basalt-ui/blob/master/docs/FRAMEWORK-FREE.md)
+for the selector-specificity trap, the `color-mix` opacity law, and the surface-token roles.
 
 ### 2. Scaffold the repo doctrine (`basalt-ui init`)
 
