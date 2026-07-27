@@ -37,6 +37,7 @@ import type { Finding, GuardConfig, GuardKind } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
 import { RULE_NAMES, SKILL_NAMES, SURFACES, TOKEN_LAYER_BOUNDARY_SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
+import { buildPaletteCss } from '../tokens'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
@@ -1571,6 +1572,66 @@ export function info(flags: string[]): number {
   return 0
 }
 
+/** Read the value that follows a `--flag` in an argv slice; `undefined` when absent or terminal. */
+function flagValue(flags: string[], name: string): string | undefined {
+  const i = flags.indexOf(name)
+  if (i === -1) return undefined
+  const value = flags[i + 1]
+  return value === undefined || value.startsWith('--') ? undefined : value
+}
+
+/**
+ * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted.
+ *
+ * The escape hatch from installing anything: a static site runs this once (`bunx basalt-ui
+ * tokens:css --selector-attribute data-theme --out src/tokens.css`) and consumes basalt's token
+ * system as plain CSS, with no package in its dependency tree at all. `basalt-ui/tokens.css` is the
+ * same artifact for a consumer that does install; this command exists for the ones that shouldn't
+ * have to just to change a selector.
+ *
+ * It parses flags and calls `buildPaletteCss` — nothing else. No emission logic, no post-processing
+ * of the returned string: the CLI and the API must not be able to disagree about what basalt's
+ * tokens are.
+ */
+export function tokensCss(flags: string[], cwd: string = process.cwd()): number {
+  const attribute = flagValue(flags, '--selector-attribute')
+  const darkValue = flagValue(flags, '--dark-value')
+  const lightValue = flagValue(flags, '--light-value')
+  const defaultScheme = flagValue(flags, '--default-scheme')
+
+  if (defaultScheme !== undefined && !['dark', 'light', 'none'].includes(defaultScheme)) {
+    console.error(
+      `tokens:css: --default-scheme must be dark, light or none (got '${defaultScheme}')`,
+    )
+    return 1
+  }
+
+  const scheme = {
+    ...(attribute === undefined ? {} : { attribute }),
+    ...(darkValue === undefined ? {} : { darkValue }),
+    ...(lightValue === undefined ? {} : { lightValue }),
+  }
+
+  const css = buildPaletteCss({
+    ...(Object.keys(scheme).length === 0 ? {} : { scheme }),
+    ...(defaultScheme === undefined
+      ? {}
+      : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
+    ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
+  })
+
+  const out = flagValue(flags, '--out')
+  if (out === undefined) {
+    process.stdout.write(`${css}\n`)
+    return 0
+  }
+  const target = isAbsolute(out) ? out : resolve(cwd, out)
+  mkdirSync(dirname(target), { recursive: true })
+  writeFileSync(target, css)
+  console.log(`wrote ${css.split('\n').length} lines → ${relative(cwd, target) || target}`)
+  return 0
+}
+
 /**
  * guard-hook — PreToolUse stdin adapter.
  *
@@ -1668,7 +1729,10 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 const USAGE =
   'Usage: basalt-ui <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
-  'check-theme | check-coverage | info [--json] | doctor | guard-hook | help>\n\n' +
+  'check-theme | check-coverage | info [--json] | doctor | guard-hook | tokens:css | help>\n\n' +
+  'tokens:css [--out <path>] [--selector-attribute <attr>] [--dark-value <v>] [--light-value <v>]\n' +
+  '           [--default-scheme <dark|light|none>] [--media-fallback]\n' +
+  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
 /**
@@ -1712,6 +1776,8 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return doctor(cwd)
     case 'guard-hook':
       return guardHook(cwd)
+    case 'tokens:css':
+      return tokensCss(flags, cwd)
     default:
       console.error(USAGE)
       return 1

@@ -424,6 +424,13 @@ export const SURFACES = {
       'Mandatory CSS import (after the Mantine styles.layer.css bundles) — @layer basalt base styles, iOS input safety net, font stack',
     forbiddenImports: [],
   },
+  './tokens.css': {
+    kind: 'tooling',
+    layer: 'non-js-asset',
+    description:
+      'Prebuilt --vx-* token stylesheet — the default buildPaletteCss() output as a plain file, for a consumer with no bundler, no React and no Mantine; retune the selector or trim the spacing set with `basalt-ui tokens:css`',
+    forbiddenImports: [],
+  },
   './configs/*': {
     kind: 'tooling',
     layer: 'non-js-asset',

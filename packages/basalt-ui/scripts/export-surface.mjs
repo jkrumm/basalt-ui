@@ -28,7 +28,11 @@ const baseDir = baseFlag !== -1 ? resolve(args[baseFlag + 1]) : OWN_PKG_ROOT
 const exportsMap = JSON.parse(readFileSync(resolve(baseDir, 'package.json'), 'utf8')).exports
 /** Every published JS subpath — non-JS assets have no named exports to snapshot. */
 const subpaths = Object.keys(exportsMap).filter(
-  (k) => !k.startsWith('./configs') && k !== './styles.css' && k !== './llms.txt',
+  (k) =>
+    !k.startsWith('./configs') &&
+    k !== './styles.css' &&
+    k !== './tokens.css' &&
+    k !== './llms.txt',
 )
 
 const actual = {}
