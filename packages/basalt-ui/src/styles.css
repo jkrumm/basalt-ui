@@ -24,6 +24,11 @@
 /* Font stack — overridable via the --basalt-font-* custom properties. */
 @layer base {
   :root {
+    /* Hubot Sans is a condensed display face; the spec pins it at 88% wherever it lands. A knob
+       rather than a literal at the rule below, because that rule reaches BARE h1–h6: a consumer
+       that layers its own base type would otherwise have no way to keep its own heading width
+       short of out-specifying the framework. `normal` opts out entirely. */
+    --basalt-font-head-stretch: 88%;
     --basalt-font-sans:
       'Nunito Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
       Helvetica, Arial, sans-serif;
@@ -75,7 +80,9 @@
   }
 
   /* Hubot Sans is a condensed display face — the spec pins it at 88% font-stretch everywhere it
-     lands (headings + the Mantine Title component). */
+     lands (headings + the Mantine Title component). Read from the knob declared above rather than
+     hardcoded here, so a consumer retunes it in one declaration instead of fighting these bare
+     element selectors with a more specific rule of their own. */
   h1,
   h2,
   h3,
@@ -83,7 +90,7 @@
   h5,
   h6,
   .mantine-Title-root {
-    font-stretch: 88%;
+    font-stretch: var(--basalt-font-head-stretch, 88%);
   }
 
   /* Scrollbars (docs/DESIGN-SPEC.md §5): 9px, ink-mix thumb (stronger on hover), radius 6,
@@ -153,14 +160,18 @@
   .mantine-ScrollArea-scrollbar:active .mantine-ScrollArea-thumb {
     background-color: var(--basalt-scrollbar-thumb-hover);
   }
-}
 
-/* Print: hide the BasaltShell chrome so only page content prints.
- * AppShell.Navbar → <nav>, AppShell.Header → <header>, AppShell.Footer → <footer>. */
-@media print {
-  nav,
-  header,
-  footer {
-    display: none !important;
+  /* Print: hide the BasaltShell chrome so only page content prints.
+     Scoped to AppShell's own class hooks, NOT to bare nav/header/footer. The element form matched
+     any landmark on the page — a consumer with a real <nav> and no BasaltShell silently printed a
+     blank one, and being unlayered with `!important` there was nothing they could do about it
+     either. `@layer basalt` already outranks `@layer mantine`, so no `!important` is needed to win
+     against the AppShell's own display rules. */
+  @media print {
+    .mantine-AppShell-navbar,
+    .mantine-AppShell-header,
+    .mantine-AppShell-footer {
+      display: none;
+    }
   }
 }
