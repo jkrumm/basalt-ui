@@ -117,6 +117,7 @@
       "import": "./dist/connectivity/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./tokens.css": "./dist/tokens.css",
     "./configs/*": "./configs/*",
     "./llms.txt": "./llms.txt"
   },
@@ -125,7 +126,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/fix-esm-extensions.mjs",
+    "build": "tsup && tsc --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
     "typecheck": "tsc --noEmit",
     "pack-test": "bash scripts/pack-test.sh",
     "prepack": "bun run build",

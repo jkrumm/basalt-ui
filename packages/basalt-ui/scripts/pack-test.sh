@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./llms.txt
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./llms.txt
 
 echo "==> assert tarball contents"
 LIST=$(tar -tzf "$TGZ")
@@ -34,7 +34,7 @@ for f in \
   dist/guard/index.js dist/guard/index.d.ts \
   dist/state.js dist/state.d.ts \
   dist/vite.js dist/vite.d.ts \
-  dist/theme-lab/index.js dist/cli/index.js dist/styles.css \
+  dist/theme-lab/index.js dist/cli/index.js dist/styles.css dist/tokens.css \
   dist/shell/index.js \
   dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
   src/index.ts \
@@ -92,6 +92,7 @@ const subpaths = [
   'basalt-ui/vite',
   'basalt-ui/theme-lab',
   'basalt-ui/styles.css',
+  'basalt-ui/tokens.css',
   'basalt-ui/query',
   'basalt-ui/router-tanstack',
   'basalt-ui/forms',

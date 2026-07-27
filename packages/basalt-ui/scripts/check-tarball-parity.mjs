@@ -24,11 +24,24 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const sources = [...new Set(managedFiles({ hasRouter: true, hasQuery: true }).map((f) => f.source))]
 const binPaths = Object.values(pkg.bin ?? {}).map((p) => p.replace(/^\.\//, ''))
 
-const missing = [...sources, ...binPaths].filter((s) => !entries.has(`package/${s}`))
+/**
+ * Non-JS asset exports (`./styles.css`, `./tokens.css`, `./llms.txt`) — string-valued entries in the
+ * exports map, pointing at a literal file. Unlike the JS subpaths they have no `import` condition
+ * for export-surface.mjs to load, and publint validates the MAP rather than the artifact, so a file
+ * missing from `files` would resolve to nothing at install time with every other gate green. Wildcard
+ * entries (`./configs/*`) are skipped — there is no single path to assert.
+ */
+const assetPaths = Object.values(pkg.exports ?? {})
+  .filter((v) => typeof v === 'string' && !v.includes('*'))
+  .map((p) => p.replace(/^\.\//, ''))
+
+const missing = [...sources, ...binPaths, ...assetPaths].filter((s) => !entries.has(`package/${s}`))
 if (missing.length > 0) {
-  console.error(`MISSING in tarball (CLI-read sources / bin):\n  ${missing.join('\n  ')}`)
+  console.error(
+    `MISSING in tarball (CLI-read sources / bin / asset exports):\n  ${missing.join('\n  ')}`,
+  )
   process.exit(1)
 }
 console.log(
-  `tarball parity OK (${sources.length} CLI-read sources + ${binPaths.length} bin present)`,
+  `tarball parity OK (${sources.length} CLI-read sources + ${binPaths.length} bin + ${assetPaths.length} asset exports present)`,
 )
