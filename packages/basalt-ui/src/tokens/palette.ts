@@ -256,14 +256,13 @@ const SPACE_ANCHORS_BASE = {
   stackXs: 4,
   /** The 4px vertical rhythm, 2nd step — always `2 * stackXs` (see {@link deriveSpacing}'s doc). */
   stackSm: 8,
-  /** The 4px vertical rhythm, 3rd step — always `3 * stackXs`; coincides with `SPACE_SCALE.sm` at
-   * level 0 (see that constant's doc for why the two stay independent regardless). */
+  /** The 4px vertical rhythm, 3rd step — always `3 * stackXs`. (It USED to coincide with
+   * `SPACE_SCALE.sm` at level 0; the component-roominess retune moved the scale off the rhythm, which
+   * is exactly the independence that constant's doc describes.) */
   stackMd: 12,
-  /** The 4px vertical rhythm, 4th step — always `4 * stackXs`; coincides with `SPACE_SCALE.md` at
-   * level 0. */
+  /** The 4px vertical rhythm, 4th step — always `4 * stackXs`. */
   stackLg: 16,
-  /** The 4px vertical rhythm's widest step — always `6 * stackXs`; coincides with `SPACE_SCALE.xl`
-   * at level 0. */
+  /** The 4px vertical rhythm's widest step — always `6 * stackXs`. */
   stackXl: 24,
   /** A `size: 'md'` Mantine Input's resolved height (see the group doc above). */
   inputHeight: CONTROL_HEIGHT_BASE,
@@ -277,9 +276,10 @@ const SPACE_ANCHORS_BASE = {
 /**
  * The Mantine `spacing` size-scale (`xs`/`sm`/`md`/`lg`/`xl`) — the app-wide generic rhythm every
  * `p=`/`m=`/`gap=` prop in every consumer resolves through. Density-tracking, like
- * `SPACE_ANCHORS_BASE` above, but deliberately a SEPARATE group even where a level-0 number
- * coincides with an anchor (today `xs`/`sm`/`md`/`xl` happen to equal `rowInsetX`/`stackMd`/
- * `stackLg`/`stackXl` — a past density pass landed there, not a law). An anchor is a SPECIFIC
+ * `SPACE_ANCHORS_BASE` above, but deliberately a SEPARATE group — and, since the
+ * component-roominess retune, no longer even numerically coincident with one. (`xs`/`sm`/`md`/`xl`
+ * used to equal `rowInsetX`/`stackMd`/`stackLg`/`stackXl`; that was a past density pass landing
+ * there, never a law, and this group moving alone is the proof.) An anchor is a SPECIFIC
  * component's inset (NavLink/Menu row padding); a scale stop is the GENERIC scale every layout call
  * site reads. Coupling them would mean retuning a nav row's inset silently reshapes every `p="xs"`
  * app-wide, and {@link deriveSpacing} could never move the two at different rates if they were
@@ -289,11 +289,11 @@ const SPACE_ANCHORS_BASE = {
  * table for {@link deriveSpacing}.
  */
 const SPACE_SCALE_BASE = {
-  xs: 10,
-  sm: 12,
-  md: 16,
-  lg: 18,
-  xl: 24,
+  xs: 11,
+  sm: 13,
+  md: 18,
+  lg: 20,
+  xl: 26,
 } as const
 
 /**
@@ -340,7 +340,7 @@ const SPACE_STEP_BASE = {
   /** Sidebar region-to-region gap: `.brand`'s bottom padding and `.searchSlot`'s bottom padding (in
    * both the expanded and collapsed rail variants) — the searchSlot comment explicitly says its gap
    * opens the nav region "the same way the brand row's own bottom padding does". */
-  sidebarRegionGap: 12,
+  sidebarRegionGap: 10,
 
   // ── content/prose.module.css ──────────────────────────────────────────────────────────────────
   /** Blockquote rail's own vertical inset. */
@@ -483,7 +483,7 @@ const SPACE_STEP_BASE = {
 
   // ── shell/sidebar-search.module.css ───────────────────────────────────────────────────────────
   /** Trigger's icon-to-label gap. */
-  sidebarSearchGap: 8,
+  sidebarSearchGap: 7,
   /** Trigger's height — floored at 24px in {@link deriveSpacing} (WCAG 2.5.8 minimum target size);
    * the collapsed rail's `ActionIcon` variant reads the SAME resolved value (`shell/sidebar-
    * search.module.css`'s `.railBtn`), so both states of the control stay consistent at every level. */
@@ -501,31 +501,31 @@ const SPACE_STEP_BASE = {
 
   // ── shell/app-sidebar.module.css (beyond the shared/reused anchors above) ────────────────────
   /** Brand row's top inset. */
-  sidebarBrandInsetTop: 3,
+  sidebarBrandInsetTop: 2,
   /** Brand row's horizontal inset. */
-  sidebarBrandInsetX: 8,
+  sidebarBrandInsetX: 7,
   /** Gap between nav sections. */
-  sidebarSectionGap: 15,
+  sidebarSectionGap: 12,
   /** Account row's top inset. */
-  sidebarAccountInsetTop: 11,
+  sidebarAccountInsetTop: 9,
   /** Account row's horizontal inset. */
-  sidebarAccountInsetX: 8,
+  sidebarAccountInsetX: 7,
   /** Account row's bottom inset. */
-  sidebarAccountInsetBottom: 3,
+  sidebarAccountInsetBottom: 2,
   /** Identity-initials avatar block's fixed size (width and height). */
   sidebarAvatarSize: 28,
   /** Section-label row's bottom gap (before the first nav row). */
-  sidebarSectionLabelGap: 3,
+  sidebarSectionLabelGap: 2,
   /** Collapsible child-list wrapper's top margin. */
   sidebarChildListGapTop: 2,
   /** Collapsible child-list wrapper's bottom margin. */
-  sidebarChildListGapBottom: 4,
+  sidebarChildListGapBottom: 3,
   /** Collapsible child-list wrapper's left indent. */
-  sidebarChildListIndent: 17,
+  sidebarChildListIndent: 15,
   /** Child NavLink row's vertical inset. */
-  sidebarChildRowInsetY: 5,
+  sidebarChildRowInsetY: 4,
   /** Child NavLink row's extra left indent (past the rail guide). */
-  sidebarChildRowIndent: 14,
+  sidebarChildRowIndent: 12,
 
   // ── shell/app-sidebar.tsx & app-sidebar-account.tsx (Mantine `<Menu width={…}>` props) ────────
   // Both are FIXED dropdown widths (a JSX number prop, not CSS — same "JS-consumed, no --vx-* var"
@@ -554,8 +554,20 @@ const SPACE_STEP_BASE = {
   /** AppShell mobile (two-row) header height. Not one concept but a sum: row 1 + `app-header.
    *  module.css`'s wrap row-gap (`--mantine-spacing-sm`) + `appHeaderMobileActionsHeight`. Two of
    *  those three addends already track density, so the container must too — held fixed, row 1's
-   *  budget collapses 52px -> 12px across the level range. */
-  appShellHeaderMobileHeight: 96,
+   *  budget collapses 52px -> 12px across the level range.
+   *
+   *  KEEP THIS EQUAL TO THE SUM. At level 0: 32 (row 1) + 13 (`SPACE_SCALE.sm`) + 52
+   *  (`appHeaderMobileActionsHeight`) = 97. It was 96 while `SPACE_SCALE.sm` was 12; the
+   *  component-roominess retune raised that addend, and leaving the total at 96 silently took the
+   *  pixel out of row 1 instead — which is what ate the last of its WCAG 2.5.8 target-size margin at
+   *  density -3 (`theme/density-relations.test.ts` measures row 1 as the REMAINDER of this sum, so
+   *  the total is the only place the budget can come from). Raise this whenever `SPACE_SCALE.sm` or
+   *  `appHeaderMobileActionsHeight` moves. Better still, make it unnecessary: computing this the way
+   *  `stickyHeaderClearance*` already is — post-`step`, from its own addends rather than as an
+   *  independent literal — would make the drift impossible instead of merely re-tuned. That is the
+   *  same refactor, and the same reasoning, this PR applied to the clearances; it is worth doing to
+   *  this one too, and it stays a follow-up only because it moves every non-zero level's value. */
+  appShellHeaderMobileHeight: 97,
   /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile drawer) and the
    *  expanded `sm` value: the same `.root` at full width, genuinely one concept. */
   appShellNavbarWidth: 216,
