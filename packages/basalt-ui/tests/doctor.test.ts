@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 
 import { doctor, MANIFEST_PATH, RULE_NAMES } from '../src/cli/index'
+import { deriveSpacing } from '../src/tokens'
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
@@ -85,5 +86,120 @@ describe('basalt doctor', () => {
     }
     const exitCode = doctor(tmpDir)
     expect(exitCode).toBe(0) // warning only
+  })
+})
+
+describe('basalt doctor — spacing-scale drift', () => {
+  /** Run doctor, capturing stdout so the emitted lines can be asserted on. */
+  function runDoctor(): { code: number; out: string } {
+    const original = console.log
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      return { code: doctor(tmpDir), out }
+    } finally {
+      console.log = original
+    }
+  }
+
+  it('warns when the recorded scale differs from the installed one', () => {
+    setupPassingLayout()
+    // A scale one notch off the shipped level-0 ladder — what a consumer's manifest looks like the
+    // moment after a retune lands and before they have looked at their app.
+    writeFixture(
+      MANIFEST_PATH,
+      JSON.stringify({
+        version: 1,
+        files: {},
+        spacingScale: { ...deriveSpacing(0).scale, md: deriveSpacing(0).scale.md + 2 },
+      }),
+    )
+    const { code, out } = runDoctor()
+    // A warning, never a hard failure: nothing is broken, the app just looks different.
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale moved')
+    expect(out).toContain(`md ${deriveSpacing(0).scale.md + 2}→${deriveSpacing(0).scale.md}`)
+    expect(out).toContain('createBasaltTheme() bare')
+  })
+
+  it('passes silently when the recorded scale matches', () => {
+    setupPassingLayout()
+    writeFixture(
+      MANIFEST_PATH,
+      JSON.stringify({ version: 1, files: {}, spacingScale: { ...deriveSpacing(0).scale } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale matches the last sync')
+    expect(out).not.toContain('spacing scale moved')
+  })
+
+  it('does not double-warn a manifest written before the field existed', () => {
+    // The version check already tells them to sync; a second warning for the same cause is noise.
+    setupPassingLayout()
+    const { out } = runDoctor()
+    expect(out).not.toContain('spacing scale moved')
+    expect(out).toContain('spacing scale not yet recorded')
+  })
+
+  it('skips the comparison when this CLI is not the installed package', () => {
+    // A stale `bunx basalt-ui` fetch: the CLI's own scale is not the one the app renders with, so
+    // any verdict it reaches is about the wrong package. Claiming a match here is the false pass
+    // this skip exists to prevent.
+    setupPassingLayout()
+    writeFixture(
+      'node_modules/basalt-ui/package.json',
+      JSON.stringify({ name: 'basalt-ui', version: '0.0.0-not-this-cli' }),
+    )
+    writeFixture(
+      MANIFEST_PATH,
+      JSON.stringify({ version: 1, files: {}, spacingScale: { ...deriveSpacing(0).scale } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale not compared')
+    expect(out).not.toContain('spacing scale matches the last sync')
+    expect(out).not.toContain('spacing scale moved')
+  })
+
+  it('ignores a null spacingScale instead of indexing it', () => {
+    // `typeof null === 'object'` — a hand-edited manifest must not crash doctor.
+    setupPassingLayout()
+    writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, spacingScale: null }))
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale not yet recorded')
+  })
+
+  it('ignores a spacingScale whose values are not numbers', () => {
+    // `"4" !== 4` would otherwise report every single step as moved.
+    setupPassingLayout()
+    writeFixture(
+      MANIFEST_PATH,
+      JSON.stringify({ version: 1, files: {}, spacingScale: { xs: '4', sm: 8 } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale not yet recorded')
+    expect(out).not.toContain('spacing scale moved')
+  })
+
+  it('reports a step the recorded scale has and the current one no longer does', () => {
+    // Iterating only the CURRENT keys would miss a removed step entirely and call it a match.
+    setupPassingLayout()
+    writeFixture(
+      MANIFEST_PATH,
+      JSON.stringify({
+        version: 1,
+        files: {},
+        spacingScale: { ...deriveSpacing(0).scale, retiredStep: 12 },
+      }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('spacing scale moved')
+    expect(out).toContain('retiredStep 12→(removed)')
   })
 })

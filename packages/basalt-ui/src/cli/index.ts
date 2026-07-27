@@ -33,11 +33,11 @@ import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
-import type { Finding, GuardConfig, GuardKind } from '../guard'
+import type { Finding, GuardConfig, GuardKind, GuardSeverity } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
 import { RULE_NAMES, SKILL_NAMES, SURFACES, TOKEN_LAYER_BOUNDARY_SURFACES } from '../surfaces'
 import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
-import { buildPaletteCss } from '../tokens'
+import { buildPaletteCss, deriveSpacing } from '../tokens'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
@@ -47,6 +47,9 @@ export type BasaltConfig = {
   exempt?: string[]
   /** Named spacing-scale steps (px) flagged when used as a raw spacing prop. Default: 10/12/16/20/32. */
   spacingSteps?: number[]
+  /** Per-kind severity override — `'warn'` reports without failing, `'error'` fails the build.
+   *  See `GuardSeverity` in ../guard/types for the grace-minor doctrine behind it. */
+  severity?: Partial<Record<GuardKind, GuardSeverity>>
   /** Off-identity Mantine accent families forbidden as chrome accents. Default: argo's set. */
   forbiddenAccents?: string[]
   /** Earned accent hue recorded in DESIGN.md `{{ACCENT_HUE}}`. Default: `blue`. */
@@ -207,12 +210,46 @@ const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
 /** Filenames that look like they ARE the palette source, for the check-theme escape-hatch hint. */
 const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
 
+const SEVERITY_VALUES: readonly string[] = ['warn', 'error']
+
+/**
+ * Drop `basalt.severity` entries whose value is not `'warn'` / `'error'`, loudly.
+ *
+ * This is the one config field where a typo REMOVES enforcement rather than failing: package.json
+ * is untyped at runtime, and `"warning"` would stamp findings with a value matching neither the
+ * error bucket (which fails the build) nor the warn bucket (which prints them) — the kind would
+ * vanish and `check-theme` would exit 0 as if the tree were clean. Dropping the entry falls the
+ * kind back to its default, so the failure direction of a typo is "stricter than you meant, and
+ * told about it" instead of "silently unguarded".
+ */
+function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
+  const raw: unknown = cfg.severity
+  if (raw === undefined) return cfg
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    console.error('⚠ basalt.severity is not an object — ignoring it; every kind keeps its default.')
+    const { severity: _dropped, ...rest } = cfg
+    return rest
+  }
+  const kept: Record<string, GuardSeverity> = {}
+  for (const [kind, value] of Object.entries(raw)) {
+    if (typeof value === 'string' && SEVERITY_VALUES.includes(value)) {
+      kept[kind] = value as GuardSeverity
+      continue
+    }
+    console.error(
+      `⚠ basalt.severity["${kind}"] is ${JSON.stringify(value)}, not 'warn' or 'error' — ` +
+        'ignoring it; that kind keeps its default severity.',
+    )
+  }
+  return { ...cfg, severity: kept as Partial<Record<GuardKind, GuardSeverity>> }
+}
+
 function readBasaltConfig(cwd: string): BasaltConfig {
   try {
     const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
       basalt?: BasaltConfig
     }
-    return pkg.basalt ?? {}
+    return sanitizeSeverity(pkg.basalt ?? {})
   } catch {
     return {}
   }
@@ -325,6 +362,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
     exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
+    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
   }
 
   const findings: Finding[] = []
@@ -365,20 +403,43 @@ export function checkTheme(cwd: string = process.cwd()): number {
     return 0
   }
 
-  const byFile = new Map<string, Finding[]>()
-  for (const f of findings) {
-    const list = byFile.get(f.relPath) ?? []
-    list.push(f)
-    byFile.set(f.relPath, list)
-  }
-  console.error(`✖ Theme guard: ${findings.length} off-palette / off-identity violation(s)\n`)
-  for (const [file, vs] of [...byFile].toSorted()) {
-    console.error(file)
-    for (const v of vs.toSorted((a, b) => a.line - b.line)) {
-      console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.token}`)
+  // Errors and warnings are reported as two separate blocks, not one list with a column: a
+  // consumer scanning the output needs "what breaks my build" answered before "what will later".
+  const errors = findings.filter((f) => f.severity === 'error')
+  const warnings = findings.filter((f) => f.severity === 'warn')
+
+  const report = (group: Finding[], heading: string): void => {
+    const byFile = new Map<string, Finding[]>()
+    for (const f of group) {
+      const list = byFile.get(f.relPath) ?? []
+      list.push(f)
+      byFile.set(f.relPath, list)
     }
-    console.error('')
+    console.error(heading)
+    for (const [file, vs] of [...byFile].toSorted()) {
+      console.error(file)
+      for (const v of vs.toSorted((a, b) => a.line - b.line)) {
+        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.token}`)
+      }
+      console.error('')
+    }
   }
+
+  if (warnings.length > 0) {
+    report(
+      warnings,
+      // Deliberately neutral about WHY a kind is a warning. Two origins reach this block — a kind
+      // in its grace minor, and a consumer's own `basalt.severity` override — and the finding
+      // doesn't carry which. Promising promotion next minor would be wrong for the second.
+      `⚠ Theme guard: ${warnings.length} warning(s) — reported, not fatal. A kind warns while it ` +
+        'is in its grace minor, or because `basalt.severity` turned it down; fix on your own ' +
+        'schedule.\n',
+    )
+  }
+  if (errors.length > 0) {
+    report(errors, `✖ Theme guard: ${errors.length} off-palette / off-identity violation(s)\n`)
+  }
+
   const presentKinds = new Set(findings.map((f) => f.kind))
   const explanations = (Object.keys(GUARD_KIND_EXPLANATIONS) as GuardKind[])
     .filter((kind) => presentKinds.has(kind))
@@ -392,13 +453,15 @@ export function checkTheme(cwd: string = process.cwd()): number {
 
   // A violation in a file that looks like the palette source itself is likely intentional — point
   // at the exempt escape hatch instead of leaving the author to search for it.
-  if ([...byFile.keys()].some((f) => SERIES_MODULE_HINT_RE.test(f))) {
+  if (findings.some((f) => SERIES_MODULE_HINT_RE.test(f.relPath))) {
     console.error(
       'Hint: if a flagged file IS your palette/series source, exempt it via ' +
         '"basalt": { "exempt": ["<path>"] } in package.json.',
     )
   }
-  return 1
+  // Warnings alone pass. That is the whole point of the grace minor: a consumer takes the upgrade
+  // on a green build and schedules the fix, instead of the release scheduling it for them.
+  return errors.length > 0 ? 1 : 0
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -743,6 +806,19 @@ type Manifest = {
   basaltVersion?: string
   /** dest path → sha256 of the managed unit (file bytes, block body, or stanza) at last write. */
   files: Record<string, string>
+  /**
+   * The resolved level-0 spacing scale (`xs`..`xl`, px) at last write — `doctor`'s second
+   * reconciliation axis, and the only one that reports a change in RENDERED OUTPUT rather than in
+   * placed files.
+   *
+   * A retune of the spacing bases moves every surface in every consumer calling
+   * `createBasaltTheme()` bare. basalt-ui bans majors by design, so the changelog is the only
+   * channel that carries that, and a one-line `feat:` subject cannot convey blast radius: the
+   * 1.2.0 retune shipped as "tighten the sidebar, open up components" and went unverified in
+   * production for a day because nothing said "every padding moved". Recording the scale makes the
+   * move mechanically visible on the next `doctor` run instead of depending on a subject line.
+   */
+  spacingScale?: Record<string, number>
 }
 
 function readManifest(cwd: string): Manifest {
@@ -752,6 +828,20 @@ function readManifest(cwd: string): Manifest {
     const parsed = JSON.parse(raw) as Partial<Manifest>
     const manifest: Manifest = { version: 1, files: parsed.files ?? {} }
     if (typeof parsed.basaltVersion === 'string') manifest.basaltVersion = parsed.basaltVersion
+    // `typeof null === 'object'` and so is an array — a hand-edited manifest carrying either would
+    // reach doctor and be indexed as a record. Values must be numbers too: a `"4"` would never
+    // `===` the derived `4`, so doctor would report every step as moved. Anything else is treated
+    // as unrecorded, which reads as "run sync" rather than as a garbled diff.
+    const scale: unknown = parsed.spacingScale
+    if (
+      scale !== null &&
+      scale !== undefined &&
+      typeof scale === 'object' &&
+      !Array.isArray(scale) &&
+      Object.values(scale).every((v) => typeof v === 'number')
+    ) {
+      manifest.spacingScale = scale as Record<string, number>
+    }
     return manifest
   } catch {
     return { version: 1, files: {} }
@@ -973,6 +1063,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   }
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
+  manifest.spacingScale = { ...deriveSpacing(0).scale }
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
   console.log(`basalt-ui init: ${written} written, ${skipped} kept, manifest at ${MANIFEST_PATH}`)
@@ -1095,6 +1186,7 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   }
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
+  manifest.spacingScale = { ...deriveSpacing(0).scale }
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
   console.log(
@@ -1324,9 +1416,11 @@ type DoctorResult = {
  *   2. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
  *      (a mismatch means the package was upgraded but `sync` never ran — the placed doctrine is
  *      stale).
- *   3. The running CLI's own version matches the installed basalt-ui (catches a stale
+ *   3. The spacing scale still matches the one stamped into the manifest at the last init/sync
+ *      (skipped when this CLI is demonstrably not the installed package — see the check).
+ *   4. The running CLI's own version matches the installed basalt-ui (catches a stale
  *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
- *   4. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
+ *   5. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
  *      a public/ dir exists at all — skipped otherwise).
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
@@ -1386,11 +1480,57 @@ export function doctor(cwd: string = process.cwd()): number {
     }
   }
 
-  // ── Warn check 3: running CLI version matches the consumer's installed basalt-ui ────
+  const cliVersion = readFrameworkVersion(packageRoot())
+
+  // ── Warn check 3: the spacing scale has not moved under the app ────────────
+  // The only check here that reports a change in RENDERED OUTPUT rather than in placed files. A
+  // retune of the spacing bases moves every surface in an app calling `createBasaltTheme()` bare,
+  // and majors are banned by design, so nothing in the version number says so — 1.2.0's retune
+  // shipped under "tighten the sidebar, open up components" and sat unverified in production for a
+  // day. Diffing the current scale against what last synced makes that move something a consumer
+  // is told rather than something they have to notice.
+  //
+  // The scale that matters is the INSTALLED package's — that is what the app renders with — but
+  // `deriveSpacing` here is the RUNNING CLI's, which a stale `bunx basalt-ui` fetch makes a
+  // different package. Rather than load the installed tokens entry (async, and doctor is sync),
+  // the comparison is skipped whenever the two versions are known to disagree: a false "matches"
+  // is worse than no answer. Check 4 below names that disagreement, so this stays a neutral note.
+  const cliIsTheInstall = installedVersion === null || installedVersion === cliVersion
+  if (manifestExists && !cliIsTheInstall) {
+    pass(
+      `spacing scale not compared — this CLI (${cliVersion}) is not the installed basalt-ui ` +
+        `(${installedVersion}), so its scale is not the one the app renders with`,
+    )
+  } else if (manifestExists) {
+    const recorded = readManifest(cwd).spacingScale
+    const current = deriveSpacing(0).scale as Record<string, number>
+    if (recorded === undefined) {
+      // Silent for a manifest written before this field existed — the version check above already
+      // says "run sync", and a second warning for the same cause is noise.
+      pass('spacing scale not yet recorded — `basalt-ui sync` will stamp it')
+    } else {
+      // Over the UNION of both key sets: a step the scale gained since the last sync is a move the
+      // app feels, and so is one it lost. Iterating only `current` would miss the second.
+      const steps = [...new Set([...Object.keys(current), ...Object.keys(recorded)])].toSorted()
+      const moved = steps
+        .filter((step) => recorded[step] !== current[step])
+        .map((step) => `${step} ${recorded[step] ?? '(none)'}→${current[step] ?? '(removed)'}`)
+      if (moved.length > 0) {
+        warn(
+          `the spacing scale moved since the last sync (${moved.join(', ')}) — every surface in an ` +
+            'app calling createBasaltTheme() bare shifts with it. Review the app visually, then run ' +
+            '`basalt-ui sync` to record the new scale.',
+        )
+      } else {
+        pass('spacing scale matches the last sync')
+      }
+    }
+  }
+
+  // ── Warn check 4: running CLI version matches the consumer's installed basalt-ui ────
   // Catches the failure mode where bunx fetches a stale published package instead of the local
   // install — the CLI that ran doctor and the package resolved from the consumer's node_modules
   // silently disagree.
-  const cliVersion = readFrameworkVersion(packageRoot())
   if (installedVersion !== null) {
     if (installedVersion !== cliVersion) {
       warn(
@@ -1403,7 +1543,7 @@ export function doctor(cwd: string = process.cwd()): number {
     }
   }
 
-  // ── Warn check 4: basaltAppPlugin's default icon files exist in public/ ────
+  // ── Warn check 5: basaltAppPlugin's default icon files exist in public/ ────
   // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references these filenames by
   // default (the realfavicongenerator convention). Only runs when a public/ dir exists at all —
   // apps that don't use the plugin, or don't use Vite's public-dir convention, get no false
@@ -1696,6 +1836,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
     allowComment: 'theme-allow',
     exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
+    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
   }
 
   // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
