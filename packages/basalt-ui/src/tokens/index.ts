@@ -585,13 +585,73 @@ export function groupTokens<const T extends SeriesMap>(
   return seriesTokens(map, `${name}-`)
 }
 
+/**
+ * The attribute + values the per-scheme blocks key off. Defaults reproduce Mantine's own toggle
+ * (`data-mantine-color-scheme` = `dark` / `light`), so a consumer only names the axis it differs
+ * on. Supplying this object at all switches the emitter onto the framework-neutral selector shape
+ * — see {@link BuildPaletteOpts.scheme}.
+ */
+export type ColorSchemeSelector = {
+  attribute?: string
+  darkValue?: string
+  lightValue?: string
+}
+
 /** Options for {@link buildPaletteCss}. */
 export type BuildPaletteOpts = {
   /** Extra named series maps to emit under the given prefixes (e.g. `{ '': SERIES, 'activity-': ACTIVITY }`). */
   groups?: Record<string, SeriesMap>
   /** Theme-independent derived declarations (gradients, semantic fills) emitted once on `:root`. */
   derived?: string[]
+  /**
+   * Attribute + values the per-scheme blocks key off — for a consumer whose scheme toggle is not
+   * Mantine's (a static site on `data-theme`, say). Default: Mantine's own
+   * `data-mantine-color-scheme` = `dark` / `light`.
+   *
+   * Setting ANY of `scheme` / `defaultScheme` / `mediaFallback` moves the emitter off the legacy
+   * `html[…]` selector onto `:root[…]`. That is deliberate and load-bearing, NOT cosmetic:
+   *
+   *   `:root[data-theme='dark']`   0-2-0   ← what this path emits
+   *   `html[data-theme='dark']`    0-1-1
+   *   `[data-theme='dark']`        0-1-0   ← same as a bare `:root`, so source order decides
+   *
+   * A light-default site whose own `:root` block happens to come last would beat the third form
+   * outright — dark mode silently does nothing. `:root[…]` sits above both a bare `:root` and
+   * `html[…]`, and carries no assumption about the element the attribute lands on.
+   *
+   * The no-options path keeps emitting `html[data-mantine-color-scheme='…']` verbatim, because a
+   * basalt consumer may already override `--vx-*` under that exact selector — raising basalt's own
+   * specificity would silently win over their override.
+   */
+  scheme?: ColorSchemeSelector
+  /**
+   * Which scheme rides along on the bare `:root` block — the one that applies when the attribute
+   * is absent. Default: `'dark'` (the framework's own default scheme).
+   *
+   * `'none'` emits no bare-`:root` primitives at all: each scheme gets only its attribute block,
+   * and an unattributed document falls back to the theme-independent scalars alone. Pair it with
+   * `mediaFallback` unless the consumer always sets the attribute.
+   */
+  defaultScheme?: 'dark' | 'light' | 'none'
+  /**
+   * Also emit an `@media (prefers-color-scheme: …)` block for every scheme that is not the bare
+   * `:root` default, so a document with no attribute set follows the OS. Default: `false`.
+   *
+   * The block is a bare `:root` (0-1-0), so an explicit attribute block (0-2-0) always wins over
+   * it regardless of source order — the OS preference is a fallback, never an override.
+   */
+  mediaFallback?: boolean
 }
+
+/** Mantine's own color-scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
+const MANTINE_SCHEME_ATTRIBUTE = 'data-mantine-color-scheme'
+
+/** Indent an already-2-space-indented declaration block one level deeper (for `@media` nesting). */
+const indent = (block: string): string =>
+  block
+    .split('\n')
+    .map((line) => (line === '' ? line : `  ${line}`))
+    .join('\n')
 
 /**
  * Emit the `--vx-*` stylesheet: a `:root` block of theme-independent scalars, then the
@@ -608,6 +668,14 @@ export type BuildPaletteOpts = {
  *
  * Dark is the default (`:root`) since the framework defaults to dark; the
  * `[data-mantine-color-scheme]` selectors track Mantine's toggle on `<html>`.
+ *
+ * A non-Mantine consumer retargets all three of those choices — the attribute, which scheme rides
+ * the bare `:root`, and whether the OS preference is honoured — via `opts.scheme` /
+ * `opts.defaultScheme` / `opts.mediaFallback`. Setting any of them also moves the per-scheme
+ * selector from `html[…]` to the framework-neutral, higher-specificity `:root[…]`; see
+ * `BuildPaletteOpts.scheme` for why that is not cosmetic. With none of them set the output is
+ * byte-identical to what the framework has always emitted (pinned by
+ * `tests/palette-css.test.ts`).
  */
 export function buildPaletteCss(
   opts: BuildPaletteOpts = {},
@@ -624,9 +692,11 @@ export function buildPaletteCss(
     const framework = frameworkPrimitives(s, data)
     return extra ? `${framework}\n${extra}` : framework
   }
-  return `:root {
-${derived}
-}
+  const rootBlock = `:root {\n${derived}\n}`
+
+  // The legacy shape — kept verbatim, and only reachable when the caller asked for nothing.
+  if (opts.scheme === undefined && opts.defaultScheme === undefined && !opts.mediaFallback) {
+    return `${rootBlock}
 :root,
 html[data-mantine-color-scheme='dark'] {
 ${side('dark')}
@@ -634,6 +704,34 @@ ${side('dark')}
 html[data-mantine-color-scheme='light'] {
 ${side('light')}
 }`
+  }
+
+  const attribute = opts.scheme?.attribute ?? MANTINE_SCHEME_ATTRIBUTE
+  const value: Record<Side, string> = {
+    dark: opts.scheme?.darkValue ?? 'dark',
+    light: opts.scheme?.lightValue ?? 'light',
+  }
+  const defaultScheme = opts.defaultScheme ?? 'dark'
+  // Default scheme first, so its attribute block can absorb the bare `:root` instead of repeating
+  // ~40 declarations; `'none'` keeps the framework's dark-then-light order.
+  const order: Side[] = defaultScheme === 'light' ? ['light', 'dark'] : ['dark', 'light']
+
+  const blocks = [rootBlock]
+  for (const s of order) {
+    const selector =
+      s === defaultScheme
+        ? `:root,\n:root[${attribute}='${value[s]}']`
+        : `:root[${attribute}='${value[s]}']`
+    // The OS fallback for a scheme goes immediately before that scheme's own attribute block. It is
+    // a bare `:root` (0-1-0), so the attribute block (0-2-0) outranks it on specificity rather than
+    // on order — an explicit toggle always beats the OS preference, and the OS preference always
+    // beats the hardcoded default that a bare `:root` above it carries.
+    if (opts.mediaFallback === true && s !== defaultScheme) {
+      blocks.push(`@media (prefers-color-scheme: ${s}) {\n  :root {\n${indent(side(s))}\n  }\n}`)
+    }
+    blocks.push(`${selector} {\n${side(s)}\n}`)
+  }
+  return blocks.join('\n')
 }
 
 /**
