@@ -19,18 +19,23 @@ pre-commit:
         fi
 
     check-theme:
-      glob: "packages/basalt-ui/src/**"
+      glob: 'packages/basalt-ui/src/**'
       # Run inside the package so its own `basalt` config (roots: ["src"] + framework-internal
       # rule opt-outs) applies — from the repo root the CLI sees no config and scans nothing.
       run: cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme
 
     oxlint:
-      glob: "*.{js,jsx,ts,tsx,cjs,mjs}"
+      glob: '*.{js,jsx,ts,tsx,cjs,mjs}'
       run: bunx oxlint {staged_files}
 
+    # Must cover every type `bun run fmt:check` reaches, or the hook passes and CI fails on the same
+    # commit — oxfmt formats css/md/yaml too. The --ignore-path flags mirror the root scripts and are
+    # load-bearing here in a way they are not there: this command WRITES (and re-stages), so without
+    # them it would reformat tests/fixtures/palette-default.css, whose byte-for-byte content is the
+    # thing tests/palette-css.test.ts pins. The hook would break the test it just staged.
     oxfmt:
-      glob: "*.{js,jsx,ts,tsx,cjs,mjs,json}"
-      run: bunx oxfmt {staged_files}
+      glob: '*.{js,jsx,ts,tsx,cjs,mjs,css,json,md,yml,yaml}'
+      run: bunx oxfmt --ignore-path=.gitignore --ignore-path=.oxfmtignore {staged_files}
       stage_fixed: true
 
 commit-msg:
