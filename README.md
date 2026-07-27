@@ -25,6 +25,14 @@ bunx basalt-ui init
 **Full docs, subpath export table, token system, and adapter batteries:** see the
 [package README](./packages/basalt-ui/README.md).
 
+Not a React app? The token system works without one — no React, no Mantine, no bundler:
+
+```bash
+bunx basalt-ui tokens:css --selector-attribute data-theme --only core --out src/tokens.css
+```
+
+See [Framework-free token consumption](./docs/FRAMEWORK-FREE.md).
+
 ## Repository Structure
 
 ```

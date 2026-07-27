@@ -3,17 +3,18 @@
 > **Single source of truth for current state.** As of **2026-07-27**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `master` is the released 1.x line; `feat/density-tokens` (PR #23) carries the density
-dimension and the guard wave below it.
-**Version:** `1.1.1` on `master`, **published** to npm (tags through `v1.1.1`, Trusted Publisher
+**Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
+framework-free token work below.
+**Version:** `1.2.0` on `master`, **published** to npm (tags through `v1.2.0`, Trusted Publisher
 OIDC).
 
 ## TL;DR
 
-The 1.0 Mantine pivot shipped and the 1.x line is live on npm. Current work is the theme-config
-surface: `createBasaltTheme`'s four dimensions (`derive`, `fonts`, `radius`, `density`) — the first
-three released, `density` in review on PR #23. The June-era roadmap/handover docs still phrase built
-work as "remaining"; that language is historical, see the banner on each.
+The 1.0 Mantine pivot shipped and the 1.x line is live on npm. The theme-config surface is closed:
+all four of `createBasaltTheme`'s dimensions (`derive`, `fonts`, `radius`, `density`) are released as
+of 1.2.0. Current work is framework-free token consumption — making the `--vx-*` system usable from a
+static site with no React, no Mantine and no bundler. The June-era roadmap/handover docs still phrase
+built work as "remaining"; that language is historical, see the banner on each.
 
 ## Built (verified as-built, 2026-07-07)
 
@@ -266,22 +267,51 @@ preview`) — run the playground through its dev server. Two things previously d
   density })` one, not merely the dev slider (see `deriveSpacing`'s JSDoc, `tokens/palette.ts`, for
   the full accounting of what tracks density end to end and what doesn't).
 
-## Open — PR #23 (`feat/density-tokens`)
+## Open — framework-free token consumption (`feat/framework-free-tokens`)
 
-The 1.0 ship sequence is closed: the pivot merged, npm Trusted Publisher (OIDC) is configured, and
-`v1.0.2`/`v1.1.0`/`v1.1.1` published. What's open is one PR:
+Driven by jkrumm.com, which evaluated 1.2.0 and hand-ported the hexes rather than installing the
+package. The capability was there — `buildPaletteCss` already ran framework-free under Node and Bun;
+the blockers were packaging and ergonomics. Five additive changes, every one defaulting to today's
+exact output:
 
-1. **PR #23** — the density dimension, the theme-lab prune, and the guard wave above. Mergeable, no
-   conflicts.
-2. **`/code-review ultra`** before merge (billed).
-3. **Merge**, then trigger the release workflow (semantic-release-monorepo, npm provenance).
-   `release.yml` is `workflow_dispatch`-only — merging to `master` does NOT auto-release.
+1. **Golden fixture** — `buildPaletteCss()` pinned byte-for-byte (9718 bytes, 248 lines, 197
+   variables). The regression gate the rest land against.
+2. **Selector options** — `scheme` / `defaultScheme` / `mediaFallback` on `BuildPaletteOpts`. Any of
+   them moves the emitted per-scheme selector from `html[…]` (0-1-1) to `:root[…]` (0-2-0); the
+   no-options path stays on the legacy literal.
+3. **Optional peers** — the five remaining required peers (`react`, `react-dom`, `@mantine/core`,
+   `@mantine/hooks`, `@tanstack/react-query`) are now `optional`, so a tokens-only install carries
+   no React. They stay in `peerDependencies`, which is what preserves the version-mismatch warning.
+4. **`dist/tokens.css` + `basalt-ui tokens:css`** — the prebuilt stylesheet as a published subpath,
+   plus a CLI that re-emits it with the options above. `bunx` it once and carry no dependency at all.
+5. **`only: 'core'`** — drops the 95 component-named `--vx-space-*` one-offs, 197 variables → 102.
+   Partition derived from the `SPACE` key set, not a maintained list.
+
+Plus two `styles.css` reach fixes (the unlayered `!important` print rule matched a consumer's own
+landmarks; the heading `font-stretch` is now a `--basalt-font-head-stretch` knob) and
+`docs/FRAMEWORK-FREE.md`.
+
+**Follow-ups this work deliberately did NOT fold in:**
+
+- **Expose `buildPaletteData` / `PaletteData`.** `deriveRadius` and `deriveSpacing` are public, but
+  the color derivation runs through `createBasaltTheme` (React + Mantine), so a framework-free
+  consumer can retune radius and density and **cannot retune the accent**. Real gap.
+- **A plain-class `dist/content.css`.** The prose language is CSS-modules-scoped and reachable only
+  through React components. Larger design question.
+- **Reconcile the accent drift.** `docs/DESIGN-SPEC.md` states `#0077bd` / `#8ec5ff`; the emitter
+  produces `#4374a6` / `#a2c3f0`, because chroma is scaled by `max(seedChroma, 40) × 0.72` at
+  vibrancy 0. `theme/contrast.test.ts` pins the drifted values, so this is known rather than
+  accidental — but a consumer reading the spec gets a different palette than one calling the
+  emitter. Decide which is authoritative. This is the one item here that would visibly move existing
+  consumers' pixels, which is why it stays separate.
+- **`--basalt-font-head-stretch` as a `createBasaltTheme({ fonts })` option.** The knob exists in
+  CSS; reaching it from the theme config would make it a real dimension like the rest.
 
 ## Validation
 
-Last verified green **2026-07-27** on `feat/density-tokens` — `bun test`: 905 pass / 49 files, and
-`bun run pre` (fmt/lint/typecheck/check-theme). The pack-test's export-surface snapshot was updated
-in the same pass for `./tokens`'s three new exports (`deriveSpacing`, `buildDensityCss`, `pxRem`).
+Last verified green **2026-07-27** on `feat/framework-free-tokens` — `bun test`: 968 pass / 54
+files, `bun run pre` (fmt/lint/typecheck/check-theme), and the full pack-test (`./tokens.css`
+resolves from a scratch install; tarball parity now asserts every file-valued export ships).
 **A final re-verification (`bun run pre` + `bun test` + pack-test) runs before ship** if further
 commits land.
 
@@ -319,7 +349,8 @@ packaging, the charts/tokens API, the shell, or the batteries above.
 
 - **Living reference** (current, maintained alongside the code) — **`STATUS.md`** (this file,
   single source of truth), `DESIGN-SPEC.md` (2026-07 visual identity, supersedes older doctrine —
-  see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`.
+  see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`,
+  `FRAMEWORK-FREE.md` (consuming the token system with no React/Mantine/bundler).
 - **`docs/archive/`** — superseded scope ledgers and historical process artifacts, kept for
   provenance only:
   - Executed ledger — `MATURATION-REVIEW.md` (the maturation quality ledger; its phases are
