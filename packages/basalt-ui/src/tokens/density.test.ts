@@ -56,12 +56,14 @@ describe('a positive level scales anchors/scale/step by the multiplier, rounded'
     expect(result.step.proseQuoteInsetY).toBe(3)
   })
 
-  test('a scale stop moves independently of its coinciding anchor', () => {
+  test('a scale stop moves independently of the anchor stack rhythm', () => {
     const result = deriveSpacing(3)
-    expect(result.scale.xs).toBe(13)
-    expect(result.scale.md).toBe(21)
-    // scale.md (21) diverges from anchors.stackLg (20, rebuilt from the shared stack unit) even
-    // though both share a 16px level-0 base — proving the two groups scale independently.
+    expect(result.scale.xs).toBe(14)
+    expect(result.scale.md).toBe(23)
+    // scale.md (23) diverges from anchors.stackLg (20, rebuilt from the shared stack unit) — the two
+    // groups scale by different laws (independently-rounded stops vs one shared unit) and, since the
+    // component-roominess retune moved the scale off the stack rhythm, no longer even coincide at
+    // level 0. That the two can be read apart at all is the point this locks.
     expect(result.anchors.stackLg).toBe(20)
   })
 })
@@ -137,16 +139,16 @@ describe('stickyHeaderClearance/stickyHeaderClearanceMobile derive from their OW
     )
   })
 
-  test('level -3/0/+3: mobile 76 / 108 / 140 — appShellHeaderMobileHeight + anchors.stackMd at each level', () => {
+  test('level -3/0/+3: mobile 77 / 109 / 141 — appShellHeaderMobileHeight + anchors.stackMd at each level', () => {
     const low = deriveSpacing(-3)
     const zero = deriveSpacing(0)
     const high = deriveSpacing(3)
-    expect(low.step.stickyHeaderClearanceMobile).toBe(76)
+    expect(low.step.stickyHeaderClearanceMobile).toBe(77)
     expect(low.step.stickyHeaderClearanceMobile).toBe(
       low.step.appShellHeaderMobileHeight + low.anchors.stackMd,
     )
-    expect(zero.step.stickyHeaderClearanceMobile).toBe(108)
-    expect(high.step.stickyHeaderClearanceMobile).toBe(140)
+    expect(zero.step.stickyHeaderClearanceMobile).toBe(109)
+    expect(high.step.stickyHeaderClearanceMobile).toBe(141)
     expect(high.step.stickyHeaderClearanceMobile).toBe(
       high.step.appShellHeaderMobileHeight + high.anchors.stackMd,
     )
@@ -204,10 +206,10 @@ describe('buildDensityCss', () => {
     // REM, not px — see the input-height describe block below for why.
     expect(css).toContain('--vx-space-input-height: 3.4375rem;')
     expect(css).toContain('--vx-space-control-height: 3.4375rem;')
-    // 77 (desktop) / 140 (mobile), not the anchor/scale/step multiplier result for an 84px base —
+    // 77 (desktop) / 141 (mobile), not the anchor/scale/step multiplier result for an 84px base —
     // both are DERIVED (own header + anchors.stackMd), see the dedicated describe block above.
     expect(css).toContain('--vx-space-sticky-header-clearance: 77px;')
-    expect(css).toContain('--vx-space-sticky-header-clearance-mobile: 140px;')
+    expect(css).toContain('--vx-space-sticky-header-clearance-mobile: 141px;')
     // JS-number-only constants (Timeline's bulletSize, VX chart geometry, Progress's size) have no
     // CSS var to override — see `spaceDecls`'s doc in `tokens/index.ts`.
     expect(css).not.toContain('--vx-space-timeline-bullet')

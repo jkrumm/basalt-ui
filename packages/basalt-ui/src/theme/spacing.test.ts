@@ -1,21 +1,35 @@
 /**
- * The spacing gate — this is a TOKENIZATION-only refactor (`SPACE`/`SPACE_SCALE`/`SPACE_STEP`/
- * `SPACE_FIXED` in `tokens/palette.ts` replace the Mantine `spacing` size-scale plus ~4 components'
- * hardcoded `styles`/`defaultProps` spacing literals and the `--vx-space-*` CSS vars), so the
- * rendered output must stay byte-identical to the numbers shipped before it. This locks today's
- * exact values as the acceptance baseline — a future change to `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/
- * `SPACE_FIXED` that moves one of these numbers is a deliberate visual change, not a silent
- * regression, and must update this file in the same commit.
+ * The spacing gate — the level-0 acceptance baseline for `SPACE`/`SPACE_SCALE`/`SPACE_STEP`/
+ * `SPACE_FIXED` (`tokens/palette.ts`).
  *
- * ONE exception: `SPACE_STEP.stickyHeaderClearance` moved from 84 (the original literal) through an
+ * READ THIS BEFORE UPDATING A NUMBER HERE. This file locks the CURRENT shipped identity, not the
+ * pre-tokenization one. It was born as the byte-identity gate for a tokenization-only refactor (the
+ * token tables replacing the Mantine `spacing` size-scale, ~4 components' hardcoded
+ * `styles`/`defaultProps` literals, and the `--vx-space-*` CSS vars), and it is still the ONLY thing
+ * standing between a base-table typo and a silent app-wide layout shift. What it can NOT do is tell
+ * you whether a diff to it was intended — updating this file is exactly how a deliberate retune
+ * lands, and also exactly how a regression would hide. So: a change here must be a visual decision
+ * taken on purpose, in the same commit as the base-table edit, with the reason in the commit body.
+ * Never "fix the test" to make a red suite green.
+ *
+ * Deliberate departures from the original pre-tokenization numbers so far:
+ *
+ * - `SPACE_SCALE` (the app-wide Mantine `xs`..`xl` rhythm) went 10/12/16/18/24 → 11/13/18/20/26, and
+ *   13 `sidebar*` gap/inset one-offs tightened ~15% — the component-roominess retune. The two moves
+ *   are deliberately opposite: roomier cards and generic layout, a tighter sidebar. `SPACE.rowInsetX`/
+ *   `rowInsetY`, the 4px stack rhythm, and the sidebar SIZES (`sidebarAvatarSize`,
+ *   `sidebarSearchTriggerHeight`, the two Menu widths) were held back on purpose — see that commit.
+ * - `SPACE_STEP.stickyHeaderClearance` moved from 84 (the original literal) through an
  * intermediate single derived value of 108, to its FINAL shape — a responsive PAIR (Decision 3):
  * `stickyHeaderClearance` (desktop, `>= sm`) now 60, plus a new `stickyHeaderClearanceMobile`
  * (mobile, `< sm`) at 108. Both are DERIVED from their own AppShell header (`appShellHeaderHeight`/
  * `appShellHeaderMobileHeight`) instead of one independent literal, which fixed two bugs at once:
- * the original 84 under-cleared the 96px mobile header at level 0 (before density entered the
+ * the original 84 under-cleared the mobile header (96px at the time, 97 since the retune above) at
+ * level 0 (before density entered the
  * picture at all), and a single derived value tuned against the mobile header over-cleared the 48px
  * desktop header by 60px on the common (desktop) path. See `deriveSpacing`'s doc in
- * `tokens/palette.ts` for the full rationale. Every other value in this file stays byte-identical.
+ * `tokens/palette.ts` for the full rationale. Every value NOT named above is still byte-identical to
+ * the pre-tokenization number it replaced.
  */
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
@@ -47,12 +61,12 @@ describe('SPACE anchors match the shipped identity', () => {
 })
 
 describe('SPACE_SCALE matches the shipped identity — independent of SPACE even where it coincides', () => {
-  test('xs/sm/md/lg/xl are 10/12/16/18/24', () => {
-    expect(SPACE_SCALE.xs).toBe(10)
-    expect(SPACE_SCALE.sm).toBe(12)
-    expect(SPACE_SCALE.md).toBe(16)
-    expect(SPACE_SCALE.lg).toBe(18)
-    expect(SPACE_SCALE.xl).toBe(24)
+  test('xs/sm/md/lg/xl are 11/13/18/20/26', () => {
+    expect(SPACE_SCALE.xs).toBe(11)
+    expect(SPACE_SCALE.sm).toBe(13)
+    expect(SPACE_SCALE.md).toBe(18)
+    expect(SPACE_SCALE.lg).toBe(20)
+    expect(SPACE_SCALE.xl).toBe(26)
   })
 })
 
@@ -76,14 +90,16 @@ describe('SPACE_FIXED structurals match the shipped identity', () => {
   })
 })
 
-describe('the Mantine spacing size-scale is byte-identical to the pre-tokenization literals', () => {
-  test('xs/sm/md/lg/xl resolve to the exact prior rem strings', () => {
+describe('the Mantine spacing size-scale reaches theme.spacing as the expected rem strings', () => {
+  // The px->rem conversion and the retuned bases, end to end (`pxRem`'s 16px root: 11px = 0.6875rem).
+  // These WERE the pre-tokenization literals until the component-roominess retune — see the file doc.
+  test('xs/sm/md/lg/xl resolve to the exact expected rem strings', () => {
     expect(baseTheme.spacing).toEqual({
-      xs: '0.625rem',
-      sm: '0.75rem',
-      md: '1rem',
-      lg: '1.125rem',
-      xl: '1.5rem',
+      xs: '0.6875rem',
+      sm: '0.8125rem',
+      md: '1.125rem',
+      lg: '1.25rem',
+      xl: '1.625rem',
     })
   })
 })
@@ -241,14 +257,14 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
 > = [
   // DERIVED, not an independent literal — see `deriveSpacing`'s doc (`tokens/palette.ts`, third
   // bullet, Decision 3) for why 60/108 (not 84) are the level-0 values: the ONE responsive PAIR
-  // deliberately exempt from the "every SPACE_STEP number is byte-identical at level 0" invariant
+  // deliberately exempt from the "every SPACE_STEP number is locked at level 0" invariant
   // this file otherwise enforces (locked here, not skipped, precisely so a future regression back to
   // 84, or back to a single shared value, shows up as a failing assertion rather than a silent
   // revert).
   ['stickyHeaderClearance', 60, 'space-sticky-header-clearance'],
-  ['stickyHeaderClearanceMobile', 108, 'space-sticky-header-clearance-mobile'],
+  ['stickyHeaderClearanceMobile', 109, 'space-sticky-header-clearance-mobile'],
   ['navIconGap', 10, 'space-nav-icon-gap'],
-  ['sidebarRegionGap', 12, 'space-sidebar-region-gap'],
+  ['sidebarRegionGap', 10, 'space-sidebar-region-gap'],
   ['proseQuoteInsetY', 2, 'space-prose-quote-inset-y'],
   ['proseQuoteIndent', 12, 'space-prose-quote-indent'],
   ['proseInlineCodeInsetY', 1.5, 'space-prose-inline-code-inset-y'],
@@ -305,24 +321,24 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['guideBodyGapBottom', 8, 'space-guide-body-gap-bottom'],
   ['guideFooterGapTop', 20, 'space-guide-footer-gap-top'],
   ['guideFooterInsetTop', 16, 'space-guide-footer-inset-top'],
-  ['sidebarSearchGap', 8, 'space-sidebar-search-gap'],
+  ['sidebarSearchGap', 7, 'space-sidebar-search-gap'],
   ['sidebarSearchTriggerHeight', 32, 'space-sidebar-search-trigger-height'],
   ['settingsRowInsetY', 10, 'space-settings-row-inset-y'],
   ['settingsRowGap', 16, 'space-settings-row-gap'],
   ['mermaidContainerInset', 16, 'space-mermaid-container-inset'],
-  ['sidebarBrandInsetTop', 3, 'space-sidebar-brand-inset-top'],
-  ['sidebarBrandInsetX', 8, 'space-sidebar-brand-inset-x'],
-  ['sidebarSectionGap', 15, 'space-sidebar-section-gap'],
-  ['sidebarAccountInsetTop', 11, 'space-sidebar-account-inset-top'],
-  ['sidebarAccountInsetX', 8, 'space-sidebar-account-inset-x'],
-  ['sidebarAccountInsetBottom', 3, 'space-sidebar-account-inset-bottom'],
+  ['sidebarBrandInsetTop', 2, 'space-sidebar-brand-inset-top'],
+  ['sidebarBrandInsetX', 7, 'space-sidebar-brand-inset-x'],
+  ['sidebarSectionGap', 12, 'space-sidebar-section-gap'],
+  ['sidebarAccountInsetTop', 9, 'space-sidebar-account-inset-top'],
+  ['sidebarAccountInsetX', 7, 'space-sidebar-account-inset-x'],
+  ['sidebarAccountInsetBottom', 2, 'space-sidebar-account-inset-bottom'],
   ['sidebarAvatarSize', 28, 'space-sidebar-avatar-size'],
-  ['sidebarSectionLabelGap', 3, 'space-sidebar-section-label-gap'],
+  ['sidebarSectionLabelGap', 2, 'space-sidebar-section-label-gap'],
   ['sidebarChildListGapTop', 2, 'space-sidebar-child-list-gap-top'],
-  ['sidebarChildListGapBottom', 4, 'space-sidebar-child-list-gap-bottom'],
-  ['sidebarChildListIndent', 17, 'space-sidebar-child-list-indent'],
-  ['sidebarChildRowInsetY', 5, 'space-sidebar-child-row-inset-y'],
-  ['sidebarChildRowIndent', 14, 'space-sidebar-child-row-indent'],
+  ['sidebarChildListGapBottom', 3, 'space-sidebar-child-list-gap-bottom'],
+  ['sidebarChildListIndent', 15, 'space-sidebar-child-list-indent'],
+  ['sidebarChildRowInsetY', 4, 'space-sidebar-child-row-inset-y'],
+  ['sidebarChildRowIndent', 12, 'space-sidebar-child-row-indent'],
   // JS-number-only (`app-sidebar-account.tsx`/`app-sidebar.tsx` read both via `useBasaltSpacing()` —
   // Mantine's `<Menu width={…}>` also takes a number, not a `var()` string).
   ['sidebarAccountMenuWidth', 220, null],
@@ -332,7 +348,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // `header`/`navbar` props take numbers, not `var()` strings) — see `spaceDecls`'s doc in
   // `tokens/index.ts` for why a `--vx-space-app-shell-*` declaration would have zero consumers.
   ['appShellHeaderHeight', 48, null],
-  ['appShellHeaderMobileHeight', 96, null],
+  ['appShellHeaderMobileHeight', 97, null],
   ['appShellNavbarWidth', 216, null],
   ['appShellNavbarRailWidth', 48, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],

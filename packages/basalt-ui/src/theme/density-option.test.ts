@@ -43,12 +43,16 @@ describe('a non-default density level graduates onto the theme', () => {
     expect(theme.components?.['Progress']?.defaultProps?.['size']).toBe(5)
   })
 
+  // Read off `expected.scale` rather than hardcoded literals: what this asserts is the WIRING (the
+  // resolved scale group reaches `theme.spacing` as rem strings), and the law's own level-0 bases plus
+  // its per-level output are locked by `spacing.test.ts` + `density-relations.test.ts`. At the time of
+  // writing, `density: -2` resolves to 9/10/14/16/21.
   test('the spacing size-scale reflects the resolved scale group', () => {
-    expect(theme.spacing?.xs).toBe(`${8 / 16}rem`)
-    expect(theme.spacing?.sm).toBe(`${10 / 16}rem`)
-    expect(theme.spacing?.md).toBe(`${13 / 16}rem`)
-    expect(theme.spacing?.lg).toBe(`${14 / 16}rem`)
-    expect(theme.spacing?.xl).toBe(`${19 / 16}rem`)
+    expect(theme.spacing?.xs).toBe(`${expected.scale.xs / 16}rem`)
+    expect(theme.spacing?.sm).toBe(`${expected.scale.sm / 16}rem`)
+    expect(theme.spacing?.md).toBe(`${expected.scale.md / 16}rem`)
+    expect(theme.spacing?.lg).toBe(`${expected.scale.lg / 16}rem`)
+    expect(theme.spacing?.xl).toBe(`${expected.scale.xl / 16}rem`)
   })
 })
 

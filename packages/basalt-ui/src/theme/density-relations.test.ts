@@ -343,8 +343,16 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     // The 22px floor is `--ai-size-sm` — verified directly against the INSTALLED Mantine source
     // (`@mantine/core/styles/ActionIcon.css`: `--ai-size-xs: 18px; --ai-size-sm: 22px; --ai-size-md:
     // 28px; ...`), not recalled from memory. The budget at every level in `[-3, 3]` under the current
-    // law: 23 / 25 / 28 / 32 / 36 / 39 / 41 (level -3 through +3) — never below the floor, with the
+    // law: 23 / 26 / 28 / 32 / 36 / 38 / 41 (level -3 through +3) — never below the floor, with the
     // smallest margin (1px) at level -3, not at -2 as sometimes assumed by eye.
+    //
+    // Row 1 is the REMAINDER of `appShellHeaderMobileHeight`'s documented sum (row 1 + `SPACE_SCALE.sm`
+    // + `appHeaderMobileActionsHeight`), so raising an addend without raising the total takes the
+    // difference straight out of this budget. That is exactly what the component-roominess retune did
+    // — `SPACE_SCALE.sm` 12 -> 13 briefly drove level -3 to 22, flush against the floor — and why the
+    // mobile header went 96 -> 97 in the same change. See that constant's JSDoc (`tokens/palette.ts`):
+    // it names this test as the thing that measures the drift, and computing the header from its
+    // addends as the fix that would make the drift impossible.
     for (const level of ALL_LEVELS) {
       const { step, scale } = deriveSpacing(level)
       const budget = step.appShellHeaderMobileHeight - step.appHeaderMobileActionsHeight - scale.sm
