@@ -330,12 +330,18 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
  * only invite someone to think it does.
  *
  * Deliberately DOES NOT emit a var for every `SpaceValues` number — `space.scale.*` (the generic
- * Mantine spacing scale) and `space.step.{timelineBullet,progressBarSize,chartLegendGap,
- * chartMarginTop,chartMarginRight,chartMarginBottom,chartMarginLeft,chartDotR}` have ZERO `var()`
- * consumers anywhere in the framework or its tests beyond the CSS-emission test itself — each is
- * read straight off the resolved `SpaceValues` as a JS NUMBER instead (`theme/index.ts`'s Timeline/
- * Progress `defaultProps`, and `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object),
- * so a `--vx-space-*` declaration for one of them was dead weight that only looked like the fix for
+ * Mantine spacing scale) and fourteen `space.step.*` keys have ZERO `var()` consumers anywhere in
+ * the framework or its tests beyond the CSS-emission test itself. Each is read straight off the
+ * resolved `SpaceValues` as a JS NUMBER instead, in one of three ways:
+ * `{timelineBullet,progressBarSize}` are Mantine `defaultProps` (`theme/index.ts`'s Timeline/
+ * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,appShellHeaderHeight,
+ * appShellHeaderMobileHeight,appShellNavbarWidth,appShellNavbarRailWidth}` are numeric Mantine
+ * component props (Menu `width`, AppShell `header`/`navbar`); and `{chartLegendGap,chartMarginTop,
+ * chartMarginRight,chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
+ * `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object. The full list is locked
+ * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a
+ * one-off silently omits nothing. A `--vx-space-*` declaration for any of them would be dead weight
+ * that only looked like the fix for
  * the dev-slider/production gap those JS reads actually have (see `deriveSpacing`'s JSDoc in
  * `tokens/palette.ts` for the real scope of that gap — it is materially bigger than "a var these
  * numbers could round-trip through"). `theme.spacing` (the generic scale, JS) already resolves

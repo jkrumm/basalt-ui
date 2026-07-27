@@ -136,7 +136,13 @@ export function BasaltVirtualList<T>({
               boxSizing: 'border-box',
             }}
           >
-            <Skeleton height={estimateSize - 16} radius="sm" />
+            {/* Inner height = row height minus the row's own vertical inset (top + bottom), read
+                from the same density-tracking var the padding above uses — a hardcoded subtrahend
+                would only be correct at density level 0. */}
+            <Skeleton
+              height={`calc(${estimateSize}px - 2 * var(--vx-space-virtual-row-inset-y))`}
+              radius="sm"
+            />
           </div>
         ))}
       </Box>
