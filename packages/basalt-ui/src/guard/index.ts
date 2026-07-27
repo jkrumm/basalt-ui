@@ -68,6 +68,47 @@ const LAYOUT_SURFACE_PROP =
 const INLINE_SPACING =
   /\b(?:padding(?:Top|Bottom|Left|Right)?|margin(?:Top|Bottom|Left|Right)?|gap|rowGap|columnGap)\s*:\s*(?!var\()['"]?-?(?!0\b)\d/g
 
+/**
+ * The sub-scale micro-spacing ceiling, in px — the largest literal `inline-spacing` tolerates in a
+ * CSS file. Below the smallest spacing scale stop (`SPACE_SCALE.xs`), which is the whole point: a
+ * value under that stop has NO token to prefer, so flagging it asks for something that does not
+ * exist. Pinned against the real scale by `check-source.test.ts` so a density retune of the ladder
+ * cannot leave this stranded above it.
+ *
+ * Deliberately CSS-ONLY. In TSX the same shape means something different: `pl={4}` is a Mantine
+ * PROP and never matches this pattern in the first place, while `style={{ paddingLeft: 4 }}` does —
+ * and there the finding is right, because the prop form exists and should have been used. In CSS
+ * there is no prop form, and the emitted `--vx-space-*` set is basalt's own component one-offs
+ * (`--vx-space-toc-sub-indent`), not a consumer surface. Without this escape a consumer's CSS
+ * module had no legal way to write a 4px cluster gap: no token to reach for, `theme-allow` on every
+ * line (which `basalt-tokens.md` explicitly warns against), or `exemptRules` — which matches whole
+ * path segments and so cannot express `*.module.css`.
+ */
+const MICRO_SPACING_CEILING_PX = 10
+
+/**
+ * Is this CSS declaration entirely sub-scale? True when every literal in the value is a bare px (or
+ * unitless) number at or below {@link MICRO_SPACING_CEILING_PX}. `var(...)` components are dropped
+ * before the check — a value that mixes a token with a micro literal (`padding: 4px var(--x)`) is
+ * already tokenized where it counts.
+ *
+ * Multi-value shorthands are judged as a whole: `padding: 4px 8px` passes, `padding: 4px 16px` does
+ * not — the 16 has a scale stop and should use it. Any other unit (`rem`, `em`, `%`) fails, because
+ * the doctrine is stated in px and a rem value is a different axis, not a micro-spacing one.
+ */
+function isSubScaleCssSpacing(line: string, matchIndex: number): boolean {
+  const colon = line.indexOf(':', matchIndex)
+  if (colon === -1) return false
+  const rest = line.slice(colon + 1)
+  const end = rest.search(/[;}]/)
+  const value = (end === -1 ? rest : rest.slice(0, end)).replace(/var\([^)]*\)/g, ' ').trim()
+  if (value === '') return true
+  return value.split(/\s+/).every((part) => {
+    const literal = /^-?(\d+(?:\.\d+)?)(?:px)?$/.exec(part)
+    return literal !== null && Number(literal[1]) <= MICRO_SPACING_CEILING_PX
+  })
+}
+
 // display:flex/grid/inline-flex/inline-grid in an inline style.
 const INLINE_DISPLAY = /\bdisplay\s*:\s*['"](?:inline-)?(?:flex|grid)['"]/g
 
@@ -130,7 +171,21 @@ const SUB_16_FONT_SIZE = /font-?[Ss]ize\s*:\s*['"]?(-?\d+(?:\.\d+)?)(?:px)?['"]?
 // ── Defaults ─────────────────────────────────────────────────────────────────────────────────────
 
 /** Default spacing steps (px) flagged as raw spacing props. */
-const DEFAULT_SPACING_STEPS: readonly number[] = [10, 12, 16, 20, 32]
+/**
+ * The `xs…xl` spacing scale, as raw numbers — what `raw-spacing` flags, because a prop value that
+ * EQUALS a step should be written as the token (`p="md"`, not `p={18}`).
+ *
+ * Mirrors `SPACE_SCALE` at level 0. Kept as a literal rather than imported from `tokens/palette` so
+ * the headless guard core stays a single file: it runs on every Write/Edit through the PreToolUse
+ * hook, and pulling the palette in would drag `derive.ts` + `hct.ts`'s color math along with it.
+ * `check-source.test.ts` asserts the two agree, so the copy cannot drift — which it did: this list
+ * still read `[10, 12, 16, 20, 32]` after the level-0 retune, telling consumers to replace `p={16}`
+ * with a `p="md"` that resolves to 18.
+ *
+ * A consumer whose theme moves the scale (`createBasaltTheme({ density })`, or its own overrides)
+ * sets `basalt.spacingSteps` in package.json rather than living with this default.
+ */
+const DEFAULT_SPACING_STEPS: readonly number[] = [11, 13, 18, 20, 26]
 /** Default off-identity Mantine accent families. */
 const DEFAULT_FORBIDDEN_ACCENTS: readonly string[] = ['teal', 'violet', 'grape', 'indigo', 'pink']
 
@@ -635,7 +690,8 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // the stripped text has already blanked out. Same length / same newline positions as `text`, so
   // line numbers computed off either one agree.
   const lines = text.split('\n')
-  const codeText = stripComments(text, guardSyntaxFor(relPath))
+  const syntax = guardSyntaxFor(relPath)
+  const codeText = stripComments(text, syntax)
   const codeLines = codeText.split('\n')
 
   for (let i = 0; i < lines.length; i++) {
@@ -708,9 +764,10 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       findings.push({ relPath, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
     }
 
-    // inline-spacing — pattern + gating from GUARD_RULES.
+    // inline-spacing — pattern + gating from GUARD_RULES, plus the CSS-only sub-scale escape.
     if (GUARD_RULES['inline-spacing'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['inline-spacing'].pattern as RegExp)) {
+        if (syntax === 'css' && isSubScaleCssSpacing(line, m.index)) continue
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-spacing' })
       }
     }
