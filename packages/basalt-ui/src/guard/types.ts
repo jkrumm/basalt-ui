@@ -29,6 +29,22 @@ export type GuardKind =
   | 'raw-font-family'
 
 /**
+ * How hard a finding lands. `error` fails the build; `warn` reports and passes.
+ *
+ * The point of `warn` is the LANDING of a new rule, not a permanent tier. basalt-ui bans majors by
+ * design — 1.x absorbs breaks — so a consumer has no semver channel telling them enforcement got
+ * stricter, and the guard is the part of the framework that can hard-fail their build. A kind that
+ * arrives as an error therefore turns a routine minor upgrade into an unplanned refactor: 1.2.0
+ * cost the one real consumer eleven `theme-allow` comments, and 1.3.0 had them delete all eleven
+ * again — net zero source change, two commits, two production deploys.
+ *
+ * So: a change that makes the guard reject code it previously accepted — a new kind, or an existing
+ * kind reaching a new file type — ships `warn` for one minor, then promotes. The consumer sees it,
+ * schedules it, and upgrades on a green build.
+ */
+export type GuardSeverity = 'warn' | 'error'
+
+/**
  * A structured finding — the chosen testable surface (§C.4). Replaces the old `Violation` type.
  * `relPath` + `line` + `token` + `kind` uniquely identify the violation.
  *
@@ -41,6 +57,8 @@ export type Finding = {
   readonly line: number
   readonly token: string
   readonly kind: GuardKind
+  /** Resolved per kind from {@link GuardConfig.severity} over the shipped default. */
+  readonly severity: GuardSeverity
 }
 
 /**
@@ -136,4 +154,21 @@ export type GuardConfig = {
    * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
    */
   readonly exemptRules: Partial<Record<GuardKind, string[]>>
+  /**
+   * Per-kind severity override. A kind absent here takes the shipped default, which is `error`
+   * for every kind past its grace minor — see {@link GuardSeverity} for why a grace minor exists.
+   *
+   * Two directions, both legitimate:
+   *  • `'warn'` on an `error` kind — a consumer who wants to upgrade now and fix later, on their
+   *    own schedule rather than the release's.
+   *  • `'error'` on a grace-period kind — a consumer who would rather take the enforcement
+   *    immediately than carry a warning for a minor.
+   *
+   * This is severity, NOT an off switch: every kind already has its own boolean in this config,
+   * and `exemptRules` scopes a kind to paths. A kind turned down to `warn` still reports.
+   *
+   * @example
+   * { severity: { 'inline-spacing': 'warn' } } // report, don't fail, while we migrate
+   */
+  readonly severity: Partial<Record<GuardKind, GuardSeverity>>
 }

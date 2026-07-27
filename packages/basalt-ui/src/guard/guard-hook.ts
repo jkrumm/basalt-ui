@@ -106,7 +106,12 @@ export function evaluateGuardHook(
     return { permissionDecision: 'allow' }
   }
 
-  const findings = checkSource(target.text, target.relPath, cfg)
+  // Errors only. A `warn` kind is inside its grace minor — it must not block a write, or the
+  // grace period would be the strictest gate in the toolchain rather than the softest: `sync` and
+  // CI would pass while the PreToolUse hook refused the edit outright.
+  const findings = checkSource(target.text, target.relPath, cfg).filter(
+    (f) => f.severity === 'error',
+  )
   if (findings.length === 0) return { permissionDecision: 'allow' }
 
   const shown = findings.slice(0, 10)

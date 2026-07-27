@@ -262,7 +262,7 @@ cat >dist-vantage.ts <<'TS'
 import type { Slot, AsyncState } from 'basalt-ui'
 import { assertNever } from 'basalt-ui'
 import type { SeriesKey } from 'basalt-ui/charts'
-import type { GuardKind, Finding } from 'basalt-ui/guard'
+import type { GuardKind, GuardSeverity, Finding } from 'basalt-ui/guard'
 
 // Slot: un-augmented slot is never-keyed {}
 type EmptySlot = Slot<'nonexistent', Record<string, unknown>>
@@ -282,11 +282,12 @@ function render(s: AsyncState<number>): string {
 // SeriesKey resolves (never when un-augmented — valid, no tsc error)
 const _sk: SeriesKey = undefined as never
 
-// GuardKind and Finding are present in the .d.ts
+// GuardKind, GuardSeverity and Finding are present in the .d.ts
 const _gk: GuardKind = 'raw-hex'
-const _f: Finding = { relPath: 'x', line: 1, token: '#fff', kind: 'raw-hex' }
+const _sev: GuardSeverity = 'error'
+const _f: Finding = { relPath: 'x', line: 1, token: '#fff', kind: 'raw-hex', severity: _sev }
 
-export { render, _k, _sk, _gk, _f }
+export { render, _k, _sk, _gk, _sev, _f }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"

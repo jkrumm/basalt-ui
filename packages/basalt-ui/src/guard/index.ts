@@ -4,9 +4,9 @@
  * GUARD_RULES: the closed registry of all 19 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
-import type { Finding, GuardConfig, GuardKind } from './types'
+import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
 
-export type { Finding, GuardConfig, GuardKind }
+export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 
 // ── Static regex consts ──────────────────────────────────────────────────────────────────────────
 
@@ -208,6 +208,29 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   sub16InputFont: true,
   allowComment: 'theme-allow',
   exemptRules: {},
+  severity: {},
+}
+
+/**
+ * Kinds still inside their grace minor — reported, not fatal, until the next minor promotes them.
+ * See {@link GuardSeverity} for the doctrine and why basalt-ui in particular needs it.
+ *
+ * The value is the promotion note, so the entry carries its own expiry rather than relying on
+ * someone remembering. Adding a kind here is part of shipping it; removing the entry IS the
+ * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
+ *
+ * Empty today: every shipped kind is past its grace period. The next new kind goes here first.
+ *
+ * @example
+ * const GRACE: Partial<Record<GuardKind, string>> = {
+ *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
+ * }
+ */
+const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {}
+
+/** A kind's effective severity: consumer override first, then the grace table, then `error`. */
+function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
+  return cfg.severity?.[kind] ?? (kind in GRACE_PERIOD_KINDS ? 'warn' : 'error')
 }
 
 // ── Path predicate ────────────────────────────────────────────────────────────────────────────────
@@ -672,7 +695,9 @@ function ruleApplies(kind: GuardKind, relPath: string): boolean {
  * if (findings.some((f) => f.kind === 'raw-hex')) { ... }
  */
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
-  const findings: Finding[] = []
+  // Severity is stamped once at the end rather than at each of the ~20 push sites — it is a
+  // property of the KIND and the config, never of the match.
+  const findings: Omit<Finding, 'severity'>[] = []
 
   // Derive the 3 dynamic regexes via GUARD_RULES pattern builders.
   const forbiddenAccentRe = (
@@ -885,5 +910,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // Per-rule, per-path exemption post-filter (§exemptRules) — applied once here so it uniformly
   // covers every kind regardless of whether it was emitted via the GUARD_RULES registry loop above
   // or one of the inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
-  return findings.filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
+  return findings
+    .filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
+    .map((f) => ({ ...f, severity: severityOf(f.kind, cfg) }))
 }

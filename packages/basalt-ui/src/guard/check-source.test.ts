@@ -1300,3 +1300,44 @@ describe('exemptRules', () => {
     expect(kinds(f)).toContain('raw-html-layout')
   })
 })
+
+// ── 20. severity ─────────────────────────────────────────────────────────────
+
+describe('severity', () => {
+  it('stamps every finding, defaulting to error', () => {
+    const f = find(`<Box style={{ color: '#ff0000' }} />`)
+    expect(f.length).toBeGreaterThan(0)
+    expect(f.every((v) => v.severity === 'error')).toBe(true)
+  })
+
+  it('honours a per-kind consumer override without suppressing the finding', () => {
+    // Turning a kind down must still REPORT it — severity is not an off switch. The per-kind
+    // booleans and `exemptRules` are the off switches, and they stay separate on purpose.
+    const cfg = { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' as const } }
+    const f = checkSource(`<Box style={{ color: '#ff0000' }} />`, PATH, cfg)
+    const hex = f.filter((v) => v.kind === 'raw-hex')
+    expect(hex).toHaveLength(1)
+    expect(hex[0]?.severity).toBe('warn')
+  })
+
+  it('scopes the override to the named kind only', () => {
+    const cfg = { ...DEFAULT_GUARD_CONFIG, severity: { 'raw-hex': 'warn' as const } }
+    const f = checkSource(`<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} />`, PATH, cfg)
+    expect(f.find((v) => v.kind === 'raw-hex')?.severity).toBe('warn')
+    expect(f.find((v) => v.kind === 'raw-spacing')?.severity).toBe('error')
+  })
+
+  it('ships no kind in its grace period today', () => {
+    // Every shipped kind is past its grace minor. This is a LEDGER, not a constraint: when a new
+    // kind lands warn-only, this expectation changes in the same commit, and changing it back is
+    // the promotion. A grace entry that outlives its minor shows up here as an unexplained diff.
+    const cfg = DEFAULT_GUARD_CONFIG
+    const everyKind = checkSource(
+      `<Box p={${SPACE_SCALE.md}} radius={4} style={{ color: '#ff0000', gap: 3 }} />`,
+      PATH,
+      cfg,
+    )
+    expect(everyKind.length).toBeGreaterThan(0)
+    expect(everyKind.every((v) => v.severity === 'error')).toBe(true)
+  })
+})
