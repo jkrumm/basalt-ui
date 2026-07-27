@@ -156,15 +156,28 @@ fails a mixed staging set.
 **Commit type discipline (affects npm versioning):**
 
 - `feat:` / `fix:` — triggers minor/patch release **only when the commit touches
-  `packages/basalt-ui/`** (path-filtered). `feat!:` or a `BREAKING CHANGE:` footer → major.
+  `packages/basalt-ui/`** (path-filtered).
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
+
+**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui is **greenfield —
+zero external consumers**; the only consumer is argo, in the same hands, upgraded in lockstep. A
+behavior change that would nominally be "breaking" (a component's resolved size shifting, a prop
+default moving, an export being renamed) ships as a plain `feat:` on the 1.x line. Document the
+change and the opt-out in the commit body; do not encode it in the version number. Cutting a major
+here buys nobody anything and costs a version-number reset — don't raise it, don't propose it,
+don't reach for the marker. Revisit only if basalt-ui ever gains an outside consumer.
 
 ## Release Process
 
 1. Trigger the **Make Release** / release workflow on GitHub Actions (workflow_dispatch).
 2. `semantic-release-monorepo` analyzes only commits touching `packages/basalt-ui/`.
 3. Creates git tag + GitHub release + publishes to npm **with provenance** automatically.
+
+**Releasing is owner-triggered, always.** Never run the release workflow, and never list releasing
+as a queued next step or a "remaining before ship" item — the owner decides when a version goes
+out. Merging is a separate decision: `release.yml` is `workflow_dispatch`-only, so merged never
+means published.
 
 ## Analytics & Tracking
 
