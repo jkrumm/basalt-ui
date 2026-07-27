@@ -328,7 +328,11 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
 (Bun runtime).
 
 - `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
-  palette. Reads config from the consumer package.json `"basalt"` key
+  palette. **Findings carry a severity** (`warn` | `error`): errors fail the build, warnings report
+  and pass, and the PreToolUse `guard-hook` denies only on errors. Consumers override per kind via
+  `basalt.severity` — down, to upgrade now and migrate later, or up, to take a grace-period kind's
+  enforcement immediately. Severity is not an off switch; each kind already has its own boolean and
+  `exemptRules` scopes it to paths. Reads config from the consumer package.json `"basalt"` key
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); default root is `src`, and a scan that
   matches zero files fails loudly. Consumer lint = `oxlint . && basalt-ui check-theme`.
 - `init` / `sync` — **real**. Two ownership modes, decided by one question — _does Claude read this
@@ -343,8 +347,17 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports); not a consumer
   command.
 - `info` (+ `--json`) — prints the published surface map; `--json` emits a stable JSON form.
-- `doctor` — verifies the one version axis: installed `node_modules/basalt-ui` vs the manifest's
-  `basaltVersion` (plus manifest presence and a stale-`bunx` CLI-version warning).
+- `doctor` — verifies two reconciliation axes. **Version**: installed `node_modules/basalt-ui` vs
+  the manifest's `basaltVersion` (plus manifest presence and a stale-`bunx` CLI-version warning).
+  **Spacing scale**: `deriveSpacing(0).scale` vs the manifest's `spacingScale`, stamped by
+  `init`/`sync` — skipped outright when the running CLI's version and the installed one disagree,
+  since the CLI's scale is then not the one the app renders with and a "matches" would be a false
+  pass. The second one is the only check that reports a change in RENDERED OUTPUT rather
+  than in placed files — a retune of the spacing bases moves every surface in an app calling
+  `createBasaltTheme()` bare, and since majors are banned the version number cannot say so. The
+  1.2.0 retune shipped as "tighten the sidebar, open up components" and sat unverified in the one
+  consumer's production for a day; this makes the move something a consumer is told rather than
+  something they have to notice in a subject line.
 - `guard-hook` — PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies
   off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
   `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook`.
@@ -354,6 +367,23 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   parser over `buildPaletteCss` and holds NO emission logic of its own — the CLI and the API must
   not be able to disagree about what basalt's tokens are (`src/cli/tokens-css.test.ts`). This is the
   command that removes the install entirely for a static, non-React consumer.
+
+### Shipping a stricter guard — the grace minor
+
+**A change that makes the guard reject code it previously accepted ships `warn` for one minor, then
+promotes to `error`.** That covers a new `GuardKind` and an existing kind reaching a new file type
+(1.2.0's CSS-module scan was the latter, and it is the reason this rule exists).
+
+Mechanically: add the kind to `GRACE_PERIOD_KINDS` in `src/guard/index.ts` with its promotion note
+in the same commit that ships it; deleting that entry one minor later IS the promotion, and belongs
+in its own commit so the changelog reads "enforcement got stricter".
+
+The justification is specific to this package, not general caution. **Majors are banned here by
+design** — 1.x absorbs breaks — so a consumer has no semver channel telling them enforcement
+tightened, and the guard is the one part of basalt that can hard-fail their build. Landing a kind as
+an error turns a routine minor upgrade into an unplanned refactor: 1.2.0 cost the one real consumer
+eleven `theme-allow` comments and 1.3.0 had them delete all eleven, for a net-zero source change
+across two commits and two production deploys.
 
 ## Toolchain (oxlint + oxfmt — not Biome/Prettier)
 

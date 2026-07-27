@@ -722,4 +722,23 @@ describe('severity — warnings report, errors fail', () => {
     // Warnings first — "what will break later" is the less urgent read.
     expect(err.indexOf('⚠ Theme guard')).toBeLessThan(err.indexOf('✖ Theme guard'))
   })
+
+  it('ignores an unrecognized severity value instead of silently unguarding the kind', () => {
+    // The one config typo that would REMOVE enforcement: 'warning' matches neither bucket, so the
+    // finding would vanish and the command would exit 0 on a tree that is not clean.
+    fixture(RAW_HEX, { roots: ['src'], severity: { 'raw-hex': 'warning' } })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain("not 'warn' or 'error'")
+    expect(err).toContain('✖ Theme guard')
+    expect(err).toContain('raw-hex')
+  })
+
+  it('ignores a severity block that is not an object', () => {
+    fixture(RAW_HEX, { roots: ['src'], severity: 'warn' })
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('basalt.severity is not an object')
+    expect(err).toContain('✖ Theme guard')
+  })
 })
