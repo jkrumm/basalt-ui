@@ -24,15 +24,15 @@
 }
 
 .good {
-  --callout-ink: var(--vx-goodSolid);
+  --callout-ink: var(--vx-good-solid);
 }
 
 .warn {
-  --callout-ink: var(--vx-warnSolid);
+  --callout-ink: var(--vx-warn-solid);
 }
 
 .bad {
-  --callout-ink: var(--vx-badSolid);
+  --callout-ink: var(--vx-bad-solid);
 }
 
 .titleRow {

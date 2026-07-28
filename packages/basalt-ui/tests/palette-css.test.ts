@@ -148,9 +148,12 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 95 of the 104 spacing variables, taking the set from 197 to 102', () => {
-    expect(all.size).toBe(197)
-    expect(core.size).toBe(102)
+  it('drops 95 of the 104 spacing variables, taking the set from 229 to 134', () => {
+    // 197 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
+    // (default `legacyAliases: true`) = 229; the alias set is spacing-free, so it rides along
+    // unchanged in both `all` and `core`.
+    expect(all.size).toBe(229)
+    expect(core.size).toBe(134)
     expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(104)
     expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(9)
   })
@@ -169,5 +172,85 @@ describe('buildPaletteCss core-only spacing', () => {
     const dropped = [...all].filter((n) => !core.has(n))
     expect(dropped.every((n) => n.startsWith('space-'))).toBe(true)
     expect(dropped).toHaveLength(95)
+  })
+})
+
+/**
+ * The 1.4.0 kebab-case rename: 20 stems (12 of them the `fillHover-<family>` family) that used to
+ * be emitted camelCase are now canonical kebab, with the camelCase spelling kept as an alias —
+ * `legacy name -> canonical kebab name`, exhaustive.
+ */
+const LEGACY_ALIASES: Record<string, string> = {
+  accentFill: 'accent-fill',
+  accentFillHover: 'accent-fill-hover',
+  accentHover: 'accent-hover',
+  axisStroke: 'axis-stroke',
+  badRef: 'bad-ref',
+  badSolid: 'bad-solid',
+  dotStroke: 'dot-stroke',
+  goodRef: 'good-ref',
+  goodSoft: 'good-soft',
+  goodSolid: 'good-solid',
+  legendText: 'legend-text',
+  onAccent: 'on-accent',
+  'surface-panelHover': 'surface-panel-hover',
+  tooltipBg: 'tooltip-bg',
+  tooltipBorder: 'tooltip-border',
+  tooltipMuted: 'tooltip-muted',
+  tooltipShadow: 'tooltip-shadow',
+  tooltipText: 'tooltip-text',
+  warnRef: 'warn-ref',
+  warnSolid: 'warn-solid',
+  ...Object.fromEntries(
+    [
+      'gray',
+      'red',
+      'pink',
+      'grape',
+      'violet',
+      'indigo',
+      'cyan',
+      'teal',
+      'green',
+      'lime',
+      'yellow',
+      'orange',
+    ].map((name) => [`fillHover-${name}`, `fill-hover-${name}`]),
+  ),
+}
+
+describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
+  it('is exactly 32 stems, per the naming map', () => {
+    expect(Object.keys(LEGACY_ALIASES)).toHaveLength(32)
+  })
+
+  it('emits all 32 legacy aliases by default, each a pure var() passthrough to its canonical name', () => {
+    const css = buildPaletteCss()
+    for (const [legacy, canonical] of Object.entries(LEGACY_ALIASES)) {
+      expect(css).toContain(`--vx-${legacy}: var(--vx-${canonical});`)
+    }
+  })
+
+  it('never emits a camelCase name as a DEFINITION — only as an alias var() passthrough', () => {
+    const css = buildPaletteCss()
+    for (const [, name, value] of css.matchAll(/--vx-([\w-]+):\s*([^;]+);/g)) {
+      if (!name || !/[a-z][A-Z]/.test(name)) continue // kebab (or non-alphabetic) name — canonical
+      expect(value?.trim()).toMatch(/^var\(--vx-[\w-]+\)$/)
+    }
+  })
+
+  it('legacyAliases: false emits none of the 32 aliases — canonical names only', () => {
+    const css = buildPaletteCss({ legacyAliases: false })
+    for (const legacy of Object.keys(LEGACY_ALIASES)) expect(css).not.toContain(`--vx-${legacy}:`)
+    expect(css).not.toContain('Deprecated camelCase aliases')
+    for (const [, name] of css.matchAll(/--vx-([\w-]+):/g)) expect(name).not.toMatch(/[a-z][A-Z]/)
+  })
+
+  it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
+    const withAliases = varNames(buildPaletteCss())
+    const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
+    expect(withoutAliases.size).toBe(197)
+    expect(withAliases.size).toBe(withoutAliases.size + 32)
+    for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })
 })

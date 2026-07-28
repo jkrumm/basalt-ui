@@ -23,7 +23,7 @@
  * whether the bullet carries child content (Mantine's own `[data-active]` rule only fills solid
  * when a bullet child is present; a plain dot would otherwise render a white fill). */
 .itemBullet[data-active] {
-  background-color: var(--vx-accentFill);
-  border-color: var(--vx-accentFill);
-  color: var(--vx-onAccent);
+  background-color: var(--vx-accent-fill);
+  border-color: var(--vx-accent-fill);
+  color: var(--vx-on-accent);
 }

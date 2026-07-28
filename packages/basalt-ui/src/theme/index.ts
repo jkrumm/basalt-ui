@@ -226,7 +226,7 @@ function buildDarkTuple(data: PaletteData): MantineColorsTuple {
  * consumer that retunes a family outside the band still gets the legible foreground.
  *
  * The palette already KNEW the answer: `ACCENT.onAccent` ("text on an accent fill") existed, and
- * `Composer`'s send button hand-wired `color: var(--vx-onAccent)` — which was the ONLY reason that
+ * `Composer`'s send button hand-wired `color: var(--vx-on-accent)` — which was the ONLY reason that
  * one control stayed legible while every generic Mantine control did not. The token was right;
  * nothing bound the chrome to it. It is bound now (see `accentBridge` / `familyBridge`), and the
  * Composer no longer needs the override.
@@ -304,7 +304,7 @@ function onColorVars(
     // chrome with it. Everything else is a generic surface with no declared foreground: measure it.
     vars[`--vx-on-${name}`] =
       name === theme.primaryColor
-        ? `var(--vx-onAccent, ${data.ACCENT.onAccent[colorScheme]})`
+        ? `var(--vx-on-accent, ${data.ACCENT.onAccent[colorScheme]})`
         : legibleOn(filled, theme)
   }
   return vars
@@ -1044,8 +1044,8 @@ function accentBridge(
   const c = theme.primaryColor
   const { ACCENT } = data
   return {
-    [`--mantine-color-${c}-filled`]: `var(--vx-accentFill, ${ACCENT.accentFill[side]})`,
-    [`--mantine-color-${c}-filled-hover`]: `var(--vx-accentFillHover, ${ACCENT.accentFillHover[side]})`,
+    [`--mantine-color-${c}-filled`]: `var(--vx-accent-fill, ${ACCENT.accentFill[side]})`,
+    [`--mantine-color-${c}-filled-hover`]: `var(--vx-accent-fill-hover, ${ACCENT.accentFillHover[side]})`,
     [`--mantine-color-${c}-text`]: `var(--vx-accent, ${ACCENT.accent[side]})`,
     [`--mantine-color-${c}-outline`]: `var(--vx-accent, ${ACCENT.accent[side]})`,
     [`--mantine-color-${c}-light-color`]: `var(--vx-accent, ${ACCENT.accent[side]})`,
@@ -1068,7 +1068,7 @@ function familyBridge(data: PaletteData): Record<string, string> {
   for (const [name, hex] of Object.entries(data.FILL)) {
     vars[`--mantine-color-${name}-filled`] = `var(--vx-fill-${name}, ${hex})`
     vars[`--mantine-color-${name}-filled-hover`] =
-      `var(--vx-fillHover-${name}, color-mix(in srgb, ${hex} 88%, #000))`
+      `var(--vx-fill-hover-${name}, color-mix(in srgb, ${hex} 88%, #000))`
   }
   return vars
 }

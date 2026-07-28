@@ -25,12 +25,12 @@ const REFS = {
   line: 'var(--vx-line)',
   line2: 'var(--vx-line2)',
   axis: 'var(--vx-axis)',
-  axisStroke: 'var(--vx-axisStroke)',
-  tooltipBg: 'var(--vx-tooltipBg)',
-  tooltipText: 'var(--vx-tooltipText)',
-  tooltipMuted: 'var(--vx-tooltipMuted)',
-  tooltipBorder: 'var(--vx-tooltipBorder)',
-  tooltipShadow: 'var(--vx-tooltipShadow)',
+  axisStroke: 'var(--vx-axis-stroke)',
+  tooltipBg: 'var(--vx-tooltip-bg)',
+  tooltipText: 'var(--vx-tooltip-text)',
+  tooltipMuted: 'var(--vx-tooltip-muted)',
+  tooltipBorder: 'var(--vx-tooltip-border)',
+  tooltipShadow: 'var(--vx-tooltip-shadow)',
 } as const
 
 const VxThemeContext = createContext<VxTheme | null>(null)

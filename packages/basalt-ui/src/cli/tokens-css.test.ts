@@ -73,6 +73,23 @@ describe('tokens:css', () => {
     expect(existsSync(resolve(dir, 'out.css'))).toBe(false)
   })
 
+  it('--no-legacy-aliases drops every deprecated camelCase spelling while the canonical kebab names still resolve', () => {
+    const css = emit(['--no-legacy-aliases'])
+    expect(css).not.toContain('--vx-accentFill')
+    expect(css).not.toContain('--vx-tooltipBg')
+    expect(css).not.toContain('--vx-fillHover-')
+    expect(css).not.toContain('--vx-goodSoft')
+    expect(css).not.toContain('Deprecated camelCase aliases')
+    expect(css).toContain('--vx-accent-fill:')
+    expect(css).toContain('--vx-tooltip-bg:')
+    expect(css).toContain('--vx-fill-hover-')
+    expect(css).toContain('--vx-good-soft:')
+  })
+
+  it('--no-legacy-aliases output is byte-identical to buildPaletteCss({ legacyAliases: false }) — the CLI holds no emission logic of its own', () => {
+    expect(emit(['--no-legacy-aliases'])).toBe(buildPaletteCss({ legacyAliases: false }))
+  })
+
   it('`--help` short-circuits before the command runs — no file written', () => {
     const originalLog = console.log
     let log = ''

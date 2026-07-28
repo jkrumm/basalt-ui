@@ -80,8 +80,26 @@ describe('the accent delegates to the palette, not to a computed guess', () => {
   for (const scheme of SCHEMES) {
     test(scheme, () => {
       expect(onColorVar(theme.primaryColor, scheme)).toBe(
-        `var(--vx-onAccent, ${ACCENT.onAccent[scheme]})`,
+        `var(--vx-on-accent, ${ACCENT.onAccent[scheme]})`,
       )
+    })
+  }
+})
+
+describe('--vx-on-accent has no collision with the per-color --vx-on-* family', () => {
+  // The 1.4.0 kebab-case rename moved the token layer's `--vx-onAccent` to `--vx-on-accent`.
+  // `onColorVars` (above) ALSO emits a `--vx-on-{name}` per Mantine color name — but `theme.colors`
+  // never registers a color literally named `'accent'` (the primary color is `'blue'`), so that
+  // family can never itself produce a `--vx-on-accent` key. The two stay distinct sources, not a
+  // merge: `--vx-on-accent` is exclusively the token layer's `ACCENT.onAccent` alias target.
+  test('theme.colors has no color named "accent"', () => {
+    expect(COLORS).not.toContain('accent')
+  })
+
+  for (const scheme of SCHEMES) {
+    test(`the resolver's own --vx-on-* map carries no accent key (${scheme})`, () => {
+      const vars = cssVariablesResolver(theme)[scheme]
+      expect(vars['--vx-on-accent']).toBeUndefined()
     })
   }
 })
@@ -211,7 +229,7 @@ describe('the accent is single-sourced: Mantine chrome is bridged to --vx-*', ()
       for (const [name, hex] of Object.entries(FILL)) {
         expect(vars[`--mantine-color-${name}-filled`]).toBe(`var(--vx-fill-${name}, ${hex})`)
         expect(vars[`--mantine-color-${name}-filled-hover`]).toContain(
-          `var(--vx-fillHover-${name},`,
+          `var(--vx-fill-hover-${name},`,
         )
       }
     })
@@ -221,15 +239,15 @@ describe('the accent is single-sourced: Mantine chrome is bridged to --vx-*', ()
   // and links; Mantine's chrome drove buttons off a JS hex ramp that pointed at nothing. Overriding
   // `--vx-accent` restyled the charts and left every button untouched. These lock the bridge.
   for (const scheme of SCHEMES) {
-    test(`the filled surface resolves through --vx-accentFill (${scheme})`, () => {
+    test(`the filled surface resolves through --vx-accent-fill (${scheme})`, () => {
       const vars = cssVariablesResolver(theme)[scheme]
       // `getThemeColor()` resolves any plain theme color to `-filled`, so this ONE var reaches the
       // variant resolver AND every component that fills from its own varsResolver.
       expect(vars[`--mantine-color-${theme.primaryColor}-filled`]).toBe(
-        `var(--vx-accentFill, ${ACCENT.accentFill[scheme]})`,
+        `var(--vx-accent-fill, ${ACCENT.accentFill[scheme]})`,
       )
       expect(vars[`--mantine-color-${theme.primaryColor}-filled-hover`]).toBe(
-        `var(--vx-accentFillHover, ${ACCENT.accentFillHover[scheme]})`,
+        `var(--vx-accent-fill-hover, ${ACCENT.accentFillHover[scheme]})`,
       )
     })
 
