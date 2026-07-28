@@ -64,7 +64,8 @@ echo "==> scratch-consumer resolution test (with optional peers)"
 ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
 SCRATCH2=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2"' EXIT
+SCRATCH3=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 bun add "$ABS_TGZ" \
@@ -77,7 +78,13 @@ bun add "$ABS_TGZ" \
   "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
   "use-stick-to-bottom@^1.1.6" \
   vite \
-  typescript >/dev/null 2>&1
+  typescript \
+  "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
+  "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
+  "@visx/threshold@4.0.0" \
+  "motion@12.42.0" "remend@1.3.0" \
+  "@fontsource-variable/hubot-sans@5.2.8" "@fontsource-variable/jetbrains-mono@5.2.8" \
+  "@fontsource-variable/nunito-sans@5.2.7" >/dev/null 2>&1
 cat >test.mjs <<'JS'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -303,7 +310,10 @@ echo "==> charts/tokens-only (no-Mantine) resolution + render"
 SCRATCH2=$(mktemp -d)
 cd "$SCRATCH2"
 echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" react react-dom >/dev/null 2>&1
+bun add "$ABS_TGZ" react react-dom \
+  "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
+  "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
+  "@visx/threshold@4.0.0" >/dev/null 2>&1
 cat >free.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -334,5 +344,27 @@ if (!html.includes('<svg')) throw new Error('chart kind did not render an <svg>'
 console.log('charts/tokens-only resolution + render OK')
 JS
 node free.mjs
+
+echo "==> tokens-only install is light (no peers at all)"
+# The property this whole change exists to prove: a consumer who only wants the token layer
+# installs basalt-ui and gets NOTHING else — no visx/d3 chart stack, no fonts, no Mantine. Every
+# peer above (including the fourteen moved out of `dependencies` in this change) is optional, so a
+# bare `bun add basalt-ui` must not pull any of them in transitively.
+SCRATCH3=$(mktemp -d)
+cd "$SCRATCH3"
+echo '{ "name": "scratch-light", "private": true, "type": "module" }' >package.json
+bun add "$ABS_TGZ" >/dev/null 2>&1
+if [ -d node_modules/@visx/scale ]; then
+  echo "FAILED: @visx/scale present in a tokens-only install — dependency weight regression"
+  exit 1
+fi
+cat >light.mjs <<'JS'
+const tokens = await import('basalt-ui/tokens')
+if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildPaletteCss missing')
+if (typeof tokens.buildPaletteCss() !== 'string') throw new Error('buildPaletteCss() did not return a string')
+console.log('tokens-only resolution OK, no @visx/scale in tree')
+JS
+node light.mjs
+echo "tokens-only install is light OK"
 
 echo "PACK TEST PASSED"

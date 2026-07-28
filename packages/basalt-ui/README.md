@@ -32,6 +32,14 @@ version mismatches on an installed peer still warn.
 A real app also needs `@types/react @types/react-dom` (dev) and a standard Vite `vite-env.d.ts`
 for `tsc --noEmit` to pass.
 
+Two more peers are needed by specific named exports of the root `.` entry, not by
+`BasaltProvider` itself: `bun add motion` if you use `ThemeToggle`, `ThreadFeed` or
+`ThreadDetailPanel`, and the three `@fontsource-variable` packages
+(`bun add @fontsource-variable/hubot-sans @fontsource-variable/jetbrains-mono
+@fontsource-variable/nunito-sans`, all exact-pinned — see `packages/basalt-ui/package.json` for the
+versions) if you import `basalt-ui/styles.css`, which `@import`s them for the three-font system.
+Both are optional peers, so neither installs automatically.
+
 **No React?** `./tokens`, `./charts`, `./state` and `./guard` resolve with none of the five
 installed, and the token system is consumable with no package at all:
 
@@ -292,6 +300,20 @@ Every `defineX` factory is const-generic and exact-keyed — the return type mir
 
 Seven optional-peer batteries extend the core. Install only what you use — core resolves without them.
 
+### `./charts` — visx chart primitives
+
+```bash
+bun add @visx/axis @visx/curve @visx/event @visx/grid @visx/group @visx/responsive @visx/scale @visx/shape @visx/threshold
+```
+
+`./charts` is Mantine-free (see [Mantine-free boundary](#mantine-free-boundary) above) but not
+dependency-free: it needs the nine `@visx/*` packages, all pinned exact at `4.0.0`. They ship as
+optional peers, not bundled dependencies, so a `./tokens`-only consumer never installs them.
+
+```tsx
+import { Bars, VxThemeProvider } from 'basalt-ui/charts'
+```
+
 ### `./query` — TanStack Query adapter
 
 ```bash
@@ -400,13 +422,16 @@ import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 ### `./content` — prose + markdown
 
 ````bash
+bun add remend                      # required — `Markdown` imports it eagerly, so the subpath won't resolve without it
 bun add react-markdown remark-gfm   # Markdown
 bun add shiki                       # CodeBlock / fenced-code highlighting (brings @shikijs/langs, @shikijs/themes as optional peers)
 bun add beautiful-mermaid           # MermaidDiagram / ```mermaid fences
 ````
 
-Every peer is lazily imported and degrades gracefully when absent (markdown falls back to plain
-text, fences to plain mono, mermaid renders nothing). `Markdown` is the package's **only** markdown
+`remend` is the one peer here that is not lazy: `Markdown` imports it at the top of the module, so
+`basalt-ui/content` fails to resolve without it even if you never render `Markdown` yourself.
+Everything else degrades gracefully when absent (markdown falls back to plain text, fences to
+plain mono, mermaid renders nothing). `Markdown` is the package's **only** markdown
 renderer — it backs long-form content and AI chat alike:
 
 ```tsx

@@ -107,22 +107,31 @@ false` are required.
 
 ## Dependencies
 
-- **deps**: 9 `@visx/*` pinned **exact** at stable `4.0.0` (`axis`, `curve`, `event`, `grid`,
-  `group`, `responsive`, `scale`, `shape`, `threshold`).
+- **`dependencies` is empty.** The package ships zero runtime dependencies — `bun add basalt-ui`
+  with no peers installed pulls in exactly one package. Every dependency the framework's components
+  need is a peer instead, so a subpath that doesn't touch them never installs them.
 - **peers**: `react` / `react-dom` `^19`; `@mantine/core` + `@mantine/hooks` `^9.3`;
-  `@tanstack/react-query` `^5.101`. Battery subpaths declare their own peers (e.g. `@tanstack/*`,
-  `@mantine/form|modals|notifications|spotlight`, `vite`, the markdown trio) — see `AGENTS.md`.
+  `@tanstack/react-query` `^5.101`. `./charts` needs 9 `@visx/*` pinned **exact** at stable `4.0.0`
+  (`axis`, `curve`, `event`, `grid`, `group`, `responsive`, `scale`, `shape`, `threshold`). The root
+  `.` entry's `ThemeToggle`/`ThreadFeed`/`ThreadDetailPanel` need `motion` pinned exact at
+  `12.42.0`. `basalt-ui/content`'s `Markdown` needs `remend` pinned exact at `1.3.0` — its one
+  eagerly-imported peer, so `./content` fails to resolve at all without it (every other content peer
+  degrades gracefully when absent; see the package README). `basalt-ui/styles.css`'s font stack
+  needs the three exact-pinned `@fontsource-variable/*` packages (`hubot-sans` `5.2.8`,
+  `jetbrains-mono` `5.2.8`, `nunito-sans` `5.2.7`). Battery subpaths declare their own peers further
+  (e.g. `@tanstack/*`, `@mantine/form|modals|notifications|spotlight`, `vite`, the markdown trio) —
+  see `AGENTS.md`.
 - **Every peer is `optional` in `peerDependenciesMeta`**, including the five the root `.` entry
-  hard-requires at build time. npm expresses optionality per PACKAGE, never per SUBPATH, and
-  `./tokens` / `./charts` / `./state` / `./guard` really do resolve with none of them installed — so
-  requiring them would charge a framework-free consumer ~79 packages it never loads. The trade: a
-  `.` consumer missing one gets a bundler resolution error instead of an install-time warning.
-  Version-mismatch warnings are unaffected and must stay that way — `optional` only suppresses the
-  MISSING-peer check, so every one of the five stays listed in `peerDependencies`
-  (`tests/required-peers.test.ts` pins both halves).
-- **`motion`** pinned exact at `12.42.0` — the framework's one animation dependency (bundled
-  implementation detail of shipped components, same precedent as `@visx/*`; not a peer). See
-  "Motion" below.
+  hard-requires at build time and the fourteen above that used to ship as bundled `dependencies`
+  (the `@visx/*` chart stack, `motion`, `remend`, the three fonts) until this moved them to
+  `peerDependencies` — a tokens-only consumer no longer installs any of them. npm expresses
+  optionality per PACKAGE, never per SUBPATH, and `./tokens` / `./charts` / `./state` / `./guard`
+  really do resolve with none of the five Mantine/react peers installed — so requiring them would
+  charge a framework-free consumer packages it never loads. The trade: a consumer missing a peer
+  gets a bundler resolution error instead of an install-time warning. Version-mismatch warnings are
+  unaffected and must stay that way — `optional` only suppresses the MISSING-peer check, so every
+  peer stays listed in `peerDependencies` (`tests/required-peers.test.ts` pins both halves for the
+  five hard-required root peers).
 - **NO** zustand, **NO** `@tanstack/*`, **NO** `@tabler/icons` — icons are passed in as `ReactNode`.
 - `sideEffects: ['*.css']`.
 
