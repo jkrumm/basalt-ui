@@ -103,7 +103,7 @@ export function Composer({
           disabled={disabled || value.trim().length === 0}
           aria-label="Send message"
           // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs no color
-          // override — `filled` resolves through the theme to `--vx-accentFill` / `--vx-onAccent`.
+          // override — `filled` resolves through the theme to `--vx-accent-fill` / `--vx-on-accent`.
           // (It used to hand-wire those two vars inline, which is why this was the ONLY filled
           // control that stayed legible while the rest of the chrome went through Mantine's
           // scheme-blind autoContrast. The theme owns it now, and hover works again — an inline

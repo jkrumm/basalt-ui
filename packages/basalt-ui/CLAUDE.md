@@ -267,7 +267,7 @@ Rules that apply to every factory, without exception:
     white label (≥3.0:1, the derivation's UI-component contrast floor) AND stay visible on both
     pages (≥3:1). That pins every fill into one narrow luminance band (Y=0.165, `FILL` / `ACCENT`
     in `tokens/palette.ts`, computed by `tokens/derive.ts`) — hue varies, luminance does not. Never
-    fill with the ink accent (`--vx-accent`); fill with `--vx-accentFill` / `--vx-fill-{family}`.
+    fill with the ink accent (`--vx-accent`); fill with `--vx-accent-fill` / `--vx-fill-{family}`.
   - **On-color in CSS, never in JS.** Mantine resolves a filled foreground once, scheme-blindly, via
     a brightness heuristic that does not track WCAG contrast. Basalt emits `--vx-on-{color}` per
     scheme instead and re-points every filled surface at it — including the seven components

@@ -1765,6 +1765,11 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
       : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
     ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
     ...(only === undefined ? {} : { only: only as 'core' | 'all' }),
+    // The tokens-only consumer is exactly the one who writes these names by hand, so they are also
+    // the one who wants the deprecated camelCase aliases gone — and this command is their only
+    // entry point. Without the flag the CLI and the API could disagree about what basalt's tokens
+    // are, which is the one thing this command is documented never to allow.
+    ...(flags.includes('--no-legacy-aliases') ? { legacyAliases: false } : {}),
   })
 
   const out = flagValue(flags, '--out')
@@ -1880,7 +1885,10 @@ const USAGE =
   'check-theme | check-coverage | info [--json] | doctor | guard-hook | tokens:css | help>\n\n' +
   'tokens:css [--out <path>] [--selector-attribute <attr>] [--dark-value <v>] [--light-value <v>]\n' +
   '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
-  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n\n' +
+  '           [--no-legacy-aliases]\n' +
+  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n' +
+  '  --no-legacy-aliases drops the deprecated camelCase spellings (--vx-accentFill and friends),\n' +
+  '  which are emitted by default as aliases of the canonical kebab-case names.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
 /**

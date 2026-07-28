@@ -16,7 +16,7 @@ charts. The **identity is modern zinc** (see `docs/DESIGN-SPEC.md` in the basalt
 depth via a whisper shadow + 1px ring (`shadow-card`) rather than a hairline border, carrying
 **one saturated sky-blue accent**, split by ROLE: as INK (links, active-nav icon, chart
 lines, focus ring) it is `#0077bd` light / `#8ec5ff` dark; as a FILLED SURFACE it is
-`#0077bd` in BOTH schemes with a WHITE label (`--vx-accentFill`, never `--vx-accent`). Neutrals do ~90% of the
+`#0077bd` in BOTH schemes with a WHITE label (`--vx-accent-fill`, never `--vx-accent`). Neutrals do ~90% of the
 surface (60/30/10, pushed toward 90/10); the accent only points — primary CTA, focus, links, small
 status pops — never floods. (Blueprint/Basalt zinc-charcoal are the historical hue-tuning
 ancestors; `docs/DESIGN-SPEC.md` in the basalt-ui repo supersedes both — see its "Doctrine
@@ -39,7 +39,7 @@ against the page behind it — on BOTH pages. That leaves one narrow luminance b
   luminance does not. Every filled surface therefore reads WHITE, on either page, at ~4.9:1.
 - **Never fill with the ink accent.** `--vx-accent` is light on dark by design (it is read against
   the page) — filling with it puts a white label on a light blue button. Fill with
-  `--vx-accentFill` / `--vx-fill-{family}`; label with `--vx-onAccent` / `--vx-on-{family}`.
+  `--vx-accent-fill` / `--vx-fill-{family}`; label with `--vx-on-accent` / `--vx-on-{family}`.
 - **Never decide a foreground yourself**, and do not trust Mantine's `autoContrast`: it resolves the
   color once in JS, scheme-blindly, using a brightness heuristic that does not track WCAG contrast.
   The theme emits `--vx-on-*` per scheme instead, and every filled control is bound to it.

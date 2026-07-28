@@ -41,7 +41,7 @@
 
 .clickable:hover,
 .clickable:focus-visible {
-  background-color: var(--vx-surface-panelHover);
+  background-color: var(--vx-surface-panel-hover);
 }
 
 .clickable:hover .title,

@@ -141,17 +141,17 @@ export const VX = {
 
   // Semantic fills — consistent opacity across all charts
   good: 'var(--vx-good)',
-  goodSoft: 'var(--vx-goodSoft)',
+  goodSoft: 'var(--vx-good-soft)',
   bad: 'var(--vx-bad)',
   warn: 'var(--vx-warn)',
-  goodSolid: 'var(--vx-goodSolid)',
-  badSolid: 'var(--vx-badSolid)',
-  warnSolid: 'var(--vx-warnSolid)',
+  goodSolid: 'var(--vx-good-solid)',
+  badSolid: 'var(--vx-bad-solid)',
+  warnSolid: 'var(--vx-warn-solid)',
 
   // Reference/dashed lines for thresholds
-  goodRef: 'var(--vx-goodRef)',
-  badRef: 'var(--vx-badRef)',
-  warnRef: 'var(--vx-warnRef)',
+  goodRef: 'var(--vx-good-ref)',
+  badRef: 'var(--vx-bad-ref)',
+  warnRef: 'var(--vx-warn-ref)',
 
   // Neutral primary line/text color — the default for single-series, no-signal marks
   // ("white/gray per theme"). Same value as the NEUTRAL.line pair.
@@ -161,19 +161,19 @@ export const VX = {
   // Axis label + axis stroke colors (theme-aware). Exposed as flat refs so a bespoke chart that
   // renders raw <text> labels or axis lines (without the Axis* primitives) needs no hook.
   axis: 'var(--vx-axis)',
-  axisStroke: 'var(--vx-axisStroke)',
+  axisStroke: 'var(--vx-axis-stroke)',
 
   // Grid, hover, legend
   grid: 'var(--vx-grid)',
   crosshair: 'var(--vx-crosshair)',
-  dotStroke: 'var(--vx-dotStroke)',
-  legendText: 'var(--vx-legendText)',
+  dotStroke: 'var(--vx-dot-stroke)',
+  legendText: 'var(--vx-legend-text)',
 
   // Tooltip chrome — muted (secondary) text inside a bespoke tooltip. The other tooltip vars
   // (bg/text/border/shadow) are only exposed via `useVxTheme()` (see `charts/theme.tsx`); this
   // one is flattened onto `VX` too because bespoke-tooltip authors reached for `VX.muted` (the
   // general ink-ramp muted) instead and got the wrong token — same pattern as `VX.muted` below.
-  tooltipMuted: 'var(--vx-tooltipMuted)',
+  tooltipMuted: 'var(--vx-tooltip-muted)',
 
   // Base neutral for hairlines / muted text / overlays — apply opacity via alpha()
   neutral: 'var(--vx-neutral)',
@@ -187,14 +187,14 @@ export const VX = {
   // The accent as INK — primary series, active-nav icon, links, focus rings. Read against the PAGE,
   // so it inverts across schemes (light on dark, deep on light).
   accent: 'var(--vx-accent)',
-  accentHover: 'var(--vx-accentHover)',
+  accentHover: 'var(--vx-accent-hover)',
   // The accent as SURFACE — a filled control that carries a label. Squeezed between white-text
   // contrast and page contrast, so it is the same hex in both schemes (see ACCENT in palette.ts).
   // Mantine's `--mantine-color-<primary>-filled` is bridged onto this, so it drives ALL filled
   // chrome; a raw `--vx-accent` fill would be unreadable on dark. Fills use THIS, never `accent`.
-  accentFill: 'var(--vx-accentFill)',
-  accentFillHover: 'var(--vx-accentFillHover)',
-  onAccent: 'var(--vx-onAccent)',
+  accentFill: 'var(--vx-accent-fill)',
+  accentFillHover: 'var(--vx-accent-fill-hover)',
+  onAccent: 'var(--vx-on-accent)',
 
   // Layout separators (header bottom rule, sidebar child indent) — distinct from `surface.border`.
   divider: 'var(--vx-divider)',
@@ -209,7 +209,7 @@ export const VX = {
   surface: {
     bg: 'var(--vx-surface-bg)',
     panel: 'var(--vx-surface-panel)',
-    panelHover: 'var(--vx-surface-panelHover)',
+    panelHover: 'var(--vx-surface-panel-hover)',
     elevated: 'var(--vx-surface-elevated)',
     subtle: 'var(--vx-surface-subtle)',
     overlay: 'var(--vx-surface-overlay)', // floating layer (menus, popovers, modals, drawers)
@@ -263,51 +263,80 @@ const groupSide = (prefix: string, map: SeriesMap, side: Side): string =>
     .join('\n')
 
 /**
+ * The 16 deprecated camelCase aliases for `frameworkPrimitives`' per-scheme canonicals, each
+ * defined as `var(--vx-<canonical-kebab-name>)` so it can never drift from the value above it.
+ * Emitted as its own commented, trailing group (never interleaved with the canonicals) — gated by
+ * {@link BuildPaletteOpts.legacyAliases}, default on. See that option's doc for the migration
+ * rationale (1.4.0 kebab-case normalization).
+ */
+function frameworkPrimitivesAliases(): string {
+  return [
+    '  /* Deprecated camelCase aliases — removed in a future minor; migrate to the kebab names above. */',
+    decl('goodSolid', 'var(--vx-good-solid)'),
+    decl('badSolid', 'var(--vx-bad-solid)'),
+    decl('warnSolid', 'var(--vx-warn-solid)'),
+    decl('axisStroke', 'var(--vx-axis-stroke)'),
+    decl('dotStroke', 'var(--vx-dot-stroke)'),
+    decl('tooltipBg', 'var(--vx-tooltip-bg)'),
+    decl('tooltipText', 'var(--vx-tooltip-text)'),
+    decl('tooltipMuted', 'var(--vx-tooltip-muted)'),
+    decl('tooltipBorder', 'var(--vx-tooltip-border)'),
+    decl('tooltipShadow', 'var(--vx-tooltip-shadow)'),
+    decl('legendText', 'var(--vx-legend-text)'),
+    decl('accentHover', 'var(--vx-accent-hover)'),
+    decl('accentFill', 'var(--vx-accent-fill)'),
+    decl('accentFillHover', 'var(--vx-accent-fill-hover)'),
+    decl('onAccent', 'var(--vx-on-accent)'),
+    decl('surface-panelHover', 'var(--vx-surface-panel-hover)'),
+  ].join('\n')
+}
+
+/**
  * Built-in framework primitives for a given scheme side — STATUS group, semantic solids,
  * neutral line/axis/grid/tooltip chrome, legend text, and the surface ramp. Domain series
  * (SERIES/ACTIVITY/USAGE) are NOT shipped — apps append them via `opts.groups`.
  */
-function frameworkPrimitives(side: Side, data: PaletteData): string {
+function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boolean): string {
   const n = data.NEUTRAL
   const s = data.SEMANTIC
   const su = data.SURFACE
   const ink = data.INK
   const ac = data.ACCENT
-  return [
+  const canonical = [
     groupSide('status-', data.STATUS as SeriesMap, side),
-    decl('goodSolid', s.good[side]),
-    decl('badSolid', s.bad[side]),
-    decl('warnSolid', s.warn[side]),
+    decl('good-solid', s.good[side]),
+    decl('bad-solid', s.bad[side]),
+    decl('warn-solid', s.warn[side]),
     decl('neutral', n.neutral[side]),
     decl('line', n.line[side]),
     decl('line2', n.line2[side]),
     decl('axis', n.axis[side]),
-    decl('axisStroke', n.axisStroke[side]),
+    decl('axis-stroke', n.axisStroke[side]),
     decl('grid', n.grid[side]),
     decl('crosshair', n.crosshair[side]),
-    decl('dotStroke', n.dotStroke[side]),
-    decl('tooltipBg', n.tooltipBg[side]),
-    decl('tooltipText', n.tooltipText[side]),
-    decl('tooltipMuted', n.tooltipMuted[side]),
-    decl('tooltipBorder', n.tooltipBorder[side]),
-    decl('tooltipShadow', n.tooltipShadow[side]),
-    decl('legendText', n.legendText[side]),
+    decl('dot-stroke', n.dotStroke[side]),
+    decl('tooltip-bg', n.tooltipBg[side]),
+    decl('tooltip-text', n.tooltipText[side]),
+    decl('tooltip-muted', n.tooltipMuted[side]),
+    decl('tooltip-border', n.tooltipBorder[side]),
+    decl('tooltip-shadow', n.tooltipShadow[side]),
+    decl('legend-text', n.legendText[side]),
     decl('ink', ink.ink[side]),
     decl('ink2', ink.ink2[side]),
     decl('muted', ink.muted[side]),
     decl('faint', ink.faint[side]),
     decl('accent', ac.accent[side]),
-    decl('accentHover', ac.accentHover[side]),
-    decl('accentFill', ac.accentFill[side]),
-    decl('accentFillHover', ac.accentFillHover[side]),
-    decl('onAccent', ac.onAccent[side]),
+    decl('accent-hover', ac.accentHover[side]),
+    decl('accent-fill', ac.accentFill[side]),
+    decl('accent-fill-hover', ac.accentFillHover[side]),
+    decl('on-accent', ac.onAccent[side]),
     decl('divider', su.divider[side]),
     decl('shadow-card', SHADOW.card[side]),
     decl('shadow-ctrl', SHADOW.ctrl[side]),
     decl('shadow-overlay', SHADOW.overlay[side]),
     decl('surface-bg', su.bg[side]),
     decl('surface-panel', su.panel[side]),
-    decl('surface-panelHover', su.panelHover[side]),
+    decl('surface-panel-hover', su.panelHover[side]),
     decl('surface-elevated', su.elevated[side]),
     decl('surface-subtle', su.subtle[side]),
     decl('surface-overlay', su.overlay[side]),
@@ -315,6 +344,7 @@ function frameworkPrimitives(side: Side, data: PaletteData): string {
     decl('surface-border', su.border[side]),
     decl('surface-hairline', su.hairline[side]),
   ].join('\n')
+  return legacyAliases ? `${canonical}\n${frameworkPrimitivesAliases()}` : canonical
 }
 
 /**
@@ -521,14 +551,33 @@ const DEFAULT_SPACE_VALUES: SpaceValues = {
 }
 
 /**
+ * The 16 deprecated camelCase aliases for `frameworkDerived`'s theme-independent (`:root`)
+ * canonicals — the 12 `fill-hover-<family>` fills plus `good-soft`/`good-ref`/`bad-ref`/`warn-ref`.
+ * Each is a `var(--vx-<canonical-kebab-name>)` ref so it can never drift. Emitted as its own
+ * commented, trailing group — gated by {@link BuildPaletteOpts.legacyAliases}, default on.
+ */
+function frameworkDerivedAliases(data: PaletteData): string {
+  return [
+    '  /* Deprecated camelCase aliases — removed in a future minor; migrate to the kebab names above. */',
+    ...Object.keys(data.FILL).map((name) =>
+      decl(`fillHover-${name}`, `var(--vx-fill-hover-${name})`),
+    ),
+    decl('goodSoft', 'var(--vx-good-soft)'),
+    decl('goodRef', 'var(--vx-good-ref)'),
+    decl('badRef', 'var(--vx-bad-ref)'),
+    decl('warnRef', 'var(--vx-warn-ref)'),
+  ].join('\n')
+}
+
+/**
  * Theme-independent scalars + semantic fills, defined once on `:root`.
  *
  * Area-gradient strength is a global knob (the theme lab overrides these two on `:root`
  * to retune every line-area fill live). 0%/0% disables gradients app-wide.
  */
-function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
+function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases: boolean): string {
   const space = spaceDecls(DEFAULT_SPACE_VALUES)
-  return [
+  const canonical = [
     decl('radius-card', `${RADIUS.card}px`),
     decl('radius-ctrl', `${RADIUS.ctrl}px`),
     // The two offset tiers (SegmentedControl indicator/Kbd/Code, Progress/scale-sm) — added so a
@@ -553,21 +602,22 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all'): string {
     // hover along instead of leaving a stale pair. 88% of the fill over black lands ~0.128 luminance:
     // a visible press-darkening that still clears AA for the white label (~5.9:1).
     ...Object.keys(data.FILL).map((name) =>
-      decl(`fillHover-${name}`, `color-mix(in srgb, var(--vx-fill-${name}) 88%, #000)`),
+      decl(`fill-hover-${name}`, `color-mix(in srgb, var(--vx-fill-${name}) 88%, #000)`),
     ),
     // The type scale, emitted from the SAME `TEXT` object `VX.text` reads — CSS modules and the
     // Mantine theme consume these; inline styles / visx read the numbers. One ladder, two forms.
     ...Object.entries(TEXT).map(([step, px]) => decl(`text-${step}`, `${px}px`)),
     decl('area-top', '22%'),
     decl('area-bottom', '1%'),
-    decl('good', 'color-mix(in srgb, var(--vx-goodSolid) 18%, transparent)'),
-    decl('goodSoft', 'color-mix(in srgb, var(--vx-goodSolid) 8%, transparent)'),
-    decl('bad', 'color-mix(in srgb, var(--vx-badSolid) 18%, transparent)'),
-    decl('warn', 'color-mix(in srgb, var(--vx-warnSolid) 8%, transparent)'),
-    decl('goodRef', 'color-mix(in srgb, var(--vx-goodSolid) 30%, transparent)'),
-    decl('badRef', 'color-mix(in srgb, var(--vx-badSolid) 30%, transparent)'),
-    decl('warnRef', 'color-mix(in srgb, var(--vx-warnSolid) 20%, transparent)'),
+    decl('good', 'color-mix(in srgb, var(--vx-good-solid) 18%, transparent)'),
+    decl('good-soft', 'color-mix(in srgb, var(--vx-good-solid) 8%, transparent)'),
+    decl('bad', 'color-mix(in srgb, var(--vx-bad-solid) 18%, transparent)'),
+    decl('warn', 'color-mix(in srgb, var(--vx-warn-solid) 8%, transparent)'),
+    decl('good-ref', 'color-mix(in srgb, var(--vx-good-solid) 30%, transparent)'),
+    decl('bad-ref', 'color-mix(in srgb, var(--vx-bad-solid) 30%, transparent)'),
+    decl('warn-ref', 'color-mix(in srgb, var(--vx-warn-solid) 20%, transparent)'),
   ].join('\n')
+  return legacyAliases ? `${canonical}\n${frameworkDerivedAliases(data)}` : canonical
 }
 
 /**
@@ -679,6 +729,15 @@ export type BuildPaletteOpts = {
    * — see {@link CORE_SPACE_VARS}.
    */
   only?: 'core' | 'all'
+  /**
+   * Whether to also emit the 32 deprecated camelCase aliases (`--vx-accentFill`, `--vx-tooltipBg`,
+   * `--vx-fillHover-gray`, …) alongside the canonical kebab-case names the 1.4.0 normalization
+   * introduced. Default: `true`, so an existing consumer's hand-written CSS referencing a
+   * camelCase name keeps resolving. Each alias is defined as `var(--vx-<canonical>)` — it can
+   * never drift from the value it aliases. Pass `false` once every reference in your own code has
+   * migrated to the kebab names to drop the extra 32 lines.
+   */
+  legacyAliases?: boolean
 }
 
 /** Mantine's own color-scheme attribute — the default {@link ColorSchemeSelector.attribute}. */
@@ -720,14 +779,15 @@ export function buildPaletteCss(
   data: PaletteData = buildPaletteData(),
 ): string {
   const groups = opts.groups ?? {}
+  const legacyAliases = opts.legacyAliases ?? true
   const extraDerived = (opts.derived ?? []).map((d) => `  ${d}`).join('\n')
-  const derivedBlock = frameworkDerived(data, opts.only ?? 'all')
+  const derivedBlock = frameworkDerived(data, opts.only ?? 'all', legacyAliases)
   const derived = extraDerived ? `${derivedBlock}\n${extraDerived}` : derivedBlock
   const side = (s: Side): string => {
     const extra = Object.entries(groups)
       .map(([prefix, map]) => groupSide(prefix, map, s))
       .join('\n')
-    const framework = frameworkPrimitives(s, data)
+    const framework = frameworkPrimitives(s, data, legacyAliases)
     return extra ? `${framework}\n${extra}` : framework
   }
   const rootBlock = `:root {\n${derived}\n}`

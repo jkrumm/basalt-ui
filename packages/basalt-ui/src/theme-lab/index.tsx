@@ -8,7 +8,7 @@
  * a refresh.
  *
  * The chrome follows because `theme/index.ts` bridges Mantine's surface vars AND its primary-color
- * vars onto these same tokens — retuning `--vx-accentFill` restyles every Button/Switch/Checkbox
+ * vars onto these same tokens — retuning `--vx-accent-fill` restyles every Button/Switch/Checkbox
  * live. (It did NOT before: the accent was dual-sourced, so the lab moved the charts and left the
  * chrome alone.) Known limit: only the PRIMARY Mantine color is bridged. A `color="red"` filled
  * badge still reads Mantine's JS ramp and will not follow a lab override.
@@ -87,7 +87,7 @@ export const COLOR_GROUPS: ColorGroup[] = [
     items: [
       { var: '--vx-line', label: 'Line' },
       { var: '--vx-line2', label: 'Line 2' },
-      { var: '--vx-dotStroke', label: 'Dot stroke' },
+      { var: '--vx-dot-stroke', label: 'Dot stroke' },
     ],
   },
   {

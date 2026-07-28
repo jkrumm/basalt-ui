@@ -1059,8 +1059,8 @@ function buildPaletteDataUncached(config: DeriveConfig) {
    *    that floor holds (a near-black ink otherwise, for a fill brightened past the safety margin).
    *
    * `onAccent` is THE foreground for any accent fill. `theme/index.ts` bridges Mantine's
-   * `--mantine-color-<primary>-filled` onto `--vx-accentFill` and every filled foreground onto
-   * `--vx-onAccent`, so ONE token drives the chrome — which is also what makes the theme lab able to
+   * `--mantine-color-<primary>-filled` onto `--vx-accent-fill` and every filled foreground onto
+   * `--vx-on-accent`, so ONE token drives the chrome — which is also what makes the theme lab able to
    * retune the accent live. Mantine's own `autoContrast` cannot express this (it resolves the
    * foreground scheme-blindly, in JS). Regression-locked by `theme/contrast.test.ts`.
    */
