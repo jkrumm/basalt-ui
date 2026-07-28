@@ -1173,6 +1173,27 @@ describe('CSS applicability', () => {
     expect(cssSpacing('padding: 2em')).toEqual(['inline-spacing'])
   })
 
+  it('does NOT read a unitless fraction — that is a ratio, not a length', () => {
+    // visx band padding. Ten of these in one consumer's chart files the day the leading-decimal fix
+    // shipped: `padding` here is dimensionless 0–1, and "use p/m/gap with xs..xl" cannot be done to
+    // it. Admitting `.75rem` and admitting `0.3` are the same regex change; the unit tells them
+    // apart. Scoping inline-spacing out of chart files would also have cleared it, and would have
+    // dropped real coverage inside charts/ while leaving the false positive live everywhere else.
+    const scale = (src: string): GuardKind[] =>
+      kinds(checkSource(src, 'src/charts/kinds/Bars.tsx', DEFAULT_GUARD_CONFIG)).filter(
+        (k) => k === 'inline-spacing',
+      )
+    expect(
+      scale('const s = scalePoint<string>({ domain: d, range: [0, w], padding: 0.3 })'),
+    ).toEqual([])
+    expect(scale('const s = scaleBand({ padding: .2 })')).toEqual([])
+    // A unitless INTEGER is still 4px by React's convention, and still a finding.
+    expect(scale('<Box style={{ padding: 4 }} />')).toEqual(['inline-spacing'])
+    // A fraction WITH a unit is a real length and still flags — above the sub-scale ceiling, since
+    // 0.3rem is 4.8px and would be excused by the micro-spacing escape for that reason instead.
+    expect(cssSpacing('padding: 0.7rem')).toEqual(['inline-spacing'])
+  })
+
   it('reads a CSS number without its integer part, and one carrying an explicit +', () => {
     // `.75rem` IS `0.75rem` and `+12px` IS `12px`. Requiring a leading digit skipped both — the
     // same silent skip the `0.` guard was fixed for, one spelling over.
