@@ -82,17 +82,26 @@ const SPACING_PROP = `(?:padding|margin)(?:${BOX_SIDE}|-${BOX_SIDE_KEBAB})?|gap|
 // starting `0.` matched the guard and dropped out of the scan entirely. `0.75rem` is 12px, a real
 // spacing value, and it was invisible. `(?!0(?![.\d]))` excuses only a zero that ends there.
 //
-// The number itself is `[-+]?(?:\d|\.\d)`, not `-?\d`: CSS lets a value carry an explicit `+` and
-// omit the integer part, so `.75rem` and `+12px` are the same spacing as `0.75rem` and `12px`.
-// Requiring a leading digit skipped both — the same silent-skip the zero guard above was fixed for,
-// one spelling over.
-//
 // The property is preceded by `(?<![\w-])`, not `\b`: a `\b` boundary sits inside a hyphenated
 // identifier, so every custom property whose NAME ends in a spacing word — the token layer's own
 // `--vx-space-article-header-padding-bottom`, a consumer's `--card-padding-inline` — matched as if
 // it were a declaration. A custom property is a definition, not a rendered spacing decision.
+//
+// The number does two things at once. CSS lets a value carry an explicit `+` and omit the integer
+// part, so `.75rem` and `+12px` are the same spacing as `0.75rem` and `12px`; requiring a leading
+// digit skipped both — the same silent-skip the zero guard above was fixed for, one spelling over.
+//
+// But admitting a fractional part also admits values that are not lengths at all. A UNITLESS
+// fraction is never a spacing literal: `padding: 4` in an inline style is 4px by React's convention,
+// while `padding: 0.3` is a RATIO — visx's band padding (`scalePoint({ padding: 0.3 })`) found this,
+// ten times over in one consumer, and the guard's own advice ("use p/m/gap with xs..xl") is
+// meaningless for it. So the discriminator is the UNIT, not the digit shape: a fraction must carry
+// one (`.75rem`), and a unitless number must be an integer (`padding: 4` — still 4px, still a
+// finding). `0.3` matches neither and drops out. `(?=[a-z%])` covers every CSS unit without
+// enumerating them, and the sign stays outside so the zero guard still sees `-0` as a zero.
+const SPACING_NUMBER = '(?:\\d*\\.\\d+(?=[a-z%])|\\d+(?!\\.\\d))'
 const INLINE_SPACING = new RegExp(
-  `(?<![\\w-])(?:${SPACING_PROP})\\s*:\\s*(?!var\\()['"]?[-+]?(?!0(?![.\\d]))(?:\\d|\\.\\d)`,
+  `(?<![\\w-])(?:${SPACING_PROP})\\s*:\\s*(?!var\\()['"]?[-+]?(?!0(?![.\\d]))${SPACING_NUMBER}`,
   'g',
 )
 
