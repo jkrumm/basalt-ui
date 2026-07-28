@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/jkrumm/basalt-ui/compare/v1.4.0...v1.4.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* tell a spacing length apart from a dimensionless ratio ([d7629e5](https://github.com/jkrumm/basalt-ui/commit/d7629e5ec4b5d224accb31ac00a2e40d89de6dca))
+
 # [1.4.0](https://github.com/jkrumm/basalt-ui/compare/v1.3.0...v1.4.0) (2026-07-28)
 
 
