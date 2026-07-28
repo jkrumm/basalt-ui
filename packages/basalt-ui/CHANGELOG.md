@@ -1,3 +1,18 @@
+# [1.4.0](https://github.com/jkrumm/basalt-ui/compare/v1.3.0...v1.4.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* let the shipped pre-commit hook see CSS ([fd3341f](https://github.com/jkrumm/basalt-ui/commit/fd3341fd9e648ee30e512f38d47596c4d67b2d00))
+* make inline-spacing read the CSS a consumer actually writes ([77c930d](https://github.com/jkrumm/basalt-ui/commit/77c930d16fe27b0e98bb0ac05c92e8e0653df723)), closes [#25](https://github.com/jkrumm/basalt-ui/issues/25)
+* widen this repo's own pre-commit formatter to match its CI ([b25455e](https://github.com/jkrumm/basalt-ui/commit/b25455ef918b2953c10c996f468eb1fd41f91dae))
+
+
+### Features
+
+* give guard findings a severity so new rules can land soft ([1142ded](https://github.com/jkrumm/basalt-ui/commit/1142ded3f049054d316b3a8857c3fedc98a2fe46))
+* have doctor report a spacing scale that moved under the app ([1e0ee4f](https://github.com/jkrumm/basalt-ui/commit/1e0ee4f1726fa4c358ec9bf6c22f075d1aebb665))
+
 # [1.3.0](https://github.com/jkrumm/basalt-ui/compare/v1.2.0...v1.3.0) (2026-07-27)
 
 
