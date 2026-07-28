@@ -194,7 +194,7 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
           style={{
             position: 'absolute',
             inset: 0,
-            display: 'flex',
+            display: 'flex', // theme-allow: centering over the donut hole — charts/ is Mantine-free, so Center is unavailable here
             alignItems: 'center',
             justifyContent: 'center',
             pointerEvents: 'none',

@@ -285,7 +285,14 @@ const _sk: SeriesKey = undefined as never
 // GuardKind, GuardSeverity and Finding are present in the .d.ts
 const _gk: GuardKind = 'raw-hex'
 const _sev: GuardSeverity = 'error'
-const _f: Finding = { relPath: 'x', line: 1, token: '#fff', kind: 'raw-hex', severity: _sev }
+const _f: Finding = {
+  relPath: 'x',
+  line: 1,
+  token: '#fff',
+  text: 'color: #fff',
+  kind: 'raw-hex',
+  severity: _sev,
+}
 
 export { render, _k, _sk, _gk, _sev, _f }
 TS

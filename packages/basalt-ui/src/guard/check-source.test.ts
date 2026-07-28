@@ -385,6 +385,50 @@ describe('inline-spacing', () => {
   })
 })
 
+// ── 10b. Finding.text ─────────────────────────────────────────────────────────
+//
+// `token` stays the regex match (e.g. the unit-less numeric part of a spacing declaration);
+// `text` is the full trimmed source line, so a human reading the report sees `padding: 0.75rem;`
+// rather than the confusing partial match `padding: 0.75`.
+
+describe('Finding.text', () => {
+  it('reports text as the full trimmed source line while token stays the truncated match', () => {
+    const f = checkSource(
+      '.foo {\n  padding: 0.75rem;\n}\n',
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    const hit = f.find((x) => x.kind === 'inline-spacing')
+    expect(hit?.token).toBe('padding: 0.75')
+    expect(hit?.text).toBe('padding: 0.75rem;')
+  })
+
+  it('reports the whole declaration including the unit for a CSS padding-left finding', () => {
+    const f = checkSource('padding-left: 1.25rem;', 'src/Card.module.css', DEFAULT_GUARD_CONFIG)
+    const hit = f.find((x) => x.kind === 'inline-spacing')
+    expect(hit?.token).toBe('padding-left: 1.25')
+    expect(hit?.text).toBe('padding-left: 1.25rem;')
+  })
+
+  it('truncates a line over 100 characters with a trailing …', () => {
+    const filler = 'x'.repeat(200)
+    const f = checkSource(
+      `padding: 16px; /* ${filler} */`,
+      'src/Card.module.css',
+      DEFAULT_GUARD_CONFIG,
+    )
+    const hit = f.find((x) => x.kind === 'inline-spacing')
+    expect(hit?.text.length).toBe(101)
+    expect(hit?.text.endsWith('…')).toBe(true)
+  })
+
+  it('trims a leading-indented line', () => {
+    const f = checkSource('    padding: 16px;', 'src/Card.module.css', DEFAULT_GUARD_CONFIG)
+    const hit = f.find((x) => x.kind === 'inline-spacing')
+    expect(hit?.text).toBe('padding: 16px;')
+  })
+})
+
 // ── 11. inline-display ───────────────────────────────────────────────────────
 
 describe('inline-display', () => {
@@ -621,6 +665,39 @@ describe('chart-missing-aria-label', () => {
       ...DEFAULT_GUARD_CONFIG,
       chartMissingAriaLabel: false,
     })
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  // ── reported line: the tag's OPENING line, not the end of the match ─────────
+  //
+  // The scan used to compute its line from the END of the matched tag, so on a multi-line-
+  // formatted chart element the reported line was the closing `/>` rather than the `<Bars` line
+  // that is actually missing the prop. Invisible while the report only printed `token`; visible
+  // the moment `Finding.text` started quoting the reported source line back.
+
+  it('reports the OPENING tag line (and quotes it in text) for a multi-line-formatted chart element', () => {
+    const text = ['<Bars', '  data={points}', '  height={240}', '/>'].join('\n')
+    const f = find(text)
+    const hit = f.find((x) => x.kind === 'chart-missing-aria-label')
+    expect(hit?.line).toBe(1)
+    expect(hit?.text).toBe('<Bars')
+  })
+
+  it('reports the same line as before for a single-line chart element (no regression)', () => {
+    const f = find(`<ZonedLine data={points} height={240} chartId="x" />`)
+    const hit = f.find((x) => x.kind === 'chart-missing-aria-label')
+    expect(hit?.line).toBe(1)
+  })
+
+  it('a theme-allow comment on the CLOSING line of a multi-line tag still suppresses the finding (back-compat)', () => {
+    const text = ['<Bars', '  data={points}', '  height={240}', '/> // theme-allow'].join('\n')
+    const f = find(text)
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  it('a theme-allow comment on the OPENING line of a multi-line tag also suppresses the finding', () => {
+    const text = ['<Bars // theme-allow', '  data={points}', '  height={240}', '/>'].join('\n')
+    const f = find(text)
     expect(kinds(f)).not.toContain('chart-missing-aria-label')
   })
 })

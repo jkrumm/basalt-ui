@@ -280,6 +280,22 @@ function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
   return cfg.severity?.[kind] ?? (kind in GRACE_PERIOD_KINDS ? 'warn' : 'error')
 }
 
+/** The `Finding.text` cap, in characters — a minified CSS line must not blow up the report. */
+const FINDING_TEXT_MAX_LENGTH = 100
+
+/**
+ * A finding's `text`: the trimmed source line it sits on, capped at {@link FINDING_TEXT_MAX_LENGTH}
+ * with a trailing `…`. Falls back to `fallbackToken` when `line` is out of range for the source
+ * (should not happen in practice, but a Finding's own `line` must never crash the render).
+ */
+function textForFinding(sourceLine: string | undefined, fallbackToken: string): string {
+  if (sourceLine === undefined) return fallbackToken
+  const trimmed = sourceLine.trim()
+  return trimmed.length > FINDING_TEXT_MAX_LENGTH
+    ? `${trimmed.slice(0, FINDING_TEXT_MAX_LENGTH)}…`
+    : trimmed
+}
+
 // ── Path predicate ────────────────────────────────────────────────────────────────────────────────
 
 function isChartFile(relPath: string): boolean {
@@ -742,9 +758,10 @@ function ruleApplies(kind: GuardKind, relPath: string): boolean {
  * if (findings.some((f) => f.kind === 'raw-hex')) { ... }
  */
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
-  // Severity is stamped once at the end rather than at each of the ~20 push sites — it is a
-  // property of the KIND and the config, never of the match.
-  const findings: Omit<Finding, 'severity'>[] = []
+  // Severity and text are stamped once at the end rather than at each of the ~20 push sites — both
+  // are derived from state the push sites don't need: severity from the KIND and the config, text
+  // from the finding's own `line` against the source split below.
+  const findings: Omit<Finding, 'severity' | 'text'>[] = []
 
   // Derive the 3 dynamic regexes via GUARD_RULES pattern builders.
   const forbiddenAccentRe = (
@@ -894,6 +911,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
   // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
+  // Reports at the tag's OPENING line, like card-with-border below and unlike the end-of-match
+  // arithmetic this used to do: on a multi-line-formatted chart the end lands on the closing `/>`,
+  // which is what `Finding.text` would then quote back — the closing bracket rather than the tag
+  // that is missing the prop. The allow-comment is honored anywhere in the tag's span, so a
+  // `theme-allow` that used to sit on the closing line keeps working.
   if (
     GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
     ruleApplies('chart-missing-aria-label', relPath)
@@ -901,11 +923,19 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
       const tagText = m[0]
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
-      const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
-      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
+      const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
+      const endLine = startLine + (tagText.split('\n').length - 1)
+      let skipped = false
+      for (let n = startLine; n <= endLine; n++) {
+        if (isSkippedLine(lines[n - 1] ?? '', cfg)) {
+          skipped = true
+          break
+        }
+      }
+      if (skipped) continue
       findings.push({
         relPath,
-        line: lineNo,
+        line: startLine,
         token: tagText.slice(0, 40),
         kind: 'chart-missing-aria-label',
       })
@@ -957,7 +987,15 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // Per-rule, per-path exemption post-filter (§exemptRules) — applied once here so it uniformly
   // covers every kind regardless of whether it was emitted via the GUARD_RULES registry loop above
   // or one of the inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+  //
+  // `text` is stamped here too, in the same single post-pass, off the ORIGINAL (unstripped) `lines`
+  // split — never `codeLines` — so a finding on a line whose comment was stripped still reports the
+  // real source text a human would read.
   return findings
     .filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
-    .map((f) => ({ ...f, severity: severityOf(f.kind, cfg) }))
+    .map((f) => ({
+      ...f,
+      text: textForFinding(lines[f.line - 1], f.token),
+      severity: severityOf(f.kind, cfg),
+    }))
 }

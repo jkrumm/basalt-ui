@@ -285,15 +285,15 @@
     "rawRadius": true,
     "exemptRules": {
       "inline-spacing": [
-        "charts"
+        "primitives"
       ],
       "inline-display": [
         "agent",
-        "charts"
+        "primitives"
       ],
       "raw-html-layout": [
         "agent",
-        "charts"
+        "primitives"
       ]
     }
   }

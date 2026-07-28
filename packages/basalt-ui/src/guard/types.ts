@@ -56,6 +56,12 @@ export type Finding = {
   readonly relPath: string
   readonly line: number
   readonly token: string
+  /**
+   * The trimmed source line the finding sits on — what a human should read; `token` stays the
+   * matched substring for programmatic use. Truncated to 100 characters (with a trailing `…`) so
+   * a minified line can't blow up the report.
+   */
+  readonly text: string
   readonly kind: GuardKind
   /** Resolved per kind from {@link GuardConfig.severity} over the shipped default. */
   readonly severity: GuardSeverity
