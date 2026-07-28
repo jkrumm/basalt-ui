@@ -170,14 +170,31 @@ don't reach for the marker. Revisit only if basalt-ui ever gains an outside cons
 
 ## Release Process
 
-1. Trigger the **Make Release** / release workflow on GitHub Actions (workflow_dispatch).
-2. `semantic-release-monorepo` analyzes only commits touching `packages/basalt-ui/`.
-3. Creates git tag + GitHub release + publishes to npm **with provenance** automatically.
+```bash
+make release-dry   # preview only — prints last-tag → next-version and the bump type
+make release       # dry run, show the bump, confirm, publish, wait for npm
+```
 
-**Releasing is owner-triggered, always.** Never run the release workflow, and never list releasing
-as a queued next step or a "remaining before ship" item — the owner decides when a version goes
-out. Merging is a separate decision: `release.yml` is `workflow_dispatch`-only, so merged never
-means published.
+`scripts/release.sh` is the front door to two workflows, and replaces neither. **Make Release**
+(`workflow_dispatch`) runs `semantic-release-monorepo` — it analyzes only commits touching
+`packages/basalt-ui/`, computes the version, tags, and creates the GitHub release, using a PAT that
+bypasses branch protection. **Publish to npm** fires on `release: published` and is the one holding
+the OIDC identity that pushes to the registry **with provenance**.
+
+The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync), a dry
+run **always** first with the computed version read back, one confirmation on the number itself,
+and a follow-through to the _publish_ run — so a green exit means "on npm", not "the release job
+finished". `YES=1 make release` skips only the prompt.
+
+**The wrapper hard-refuses a major.** Majors are banned here (see "Commit type discipline" above)
+and the one way to get one by accident is a stray `feat!:` or `BREAKING CHANGE:` footer reaching
+`master` — nothing else in the pipeline checks for it. Rewrite the commit as a plain `feat:` that
+documents the change in its body, then release again.
+
+**Ask before releasing.** Cutting a version is the owner's call, not a step that follows merging —
+`release.yml` is `workflow_dispatch`-only precisely so merged never means published. Don't list
+releasing as a queued next step or a "remaining before ship" item; when the owner does ask, run
+`make release` rather than dispatching the workflow by hand.
 
 ## Analytics & Tracking
 
