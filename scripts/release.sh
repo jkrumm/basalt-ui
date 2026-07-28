@@ -51,7 +51,12 @@ gh auth status >/dev/null 2>&1 || die "gh is not authenticated"
 
 current=$(git rev-parse --abbrev-ref HEAD)
 [ "$current" = "$BRANCH" ] || die "on '$current' — releases cut from '$BRANCH' only"
-[ -z "$(git status --porcelain)" ] || die "working tree is dirty — commit or stash first"
+# Tracked changes only. What gets released is `origin/$BRANCH` checked out fresh in CI, so an
+# untracked local file cannot reach it — failing on one (a stray `.env.local`, an editor scratch
+# file, a `.claude/` dir) would block a release for a reason that has nothing to do with the release.
+# A MODIFIED tracked file is different: it means the thing under test is not the thing shipping.
+[ -z "$(git status --porcelain --untracked-files=no)" ] ||
+  die "tracked files are modified — commit or stash first"
 
 git fetch origin --quiet
 [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ] ||
