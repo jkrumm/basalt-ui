@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/jkrumm/basalt-ui/compare/v1.4.1...v1.5.0) (2026-07-28)
+
+
+### Features
+
+* normalise the emitted --vx-* names to kebab-case ([17bd239](https://github.com/jkrumm/basalt-ui/commit/17bd239bb3192c8b1a2f9dbd4f9ce513282df979))
+* report the source declaration and unblind the chart kinds ([2d791f0](https://github.com/jkrumm/basalt-ui/commit/2d791f03f229e86eced5afda2f5ae90c8ec99533))
+* ship zero runtime dependencies ([144327f](https://github.com/jkrumm/basalt-ui/commit/144327f76cb6a6bf863bed3d023181320a60246d))
+
 ## [1.4.1](https://github.com/jkrumm/basalt-ui/compare/v1.4.0...v1.4.1) (2026-07-28)
 
 
