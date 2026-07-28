@@ -191,10 +191,15 @@ and the one way to get one by accident is a stray `feat!:` or `BREAKING CHANGE:`
 `master` — nothing else in the pipeline checks for it. Rewrite the commit as a plain `feat:` that
 documents the change in its body, then release again.
 
-**Ask before releasing.** Cutting a version is the owner's call, not a step that follows merging —
-`release.yml` is `workflow_dispatch`-only precisely so merged never means published. Don't list
-releasing as a queued next step or a "remaining before ship" item; when the owner does ask, run
-`make release` rather than dispatching the workflow by hand.
+**Releasing is allowed — through `make release`, and only there.** No per-release permission is
+needed; `make release` is itself the gate, because it always dry-runs first, reads the computed
+version back, and refuses a major outright. Never dispatch the workflow by hand — that path runs
+none of those checks.
+
+What has NOT changed is that releasing is a decision, not a step that follows merging. `release.yml`
+is `workflow_dispatch`-only precisely so merged never means published: don't queue a release
+unasked, and don't list one as a "remaining before ship" item. Release when there is a reason to —
+a consumer is blocked, a fix is wanted downstream — and say which version went out and why.
 
 ## Analytics & Tracking
 
