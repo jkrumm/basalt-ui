@@ -115,7 +115,7 @@ export function evaluateGuardHook(
   if (findings.length === 0) return { permissionDecision: 'allow' }
 
   const shown = findings.slice(0, 10)
-  const lines = shown.map((f) => `${f.kind} @ ${f.line}: ${f.token}`)
+  const lines = shown.map((f) => `${f.kind} @ ${f.line}: ${f.text}`)
   const extra = findings.length > 10 ? ` (+${findings.length - 10} more)` : ''
   const reason =
     `basalt theme-guard: ${findings.length} off-palette/off-system violation(s) in ${target.relPath}\n` +

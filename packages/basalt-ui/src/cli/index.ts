@@ -419,7 +419,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     for (const [file, vs] of [...byFile].toSorted()) {
       console.error(file)
       for (const v of vs.toSorted((a, b) => a.line - b.line)) {
-        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.token}`)
+        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.text}`)
       }
       console.error('')
     }
