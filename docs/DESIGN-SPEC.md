@@ -27,32 +27,32 @@ carry the character.
 
 ## 2. Color tokens
 
-| Token | Light | Dark |
-|-|-|-|
-| bg (page) | `color-mix(in srgb, #f4f4f5 50%, #e4e4e7)` (#ececee) | `color-mix(in srgb, #27272a 70%, #18181b)` (#232326) |
-| panel (cards, controls) | `#f4f4f5` | `#27272a` |
-| panel-hover | `#fafafa` | `color-mix(in srgb, #3f3f46 50%, #27272a)` (#333338) |
-| line (strong border) | `color-mix(in srgb, #e4e4e7 50%, #d4d4d8)` (#dcdce0) | `#3f3f46` |
-| hairline (card ring) | `#e5e5e5` | `color-mix(in srgb, #52525c 50%, #3f3f46)` (#494951) |
-| divider (layout separators) | `color-mix(in srgb, #e5e5e5 65%, transparent)` | `color-mix(in srgb, #ffffff 6%, transparent)` |
-| ink (primary text) | `#262626` | `#e5e5e5` |
-| ink-2 (emphasis body) | `#404040` | `color-mix(in srgb, #e5e5e5 50%, #d4d4d4)` (#dddddd) |
-| muted (secondary text) | `#525252` | `#d4d4d4` |
-| faint (tertiary/labels) | `#737373` | `#a1a1a1` |
-| accent — INK (links, active-nav icon, chart lines, focus ring; read against the page) | `#0077bd` | `#8ec5ff` |
-| accent-hover (ink) | `#0069a8` | `#51a2ff` |
-| accent-fill — SURFACE (filled button/switch/checkbox/bullet; carries a label) | `#0077bd` | `#0077bd` |
-| accent-fill-hover | `#0069a8` | `#0069a8` |
-| on-accent (text on an accent fill) | `#ffffff` | `#ffffff` |
-| status-success | `#2f7a4f` | `#56c07a` |
-| status-warning | `#b5750f` | `#e0a83a` |
-| status-danger (derived, same tonality) | `#b53f3f` | `#e0685f` |
+| Token                                                                                 | Light                                                | Dark                                                 |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| bg (page)                                                                             | `color-mix(in srgb, #f4f4f5 50%, #e4e4e7)` (#ececee) | `color-mix(in srgb, #27272a 70%, #18181b)` (#232326) |
+| panel (cards, controls)                                                               | `#f4f4f5`                                            | `#27272a`                                            |
+| panel-hover                                                                           | `#fafafa`                                            | `color-mix(in srgb, #3f3f46 50%, #27272a)` (#333338) |
+| line (strong border)                                                                  | `color-mix(in srgb, #e4e4e7 50%, #d4d4d8)` (#dcdce0) | `#3f3f46`                                            |
+| hairline (card ring)                                                                  | `#e5e5e5`                                            | `color-mix(in srgb, #52525c 50%, #3f3f46)` (#494951) |
+| divider (layout separators)                                                           | `color-mix(in srgb, #e5e5e5 65%, transparent)`       | `color-mix(in srgb, #ffffff 6%, transparent)`        |
+| ink (primary text)                                                                    | `#262626`                                            | `#e5e5e5`                                            |
+| ink-2 (emphasis body)                                                                 | `#404040`                                            | `color-mix(in srgb, #e5e5e5 50%, #d4d4d4)` (#dddddd) |
+| muted (secondary text)                                                                | `#525252`                                            | `#d4d4d4`                                            |
+| faint (tertiary/labels)                                                               | `#737373`                                            | `#a1a1a1`                                            |
+| accent — INK (links, active-nav icon, chart lines, focus ring; read against the page) | `#0077bd`                                            | `#8ec5ff`                                            |
+| accent-hover (ink)                                                                    | `#0069a8`                                            | `#51a2ff`                                            |
+| accent-fill — SURFACE (filled button/switch/checkbox/bullet; carries a label)         | `#0077bd`                                            | `#0077bd`                                            |
+| accent-fill-hover                                                                     | `#0069a8`                                            | `#0069a8`                                            |
+| on-accent (text on an accent fill)                                                    | `#ffffff`                                            | `#ffffff`                                            |
+| status-success                                                                        | `#2f7a4f`                                            | `#56c07a`                                            |
+| status-warning                                                                        | `#b5750f`                                            | `#e0a83a`                                            |
+| status-danger (derived, same tonality)                                                | `#b53f3f`                                            | `#e0685f`                                            |
 
 **The accent has two roles, and they are different colors.** As **ink** it is read against the page,
 so it inverts across schemes (light on dark, deep on light). As a **surface** it carries a label, so
 it is squeezed from both sides at once — white text needs to clear a floor against the fill, and the
 control needs ≥3:1 against the page behind it. On the dark page those two constraints leave one
-narrow window, so the fill is the *same* hex in both schemes and its label is white in both.
+narrow window, so the fill is the _same_ hex in both schemes and its label is white in both.
 Darkening the fill further (`#0069a8`, `#04669b`) buys text contrast but drops the button below the
 page floor — it fades into the background. Never fill with the ink token.
 
@@ -70,14 +70,14 @@ target the law approximates, not necessarily byte-identical to the generator's l
 Untuned, five families sat below the 3:1 page floor (grape 2.17:1) and three needed black labels;
 the law fixes all twelve at once.
 
-| Family | Fill (both schemes) | | Family | Fill (both schemes) |
-|-|-|-|-|-|
-| blue (accent) | `#0077bd` | | teal | `#007f75` |
-| gray | `#707078` | | green | `#1f8228` |
-| red | `#cc3c41` | | lime | `#617a1a` |
-| pink | `#d22b6a` | | yellow | `#936a05` |
-| grape / violet | `#ad47ad` | | orange | `#a56113` |
-| indigo | `#745cda` | | cyan | `#1378aa` |
+| Family         | Fill (both schemes) |     | Family | Fill (both schemes) |
+| -------------- | ------------------- | --- | ------ | ------------------- |
+| blue (accent)  | `#0077bd`           |     | teal   | `#007f75`           |
+| gray           | `#707078`           |     | green  | `#1f8228`           |
+| red            | `#cc3c41`           |     | lime   | `#617a1a`           |
+| pink           | `#d22b6a`           |     | yellow | `#936a05`           |
+| grape / violet | `#ad47ad`           |     | orange | `#a56113`           |
+| indigo         | `#745cda`           |     | cyan   | `#1378aa`           |
 
 Hover is derived in CSS (`88%` of the fill over black), so retuning a fill carries its hover along.
 `dark` is not a band member — `color="dark"` is a deliberately near-black surface. Mantine's
@@ -86,12 +86,13 @@ with the charts and the theme lab retunes it live. All of it is enforced by `the
 
 Shadows (tokens, not ad hoc):
 
-| Token | Light | Dark |
-|-|-|-|
+| Token       | Light                                                 | Dark                                                                                     |
+| ----------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | shadow-card | `0 1px 2px rgba(28,25,23,0.05), 0 0 0 1px <hairline>` | `0 1px 3px rgba(0,0,0,0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)` |
-| shadow-ctrl | `0 1px 2px rgba(28,25,23,0.12)` | `0 1px 2px rgba(0,0,0,0.35)` |
+| shadow-ctrl | `0 1px 2px rgba(28,25,23,0.12)`                       | `0 1px 2px rgba(0,0,0,0.35)`                                                             |
 
 Tint idiom — interactive neutral fills are **ink mixes**, never grey hexes:
+
 - ghost hover: `color-mix(in srgb, <ink> 6%, transparent)`
 - segmented-control track / count-badge bg: ink 6–8%
 - progress track: ink 8%
@@ -102,11 +103,11 @@ Tint idiom — interactive neutral fills are **ink mixes**, never grey hexes:
 
 ## 3. Typography
 
-| Role | Font | Usage |
-|-|-|-|
-| body | `'Nunito Sans Variable'` | all UI copy; the `md` step (15px) is the default density |
-| head | `'Hubot Sans Variable'` | headings, brand, card titles, breadcrumb current page — always `font-stretch: 88%`, weight ~550 |
-| mono | `'JetBrains Mono Variable'` | ALL numerals/data, micro-labels, kbd/badges, axis ticks |
+| Role | Font                        | Usage                                                                                           |
+| ---- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| body | `'Nunito Sans Variable'`    | all UI copy; the `md` step (15px) is the default density                                        |
+| head | `'Hubot Sans Variable'`     | headings, brand, card titles, breadcrumb current page — always `font-stretch: 88%`, weight ~550 |
+| mono | `'JetBrains Mono Variable'` | ALL numerals/data, micro-labels, kbd/badges, axis ticks                                         |
 
 Loaded via exact-pinned `@fontsource-variable/*` deps, `@import`ed in `styles.css`; the
 `--basalt-font-{sans,head,mono}` CSS vars stay the override seam (system-font fallback chains
@@ -121,29 +122,29 @@ props, which can't resolve `var()`) and `--vx-text-*` (CSS vars, for CSS modules
 theme). The Mantine theme re-expresses xs–xl through Mantine's `rem()`, so the component surface
 also honors the user's browser font-size and `--mantine-scale`.
 
-| Step | Size | Used for |
-|-|-|-|
-| `micro` | 11px | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks |
-| `xs` | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px) |
-| `sm` | 13.5px | stat/table numerals, chart tooltip, chart legend |
-| `md` | 15px | **body** — nav rows, menu items, timeline, labels, prose; **chart card titles** (density pass moved these 16px → 15px) |
-| `lg` | 16px | breadcrumb current page — **also the iOS input floor** |
-| `xl` | 18px | section titles, brand |
-| `kpi` | 24px | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24) |
+| Step    | Size   | Used for                                                                                                               |
+| ------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `micro` | 11px   | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks                                       |
+| `xs`    | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px)                 |
+| `sm`    | 13.5px | stat/table numerals, chart tooltip, chart legend                                                                       |
+| `md`    | 15px   | **body** — nav rows, menu items, timeline, labels, prose; **chart card titles** (density pass moved these 16px → 15px) |
+| `lg`    | 16px   | breadcrumb current page — **also the iOS input floor**                                                                 |
+| `xl`    | 18px   | section titles, brand                                                                                                  |
+| `kpi`   | 24px   | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24)                                   |
 
 Weights and fonts stay as above: card titles and section titles take the head font at 88% stretch,
 weight ~550; every numeral and micro-label takes mono.
 
-An optical ratio is not a scale step — a glyph sized *relative* to its own label (the delta badge's
+An optical ratio is not a scale step — a glyph sized _relative_ to its own label (the delta badge's
 ▲/▼, inline `<code>`) uses an `em` value so it tracks whatever step its parent lands on.
 
 ### iOS input floor (non-negotiable)
 
 **Inputs never compute below 16px.** Safari zooms the viewport whenever a focused input is under
-16px and never zooms back out on blur. This is enforced as a CSS *floor* in `styles.css` —
+16px and never zooms back out on blur. This is enforced as a CSS _floor_ in `styles.css` —
 `font-size: max(16px, var(--input-fz, 1rem))` — not as per-component `defaultProps`, so it reaches
 every Mantine input (Autocomplete, MultiSelect, TagsInput, PinInput, …) and survives a consumer
-passing `size="xs"`. Inputs keep `size: 'md'` for *geometry* (42px height); only the font-size is
+passing `size="xs"`. Inputs keep `size: 'md'` for _geometry_ (42px height); only the font-size is
 floored, so a 16px font sits in a normally-proportioned control.
 
 The floor lives in `@layer basalt`, which means **the consumer must import
@@ -152,7 +153,7 @@ bundle is entirely unlayered, and unlayered author styles outrank every layered 
 specificity — with the plain bundle the floor (and the rest of `@layer basalt`) silently loses.
 
 16px is the only clean fix: `maximum-scale=1` / `user-scalable=no` block pinch-zoom on Android
-(WCAG 1.4.4), `text-size-adjust` governs text *inflation* rather than focus-zoom, and Safari does
+(WCAG 1.4.4), `text-size-adjust` governs text _inflation_ rather than focus-zoom, and Safari does
 not support `interactive-widget`.
 
 The floor is `!important` — the one deliberate use of it in the framework. An inline `style`
@@ -164,14 +165,14 @@ dead code against the `!important` floor.
 
 ## 4. Radii & shape
 
-| Surface | Radius |
-|-|-|
-| cards / panels | **7px** (`--vx-radius-card`; the 2026-07 density pass moves 10px → 7px for a sharper, data-driven edge) |
-| controls (inputs, search, buttons, segmented track, icon buttons ≥28px) | **6px** (`radius.md` = 0.375rem, mirrored by `--vx-radius-ctrl`; density pass moves 8px → 6px) |
-| segmented active thumb, small ghost buttons, kbd badges, nav rows | 5–6px |
-| progress bars | 4px (6px height) |
-| avatar block | 7px |
-| chart bar tops | rx ≈ 1.4 |
+| Surface                                                                 | Radius                                                                                                  |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| cards / panels                                                          | **7px** (`--vx-radius-card`; the 2026-07 density pass moves 10px → 7px for a sharper, data-driven edge) |
+| controls (inputs, search, buttons, segmented track, icon buttons ≥28px) | **6px** (`radius.md` = 0.375rem, mirrored by `--vx-radius-ctrl`; density pass moves 8px → 6px)          |
+| segmented active thumb, small ghost buttons, kbd badges, nav rows       | 5–6px                                                                                                   |
+| progress bars                                                           | 4px (6px height)                                                                                        |
+| avatar block                                                            | 7px                                                                                                     |
+| chart bar tops                                                          | rx ≈ 1.4                                                                                                |
 
 ## 5. Component idioms
 
@@ -185,8 +186,9 @@ dead code against the `!important` floor.
 - **Card**: panel bg + `shadow-card` (ring lives IN the shadow — no `border` property), radius
   7px, padding ~14–16px. Cards lift subtly off a slightly darker page.
 - **Sidebar**: transparent (page bg, no panel, no border), ~216px. Section headers are
-  micro-labels. Active item = panel bg + `shadow-card` + **accent-colored icon** + weight 600 ink
-  text; inactive = muted text, faint icon; hover = ink-6% tint. Child items indent with a 1px
+  micro-labels. Active item = ink-9% tint (NO panel fill, NO shadow — a selected row, not a raised
+  control) + **accent-colored icon** + weight 600 ink text, hovering to ink-13%;
+  inactive = muted text, faint icon; hover = ink-6% tint. Child items indent with a 1px
   `divider` left border; active child = accent text, weight 600. Count badges: mono 10.5px,
   ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (13px semibold) +
   mono 9.5px uppercase faint meta line.
@@ -206,8 +208,8 @@ dead code against the `!important` floor.
   numeral + delta badge; optional sparkline runs full-bleed to the card's L/R/bottom edges (card
   clips to the corner radius; the shadow ring is unaffected).
 - **Settings section**: card-radius panel + shadow-card, spacing xs/sm inset, head-font 15px title
-  + 13px muted description, rows split by a 1px `--vx-divider` rule; the `DangerZone` variant adds
-  a mono danger eyebrow + a danger-tinted ring layered over the shadow.
+  - 13px muted description, rows split by a 1px `--vx-divider` rule; the `DangerZone` variant adds
+    a mono danger eyebrow + a danger-tinted ring layered over the shadow.
 - **Alert**: Mantine `Alert` on the card tint idiom — title in head font (88% stretch, ~550);
   color tint comes from the variant color resolver; control-tier radius.
 - **Progress/meter row**: 13px label (ink-2) + mono 12px faint value; 6px track (ink-8%, radius
@@ -288,8 +290,10 @@ encountered; never "correct" code back toward them:
    controls likewise 8px → 6px).
 6. ~~System-font stack only~~ → shipped three-font system (Nunito Sans / Hubot Sans / JetBrains
    Mono).
-7. Active nav stays a quiet fill (unchanged), but the active **icon** is now accent-colored and
-   the row carries `shadow-card`.
+7. Active nav stays a quiet fill (unchanged) and the active **icon** is accent-colored.
+   ~~The row carries `shadow-card`~~ → the row is an ink-9% tint with no panel fill and no depth:
+   panel + shadow made the current location read as a _button_ parked in the nav. Selection is
+   the same tint idiom as hover, one step stronger, plus ink text, weight 600 and the accent icon.
 8. ~~"The accent uses its lighter shade on dark (no glow)"~~ → true of the accent as **ink** only.
    A filled **surface** keeps the deep `#0077bd` and a white label in BOTH schemes: a light fill
    cannot carry white text, and a darker one drops below 3:1 against the dark page. See §2, "the
