@@ -6,7 +6,7 @@
  * line is the child-list left guide (`--vx-divider`). Never reintroduce brand/section/footer
  * borders.
  *
- * The active fill, shadow-card depth and icon-accent color live in the Mantine theme
+ * The active tint and icon-accent color live in the Mantine theme
  * (`NavLink.extend` + `theme/nav-link.module.css`) so they apply to EVERY render path, including a
  * consumer's router `<Link>` via `renderNavLink` (which never sees this CSS module). This module
  * owns the shell-local layout (docs/DESIGN-SPEC.md §5) and the INACTIVE state (muted text, faint
@@ -50,7 +50,7 @@
 }
 
 /* Hover — ink-6% tint + ink text, for inactive rows only (an active row already carries the
- * theme's panel/shadow-card treatment and keeps its own hover via `--nl-hover`). */
+ * theme's stronger ink-9% tint and keeps its own hover via `--nl-hover`). */
 @media (hover: hover) {
   .link:not([data-active]):not([aria-current='page']):hover {
     background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
@@ -316,16 +316,14 @@
 
 /*
  * Active child = accent text, weight 600, NO fill (docs/DESIGN-SPEC.md §5) — unlike a top-level
- * active row (panel + shadow-card). Overrides the `--nl-*` custom properties the theme sets
- * inline on the SAME NavLink root, so `!important` is required; `box-shadow` cancels the theme
- * module's active shadow-card.
+ * active row (ink-9% tint). Overrides the `--nl-*` custom properties the theme sets inline on the
+ * SAME NavLink root, so `!important` is required.
  */
 .childList :global(.mantine-NavLink-root[data-active]),
 .childList :global(.mantine-NavLink-root[aria-current='page']) {
   --nl-color: var(--vx-accent) !important;
   --nl-bg: transparent !important;
   --nl-hover: color-mix(in srgb, var(--vx-ink) 5%, transparent) !important;
-  box-shadow: none !important;
 }
 
 /* Child hover (inactive) — ink-5% + ink, one step quieter than the parent rows' 6%. Outranks the
