@@ -1,19 +1,19 @@
 /*
- * Active nav row = heavier weight + card depth, applied at the THEME level via `classNames` so it
- * reaches EVERY NavLink render path — including a consumer's router `<Link>` mounted through
- * `renderNavLink`, which a shell-scoped CSS module never sees. Mantine's `styles` prop only takes
- * flat inline properties (a nested `&[data-active]` there throws a React warning), so the state
- * selectors live here. React Router's NavLink marks the active item via `aria-current` rather than
- * the `active` prop's `data-active`, so both states are matched.
+ * Active nav row = heavier weight over the ink tint `--nl-bg` carries (set in theme/index.ts,
+ * applied unconditionally by Mantine's own `[data-active]` CSS). NO depth: an active row is a
+ * SELECTED ROW, not a raised control — it deliberately reads as a stronger version of the hover
+ * tint rather than as a button, so the row never competes with the real filled controls around it.
  *
- * The row's background comes from `--nl-bg` (set in theme/index.ts, applies unconditionally via
- * Mantine's own `[data-active]` CSS) — `shadow-card` is added here because there's no `--nl-*` var
- * for depth.
+ * Applied at the THEME level via `classNames` so it reaches EVERY NavLink render path — including a
+ * consumer's router `<Link>` mounted through `renderNavLink`, which a shell-scoped CSS module never
+ * sees. Mantine's `styles` prop only takes flat inline properties (a nested `&[data-active]` there
+ * throws a React warning), so the state selectors live here. React Router's NavLink marks the
+ * active item via `aria-current` rather than the `active` prop's `data-active`, so both states are
+ * matched.
  */
 .root[data-active],
 .root[aria-current='page'] {
   font-weight: 600;
-  box-shadow: var(--vx-shadow-card);
 }
 
 /*

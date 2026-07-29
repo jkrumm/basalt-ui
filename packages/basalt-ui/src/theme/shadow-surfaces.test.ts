@@ -251,17 +251,8 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       "--chip-radius (Mantine's own Chip.css declares `border-radius: var(--chip-radius, 1000rem)` " +
       'directly on the label part — the same element `.chipLabel` targets).',
   },
-  // ── theme/nav-link.module.css ────────────────────────────────────────────────────────────────
-  {
-    file: 'theme/nav-link.module.css',
-    site: ".root[data-active], .root[aria-current='page']",
-    roundedBy:
-      "borderRadius: 6 (theme/index.ts's NavLink.extend styles.root — Mantine renders this as an " +
-      'inline style on the root part, wired via `classNames: { root: navLinkClasses.root }` to the ' +
-      "exact `.root` element this rule's box-shadow lands on). Verified NOT a square surface: " +
-      "Mantine's own NavLink.css declares no border-radius at all for .root — the 6px comes only " +
-      'from our own theme override.',
-  },
+  // theme/nav-link.module.css applies no shadow token: the active nav row is a selected row (ink
+  // tint), never a raised control — see that file's header comment.
   // ── shell/app-mobile-nav.module.css ──────────────────────────────────────────────────────────
   {
     file: 'shell/app-mobile-nav.module.css',

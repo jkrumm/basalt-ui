@@ -526,17 +526,26 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         },
       }),
       // "Ink earns its color" — a nav selection is UI state, not the identity accent on the LABEL.
-      // The active item is panel bg + `shadow-card` (forced here at the THEME level via NavLink's
-      // `--nl-*` vars, so it holds for every render path — including a consumer's router `<Link>`
-      // via `renderNavLink`, which never sees the shell CSS module); the active ICON is
-      // accent-colored via `nav-link.module.css` (targets the `[data-position='left']` leftSection,
-      // which the flat `vars`/`styles` API can't express conditionally on `[data-active]`).
+      // The active item is a SELECTED ROW, not a raised control: the same ink-tint idiom as the
+      // hover state (one step stronger, ink-9%), no panel fill and no `shadow-card` — a raised,
+      // panel-filled row read as a button sitting in the nav rather than as the current location.
+      // Selection is carried by the tint + ink text + weight 600 + the accent icon instead. Forced
+      // here at the THEME level via NavLink's `--nl-*` vars so it holds for every render path —
+      // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
+      // module; the active ICON is accent-colored via `nav-link.module.css` (targets the
+      // `[data-position='left']` leftSection, which the flat `vars`/`styles` API can't express
+      // conditionally on `[data-active]`).
+      //
+      // `--nl-hover` (ink-13%) only ever reaches an ACTIVE row in practice — the inactive hover is
+      // set at ink-6% by higher-specificity `:not([data-active])` rules in `nav-link.module.css` /
+      // `app-sidebar.module.css` — so it exists to keep the active row responding to the pointer
+      // now that its rest state sits in the same tint family as an inactive hover.
       NavLink: NavLink.extend({
         vars: () => ({
           root: {
-            '--nl-bg': 'var(--vx-surface-panel)',
+            '--nl-bg': 'color-mix(in srgb, var(--vx-ink) 9%, transparent)',
             '--nl-color': 'var(--vx-ink)',
-            '--nl-hover': 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
+            '--nl-hover': 'color-mix(in srgb, var(--vx-ink) 13%, transparent)',
           },
           children: {},
         }),
