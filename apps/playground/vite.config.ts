@@ -18,7 +18,7 @@ export default mergeConfig(
     port: 7710,
     version: '1.0.0',
     basaltSrc,
-    allowedHosts: ['basalt-playground.test'],
+    allowedHosts: ['basalt-playground.test', 'basalt-playground.mini.jkrumm.com'],
   }),
   {
     // tanstackRouter must precede the React plugin — it generates `src/routeTree.gen.ts` from the
