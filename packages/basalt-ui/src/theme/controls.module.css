@@ -6,10 +6,19 @@
 
 /*
  * Field idiom (docs/DESIGN-SPEC.md §5): inputs read slightly inset on the panel — field surface
- * (white on light, a page-bg step below panel on dark), depth via `shadow-card` (a whisper shadow
- * + ring baked into the one value — DESIGN-SPEC doctrine inversion #1: depth is `shadow-card`, not
- * a hairline; borders-as-borders stay reserved for layout dividers), faint placeholder, and an
+ * (white on light, a page-bg step below panel on dark), depth via `shadow-raised` (a whisper shadow
+ * + ring baked into the one value — DESIGN-SPEC doctrine inversion #1: depth is a shadow, not a
+ * hairline; borders-as-borders stay reserved for layout dividers), faint placeholder, and an
  * accent border on focus (Mantine's own `:focus` rule swaps `--input-bd` to `--input-bd-focus`).
+ *
+ * `shadow-raised` — the SAME token Button/ActionIcon take below, and that sharing is deliberate.
+ * A `size="md"` Input and a `size="md"` Button are pinned to identical heights by
+ * `--vx-space-control-height`, so they are read as one row of controls; when the buttons moved onto
+ * `shadow-raised` and the fields stayed on `shadow-card`, that row visibly split in two. Panels
+ * (Card/Paper/Notification/ChartCard/SettingsSection) keep `shadow-card` — the line is
+ * control-vs-panel, not component-by-component. Its inset ring also suits a field better than
+ * `card`'s outset one ever did: an outset ring draws a boundary AROUND the box, while an inset edge
+ * darkens the field's own rim, which is what "recessed into the panel" actually looks like.
  * The `--input-bd` box itself stays a TRANSPARENT 1px border (not `border: none`) so focus can
  * recolor the same box with no layout shift, and `[data-error]` still wins a real red border.
  *
@@ -30,13 +39,15 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 }
 
 /*
- * Depth lands on the INPUT ELEMENT, never on the wrapper above — `--vx-shadow-card` bakes a 1px
+ * Depth lands on the INPUT ELEMENT, never on the wrapper above — `--vx-shadow-raised` bakes a 1px
  * ring into the shadow, and the ring follows the shadowed box's OWN `border-radius`, not any other
  * element's. Mantine's input wrapper (`.m_6c018570`) is a bare `position: relative` box with
  * `border-radius: 0`; the ring drawn there squares off around the rounded input inside it and leaks
  * visible corner nubs. The input element itself carries `border-radius: var(--input-radius)`
- * (Input.css), so the ring follows the rounded edge exactly. This is the general rule for the token
- * — see shadow-surfaces.test.ts.
+ * (Input.css), so the ring follows the rounded edge exactly. `raised`'s ring being INSET rather than
+ * outset does not soften this: an inset ring is drawn by the same box and follows the same corners,
+ * so a mismatch leaks nubs on the inside of the corner instead of the outside. This is the general
+ * rule for every depth token — see shadow-surfaces.test.ts.
  *
  * Mantine never declares a `box-shadow` on the input at any specificity, so a plain `.input` class
  * (0,1,0) wins uncontested. `--field-depth` carries the resting shadow so the `:focus` rule below
@@ -51,27 +62,155 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 }
 
 .input[data-variant='default'] {
-  --field-depth: var(--vx-shadow-card);
+  --field-depth: var(--vx-shadow-raised);
 }
 
 /*
- * Button / ActionIcon (`default` variant): the SAME shadow-card depth as the field above and as
- * Card/Paper (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
- * panel + shadow-card"). Background and border already resolve centrally, through
- * `--mantine-color-default`/`-border` (theme/index.ts's `cssVariablesResolver`) — the
- * `default-border` var is pinned to `transparent` there, which is what kills the stock 1px
- * hairline `defaultVariantColorsResolver`'s `variant === 'default'` branch draws for EVERY
- * default-variant control (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), not just these
- * two. Only the shadow is a fresh declaration (Mantine never sets one for `default`), so no
- * `html[...]` specificity fight is needed to win it — a plain module-class + attribute selector is
- * deterministic. `filled`/`subtle`/`light` variants are untouched by the attribute scope.
+ * Button / ActionIcon depth (docs/DESIGN-SPEC.md §5's Button idiom; the header's search trigger and
+ * icon button are specified there as a matched pair and both land on `shadow-raised`, same as the
+ * field above).
+ *
+ * THE LAW: depth says "this is a control surface"; it is NOT the emphasis axis. Emphasis lives
+ * entirely in fill weight (`filled` > `light`/`outline` > `subtle`), exactly as every surveyed
+ * system resolves it — Material 3's filled button, Radix's `solid`, and Primer's primary all rank
+ * by fill and saturation, never by z-height. So every variant that OWNS A BOX gets the same
+ * resting depth, and only the tier that owns no box stays flat.
+ *
+ * This replaces a `default`-only rule that inverted the hierarchy in practice: `default` was the
+ * one variant carrying depth, so the SECONDARY button read as a physical object while the primary
+ * (`filled`) read as paint on the page. Raising the rest is what removes the inversion — flattening
+ * `default` instead would fix it too, but it is not open to us: DESIGN-SPEC doctrine inversion #1
+ * ("depth is a shadow, not a hairline") already raised Card/Paper/Input/Chip/CheckboxCard, so a flat
+ * Button would be the only flat control in a row of raised ones — most visibly beside a
+ * `size="md"` TextInput, which the `--vx-space-control-height` coupling in theme/index.ts pins to
+ * the exact same height.
+ *
+ * ONE depth value for the raised family, and it is `shadow-raised` — a drop plus a 1px INSET edge:
+ *   - `default`/`filled`/`light` all take it, unmodified. The shared value is the point. An earlier
+ *     revision split them (`default` on `shadow-card`, the rest on ring-free `shadow-ctrl`) and
+ *     `default` visibly read a step more three-dimensional than the other two: it was the only one
+ *     with a DEFINED EDGE, and on dark it also carried a wider blur. A soft drop alone reads as
+ *     "something is under this"; a crisp boundary is what actually reads as an object. Landing them
+ *     on one value is what closed that gap — `default` came down (no more 3px/0.4 dark blur, no
+ *     outset ring), `filled`/`light` came up (they gained an edge at all).
+ *   - The edge is INSET, which is exactly why one value can cover all three — see `SHADOW.raised`
+ *     in tokens/palette.ts for the full reasoning. Short version: an outset ring paints in the color
+ *     of what it is drawn over, so `card`'s pale hairline ring would read as a grey outline around a
+ *     saturated `filled` button on light scheme; an inset edge is drawn over the control's OWN
+ *     background and works on a fill, a 13% tint and a neutral panel alike. It also keeps `default`
+ *     legible inside a Card, where button and card share `--vx-surface-panel` and the inset edge is
+ *     the only thing separating them (its border is pinned `transparent` by
+ *     `cssVariablesResolver`, which kills the stock hairline `defaultVariantColorsResolver` draws
+ *     for EVERY default-variant control — so this edge really is its only one).
+ *   - `outline` is the one raised variant NOT on it: it already carries a real 1px accent border,
+ *     and an inset edge tucked just inside a border is muddy. It takes ring-free `shadow-ctrl`
+ *     instead — the same token, for the same reason, that SegmentedControl's active segment uses to
+ *     say "this is the lifted one". Its border is its edge, so it is not missing one.
+ *
+ * `subtle` is the one tier that owns no box — it is a text affordance, not an object, and every
+ * system surveyed keeps that tier flat. It stays flat in BOTH states here: its hover is Mantine's
+ * own background tint and nothing else, which is exactly how the spec's "ghost icon button" (§5:
+ * transparent, faint icon, hover ink-6% + ink icon) already behaved. Button's `subtle` and
+ * ActionIcon's therefore need no asymmetry between them. See the note below the variant rules for
+ * why an earlier hover-depth attempt was reverted.
+ *
+ * Mantine never declares a `box-shadow` on either component at ANY specificity, so a plain
+ * module-class + attribute selector wins uncontested — no `html[...]` prefix fight, unlike the
+ * input-variable overrides above. Depth rides `--ctrl-depth` rather than landing on `box-shadow`
+ * directly (the same indirection `.input` uses for `--field-depth`) so the disabled rule below
+ * moves ONE variable instead of restating a value per variant.
  */
-.buttonRoot[data-variant='default'] {
-  box-shadow: var(--vx-shadow-card);
+.buttonRoot,
+.actionIconRoot {
+  --ctrl-depth: 0 0 transparent;
+
+  box-shadow: var(--ctrl-depth);
+  transition: box-shadow 120ms ease;
 }
 
-.actionIconRoot[data-variant='default'] {
-  box-shadow: var(--vx-shadow-card);
+.buttonRoot[data-variant='default'],
+.buttonRoot[data-variant='filled'],
+.buttonRoot[data-variant='light'] {
+  --ctrl-depth: var(--vx-shadow-raised);
+}
+
+.actionIconRoot[data-variant='default'],
+.actionIconRoot[data-variant='filled'],
+.actionIconRoot[data-variant='light'] {
+  --ctrl-depth: var(--vx-shadow-raised);
+}
+
+.buttonRoot[data-variant='outline'] {
+  --ctrl-depth: var(--vx-shadow-ctrl);
+}
+
+.actionIconRoot[data-variant='outline'] {
+  --ctrl-depth: var(--vx-shadow-ctrl);
+}
+
+/*
+ * DEPTH HERE IS STATIC. No variant changes depth or position on hover or press — the raised variants
+ * already get hover feedback from Mantine's own background change, so anything layered on top just
+ * restates a signal that is already there. Two attempts at adding one were made and both reverted,
+ * for reasons worth keeping:
+ *
+ *   - A 1px `translateY` lift on hover, reversed on press. It restated the background change AND
+ *     cost something real: Floating UI measures a transformed rect, so a Tooltip or Popover anchored
+ *     to the button visibly shifts with it.
+ *   - `subtle` materializing into `shadow-raised` on hover. The theory was that `subtle` owns no box
+ *     at rest, so gaining one under the cursor is the affordance rather than decoration. In practice
+ *     `shadow-raised`'s INSET edge is a hard rim, and a rim appearing around a ghost button makes it
+ *     read as an `outline` button rather than as a text affordance that lit up — the tint alone
+ *     already says "pressable", and the rim says something else entirely. `subtle` is now flat in
+ *     BOTH states, which also collapses an asymmetry that had to be documented twice: Button's
+ *     `subtle` and ActionIcon's ghost icon button finally behave identically.
+ *
+ * DON'T REINTRODUCE EITHER. If a future pass wants `subtle` to gain depth on hover, the token to
+ * reach for is ring-free `shadow-ctrl`, not `shadow-raised` — the drop is the part that reads as
+ * lift, the rim is the part that read as wrong.
+ */
+
+/*
+ * Disabled is flat and grounded — a raised control reads as pressable, which is the one thing a
+ * disabled control must not do. Mantine's own disabled rule (Button.css/ActionIcon.css) recolors
+ * background and text but never touches the shadow, so nothing here fights it; the `[data-loading]`
+ * exclusion mirrors that same rule, keeping a loading button's chrome intact while it works.
+ * Written as real (0,3,0) selectors rather than a `:where()` group so this outranks the (0,2,0)
+ * variant rules above on specificity alone, independent of source order.
+ */
+.buttonRoot:disabled:not([data-loading]),
+.buttonRoot[data-disabled]:not([data-loading]),
+.actionIconRoot:disabled:not([data-loading]),
+.actionIconRoot[data-disabled]:not([data-loading]) {
+  --ctrl-depth: 0 0 transparent;
+}
+
+/*
+ * Fields ground when disabled for the same reason, and this rule is why the field/button split had
+ * to close on BOTH sides: buttons got the treatment above when they moved onto `shadow-raised`,
+ * while inputs — which sat on `shadow-card` at the time — never had one at all, so a disabled
+ * TextInput stayed raised. Once fields joined the same depth family that gap became a visible
+ * inconsistency inside one form rather than a quiet oversight.
+ *
+ * `:disabled` covers the real `<input>`/`<textarea>`; `[data-disabled]` covers the composite fields
+ * (Select, MultiSelect, DatePicker) where Mantine disables a readonly input via the attribute
+ * instead. No `[data-loading]` exclusion here — inputs have no loading state, unlike Button.
+ */
+.input:disabled,
+.input[data-disabled] {
+  --field-depth: 0 0 transparent;
+}
+
+/*
+ * Reduced motion drops the fade, never the shadow: a static shadow is not motion, and removing it
+ * would strip the very hierarchy this pass exists to establish from the users who asked for less
+ * animation. `subtle`'s hover depth still lands — it just lands instantly.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .buttonRoot,
+  .actionIconRoot {
+    transition: none;
+  }
 }
 
 /*
@@ -84,7 +223,7 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 .radioCardRoot[data-with-border] {
   background-color: var(--vx-surface-panel);
   border-color: transparent;
-  box-shadow: var(--vx-shadow-card);
+  box-shadow: var(--vx-shadow-raised);
 }
 
 /*
@@ -96,7 +235,7 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
  */
 .chipLabel:not([data-checked]):not([data-disabled]) {
   background-color: var(--vx-surface-panel);
-  box-shadow: var(--vx-shadow-card);
+  box-shadow: var(--vx-shadow-raised);
 }
 
 /*

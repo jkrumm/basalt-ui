@@ -81,7 +81,8 @@ const LazyStickToBottom = lazy(() =>
                   border: 'none',
                   cursor: 'pointer',
                   backgroundColor: 'var(--vx-surface-panel)',
-                  boxShadow: 'var(--vx-shadow-card)',
+                  // Control depth, not panel depth — this is a real <button> (DESIGN-SPEC §2).
+                  boxShadow: 'var(--vx-shadow-raised)',
                   color: 'var(--vx-faint)',
                   fontFamily: 'var(--basalt-font-mono)',
                   fontSize: VX.text.md,

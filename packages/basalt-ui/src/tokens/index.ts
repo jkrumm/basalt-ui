@@ -202,6 +202,9 @@ export const VX = {
   // Depth shadows — a whisper shadow + a 1px ring baked into the value (never a `border` prop).
   shadowCard: 'var(--vx-shadow-card)',
   shadowCtrl: 'var(--vx-shadow-ctrl)',
+  // Raised interactive controls — drop + a 1px INSET edge, the one depth every raised Button/
+  // ActionIcon variant shares (works over a fill, a tint or a panel alike; see SHADOW.raised).
+  shadowRaised: 'var(--vx-shadow-raised)',
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a real drop shadow.
   shadowOverlay: 'var(--vx-shadow-overlay)',
 
@@ -333,6 +336,7 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
     decl('divider', su.divider[side]),
     decl('shadow-card', SHADOW.card[side]),
     decl('shadow-ctrl', SHADOW.ctrl[side]),
+    decl('shadow-raised', SHADOW.raised[side]),
     decl('shadow-overlay', SHADOW.overlay[side]),
     decl('surface-bg', su.bg[side]),
     decl('surface-panel', su.panel[side]),
