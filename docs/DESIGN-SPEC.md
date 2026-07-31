@@ -86,10 +86,39 @@ with the charts and the theme lab retunes it live. All of it is enforced by `the
 
 Shadows (tokens, not ad hoc):
 
-| Token       | Light                                                 | Dark                                                                                     |
-| ----------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| shadow-card | `0 1px 2px rgba(28,25,23,0.05), 0 0 0 1px <hairline>` | `0 1px 3px rgba(0,0,0,0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)` |
-| shadow-ctrl | `0 1px 2px rgba(28,25,23,0.12)`                       | `0 1px 2px rgba(0,0,0,0.35)`                                                             |
+| Token         | Light                                                 | Dark                                                                                      |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| shadow-card   | `0 1px 2px rgba(28,25,23,0.05), 0 0 0 1px <hairline>` | `0 1px 3px rgba(0,0,0,0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)`  |
+| shadow-ctrl   | `0 1px 2px rgba(28,25,23,0.12)`                       | `0 1px 2px rgba(0,0,0,0.35)`                                                              |
+| shadow-raised | `0 1px 2px rgba(28,25,23,0.10)`                       | `0 1px 2px rgba(0,0,0,0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent)` |
+
+`shadow-raised` is the depth for every INTERACTIVE CONTROL — buttons, action icons, inputs, the
+search trigger, chips, selection cards, the composer — and the only one whose ring is **inset**.
+The dividing line is control-vs-panel, not component-by-component: anything you click or type into
+takes `shadow-raised`; anything that is a surface holding content (Card, Paper, Notification,
+ChartCard, SettingsSection) keeps `shadow-card`. Detached FLOATING surfaces are a third tier and
+keep `shadow-overlay` — Tooltip, Popover, Menu, Combobox, Modal and Drawer all resolve it in
+`theme/index.ts`; they sit above the page rather than on it. Two controls that sit beside each
+other — a `size="md"` Input and a `size="md"` Button, pinned to the same height by
+`--vx-space-control-height`; the header's search trigger and icon button — must never end up on
+different tokens; that split is exactly what this token was introduced to close. That is what lets one value cover a saturated fill, a 13% tint and a neutral panel alike:
+an outset ring paints in the color of whatever it is drawn over, so `shadow-card`'s pale hairline
+would read as a grey outline around a colored button, while an inset edge is drawn over the
+control's own background. Its edge is a pure luminance shift — darkening on light, lightening on
+dark — never a hue, so it never tints the fill it rides on.
+
+**The two schemes are shaped differently, deliberately — don't tidy them into one.** Dark is drop +
+a full inset rim: its edge is a _lightening_, so it can't collide with the dark drop below, and a
+uniform lightening on a dark surface reads as rim light wrapping a raised object. Light is **drop
+only, no edge**. A light-mode edge would have to be a _darkening_, and every position for one fails:
+uniform reads as a **border** (it made `default` and `light` look like outlined buttons and every
+form field look boxed), and bottom-only puts a dark inner line directly above the dark drop — a
+visible **double bottom border**. There is no third position, because a light-mode raised object's
+only honest cue is the shadow it casts. Both shapes were tried on screen and rejected.
+
+The cost, light only: a `default` control nested in a Card (both `--vx-surface-panel`) has no
+boundary but the drop. Accepted — a wrong-looking border on every control beats a soft edge in one
+nesting case. If it ever needs more, raise the **drop**; do not reintroduce an edge.
 
 Tint idiom — interactive neutral fills are **ink mixes**, never grey hexes:
 
@@ -177,7 +206,7 @@ dead code against the `!important` floor.
 ## 5. Component idioms
 
 - **The ring lives IN the shadow — apply it to the box that carries the surface's `border-radius`.**
-  `shadow-card`/`shadow-ctrl` bakes a 1px ring into the shadow value itself; the ring follows the
+  `shadow-card`/`shadow-raised` bakes a 1px ring into the shadow value itself; the ring follows the
   shadowed box's OWN corners, so it only renders correctly there — never on a bare layout wrapper
   whose radius doesn't match the rounded surface it wraps. Background usually sits on the same box
   too, but it's the radius the ring is bound to, not the background (a shadowed box with a separate,
@@ -185,6 +214,47 @@ dead code against the `!important` floor.
   `src/theme/shadow-surfaces.test.ts`.
 - **Card**: panel bg + `shadow-card` (ring lives IN the shadow — no `border` property), radius
   7px, padding ~14–16px. Cards lift subtly off a slightly darker page.
+- **Button / ActionIcon**: **depth says "this is a control surface"; it is not the emphasis axis.**
+  Emphasis is carried entirely by fill weight (`filled` > `light`/`outline` > `subtle`) — the same
+  way Material 3, Radix and Primer rank their variants, none of which rank by z-height. So every
+  variant that owns a box carries the **same** resting depth — one value, `shadow-raised`, not a
+  tier list:
+  - `default` / `filled` / `light` → `shadow-raised`, unmodified. The sharedness is the point. These
+    were briefly split (`default` on `shadow-card`, the rest on `shadow-ctrl`) and `default` read a
+    visible step more three-dimensional, because it was the only one with a **defined edge** — a
+    soft drop alone reads as "something is under this", a crisp boundary is what reads as an object.
+    One value fixed it from both sides: `default` came down (no 3px/0.4 dark blur, no outset ring),
+    `filled`/`light` came up (they gained an edge at all).
+  - The edge being **inset** is what makes one value possible across a fill, a tint and a panel —
+    see §2. It also keeps `default` legible inside a Card, where button and card share
+    `--vx-surface-panel` and that edge is the only thing separating them.
+  - `outline` → `shadow-ctrl`, ring-free. Its real 1px accent border already is its edge, and an
+    inset ring tucked just inside a border is muddy. Same token, same reason, as the segmented
+    control's active segment.
+  - `subtle` → **flat in both states**. It is a text affordance, not an object; its hover is a
+    background tint and nothing more — and that tint is the **neutral ink-6%** of the ghost idiom
+    below, not Mantine's saturated accent tint, which made a hovered subtle Button read as a filled
+    control appearing under the cursor. Resolved in `basaltVariantColorResolver` so Button and
+    ActionIcon agree; an explicitly-colored subtle control (`color="red"`) keeps its own hue, since
+    there the colour is the whole signal. Giving it `shadow-raised` on hover was tried and reverted —
+    that token's inset rim made a hovered ghost button read as an `outline` button. If depth is ever
+    wanted there, use ring-free `shadow-ctrl`: the drop reads as lift, the rim read as wrong.
+    Button's `subtle` and the ghost icon button below now behave identically.
+
+  **Depth is static — no variant moves or changes depth on hover or press, without exception.**
+  Everything raised already gets hover feedback from its background change, so anything layered on
+  top restates a signal that is already there. Two additions were tried and both reverted: a 1px
+  hover lift (a `transform` also shifts anchored Tooltips/Popovers, since Floating UI measures a
+  transformed rect) and `subtle` gaining depth on hover. Don't reintroduce either.
+
+  Disabled is flat and grounded — a raised control reads as pressable. Reduced motion drops the
+  transition, never the resting depth (a static shadow is not motion).
+
+  Do **not** "fix" a flat-looking button row by flattening `default` to match. That inverts nothing
+  and breaks something: doctrine inversion #1 already raised Card/Paper/Input/Chip/CheckboxCard, so
+  a flat Button becomes the only flat control in the row — most visibly next to a `size="md"`
+  TextInput, pinned to the identical height by `--vx-space-control-height`.
+
 - **Sidebar**: transparent (page bg, no panel, no border), ~216px. Section headers are
   micro-labels. Active item = ink-9% tint (NO panel fill, NO shadow — a selected row, not a raised
   control) + **accent-colored icon** + weight 600 ink text, hovering to ink-13%;
@@ -195,12 +265,14 @@ dead code against the `!important` floor.
 - **Header**: transparent, no bottom rule — it shares the page background with the body, so a
   separator would only draw a line across a continuous surface. Breadcrumb 13.5px: parents faint, separator
   line-colored, current page in head font ~14.5px/550. Right side: search trigger (panel +
-  shadow-card, radius 8, faint text, mono ⌘K badge), icon button (31px, panel + shadow-card),
-  segmented range control.
+  shadow-raised, radius 8, faint text, mono ⌘K badge), icon button (31px, panel + shadow-raised),
+  segmented range control. These two are a matched pair — they sit side by side, so they must never
+  drift onto different depth tokens.
 - **Segmented control**: track = ink-6% tint, radius 7, 2px padding, 2px gap; active segment =
   panel bg + `shadow-ctrl`, radius 5, ink text weight 600; inactive = muted, transparent. Numeric
   segment labels (1D/7D/30D) are mono 11.5px; word labels are sans 12px.
-- **Ghost icon button**: transparent, faint icon, hover ink-6% + ink icon, radius 6.
+- **Ghost icon button**: transparent, faint icon, hover ink-6% + ink icon, radius 6. Flat at rest
+  AND on hover. Button's `subtle` behaves identically — neither takes depth in either state.
 - **Delta/status badge**: mono 11.5px weight 600, status-color text on status-13% tint, radius 6,
   2px 7px padding, optional ▲/▼ glyph at 9px, optional comparison-period suffix (`MoM`/`WoW`/`YTD`)
   in a dimmer shade of the same tone directly after the value.
@@ -220,7 +292,8 @@ dead code against the `!important` floor.
   status-warning at 1.9px stroke; bar pairs 6.4px wide, rx 1.4; legend centered below — 11px
   radius-3 square swatches (16×3px radius-2 pill for line series), 12.5px muted labels, 22px gap.
 - **Sparklines**: single 1.6px faint line, no fill, no axes.
-- **Tooltip/popover/menu**: panel bg + shadow-card, radius 7–8px (cards 7px; floating surfaces 8px).
+- **Tooltip/popover/menu**: panel bg + `shadow-overlay` (the detached floating tier, a step above
+  `shadow-card` — see §2), radius 7–8px (cards 7px; floating surfaces 8px).
   The chart info-tooltip (`ChartCard`'s `i`) is a Mantine-free hover/focus/tap bubble in the same
   idiom; it dismisses on Escape, blur, or an outside click. Its trigger lives in the card header,
   which sits OUTSIDE the chart body's clip box, so the bubble can overhang the card edge and is never
@@ -281,8 +354,9 @@ the discipline is unchanged even though the hue is louder.
 Older comments/docs in the codebase state doctrine this redesign **replaces** — update them where
 encountered; never "correct" code back toward them:
 
-1. ~~"Depth = surface change + 1px hairline, NEVER a drop shadow"~~ → depth = `shadow-card`
-   (whisper shadow + ring). Borders-as-borders remain only for layout dividers.
+1. ~~"Depth = surface change + 1px hairline, NEVER a drop shadow"~~ → depth = a whisper shadow with
+   a 1px ring baked in: `shadow-card` for panels, `shadow-raised` for controls. Borders-as-borders
+   remain only for layout dividers.
 2. ~~Warm-neutral greys (blue channel ≤ red)~~ → cool zinc neutrals.
 3. ~~Muted slate-blue accent (~50% sat)~~ → saturated sky accent (#0077bd / #8ec5ff).
 4. ~~Panels are white on light~~ → panels are zinc-100 (#f4f4f5) on a slightly darker page.

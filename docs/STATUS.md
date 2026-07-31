@@ -31,8 +31,11 @@ built work as "remaining"; that language is historical, see the banner on each.
   `docs/DESIGN-SPEC.md`), motion discipline (oxlint + `check-theme` enforced).
 - **Design overhaul (2026-07-11)** — the shell, charts, components (`data-table`, notifications
   bell/center), and agent-chat surfaces were restyled to `docs/DESIGN-SPEC.md`: cool zinc surfaces,
-  a single saturated sky accent, split by role (ink `#0077bd`/`#8ec5ff`; fill `#0077bd` both schemes, white label), `shadow-card` depth (whisper shadow + ring,
-  no plain hairline), 7px card radius (6px controls, after the 2026-07-15 density pass), and the
+  a single saturated sky accent, split by role (SEED values ink `#0077bd`/`#8ec5ff`, fill `#0077bd`
+  both schemes, white label — the derive engine now EMITS different tokens from these seeds, see the
+  post-derive-engine note in `DESIGN-SPEC.md`), whisper-shadow-plus-ring depth
+  (no plain hairline) — `shadow-card` for panels, `shadow-raised` for interactive controls since the
+  2026-07-31 control-depth pass — 7px card radius (6px controls, after the 2026-07-15 density pass), and the
   three-font system (Nunito Sans / Hubot Sans /
   JetBrains Mono, shipped via exact-pinned `@fontsource-variable/*` deps). `DESIGN-SPEC.md` is the
   ground truth for all visual doctrine going forward; older doctrine comments describing warm-neutral
@@ -263,8 +266,8 @@ preview`) — run the playground through its dev server. Two things previously d
   one-off — deliberately have NO `--vx-space-*` CSS var (visx SVG props read plain JS numbers, not
   `var()` strings, so a declaration would have zero consumers). `VX` is built ONCE at module load
   from the frozen level-0 `SPACE_STEP` snapshot, so it never re-reads a `density` option at all —
-  this is the one case that fails BOTH paths, including the PRODUCTION `createBasaltTheme({
-  density })` one, not merely the dev slider (see `deriveSpacing`'s JSDoc, `tokens/palette.ts`, for
+  this is the one case that fails BOTH paths, including the PRODUCTION
+  `createBasaltTheme(undefined, { density })` one, not merely the dev slider (see `deriveSpacing`'s JSDoc, `tokens/palette.ts`, for
   the full accounting of what tracks density end to end and what doesn't).
 
 ## Open — framework-free token consumption (`feat/framework-free-tokens`)
