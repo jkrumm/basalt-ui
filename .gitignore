@@ -79,3 +79,16 @@ pnpm-lock.yaml
 
 # Local scratch notes
 sc-note.md
+
+# Local Claude Code config. Scoped to the USER-OWNED paths only, never the whole `.claude/` tree:
+# `basalt-ui init`/`sync` place MANAGED files at `.claude/rules/basalt-*.md` and
+# `.claude/skills/basalt-*/`, and a blanket ignore would silently hide that output if this repo ever
+# dogfoods its own CLI.
+#
+# `user-*.md` is the load-bearing entry. This is a PUBLIC repo, and those are verbatim copies of the
+# machine's global CLAUDE.md — internal hostnames, the homelab/VPS layout, 1Password account names.
+.claude/rules/user-*.md
+.claude/rules/pandaos-config.md
+.claude/settings.local.json
+.claude/plans/
+.claude/e2e-shots/
