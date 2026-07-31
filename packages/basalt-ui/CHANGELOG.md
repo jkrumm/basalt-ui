@@ -1,3 +1,16 @@
+# [1.6.0](https://github.com/jkrumm/basalt-ui/compare/v1.5.0...v1.6.0) (2026-07-31)
+
+
+### Bug Fixes
+
+* **dev:** move marketing off the playground's port, allow the tailnet doors ([488f9e8](https://github.com/jkrumm/basalt-ui/commit/488f9e8d0824ff785c2eee1b2f43e7e456f9beca))
+
+
+### Features
+
+* quiet the active nav row into a selection ([767aed2](https://github.com/jkrumm/basalt-ui/commit/767aed2ec72ca92bfdbf5d0c30162b0f64d74e84))
+* unify every interactive control on one raised depth ([7e6adc6](https://github.com/jkrumm/basalt-ui/commit/7e6adc6ef936f312f24112d4e15cd88e5d5d95b3))
+
 # [1.5.0](https://github.com/jkrumm/basalt-ui/compare/v1.4.1...v1.5.0) (2026-07-28)
 
 
