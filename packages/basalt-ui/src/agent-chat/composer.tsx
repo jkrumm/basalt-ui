@@ -76,13 +76,14 @@ export function Composer({
     disabled,
     onChange: (event) => setValue(event.currentTarget.value),
     onKeyDown: handleKeyDown,
-    // Composer input surface (docs/DESIGN-SPEC.md §5): panel + shadow-card, control radius (6px,
-    // VX.radiusCtrl) — the ring
-    // lives in the shadow, so the input carries no separate border.
+    // Composer input surface (docs/DESIGN-SPEC.md §5): panel + control radius (6px, VX.radiusCtrl);
+    // the ring lives in the shadow, so the input carries no separate border. Depth is deliberately
+    // NOT set here — it arrives from the themed `.input` class (theme/controls.module.css), which
+    // also grounds it when disabled. A `boxShadow` in this `styles` object renders as an INLINE
+    // style and would beat that class unconditionally, leaving a disabled composer raised.
     styles: {
       input: {
         backgroundColor: 'var(--vx-surface-panel)',
-        boxShadow: 'var(--vx-shadow-card)',
         borderRadius: VX.radiusCtrl,
         border: 'none',
       },

@@ -1,6 +1,8 @@
 /*
  * Sidebar search trigger — replicates the former header search trigger (panel surface +
- * shadow-card, control radius, faint icon/label, mono Kbd) at full width inside the sidebar.
+ * shadow-raised, control radius, faint icon/label, mono Kbd) at full width inside the sidebar.
+ * `shadow-raised` is the shared CONTROL depth — §5 specifies this trigger and the header icon
+ * button as a matched pair, so the two must never drift onto different depth tokens.
  */
 
 .trigger {
@@ -12,7 +14,7 @@
   padding: 0 var(--vx-space-row-inset-x);
   border-radius: var(--vx-radius-ctrl);
   background-color: var(--vx-surface-panel);
-  box-shadow: var(--vx-shadow-card);
+  box-shadow: var(--vx-shadow-raised);
   color: var(--vx-faint);
 }
 

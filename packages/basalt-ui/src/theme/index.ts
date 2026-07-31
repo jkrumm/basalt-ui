@@ -342,6 +342,24 @@ const basaltVariantColorResolver: VariantColorsResolver = (input) => {
     return autoContrast ? { ...resolved, color: on } : resolved
   }
 
+  // `subtle`: hover is a NEUTRAL ink tint, not Mantine's accent tint
+  // (`--mantine-color-{c}-light`). `docs/DESIGN-SPEC.md` §5 specifies the ghost idiom as "hover
+  // ink-6% + ink icon", and a subtle Button had never followed it — it hovered into a saturated
+  // accent block that read as a filled control appearing under the cursor. Fixing it HERE rather
+  // than in controls.module.css is what makes Button and ActionIcon agree: both resolve `subtle`
+  // through this one function, and §5's ghost icon button and a `variant="subtle"` Button are meant
+  // to be the same idiom at two sizes.
+  //
+  // Scoped to the DEFAULT color on purpose. An explicitly-colored subtle control (`color="red"` on a
+  // destructive text action) carries its hue as the whole signal, so neutralizing its hover would
+  // erase the one thing that marks it dangerous — those keep Mantine's own tinted hover.
+  if (input.variant === 'subtle') {
+    const isDefaultColor = input.color === undefined || input.color === input.theme.primaryColor
+    return isDefaultColor
+      ? { ...resolved, hover: `color-mix(in srgb, var(--vx-ink) 6%, transparent)` }
+      : resolved
+  }
+
   if (input.variant !== 'light') return resolved
   const ink = `var(--mantine-color-${colorName}-light-color)`
   return {
@@ -579,7 +597,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           label: { fontSize: VX.text.md, lineHeight: 'var(--vx-space-row-line-height)' },
         },
       }),
-      // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-card` depth + faint placeholder,
+      // Field idiom (docs/DESIGN-SPEC.md §5): field surface + `shadow-raised` depth + faint placeholder,
       // accent border + subtle accent ring on focus — see controls.module.css. The two slots carry
       // different halves of it: the `wrapper` is where Mantine declares the `--input-*` vars, the
       // `input` is the box that actually paints the surface (bg + radius) and therefore the only
@@ -634,16 +652,19 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       PillsInput: PillsInput.extend({
         classNames: { wrapper: controlsClasses.inputWrapper, input: controlsClasses.input },
       }),
-      // Button / ActionIcon (`default` variant): same `shadow-card` depth as every other control
-      // surface (docs/DESIGN-SPEC.md §5: "search trigger … panel + shadow-card", "icon button …
-      // panel + shadow-card"; doctrine inversion #1). Background already resolves through the shared
+      // Button / ActionIcon: depth for EVERY variant that owns a box (docs/DESIGN-SPEC.md §5's
+      // Button idiom; doctrine inversion #1) — `default`/`filled`/`light` on the shared
+      // `shadow-raised`, `outline` on ring-free `shadow-ctrl`, `subtle` flat at rest. Emphasis stays
+      // in fill weight,
+      // never in z-height. Background for `default` already resolves through the shared
       // `--mantine-color-default` var (→ `--vx-surface-panel`, see cssVariablesResolver below) and
-      // the border through `--mantine-color-default-border` (→ transparent, same resolver) — neither
+      // its border through `--mantine-color-default-border` (→ transparent, same resolver) — neither
       // component had a `.extend()` block at all before this, which is why they never picked up
-      // either. Only the shadow needs adding here, in controls.module.css: Mantine's own
-      // `[data-variant='default']` rule never declares a `box-shadow`, so no specificity fight is
-      // needed to win one. `filled`/`subtle`/`light` variants are untouched — scoped by attribute
-      // selector in the CSS, not here.
+      // either. Everything else — the per-variant depth and the disabled/reduced-motion grounding —
+      // lives in controls.module.css, where the variant scoping
+      // is an attribute selector: Mantine declares no `box-shadow` on either component at any
+      // specificity, so none of it needs a specificity fight. Nothing about depth is expressible in
+      // the flat `styles` objects here, which is the whole reason that file exists.
       //
       // Density coupling: mirrors Input's `--input-height` override above — Mantine's OWN
       // `--button-height-md`/`--ai-size` (via `--ai-size-md`) are global, non-retunable statics
@@ -688,7 +709,8 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // real attribute selectors ((0,2,0)) — Mantine's own rule wraps the same attribute in `:where()`
       // (0 specificity, landing at (0,1,0) total), so no `html[…]` prefix fight is needed here either.
       // Neither component sets a background of its own, so panel bg is added alongside the shadow —
-      // the same panel-bg + shadow-card + no-border triad as Card/Paper.
+      // the same panel-bg + depth + no-border triad as Card/Paper — on `shadow-raised`, the shared
+      // CONTROL depth, not Card/Paper's `shadow-card`: a selection card is something you click.
       CheckboxCard: CheckboxCard.extend({
         classNames: { card: controlsClasses.checkboxCardRoot },
       }),
@@ -1108,8 +1130,8 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       '--mantine-color-body': `var(--vx-surface-bg, ${SURFACE.bg.light})`, // page background
       '--mantine-color-default': `var(--vx-surface-panel, ${SURFACE.panel.light})`, // cards / default controls
       '--mantine-color-default-hover': `var(--vx-surface-elevated, ${SURFACE.elevated.light})`,
-      // THE central lever for doctrine inversion #1 on CONTROLS (docs/DESIGN-SPEC.md §8): depth is
-      // `shadow-card`, never a hairline, for every `variant="default"` control — not just Card/Paper.
+      // THE central lever for doctrine inversion #1 on CONTROLS (docs/DESIGN-SPEC.md §8): depth is a
+      // shadow, never a hairline, for every `variant="default"` control — not just Card/Paper.
       // `defaultVariantColorsResolver`'s `variant === 'default'` branch reads this ONE var for every
       // component that uses it (Button, ActionIcon, Chip, CheckboxCard, RadioCard, …), so pointing it
       // at `transparent` kills the stock 1px hairline everywhere at once. `transparent`, not `border:

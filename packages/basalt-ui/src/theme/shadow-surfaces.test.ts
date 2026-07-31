@@ -2,7 +2,8 @@
  * Shadow-surface coverage — closes a class of bug `check-theme`'s regex scans cannot see: applying
  * the depth token to the WRONG box.
  *
- * `--vx-shadow-card` (and `--vx-shadow-ctrl`) bakes a 1px ring into the shadow value itself (see
+ * `--vx-shadow-card` (and `--vx-shadow-ctrl`/`--vx-shadow-raised`) bakes a 1px ring into the shadow
+ * value itself (see
  * `tokens/palette.ts`'s `SHADOW`). THE INVARIANT: an element applying the token must carry the
  * surface's OWN `border-radius` — the ring is drawn by the shadow's rendering box and follows THAT
  * box's own corners, not any other element's. We shipped a bug where `box-shadow: var(--vx-shadow-
@@ -16,10 +17,16 @@
  * mechanical inventory of every site that APPLIES the token would have caught it: a source-level
  * guard can only flag a bad value, never a bad ELEMENT.
  *
+ * `--vx-shadow-raised`'s ring is INSET rather than outset, which changes nothing about the
+ * invariant: an inset ring is still drawn by the shadow's rendering box and still follows that
+ * box's own corners, so a radius mismatch leaks the same way (nubs on the inside of the corner
+ * instead of the outside). It is registered here for exactly the same reason as the other two.
+ *
  * This test IS that inventory: it scans basalt-ui's own source for every place that applies
- * `--vx-shadow-card`/`--vx-shadow-ctrl` (a `box-shadow`/CSS-custom-property declaration in
- * `*.module.css`, or a `boxShadow` object property — literal, `VX.shadowCard`/`VX.shadowCtrl`, or a
- * template-literal composite of either — in `*.ts`/`*.tsx`) and asserts every one is registered in
+ * `--vx-shadow-card`/`--vx-shadow-ctrl`/`--vx-shadow-raised` (a `box-shadow`/CSS-custom-property
+ * declaration in `*.module.css`, or a `boxShadow` object property — literal, `VX.shadowCard`/
+ * `VX.shadowCtrl`/`VX.shadowRaised`, or a template-literal composite of any — in `*.ts`/`*.tsx`)
+ * and asserts every one is registered in
  * `SHADOW_SURFACES` below with a written `roundedBy` reason naming exactly where that box's
  * `border-radius` comes from. Mere mentions in comments/docstrings and the token DEFINITION itself
  * (`tokens/index.ts`, `tokens/palette.ts`) are excluded — this test only cares about APPLICATION.
@@ -34,8 +41,12 @@
  * so plainly; a square ring on a square surface is correct, not a gap.
  *
  * THIS TEST IS DELIBERATELY COUPLED TO OUR OWN SOURCE. Adding a new `box-shadow: var(--vx-shadow-
- * card)` (or `-ctrl`) anywhere SHOULD fail this test until it's registered — that failure IS the
- * point. Do NOT "fix" a future failure by loosening the scan or bulk-registering with a placeholder
+ * card)` (or `-ctrl`/`-raised`) anywhere SHOULD fail this test until it's registered — that failure
+ * IS the point. A NEW depth token is the one case the scan cannot fail loudly on: the two regexes
+ * below name their tokens explicitly, so an unlisted `--vx-shadow-*` slips through silently and
+ * vacuously. Adding a token to `SHADOW` therefore means adding it to BOTH regexes in the same
+ * commit — `raised` is the precedent.
+ * Do NOT "fix" a future failure by loosening the scan or bulk-registering with a placeholder
  * reason; open the file, find the element the shadow is declared on, prove (or fix) that IT carries
  * the surface's own border-radius, and write down where that radius comes from.
  *
@@ -95,7 +106,7 @@ function stripTsComments(text: string): string {
 // bare mention of `--vx-shadow-card` in a comment never matches — comments are stripped first, and
 // this requires an actual `property:` declaration.
 const CSS_SHADOW_TOKEN =
-  /(?<![\w-])(?:box-shadow|--[\w-]+)\s*:\s*[^;]*var\(--vx-shadow-(?:card|ctrl)\)/
+  /(?<![\w-])(?:box-shadow|--[\w-]+)\s*:\s*[^;]*var\(--vx-shadow-(?:card|ctrl|raised)\)/
 
 // A real application in TS/TSX: a `boxShadow` object property whose value is the literal CSS var
 // string, `VX.shadowCard`/`VX.shadowCtrl`, or a template literal compositing either (e.g. the
@@ -103,7 +114,7 @@ const CSS_SHADOW_TOKEN =
 // `--vx-shadow-overlay` (a different, unrelated token) or a `boxShadow` string literal that doesn't
 // reference either token (data-table's scroll-shadow, guard/index.ts's own regex source, etc.).
 const TS_SHADOW_TOKEN =
-  /\bboxShadow\s*:\s*(?:'[^']*var\(--vx-shadow-(?:card|ctrl)\)[^']*'|`[^`]*(?:var\(--vx-shadow-(?:card|ctrl)\)|VX\.shadow(?:Card|Ctrl))[^`]*`|VX\.shadow(?:Card|Ctrl))/
+  /\bboxShadow\s*:\s*(?:'[^']*var\(--vx-shadow-(?:card|ctrl|raised)\)[^']*'|`[^`]*(?:var\(--vx-shadow-(?:card|ctrl|raised)\)|VX\.shadow(?:Card|Ctrl|Raised))[^`]*`|VX\.shadow(?:Card|Ctrl|Raised))/
 
 type ShadowSite = {
   /** Path relative to `src/`, e.g. `theme/controls.module.css`. */
@@ -116,8 +127,13 @@ type ShadowSite = {
 
 /** Every rule in a CSS module whose declarations apply the token, keyed by the rule's own selector
  * (multi-line selectors are collapsed to one line). Assumes flat, non-nested CSS (no native
- * nesting) — the one `@media` block in this codebase sits after every shadow site, so a naive
- * brace-pair scan never needs to understand at-rule nesting to find them. */
+ * nesting). A rule nested one level inside an at-rule IS still found — the brace-pair regex matches
+ * INNERMOST pairs, so `@media (hover: hover) { .x:hover { … } }` resolves as the inner `.x:hover`
+ * rule. (No such site exists today — depth is static — but the scan must keep finding one if a
+ * future state-scoped depth rule lands inside an at-rule.) What the
+ * naive scan does NOT do is carry the at-rule condition into the site label: such a site registers
+ * under its bare inner selector, with the `@media` context stated in its `roundedBy` reason
+ * instead. That is a labeling limitation, never a coverage one. */
 function cssShadowSites(relPath: string, text: string): ShadowSite[] {
   const clean = stripCssComments(text)
   const sites: ShadowSite[] = []
@@ -173,7 +189,7 @@ function tsShadowSites(relPath: string, text: string): ShadowSite[] {
   return sites
 }
 
-/** Every application of `--vx-shadow-card`/`--vx-shadow-ctrl` across `src/**`. */
+/** Every application of `--vx-shadow-card`/`--vx-shadow-ctrl`/`--vx-shadow-raised` across `src/**`. */
 function scanShadowSites(): ShadowSite[] {
   const files: string[] = []
   collectSourceFiles(SRC_DIR, files)
@@ -221,21 +237,55 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       '<input> element itself — the custom property inherits from wrapper to input, landing on the ' +
       'exact element the shadow lands on).',
   },
+  // The five Button/ActionIcon entries below all resolve their radius the same way, and all set the
+  // token on `--ctrl-depth` rather than on `box-shadow` directly — the single `box-shadow:
+  // var(--ctrl-depth)` declaration lives on the shared `.buttonRoot, .actionIconRoot` base rule
+  // (which is therefore NOT a token-application site itself and correctly goes unregistered). The
+  // indirection changes nothing about this invariant: the variable is consumed on the very same
+  // element these selectors target, so the ring is still drawn by a box carrying the control's own
+  // `--button-radius`/`--ai-radius`.
   {
     file: 'theme/controls.module.css',
-    site: ".buttonRoot[data-variant='default']",
+    site:
+      ".buttonRoot[data-variant='default'], .buttonRoot[data-variant='filled'], " +
+      ".buttonRoot[data-variant='light']",
     roundedBy:
       "--button-radius (Mantine's own Button.css declares `border-radius: var(--button-radius, " +
       'var(--mantine-radius-default))` directly on the button root — the same element `.buttonRoot` ' +
-      'targets).',
+      'targets). This is the raised family on the shared `shadow-raised`, and its ring is INSET — a ' +
+      'radius mismatch would leak nubs on the INSIDE of each corner rather than the outside, so the ' +
+      'invariant bites exactly as hard here as on an outset ring.',
   },
   {
     file: 'theme/controls.module.css',
-    site: ".actionIconRoot[data-variant='default']",
+    site: ".buttonRoot[data-variant='outline']",
+    roundedBy:
+      '--button-radius (same chain as the raised-family entry above — Button.css declares ' +
+      '`border-radius: var(--button-radius, var(--mantine-radius-default))` on the button root; the ' +
+      'variant changes only which depth token lands, never which element carries it). `outline` is ' +
+      'the one raised variant on ring-FREE `shadow-ctrl`, because its real 1px accent border already ' +
+      'IS its edge and an inset ring tucked just inside a border is muddy — so no ring is at risk ' +
+      'here at all, and the registration exists to keep the inventory exhaustive.',
+  },
+  {
+    file: 'theme/controls.module.css',
+    site:
+      ".actionIconRoot[data-variant='default'], .actionIconRoot[data-variant='filled'], " +
+      ".actionIconRoot[data-variant='light']",
     roundedBy:
       "--ai-radius (Mantine's own ActionIcon.css declares `border-radius: var(--ai-radius, " +
       'var(--mantine-radius-default))` directly on the root — the same element `.actionIconRoot` ' +
-      'targets).',
+      'targets). Same inset-ring reasoning as the Button raised-family entry above.',
+  },
+  {
+    file: 'theme/controls.module.css',
+    site: ".actionIconRoot[data-variant='outline']",
+    roundedBy:
+      '--ai-radius (same chain as the entry above — ActionIcon.css declares `border-radius: ' +
+      'var(--ai-radius, var(--mantine-radius-default))` on the root). Ring-free `shadow-ctrl`, same ' +
+      "reason as Button's `outline`. ActionIcon has no `subtle` counterpart to Button's " +
+      "hover-materialized entry by design: its `subtle` IS the spec's separate ghost-icon-button " +
+      'idiom (DESIGN-SPEC §5), whose hover state is an ink tint, not a raise.',
   },
   {
     file: 'theme/controls.module.css',
@@ -317,11 +367,9 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     roundedBy: 'borderRadius: 8 (co-declared in the same TOOLTIP_STYLES object).',
   },
   // ── agent-chat ───────────────────────────────────────────────────────────────────────────────
-  {
-    file: 'agent-chat/composer.tsx',
-    site: 'input',
-    roundedBy: 'borderRadius: 8 (co-declared in the same styles.input object).',
-  },
+  // agent-chat/composer.tsx applies no shadow token of its own: it takes the themed `.input` depth
+  // (theme/controls.module.css) so it also inherits that class's disabled grounding — an inline
+  // `boxShadow` in its `styles` object used to beat the class and leave a disabled composer raised.
   {
     file: 'agent-chat/thread-outcome-card.tsx',
     site: 'default',
@@ -371,7 +419,7 @@ describe('SHADOW_SURFACES is well-formed', () => {
   })
 })
 
-describe('every applied --vx-shadow-card / --vx-shadow-ctrl site is registered', () => {
+describe('every applied --vx-shadow-card / -ctrl / -raised site is registered', () => {
   // The coverage assertion below is `expect(gaps).toEqual([])`, which passes VACUOUSLY if the scan
   // finds nothing. That is exactly the failure mode `border-coverage.test.ts` already had to guard
   // against once — this is the same tripwire: fail loudly here if the scan stops resolving real
@@ -399,7 +447,7 @@ describe('every applied --vx-shadow-card / --vx-shadow-ctrl site is registered',
       .filter((site) => !registered.has(siteKey(site)))
       .map(
         (site) =>
-          `${site.file} (${site.site}): applies --vx-shadow-card/--vx-shadow-ctrl but has no ` +
+          `${site.file} (${site.site}): applies --vx-shadow-card/-ctrl/-raised but has no ` +
           'entry in SHADOW_SURFACES (src/theme/shadow-surfaces.test.ts). The ring baked into the ' +
           "token follows THIS box's own border-radius — find where this box's radius comes from " +
           '(a co-declared border-radius, or a Mantine CSS var/prop, verified against the shipped ' +

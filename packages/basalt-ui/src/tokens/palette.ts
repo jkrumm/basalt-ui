@@ -104,6 +104,37 @@ export const SHADOW = {
     light: '0 1px 2px rgba(28,25,23,0.12)',
     dark: '0 1px 2px rgba(0,0,0,0.35)',
   },
+  /**
+   * Interactive-control depth — the ONE value every raised Button/ActionIcon/Input variant shares
+   * (`docs/DESIGN-SPEC.md` §5's Button idiom). Exists rather than reusing `card` because `card`'s
+   * ring is OUTSET, and an outset ring paints in the color of whatever it is drawn over: fine
+   * between neutral panels, but on light scheme it resolves to `--vx-surface-hairline` and draws a
+   * pale grey outline around a saturated `filled` button, which reads as a rendering defect.
+   *
+   * THE TWO SCHEMES ARE SHAPED DIFFERENTLY, and the asymmetry is the whole design — do NOT "tidy"
+   * them into one shape. Both were arrived at by elimination, on screen:
+   *
+   *   - DARK = drop + a full inset rim. Its edge is a LIGHTENING, so it cannot collide with the
+   *     dark drop below the box; a uniform lightening on a dark surface reads as rim light wrapping
+   *     a raised object, which is exactly right.
+   *
+   *   - LIGHT = drop ONLY, no edge at all. A light-mode edge would have to be a DARKENING (there is
+   *     nothing lighter than a near-white control to lighten with), and every position for one
+   *     fails: a uniform dark ring does not read as depth, it reads as a BORDER — it made `default`
+   *     and `light` look like outlined buttons and every form field look boxed. Moving it to the
+   *     bottom edge alone then put a dark inner line directly above the dark drop, i.e. a visible
+   *     DOUBLE BOTTOM BORDER. There is no third position, because a light-mode raised object's only
+   *     honest cue is the shadow it casts. So light casts one and draws nothing.
+   *
+   * Consequence to know, on light only: a `default` control nested in a Card shares
+   * `--vx-surface-panel` with it and has no boundary but the drop. That is accepted — a wrong-
+   * looking border on every control in the app is worse than a soft edge in one nesting case. If it
+   * ever needs more, raise the DROP. Do not reintroduce an edge; both shapes have been tried.
+   */
+  raised: {
+    light: '0 1px 2px rgba(28,25,23,0.10)',
+    dark: '0 1px 2px rgba(0,0,0,0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent)',
+  },
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a REAL drop shadow, a
   // step above `card`, so detached surfaces read as lifted off the page (`docs/DESIGN-SPEC.md` §5).
   // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--vx-surface-border` so
