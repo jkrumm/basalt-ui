@@ -21,7 +21,8 @@ law, the law wins.
 ## Identity
 
 {{APP_NAME}} inherits the basalt-ui identity verbatim: modern zinc surfaces, one earned saturated
-sky-blue accent, `shadow-card` elevation, dense-by-default spacing, and the three-font system. The
+sky-blue accent, the `shadow-card` / `shadow-raised` / `shadow-overlay` depth split,
+dense-by-default spacing, and the three-font system. The
 law itself — every hex, role split, and enforcement rule — lives in the `basalt-tokens` and
 `basalt-mantine` rules (`.claude/rules/basalt-{tokens,mantine}.md`) and `docs/DESIGN-SPEC.md` in
 the basalt-ui repo; it is **not** restated here. Confirm or restate any intentional identity shift

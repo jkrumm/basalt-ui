@@ -214,8 +214,10 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 }
 
 /*
- * CheckboxCard / RadioCard (`withBorder`, the default): panel bg + `shadow-card`, no border — the
- * same triad as Card/Paper. Mantine's own border-color rule wraps `[data-with-border]` in
+ * CheckboxCard / RadioCard (`withBorder`, the default): panel bg + depth, no border — the same
+ * triad as Card/Paper, but on `shadow-raised`, since a selection card is something you click (the
+ * control-vs-panel line, see the header above). Mantine's own border-color rule wraps
+ * `[data-with-border]` in
  * `:where()` (0 specificity), so a plain class + real attribute selector ((0,2,0)) already wins;
  * no `html[…]` prefix fight needed, same reasoning as Button/ActionIcon above.
  */
@@ -240,7 +242,7 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 
 /*
  * Focus = accent border (via --input-bd-focus above) + a subtle accent ring layered over the
- * resting `--field-depth`, so the field keeps its shadow-card depth while focused.
+ * resting `--field-depth`, so the field keeps its `shadow-raised` depth while focused.
  */
 .input:focus,
 .input:focus-within {

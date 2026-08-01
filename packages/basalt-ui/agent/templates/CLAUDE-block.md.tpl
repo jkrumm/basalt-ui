@@ -31,8 +31,9 @@ defer to DESIGN.md.
 dark-first professional surface — not a showcase. Ignore `/frontend-design`'s push toward a "BOLD
 aesthetic direction", gradient meshes, noise/grain, and dramatic motion. Here: the shipped
 three-font system (Nunito Sans body, Hubot Sans condensed headings, JetBrains Mono for every
-numeral/micro-label), depth via `shadow-card` (a whisper shadow + 1px ring, never a decorative drop
-shadow), neutral zinc-by-default with the single saturated accent spent only when earned (trend /
+numeral/micro-label), depth via a whisper shadow + 1px ring (`shadow-card` on panels,
+`shadow-raised` on controls — never a decorative drop shadow, never a hover lift), neutral
+zinc-by-default with the single saturated accent spent only when earned (trend /
 signal / categorical separation). Restraint **is** the identity.
 
 <!-- basalt:end -->
