@@ -675,8 +675,105 @@ function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
   }
 }
 
+/**
+ * Where the seed engine is running relative to the consumer's git repo — decides which
+ * repo-root-shaped seeds are safe to write. `init`/`sync` compute it once per run via
+ * `resolvePlacement` and print the matching skip notices themselves; `managedFiles` only reads it.
+ */
+type PlacementFlags = {
+  /** True when the package directory IS the detected repo root, or no `.git` exists anywhere above
+   *  it (a consumer not using git keeps today's behaviour exactly). False means the package lives
+   *  in a subdirectory of the repo (a monorepo's `web/`, say) — lefthook and GitHub Actions both
+   *  only read config at the repo root, so seeding either one there is worse than not seeding at
+   *  all. */
+  isPackageRepoRoot: boolean
+  /** Absolute path of the detected repo root. Meaningful only when `isPackageRepoRoot` is false —
+   *  otherwise it equals the package dir and is never read. */
+  repoRoot: string
+  /** Absolute path of a `query-client.ts` already present elsewhere under the package's `src/` (the
+   *  consumer relocated it — e.g. to `src/lib/query-client.ts`), or null. The seed's OWN
+   *  destination is deliberately excluded here — that exact-path case is handled by the ordinary
+   *  skip-if-exists logic every seed file already goes through, unchanged. */
+  relocatedQueryClient: string | null
+}
+
+/** The default placement — today's single-package-at-repo-root behaviour, unconditionally. */
+const ROOT_PLACEMENT: PlacementFlags = {
+  isPackageRepoRoot: true,
+  repoRoot: '',
+  relocatedQueryClient: null,
+}
+
+/**
+ * Walks up from `dir` looking for a `.git` entry — ordinarily a directory, but a git worktree or
+ * submodule points it at a FILE instead, and both still mean "this directory is the repo root".
+ * Stops at the filesystem root. Returns `dir` itself when no `.git` is found anywhere, so a
+ * consumer not using git falls back to today's behaviour exactly.
+ */
+function findRepoRoot(dir: string): string {
+  let current = dir
+  for (;;) {
+    if (existsSync(resolve(current, '.git'))) return current
+    const parent = dirname(current)
+    if (parent === current) return dir
+    current = parent
+  }
+}
+
+/**
+ * First path under `dir` (recursive) whose basename is `filename`, or null. Skips dependency/build
+ * dirs, mirroring `walkSourceFiles`'s scoping.
+ */
+function findFileNamed(dir: string, filename: string): string | null {
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return null
+  }
+  for (const name of entries) {
+    if (name === 'node_modules' || name === '.git' || name === 'dist') continue
+    const abs = resolve(dir, name)
+    let isDir: boolean
+    try {
+      isDir = statSync(abs).isDirectory()
+    } catch {
+      continue
+    }
+    if (isDir) {
+      const found = findFileNamed(abs, filename)
+      if (found !== null) return found
+    } else if (name === filename) {
+      return abs
+    }
+  }
+  return null
+}
+
+/**
+ * Absolute path of a `query-client.ts` living elsewhere under the package's `src/`, or null. The
+ * seed's own destination is excluded — reseeding on top of a RELOCATED client (the failure this
+ * exists to prevent) is a different case from the seed's own path already being occupied, which the
+ * ordinary skip-if-exists logic handles unchanged.
+ */
+function findRelocatedQueryClient(cwd: string): string | null {
+  const seedAbs = resolve(cwd, 'src/query-client.ts')
+  const found = findFileNamed(resolve(cwd, 'src'), 'query-client.ts')
+  return found !== null && found !== seedAbs ? found : null
+}
+
+/** Resolve a run's placement flags once, from the consumer cwd. */
+function resolvePlacement(cwd: string): PlacementFlags {
+  const repoRoot = findRepoRoot(cwd)
+  return {
+    isPackageRepoRoot: repoRoot === cwd,
+    repoRoot,
+    relocatedQueryClient: findRelocatedQueryClient(cwd),
+  }
+}
+
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
-function managedFiles(peers: PeerFlags): ManagedFile[] {
+function managedFiles(peers: PeerFlags, placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
@@ -804,10 +901,16 @@ function managedFiles(peers: PeerFlags): ManagedFile[] {
   // type) — both are documented optional peers, so seeding either scaffold without its peer(s)
   // installed would ship a file with an unresolved import.
   const scaffolds: ManagedFile[] = []
-  if (peers.hasQuery) scaffolds.push(queryClient)
+  if (peers.hasQuery && placement.relocatedQueryClient === null) scaffolds.push(queryClient)
   if (peers.hasRouter && peers.hasQuery) scaffolds.push(rootRoute)
 
-  return [...rules, ...skills, claudeBlock, design, oxfmt, lefthook, ci, oxlintrc, ...scaffolds]
+  // lefthook.yml / .github/workflows/check.yml are repo-root-shaped: lefthook and GitHub Actions
+  // only ever read config at the repo root, so a package living in a subdirectory (a monorepo's
+  // `web/`) skips both rather than relocating them — the repo root very often already has its own
+  // lefthook/CI config, and writing over or beside it is worse than not writing at all.
+  const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
+
+  return [...rules, ...skills, claudeBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
 }
 
 type Manifest = {
@@ -1041,7 +1144,8 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   const manifest = readManifest(cwd)
   migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
   const peers = resolvePeerFlags(cwd, scaffoldFlags)
-  const files = managedFiles(peers)
+  const placement = resolvePlacement(cwd)
+  const files = managedFiles(peers, placement)
 
   let written = 0
   let skipped = 0
@@ -1080,6 +1184,28 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
+    )
+  }
+  // lefthook.yml / .github/workflows/check.yml are repo-root-shaped — neither lefthook nor GitHub
+  // Actions reads config from anywhere but the repo root, so a package living in a subdirectory
+  // skips both rather than relocating them into a spot nothing reads.
+  if (!placement.isPackageRepoRoot) {
+    console.log(
+      `basalt-ui init: skipped lefthook.yml (this package is not the repo root — repo root ` +
+        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
+        'node_modules/basalt-ui/configs/lefthook.yml from your root lefthook.yml instead.',
+    )
+    console.log(
+      `basalt-ui init: skipped .github/workflows/check.yml (this package is not the repo root — ` +
+        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
+        'repo root; extend node_modules/basalt-ui/configs/check.yml from your root CI workflow instead.',
+    )
+  }
+  if (placement.relocatedQueryClient !== null) {
+    console.log(
+      `basalt-ui init: skipped src/query-client.ts (found an existing query client at ` +
+        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
+        're-seeding at the original path.',
     )
   }
   // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
@@ -1132,7 +1258,8 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   const manifest = readManifest(cwd)
   if (!opts.check) migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
   const peers = resolvePeerFlags(cwd, {})
-  const files = managedFiles(peers)
+  const placement = resolvePlacement(cwd)
+  const files = managedFiles(peers, placement)
 
   let updated = 0
   let recreated = 0
@@ -1180,6 +1307,28 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
     manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
     if (kind === 'missing') recreated++
     else updated++
+  }
+
+  // Placement notices — informational, never affect the exit code (a skipped tooling seed or a
+  // relocated scaffold is a legitimate consumer choice, not a sync failure).
+  if (!placement.isPackageRepoRoot) {
+    console.log(
+      `basalt-ui sync: skipped lefthook.yml (this package is not the repo root — repo root ` +
+        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
+        'node_modules/basalt-ui/configs/lefthook.yml from your root lefthook.yml instead.',
+    )
+    console.log(
+      `basalt-ui sync: skipped .github/workflows/check.yml (this package is not the repo root — ` +
+        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
+        'repo root; extend node_modules/basalt-ui/configs/check.yml from your root CI workflow instead.',
+    )
+  }
+  if (placement.relocatedQueryClient !== null) {
+    console.log(
+      `basalt-ui sync: skipped src/query-client.ts (found an existing query client at ` +
+        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
+        're-seeding at the original path.',
+    )
   }
 
   if (opts.check) {
