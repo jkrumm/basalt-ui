@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/jkrumm/basalt-ui/compare/v1.7.0...v1.8.0) (2026-08-02)
+
+
+### Features
+
+* give the stat card's threshold rail a good tone ([49e795f](https://github.com/jkrumm/basalt-ui/commit/49e795f2f0da85334953bf6280ca108c730d532c))
+
 # [1.7.0](https://github.com/jkrumm/basalt-ui/compare/v1.6.0...v1.7.0) (2026-08-02)
 
 
