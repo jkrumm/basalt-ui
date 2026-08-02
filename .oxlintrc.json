@@ -21,6 +21,7 @@
     "import/consistent-type-specifier-style": "error",
     "react/hook-use-state": "warn",
     "basalt/no-raw-font-size": "error",
+    "basalt/raw-size-literal": "error",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
     "basalt/raw-scroll-container": "warn",

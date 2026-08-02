@@ -1,12 +1,12 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-07-27**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-08-02**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
 framework-free token work below.
-**Version:** `1.2.0` on `master`, **published** to npm (tags through `v1.2.0`, Trusted Publisher
-OIDC).
+**Version:** `1.5.0` on `master`, **published** to npm (Trusted Publisher OIDC). The adoption-gap
+work below is the 1.6.0 candidate.
 
 ## TL;DR
 
@@ -15,6 +15,37 @@ all four of `createBasaltTheme`'s dimensions (`derive`, `fonts`, `radius`, `dens
 of 1.2.0. Current work is framework-free token consumption — making the `--vx-*` system usable from a
 static site with no React, no Mantine and no bundler. The June-era roadmap/handover docs still phrase
 built work as "remaining"; that language is historical, see the banner on each.
+
+## Adoption gap — closed in 1.6.0 (2026-08-02)
+
+Prompted by the first outside-of-argo consumer (LineWatch). Its dashboard had grown seven
+hand-rolled `<Card withBorder radius="md" padding="lg">` across six files, next to `StatCard`s —
+two card idioms, visibly different borders/shadows/heights on one screen. Running `check-theme`
+there for the first time reported all of it in one pass. Three separate causes, all now addressed:
+
+1. **basalt was installed as a component library and nothing else.** No `.oxlintrc.json`, no
+   `.basalt/manifest.json`, no lint script, no CI — `basalt-ui init` had never been run, so every
+   enforcement mechanism the package ships was inert and nothing said so. `basaltViteConfig` now
+   prints a one-time notice when no `.basalt/manifest.json` is found at or above the cwd. It is the
+   only basalt seam that runs on every dev start and every build, which makes it the only place that
+   can catch this while it is still cheap. Notice, never an error (`enforcementNotice: false` opts
+   out) — declining the toolchain is a legitimate choice; failing a build over a missing lint preset
+   would be a worse bug than the one it prevents.
+2. **Two real holes in the guard.** `size="10px"` passed because `basalt/no-raw-font-size` only
+   ever tested for a NUMERIC literal → new `basalt/raw-size-literal` oxlint rule (CSS-length strings
+   on `size`/`fz`/`fontSize`; `warn` in the shipped preset for its grace minor). `c="yellow.7"`
+   passed because no kind covered a shade-pinned Mantine color — `off-identity-accent` polices which
+   hue, not which index → new `mantine-shade-index` guard kind (`warn` through 1.6.x, promotes in
+   1.7.0).
+3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
+   `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
+   that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a
+   card would fork the one component every stat was drawn with. That is a well-behaved consumer
+   hitting a wall and inventing visual vocabulary anyway. `StatCard` now takes `tone="warn" | "bad"`
+   and draws the rail itself (plus a `VisuallyHidden` label — colour alone never carries a verdict).
+   The lesson generalizes: a composite that cannot express a common case gets routed around by
+   compliant-looking code the guard has no way to recognize, so the gap is invisible until someone
+   looks at a screenshot.
 
 ## Built (verified as-built, 2026-07-07)
 
