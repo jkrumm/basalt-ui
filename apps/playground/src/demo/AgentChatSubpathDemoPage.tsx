@@ -24,7 +24,7 @@ const CANNED_MESSAGES: ChatMessage[] = [
   {
     id: 'subpath-msg-1',
     role: 'user',
-    parts: [{ type: 'text', text: 'What does the `basalt-ui/agent-chat` subpath ship?' }],
+    parts: [{ id: 'p1', type: 'text', text: 'What does the `basalt-ui/agent-chat` subpath ship?' }],
     createdAt: Date.now() - 60_000,
   },
   {
@@ -32,10 +32,12 @@ const CANNED_MESSAGES: ChatMessage[] = [
     role: 'assistant',
     parts: [
       {
+        id: 'p2',
         type: 'reasoning',
         text: 'The consumer is asking about the Mantine chrome layer over the headless agent primitives.',
       },
       {
+        id: 'p3',
         type: 'text',
         text:
           'It ships the Mantine-styled thread-chat chrome — `ThreadWorkspace`, `ThreadFeed`, ' +
@@ -50,7 +52,7 @@ const CANNED_MESSAGES: ChatMessage[] = [
   {
     id: 'subpath-msg-3',
     role: 'user',
-    parts: [{ type: 'text', text: 'Does it need the shell or a provider to render?' }],
+    parts: [{ id: 'p4', type: 'text', text: 'Does it need the shell or a provider to render?' }],
     createdAt: Date.now() - 20_000,
   },
   {
@@ -58,12 +60,16 @@ const CANNED_MESSAGES: ChatMessage[] = [
     role: 'assistant',
     parts: [
       {
+        id: 'p5',
         type: 'tool',
+        toolCallId: 'call-check-import-graph',
         toolName: 'check_import_graph',
+        state: 'output-available',
         input: { file: 'AgentChatSubpathDemoPage.tsx' },
         output: { basaltImports: ['basalt-ui/agent-chat', 'basalt-ui/agent'] },
       },
       {
+        id: 'p6',
         type: 'text',
         text: 'No — this transcript rendered with exactly those two subpaths imported from `basalt-ui`.',
       },
