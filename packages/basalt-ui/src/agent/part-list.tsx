@@ -151,7 +151,7 @@ function DefaultToolCall({ part }: { part: ToolCallPart; index: number }): JSX.E
       <pre className="basalt-agent-tool-input" style={CODE_BLOCK_STYLE}>
         {JSON.stringify(part.input, null, 2)}
       </pre>
-      {part.output !== undefined && (
+      {part.state === 'output-available' && (
         <pre className="basalt-agent-tool-output" style={CODE_BLOCK_STYLE}>
           {JSON.stringify(part.output, null, 2)}
         </pre>

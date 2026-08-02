@@ -34,14 +34,26 @@
 // ── AgentPart discriminated union ─────────────────────────────────────────────
 export type {
   AgentPart,
+  AgentPartDraft,
+  Drafted,
   StartPart,
   TextPart,
   ReasoningPart,
   ToolCallPart,
+  ToolCallState,
   SourcePart,
   ErrorPart,
 } from './parts'
-export { parseAgentPart, isStartPart } from './parts'
+export { parseAgentPart, isStartPart, isToolCallSettled, TERMINAL_TOOL_STATES } from './parts'
+
+// ── mergePart (identity-addressed accumulator) ───────────────────────────────
+export { mergePart } from './merge'
+
+// ── withPartIds (drafts → identified parts) ──────────────────────────────────
+export { withPartIds } from './id'
+
+// ── coalesceParts (adjacent + by-id merge for display) ───────────────────────
+export { coalesceParts } from './coalesce'
 
 // ── AgentTransport + edenTransport ───────────────────────────────────────────
 export type { AgentTransport } from './transport'
