@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/jkrumm/basalt-ui/compare/v1.6.0...v1.7.0) (2026-08-02)
+
+
+### Bug Fixes
+
+* correct the shipped depth and active-nav doctrine in the agent rules ([38e0f39](https://github.com/jkrumm/basalt-ui/commit/38e0f396012064aaee0ca7b252dabea3c281d5e3))
+
+
+### Features
+
+* close the three gaps that let a consumer fork the card idiom ([d83988b](https://github.com/jkrumm/basalt-ui/commit/d83988b12c38287c42b3c3148493c614380e27b9))
+
 # [1.6.0](https://github.com/jkrumm/basalt-ui/compare/v1.5.0...v1.6.0) (2026-07-31)
 
 
