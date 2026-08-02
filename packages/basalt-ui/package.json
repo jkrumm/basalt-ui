@@ -342,12 +342,10 @@
         "primitives"
       ],
       "inline-display": [
-        "agent",
-        "primitives"
+        "agent"
       ],
       "raw-html-layout": [
-        "agent",
-        "primitives"
+        "agent"
       ]
     }
   }

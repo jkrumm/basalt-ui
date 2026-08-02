@@ -688,8 +688,12 @@ export const GUARD_RULES = {
     kind: 'raw-html-layout',
     pattern: RAW_HTML_TAG, // handled inline (3-condition conjunction); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
-    // JSX-tag-shaped (`<div style={{...}}>`) — never appears in CSS text.
-    appliesTo: (relPath) => !relPath.endsWith('.css'),
+    // JSX-tag-shaped (`<div style={{...}}>`) — never appears in CSS text. Also excluded from
+    // chart files: the remedy (Box/Flex/Grid/Stack/Group) is `@mantine/*`, and src/charts/** is a
+    // lint-enforced Mantine-free layer (basalt/token-layer-boundary) — so inside a chart file the
+    // finding is unactionable, not merely inconvenient, and the only "fix" would be a theme-allow
+    // comment written inside the very directory this rule protects.
+    appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
       'Raw HTML element with inline layout/surface styling — use a Mantine layout primitive (Box/Flex/Grid/Stack/Group).',
   },
@@ -704,8 +708,12 @@ export const GUARD_RULES = {
     pattern: INLINE_DISPLAY,
     enabled: (cfg: GuardConfig) => cfg.inlineDisplay,
     // JSX-object-shaped (`display: 'flex'`, quoted value) — CSS never quotes a keyword value
-    // (`display: flex;` is bare), so the pattern's quote anchor can never match real CSS.
-    appliesTo: (relPath) => !relPath.endsWith('.css'),
+    // (`display: flex;` is bare), so the pattern's quote anchor can never match real CSS. Also
+    // excluded from chart files: the remedy (Flex/Grid/Group) is `@mantine/*`, and src/charts/**
+    // is a lint-enforced Mantine-free layer (basalt/token-layer-boundary) — so inside a chart file
+    // the finding is unactionable, not merely inconvenient, and the only "fix" would be a
+    // theme-allow comment written inside the very directory this rule protects.
+    appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message: 'Use <Flex>/<Grid>/<Group> instead of an inline display:flex/grid.',
   },
   'raw-visx-axis': {
