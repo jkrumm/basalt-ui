@@ -71,11 +71,11 @@ function coalesceRuns(parts: AgentPart[]): AgentPart[] {
   for (const part of parts) {
     const last = merged.at(-1)
     if (part.type === 'text' && last?.type === 'text') {
-      merged[merged.length - 1] = { type: 'text', text: last.text + part.text }
+      merged[merged.length - 1] = { ...part, text: last.text + part.text }
       continue
     }
     if (part.type === 'reasoning' && last?.type === 'reasoning') {
-      merged[merged.length - 1] = { type: 'reasoning', text: last.text + part.text }
+      merged[merged.length - 1] = { ...part, text: last.text + part.text }
       continue
     }
     merged.push(part)
@@ -223,7 +223,9 @@ export function AgentDemoPage() {
     if (committedRef.current) return
     committedRef.current = true
     const finalParts: AgentPart[] =
-      status === 'error' ? [...parts, { type: 'error', message: errorMessage(error) }] : parts
+      status === 'error'
+        ? [...parts, { id: crypto.randomUUID(), type: 'error', message: errorMessage(error) }]
+        : parts
     // Don't persist an empty assistant turn (e.g. stop() before any token arrived).
     if (finalParts.length > 0) {
       append({
@@ -245,7 +247,7 @@ export function AgentDemoPage() {
       append({
         id: crypto.randomUUID(),
         role: 'user',
-        parts: [{ type: 'text', text: trimmed }],
+        parts: [{ id: crypto.randomUUID(), type: 'text', text: trimmed }],
         createdAt: Date.now(),
       })
       void send(trimmed)

@@ -98,8 +98,12 @@ export function ToolBlock({ part }: { part: ToolCallPart; index: number }) {
           <Text size="xs" ff="monospace" fw={600}>
             {part.toolName}
           </Text>
-          <Badge size="xs" variant="outline" color={part.output !== undefined ? 'teal' : 'gray'}>
-            {part.output !== undefined ? 'done' : 'running'}
+          <Badge
+            size="xs"
+            variant="outline"
+            color={part.state === 'output-available' ? 'teal' : 'gray'}
+          >
+            {part.state === 'output-available' ? 'done' : 'running'}
           </Badge>
         </Group>
         <Button size="compact-xs" variant="subtle" color="gray" onClick={toggle}>
@@ -114,7 +118,7 @@ export function ToolBlock({ part }: { part: ToolCallPart; index: number }) {
           <Code block fz={VX.text.micro}>
             {JSON.stringify(part.input, null, 2)}
           </Code>
-          {part.output !== undefined && (
+          {part.state === 'output-available' && (
             <>
               <Text fz={VX.text.micro} tt="uppercase" fw={700} c="dimmed">
                 Output
@@ -193,10 +197,10 @@ export function coalesce(parts: AgentPart[]): Block[] {
       if (last?.kind === 'text') {
         blocks[blocks.length - 1] = {
           ...last,
-          part: { type: 'text', text: last.part.text + part.text },
+          part: { ...part, type: 'text', text: last.part.text + part.text },
         }
       } else {
-        blocks.push({ kind: 'text', key: `b${i}`, part: { type: 'text', text: part.text } })
+        blocks.push({ kind: 'text', key: `b${i}`, part: { ...part, type: 'text' } })
       }
       return
     }
@@ -273,7 +277,7 @@ export function MessageBubble({
   const isUser = author === 'user'
   const userText = isUser
     ? parts
-        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+        .filter((p): p is Extract<AgentPart, { type: 'text' }> => p.type === 'text')
         .map((p) => p.text)
         .join('')
     : ''

@@ -55,7 +55,7 @@ async function* wedgeResumeGenerator(signal?: AbortSignal): AsyncGenerator<Agent
   for (const text of chunks) {
     if (signal?.aborted) return
     await wait(400)
-    yield { type: 'text', text }
+    yield { id: crypto.randomUUID(), type: 'text', text }
   }
 }
 
@@ -64,7 +64,7 @@ const wedgeTransport: AgentTransport<AgentPart, string> = {
   // AgentTransport's required shape.
   async *stream(input: string, signal?: AbortSignal): AsyncGenerator<AgentPart> {
     if (signal?.aborted) return
-    yield { type: 'text', text: `Echo: ${input}` }
+    yield { id: crypto.randomUUID(), type: 'text', text: `Echo: ${input}` }
   },
   resume: (_resumeToken: string, signal?: AbortSignal) => wedgeResumeGenerator(signal),
 }
@@ -130,7 +130,13 @@ export function AgentWedgeDemoPage() {
     store.appendMessage(id, {
       id: crypto.randomUUID(),
       role: 'user',
-      parts: [{ type: 'text', text: 'Summarize the last deploy and flag anything risky.' }],
+      parts: [
+        {
+          id: crypto.randomUUID(),
+          type: 'text',
+          text: 'Summarize the last deploy and flag anything risky.',
+        },
+      ],
       createdAt: Date.now(),
     })
     store.setResumeToken(id, RESUME_TOKEN)

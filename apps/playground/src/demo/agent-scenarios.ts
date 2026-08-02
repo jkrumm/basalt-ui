@@ -52,7 +52,7 @@ function tokens(text: string): AgentPart[] {
   const pieces = text.match(/\S+\s*/g) ?? [text]
   const out: AgentPart[] = []
   for (let i = 0; i < pieces.length; i += 2) {
-    out.push({ type: 'text', text: pieces.slice(i, i + 2).join('') })
+    out.push({ id: crypto.randomUUID(), type: 'text', text: pieces.slice(i, i + 2).join('') })
   }
   return out
 }
@@ -76,6 +76,7 @@ export const AGENT_SCENARIOS = [
     hint: 'Exercises what `basalt-ui/content` renders that a plain markdown pass does not: a shiki-highlighted fence, a mermaid diagram, and a GFM alert as a Callout.',
     parts: (input: string) => [
       {
+        id: crypto.randomUUID(),
         type: 'reasoning',
         text: `"${input}" is best answered with a snippet and a diagram — streaming both now.`,
       },
@@ -108,6 +109,7 @@ export const AGENT_SCENARIOS = [
     hint: 'Reasoning + a streamed markdown reply (headings, list, inline code, quote).',
     parts: (input: string) => [
       {
+        id: crypto.randomUUID(),
         type: 'reasoning',
         text: `The user asked: "${input}". I'll give a structured, concise answer.`,
       },
@@ -129,12 +131,16 @@ export const AGENT_SCENARIOS = [
     hint: 'Reasoning → a tool call with input/output → cited sources → a synthesized answer.',
     parts: (input: string) => [
       {
+        id: crypto.randomUUID(),
         type: 'reasoning',
         text: 'I should ground this in the docs before answering — searching now.',
       },
       {
+        id: crypto.randomUUID(),
         type: 'tool',
+        toolCallId: crypto.randomUUID(),
         toolName: 'search_docs',
+        state: 'output-available',
         input: { query: input, limit: 3 },
         output: {
           hits: [
@@ -143,8 +149,14 @@ export const AGENT_SCENARIOS = [
           ],
         },
       },
-      { type: 'source', url: 'https://basalt-ui.com/docs/shell', title: 'App shell & router seam' },
       {
+        id: crypto.randomUUID(),
+        type: 'source',
+        url: 'https://basalt-ui.com/docs/shell',
+        title: 'App shell & router seam',
+      },
+      {
+        id: crypto.randomUUID(),
         type: 'source',
         url: 'https://basalt-ui.com/docs/tokens',
         title: 'The --vx-* token system',
@@ -164,10 +176,22 @@ export const AGENT_SCENARIOS = [
     label: 'Reasoning-heavy',
     hint: 'A longer multi-step reasoning block, then a short final answer.',
     parts: (input: string) => [
-      { type: 'reasoning', text: `Breaking "${input}" into steps.\n` },
-      { type: 'reasoning', text: '1. Identify the constraint that actually moves the result.\n' },
-      { type: 'reasoning', text: '2. Discard the options that violate it.\n' },
-      { type: 'reasoning', text: '3. Pick the simplest survivor and sanity-check the edges.\n' },
+      { id: crypto.randomUUID(), type: 'reasoning', text: `Breaking "${input}" into steps.\n` },
+      {
+        id: crypto.randomUUID(),
+        type: 'reasoning',
+        text: '1. Identify the constraint that actually moves the result.\n',
+      },
+      {
+        id: crypto.randomUUID(),
+        type: 'reasoning',
+        text: '2. Discard the options that violate it.\n',
+      },
+      {
+        id: crypto.randomUUID(),
+        type: 'reasoning',
+        text: '3. Pick the simplest survivor and sanity-check the edges.\n',
+      },
       ...tokens(
         `Short version: optimize for the **constraint that binds**, then take the simplest option ` +
           `that respects it. Everything else is noise.\n`,
