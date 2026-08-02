@@ -40,6 +40,8 @@ export type StackedAreaProps<T> = {
   legend?: ChartLegendConfig | false
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  isPending?: boolean
 }
 
 /**
@@ -48,7 +50,7 @@ export type StackedAreaProps<T> = {
  * The tooltip renders rows in reversed (top-to-bottom) stack order so it matches the visual stack.
  */
 function StackedAreaInner<T>(props: StackedAreaProps<T>) {
-  const { series, chartId, height, legend, ariaLabel } = props
+  const { series, chartId, height, legend, ariaLabel, isPending } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   return (
@@ -57,6 +59,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
       legend={resolveLegend(legend, {
         highlighted: highlightedKey,
         onHighlight: setHighlightedKey,

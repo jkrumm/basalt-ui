@@ -3,6 +3,7 @@ import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
 import { ChartLegend } from './ChartLegend'
+import { ChartPending } from './ChartPending'
 
 const DEFAULT_HEIGHT = 240
 const DEFAULT_MIN_WIDTH = 200
@@ -36,6 +37,13 @@ export type ChartFrameProps = {
   chartId?: string
   /** `false` only for the sparkline exemption — every other chart gets a legend by default. */
   legend?: ChartFrameLegend | false
+  /**
+   * The query behind this chart hasn't resolved yet. Renders `ChartPending` (see its JSDoc for the
+   * three-state "nothing to draw" rationale) over the full plot rect in place of `children`,
+   * suppresses the legend entirely (a legend naming a series with nothing yet to point at is its
+   * own small lie), and marks the outer container `aria-busy="true"`.
+   */
+  isPending?: boolean
   /**
    * Accessible text alternative for the chart, applied as `aria-label` (+ `role="img"`) on the
    * outer container so screen readers announce something other than an unlabeled graphic. Every
@@ -106,6 +114,7 @@ export function ChartFrame({
   chartId,
   legend = {},
   ariaLabel,
+  isPending = false,
   children,
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
@@ -113,6 +122,7 @@ export function ChartFrame({
 
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
+  const legendVisible = legend !== false && !isPending
 
   const resolvedHeight = fill
     ? containerH
@@ -120,8 +130,8 @@ export function ChartFrame({
       ? Math.round(containerW / aspectRatio)
       : (height ?? DEFAULT_HEIGHT)
 
-  const sideLegendWidth = legend !== false && vertical ? legendW : 0
-  const topBottomLegendHeight = legend !== false && !vertical ? legendH : 0
+  const sideLegendWidth = legendVisible && vertical ? legendW : 0
+  const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
 
   const plot = {
     width: Math.max(containerW - sideLegendWidth, minWidth),
@@ -129,7 +139,7 @@ export function ChartFrame({
   }
 
   const legendNode =
-    legend === false ? null : (
+    legend === false || isPending ? null : (
       <div ref={legendRef} style={legendWrapperStyle(vertical)}>
         <ChartLegend
           items={deriveLegend(series)}
@@ -148,9 +158,12 @@ export function ChartFrame({
       ref={containerRef}
       style={outerStyle(fill, vertical)}
       {...(ariaLabel !== undefined && { role: 'img', 'aria-label': ariaLabel })}
+      {...(isPending && { 'aria-busy': 'true' })}
     >
       {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
-      {plot.width > 0 && plot.height > 0 ? children(plot) : null}
+      {plot.width > 0 &&
+        plot.height > 0 &&
+        (isPending ? <ChartPending width={plot.width} height={plot.height} /> : children(plot))}
       {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}
     </div>
   )

@@ -139,6 +139,8 @@ export type BarsProps<T> = {
   legend?: ChartLegendConfig | false
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  isPending?: boolean
 }
 
 /**
@@ -164,6 +166,7 @@ function BarsInner<T>(props: BarsProps<T>) {
     height,
     legend,
     ariaLabel,
+    isPending,
   } = props
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
@@ -207,6 +210,7 @@ function BarsInner<T>(props: BarsProps<T>) {
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
       legend={resolveLegend(legend, {
         highlighted: highlightedKey,
         onHighlight: setHighlightedKey,

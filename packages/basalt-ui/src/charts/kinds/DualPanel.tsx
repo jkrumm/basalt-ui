@@ -57,6 +57,8 @@ export type DualPanelProps<T> = {
   legend?: ChartLegendConfig | false
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  isPending?: boolean
 }
 
 const PANE_GAP = 12
@@ -74,7 +76,8 @@ const PANE_GAP = 12
  * when a series has nulls; lines/bars skip null points (visual gaps).
  */
 function DualPanelInner<T>(props: DualPanelProps<T>) {
-  const { series, chartId, height, barLabel, barColorPositive, legend, ariaLabel } = props
+  const { series, chartId, height, barLabel, barColorPositive, legend, ariaLabel, isPending } =
+    props
 
   // Default the top-pane line overlays to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) —
   // applied once here so the plotted line, the derived legend swatch, and the derived tooltip row
@@ -101,6 +104,7 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <DualPanelPlot {...props} series={styledSeries} plot={plot} />}
