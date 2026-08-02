@@ -101,6 +101,8 @@ export type ZonedLineProps<T> = {
   legend?: ChartLegendConfig | false
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  isPending?: boolean
 }
 
 /**
@@ -116,7 +118,7 @@ export type ZonedLineProps<T> = {
  * visual gaps).
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
-  const { series, chartId, height, legend, ariaLabel } = props
+  const { series, chartId, height, legend, ariaLabel, isPending } = props
 
   // Default the line overlay to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied
   // once here so the plotted line, the derived legend swatch, and the derived tooltip row agree.
@@ -131,6 +133,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
       chartId={chartId}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <ZonedLinePlot {...props} series={styledSeries} plot={plot} />}

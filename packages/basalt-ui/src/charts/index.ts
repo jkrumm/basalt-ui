@@ -46,6 +46,12 @@ export {
 // ── Primitives ───────────────────────────────────────────────────────────
 export { ResponsiveChart, type ResponsiveChartProps } from './primitives/ResponsiveChart'
 export { ChartFrame, type ChartFrameProps, type ChartFrameLegend } from './primitives/ChartFrame'
+export {
+  ChartCenter,
+  type ChartCenterProps,
+  ChartPending,
+  type ChartPendingProps,
+} from './primitives/ChartPending'
 export { Crosshair, SeriesDot } from './primitives/Crosshair'
 export { ChartCard } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'

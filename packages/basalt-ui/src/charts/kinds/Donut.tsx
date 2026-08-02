@@ -53,6 +53,8 @@ export type DonutProps<K extends string = SeriesKey> = {
   padAngle?: number
   /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  isPending?: boolean
 }
 
 /**
@@ -64,7 +66,7 @@ export type DonutProps<K extends string = SeriesKey> = {
  * (donut ↔ bar, via the generalized key) is a distinct, deliberately deferred feature.
  */
 function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
-  const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel } = props
+  const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel, isPending } = props
 
   const series: SeriesStyle[] = data.map((d) => ({
     key: d.key,
@@ -78,6 +80,7 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
       series={series}
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
     >
       {(plot) => <DonutPlot {...props} plot={plot} />}
     </ChartFrame>

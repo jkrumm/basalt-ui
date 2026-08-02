@@ -8,6 +8,7 @@ import {
   TooltipRow,
   useTooltipStyles,
 } from '../primitives/ChartTooltip'
+import { ChartPending } from '../primitives/ChartPending'
 import { useChartTooltip } from '../hooks/useChartTooltip'
 import { VX, alpha } from '../../tokens'
 
@@ -47,6 +48,14 @@ export type HeatmapProps<T> = {
   renderTooltip?: (cell: HeatmapCell) => ReactNode
   /** Optional gradient legend strip below the grid (faint → solid color). */
   legend?: { min: string; max: string }
+  /**
+   * The query behind this chart hasn't resolved yet. Renders `ChartPending` (see its JSDoc for the
+   * three-state rationale) over the full `width` × `height` box in place of the grid, suppressing
+   * the legend strip and every cell/label/tooltip along with it. Unlike the other six kinds,
+   * `Heatmap` doesn't compose `ChartFrame` (it takes `width`/`height` directly rather than
+   * measuring), so this is handled locally instead of forwarded.
+   */
+  isPending?: boolean
 }
 
 /** Build a first-seen-ordered list of unique keys from data via an accessor. */
@@ -106,6 +115,7 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
     colLabel = (c) => c,
     renderTooltip,
     legend,
+    isPending,
   } = props
 
   const tooltipStyles = useTooltipStyles()
@@ -125,6 +135,12 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
     }
     return { lookup: map, max: m }
   }, [data, getRow, getCol, getValue])
+
+  // Every hook above must still run on a pending render (Rules of Hooks) — the early return comes
+  // after them. No `ChartFrame` to forward to here (Heatmap measures via required `width`/`height`
+  // props, not `useChartSize`), so the placeholder is rendered directly in its place, same footprint,
+  // legend strip and all other content omitted along with it.
+  if (isPending) return <ChartPending width={width} height={height} />
 
   const legendH = legend ? LEGEND_H + LEGEND_LABEL_H : 0
   const gridW = Math.max(0, width - PAD_LEFT)
