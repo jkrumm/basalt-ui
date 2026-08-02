@@ -344,6 +344,11 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   `exemptRules` scopes it to paths. Reads config from the consumer package.json `"basalt"` key
   (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); default root is `src`, and a scan that
   matches zero files fails loudly. Consumer lint = `oxlint . && basalt-ui check-theme`.
+  **Footgun: `check-theme` (and `pre`, which runs it) validates the last BUILT `dist`, not the
+  working tree.** `bin/basalt-ui.mjs` imports `../dist/cli/index.js` — a source change under
+  `src/guard/**` or `src/cli/**` is invisible to `check-theme` until `bun run build` runs, and a
+  stale `dist` can make `bun run pre` report green over source it never read. Run `bun run build`
+  before trusting `check-theme` after touching `src/guard/` or `src/cli/`.
 - `init` / `sync` — **real**. Two ownership modes, decided by one question — _does Claude read this
   file?_ **managed** (three-way reconciled; local edits skipped unless `--force`; the CLAUDE block
   is managed with markers): `.claude/rules/basalt-*.md`, `.claude/skills/basalt-*/SKILL.md`, the
@@ -352,6 +357,16 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   `node_modules/basalt-ui/configs/`), `.oxfmtrc.json`, `.github/workflows/check.yml`, optional
   scaffolds. Reconciled against `.basalt/manifest.json` (sha256 per managed unit + basaltVersion);
   `--check` is the CI drift gate. Contract tests: `src/cli/placement-engine.test.ts`.
+  Two of the seeds are **repo-root-shaped**, not package-shaped: `lefthook.yml` and
+  `.github/workflows/check.yml` are read only from the repo root by their respective tools, so both
+  `init` and `sync` walk up from `cwd` for the nearest `.git` and skip both (printed notice, exit 0)
+  when the package isn't that root — writing them into a monorepo subdirectory nothing reads risks
+  clobbering the real root's own config instead. `src/query-client.ts` gets the same treatment for
+  a different reason: when a `query-client.ts` already exists anywhere else under `src/` (the
+  consumer relocated it), the seed is skipped and the notice names the found path instead —
+  re-seeding at the original location used to shadow a relocated client that sets real query
+  options (`staleTime`, `refetchOnWindowFocus: false`) behind one wrong import. All three are
+  notices, never errors; zero behaviour change when the package IS the repo root.
 - `check-coverage` — **framework-internal only**, a self-consistency gate for the basalt-ui repo
   itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports); not a consumer
   command.
@@ -402,6 +417,18 @@ tightened, and the guard is the one part of basalt that can hard-fail their buil
 an error turns a routine minor upgrade into an unplanned refactor: 1.2.0 cost the one real consumer
 eleven `theme-allow` comments and 1.3.0 had them delete all eleven, for a net-zero source change
 across two commits and two production deploys.
+
+**This doctrine governs only changes that make enforcement STRICTER — a relaxation needs no
+`GRACE_PERIOD_KINDS` entry.** `inline-display` and `raw-html-layout` no longer fire inside
+`src/charts/**`: both remedies name a Mantine layout primitive (`Box`/`Flex`/`Grid`/`Stack`/
+`Group`), which the Mantine-free chart layer (`basalt/token-layer-boundary`) already forbids there
+— so inside a chart file the finding was unactionable, and the only "fix" was a `theme-allow`
+comment written inside the very directory the boundary protects. `appliesTo` for both kinds now
+excludes chart files (`isChartFile`, shared with the boundary rule's own path scoping). This also
+deleted basalt's own `package.json` `exemptRules` `primitives` entry for both kinds — that private
+self-exemption is what hid the unactionable-finding problem from the framework while every consumer
+ate it; basalt now passes `check-theme` for the same reason a consumer does, not because it
+silenced itself. Do not add a `GRACE_PERIOD_KINDS` entry for a relaxation like this one.
 
 ## Toolchain (oxlint + oxfmt — not Biome/Prettier)
 
