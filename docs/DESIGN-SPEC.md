@@ -279,6 +279,17 @@ dead code against the `!important` floor.
 - **Stat card**: card-radius panel, spacing xs/sm inset, mono xs uppercase label + mono ~24px hero
   numeral + delta badge; optional sparkline runs full-bleed to the card's L/R/bottom edges (card
   clips to the corner radius; the shadow ring is unaffected).
+- **Threshold rail** (the stat card's `tone`): a 3px full-height bar overlaying the card's leading
+  edge in `--vx-status-{good,warn,bad}`, plus a `VisuallyHidden` verdict string — colour never
+  carries a threshold alone. Three values, and the fourth state is the absence of the prop: **no
+  tone means "fine, or nothing measured", and is never tinted.** `good` is therefore an assertion a
+  consumer opts into for a value that earned it (`0 min` downtime over the window), not what a card
+  falls back to — a card with no reading must not be able to render green by omission. The rail is
+  the largest mark available without touching the numeral's own colour: it overlays the edge rather
+  than adding to it, so layout is identical with and without it, and it stays a rail — tinting the
+  card body would make a routine dashboard a traffic-light board. Contrast against
+  `--vx-surface-panel` is measured in both schemes (`theme/contrast.test.ts`), not eyeballed, since
+  the status solids are derived.
 - **Settings section**: card-radius panel + shadow-card, spacing xs/sm inset, head-font 15px title
   - 13px muted description, rows split by a 1px `--vx-divider` rule; the `DangerZone` variant adds
     a mono danger eyebrow + a danger-tinted ring layered over the shadow.

@@ -5,8 +5,8 @@
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
 framework-free token work below.
-**Version:** `1.6.0` on `master`, **published** to npm (Trusted Publisher OIDC). The adoption-gap
-work below is the 1.7.0 candidate.
+**Version:** `1.7.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
+work below shipped in it. The stat card's `good` tone is the 1.8.0 candidate.
 
 ## TL;DR
 
@@ -36,7 +36,7 @@ there for the first time reported all of it in one pass. Three separate causes, 
    on `size`/`fz`/`fontSize`; `warn` in the shipped preset for its grace minor). `c="yellow.7"`
    passed because no kind covered a shade-pinned Mantine color — `off-identity-accent` polices which
    hue, not which index → new `mantine-shade-index` guard kind (`warn` through 1.7.x, promotes in
-   1.8.0).
+   1.9.0 — deferred one minor because 1.8.0 shipped the same day, see `GRACE_PERIOD_KINDS`).
 3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
    `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
    that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a
@@ -46,6 +46,14 @@ there for the first time reported all of it in one pass. Three separate causes, 
    The lesson generalizes: a composite that cannot express a common case gets routed around by
    compliant-looking code the guard has no way to recognize, so the gap is invisible until someone
    looks at a screenshot.
+
+   **Follow-up in 1.8.0 — the tone set is three-valued.** The same consumer hit the same wall one
+   step further in: a Downtime card where **zero is the earned state**, which the two-tone set could
+   only render as red (wrong) or untinted (indistinguishable from "nothing measured"). `tone` now
+   takes `"good"` as well. `undefined` is unchanged and still load-bearing — it means "fine, or
+   nothing measured" and stays untinted, so `good` is a positive assertion a consumer opts into, not
+   a default a card without a reading can fall into. Second data point for the same lesson: the gap
+   a shipped composite leaves is found by the consumer, one case at a time, not by the framework.
 
 ## Built (verified as-built, 2026-07-07)
 
