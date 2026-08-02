@@ -1,6 +1,6 @@
 {
   "name": "basalt-ui",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets",
   "keywords": [
     "charts",

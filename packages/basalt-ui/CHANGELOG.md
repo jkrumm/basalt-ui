@@ -1,3 +1,20 @@
+# [1.9.0](https://github.com/jkrumm/basalt-ui/compare/v1.8.0...v1.9.0) (2026-08-02)
+
+
+### Bug Fixes
+
+* stop seeding repo-root files into a subdirectory package ([cd2fa7e](https://github.com/jkrumm/basalt-ui/commit/cd2fa7ea851eb1c73943e6bbdad5211b2fc65200))
+* stop the layout guards firing where their remedy is banned ([6851a90](https://github.com/jkrumm/basalt-ui/commit/6851a908293cb5c46dc6e7c4c01185d3ac909928))
+
+
+### Features
+
+* capture chart hover through pointer events ([4f53f4b](https://github.com/jkrumm/basalt-ui/commit/4f53f4bd9ff2bb4ededb8db7ba9bf6049a62dc48))
+* give charts a pending state ([c3a8d05](https://github.com/jkrumm/basalt-ui/commit/c3a8d05a4aac166d4264a8dc6b8afa2b45d1893b))
+* let the date axis take a tick format ([5502ef5](https://github.com/jkrumm/basalt-ui/commit/5502ef5614e482a422b5f70e5701588d9612209e))
+* portal the chart tooltip out of the svg namespace trap ([6e9c399](https://github.com/jkrumm/basalt-ui/commit/6e9c399d3d52c232765959386091d06379c35a98))
+* resolve a sibling's hover key through a consumer seam ([c8b7c93](https://github.com/jkrumm/basalt-ui/commit/c8b7c93fb9cf0d56d940d0d466efa07a5b90508e))
+
 # [1.8.0](https://github.com/jkrumm/basalt-ui/compare/v1.7.0...v1.8.0) (2026-08-02)
 
 
