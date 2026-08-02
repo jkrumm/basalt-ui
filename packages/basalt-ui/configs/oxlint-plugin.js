@@ -81,6 +81,27 @@ function isNumericLiteral(node) {
   return node !== null && node.type === 'Literal' && typeof node.value === 'number'
 }
 
+/**
+ * An absolute CSS length written as a STRING — `'10px'`, `"1.5rem"`, `'0.75em'`.
+ *
+ * Mantine's `size` / `fz` props accept a scale token (`"xs"`…`"xl"`) OR any CSS length, and the
+ * second form is the one that leaves the token system. A string is not a numeric literal, so every
+ * `size="10px"` in an app slipped past the numeric-only check these two rules used to be.
+ *
+ * `em`/relative ratios are included on `size` (a `2em` icon is still an off-scale dimension) but
+ * the message names the right escape for each rule, so the two are not merged into one check.
+ */
+const CSS_LENGTH_STRING = /^-?\d*\.?\d+(?:px|rem|em)$/
+
+function isCssLengthString(node) {
+  return (
+    node !== null &&
+    node.type === 'Literal' &&
+    typeof node.value === 'string' &&
+    CSS_LENGTH_STRING.test(node.value.trim())
+  )
+}
+
 /** Unwraps a JSXExpressionContainer to its inner expression; passes any other node through. */
 function unwrapExpressionContainer(node) {
   return node !== null && node.type === 'JSXExpressionContainer' ? node.expression : node
@@ -126,7 +147,59 @@ const noRawFontSize = {
   },
 }
 
-// ── Rule 2 — card-inset ─────────────────────────────────────────────────────────────────────────
+// ── Rule 2 — raw-size-literal ───────────────────────────────────────────────────────────────────
+
+const RAW_SIZE_LITERAL_MESSAGE =
+  'Raw CSS length on a size prop — use the scale ("xs".."xl"), or fz={VX.text.*} when the type ' +
+  'scale has no step for it. (basalt/raw-size-literal)'
+
+/** The size-ish JSX props a CSS-length string can leave the token system through. */
+const SIZE_ATTRS = new Set(['size', 'fz', 'fontSize'])
+
+/**
+ * A CSS length written as a STRING on a size prop — `<Text size="10px">`, `<ThemeIcon size="2rem">`,
+ * `<Text fz="0.8rem">`. This is the hole `no-raw-font-size` left open: it only ever tested for a
+ * NUMERIC literal, so every string form walked straight past it.
+ *
+ * Its own rule id rather than a widening of `no-raw-font-size`, for two reasons. It covers `size`,
+ * which is not always a font size — on `Text` it is, on `ThemeIcon`/`ActionIcon` it is a box
+ * dimension — so one shared id would mean a consumer silencing the icon case also silences every
+ * off-scale font size, the bundled-rule mistake the three boundary rules were split apart to avoid.
+ * And a separate id can carry its own severity: this rule ships `warn` in the consumer preset for
+ * one minor (the grace-minor doctrine in the package CLAUDE.md — it rejects code that previously
+ * passed, and majors are banned here, so a consumer has no semver channel warning them). Widening
+ * `no-raw-font-size` in place would have promoted it to `error` on upgrade with no such runway.
+ *
+ * Numeric `size={32}` is deliberately NOT flagged. It is the documented Mantine idiom for icon
+ * dimensions and flagging it would fire on nearly every icon in an app for no design-system gain —
+ * the token system has an opinion about type scale and spacing, not about how many pixels wide one
+ * glyph box is.
+ */
+const rawSizeLiteral = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow raw CSS-length strings on size/fz/fontSize props.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (getFilename(context).includes('/src/tokens/')) return {}
+
+    return {
+      JSXAttribute(node) {
+        const name = node.name?.name
+        if (typeof name !== 'string' || !SIZE_ATTRS.has(name)) return
+        const value = unwrapExpressionContainer(node.value)
+        if (!isCssLengthString(value)) return
+        if (hasThemeAllow(context, node)) return
+        context.report({ node, message: RAW_SIZE_LITERAL_MESSAGE })
+      },
+    }
+  },
+}
+
+// ── Rule 3 — card-inset ─────────────────────────────────────────────────────────────────────────
 
 const CARD_TAGS = new Set(['Card', 'Paper'])
 
@@ -456,6 +529,7 @@ export default {
   meta: { name: 'basalt' },
   rules: {
     'no-raw-font-size': noRawFontSize,
+    'raw-size-literal': rawSizeLiteral,
     'card-inset': cardInset,
     'chart-in-raw-surface': chartInRawSurface,
     'raw-scroll-container': rawScrollContainer,

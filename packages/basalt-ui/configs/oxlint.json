@@ -17,6 +17,7 @@
     "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",
     "basalt/no-raw-font-size": "error",
+    "basalt/raw-size-literal": "warn",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
     "basalt/raw-scroll-container": "off",

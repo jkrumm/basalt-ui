@@ -81,6 +81,15 @@ export type BasaltConfig = {
    */
   offSystemSurfaceVar?: boolean
   /**
+   * Flag a SHADE-PINNED Mantine color — `c="yellow.7"`, `bg="blue.4"`,
+   * `var(--mantine-color-red-6)`. A pinned step is one fixed swatch in BOTH color schemes, so it
+   * cannot stay legible in either; route a verdict color through `VX.status.*` / `--vx-status-*`,
+   * or drop the index (`c="red"`) and let the theme resolve the shade per scheme. `gray-*`/`dark-*`
+   * in `var()` form belong to `off-system-surface-var` instead. Default: `true` (ON). Set `false`
+   * to disable the `mantine-shade-index` check.
+   */
+  mantineShadeIndex?: boolean
+  /**
    * Flag raw lowercase JSX layout/surface elements (`div`/`span`/`section`/…) carrying an inline
    * `style={{}}` with a layout/surface property — steer to a Mantine layout primitive
    * (`Box`/`Flex`/`Grid`/`Stack`/`Group`/`SimpleGrid`/`Paper`). Default: `true` (ON). Set `false`
@@ -348,6 +357,7 @@ export function checkTheme(cwd: string = process.cwd()): number {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
     rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
+    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
     cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
@@ -1827,6 +1837,7 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
     rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
     forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
+    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
     rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
     cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
     offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,

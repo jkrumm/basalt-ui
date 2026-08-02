@@ -58,6 +58,20 @@ const WITH_BORDER_PROP = /\bwithBorder\b(?!\s*=\s*\{\s*false\s*\})/
 // Raw Mantine ramp step used for surface color — gray/dark + a step digit.
 const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
 
+// A SHADE-PINNED Mantine color: the dotted JSX form (`c="yellow.7"`) or the var() form
+// (`var(--mantine-color-red-6)`). Both name one fixed swatch that does NOT flip across color
+// schemes — see the `mantineShadeIndex` doc in guard/types.ts for why the bare hue name is fine and
+// the pinned step is not.
+//
+// The var() half deliberately excludes gray-/dark-, which `off-system-surface-var` already owns, so
+// a surface violation reports once under one kind rather than twice under two.
+//
+// The JSX half is prop-shaped (`c="yellow.7"` needs the `=`), which CSS text has no syntax for, so
+// it cannot fire in a `.css` file; the var() half is a real violation in CSS and is meant to fire
+// there. That split is why this kind, unlike its prop-only neighbours, carries no `appliesTo` gate.
+const MANTINE_SHADE_INDEX =
+  /\b(?:color|c|bg|backgroundColor|borderColor)\s*=\s*\{?\s*['"][a-z]+\.\d\b|var\(--mantine-color-(?!gray-|dark-)[a-z]+-\d/g
+
 // Raw lowercase JSX layout/surface element with inline style and layout/surface prop — line-scoped.
 const RAW_HTML_TAG = /<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\b/
 const INLINE_STYLE = /style=\{\{/
@@ -241,6 +255,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   spacingSteps: DEFAULT_SPACING_STEPS,
   rawRadius: true,
   forbiddenAccents: DEFAULT_FORBIDDEN_ACCENTS,
+  mantineShadeIndex: true,
   rawSurface: true,
   cardWithBorder: true,
   offSystemSurfaceVar: true,
@@ -266,14 +281,18 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * someone remembering. Adding a kind here is part of shipping it; removing the entry IS the
  * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
  *
- * Empty today: every shipped kind is past its grace period. The next new kind goes here first.
+ * `mantine-shade-index` landed in 1.6.0 and is the sole entry — it rejects `c="yellow.7"`, which
+ * previously passed, and the one real consumer has several. Promote it in 1.7.0 by deleting the
+ * entry.
  *
  * @example
  * const GRACE: Partial<Record<GuardKind, string>> = {
  *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
  * }
  */
-const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {}
+const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
+  'mantine-shade-index': 'introduced 1.6.0 — promote to error in 1.7.0',
+}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
@@ -561,7 +580,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 19 guard kinds. The triad test asserts
+ * The closed registry of all 20 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -611,6 +630,13 @@ export const GUARD_RULES = {
     // tweak can't silently start false-positiving on consumer CSS.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message: 'For an off-identity accent use blue/gray or a status hue (red/green/orange/yellow).',
+  },
+  'mantine-shade-index': {
+    kind: 'mantine-shade-index',
+    pattern: MANTINE_SHADE_INDEX,
+    enabled: (cfg: GuardConfig) => cfg.mantineShadeIndex,
+    message:
+      'Shade-pinned Mantine color — one fixed swatch in BOTH color schemes, so it cannot stay legible in either. Use VX.status.* / --vx-status-* for a verdict color, or the bare hue name (c="red") to let the theme resolve the shade per scheme.',
   },
   'raw-spacing': {
     kind: 'raw-spacing',
@@ -839,6 +865,16 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     if (GUARD_RULES['off-system-surface-var'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['off-system-surface-var'].pattern as RegExp)) {
         findings.push({ relPath, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
+      }
+    }
+
+    // mantine-shade-index — the sibling of off-system-surface-var above, partitioned by hue: that
+    // kind owns gray/dark (surface color), this one owns every other shade-pinned step (verdict and
+    // accent color). Both halves of the pattern (JSX prop + var()) run in every file type; see the
+    // pattern's own comment for why this kind carries no appliesTo gate.
+    if (GUARD_RULES['mantine-shade-index'].enabled!(cfg)) {
+      for (const m of line.matchAll(GUARD_RULES['mantine-shade-index'].pattern as RegExp)) {
+        findings.push({ relPath, line: i + 1, token: m[0], kind: 'mantine-shade-index' })
       }
     }
 

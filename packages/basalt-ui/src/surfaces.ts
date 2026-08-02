@@ -186,9 +186,15 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'mantine',
     skill: ['basalt-app', 'basalt-design'],
-    guardKinds: ['raw-motion-value', 'card-with-border', 'raw-form-control', 'sub-16-input-font'],
+    guardKinds: [
+      'raw-motion-value',
+      'card-with-border',
+      'raw-form-control',
+      'sub-16-input-font',
+      'mantine-shade-index',
+    ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard, EmptyState, SettingsSection/SettingsRow/DangerZone)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, SettingsSection/SettingsRow/DangerZone)',
     optionalPeers: ['react-markdown', 'remark-gfm', 'shiki', 'beautiful-mermaid'],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },

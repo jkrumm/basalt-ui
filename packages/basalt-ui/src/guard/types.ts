@@ -1,17 +1,18 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 19 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 20 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 19 theme-guard violation kinds. */
+/** The 20 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
   | 'localstorage-theme'
   | 'off-identity-accent'
+  | 'mantine-shade-index'
   | 'raw-spacing'
   | 'raw-radius'
   | 'raw-surface'
@@ -82,6 +83,21 @@ export type GuardConfig = {
   readonly rawRadius: boolean
   /** Off-identity Mantine accent families forbidden as chrome accents. */
   readonly forbiddenAccents: readonly string[]
+  /**
+   * Flag a SHADE-PINNED Mantine color — `c="yellow.7"`, `bg="blue.4"`, `var(--mantine-color-red-6)`.
+   *
+   * This is the sibling of `off-identity-accent`, and the two are deliberately disjoint. That kind
+   * polices WHICH hue you reach for and permits the bare status names (`c="red"`, `color="green"`)
+   * on purpose: they resolve through the theme, so they flip correctly across color schemes. This
+   * kind polices the SHADE INDEX, which does not — a pinned step is one fixed swatch in both
+   * schemes, so a `yellow.7` legible on the dark page is the one that fails contrast on the light
+   * one. Status color belongs on `VX.status.*` (`--vx-status-warn|bad|good|…`), which is emitted per
+   * scheme.
+   *
+   * `gray-*`/`dark-*` in `var()` form are excluded here because `off-system-surface-var` already
+   * owns them (surface color, its own message). Default true.
+   */
+  readonly mantineShadeIndex: boolean
   /** Flag ad-hoc inline surface styling (border/borderRadius/boxShadow literals). Default true. */
   readonly rawSurface: boolean
   /**
