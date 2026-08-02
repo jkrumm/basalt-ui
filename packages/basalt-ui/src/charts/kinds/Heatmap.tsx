@@ -152,8 +152,9 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
                   rx={cellRadius}
                   fill={fill}
                   style={{ cursor: has ? 'pointer' : 'default' }}
-                  onMouseMove={(e) => has && show({ row, col, value }, e)}
-                  onMouseLeave={hide}
+                  onPointerMove={(e) => has && show({ row, col, value }, e)}
+                  onPointerLeave={hide}
+                  onPointerCancel={hide}
                 />
               )
             }),
