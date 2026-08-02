@@ -79,6 +79,16 @@ renderer). Full doctrine + usage: `agent/rules/basalt-agent.md`.
   the same direction the token-layer boundary protects, AND it means a charts/tokens-only consumer
   never pulls Mantine into their bundle by importing the root barrel.
 
+## Tests
+
+Run tests from the **repo root** (`bun test`), not from this package directory. The DOM harness
+(`tests/setup/dom.ts`) is wired via `[test].preload` in the ROOT `bunfig.toml` — Bun resolves
+`bunfig.toml` relative to `cwd`, and there is no package-level one (deliberately: a second preload
+config here would drift from the root one). Running `bun test` from inside `packages/basalt-ui`
+finds no `bunfig.toml`, gets no DOM, and fails every DOM-touching test with `ReferenceError:
+document is not defined`. `bun run test` from this directory is safe — it's a thin delegate
+(`cd ../.. && bun test packages/basalt-ui`) that always runs from the root.
+
 ## Build (dist-first, unbundled)
 
 ```bash
@@ -371,17 +381,33 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports); not a consumer
   command.
 - `info` (+ `--json`) — prints the published surface map; `--json` emits a stable JSON form.
-- `doctor` — verifies two reconciliation axes. **Version**: installed `node_modules/basalt-ui` vs
+- `doctor` — verifies three reconciliation axes. **Version**: installed `node_modules/basalt-ui` vs
   the manifest's `basaltVersion` (plus manifest presence and a stale-`bunx` CLI-version warning).
   **Spacing scale**: `deriveSpacing(0).scale` vs the manifest's `spacingScale`, stamped by
   `init`/`sync` — skipped outright when the running CLI's version and the installed one disagree,
   since the CLI's scale is then not the one the app renders with and a "matches" would be a false
-  pass. The second one is the only check that reports a change in RENDERED OUTPUT rather
+  pass. This one is the only check that reports a change in RENDERED OUTPUT rather
   than in placed files — a retune of the spacing bases moves every surface in an app calling
   `createBasaltTheme()` bare, and since majors are banned the version number cannot say so. The
   1.2.0 retune shipped as "tighten the sidebar, open up components" and sat unverified in the one
   consumer's production for a day; this makes the move something a consumer is told rather than
-  something they have to notice in a subject line.
+  something they have to notice in a subject line. **`ai-major-parity` (1.10.0, HARD failure, not a
+  warning)**: every workspace package that declares the `ai` package agrees on its major version —
+  doctor walks every manifest under the consumer repo's `workspaces` globs and exits non-zero on a
+  skew, e.g. one package streaming on `ai@5` while another parses it on `ai@7`. This is
+  CROSS-PACKAGE by construction, which is exactly why the `basalt/ai-sdk-major` oxlint rule cannot
+  replace it: a lint run is scoped to one file's nearest `package.json`, so it only ever sees that
+  package's own declared `ai` major and passes even when a sibling workspace package disagrees.
+  Skipped entirely when `cwd` has no `workspaces` field or none of its packages declare `ai`. A
+  detected skew is declarable, not just fatal: `basalt.aiMajorSkewReason` in the consumer's
+  package.json exempts an INTENTIONAL pairing (argo's real one — the api app on ai@5, the dashboard
+  app on ai@7, neutralized by a producer-side `TransformStream`), and doctor passes while echoing
+  both the detected skew and the declared reason verbatim. The reason is mandatory — the
+  value IS the reason string, so a bare `true` (or an empty string, or any non-string) is rejected
+  and hard-fails exactly like an absent key, with a message saying so. A declared reason that
+  outlives its skew (the majors later agree) is stale config, not a clean pass: doctor warns that
+  the exemption can be deleted rather than passing silently, so a real skew that returns later isn't
+  masked by a leftover declaration nobody re-checks.
 - `guard-hook` — PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies
   off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
   `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook`.

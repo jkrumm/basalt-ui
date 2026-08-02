@@ -104,6 +104,10 @@
       "types": "./dist/agent/index.d.ts",
       "import": "./dist/agent/index.js"
     },
+    "./agent-chat": {
+      "types": "./dist/agent-chat/index.d.ts",
+      "import": "./dist/agent-chat/index.js"
+    },
     "./content": {
       "types": "./dist/content/index.d.ts",
       "import": "./dist/content/index.js"
@@ -128,6 +132,7 @@
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",
     "prepack": "bun run build",
     "clean": "rm -rf dist"

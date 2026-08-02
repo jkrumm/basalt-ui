@@ -13,9 +13,11 @@
  *     leaving the prop off, so the absence case asserts no rail and no verdict text at all — which a
  *     future `tone = tone ?? 'good'` style default would immediately fail.
  *
- * No jsdom is configured in this repo (see `theme/use-basalt-spacing.test.tsx`'s doc) —
- * `renderToStaticMarkup` inside a real `MantineProvider` is enough here, since the rail is an inline
- * style on server-rendered markup.
+ * A DOM harness now exists (`tests/setup/dom.ts`, preloaded via the root `bunfig.toml`; see
+ * `theme/use-basalt-spacing.test.tsx`'s doc) — `renderToStaticMarkup` inside a real `MantineProvider`
+ * is used deliberately here instead, since the rail is an inline style on server-rendered markup.
+ * Converting to the DOM harness would only be worth it if a future assertion here needed live DOM
+ * behavior (e.g. computed styles, focus/hover interaction) rather than the static markup string.
  */
 import { MantineProvider } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'

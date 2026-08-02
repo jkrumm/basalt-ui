@@ -371,6 +371,28 @@ export const SURFACES = {
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
   },
+  './agent-chat': {
+    kind: 'doctrine',
+    layer: 'mantine-coupled',
+    rule: 'agent',
+    skill: ['basalt-app'],
+    guardKinds: [],
+    description:
+      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript, threadPartRenderers (Mantine-coupled). remend and motion are required, not optional — ThreadTranscript imports content/markdown.tsx (remend eagerly), and ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without both installed even though peerDependenciesMeta marks them optional (npm has no per-subpath optionality).',
+    optionalPeers: [
+      'ai',
+      'motion',
+      'remend',
+      'use-stick-to-bottom',
+      'react-markdown',
+      'remark-gfm',
+      'shiki',
+      '@shikijs/langs',
+      '@shikijs/themes',
+      'beautiful-mermaid',
+    ],
+    forbiddenImports: [],
+  },
   './content': {
     kind: 'doctrine',
     layer: 'mantine-coupled',

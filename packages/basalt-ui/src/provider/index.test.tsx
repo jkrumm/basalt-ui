@@ -10,11 +10,12 @@
  * The `BasaltBridge density wiring` block below covers the layer `composeInjectedCss` alone can't:
  * that `BasaltBridge` (not just the pure `composeInjectedCss` helper) actually reads
  * `theme.other.basaltDensity` off the RUNNING theme and feeds it through `buildDensityCss` into the
- * injected `<style>`, end to end from `createBasaltTheme(undefined, { density })`. No
- * `@testing-library/react`/jsdom is configured in this repo (see `tokens/build-fonts-css.test.ts`'s
- * doc for that same limitation elsewhere) — `react-dom/server`'s `renderToStaticMarkup` renders the
- * real `BasaltProvider` tree without a DOM, which is enough since the injected `<style>` is plain
- * text content, not something that needs a live DOM to assert on.
+ * injected `<style>`, end to end from `createBasaltTheme(undefined, { density })`. A DOM harness now
+ * exists (`tests/setup/dom.ts`, preloaded via the root `bunfig.toml`) — this suite still uses
+ * `react-dom/server`'s `renderToStaticMarkup` deliberately, since the injected `<style>` is plain
+ * text content on server-rendered markup, not something that needs a live DOM to assert on.
+ * Converting this to mount through the DOM harness would only be worth it if a future assertion here
+ * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
