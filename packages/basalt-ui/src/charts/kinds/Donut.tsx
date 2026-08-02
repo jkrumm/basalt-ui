@@ -136,13 +136,16 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
                 return (
                   <g
                     key={key}
-                    onMouseEnter={(event) => {
+                    onPointerEnter={(event) => {
                       show(arc.data, event)
                     }}
-                    onMouseMove={(event) => {
+                    onPointerMove={(event) => {
                       show(arc.data, event)
                     }}
-                    onMouseLeave={() => {
+                    onPointerLeave={() => {
+                      hide()
+                    }}
+                    onPointerCancel={() => {
                       hide()
                     }}
                     style={{ cursor: 'pointer' }}
