@@ -409,6 +409,16 @@ describe('raw-html-layout', () => {
     const f = find(`<div style={{ display: 'flex' }} /> // theme-allow`)
     expect(kinds(f)).not.toContain('raw-html-layout')
   })
+
+  it('does NOT flag a raw <div> with inline display:flex in a chart file — the Flex/Grid/Group remedy is @mantine/*, banned in the Mantine-free chart layer', () => {
+    const f = find(`<div style={{ display: 'flex', gap: 8 }} />`, CHART_PATH)
+    expect(kinds(f)).not.toContain('raw-html-layout')
+  })
+
+  it('still flags the same literal in a non-chart path (the check is not globally weakened)', () => {
+    const f = find(`<div style={{ display: 'flex', gap: 8 }} />`, PATH)
+    expect(kinds(f)).toContain('raw-html-layout')
+  })
 })
 
 // ── 10. inline-spacing ───────────────────────────────────────────────────────
@@ -526,6 +536,16 @@ describe('inline-display', () => {
   it('does NOT flag a theme-allow line', () => {
     const f = find(`<Box style={{ display: 'flex' }} /> // theme-allow`)
     expect(kinds(f)).not.toContain('inline-display')
+  })
+
+  it('does NOT flag display: "flex" in a chart file — the Flex/Grid/Group remedy is @mantine/*, banned in the Mantine-free chart layer', () => {
+    const f = find(`<Box style={{ display: 'flex' }} />`, CHART_PATH)
+    expect(kinds(f)).not.toContain('inline-display')
+  })
+
+  it('still flags the same literal in a non-chart path (the check is not globally weakened)', () => {
+    const f = find(`<Box style={{ display: 'flex' }} />`, PATH)
+    expect(kinds(f)).toContain('inline-display')
   })
 })
 
