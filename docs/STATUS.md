@@ -4,9 +4,9 @@
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
-framework-free token work below.
-**Version:** `1.7.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
-work below shipped in it. The stat card's `good` tone is the 1.8.0 candidate.
+framework-free token work below; `feat/linewatch-chart-gaps` carries the chart-layer batch below.
+**Version:** `1.8.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
+work below shipped across 1.7.0 and 1.8.0. The chart-layer batch is the next candidate.
 
 ## TL;DR
 
@@ -54,6 +54,90 @@ there for the first time reported all of it in one pass. Three separate causes, 
    nothing measured" and stays untinted, so `good` is a positive assertion a consumer opts into, not
    a default a card without a reading can fall into. Second data point for the same lesson: the gap
    a shipped composite leaves is found by the consumer, one case at a time, not by the framework.
+
+## Chart-layer batch — `feat/linewatch-chart-gaps` (2026-08-02)
+
+The same consumer (LineWatch) that prompted the adoption-gap work came back with a second field
+report, this time from four rounds of UI overhaul rather than one lint run. Every item below cost
+them real time or shipped a real defect. The through-line is different from last time and worth
+naming: **the adoption gap was things the framework never told them; this is things the framework
+could not express, or expressed in a way that silently did nothing.**
+
+Three of them are traps rather than gaps — code that typechecks, lints, passes `check-theme`, and
+renders, while being wrong:
+
+1. **`ChartTooltip` was a `<div>` that no-opped inside `<svg>`.** Authored in an SVG tree, React
+   creates it in the SVG namespace: it mounts, accepts every prop, throws nothing, and is never
+   painted. One of their charts carried eight authored tooltip rows no human had ever seen. No gate
+   on either side could catch it. It now portals to `document.body` (SSR-guarded), which removes the
+   trap instead of warning about it — and un-breaks `position: fixed` under a transformed ancestor
+   as a side effect.
+2. **Cross-chart hover synced on exact string match.** A chart that folds its domain to fit a narrow
+   viewport stops owning most of the keys its unfolded siblings broadcast, so the shared crosshair
+   appeared on roughly one hover in three with no rule a reader could infer — worse than no shared
+   cursor. `useHoverSync` now takes an optional `resolveKey`.
+3. **`AxisBottomDate` hardcoded `DD.MM`,** so a 24h window printed the same label a dozen times —
+   and `raw-visx-axis` makes a raw `<AxisBottom>` a build failure, so there was no supported exit.
+   They pre-formatted upstream instead, which forced those labels to double as unique scale domain
+   values and cascaded into the fold-key coupling in (2). One missing prop, three layers of
+   consequence. It now takes a `tickFormat`.
+
+Plus three plain gaps: `useHoverSync` rebuilt its point map on every render (the accessors now sit
+in refs, matching the pattern the file already used for `ctx` and explained in a comment before
+failing to apply it here); hover capture was mouse-only, so every chart was inert on touch, for a
+framework that ships a `MobileNav`; and `charts/` had no Mantine-free layout primitive, so centering
+anything cost a `theme-allow` inside the directory the guard exists to protect.
+
+### `isPending` — "nothing to draw" is three states, not two
+
+The item they rated highest-value, and the one that generalizes furthest. A chart has three empty
+states: **measured and empty**, **measured and absent** (a real coverage gap), and **not asked yet**.
+The `data ?? []` idiom collapses the third into the second, densifying an in-flight query into a
+fully-hatched "not measured" window — a positive claim that the line was watched and carried
+nothing — on every cold load and every range change. They found and fixed this class of bug in four
+separate places across four review rounds and still had six chart instances without it.
+
+`ChartPending` (+ the minimal `ChartCenter` it needed) now ships from `./charts`, with `isPending`
+on `ChartFrame` and all seven kinds. It reserves the footprint and draws nothing that could be read
+as a measurement — no axes, no gridlines, no hatching, no marks — and no animation, since the motion
+doctrine bans idle pulsing. `ChartFrame` also drops the legend entirely while pending: a legend
+naming a series with nothing yet to point at is its own small lie. This is the third data point for
+the lesson the 1.7.0/1.8.0 `tone` work established — **what a shipped composite cannot express gets
+routed around by compliant-looking code the guard has no way to recognize**, so the gap stays
+invisible until a consumer describes it.
+
+### Two self-inflicted findings
+
+- **The guard told chart files to use Mantine.** `inline-display`/`raw-html-layout` name
+  `Box`/`Flex`/`Grid`/`Group` as the remedy, all `@mantine/*`, all banned in the Mantine-free chart
+  layer — so inside a chart file the finding was unactionable, not merely inconvenient. basalt never
+  felt it because `package.json`'s `exemptRules` carried a private `primitives` self-exemption. Both
+  kinds now skip chart files and **the self-exemption is deleted**, so basalt passes for the same
+  reason a consumer does. This is a relaxation, so the grace-minor doctrine (which governs the guard
+  getting _stricter_) does not apply and no `GRACE_PERIOD_KINDS` entry belongs with it. Same shape
+  as the dogfood blind spot that let the 1.4.0 regression reach a consumer — worth watching for.
+- **`init`/`sync` seeded repo-root files into a subdirectory package.** Their app is
+  `repo-root/web/`; `lefthook.yml`, `.github/workflows/check.yml` and `src/query-client.ts` all
+  landed where nothing reads them, and because seeds are recreated-when-missing, every upgrade put
+  them back after the consumer relocated them. The `query-client.ts` seed was the harmful one — it
+  shadowed a real client carrying `staleTime` and `refetchOnWindowFocus: false`, so one wrong import
+  silently reinstated a refetch loop. The CLI now walks up for `.git` and skips those units with a
+  printed note when the package is not the repo root. Notice, never an error.
+
+### Held, not done
+
+- **The horizontal stat strip** they proposed as a component: one consumer, one instance. Under this
+  repo's own rule of three that is not an extraction yet.
+- Their report reached us with item 4 missing and item 1's closing paragraph truncated — neither is
+  addressed here.
+
+### Footgun found doing this work
+
+`bun run check-theme` — and therefore `bun run pre` — runs `bin/basalt-ui.mjs`, which imports
+`../dist/cli/index.js`. It validates the last **built** dist, not the working tree. A change under
+`src/guard/**` is invisible to it until `bun run build` runs, and a stale dist can report green over
+source it never read. That is how the guard change above first appeared to be a no-op. Build before
+trusting `check-theme` after touching `src/guard/` or `src/cli/`.
 
 ## Built (verified as-built, 2026-07-07)
 
