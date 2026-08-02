@@ -165,6 +165,25 @@ export type BasaltConfig = {
    * { exemptRules: { 'inline-display': ['agent'] } } // inline-display never fires under src/agent/**
    */
   exemptRules?: Partial<Record<GuardKind, string[]>>
+  /**
+   * Declares an intentional `ai` package major-version skew across workspace packages, exempting
+   * `doctor`'s `ai-major-parity` hard check. The value IS the reason — a bare `true` is rejected,
+   * because the whole point of this key is that the pairing is written down, not just switched off.
+   * A written declaration is the pin `basalt/ai-sdk-major`'s own comment notes is otherwise missing.
+   *
+   * Semantics: absent (or present but not a non-empty string) → the skew still hard-fails exactly as
+   * without this key. A non-empty string with a skew present → `doctor` passes, echoing both the
+   * skew and this reason. A non-empty string with NO skew present → `doctor` warns that the
+   * exemption is stale and can be deleted (an exemption nobody re-checks is how a real, later skew
+   * slips through unnoticed).
+   *
+   * @example
+   * // apps/api streams on ai@5; apps/dashboard parses on ai@7; a producer-side TransformStream
+   * // neutralizes the one enum value that differs between the two majors.
+   * { aiMajorSkewReason: 'apps/api pinned to ai@5, apps/dashboard on ai@7 — the skew is neutralized '
+   *   + 'by a producer-side TransformStream in apps/api/src/stream-transform.ts' }
+   */
+  aiMajorSkewReason?: string
 }
 
 const DEFAULT_ROOT = 'src'
@@ -1560,6 +1579,202 @@ type DoctorResult = {
   warnings: number
 }
 
+type WorkspacePackage = { readonly name: string; readonly dir: string }
+
+/** {@link collectWorkspacePackages}'s return: the walked packages plus whether a `workspaces`
+ * field was present at all (distinguishes "nothing to compare" from "not a workspace root"). */
+type WorkspaceWalk = {
+  readonly packages: readonly WorkspacePackage[]
+  readonly hasWorkspacesField: boolean
+}
+
+/**
+ * Every subdirectory of `base` (name only), or `[]` if `base` doesn't exist / isn't a directory.
+ * `node_modules` is always excluded — a wildcard workspaces pattern must never descend into a
+ * dependency tree. `skipDotDirs` additionally excludes dot-directories; it is only set by the
+ * `*`/`**` wildcard descent in {@link expandPatternSegments}, never for an explicitly named
+ * literal segment, so a pattern like `.internal/*` still resolves.
+ */
+function subdirNames(base: string, options: { skipDotDirs?: boolean } = {}): string[] {
+  let entries: string[]
+  try {
+    entries = readdirSync(base)
+  } catch {
+    return []
+  }
+  return entries.filter((name) => {
+    if (name === 'node_modules') return false
+    if (options.skipDotDirs && name.startsWith('.')) return false
+    try {
+      return statSync(resolve(base, name)).isDirectory()
+    } catch {
+      return false
+    }
+  })
+}
+
+/**
+ * Expands one glob PATTERN's segments against the filesystem, starting from `baseDir`. Supports
+ * three segment kinds: a literal name, a single `*` wildcard (any one directory), and a `**`
+ * wildcard (zero or more directory levels, i.e. arbitrary depth) — covering a trailing single
+ * wildcard, an interior wildcard between literal segments, and a trailing double-wildcard alike,
+ * not just one trailing single-wildcard segment.
+ */
+function expandPatternSegments(baseDir: string, segments: readonly string[]): string[] {
+  if (segments.length === 0) return [baseDir]
+  const [head, ...rest] = segments
+
+  if (head === '**') {
+    // Zero levels: `**` consumes nothing and the rest of the pattern matches right here.
+    const matches = expandPatternSegments(baseDir, rest)
+    // One-or-more levels: descend into every subdirectory, `**` still active.
+    for (const name of subdirNames(baseDir, { skipDotDirs: true })) {
+      matches.push(...expandPatternSegments(resolve(baseDir, name), segments))
+    }
+    return matches
+  }
+
+  const names =
+    head === '*'
+      ? subdirNames(baseDir, { skipDotDirs: true })
+      : subdirNames(baseDir).filter((n) => n === head)
+  return names.flatMap((name) => expandPatternSegments(resolve(baseDir, name), rest))
+}
+
+/**
+ * Expands a root `package.json`'s `workspaces` patterns into concrete package directories.
+ * Supports literal segments, a single-wildcard segment, and a double-wildcard segment, both
+ * interior and trailing (e.g. `packages` followed by a double wildcard, or an interior single
+ * wildcard between two literal segments) — not just one trailing single-wildcard segment. A
+ * candidate directory that has no `package.json` of its own is skipped, not reported — an empty
+ * scaffold directory is not a workspace package. Also honours npm/bun/yarn `!`-prefixed exclusion
+ * entries (e.g. `["packages/*", "!packages/legacy"]`) — both the included and excluded patterns
+ * are expanded through the same machinery, then the excluded set is subtracted.
+ */
+function expandWorkspaceGlobs(cwd: string, patterns: readonly string[]): string[] {
+  const expand = (pattern: string): string[] =>
+    expandPatternSegments(
+      cwd,
+      pattern.split('/').filter((s) => s.length > 0),
+    )
+
+  const excluded = new Set(
+    patterns
+      .filter((pattern) => pattern.startsWith('!'))
+      .flatMap((pattern) => expand(pattern.replace(/^!+/, ''))),
+  )
+
+  const dirs: string[] = []
+  for (const pattern of patterns) {
+    if (pattern.startsWith('!')) continue
+    for (const abs of expand(pattern)) {
+      if (excluded.has(abs)) continue
+      if (existsSync(resolve(abs, 'package.json'))) dirs.push(abs)
+    }
+  }
+  return dirs
+}
+
+/**
+ * Every workspace package declared by `cwd`'s root `package.json` (npm/bun/yarn `workspaces`
+ * field, array or `{ packages: [...] }` object form), named + directory-resolved — PLUS the root
+ * manifest itself, labelled `"{name} (root)"`. The root is walked because it commonly carries a
+ * hoisted `ai` dev dependency that can itself skew against a workspace package's own major — that
+ * is the producer/consumer shape the whole check exists to catch, and it is invisible if only the
+ * expanded workspace dirs are inspected. `hasWorkspacesField` is `false` (and `packages` empty)
+ * when `cwd` has no `package.json`, no `workspaces` field, or the field is a shape this doesn't
+ * recognize — a repo-wide walk is a bonus check, not something that should ever throw doctor over
+ * an unrecognized `workspaces` shape.
+ */
+function collectWorkspacePackages(cwd: string): WorkspaceWalk {
+  const raw = readIfExists(resolve(cwd, 'package.json'))
+  if (raw === null) return { packages: [], hasWorkspacesField: false }
+
+  let parsed: { workspaces?: unknown; name?: string }
+  try {
+    parsed = JSON.parse(raw) as { workspaces?: unknown; name?: string }
+  } catch {
+    return { packages: [], hasWorkspacesField: false }
+  }
+
+  const patterns = isStringArray(parsed.workspaces)
+    ? parsed.workspaces
+    : parsed.workspaces !== null &&
+        typeof parsed.workspaces === 'object' &&
+        isStringArray((parsed.workspaces as { packages?: unknown }).packages)
+      ? (parsed.workspaces as { packages: string[] }).packages
+      : null
+  if (patterns === null) return { packages: [], hasWorkspacesField: false }
+
+  const rootName = parsed.name && parsed.name.length > 0 ? `${parsed.name} (root)` : '(root)'
+  const workspacePackages = expandWorkspaceGlobs(cwd, patterns).map((dir) => ({
+    name: readPackageName(dir),
+    dir,
+  }))
+
+  return {
+    packages: [{ name: rootName, dir: cwd }, ...workspacePackages],
+    hasWorkspacesField: true,
+  }
+}
+
+/** Narrows to a string array — shared by `collectWorkspacePackages`'s two `workspaces` shapes. */
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+}
+
+/**
+ * First run of digits in a semver range string (`^7.0.15` → `7`), or null if there is none.
+ *
+ * Duplicated verbatim in `configs/oxlint-plugin.js` — that file must stay import-free from this
+ * package (it loads via `jsPlugins` out of a consumer's node_modules, before this package's own
+ * code is necessarily resolvable), so the duplication is structural, not an oversight. Keep both
+ * copies in sync by hand; a future parsing fix (pre-release suffixes, say) must land in both.
+ */
+function majorOf(range: string | undefined): number | null {
+  if (typeof range !== 'string') return null
+  const match = range.match(/\d+/)
+  return match === null ? null : Number(match[0])
+}
+
+/** The `ai` package's declared major at `dir`'s own `package.json`, or null if undeclared/unreadable. */
+function aiMajorAt(dir: string): number | null {
+  const raw = readIfExists(resolve(dir, 'package.json'))
+  if (raw === null) return null
+  try {
+    const pkg = JSON.parse(raw) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+      peerDependencies?: Record<string, string>
+    }
+    return majorOf(
+      pkg.dependencies?.['ai'] ?? pkg.devDependencies?.['ai'] ?? pkg.peerDependencies?.['ai'],
+    )
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Splits `basalt.aiMajorSkewReason` into a validated reason (or null) plus whether the key was
+ * present at all but failed validation. A present-but-invalid value (anything other than a
+ * non-empty string — including a bare `true`) is treated as absent for the pass/fail decision, same
+ * as a missing key, but doctor's failure message still calls out that the key exists and is
+ * malformed rather than silently falling back to the plain "no exemption" message — a forgotten key
+ * and a broken one are different mistakes and deserve different guidance.
+ */
+function resolveAiMajorSkewReason(cfg: BasaltConfig): {
+  reason: string | null
+  presentButInvalid: boolean
+} {
+  const raw = cfg.aiMajorSkewReason
+  if (raw === undefined) return { reason: null, presentButInvalid: false }
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return { reason: raw, presentButInvalid: false }
+  }
+  return { reason: null, presentButInvalid: true }
+}
+
 /**
  * Check a consumer repo's basalt integration and print a pass/warn report.
  *
@@ -1570,6 +1785,17 @@ type DoctorResult = {
  *
  * Hard failures (exit non-zero):
  *   1. .basalt/manifest.json exists (init was run).
+ *   6. `ai-major-parity`: every workspace package that declares the `ai` package agrees on its
+ *      major version. `basalt/ai-sdk-major` (the oxlint plugin rule) cannot catch this — it checks
+ *      a linted file's NEAREST package.json, so a lint run scoped to one workspace package only
+ *      ever sees that package's own `ai` major and is perfectly happy; the cross-package skew (one
+ *      package streaming on `ai@5`, another parsing it on `ai@7`) only a repo-wide manifest walk
+ *      can see. Skipped entirely when `cwd` has no `workspaces` field or none of its packages
+ *      declare `ai`. A detected skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
+ *      reason string, not a bare `true`) in the consumer's package.json — an intentional
+ *      producer/consumer split neutralized by a transform is a locked decision, not a defect, and
+ *      the written reason IS the pin that a permanently-failing guard would otherwise lack. Missing
+ *      or invalid (empty/non-string) still hard-fails exactly as if the key were absent.
  *
  * Warnings (non-fatal):
  *   2. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
@@ -1581,10 +1807,14 @@ type DoctorResult = {
  *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
  *   5. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
  *      a public/ dir exists at all — skipped otherwise).
+ *   7. A declared `basalt.aiMajorSkewReason` when the ai majors currently AGREE — the exemption is
+ *      stale and can be deleted; an exemption nobody revisits is how a real, later skew slips
+ *      through unnoticed.
  *
  * Returns the exit code: 0 = all good, 1 = one or more hard failures.
  */
 export function doctor(cwd: string = process.cwd()): number {
+  const cfg = readBasaltConfig(cwd)
   const result: DoctorResult = { hardFailures: 0, warnings: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
 
@@ -1726,6 +1956,61 @@ export function doctor(cwd: string = process.cwd()): number {
     } else {
       pass("public/ has all of basaltAppPlugin's default icon files")
     }
+  }
+
+  // ── Hard check 6: ai package major version parity across workspace packages ─
+  // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
+  // run scoped to one workspace package only ever sees that package's own `ai` major and is
+  // perfectly happy. The real defect is CROSS-package (argo defect 1: apps/api on ai@5 producing a
+  // stream apps/dashboard's ai@7 client can't parse) and only a repo-wide manifest walk sees it —
+  // this is that walk. Hard failure, not a warning: a skewed pair throws at runtime, it doesn't
+  // just look different. `basalt.aiMajorSkewReason` exempts an INTENTIONAL skew (e.g. a
+  // producer-side TransformStream neutralizing the divergent enum value) — see the BasaltConfig
+  // JSDoc for its exact semantics; a stale declaration (skew resolved, reason still present) warns
+  // instead of passing silently.
+  const workspaceWalk = collectWorkspacePackages(cwd)
+  const aiMajors = workspaceWalk.packages
+    .map((pkg) => ({ name: pkg.name, major: aiMajorAt(pkg.dir) }))
+    .filter((entry): entry is { name: string; major: number } => entry.major !== null)
+  const { reason: aiMajorSkewReason, presentButInvalid: aiMajorSkewReasonInvalid } =
+    resolveAiMajorSkewReason(cfg)
+  if (aiMajors.length > 0) {
+    const distinctMajors = new Set(aiMajors.map((entry) => entry.major))
+    if (distinctMajors.size > 1) {
+      const summary = aiMajors.map((entry) => `${entry.name}@ai${entry.major}`).join(', ')
+      if (aiMajorSkewReason !== null) {
+        pass(
+          `ai package major version mismatch across workspace packages: ${summary} — exempted via ` +
+            `basalt.aiMajorSkewReason: "${aiMajorSkewReason}"`,
+        )
+      } else if (aiMajorSkewReasonInvalid) {
+        fail(
+          `ai package major version mismatch across workspace packages: ${summary} — ` +
+            'basalt.aiMajorSkewReason is present but is not a non-empty string (a bare `true` is ' +
+            'not accepted); the exemption must carry a written reason, e.g. ' +
+            '`aiMajorSkewReason: "apps/api on ai@5, apps/dashboard on ai@7, neutralized by a ' +
+            'producer-side TransformStream"`.',
+        )
+      } else {
+        fail(`ai package major version mismatch across workspace packages: ${summary}`)
+      }
+    } else {
+      const [major] = distinctMajors
+      if (aiMajorSkewReason !== null) {
+        warn(
+          `basalt.aiMajorSkewReason ("${aiMajorSkewReason}") is declared but the ai package major ` +
+            `already matches across all ${aiMajors.length} workspace package(s) declaring it ` +
+            `(ai@${major}) — the exemption is no longer needed and can be deleted.`,
+        )
+      } else {
+        pass(
+          `ai package major matches across ${aiMajors.length} workspace package(s) declaring it (ai@${major})`,
+        )
+      }
+    }
+  } else if (workspaceWalk.hasWorkspacesField) {
+    // A hard check that can silently not run is worse than one that is absent — say so.
+    pass('ai-major-parity: no workspace package declares the ai dependency — nothing to compare')
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────

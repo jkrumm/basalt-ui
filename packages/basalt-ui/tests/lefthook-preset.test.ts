@@ -59,15 +59,23 @@ const PROBES: Record<string, string> = {
   yaml: 'a:      1\nb:\n    - x\n',
 }
 
-/** Does oxfmt actually handle this extension? Deliberately unformatted input, so a handled file
- *  reports a diff and an unhandled one is silently skipped. */
-function oxfmtHandles(extension: string): boolean {
-  const probe = PROBES[extension]
-  expect(probe).toBeDefined()
-  const file = join(dir, `probe.${extension}`)
-  writeFileSync(file, probe ?? '')
-  const out = Bun.spawnSync(['bunx', 'oxfmt', '--check', file], { cwd: dir })
-  return `${out.stdout}${out.stderr}`.includes(`probe.${extension}`)
+/**
+ * Which of the PROBES extensions oxfmt actually handles, decided by ONE `oxfmt --check` invocation
+ * over all probe files rather than one spawn per extension — spawning `bunx oxfmt` nine times sat
+ * on the boundary of Bun's 5000ms default test timeout by construction and flaked the gate. A
+ * single invocation still proves the same thing per extension (a handled file reports a diff and
+ * carries its own filename in the output; an unhandled one is silently skipped), so batching does
+ * not weaken the assertion.
+ */
+function oxfmtHandledExtensions(): Set<string> {
+  const files = Object.entries(PROBES).map(([extension, content]) => {
+    const file = join(dir, `probe.${extension}`)
+    writeFileSync(file, content)
+    return file
+  })
+  const out = Bun.spawnSync(['bunx', 'oxfmt', '--check', ...files], { cwd: dir })
+  const output = `${out.stdout}${out.stderr}`
+  return new Set(Object.keys(PROBES).filter((extension) => output.includes(`probe.${extension}`)))
 }
 
 describe('shipped lefthook preset', () => {
@@ -81,8 +89,9 @@ describe('shipped lefthook preset', () => {
   it('formats every file type oxfmt actually handles', () => {
     const covered = extensionsOf('oxfmt')
     expect(covered).toContain('css')
+    const handled = oxfmtHandledExtensions()
     for (const extension of Object.keys(PROBES)) {
-      if (oxfmtHandles(extension)) expect(covered).toContain(extension)
+      if (handled.has(extension)) expect(covered).toContain(extension)
     }
   })
 

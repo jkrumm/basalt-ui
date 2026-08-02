@@ -4,11 +4,14 @@
  * shape back on screen exactly where `ChartPending` is supposed to reserve a static, contentless
  * placeholder (see `ChartPending`'s JSDoc for the three-state "nothing to draw" rationale).
  *
- * No jsdom is configured in this repo (see `theme/use-basalt-spacing.test.tsx`'s doc) —
- * `renderToStaticMarkup` is enough here: `ChartFrame`/`ChartPending` live in `src/charts/**`, which
- * is Mantine-free, so no `MantineProvider` wrapper is needed either. `useChartSize` never measures
- * under SSR (no `ResizeObserver`), so the plot rect falls back to `minWidth` × the resolved fixed
- * height — non-zero, which is what lets `children`/`ChartPending` render at all in this harness.
+ * A DOM harness now exists (`tests/setup/dom.ts`, preloaded via the root `bunfig.toml`; see
+ * `theme/use-basalt-spacing.test.tsx`'s doc) — `renderToStaticMarkup` is used deliberately here
+ * instead: `ChartFrame`/`ChartPending` live in `src/charts/**`, which is Mantine-free, so no
+ * `MantineProvider` wrapper is needed either. `useChartSize` never measures under SSR (no
+ * `ResizeObserver`), so the plot rect falls back to `minWidth` × the resolved fixed height —
+ * non-zero, which is what lets `children`/`ChartPending` render at all in this harness. Converting
+ * to the DOM harness would only be worth it if a future assertion here needed a real measured size
+ * (a live `ResizeObserver` reading) rather than this SSR fallback rect.
  */
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'

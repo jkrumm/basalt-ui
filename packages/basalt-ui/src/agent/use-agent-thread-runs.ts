@@ -305,10 +305,16 @@ export function useAgentThreadRuns<TPart = AgentPart>({
     return resolved
   }
 
-  // Abort every in-flight stream on unmount to stop the async generators.
+  // Abort every in-flight stream on unmount to stop the async generators. Also clears the map —
+  // leaving aborted entries behind would make the mount-reconcile effect below see a
+  // `controllersRef.current.has(id)` of `true` for a thread whose only consumer was just aborted,
+  // skipping the orphan-resume path and wedging the thread in 'streaming' forever. Reachable
+  // whenever this fiber's effects re-run without the fiber itself unmounting (React 19 StrictMode
+  // double-invoke; `<Activity>` hide/show) — see this hook's `@example`-adjacent doc / the F3 note.
   useEffect(
     () => () => {
       controllersRef.current.forEach((controller) => controller.abort())
+      controllersRef.current.clear()
     },
     [],
   )

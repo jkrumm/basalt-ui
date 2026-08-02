@@ -14,6 +14,19 @@
  * immediately above it. The three boundary rules deliberately do NOT — see their own comment for
  * why.
  *
+ * ── The two agent-chat guard rules (`agent-resume-guard` / `agent-no-raw-usechat`) + `ai-sdk-major` ──
+ * These are also correctness/architecture boundaries, not design guidance, so they do NOT honour
+ * `theme-allow`. All three instead honour their own line-comment escape, `basalt-agent-allow`
+ * (`hasAgentAllow`, a copy of `hasThemeAllow` with a different needle) — deliberately a separate
+ * token, so a color exemption can never double as a license to switch off a streaming guard or an
+ * intentional `ai` major skew. `ai-sdk-major`'s escape is line-level and per-import, distinct from
+ * `basalt.aiMajorSkewReason` — the repo-wide, mandatory-reason config exemption for the SAME skew
+ * read by `doctor`'s `ai-major-parity` check (`src/cli/index.ts`): a lint run only ever sees one
+ * file, so there's no reason string to echo here, just a marker on the import that intentionally
+ * crosses the declared skew. `ai-sdk-major` is the one rule in this file that touches the
+ * filesystem (reads ancestor `package.json`s, memoized per directory so a lint run does one walk
+ * per directory, not per file) — every other rule here is pure AST + filename-string matching.
+ *
  * ── The three boundary rules (`visx-boundary` / `visx-tooltip` / `token-layer-boundary`) ─────────
  * These used to be one bundled `import-boundary` rule sharing a single on/off toggle — that meant
  * a consumer disabling the one check they disagreed with silently dropped the other two as well.
@@ -58,6 +71,9 @@
  * oxlint's own parser accepts (see `ALLOWED_TOP_LEVEL_KEYS` in that script); do not add ad hoc keys
  * to that file.
  */
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
 
@@ -69,6 +85,23 @@ function hasThemeAllow(context, node) {
   return comments.some(
     (comment) =>
       comment.value.includes('theme-allow') &&
+      (comment.loc.end.line === nodeLine || comment.loc.end.line === nodeLine - 1),
+  )
+}
+
+/**
+ * True when a `basalt-agent-allow` line comment sits on `node`'s own source line or the line above
+ * it. A copy of `hasThemeAllow` with a different needle — deliberately NOT the same token, so a
+ * color exemption can never double as a license to switch off a streaming guard (see the file-header
+ * comment for the two agent-chat rules).
+ */
+function hasAgentAllow(context, node) {
+  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+  const comments = sourceCode?.getAllComments?.() ?? []
+  const nodeLine = node.loc.start.line
+  return comments.some(
+    (comment) =>
+      comment.value.includes('basalt-agent-allow') &&
       (comment.loc.end.line === nodeLine || comment.loc.end.line === nodeLine - 1),
   )
 }
@@ -523,6 +556,249 @@ const tokenLayerBoundary = {
   },
 }
 
+// ── Rule 8 — agent-resume-guard ─────────────────────────────────────────────────────────────────
+
+const AGENT_RESUME_GUARD_MESSAGE =
+  'Unguarded stream resume — useAgentThreadRuns owns single-consumer discipline and ' +
+  'StrictMode-safe reconnection; a raw resume re-fires on every effect re-run (vercel/ai#7891, no ' +
+  "merged fix). Mark the line 'basalt-agent-allow' if you own the guard. (basalt/agent-resume-guard)"
+
+/** True for `resumeStream()` and `<anything>.resumeStream()` call expressions. */
+function isResumeStreamCall(callee) {
+  if (callee.type === 'Identifier') return callee.name === 'resumeStream'
+  return (
+    callee.type === 'MemberExpression' &&
+    callee.property.type === 'Identifier' &&
+    callee.property.name === 'resumeStream'
+  )
+}
+
+/** The `key` of an object Property as a string, covering both Identifier and Literal keys. */
+function propertyKeyName(node) {
+  const key = node.key
+  if (key.type === 'Identifier') return key.name
+  if (key.type === 'Literal') return key.value
+  return undefined
+}
+
+// Deliberately NO `hasThemeAllow` escape — see basalt/visx-boundary's comment for why these
+// guards use their own token (`basalt-agent-allow`, see the file-header comment) instead.
+const agentResumeGuard = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow unguarded useChat({ resume: true }) / resumeStream() calls outside useAgentThreadRuns.',
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        const callee = node.callee
+
+        if (callee.type === 'Identifier' && callee.name === 'useChat') {
+          const arg0 = node.arguments[0]
+          if (arg0 === undefined || arg0.type !== 'ObjectExpression') return
+          for (const prop of arg0.properties) {
+            if (prop.type !== 'Property') continue
+            if (propertyKeyName(prop) !== 'resume') continue
+            if (prop.value.type !== 'Literal' || prop.value.value !== true) continue
+            if (hasAgentAllow(context, prop)) continue
+            context.report({ node: prop, message: AGENT_RESUME_GUARD_MESSAGE })
+          }
+          return
+        }
+
+        if (!isResumeStreamCall(callee)) return
+        if (hasAgentAllow(context, node)) return
+        context.report({ node, message: AGENT_RESUME_GUARD_MESSAGE })
+      },
+    }
+  },
+}
+
+// ── Rule 9 — agent-no-raw-usechat ───────────────────────────────────────────────────────────────
+
+const AGENT_NO_RAW_USECHAT_MESSAGE =
+  'Raw @ai-sdk/react useChat — use useAgentStream / useAgentThreadRuns over aiSdkTransport ' +
+  "(unmount abort, supersede guards, single-consumer resume). Mark the line 'basalt-agent-allow' to " +
+  'opt out. (basalt/agent-no-raw-usechat)'
+
+const RAW_USE_CHAT_SOURCES = new Set(['@ai-sdk/react', 'ai/react'])
+const RAW_USE_CHAT_NAMES = new Set(['useChat', 'useCompletion'])
+
+// Deliberately NO `hasThemeAllow` escape — see the file-header comment.
+const agentNoRawUseChat = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Disallow importing useChat/useCompletion directly from @ai-sdk/react or ai/react.',
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      ImportDeclaration(node) {
+        const source = node.source?.value
+        if (typeof source !== 'string' || !RAW_USE_CHAT_SOURCES.has(source)) return
+        // A whole `import type { … } from '…'` is erased at compile time — nothing to guard.
+        if (node.importKind === 'type') return
+
+        for (const specifier of node.specifiers) {
+          if (specifier.type !== 'ImportSpecifier') continue
+          // `import { type useChat } from '…'` — the individual specifier is type-only.
+          if (specifier.importKind === 'type') continue
+          const imported = specifier.imported
+          const importedName = imported.type === 'Identifier' ? imported.name : imported.value
+          if (typeof importedName !== 'string' || !RAW_USE_CHAT_NAMES.has(importedName)) continue
+          if (hasAgentAllow(context, specifier)) continue
+          context.report({ node: specifier, message: AGENT_NO_RAW_USECHAT_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 10 — ai-sdk-major ──────────────────────────────────────────────────────────────────────
+
+/**
+ * First run of digits in a semver range string (`^7.0.15` → `7`), or null if there is none.
+ *
+ * Duplicated verbatim in `src/cli/index.ts` — kept separate deliberately: this file must stay
+ * import-free from the package (it loads via `jsPlugins` out of a consumer's node_modules), so it
+ * cannot import the CLI's copy. Keep both copies in sync by hand; a future parsing fix (pre-release
+ * suffixes, say) must land in both.
+ */
+function majorOf(range) {
+  if (typeof range !== 'string') return null
+  const match = range.match(/\d+/)
+  return match === null ? null : Number(match[0])
+}
+
+/**
+ * `ai`'s declared major off one parsed package.json, checked in ONE fixed order shared by every
+ * reader in this file (basalt's own major below, and the linted file's nearest package.json in
+ * `aiMajorAtPackageJson`) — `dependencies` → `devDependencies` → `peerDependencies`. Chosen
+ * deliberately: `dependencies` is what actually gets installed and resolved at runtime, so it wins
+ * over a `devDependencies` pin (test-only) or a `peerDependencies` range (a floor, not a pin). Two
+ * readers disagreeing on this order is exactly the kind of skew this rule exists to catch — see
+ * `cli/index.ts`'s `aiMajorAt`, which uses the same order for doctor's cross-package walk.
+ */
+function aiMajorFromPkg(pkg) {
+  return majorOf(pkg.dependencies?.ai ?? pkg.devDependencies?.ai ?? pkg.peerDependencies?.ai)
+}
+
+/**
+ * basalt-ui's OWN declared `ai` peer major, read once at module load from the package.json
+ * sitting next to this file's `configs/` directory — `../package.json` relative to this module,
+ * which resolves to `packages/basalt-ui/package.json` repo-locally AND to
+ * `node_modules/basalt-ui/package.json` when this file runs from a consumer's installed copy
+ * (`configs/oxlint-plugin.js` is one directory below the package root in both places). `null` when
+ * unreadable or undeclared — the rule then has nothing to compare against and stays silent.
+ */
+const PLUGIN_DIR = dirname(fileURLToPath(import.meta.url))
+const BASALT_AI_MAJOR = (() => {
+  try {
+    const pkg = JSON.parse(readFileSync(resolvePath(PLUGIN_DIR, '..', 'package.json'), 'utf8'))
+    // Peer-first, unlike aiMajorFromPkg's dependencies-first order: `ai` is an optional PEER of
+    // basalt-ui, never its runtime dependency, so the "dependencies wins because runtime" rationale
+    // above does not apply to this self-read — a devDependencies test pin must not masquerade as
+    // the declared peer major.
+    return majorOf(pkg.peerDependencies?.ai ?? pkg.devDependencies?.ai ?? pkg.dependencies?.ai)
+  } catch {
+    return null
+  }
+})()
+
+// One JSON.parse per package.json path, and one directory-walk result per starting directory — so
+// a lint run over N files in the same package does one filesystem walk total, not N.
+const packageJsonMajorCache = new Map()
+const nearestAiMajorCache = new Map()
+
+function aiMajorAtPackageJson(pkgPath) {
+  if (packageJsonMajorCache.has(pkgPath)) return packageJsonMajorCache.get(pkgPath)
+  let major = null
+  try {
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+    major = aiMajorFromPkg(pkg)
+  } catch {
+    major = null
+  }
+  packageJsonMajorCache.set(pkgPath, major)
+  return major
+}
+
+/** Walks up from `startDir` to the nearest ancestor `package.json`'s declared `ai` major. */
+function nearestAiMajor(startDir) {
+  if (nearestAiMajorCache.has(startDir)) return nearestAiMajorCache.get(startDir)
+
+  const visited = []
+  let dir = startDir
+  let result = null
+  for (;;) {
+    if (nearestAiMajorCache.has(dir)) {
+      result = nearestAiMajorCache.get(dir)
+      break
+    }
+    visited.push(dir)
+    const pkgPath = resolvePath(dir, 'package.json')
+    if (existsSync(pkgPath)) {
+      result = aiMajorAtPackageJson(pkgPath)
+      break
+    }
+    const parent = dirname(dir)
+    if (parent === dir) break // filesystem root — no package.json found
+    dir = parent
+  }
+  for (const d of visited) nearestAiMajorCache.set(d, result)
+  return result
+}
+
+function aiSdkMajorMessage(consumerMajor) {
+  return (
+    `This file's nearest package.json declares ai@${consumerMajor}, but basalt-ui declares the ` +
+    `ai@${BASALT_AI_MAJOR} peer major — a producer/consumer pair on different ai majors can throw ` +
+    "'Unknown chunk type' at runtime (argo defect 1: apps/api on ai@5 vs apps/dashboard on ai@7). " +
+    '(basalt/ai-sdk-major)'
+  )
+}
+
+// Honours `basalt-agent-allow` (NOT `theme-allow`) like its two agent-chat siblings above — a
+// version skew is still a fact about two package.json files, but a written, intentional
+// producer/consumer pair (see `doctor`'s `aiMajorSkewReason`) needs a way to say so at the import
+// site too, not just be permanently blocked.
+const aiSdkMajor = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        "Disallow importing 'ai'/'@ai-sdk/*' from a package whose declared ai major differs from basalt-ui's.",
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      ImportDeclaration(node) {
+        if (BASALT_AI_MAJOR === null) return
+        const source = node.source?.value
+        if (typeof source !== 'string') return
+        if (source !== 'ai' && !source.startsWith('@ai-sdk/')) return
+
+        const filename = getFilename(context)
+        if (filename.length === 0) return
+        const consumerMajor = nearestAiMajor(dirname(filename))
+        if (consumerMajor === null) return // no `ai` in the nearest package.json — nothing to compare
+        if (consumerMajor === BASALT_AI_MAJOR) return
+        if (hasAgentAllow(context, node)) return
+
+        context.report({ node, message: aiSdkMajorMessage(consumerMajor) })
+      },
+    }
+  },
+}
+
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 
 export default {
@@ -536,5 +812,8 @@ export default {
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,
     'token-layer-boundary': tokenLayerBoundary,
+    'agent-resume-guard': agentResumeGuard,
+    'agent-no-raw-usechat': agentNoRawUseChat,
+    'ai-sdk-major': aiSdkMajor,
   },
 }

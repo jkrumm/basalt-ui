@@ -6,10 +6,13 @@
  * with every other density test still green, since those all exercise `deriveSpacing`/
  * `createBasaltTheme` directly, never this hook.
  *
- * No `@testing-library/react`/jsdom is configured in this repo (see `tokens/build-fonts-css.test.ts`'s
- * doc for that same limitation elsewhere) — `react-dom/server`'s `renderToStaticMarkup` is enough to
- * invoke a hook inside a REAL `MantineProvider` tree without a DOM, so these assertions exercise the
- * actual `useMantineTheme()` read, not a re-implementation of it.
+ * A DOM harness now exists (`tests/setup/dom.ts`, preloaded via the root `bunfig.toml`; see
+ * `tokens/build-fonts-css.test.ts`'s doc for that same note elsewhere) — this suite still uses
+ * `react-dom/server`'s `renderToStaticMarkup` deliberately: it's enough to invoke a hook inside a
+ * REAL `MantineProvider` tree without a DOM, so these assertions exercise the actual
+ * `useMantineTheme()` read, not a re-implementation of it. Converting to the DOM harness would only
+ * be worth it if a future assertion here needed the hook to react to a live DOM event (e.g. a
+ * `ResizeObserver`-driven remeasure) rather than a single render-time read.
  */
 import { MantineProvider } from '@mantine/core'
 import type { MantineProviderProps } from '@mantine/core'

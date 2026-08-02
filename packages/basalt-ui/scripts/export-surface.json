@@ -255,6 +255,15 @@
     "useAgentStream",
     "useAgentThreadRuns"
   ],
+  "./agent-chat": [
+    "Composer",
+    "ThreadDetailPanel",
+    "ThreadFeed",
+    "ThreadOutcomeCard",
+    "ThreadTranscript",
+    "ThreadWorkspace",
+    "threadPartRenderers"
+  ],
   "./content": [
     "ArticleCard",
     "ArticleFilterBar",

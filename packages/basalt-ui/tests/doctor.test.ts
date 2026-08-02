@@ -203,3 +203,297 @@ describe('basalt doctor — spacing-scale drift', () => {
     expect(out).toContain('retiredStep 12→(removed)')
   })
 })
+
+describe('basalt doctor — ai-major-parity', () => {
+  /** Run doctor, capturing stdout/stderr so the emitted lines can be asserted on either way. */
+  function runDoctor(): { code: number; out: string } {
+    const originalLog = console.log
+    const originalError = console.error
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    console.error = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      return { code: doctor(tmpDir), out }
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  }
+
+  it('hard-fails and names both packages when workspace packages disagree on the ai major', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('api@ai5')
+    expect(out).toContain('dashboard@ai7')
+  })
+
+  it('passes when every workspace package agrees on the ai major', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.15' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('ai package major matches across 2 workspace package(s)')
+  })
+
+  it('is silent (no line, no failure) for a repo with no workspaces field', () => {
+    setupPassingLayout()
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).not.toContain('ai package major')
+  })
+
+  it('skips a workspace package that declares no ai dependency at all', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
+    )
+    writeFixture('packages/api/package.json', JSON.stringify({ name: 'api', dependencies: {} }))
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('ai package major matches across 1 workspace package(s)')
+  })
+
+  it('hard-fails when the ROOT manifest itself skews against a workspace package (hoisted dev dep)', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'consumer-monorepo',
+        workspaces: ['packages/*'],
+        devDependencies: { ai: '5.0.196' },
+      }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('consumer-monorepo (root)@ai5')
+    expect(out).toContain('dashboard@ai7')
+  })
+
+  it('walks a "packages/**" workspaces pattern instead of silently skipping it', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/**'] }),
+    )
+    writeFixture(
+      'packages/nested/service/package.json',
+      JSON.stringify({ name: 'nested-service', dependencies: { ai: '5.0.196' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('nested-service@ai5')
+    expect(out).toContain('dashboard@ai7')
+  })
+
+  it('does not descend into node_modules when walking a "packages/**" workspaces pattern', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/**'] }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.18' } }),
+    )
+    writeFixture(
+      'packages/api/node_modules/skewed-dep/package.json',
+      JSON.stringify({ name: 'skewed-dep', dependencies: { ai: '5.0.196' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).not.toContain('ai package major version mismatch')
+    expect(out).not.toContain('skewed-dep')
+  })
+
+  it('honours a "!"-prefixed exclusion entry: the excluded package is invisible to ai-major-parity while a non-excluded skew still fails', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'consumer-monorepo',
+        workspaces: ['packages/*', '!packages/legacy'],
+      }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    writeFixture(
+      'packages/legacy/package.json',
+      JSON.stringify({ name: 'legacy', dependencies: { ai: '3.0.0' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('api@ai5')
+    expect(out).toContain('dashboard@ai7')
+    expect(out).not.toContain('legacy')
+  })
+
+  it('reports pass() naming the reason when workspaces exist but none declare ai', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
+    )
+    writeFixture('packages/api/package.json', JSON.stringify({ name: 'api', dependencies: {} }))
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('ai-major-parity')
+    expect(out).toContain('nothing to compare')
+  })
+})
+
+describe('basalt doctor — ai-major-parity, aiMajorSkewReason exemption', () => {
+  /** Run doctor, capturing stdout/stderr so the emitted lines can be asserted on either way. */
+  function runDoctor(): { code: number; out: string } {
+    const originalLog = console.log
+    const originalError = console.error
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    console.error = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      return { code: doctor(tmpDir), out }
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  }
+
+  /** The skewed-workspace layout every case below starts from: root config + two skewed packages. */
+  function writeSkewedWorkspace(basalt?: Record<string, unknown>): void {
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'consumer-monorepo',
+        workspaces: ['packages/*'],
+        ...(basalt !== undefined ? { basalt } : {}),
+      }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+  }
+
+  it('still hard-fails a skew with no aiMajorSkewReason key at all (default unweakened)', () => {
+    setupPassingLayout()
+    writeSkewedWorkspace()
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).not.toContain('aiMajorSkewReason')
+  })
+
+  it('passes and echoes the skew + the reason when aiMajorSkewReason is a non-empty string', () => {
+    setupPassingLayout()
+    writeSkewedWorkspace({
+      aiMajorSkewReason:
+        'apps/api on ai@5, apps/dashboard on ai@7 — neutralized by a producer-side TransformStream',
+    })
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('api@ai5')
+    expect(out).toContain('dashboard@ai7')
+    expect(out).toContain(
+      'apps/api on ai@5, apps/dashboard on ai@7 — neutralized by a producer-side TransformStream',
+    )
+  })
+
+  it('still hard-fails when aiMajorSkewReason is present but not a non-empty string (bare true)', () => {
+    setupPassingLayout()
+    writeSkewedWorkspace({ aiMajorSkewReason: true })
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('aiMajorSkewReason')
+  })
+
+  it('still hard-fails when aiMajorSkewReason is an empty string', () => {
+    setupPassingLayout()
+    writeSkewedWorkspace({ aiMajorSkewReason: '' })
+    const { code, out } = runDoctor()
+    expect(code).toBe(1)
+    expect(out).toContain('ai package major version mismatch')
+  })
+
+  it('warns that a declared aiMajorSkewReason is stale when the majors already agree', () => {
+    setupPassingLayout()
+    writeFixture(
+      'package.json',
+      JSON.stringify({
+        name: 'consumer-monorepo',
+        workspaces: ['packages/*'],
+        basalt: { aiMajorSkewReason: 'no longer skewed, forgot to delete this' },
+      }),
+    )
+    writeFixture(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.18' } }),
+    )
+    writeFixture(
+      'packages/dashboard/package.json',
+      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
+    )
+    const { code, out } = runDoctor()
+    expect(code).toBe(0)
+    expect(out).toContain('aiMajorSkewReason')
+    expect(out).toContain('no longer needed')
+  })
+})

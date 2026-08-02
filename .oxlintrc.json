@@ -27,7 +27,10 @@
     "basalt/raw-scroll-container": "warn",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",
-    "basalt/token-layer-boundary": "error"
+    "basalt/token-layer-boundary": "error",
+    "basalt/agent-resume-guard": "error",
+    "basalt/agent-no-raw-usechat": "error",
+    "basalt/ai-sdk-major": "error"
   },
   "ignorePatterns": [
     "dist",

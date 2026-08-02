@@ -65,7 +65,8 @@ ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
 SCRATCH2=""
 SCRATCH3=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3"' EXIT
+SCRATCH4=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 bun add "$ABS_TGZ" \
@@ -109,6 +110,7 @@ const subpaths = [
   'basalt-ui/data/table',
   'basalt-ui/data/virtual',
   'basalt-ui/agent',
+  'basalt-ui/agent-chat',
   'basalt-ui/connectivity',
   'basalt-ui/content',
 ]
@@ -145,7 +147,7 @@ if (typeof routerTanstackMod.createMultiSearchParamStore !== 'function') {
 }
 console.log('smoke: basalt-ui/router-tanstack OK')
 
-console.log('scratch resolution OK (19 subpaths)')
+console.log('scratch resolution OK (20 subpaths)')
 JS
 node test.mjs
 
@@ -344,6 +346,34 @@ if (!html.includes('<svg')) throw new Error('chart kind did not render an <svg>'
 console.log('charts/tokens-only resolution + render OK')
 JS
 node free.mjs
+
+echo "==> agent-chat minimal-peer resolution (remend + motion required, everything else absent)"
+# `./agent-chat`'s optionalPeers list (surfaces.ts) cannot express that `remend` and `motion` are
+# HARD requirements — npm has no per-subpath optionality. The scratch-consumer step above installs
+# every optional peer at once, so it can never catch a peer that is secretly required; this step is
+# the minimal install that would have caught the F2-for-agent-chat defect (remend/motion silently
+# required, documented as optional). Models the shape of the charts/tokens-only step above rather
+# than inventing a new mechanism.
+SCRATCH4=$(mktemp -d)
+cd "$SCRATCH4"
+echo '{ "name": "scratch-agent-chat", "private": true, "type": "module" }' >package.json
+bun add "$ABS_TGZ" react react-dom \
+  @mantine/core @mantine/hooks \
+  "motion@12.42.0" "remend@1.3.0" >/dev/null 2>&1
+cat >agent-chat.mjs <<'JS'
+// react/react-dom + @mantine/core + @mantine/hooks + motion + remend is the FULL peer set
+// `basalt-ui/agent-chat` needs — deliberately NOT installed: ai, use-stick-to-bottom,
+// react-markdown, remark-gfm, shiki, @shikijs/langs, @shikijs/themes, beautiful-mermaid. Every one
+// of those is reached only via `lazy()`/dynamic `import()`, so the subpath must still resolve and
+// its top-level exports must still be functions without them.
+const agentChat = await import('basalt-ui/agent-chat')
+if (typeof agentChat.ThreadWorkspace !== 'function') throw new Error('agent-chat.ThreadWorkspace missing')
+if (typeof agentChat.ThreadTranscript !== 'function') throw new Error('agent-chat.ThreadTranscript missing')
+if (typeof agentChat.ThreadFeed !== 'function') throw new Error('agent-chat.ThreadFeed missing')
+if (typeof agentChat.ThreadDetailPanel !== 'function') throw new Error('agent-chat.ThreadDetailPanel missing')
+console.log('agent-chat minimal-peer resolution OK')
+JS
+node --import "$PKGDIR/scripts/css-noop-register.mjs" agent-chat.mjs
 
 echo "==> tokens-only install is light (no peers at all)"
 # The property this whole change exists to prove: a consumer who only wants the token layer
