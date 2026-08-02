@@ -42,7 +42,7 @@ import type {
   TextPart,
   ToolCallPart,
 } from '../agent'
-import { PartList } from '../agent'
+import { coalesceParts, PartList } from '../agent'
 import { Markdown } from '../content/markdown'
 import { alpha, VX } from '../tokens'
 
@@ -114,7 +114,7 @@ function ToolRenderer({ part }: { part: ToolCallPart; index: number }): JSX.Elem
         <Text component="pre" size="xs" style={CODE_BLOCK_STYLE}>
           {JSON.stringify(part.input, null, 2)}
         </Text>
-        {part.output !== undefined && (
+        {part.state === 'output-available' && (
           <Text component="pre" size="xs" style={CODE_BLOCK_STYLE}>
             {JSON.stringify(part.output, null, 2)}
           </Text>
@@ -158,23 +158,6 @@ export const threadPartRenderers: Partial<AgentPartRenderers> = {
 }
 
 // ── ThreadTranscript ──────────────────────────────────────────────────────────
-
-// Streamed answers arrive as many small text parts; merge consecutive same-type text/reasoning
-// parts so a streaming reply renders as one flowing block instead of a stack of fragments.
-function coalesceParts(parts: AgentPart[]): AgentPart[] {
-  const out: AgentPart[] = []
-  for (const part of parts) {
-    const last = out[out.length - 1]
-    if (part.type === 'text' && last?.type === 'text') {
-      out[out.length - 1] = { type: 'text', text: last.text + part.text }
-    } else if (part.type === 'reasoning' && last?.type === 'reasoning') {
-      out[out.length - 1] = { type: 'reasoning', text: last.text + part.text }
-    } else {
-      out.push(part)
-    }
-  }
-  return out
-}
 
 const ROLE_LABEL: Record<ChatMessage['role'], string> = {
   user: 'You',

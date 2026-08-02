@@ -2,10 +2,15 @@
  * aiSdkTransport — snapshot→delta diffing (text/reasoning/source/tool), signal-abort mid-stream,
  * and deterministic chat-id binding via `.forThread()`.
  *
- * Scope: the diffing behaviour AS IT EXISTS TODAY (B1) — no seven-state ToolCallPart, no
- * `output-error` carrying a dedicated `error` field (today it is smuggled through `output`, see
- * the `output-error` test below), no `durationMs` on terminal states. Those are 1.10.0 part-
- * identity work; this file pins the CURRENT shape so that work has a baseline to diff against.
+ * Scope: the diffing behaviour post-1.11.0's seven-state `ToolCallPart` — `diffToolPart` now tags
+ * every emitted tool delta with its real `state` and, for a failed call, a dedicated `errorText`
+ * field (never `output`, which the corrected type doesn't carry on `output-error`). What is still
+ * OUT of scope here (deliberately, a later brief's own "B2" rewrite of this transport): swallowing
+ * `input-streaming`, deriving the SDK's nested `approval` envelope, `durationMs`, and per-state
+ * modeling of `approval-requested`/`approval-responded`/`output-denied` — those states still pass
+ * through flat (see `diffToolPart`'s own comment). No `id` is minted by this transport yet either
+ * (`useAgentStream`/`useAgentThreadRuns` don't normalize drafts through `withPartIds` yet) — the
+ * yielded objects have no `id` key at runtime, which is why every `toEqual` below omits it.
  *
  * Driving `aiSdkTransport` through a scripted HTTP response — the only way to exercise its public
  * stream()/resume() diffing at all, since the diffing internals are not exported — requires a real
@@ -122,9 +127,16 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     // input-streaming is never emitted (deliberate v1 simplification) — only input-available then
     // output-available surface, one AgentPart each.
     expect(toolParts).toEqual([
-      { type: 'tool', toolName: 'search', toolCallId: 'call-1', input: { q: 'x' } },
       {
         type: 'tool',
+        state: 'input-available',
+        toolName: 'search',
+        toolCallId: 'call-1',
+        input: { q: 'x' },
+      },
+      {
+        type: 'tool',
+        state: 'output-available',
         toolName: 'search',
         toolCallId: 'call-1',
         input: { q: 'x' },
@@ -151,11 +163,10 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     expect(toolParts).toHaveLength(2) // input-available once, output-available once — not three
   })
 
-  // 1.10.0 will give ToolCallPart a dedicated error state/field (the seven-state union named in
-  // this file's scope note). TODAY, ai-sdk-transport.ts:187-188 smuggles a tool failure through
-  // the ordinary `output` field as `{ error: errorText }` — this test pins THAT current shape so
-  // the 1.10.0 change has a documented baseline to diff against.
-  test('output-error is currently smuggled through `output`, not a dedicated error field', async () => {
+  // ToolCallPart's `output-error` state carries a dedicated `errorText` field (the SDK's own field
+  // name — there is no field named `error` anywhere in the union). Stuffing the failure into
+  // `output` is gone: `output-error` doesn't even have an `output` field to smuggle it through.
+  test('output-error surfaces a dedicated `errorText` field, not `output`', async () => {
     const chunks: UIMessageChunk[] = [
       { type: 'tool-input-start', toolCallId: 'call-1', toolName: 'search' },
       { type: 'tool-input-available', toolCallId: 'call-1', toolName: 'search', input: { q: 'x' } },
@@ -171,10 +182,11 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     const failed = toolParts.at(-1)
     expect(failed).toEqual({
       type: 'tool',
+      state: 'output-error',
       toolName: 'search',
       toolCallId: 'call-1',
       input: { q: 'x' },
-      output: { error: 'boom' },
+      errorText: 'boom',
     })
   })
 })

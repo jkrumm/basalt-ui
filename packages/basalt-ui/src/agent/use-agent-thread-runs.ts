@@ -116,7 +116,7 @@ export type UseAgentThreadRunsReturn<TPart = AgentPart> = {
 
 /** Default toUserParts: wraps raw input in a single text part. */
 function defaultToUserParts(input: string): AgentPart[] {
-  return [{ type: 'text', text: input }]
+  return [{ id: crypto.randomUUID(), type: 'text', text: input }]
 }
 
 /**

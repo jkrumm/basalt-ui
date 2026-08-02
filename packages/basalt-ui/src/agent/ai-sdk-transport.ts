@@ -47,7 +47,7 @@
  *   resolveOutcome: heuristicOutcome,
  * })
  */
-import type { AgentPart, SourcePart, ToolCallPart } from './parts'
+import type { AgentPart, AgentPartDraft } from './parts'
 import type { AgentTransport } from './transport'
 
 // ── ai (optional peer) — TYPE-ONLY imports, erased at runtime ────────────────
@@ -125,7 +125,7 @@ function createAiSdkResolver(options: AiSdkTransportOptions): () => Promise<Reso
  * source-document, file, reasoning-file, data-*, step-start, custom, and dynamic-tool parts have
  * no AgentPart equivalent yet — deliberate v1 gap, skipped rather than inventing new variants.
  */
-function diffPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPart[] {
+function diffPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPartDraft[] {
   switch (currPart.type) {
     case 'text': {
       const prevText = prevPart?.type === 'text' ? prevPart.text : ''
@@ -140,7 +140,7 @@ function diffPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPart[] {
     case 'source-url': {
       // Emit once, the first time this part appears at this index.
       if (prevPart !== undefined) return []
-      const source: SourcePart = { type: 'source', url: currPart.url }
+      const source: AgentPartDraft = { type: 'source', url: currPart.url }
       return [currPart.title !== undefined ? { ...source, title: currPart.title } : source]
     }
     default:
@@ -162,7 +162,7 @@ type ToolLike = {
   readonly errorText?: string
 }
 
-function diffToolPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPart[] {
+function diffToolPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPartDraft[] {
   const curr = currPart as unknown as ToolLike
   // Deliberate v1 simplification: never emit on 'input-streaming' (partial/DeepPartial input) —
   // wait for at least 'input-available' so the consumer isn't flooded with incomplete fragments.
@@ -176,22 +176,30 @@ function diffToolPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPart
   if (prev?.state === curr.state) return []
 
   const toolName = curr.type.slice('tool-'.length)
-  const base: ToolCallPart = {
-    type: 'tool',
-    toolName,
-    toolCallId: curr.toolCallId,
-    input: curr.input,
+  const common = { type: 'tool' as const, toolName, toolCallId: curr.toolCallId }
+
+  if (curr.state === 'output-available') {
+    return [{ ...common, state: 'output-available', input: curr.input, output: curr.output }]
   }
-  if (curr.state === 'output-available') return [{ ...base, output: curr.output }]
-  // output-error: still surface it as a tool part rather than silently dropping the failure — the
-  // error text becomes the output payload since ToolCallPart has no dedicated error field.
-  if (curr.state === 'output-error') return [{ ...base, output: { error: curr.errorText } }]
-  return [base]
+  if (curr.state === 'output-error') {
+    // errorText is the SDK's (and our) real field name — parts.ts's ToolCallPart has no field
+    // named `error`; stuffing the failure into `output` (the pre-1.11.0 behavior) is gone.
+    return [
+      { ...common, state: 'output-error', input: curr.input, errorText: curr.errorText ?? '' },
+    ]
+  }
+  // Any other state (input-available, approval-requested, approval-responded, output-denied) is
+  // passed through flat, same as before this brief's change — full per-state modeling (the SDK's
+  // nested `approval` envelope, output-denied's `reason`) is the transport's own B2 rewrite,
+  // deliberately out of scope here. Mechanical type-only adaptation: ToolLike doesn't carry those
+  // fields, so this branch can't honestly construct a fully-typed member — cast instead of
+  // inventing data.
+  return [{ ...common, state: curr.state, input: curr.input } as unknown as AgentPartDraft]
 }
 
 /** Diffs every index of one UIMessage snapshot against the previous snapshot. */
-function diffMessage(prev: UIMessage | undefined, curr: UIMessage): AgentPart[] {
-  const deltas: AgentPart[] = []
+function diffMessage(prev: UIMessage | undefined, curr: UIMessage): AgentPartDraft[] {
+  const deltas: AgentPartDraft[] = []
   curr.parts.forEach((part, i) => {
     deltas.push(...diffPart(prev?.parts[i], part))
   })
