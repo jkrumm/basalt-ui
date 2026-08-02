@@ -35,6 +35,7 @@ import type {
   ToolCallPart,
 } from 'basalt-ui/agent'
 import { Markdown } from 'basalt-ui/content'
+import { VX } from 'basalt-ui/tokens'
 import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 import { IconSparkle, IconUser } from './icons'
@@ -107,18 +108,18 @@ export function ToolBlock({ part }: { part: ToolCallPart; index: number }) {
       </Group>
       <Collapse expanded={open}>
         <Stack gap={4} mt={6}>
-          <Text size="10px" tt="uppercase" fw={700} c="dimmed">
+          <Text fz={VX.text.micro} tt="uppercase" fw={700} c="dimmed">
             Input
           </Text>
-          <Code block fz="11px">
+          <Code block fz={VX.text.micro}>
             {JSON.stringify(part.input, null, 2)}
           </Code>
           {part.output !== undefined && (
             <>
-              <Text size="10px" tt="uppercase" fw={700} c="dimmed">
+              <Text fz={VX.text.micro} tt="uppercase" fw={700} c="dimmed">
                 Output
               </Text>
-              <Code block fz="11px">
+              <Code block fz={VX.text.micro}>
                 {JSON.stringify(part.output, null, 2)}
               </Code>
             </>
@@ -135,7 +136,7 @@ export function ToolBlock({ part }: { part: ToolCallPart; index: number }) {
 export function SourcesBlock({ parts }: { parts: SourcePart[] }) {
   return (
     <Group gap={6} wrap="wrap">
-      <Text size="10px" tt="uppercase" fw={700} c="dimmed">
+      <Text fz={VX.text.micro} tt="uppercase" fw={700} c="dimmed">
         Sources
       </Text>
       {parts.map((source, i) => (

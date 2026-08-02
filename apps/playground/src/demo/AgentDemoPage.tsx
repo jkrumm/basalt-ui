@@ -37,6 +37,7 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { EmptyState } from 'basalt-ui'
+import { VX } from 'basalt-ui/tokens'
 import {
   BasaltStickToBottom,
   createChatHistoryStore,
@@ -429,7 +430,7 @@ export function AgentDemoPage() {
             </Text>
 
             <Box>
-              <Text size="10px" tt="uppercase" fw={700} c="dimmed" mb={4}>
+              <Text fz={VX.text.micro} tt="uppercase" fw={700} c="dimmed" mb={4}>
                 Live parts (raw)
               </Text>
               {/* theme-allow — a raw debug Code block, not app chrome. */}
