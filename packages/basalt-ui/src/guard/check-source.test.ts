@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 19 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 20 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -151,6 +151,68 @@ describe('off-identity-accent', () => {
   it('does NOT flag a theme-allow line', () => {
     const f = find(`<Badge color="teal" /> // theme-allow: design exception`)
     expect(kinds(f)).not.toContain('off-identity-accent')
+  })
+})
+
+// ── 4b. mantine-shade-index ──────────────────────────────────────────────────
+
+describe('mantine-shade-index', () => {
+  it('flags a shade-pinned text color (c="yellow.7")', () => {
+    const f = find(`<Text c="yellow.7">stale</Text>`)
+    expect(kinds(f)).toContain('mantine-shade-index')
+  })
+
+  it('flags bg="blue.4" and color="red.6"', () => {
+    expect(kinds(find(`<Box bg="blue.4" />`))).toContain('mantine-shade-index')
+    expect(kinds(find(`<ThemeIcon color="red.6" />`))).toContain('mantine-shade-index')
+  })
+
+  it('flags the var() form for a non-surface hue', () => {
+    const f = find(`const a = { color: 'var(--mantine-color-yellow-7)' }`)
+    expect(kinds(f)).toContain('mantine-shade-index')
+  })
+
+  it('flags the var() form in a .css file too — unlike the prop-only kinds', () => {
+    const f = find(`.a { color: var(--mantine-color-red-6); }`, 'src/app.css')
+    expect(kinds(f)).toContain('mantine-shade-index')
+  })
+
+  // The two kinds partition the space: gray/dark var() steps are surface color and belong to
+  // off-system-surface-var, so a single violation must never report under both.
+  it('leaves gray/dark var() steps to off-system-surface-var', () => {
+    const f = find(`const a = { background: 'var(--mantine-color-gray-3)' }`)
+    expect(kinds(f)).toContain('off-system-surface-var')
+    expect(kinds(f)).not.toContain('mantine-shade-index')
+  })
+
+  it('does NOT flag a bare status hue — it resolves per scheme, which is the point', () => {
+    expect(kinds(find(`<Text c="red">down</Text>`))).not.toContain('mantine-shade-index')
+    expect(kinds(find(`<ThemeIcon color="green" />`))).not.toContain('mantine-shade-index')
+  })
+
+  it('does NOT flag c="dimmed" or a token ref', () => {
+    expect(kinds(find(`<Text c="dimmed">age</Text>`))).not.toContain('mantine-shade-index')
+    expect(kinds(find(`<Text c={VX.status.warn}>age</Text>`))).not.toContain('mantine-shade-index')
+  })
+
+  it('does NOT flag a theme-allow line', () => {
+    const f = find(`<Text c="yellow.7" /> // theme-allow: design exception`)
+    expect(kinds(f)).not.toContain('mantine-shade-index')
+  })
+
+  it('is disabled by the mantineShadeIndex knob', () => {
+    const f = checkSource(`<Text c="yellow.7" />`, PATH, {
+      ...DEFAULT_GUARD_CONFIG,
+      mantineShadeIndex: false,
+    })
+    expect(kinds(f)).not.toContain('mantine-shade-index')
+  })
+
+  // The grace-minor doctrine (package CLAUDE.md): a kind that rejects previously-passing code
+  // lands as `warn` for one minor. Deleting its GRACE_PERIOD_KINDS entry in 1.7.0 flips this.
+  it('lands as a warning, not an error, for its grace minor', () => {
+    const f = find(`<Text c="yellow.7" />`)
+    expect(f.find((x) => x.kind === 'mantine-shade-index')?.severity).toBe('warn')
   })
 })
 

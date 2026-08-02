@@ -146,12 +146,23 @@ section divider, not card depth) are both fine.
   consumer code must compose Mantine layout/surface primitives — `Box`, `Flex`, `Grid`,
   `SimpleGrid`, `Stack`, `Group`, `Paper`, `Card` — instead of raw `<div>`/`<span>` with inline
   `style`. Raw HTML with inline layout/surface styling defeats the token system.
-- **Mechanical enforcement.** `basalt-ui check-theme` adds five surface guard kinds (each a config knob,
+- **Mechanical enforcement.** `basalt-ui check-theme` adds six surface guard kinds (each a config knob,
   default ON; `theme-allow` line-comment escape): `off-system-surface-var` (raw ramp-step vars),
-  `card-with-border` (`withBorder` on a `Card`/`Paper`), `raw-html-layout` (raw `<div>`/`<span>` with
-  inline layout/surface styling), `inline-spacing` (inline spacing literals), `inline-display`
-  (inline `display` literals). The Mantine-free `src/charts/**` is the only place raw `<div>` is
-  allowed — and it must still use `VX.*` tokens.
+  `card-with-border` (`withBorder` on a `Card`/`Paper`), `mantine-shade-index` (a shade-pinned color —
+  see below), `raw-html-layout` (raw `<div>`/`<span>` with inline layout/surface styling),
+  `inline-spacing` (inline spacing literals), `inline-display` (inline `display` literals). The
+  Mantine-free `src/charts/**` is the only place raw `<div>` is allowed — and it must still use `VX.*`
+  tokens. `oxlint` adds `basalt/card-inset`, which catches the other half of the same card drift: an
+  explicit `p`/`padding`/`radius` on a `Card`/`Paper` instead of the xs/sm inset and the theme radius.
+
+**Never pin a shade index on a color.** `c="yellow.7"`, `bg="blue.4"`, `var(--mantine-color-red-6)` —
+each names one fixed swatch that is identical in light and dark, so a shade legible on the dark page
+is the one that fails contrast on the light one. Two correct forms: `VX.status.*` /
+`--vx-status-warn|bad|good` for a verdict color (emitted per scheme, contrast guaranteed by the
+derivation), or the bare hue name (`c="red"`, `color="green"`) to let the theme pick the step. The
+`mantine-shade-index` guard kind catches the pinned form; `gray`/`dark` steps in `var()` belong to
+`off-system-surface-var` instead. Note the distinction from `off-identity-accent`, which polices
+_which hue_ you reach for and permits the bare status names on purpose — this kind polices the index.
 
 ## Scroll regions
 

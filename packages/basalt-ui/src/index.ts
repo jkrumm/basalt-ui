@@ -76,6 +76,7 @@ export {
   type DeltaBadgeProps,
   StatCard,
   type StatCardProps,
+  type StatCardTone,
   EmptyState,
   type EmptyStateProps,
   SettingsSection,

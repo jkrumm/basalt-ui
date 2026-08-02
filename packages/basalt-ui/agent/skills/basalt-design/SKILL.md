@@ -128,10 +128,16 @@ structure, the accent only points.
   `--vx-surface-*` tokens** — one depth token per tier, one card bg, one radius across every
   component (AppShell, Table, Input, Divider, Tabs, Popover, Accordion, cards). Consumer code must
   **use Mantine layout primitives** (`Box`/`Flex`/`Grid`/`SimpleGrid`/`Stack`/`Group`/`Paper`/`Card`),
-  not raw `<div>`/`<span>` with inline `style`. `check-theme` adds four guard kinds to enforce this
+  not raw `<div>`/`<span>` with inline `style`. `check-theme` adds five guard kinds to enforce this
   (default ON, `theme-allow` escape): `off-system-surface-var` (raw ramp-step vars),
-  `raw-html-layout`, `inline-spacing`, `inline-display`. Only the Mantine-free `src/charts/**` may
-  use raw `<div>` (still with `VX.*` tokens).
+  `mantine-shade-index` (a shade-pinned color — `c="yellow.7"` is one fixed swatch in both schemes;
+  use `VX.status.*` or the bare hue name), `raw-html-layout`, `inline-spacing`, `inline-display`.
+  Only the Mantine-free `src/charts/**` may use raw `<div>` (still with `VX.*` tokens).
+- **Reach for the shipped composite before wrapping one.** A `StatCard` past a threshold takes
+  `tone="warn" | "bad"` (an accent rail down its leading edge); a chart goes in `ChartCard`. Wrapping
+  a shipped card in a hand-positioned `Box` to add a mark it already has is how an app grows a second
+  card idiom — one the guard cannot recognize as a card, and therefore cannot police. If a composite
+  genuinely can't express what you need, that is a gap to report, not to route around.
 
 **Anti-slop checklist:** no pure `#000`/`#fff`; one accent locked page-wide; neutral does the
 structure, accent only points; don't flood blue; hierarchy via scale/weight/contrast/space, not

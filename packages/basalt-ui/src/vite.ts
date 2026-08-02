@@ -13,8 +13,13 @@
  *
  * NEVER reference `import.meta.env` here — this file is invoked inside the consumer's vite config
  * at config-evaluation time (plain Node), where only `process.env` exists.
+ *
+ * It also carries the enforcement notice (`warnIfUnenforced`): this is the one basalt seam that runs
+ * on every dev start and every build of a consumer app, so it is the only place that can tell an app
+ * it installed the components and skipped `basalt-ui init`.
  */
-import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { searchForWorkspaceRoot } from 'vite'
 import type { HtmlTagDescriptor, Plugin, PluginOption, UserConfig } from 'vite'
 import { SURFACE } from './tokens/palette'
@@ -46,6 +51,55 @@ export type BasaltViteOptions = {
   basaltSrc?: string
   /** App version surfaced via the `__APP_VERSION__` define. Defaults to `0.0.0`. */
   version?: string
+  /**
+   * Print a one-time notice when `basalt-ui init` has never been run in this project (no
+   * `.basalt/manifest.json` found at or above the cwd) — see `warnIfUnenforced`. Default `true`.
+   * Set `false` to adopt the components without the toolchain and stop being told about it.
+   */
+  enforcementNotice?: boolean
+}
+
+/** How many directories up from `cwd` to look for `.basalt/manifest.json`. Three covers the common
+ * shapes: config at the app root, an app in `web/` or `apps/<name>/` under a repo root. */
+const UNENFORCED_SEARCH_DEPTH = 3
+
+/** Set once the notice has been printed, so a watch-mode restart doesn't reprint it every reload. */
+let unenforcedNoticePrinted = false
+
+/**
+ * Print one notice when basalt-ui is installed as a component library and nothing else.
+ *
+ * `basalt-ui init` is what places the oxlint preset, the theme-guard wiring, the lefthook stub and
+ * the agent rules. Skipping it leaves a consumer with the components and NONE of the enforcement —
+ * and, critically, no signal that this is the case. The failure is silent and cumulative: every
+ * hand-rolled `<Card withBorder radius="md" padding="lg">` renders perfectly, so the app drifts a
+ * card idiom at a time until someone looks at a screenshot and asks why the design system did
+ * nothing. The first real consumer reached seven such cards across six files that way.
+ *
+ * This is the only seam basalt owns that runs on every dev start and every build, which makes it
+ * the only place that can say so at the time it is still cheap to fix. It stays a notice, never an
+ * error: declining to adopt the toolchain is a legitimate choice, and a build that fails because a
+ * lint preset is absent would be a worse bug than the one this prevents.
+ */
+function warnIfUnenforced(cwd: string): void {
+  if (unenforcedNoticePrinted) return
+
+  let dir = cwd
+  for (let i = 0; i <= UNENFORCED_SEARCH_DEPTH; i++) {
+    if (existsSync(resolve(dir, '.basalt/manifest.json'))) return
+    const parent = dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+
+  unenforcedNoticePrinted = true
+  // oxlint-disable-next-line no-console -- a build-time notice has no other channel
+  console.warn(
+    '\n[basalt-ui] Installed, but `basalt-ui init` has never run here — no oxlint preset, no theme\n' +
+      '            guard, no agent rules. You have the components and none of the enforcement.\n' +
+      '            Fix: `bunx basalt-ui init`, then add `oxlint . && basalt-ui check-theme` as your\n' +
+      '            lint script. Silence: pass `enforcementNotice: false` to basaltViteConfig().\n',
+  )
 }
 
 export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
@@ -54,6 +108,13 @@ export function basaltViteConfig(opts: BasaltViteOptions): UserConfig {
   // basaltSrc opt wins; fall back to the BASALT_LOCAL env so a consumer can flip local-source dev
   // on without editing its vite config. process.env (not import.meta.env) — this runs in Node.
   const basaltSrc = opts.basaltSrc ?? process.env['BASALT_LOCAL']
+
+  // Skipped under basaltSrc/BASALT_LOCAL: that path means basalt-ui itself is being developed from
+  // a sibling checkout (the playground, or a consumer debugging against local source), where the
+  // enforcement config lives in basalt's own repo and a manifest is not expected.
+  if (opts.enforcementNotice !== false && basaltSrc === undefined) {
+    warnIfUnenforced(process.cwd())
+  }
 
   const config: UserConfig = {
     define: {
