@@ -209,7 +209,8 @@ describe('mantine-shade-index', () => {
   })
 
   // The grace-minor doctrine (package CLAUDE.md): a kind that rejects previously-passing code
-  // lands as `warn` for one minor. Deleting its GRACE_PERIOD_KINDS entry in 1.7.0 flips this.
+  // lands as `warn` for one minor. Deleting its GRACE_PERIOD_KINDS entry flips this — scheduled
+  // for 1.9.0, deferred one minor because 1.8.0 shipped the same day as 1.7.0 (see the entry).
   it('lands as a warning, not an error, for its grace minor', () => {
     const f = find(`<Text c="yellow.7" />`)
     expect(f.find((x) => x.kind === 'mantine-shade-index')?.severity).toBe('warn')
