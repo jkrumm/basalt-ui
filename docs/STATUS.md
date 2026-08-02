@@ -5,8 +5,8 @@
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
 framework-free token work below.
-**Version:** `1.5.0` on `master`, **published** to npm (Trusted Publisher OIDC). The adoption-gap
-work below is the 1.6.0 candidate.
+**Version:** `1.6.0` on `master`, **published** to npm (Trusted Publisher OIDC). The adoption-gap
+work below is the 1.7.0 candidate.
 
 ## TL;DR
 
@@ -16,7 +16,7 @@ of 1.2.0. Current work is framework-free token consumption — making the `--vx-
 static site with no React, no Mantine and no bundler. The June-era roadmap/handover docs still phrase
 built work as "remaining"; that language is historical, see the banner on each.
 
-## Adoption gap — closed in 1.6.0 (2026-08-02)
+## Adoption gap — closed in 1.7.0 (2026-08-02)
 
 Prompted by the first outside-of-argo consumer (LineWatch). Its dashboard had grown seven
 hand-rolled `<Card withBorder radius="md" padding="lg">` across six files, next to `StatCard`s —
@@ -35,8 +35,8 @@ there for the first time reported all of it in one pass. Three separate causes, 
    ever tested for a NUMERIC literal → new `basalt/raw-size-literal` oxlint rule (CSS-length strings
    on `size`/`fz`/`fontSize`; `warn` in the shipped preset for its grace minor). `c="yellow.7"`
    passed because no kind covered a shade-pinned Mantine color — `off-identity-accent` polices which
-   hue, not which index → new `mantine-shade-index` guard kind (`warn` through 1.6.x, promotes in
-   1.7.0).
+   hue, not which index → new `mantine-shade-index` guard kind (`warn` through 1.7.x, promotes in
+   1.8.0).
 3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
    `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
    that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a
