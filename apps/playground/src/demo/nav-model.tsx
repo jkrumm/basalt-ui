@@ -180,6 +180,20 @@ export const NAV_MODEL: SidebarSection[] = [
         icon: <IconActivity />,
         href: '/threads',
       },
+      {
+        key: 'agent-chat-subpath',
+        label: 'Agent chat (subpath)',
+        mobile: true,
+        icon: <IconActivity />,
+        href: '/agent-chat-subpath',
+      },
+      {
+        key: 'agent-wedge',
+        label: 'Agent wedge recovery',
+        mobile: true,
+        icon: <IconActivity />,
+        href: '/agent-wedge',
+      },
     ],
   },
   {
