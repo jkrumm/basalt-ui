@@ -282,10 +282,13 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
  *
  * `mantine-shade-index` landed in 1.7.0 and is the sole entry — it rejects `c="yellow.7"`, which
- * previously passed, and the one real consumer has several. Its promotion is **deferred to 1.9.0**:
- * 1.8.0 shipped the same day as 1.7.0, so promoting on the next minor number would have given the
- * consumer roughly no runway at all — which is the exact failure the grace minor exists to prevent,
- * and the runway is measured in consumer upgrades, not in version numbers. Promote it by deleting
+ * previously passed, and the one real consumer has several. Its promotion is **deferred to 1.10.0**,
+ * for the second time and for the same reason both times: the runway is measured in consumer
+ * upgrades, not in version numbers. 1.8.0 shipped the same day as 1.7.0, so promoting there would
+ * have given no runway at all. 1.9.0 then carried the chart-layer batch the same consumer asked
+ * for — bundling a build-breaking promotion into the minor they upgrade for the fixes turns a
+ * routine bump into an unplanned refactor, which is precisely what the grace minor exists to
+ * prevent. 1.10.0 is the first minor they can take the promotion on its own. Promote it by deleting
  * the entry (its own commit).
  *
  * @example
@@ -294,7 +297,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * }
  */
 const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
-  'mantine-shade-index': 'introduced 1.7.0 — promote to error in 1.9.0',
+  'mantine-shade-index': 'introduced 1.7.0 — promote to error in 1.10.0',
 }
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
