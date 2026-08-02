@@ -15,7 +15,10 @@
  * the guard has no way to recognize as one. The rail is the largest signal available without
  * touching the value's own type: full card height, overlaying the card's edge rather than adding to
  * it, so layout is unchanged. `undefined` renders nothing at all — absence of a reading is neither a
- * good one nor a bad one, and must never be tinted.
+ * good one nor a bad one, and must never be tinted. `'good'` is a deliberate positive verdict, never
+ * the meaning of omission: it exists for the threshold where the calm number IS the finding (zero
+ * downtime over the window), and a card that has measured nothing must not be able to reach green by
+ * leaving the prop off.
  *
  * @example
  * import { StatCard } from 'basalt-ui'
@@ -31,6 +34,10 @@
  * @example
  * // Past a threshold — an accent rail down the leading edge, value untouched.
  * <StatCard label="Downtime" value="29 min" tone="bad" />
+ *
+ * @example
+ * // The earned zero — a measured value worth asserting, not a card that merely has no reading.
+ * <StatCard label="Downtime · last 24h" value="0 min" tone="good" />
  */
 import { Box, Card, Group, VisuallyHidden } from '@mantine/core'
 import type { ReactNode } from 'react'
@@ -38,13 +45,14 @@ import { DeltaBadge } from './delta-badge'
 import { VX } from '../tokens'
 
 /** A threshold verdict on the card's value. `undefined` is never tinted — see the module docblock. */
-export type StatCardTone = 'warn' | 'bad'
+export type StatCardTone = 'good' | 'warn' | 'bad'
 
 /** The rail's width, in px. Wide enough to read as a deliberate mark at a glance, narrow enough
  * that it cannot be mistaken for the card's own edge. */
 const TONE_RAIL_WIDTH = 3
 
 const TONE_LABEL: Record<StatCardTone, string> = {
+  good: 'Within the good threshold',
   warn: 'Past the warning threshold',
   bad: 'Past the severe threshold',
 }
@@ -64,7 +72,9 @@ export type StatCardProps = {
   /** Optional header-right slot (e.g. a ghost "..." menu trigger) — consumer-owned. */
   menu?: ReactNode
   /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
-   * assistive tech. Omit it for a reading that is fine, and for one that is absent. */
+   * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
+   * is absent, and stays untinted so a card with nothing measured can never render green. Pass
+   * `'good'` only to assert a measured value that has earned the verdict. */
   tone?: StatCardTone
 }
 
@@ -111,7 +121,11 @@ export function StatCard({
               insetBlock: 0,
               insetInlineStart: 0,
               width: TONE_RAIL_WIDTH,
-              background: tone === 'bad' ? VX.status.bad : VX.status.warn,
+              // `StatCardTone`'s members are `VX.status` keys by construction, so the rail reads the
+              // per-scheme `--vx-status-*` solid directly — never a hex, so it re-resolves in both
+              // schemes and under a consumer's `derive` retune. Contrast against
+              // `--vx-surface-panel` is measured in `theme/contrast.test.ts`.
+              background: VX.status[tone],
             }}
           />
         </>

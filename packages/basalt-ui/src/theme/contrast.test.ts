@@ -24,7 +24,7 @@
 import { DEFAULT_THEME, getPrimaryShade, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { ACCENT, FILL, SURFACE } from '../tokens/palette'
+import { ACCENT, FILL, STATUS, SURFACE } from '../tokens/palette'
 import { baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
@@ -322,6 +322,23 @@ describe('doctrine inversion #1 reaches every default-variant CONTROL, not just 
     expect(border).toContain('solid var(--mantine-color-default-border)')
     expect(border).not.toContain('surface-border')
   })
+})
+
+describe("the StatCard tone rail reads against the panel it's drawn on", () => {
+  // The rail (`dashboard/stat-card.tsx`) is a 3px non-text mark carrying a threshold verdict, so it
+  // takes WCAG's 3:1 non-text floor against `--vx-surface-panel` — the card background it overlays,
+  // not the page — in BOTH schemes. Worth measuring rather than eyeballing for the same reason the
+  // fill band is: the status solids are DERIVED, so retuning the generator could sink one of them
+  // into the panel it sits on without anything else failing.
+  const TONES = ['good', 'warn', 'bad'] as const
+
+  for (const scheme of SCHEMES) {
+    for (const tone of TONES) {
+      test(`${tone} / ${scheme}`, () => {
+        expect(contrastRatio(STATUS[tone][scheme], SURFACE.panel[scheme])).toBeGreaterThanOrEqual(3)
+      })
+    }
+  }
 })
 
 describe('the shipped palette is the generator output at DEFAULT_DERIVE_CONFIG', () => {
