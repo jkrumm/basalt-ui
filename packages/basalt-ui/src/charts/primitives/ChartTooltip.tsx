@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode, RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { VX } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'
 
@@ -24,7 +25,10 @@ export function useTooltipStyles(): CSSProperties {
   return TOOLTIP_STYLES
 }
 
-/** Outer tooltip shell. Renders nothing when tip is null. */
+/**
+ * Outer tooltip shell. Renders nothing when tip is null. Renders to `document.body` via a
+ * portal, so it may be authored anywhere in the tree, including inside `<svg>`.
+ */
 export function ChartTooltip({
   tip,
   tooltipRef,
@@ -37,10 +41,18 @@ export function ChartTooltip({
   children: ReactNode
 }) {
   if (!tip) return null
-  return (
+  // SSR guard: react-dom/server (renderToStaticMarkup, used by this repo's tests — see
+  // dashboard/stat-card.test.tsx) has no jsdom and does not support portals.
+  if (typeof document === 'undefined') return null
+  // Portal to document.body for two reasons: (1) authoring this inside an <svg> tree would
+  // otherwise create the div in the SVG namespace, where it mounts, accepts every prop, and
+  // is never painted; (2) TOOLTIP_STYLES' position: 'fixed' breaks inside any transformed
+  // ancestor unless the node is portalled out to the body.
+  return createPortal(
     <div ref={tooltipRef} style={{ ...styles, left: tip.x, top: tip.y }}>
       {children}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
