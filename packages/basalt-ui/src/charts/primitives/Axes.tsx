@@ -73,17 +73,23 @@ export function AxisBottomDate({
   scale,
   top,
   tickValues,
+  tickFormat = fmtAxisDate,
 }: {
   scale: AxisScale
   top: number
   tickValues: string[]
+  /**
+   * Defaults to `fmtAxisDate` (DD.MM). Override for a sub-day window, where DD.MM collapses every
+   * tick to the same label.
+   */
+  tickFormat?: TickFormatter<string>
 }) {
   return (
     <AxisBottom
       top={top}
       scale={scale}
       tickValues={tickValues}
-      tickFormat={fmtAxisDate}
+      tickFormat={tickFormat}
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
