@@ -1,3 +1,11 @@
+# [1.10.0](https://github.com/jkrumm/basalt-ui/compare/v1.9.0...v1.10.0) (2026-08-02)
+
+
+### Features
+
+* open ./agent-chat as its own door, and put the agent layer under test ([2005aa6](https://github.com/jkrumm/basalt-ui/commit/2005aa6db90d02e9310188873027ecf8b93027ff))
+* prove the agent-chat subpath and the streaming wedge in the playground ([caff9c4](https://github.com/jkrumm/basalt-ui/commit/caff9c4f4a3d92259a1e8a88348474c90dc4c18a))
+
 # [1.9.0](https://github.com/jkrumm/basalt-ui/compare/v1.8.0...v1.9.0) (2026-08-02)
 
 
