@@ -38,6 +38,18 @@
  * @example
  * // The earned zero — a measured value worth asserting, not a card that merely has no reading.
  * <StatCard label="Downtime · last 24h" value="0 min" tone="good" />
+ *
+ * @example
+ * // The honest gate. A zero can be synthesized as well as measured — a downtime figure derived
+ * // from outage rows reads 0 both when probes ran clean AND when no probe cycle was ingested at
+ * // all, because a dead collector opens no outage row either. `tone` is a positive assertion
+ * // about a reading, so the gate belongs on whether a reading exists, not on whether the number
+ * // happens to be defined — those are separate facts. Gate on measured coverage instead:
+ * <StatCard
+ *   label="Downtime · last 24h"
+ *   value={`${downtimeMinutes} min`}
+ *   tone={hasCoverage ? (downtimeMinutes === 0 ? 'good' : 'bad') : undefined}
+ * />
  */
 import { Box, Card, Group, VisuallyHidden } from '@mantine/core'
 import type { ReactNode } from 'react'
