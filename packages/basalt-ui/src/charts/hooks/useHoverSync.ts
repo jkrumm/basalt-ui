@@ -24,12 +24,29 @@ export function useHoverSync<T>({
   getKey,
   xScale,
   marginLeft,
+  resolveKey,
 }: {
   data: T[]
   chartId: string
   getKey: (d: T) => string
   xScale: XScale
   marginLeft: number
+  /**
+   * Overrides how a SIBLING's broadcast key resolves to one of THIS chart's own points. Only
+   * affects reading another chart's hover — this chart's own hover (via `getKey`/`xScale`) is
+   * untouched.
+   *
+   * Cross-chart sync is exact string match by default (`pointByKey.get(ctx.key)`), so two charts
+   * share a cursor only if they emit identical key strings. A chart that downsamples/folds its
+   * domain to fit a narrow viewport (e.g. ~288 buckets folded into ~97 columns at 390px) no longer
+   * owns most of the keys its unfolded siblings broadcast — the shared crosshair then appears on
+   * roughly one hover in three, with no rule a reader can infer, which is worse than no shared
+   * cursor at all. Pass `resolveKey` to map a foreign key onto whichever of this chart's own points
+   * swallowed it (e.g. the folded bucket the key falls into).
+   *
+   * Omit it and behaviour is byte-identical to today.
+   */
+  resolveKey?: (key: string) => T | null
 }) {
   const ctx = useContext(HoverContext)
   // Latest context in a ref so the mouse callbacks stay referentially stable: the provider's value
@@ -53,13 +70,26 @@ export function useHoverSync<T>({
 
   const { tip, show, hide, tooltipRef, lastDateRef } = useChartTooltip<T>()
 
+  // Latest accessors in refs, same reasoning as `ctxRef` above: the natural call style is an
+  // inline arrow for `getKey`/`xScale`, which is fresh on every render, and this file already
+  // pays for that hazard once (see the comment above `ctxRef`) without applying the fix here — a
+  // several-hundred-entry `pointByKey` Map was rebuilding on every render of a page that
+  // re-renders on a heartbeat. Trade-off: because `getKey` is read through a ref, changing key
+  // SEMANTICS without changing `data` will NOT rebuild the map. That's the intended trade — a
+  // `getKey` that changes meaning for the same data is pathological; a `getKey` that changes
+  // identity every render is the normal case.
+  const getKeyRef = useRef(getKey)
+  getKeyRef.current = getKey
+  const xScaleRef = useRef(xScale)
+  xScaleRef.current = xScale
+
   // O(1) lookup of a point by its key. Under a provider every sibling resolves the broadcast
   // key each frame; an O(n) `data.find` per sibling per move is N×O(M). This makes it N×O(1).
   const pointByKey = useMemo(() => {
     const m = new Map<string, T>()
-    for (const d of data) m.set(getKey(d), d)
+    for (const d of data) m.set(getKeyRef.current(d), d)
     return m
-  }, [data, getKey])
+  }, [data])
 
   const handleMouse = useCallback(
     (event: React.MouseEvent<SVGRectElement>) => {
@@ -69,7 +99,7 @@ export function useHoverSync<T>({
       let closest: T = data[0] as T
       let minDist = Infinity
       for (const d of data) {
-        const sx = xScale(getKey(d)) ?? 0
+        const sx = xScaleRef.current(getKeyRef.current(d)) ?? 0
         const dist = Math.abs(sx - px)
         if (dist < minDist) {
           minDist = dist
@@ -77,13 +107,13 @@ export function useHoverSync<T>({
         }
       }
       show(closest, event)
-      const key = getKey(closest)
+      const key = getKeyRef.current(closest)
       if (lastDateRef.current !== key) {
         lastDateRef.current = key
         ctxRef.current.setHover(key, chartId)
       }
     },
-    [data, xScale, getKey, chartId, marginLeft, show, lastDateRef],
+    [data, chartId, marginLeft, show, lastDateRef],
   )
 
   const handleLeave = useCallback(() => {
@@ -97,8 +127,14 @@ export function useHoverSync<T>({
   // The point the crosshair + synced dots track. Inside a <ChartHoverSync> this follows the
   // broadcast key (so every sibling paints a ghost crosshair at the same x). WITHOUT a provider the
   // chart is standalone, so it falls back to THIS chart's own hovered point (`tip.data`) — otherwise
-  // a chart outside a provider would never draw a crosshair/dots at all.
-  const syncedPoint = ctx.key ? (pointByKey.get(ctx.key) ?? null) : (tip?.data ?? null)
+  // a chart outside a provider would never draw a crosshair/dots at all. When `resolveKey` is
+  // supplied it replaces the default exact-match lookup for reading a SIBLING's broadcast key (see
+  // its doc comment above) — this chart's own hover is unaffected either way.
+  const syncedPoint = ctx.key
+    ? resolveKey
+      ? resolveKey(ctx.key)
+      : (pointByKey.get(ctx.key) ?? null)
+    : (tip?.data ?? null)
   // Which chart owns the floating tooltip. Inside a provider the hovered chart is the one whose id
   // matches the broadcast source (siblings show a ghost crosshair only). Standalone, its own local
   // hover (`tip`) drives the tooltip.
