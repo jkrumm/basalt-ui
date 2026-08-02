@@ -281,8 +281,8 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * someone remembering. Adding a kind here is part of shipping it; removing the entry IS the
  * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
  *
- * `mantine-shade-index` landed in 1.6.0 and is the sole entry — it rejects `c="yellow.7"`, which
- * previously passed, and the one real consumer has several. Promote it in 1.7.0 by deleting the
+ * `mantine-shade-index` landed in 1.7.0 and is the sole entry — it rejects `c="yellow.7"`, which
+ * previously passed, and the one real consumer has several. Promote it in 1.8.0 by deleting the
  * entry.
  *
  * @example
@@ -291,7 +291,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * }
  */
 const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
-  'mantine-shade-index': 'introduced 1.6.0 — promote to error in 1.7.0',
+  'mantine-shade-index': 'introduced 1.7.0 — promote to error in 1.8.0',
 }
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
