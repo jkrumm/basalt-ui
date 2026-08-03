@@ -29,13 +29,18 @@
  *   api.chat.post({ body: { message: input }, fetch: { signal } }),
  * )
  */
-import type { AgentPart } from './parts'
+import type { AgentPart, AgentPartDraft } from './parts'
 
 // ── AgentTransport ────────────────────────────────────────────────────────────
 
 /**
  * The injected transport seam. `stream(input, signal)` returns an async generator of parts.
  * Implement this interface for any backend — Eden, fetch-based SSE, AI SDK, or a mock.
+ *
+ * The default `TPart` is `AgentPartDraft` (not `AgentPart`): transports yield DRAFTS — `id`
+ * optional — and the consuming hooks (or `withPartIds`) normalize a draft into a fully-identified
+ * part before it is ever accumulated. Pass an explicit `AgentPart` generic when a transport mints
+ * its own ids directly (as `aiSdkTransport` does).
  *
  * @example
  * // Minimal mock transport for tests / playground:
@@ -45,10 +50,46 @@ import type { AgentPart } from './parts'
  *   },
  * }
  */
-export type AgentTransport<TPart = AgentPart, TInput = string> = {
+export type AgentTransport<TPart = AgentPartDraft, TInput = string> = {
   stream: (input: TInput, signal?: AbortSignal) => AsyncGenerator<TPart>
   /** Optional: resume a previously-started run from its resumeToken (see StartPart). Transports that don't support resumption simply omit this. */
   resume?: (resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>
+}
+
+// ── ResumableAgentTransport ───────────────────────────────────────────────────
+
+/**
+ * A transport whose replay is safe to run over an already-rendered turn. Implementing `resume`
+ * alone is no longer enough: `idempotentReplay: true` is a literal-typed assertion that every
+ * text/reasoning part this transport emits carries an authoritative `offset`, so mergePart
+ * rewrites instead of appending.
+ */
+export type ResumableAgentTransport<TPart = AgentPartDraft, TInput = string> = AgentTransport<
+  TPart,
+  TInput
+> & {
+  readonly resume: (resumeToken: string, signal?: AbortSignal) => AsyncGenerator<TPart>
+  readonly idempotentReplay: true
+}
+
+/**
+ * Type guard: true when `t` both implements `resume` AND has explicitly asserted
+ * `idempotentReplay: true`. A transport with `resume` but no `idempotentReplay` is NOT resumable
+ * — the mount-time reconcile in `useAgentThreadRuns` falls back to `'interrupted'` for it rather
+ * than risk duplicating already-rendered content.
+ *
+ * @example
+ * if (isResumable(transport)) {
+ *   for await (const part of transport.resume(resumeToken)) { ... }
+ * }
+ */
+export function isResumable<TPart, TInput>(
+  t: AgentTransport<TPart, TInput>,
+): t is ResumableAgentTransport<TPart, TInput> {
+  return (
+    typeof t.resume === 'function' &&
+    (t as Partial<ResumableAgentTransport<TPart, TInput>>).idempotentReplay === true
+  )
 }
 
 // ── edenTransport ─────────────────────────────────────────────────────────────
@@ -70,6 +111,12 @@ export type AgentTransport<TPart = AgentPart, TInput = string> = {
  * object has NO `resume` key at all (not `resume: undefined`) — consumers that don't wire a
  * resumable backend get a transport that behaves exactly as before.
  *
+ * `resumeCall` alone does NOT make the transport resumable per `isResumable` — pass
+ * `{ idempotentReplay: true }` as the third argument to opt in EXPLICITLY once the server-side
+ * `resumeCall` route is verified to re-emit every text/reasoning delta with an authoritative
+ * `offset` (never a bare append). This is an opt-in, not an inference: a `resumeCall` whose deltas
+ * aren't offset-accurate would double-render on replay if treated as resumable.
+ *
  * @example
  * import { edenTransport, type AgentPart } from 'basalt-ui/agent'
  *
@@ -78,6 +125,7 @@ export type AgentTransport<TPart = AgentPart, TInput = string> = {
  * const transport = edenTransport<AgentPart>(
  *   (input, signal) => api.chat.post({ body: { message: input }, fetch: { signal } }),
  *   (resumeToken, signal) => api.chat.resume.post({ body: { resumeToken }, fetch: { signal } }),
+ *   { idempotentReplay: true },
  * )
  *
  * // Wire into useAgentStream:
@@ -92,23 +140,27 @@ export function edenTransport<TPart = AgentPart, TInput = string>(
     resumeToken: string,
     signal?: AbortSignal,
   ) => Promise<{ data: AsyncGenerator<TPart> | null; error: unknown }>,
-): AgentTransport<TPart, TInput> {
-  return {
-    async *stream(input: TInput, signal?: AbortSignal): AsyncGenerator<TPart> {
-      const { data, error } = await call(input, signal)
-      if (error) throw error
-      if (data === null) return
-      yield* data
-    },
-    ...(resumeCall !== undefined
-      ? {
-          async *resume(resumeToken: string, signal?: AbortSignal): AsyncGenerator<TPart> {
-            const { data, error } = await resumeCall(resumeToken, signal)
-            if (error) throw error
-            if (data === null) return
-            yield* data
-          },
-        }
-      : {}),
+  options?: { readonly idempotentReplay?: true },
+): AgentTransport<TPart, TInput> | ResumableAgentTransport<TPart, TInput> {
+  const stream = async function* (input: TInput, signal?: AbortSignal): AsyncGenerator<TPart> {
+    const { data, error } = await call(input, signal)
+    if (error) throw error
+    if (data === null) return
+    yield* data
   }
+
+  if (resumeCall === undefined) return { stream }
+
+  const resume = async function* (
+    resumeToken: string,
+    signal?: AbortSignal,
+  ): AsyncGenerator<TPart> {
+    const { data, error } = await resumeCall(resumeToken, signal)
+    if (error) throw error
+    if (data === null) return
+    yield* data
+  }
+
+  if (options?.idempotentReplay !== true) return { stream, resume }
+  return { stream, resume, idempotentReplay: true }
 }

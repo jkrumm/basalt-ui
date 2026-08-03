@@ -55,9 +55,20 @@ export { withPartIds } from './id'
 // ── coalesceParts (adjacent + by-id merge for display) ───────────────────────
 export { coalesceParts } from './coalesce'
 
+// ── foreign parts (the open half of the part-renderer registry) ──────────────
+export { definePartRenderers, narrowAgentPart } from './foreign'
+export type {
+  ForeignPart,
+  TranscriptPart,
+  ConsumerPart,
+  PartRenderers,
+  PartRenderContext,
+  PartRenderer,
+} from './foreign'
+
 // ── AgentTransport + edenTransport ───────────────────────────────────────────
-export type { AgentTransport } from './transport'
-export { edenTransport } from './transport'
+export type { AgentTransport, ResumableAgentTransport } from './transport'
+export { edenTransport, isResumable } from './transport'
 
 // ── aiSdkTransport (recommended default, optional peer: ai) ──────────────────
 export { aiSdkTransport } from './ai-sdk-transport'

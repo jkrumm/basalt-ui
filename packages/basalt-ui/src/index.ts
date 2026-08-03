@@ -118,6 +118,7 @@ export {
   Composer,
   threadPartRenderers,
   ThreadTranscript,
+  ToolChip,
 } from './agent-chat'
 export type {
   ThreadWorkspaceProps,
@@ -126,6 +127,7 @@ export type {
   ThreadDetailPanelProps,
   ComposerProps,
   ThreadTranscriptProps,
+  ToolChipProps,
 } from './agent-chat'
 export { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from './agent'
 export type {

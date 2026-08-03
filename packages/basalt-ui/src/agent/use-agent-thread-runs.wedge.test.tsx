@@ -210,12 +210,13 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
-    const transport: AgentTransport<AgentPart, string> = {
+    const transport = {
       async *stream() {},
       async *resume() {
         resumeCalls++
         yield { type: 'text', text: 'resumed' }
       },
+      idempotentReplay: true as const,
     }
 
     renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }), {
@@ -250,13 +251,14 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const gate = deferred<void>()
 
     let resumeCalls = 0
-    const transport: AgentTransport<AgentPart, string> = {
+    const transport = {
       async *stream() {},
       async *resume() {
         resumeCalls++
         await gate.promise
         yield { type: 'text', text: 'resumed' }
       },
+      idempotentReplay: true as const,
     }
 
     let externalSetMode: ((mode: 'visible' | 'hidden') => void) | undefined

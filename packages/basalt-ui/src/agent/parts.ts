@@ -267,7 +267,12 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
     case 'approval-requested': {
       if (!('input' in obj)) return null
       const approval = parseApproval(obj['approval'])
-      if (approval === null) return null
+      // The type declares this state's approval as `{ approved?: never; reason?: never }` — a
+      // request that already carries a verdict or a reason is a contradiction, not a pending
+      // request, so reject it rather than silently casting past the invariant.
+      if (approval === null || approval.approved !== undefined || approval.reason !== undefined) {
+        return null
+      }
       return {
         ...common,
         state: 'approval-requested',
@@ -301,6 +306,13 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
       if (!('input' in obj)) return null
       if (!('output' in obj)) return null
       const approval = obj['approval'] === undefined ? null : parseApproval(obj['approval'])
+      // The type declares this state's approval as `{ approved?: true }` — output present
+      // alongside `approved: false` is a denial masquerading as a result, not a valid "approved"
+      // carry-through. A present-but-malformed approval is rejected the same way (not silently
+      // dropped), matching output-denied/approval-responded's precedent above.
+      if (obj['approval'] !== undefined && (approval === null || approval.approved === false)) {
+        return null
+      }
       return {
         ...common,
         state: 'output-available',
@@ -313,6 +325,11 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
     case 'output-error': {
       if (typeof obj['errorText'] !== 'string') return null
       const approval = obj['approval'] === undefined ? null : parseApproval(obj['approval'])
+      // Same invariant as output-available above: an error carrying `approved: false` is a
+      // denial, not an error whose approval "happens to carry through".
+      if (obj['approval'] !== undefined && (approval === null || approval.approved === false)) {
+        return null
+      }
       return {
         ...common,
         state: 'output-error',
