@@ -139,7 +139,7 @@ export function ThreadWorkspace({
       <Divider color="var(--vx-divider)" />
       <Box p="sm">
         <Composer
-          onSubmit={handleNewThread}
+          onSubmit={({ text }) => handleNewThread(text)}
           {...(newThreadPlaceholder !== undefined ? { placeholder: newThreadPlaceholder } : {})}
         />
       </Box>
