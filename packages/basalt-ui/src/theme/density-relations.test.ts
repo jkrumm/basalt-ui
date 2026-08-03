@@ -67,8 +67,10 @@ describe('Fix 1 — input height, button height, and ActionIcon size never drift
     }
     for (const level of ALL_LEVELS) {
       const { anchors } = deriveSpacing(level)
-      expect(anchors.inputHeight).toBe(expected[level])
-      expect(anchors.controlHeight).toBe(expected[level])
+      const expectedHeight = expected[level]
+      if (expectedHeight === undefined) throw new Error(`no expected height for level ${level}`)
+      expect(anchors.inputHeight).toBe(expectedHeight)
+      expect(anchors.controlHeight).toBe(expectedHeight)
     }
   })
 

@@ -140,8 +140,10 @@ function cssShadowSites(relPath: string, text: string): ShadowSite[] {
   const RULE = /([^{}]+)\{([^{}]*)\}/g
   let match: RegExpExecArray | null
   while ((match = RULE.exec(clean))) {
-    const selector = match[1].trim().replace(/\s+/g, ' ')
-    const body = match[2]
+    // Both capture groups are non-optional in RULE — a successful match always populates them;
+    // the `!` documents that (matches the same idiom in vite-color-mix.ts's splitColorAndPercent).
+    const selector = match[1]!.trim().replace(/\s+/g, ' ')
+    const body = match[2]!
     if (CSS_SHADOW_TOKEN.test(body)) sites.push({ file: relPath, site: selector })
   }
   return sites
@@ -165,16 +167,20 @@ function tsShadowSites(relPath: string, text: string): ShadowSite[] {
     let slot: string | null = null
     let component: string | null = null
     for (let j = i - 1; j >= 0 && j >= i - LOOKBACK; j--) {
+      // `j` is bounded by the loop condition (`j >= 0`) to a valid index of `lines` — the `!`
+      // documents that, not a mis-indexed fixture.
+      const jLine = lines[j]!
       if (slot === null) {
-        const slotMatch = SLOT.exec(lines[j])
+        const slotMatch = SLOT.exec(jLine)
         if (slotMatch) {
-          slot = slotMatch[1]
+          // SLOT's one capture group is non-optional — a successful match always populates it.
+          slot = slotMatch[1]!
           continue
         }
       }
-      const componentMatch = COMPONENT.exec(lines[j])
+      const componentMatch = COMPONENT.exec(jLine)
       if (componentMatch) {
-        component = componentMatch[1]
+        component = componentMatch[1]!
         break
       }
     }

@@ -5,6 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { baseTheme, createBasaltTheme } from './index'
+import type { BasaltFontsConfig } from './index'
 
 describe('the default path carries no theme.other.basaltFonts', () => {
   test('createBasaltTheme() carries no basaltFonts', () => {
@@ -26,7 +27,12 @@ describe('an empty fonts object is treated as absent — stays on the static bas
   })
 
   test('an all-undefined-keys fonts object is also treated as absent', () => {
-    const theme = createBasaltTheme(undefined, { fonts: { sans: undefined } })
+    // Deliberately constructs a key explicitly set to undefined — exactOptionalPropertyTypes
+    // correctly forbids this as a static shape, but the whole point of the test is verifying
+    // createBasaltTheme's RUNTIME handling of that wire shape (a caller spreading in an
+    // undefined value), hence the cast.
+    const fonts = { sans: undefined } as unknown as BasaltFontsConfig
+    const theme = createBasaltTheme(undefined, { fonts })
     expect(theme).toBe(baseTheme)
     expect(theme.other?.['basaltFonts']).toBeUndefined()
   })

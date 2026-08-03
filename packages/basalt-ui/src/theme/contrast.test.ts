@@ -263,8 +263,7 @@ describe('the accent is single-sourced: Mantine chrome is bridged to --vx-*', ()
 })
 
 describe('the variant resolver hands off to CSS, never to a baked color', () => {
-  const resolve = (color: string) =>
-    theme.variantColorResolver({ color, theme, variant: 'filled', gradient: undefined })
+  const resolve = (color: string) => theme.variantColorResolver({ color, theme, variant: 'filled' })
 
   for (const color of COLORS) {
     test(`filled ${color} resolves to var(--vx-on-${color})`, () => {
@@ -288,7 +287,6 @@ describe('the variant resolver hands off to CSS, never to a baked color', () => 
       color: 'blue',
       theme,
       variant: 'filled',
-      gradient: undefined,
       autoContrast: false,
     })
     expect(color).toBe('var(--mantine-color-white)')
@@ -317,7 +315,6 @@ describe('doctrine inversion #1 reaches every default-variant CONTROL, not just 
       color: theme.primaryColor,
       theme,
       variant: 'default',
-      gradient: undefined,
     })
     expect(border).toContain('solid var(--mantine-color-default-border)')
     expect(border).not.toContain('surface-border')

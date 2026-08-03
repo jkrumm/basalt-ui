@@ -16,7 +16,7 @@ import { describe, expect, test } from 'bun:test'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { AgentThread, ThreadsStore } from './thread'
-import type { AgentTransport } from './transport'
+import type { AgentTransport, ResumableAgentTransport } from './transport'
 import type { AgentPart } from './parts'
 import type { ChatMessage } from './history'
 import type { AgentOutcome } from './outcome'
@@ -90,6 +90,11 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[]): ThreadsStore
       threads = []
       activeId = null
     },
+    // Always-hydrated, never-erroring — mirrors the localStorage-backed store's real values
+    // (see ThreadsStore.hydrated/.error doc comments); this double is a synchronous in-memory
+    // stand-in with no async load path to fail.
+    hydrated: true,
+    error: undefined,
   }
 }
 
@@ -100,7 +105,7 @@ function makeStreamingThread(
   const userMessage: ChatMessage<AgentPart> = {
     id: crypto.randomUUID(),
     role: 'user',
-    parts: [{ type: 'text', text: 'hello' }],
+    parts: [{ id: 'seed-user-part', type: 'text', text: 'hello' }],
     createdAt: now,
   }
   return {
@@ -142,7 +147,7 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const userMessage: ChatMessage<AgentPart> = {
       id: crypto.randomUUID(),
       role: 'user',
-      parts: [{ type: 'text', text: 'hello' }],
+      parts: [{ id: 'seed-user-part', type: 'text', text: 'hello' }],
       createdAt: now,
     }
     const thread: AgentThread<AgentPart> = {
@@ -157,11 +162,11 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
-    const transport = {
+    const transport: ResumableAgentTransport<AgentPart, string> = {
       async *stream() {},
       async *resume() {
         resumeCalls++
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       idempotentReplay: true as const,
     }
@@ -179,11 +184,11 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
-    const transport = {
+    const transport: ResumableAgentTransport<AgentPart, string> = {
       async *stream() {},
       async *resume() {
         resumeCalls++
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       idempotentReplay: true as const,
     }
@@ -205,7 +210,7 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
       async *stream() {},
       async *resume() {
         resumeCalls++
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       // deliberately NO idempotentReplay: true
     }
@@ -223,11 +228,11 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     const resumeArgs: string[] = []
-    const transport = {
+    const transport: ResumableAgentTransport<AgentPart, string> = {
       async *stream() {},
-      async *resume(token: string) {
+      async *resume(token) {
         resumeArgs.push(token)
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       idempotentReplay: true as const,
     }

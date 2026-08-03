@@ -11,7 +11,7 @@ import { StrictMode, useEffect } from 'react'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { useAgentStream } from './use-agent-stream'
 import type { AgentTransport } from './transport'
-import type { AgentPart } from './parts'
+import type { AgentPart, AgentPartDraft } from './parts'
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void
@@ -96,17 +96,21 @@ describe('useAgentStream', () => {
   })
 
   test('F1 regression: id-less drafts of different types within one send() do not destroy each other', async () => {
+    // Yields id-less drafts on purpose — the whole point of this regression is that TWO drafts
+    // (of different types, so a real bug wouldn't be "same id" but "no id at all") must not
+    // collide via `undefined === undefined`. The cast documents that the type says AgentPart
+    // (identified) while a transport is always permitted to omit id (AgentPartDraft).
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'Hi' }
+        yield { type: 'text', text: 'Hi' } as AgentPartDraft as AgentPart
         yield {
           type: 'tool',
           toolCallId: 'c1',
           toolName: 'search',
           state: 'input-available',
           input: { q: 'x' },
-        }
-        yield { type: 'text', text: 'Bye' }
+        } as AgentPartDraft as AgentPart
+        yield { type: 'text', text: 'Bye' } as AgentPartDraft as AgentPart
       },
     }
 
@@ -131,7 +135,7 @@ describe('useAgentStream', () => {
       async *stream() {
         throw boom
         // eslint-disable-next-line no-unreachable
-        yield { type: 'text', text: 'unreachable' }
+        yield { id: 'unreachable', type: 'text', text: 'unreachable' }
       },
     }
 

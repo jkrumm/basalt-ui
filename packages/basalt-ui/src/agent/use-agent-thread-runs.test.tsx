@@ -17,7 +17,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { AgentThread, ThreadsStore } from './thread'
 import type { AgentTransport } from './transport'
-import type { AgentPart } from './parts'
+import type { AgentPart, AgentPartDraft } from './parts'
 import type { AgentOutcome, OutcomeResolver } from './outcome'
 
 // ── test-only ThreadsStore double — see use-agent-thread-runs.wedge.test.tsx for the rationale ──
@@ -100,6 +100,11 @@ function createTestThreadsStore(
       threads = []
       activeId = null
     },
+    // Always-hydrated, never-erroring — mirrors the localStorage-backed store's real values
+    // (see ThreadsStore.hydrated/.error doc comments); this double is a synchronous in-memory
+    // stand-in with no async load path to fail.
+    hydrated: true,
+    error: undefined,
   }
 }
 
@@ -130,7 +135,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(input) {
         await gates.get(input)?.promise
-        yield { type: 'text', text: `done:${input}` }
+        yield { id: 'p1', type: 'text', text: `done:${input}` }
       },
     }
 
@@ -173,7 +178,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
       async *stream(input) {
         calls.push(input)
         await gate.promise
-        yield { type: 'text', text: 'ok' }
+        yield { id: 'p1', type: 'text', text: 'ok' }
       },
     }
 
@@ -218,7 +223,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
         await gate.promise
-        yield { type: 'text', text: 'hi' }
+        yield { id: 'p1', type: 'text', text: 'hi' }
       },
     }
 
@@ -265,7 +270,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
       async *stream() {
         throw new Error('boom')
         // eslint-disable-next-line no-unreachable
-        yield { type: 'text', text: 'unreachable' }
+        yield { id: 'p1', type: 'text', text: 'unreachable' }
       },
     }
 
@@ -294,7 +299,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(input) {
         calls.push(input)
-        yield { type: 'text', text: 'x' }
+        yield { id: 'p1', type: 'text', text: 'x' }
       },
     }
 
@@ -316,7 +321,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(input) {
         calls.push(input)
-        yield { type: 'text', text: `done:${input}` }
+        yield { id: 'p1', type: 'text', text: `done:${input}` }
       },
     }
 
@@ -364,7 +369,7 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
 
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'hi' }
+        yield { id: 'p1', type: 'text', text: 'hi' }
       },
     }
 
@@ -403,11 +408,15 @@ describe('useAgentThreadRuns — stop()/stopAll() lifecycle', () => {
     const threadId = store.create()
 
     const gate = deferred<void>()
+    // Yields id-less drafts on purpose — the assertion below exists specifically to prove
+    // withPartIds stamps the missing id as `${threadId}#0`, so the cast documents that the type
+    // says AgentPart (identified) while this transport deliberately produces what the real
+    // contract is AgentPartDraft (a transport is always permitted to omit id).
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'partial' }
+        yield { type: 'text', text: 'partial' } as AgentPartDraft as AgentPart
         await gate.promise
-        yield { type: 'text', text: 'never arrives' }
+        yield { type: 'text', text: 'never arrives' } as AgentPartDraft as AgentPart
       },
     }
 
@@ -456,7 +465,7 @@ describe('useAgentThreadRuns — stop()/stopAll() lifecycle', () => {
 
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'hi' }
+        yield { id: 'p1', type: 'text', text: 'hi' }
       },
     }
 
@@ -498,7 +507,7 @@ describe('useAgentThreadRuns — stop()/stopAll() lifecycle', () => {
 
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'x' }
+        yield { id: 'p1', type: 'text', text: 'x' }
       },
     }
 
@@ -672,10 +681,10 @@ describe('useAgentThreadRuns — stop()/stopAll() lifecycle', () => {
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(input) {
         if (input === 'a') {
-          yield { type: 'text', text: 'partial-a' }
+          yield { id: 'p1', type: 'text', text: 'partial-a' }
           await gateA.promise
         } else {
-          yield { type: 'text', text: 'partial-b' }
+          yield { id: 'p1', type: 'text', text: 'partial-b' }
           await gateB.promise
         }
       },
@@ -748,17 +757,21 @@ describe('useAgentThreadRuns — F1 regression: id-less drafts within one run', 
     const store = createTestThreadsStore()
     const threadId = store.create()
 
+    // Yields id-less drafts on purpose — the whole point of this regression is that TWO drafts
+    // (of different types, so a real bug wouldn't be "same id" but "no id at all") must not
+    // collide via `undefined === undefined`. The cast documents that the type says AgentPart
+    // (identified) while a transport is always permitted to omit id (AgentPartDraft).
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'Hi' }
+        yield { type: 'text', text: 'Hi' } as AgentPartDraft as AgentPart
         yield {
           type: 'tool',
           toolCallId: 'c1',
           toolName: 'search',
           state: 'input-available',
           input: { q: 'x' },
-        }
-        yield { type: 'text', text: 'Bye' }
+        } as AgentPartDraft as AgentPart
+        yield { type: 'text', text: 'Bye' } as AgentPartDraft as AgentPart
       },
     }
 

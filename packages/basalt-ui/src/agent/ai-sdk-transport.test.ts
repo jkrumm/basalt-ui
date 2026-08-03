@@ -23,7 +23,7 @@ import { aiSdkTransport } from './ai-sdk-transport'
 import { withPartIds } from './id'
 import { mergePart } from './merge'
 import type { UIMessageChunk } from 'ai'
-import type { AgentPart } from './parts'
+import type { AgentPart, ToolCallPart } from './parts'
 
 /**
  * Builds a fetch-compatible Response whose body is the given low-level UIMessageChunks, SSE-
@@ -43,6 +43,16 @@ function scriptedResponse(chunks: UIMessageChunk[]): Response {
   return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } })
 }
 
+/**
+ * Casts a scripted fetch stub into `aiSdkTransport`'s `fetch: typeof globalThis.fetch` option.
+ * The DOM lib's `typeof fetch` type also demands a static `preconnect` method (a real
+ * browser/undici API these scripted mocks never call and don't need to implement) — the cast
+ * documents that the only structural gap is that one, unused static member.
+ */
+function mockFetch(impl: () => Promise<Response>): typeof fetch {
+  return impl as unknown as typeof fetch
+}
+
 /** Drains an aiSdkTransport `.stream()`/`.resume()` async generator into a plain array. */
 async function collect(gen: AsyncGenerator<AgentPart>): Promise<AgentPart[]> {
   const parts: AgentPart[] = []
@@ -50,11 +60,24 @@ async function collect(gen: AsyncGenerator<AgentPart>): Promise<AgentPart[]> {
   return parts
 }
 
+/**
+ * `Omit<T, K>` does not distribute over a union — `keyof T` on a union collapses to only the
+ * KEYS COMMON to every member, so `Omit<ToolCallPart, 'durationMs'>` would silently drop each
+ * state's own fields (`input`, `output`, …) rather than just `durationMs`. This variant forces
+ * distribution via a naked conditional type parameter.
+ */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
+
 /** Strips a non-deterministic `durationMs` (wall-clock, so never equality-comparable) before an
- * exact `toEqual`, and separately asserts its type. */
-function withoutDurationMs<T extends { durationMs?: number }>(part: T): Omit<T, 'durationMs'> {
+ * exact `toEqual`, and separately asserts its type. Constrained to `Record<string, unknown>`
+ * rather than `{ durationMs?: number }` because ErrorPart (uniquely among AgentPart variants)
+ * carries no `durationMs` field at all — that stricter constraint trips TS's weak-type check
+ * ("no properties in common") the moment this is called with the full AgentPart union. */
+function withoutDurationMs<T extends Record<string, unknown>>(
+  part: T,
+): DistributiveOmit<T, 'durationMs'> {
   const { durationMs: _durationMs, ...rest } = part
-  return rest
+  return rest as DistributiveOmit<T, 'durationMs'>
 }
 
 describe('aiSdkTransport — snapshot→delta diffing', () => {
@@ -67,7 +90,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -107,7 +130,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     // trivially fail to match on that alone, masking whether withPartIds itself changed anything.
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const direct = await collect(transport.stream('hi'))
     const wrapped = await collect(withPartIds('unrelated-run-id', transport.stream('hi')))
@@ -126,7 +149,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -146,7 +169,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -168,13 +191,16 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
     const toolParts = parts.filter((p) => p.type === 'tool')
     expect(toolParts.every((p) => (p as { id: string }).id === 'tool#call-1')).toBe(true)
-    expect(toolParts.map(withoutDurationMs)).toEqual([
+    // Annotated so each element is checked individually against the ToolCallPart union — passed
+    // inline, TS collapses the array's contextual element type and rejects the settled states'
+    // extra `input`/`output` fields against the first (narrowest) member it picks.
+    const expectedToolParts: DistributiveOmit<ToolCallPart, 'durationMs'>[] = [
       {
         id: 'tool#call-1',
         type: 'tool',
@@ -199,7 +225,8 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
         input: { q: 'x' },
         output: { hits: 3 },
       },
-    ])
+    ]
+    expect(toolParts.map(withoutDurationMs)).toEqual(expectedToolParts)
     // durationMs is only set once the call reaches a terminal state (output-available here).
     expect((toolParts[0] as { durationMs?: number }).durationMs).toBeUndefined()
     expect(typeof (toolParts.at(-1) as { durationMs?: number }).durationMs).toBe('number')
@@ -215,7 +242,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -245,7 +272,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -282,7 +309,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -330,7 +357,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -362,7 +389,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -394,7 +421,7 @@ describe('aiSdkTransport — snapshot→delta diffing', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const parts = await collect(transport.stream('hi'))
 
@@ -415,7 +442,7 @@ describe('aiSdkTransport — signal.aborted stops the yield', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     })
     const controller = new AbortController()
     const gen = transport.stream('hi', controller.signal)
@@ -446,9 +473,9 @@ describe('aiSdkTransport — deterministic chat-id binding', () => {
     // generator that never advances past its first `.next()` never touches the network.
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: () => {
+      fetch: mockFetch(() => {
         throw new Error('must not be called — only the first, pre-network yield is read')
-      },
+      }),
     })
 
     const first = await transport.stream('a').next()
@@ -460,9 +487,9 @@ describe('aiSdkTransport — deterministic chat-id binding', () => {
   test('.forThread(id) binds the StartPart runId/resumeToken/id deterministically to the given id', async () => {
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: () => {
+      fetch: mockFetch(() => {
         throw new Error('must not be called — only the first, pre-network yield is read')
-      },
+      }),
     })
     const bound = transport.forThread('caller-supplied-thread-id')
 
@@ -482,9 +509,9 @@ describe('aiSdkTransport — deterministic chat-id binding', () => {
   test('two different .forThread() ids produce two different StartPart runIds/ids', async () => {
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: () => {
+      fetch: mockFetch(() => {
         throw new Error('must not be called — only the first, pre-network yield is read')
-      },
+      }),
     })
 
     const a = await transport.forThread('thread-a').stream('hi').next()
@@ -516,7 +543,7 @@ describe('aiSdkTransport — deterministic ids and replay idempotency', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     }).forThread('thread-x')
 
     const firstIds = (await collect(transport.stream('hi'))).map((p) => (p as { id: string }).id)
@@ -535,7 +562,7 @@ describe('aiSdkTransport — deterministic ids and replay idempotency', () => {
     ]
     const transport = aiSdkTransport({
       api: '/api/chat',
-      fetch: async () => scriptedResponse(chunks),
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
     }).forThread('thread-x')
 
     const firstPass = await collect(transport.stream('hi'))
