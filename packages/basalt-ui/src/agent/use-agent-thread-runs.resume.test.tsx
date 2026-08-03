@@ -4,8 +4,10 @@
  * The mount-reconcile effect (empty deps — a one-time sweep of whatever the store held when this
  * manager first attaches) treats any persisted 'pending' or 'streaming' thread with no live
  * controller as orphaned, and either attempts `transport.resume(resumeToken, signal)` (when the
- * transport supports it, a resumeToken is present, and there's a last user message to attribute
- * the resumed turn to) or falls back straight to 'interrupted'.
+ * transport is RESUMABLE per `isResumable` — `resume` AND the literal `idempotentReplay: true`
+ * assertion, a resumeToken is present, and there's a last user message to attribute the resumed
+ * turn to) or falls back straight to 'interrupted'. `resume` alone is NOT enough post-B2 — see the
+ * dedicated "resume() present but no idempotentReplay" test below.
  *
  * The F3 wedge (StrictMode/`<Activity>` re-running this same effect on the SAME fiber) has its
  * own file: `use-agent-thread-runs.wedge.test.tsx`.
@@ -155,12 +157,13 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
-    const transport: AgentTransport<AgentPart, string> = {
+    const transport = {
       async *stream() {},
       async *resume() {
         resumeCalls++
         yield { type: 'text', text: 'resumed' }
       },
+      idempotentReplay: true as const,
     }
 
     renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
@@ -176,12 +179,35 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
+    const transport = {
+      async *stream() {},
+      async *resume() {
+        resumeCalls++
+        yield { type: 'text', text: 'resumed' }
+      },
+      idempotentReplay: true as const,
+    }
+
+    renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    await waitFor(() => {
+      expect(store.threads.find((t) => t.id === thread.id)?.status).toBe('interrupted')
+    })
+    expect(resumeCalls).toBe(0)
+  })
+
+  test('resume() present but WITHOUT idempotentReplay → still falls back to interrupted (resume alone is not enough post-B2)', async () => {
+    const thread = makeStreamingThread()
+    const store = createTestThreadsStore([thread])
+
+    let resumeCalls = 0
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {},
       async *resume() {
         resumeCalls++
         yield { type: 'text', text: 'resumed' }
       },
+      // deliberately NO idempotentReplay: true
     }
 
     renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
@@ -197,12 +223,13 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const store = createTestThreadsStore([thread])
 
     const resumeArgs: string[] = []
-    const transport: AgentTransport<AgentPart, string> = {
+    const transport = {
       async *stream() {},
-      async *resume(token) {
+      async *resume(token: string) {
         resumeArgs.push(token)
         yield { type: 'text', text: 'resumed' }
       },
+      idempotentReplay: true as const,
     }
 
     renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
@@ -217,12 +244,13 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     const thread = makeStreamingThread()
     const store = createTestThreadsStore([thread])
 
-    const transport: AgentTransport<AgentPart, string> = {
+    const transport = {
       async *stream() {},
       // oxlint-disable-next-line require-yield
       async *resume() {
         throw new Error('resume failed')
       },
+      idempotentReplay: true as const,
     }
 
     renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))

@@ -27,7 +27,10 @@
  * }
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { withPartIds } from './id'
 import { isStartPart } from './parts'
+import { mergePart } from './merge'
+import type { PartLike } from './merge'
 import type { AgentPart } from './parts'
 import type { AgentTransport } from './transport'
 
@@ -67,7 +70,7 @@ export type UseAgentStreamReturn<TPart, TInput> = {
  * // parts accumulates as the stream arrives
  * // status: 'idle' → 'streaming' → 'done' (or 'error')
  */
-export function useAgentStream<TPart = AgentPart, TInput = string>({
+export function useAgentStream<TPart extends PartLike = AgentPart, TInput = string>({
   transport,
 }: {
   transport: AgentTransport<TPart, TInput>
@@ -100,15 +103,22 @@ export function useAgentStream<TPart = AgentPart, TInput = string>({
       setError(undefined)
       setStatus('streaming')
 
+      // Per-send namespace: this hook has no thread/session id to key off, and each send() call
+      // fully resets `parts` anyway, so a fresh id per call is enough to keep two id-less drafts
+      // ARRIVING WITHIN THE SAME SEND from colliding on `undefined === undefined` in mergePart (the
+      // F1 bug — text→tool→text destroying each other). Not a replay mechanism — this hook has no
+      // resume() path — see withPartIds' own doc for why it can't be one anyway.
+      const runId = crypto.randomUUID()
+
       try {
-        for await (const part of transport.stream(input, controller.signal)) {
+        for await (const part of withPartIds(runId, transport.stream(input, controller.signal))) {
           // Guard: if a newer send() has superseded this stream, stop updating state.
           if (controllerRef.current !== controller) return
           if (controller.signal.aborted) break
           // StartPart is a no-op signal (run id + resume token), not renderable content — this
           // hook has no persistence layer to resume across, so just skip it.
           if (isStartPart(part)) continue
-          setParts((prev) => [...prev, part])
+          setParts((prev) => mergePart(prev, part))
         }
         // Only mark done if this stream is still the current one and wasn't aborted.
         if (controllerRef.current === controller && !controller.signal.aborted) setStatus('done')

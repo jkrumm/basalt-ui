@@ -112,6 +112,12 @@ const CODE_BLOCK_STYLE = {
   overflowX: 'auto',
 } as const
 
+/** Terminal-state status line (tool-call error/denial) — plain text, no code-block chrome. */
+const STATUS_LINE_STYLE = {
+  marginTop: 'var(--vx-space-agent-part-gap-top)',
+  color: VX.status.bad,
+} as const
+
 function DefaultText({ part }: { part: TextPart; index: number }): JSX.Element {
   return (
     <div
@@ -151,10 +157,29 @@ function DefaultToolCall({ part }: { part: ToolCallPart; index: number }): JSX.E
       <pre className="basalt-agent-tool-input" style={CODE_BLOCK_STYLE}>
         {JSON.stringify(part.input, null, 2)}
       </pre>
+      {/* output-error's input never validated — rawInput is the only surviving record of what was
+          actually sent, so show it whenever there is no validated input to show instead. */}
+      {part.state === 'output-error' && part.input === undefined && part.rawInput !== undefined && (
+        <pre className="basalt-agent-tool-raw-input" style={CODE_BLOCK_STYLE}>
+          {JSON.stringify(part.rawInput, null, 2)}
+        </pre>
+      )}
       {part.state === 'output-available' && (
         <pre className="basalt-agent-tool-output" style={CODE_BLOCK_STYLE}>
           {JSON.stringify(part.output, null, 2)}
         </pre>
+      )}
+      {/* A failed or denied call must stay visible after the seven-state split — neither carries
+          an `output`, so without this the call renders as name+input and nothing else. */}
+      {part.state === 'output-error' && (
+        <div className="basalt-agent-tool-error" role="alert" style={STATUS_LINE_STYLE}>
+          {part.errorText}
+        </div>
+      )}
+      {part.state === 'output-denied' && (
+        <div className="basalt-agent-tool-denied" style={STATUS_LINE_STYLE}>
+          Denied{part.approval.reason !== undefined ? `: ${part.approval.reason}` : ''}
+        </div>
       )}
     </div>
   )
@@ -251,7 +276,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
           case 'text': {
             const Render = renderers.text
             return (
-              <Fragment key={index}>
+              <Fragment key={part.id}>
                 <Render part={part as Extract<TPart, { type: 'text' }>} index={index} />
               </Fragment>
             )
@@ -259,7 +284,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
           case 'reasoning': {
             const Render = renderers.reasoning
             return (
-              <Fragment key={index}>
+              <Fragment key={part.id}>
                 <Render part={part as Extract<TPart, { type: 'reasoning' }>} index={index} />
               </Fragment>
             )
@@ -267,7 +292,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
           case 'tool': {
             const Render = renderers.tool
             return (
-              <Fragment key={index}>
+              <Fragment key={part.id}>
                 <Render part={part as Extract<TPart, { type: 'tool' }>} index={index} />
               </Fragment>
             )
@@ -275,7 +300,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
           case 'source': {
             const Render = renderers.source
             return (
-              <Fragment key={index}>
+              <Fragment key={part.id}>
                 <Render part={part as Extract<TPart, { type: 'source' }>} index={index} />
               </Fragment>
             )
@@ -283,7 +308,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
           case 'error': {
             const Render = renderers.error
             return (
-              <Fragment key={index}>
+              <Fragment key={part.id}>
                 <Render part={part as Extract<TPart, { type: 'error' }>} index={index} />
               </Fragment>
             )

@@ -34,3 +34,7 @@ export type { ComposerProps } from './composer'
 // ── threadPartRenderers + ThreadTranscript ────────────────────────────────────
 export { threadPartRenderers, ThreadTranscript } from './thread-message'
 export type { ThreadTranscriptProps } from './thread-message'
+
+// ── ToolChip ──────────────────────────────────────────────────────────────────
+export { ToolChip } from './tool-chip'
+export type { ToolChipProps } from './tool-chip'

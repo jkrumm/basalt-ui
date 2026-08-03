@@ -362,7 +362,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, PartList, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
+      'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, isResumable/ResumableAgentTransport (stream-resumption seam), PartList, coalesceParts, the ForeignPart/definePartRenderers/narrowAgentPart open part-registry seam, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
     optionalPeers: ['ai', 'use-stick-to-bottom'],
     globs: {
       shipped: [],
@@ -378,7 +378,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript, threadPartRenderers (Mantine-coupled). remend and motion are required, not optional — ThreadTranscript imports content/markdown.tsx (remend eagerly), and ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without both installed even though peerDependenciesMeta marks them optional (npm has no per-subpath optionality).',
+      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). remend and motion are required, not optional — ThreadTranscript imports content/markdown.tsx (remend eagerly), and ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without both installed even though peerDependenciesMeta marks them optional (npm has no per-subpath optionality).',
     optionalPeers: [
       'ai',
       'motion',

@@ -30,6 +30,7 @@
     "ThreadOutcomeCard",
     "ThreadTranscript",
     "ThreadWorkspace",
+    "ToolChip",
     "assertNever",
     "baseTheme",
     "createBasaltTheme",
@@ -245,15 +246,23 @@
   "./agent": [
     "BasaltStickToBottom",
     "PartList",
+    "TERMINAL_TOOL_STATES",
     "aiSdkTransport",
+    "coalesceParts",
     "createChatHistoryStore",
     "createThreadsStore",
+    "definePartRenderers",
     "edenTransport",
     "heuristicOutcome",
+    "isResumable",
     "isStartPart",
+    "isToolCallSettled",
+    "mergePart",
+    "narrowAgentPart",
     "parseAgentPart",
     "useAgentStream",
-    "useAgentThreadRuns"
+    "useAgentThreadRuns",
+    "withPartIds"
   ],
   "./agent-chat": [
     "Composer",
@@ -262,6 +271,7 @@
     "ThreadOutcomeCard",
     "ThreadTranscript",
     "ThreadWorkspace",
+    "ToolChip",
     "threadPartRenderers"
   ],
   "./content": [

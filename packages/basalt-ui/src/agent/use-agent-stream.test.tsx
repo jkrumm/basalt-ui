@@ -26,10 +26,10 @@ describe('useAgentStream', () => {
     const gate = deferred<void>()
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
-        yield { type: 'text', text: 'a' }
+        yield { id: 'p1', type: 'text', text: 'a' }
         await gate.promise
         // Must never be observed — the consumer's guard should discard this once aborted.
-        yield { type: 'text', text: 'b' }
+        yield { id: 'p2', type: 'text', text: 'b' }
       },
     }
 
@@ -39,7 +39,7 @@ describe('useAgentStream', () => {
       void result.current.send('hi')
     })
     await waitFor(() => {
-      expect(result.current.parts).toEqual([{ type: 'text', text: 'a' }])
+      expect(result.current.parts).toEqual([{ id: 'p1', type: 'text', text: 'a' }])
     })
     expect(result.current.status).toBe('streaming')
 
@@ -53,7 +53,7 @@ describe('useAgentStream', () => {
     await waitFor(() => {
       expect(result.current.status).toBe('done')
     })
-    expect(result.current.parts).toEqual([{ type: 'text', text: 'a' }])
+    expect(result.current.parts).toEqual([{ id: 'p1', type: 'text', text: 'a' }])
   })
 
   test("a second send() supersedes an in-flight one — the first stream's later parts are discarded", async () => {
@@ -61,12 +61,12 @@ describe('useAgentStream', () => {
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(input) {
         if (input === 'first') {
-          yield { type: 'text', text: 'first-1' }
+          yield { id: 'f1', type: 'text', text: 'first-1' }
           await gateFirst.promise
           // Must never be observed — 'second' has already superseded this controller.
-          yield { type: 'text', text: 'first-2' }
+          yield { id: 'f2', type: 'text', text: 'first-2' }
         } else {
-          yield { type: 'text', text: 'second-1' }
+          yield { id: 's1', type: 'text', text: 'second-1' }
         }
       },
     }
@@ -77,14 +77,14 @@ describe('useAgentStream', () => {
       void result.current.send('first')
     })
     await waitFor(() => {
-      expect(result.current.parts).toEqual([{ type: 'text', text: 'first-1' }])
+      expect(result.current.parts).toEqual([{ id: 'f1', type: 'text', text: 'first-1' }])
     })
 
     act(() => {
       void result.current.send('second')
     })
     await waitFor(() => {
-      expect(result.current.parts).toEqual([{ type: 'text', text: 'second-1' }])
+      expect(result.current.parts).toEqual([{ id: 's1', type: 'text', text: 'second-1' }])
     })
     expect(result.current.status).toBe('done')
 
@@ -92,7 +92,37 @@ describe('useAgentStream', () => {
     await waitFor(() => {
       expect(result.current.status).toBe('done')
     })
-    expect(result.current.parts).toEqual([{ type: 'text', text: 'second-1' }])
+    expect(result.current.parts).toEqual([{ id: 's1', type: 'text', text: 'second-1' }])
+  })
+
+  test('F1 regression: id-less drafts of different types within one send() do not destroy each other', async () => {
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { type: 'text', text: 'Hi' }
+        yield {
+          type: 'tool',
+          toolCallId: 'c1',
+          toolName: 'search',
+          state: 'input-available',
+          input: { q: 'x' },
+        }
+        yield { type: 'text', text: 'Bye' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentStream({ transport }))
+
+    await act(async () => {
+      await result.current.send('hi')
+    })
+
+    // Pre-fix: mergePart matched all three drafts on `undefined === undefined`, so text→tool→text
+    // collapsed to a single (wrong-typed) entry instead of three. withPartIds stamping a distinct
+    // id per draft is what keeps them apart.
+    expect(result.current.parts).toHaveLength(3)
+    expect(result.current.parts.map((part) => part.type)).toEqual(['text', 'tool', 'text'])
+    const ids = result.current.parts.map((part) => (part as { id: string }).id)
+    expect(new Set(ids).size).toBe(3)
   })
 
   test('a thrown (non-abort) error sets status "error" and captures the error', async () => {
@@ -119,10 +149,10 @@ describe('useAgentStream', () => {
     const gate = deferred<void>()
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(_input, signal) {
-        yield { type: 'text', text: 'a' }
+        yield { id: 'p1', type: 'text', text: 'a' }
         await gate.promise
         if (signal?.aborted) throw new DOMException('The operation was aborted.', 'AbortError')
-        yield { type: 'text', text: 'b' }
+        yield { id: 'p2', type: 'text', text: 'b' }
       },
     }
 
@@ -132,7 +162,7 @@ describe('useAgentStream', () => {
       void result.current.send('hi')
     })
     await waitFor(() => {
-      expect(result.current.parts).toEqual([{ type: 'text', text: 'a' }])
+      expect(result.current.parts).toEqual([{ id: 'p1', type: 'text', text: 'a' }])
     })
 
     // stop() aborts the signal AND sets 'done' synchronously.
@@ -155,7 +185,7 @@ describe('useAgentStream', () => {
     const gate = deferred<void>()
     const transport: AgentTransport<AgentPart, string> = {
       async *stream(_input, signal) {
-        yield { type: 'text', text: 'a' }
+        yield { id: 'p1', type: 'text', text: 'a' }
         await gate.promise
         observedAbortedOnResume = signal?.aborted ?? false
       },
@@ -167,7 +197,7 @@ describe('useAgentStream', () => {
       void result.current.send('hi')
     })
     await waitFor(() => {
-      expect(result.current.parts).toEqual([{ type: 'text', text: 'a' }])
+      expect(result.current.parts).toEqual([{ id: 'p1', type: 'text', text: 'a' }])
     })
 
     unmount()
@@ -197,7 +227,7 @@ describe('useAgentStream', () => {
     const transport: AgentTransport<AgentPart, string> = {
       async *stream() {
         streamCalls++
-        yield { type: 'text', text: `call-${streamCalls}` }
+        yield { id: `call-${streamCalls}`, type: 'text', text: `call-${streamCalls}` }
       },
     }
 
@@ -226,6 +256,6 @@ describe('useAgentStream', () => {
 
     expect(streamCalls).toBe(2)
     // Only the SECOND (surviving) call's part made it into final state — the first is discarded.
-    expect(capturedParts).toEqual([{ type: 'text', text: 'call-2' }])
+    expect(capturedParts).toEqual([{ id: 'call-2', type: 'text', text: 'call-2' }])
   })
 })

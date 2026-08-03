@@ -10,7 +10,10 @@
  */
 import { describe, expect, it } from 'bun:test'
 
+import * as agentBarrel from '../src/agent'
+import * as agentChatBarrel from '../src/agent-chat'
 import * as chartsBarrel from '../src/charts'
+import * as rootBarrel from '../src/index'
 import * as tokensBarrel from '../src/tokens'
 
 const RAW_PALETTE_KEYS = [
@@ -66,5 +69,48 @@ describe('barrel surface', () => {
         expect((chartsBarrel as Record<string, unknown>)[key]).toBeDefined()
       })
     }
+  })
+
+  // ./agent — the headless part-renderer registry seam (B2 lane 2): `definePartRenderers` and
+  // `narrowAgentPart` are the two runtime-checkable values `ThreadTranscript`'s open-registry
+  // resolution order depends on. `ToolRenderer` (the pre-1.11.0 always-expanded tool renderer) was
+  // never exported from this barrel, so there is nothing to assert removed. `isResumable` is the
+  // B2 convergence-pass fix: it lived in transport.ts but was missing from this barrel.
+  describe('./agent', () => {
+    const AGENT_REQUIRED_KEYS = ['definePartRenderers', 'narrowAgentPart', 'isResumable'] as const
+
+    for (const key of AGENT_REQUIRED_KEYS) {
+      it(`exports '${key}'`, () => {
+        expect((agentBarrel as Record<string, unknown>)[key]).toBeDefined()
+      })
+    }
+  })
+
+  // ./agent-chat — `ToolChip` replaces the internal `ToolRenderer`/`ToolChipRenderer` adapter as
+  // the public collapsed tool-call row; neither adapter is (or was) exported here.
+  describe('./agent-chat', () => {
+    const AGENT_CHAT_REQUIRED_KEYS = [
+      'ToolChip',
+      'threadPartRenderers',
+      'ThreadTranscript',
+    ] as const
+
+    for (const key of AGENT_CHAT_REQUIRED_KEYS) {
+      it(`exports '${key}'`, () => {
+        expect((agentChatBarrel as Record<string, unknown>)[key]).toBeDefined()
+      })
+    }
+
+    it('does not export the internal ToolChipRenderer adapter', () => {
+      expect(Object.prototype.hasOwnProperty.call(agentChatBarrel, 'ToolChipRenderer')).toBe(false)
+    })
+  })
+
+  // root (.) — the B2 convergence-pass fix: `ToolChip` is documented ("from `./agent-chat` and
+  // `.`") but was missing from the root's selective re-export of `./agent-chat`.
+  describe('. (root)', () => {
+    it("exports 'ToolChip'", () => {
+      expect((rootBarrel as Record<string, unknown>)['ToolChip']).toBeDefined()
+    })
   })
 })

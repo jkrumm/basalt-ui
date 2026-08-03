@@ -5,6 +5,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { mergePart } from './merge'
+import type { TranscriptPart } from './foreign'
 import type { AgentPart, TextPart, ToolCallPart } from './parts'
 
 describe('mergePart', () => {
@@ -89,5 +90,30 @@ describe('mergePart', () => {
     const merged = mergePart(parts, next)
     expect(merged.map((p) => p.id)).toEqual(['a', 'b', 'c'])
     expect((merged[1] as TextPart).text).toBe('second!!')
+  })
+
+  // B2 convergence fix: mergePart is constrained on PartLike (structural `id` + `type`), not the
+  // closed AgentPart union, precisely so a ForeignPart (never text-like) flows through the same
+  // accumulator. This is the compile-time contract `useAgentThreadRuns<TranscriptPart>` depends on.
+  test('a foreign part (never text-like) survives a round trip unchanged', () => {
+    const parts: TranscriptPart[] = []
+    const first = mergePart(parts, {
+      id: 'f1',
+      type: 'data-toolProgress',
+      tool: 'search',
+      message: 'searching',
+    })
+    expect(first).toEqual([
+      { id: 'f1', type: 'data-toolProgress', tool: 'search', message: 'searching' },
+    ])
+  })
+
+  test('a replayed foreign part (same id) replaces wholesale rather than duplicating', () => {
+    let parts: TranscriptPart[] = []
+    parts = mergePart(parts, { id: 'f1', type: 'data-toolProgress', message: 'searching' })
+    parts = mergePart(parts, { id: 'f1', type: 'data-toolProgress', message: 'done' })
+
+    expect(parts).toHaveLength(1)
+    expect(parts).toEqual([{ id: 'f1', type: 'data-toolProgress', message: 'done' }])
   })
 })

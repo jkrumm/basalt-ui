@@ -47,13 +47,22 @@
  *   resolveOutcome: heuristicOutcome,
  * })
  */
+import { assertNever } from '../register'
+import { TERMINAL_TOOL_STATES } from './parts'
 import type { AgentPart, AgentPartDraft } from './parts'
-import type { AgentTransport } from './transport'
+import type { ResumableAgentTransport } from './transport'
 
 // ── ai (optional peer) — TYPE-ONLY imports, erased at runtime ────────────────
 // verbatimModuleSyntax-safe: these never trigger a runtime resolution of 'ai'. The actual runtime
 // access goes through the memoized `import('ai')` inside resolveAiSdk() below.
-import type { DefaultChatTransport, UIMessage, UIMessageChunk, readUIMessageStream } from 'ai'
+import type {
+  DefaultChatTransport,
+  DynamicToolUIPart,
+  ToolUIPart,
+  UIMessage,
+  UIMessageChunk,
+  readUIMessageStream,
+} from 'ai'
 
 /** The element type of an AI SDK UIMessage's `parts` array (defaults applied). */
 type AiPart = UIMessage['parts'][number]
@@ -76,13 +85,13 @@ export type AiSdkTransportOptions = {
 
 // ── AiSdkTransport ─────────────────────────────────────────────────────────────
 
-export type AiSdkTransport<TPart = AgentPart> = AgentTransport<TPart, string> & {
+export type AiSdkTransport<TPart = AgentPart> = ResumableAgentTransport<TPart, string> & {
   /**
    * Returns an AgentTransport bound to a stable chat id (e.g. a basalt-ui thread id) instead of
    * this transport's own fixed one. Use this for useAgentThreadRuns's per-thread transport-factory
    * form so each thread's turns share one continuous AI SDK chat session.
    */
-  readonly forThread: (chatId: string) => AgentTransport<TPart, string>
+  readonly forThread: (chatId: string) => ResumableAgentTransport<TPart, string>
 }
 
 // ── Lazy, memoized 'ai' resolution ────────────────────────────────────────────
@@ -120,88 +129,209 @@ function createAiSdkResolver(options: AiSdkTransportOptions): () => Promise<Reso
 
 /**
  * Diffs one AI SDK part (by array index) against its previous snapshot at that same index,
- * returning zero or more new AgentPart deltas.
+ * returning zero or more new AgentPart drafts, each carrying a deterministic id.
  *
- * source-document, file, reasoning-file, data-*, step-start, custom, and dynamic-tool parts have
- * no AgentPart equivalent yet — deliberate v1 gap, skipped rather than inventing new variants.
+ * Index-addressed parts (text, reasoning, source) get `${chatId}#${index}` — stable across
+ * replays of the same snapshot sequence, which is what lets `mergePart` rewrite instead of
+ * duplicate on a resumed/replayed stream. text/reasoning also carry an authoritative `offset`
+ * (the length of the previously-seen text for that part) so a full-length resend at offset 0
+ * splices over the existing content instead of appending — the literal mechanism
+ * `idempotentReplay: true` asserts.
+ *
+ * source-document, file, reasoning-file, data-*, step-start, and custom parts have no AgentPart
+ * equivalent yet — deliberate v1 gap, skipped rather than inventing new variants.
  */
-function diffPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPartDraft[] {
+function diffPart(
+  chatId: string,
+  index: number,
+  prevPart: AiPart | undefined,
+  currPart: AiPart,
+  toolStartTimes: Map<string, number>,
+): AgentPartDraft[] {
   switch (currPart.type) {
     case 'text': {
       const prevText = prevPart?.type === 'text' ? prevPart.text : ''
       const delta = currPart.text.slice(prevText.length)
-      return delta.length === 0 ? [] : [{ type: 'text', text: delta }]
+      return delta.length === 0
+        ? []
+        : [{ id: `${chatId}#${index}`, type: 'text', text: delta, offset: prevText.length }]
     }
     case 'reasoning': {
       const prevText = prevPart?.type === 'reasoning' ? prevPart.text : ''
       const delta = currPart.text.slice(prevText.length)
-      return delta.length === 0 ? [] : [{ type: 'reasoning', text: delta }]
+      return delta.length === 0
+        ? []
+        : [{ id: `${chatId}#${index}`, type: 'reasoning', text: delta, offset: prevText.length }]
     }
     case 'source-url': {
       // Emit once, the first time this part appears at this index.
       if (prevPart !== undefined) return []
-      const source: AgentPartDraft = { type: 'source', url: currPart.url }
+      const source: AgentPartDraft = { id: `${chatId}#${index}`, type: 'source', url: currPart.url }
       return [currPart.title !== undefined ? { ...source, title: currPart.title } : source]
     }
     default:
-      return currPart.type.startsWith('tool-') ? diffToolPart(prevPart, currPart) : []
+      return isToolLikePart(currPart) ? diffToolPart(prevPart, currPart, toolStartTimes) : []
   }
+}
+
+/** True for a `tool-${name}` static part OR a `dynamic-tool` part — the two AI SDK shapes basalt
+ * models as one `ToolCallPart`. `'dynamic-tool'` does NOT start with `'tool-'`, so this must be
+ * its own check, not a `.startsWith('tool-')` alone (that silently drops every dynamic tool call). */
+function isToolLikePart(part: AiPart): part is ToolUIPart | DynamicToolUIPart {
+  return part.type === 'dynamic-tool' || part.type.startsWith('tool-')
+}
+
+/** Derives the tool's display name — mirrors AI SDK's own `getToolName`/`getStaticToolName`
+ * runtime (reimplemented locally rather than value-imported, so this module never resolves 'ai'
+ * at runtime; see the module docblock). Static tools carry their name only in the `tool-${name}`
+ * discriminator; dynamic tools carry it in `toolName`. */
+function deriveToolName(part: ToolUIPart | DynamicToolUIPart): string {
+  return part.type === 'dynamic-tool' ? part.toolName : part.type.split('-').slice(1).join('-')
+}
+
+/** The `{ output, preliminary }` snapshot of an `output-available` tool part, or undefined for
+ * any other state. */
+function outputSnapshot(
+  part: ToolUIPart | DynamicToolUIPart,
+): { readonly output: unknown; readonly preliminary: boolean | undefined } | undefined {
+  return part.state === 'output-available'
+    ? { output: part.output, preliminary: part.preliminary }
+    : undefined
 }
 
 /**
- * Minimal structural shape read off a `tool-${name}` UIMessagePart. Cast to this (rather than
- * AI SDK's own generic ToolUIPart<TOOLS>) because we diff by raw `type`/`state` string comparison,
- * not by a caller-supplied tool registry.
+ * True when `curr` reports nothing new relative to `prev` — same state AND (for output-available)
+ * the same output/preliminary content. A `preliminary: true` result streams several
+ * output-available snapshots with the SAME `state` but a MUTATING `output`; naive state-equality
+ * would freeze on the first snapshot and drop every refinement. Content (not reference) equality:
+ * each snapshot from `readUIMessageStream` is a fresh `structuredClone`, so `===` on nested output
+ * objects would never match even when genuinely unchanged.
  */
-type ToolLike = {
-  readonly type: string
-  readonly toolCallId: string
-  readonly state: string
-  readonly input?: unknown
-  readonly output?: unknown
-  readonly errorText?: string
+function isSameToolState(
+  prev: ToolUIPart | DynamicToolUIPart,
+  curr: ToolUIPart | DynamicToolUIPart,
+): boolean {
+  if (prev.state !== curr.state) return false
+  const prevOutput = outputSnapshot(prev)
+  const currOutput = outputSnapshot(curr)
+  if (prevOutput === undefined || currOutput === undefined) return true
+  return (
+    JSON.stringify(prevOutput.output) === JSON.stringify(currOutput.output) &&
+    prevOutput.preliminary === currOutput.preliminary
+  )
 }
 
-function diffToolPart(prevPart: AiPart | undefined, currPart: AiPart): AgentPartDraft[] {
-  const curr = currPart as unknown as ToolLike
-  // Deliberate v1 simplification: never emit on 'input-streaming' (partial/DeepPartial input) —
-  // wait for at least 'input-available' so the consumer isn't flooded with incomplete fragments.
-  if (curr.state === 'input-streaming') return []
-
-  const prev =
-    prevPart !== undefined && prevPart.type === currPart.type
-      ? (prevPart as unknown as ToolLike)
-      : undefined
-  // Already emitted this exact state for this tool call index — nothing new to report.
-  if (prev?.state === curr.state) return []
-
-  const toolName = curr.type.slice('tool-'.length)
-  const common = { type: 'tool' as const, toolName, toolCallId: curr.toolCallId }
-
-  if (curr.state === 'output-available') {
-    return [{ ...common, state: 'output-available', input: curr.input, output: curr.output }]
+/**
+ * Diffs one tool part across the seven-state `UIToolInvocation` union into a `ToolCallPart` draft,
+ * addressed by `tool#${toolCallId}` — stable across every state transition of one call, so
+ * `mergePart` rewrites the same part in place rather than stacking one entry per state.
+ *
+ * `durationMs` is basalt's own field (the SDK doesn't provide one): wall-clock from this
+ * toolCallId's first sighting (recorded in `toolStartTimes`, scoped to ONE stream() / resume()
+ * call — never module-global, so two concurrent threads never share timings) to a terminal state.
+ */
+function diffToolPart(
+  prevPart: AiPart | undefined,
+  currPart: ToolUIPart | DynamicToolUIPart,
+  toolStartTimes: Map<string, number>,
+): AgentPartDraft[] {
+  if (!toolStartTimes.has(currPart.toolCallId)) {
+    toolStartTimes.set(currPart.toolCallId, Date.now())
   }
-  if (curr.state === 'output-error') {
-    // errorText is the SDK's (and our) real field name — parts.ts's ToolCallPart has no field
-    // named `error`; stuffing the failure into `output` (the pre-1.11.0 behavior) is gone.
-    return [
-      { ...common, state: 'output-error', input: curr.input, errorText: curr.errorText ?? '' },
-    ]
+
+  const prev = prevPart !== undefined && isToolLikePart(prevPart) ? prevPart : undefined
+  if (prev !== undefined && isSameToolState(prev, currPart)) return []
+
+  const settled = (TERMINAL_TOOL_STATES as readonly string[]).includes(currPart.state)
+  const durationMs = settled
+    ? Date.now() - (toolStartTimes.get(currPart.toolCallId) ?? Date.now())
+    : undefined
+
+  const base = {
+    id: `tool#${currPart.toolCallId}`,
+    type: 'tool' as const,
+    toolCallId: currPart.toolCallId,
+    toolName: deriveToolName(currPart),
+    ...(currPart.providerExecuted !== undefined
+      ? { providerExecuted: currPart.providerExecuted }
+      : {}),
+    ...(durationMs !== undefined ? { durationMs } : {}),
   }
-  // Any other state (input-available, approval-requested, approval-responded, output-denied) is
-  // passed through flat, same as before this brief's change — full per-state modeling (the SDK's
-  // nested `approval` envelope, output-denied's `reason`) is the transport's own B2 rewrite,
-  // deliberately out of scope here. Mechanical type-only adaptation: ToolLike doesn't carry those
-  // fields, so this branch can't honestly construct a fully-typed member — cast instead of
-  // inventing data.
-  return [{ ...common, state: curr.state, input: curr.input } as unknown as AgentPartDraft]
+
+  switch (currPart.state) {
+    case 'input-streaming':
+      return [
+        {
+          ...base,
+          state: 'input-streaming',
+          ...(currPart.input !== undefined ? { input: currPart.input } : {}),
+        },
+      ]
+    case 'input-available':
+      return [{ ...base, state: 'input-available', input: currPart.input }]
+    case 'approval-requested':
+      return [
+        {
+          ...base,
+          state: 'approval-requested',
+          input: currPart.input,
+          approval: currPart.approval,
+        },
+      ]
+    case 'approval-responded':
+      return [
+        {
+          ...base,
+          state: 'approval-responded',
+          input: currPart.input,
+          approval: currPart.approval,
+        },
+      ]
+    case 'output-available':
+      return [
+        {
+          ...base,
+          state: 'output-available',
+          input: currPart.input,
+          output: currPart.output,
+          ...(currPart.preliminary !== undefined ? { preliminary: currPart.preliminary } : {}),
+          ...(currPart.approval !== undefined ? { approval: currPart.approval } : {}),
+        },
+      ]
+    case 'output-error': {
+      // rawInput only exists on the static ToolUIPart variant — a DynamicToolUIPart's output-error
+      // has no such field at all, so this must be read defensively behind the type discriminant.
+      const rawInput = currPart.type === 'dynamic-tool' ? undefined : currPart.rawInput
+      return [
+        {
+          ...base,
+          state: 'output-error',
+          ...(currPart.input !== undefined ? { input: currPart.input } : {}),
+          errorText: currPart.errorText,
+          ...(rawInput !== undefined ? { rawInput } : {}),
+          ...(currPart.approval !== undefined ? { approval: currPart.approval } : {}),
+        },
+      ]
+    }
+    case 'output-denied':
+      return [
+        { ...base, state: 'output-denied', input: currPart.input, approval: currPart.approval },
+      ]
+    default:
+      return assertNever(currPart)
+  }
 }
 
 /** Diffs every index of one UIMessage snapshot against the previous snapshot. */
-function diffMessage(prev: UIMessage | undefined, curr: UIMessage): AgentPartDraft[] {
+function diffMessage(
+  chatId: string,
+  prev: UIMessage | undefined,
+  curr: UIMessage,
+  toolStartTimes: Map<string, number>,
+): AgentPartDraft[] {
   const deltas: AgentPartDraft[] = []
   curr.parts.forEach((part, i) => {
-    deltas.push(...diffPart(prev?.parts[i], part))
+    deltas.push(...diffPart(chatId, i, prev?.parts[i], part, toolStartTimes))
   })
   return deltas
 }
@@ -212,19 +342,28 @@ function diffMessage(prev: UIMessage | undefined, curr: UIMessage): AgentPartDra
  * built-in AgentPart variants, so TPart must be — or be assignable from — AgentPart for a
  * meaningful result; same documented-cast convention as useAgentThreadRuns' defaultToUserParts).
  *
+ * `chatId` is the id-namespace for this diff pass — the caller's chat id on stream(), the
+ * resumeToken (which IS the chat id, see the module docblock's CHAT ID BINDING note) on resume() —
+ * so index-addressed ids line up with the original run's ids across a reconnect.
+ *
+ * A fresh `toolStartTimes` map is scoped to ONE diffChunkStream call (one stream()/resume()
+ * invocation), never shared across calls or threads.
+ *
  * `resume()`'s underlying reconnectToStream call has no AbortSignal parameter in the current AI
  * SDK API (unlike sendMessages), so we can't cancel the in-flight fetch directly — checking
  * `signal.aborted` here at least stops yielding further deltas to an aborted caller promptly.
  */
 async function* diffChunkStream<TPart>(
+  chatId: string,
   chunkStream: ReadableStream<UIMessageChunk>,
   readStream: typeof readUIMessageStream,
   signal?: AbortSignal,
 ): AsyncGenerator<TPart> {
   let prev: UIMessage | undefined
+  const toolStartTimes = new Map<string, number>()
   for await (const curr of readStream<UIMessage>({ stream: chunkStream })) {
     if (signal?.aborted) return
-    for (const part of diffMessage(prev, curr)) {
+    for (const part of diffMessage(chatId, prev, curr, toolStartTimes)) {
       yield part as TPart
     }
     prev = curr
@@ -249,12 +388,16 @@ export function aiSdkTransport<TPart = AgentPart>(
 ): AiSdkTransport<TPart> {
   const resolveAiSdk = createAiSdkResolver(options)
 
-  function makeTransport(chatId: string): AgentTransport<TPart, string> {
+  function makeTransport(chatId: string): ResumableAgentTransport<TPart, string> {
     return {
+      // Every text/reasoning delta this transport emits carries an authoritative `offset` (see
+      // diffPart), so a replayed run rewrites in place instead of duplicating — the literal
+      // condition this assertion stands for.
+      idempotentReplay: true,
       async *stream(input: string, signal?: AbortSignal): AsyncGenerator<TPart> {
         // Synthesized locally, first — we already know the chat id client-side, so there is no
         // need to wait on the server to hand us a run id (unlike a river-style protocol).
-        yield { type: 'start', runId: chatId, resumeToken: chatId } as TPart
+        yield { id: `${chatId}#start`, type: 'start', runId: chatId, resumeToken: chatId } as TPart
 
         const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
         const userMessage: UIMessage = {
@@ -269,13 +412,15 @@ export function aiSdkTransport<TPart = AgentPart>(
           messageId: undefined,
           abortSignal: signal,
         })
-        yield* diffChunkStream<TPart>(chunkStream, readStream, signal)
+        yield* diffChunkStream<TPart>(chatId, chunkStream, readStream, signal)
       },
       async *resume(resumeToken: string, signal?: AbortSignal): AsyncGenerator<TPart> {
         const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
         const chunkStream = await httpTransport.reconnectToStream({ chatId: resumeToken })
         if (chunkStream === null) return
-        yield* diffChunkStream<TPart>(chunkStream, readStream, signal)
+        // resumeToken IS the chat id (see CHAT ID BINDING above) — reusing it as the id-namespace
+        // here keeps replayed index-addressed ids identical to the ones the original run minted.
+        yield* diffChunkStream<TPart>(resumeToken, chunkStream, readStream, signal)
       },
     }
   }

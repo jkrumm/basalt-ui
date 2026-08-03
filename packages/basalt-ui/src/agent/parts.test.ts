@@ -246,6 +246,32 @@ describe('parseAgentPart', () => {
       expect(parseAgentPart(raw)).toBeNull()
     })
 
+    test('approval-requested: rejects an approval that already carries approved (a verdict, not a pending request)', () => {
+      const raw = {
+        id: 'p1',
+        type: 'tool',
+        toolCallId: 'call-1',
+        toolName: 'search',
+        state: 'approval-requested',
+        input: { q: 'x' },
+        approval: { id: 'appr-1', approved: true },
+      }
+      expect(parseAgentPart(raw)).toBeNull()
+    })
+
+    test('approval-requested: rejects an approval that already carries a reason', () => {
+      const raw = {
+        id: 'p1',
+        type: 'tool',
+        toolCallId: 'call-1',
+        toolName: 'search',
+        state: 'approval-requested',
+        input: { q: 'x' },
+        approval: { id: 'appr-1', reason: 'too risky' },
+      }
+      expect(parseAgentPart(raw)).toBeNull()
+    })
+
     test('approval-responded: round-trips with approved + reason', () => {
       const part: ToolCallPart = {
         id: 'p1',
@@ -338,6 +364,20 @@ describe('parseAgentPart', () => {
       expect(parseAgentPart(raw)).toBeNull()
     })
 
+    test('output-available: rejects approval.approved === false (a denial masquerading as output)', () => {
+      const raw = {
+        id: 'p1',
+        type: 'tool',
+        toolCallId: 'call-1',
+        toolName: 'search',
+        state: 'output-available',
+        input: { q: 'x' },
+        output: { hits: 3 },
+        approval: { id: 'appr-1', approved: false },
+      }
+      expect(parseAgentPart(raw)).toBeNull()
+    })
+
     test('output-error: uses errorText, not error, and round-trips with rawInput', () => {
       const part: ToolCallPart = {
         id: 'p1',
@@ -358,6 +398,19 @@ describe('parseAgentPart', () => {
         toolCallId: 'call-1',
         toolName: 'search',
         state: 'output-error',
+      }
+      expect(parseAgentPart(raw)).toBeNull()
+    })
+
+    test('output-error: rejects approval.approved === false (a denial masquerading as an error)', () => {
+      const raw = {
+        id: 'p1',
+        type: 'tool',
+        toolCallId: 'call-1',
+        toolName: 'search',
+        state: 'output-error',
+        errorText: 'boom',
+        approval: { id: 'appr-1', approved: false },
       }
       expect(parseAgentPart(raw)).toBeNull()
     })
