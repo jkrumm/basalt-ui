@@ -2240,7 +2240,6 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
   try {
     // Bun: Bun.stdin.text() drains stdin to a string; under Node fall back to manual drain.
     if (typeof (globalThis as Record<string, unknown>)['Bun'] !== 'undefined') {
-      // @ts-expect-error — Bun global, not in @types/bun for this import context
       raw = await globalThis['Bun'].stdin.text()
     } else {
       const chunks: Buffer[] = []

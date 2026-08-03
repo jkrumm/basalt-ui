@@ -28,7 +28,12 @@ import type { StatCardTone } from './stat-card'
 function render(tone?: StatCardTone) {
   return renderToStaticMarkup(
     <MantineProvider>
-      <StatCard label="Downtime · last 24h" value="0 min" tone={tone} />
+      {/* exactOptionalPropertyTypes forbids an explicit tone={undefined} — spread only when set */}
+      <StatCard
+        label="Downtime · last 24h"
+        value="0 min"
+        {...(tone !== undefined ? { tone } : {})}
+      />
     </MantineProvider>,
   )
 }

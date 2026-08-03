@@ -8,9 +8,13 @@
 import { describe, expect, test } from 'bun:test'
 import { definePartRenderers, narrowAgentPart } from './foreign'
 import type { TranscriptPart } from './foreign'
+import type { AgentPart } from './parts'
 
 describe('narrowAgentPart', () => {
-  const BUILT_IN_SAMPLES: TranscriptPart[] = [
+  // Typed AgentPart[], not TranscriptPart[]: every literal here IS a built-in variant (the whole
+  // point of this fixture), and narrowAgentPart's return type is AgentPart | null — comparing it
+  // against a TranscriptPart-typed element (which also admits ForeignPart) doesn't type-check.
+  const BUILT_IN_SAMPLES: AgentPart[] = [
     { id: 'p1', type: 'start', runId: 'r1' },
     { id: 'p2', type: 'text', text: 'hi' },
     { id: 'p3', type: 'reasoning', text: 'thinking' },

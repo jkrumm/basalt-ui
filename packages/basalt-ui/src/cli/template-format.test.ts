@@ -46,12 +46,12 @@ describe('shipped managed templates are oxfmt-clean', () => {
     expectOxfmtNoop('CLAUDE.md', filled)
   })
 
-  it.each(RULE_NAMES)('agent/rules/basalt-%s.md (managed) round-trips unchanged', (name) => {
+  it.each([...RULE_NAMES])('agent/rules/basalt-%s.md (managed) round-trips unchanged', (name) => {
     const content = readFileSync(resolve(PKG_ROOT, `agent/rules/basalt-${name}.md`), 'utf8')
     expectOxfmtNoop(`basalt-${name}.md`, content)
   })
 
-  it.each(SKILL_NAMES)('agent/skills/%s/SKILL.md (managed) round-trips unchanged', (name) => {
+  it.each([...SKILL_NAMES])('agent/skills/%s/SKILL.md (managed) round-trips unchanged', (name) => {
     const content = readFileSync(resolve(PKG_ROOT, `agent/skills/${name}/SKILL.md`), 'utf8')
     expectOxfmtNoop('SKILL.md', content)
   })

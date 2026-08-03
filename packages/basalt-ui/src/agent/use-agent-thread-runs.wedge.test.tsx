@@ -50,11 +50,12 @@
  * single attempt.
  */
 import { describe, expect, test } from 'bun:test'
+import type { JSX } from 'react'
 import { Activity, StrictMode, useState } from 'react'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { useAgentThreadRuns } from './use-agent-thread-runs'
 import type { AgentThread, ThreadsStore } from './thread'
-import type { AgentTransport } from './transport'
+import type { AgentTransport, ResumableAgentTransport } from './transport'
 import type { AgentPart } from './parts'
 import type { ChatMessage } from './history'
 import type { AgentOutcome } from './outcome'
@@ -134,6 +135,11 @@ function createTestThreadsStore(initial: AgentThread<AgentPart>[] = []): Threads
       threads = []
       activeId = null
     },
+    // Always-hydrated, never-erroring — mirrors the localStorage-backed store's real values
+    // (see ThreadsStore.hydrated/.error doc comments); this double is a synchronous in-memory
+    // stand-in with no async load path to fail.
+    hydrated: true,
+    error: undefined,
   }
 }
 
@@ -199,7 +205,7 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const userMessage: ChatMessage<AgentPart> = {
       id: crypto.randomUUID(),
       role: 'user',
-      parts: [{ type: 'text', text: 'hello' }],
+      parts: [{ id: 'seed-user-part', type: 'text', text: 'hello' }],
       createdAt: Date.now(),
     }
     const thread = makeThread({
@@ -210,11 +216,11 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const store = createTestThreadsStore([thread])
 
     let resumeCalls = 0
-    const transport = {
+    const transport: ResumableAgentTransport<AgentPart, string> = {
       async *stream() {},
       async *resume() {
         resumeCalls++
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       idempotentReplay: true as const,
     }
@@ -235,7 +241,7 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const userMessage: ChatMessage<AgentPart> = {
       id: crypto.randomUUID(),
       role: 'user',
-      parts: [{ type: 'text', text: 'hello' }],
+      parts: [{ id: 'seed-user-part', type: 'text', text: 'hello' }],
       createdAt: Date.now(),
     }
     const thread = makeThread({
@@ -251,12 +257,12 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
     const gate = deferred<void>()
 
     let resumeCalls = 0
-    const transport = {
+    const transport: ResumableAgentTransport<AgentPart, string> = {
       async *stream() {},
       async *resume() {
         resumeCalls++
         await gate.promise
-        yield { type: 'text', text: 'resumed' }
+        yield { id: 'p1', type: 'text', text: 'resumed' }
       },
       idempotentReplay: true as const,
     }

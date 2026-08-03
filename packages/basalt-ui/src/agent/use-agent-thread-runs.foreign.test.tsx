@@ -86,6 +86,11 @@ function createTestThreadsStore(): ThreadsStore<TranscriptPart> {
       threads = []
       activeId = null
     },
+    // Always-hydrated, never-erroring — mirrors the localStorage-backed store's real values
+    // (see ThreadsStore.hydrated/.error doc comments); this double is a synchronous in-memory
+    // stand-in with no async load path to fail.
+    hydrated: true,
+    error: undefined,
   }
 }
 

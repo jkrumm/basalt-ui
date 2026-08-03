@@ -4,6 +4,7 @@
  */
 import { describe, expect, test } from 'bun:test'
 import { withPartIds } from './id'
+import type { AgentPartDraft } from './parts'
 
 async function* gen<T>(values: T[]): AsyncGenerator<T> {
   for (const value of values) yield value
@@ -17,7 +18,10 @@ async function collect<T>(source: AsyncGenerator<T>): Promise<T[]> {
 
 describe('withPartIds', () => {
   test('stamps a sequential id on every draft missing one', async () => {
-    const drafts = [
+    // Annotated: all three literals uniformly omit `id`, so without this TS infers an `id`-less
+    // element type that has no properties in common with withPartIds' `{ id?: string }`
+    // constraint — a weak-type check failure, not a real shape mismatch.
+    const drafts: AgentPartDraft[] = [
       { type: 'text', text: 'a' },
       { type: 'text', text: 'b' },
       { type: 'text', text: 'c' },
@@ -37,7 +41,7 @@ describe('withPartIds', () => {
   })
 
   test('is idempotent: re-running withPartIds over already-identified parts changes nothing', async () => {
-    const drafts = [{ type: 'text', text: 'a' }]
+    const drafts: AgentPartDraft[] = [{ type: 'text', text: 'a' }]
     const once = await collect(withPartIds('run-1', gen(drafts)))
     const twice = await collect(withPartIds('run-1', gen(once)))
     expect(twice).toEqual(once)

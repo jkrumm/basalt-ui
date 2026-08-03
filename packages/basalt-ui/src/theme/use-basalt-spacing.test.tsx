@@ -28,7 +28,8 @@ function readBasaltSpacing(theme?: MantineProviderProps['theme']) {
     return null
   }
   renderToStaticMarkup(
-    <MantineProvider theme={theme}>
+    // exactOptionalPropertyTypes forbids an explicit theme={undefined} — spread only when set
+    <MantineProvider {...(theme !== undefined ? { theme } : {})}>
       <Probe />
     </MantineProvider>,
   )

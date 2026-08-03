@@ -8,9 +8,13 @@
  *    package, not `happy-dom` itself) installs `window`/`document`/etc as globals so
  *    React 19 + Testing Library can render into a real DOM under `bun test`.
  *
- * 2. happy-dom does not implement `ResizeObserver` or `window.matchMedia`, both of which
- *    Mantine v9 components touch during mount. Shimmed here, guarded by `typeof x ===
- *    'undefined'` so a future happy-dom release that ships either one wins over the shim.
+ * 2. happy-dom does not implement `ResizeObserver`, `window.matchMedia`, or `document.fonts`,
+ *    all of which Mantine v9 components touch during mount — `document.fonts` specifically via
+ *    `Textarea`'s autosize implementation (`@mantine/core/components/Textarea/Autosize`), which
+ *    calls `document.fonts.addEventListener('loadingdone', ...)` on mount and
+ *    `removeEventListener` on unmount to re-measure once web fonts settle. Shimmed here, guarded
+ *    by `typeof x === 'undefined'` so a future happy-dom release that ships any of the three wins
+ *    over the shim.
  *
  * 3. Testing Library's auto-cleanup silently NO-OPS under `bun test`. RTL registers its
  *    afterEach hook with `if (typeof afterEach === 'function')` checked against the GLOBAL
@@ -100,6 +104,21 @@ if (typeof window.matchMedia === 'undefined') {
       removeEventListener: () => {},
       dispatchEvent: () => false,
     }) as MediaQueryList
+}
+
+if (typeof document.fonts === 'undefined') {
+  // `document.fonts` (the CSS Font Loading API's `FontFaceSet`) is `readonly` on `Document`,
+  // so — unlike `window.matchMedia` above — it cannot be restored with a plain assignment;
+  // `defineProperty` is the only way to install it. Only `addEventListener`/`removeEventListener`
+  // are exercised (Mantine never calls `check`/`load`/`ready`/etc), so this deliberately stops at
+  // those two rather than reimplementing the full `FontFaceSet` interface.
+  Object.defineProperty(document, 'fonts', {
+    configurable: true,
+    value: {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+  })
 }
 
 const { cleanup } = await import('@testing-library/react')
