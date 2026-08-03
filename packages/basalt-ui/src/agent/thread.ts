@@ -24,6 +24,7 @@
 import { useCallback, useRef } from 'react'
 import { createPersistedState } from '../state'
 import type { ChatMessage } from './history'
+import { mintThreadId } from './id'
 import type { AgentOutcome } from './outcome'
 import type { AgentPart } from './parts'
 
@@ -138,6 +139,20 @@ export type ThreadsStore<TPart = AgentPart> = {
   readonly remove: (id: string) => void
   /** Remove all threads and clear the active selection. */
   readonly clear: () => void
+  /**
+   * Whether `threads` reflects the backing store yet. Always `true` for the localStorage store
+   * (createPersistedState resolves synchronously); meaningful only for an async, server-backed
+   * store built with `createAdapterThreadsStore` (./adapter), where it stays `false` until the
+   * first `listThreads` SUCCEEDS. Pair it with `error` — `!hydrated && error !== undefined` is a
+   * failed load, `!hydrated && error === undefined` is still loading.
+   */
+  readonly hydrated: boolean
+  /**
+   * The most recent persistence failure, or `undefined`. Always `undefined` for the localStorage
+   * store, which has no failure the caller can act on. An async store surfaces the rejected
+   * load/write here after rolling its optimistic edit back.
+   */
+  readonly error: unknown
 }
 
 // ── createThreadsStore ────────────────────────────────────────────────────────
@@ -198,7 +213,7 @@ export function createThreadsStore<TPart = AgentPart>(
 
     const create = useCallback(
       (createOpts?: { readonly meta?: Record<string, unknown> }): string => {
-        const id = crypto.randomUUID()
+        const id = mintThreadId()
         const now = Date.now()
         const thread: AgentThread<TPart> = {
           id,
@@ -307,6 +322,11 @@ export function createThreadsStore<TPart = AgentPart>(
       markRead,
       remove,
       clear,
+      // localStorage resolves synchronously and swallows its own quota errors, so there is never
+      // a pending load to await nor a failure a caller could act on. See ./adapter for the async
+      // store where these two carry real information.
+      hydrated: true,
+      error: undefined,
     }
   }
 }
