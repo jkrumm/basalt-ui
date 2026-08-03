@@ -1,3 +1,13 @@
+# [1.11.0](https://github.com/jkrumm/basalt-ui/compare/v1.10.0...v1.11.0) (2026-08-03)
+
+
+### Features
+
+* give every part a stable id and mirror v7's real tool lifecycle ([d63aac3](https://github.com/jkrumm/basalt-ui/commit/d63aac3267d2322dfd027ba9b78e730eeec95d30))
+* make the transcript addressable, open, and honest about how a turn ended ([f153107](https://github.com/jkrumm/basalt-ui/commit/f1531077b411517226d2f349970677951d95bd59))
+* promote the shade-index guard out of its grace period ([e6a7bf9](https://github.com/jkrumm/basalt-ui/commit/e6a7bf919a1c28246157f918b5462311b37bc192))
+* prove the transcript layer from outside the package boundary ([52bd6d2](https://github.com/jkrumm/basalt-ui/commit/52bd6d2965e780d9d11008c6c449120285983c76))
+
 # [1.10.0](https://github.com/jkrumm/basalt-ui/compare/v1.9.0...v1.10.0) (2026-08-02)
 
 
