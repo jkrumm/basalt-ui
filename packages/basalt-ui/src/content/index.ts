@@ -4,7 +4,8 @@
  * Mantine-coupled (like `./forms`/`./notifications`/`./data`): prose typography, a shiki-backed
  * code block (optional peer, lazy singleton), a semantic callout, a scroll-spy TOC rail, a
  * scroll-driven reading-progress bar, a streaming-aware `Markdown` renderer (react-markdown +
- * remark-gfm, optional peers), `MermaidDiagram` (beautiful-mermaid, optional peer), the MDX
+ * remark-gfm + rehype-sanitize + remend, all optional peers) with its fence-renderer registry,
+ * `MermaidDiagram` (beautiful-mermaid, optional peer), the MDX
  * component map, the docs-page frame (`ArticleLayout`), overview cards (`ArticleCard`/
  * `ArticleGrid`), and the contextual-help drawer (`GuideLink`/`GuideDrawer`). See
  * `agent/rules/basalt-content.md` for the full doctrine + the content-collections recipe.
@@ -30,8 +31,23 @@ export type { ReadingTime } from './slug'
 export { HeadingAnchor } from './heading-anchor'
 export type { HeadingAnchorProps } from './heading-anchor'
 
-export { Markdown } from './markdown'
-export type { MarkdownComponents, MarkdownProps } from './markdown'
+export { Markdown, settledOnly } from './markdown'
+export type {
+  FenceRenderContext,
+  FenceRenderer,
+  FenceRenderers,
+  MarkdownComponents,
+  MarkdownContentTrust,
+  MarkdownProps,
+} from './markdown'
+
+export { BASALT_SANITIZE_SCHEMA, mergeSanitizeSchema } from './sanitize'
+export type {
+  SanitizePropertyDefinition,
+  SanitizeSchema,
+  SanitizeSchemaExtension,
+  SanitizeSchemaInput,
+} from './sanitize'
 
 export { MermaidDiagram } from './mermaid'
 export type { MermaidDiagramProps } from './mermaid'
