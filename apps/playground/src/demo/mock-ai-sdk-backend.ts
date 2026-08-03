@@ -288,7 +288,8 @@ function textOfLastMessage(body: SendMessagesBody): string {
 
 /**
  * Builds the mock `fetch` implementation to pass as `aiSdkTransport({ fetch: ... })`. Scoped
- * entirely to `MOCK_API_PATH` — never touches global `fetch` or any real network.
+ * entirely to `MOCK_API_PATH`/`TOOL_DEMO_API_PATH` — never touches global `fetch` or any real
+ * network.
  */
 export function createMockAiSdkFetch(): typeof fetch {
   return async function mockAiSdkFetch(
@@ -314,6 +315,124 @@ export function createMockAiSdkFetch(): typeof fetch {
       return sseResponse(connectSseStream(chatId))
     }
 
+    if (method === 'POST' && path === TOOL_DEMO_API_PATH) {
+      const body = JSON.parse(String(init?.body ?? '{}')) as SendMessagesBody
+      const outcome: ToolDemoOutcome =
+        textOfLastMessage(body).trim() === 'fail' ? 'fail' : 'succeed'
+      void runToolLifecycleGeneration(body.id, outcome)
+      return sseResponse(connectSseStream(body.id))
+    }
+
     throw new Error(`mock-ai-sdk-backend: unhandled request ${method} ${path}`)
   }
+}
+
+// ── Tool lifecycle demo (basalt-ui 1.11.0 playground gate, demo 2) ───────────────────────────────
+//
+// Drives ONE tool call through the real AI-SDK wire chunks for all seven `ToolCallPart` states —
+// `input-streaming` (tool-input-start/-delta), `input-available`, `approval-requested`,
+// `approval-responded`, then whichever terminal state the run reaches (`output-available` with a
+// preliminary refinement, `output-error`, or `output-denied`). Reuses this file's generic
+// buffer/SSE plumbing above (`getOrCreateBuffer`/`pushChunk`/`markDone`/`connectSseStream`) — none
+// of it is resumption-specific, and the drop simulation never arms for this path (armDrop() is
+// never called on a TOOL_DEMO_API_PATH chat id).
+//
+// The approval step is a REAL pause: generation blocks on `waitForApproval` until the playground UI
+// calls `resolveToolApproval` from the actual `ToolChip` `onApprove`/`onDeny` handlers — so the
+// approve/deny affordances in the demo drive the SAME state machine a real backend would, not a
+// scripted timer.
+
+export const TOOL_DEMO_API_PATH = '/mock/ai-sdk-tool-lifecycle'
+
+/** Chosen before Approve is clicked — only the approved branch reaches either outcome; Deny always
+ * lands on `output-denied` regardless. */
+export type ToolDemoOutcome = 'succeed' | 'fail'
+
+const approvalWaiters = new Map<string, (approved: boolean, reason: string | undefined) => void>()
+
+/** Resolves the pending `tool-approval-request` for `approvalId` — called from `ToolChip`'s real
+ * `onApprove`/`onDeny` handlers. No-op once already resolved (or for an unknown id). */
+export function resolveToolApproval(approvalId: string, approved: boolean, reason?: string): void {
+  const resolve = approvalWaiters.get(approvalId)
+  if (resolve === undefined) return
+  approvalWaiters.delete(approvalId)
+  resolve(approved, reason)
+}
+
+/** Suspends generation until `resolveToolApproval(approvalId, ...)` is called. */
+function waitForApproval(
+  approvalId: string,
+): Promise<{ approved: boolean; reason: string | undefined }> {
+  return new Promise((resolve) => {
+    approvalWaiters.set(approvalId, (approved, reason) => resolve({ approved, reason }))
+  })
+}
+
+async function runToolLifecycleGeneration(chatId: string, outcome: ToolDemoOutcome): Promise<void> {
+  const buf = getOrCreateBuffer(chatId)
+  const toolCallId = crypto.randomUUID()
+  const approvalId = crypto.randomUUID()
+
+  pushChunk(buf, { type: 'start' })
+  pushChunk(buf, { type: 'start-step' })
+
+  // input-streaming: a partial-input stream, exactly as a real provider-side tool call arrives.
+  pushChunk(buf, { type: 'tool-input-start', toolCallId, toolName: 'transfer_funds' })
+  await sleep(DELTA_DELAY * 2)
+  pushChunk(buf, { type: 'tool-input-delta', toolCallId, inputTextDelta: '{"amount":250,"to":"ve' })
+  await sleep(DELTA_DELAY * 2)
+  pushChunk(buf, { type: 'tool-input-delta', toolCallId, inputTextDelta: 'ndor-acct-9182"}' })
+
+  // input-available: the full, validated input.
+  await sleep(DELTA_DELAY * 2)
+  const input = { amount: 250, to: 'vendor-acct-9182' }
+  pushChunk(buf, { type: 'tool-input-available', toolCallId, toolName: 'transfer_funds', input })
+
+  // approval-requested: pauses for a real Approve/Deny click from the playground UI.
+  await sleep(DELTA_DELAY * 3)
+  pushChunk(buf, { type: 'tool-approval-request', approvalId, toolCallId })
+  const { approved, reason } = await waitForApproval(approvalId)
+
+  // approval-responded.
+  await sleep(DELTA_DELAY * 2)
+  pushChunk(buf, {
+    type: 'tool-approval-response',
+    approvalId,
+    approved,
+    ...(reason !== undefined ? { reason } : {}),
+  })
+
+  // Terminal state.
+  if (!approved) {
+    await sleep(DELTA_DELAY * 2)
+    pushChunk(buf, { type: 'tool-output-denied', toolCallId })
+  } else if (outcome === 'fail') {
+    await sleep(DELTA_DELAY * 4)
+    pushChunk(buf, {
+      type: 'tool-output-error',
+      toolCallId,
+      errorText: 'Ledger service returned 503 (temporary outage).',
+    })
+  } else {
+    // A PRELIMINARY output-available refining into a FINAL one — the exact case the
+    // isSameToolState/preliminary-drop fix (ai-sdk-transport.ts) exists to keep visible.
+    await sleep(DELTA_DELAY * 3)
+    pushChunk(buf, {
+      type: 'tool-output-available',
+      toolCallId,
+      output: { status: 'pending', confirmationId: null },
+      preliminary: true,
+    })
+    await sleep(DELTA_DELAY * 4)
+    pushChunk(buf, {
+      type: 'tool-output-available',
+      toolCallId,
+      output: { status: 'settled', confirmationId: crypto.randomUUID() },
+      preliminary: false,
+    })
+  }
+
+  pushChunk(buf, { type: 'finish-step' })
+  pushChunk(buf, { type: 'finish' })
+  markDone(buf)
 }
