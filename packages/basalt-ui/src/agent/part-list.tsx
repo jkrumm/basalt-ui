@@ -19,7 +19,9 @@
  * <PartList
  *   parts={parts}
  *   components={{
- *     text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown>,
+ *     text: ({ part, settled }) => (
+ *       <Markdown streaming={!settled} contentTrust="untrusted" density="chat">{part.text}</Markdown>
+ *     ),
  *   }}
  * />
  */
@@ -38,37 +40,48 @@ import type {
 
 // ── Per-type renderer signatures ──────────────────────────────────────────────
 
-export type TextPartRenderer<TPart extends AgentPart = AgentPart> = (props: {
-  part: Extract<TPart, { type: 'text' }>
+/**
+ * The per-renderer argument. `settled` is `false` only while the message these parts belong to is
+ * still streaming — it converges this map toward the `PartRenderContext` a foreign renderer
+ * already receives (`./foreign`), rather than adding a third shape. Additive and
+ * source-compatible: an existing `({ part }) => …` renderer simply ignores it.
+ *
+ * Settlement is MONOTONE — a message that has settled never un-settles.
+ */
+type PartRenderArgs<TPart> = {
+  part: TPart
   index: number
-}) => JSX.Element | null
+  settled: boolean
+}
 
-export type ReasoningPartRenderer<TPart extends AgentPart = AgentPart> = (props: {
-  part: Extract<TPart, { type: 'reasoning' }>
-  index: number
-}) => JSX.Element | null
+export type TextPartRenderer<TPart extends AgentPart = AgentPart> = (
+  props: PartRenderArgs<Extract<TPart, { type: 'text' }>>,
+) => JSX.Element | null
 
-export type ToolCallPartRenderer<TPart extends AgentPart = AgentPart> = (props: {
-  part: Extract<TPart, { type: 'tool' }>
-  index: number
-}) => JSX.Element | null
+export type ReasoningPartRenderer<TPart extends AgentPart = AgentPart> = (
+  props: PartRenderArgs<Extract<TPart, { type: 'reasoning' }>>,
+) => JSX.Element | null
 
-export type SourcePartRenderer<TPart extends AgentPart = AgentPart> = (props: {
-  part: Extract<TPart, { type: 'source' }>
-  index: number
-}) => JSX.Element | null
+export type ToolCallPartRenderer<TPart extends AgentPart = AgentPart> = (
+  props: PartRenderArgs<Extract<TPart, { type: 'tool' }>>,
+) => JSX.Element | null
 
-export type ErrorPartRenderer<TPart extends AgentPart = AgentPart> = (props: {
-  part: Extract<TPart, { type: 'error' }>
-  index: number
-}) => JSX.Element | null
+export type SourcePartRenderer<TPart extends AgentPart = AgentPart> = (
+  props: PartRenderArgs<Extract<TPart, { type: 'source' }>>,
+) => JSX.Element | null
+
+export type ErrorPartRenderer<TPart extends AgentPart = AgentPart> = (
+  props: PartRenderArgs<Extract<TPart, { type: 'error' }>>,
+) => JSX.Element | null
 
 /**
  * Partial map of per-type renderers. Any omitted key falls back to the headless default.
  *
  * @example
  * const renderers: Partial<AgentPartRenderers> = {
- *   text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown>,
+ *   text: ({ part, settled }) => (
+ *     <Markdown streaming={!settled} contentTrust="untrusted" density="chat">{part.text}</Markdown>
+ *   ),
  * }
  */
 export type AgentPartRenderers<TPart extends AgentPart = AgentPart> = {
@@ -231,10 +244,17 @@ export type PartListProps<TPart extends AgentPart = AgentPart> = {
   readonly parts: TPart[]
   /**
    * Override individual part renderers. Omitted keys fall back to the headless defaults.
-   * Pass `{ text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown> }` to
-   * enable rich markdown rendering.
+   * Pass `{ text: ({ part, settled }) => <Markdown streaming={!settled} contentTrust="untrusted" density="chat">{part.text}</Markdown> }`
+   * to enable rich markdown rendering.
    */
   readonly components?: Partial<AgentPartRenderers<TPart>>
+  /**
+   * `false` while the message these parts belong to is still streaming — forwarded to every
+   * renderer so a text renderer can drop out of streaming mode (and a fenced mermaid/diagram can
+   * upgrade) once the turn finishes. Defaults to `true`: a caller that knows nothing about a run
+   * is rendering a finished list, and un-settled must be opted into by the thing that does know.
+   */
+  readonly settled?: boolean
 }
 
 /**
@@ -251,11 +271,19 @@ export type PartListProps<TPart extends AgentPart = AgentPart> = {
  * // With basalt's own Markdown for the text renderer:
  * import { PartList } from 'basalt-ui/agent'
  * import { Markdown } from 'basalt-ui/content'
- * <PartList parts={parts} components={{ text: ({ part }) => <Markdown streaming density="chat">{part.text}</Markdown> }} />
+ * <PartList
+ *   parts={parts}
+ *   components={{
+ *     text: ({ part, settled }) => (
+ *       <Markdown streaming={!settled} contentTrust="untrusted" density="chat">{part.text}</Markdown>
+ *     ),
+ *   }}
+ * />
  */
 export function PartList<TPart extends AgentPart = AgentPart>({
   parts,
   components,
+  settled = true,
 }: PartListProps<TPart>): JSX.Element {
   // Memoised to avoid rebuilding the renderer map on every streaming re-render (hot path).
   // Cast required because DEFAULT_RENDERERS is typed for the base AgentPart, not the generic TPart.
@@ -277,7 +305,11 @@ export function PartList<TPart extends AgentPart = AgentPart>({
             const Render = renderers.text
             return (
               <Fragment key={part.id}>
-                <Render part={part as Extract<TPart, { type: 'text' }>} index={index} />
+                <Render
+                  part={part as Extract<TPart, { type: 'text' }>}
+                  index={index}
+                  settled={settled}
+                />
               </Fragment>
             )
           }
@@ -285,7 +317,11 @@ export function PartList<TPart extends AgentPart = AgentPart>({
             const Render = renderers.reasoning
             return (
               <Fragment key={part.id}>
-                <Render part={part as Extract<TPart, { type: 'reasoning' }>} index={index} />
+                <Render
+                  part={part as Extract<TPart, { type: 'reasoning' }>}
+                  index={index}
+                  settled={settled}
+                />
               </Fragment>
             )
           }
@@ -293,7 +329,11 @@ export function PartList<TPart extends AgentPart = AgentPart>({
             const Render = renderers.tool
             return (
               <Fragment key={part.id}>
-                <Render part={part as Extract<TPart, { type: 'tool' }>} index={index} />
+                <Render
+                  part={part as Extract<TPart, { type: 'tool' }>}
+                  index={index}
+                  settled={settled}
+                />
               </Fragment>
             )
           }
@@ -301,7 +341,11 @@ export function PartList<TPart extends AgentPart = AgentPart>({
             const Render = renderers.source
             return (
               <Fragment key={part.id}>
-                <Render part={part as Extract<TPart, { type: 'source' }>} index={index} />
+                <Render
+                  part={part as Extract<TPart, { type: 'source' }>}
+                  index={index}
+                  settled={settled}
+                />
               </Fragment>
             )
           }
@@ -309,7 +353,11 @@ export function PartList<TPart extends AgentPart = AgentPart>({
             const Render = renderers.error
             return (
               <Fragment key={part.id}>
-                <Render part={part as Extract<TPart, { type: 'error' }>} index={index} />
+                <Render
+                  part={part as Extract<TPart, { type: 'error' }>}
+                  index={index}
+                  settled={settled}
+                />
               </Fragment>
             )
           }

