@@ -195,7 +195,14 @@ export const SURFACES = {
     ],
     description:
       'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, SettingsSection/SettingsRow/DangerZone)',
-    optionalPeers: ['react-markdown', 'remark-gfm', 'shiki', 'beautiful-mermaid'],
+    optionalPeers: [
+      'react-markdown',
+      'remark-gfm',
+      'rehype-sanitize',
+      'remend',
+      'shiki',
+      'beautiful-mermaid',
+    ],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
   './charts': {
@@ -378,7 +385,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). remend and motion are required, not optional — ThreadTranscript imports content/markdown.tsx (remend eagerly), and ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without both installed even though peerDependenciesMeta marks them optional (npm has no per-subpath optionality).',
+      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx.',
     optionalPeers: [
       'ai',
       'motion',
@@ -400,7 +407,7 @@ export const SURFACES = {
     skill: ['basalt-design'],
     guardKinds: [],
     description:
-      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
+      'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
     optionalPeers: [
       'shiki',
       '@shikijs/langs',
@@ -408,6 +415,8 @@ export const SURFACES = {
       'beautiful-mermaid',
       'react-markdown',
       'remark-gfm',
+      'rehype-sanitize',
+      'remend',
       '@mantine/spotlight',
     ],
     forbiddenImports: [],

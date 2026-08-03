@@ -347,31 +347,77 @@ console.log('charts/tokens-only resolution + render OK')
 JS
 node free.mjs
 
-echo "==> agent-chat minimal-peer resolution (remend + motion required, everything else absent)"
-# `./agent-chat`'s optionalPeers list (surfaces.ts) cannot express that `remend` and `motion` are
-# HARD requirements — npm has no per-subpath optionality. The scratch-consumer step above installs
-# every optional peer at once, so it can never catch a peer that is secretly required; this step is
-# the minimal install that would have caught the F2-for-agent-chat defect (remend/motion silently
-# required, documented as optional). Models the shape of the charts/tokens-only step above rather
-# than inventing a new mechanism.
+echo "==> agent-chat + root-entry minimal-peer resolution (motion required, remend genuinely optional)"
+# `./agent-chat`'s optionalPeers list (surfaces.ts) cannot express that `motion` is a HARD static
+# requirement while `remend` is genuinely optional — npm has no per-subpath optionality. The
+# scratch-consumer step above installs every optional peer at once, so it can never catch a peer
+# that is secretly required; this step is the minimal install that would catch that class of defect
+# (a peer silently required, documented as optional). Models the shape of the charts/tokens-only
+# step above rather than inventing a new mechanism.
+#
+# Ground truth (verified against the import graph, not assumed): `thread-feed.tsx` and
+# `thread-detail-panel.tsx` import `motion/react` eagerly, and the root entry's `./provider` ->
+# `./connectivity` chain imports `@tanstack/react-query` eagerly (ConnectivityProvider, auto-mounted
+# by BasaltProvider) — both genuinely required to resolve their entries even though
+# `peerDependenciesMeta` marks them optional. `remend` is NOT — `thread-message.tsx` reaches
+# `content/markdown.tsx`'s `Markdown`, but markdown.tsx's own `remend` dependency is a lazy
+# `import('remend')`, so the static chain stops there. This is F2: `markdown.tsx` used to have a
+# STATIC top-level `import remend from 'remend'`, which meant the ROOT entry — which re-exports
+# `./agent-chat` (see src/index.ts) — hard-required `remend` too, even though `peerDependenciesMeta`
+# marks it optional. `remend` is deliberately NOT installed below (motion and @tanstack/react-query
+# ARE, since both are genuinely required) so this step also proves F2 from outside the package
+# boundary: the built, packed, INSTALLED artifact resolves and evaluates both `./agent-chat` and the
+# root entry with `remend` absent — not just "absent from source", which is the strongest claim a
+# source-level regression test can make.
 SCRATCH4=$(mktemp -d)
 cd "$SCRATCH4"
 echo '{ "name": "scratch-agent-chat", "private": true, "type": "module" }' >package.json
 bun add "$ABS_TGZ" react react-dom \
   @mantine/core @mantine/hooks \
-  "motion@12.42.0" "remend@1.3.0" >/dev/null 2>&1
+  "motion@12.42.0" "@tanstack/react-query@^5.101.0" >/dev/null 2>&1
+if [ -d node_modules/remend ]; then
+  echo "FAILED: remend ended up in a scratch install that never requested it — test setup is broken, not a package defect"
+  exit 1
+fi
 cat >agent-chat.mjs <<'JS'
-// react/react-dom + @mantine/core + @mantine/hooks + motion + remend is the FULL peer set
-// `basalt-ui/agent-chat` needs — deliberately NOT installed: ai, use-stick-to-bottom,
-// react-markdown, remark-gfm, shiki, @shikijs/langs, @shikijs/themes, beautiful-mermaid. Every one
-// of those is reached only via `lazy()`/dynamic `import()`, so the subpath must still resolve and
-// its top-level exports must still be functions without them.
-const agentChat = await import('basalt-ui/agent-chat')
-if (typeof agentChat.ThreadWorkspace !== 'function') throw new Error('agent-chat.ThreadWorkspace missing')
-if (typeof agentChat.ThreadTranscript !== 'function') throw new Error('agent-chat.ThreadTranscript missing')
-if (typeof agentChat.ThreadFeed !== 'function') throw new Error('agent-chat.ThreadFeed missing')
-if (typeof agentChat.ThreadDetailPanel !== 'function') throw new Error('agent-chat.ThreadDetailPanel missing')
-console.log('agent-chat minimal-peer resolution OK')
+// react/react-dom + @mantine/core + @mantine/hooks + motion is the FULL peer set `./agent-chat`
+// genuinely, statically requires (@tanstack/react-query is installed too, for the root-entry import
+// below — it is not needed by agent-chat itself) — deliberately NOT installed: remend, ai,
+// use-stick-to-bottom, react-markdown, remark-gfm, shiki, @shikijs/langs, @shikijs/themes,
+// beautiful-mermaid. Every one of those is reached only via `lazy()`/dynamic `import()`, so the
+// subpath must still resolve and its top-level exports must still be functions without them.
+try {
+  const agentChat = await import('basalt-ui/agent-chat')
+  if (typeof agentChat.ThreadWorkspace !== 'function') throw new Error('agent-chat.ThreadWorkspace missing')
+  if (typeof agentChat.ThreadTranscript !== 'function') throw new Error('agent-chat.ThreadTranscript missing')
+  if (typeof agentChat.ThreadFeed !== 'function') throw new Error('agent-chat.ThreadFeed missing')
+  if (typeof agentChat.ThreadDetailPanel !== 'function') throw new Error('agent-chat.ThreadDetailPanel missing')
+} catch (err) {
+  console.error(err)
+  throw new Error(
+    'basalt-ui/agent-chat failed to resolve/evaluate with remend NOT installed — an optional peer ' +
+      'has regressed to a hard, static import (the F2 defect). This subpath must load for every ' +
+      'agent-chat consumer who never installs remend.',
+  )
+}
+console.log('agent-chat minimal-peer resolution OK (motion required, remend not installed)')
+
+// F2 regression proof: the ROOT entry re-exports `./agent-chat` (src/index.ts), so a static `remend`
+// import anywhere in that chain doesn't just break agent-chat users — it breaks EVERY consumer of
+// `basalt-ui`'s root entry, including ones who never touch agent-chat at all.
+try {
+  const root = await import('basalt-ui')
+  if (typeof root.ThreadWorkspace !== 'function') throw new Error('root entry ThreadWorkspace missing')
+} catch (err) {
+  console.error(err)
+  throw new Error(
+    'basalt-ui root entry hard-requires an optional peer: it failed to resolve/evaluate with remend ' +
+      'not installed at all. The root entry re-exports ./agent-chat, so this is the F2 defect — a ' +
+      'lazy dynamic import() regressed back to a static one — and it means EVERY consumer of the ' +
+      'root entry now needs remend installed, not just agent-chat consumers.',
+  )
+}
+console.log('F2 proof: root entry resolved and evaluated with remend NOT installed at all')
 JS
 node --import "$PKGDIR/scripts/css-noop-register.mjs" agent-chat.mjs
 

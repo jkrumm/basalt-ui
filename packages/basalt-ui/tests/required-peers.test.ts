@@ -1,17 +1,23 @@
 /**
  * Peer declaration invariants.
  *
- * Every peer is marked `optional` in `peerDependenciesMeta`, including the seven the root `.` entry
+ * Every peer is marked `optional` in `peerDependenciesMeta`, including the six the root `.` entry
  * hard-requires at build time (`react`, `react-dom`, `@mantine/core`, `@mantine/hooks`,
- * `@tanstack/react-query`, `remend`, `motion`). That is a deliberate trade, not an oversight:
+ * `@tanstack/react-query`, `motion`). That is a deliberate trade, not an oversight:
  *
  * npm expresses peer optionality per PACKAGE, never per SUBPATH — and `./tokens`, `./charts`,
- * `./state` and `./guard` genuinely resolve and render with none of the seven installed (enforced by
+ * `./state` and `./guard` genuinely resolve and render with none of the six installed (enforced by
  * the repo-local `basalt/token-layer-boundary` oxlint rule, by `scripts/check-dist-layering.mjs`'s
  * walk of the BUILT dist graph, and by the no-Mantine resolution step in `scripts/pack-test.sh`).
- * With the seven required, a framework-free consumer that only ever imports `basalt-ui/tokens` still
+ * With the six required, a framework-free consumer that only ever imports `basalt-ui/tokens` still
  * pulls packages it will never load. Marking them optional is the only way to say
  * "framework-free subpaths cost nothing" in the manifest format that exists.
+ *
+ * `remend` is NOT in that six — F2 (1.11.0/B3) made `content/markdown.tsx`'s remend import a lazy
+ * dynamic `import()`, so the root `.` entry no longer hard-requires it. It stays in
+ * `peerDependencies`/`peerDependenciesMeta` regardless (every peer does, per the loop below); it is
+ * simply no longer one of the ones that is optional ONLY on paper. The `remend root-entry
+ * requirement (F2)` describe block below is the regression guard for that fix.
  *
  * What that COSTS: a consumer of the root `.` entry no longer gets a missing-peer warning at
  * install time — they get an unresolved-import error from their bundler the first time they build.
@@ -39,7 +45,6 @@ const RUNTIME_REQUIRED_PEERS = [
   'motion',
   'react',
   'react-dom',
-  'remend',
 ]
 
 describe('peer declarations', () => {
@@ -66,21 +71,84 @@ describe('peer declarations', () => {
   })
 })
 
-describe('remend root-entry requirement (F2)', () => {
-  // `remend`'s ROOT-entry hard-requirement is a fact about `content/markdown.tsx`'s import style,
-  // not about `peerDependencies` — the chain is `src/index.ts` -> `agent-chat/thread-message.tsx`
-  // -> `content/markdown.tsx`, and this file's own header doctrine (react-markdown/remark-gfm) shows
-  // the alternative: those two go through `lazy` + a dynamic `import()`, so they are NOT root
-  // requirements even though `Markdown` uses them. `remend` is imported statically at the top of the
-  // module instead, which is what actually makes it required.
+describe('remend root-entry requirement (F2) — resolved, now a regression guard', () => {
+  // F2 shipped in 1.11.0/B3: `content/markdown.tsx` now loads `remend` through a lazy dynamic
+  // `import('remend')` (see `loadRemend` there), not a static top-level import. This block used to
+  // assert the OLD, broken shape ("still imports remend statically") — that assertion started
+  // failing the moment the fix landed, which was the gate doing its job. Deleting it here would
+  // throw away the guard exactly when it becomes useful: the static form
+  // (`import remend from 'remend'`) is one careless debugging edit away from coming back, and if it
+  // does, the root `.` entry hard-requires an optional peer again — latent for a consumer who
+  // already has `remend` installed, fatal (unresolved import at build time) for one who doesn't.
   //
-  // Phase B3 (basalt-ui 1.11.0, docs/AGENT-CHAT-SPEC.md) makes this import lazy too. When it does,
-  // this assertion must be DELETED (along with `'remend'` in RUNTIME_REQUIRED_PEERS above and the
-  // root-requirement row/notes in README.md) — not adjusted. Until then it is the gate that fails
-  // the moment the source changes without the docs following.
-  it('content/markdown.tsx still imports remend statically (delete this test in 1.11.0/B3)', () => {
-    const source = readFileSync(join(pkgRoot, 'src/content/markdown.tsx'), 'utf8')
-    expect(source).toMatch(/^import remend from 'remend'$/m)
+  // So the assertion is INVERTED, not removed: it now scans every file under `src/**` and fails if
+  // ANY of them still contains a static top-level import of `remend`.
+  //
+  // PRECISION — what counts as a violation and why. Every way a module can be statically pulled
+  // into the graph in ESM/TS, enumerated:
+  //  CAUGHT (all of these register 'remend' in the module graph the moment the file is evaluated):
+  //   - default import           `import remend from 'remend'`
+  //   - named import             `import { x } from 'remend'`
+  //   - namespace import         `import * as remend from 'remend'`
+  //   - default + named          `import remend, { x } from 'remend'`
+  //   - default + namespace      `import remend, * as ns from 'remend'`
+  //   - side-effect import       `import 'remend'` (no binding, no `from` — resolves anyway)
+  //   - named re-export          `export { x } from 'remend'`
+  //   - export-all               `export * from 'remend'`
+  //   - export-all-as-namespace  `export * as ns from 'remend'`
+  //   - mixed inline `type`      `import { type X, y } from 'remend'` (one non-type specifier
+  //                              still pulls the module — the whole statement counts)
+  //  DELIBERATELY EXCLUDED (erased at compile time / not static — carries no runtime requirement):
+  //   - type-only import         `import type { X } from 'remend'`
+  //   - type-only re-export      `export type { X } from 'remend'`
+  //   - type-only export-all     `export type * from 'remend'` / `export type * as ns from 'remend'`
+  //   - lazy dynamic import      `import('remend')` — a call, not a declaration; excluded because
+  //                              there is never whitespace between `import` and the paren, and it
+  //                              never has a `from` clause, so it can't match either alternative
+  //                              below
+  //   - prose mentioning remend in a comment (comments are stripped first, see below)
+  //  NOT HANDLED (scope boundary, unchanged from before): a static import/export whose clause wraps
+  //  across multiple lines. Every static import in this codebase is single-line by convention
+  //  (oxfmt), matching the same single-line assumption this regex has always made — still an
+  //  assumption, not a guarantee, so noted here rather than silently relied on.
+  //
+  // Implementation: comments are stripped first (block `/* … */` and line `// …`, same strip
+  // `jsdoc-specifiers.test.ts` uses in reverse). The pattern is two alternatives sharing the same
+  // `(?!type\b)` type-only exclusion:
+  //  1. the `from`-clause form — `(?:import|export)\s+(?!type\b)[^\n]*from\s+'remend'` — covers
+  //     every CAUGHT form above except the side-effect import, since all of them end in
+  //     `from '...remend'`.
+  //  2. the side-effect form — `import\s+(?!type\b)['"]remend['"]` — has no `from` clause at all,
+  //     so alternative 1 can never match it; `import type 'remend'` is not valid syntax, but the
+  //     lookahead is kept for symmetry and cost nothing.
+  const REMEND_BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
+  const REMEND_LINE_COMMENT_RE = /\/\/.*$/gm
+  const STATIC_REMEND_IMPORT_RE =
+    /^(?:import|export)\s+(?!type\b)[^\n]*from\s+['"]remend['"]|^import\s+(?!type\b)['"]remend['"]/m
+
+  function stripComments(source: string): string {
+    return source.replace(REMEND_BLOCK_COMMENT_RE, '').replace(REMEND_LINE_COMMENT_RE, '')
+  }
+
+  function findSourceFiles(): string[] {
+    const srcRoot = join(pkgRoot, 'src')
+    const glob = new Bun.Glob('**/*.{ts,tsx}')
+    return [...glob.scanSync({ cwd: srcRoot })].map((rel) => join(srcRoot, rel))
+  }
+
+  const files = findSourceFiles()
+
+  // Sanity check: this walk must actually find files, or the assertion below is vacuous.
+  it('found source files to scan', () => {
+    expect(files.length).toBeGreaterThan(0)
+  })
+
+  const violations = files
+    .filter((file) => STATIC_REMEND_IMPORT_RE.test(stripComments(readFileSync(file, 'utf8'))))
+    .map((file) => file.slice(pkgRoot.length + 1))
+
+  it('no src/** file statically imports remend — that would hard-require an optional peer at the root entry again', () => {
+    expect(violations).toEqual([])
   })
 })
 
@@ -106,31 +174,33 @@ describe('motion root-entry requirement (two independent paths)', () => {
 
 describe('./agent-chat hard-required peers', () => {
   // `./agent-chat` (`src/agent-chat/index.ts`) is its OWN subpath, not merely a root re-export, and
-  // its peer story was found to be a lie: `surfaces.ts` listed every one of its peers under
-  // `optionalPeers`, but two are reached by a STATIC top-level import the moment any export of the
-  // subpath is evaluated:
+  // its peer story was found to be a lie: `surfaces.ts` listed `motion` under `optionalPeers`, but it
+  // is reached by a STATIC top-level import the moment any export of the subpath is evaluated:
   //
-  //  - remend    — index.ts -> thread-message.tsx -> content/markdown.tsx -> `import remend from
-  //                'remend'` (same chain as the F2 describe block above, reached a second way).
   //  - motion    — index.ts -> thread-feed.tsx AND thread-detail-panel.tsx -> `import … from
   //                'motion/react'`.
   //
-  // Confirmed empirically (not just by reading): a scratch-installed tarball with react/react-dom/
-  // @mantine/core/@mantine/hooks but WITHOUT remend fails `await import('basalt-ui/agent-chat')`
-  // with "Cannot find package 'remend'"; the same install WITHOUT motion fails with "Cannot find
-  // package 'motion'". The same tarball WITH react/react-dom/@mantine/core/@mantine/hooks/remend/
-  // motion and nothing else resolves and renders. Every other declared optionalPeer of `./agent-chat`
-  // (`ai`, `use-stick-to-bottom`, `react-markdown`, `remark-gfm`, `shiki`, `@shikijs/langs`,
-  // `@shikijs/themes`, `beautiful-mermaid`) is reached only via `lazy()`/dynamic `import()` and is
-  // genuinely optional.
+  // `remend` is NOT part of that hard-require: index.ts -> thread-message.tsx statically imports
+  // `Markdown` from `../content/markdown`, but `content/markdown.tsx` resolves `remend` itself
+  // through a lazy dynamic `import('remend')` (see `loadRemend` there, and the F2 describe block
+  // above) — the static chain stops at the `Markdown` component, so evaluating `./agent-chat` never
+  // forces remend's resolution. It is genuinely optional here, same as at the root `.` entry.
   //
-  // npm has no per-subpath optionality (`peerDependenciesMeta` stays package-wide, so `remend`/
-  // `motion` stay `optional: true` there too — pinned by the shared checks above). This test plus
-  // the `./agent-chat` description string in `surfaces.ts` are therefore the only places the truth
-  // can live. If a future change makes either import lazy, update this test, the `surfaces.ts`
+  // Confirmed empirically (not just by reading): a scratch-installed tarball with react/react-dom/
+  // @mantine/core/@mantine/hooks but WITHOUT motion fails `await import('basalt-ui/agent-chat')` with
+  // "Cannot find package 'motion'". The same tarball WITH react/react-dom/@mantine/core/
+  // @mantine/hooks/motion and nothing else — remend included — resolves and renders. Every other
+  // declared optionalPeer of `./agent-chat` (`ai`, `remend`, `use-stick-to-bottom`, `react-markdown`,
+  // `remark-gfm`, `shiki`, `@shikijs/langs`, `@shikijs/themes`, `beautiful-mermaid`) is reached only
+  // via `lazy()`/dynamic `import()` and is genuinely optional.
+  //
+  // npm has no per-subpath optionality (`peerDependenciesMeta` stays package-wide, so `motion` stays
+  // `optional: true` there too — pinned by the shared checks above). This test plus the
+  // `./agent-chat` description string in `surfaces.ts` are therefore the only places the truth can
+  // live. If a future change makes the motion import lazy too, update this test, the `surfaces.ts`
   // description, and README.md's Requirements table in the same commit — not adjust the assertion.
 
-  it('agent-chat/thread-message.tsx still imports Markdown statically (pulls remend eagerly)', () => {
+  it('agent-chat/thread-message.tsx still imports Markdown statically (remend itself stays lazy inside it)', () => {
     const source = readFileSync(join(pkgRoot, 'src/agent-chat/thread-message.tsx'), 'utf8')
     expect(source).toMatch(/^import \{ Markdown \} from '\.\.\/content\/markdown'$/m)
   })
@@ -152,17 +222,22 @@ describe('./agent-chat hard-required peers', () => {
     )
   })
 
-  it("surfaces.ts states remend and motion as ./agent-chat's hard requirements in its DESCRIPTION string", () => {
-    // Checked against `description`, not the whole `./agent-chat` block — `optionalPeers` lists
-    // both names too (npm has no per-subpath optionality, so they must stay there), which would
-    // make a whole-block match pass even if the description never said "required".
+  it("surfaces.ts states motion as ./agent-chat's hard requirement, and remend as genuinely optional, in its DESCRIPTION string", () => {
+    // Checked against `description`, not the whole `./agent-chat` block — `optionalPeers` lists both
+    // names too (npm has no per-subpath optionality, so they must stay there), which would make a
+    // whole-block match pass even if the description never said "required".
     const source = readFileSync(join(pkgRoot, 'src/surfaces.ts'), 'utf8')
     const block = source.match(/'\.\/agent-chat': \{[\s\S]*?\n  \},/)?.[0] ?? ''
     expect(block).not.toBe('')
     const description = block.match(/description:\s*\n?\s*'([^']*)'/)?.[1] ?? ''
     expect(description).not.toBe('')
-    expect(description).toContain('remend')
     expect(description).toContain('motion')
     expect(description.toLowerCase()).toContain('required')
+    expect(description).toContain('remend')
+    // The bug this test exists to catch: surfaces.ts once called BOTH peers "required", pinning a
+    // claim that went stale the moment remend's static import in content/markdown.tsx became a lazy
+    // one (F2). Fail loud if that false pairing comes back.
+    expect(description.toLowerCase()).not.toMatch(/remend\b[\s\S]{0,40}\brequired\b/)
+    expect(description).toMatch(/remend\b[\s\S]{0,60}(lazy|optional)/i)
   })
 })
