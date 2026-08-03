@@ -3,14 +3,16 @@
  * AgentPart wire format, post-1.11.0 part identity + the seven-state ToolCallPart union.
  *
  * Every AgentPart variant below is validated against parts.ts's `parseAgentPart`, `isStartPart`,
- * and `isToolCallSettled` as they read right now: `id` is required on every variant, and `tool`
- * parts are validated against the seven-state discriminated union mirroring AI SDK v7's
+ * and `isToolCallSettled` as they read right now: `id` is required on every variant, `toolCallId`
+ * is required on the three in-flight tool states and optional on the four settled ones (see the
+ * per-state identity block below), and `tool` parts are validated against the seven-state
+ * discriminated union mirroring AI SDK v7's
  * `UIToolInvocation` (see parts.ts's ToolCallPart doc for the ground-truth corrections against the
  * design spec).
  */
 import { describe, expect, test } from 'bun:test'
 import { isStartPart, isToolCallSettled, parseAgentPart } from './parts'
-import type { AgentPart, ToolCallPart } from './parts'
+import type { AgentPart, ToolCallPart, ToolCallState } from './parts'
 
 /** JSON round-trip a value through JSON.stringify → JSON.parse, mirroring wire transport. */
 function roundTrip(value: unknown): unknown {
@@ -109,15 +111,130 @@ describe('parseAgentPart', () => {
   })
 
   describe('tool', () => {
-    test('rejects a missing toolCallId', () => {
+    test('rejects a non-string toolCallId', () => {
       const raw = {
         id: 'p1',
         type: 'tool',
+        toolCallId: 42,
         toolName: 'search',
         state: 'input-available',
         input: {},
       }
       expect(parseAgentPart(raw)).toBeNull()
+    })
+
+    // ── toolCallId identity, decided per state ──────────────────────────────
+    // An empty string is not a value any state accepts: '' normalizes to absent right here, so the
+    // pre-1.12.0 sentinel can never reach the type or a consumer of it. What an ABSENT id then
+    // means is a per-state decision (see Identified / MaybeIdentified in parts.ts):
+    //   in-flight  (input-streaming, input-available, approval-requested) → REJECTED. The part
+    //     exists only to be closed by a later state, which re-supplies its toolName and input;
+    //     unidentified it could never be closed and would render as a forever-pending chip.
+    //   settled    (approval-responded + the three terminal states)       → KEPT, unidentified.
+    //     It carries the OUTCOME; dropping it would erase how the call ended (silent data loss),
+    //     while keeping it costs only the fold — coalesceParts renders it as its own block.
+    //
+    // The `satisfies Record<ToolCallState, …>` below is an authoring-time exhaustiveness gate: add
+    // a state to the union and this fixture stops typechecking until its identity behaviour is
+    // decided here too. It is an EDITOR/tsc guard only — the package tsconfig excludes `*.test.ts`
+    // from `bun run typecheck`, and `bun test` type-strips rather than typechecks — so the
+    // "covers every state exactly once" test below backs it with a runtime check of the same claim.
+
+    const UNIDENTIFIED_RAW = {
+      'input-streaming': { toolName: 'search', state: 'input-streaming' },
+      'input-available': { toolName: 'search', state: 'input-available', input: { q: 'x' } },
+      'approval-requested': {
+        toolName: 'search',
+        state: 'approval-requested',
+        input: { q: 'x' },
+        approval: { id: 'appr-1' },
+      },
+      'approval-responded': {
+        toolName: 'search',
+        state: 'approval-responded',
+        input: { q: 'x' },
+        approval: { id: 'appr-1', approved: true },
+      },
+      'output-available': {
+        toolName: 'search',
+        state: 'output-available',
+        input: { q: 'x' },
+        output: { hits: 3 },
+      },
+      'output-error': { toolName: 'search', state: 'output-error', errorText: 'boom' },
+      'output-denied': {
+        toolName: 'search',
+        state: 'output-denied',
+        input: { q: 'x' },
+        approval: { id: 'appr-1', approved: false },
+      },
+    } satisfies Record<ToolCallState, Record<string, unknown>>
+
+    const IN_FLIGHT_STATES = [
+      'input-streaming',
+      'input-available',
+      'approval-requested',
+    ] as const satisfies readonly ToolCallState[]
+
+    const SETTLED_STATES = [
+      'approval-responded',
+      'output-available',
+      'output-error',
+      'output-denied',
+    ] as const satisfies readonly ToolCallState[]
+
+    test('the in-flight/settled split covers every tool state exactly once', () => {
+      // Object.keys() is always typed string[] regardless of the object's key type — cast back to
+      // ToolCallState[], which every key of UNIDENTIFIED_RAW genuinely is (used as
+      // UNIDENTIFIED_RAW[state] elsewhere in this file).
+      expect([...IN_FLIGHT_STATES, ...SETTLED_STATES].toSorted()).toEqual(
+        (Object.keys(UNIDENTIFIED_RAW) as ToolCallState[]).toSorted(),
+      )
+    })
+
+    for (const state of IN_FLIGHT_STATES) {
+      test(`${state}: rejects a missing toolCallId — an in-flight part that could never be closed`, () => {
+        expect(parseAgentPart({ id: 'p1', type: 'tool', ...UNIDENTIFIED_RAW[state] })).toBeNull()
+      })
+
+      test(`${state}: rejects an empty-string toolCallId identically (it means absent)`, () => {
+        const raw = { id: 'p1', type: 'tool', toolCallId: '', ...UNIDENTIFIED_RAW[state] }
+        expect(parseAgentPart(raw)).toBeNull()
+      })
+    }
+
+    for (const state of SETTLED_STATES) {
+      test(`${state}: a missing toolCallId keeps the part UNIDENTIFIED — it is never dropped`, () => {
+        const parsed = parseAgentPart({ id: 'p1', type: 'tool', ...UNIDENTIFIED_RAW[state] })
+        expect(parsed).not.toBeNull()
+        expect((parsed as ToolCallPart).state).toBe(state)
+        expect(Object.hasOwn(parsed as object, 'toolCallId')).toBe(false)
+      })
+
+      test(`${state}: an empty-string toolCallId normalizes to absent, never to ""`, () => {
+        const raw = { id: 'p1', type: 'tool', toolCallId: '', ...UNIDENTIFIED_RAW[state] }
+        const parsed = parseAgentPart(raw)
+        expect(parsed).not.toBeNull()
+        expect(Object.hasOwn(parsed as object, 'toolCallId')).toBe(false)
+      })
+
+      test(`${state}: a real toolCallId still carries through`, () => {
+        const raw = { id: 'p1', type: 'tool', toolCallId: 'call-1', ...UNIDENTIFIED_RAW[state] }
+        expect((parseAgentPart(raw) as ToolCallPart | null)?.toolCallId).toBe('call-1')
+      })
+    }
+
+    test('approval-responded: a real toolCallId round-trips through JSON', () => {
+      const part: ToolCallPart = {
+        id: 'p1',
+        type: 'tool',
+        toolCallId: 'call-1',
+        toolName: 'delete_file',
+        state: 'approval-responded',
+        input: { path: '/tmp/x' },
+        approval: { id: 'appr-1', approved: true },
+      }
+      expect(parseAgentPart(roundTrip(part))).toEqual(part)
     })
 
     test('rejects a missing toolName', () => {
