@@ -1,6 +1,7 @@
 /**
  * createThreadsStore — ring-buffer caps (maxThreads/maxMessagesPerThread), newest-first ordering,
- * setResumeToken's delete-the-key-on-undefined semantics, and same-tick action accumulation.
+ * setResumeToken's delete-the-key-on-undefined semantics, same-tick action accumulation, and the
+ * constant hydrated/error pair the async sibling store (./adapter) actually varies.
  *
  * Uses the REAL localStorage-backed store (happy-dom provides `window.localStorage`), so every
  * test uses its own unique `key` — the same convention as
@@ -13,7 +14,12 @@ import { createThreadsStore } from './thread'
 import type { ChatMessage } from './history'
 
 function makeMessage(id: string): ChatMessage {
-  return { id, role: 'user', parts: [{ type: 'text', text: id }], createdAt: Date.now() }
+  return {
+    id,
+    role: 'user',
+    parts: [{ id: `${id}-p0`, type: 'text', text: id }],
+    createdAt: Date.now(),
+  }
 }
 
 describe('createThreadsStore', () => {
@@ -143,5 +149,72 @@ describe('createThreadsStore', () => {
     const thread = result.current.threads.find((t) => t.id === threadId)
     expect(thread?.status).toBe('streaming')
     expect(thread?.resumeToken).toBe('tok-accum')
+  })
+
+  test('hydrated is always true and error always undefined — localStorage resolves synchronously', () => {
+    const useThreads = createThreadsStore({ key: 'thread-hydrated-a', version: 1 })
+    const { result } = renderHook(() => useThreads())
+
+    // Pinned because these two exist for the async adapter store (./adapter); the localStorage
+    // store must fill them with the "nothing to wait for, nothing to report" constants on the
+    // very first render, before any action has run.
+    expect(result.current.hydrated).toBe(true)
+    expect(result.current.error).toBeUndefined()
+
+    act(() => {
+      result.current.create()
+    })
+
+    expect(result.current.hydrated).toBe(true)
+    expect(result.current.error).toBeUndefined()
+  })
+
+  test('create() mints distinct ids via crypto.getRandomValues when randomUUID is unavailable', () => {
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) },
+      configurable: true,
+    })
+    try {
+      const useThreads = createThreadsStore({ key: 'thread-crypto-a', version: 1 })
+      const { result } = renderHook(() => useThreads())
+
+      let first = ''
+      let second = ''
+      act(() => {
+        first = result.current.create()
+        second = result.current.create()
+      })
+
+      expect(first).not.toBe('')
+      expect(second).not.toBe('')
+      expect(first).not.toBe(second)
+    } finally {
+      // Restore the real crypto so no later test in the process is affected.
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+
+  test('create() still mints distinct ids with no usable crypto at all (randomUUID and getRandomValues both absent)', () => {
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      const useThreads = createThreadsStore({ key: 'thread-crypto-b', version: 1 })
+      const { result } = renderHook(() => useThreads())
+
+      let first = ''
+      let second = ''
+      act(() => {
+        first = result.current.create()
+        second = result.current.create()
+      })
+
+      expect(first).not.toBe('')
+      expect(second).not.toBe('')
+      expect(first).not.toBe(second)
+    } finally {
+      // Restore the real crypto so no later test in the process is affected.
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
   })
 })

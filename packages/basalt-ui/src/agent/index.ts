@@ -113,3 +113,11 @@ export type { AgentThread, ThreadStatus, ThreadsStore, ThreadsStoreOptions } fro
 // ── AgentOutcome + heuristicOutcome ────────────────────────────────────────────
 export { heuristicOutcome } from './outcome'
 export type { AgentOutcome, OutcomeResolver } from './outcome'
+
+// ── createAdapterThreadsStore + threadsStoreAdapterContract ──────────────────
+export { createAdapterThreadsStore, threadsStoreAdapterContract } from './adapter'
+export type {
+  AdapterThreadsStoreOptions,
+  ThreadsStoreAdapter,
+  ThreadsStoreAdapterContractCase,
+} from './adapter'
