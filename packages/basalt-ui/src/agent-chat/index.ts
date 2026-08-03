@@ -29,7 +29,7 @@ export type { ThreadDetailPanelProps } from './thread-detail-panel'
 
 // ── Composer ──────────────────────────────────────────────────────────────────
 export { Composer } from './composer'
-export type { ComposerProps } from './composer'
+export type { ComposerAttachment, ComposerHandle, ComposerProps, ComposerSubmit } from './composer'
 
 // ── threadPartRenderers + ThreadTranscript ────────────────────────────────────
 export { threadPartRenderers, ThreadTranscript } from './thread-message'

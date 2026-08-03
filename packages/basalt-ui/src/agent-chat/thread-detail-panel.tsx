@@ -167,7 +167,9 @@ export function ThreadDetailPanel({
       <Divider color="var(--vx-divider)" />
       <Box p="sm">
         <Stack gap="xs">
-          <Composer onSubmit={onSend} disabled={streaming} />
+          {/* `onSend` stays a plain string at this component's public seam — the payload shape is
+              unwrapped here rather than pushed onto every caller. */}
+          <Composer onSubmit={({ text }) => onSend(text)} streaming={streaming} />
           {streaming && (
             <Button size="compact-sm" variant="subtle" color="red" onClick={onStop}>
               Stop
