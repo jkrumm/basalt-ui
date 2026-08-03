@@ -3,7 +3,10 @@
  *
  * Exhaustiveness is enforced at every switch via assertNever (imported from '../register').
  * Adding a new variant without a matching case is a tsc error — see the fixture in
- * apps/playground/src/demo/agent-part.type-guard.ts.
+ * apps/playground/src/demo/agent-part.type-guard.ts. One caveat for code that folds WIRE data on
+ * the render path (`coalesceParts`): keep the compile-time guarantee — bind the value at `never` —
+ * but do NOT let the runtime throw, or one malformed chunk kills the whole transcript. See
+ * `mergeToolPart`'s default branch for that shape.
  *
  * Eden #231 doctrine: the server-side Elysia route MUST declare `: AsyncGenerator<AgentPart>`
  * explicitly and carry NO t.Object/t.Union response schema. Validate at yield-time. See
@@ -78,6 +81,10 @@ export type ReasoningPart = PartBase & {
 // discriminator `tool-${NAME}`. It IS a required field here (ours, not the SDK's) because the chip
 // needs it; a transport mapping from the SDK must DERIVE it from the discriminator, not read it off
 // the invocation.
+//
+// `toolCallId` is required on the three IN-FLIGHT states and OPTIONAL on the four SETTLED ones —
+// see `Identified` / `MaybeIdentified` below. The absence is modelled in the type, never as a
+// sentinel value.
 
 /** The nested approval envelope — mirrors the SDK's shape verbatim, never flattened. */
 type ToolApproval = {
@@ -90,35 +97,66 @@ type ToolApproval = {
 
 type ToolCallBase = PartBase & {
   readonly type: 'tool'
-  /** Required on all seven states (was optional — see parts.ts history). */
-  readonly toolCallId: string
   readonly toolName: string
   /** Wall-clock time from first sighting of this toolCallId to its terminal state. */
   readonly durationMs?: number
   readonly providerExecuted?: boolean
 }
 
+/**
+ * The three IN-FLIGHT states (`input-streaming`, `input-available`, `approval-requested`) carry an
+ * authoritative `toolCallId` — the merge key, and for them it is structural. An in-flight part
+ * exists only to be superseded by the settled part for the same call; with no merge key it can
+ * never be closed, so it would render as a forever-pending chip standing beside the real result.
+ * Nothing is lost by rejecting an unidentified one either: the `toolName` and `input` it carries
+ * are re-supplied on the settled part. `parseToolCallPart` therefore rejects these when the id is
+ * missing or empty.
+ */
+type Identified = ToolCallBase & { readonly toolCallId: string }
+
+/**
+ * The four SETTLED states (`approval-responded` plus the three terminal ones) may legitimately
+ * arrive without a `toolCallId`, for two different reasons.
+ *
+ * `approval-responded` is where the WIRE omits it: the SDK's `tool-approval-response` chunk
+ * carries none, and it is resolved by reverse lookup on `approval.id` (coalesce.ts keeps the
+ * approvalId -> toolCallId side index that does it).
+ *
+ * The three terminal states admit the absence for a different reason — tolerance, not wire shape.
+ * They are self-contained: each carries the OUTCOME of the call, so a missing id costs only the
+ * fold (`coalesceParts` keeps an unresolvable part as its own block and never discards it).
+ * Rejecting one instead would delete the only record of how the call ended — silent data loss in a
+ * transcript, strictly worse than an unfolded block.
+ *
+ * The absence is modelled here rather than smuggled through an empty-string sentinel: the union
+ * previously declared an always-meaningful `string` that the `approval-responded` wire shape
+ * cannot supply, which forced a `''` sentinel into the type and an `as unknown as` cast into every
+ * test that built one. A `''` toolCallId is not a value any state accepts; `parseToolCallPart`
+ * normalizes one to absent at the wire boundary, so it never reaches the type or a consumer.
+ */
+type MaybeIdentified = ToolCallBase & { readonly toolCallId?: string }
+
 export type ToolCallPart =
-  | (ToolCallBase & { readonly state: 'input-streaming'; readonly input?: unknown })
-  | (ToolCallBase & { readonly state: 'input-available'; readonly input: unknown })
-  | (ToolCallBase & {
+  | (Identified & { readonly state: 'input-streaming'; readonly input?: unknown })
+  | (Identified & { readonly state: 'input-available'; readonly input: unknown })
+  | (Identified & {
       readonly state: 'approval-requested'
       readonly input: unknown
       readonly approval: ToolApproval & { readonly approved?: never; readonly reason?: never }
     })
-  | (ToolCallBase & {
+  | (MaybeIdentified & {
       readonly state: 'approval-responded'
       readonly input: unknown
       readonly approval: ToolApproval & { readonly approved: boolean }
     })
-  | (ToolCallBase & {
+  | (MaybeIdentified & {
       readonly state: 'output-available'
       readonly input: unknown
       readonly output: unknown
       readonly preliminary?: boolean
       readonly approval?: ToolApproval & { readonly approved?: true }
     })
-  | (ToolCallBase & {
+  | (MaybeIdentified & {
       readonly state: 'output-error'
       readonly input?: unknown
       /** The SDK's field name — there is no field named `error` anywhere in the union. */
@@ -127,7 +165,7 @@ export type ToolCallPart =
       readonly rawInput?: unknown
       readonly approval?: ToolApproval & { readonly approved?: true }
     })
-  | (ToolCallBase & {
+  | (MaybeIdentified & {
       readonly state: 'output-denied'
       readonly input: unknown
       readonly approval: ToolApproval & { readonly approved: false }
@@ -236,35 +274,53 @@ export function parseAgentPart(raw: unknown): AgentPart | null {
 }
 
 /** Validates the state-discriminated `tool` part shape. Rejects the pre-1.11.0 flat shape
- * (`{type:'tool', output}` with no `state`) and any unrecognized `state` value. */
+ * (`{type:'tool', output}` with no `state`) and any unrecognized `state` value.
+ *
+ * An empty-string `toolCallId` is normalized to absent here — the one place the wire's degenerate
+ * shape is decoded — so `''` never reaches the type or any consumer of it. What an ABSENT id then
+ * means is decided per state, exactly as the union declares it (`Identified` /
+ * `MaybeIdentified`): fatal on the three in-flight states, which exist only to be closed by a
+ * later one and are re-supplied by it; survivable on the four settled states, which carry the
+ * outcome and are kept UNIDENTIFIED rather than dropped. Dropping a settled part would be silent
+ * data loss — the transcript would simply forget how the call ended. */
 function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPart | null {
-  if (typeof obj['toolCallId'] !== 'string') return null
   if (typeof obj['toolName'] !== 'string') return null
   if (typeof obj['state'] !== 'string') return null
 
-  const { toolCallId, toolName } = obj as { toolCallId: string; toolName: string }
+  const rawToolCallId = obj['toolCallId']
+  if (rawToolCallId !== undefined && typeof rawToolCallId !== 'string') return null
+  const toolCallId =
+    typeof rawToolCallId === 'string' && rawToolCallId.length > 0 ? rawToolCallId : undefined
+
+  const toolName = obj['toolName']
   const common = {
     id,
     type: 'tool' as const,
-    toolCallId,
     toolName,
     ...(typeof obj['durationMs'] === 'number' ? { durationMs: obj['durationMs'] } : {}),
     ...(typeof obj['providerExecuted'] === 'boolean'
       ? { providerExecuted: obj['providerExecuted'] }
       : {}),
   }
+  // The three in-flight states below require an identified call; the four settled ones spread
+  // `identity` instead, which is simply empty when the wire supplied no usable id.
+  const identified = toolCallId !== undefined ? { ...common, toolCallId } : null
+  const identity = toolCallId !== undefined ? { toolCallId } : {}
 
   switch (obj['state']) {
     case 'input-streaming':
+      if (identified === null) return null
       return {
-        ...common,
+        ...identified,
         state: 'input-streaming',
         ...('input' in obj ? { input: obj['input'] } : {}),
       }
     case 'input-available':
+      if (identified === null) return null
       if (!('input' in obj)) return null
-      return { ...common, state: 'input-available', input: obj['input'] }
+      return { ...identified, state: 'input-available', input: obj['input'] }
     case 'approval-requested': {
+      if (identified === null) return null
       if (!('input' in obj)) return null
       const approval = parseApproval(obj['approval'])
       // The type declares this state's approval as `{ approved?: never; reason?: never }` — a
@@ -274,7 +330,7 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
         return null
       }
       return {
-        ...common,
+        ...identified,
         state: 'approval-requested',
         input: obj['input'],
         approval: approval as ToolApproval & { approved?: never; reason?: never },
@@ -284,8 +340,10 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
       if (!('input' in obj)) return null
       const approval = parseApproval(obj['approval'])
       if (approval === null || typeof approval.approved !== 'boolean') return null
+      // The state the WIRE ships unidentified — `approval.id` is then its only addressing key.
       return {
         ...common,
+        ...identity,
         state: 'approval-responded',
         input: obj['input'],
         approval: approval as ToolApproval & { approved: boolean },
@@ -297,6 +355,7 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
       if (approval === null || approval.approved !== false) return null
       return {
         ...common,
+        ...identity,
         state: 'output-denied',
         input: obj['input'],
         approval: approval as ToolApproval & { approved: false },
@@ -315,6 +374,7 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
       }
       return {
         ...common,
+        ...identity,
         state: 'output-available',
         input: obj['input'],
         output: obj['output'],
@@ -332,6 +392,7 @@ function parseToolCallPart(id: string, obj: Record<string, unknown>): ToolCallPa
       }
       return {
         ...common,
+        ...identity,
         state: 'output-error',
         errorText: obj['errorText'],
         ...('input' in obj ? { input: obj['input'] } : {}),

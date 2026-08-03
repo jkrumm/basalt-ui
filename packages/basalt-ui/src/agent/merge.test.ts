@@ -57,6 +57,93 @@ describe('mergePart', () => {
     expect(replayed).toEqual(firstPassResult.map((p) => ({ ...p, offset: 0 })))
   })
 
+  // ── out-of-range offsets ───────────────────────────────────────────────────
+  // spliceText supports exactly two shapes (append at the end, in-range replace). Everything else
+  // is CLAMPED into [0, existing.text.length] with a dev warning — never thrown on, because a
+  // throw on the render path turns a transient wire anomaly into a permanently dead transcript.
+
+  test('an offset past the end of the existing text clamps to the tail (appends, leaves no hole)', () => {
+    const parts: TextPart[] = [{ id: 'p1', type: 'text', text: 'Hi' }]
+    const [merged] = mergePart(parts, { id: 'p1', type: 'text', text: '!', offset: 10 })
+    expect(merged?.text).toBe('Hi!')
+  })
+
+  test('a negative offset clamps to 0 rather than slicing from the end', () => {
+    const parts: TextPart[] = [{ id: 'p1', type: 'text', text: 'Hello world' }]
+    const [merged] = mergePart(parts, { id: 'p1', type: 'text', text: 'Hey', offset: -3 })
+    expect(merged?.text).toBe('Heylo world')
+  })
+
+  test('an out-of-order (already-covered) offset replaces in place — it never re-appends', () => {
+    // 'Hello world' is fully accumulated; a straggler delta for offset 6 arrives after the tail
+    // has moved past it. In-range, so it is honoured as a replace, not clamped.
+    const parts: TextPart[] = [{ id: 'p1', type: 'text', text: 'Hello world' }]
+    const [merged] = mergePart(parts, { id: 'p1', type: 'text', text: 'WORLD', offset: 6 })
+    expect(merged?.text).toBe('Hello WORLD')
+  })
+
+  test('a non-finite offset clamps to the tail rather than blanking the part', () => {
+    const parts: TextPart[] = [{ id: 'p1', type: 'text', text: 'Hi' }]
+    const [merged] = mergePart(parts, { id: 'p1', type: 'text', text: '!', offset: Number.NaN })
+    expect(merged?.text).toBe('Hi!')
+  })
+
+  test('a FIRST insertion with a nonzero offset clamps and warns like any other out-of-range one', () => {
+    // A first insertion splices against an EMPTY existing text, so the offset is out of range
+    // [0, 0]: mergePart never invents the 2 missing characters, it stores what arrived — but the
+    // anomaly is announced, exactly as it is for an existing part. One contract, one code path.
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => void warnings.push(String(args[0]))
+    let first: TextPart[]
+    try {
+      first = mergePart<TextPart>([], { id: 'p1', type: 'text', text: 'llo', offset: 2 })
+    } finally {
+      console.warn = original
+    }
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toContain('out of range [0, 0]')
+    expect(first).toEqual([{ id: 'p1', type: 'text', text: 'llo', offset: 2 }])
+
+    // The offset rides along inert; the next delta for this id splices relative to the STORED text.
+    const [merged] = mergePart(first, { id: 'p1', type: 'text', text: ' there' })
+    expect(merged?.text).toBe('llo there')
+  })
+
+  test('a FIRST insertion with an in-range (0 or undefined) offset stays silent and stores the text as-is', () => {
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => void warnings.push(String(args[0]))
+    try {
+      expect(mergePart<TextPart>([], { id: 'p1', type: 'text', text: 'Hello', offset: 0 })).toEqual(
+        [{ id: 'p1', type: 'text', text: 'Hello', offset: 0 }],
+      )
+      expect(mergePart<TextPart>([], { id: 'p2', type: 'text', text: 'Hello' })).toEqual([
+        { id: 'p2', type: 'text', text: 'Hello' },
+      ])
+    } finally {
+      console.warn = original
+    }
+    expect(warnings).toHaveLength(0)
+  })
+
+  test('warns in dev on an out-of-range offset, and stays silent on an in-range one', () => {
+    const warnings: string[] = []
+    const original = console.warn
+    console.warn = (...args: unknown[]) => void warnings.push(String(args[0]))
+    try {
+      const parts: TextPart[] = [{ id: 'p1', type: 'text', text: 'Hi' }]
+      mergePart(parts, { id: 'p1', type: 'text', text: '!', offset: 1 })
+      expect(warnings).toHaveLength(0)
+
+      mergePart(parts, { id: 'p1', type: 'text', text: '!', offset: 10 })
+      expect(warnings).toHaveLength(1)
+      expect(warnings[0]).toContain('out of range')
+    } finally {
+      console.warn = original
+    }
+  })
+
   test('non-text/reasoning variants replace wholesale rather than merging fields', () => {
     const parts: ToolCallPart[] = [
       {
