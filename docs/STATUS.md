@@ -35,9 +35,12 @@ there for the first time reported all of it in one pass. Three separate causes, 
    ever tested for a NUMERIC literal → new `basalt/raw-size-literal` oxlint rule (CSS-length strings
    on `size`/`fz`/`fontSize`; `warn` in the shipped preset for its grace minor). `c="yellow.7"`
    passed because no kind covered a shade-pinned Mantine color — `off-identity-accent` polices which
-   hue, not which index → new `mantine-shade-index` guard kind (`warn` through 1.9.x, promotes in
-   1.10.0 — deferred twice, first because 1.8.0 shipped the same day, then because 1.9.0 carried the
-   chart-layer batch the same consumer was waiting on, see `GRACE_PERIOD_KINDS`).
+   hue, not which index → new `mantine-shade-index` guard kind (`warn` from 1.7.0, **promoted to
+   `error` in 1.11.0**). Its grace ran across four minors rather than the doctrinal one — deferred by
+   1.8.0 (shipped the same day as 1.7.0), by 1.9.0 (which carried the chart-layer batch the same
+   consumer was waiting on), and then 1.10.0 shipped without the promotion at all. Promoted only
+   after verifying the consumer: argo's `check-theme` reports zero violations of any kind, so nothing
+   that was passing now fails. `GRACE_PERIOD_KINDS` is empty again.
 3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
    `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
    that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a

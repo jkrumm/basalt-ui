@@ -279,35 +279,47 @@ type ToolCallBase = PartBase & {
   readonly providerExecuted?: boolean
 }
 
+type ToolApproval = {
+  readonly id: string
+  readonly approved?: boolean
+  readonly reason?: string
+  readonly isAutomatic?: boolean
+  readonly signature?: string
+}
+
 export type ToolCallPart =
   | (ToolCallBase & { readonly state: 'input-streaming'; readonly input?: unknown })
   | (ToolCallBase & { readonly state: 'input-available'; readonly input: unknown })
   | (ToolCallBase & {
       readonly state: 'approval-requested'
       readonly input: unknown
-      readonly approvalId: string
+      readonly approval: ToolApproval & { readonly approved?: never; readonly reason?: never }
     })
   | (ToolCallBase & {
       readonly state: 'approval-responded'
       readonly input: unknown
-      readonly approvalId: string
-      readonly approved: boolean
+      readonly approval: ToolApproval & { readonly approved: boolean }
     })
   | (ToolCallBase & {
       readonly state: 'output-available'
       readonly input: unknown
       readonly output: unknown
       readonly preliminary?: boolean
+      readonly approval?: ToolApproval & { readonly approved?: true }
     })
   | (ToolCallBase & {
       readonly state: 'output-error'
       readonly input?: unknown
-      readonly error: string
+      /** The SDK's field name — there is no field named `error` anywhere in the union. */
+      readonly errorText: string
+      /** The only surviving record of an input that never validated. Static parts only. */
+      readonly rawInput?: unknown
+      readonly approval?: ToolApproval & { readonly approved?: true }
     })
   | (ToolCallBase & {
       readonly state: 'output-denied'
       readonly input: unknown
-      readonly reason?: string
+      readonly approval: ToolApproval & { readonly approved: false }
     })
 
 export type ToolCallState = ToolCallPart['state']
@@ -315,14 +327,54 @@ export const TERMINAL_TOOL_STATES = ['output-available', 'output-error', 'output
 export function isToolCallSettled(part: ToolCallPart): boolean
 ```
 
-`error?` from the brief lives where it can actually exist: required on `output-error`, absent
-everywhere else. `output` is present only in `output-available` — "output present while still
-running" is now unrepresentable, which is the point of nesting the union rather than flattening
-seven optional fields onto one object.
+> **Corrected 2026-08-02 against installed `ai@7.0.16`.** This section previously specified a flat
+> `approvalId` / `approved` / `reason` and an error field named `error`. Both were wrong, and the
+> shape above is what shipped in `e967a45`. Read `node_modules/ai/dist/index.d.ts:1977-2071` before
+> trusting any restatement of this union, including this one.
 
-`aiSdkTransport`'s `diffToolPart` (`ai-sdk-transport.ts:165-190`) changes accordingly: it stops
-swallowing `'input-streaming'` (`:169`) and stops stuffing the error into `output`
-(`:187-188` — `{ ...base, output: { error: curr.errorText } }`), emitting the real state instead.
+Four things the earlier draft got wrong, each with a cost:
+
+1. **The error field is `errorText`.** No field named `error` exists anywhere in `UIToolInvocation`.
+2. **Approval is nested, not flat.** The SDK carries
+   `approval: { id, approved?, reason?, isAutomatic?, signature? }`. Flattening it to sibling fields
+   silently drops `isAutomatic` and `signature`, and `approved` is narrowed per state — `?: never` at
+   `approval-requested`, `boolean` at `approval-responded`, literal `true` at
+   `output-available`/`output-error`, literal `false` at `output-denied`. basalt **mirrors** the
+   nesting rather than unwrapping it, following this spec's own premise of mirroring v7.
+3. **`rawInput` exists and matters.** It is `output-error`-only and static-variant-only
+   (`DynamicToolUIPart`'s `output-error` has no `rawInput`), and at that state `input` is explicitly
+   nullable — so `rawInput` is the only surviving record of an input that never validated.
+4. **`toolName` is not a field on `UIToolInvocation`.** For static tools it is encoded in the part
+   discriminator `` `tool-${NAME}` `` and must be derived; only `DynamicToolUIPart` carries it
+   explicitly. basalt's `ToolCallPart` keeps a required `toolName` — it is derived at the transport
+   boundary, not read off the SDK part.
+
+Also omitted by the earlier draft, all real: `title`, `toolMetadata`, `callProviderMetadata`
+(all seven states) and `resultProviderMetadata` (`output-available`/`output-error` only).
+
+`output` is present only in `output-available` — "output present while still running" is
+unrepresentable, which is the point of nesting the union rather than flattening seven optional
+fields onto one object.
+
+`aiSdkTransport`'s `diffToolPart` changes accordingly: it stops swallowing `'input-streaming'`, stops
+stuffing the error into `output`, and stops passing the four un-modelled states through flat behind an
+`as unknown as AgentPartDraft` cast — emitting the real state, with the nested `approval` object
+carried through verbatim, instead.
+
+Three defects in that function were found in the 2026-08-02 SDK read and are fixed in the same pass.
+None of them appear in the defect register:
+
+| #   | Defect                                                                                                                                                                                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| a   | **Dynamic tool names are destroyed.** `curr.type.slice('tool-'.length)` runs on every tool part, but `DynamicToolUIPart` has `type: 'dynamic-tool'` and carries its name only in `part.toolName`. Every dynamic tool renders as the literal string `dynamic-tool`                                                                                                              |
+| b   | **The `prev?.state === curr.state → return []` short-circuit drops preliminary refinements.** `preliminary: true` outputs stream: successive updates arrive with `state: 'output-available'` unchanged and `output` mutating, so the first is emitted and every refinement discarded. Invisible to any fixture that drives one transition per tool call — which is all of them |
+| c   | **`output-denied` carries neither `output` nor `errorText`.** A chip shaped "error if `errorText`, else done if `output`, else pending" renders a denied tool as pending forever                                                                                                                                                                                               |
+
+A constraint on how the name gets derived: `ai` root-exports `getToolName` / `getStaticToolName` /
+`isToolUIPart`, and they must **not** be imported. `ai-sdk-transport.ts` imports from `ai` type-only
+by deliberate design — it never resolves the peer at runtime — so the fix uses the SDK's _types_ and
+reimplements the two-line derivation locally (`split('-').slice(1).join('-')`, which handles
+hyphenated tool names; `type.split('-')[1]` does not).
 
 ```ts
 // src/agent/coalesce.ts — NEW, exported from ./agent (moved out of thread-message.tsx:164-177)
@@ -332,6 +384,13 @@ swallowing `'input-streaming'` (`:169`) and stops stuffing the error into `outpu
  * and an input from an earlier state survives a later state that omits it. Without the
  * toolCallId rule the AI SDK's re-emission at input-available then output-available renders two
  * stacked <pre> blocks (today's behaviour via thread-message.tsx:209).
+ *
+ * It also maintains an approvalId -> toolCallId side index, and THAT part is not cosmetic:
+ * `tool-approval-response` carries approvalId, approved and reason? but NO toolCallId
+ * (ai@7.0.16 index.d.ts:2462-2467). The SDK itself resolves it by scanning accumulated parts for
+ * a matching approval.id and throws when the request chunk was never applied, so the mapping
+ * exists only in accumulated state and never on the wire. A toolCallId-only merge index cannot
+ * represent an approval response at all.
  */
 export function coalesceParts<TPart extends AgentPart>(parts: readonly TPart[]): TPart[]
 ```
@@ -384,8 +443,8 @@ export type ConsumerPart = BasaltRegister extends { parts: infer P extends Forei
 
 /**
  * Un-augmented: a loose string-keyed map. Augmented: EXHAUSTIVE over the registered union — a
- * missing key is a tsc error, a stale key is a tsc error, and each renderer's `part` is narrowed
- * to exactly its variant. Same Slot mechanism as SeriesKey (src/register.ts:26-58).
+ * MISSING key is a tsc error, and each renderer's `part` is narrowed to exactly its variant.
+ * A stale key is NOT caught — see the note under invariant 2.
  */
 export type PartRenderers = [ConsumerPart] extends [never]
   ? Readonly<Record<string, PartRenderer<ForeignPart>>>
@@ -823,11 +882,30 @@ everything — which is exactly what would happen if `ForeignPart` were folded i
 
 **2. Registered parts cannot be dropped.** `PartRenderers` is a mapped type over
 `ConsumerPart['type']` with **no `?`**. Once a consumer augments `BasaltRegister['parts']`, omitting
-a renderer is `Property 'data-chart' is missing`, and a stale key after a part type is renamed is
-`Object literal may only specify known properties`. Un-augmented consumers get
-`Record<string, PartRenderer<ForeignPart>>` and pay nothing — the same `[T] extends [never]`
-conditional and `{}`-default discipline `src/register.ts:26-58` already documents at length for
-`Slot`/`SeriesKey`.
+a renderer is `Property 'data-chart' is missing`. Un-augmented consumers get
+`Record<string, PartRenderer<ForeignPart>>` and pay nothing.
+
+> **Corrected 2026-08-02.** This paragraph previously also claimed a stale key errors with
+> `Object literal may only specify known properties`. **It does not.** Verified with a minimal `tsc`
+> repro during B2: `<const T extends Constraint>` inference does not excess-property-check an
+> object-literal argument against the constraint — only _missing_ required keys are caught, and that
+> check comes from ordinary assignability, not from freshness. An `@ts-expect-error` asserting the
+> stale-key error is itself an unused-directive error.
+>
+> Deliberately not fixed with an `Exact<T, Shape>` wrapper. The Canonical token-factory contract
+> (`packages/basalt-ui/CLAUDE.md:235-261`) mandates one shape across every `defineX`, and
+> special-casing this factory would break a doctrine that is itself load-bearing. The severity does
+> not warrant it: a stale key is a renderer for a part type nobody registers — dead code that never
+> fires, not a runtime break — while the valuable half, a _missing_ key, is caught, and a registered
+> type with no renderer falls through to `fallbackRenderer`, which is safe by construction.
+
+`ConsumerPart` is a **hand-written sibling conditional, not a reuse of `Slot`** (`src/register.ts`).
+`Slot`'s un-augmented fallback is the never-keyed `{}`, which is right for MAP-shaped slots and wrong
+for this one: `{}` does not satisfy `ForeignPart`'s `{ type: string; id: string }` shape, so
+`ConsumerPart['type']` would be a tsc error on the very zero-augmentation call site that has to
+compile clean. `Slot`'s fallback is not parameterized — every other slot wants `{}` — so `parts` gets
+its own conditional rather than a change to the shared mechanism. It keeps the `[T] extends [never]`
+discipline `src/register.ts` documents at length; it just does not share the type.
 
 **3. Inference actually infers.** `definePartRenderers<const T extends PartRenderers>(map: T): T`
 follows the canonical factory contract verbatim (const generic, exact-keyed return, `satisfies` for
@@ -1019,7 +1097,7 @@ component, not a mocking library.
 | `src/content/sanitize.test.ts`                               | `sanitizeSchema` additions merge into `BASALT_SANITIZE_SCHEMA`; a returned schema cannot remove a baseline tag (not expressible); the sanitize pass runs **after** consumer `rehypePlugins`; `<script>` and `on*` attributes stripped with and without an extension                                                                                                                                                          |
 | `configs/oxlint-plugin.test.ts`                              | three new `describe` blocks with the fixtures tabled above, plus `raw-scroll-container`'s promotion                                                                                                                                                                                                                                                                                                                          |
 | `tests/required-peers.test.ts`                               | new row: `remend` is a **root-entry** hard requirement while `content/markdown.tsx:39` is a static import (1.10.0), flipped to lazy-optional in 1.12.0                                                                                                                                                                                                                                                                       |
-| `apps/playground/src/demo/agent-part-registry.type-guard.ts` | tsc fixture in the shape of `agent-part.type-guard.ts`: an augmented `BasaltRegister['parts']` with a missing renderer key is a `@ts-expect-error`; a stale key is a `@ts-expect-error`; a correctly-keyed map compiles and narrows `part`                                                                                                                                                                                   |
+| `apps/playground/src/demo/agent-part-registry.type-guard.ts` | tsc fixture in the shape of `agent-part.type-guard.ts`: an augmented `BasaltRegister['parts']` with a missing renderer key is a `@ts-expect-error`; a correctly-keyed map compiles and narrows `part`. **No stale-key `@ts-expect-error`** — const-generic inference does not excess-property-check, so that directive would itself be an unused-directive error (see invariant 2)                                           |
 
 ### The suspected `useAgentThreadRuns` wedge — reproduce **and** refute
 
