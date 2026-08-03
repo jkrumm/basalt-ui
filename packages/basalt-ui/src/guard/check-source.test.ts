@@ -209,11 +209,15 @@ describe('mantine-shade-index', () => {
   })
 
   // The grace-minor doctrine (package CLAUDE.md): a kind that rejects previously-passing code
-  // lands as `warn` for one minor. Deleting its GRACE_PERIOD_KINDS entry flips this — scheduled
-  // for 1.9.0, deferred one minor because 1.8.0 shipped the same day as 1.7.0 (see the entry).
-  it('lands as a warning, not an error, for its grace minor', () => {
+  // lands as `warn` for one minor, then its GRACE_PERIOD_KINDS entry is deleted and it becomes an
+  // error. This one ran its grace across FOUR minors — introduced 1.7.0, then deferred by 1.8.0
+  // (shipped the same day as 1.7.0), 1.9.0 (carried the chart-layer batch the same consumer was
+  // waiting on) and 1.10.0 (shipped without the promotion at all). Promoted in 1.11.0, verified
+  // against the only consumer first: argo's `check-theme` reports zero violations of any kind, so
+  // the promotion breaks nothing that was passing.
+  it('is an error now that its grace period has ended', () => {
     const f = find(`<Text c="yellow.7" />`)
-    expect(f.find((x) => x.kind === 'mantine-shade-index')?.severity).toBe('warn')
+    expect(f.find((x) => x.kind === 'mantine-shade-index')?.severity).toBe('error')
   })
 })
 

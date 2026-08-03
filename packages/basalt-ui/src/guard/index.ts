@@ -296,9 +296,7 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
  * }
  */
-const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
-  'mantine-shade-index': 'introduced 1.7.0 — promote to error in 1.10.0',
-}
+const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
