@@ -1,3 +1,18 @@
+# [1.12.0](https://github.com/jkrumm/basalt-ui/compare/v1.11.0...v1.12.0) (2026-08-03)
+
+
+### Bug Fixes
+
+* stop the tool-part fold carrying stale state and dropping parts ([d47a35f](https://github.com/jkrumm/basalt-ui/commit/d47a35f7d58d985037814b8771b0e426c5396403))
+
+
+### Features
+
+* give the composer its slots and a way to write into them ([e115b7e](https://github.com/jkrumm/basalt-ui/commit/e115b7efd428a09701307f9fe7448f72e69606bb))
+* let a server-backed store stand behind the threads API ([dfdf9c5](https://github.com/jkrumm/basalt-ui/commit/dfdf9c543554167ff9d780dda2cb662238eff419))
+* open the markdown seams and split trust from streaming ([90d406e](https://github.com/jkrumm/basalt-ui/commit/90d406e13311a107a6a160d8f66ff42e41085a75))
+* prove the 1.12.0 seams from outside the package ([0231345](https://github.com/jkrumm/basalt-ui/commit/0231345f88f9d8f7191db6c733ac124d5fae85fd))
+
 # [1.11.0](https://github.com/jkrumm/basalt-ui/compare/v1.10.0...v1.11.0) (2026-08-03)
 
 
