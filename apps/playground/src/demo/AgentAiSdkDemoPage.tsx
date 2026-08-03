@@ -127,8 +127,12 @@ export function AgentAiSdkDemoPage() {
               </MessageBubble>
             ))}
             {run !== undefined && (
+              // `run` only exists in the map while its status is 'streaming' (see
+              // ThreadRunState's type doc) — once the turn finishes it is committed to
+              // `thread.messages` and removed here, so `settled={false}` is unconditionally
+              // correct for this branch.
               <MessageBubble author="assistant" parts={run.parts}>
-                <AssistantBlocks parts={run.parts} />
+                <AssistantBlocks parts={run.parts} settled={false} />
               </MessageBubble>
             )}
           </Stack>

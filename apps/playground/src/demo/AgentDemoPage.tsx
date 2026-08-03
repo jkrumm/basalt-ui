@@ -114,8 +114,12 @@ function useSourceRenderer(parts: AgentPart[]): SourcePartRenderer {
   return rendererRef.current
 }
 
-/** Renders an assistant turn via the shipped `PartList` — the recommended path (see module doc). */
-function AssistantParts({ parts }: { parts: AgentPart[] }) {
+/** Renders an assistant turn via the shipped `PartList` — the recommended path (see module doc).
+ * `settled` forwards straight to `PartList`'s own prop (`false` only while the LIVE turn is still
+ * streaming) so `TextBlock`'s trailing fence upgrades the instant the run finishes, instead of
+ * staying stuck in streaming mode forever. Defaults to `true`: every committed thread message is
+ * already settled — only the live tail below passes `settled={false}` while in flight. */
+function AssistantParts({ parts, settled = true }: { parts: AgentPart[]; settled?: boolean }) {
   const coalesced = useMemo(() => coalesceRuns(parts), [parts])
   const sourceRenderer = useSourceRenderer(coalesced)
   const components = useMemo<Partial<AgentPartRenderers>>(
@@ -130,7 +134,7 @@ function AssistantParts({ parts }: { parts: AgentPart[] }) {
   )
   return (
     <Stack gap="xs">
-      <PartList parts={coalesced} components={components} />
+      <PartList parts={coalesced} components={components} settled={settled} />
     </Stack>
   )
 }
@@ -305,7 +309,7 @@ export function AgentDemoPage() {
                 ))}
                 {showLive && (
                   <MessageBubble author="assistant" parts={parts}>
-                    {parts.length > 0 && <AssistantParts parts={parts} />}
+                    {parts.length > 0 && <AssistantParts parts={parts} settled={!streaming} />}
                     {streaming && (
                       <Group gap={5} align="center" mt="xs" aria-label="Assistant is typing">
                         <TypingDot delay={0} />

@@ -178,6 +178,27 @@ export function IconDots() {
   )
 }
 
+/** Paperclip glyph for an "attach file" affordance. */
+export function IconPaperclip() {
+  return (
+    <Glyph size={16}>
+      <path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" />
+    </Glyph>
+  )
+}
+
+/** Microphone glyph for a "simulate voice input" affordance. */
+export function IconMic() {
+  return (
+    <Glyph size={16}>
+      <path d="M9 2m0 3a3 3 0 0 1 3 -3h0a3 3 0 0 1 3 3v5a3 3 0 0 1 -3 3h0a3 3 0 0 1 -3 -3z" />
+      <path d="M5 10a7 7 0 0 0 14 0" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </Glyph>
+  )
+}
+
 /** Subtle wifi icon for the online-status indicator. */
 export function IconWifi() {
   return (

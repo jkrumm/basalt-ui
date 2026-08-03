@@ -44,12 +44,22 @@ import { IconSparkle, IconUser } from './icons'
 // Signatures match basalt-ui/agent's PartList per-type renderer shape (`{ part, index }`), so
 // AgentDemoPage can pass these straight through as `PartList`'s `components` overrides.
 
-export function TextBlock({ part }: { part: TextPart; index: number }) {
+export function TextBlock({ part, settled }: { part: TextPart; index: number; settled: boolean }) {
   // basalt-ui/content's Markdown (density="chat") owns the chat typography via Prose — headings,
   // blockquotes, and code all land at the compact chat body size. We deliberately do NOT wrap in
   // Mantine's <Typography>: it sizes blockquotes and headings far too large inside a chat bubble.
+  //
+  // Two independent props, mirroring basalt-ui's own thread-message.tsx `TextRenderer`:
+  //
+  // `streaming={!settled}` is the RENDERING mode. Hardcoding `streaming` here previously kept
+  // `Markdown` in block-split mode forever, so a FINISHED message ending in a fence (e.g. mermaid)
+  // rendered as a plain CodeBlock permanently and the tail block's copy action stayed hidden.
+  //
+  // `contentTrust="untrusted"` is the SECURITY policy and is pinned unconditionally — this renders
+  // model output whether or not the run is still in flight, and images auto-fetch under the
+  // trusted allowlist.
   return (
-    <Markdown streaming density="chat">
+    <Markdown streaming={!settled} contentTrust="untrusted" density="chat">
       {part.text}
     </Markdown>
   )
@@ -233,8 +243,18 @@ export function coalesce(parts: AgentPart[]): Block[] {
 
 /** Renders a coalesced assistant turn by hand — the bespoke counterpart to `<PartList />`. Owns
  * the "nothing to show yet" fallback too (a turn with only a no-op `start` part, or no parts at
- * all, coalesces to zero blocks) so call sites don't each repeat the same length-check ternary. */
-export function AssistantBlocks({ parts }: { parts: AgentPart[] }) {
+ * all, coalesces to zero blocks) so call sites don't each repeat the same length-check ternary.
+ *
+ * `settled` mirrors `PartList`'s own prop: `false` only while the turn these parts belong to is
+ * still streaming, forwarded to `TextBlock` so a trailing fence upgrades once the run finishes.
+ * Defaults to `true` — a caller that knows nothing about a run is rendering a finished turn. */
+export function AssistantBlocks({
+  parts,
+  settled = true,
+}: {
+  parts: AgentPart[]
+  settled?: boolean
+}) {
   const blocks = useMemo(() => coalesce(parts), [parts])
   if (blocks.length === 0) {
     return (
@@ -248,7 +268,7 @@ export function AssistantBlocks({ parts }: { parts: AgentPart[] }) {
       {blocks.map((block, i) => {
         switch (block.kind) {
           case 'text':
-            return <TextBlock key={block.key} part={block.part} index={i} />
+            return <TextBlock key={block.key} part={block.part} index={i} settled={settled} />
           case 'tool':
             return <ToolBlock key={block.key} part={block.part} index={i} />
           case 'sources':
