@@ -126,15 +126,27 @@ export type {
   ThreadOutcomeCardProps,
   ThreadDetailPanelProps,
   ComposerProps,
+  ComposerSubmit,
+  ComposerAttachment,
+  ComposerHandle,
   ThreadTranscriptProps,
   ToolChipProps,
 } from './agent-chat'
-export { createThreadsStore, heuristicOutcome, useAgentThreadRuns } from './agent'
+export {
+  createAdapterThreadsStore,
+  createThreadsStore,
+  heuristicOutcome,
+  threadsStoreAdapterContract,
+  useAgentThreadRuns,
+} from './agent'
 export type {
+  AdapterThreadsStoreOptions,
   AgentThread,
   AgentOutcome,
   ThreadStatus,
   ThreadsStore,
+  ThreadsStoreAdapter,
+  ThreadsStoreAdapterContractCase,
   ThreadsStoreOptions,
   OutcomeResolver,
   ChatMessage,

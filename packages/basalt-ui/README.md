@@ -236,7 +236,7 @@ deleted rather than silently surviving into the next real skew.
 | `./data/table`      | coupled  | `BasaltDataTable` — sortable data table over TanStack Table, rendered with Mantine                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `./data/virtual`    | coupled  | `BasaltVirtualList` — windowed virtual list over TanStack Virtual, rendered with Mantine                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `./agent`           | **free** | Headless streaming layer (`useAgentStream`, `PartList`) + multi-thread `createThreadsStore` / `useAgentThreadRuns` / outcome seam                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `./agent-chat`      | coupled  | Mantine-styled thread-chat components over `./agent`: `ThreadWorkspace`, `ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`, `Composer`, `ThreadTranscript`, `threadPartRenderers` — **requires `remend` and `motion`**, not merely optional peers; see [Requirements](#requirements)                                                                                                                                                                                                                                          |
+| `./agent-chat`      | coupled  | Mantine-styled thread-chat components over `./agent`: `ThreadWorkspace`, `ThreadFeed`, `ThreadOutcomeCard`, `ThreadDetailPanel`, `Composer`, `ThreadTranscript`, `threadPartRenderers` — **requires `motion`**, not merely an optional peer; see [Requirements](#requirements)                                                                                                                                                                                                                                                     |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `./connectivity`    | coupled  | `ConnectivityProvider` (aggregates browser/React-Query/SSE/health-check status), `useConnectivity`, `ConnectivityIndicator` — auto-mounted by `BasaltProvider`                                                                                                                                                                                                                                                                                                                                                                     |
 | `./content`         | coupled  | `Prose`, `CodeBlock`, `Callout`, `TableOfContents`, `ReadingProgress`, `Markdown`, `MermaidDiagram`, `ArticleLayout`, `ArticleCard` / `ArticleGrid`, `GuideLink` / `GuideDrawer`, `mdxComponents`                                                                                                                                                                                                                                                                                                                                  |
@@ -443,20 +443,19 @@ import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 ### `./content` — prose + markdown
 
 ````bash
-bun add remend                      # required — `Markdown` imports it eagerly, so the subpath won't resolve without it
-bun add react-markdown remark-gfm   # Markdown
-bun add shiki                       # CodeBlock / fenced-code highlighting (brings @shikijs/langs, @shikijs/themes as optional peers)
-bun add beautiful-mermaid           # MermaidDiagram / ```mermaid fences
+bun add react-markdown remark-gfm     # Markdown
+bun add remend                        # `Markdown`'s streaming-tail repair — optional, lazy dynamic import
+bun add rehype-sanitize               # `Markdown`'s sanitize pass — optional, lazy dynamic import
+bun add shiki                         # CodeBlock / fenced-code highlighting (brings @shikijs/langs, @shikijs/themes as optional peers)
+bun add beautiful-mermaid             # MermaidDiagram / ```mermaid fences
 ````
 
-`remend` is the one peer here that is not lazy: `Markdown` imports it at the top of the module, so
-`basalt-ui/content` fails to resolve without it even if you never render `Markdown` yourself. That
-eager import also reaches past this subpath: both the root `.` entry and `./agent-chat`'s
-`ThreadWorkspace` / `ThreadTranscript` import `Markdown` directly (not lazily) as their text
-renderer, so `remend` is listed as **required** in the [Requirements](#requirements) table too, not
-only here.
-Everything else degrades gracefully when absent (markdown falls back to plain text, fences to
-plain mono, mermaid renders nothing). `Markdown` is the package's **only** markdown
+Every peer here is lazy: `Markdown` reaches all of them through a dynamic `import()`, so
+`basalt-ui/content` resolves and renders with none of them installed. Absence degrades gracefully
+— never a crash: without `react-markdown`/`remark-gfm`, markdown falls back to plain text; without
+`remend`, the streaming tail renders unrepaired; without `rehype-sanitize`, the sanitize pass is
+skipped (dev-warned once); without `shiki`, fences fall back to plain mono; without
+`beautiful-mermaid`, mermaid fences render nothing. `Markdown` is the package's **only** markdown
 renderer — it backs long-form content and AI chat alike:
 
 ```tsx
@@ -465,12 +464,16 @@ import { Markdown, Prose, CodeBlock, TableOfContents } from 'basalt-ui/content'
 // Long-form: 72ch measure, article typography, heading anchors + slug dedup.
 <Markdown>{article.body}</Markdown>
 
-// AI output: chat density, block-split + memoized, `remend`-repaired in-flight tail.
-<Markdown streaming density="chat">{part.text}</Markdown>
+// AI output: chat density, block-split + memoized, `remend`-repaired in-flight tail. Model-generated
+// text is untrusted regardless of whether it has finished streaming — pin `contentTrust` explicitly.
+<Markdown streaming density="chat" contentTrust="untrusted">{part.text}</Markdown>
 ```
 
-`streaming` also tightens image URLs to same-origin — LLM-authored markdown can otherwise exfiltrate
-via a remote image URL. Full doctrine: `agent/rules/basalt-content.md`.
+`streaming` is a rendering mode only — it says the text is still arriving, not who wrote it. The
+security input is the separate `contentTrust` prop (`'trusted' | 'untrusted'`), the sole driver of
+the `allowedImagePrefixes` default: same-origin-only when untrusted, since LLM-authored markdown can
+otherwise exfiltrate via a remote image URL. Any surface rendering agent/model output must pin
+`contentTrust="untrusted"` explicitly. Full doctrine: `agent/rules/basalt-content.md`.
 
 ### `./agent` — streaming-chat layer
 
@@ -606,16 +609,22 @@ Wire the drift gate to catch doctrine falling behind after a basalt-ui upgrade:
 
 ## Requirements
 
-| Peer                    | Version   | Notes                                                                                                                                                                                                                                                                             |
-| ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `react` / `react-dom`   | `^19`     | required                                                                                                                                                                                                                                                                          |
-| `@mantine/core`         | `^9.3`    | required                                                                                                                                                                                                                                                                          |
-| `@mantine/hooks`        | `^9.3`    | required                                                                                                                                                                                                                                                                          |
-| `@tanstack/react-query` | —         | required for the root `.` entry — `BasaltProvider` hard-requires it at build time; NOT required by `./agent-chat`, which doesn't touch it                                                                                                                                         |
-| `remend`                | `1.3.0`   | required for both the root `.` entry and `./agent-chat` — both export `ThreadWorkspace`/`ThreadTranscript` (`agent-chat/thread-message.tsx`), which statically imports `content/markdown.tsx`, which imports `remend` eagerly; see [`./content`](#content--prose--markdown) below |
-| `motion`                | `12.42.0` | required for both the root `.` entry and `./agent-chat` — both export `ThreadFeed`/`ThreadDetailPanel` (`agent-chat/thread-feed.tsx` / `thread-detail-panel.tsx`), which import `motion/react` eagerly; the root's `ThemeToggle` also uses it                                     |
+| Peer                    | Version   | Notes                                                                                                                                                                                                                                         |
+| ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `react` / `react-dom`   | `^19`     | required                                                                                                                                                                                                                                      |
+| `@mantine/core`         | `^9.3`    | required                                                                                                                                                                                                                                      |
+| `@mantine/hooks`        | `^9.3`    | required                                                                                                                                                                                                                                      |
+| `@tanstack/react-query` | —         | required for the root `.` entry — `BasaltProvider` hard-requires it at build time; NOT required by `./agent-chat`, which doesn't touch it                                                                                                     |
+| `motion`                | `12.42.0` | required for both the root `.` entry and `./agent-chat` — both export `ThreadFeed`/`ThreadDetailPanel` (`agent-chat/thread-feed.tsx` / `thread-detail-panel.tsx`), which import `motion/react` eagerly; the root's `ThemeToggle` also uses it |
 
-`./agent-chat`'s `optionalPeers` in `llms.txt`/`surfaces.ts` still lists `remend` and `motion` (npm has no per-subpath optionality in `peerDependenciesMeta`), but treat both as required when installing just this subpath — see the subpath table above.
+`remend` was required through 1.10.x — `content/markdown.tsx` imported it at the top of the module,
+so both the root `.` entry and `./agent-chat`'s `ThreadWorkspace`/`ThreadTranscript` hard-required it
+transitively. It is now a genuinely optional, lazy peer (dynamic `import()`); see
+[`./content`](#content--prose--markdown) below.
+
+`./agent-chat`'s `optionalPeers` in `llms.txt`/`surfaces.ts` lists `remend` and `motion` (npm has no
+per-subpath optionality in `peerDependenciesMeta`) — only `motion` needs to be treated as required
+when installing just this subpath; `remend` is accurately optional there too now.
 
 Optional peer batteries and their packages are listed per battery above.
 

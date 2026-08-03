@@ -26,7 +26,7 @@ Import: import { ... } from 'basalt-ui'
 Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, SettingsSection/SettingsRow/DangerZone)
 Layer: mantine-coupled
 Rule: basalt-mantine
-OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, beautiful-mermaid@^1.1.0
+OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
@@ -121,17 +121,17 @@ OptionalPeers: ai@^7.0.15, use-stick-to-bottom@^1.1.6
 
 ## basalt-ui/agent-chat
 Import: import { ... } from 'basalt-ui/agent-chat'
-Description: Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). remend and motion are required, not optional — ThreadTranscript imports content/markdown.tsx (remend eagerly), and ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without both installed even though peerDependenciesMeta marks them optional (npm has no per-subpath optionality).
+Description: Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx.
 Layer: mantine-coupled
 Rule: basalt-agent
 OptionalPeers: ai@^7.0.15, motion@12.42.0, remend@1.3.0, use-stick-to-bottom@^1.1.6, react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
-Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers, streaming-aware), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
+Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), ArticleFilterBar (category/tags filter UI), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
 Layer: mantine-coupled
 Rule: basalt-content
-OptionalPeers: shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, @mantine/spotlight@^9.3.0
+OptionalPeers: shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, @mantine/spotlight@^9.3.0
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
