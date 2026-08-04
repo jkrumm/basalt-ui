@@ -49,8 +49,9 @@ export type ThreadFeedProps = {
    * collapsing a row that remains the active thread isn't one; wiring `onToggle={onSelect}`
    * directly (the previous shape) meant a plain `onSelect={setActiveId}` consumer could never
    * collapse a row, since re-selecting the same id is a no-op state update. Collapsing here is
-   * local, UI-only state, reset whenever `activeId` moves to point at a different thread (or is
-   * re-driven to the same one from outside this component).
+   * local, UI-only state, reset whenever `activeId` changes to point at a DIFFERENT thread. Since
+   * this reset is a `useEffect` keyed on `activeId`, re-driving it to the SAME id from outside
+   * this component is a no-op React dep comparison, so it does not clear the override.
    */
   readonly variant?: 'outcome' | 'inline'
   /**
@@ -119,10 +120,11 @@ export function ThreadFeed({
   // meaningful for the id it names; a stale value left over for a since-deselected thread is inert
   // (the per-row `expanded` check below always requires `thread.id === activeId` too).
   const [collapsedId, setCollapsedId] = useState<string | null>(null)
-  // Any externally-driven move of `activeId` — a different thread selected elsewhere, or the SAME
-  // thread re-selected after being manually collapsed — clears a stale override. A collapse
+  // Any externally-driven move of `activeId` to a DIFFERENT thread clears a stale override. React
+  // bails on a same-value dep, so re-driving `activeId` to the id it already holds (e.g. the SAME
+  // thread re-selected after being manually collapsed) does NOT re-run this effect. A collapse
   // triggered by this component's own header click does NOT touch `activeId` at all (see
-  // `handleInlineToggle`), so it does not re-trigger this effect.
+  // `handleInlineToggle`), so it does not re-trigger this effect either.
   useEffect(() => {
     setCollapsedId(null)
   }, [activeId])
