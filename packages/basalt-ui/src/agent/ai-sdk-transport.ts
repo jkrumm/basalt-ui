@@ -48,6 +48,7 @@
  * })
  */
 import { assertNever } from '../register'
+import { mintMessageId, mintThreadId } from './id'
 import { TERMINAL_TOOL_STATES } from './parts'
 import type { AgentPart, AgentPartDraft } from './parts'
 import type { ResumableAgentTransport } from './transport'
@@ -401,7 +402,10 @@ export function aiSdkTransport<TPart = AgentPart>(
 
         const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
         const userMessage: UIMessage = {
-          id: crypto.randomUUID(),
+          // This id is what AI SDK's own backend persistence/dedup keys turns hang off — the same
+          // idempotency-key cost as basalt's own ChatMessage.id (see mintMessageId's doc), so
+          // mintMessageId, not mintThreadId, is the right helper here.
+          id: mintMessageId(),
           role: 'user',
           parts: [{ type: 'text', text: input }],
         }
@@ -425,7 +429,9 @@ export function aiSdkTransport<TPart = AgentPart>(
     }
   }
 
-  const fixedChatId = crypto.randomUUID()
+  // Client-side conversation namespace, not an idempotency key — a collision here would merge two
+  // conversations' index-addressed part ids, the same low collision cost `mintThreadId` covers.
+  const fixedChatId = mintThreadId()
   return {
     ...makeTransport(fixedChatId),
     forThread: (chatId: string) => makeTransport(chatId),

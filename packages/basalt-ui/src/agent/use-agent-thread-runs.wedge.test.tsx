@@ -48,6 +48,17 @@
  * that the thread SETTLES (leaves `'streaming'`) rather than wedging — the resume() call count is
  * asserted too, but as an observed constant with the doubling explained, not as evidence of a
  * single attempt.
+ *
+ * (d) is a SEPARATE, later-release defect discovered in the same family: the F3 fix above made the
+ * PERSISTED thread settle correctly (to a resume, or to 'interrupted'), but left the hook's OWN
+ * `runs` state untouched by the unmount-cleanup effect — so on a fiber that survives (StrictMode
+ * double-invoke, `<Activity>` hide/show), `runs` kept reporting the aborted run as `'streaming'`
+ * forever, even once the persisted thread had already settled. Unlike (b)/(c) (which use a
+ * RESUMABLE transport, so a fresh `runs` entry gets created by the surviving resume), (d) uses a
+ * NON-resumable transport — the case where nothing ever replaces the phantom entry, and `stop()`
+ * on it was a permanent no-op (see this hook's `stop()` JSDoc). Verified manually: reverting the
+ * `runs` teardown in the unmount-cleanup effect makes (d) fail — `runs.has(threadId)` stays `true`
+ * after the thread settles to `'interrupted'` — while (a)/(b)/(c) are unaffected by that revert.
  */
 import { describe, expect, test } from 'bun:test'
 import type { JSX } from 'react'
@@ -303,5 +314,74 @@ describe('useAgentThreadRuns — F3 mount-reconcile / unmount-cleanup wedge', ()
       expect(store.threads.find((t) => t.id === thread.id)?.status).toBe('done')
     })
     expect(resumeCalls).toBe(2)
+  })
+
+  test('(d) BLOCKING regression: a non-resumable run aborted by an <Activity> hide/show cycle leaves no phantom `runs` entry, and stop() still reaches a terminal state', async () => {
+    const store = createTestThreadsStore()
+
+    // No `resume` at all — unlike (c), this transport cannot be resumed. Hangs until aborted;
+    // never resolves on its own (matching the real playground repro this test pins).
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield -- hangs until aborted; never has anything to yield
+      async *stream(_input, signal) {
+        await new Promise((resolve) => {
+          signal?.addEventListener('abort', () => resolve(undefined))
+        })
+      },
+    }
+
+    let externalSetMode: ((mode: 'visible' | 'hidden') => void) | undefined
+    let hookResult: ReturnType<typeof useAgentThreadRuns<AgentPart>> | undefined
+
+    function Probe(): null {
+      hookResult = useAgentThreadRuns({ transport, store, resolveOutcome })
+      return null
+    }
+
+    function Harness(): JSX.Element {
+      const [mode, setMode] = useState<'visible' | 'hidden'>('visible')
+      externalSetMode = setMode
+      return (
+        <Activity mode={mode}>
+          <Probe />
+        </Activity>
+      )
+    }
+
+    await act(async () => {
+      render(<Harness />)
+    })
+
+    const threadId = store.create()
+    act(() => {
+      hookResult?.start(threadId, 'hello')
+    })
+    expect(hookResult?.runs.get(threadId)?.status).toBe('streaming')
+
+    // Hide then show — the cleanup-without-unmount path. The fiber (and its refs/state) survive;
+    // only its effects are destroyed and recreated, exactly as React 19.2's <Activity> does in
+    // PRODUCTION (see the file doc above) or as StrictMode does on every dev mount.
+    await act(async () => {
+      externalSetMode?.('hidden')
+    })
+    await act(async () => {
+      externalSetMode?.('visible')
+    })
+
+    await waitFor(() => {
+      expect(store.threads.find((t) => t.id === threadId)?.status).toBe('interrupted')
+    })
+
+    // The BLOCKING defect this test pins: `runs` must not still report this thread as 'streaming'
+    // once the persisted thread has settled to 'interrupted' — that phantom entry is what made
+    // stop() a permanent no-op.
+    expect(hookResult?.runs.has(threadId)).toBe(false)
+
+    // stop() on the now-settled thread reaches (stays at) a terminal state — not a wedge.
+    act(() => {
+      hookResult?.stop(threadId)
+    })
+    expect(store.threads.find((t) => t.id === threadId)?.status).toBe('interrupted')
+    expect(hookResult?.runs.has(threadId)).toBe(false)
   })
 })
