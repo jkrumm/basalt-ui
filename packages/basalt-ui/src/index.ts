@@ -113,6 +113,7 @@ export type { GuardKind } from './guard/types'
 export {
   ThreadWorkspace,
   ThreadFeed,
+  ThreadFeedRow,
   ThreadOutcomeCard,
   ThreadDetailPanel,
   Composer,
@@ -123,6 +124,7 @@ export {
 export type {
   ThreadWorkspaceProps,
   ThreadFeedProps,
+  ThreadFeedRowProps,
   ThreadOutcomeCardProps,
   ThreadDetailPanelProps,
   ComposerProps,
@@ -130,6 +132,9 @@ export type {
   ComposerAttachment,
   ComposerHandle,
   ThreadTranscriptProps,
+  MessageAffordances,
+  VirtualizeOptions,
+  VirtualizeProps,
   ToolChipProps,
 } from './agent-chat'
 export {

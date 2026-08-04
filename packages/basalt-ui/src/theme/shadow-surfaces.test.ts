@@ -386,6 +386,15 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
     site: 'default',
     roundedBy: 'borderRadius: VX.radiusCard (co-declared in the same inline style object).',
   },
+  {
+    file: 'agent-chat/thread-feed-row.tsx',
+    site: 'default',
+    roundedBy:
+      'borderRadius: VX.radiusCard (co-declared in the same inline style object as the shadow). ' +
+      'This box also carries overflow: hidden, which is what lets the header button and the ' +
+      'expanded body square off against the row’s rounded corners; an element’s own overflow ' +
+      'never clips its own ring, so the shadow is unaffected.',
+  },
   // ── agent ────────────────────────────────────────────────────────────────────────────────────
   {
     file: 'agent/stick-to-bottom.tsx',

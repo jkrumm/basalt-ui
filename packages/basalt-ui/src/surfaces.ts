@@ -385,7 +385,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed, ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx.',
+      'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).',
     optionalPeers: [
       'ai',
       'motion',
@@ -397,6 +397,7 @@ export const SURFACES = {
       '@shikijs/langs',
       '@shikijs/themes',
       'beautiful-mermaid',
+      '@tanstack/react-virtual',
     ],
     forbiddenImports: [],
   },
