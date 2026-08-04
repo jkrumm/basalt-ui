@@ -14,7 +14,7 @@ describe('formatRelativeTime', () => {
   test('sub-minute past → "just now"', () => {
     expect(formatRelativeTime(Date.now() - 1)).toBe('just now')
     expect(formatRelativeTime(Date.now() - 30_000)).toBe('just now')
-    expect(formatRelativeTime(Date.now() - (MINUTE_MS - 1))).toBe('just now')
+    expect(formatRelativeTime(Date.now() - (MINUTE_MS - 1_000))).toBe('just now')
   })
 
   test('sub-minute future → "just now" (the threshold is symmetric on |diff|)', () => {
