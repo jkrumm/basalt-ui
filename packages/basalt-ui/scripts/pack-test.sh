@@ -75,7 +75,7 @@ bun add "$ABS_TGZ" \
   @mantine/form @mantine/notifications @mantine/spotlight @mantine/modals \
   "@tanstack/react-query@^5.101.0" "@tanstack/react-query-devtools@^5.101.0" \
   "@tanstack/react-router@^1.170.0" \
-  "@tanstack/react-table@>=8 <9" "@tanstack/react-virtual@>=3 <4" \
+  "@tanstack/react-table@>=8 <9" "@tanstack/react-virtual@>=3.13.26 <4" \
   "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
   "use-stick-to-bottom@^1.1.6" \
   vite \
