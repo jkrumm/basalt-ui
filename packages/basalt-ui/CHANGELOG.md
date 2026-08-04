@@ -1,3 +1,20 @@
+# [1.13.0](https://github.com/jkrumm/basalt-ui/compare/v1.12.0...v1.13.0) (2026-08-04)
+
+
+### Bug Fixes
+
+* hold the pack-test consumer inside the peer ranges it declares ([1fb3abe](https://github.com/jkrumm/basalt-ui/commit/1fb3abe09206cdd46a0a6f05cbbb9e3344c899f6))
+* hold the virtual peer floor at the APIs the transcript calls ([324b474](https://github.com/jkrumm/basalt-ui/commit/324b47459b5717210464ffb5eb8b363bb152f87a))
+* mint ids safely off a secure context and never wedge a stopped turn ([2d72074](https://github.com/jkrumm/basalt-ui/commit/2d7207403baa5a1aa5400355ac92417c9f767ffc))
+* stop a hydrating store flashing empty and a cascade burying its cause ([93fe8c2](https://github.com/jkrumm/basalt-ui/commit/93fe8c261f5d027c003f1ce71108cd1bab1163e9))
+* surface a failed thread load instead of an endless skeleton ([ea15873](https://github.com/jkrumm/basalt-ui/commit/ea15873fc797f237dd5d65ad1ffa5a781ff6e86c))
+
+
+### Features
+
+* give the transcript a Slack shape, affordances and virtualization ([33ca057](https://github.com/jkrumm/basalt-ui/commit/33ca057eb9fd78a59b369c1410b6e34ef0a04602))
+* promote the agent guards and raw-scroll-container to error ([9ee8c44](https://github.com/jkrumm/basalt-ui/commit/9ee8c44acc2cc54973372dca5a8712dcf9def644))
+
 # [1.12.0](https://github.com/jkrumm/basalt-ui/compare/v1.11.0...v1.12.0) (2026-08-03)
 
 
