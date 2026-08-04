@@ -168,7 +168,11 @@ type ThreadPatch<TPart> = {
  * - **Roll back on rejection.** A rejected write's patch is discarded, the rejection is surfaced
  *   on `error`, and the store re-lists to converge on whatever the server really did. Patches are
  *   tracked individually, so a failing write rolls back only itself and not whatever else was in
- *   flight beside it.
+ *   flight beside it. A rejected `create()` additionally drops every later single-thread write for
+ *   that id (`markRead`/`appendMessage`/`setStatus`/… — both the ones chained directly behind it and
+ *   the run's completion writes at stream end) instead of letting each fail independently against a
+ *   row that no longer exists — see `failedCreateIds`. Without that, the create's own error is
+ *   overwritten by a run of "unknown thread" rejections that name nothing a caller can act on.
  * - **`hydrated` means "a `listThreads` has succeeded"**, not "a load has been attempted". A
  *   store that is `!hydrated` with a non-undefined `error` failed to load; check both.
  * - **`error` latches the most recent failure until something disproves it.** A successful
@@ -412,6 +416,31 @@ export function createAdapterThreadsStore<TPart = AgentPart>(
    */
   const chains = new Map<string, Promise<void>>()
 
+  /**
+   * Thread ids whose `createThread` has rejected and been rolled back. The send path issues
+   * `create()` → `markRead()` → `appendMessage()` → `setStatus()` in one synchronous block, all
+   * chained behind the same per-thread queue above — so when `createThread` rejects, the three
+   * dependent writes queued right behind it are guaranteed to reach the adapter next, each against
+   * a row that was never materialized. Left alone, each of those independently rejects with its own
+   * "unknown thread" error and overwrites the one that actually explains what happened (the
+   * create's), so the user ends up staring at the last cascade error instead of the root cause.
+   *
+   * Recording the id here lets `mutate` recognize a single-thread write against a rolled-back
+   * create and drop it silently instead of running a doomed commit — see `mutate`'s `isCreate`
+   * guard.
+   *
+   * Entries are NEVER removed, deliberately. The cascade is not confined to the synchronous block:
+   * `useAgentThreadRuns`' COMPLETION path (`appendMessage(assistant)` → `setOutcome` → `setStatus`
+   * → `setResumeToken`) fires when the stream ends, long after this thread's write chain has
+   * drained — same rolled-back row, same "unknown thread" rejections, and landing at exactly the
+   * moment the user is watching the thread. Clearing the entry when the chain drains would fix the
+   * first few hundred milliseconds and hand the cascade straight back at stream end. Retaining it
+   * is safe and bounded: `create()` always mints its own id (`mintThreadId`, never caller-supplied),
+   * so an id in here can never be re-created and the set only grows by one per FAILED create in a
+   * session.
+   */
+  const failedCreateIds = new Set<string>()
+
   /** `task` must never reject, so a failed write cannot poison the chain behind it. */
   function enqueue(threadIds: readonly string[], task: () => Promise<void>): void {
     const ids = [...new Set(threadIds)]
@@ -421,6 +450,7 @@ export function createAdapterThreadsStore<TPart = AgentPart>(
     for (const id of ids) chains.set(id, run)
     void run.finally(() => {
       // Only the tail clears its own entry, so a later write chained behind it is not orphaned.
+      // `failedCreateIds` is deliberately NOT cleared here — see its doc.
       for (const id of ids) if (chains.get(id) === run) chains.delete(id)
     })
   }
@@ -438,6 +468,12 @@ export function createAdapterThreadsStore<TPart = AgentPart>(
     readonly apply: ThreadPatch<TPart>['apply']
     readonly applyActive?: (activeId: string | null) => string | null
     readonly commit: () => Promise<void>
+    /**
+     * True only for `create()`'s own write. On rejection, marks its thread id as failed so the
+     * dependent writes chained behind it in the same synchronous send-path block recognize the row
+     * was rolled back — see `failedCreateIds`.
+     */
+    readonly isCreate?: boolean
   }): void {
     const patch: ThreadPatch<TPart> = {
       apply: memoizeApply(i.apply),
@@ -448,9 +484,30 @@ export function createAdapterThreadsStore<TPart = AgentPart>(
     const tokenAtIssue = errorToken
     recompute()
     enqueue(i.threadIds, async (): Promise<void> => {
+      // A single-thread write against a create that already rolled back cannot succeed — the row
+      // was never materialized, and running it only manufactures a second "unknown thread" error
+      // that would bury the create's own. This covers both the writes chained directly behind the
+      // create and the run's later completion writes (see `failedCreateIds`). Scoped to
+      // single-thread writes deliberately:
+      // `clear()`'s multi-id commit already has its own per-id fan-out (`Promise.allSettled`) and
+      // `removeThread` is contractually a no-op on an unknown id anyway, so folding this check into
+      // a multi-id write would risk dropping legitimate deletes for OTHER, healthy threads in the
+      // same batch just because one id in it happened to be orphaned.
+      const [soleThreadId] = i.threadIds
+      if (
+        !i.isCreate &&
+        i.threadIds.length === 1 &&
+        soleThreadId !== undefined &&
+        failedCreateIds.has(soleThreadId)
+      ) {
+        drop(patch)
+        recompute()
+        return
+      }
       try {
         await i.commit()
       } catch (cause) {
+        if (i.isCreate) for (const threadId of i.threadIds) failedCreateIds.add(threadId)
         // Roll back: discard THIS patch only, leaving any other in-flight patch applied.
         drop(patch)
         error = cause
@@ -540,6 +597,7 @@ export function createAdapterThreadsStore<TPart = AgentPart>(
     mutate({
       threadIds: [id],
       apply: (threads) => (threads.some((t) => t.id === id) ? [...threads] : [thread, ...threads]),
+      isCreate: true,
       commit: () =>
         adapter.createThread({
           id,
@@ -738,7 +796,7 @@ export function threadsStoreAdapterContract<TPart>(
 
   return [
     define('createThread then listThreads returns the thread with empty defaults', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       const threads = await a.listThreads()
       const found = threads.filter((t) => t.id === id)
@@ -754,19 +812,19 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('createThread persists meta', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id, meta: { source: 'contract' } })
       const thread = await loadOrThrow(a, id)
       assert(thread.meta?.['source'] === 'contract', 'meta did not round-trip')
     }),
 
     define('loadThread returns null for an unknown id', async (a) => {
-      const thread = await a.loadThread(crypto.randomUUID())
+      const thread = await a.loadThread(mintThreadId())
       assert(thread === null, 'loadThread must return null (not throw, not undefined) when absent')
     }),
 
     define('appendMessage is idempotent on message.id', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       const msg = message<TPart>('contract-msg-1')
       await a.appendMessage({ threadId: id, message: msg })
@@ -780,7 +838,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('appendMessage preserves order for distinct ids', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       await a.appendMessage({ threadId: id, message: message<TPart>('contract-msg-1') })
       await a.appendMessage({ threadId: id, message: message<TPart>('contract-msg-2') })
@@ -792,7 +850,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('setStatus round-trips', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       await a.setStatus({ threadId: id, status: 'streaming' })
       assert((await loadOrThrow(a, id)).status === 'streaming', "status did not become 'streaming'")
@@ -801,7 +859,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('setOutcome round-trips', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       const outcome: AgentOutcome = { title: 'Title', summary: 'Summary', status: 'done' }
       await a.setOutcome({ threadId: id, outcome })
@@ -812,7 +870,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('setResumeToken round-trips and clears with undefined', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       await a.setResumeToken({ threadId: id, token: 'tok-1' })
       assert((await loadOrThrow(a, id)).resumeToken === 'tok-1', 'resumeToken did not round-trip')
@@ -824,7 +882,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('markRead marks the thread read', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       assert((await loadOrThrow(a, id)).read === false, 'a new thread must start unread')
       await a.markRead(id)
@@ -835,7 +893,7 @@ export function threadsStoreAdapterContract<TPart>(
       // The store keeps a write's optimistic patch applied until a listThreads STARTED after that
       // write resolved lands in the confirmed base. An eventually-consistent list (a stale read
       // replica, a cached response) breaks that and flashes the pre-write state back into the UI.
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       await a.appendMessage({ threadId: id, message: message<TPart>('contract-msg-raw') })
       await a.setStatus({ threadId: id, status: 'streaming' })
@@ -856,7 +914,7 @@ export function threadsStoreAdapterContract<TPart>(
       async (a) => {
         // The store serializes writes per thread id, so this exact sequence — the send path's
         // create-then-first-message — is what a real adapter receives. Each write must find the row.
-        const id = crypto.randomUUID()
+        const id = mintThreadId()
         await a.createThread({ id })
         await a.markRead(id)
         await a.appendMessage({ threadId: id, message: message<TPart>('contract-msg-dep') })
@@ -872,7 +930,7 @@ export function threadsStoreAdapterContract<TPart>(
     ),
 
     define('removeThread removes the thread', async (a) => {
-      const id = crypto.randomUUID()
+      const id = mintThreadId()
       await a.createThread({ id })
       await a.removeThread(id)
       assert(await a.loadThread(id).then((t) => t === null), 'loadThread must be null after remove')
@@ -881,7 +939,7 @@ export function threadsStoreAdapterContract<TPart>(
     }),
 
     define('removeThread of an unknown id does not throw', async (a) => {
-      await a.removeThread(crypto.randomUUID())
+      await a.removeThread(mintThreadId())
     }),
   ]
 }

@@ -145,6 +145,10 @@ export type ThreadsStore<TPart = AgentPart> = {
    * store built with `createAdapterThreadsStore` (./adapter), where it stays `false` until the
    * first `listThreads` SUCCEEDS. Pair it with `error` — `!hydrated && error !== undefined` is a
    * failed load, `!hydrated && error === undefined` is still loading.
+   *
+   * Gating an empty state on this is the CALLER's job when hand-assembling `ThreadFeed` /
+   * `ThreadDetailPanel`; the shipped `ThreadWorkspace` already does it internally, so an
+   * async store never flashes "no threads yet" through it before it actually knows.
    */
   readonly hydrated: boolean
   /**

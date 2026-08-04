@@ -134,6 +134,21 @@ describe('threadsStoreAdapterContract', () => {
     expect(new Set(cases.map((c) => c.name)).size).toBe(cases.length)
   })
 
+  test("the contract suite itself does not depend on crypto.randomUUID — it still runs to completion via the getRandomValues fallback (mintThreadId, since every id it mints here is a THREAD id, never appendMessage's idempotency key)", async () => {
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) },
+      configurable: true,
+    })
+    try {
+      for (const conformanceCase of threadsStoreAdapterContract(() => createMemoryAdapter())) {
+        await conformanceCase.run()
+      }
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+
   test('FAILS an adapter whose appendMessage is not idempotent on message.id', async () => {
     const cases = threadsStoreAdapterContract(() => {
       const memory = createMemoryAdapter()
@@ -415,6 +430,228 @@ describe('createAdapterThreadsStore', () => {
     // Per-patch rollback: the status reverts, the read flag beside it does not.
     expect(result.current.threads[0]?.status).toBe('pending')
     expect(result.current.threads[0]?.read).toBe(true)
+  })
+
+  // ── rolled-back create() and its dependent writes ───────────────────────────
+
+  test('a rolled-back create surfaces its own error, not a cascade from the writes queued behind it', async () => {
+    const calls: string[] = []
+    const memory = createMemoryAdapter()
+    const useThreads = createAdapterThreadsStore<AgentPart>({
+      ...memory,
+      createThread: async () => {
+        calls.push('createThread')
+        throw new Error('create-boom')
+      },
+      // Mirrors the real finding: a real backend REJECTS a write against a row that was never
+      // created, it does not silently no-op the way the permissive reference `memory` adapter
+      // does — so these reproduce the exact "unknown thread" cascade from the console trace.
+      markRead: async (id) => {
+        calls.push('markRead')
+        if ((await memory.loadThread(id)) === null)
+          throw new Error(`markRead: unknown thread ${id}`)
+        await memory.markRead(id)
+      },
+      appendMessage: async (i) => {
+        calls.push('appendMessage')
+        if ((await memory.loadThread(i.threadId)) === null) {
+          throw new Error(`appendMessage: unknown thread ${i.threadId}`)
+        }
+        await memory.appendMessage(i)
+      },
+      setStatus: async (i) => {
+        calls.push('setStatus')
+        if ((await memory.loadThread(i.threadId)) === null) {
+          throw new Error(`setStatus: unknown thread ${i.threadId}`)
+        }
+        await memory.setStatus(i)
+      },
+    })
+
+    const { result } = renderHook(() => useThreads())
+    await waitFor(() => {
+      expect(result.current.hydrated).toBe(true)
+    })
+
+    // Exactly the observed sequence: create() -> markRead() -> appendMessage() -> setStatus() in
+    // one synchronous block, every dependent write chained behind the same rejected createThread.
+    let id = ''
+    act(() => {
+      id = result.current.create()
+      result.current.markRead(id)
+      result.current.appendMessage(id, makeMessage('m-first'))
+      result.current.setStatus(id, 'streaming')
+    })
+
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error)
+    })
+    await settle()
+
+    // The surfaced error names the create, not one of the three cascade rejections that would
+    // otherwise overwrite it in issue order.
+    expect((result.current.error as Error).message).toBe('create-boom')
+    // The dependent writes never reached the adapter at all — dropped, not run-and-failed.
+    expect(calls).toEqual(['createThread'])
+    // Rollback semantics are untouched: the thread is gone, both locally and server-side.
+    expect(result.current.threads).toHaveLength(0)
+    expect(await memory.loadThread(id)).toBeNull()
+  })
+
+  test('a rolled-back create does not stall or spoil the write queue for a different thread', async () => {
+    const memory = createMemoryAdapter()
+    const calls: string[] = []
+    let createCalls = 0
+    const useThreads = createAdapterThreadsStore<AgentPart>({
+      ...memory,
+      createThread: async (i) => {
+        createCalls += 1
+        if (createCalls === 1) {
+          calls.push('createThread:doomed')
+          throw new Error('create-boom')
+        }
+        calls.push('createThread:healthy')
+        await memory.createThread(i)
+      },
+      markRead: async (id) => {
+        calls.push(`markRead:${id}`)
+        await memory.markRead(id)
+      },
+    })
+
+    const { result } = renderHook(() => useThreads())
+    await waitFor(() => {
+      expect(result.current.hydrated).toBe(true)
+    })
+
+    let doomed = ''
+    let healthy = ''
+    act(() => {
+      doomed = result.current.create()
+      result.current.markRead(doomed)
+      healthy = result.current.create()
+      result.current.markRead(healthy)
+    })
+
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error)
+    })
+    await waitFor(async () => {
+      expect(await memory.loadThread(healthy)).not.toBeNull()
+    })
+    await settle()
+
+    expect((result.current.error as Error).message).toBe('create-boom')
+    // doomed's markRead was dropped; healthy's own write for a DIFFERENT thread ran normally.
+    expect(calls).toEqual(['createThread:doomed', 'createThread:healthy', `markRead:${healthy}`])
+    expect((await memory.loadThread(healthy))?.read).toBe(true)
+    expect(await memory.loadThread(doomed)).toBeNull()
+  })
+
+  test('a genuine failure that arrives after a rolled-back create still surfaces', async () => {
+    const memory = createMemoryAdapter()
+    let createCalls = 0
+    const useThreads = createAdapterThreadsStore<AgentPart>({
+      ...memory,
+      createThread: async (i) => {
+        createCalls += 1
+        if (createCalls === 1) throw new Error('create-boom')
+        await memory.createThread(i)
+      },
+      markRead: async () => {
+        // A genuine, unrelated failure against a HEALTHY thread — not a cascade of the rollback.
+        throw new Error('markRead-boom')
+      },
+    })
+
+    const { result } = renderHook(() => useThreads())
+    await waitFor(() => {
+      expect(result.current.hydrated).toBe(true)
+    })
+
+    act(() => {
+      result.current.create()
+    })
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error)
+    })
+    expect((result.current.error as Error).message).toBe('create-boom')
+
+    let healthy = ''
+    act(() => {
+      healthy = result.current.create()
+    })
+    await waitFor(async () => {
+      expect(await memory.loadThread(healthy)).not.toBeNull()
+    })
+
+    act(() => {
+      result.current.markRead(healthy)
+    })
+
+    await waitFor(() => {
+      expect((result.current.error as Error).message).toBe('markRead-boom')
+    })
+  })
+
+  test('a rolled-back create keeps dropping its thread’s writes after the queue drains', async () => {
+    // The run's COMPLETION path (useAgentThreadRuns: appendMessage(assistant) -> setOutcome ->
+    // setStatus -> setResumeToken) lands when the stream ends, long after the create's own
+    // rollback has drained the per-thread chain. Those writes target the same rolled-back row, so
+    // they are the same cascade as the synchronous send-path trio — just later. If the failed-id
+    // record is cleared when the chain drains, the fix above covers the first ~200ms and then the
+    // cascade returns at stream end, which is precisely when the user is looking at the thread.
+    const calls: string[] = []
+    const memory = createMemoryAdapter()
+    const useThreads = createAdapterThreadsStore<AgentPart>({
+      ...memory,
+      createThread: async () => {
+        calls.push('createThread')
+        throw new Error('create-boom')
+      },
+      appendMessage: async (i) => {
+        calls.push('appendMessage')
+        if ((await memory.loadThread(i.threadId)) === null) {
+          throw new Error(`appendMessage: unknown thread ${i.threadId}`)
+        }
+        await memory.appendMessage(i)
+      },
+      setStatus: async (i) => {
+        calls.push('setStatus')
+        if ((await memory.loadThread(i.threadId)) === null) {
+          throw new Error(`setStatus: unknown thread ${i.threadId}`)
+        }
+        await memory.setStatus(i)
+      },
+    })
+
+    const { result } = renderHook(() => useThreads())
+    await waitFor(() => {
+      expect(result.current.hydrated).toBe(true)
+    })
+
+    let id = ''
+    act(() => {
+      id = result.current.create()
+    })
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error)
+    })
+    // Drain fully: the create's chain entry is gone by the time the completion writes arrive.
+    await settle()
+    await settle()
+    expect((result.current.error as Error).message).toBe('create-boom')
+
+    // The completion path fires now, against the row that was never materialized.
+    act(() => {
+      result.current.appendMessage(id, makeMessage('m-assistant'))
+      result.current.setStatus(id, 'done')
+    })
+    await settle()
+    await settle()
+
+    expect(calls).toEqual(['createThread'])
+    expect((result.current.error as Error).message).toBe('create-boom')
   })
 
   test('setResumeToken(undefined) clears the key through the adapter', async () => {
