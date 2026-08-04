@@ -123,6 +123,19 @@ describe('ThreadWorkspace hydration gating', () => {
     expect(screen.queryByTestId('thread-workspace-hydrating')).toBeNull()
   })
 
+  test('failed load: renders the error state, never the hydrating hold', () => {
+    withWideViewport(() => {
+      render(
+        renderWorkspace(
+          makeStore({ hydrated: false, error: new Error('listThreads failed'), threads: [] }),
+        ),
+      )
+    })
+
+    expect(screen.getByTestId('thread-workspace-error')).toBeDefined()
+    expect(screen.queryByTestId('thread-workspace-hydrating')).toBeNull()
+  })
+
   test('hydrated + empty: renders the empty state (no threads really is the truth)', () => {
     withWideViewport(() => {
       render(renderWorkspace(makeStore({ hydrated: true, threads: [] })))

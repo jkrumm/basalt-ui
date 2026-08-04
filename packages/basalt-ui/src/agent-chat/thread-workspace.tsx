@@ -37,6 +37,7 @@ import { useMediaQuery } from '@mantine/hooks'
 import type { JSX, ReactNode } from 'react'
 import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
 import { useAgentThreadRuns } from '../agent'
+import { VX } from '../tokens'
 import { Composer } from './composer'
 import { ThreadDetailPanel } from './thread-detail-panel'
 import { ThreadFeed } from './thread-feed'
@@ -63,6 +64,13 @@ export type ThreadWorkspaceProps = {
    * so a server-backed workspace never asserts "no threads yet" before it actually knows that.
    */
   readonly emptyState?: ReactNode
+  /**
+   * Rendered in place of the feed when the store's initial load has failed — `!store.hydrated &&
+   * store.error !== undefined` (see `ThreadsStore.hydrated`'s doc for the discriminant). Shown
+   * instead of `FeedHydratingState`, so a rejected `listThreads` surfaces a legible failure rather
+   * than an endless skeleton.
+   */
+  readonly errorState?: ReactNode
 }
 
 /** Default hint shown in the feed pane once hydrated with no threads (overridable via `emptyState`). */
@@ -81,10 +89,11 @@ function FeedEmptyState(): JSX.Element {
 
 /**
  * Neutral hold shown in the feed pane while an async store's initial `listThreads` is still in
- * flight AND it has no threads to show yet (`!store.hydrated && threads.length === 0`). Never
- * shown for the synchronous `createThreadsStore`, whose `hydrated` is always `true` — see
- * `ThreadsStore.hydrated`'s doc. A store that already holds cached threads while revalidating
- * (`!hydrated` with a non-empty `threads`) skips this entirely and renders the feed normally.
+ * flight, has no threads to show yet, AND has not failed (`!store.hydrated && threads.length ===
+ * 0 && store.error === undefined`). Never shown for the synchronous `createThreadsStore`, whose
+ * `hydrated` is always `true` — see `ThreadsStore.hydrated`'s doc. A store that already holds
+ * cached threads while revalidating (`!hydrated` with a non-empty `threads`) skips this entirely
+ * and renders the feed normally. A failed load renders `FeedErrorState` instead of this.
  */
 function FeedHydratingState(): JSX.Element {
   return (
@@ -92,6 +101,32 @@ function FeedHydratingState(): JSX.Element {
       <Skeleton height={54} radius="sm" />
       <Skeleton height={54} radius="sm" />
       <Skeleton height={54} radius="sm" />
+    </Stack>
+  )
+}
+
+/**
+ * Default failure hold shown in the feed pane when an async store's initial `listThreads` has
+ * rejected (`!store.hydrated && store.error !== undefined`), overridable via `errorState`. Never
+ * shown for the synchronous `createThreadsStore`, whose `error` is always `undefined` — see
+ * `ThreadsStore.error`'s doc.
+ */
+function FeedErrorState(): JSX.Element {
+  return (
+    <Stack
+      align="center"
+      justify="center"
+      gap={4}
+      h="100%"
+      p="xl"
+      data-testid="thread-workspace-error"
+    >
+      <Text fw={600} size="sm" style={{ color: VX.status.bad }}>
+        Couldn&apos;t load threads
+      </Text>
+      <Text size="xs" c="dimmed" ta="center">
+        Something went wrong loading your threads. Try refreshing the page.
+      </Text>
     </Stack>
   )
 }
@@ -110,6 +145,7 @@ export function ThreadWorkspace({
   resolveOutcome,
   newThreadPlaceholder,
   emptyState,
+  errorState,
 }: ThreadWorkspaceProps): JSX.Element {
   const store = useThreads()
   const runs = useAgentThreadRuns({ transport, store, resolveOutcome })
@@ -155,6 +191,8 @@ export function ThreadWorkspace({
         {threads.length === 0 ? (
           store.hydrated ? (
             (emptyState ?? <FeedEmptyState />)
+          ) : store.error !== undefined ? (
+            (errorState ?? <FeedErrorState />)
           ) : (
             <FeedHydratingState />
           )
