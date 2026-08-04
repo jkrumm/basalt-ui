@@ -417,21 +417,21 @@ describe('basalt/ai-sdk-major', () => {
   })
 })
 
-// ── raw-scroll-container — promotion (off → warn shipped) ────────────────────
+// ── raw-scroll-container — promotion (off → warn → error shipped) ───────────
 
 describe('basalt/raw-scroll-container promotion', () => {
-  it('ships "warn" (not "off") in the consumer preset', () => {
+  it('ships "error" (not "warn"/"off") in the consumer preset', () => {
     const shipped = JSON.parse(
       readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8'),
     ) as { rules: Record<string, unknown> }
-    expect(shipped.rules['basalt/raw-scroll-container']).toBe('warn')
+    expect(shipped.rules['basalt/raw-scroll-container']).toBe('error')
   })
 
-  it('stays "warn" repo-local', () => {
+  it('stays at the shipped level ("error") repo-local', () => {
     const repoLocal = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'), 'utf8'),
     ) as { rules: Record<string, unknown> }
-    expect(repoLocal.rules['basalt/raw-scroll-container']).toBe('warn')
+    expect(repoLocal.rules['basalt/raw-scroll-container']).toBe('error')
   })
 
   it('still flags a raw overflow:auto style property at the shipped level', () => {
@@ -446,4 +446,33 @@ describe('basalt/raw-scroll-container promotion', () => {
     const { rules } = run(`const s = { overflowY: 'auto' }\n`, 'lib.ts')
     expect(rules).toContain('raw-scroll-container')
   })
+})
+
+// ── agent rules — promotion (warn → error shipped) ──────────────────────────
+// The three agent-chat rules were promoted warn → error in the SHIPPED preset alongside
+// raw-scroll-container above, but had no equivalent lock — `scripts/gen-oxlint.ts` only regenerates
+// the `overrides` array; this top-level `rules` block is hand-maintained and
+// `tests/oxlint-preset-sync.test.ts` only checks `overrides` against `projectBanList('shipped')`, so
+// a later accidental revert of one of these three back to "warn" would pass the suite silently.
+
+describe('basalt agent rules promotion', () => {
+  it.each(['basalt/agent-resume-guard', 'basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
+    '%s ships "error" (not "warn"/"off") in the consumer preset',
+    (rule) => {
+      const shipped = JSON.parse(
+        readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8'),
+      ) as { rules: Record<string, unknown> }
+      expect(shipped.rules[rule]).toBe('error')
+    },
+  )
+
+  it.each(['basalt/agent-resume-guard', 'basalt/agent-no-raw-usechat', 'basalt/ai-sdk-major'])(
+    '%s stays at the shipped level ("error") repo-local',
+    (rule) => {
+      const repoLocal = JSON.parse(
+        readFileSync(resolve(import.meta.dirname, '..', '..', '..', '.oxlintrc.json'), 'utf8'),
+      ) as { rules: Record<string, unknown> }
+      expect(repoLocal.rules[rule]).toBe('error')
+    },
+  )
 })

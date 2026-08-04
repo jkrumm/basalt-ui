@@ -372,9 +372,13 @@ const OVERFLOW_KEYS = new Set(['overflow', 'overflowY'])
 const SCROLLING_VALUES = new Set(['auto', 'scroll'])
 
 /**
- * Reports a `style` object property that turns a node into its own scroll container. Warning-level
- * by design: whether a raw scroll box is wrong depends on who owns the scroll node, which no AST
- * check can see — so this steers rather than blocks, and `theme-allow` opts out.
+ * Reports a `style` object property that turns a node into its own scroll container. Whether a raw
+ * scroll box is wrong depends on who owns the scroll node, which no AST check can see — so the
+ * `theme-allow` comment is a first-class part of the rule, not an escape valve for exceptional
+ * cases: a component that legitimately owns its scroll node (`BasaltStickToBottom`,
+ * `BasaltVirtualList`, `ThreadTranscript`'s virtualized pane) declares that ownership with the
+ * comment and moves on. Severity went `off` → `warn` (1.12.0) → `error` (1.13.0) once every live
+ * site in the repo carried that declaration; the opt-out mechanism is identical at either level.
  */
 const rawScrollContainer = {
   meta: {
