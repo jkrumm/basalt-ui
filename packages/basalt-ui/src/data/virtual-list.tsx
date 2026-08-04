@@ -1,7 +1,8 @@
 /**
  * ./data — BasaltVirtualList: a windowed virtual list over @tanstack/react-virtual,
  * rendered with a Mantine Box scroll container.
- * Optional peer: @tanstack/react-virtual >=3 <4.
+ * Optional peer: @tanstack/react-virtual >=3.13.26 <4. This list works on any 3.x — the floor is
+ * set by ./agent-chat's virtualize mode (see ./data/index.ts), so do not lower it.
  *
  * @example
  * import { BasaltVirtualList } from 'basalt-ui/data'

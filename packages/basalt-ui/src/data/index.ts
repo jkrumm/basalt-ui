@@ -7,7 +7,11 @@
  *
  * Optional peers:
  *  - @tanstack/react-table  >=8 <9  (BasaltDataTable)
- *  - @tanstack/react-virtual >=3 <4  (BasaltVirtualList)
+ *  - @tanstack/react-virtual >=3.13.26 <4  (BasaltVirtualList)
+ *
+ * BasaltVirtualList itself works on any 3.x; the declared floor is set by ./agent-chat's
+ * ThreadTranscript virtualize mode (it calls scrollToEnd/anchorTo, added in virtual-core 3.16.0,
+ * first pinned by react-virtual 3.13.26). npm has one peer range per package, so do not lower it.
  *
  * Install with:
  *   bun add @tanstack/react-table @tanstack/react-virtual

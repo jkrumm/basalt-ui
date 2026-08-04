@@ -96,7 +96,7 @@ Import: import { ... } from 'basalt-ui/data'
 Description: Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in
 Layer: mantine-coupled
 Rule: basalt-data
-OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3 <4
+OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/data/table
 Import: import { ... } from 'basalt-ui/data/table'
@@ -110,7 +110,7 @@ Import: import { ... } from 'basalt-ui/data/virtual'
 Description: BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)
 Layer: mantine-coupled
 Rule: basalt-data
-OptionalPeers: @tanstack/react-virtual@>=3 <4
+OptionalPeers: @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
@@ -124,7 +124,7 @@ Import: import { ... } from 'basalt-ui/agent-chat'
 Description: Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).
 Layer: mantine-coupled
 Rule: basalt-agent
-OptionalPeers: ai@^7.0.15, motion@12.42.0, remend@1.3.0, use-stick-to-bottom@^1.1.6, react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, @tanstack/react-virtual@>=3 <4
+OptionalPeers: ai@^7.0.15, motion@12.42.0, remend@1.3.0, use-stick-to-bottom@^1.1.6, react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
