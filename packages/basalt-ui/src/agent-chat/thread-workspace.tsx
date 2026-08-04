@@ -32,7 +32,7 @@
  *   )
  * }
  */
-import { Box, Divider, Flex, Stack, Text } from '@mantine/core'
+import { Box, Divider, Flex, Skeleton, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { JSX, ReactNode } from 'react'
 import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
@@ -56,11 +56,16 @@ export type ThreadWorkspaceProps = {
   readonly resolveOutcome: OutcomeResolver<AgentPart>
   /** Placeholder for the new-thread composer pinned under the feed. */
   readonly newThreadPlaceholder?: string
-  /** Rendered in place of the feed while there are no threads yet. */
+  /**
+   * Rendered in place of the feed once the store is hydrated and there really are no threads.
+   * Shown ONLY when `store.hydrated` is true — while an async store's initial load is still in
+   * flight, `ThreadWorkspace` holds a neutral loading state instead (see `FeedHydratingState`),
+   * so a server-backed workspace never asserts "no threads yet" before it actually knows that.
+   */
   readonly emptyState?: ReactNode
 }
 
-/** Default hint shown in the feed pane before any thread exists (overridable via `emptyState`). */
+/** Default hint shown in the feed pane once hydrated with no threads (overridable via `emptyState`). */
 function FeedEmptyState(): JSX.Element {
   return (
     <Stack align="center" justify="center" gap={4} h="100%" p="xl">
@@ -70,6 +75,23 @@ function FeedEmptyState(): JSX.Element {
       <Text size="xs" c="dimmed" ta="center">
         Send a message below to start your first thread.
       </Text>
+    </Stack>
+  )
+}
+
+/**
+ * Neutral hold shown in the feed pane while an async store's initial `listThreads` is still in
+ * flight AND it has no threads to show yet (`!store.hydrated && threads.length === 0`). Never
+ * shown for the synchronous `createThreadsStore`, whose `hydrated` is always `true` — see
+ * `ThreadsStore.hydrated`'s doc. A store that already holds cached threads while revalidating
+ * (`!hydrated` with a non-empty `threads`) skips this entirely and renders the feed normally.
+ */
+function FeedHydratingState(): JSX.Element {
+  return (
+    <Stack gap="sm" p="sm" data-testid="thread-workspace-hydrating">
+      <Skeleton height={54} radius="sm" />
+      <Skeleton height={54} radius="sm" />
+      <Skeleton height={54} radius="sm" />
     </Stack>
   )
 }
@@ -130,8 +152,12 @@ export function ThreadWorkspace({
   const feed = (
     <Flex direction="column" h="100%" style={{ overflow: 'hidden' }}>
       <Box style={{ flex: 1, minHeight: 0 }}>
-        {store.threads.length === 0 ? (
-          (emptyState ?? <FeedEmptyState />)
+        {threads.length === 0 ? (
+          store.hydrated ? (
+            (emptyState ?? <FeedEmptyState />)
+          ) : (
+            <FeedHydratingState />
+          )
         ) : (
           <ThreadFeed threads={threads} activeId={store.activeId} onSelect={handleSelect} />
         )}
