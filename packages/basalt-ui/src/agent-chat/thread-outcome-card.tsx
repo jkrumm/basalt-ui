@@ -23,6 +23,7 @@ import { useHover } from '@mantine/hooks'
 import type { JSX } from 'react'
 import type { AgentThread, ThreadStatus } from '../agent'
 import { alpha, VX } from '../tokens'
+import { formatRelativeTime } from './relative-time'
 
 // ── Status badge — shown ONLY for states that need a glance (attention/error). ────
 // done/pending/streaming stay badge-free: a settled feed shouldn't be a wall of green chips —
@@ -33,31 +34,6 @@ const STATUS_BADGE: Partial<
 > = {
   attention: { label: 'Needs review', statusToken: VX.status.warn },
   error: { label: 'Failed', statusToken: VX.status.bad },
-}
-
-// ── Dependency-free relative-time helper (no date-fns) ────────────────────────
-
-const RELATIVE_TIME_FORMAT = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
-
-const RELATIVE_TIME_UNITS: readonly {
-  readonly unit: Intl.RelativeTimeFormatUnit
-  readonly ms: number
-}[] = [
-  { unit: 'year', ms: 31_536_000_000 },
-  { unit: 'month', ms: 2_628_000_000 },
-  { unit: 'week', ms: 604_800_000 },
-  { unit: 'day', ms: 86_400_000 },
-  { unit: 'hour', ms: 3_600_000 },
-  { unit: 'minute', ms: 60_000 },
-]
-
-/** Formats an epoch-ms timestamp as a short relative string ("3 hours ago", "just now"). */
-function formatRelativeTime(timestamp: number): string {
-  const diffMs = timestamp - Date.now()
-  const absMs = Math.abs(diffMs)
-  if (absMs < 60_000) return 'just now'
-  const unit = RELATIVE_TIME_UNITS.find(({ ms }) => absMs >= ms) ?? RELATIVE_TIME_UNITS.at(-1)!
-  return RELATIVE_TIME_FORMAT.format(Math.round(diffMs / unit.ms), unit.unit)
 }
 
 // ── Row bodies ─────────────────────────────────────────────────────────────────
