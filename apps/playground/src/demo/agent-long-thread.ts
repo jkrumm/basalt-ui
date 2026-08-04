@@ -105,8 +105,10 @@ const TURN_GAP_MS = 22 * 60_000
  */
 export function buildLongThread(count: number): ChatMessage[] {
   const messages: ChatMessage[] = []
-  // Worst case is ~1 message per turn (cycle 0, no follow-up) — `count` turns of headroom keeps
-  // every generated timestamp safely in the past regardless of how the cycle mix actually lands.
+  // This starting point is only a rough headroom guess — it does not need to land the newest
+  // message near "now" on its own, because every timestamp is shifted by one offset after
+  // generation (below) so the newest message lands at/just before `Date.now()` regardless of how
+  // the cycle mix actually plays out.
   let cursor = Date.now() - count * TURN_GAP_MS
   let turn = 0
 
@@ -143,5 +145,15 @@ export function buildLongThread(count: number): ChatMessage[] {
     turn += 1
   }
 
-  return messages.slice(0, count)
+  const sliced = messages.slice(0, count)
+
+  // Shift every timestamp by one offset so the newest message lands at/just before `Date.now()` —
+  // a post-generation correction rather than a retuned constant, so it stays correct even if the
+  // cycle mix above changes later (unlike the previous headroom guess, which assumed a worst case
+  // that didn't hold: cycle 0 alone emits 2 messages per turn, not 1, so the demo's newest message
+  // was landing days in the past instead of "just now").
+  const newest = sliced.at(-1)
+  if (newest === undefined) return sliced
+  const shift = Date.now() - newest.createdAt
+  return sliced.map((message) => ({ ...message, createdAt: message.createdAt + shift }))
 }
