@@ -592,3 +592,67 @@ describe('aiSdkTransport — deterministic ids and replay idempotency', () => {
     )
   })
 })
+
+describe('aiSdkTransport — id minting under degraded crypto', () => {
+  test('the fixed chatId (mintThreadId, low collision cost) mints fine with no usable crypto at all — construction never throws', () => {
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      expect(() =>
+        aiSdkTransport({
+          api: '/api/chat',
+          fetch: mockFetch(() => {
+            throw new Error('must not be called')
+          }),
+        }),
+      ).not.toThrow()
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+
+  test('the outbound user message id (mintMessageId, an idempotency key on the AI SDK backend) works via getRandomValues when randomUUID is unavailable', async () => {
+    const chunks: UIMessageChunk[] = [
+      { type: 'text-start', id: 't1' },
+      { type: 'text-end', id: 't1' },
+    ]
+    const transport = aiSdkTransport({
+      api: '/api/chat',
+      fetch: mockFetch(async () => scriptedResponse(chunks)),
+    })
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) },
+      configurable: true,
+    })
+    try {
+      const parts = await collect(transport.stream('hi'))
+      expect(parts[0]?.type).toBe('start')
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+
+  test('the outbound user message id THROWS on a host with no usable crypto at all, rather than silently colliding', async () => {
+    const transport = aiSdkTransport({
+      api: '/api/chat',
+      fetch: mockFetch(() => {
+        throw new Error('must not be called — must throw before any network call')
+      }),
+    })
+    const gen = transport.stream('hi')
+
+    // The synthesized StartPart is yielded first, before mintMessageId is ever reached.
+    const start = await gen.next()
+    expect(start.value).toMatchObject({ type: 'start' })
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      await expect(gen.next()).rejects.toThrow(/idempotency key/)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+})

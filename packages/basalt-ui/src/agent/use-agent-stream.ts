@@ -27,7 +27,7 @@
  * }
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { withPartIds } from './id'
+import { mintThreadId, withPartIds } from './id'
 import { isStartPart } from './parts'
 import { mergePart } from './merge'
 import type { PartLike } from './merge'
@@ -107,8 +107,11 @@ export function useAgentStream<TPart extends PartLike = AgentPart, TInput = stri
       // fully resets `parts` anyway, so a fresh id per call is enough to keep two id-less drafts
       // ARRIVING WITHIN THE SAME SEND from colliding on `undefined === undefined` in mergePart (the
       // F1 bug — text→tool→text destroying each other). Not a replay mechanism — this hook has no
-      // resume() path — see withPartIds' own doc for why it can't be one anyway.
-      const runId = crypto.randomUUID()
+      // resume() path — see withPartIds' own doc for why it can't be one anyway. Low collision
+      // cost (this hook persists nothing — `parts` is discarded on the next send()/unmount), so
+      // `mintThreadId` — never `mintMessageId` — is the right rung-3 behavior here: this must not
+      // throw on a host with no usable crypto at all.
+      const runId = mintThreadId()
 
       try {
         for await (const part of withPartIds(runId, transport.stream(input, controller.signal))) {

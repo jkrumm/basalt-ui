@@ -262,4 +262,26 @@ describe('useAgentStream', () => {
     // Only the SECOND (surviving) call's part made it into final state — the first is discarded.
     expect(capturedParts).toEqual([{ id: 'call-2', type: 'text', text: 'call-2' }])
   })
+
+  test('send() still streams without throwing on a host with no usable crypto at all — its runId is a low-collision-cost mint (mintThreadId), never the message-id one', async () => {
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      const transport: AgentTransport<AgentPart, string> = {
+        async *stream() {
+          yield { type: 'text', text: 'a' } as AgentPartDraft as AgentPart
+        },
+      }
+      const { result } = renderHook(() => useAgentStream({ transport }))
+
+      await act(async () => {
+        await result.current.send('hi')
+      })
+
+      expect(result.current.status).toBe('done')
+      expect(result.current.parts).toHaveLength(1)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
 })

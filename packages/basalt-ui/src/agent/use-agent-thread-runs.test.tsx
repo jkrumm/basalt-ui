@@ -792,3 +792,329 @@ describe('useAgentThreadRuns — F1 regression: id-less drafts within one run', 
     expect(assistantMessage?.parts.map((part) => part.type)).toEqual(['text', 'tool', 'text'])
   })
 })
+
+describe('useAgentThreadRuns — message-id minting under degraded crypto', () => {
+  test('start() mints distinct message ids via crypto.getRandomValues when randomUUID is unavailable', async () => {
+    const store = createTestThreadsStore()
+    const threadA = store.create()
+    const threadB = store.create()
+
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream(input) {
+        yield { id: 'p1', type: 'text', text: `done:${input}` }
+      },
+    }
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) },
+      configurable: true,
+    })
+    try {
+      const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+      act(() => {
+        result.current.start(threadA, 'input-a')
+        result.current.start(threadB, 'input-b')
+      })
+
+      await waitFor(() => {
+        expect(store.threads.find((t) => t.id === threadA)?.status).toBe('done')
+        expect(store.threads.find((t) => t.id === threadB)?.status).toBe('done')
+      })
+
+      const allMessageIds = store.threads.flatMap((t) => t.messages.map((m) => m.id))
+      expect(allMessageIds.length).toBeGreaterThan(0)
+      expect(new Set(allMessageIds).size).toBe(allMessageIds.length)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+  })
+
+  test('start() THROWS on a host with no usable crypto at all, rather than silently minting a colliding message id', () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { id: 'p1', type: 'text', text: 'unreachable' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      expect(() => {
+        act(() => {
+          result.current.start(threadId, 'hi')
+        })
+      }).toThrow(/idempotency key/)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+
+    // The deliberate divergence documented on mintMessageId: throwing means the write never
+    // happened at all (no half-appended message, no orphaned run entry) rather than silently
+    // dropping content behind a colliding id.
+    expect(store.threads.find((t) => t.id === threadId)?.messages).toHaveLength(0)
+    expect(result.current.runs.has(threadId)).toBe(false)
+  })
+})
+
+// A ThreadsStore double that delegates everything to a real test store EXCEPT appendMessage,
+// which throws for messages matching `shouldThrow` — lets a test simulate consumer-adapter code
+// (appendMessage) throwing without touching the shared createTestThreadsStore factory used by
+// every other test in this file.
+function wrapStoreWithThrowingAppend(
+  store: ThreadsStore<AgentPart>,
+  shouldThrow: (message: AgentThread<AgentPart>['messages'][number]) => boolean,
+): ThreadsStore<AgentPart> {
+  return {
+    get threads() {
+      return store.threads
+    },
+    get activeId() {
+      return store.activeId
+    },
+    select: store.select,
+    create: store.create,
+    appendMessage(id, message) {
+      if (shouldThrow(message)) {
+        throw new Error('consumer appendMessage boom')
+      }
+      store.appendMessage(id, message)
+    },
+    setOutcome: store.setOutcome,
+    setStatus: store.setStatus,
+    setResumeToken: store.setResumeToken,
+    markRead: store.markRead,
+    remove: store.remove,
+    clear: store.clear,
+    hydrated: store.hydrated,
+    error: store.error,
+  }
+}
+
+/** As above, but for the settle half of `finalizeStop` — a consumer store whose `setStatus` throws
+ * (a remote-backed adapter rejecting a thread removed mid-stream is the realistic shape). Narrowed
+ * by `shouldThrow` because the hook ALSO calls `setStatus` from its mount-time orphan sweep, which
+ * is a different call site with a different (non-wedge) failure mode. */
+function wrapStoreWithThrowingSetStatus(
+  store: ThreadsStore<AgentPart>,
+  shouldThrow: (status: AgentThread<AgentPart>['status']) => boolean,
+): ThreadsStore<AgentPart> {
+  return {
+    get threads() {
+      return store.threads
+    },
+    get activeId() {
+      return store.activeId
+    },
+    select: store.select,
+    create: store.create,
+    appendMessage: store.appendMessage,
+    setOutcome: store.setOutcome,
+    setStatus(id, status) {
+      if (shouldThrow(status)) throw new Error('consumer setStatus boom')
+      store.setStatus(id, status)
+    },
+    setResumeToken: store.setResumeToken,
+    markRead: store.markRead,
+    remove: store.remove,
+    clear: store.clear,
+    hydrated: store.hydrated,
+    error: store.error,
+  }
+}
+
+describe('useAgentThreadRuns — finalizeStop must reach a terminal state no matter what', () => {
+  test('stop() on a host with no usable crypto still reaches a terminal status and clears the run entry (was: wedged at "streaming" forever)', async () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+
+    const gate = deferred<void>()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { id: 'p1', type: 'text', text: 'partial' }
+        await gate.promise
+        yield { id: 'p2', type: 'text', text: 'never arrives' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+
+    await waitFor(() => {
+      expect(result.current.runs.get(threadId)?.parts).toHaveLength(1)
+    })
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true })
+    try {
+      act(() => {
+        result.current.stop(threadId)
+      })
+
+      const thread = store.threads.find((t) => t.id === threadId)
+      // Before the fix: mintMessageId's throw escaped finalizeStop entirely, so setStatus/setRuns
+      // never ran and this stayed 'streaming' forever.
+      expect(thread?.status).toBe('error')
+      // The stopped message never minted an id, so appendMessage was never even attempted —
+      // only the original user message is present.
+      expect(thread?.messages).toHaveLength(1)
+      expect(result.current.runs.has(threadId)).toBe(false)
+
+      // A second stop() must not be the user's only recourse — and it isn't: controllersRef
+      // already had this threadId deleted before finalizeStop ever ran, so this is an ordinary
+      // no-op, not a retry of the failed append.
+      act(() => {
+        result.current.stop(threadId)
+      })
+      expect(store.threads.find((t) => t.id === threadId)?.status).toBe('error')
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+
+    gate.resolve(undefined)
+  })
+
+  test("stop() reaches a terminal status and clears the run entry even when the consumer's appendMessage throws (was: wedged at 'streaming' forever)", async () => {
+    const baseStore = createTestThreadsStore()
+    const threadId = baseStore.create()
+    const store = wrapStoreWithThrowingAppend(
+      baseStore,
+      (message) => message.role === 'assistant' && message.finish === 'stopped',
+    )
+
+    const gate = deferred<void>()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { id: 'p1', type: 'text', text: 'partial' }
+        await gate.promise
+        yield { id: 'p2', type: 'text', text: 'never arrives' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+
+    await waitFor(() => {
+      expect(result.current.runs.get(threadId)?.parts).toHaveLength(1)
+    })
+
+    act(() => {
+      result.current.stop(threadId)
+    })
+
+    const thread = store.threads.find((t) => t.id === threadId)
+    expect(thread?.status).toBe('error')
+    // Only the user message — the consumer's appendMessage rejected the stopped message.
+    expect(thread?.messages).toHaveLength(1)
+    expect(result.current.runs.has(threadId)).toBe(false)
+
+    // A second stop() remains a true no-op — not the user's only recourse.
+    act(() => {
+      result.current.stop(threadId)
+    })
+    expect(store.threads.find((t) => t.id === threadId)?.status).toBe('error')
+
+    gate.resolve(undefined)
+  })
+
+  test("stop() clears the hook's own run entry even when the consumer's setStatus throws (the second half of the same wedge)", async () => {
+    const baseStore = createTestThreadsStore()
+    const threadId = baseStore.create()
+    const store = wrapStoreWithThrowingSetStatus(baseStore, (status) => status === 'done')
+
+    const gate = deferred<void>()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { id: 'p1', type: 'text', text: 'partial' }
+        await gate.promise
+        yield { id: 'p2', type: 'text', text: 'never arrives' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+
+    await waitFor(() => {
+      expect(result.current.runs.get(threadId)?.parts).toHaveLength(1)
+    })
+
+    act(() => {
+      result.current.stop(threadId)
+    })
+
+    // The store's own status is whatever the throwing adapter left it as — unrecoverable from
+    // here. What IS this hook's to guarantee is that `runs` no longer reports an in-flight turn:
+    // that entry is the hook's own state and nothing later can ever clear it (stop() already
+    // deleted the thread from controllersRef), so a throw above the teardown stranded it forever.
+    expect(result.current.runs.has(threadId)).toBe(false)
+    // The partial content still landed — the append runs before the settle.
+    expect(store.threads.find((t) => t.id === threadId)?.messages).toHaveLength(2)
+
+    act(() => {
+      result.current.stop(threadId)
+    })
+    expect(result.current.runs.has(threadId)).toBe(false)
+
+    gate.resolve(undefined)
+  })
+
+  test('stop() still succeeds via crypto.getRandomValues when randomUUID is unavailable (rung 2 — the rung that matters in practice)', async () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+
+    const gate = deferred<void>()
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        yield { id: 'p1', type: 'text', text: 'partial' }
+        await gate.promise
+        yield { id: 'p2', type: 'text', text: 'never arrives' }
+      },
+    }
+
+    const originalCrypto = globalThis.crypto
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: originalCrypto.getRandomValues.bind(originalCrypto) },
+      configurable: true,
+    })
+    try {
+      const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+      act(() => {
+        result.current.start(threadId, 'hi')
+      })
+
+      await waitFor(() => {
+        expect(result.current.runs.get(threadId)?.parts).toHaveLength(1)
+      })
+
+      act(() => {
+        result.current.stop(threadId)
+      })
+
+      const thread = store.threads.find((t) => t.id === threadId)
+      expect(thread?.status).toBe('done')
+      expect(thread?.messages).toHaveLength(2)
+      expect(thread?.messages[1]?.finish).toBe('stopped')
+      expect(result.current.runs.has(threadId)).toBe(false)
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true })
+    }
+
+    gate.resolve(undefined)
+  })
+})
