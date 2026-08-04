@@ -20,12 +20,12 @@
     "basalt/raw-size-literal": "warn",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
-    "basalt/raw-scroll-container": "warn",
+    "basalt/raw-scroll-container": "error",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",
-    "basalt/agent-resume-guard": "warn",
-    "basalt/agent-no-raw-usechat": "warn",
-    "basalt/ai-sdk-major": "warn"
+    "basalt/agent-resume-guard": "error",
+    "basalt/agent-no-raw-usechat": "error",
+    "basalt/ai-sdk-major": "error"
   },
   "overrides": [
     {
