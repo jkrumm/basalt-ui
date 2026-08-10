@@ -115,6 +115,15 @@ export type BasaltShellProps = {
   globalActions?: ReactNode
   /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
   sidebarFooterExtra?: ReactNode
+  /**
+   * Arbitrary content appended after `sections` inside the sidebar's nav scroll region (a tree, a
+   * filter panel, a project list, …). Hidden on the collapsed desktop rail; still present in the
+   * mobile drawer, which opens at full width — see `AppSidebarProps.navExtra`'s JSDoc for why.
+   * `AppSidebar` renders once and serves both the desktop rail and the mobile drawer (collapse
+   * styling is gated behind a `min-width: sm` media query, not a second render), so this slot
+   * reaches both.
+   */
+  sidebarNavExtra?: ReactNode
   /** Entries appended to the sidebar settings menu. */
   settingsMenuItems?: SettingsMenuItem[]
   /**
@@ -262,6 +271,7 @@ export function BasaltShell({
   renderNavLink,
   globalActions,
   sidebarFooterExtra,
+  sidebarNavExtra,
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
   collapsed: collapsedProp,
@@ -332,6 +342,7 @@ export function BasaltShell({
             onToggleCollapse={toggleCollapse}
             onClose={closeMobile}
             footerExtra={sidebarFooterExtra}
+            navExtra={sidebarNavExtra}
             {...(renderNavLink !== undefined && { renderNavLink })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
             {...(account !== undefined && { account })}

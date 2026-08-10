@@ -92,6 +92,24 @@ export type AppSidebarProps = {
    * fixed, non-scrolling row. Pair with basalt-ui/commands' openSpotlight.
    */
   search?: SidebarSearchConfig
+  /**
+   * Arbitrary content appended after `sections` inside the nav `ScrollArea` — a tree, a filter
+   * panel, a project list, anything a set of `SidebarItem`s can't express. Renders as the last
+   * child of the scrolling nav column, so a long list scrolls with the rest of the nav instead of
+   * fighting it for height. Pass `sections={[]}` to use this slot exclusively; the section-spacing
+   * rule only fires between adjacent children, so an empty `sections` produces no orphan divider or
+   * dead padding above it.
+   *
+   * Hidden on the collapsed desktop rail; still present in the mobile drawer, which opens at full
+   * width. The rail is ~56px of icon buttons with no sensible representation for arbitrary
+   * consumer content, so the CSS media query that drives the rail hides this slot the same way it
+   * hides `.childList` — never a JS check on `collapsed`, since that one value is shared by the
+   * rail AND the drawer (only the media query tells them apart). `SidebarSearch` gets to adapt
+   * itself to the rail (it takes `collapsed` and renders its own icon-only form) because the shell
+   * owns that control; it cannot adapt content it knows nothing about, so this slot hides instead
+   * of squashing it.
+   */
+  navExtra?: ReactNode
 }
 
 /** Inline collapse/expand chevrons — keeps the shell icon-dependency-free. */
@@ -457,6 +475,7 @@ export function AppSidebar({
   footerExtra,
   account,
   search,
+  navExtra,
 }: AppSidebarProps) {
   // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarSettingsMenuWidth`) — read the ACTIVE
   // resolved level, not the frozen level-0 constant (see that constant's own doc in
@@ -622,6 +641,9 @@ export function AppSidebar({
               </div>
             )
           })}
+          {navExtra !== undefined && navExtra !== null && (
+            <div className={classes.navExtra}>{navExtra}</div>
+          )}
         </Stack>
       </ScrollArea>
 
