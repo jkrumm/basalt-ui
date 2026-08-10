@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/jkrumm/basalt-ui/compare/v1.13.0...v1.14.0) (2026-08-10)
+
+
+### Features
+
+* let the sidebar host arbitrary content in its nav scroll region ([1b1a5f3](https://github.com/jkrumm/basalt-ui/commit/1b1a5f3f50cba0cf5f89e767d438dbd02adfe03f))
+
 # [1.13.0](https://github.com/jkrumm/basalt-ui/compare/v1.12.0...v1.13.0) (2026-08-04)
 
 
