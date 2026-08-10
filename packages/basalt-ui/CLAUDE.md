@@ -339,6 +339,17 @@ unchanged. The row shows a generic, non-personalized "person" icon (never an ava
 with plan/role badges nested under the name; the email is hidden unless `showEmail` is passed
 (privacy default).
 
+**Sidebar nav extra (`sidebarNavExtra` on `BasaltShell`, `navExtra` on `AppSidebar`, optional).**
+Arbitrary content appended after `sections` inside the nav `ScrollArea`, for a consumer with a
+tree/filter panel/project list that doesn't fit `SidebarItem`s (e.g. a note tree, instead of a
+second sidebar column beside the shell). Renders as the last child of the scrolling nav column so
+it scrolls with the rest of the nav. Hidden on the collapsed desktop rail via CSS (`.navExtra`
+under the same `min-width: sm` media query as `.childList`) — never a JS check on `collapsed`,
+since that one flag is shared by the rail AND the mobile drawer, and only the media query tells
+them apart; a JS gate would also drop the slot from the drawer, which opens at full width. Pass
+`sections={[]}` to use the slot exclusively; an empty `sections` produces no orphan divider above
+it.
+
 ## CLI (`basalt-ui`)
 
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger's package (an

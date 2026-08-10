@@ -419,4 +419,15 @@
   .root[data-collapsed] .childList {
     display: none;
   }
+
+  /* `navExtra` has no sensible icon-rail representation (arbitrary consumer content, not a nav
+   * row) — hide it in the rail, same treatment as `.childList`. It stays mounted (never a JS
+   * conditional on `collapsed`): `collapsed` is one value shared by the desktop rail AND the
+   * mobile drawer (`AppShell.Navbar`'s `collapsed: { mobile: !mobileOpened }` only ever un-collapses
+   * the mobile side), and the rail-vs-drawer split lives ENTIRELY in this media query, never in JS —
+   * a JS gate on `collapsed` would also drop `navExtra` from the mobile drawer, which opens at full
+   * width regardless of the persisted rail state. */
+  .root[data-collapsed] .navExtra {
+    display: none;
+  }
 }

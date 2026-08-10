@@ -29,6 +29,7 @@ declare const classes: {
   readonly sectionHeader: string
   readonly subnavDropdown: string
   readonly childList: string
+  readonly navExtra: string
   readonly ghostIcon: string
 }
 export default classes
