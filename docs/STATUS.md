@@ -4,7 +4,8 @@
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
-framework-free token work below; `feat/linewatch-chart-gaps` carries the chart-layer batch below.
+framework-free token work below; `feat/linewatch-chart-gaps` carries the chart-layer batch below;
+`feat/chart-x-bands-margin-legend-note` carries the x-band/margin/legend-note batch below.
 **Version:** `1.8.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
 work below shipped across 1.7.0 and 1.8.0. The chart-layer batch is the next candidate.
 
@@ -201,6 +202,31 @@ trusting `check-theme` after touching `src/guard/` or `src/cli/`.
   prev/next footer), `ArticleCard`/`ArticleGrid` (overview cards), `GuideLink`/`GuideDrawer`
   (contextual help drawer), and the content-collections + TanStack Start recipe in
   `agent/rules/basalt-content.md`.
+
+## X-bands, dual-axis margin, legend note — `feat/chart-x-bands-margin-legend-note` (2026-08-15)
+
+Another field report, three chart-API gaps and one doc gap:
+
+1. **Vertical time-window bands.** `ZoneRects`/`ZoneSpec` cover horizontal value bands only — a
+   consumer marking a time window (not a value range) had no primitive. New `XZoneRects` +
+   `type XZoneSpec` (`./charts`), wired as `xZones?: XZoneSpec[]` on `MultiLine` and `ZonedLine`
+   only. Bounds are `getX` **domain keys**, not dates/timestamps (the kinds run a
+   `scalePoint<string>` over the label strings) — an omitted bound is the plot edge, a key absent
+   from the domain skips the band rather than clamping to one.
+2. **Dual-axis margin.** `Bars` computed its right inset with an inline `Math.max`; nothing else
+   could reuse it, so a dual-axis `MultiLine`/`ZonedLine` consumer hand-picked a number. New
+   `chartMargin(opts?)` + `type ChartMargin` (`./tokens`, also from `./charts`) — bare call equals
+   `VX.margin`, `{ rightAxis: true }` widens `right` to fit `AxisRightNumeric`'s tick labels.
+   Returns a new object per call (memoize it). `Bars` now calls it internally.
+3. **Muted legend qualifier.** A series invisible in the plot (flat at the domain floor, e.g. "Low
+   cloud — 0% all night") had no way to say why. New `note?: string` on `SeriesStyle` (and so
+   `LegendEntry`, via `deriveLegend`) — `ChartLegend` renders it, muted, after the label.
+4. **Maps ambiguity, doc-only.** `@visx/geo` isn't among the 9 pinned `@visx/*` peers and
+   `basalt/visx-boundary` never says maps are out of bounds — a consumer burned 20 minutes there.
+   `agent/rules/basalt-charts.md` gained a "Maps are not charts" section: maps are consumer
+   territory, the visx boundary constrains `@visx/*` imports only (a map library is unaffected),
+   and `check-theme`'s `inline-spacing` guard is a per-line regex that still flags a map's pixel
+   geometry (`fitBounds({ padding })`) even after hoisting it to a const — use `theme-allow`.
 
 ## Derive engine — "one accent in, calculated palette out" (stages 1-3, done)
 

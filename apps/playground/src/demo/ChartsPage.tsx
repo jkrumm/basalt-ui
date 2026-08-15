@@ -34,6 +34,7 @@ import {
   AxisRightNumeric,
   ChartCard,
   ChartFrame,
+  chartMargin,
   ChartHoverSync,
   ChartTooltip,
   Crosshair,
@@ -172,7 +173,7 @@ function SessionsRevenuePlot({
     ChartSeries<DayPoint>,
   ]
 
-  const MARGIN = useMemo(() => ({ ...VX.margin, right: Math.max(VX.margin.right, 40) }), [])
+  const MARGIN = useMemo(() => chartMargin({ rightAxis: true }), [])
   const xMax = plot.width - MARGIN.left - MARGIN.right
   const yMax = plot.height - MARGIN.top - MARGIN.bottom
 
