@@ -20,6 +20,8 @@ export {
   seriesTokens,
   defineSeries,
   groupTokens,
+  chartMargin,
+  type ChartMargin,
 } from '../tokens'
 
 // ── Design seam type (type-only; erased at runtime — no @mantine value) ─
@@ -65,6 +67,7 @@ export {
 export { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './primitives/Axes'
 export { HoverOverlay } from './primitives/HoverOverlay'
 export { ZoneRects, type ZoneSpec } from './primitives/ZoneRects'
+export { XZoneRects, type XZoneSpec } from './primitives/XZoneRects'
 export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
 
 // ── Hooks ────────────────────────────────────────────────────────────────

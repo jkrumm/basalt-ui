@@ -44,6 +44,25 @@ either — both remedies point at a Mantine layout primitive (`Flex`/`Grid`/`Gro
 Mantine-free boundary above already forbids there, so the finding would be unactionable. Reach for
 `ChartCenter` (below, under "Pending state") when a chart file needs to center something.
 
+## Maps are not charts
+
+Neither `@visx/geo` nor any map library is among the 9 exact-pinned `@visx/*` peers, and basalt
+ships no map kind.
+
+- **Maps are consumer territory.** A map is a MapLibre/Leaflet/deck.gl component in the consumer's
+  own tree, not a visx chart — build it wherever the rest of that consumer's non-chart UI lives.
+- **The `basalt/visx-boundary` rule doesn't apply.** It constrains `@visx/*` imports only. A map
+  library is not `@visx/*`, so a map component needs no `charts/` path segment and no exemption.
+- **Want `@visx/geo` anyway?** Install it yourself — basalt doesn't pin it — and keep it under a
+  `charts/` segment like every other visx import, same as any bespoke chart.
+- **Style map chrome with `--vx-*` tokens** (`VX.*`/`alpha()`) so it matches the rest of the app.
+- **The guard trap:** `check-theme`'s `inline-spacing` kind is a per-line regex over raw source, not
+  an AST pass — it flags any `padding:`/`gap:`/`margin:` followed by a number in _any_ object
+  literal, in any file. A map's pixel geometry (`fitBounds({ padding: 48 })`, marker offsets) trips
+  it even though it isn't spacing, and hoisting the value to a module-scope const doesn't help — the
+  regex sees the line, not the binding. Use a `theme-allow` line comment; that's the sanctioned
+  answer, not a bug to file.
+
 ## Every chart has
 
 1. **ChartCard** wrapper — gives title + info-tooltip + extra slot, consistent margin.
@@ -152,6 +171,12 @@ basalt-ui ships these kinds (declarative props, generic over your point type via
 - **`Heatmap`** — category×category intensity grid (`color-mix` alpha), per-cell tooltip, optional
   gradient legend strip.
 
+`ZonedLine` and `MultiLine` also accept `xZones?: XZoneSpec[]` — the vertical counterpart to a
+kind's horizontal zone bands, for marking a time window rather than a value range. Each
+`{ from?, to?, fill }` bound is a `getX` **domain key** (the label string the kind's
+`scalePoint<string>` runs over), not a date or timestamp. An omitted bound is the plot edge; a key
+absent from the scale's domain skips that band entirely rather than clamping to an edge.
+
 How to add a chart:
 
 1. **Fits an existing kind?** Use it. Pass `data`, `width`, `height`, `chartId`, accessors, and the
@@ -182,6 +207,10 @@ Emit the CSS via `buildPaletteCss({ groups: { 'series-': SERIES } })`. A hue kee
 shifts shade across schemes — that's why each entry is a `{ light, dark }` pair, not a single value.
 **Adding a new color** means adding a pair to your series map and rebuilding the palette CSS — never
 inline a hex in a chart.
+
+A series that's invisible in the plot (flat at the domain floor, filtered to zero) can still carry
+an explanation: `SeriesStyle.note` (and so `LegendEntry.note`, via `deriveLegend`) renders a short
+muted qualifier after the legend label — e.g. _"Low cloud — 0% all night"_. Keep it to a clause.
 
 ## Dark/light mode
 
@@ -230,6 +259,15 @@ const { ref, width, height } = useChartSize()
 
 `ResponsiveChartProps`: `height` (default 240), `aspectRatio`, `debounceMs` (default 0), `children`.
 `UseChartSizeResult`: `{ ref, width, height }`.
+
+## Margin
+
+`chartMargin(opts?)` (`basalt-ui/tokens`, also re-exported from `basalt-ui/charts`) returns
+`VX.margin` widened for whichever axes the chart renders — `{ rightAxis: true }` widens `right` to
+fit an `AxisRightNumeric`'s tick labels. Use it instead of hand-picking a right inset for a
+dual-axis chart: `ChartFrame` reserves the legend band but never the axis band, so the margin is
+the kind's own business inside the SVG. Returns a new object per call — memoize it in a component.
+`Bars` uses it internally in place of its old inline `Math.max`.
 
 ## Migrating from pre-1.0 (`@argo/charts` era)
 

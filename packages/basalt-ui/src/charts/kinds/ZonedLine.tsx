@@ -20,6 +20,8 @@ import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
+import { XZoneRects } from '../primitives/XZoneRects'
+import type { XZoneSpec } from '../primitives/XZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
@@ -79,6 +81,9 @@ export type ZonedLineProps<T> = {
    * {@link padAutoLower}. */
   yAutoPad?: number
   zones?: ZonedLineZone[]
+  /** Vertical x-range overlays (time windows), rendered behind the line. Bounds are `getX`
+   * domain keys. */
+  xZones?: XZoneSpec[]
   thresholds?: ZonedLineThreshold[]
   refLines?: ZonedLineRefLine[]
   numTicksY?: number
@@ -158,6 +163,7 @@ function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
     yAutoMaxFloor,
     yAutoMinCeil = 0,
     zones = [],
+    xZones = [],
     thresholds = [],
     refLines = [],
     numTicksY = 5,
@@ -238,6 +244,8 @@ function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
       <svg width={plot.width} height={plot.height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
+
+          <XZoneRects zones={xZones} height={yMax} xScale={xScale} />
 
           <ZoneRects zones={zones} width={xMax} leftScale={yScale} />
 

@@ -242,6 +242,7 @@ describe('buildDensityCss', () => {
       'space-chart-legend-gap', // VX.legendGap / VX.margin / VX.dotR — visx SVG props
       'space-chart-margin-top',
       'space-chart-margin-right',
+      'space-chart-margin-right-axis',
       'space-chart-margin-bottom',
       'space-chart-margin-left',
       'space-chart-dot-r',

@@ -18,6 +18,8 @@ import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
+import { XZoneRects } from '../primitives/XZoneRects'
+import type { XZoneSpec } from '../primitives/XZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
@@ -48,6 +50,9 @@ export type MultiLineProps<T> = {
   yAutoPad?: number
   /** Horizontal value-range overlays (target zones), rendered behind the lines on the left scale. */
   zones?: ZoneSpec[]
+  /** Vertical x-range overlays (time windows), rendered behind the lines. Bounds are `getX`
+   * domain keys. */
+  xZones?: XZoneSpec[]
   /** Horizontal reference lines. Solid by default; set dashed: true for a dashed line. */
   refLines?: { value: number; color: string; dashed?: boolean }[]
   numTicksX?: number
@@ -151,6 +156,7 @@ function MultiLinePlot<T>(props: MultiLinePlotProps<T>) {
     yAutoMaxFloor,
     yAutoMinCeil = 0,
     zones = [],
+    xZones = [],
     refLines = [],
     numTicksX,
     numTicksY = 5,
@@ -245,6 +251,8 @@ function MultiLinePlot<T>(props: MultiLinePlotProps<T>) {
       <svg width={plot.width} height={plot.height}>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
+
+          <XZoneRects zones={xZones} height={yMax} xScale={xScale} />
 
           <ZoneRects zones={zones} width={xMax} leftScale={yScale} />
 

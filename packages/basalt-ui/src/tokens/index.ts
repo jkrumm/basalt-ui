@@ -241,6 +241,42 @@ export const VX = {
   minPxPerTick: 55,
 } as const
 
+/** Resolved chart plot-area margins — the return shape of {@link chartMargin}. */
+export type ChartMargin = { top: number; right: number; bottom: number; left: number }
+
+/**
+ * Chart plot-area margins — `VX.margin` widened for an `AxisRightNumeric`'s tick labels, and/or
+ * overridden per side. A token can't express "only when a right axis is rendered", so this is a
+ * function, not a second static token — also the seam that could one day track `density`
+ * (`VX.margin` itself is frozen at the level-0 snapshot; see `deriveSpacing`'s JSDoc).
+ *
+ * Law, applied in this order: start from `VX.margin`; when `rightAxis` is true, widen `right` to
+ * `Math.max(VX.margin.right, <right-axis minimum>)` (`SPACE_STEP.chartMarginRightAxis`); then any
+ * explicitly passed side wins last (including overriding `rightAxis`'s widened `right`).
+ * `chartMargin()` with no args deep-equals `VX.margin`.
+ *
+ * Returns a NEW object every call — memoize at the call site (`useMemo`), the same way `Bars`
+ * already memoizes its own margin.
+ */
+export function chartMargin(opts?: {
+  /** Reserve room for an `AxisRightNumeric`'s tick labels. */
+  rightAxis?: boolean
+  top?: number
+  right?: number
+  bottom?: number
+  left?: number
+}): ChartMargin {
+  const widenedRight = opts?.rightAxis
+    ? Math.max(VX.margin.right, SPACE_STEP.chartMarginRightAxis)
+    : VX.margin.right
+  return {
+    top: opts?.top ?? VX.margin.top,
+    right: opts?.right ?? widenedRight,
+    bottom: opts?.bottom ?? VX.margin.bottom,
+    left: opts?.left ?? VX.margin.left,
+  }
+}
+
 type Side = 'light' | 'dark'
 
 /** A CSS declaration line for a single `--vx-*` custom property. */
