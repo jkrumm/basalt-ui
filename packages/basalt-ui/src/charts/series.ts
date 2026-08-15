@@ -64,6 +64,9 @@ export type SeriesStyle = {
   legend?: boolean
   /** e.g. an MA line names its parent so hover-dimming keeps the pair. */
   parent?: string
+  /** Short qualifier rendered after the label in muted text — e.g. a flat-at-zero series that is
+   * invisible in the plot. */
+  note?: string
 }
 
 /** Full descriptor = visual identity + data accessors. Generic over the point type. */
@@ -99,6 +102,7 @@ function legendEntryFor(s: SeriesStyle): LegendEntry {
     ...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth }),
     ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
     ...(s.role !== undefined && { role: s.role }),
+    ...(s.note !== undefined && { note: s.note }),
   }
 }
 

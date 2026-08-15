@@ -21,7 +21,7 @@ import type { ZoneSpec } from '../primitives/ZoneRects'
 import { useHoverSync } from '../hooks/useHoverSync'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
-import { VX } from '../../tokens'
+import { chartMargin, VX } from '../../tokens'
 import { padAutoLower } from '../utils/domain'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
@@ -272,11 +272,11 @@ function BarsPlot<T>(props: BarsPlotProps<T>) {
 
   // Widen right margin when a right axis is rendered — labels need ~36px to fit "100"/"60m" etc.
   const MARGIN = useMemo(
-    () => ({
-      ...VX.margin,
-      left: marginLeft ?? VX.margin.left,
-      right: rightAxis ? Math.max(VX.margin.right, 40) : VX.margin.right,
-    }),
+    () =>
+      chartMargin({
+        rightAxis: Boolean(rightAxis),
+        ...(marginLeft !== undefined && { left: marginLeft }),
+      }),
     [rightAxis, marginLeft],
   )
   const xMax = plot.width - MARGIN.left - MARGIN.right

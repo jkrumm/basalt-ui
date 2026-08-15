@@ -18,6 +18,9 @@ export type LegendEntry = {
   /** Companions folded under this entry via `parent` (`deriveLegend`) — rendered as compact,
    * subordinate sub-entries beside the parent's label instead of vanishing. */
   children?: LegendEntry[]
+  /** Short qualifier rendered after the label in muted text — e.g. a flat-at-zero series that is
+   * invisible in the plot. */
+  note?: string
 }
 
 const LEGEND_ITEM_BASE: CSSProperties = {
@@ -174,6 +177,13 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
   )
 }
 
+// Same dimming as `LEGEND_CHILD_STYLE` below — the legend wrapper already sets the base text color
+// to `VX.muted` (`wrapperStyle`), so subordinate text is just that color at reduced opacity, never
+// a second color token.
+const LEGEND_NOTE_STYLE: CSSProperties = {
+  opacity: 0.75,
+}
+
 const LEGEND_CHILD_STYLE: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -221,6 +231,9 @@ function LegendChild({ item }: { item: LegendEntry }) {
     <span style={LEGEND_CHILD_STYLE}>
       <LegendChildSwatch item={item} />
       <span>{item.label}</span>
+      {/* No LEGEND_NOTE_STYLE here — LEGEND_CHILD_STYLE already dims the whole child block, and
+          compounding the two opacities would push a folded companion's note near-invisible. */}
+      {item.note ? <span>{item.note}</span> : null}
     </span>
   )
 }
@@ -270,7 +283,9 @@ export function ChartLegend({
         key={item.key}
         type="button"
         data-legend-key={item.key}
-        aria-label={item.label}
+        // The note is the whole point for a series that is invisible in the plot, so it has to
+        // reach a screen reader too — an explicit aria-label would otherwise replace it.
+        aria-label={item.note ? `${item.label} — ${item.note}` : item.label}
         style={{
           ...LEGEND_ITEM_BUTTON,
           opacity: highlighted === null || highlighted === item.key ? 1 : 0.3,
@@ -282,6 +297,7 @@ export function ChartLegend({
       >
         <LegendSwatch item={item} idPrefix={idPrefix} />
         <span>{item.label}</span>
+        {item.note ? <span style={LEGEND_NOTE_STYLE}>{item.note}</span> : null}
         {item.children?.map((child) => (
           <LegendChild key={child.key} item={child} />
         ))}

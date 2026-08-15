@@ -42,6 +42,11 @@ A good kind's props: `data`, `width`, `height`, `chartId`, generic `getX`/`getY`
 thresholds / refLines arrays, `seriesLabel`, `formatValue`, optional `tooltipLabel`. Bespoke escape
 hatches (`renderExtraTooltipRows`) are fine; they must not grow into a god-object config.
 
+`ZonedLine` and `MultiLine` also take `xZones?: XZoneSpec[]` — vertical time-window bands, the
+counterpart to the horizontal zones above. `{ from?, to?, fill }` bounds are `getX` **domain keys**
+(the label string, not a date/timestamp); an omitted bound is the plot edge, a key missing from the
+domain skips the band rather than clamping to one.
+
 ## Register a consumer series (VX.series is app-side)
 
 The framework ships generic primitives and the framework palette (semantic / status / neutral /
@@ -84,6 +89,9 @@ export const PALETTE_CSS = buildPaletteCss({
 - Inject `PALETTE_CSS` once (BasaltProvider injects the framework palette; the consumer appends its
   series CSS — or passes `injectPalette={false}` and head-injects both).
 - Then charts read `SERIES.hrv`, never a hex. This is what keeps `basalt-ui check-theme` green.
+- A series with nothing visible to point at (flat at the domain floor, all-zero) can still carry a
+  qualifier: pass `note` on the series' `SeriesStyle` (flows to `LegendEntry.note` via
+  `deriveLegend`) and `ChartLegend` renders it, muted, after the label.
 
 Theme tuning of these series happens in the theme lab — pass them as `groups` to
 `ThemeLabControls` (see `/basalt-design`).
@@ -138,6 +146,11 @@ Never substitute: hand-rolled legend markup, a raw `<AxisLeft>`/`<AxisBottom>`, 
 `@visx/tooltip` import, or an `rgba()` fill. Use `ChartLegend`, the tokenized axes, `ChartTooltip`,
 and `alpha(token, a)`. Sparklines (`charts/sparklines/`) are the one exemption from the
 Card/Legend/Tooltip composition — but they still use `VX.*` tokens.
+
+Rendering an `AxisRightNumeric` (dual-axis)? Compute margins with `chartMargin({ rightAxis: true })`
+(`basalt-ui/tokens`, also from `basalt-ui/charts`) instead of hand-picking a right inset —
+`ChartFrame` only reserves the legend band, never the axis band. It returns a new object per call,
+so memoize it in the component.
 
 ## Cross-chart cursor sync
 
