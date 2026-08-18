@@ -48,7 +48,10 @@ A kind becomes a mark renderer plus its own domain logic. Nothing else.
 **One exception, by shape:** `DualPanel` (two panes over one x scale) and the non-cartesian
 `Heatmap`/`Donut` compose `ChartFrame` + `useChartCursor` + `autoMargin` directly rather than
 `CartesianChart`, whose contract is a single plot rect with one or two numeric y axes. They share
-the same cursor, tooltip and margin machinery — just not the single-plot assembly.
+the same cursor, tooltip and margin machinery — just not the single-plot assembly. `DualPanel`'s
+top pane honors `ChartSeries.getMarker`, same as `CartesianChart`; its bottom pane's tooltip row
+is `formatBar` (separate from `formatBottom`'s tick labels), and the pane's own domain is
+configurable via `bottomYDomain`/`bottomMaxAbsFloor`.
 
 ## The contract, in force today
 
@@ -118,9 +121,17 @@ It renders, in order: measuring frame → derived legend → `<svg>` → `<Group
 caller supplies the marks; every other layer is default-on and identical across charts. That
 identity IS the consistency guarantee.
 
+An x-zone (`XZoneSpec`, drawn by `XZoneRects`) bounds default `align: 'center'` — a present `from`/
+`to` resolves to the point's own center. `align: 'edge'` widens by half a step at each present
+bound instead (clamped into the plot range at the first/last sample), so a band covers both
+terminal slots in full and `from === to` renders one step wide rather than being skipped as
+degenerate.
+
 `AxisConfig` (`y`, `y2`) collapses the previous prop soup (`yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` /
 `yAutoPad` / `numTicksY` / `formatYTick`) into one object per axis. Passing `y2` is what turns on
 the right axis — the widened margin follows from measurement, not from a `rightAxis` flag.
+`AxisConfig.nice?: boolean` (default `false`) opts into d3's `scale.nice()` rounding — off by
+default because flipping it would move the domain of every already-migrated chart.
 
 `PlotContext` handed to `children`: `{ data, visible, hidden, xScale, yScale, y2Scale, xMax, yMax,
 margin, cursorPoint, highlighted }`. Draw `visible` — never the `series` prop — so a legend toggle
@@ -154,7 +165,11 @@ points by, in order: exact match → parsed-numeric/date nearest within the char
 
 - **Derived, never assembled.** `CartesianChart` builds rows from `series` + the hovered datum via
   `deriveTooltipRows`. A chart cannot show a row it does not draw. `tooltip.extraRows` /
-  `tooltip.label` stay as additive hooks.
+  `tooltip.label` stay as additive hooks. `prependRows`/`extraRows` also receive
+  `(d, { visible, hidden })` — the same sets the plot itself draws from — so a hand-authored row
+  tracks legend toggling instead of desyncing from it.
+- A bar series can opt into "drawn and legended, never a tooltip row" via `BarsBar.tooltip: false`
+  / `BarsLine.tooltip: false`, the same escape `SeriesStyle.tooltip` gives every other kind.
 - **rAF-coalesced position.** Pointer moves write through a frame scheduler instead of a
   `setState` per event.
 - **Anchorable.** `tooltip.follow` defaults to true (the tooltip tracks the pointer, as before).
@@ -187,6 +202,11 @@ order.
   `charts/**`. `./charts` and `./tokens` still resolve and render with no Mantine installed.
 - Color only via `--vx-*` refs (`VX.*` / `alpha()`), never a raw hex.
 - `series` remains the single source of truth for mark, legend entry, and tooltip row.
+- `SeriesStyle.strokeOpacity` is a MARK property: the plotted stroke and the legend swatch honor
+  it (parity with `fillOpacity`); the tooltip-row swatch and the crosshair dot deliberately do
+  not — a sub-1 opacity there would read as a rendering bug, not as data.
+- `ChartSeries.formatValue` is `(v: number, d: T) => string` — a row can cite the hovered datum
+  (e.g. `97.5 kg (92.5 × 3)`), not just the plotted number.
 
 ## Migration note (one-time, 2026-08-18)
 

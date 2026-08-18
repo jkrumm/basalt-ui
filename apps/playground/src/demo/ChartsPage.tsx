@@ -13,15 +13,21 @@
  * and scrub with ←/→, Escape clears — and clicking any legend entry hides that series from the
  * plot, tooltip, and axis domain together (try it on "Weekly channel volume", 8 legend entries).
  *
- * Exercises: ZonedLine (zones/x-zones/thresholds/refLines/areaFill/tooltip.label) · StackedArea ·
- * DualPanel (top lines + fill-between + signed-histogram pane, shared cursor) · MultiLine (dashed
- * MA companions folded as sub-entries under their parent lift's legend entry, PR star markers,
- * legend-hover dimming) · Heatmap (self-measuring) · Donut (categorical legend
- * + `isPending`) · Bars (weekly digest) · ChartCard (title/subtitle/tooltip/extra) · ZoneSpec ·
- * XZoneSpec · alpha() · CartesianChart composed directly for the two genuinely bespoke shapes: a
- * dual-axis line pair (`y` + `y2`, a series opting in with `axis: 'right'`) and a high-cardinality
- * role-grouped legend (series / overlay / reference) with a `maxRows` rollup, neither of which any
- * shipped kind's config surface covers.
+ * Exercises: ZonedLine (zones/x-zones/thresholds/refLines/areaFill/tooltip.label, plus
+ * `tooltip.extraRows` reading `{ visible, hidden }` and an edge-aligned `XZoneSpec` widening a
+ * single-key band to a full step) · StackedArea · DualPanel (top lines + fill-between +
+ * signed-histogram pane, shared cursor, plus `getMarker` on a top-pane series, a tooltip-only
+ * `formatBar`, and `bottomMaxAbsFloor` under the default `bottomYDomain: 'auto'`) · MultiLine
+ * (dashed MA companions folded as sub-entries under their parent lift's legend entry, PR star
+ * markers, legend-hover dimming) · Heatmap (self-measuring) · Donut (categorical legend
+ * + `isPending`) · Bars (weekly digest, plus a dimmed `BarsLine.strokeOpacity` reference line
+ * excluded from the tooltip via `tooltip: false`, and `AxisConfig.nice`) · ChartCard
+ * (title/subtitle/tooltip/extra) · ZoneSpec · XZoneSpec · alpha() · CartesianChart composed
+ * directly for the two genuinely bespoke shapes: a dual-axis line pair (`y` + `y2`, a series
+ * opting in with `axis: 'right'`) and a high-cardinality role-grouped legend (series / overlay /
+ * reference) with a `maxRows` rollup, neither of which any shipped kind's config surface covers —
+ * the latter also dims its moving-average line via `SeriesStyle.strokeOpacity` and formats each
+ * channel bar's tooltip row with `ChartSeries.formatValue`'s second (datum) argument.
  */
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -38,10 +44,16 @@ import {
   LinePath,
   MultiLine,
   StackedArea,
+  TooltipRow,
   VX,
   ZonedLine,
 } from 'basalt-ui/charts'
-import type { ChartSeries, DonutDatum, ZoneSpec } from 'basalt-ui/charts'
+import type {
+  CartesianTooltipRowContext,
+  ChartSeries,
+  DonutDatum,
+  ZoneSpec,
+} from 'basalt-ui/charts'
 import {
   ACTIVITY_HEATMAP,
   CHANNEL_MIX,
@@ -68,6 +80,21 @@ const zoneLabel = (v: number): { text: string; color: string } => {
   if (v >= 75) return { text: 'Healthy', color: VX.goodSolid }
   if (v >= 50) return { text: 'Watch', color: VX.warnSolid }
   return { text: 'At risk', color: VX.badSolid }
+}
+
+// `extraRows`'s ctx carries the same `{ visible, hidden }` the plot draws from, so this row
+// disappears the moment the legend hides the (sole) `health` series rather than naming a series
+// the plot no longer draws.
+function healthExtraRow(d: DayPoint, { hidden }: CartesianTooltipRowContext<DayPoint>) {
+  if (hidden.has('health')) return null
+  return (
+    <TooltipRow
+      color={VX.goodRef}
+      label="Vs. 80 goal"
+      value={fmtSigned(d.health - 80)}
+      shape="dot"
+    />
+  )
 }
 
 // Donut `centerContent` demo (docs/DESIGN-SPEC.md §3): mono KPI value + a mono micro-label below,
@@ -187,6 +214,10 @@ const VOLUME_SERIES: ChartSeries<ChannelVolumePoint>[] = [
     mark: 'bar' as const,
     fillOpacity: 0.85,
     getValue: (d: ChannelVolumePoint) => d[b.key],
+    // `formatValue`'s second argument is the hovered datum — cites `d.total` (a field beyond the
+    // plotted bar value) so each channel's tooltip row also reads its share of that week.
+    formatValue: (v: number, d: ChannelVolumePoint) =>
+      `${fmtInt(v)} (${Math.round((v / d.total) * 100)}%)`,
   })),
   {
     key: 'volume-ma',
@@ -195,6 +226,9 @@ const VOLUME_SERIES: ChartSeries<ChannelVolumePoint>[] = [
     mark: 'line',
     dash: 'dashed',
     role: 'overlay',
+    // Dims the plotted stroke AND the legend swatch only — the tooltip row and crosshair dot stay
+    // full-strength (SeriesStyle.strokeOpacity).
+    strokeOpacity: 0.5,
     getValue: (d) => d.ma,
   },
   ...VOLUME_THRESHOLDS.map((t) => ({
@@ -293,6 +327,11 @@ function ChannelVolumeChart({ data, chartId }: { data: ChannelVolumePoint[]; cha
 // See the file-header doc: 2 weekly buckets over the same Mar 01–14 calendar as "Health score" —
 // hovering either chart moves both crosshairs with zero wiring.
 
+// Static 2-week reference — a dashed BarsLine overlay, not a fabricated third bucket.
+const WEEKLY_AVG_SESSIONS = Math.round(
+  (WEEKLY_DIGEST[0]!.sessions + WEEKLY_DIGEST[1]!.sessions) / 2,
+)
+
 function WeeklyDigestChart({ chartId }: { chartId: string }) {
   return (
     <Bars
@@ -300,9 +339,24 @@ function WeeklyDigestChart({ chartId }: { chartId: string }) {
       height={260}
       chartId={chartId}
       getX={(d) => d.date}
-      getValue={(d, key) => (key === 'sessions' ? d.sessions : null)}
+      getValue={(d, key) =>
+        key === 'sessions' ? d.sessions : key === 'trend' ? WEEKLY_AVG_SESSIONS : null
+      }
       positiveBars={[{ key: 'sessions', label: 'Sessions', color: demoColors.sessions }]}
-      y={{ format: fmtInt }}
+      lines={[
+        {
+          key: 'trend',
+          label: '2-week average',
+          color: VX.line,
+          dashed: true,
+          // Dims the stroke + legend swatch (BarsLine.strokeOpacity, same field as
+          // SeriesStyle.strokeOpacity) and drops the tooltip row entirely (tooltip: false) — a
+          // static reference, not a per-day measurement.
+          strokeOpacity: 0.5,
+          tooltip: false,
+        },
+      ]}
+      y={{ format: fmtInt, nice: true }}
       legend={{ placement: 'bottom' }}
     />
   )
@@ -359,7 +413,7 @@ export function ChartsPage() {
         <ChartCard
           title="Health score"
           subtitle="A composite 0–100 with zone bands, an x-range band, and a target threshold"
-          tooltip="Zones frame at-risk / watch / healthy; the shaded x-range band marks the taper week; the dashed reference marks the 80 goal."
+          tooltip="Zones frame at-risk / watch / healthy; the shaded taper-week band marks Mar 08–14; a second, edge-aligned band pins the Mar 12 peak to one full step (align: 'edge' — the same from === to band would render nothing under the default 'center' alignment); the dashed reference marks the 80 goal. The tooltip appends an extraRow comparing today's score to that goal, gated on the same hidden set the legend toggles."
         >
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
@@ -377,11 +431,14 @@ export function ChartsPage() {
             ]}
             y={{ domain: [0, 100], format: (v) => `${Math.round(v)}` }}
             zones={HEALTH_ZONES}
-            xZones={[{ from: 'Mar 08', to: 'Mar 14', fill: alpha(VX.accent, 0.05) }]}
+            xZones={[
+              { from: 'Mar 08', to: 'Mar 14', fill: alpha(VX.accent, 0.05) },
+              { from: 'Mar 12', to: 'Mar 12', fill: alpha(VX.goodSolid, 0.18), align: 'edge' },
+            ]}
             thresholds={[{ value: 80, side: 'above', fill: alpha(VX.goodSolid, 0.14) }]}
             refLines={[{ value: 80, color: VX.goodRef, dashed: true }]}
             areaFill={demoColors.sessions}
-            tooltip={{ label: (d) => zoneLabel(d.health) }}
+            tooltip={{ label: (d) => zoneLabel(d.health), extraRows: healthExtraRow }}
             ariaLabel="Health score trend, 0 to 100, March 1 to 14"
           />
         </ChartCard>
@@ -411,7 +468,7 @@ export function ChartsPage() {
           <ChartCard
             title="Training load"
             subtitle="Acute vs chronic, with the signed gap below"
-            tooltip="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded. Bottom: the signed acute − chronic divergence. Both panes share one cursor with every other chart on this page."
+            tooltip="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded; a warning dot flags overreach days (divergence ≥ 10) via getMarker. Bottom: the signed acute − chronic divergence — its tooltip row cites building/recovering via formatBar (formatBottom keeps owning the ticks). Both panes share one cursor with every other chart on this page. bottomMaxAbsFloor is set to 8, below this data's real max-abs of 13, so it's a floor that doesn't currently amplify anything — not a clamp."
           >
             <DualPanel<LoadPoint>
               data={LOAD_TREND}
@@ -425,6 +482,7 @@ export function ChartsPage() {
                   color: demoColors.sessions,
                   mark: 'line',
                   getValue: (d) => d.acute,
+                  getMarker: (d) => (d.divergence >= 10 ? { color: VX.warnSolid } : null),
                 },
                 {
                   key: 'chronic',
@@ -446,6 +504,11 @@ export function ChartsPage() {
               barColorNegative={VX.warnSolid}
               formatTop={(v) => fmtInt(v)}
               formatBottom={(v) => fmtSigned(v)}
+              formatBar={(v, d) =>
+                `${fmtSigned(v)} · ${d.acute > d.chronic ? 'building' : 'recovering'}`
+              }
+              bottomYDomain="auto"
+              bottomMaxAbsFloor={8}
             />
           </ChartCard>
         </SimpleGrid>
@@ -462,7 +525,7 @@ export function ChartsPage() {
           <ChartCard
             title="Weekly digest"
             subtitle="2 weekly buckets over the same Mar 01–14 calendar"
-            tooltip="No ChartCursorScope, no provider — hover either chart above or this one and the crosshair moves on all of them. This chart folds 14 days into 2 points; resolution is domain-aware (nearest parsed date within a step), so a daily hover still lands on the week that contains it."
+            tooltip="No ChartCursorScope, no provider — hover either chart above or this one and the crosshair moves on all of them. This chart folds 14 days into 2 points; resolution is domain-aware (nearest parsed date within a step), so a daily hover still lands on the week that contains it. The dashed 2-week-average line is a BarsLine: dimmed via strokeOpacity (stroke + legend swatch only) and excluded from the tooltip via tooltip: false, since it's a static reference, not a measurement. The y axis also opts into AxisConfig.nice, rounding its tick bounds outward."
           >
             <WeeklyDigestChart chartId="charts-weekly-digest" />
           </ChartCard>
@@ -533,7 +596,7 @@ export function ChartsPage() {
       <ChartCard
         title="Weekly channel volume"
         subtitle="4 stacked channels + a 3-week average + 3 threshold refs — 8 legend entries"
-        tooltip="Regression guard for the weekly-volume overlap class: role-grouped legend (series / overlay / reference) with flexWrap and a maxRows rollup, all derived from one series array. Click any entry — a channel, the average, or a threshold — to hide it; the stack, the line, and the axis domain all update together."
+        tooltip="Regression guard for the weekly-volume overlap class: role-grouped legend (series / overlay / reference) with flexWrap and a maxRows rollup, all derived from one series array. Click any entry — a channel, the average, or a threshold — to hide it; the stack, the line, and the axis domain all update together. Each channel's tooltip row also cites its share of that week's total via formatValue's second (datum) argument; the average line's stroke and legend swatch are dimmed with strokeOpacity, while its tooltip row and crosshair dot stay full-strength."
       >
         <ChannelVolumeChart data={CHANNEL_VOLUME} chartId="charts-channel-volume" />
       </ChartCard>

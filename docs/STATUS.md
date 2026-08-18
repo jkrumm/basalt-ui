@@ -1,14 +1,12 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-08-02**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-08-18**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
-framework-free token work below; `feat/linewatch-chart-gaps` carries the chart-layer batch below;
-`feat/chart-x-bands-margin-legend-note` carries the x-band/margin/legend-note batch below **and the
-chart-layer rebuild** (`docs/CHARTS-SPEC.md`).
-**Version:** `1.8.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
-work below shipped across 1.7.0 and 1.8.0. The chart-layer batch is the next candidate.
+**Branch:** `master` is the released 1.x line; `feat/chart-api-consumer-gaps` carries the
+consumer-gap batch below.
+**Version:** `1.15.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
+rebuild (`docs/CHARTS-SPEC.md`) shipped there. The consumer-gap batch below is the next candidate.
 
 ## TL;DR
 
@@ -126,6 +124,63 @@ Two regressions were caught during migration and fixed in the primitive rather t
 per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
 (now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
 legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
+
+## Chart-API consumer gaps — `feat/chart-api-consumer-gaps` (2026-08-18)
+
+argo migrated all 38 of its charts and 7 routes onto 1.15.0's `CartesianChart` in one pass: 12
+`basalt/hand-rolled-plot` violations to zero, 105 tsc errors to zero, chart source 7206 → 6187
+lines, `ChartHoverSync` deleted from every route with no `ChartCursorScope` needed (page-wide
+sharing is exactly what those wrappers had meant). Eleven charts collapsed by 79–263 lines each.
+No margin override survived anywhere — every hand-tuned nudge was deleted and none was needed
+back, which is the measured-margin claim holding up in the field.
+
+What it also produced is the useful part: **nine places the new API could not express something,
+and four charts that had to leave a shipped kind because of one of them.** Every item below is a
+gap a real migration hit, not a hypothetical.
+
+1. **`BarsBar`/`BarsLine` could not carry `tooltip: false`** — the highest-cost one. `series.ts`
+   documents `SeriesStyle.tooltip` as the replacement for the removed per-kind
+   `hideBarTooltipRows`, but `Bars` gave no way to thread it, so a chart wanting one bar drawn and
+   legended without a tooltip row had to leave the kind and hand-draw its rects. Four argo charts
+   did, at roughly +95 lines each — the kind's whole value, lost to one missing boolean.
+2. **`ChartSeries.formatValue` never saw the datum.** `(v: number) => string` cannot produce
+   `97.5 kg (92.5 × 3)` or `0.123%/d · +0.4σ`, so four more charts fell back to hand-authored
+   `prependRows` — reopening exactly the seam derived rows exist to close. Now `(v, d) => string`.
+3. **`prependRows`/`extraRows` never saw legend state**, so a hand-authored row structurally
+   desynced from toggling and the only honest repair was `legend={{ toggle: false }}` (used on four
+   charts). Both now receive `(d, { visible, hidden })` — the same sets the plot draws from.
+4. **No `AxisConfig.nice`.** The rebuild `nice()`s no scale and exposed no seam, so six charts
+   restored rounding inside a custom `domain` function. Added, default `false`: flipping the
+   default would move the domain of every already-migrated chart.
+5. **No `SeriesStyle.strokeOpacity`.** A faint MA companion could only be built by baking `alpha()`
+   into the color, which also dimmed the tooltip swatch and the crosshair dot. It is a MARK
+   property: the plotted stroke and the legend swatch honor it (parity with `fillOpacity`), the
+   12px tooltip chip and the crosshair dot deliberately do not.
+6. **`DualPanel` ignored `ChartSeries.getMarker`** where `MultiLine` honors it — one chart silently
+   lost its per-session dots.
+7. **`DualPanel` had no `formatBar`**: `formatBottom` drove the ticks AND the histogram tooltip
+   row, so a velocity reading lost a decimal and its unit. `formatBar` now owns the row only.
+8. **`DualPanel`'s bottom pane had no domain config** — a lost `max(…, 0.1)` floor meant a plateau
+   amplified to fill the pane. `bottomYDomain` + `bottomMaxAbsFloor`.
+9. **`XZoneSpec` was centre-aligned only**, so a band was always one `step()` narrow and a
+   single-sample band rendered nothing at all. `align: 'edge'` widens by half a step at each
+   present bound; `'center'` stays the default.
+
+Plus one documentation defect worth more than its size: **`basalt-ui sync` was still placing a
+managed CLAUDE.md block naming "the `ChartTooltip` family, `AxisLeftNumeric`/`AxisBottomDate`" as
+the primitives to compose** — pre-1.15 doctrine, in a block consumers are told not to hand-edit,
+describing a component that no longer exists and a composition pattern that is now a lint error.
+The rebuild updated the rules and skills and missed the template that ships beside them.
+
+Two things argo reported that are NOT treated as gaps, recorded so they don't come back: the
+pace-trend domain blowup (a zone bound of `to: 60` used as a pre-1.15 "top of axis" sentinel got
+folded into the auto domain) is already answered by `resolveAxisDomain`'s documented handling —
+non-finite `extraBounds` are skipped, so `Infinity` IS the sentinel; and `AxisConfig.format`
+feeding both the ticks and the per-series tooltip fallback is deliberate, since a right-axis value
+must never be formatted with left-axis rules — with `formatValue` now able to cite the datum, that
+is the correct seam.
+
+Every addition is optional and every default reproduces 1.15.0's rendering exactly.
 
 ## Chart-layer batch — `feat/linewatch-chart-gaps` (2026-08-02)
 
