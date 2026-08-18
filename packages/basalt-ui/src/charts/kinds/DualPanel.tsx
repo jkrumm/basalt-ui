@@ -18,6 +18,7 @@ import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
+import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
@@ -32,6 +33,15 @@ export type DualPanelProps<T> = {
   height?: number
   chartId: string
   getX: (d: T) => string
+  /** X tick label formatter. Default `fmtAxisDate` (DD.MM) — same default `CartesianChart` uses,
+   * so omitting it is byte-identical to today's rendering. */
+  formatX?: (key: string) => string
+  /**
+   * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
+   * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
+   * keyed by its Monday) — see `CursorResolution`.
+   */
+  cursorResolution?: CursorResolution
   /** 1+ line series in the top pane — the single source of truth for color, dash, legend, and
    * tooltip rows. E.g. acute (solid) / chronic (dashed). */
   series: ChartSeries<T>[]
@@ -67,6 +77,13 @@ export type DualPanelProps<T> = {
   bottomMaxAbsFloor?: number
   /** Tooltip badge — appears at the right of the tooltip header. */
   tooltipLabel?: (d: T) => { text: string; color: string } | null
+  /**
+   * Overrides the tooltip header's date text — the same seam `CartesianChart`'s
+   * `CartesianTooltipConfig.formatHeader` exposes, so the two don't diverge. Default:
+   * `TooltipHeader`'s own `fmtTooltipDate` behavior, unchanged. Receives the raw `getX` key
+   * alongside the hovered datum.
+   */
+  formatHeader?: (key: string, d: T) => string
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
@@ -138,6 +155,9 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     data,
     chartId,
     getX,
+    formatX = fmtAxisDate,
+    cursorResolution,
+    ariaLabel,
     series,
     topYDomain = 'auto',
     fillBetween,
@@ -154,6 +174,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     bottomYDomain = 'auto',
     bottomMaxAbsFloor,
     tooltipLabel,
+    formatHeader,
     plot,
   } = props
 
@@ -237,7 +258,9 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
 
   // Full (untinned) x labels are enough to measure the bottom/right gutters — thinning only drops
   // labels, never widens the max, so measuring against the full set is a safe over-estimate.
-  const xLabelsAll = useMemo(() => data.map((d) => fmtAxisDate(getX(d))), [data, getX])
+  // Uses the SAME `formatX` the real axis paints with (`AxisBottomDate` below), or the measured
+  // gutter would be computed from labels the axis never paints.
+  const xLabelsAll = useMemo(() => data.map((d) => formatX(getX(d))), [data, getX, formatX])
 
   const margin = useMemo(
     () => autoMargin({ left: [...topLabels, ...bottomLabels], bottom: xLabelsAll }),
@@ -285,6 +308,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     getKey: getX,
     xScale,
     marginLeft: margin.left,
+    ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
   const tickValues = useMemo(() => smartTicks(data.map(getX), xMax), [data, xMax, getX])
@@ -382,6 +406,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
           if (m === null) continue
           const cx = xScale(getX(p.__d)) ?? 0
           const cy = topYScale(p.__y)
+          const ring = m.ring ?? true
           markers.push(
             <circle
               key={`mk-${s.key}-${getX(p.__d)}`}
@@ -389,8 +414,8 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
               cy={cy}
               r={m.r ?? VX.dotR}
               fill={m.color ?? s.color}
-              stroke={VX.dotStroke}
-              strokeWidth={2}
+              fillOpacity={m.fillOpacity ?? 1}
+              {...(ring && { stroke: VX.dotStroke, strokeWidth: 2 })}
             />,
           )
         }
@@ -484,6 +509,11 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
           {/* One HoverOverlay per pane, both driving the SAME shared cursor — snap-to-nearest is
               x-only, so either overlay yields the same point. The top overlay extends over the gutter
               (height = topH + PANE_GAP) so there's no dead zone between the panes. */}
+          {/* The focusable overlay is the ONE keyboard control for both panes, so it carries the
+              slider's label and value — parity with `CartesianChart`. Without them the frame's
+              `aria-label` announces the chart and the slider underneath it is an unnamed control
+              reporting no position: technically focusable, useless to read. The bottom overlay
+              stays pointer-only and therefore deliberately carries neither. */}
           <HoverOverlay
             width={xMax}
             height={topH + PANE_GAP}
@@ -491,6 +521,12 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             onLeave={cursor.onPointerLeave}
             onKeyDown={cursor.onKeyDown}
             onBlur={cursor.onBlur}
+            valueMax={Math.max(data.length - 1, 0)}
+            {...(point !== null && {
+              valueNow: data.indexOf(point),
+              valueText: formatX(getX(point)),
+            })}
+            {...(ariaLabel !== undefined && { ariaLabel })}
           />
         </Group>
 
@@ -531,7 +567,12 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             )}
 
           <AxisLeftNumeric scale={bottomYScale} numTicks={3} tickFormat={formatBottom} />
-          <AxisBottomDate top={bottomH} scale={xScale} tickValues={tickValues} />
+          <AxisBottomDate
+            top={bottomH}
+            scale={xScale}
+            tickValues={tickValues}
+            tickFormat={formatX}
+          />
           {/* Pointer only — deliberately NO `onKeyDown`, which is what makes an overlay focusable.
               Both panes scrub the same single x cursor, so a second tab stop would be a second
               control for one logical axis: a keyboard user would tab twice through one chart and
@@ -556,6 +597,9 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
         <ChartTooltipFloat anchor={cursor.anchor}>
           <TooltipHeader
             date={getX(point)}
+            {...(formatHeader !== undefined && {
+              format: (key: string) => formatHeader(key, point),
+            })}
             {...(() => {
               const lbl = tooltipLabel?.(point) ?? null
               return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}

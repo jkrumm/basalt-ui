@@ -1,53 +1,33 @@
 /**
- * `ZonedLine` — the `strokeOpacity` wiring: `primary.strokeOpacity ?? 1`. SSR harness (no hover
- * needed), same pattern as `CartesianChart.test.tsx`'s `nice` assertions.
+ * `StackedArea` — the `formatX` seam forwarded to `CartesianChart` (parity with the other
+ * `CartesianChart`-composing kinds). SSR harness, no hover needed.
  */
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
 import { CartesianChart } from '../primitives/CartesianChart'
-import { ZonedLine } from './ZonedLine'
+import { StackedArea } from './StackedArea'
 import type { ChartSeries } from '../series'
 
-type Row = { date: string; v: number }
+type Row = { date: string; a: number; b: number }
 
 const rows: Row[] = [
-  { date: '2026-08-01', v: 10 },
-  { date: '2026-08-02', v: 12 },
+  { date: '2026-08-01', a: 10, b: 4 },
+  { date: '2026-08-02', a: 12, b: 6 },
 ]
 
-describe('ZonedLine — series.strokeOpacity dims the plotted stroke', () => {
-  test('the line path carries the configured stroke-opacity attribute', () => {
-    const series: ChartSeries<Row>[] = [
-      {
-        key: 'v',
-        label: 'V',
-        color: '#654321',
-        mark: 'line',
-        getValue: (d) => d.v,
-        strokeOpacity: 0.5,
-      },
-    ]
+const series: ChartSeries<Row>[] = [
+  { key: 'a', label: 'A', color: '#111', mark: 'area', getValue: (d) => d.a },
+  { key: 'b', label: 'B', color: '#222', mark: 'area', getValue: (d) => d.b },
+]
 
-    const html = renderToStaticMarkup(
-      <ZonedLine<Row> data={rows} chartId="zl-opacity" getX={(d) => d.date} series={series} />,
-    )
-
-    expect(html).toContain('stroke="#654321"')
-    expect(html).toContain('stroke-opacity="0.5"')
-  })
-})
-
-describe('ZonedLine — formatX', () => {
+describe('StackedArea — formatX', () => {
   test('a custom formatX renders on the bottom axis instead of the default DD.MM', () => {
-    const series: ChartSeries<Row>[] = [
-      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
-    ]
     const html = renderToStaticMarkup(
-      <ZonedLine<Row>
+      <StackedArea<Row>
         data={rows}
-        chartId="zl-formatx"
+        chartId="sa-formatx"
         getX={(d) => d.date}
         series={series}
         formatX={(key) => `X:${key}`}
@@ -56,65 +36,52 @@ describe('ZonedLine — formatX', () => {
     expect(html).toContain('X:2026-08-01')
     expect(html).not.toContain('>01.08<')
   })
-})
 
-describe('ZonedLine — tooltip.formatHeader', () => {
-  test('overrides the tooltip header date text', async () => {
-    const series: ChartSeries<Row>[] = [
-      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
-    ]
-    render(
-      <ZonedLine<Row>
-        data={rows}
-        chartId="zl-formatheader"
-        getX={(d) => d.date}
-        series={series}
-        tooltip={{ formatHeader: (key) => `hdr:${key}` }}
-      />,
+  test('omitting formatX keeps the default DD.MM rendering', () => {
+    const html = renderToStaticMarkup(
+      <StackedArea<Row> data={rows} chartId="sa-default" getX={(d) => d.date} series={series} />,
     )
-
-    const slider = screen.getByRole('slider')
-    fireEvent.keyDown(slider, { key: 'ArrowRight' })
-
-    expect(await screen.findByText('hdr:2026-08-01')).toBeTruthy()
+    expect(html).toContain('>01.08<')
   })
 })
 
-describe('ZonedLine — cursorResolution threads through to sibling resolution', () => {
-  // Daily calendar Aug 01–14 (a plain CartesianChart driver) alongside a ZonedLine sibling folded
-  // into 2 weekly buckets keyed by each week's leading day (Aug 01, Aug 08) — parity with
+describe('StackedArea — cursorResolution threads through to sibling resolution', () => {
+  // Daily calendar Aug 01–14 (a plain CartesianChart driver) alongside a StackedArea sibling
+  // folded into 2 weekly buckets keyed by each week's leading day (Aug 01, Aug 08) — parity with
   // `Bars.test.tsx`'s equivalent block. Proves the prop reaches THIS kind, not just
   // `CartesianChart` (a kind dropping the forward would silently fall back to 'nearest').
-  const dailyRows: Row[] = Array.from({ length: 14 }, (_, i) => ({
+  type DailyRow = { date: string; v: number }
+
+  const dailyRows: DailyRow[] = Array.from({ length: 14 }, (_, i) => ({
     date: `2026-08-${String(i + 1).padStart(2, '0')}`,
     v: i,
   }))
   const foldedRows: Row[] = [
-    { date: '2026-08-01', v: 0 },
-    { date: '2026-08-08', v: 1 },
+    { date: '2026-08-01', a: 0, b: 0 },
+    { date: '2026-08-08', a: 1, b: 1 },
   ]
-  const dailySeries: ChartSeries<Row>[] = [
+  const dailySeries: ChartSeries<DailyRow>[] = [
     { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
   ]
   const foldedSeries: ChartSeries<Row>[] = [
-    { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+    { key: 'a', label: 'A', color: '#111', mark: 'area', getValue: (d) => d.a },
   ]
 
   function renderPair(cursorResolution?: 'leading') {
     render(
       <ChartCursorScope>
-        <CartesianChart<Row>
+        <CartesianChart<DailyRow>
           data={dailyRows}
-          chartId="zl-daily"
+          chartId="sa-daily"
           getX={(d) => d.date}
           series={dailySeries}
           ariaLabel="Daily"
         >
           {() => null}
         </CartesianChart>
-        <ZonedLine<Row>
+        <StackedArea<Row>
           data={foldedRows}
-          chartId="zl-folded"
+          chartId="sa-folded"
           getX={(d) => d.date}
           series={foldedSeries}
           ariaLabel="Folded"

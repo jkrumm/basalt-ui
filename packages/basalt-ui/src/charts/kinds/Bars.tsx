@@ -1,6 +1,7 @@
 import { curveMonotoneX } from '@visx/curve'
 import { LinePath } from '@visx/shape'
 import { memo, useMemo } from 'react'
+import type { CursorResolution } from '../cursor/resolve'
 import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import { CartesianChart } from '../primitives/CartesianChart'
@@ -108,6 +109,14 @@ export type BarsProps<T> = {
 
   /** X tick count override. Default: as many as fit. */
   xTicks?: number
+  /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
+  formatX?: (key: string) => string
+  /**
+   * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
+   * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
+   * keyed by its Monday) — see `CursorResolution`.
+   */
+  cursorResolution?: CursorResolution
 
   /** `false` disables the tooltip entirely (and with it the crosshair dots). */
   tooltip?: CartesianTooltipConfig<T> | false
@@ -152,6 +161,8 @@ function BarsInner<T>(props: BarsProps<T>) {
     barLayout = 'stacked',
     barOpacity,
     xTicks,
+    formatX,
+    cursorResolution,
     tooltip,
     margin,
     legend,
@@ -269,6 +280,8 @@ function BarsInner<T>(props: BarsProps<T>) {
       y={yConfig}
       {...(y2 !== undefined && { y2 })}
       {...(xTicks !== undefined && { xTicks })}
+      {...(formatX !== undefined && { formatX })}
+      {...(cursorResolution !== undefined && { cursorResolution })}
       {...(zones !== undefined && { zones })}
       {...(mappedRefLines !== undefined && { refLines: mappedRefLines })}
       {...(height !== undefined && { height })}

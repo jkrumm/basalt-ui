@@ -91,6 +91,7 @@ export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
 
 // ── Hooks ────────────────────────────────────────────────────────────────
 export { useChartCursor, type ChartCursor, type CursorAnchor } from './hooks/useChartCursor'
+export type { CursorResolution } from './cursor/resolve'
 export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
 // ── Utils ────────────────────────────────────────────────────────────────

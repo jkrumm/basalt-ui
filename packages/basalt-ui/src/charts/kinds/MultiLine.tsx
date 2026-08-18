@@ -2,6 +2,7 @@ import { curveMonotoneX } from '@visx/curve'
 import { LinePath } from '@visx/shape'
 import { memo, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import type { CursorResolution } from '../cursor/resolve'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
@@ -35,6 +36,14 @@ export type MultiLineProps<T> = {
   refLines?: { value: number; color: string; dashed?: boolean }[]
   /** Exact number of x ticks. Default: as many as fit. */
   xTicks?: number
+  /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
+  formatX?: (key: string) => string
+  /**
+   * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
+   * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
+   * keyed by its Monday) — see `CursorResolution`.
+   */
+  cursorResolution?: CursorResolution
   /** Tooltip config — `label` for a right-aligned header badge, `extraRows` for rows appended
    * after the derived per-series rows. `false` disables the tooltip entirely. */
   tooltip?: CartesianTooltipConfig<T> | false
@@ -100,6 +109,8 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     xZones,
     refLines,
     xTicks,
+    formatX,
+    cursorResolution,
     tooltip,
     markerShape = 'circle',
     height,
@@ -127,6 +138,8 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
       {...(xZones !== undefined && { xZones })}
       {...(refLines !== undefined && { refLines })}
       {...(xTicks !== undefined && { xTicks })}
+      {...(formatX !== undefined && { formatX })}
+      {...(cursorResolution !== undefined && { cursorResolution })}
       {...(tooltip !== undefined && { tooltip })}
       {...(height !== undefined && { height })}
       {...(legend !== undefined && { legend })}
@@ -196,16 +209,16 @@ function MultiLineMarks<T>({
           const cy = scale(p.__y)
           const color = m.color ?? s.color
           const r = m.r ?? (markerShape === 'star' ? STAR_R : VX.dotR)
+          const ring = m.ring ?? true
+          const fillOpacity = (m.fillOpacity ?? 1) * op
           markers.push(
             markerShape === 'star' ? (
               <path
                 key={`mk-${s.key}-${getX(p.__d)}`}
                 d={starPath(cx, cy, r)}
                 fill={color}
-                stroke={VX.dotStroke}
-                strokeWidth={1.5}
-                fillOpacity={op}
-                strokeOpacity={op}
+                fillOpacity={fillOpacity}
+                {...(ring && { stroke: VX.dotStroke, strokeWidth: 1.5, strokeOpacity: op })}
               />
             ) : (
               <circle
@@ -214,10 +227,8 @@ function MultiLineMarks<T>({
                 cy={cy}
                 r={r}
                 fill={color}
-                stroke={VX.dotStroke}
-                strokeWidth={2}
-                fillOpacity={op}
-                strokeOpacity={op}
+                fillOpacity={fillOpacity}
+                {...(ring && { stroke: VX.dotStroke, strokeWidth: 2, strokeOpacity: op })}
               />
             ),
           )

@@ -20,3 +20,22 @@ export function padAutoLower(candidate: number, pad: number): number {
   if (candidate === 0) return 0
   return candidate > 0 ? candidate / pad : candidate * pad
 }
+
+/**
+ * Auto y-domain upper-bound padding — the exact mirror of {@link padAutoLower}, sharing its
+ * sign-safety: pad AWAY from zero (`upper >= candidate`), never toward it. `candidate` is the
+ * caller's `Math.max(dataMax, floor)` — the `autoMaxFloor` clamp has already been applied, so
+ * padding runs AFTER the floor, not before it. Applying the floor post-pad (the pre-existing bug)
+ * lands a floored axis top exactly on the floor value with zero headroom — a target line pinned to
+ * that floor then sits glued to the plot edge instead of getting the same breathing room every
+ * other bound gets.
+ *
+ *  - `candidate === 0` stays exactly 0 — never pushed positive.
+ *  - `candidate > 0` multiplies by `pad`, moving the ceiling further UP (away from zero).
+ *  - `candidate < 0` divides by `pad`, moving the ceiling UP toward (and past) zero — the mirror of
+ *    `padAutoLower`'s `candidate > 0` branch.
+ */
+export function padAutoUpper(candidate: number, pad: number): number {
+  if (candidate === 0) return 0
+  return candidate > 0 ? candidate * pad : candidate / pad
+}
