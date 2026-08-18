@@ -1,4 +1,4 @@
-# basalt-ui v1.14.0
+# basalt-ui v1.15.0
 # Opinionated framework for Mantine-based React apps — theme, app shell, visx charts, toolchain presets
 #
 # basalt-ui is an opinionated framework for Mantine-based React apps.
@@ -19,7 +19,7 @@
 # ./tokens.css subpath. Guide: docs/FRAMEWORK-FREE.md in the repo.
 
 Package: basalt-ui
-Version: 1.14.0
+Version: 1.15.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'

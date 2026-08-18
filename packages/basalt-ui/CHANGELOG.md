@@ -1,3 +1,11 @@
+# [1.15.0](https://github.com/jkrumm/basalt-ui/compare/v1.14.0...v1.15.0) (2026-08-18)
+
+
+### Features
+
+* add x-range chart bands, a dual-axis margin, and legend notes ([4883c19](https://github.com/jkrumm/basalt-ui/commit/4883c19d06a43d6a908efcf9fe8098610c86627a))
+* make one cartesian primitive the whole chart contract ([4f8a507](https://github.com/jkrumm/basalt-ui/commit/4f8a507b2ca01923c1ee9bdf8a911ac0e5b76710))
+
 # [1.14.0](https://github.com/jkrumm/basalt-ui/compare/v1.13.0...v1.14.0) (2026-08-10)
 
 
