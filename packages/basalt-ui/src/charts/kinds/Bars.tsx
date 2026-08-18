@@ -10,7 +10,12 @@ import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower } from '../utils/domain'
 
-export type BarsBar = {
+/**
+ * `T = unknown` is load-bearing, not a shortcut: it keeps a consumer's existing
+ * `const bars: BarsBar[] = [...]` compiling (and still assignable to `BarsBar<Row>[]`,
+ * contravariantly) even though the type is now generic over the datum.
+ */
+export type BarsBar<T = unknown> = {
   /** Field key — `getValue(d, key)` extracts the number (null = skip this slot, not domain hole). */
   key: string
   /** Tooltip + legend label. */
@@ -18,22 +23,30 @@ export type BarsBar = {
   /** Fill color (a resolved CSS color / token ref). Per `docs/DESIGN-SPEC.md` §5, the primary bar
    * series should typically resolve to `VX.accent`, a secondary companion to `VX.faint`. */
   color: string
-  /** Per-series tooltip value formatter — overrides the left/right axis's own format. */
-  formatValue?: (v: number) => string
+  /** Per-series tooltip value formatter — overrides the left/right axis's own format. Receives the
+   * hovered datum alongside the value. */
+  formatValue?: (v: number, d: T) => string
   /** Y axis to plot against. Honored only in grouped layout. Default 'left'. */
   axisSide?: 'left' | 'right'
   /** Relative width within the group (only honored in grouped layout). Default 1 — all bars equal. */
   weight?: number
+  /** Default true; false = drawn and legended, but never listed as a tooltip row — threads
+   * `SeriesStyle.tooltip` through `Bars`, replacing the removed per-kind `hideBarTooltipRows`. */
+  tooltip?: boolean
 }
 
-export type BarsLine = {
+export type BarsLine<T = unknown> = {
   key: string
   label: string
   color: string
   axisSide?: 'left' | 'right'
   strokeWidth?: number
   dashed?: boolean
-  formatValue?: (v: number) => string
+  formatValue?: (v: number, d: T) => string
+  /** Default true; false = drawn and legended, but never listed as a tooltip row. */
+  tooltip?: boolean
+  /** Dims the plotted stroke AND the legend swatch, never the tooltip row (`SeriesStyle.strokeOpacity`). */
+  strokeOpacity?: number
 }
 
 /** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias. */
@@ -57,12 +70,12 @@ export type BarsProps<T> = {
   getValue: (d: T, key: string) => number | null
 
   /** 1+ bar series, stacked when ≥2, plotted above baseline (y >= 0). */
-  positiveBars: BarsBar[]
+  positiveBars: BarsBar<T>[]
   /** Optional bar series stacked below baseline (rendered as flipped negatives). */
-  negativeBars?: BarsBar[]
+  negativeBars?: BarsBar<T>[]
 
   /** 0–2 line overlays, each on left or right axis. */
-  lines?: BarsLine[]
+  lines?: BarsLine<T>[]
 
   /** Horizontal value-range overlays (target zones, optimal bands). */
   zones?: BarsZone[]
@@ -157,6 +170,7 @@ function BarsInner<T>(props: BarsProps<T>) {
         ...(b.axisSide !== undefined && { axis: b.axisSide }),
         getValue: (d: T) => getValue(d, b.key),
         ...(b.formatValue !== undefined && { formatValue: b.formatValue }),
+        ...(b.tooltip !== undefined && { tooltip: b.tooltip }),
       })),
     [positiveBars, negativeBars, getValue],
   )
@@ -173,6 +187,8 @@ function BarsInner<T>(props: BarsProps<T>) {
         ...(ln.axisSide !== undefined && { axis: ln.axisSide }),
         getValue: (d: T) => getValue(d, ln.key),
         ...(ln.formatValue !== undefined && { formatValue: ln.formatValue }),
+        ...(ln.tooltip !== undefined && { tooltip: ln.tooltip }),
+        ...(ln.strokeOpacity !== undefined && { strokeOpacity: ln.strokeOpacity }),
       })),
     [lines, getValue],
   )
@@ -294,9 +310,9 @@ type LinePt<T> = { __d: T; __y: number }
 type BarsMarksProps<T> = {
   getX: (d: T) => string
   getValue: (d: T, key: string) => number | null
-  positiveBars: BarsBar[]
-  negativeBars: BarsBar[]
-  lines: BarsLine[]
+  positiveBars: BarsBar<T>[]
+  negativeBars: BarsBar<T>[]
+  lines: BarsLine<T>[]
   barWidthRatio: number
   barLayout: 'stacked' | 'grouped'
   barOpacity?: (d: T, key: string) => number
@@ -485,7 +501,7 @@ function BarsMarks<T>({
             stroke={ln.color}
             strokeWidth={ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
             strokeDasharray={ln.dashed ? VX.dashArray : undefined}
-            strokeOpacity={dim(ln.key)}
+            strokeOpacity={dim(ln.key) * (ln.strokeOpacity ?? 1)}
             curve={curveMonotoneX}
           />
         )

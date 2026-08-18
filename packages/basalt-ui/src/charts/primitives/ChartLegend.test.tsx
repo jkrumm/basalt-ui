@@ -46,3 +46,33 @@ describe('ChartLegend note', () => {
     expect(markup).toContain('est.')
   })
 })
+
+describe('ChartLegend strokeOpacity — the swatch cannot lie about a dimmed line', () => {
+  test('a line swatch honors a fractional strokeOpacity', () => {
+    const markup = render([{ ...BASE, shape: 'line', strokeOpacity: 0.4 }])
+    expect(markup).toContain('stroke-opacity="0.4"')
+  })
+
+  test('defaults to full opacity when unset', () => {
+    const markup = render([{ ...BASE, shape: 'line' }])
+    expect(markup).toContain('stroke-opacity="1"')
+  })
+
+  test('a folded MA-companion child swatch honors it too', () => {
+    const markup = render([
+      {
+        ...BASE,
+        children: [
+          {
+            key: 'ma',
+            label: '7d MA',
+            color: 'var(--vx-fill-2)',
+            shape: 'line',
+            strokeOpacity: 0.4,
+          },
+        ],
+      },
+    ])
+    expect(markup).toContain('stroke-opacity="0.4"')
+  })
+})

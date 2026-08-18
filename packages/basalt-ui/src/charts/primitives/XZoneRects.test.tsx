@@ -60,4 +60,64 @@ describe('XZoneRects', () => {
   test('an empty zones array renders no rects', () => {
     expect(render([])).not.toContain('<rect')
   })
+
+  // Mirrors XZoneRects' own bound resolution exactly (same clamp + sign math), so expectations
+  // never drift from the implementation's floating-point arithmetic.
+  function edgeBound(key: string, sign: 1 | -1): number {
+    const step = xScale.step()
+    const [rangeStart, rangeEnd] = xScale.range() as [number, number]
+    const rangeMin = Math.min(rangeStart, rangeEnd)
+    const rangeMax = Math.max(rangeStart, rangeEnd)
+    const center = xScale(key) as number
+    return Math.min(Math.max(center + sign * (step / 2), rangeMin), rangeMax)
+  }
+
+  test('align: "edge" widens a two-key band by exactly one step over center mode', () => {
+    const step = xScale.step()
+    const centerFrom = xScale('b') as number
+    const centerTo = xScale('c') as number
+    const centerMarkup = render([{ from: 'b', to: 'c', fill: 'red' }])
+    const edgeMarkup = render([{ from: 'b', to: 'c', fill: 'red', align: 'edge' }])
+    expect(centerMarkup).toContain(`width="${centerTo - centerFrom}"`)
+    const edgeFrom = edgeBound('b', -1)
+    const edgeTo = edgeBound('c', 1)
+    expect(edgeMarkup).toContain(`x="${edgeFrom}"`)
+    expect(edgeMarkup).toContain(`width="${edgeTo - edgeFrom}"`)
+    expect(edgeTo - edgeFrom).toBeCloseTo(centerTo - centerFrom + step, 10)
+  })
+
+  test('align: "edge" with from === to renders exactly one step wide, where center renders nothing', () => {
+    const step = xScale.step()
+    const centerMarkup = render([{ from: 'b', to: 'b', fill: 'red' }])
+    const edgeMarkup = render([{ from: 'b', to: 'b', fill: 'red', align: 'edge' }])
+    expect(centerMarkup).not.toContain('<rect')
+    const edgeFrom = edgeBound('b', -1)
+    const edgeTo = edgeBound('b', 1)
+    expect(edgeMarkup).toContain(`x="${edgeFrom}"`)
+    expect(edgeMarkup).toContain(`width="${edgeTo - edgeFrom}"`)
+    expect(edgeTo - edgeFrom).toBeCloseTo(step, 10)
+  })
+
+  test('an unknown key is skipped in both align modes', () => {
+    const centerMarkup = render([{ from: 'not-in-domain', to: 'c', fill: 'red' }])
+    const edgeMarkup = render([{ from: 'not-in-domain', to: 'c', fill: 'red', align: 'edge' }])
+    expect(centerMarkup).not.toContain('<rect')
+    expect(edgeMarkup).not.toContain('<rect')
+  })
+
+  test('align: "edge" clamps the widened left edge at the first sample into the plot range', () => {
+    const [rangeStart] = xScale.range() as [number, number]
+    const markup = render([{ from: 'a', to: 'a', fill: 'red', align: 'edge' }])
+    const edgeTo = edgeBound('a', 1)
+    expect(markup).toContain(`x="${rangeStart}"`)
+    expect(markup).toContain(`width="${edgeTo - rangeStart}"`)
+  })
+
+  test('align: "edge" clamps the widened right edge at the last sample into the plot range', () => {
+    const [, rangeEnd] = xScale.range() as [number, number]
+    const markup = render([{ from: 'd', to: 'd', fill: 'red', align: 'edge' }])
+    const edgeFrom = edgeBound('d', -1)
+    expect(markup).toContain(`x="${edgeFrom}"`)
+    expect(markup).toContain(`width="${rangeEnd - edgeFrom}"`)
+  })
 })

@@ -13,6 +13,9 @@ export type LegendEntry = {
   dashed?: boolean
   /** bar swatch opacity — honored instead of a hardcoded value, so it cannot lie about the fill. */
   fillOpacity?: number
+  /** line/splitLine swatch stroke opacity — parity with `fillOpacity` above, so a dimmed
+   * companion line's swatch cannot lie about its own opacity either. */
+  strokeOpacity?: number
   /** Drives `groups` rendering (series → hairline divider → overlay → reference). */
   role?: SeriesRole
   /** Companions folded under this entry via `parent` (`deriveLegend`) — rendered as compact,
@@ -113,6 +116,7 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
           y2={7}
           stroke={item.color}
           strokeWidth={item.strokeWidth ?? 2.5}
+          strokeOpacity={item.strokeOpacity ?? 1}
           strokeDasharray={item.dashed ? VX.dashArray : undefined}
         />
         <line
@@ -122,6 +126,7 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
           y2={7}
           stroke={item.secondColor}
           strokeWidth={item.strokeWidth ?? 2.5}
+          strokeOpacity={item.strokeOpacity ?? 1}
           strokeDasharray={item.dashed ? VX.dashArray : undefined}
         />
       </svg>
@@ -173,6 +178,7 @@ function LegendSwatch({ item, idPrefix }: { item: LegendEntry; idPrefix: string 
         y2={3}
         stroke={item.color}
         strokeWidth={item.strokeWidth ?? 3}
+        strokeOpacity={item.strokeOpacity ?? 1}
         strokeLinecap="round"
         strokeDasharray={item.dashed ? VX.dashArray : undefined}
       />
@@ -222,6 +228,7 @@ function LegendChildSwatch({ item }: { item: LegendEntry }) {
         y2={5}
         stroke={item.color}
         strokeWidth={item.strokeWidth ?? 2}
+        strokeOpacity={item.strokeOpacity ?? 1}
         strokeDasharray={item.dashed ? VX.dashArray : undefined}
       />
     </svg>

@@ -53,6 +53,23 @@ export type AxisConfig<T> = {
   format?: (v: number) => string
   /** Horizontal grid rules. Default: on for the left axis, off for the right. */
   grid?: boolean
+  /**
+   * Round the scale's domain outward to nice tick values (d3's `scale.nice()`). Threaded to BOTH
+   * `probeAxisLabels` (measurement) and the real `scaleLinear` (rendering) — they must agree, or
+   * the measured margin is computed from ticks the axis never paints.
+   *
+   * Default `false`, deliberately: flipping the default would move the domain of every
+   * already-migrated chart. Opt in per axis.
+   */
+  nice?: boolean
+}
+
+/** Handed to `prependRows`/`extraRows` alongside the hovered datum — the same `visible`/`hidden`
+ * the plot itself draws from, so a hand-authored row can't structurally desync from legend
+ * toggling. */
+export type CartesianTooltipRowContext<T> = {
+  visible: readonly ChartSeries<T>[]
+  hidden: ReadonlySet<string>
 }
 
 export type CartesianTooltipConfig<T> = {
@@ -65,10 +82,12 @@ export type CartesianTooltipConfig<T> = {
   follow?: boolean
   /** Right-aligned badge in the tooltip header (e.g. a status label). */
   label?: (d: T) => { text: string; color: string } | null
-  /** Rows rendered BEFORE the derived per-series rows (a total, a context line). */
-  prependRows?: (d: T) => ReactNode
-  /** Rows appended after the derived per-series rows. */
-  extraRows?: (d: T) => ReactNode
+  /** Rows rendered BEFORE the derived per-series rows (a total, a context line). The second
+   * argument carries the same `visible`/`hidden` the plot draws from, so a hand-authored row
+   * stays in sync with legend toggling instead of naming a series the plot no longer draws. */
+  prependRows?: (d: T, ctx: CartesianTooltipRowContext<T>) => ReactNode
+  /** Rows appended after the derived per-series rows. Same `ctx` as {@link prependRows}. */
+  extraRows?: (d: T, ctx: CartesianTooltipRowContext<T>) => ReactNode
 }
 
 /** Everything a mark renderer needs. Handed to `CartesianChart`'s child on every render. */
@@ -339,9 +358,10 @@ function CartesianPlot<T>({
       probeAxisLabels({
         domain: leftDomain,
         ticks: leftTicks,
+        nice: y?.nice ?? false,
         ...(y?.format !== undefined && { format: y.format }),
       }),
-    [leftDomain, leftTicks, y?.format],
+    [leftDomain, leftTicks, y?.format, y?.nice],
   )
 
   const { labels: rightLabels, format: rightFormat } = useMemo(
@@ -351,9 +371,10 @@ function CartesianPlot<T>({
         : probeAxisLabels({
             domain: rightDomain,
             ticks: rightTicks,
+            nice: y2?.nice ?? false,
             ...(y2?.format !== undefined && { format: y2.format }),
           }),
-    [rightDomain, rightTicks, y2?.format],
+    [rightDomain, rightTicks, y2?.format, y2?.nice],
   )
 
   const xLabels = useMemo(() => keys.map(formatX), [keys, formatX])
@@ -378,13 +399,24 @@ function CartesianPlot<T>({
     [keys, xMax],
   )
   const yScale = useMemo(
-    () => scaleLinear<number>({ domain: leftDomain, range: [yMax, 0] }),
-    [leftDomain, yMax],
+    () =>
+      scaleLinear<number>({
+        domain: leftDomain,
+        range: [yMax, 0],
+        ...(y?.nice === true && { nice: true }),
+      }),
+    [leftDomain, yMax, y?.nice],
   )
   const y2Scale = useMemo(
     () =>
-      rightDomain === null ? null : scaleLinear<number>({ domain: rightDomain, range: [yMax, 0] }),
-    [rightDomain, yMax],
+      rightDomain === null
+        ? null
+        : scaleLinear<number>({
+            domain: rightDomain,
+            range: [yMax, 0],
+            ...(y2?.nice === true && { nice: true }),
+          }),
+    [rightDomain, yMax, y2?.nice],
   )
 
   const tickValues = useMemo(
@@ -545,7 +577,7 @@ function CartesianPlot<T>({
             {...(badge !== null && { label: badge.text, labelColor: badge.color })}
           />
           <TooltipBody>
-            {tooltipCfg?.prependRows?.(point)}
+            {tooltipCfg?.prependRows?.(point, { visible, hidden })}
             {rows.map((row) => (
               <TooltipRow
                 key={row.key}
@@ -557,7 +589,7 @@ function CartesianPlot<T>({
                 {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
               />
             ))}
-            {tooltipCfg?.extraRows?.(point)}
+            {tooltipCfg?.extraRows?.(point, { visible, hidden })}
           </TooltipBody>
         </ChartTooltipFloat>
       )}
