@@ -5,6 +5,7 @@ import { scaleLinear, scalePoint } from '@visx/scale'
 import { Bar, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
 import { memo, useMemo } from 'react'
+import type { ReactNode } from 'react'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
   ChartTooltipFloat,
@@ -50,7 +51,20 @@ export type DualPanelProps<T> = {
   /** Top pane share of the inner plot height. Default 0.62. */
   topFraction?: number
   formatTop: (v: number) => string
+  /** Drives the bottom-pane TICKS. Also the tooltip-row fallback when `formatBar` is omitted. */
   formatBottom: (v: number) => string
+  /** Per-row tooltip formatter for the bottom-pane bar — overrides `formatBottom` for the tooltip
+   * row only (ticks keep reading `formatBottom`). Receives the hovered datum alongside the value,
+   * so a row can add a unit/decimal `formatBottom` can't (e.g. a velocity reading). */
+  formatBar?: (v: number, d: T) => string
+  /**
+   * Bottom-pane y-domain. Default `'auto'`: a symmetric `[-maxAbs, maxAbs]` computed from the
+   * data, `nice`d. A fixed tuple pins the domain instead (and is used verbatim, un-`nice`d).
+   */
+  bottomYDomain?: [number, number] | 'auto'
+  /** When `bottomYDomain` is `'auto'`: floors the symmetric max-abs so a plateau doesn't amplify
+   * to fill the whole pane (mirrors `AxisConfig.autoMaxFloor`). Ignored with a fixed tuple. */
+  bottomMaxAbsFloor?: number
   /** Tooltip badge — appears at the right of the tooltip header. */
   tooltipLabel?: (d: T) => { text: string; color: string } | null
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
@@ -136,6 +150,9 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     topFraction = 0.62,
     formatTop,
     formatBottom,
+    formatBar,
+    bottomYDomain = 'auto',
+    bottomMaxAbsFloor,
     tooltipLabel,
     plot,
   } = props
@@ -184,8 +201,11 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     [topDomain, useNiceTop, formatTop],
   )
 
-  // Bottom pane: symmetric signed domain around zero.
+  // Bottom pane: symmetric signed domain around zero — unless `bottomYDomain` pins a fixed tuple,
+  // in which case that domain ships verbatim (un-`nice`d, matching `topYDomain`'s fixed-tuple path).
+  const useNiceBottom = bottomYDomain === 'auto'
   const maxAbs = useMemo(() => {
+    if (bottomYDomain !== 'auto') return 0
     let m = 0
     for (const d of data) {
       const v = getBar(d)
@@ -193,18 +213,26 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
       const a = Math.abs(v)
       if (a > m) m = a
     }
-    return m === 0 ? 1 : m
-  }, [data, getBar])
+    const floored = bottomMaxAbsFloor !== undefined ? Math.max(m, bottomMaxAbsFloor) : m
+    return floored === 0 ? 1 : floored
+  }, [data, getBar, bottomYDomain, bottomMaxAbsFloor])
 
+  const bottomDomain = useMemo<[number, number]>(
+    () => (bottomYDomain === 'auto' ? [-maxAbs, maxAbs] : bottomYDomain),
+    [bottomYDomain, maxAbs],
+  )
+
+  // `bottomLabels`/`probeAxisLabels` measure whatever domain actually ships (fixed tuple or
+  // computed maxAbs), so the margin is never computed from ticks the axis never paints.
   const bottomLabels = useMemo(
     () =>
       probeAxisLabels({
-        domain: [-maxAbs, maxAbs],
+        domain: bottomDomain,
         ticks: 3,
         format: formatBottom,
-        nice: true,
+        nice: useNiceBottom,
       }).labels,
-    [maxAbs, formatBottom],
+    [bottomDomain, formatBottom, useNiceBottom],
   )
 
   // Full (untinned) x labels are enough to measure the bottom/right gutters — thinning only drops
@@ -242,8 +270,13 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
   )
 
   const bottomYScale = useMemo(
-    () => scaleLinear<number>({ domain: [-maxAbs, maxAbs], range: [bottomH, 0], nice: true }),
-    [maxAbs, bottomH],
+    () =>
+      scaleLinear<number>({
+        domain: bottomDomain,
+        range: [bottomH, 0],
+        ...(useNiceBottom && { nice: true }),
+      }),
+    [bottomDomain, bottomH, useNiceBottom],
   )
 
   const cursor = useChartCursor<T>({
@@ -334,6 +367,38 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     return out
   }, [data, visibleSeries])
 
+  // Per-point markers (PR star / status dots), memoized for the same reason as `histogramBars` /
+  // `lineValid` — the shared cursor re-renders every mounted chart on every pointer frame, and this
+  // walks every visible series' valid points calling the consumer's `getMarker` each time otherwise.
+  const markerNodes = useMemo<ReactNode[]>(
+    () =>
+      visibleSeries.flatMap((s) => {
+        const getMarker = s.getMarker
+        if (!getMarker) return [] as ReactNode[]
+        const pts = lineValid.get(s.key) ?? []
+        const markers: ReactNode[] = []
+        for (const p of pts) {
+          const m = getMarker(p.__d)
+          if (m === null) continue
+          const cx = xScale(getX(p.__d)) ?? 0
+          const cy = topYScale(p.__y)
+          markers.push(
+            <circle
+              key={`mk-${s.key}-${getX(p.__d)}`}
+              cx={cx}
+              cy={cy}
+              r={m.r ?? VX.dotR}
+              fill={m.color ?? s.color}
+              stroke={VX.dotStroke}
+              strokeWidth={2}
+            />,
+          )
+        }
+        return markers
+      }),
+    [visibleSeries, lineValid, xScale, topYScale, getX],
+  )
+
   const point = cursor.point
   const sx = point !== null ? (xScale(getX(point)) ?? 0) : 0
   const syncedBar = point !== null ? getBar(point) : null
@@ -386,10 +451,15 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
                 stroke={s.color}
                 strokeWidth={s.strokeWidth ?? VX.lineWidth}
                 strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
+                strokeOpacity={s.strokeOpacity ?? 1}
                 curve={curveMonotoneX}
               />
             )
           })}
+
+          {/* Per-point markers (PR star / status dots) — plain-circle parity with MultiLine's
+              `getMarker` handling; DualPanel doesn't need the star-shape variant. */}
+          {markerNodes}
 
           {/* Dots only — the crosshair LINE is the single continuous span drawn below. */}
           {point !== null && (
@@ -507,11 +577,13 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
               (() => {
                 const v = getBar(point)
                 if (v === null || v === undefined || Number.isNaN(v)) return null
+                // `formatBar` overrides the tooltip row only — `formatBottom` keeps owning ticks.
+                const value = formatBar !== undefined ? formatBar(v, point) : formatBottom(v)
                 return (
                   <TooltipRow
                     color={v >= 0 ? barColorPositive : barColorNegative}
                     label={barLabel}
-                    value={formatBottom(v)}
+                    value={value}
                     shape="bar"
                   />
                 )

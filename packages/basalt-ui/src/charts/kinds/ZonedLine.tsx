@@ -228,6 +228,7 @@ function ZonedLineMarks<T>({
           stroke={primary.color}
           strokeWidth={primary.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
           strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}
+          strokeOpacity={primary.strokeOpacity ?? 1}
           curve={curveMonotoneX}
         />
       )}

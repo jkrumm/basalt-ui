@@ -1,6 +1,8 @@
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
+import { renderToStaticMarkup } from 'react-dom/server'
 import type { ChartSeries } from '../series'
-import { resolveAxisDomain } from './CartesianChart'
+import { CartesianChart, resolveAxisDomain } from './CartesianChart'
 
 type Row = { date: string; a: number; b: number }
 
@@ -95,5 +97,64 @@ describe('resolveAxisDomain — degenerate input', () => {
     const flat: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: () => 7 }]
     const [min, max] = resolveAxisDomain({ autoMinCeil: Infinity }, rows, flat)
     expect(max).toBeGreaterThan(min)
+  })
+})
+
+describe('AxisConfig.nice — threaded to BOTH the probe and the real scale', () => {
+  // A fixed, deliberately non-round domain: d3's `.ticks()` never produces a tick past the raw
+  // domain max (95.7) without `nice`, but WITH `nice` the scale first rounds its domain outward
+  // (e.g. to 100), so a tick at "100" can only appear on the `nice: true` render.
+  function renderChart(nice: boolean): string {
+    return renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={rows}
+        chartId="nice-test"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        y={{ domain: [0, 95.7], ticks: 5, format: (v) => String(v), nice }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+  }
+
+  test('nice: false never paints a tick past the raw domain max', () => {
+    expect(renderChart(false)).not.toContain('>100<')
+  })
+
+  test('nice: true rounds the scale outward — a tick beyond the raw domain max appears', () => {
+    expect(renderChart(true)).toContain('>100<')
+  })
+})
+
+describe('tooltip extraRows — ctx.visible/ctx.hidden track legend toggling', () => {
+  test('toggling a series off via its legend entry updates the ctx the row reads', async () => {
+    render(
+      <CartesianChart<Row>
+        data={rows}
+        chartId="extra-rows-ctx"
+        getX={(d) => d.date}
+        series={both}
+        tooltip={{
+          extraRows: (_d, ctx) => (
+            <div data-testid="extra-ctx">
+              visible:{ctx.visible.map((s) => s.key).join(',')}|hidden:
+              {[...ctx.hidden].join(',')}
+            </div>
+          ),
+        }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+
+    const slider = screen.getByRole('slider')
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+
+    expect((await screen.findByTestId('extra-ctx')).textContent).toContain('visible:a,b|hidden:')
+
+    fireEvent.click(screen.getByRole('button', { name: 'b' }))
+
+    expect((await screen.findByTestId('extra-ctx')).textContent).toContain('visible:a|hidden:b')
   })
 })

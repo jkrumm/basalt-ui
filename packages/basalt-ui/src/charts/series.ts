@@ -60,6 +60,14 @@ export type SeriesStyle = {
   strokeWidth?: number
   /** bar/area: the swatch honors this so it cannot lie. */
   fillOpacity?: number
+  /**
+   * A MARK property — dims the plotted stroke, e.g. a faint moving-average companion line. The
+   * legend swatch honors it too (parity with `fillOpacity`, which it already honors — a swatch
+   * that lies is the thing the derived-legend rule exists to prevent). The TOOLTIP ROW swatch and
+   * the CROSSHAIR DOT deliberately do NOT honor it: those are 12px value-readout chips where a
+   * sub-1 opacity reads as a rendering bug, not as data.
+   */
+  strokeOpacity?: number
   /** Which y-axis this series is measured against. Default 'left'. `'right'` is what makes a
    * chart dual-axis — `CartesianChart` reads it for the crosshair dots and the tooltip. */
   axis?: 'left' | 'right'
@@ -84,8 +92,10 @@ export type SeriesStyle = {
 export type ChartSeries<T> = SeriesStyle & {
   /** null = line gap + skipped tooltip row. */
   getValue: (d: T) => number | null
-  /** Per-series override of the shared tooltip/value formatter. */
-  formatValue?: (v: number) => string
+  /** Per-series override of the shared tooltip/value formatter. Receives the hovered datum
+   * alongside the value so a row can read fields beyond the plotted number (e.g. `97.5 kg (92.5 ×
+   * 3)`). */
+  formatValue?: (v: number, d: T) => string
   /** PR star / status dot. Return null for no marker at that point. */
   getMarker?: (d: T) => { color?: string; r?: number } | null
 }
@@ -112,6 +122,7 @@ function legendEntryFor(s: SeriesStyle): LegendEntry {
     dashed: s.dash === 'dashed',
     ...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth }),
     ...(s.fillOpacity !== undefined && { fillOpacity: s.fillOpacity }),
+    ...(s.strokeOpacity !== undefined && { strokeOpacity: s.strokeOpacity }),
     ...(s.role !== undefined && { role: s.role }),
     ...(s.note !== undefined && { note: s.note }),
   }
@@ -165,12 +176,12 @@ export function deriveTooltipRows<T>(
     if (s.tooltip === false) continue
     const value = s.getValue(datum)
     if (value === null) continue
-    const format = s.formatValue ?? fallbackFormat
+    const format: (v: number, d: T) => string = s.formatValue ?? fallbackFormat
     rows.push({
       key: s.key,
       label: s.label,
       color: s.color,
-      value: format(value),
+      value: format(value, datum),
       shape: shapeFor(s.mark),
       dashed: s.dash === 'dashed',
       ...(s.strokeWidth !== undefined && { strokeWidth: s.strokeWidth }),

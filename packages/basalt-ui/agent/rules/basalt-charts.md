@@ -188,17 +188,21 @@ and its crosshair dots entirely):
 
 - `label?: (d: T) => { text; color } | null` — a right-aligned badge in the header (a status label,
   a zone name).
-- `prependRows?: (d: T) => ReactNode` — rows rendered BEFORE the derived per-series rows (a total, a
-  context line).
-- `extraRows?: (d: T) => ReactNode` — rows appended after the derived rows.
+- `prependRows?: (d: T, ctx: { visible; hidden }) => ReactNode` — rows rendered BEFORE the derived
+  per-series rows (a total, a context line). `ctx` is the same `visible`/`hidden` the plot itself
+  draws from, so a hand-authored row tracks legend toggling instead of desyncing from it.
+- `extraRows?: (d: T, ctx: { visible; hidden }) => ReactNode` — rows appended after the derived
+  rows. Same `ctx` as `prependRows`.
 - `follow?: boolean` — default `true`, the tooltip tracks the pointer. `follow: false` anchors it to
   the crosshair at the plot's top edge instead, which reads better across a column of charts sharing
   one cursor (every tooltip lines up on the same x). Anchoring costs one `getBoundingClientRect` per
   hovered frame, which is why following is the default.
 
 Per-series, `SeriesStyle.tooltip: false` means "draw the mark and legend it, but never give it a
-tooltip row" — it lives on the series, not on the
-kind.
+tooltip row" — it lives on the series, not on the kind. `ChartSeries.formatValue` is
+`(v: number, d: T) => string` — a row can cite the hovered datum, not just the plotted number (e.g.
+`97.5 kg (92.5 × 3)`). `Bars` has its own per-key version of the opt-out: `BarsBar.tooltip: false` /
+`BarsLine.tooltip: false` draws and legends a bar series without ever listing it as a tooltip row.
 
 A **stacked** chart needs `cursorValue` too: `CartesianChart`'s crosshair dot defaults to
 `series.getValue(point)`, which is correct for an unstacked line but puts a stacked band's dot at
@@ -259,8 +263,10 @@ per-series `getValue` accessors on `ChartSeries<T>`):
   refLines, fixed or auto domain (covers z-score/σ via a fixed symmetric domain + zero refLine).
   Composes `CartesianChart`.
 - **`DualPanel`** — top line-pane + bottom signed-histogram pane sharing one x-scale and one cursor;
-  optional fill-between two top lines, zones, refLines. Composes `ChartFrame` directly (two panes,
-  not one plot rect).
+  optional fill-between two top lines, zones, refLines, per-point markers on the top pane
+  (`ChartSeries.getMarker`). Composes `ChartFrame` directly (two panes, not one plot rect). The
+  bottom pane's tooltip row is `formatBar` (separate from `formatBottom`'s tick labels); its domain
+  is configurable via `bottomYDomain`/`bottomMaxAbsFloor`.
 - **`Heatmap`** — category×category intensity grid (`color-mix` alpha), per-cell tooltip, optional
   gradient legend strip. Composes `ChartFrame` directly; self-measures, no separate responsive
   wrapper.
@@ -269,9 +275,13 @@ per-series `getValue` accessors on `ChartSeries<T>`):
 
 `ZonedLine` and `MultiLine` also accept `xZones?: XZoneSpec[]` — the vertical counterpart to a
 kind's horizontal zone bands, for marking a time window rather than a value range. Each
-`{ from?, to?, fill }` bound is a `getX` **domain key** (the label string the kind's
+`{ from?, to?, fill, align? }` bound is a `getX` **domain key** (the label string the kind's
 `scalePoint<string>` runs over), not a date or timestamp. An omitted bound is the plot edge; a key
-absent from the scale's domain skips that band entirely rather than clamping to an edge.
+absent from the scale's domain skips that band entirely rather than clamping to an edge. `align`
+defaults `'center'` (a present bound resolves to the point's own center, today's behaviour);
+`align: 'edge'` widens by half a step at each present bound instead — a two-key band covers both
+terminal slots in full, and `from === to` renders one step wide instead of being skipped as
+degenerate. An edge-aligned bound is clamped into the plot range at the first/last sample.
 
 How to add a chart:
 
@@ -307,8 +317,12 @@ y={{
   ticks: 5,
   format: (v) => `${v}%`,
   grid: true,             // horizontal grid rules; default on for `y`, off for `y2`
+  nice: false,            // default false — opt in to d3's scale.nice() domain rounding
 }}
 ```
+
+`nice` defaults `false` deliberately: flipping the default would move the domain of every
+already-migrated chart, so it's opt-in per axis.
 
 **Passing `y2` is what makes a chart dual-axis** — it draws the right axis and widens the right
 margin by measurement; nothing else flips it on. A series opts into that axis with `axis: 'right'`
@@ -341,6 +355,11 @@ inline a hex in a chart.
 A series that's invisible in the plot (flat at the domain floor, filtered to zero) can still carry
 an explanation: `SeriesStyle.note` (and so `LegendEntry.note`, via `deriveLegend`) renders a short
 muted qualifier after the legend label — e.g. _"Low cloud — 0% all night"_. Keep it to a clause.
+
+`SeriesStyle.strokeOpacity` dims the plotted stroke (e.g. a faint moving-average companion) — the
+legend swatch honors it too, parity with `fillOpacity`. The tooltip-row swatch and the crosshair
+dot deliberately do NOT honor it: a sub-1 opacity on a 12px value-readout chip reads as a rendering
+bug, not as data.
 
 ## Dark/light mode
 

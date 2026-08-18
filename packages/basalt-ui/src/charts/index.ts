@@ -57,6 +57,7 @@ export {
   resolveAxisDomain,
   type CartesianChartProps,
   type CartesianTooltipConfig,
+  type CartesianTooltipRowContext,
   type AxisConfig,
   type PlotContext,
 } from './primitives/CartesianChart'

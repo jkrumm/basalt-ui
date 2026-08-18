@@ -1,6 +1,6 @@
 import { curveMonotoneX } from '@visx/curve'
 import { LinePath } from '@visx/shape'
-import { memo, useMemo } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
@@ -163,35 +163,27 @@ function MultiLineMarks<T>({
   }, [visible, data])
 
   // A series stays at full opacity when nothing is highlighted, when it IS the highlighted series,
-  // or when it is a companion of the highlighted series (its `parent` matches).
-  const dimOpacity = (s: ChartSeries<T>): number =>
-    highlighted === null || s.key === highlighted || s.parent === highlighted ? 1 : 0.25
+  // or when it is a companion of the highlighted series (its `parent` matches). `useCallback`
+  // (rather than a plain function) gives both a stable identity across renders where `highlighted`/
+  // `y2Scale` haven't changed, so `markerNodes` below can depend on THEM rather than the raw
+  // scale/highlighted values a closure would otherwise hide from the deps array.
+  const dimOpacity = useCallback(
+    (s: ChartSeries<T>): number =>
+      highlighted === null || s.key === highlighted || s.parent === highlighted ? 1 : 0.25,
+    [highlighted],
+  )
 
-  const scaleFor = (s: ChartSeries<T>) =>
-    s.axis === 'right' && y2Scale !== null ? y2Scale : yScale
+  const scaleFor = useCallback(
+    (s: ChartSeries<T>) => (s.axis === 'right' && y2Scale !== null ? y2Scale : yScale),
+    [y2Scale, yScale],
+  )
 
-  return (
-    <>
-      {visible.map((s) => {
-        const valid = pointsBySeries.get(s.key) ?? []
-        if (valid.length === 0) return null
-        const scale = scaleFor(s)
-        return (
-          <LinePath<LinePt<T>>
-            key={`line-${s.key}`}
-            data={valid}
-            x={(p) => xScale(getX(p.__d)) ?? 0}
-            y={(p) => scale(p.__y)}
-            stroke={s.color}
-            strokeWidth={s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
-            strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
-            strokeOpacity={dimOpacity(s)}
-            curve={curveMonotoneX}
-          />
-        )
-      })}
-
-      {visible.flatMap((s) => {
+  // Memoized for the same reason as `pointsBySeries` above — the shared cursor re-renders every
+  // mounted chart on every pointer frame, and this walks every visible series' points calling the
+  // consumer's `getMarker` each time otherwise.
+  const markerNodes = useMemo<ReactNode[]>(
+    () =>
+      visible.flatMap((s) => {
         const getMarker = s.getMarker
         if (!getMarker) return [] as ReactNode[]
         const scale = scaleFor(s)
@@ -231,7 +223,32 @@ function MultiLineMarks<T>({
           )
         }
         return markers
+      }),
+    [visible, pointsBySeries, xScale, getX, scaleFor, dimOpacity, markerShape],
+  )
+
+  return (
+    <>
+      {visible.map((s) => {
+        const valid = pointsBySeries.get(s.key) ?? []
+        if (valid.length === 0) return null
+        const scale = scaleFor(s)
+        return (
+          <LinePath<LinePt<T>>
+            key={`line-${s.key}`}
+            data={valid}
+            x={(p) => xScale(getX(p.__d)) ?? 0}
+            y={(p) => scale(p.__y)}
+            stroke={s.color}
+            strokeWidth={s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
+            strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
+            strokeOpacity={dimOpacity(s) * (s.strokeOpacity ?? 1)}
+            curve={curveMonotoneX}
+          />
+        )
       })}
+
+      {markerNodes}
     </>
   )
 }
