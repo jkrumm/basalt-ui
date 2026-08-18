@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/jkrumm/basalt-ui/compare/v1.15.0...v1.16.0) (2026-08-18)
+
+
+### Features
+
+* close the chart-API gaps the first full consumer migration found ([518a086](https://github.com/jkrumm/basalt-ui/commit/518a086e632c7c010584071f5780d7aa3bbe3bc2))
+
 # [1.15.0](https://github.com/jkrumm/basalt-ui/compare/v1.14.0...v1.15.0) (2026-08-18)
 
 
