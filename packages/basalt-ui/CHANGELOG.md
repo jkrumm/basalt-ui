@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/jkrumm/basalt-ui/compare/v1.16.0...v1.17.0) (2026-08-18)
+
+
+### Features
+
+* fix seven chart defects, six of them found by consumers ([c3df0b8](https://github.com/jkrumm/basalt-ui/commit/c3df0b8439c51effaf425c54644cd9a15328ef12))
+
 # [1.16.0](https://github.com/jkrumm/basalt-ui/compare/v1.15.0...v1.16.0) (2026-08-18)
 
 
