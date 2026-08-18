@@ -26,10 +26,16 @@ export function TooltipHeader({
   date,
   label,
   labelColor,
+  format = fmtTooltipDate,
 }: {
   date: string
   label?: string
   labelColor?: string
+  /** Overrides `fmtTooltipDate` for the header text. Default: today's `fmtTooltipDate` behavior,
+   * unchanged. The seam exists because `fmtTooltipDate` regexes `YYYY-MM-DD` out of the key and
+   * builds a LOCAL `Date`, so a UTC ISO domain key names the wrong day next to `formatX`/the
+   * tooltip badge, which both resolve locally — a caller with a UTC key needs to supply its own. */
+  format?: (date: string) => string
 }) {
   return (
     <div
@@ -50,7 +56,7 @@ export function TooltipHeader({
           color: VX.ink,
         }}
       >
-        {fmtTooltipDate(date)}
+        {format(date)}
       </span>
       {label !== undefined && (
         <span

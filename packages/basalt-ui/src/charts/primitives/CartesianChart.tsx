@@ -5,11 +5,12 @@ import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
+import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
 import { deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
-import { padAutoLower } from '../utils/domain'
+import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
 import { smartTicks, smartTicksEvery } from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
@@ -41,7 +42,11 @@ export type AxisConfig<T> = {
     | [number, number]
     | 'auto'
     | ((data: readonly T[], visible: readonly ChartSeries<T>[]) => [number, number])
-  /** When 'auto': the upper bound is at least this. */
+  /**
+   * When 'auto': the raw upper bound is at least this, and padding is applied AFTER — mirroring
+   * `autoMinCeil`, which clamps first and pads second. A floor that padded before the clamp used
+   * to land the axis top exactly on the floor value with zero headroom.
+   */
   autoMaxFloor?: number
   /** When 'auto': the lower bound is at most this. Default 0 (forced zero baseline). `Infinity`
    * pads down from the raw data minimum instead. */
@@ -82,6 +87,14 @@ export type CartesianTooltipConfig<T> = {
   follow?: boolean
   /** Right-aligned badge in the tooltip header (e.g. a status label). */
   label?: (d: T) => { text: string; color: string } | null
+  /**
+   * Overrides the tooltip header's date text. Default: `TooltipHeader`'s own `fmtTooltipDate`
+   * behavior, unchanged. `fmtTooltipDate` regexes `YYYY-MM-DD` out of the domain key and builds a
+   * LOCAL `Date` from it — a UTC ISO key then names the wrong day next to `formatX`, the tooltip
+   * badge, and every sibling chart, which all resolve locally. Receives the raw `getX` key
+   * alongside the hovered datum, so a caller can format from either.
+   */
+  formatHeader?: (key: string, d: T) => string
   /** Rows rendered BEFORE the derived per-series rows (a total, a context line). The second
    * argument carries the same `visible`/`hidden` the plot draws from, so a hand-authored row
    * stays in sync with legend toggling instead of naming a series the plot no longer draws. */
@@ -149,6 +162,14 @@ export type CartesianChartProps<T> = {
     series: ChartSeries<T>,
     visible: readonly ChartSeries<T>[],
   ) => number | null
+  /**
+   * How a sibling chart's broadcast cursor key resolves against THIS chart's points. Default
+   * `'nearest'`, correct when `getX` returns an instant. Pass `'leading'` when it returns a
+   * bucket's leading edge (a weekly series keyed by its Monday): under `'nearest'` a hover landing
+   * in the back half of a bucket resolves to the FOLLOWING bucket, so the shared crosshair sits
+   * one column right of the data the reader is pointing at.
+   */
+  cursorResolution?: CursorResolution
   ariaLabel?: string
   isPending?: boolean
   /** Draw ONLY the marks. Everything around them is the primitive's job. */
@@ -196,11 +217,10 @@ export function resolveAxisDomain<T>(
 
   const pad = cfg?.autoPad ?? DEFAULT_AUTO_PAD
   const ceil = cfg?.autoMinCeil ?? 0
-  // Pad AWAY from zero, never by multiplying: `max * pad` on an all-negative series moves the
-  // upper bound further negative (`-5 * 1.1 = -5.5`), i.e. past the data, clipping the largest
-  // value out of the plot. Mirrors `padAutoLower`'s reasoning for the lower bound.
-  const paddedMax = max > 0 ? max * pad : max < 0 ? max / pad : 0
-  const upper = Math.max(paddedMax, cfg?.autoMaxFloor ?? -Infinity)
+  // Symmetric with the lower bound: clamp the RAW value against the floor/ceiling first, then pad
+  // once, away from zero. Padding before the clamp (the old law) lands a floored axis top exactly
+  // on the floor with zero headroom — a target line pinned there sits glued to the plot edge.
+  const upper = padAutoUpper(Math.max(max, cfg?.autoMaxFloor ?? -Infinity), pad)
   const lower = padAutoLower(Math.min(min, ceil), pad)
   // A flat series (every value identical, the all-zero case included) collapses to `[n, n]`,
   // which is a scale with no extent: every point maps to the same pixel and the line renders as a
@@ -241,6 +261,7 @@ export function CartesianChart<T>({
   tooltip,
   margin: marginOverride,
   cursorValue,
+  cursorResolution,
   ariaLabel,
   isPending,
   children,
@@ -274,6 +295,7 @@ export function CartesianChart<T>({
           {...(tooltip !== undefined && { tooltip })}
           {...(marginOverride !== undefined && { marginOverride })}
           {...(cursorValue !== undefined && { cursorValue })}
+          {...(cursorResolution !== undefined && { cursorResolution })}
           {...(ariaLabel !== undefined && { ariaLabel })}
           plot={plot}
           highlighted={highlighted}
@@ -311,6 +333,7 @@ function CartesianPlot<T>({
   tooltip,
   marginOverride,
   cursorValue,
+  cursorResolution,
   ariaLabel,
   plot,
   highlighted,
@@ -430,6 +453,7 @@ function CartesianPlot<T>({
     getKey: getX,
     xScale,
     marginLeft: margin.left,
+    ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
   const svgRef = useRef<SVGSVGElement>(null)
@@ -438,6 +462,7 @@ function CartesianPlot<T>({
   const point = cursor.point
   const cursorX = point === null ? null : (xScale(getX(point)) ?? null)
   const badge = tooltipCfg?.label === undefined || point === null ? null : tooltipCfg.label(point)
+  const formatHeader = tooltipCfg?.formatHeader
 
   // Each series falls back to ITS OWN axis's tick format, so a right-axis value is never
   // formatted with the left axis's rules (an explicit per-series `formatValue` still wins).
@@ -574,6 +599,9 @@ function CartesianPlot<T>({
         <ChartTooltipFloat anchor={tooltipAnchor}>
           <TooltipHeader
             date={getX(point)}
+            {...(formatHeader !== undefined && {
+              format: (key: string) => formatHeader(key, point),
+            })}
             {...(badge !== null && { label: badge.text, labelColor: badge.color })}
           />
           <TooltipBody>

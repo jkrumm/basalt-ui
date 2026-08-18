@@ -22,6 +22,27 @@ export function parseKey(key: string): number | null {
   return Number.isNaN(t) ? null : t
 }
 
+/**
+ * How a foreign key maps onto a chart's own points.
+ *
+ * `'nearest'` (default) treats every key as a POINT — the foreign key resolves to whichever own
+ * point sits closest to it. Correct when a chart's x-domain is a set of instants.
+ *
+ * `'leading'` treats every key as the LEADING EDGE of a bucket covering `[key, nextKey)` — the
+ * foreign key resolves to the LAST own key `<=` it. Use this when a chart's keys are bucket
+ * starts (a weekly series keyed by the Monday of each week, a monthly series keyed by the 1st):
+ * under `'nearest'`, a target landing in the back half of a bucket resolves to the FOLLOWING
+ * bucket instead of the one it's actually inside, and the shared crosshair lands one column off
+ * for every back-half hover.
+ *
+ * The two modes differ at the DOMAIN EDGES too, and deliberately: `'nearest'` tolerates one step
+ * past each end (the target is an instant, so the closest point is still a defensible answer),
+ * while `'leading'` bounds strictly to `[first, last + step)` — outside that range no bucket
+ * CONTAINS the key, and answering with the nearest one would paint a crosshair on a bucket that
+ * provably excludes it.
+ */
+export type CursorResolution = 'nearest' | 'leading'
+
 export type DomainIndex<T> = {
   byKey: Map<string, T>
   /** Parsed positions, ascending. Empty when the domain isn't parseable. */
@@ -30,10 +51,16 @@ export type DomainIndex<T> = {
   points: T[]
   /** Median spacing — the tolerance within which a foreign key still resolves. */
   step: number
+  /** The resolution strategy this index was built for. */
+  resolution: CursorResolution
 }
 
 /** Build the lookup structure once per `data` identity. */
-export function buildDomainIndex<T>(data: readonly T[], getKey: (d: T) => string): DomainIndex<T> {
+export function buildDomainIndex<T>(
+  data: readonly T[],
+  getKey: (d: T) => string,
+  resolution: CursorResolution = 'nearest',
+): DomainIndex<T> {
   const byKey = new Map<string, T>()
   const parsed: { value: number; point: T }[] = []
   let parseable = true
@@ -48,7 +75,9 @@ export function buildDomainIndex<T>(data: readonly T[], getKey: (d: T) => string
 
   // Under two parseable points there is no step to reason about, so nearest-match would be
   // unbounded — fall back to exact match.
-  if (!parseable || parsed.length < 2) return { byKey, values: [], points: [], step: 0 }
+  if (!parseable || parsed.length < 2) {
+    return { byKey, values: [], points: [], step: 0, resolution }
+  }
 
   parsed.sort((a, b) => a.value - b.value)
   const values = parsed.map((p) => p.value)
@@ -60,15 +89,39 @@ export function buildDomainIndex<T>(data: readonly T[], getKey: (d: T) => string
   }
   diffs.sort((a, b) => a - b)
 
-  return { byKey, values, points, step: diffs[Math.floor(diffs.length / 2)] ?? 0 }
+  return { byKey, values, points, step: diffs[Math.floor(diffs.length / 2)] ?? 0, resolution }
+}
+
+/** `'leading'` resolution: the last own position `<= target`. The caller has already rejected
+ * anything outside `[first, last + step)`, so a containing bucket is guaranteed to exist. */
+function resolveLeading<T>(index: DomainIndex<T>, target: number): T {
+  let lo = 0
+  let hi = index.values.length - 1
+  let result = 0
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if ((index.values[mid] as number) <= target) {
+      result = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+  return index.points[result] as T
 }
 
 /**
- * The own point a broadcast `key` maps to: exact match first, else the nearest parsed position
- * within one domain step. Out of range → null, so charts over unrelated domains never paint a
- * cursor for each other — which is what makes "shared by default" safe.
+ * The own point a broadcast `key` maps to: exact match first, else — per `index.resolution` — the
+ * nearest parsed position or the last position at/before the target, both within one domain step.
+ * Out of range → null, so charts over unrelated domains never paint a cursor for each other —
+ * which is what makes "shared by default" safe. A categorical (unparseable) domain falls back to
+ * exact-match-only in BOTH resolutions, since "nearest"/"leading" over a category is meaningless.
  */
-export function resolveCursorPoint<T>(index: DomainIndex<T>, key: string): T | null {
+export function resolveCursorPoint<T>(
+  index: DomainIndex<T>,
+  key: string,
+  resolution: CursorResolution = index.resolution,
+): T | null {
   const exact = index.byKey.get(key)
   if (exact !== undefined) return exact
 
@@ -77,6 +130,17 @@ export function resolveCursorPoint<T>(index: DomainIndex<T>, key: string): T | n
 
   const first = index.values[0] as number
   const last = index.values[index.values.length - 1] as number
+
+  if (resolution === 'leading') {
+    // Containment, NOT tolerance. A bucket keyed `k` covers `[k, nextKey)`, so a target before the
+    // first key sits in no bucket at all, and `last + step` is the first instant past the final
+    // one. Borrowing `'nearest'`'s symmetric ±step window here would snap a pre-domain target onto
+    // the first bucket and a post-domain one onto the last — painting a crosshair on a bucket that
+    // provably does not contain the hovered key, which is the exact lie this mode exists to remove.
+    if (target < first || target >= last + index.step) return null
+    return resolveLeading(index, target)
+  }
+
   if (target < first - index.step || target > last + index.step) return null
 
   let lo = 0

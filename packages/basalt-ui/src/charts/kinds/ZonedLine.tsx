@@ -2,6 +2,7 @@ import { curveMonotoneX } from '@visx/curve'
 import { AreaClosed, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
 import { memo, useMemo } from 'react'
+import type { CursorResolution } from '../cursor/resolve'
 import { AreaGradient, areaFillUrl } from '../primitives/AreaGradient'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
@@ -51,6 +52,14 @@ export type ZonedLineProps<T> = {
   refLines?: ZonedLineRefLine[]
   /** Exact number of x ticks. Default: as many as fit. */
   xTicks?: number
+  /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
+  formatX?: (key: string) => string
+  /**
+   * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
+   * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
+   * keyed by its Monday) — see `CursorResolution`.
+   */
+  cursorResolution?: CursorResolution
   /** Tooltip config — `label` for a right-aligned header badge (e.g. zone name with zone color),
    * `extraRows` for rows appended after the derived row. `false` disables the tooltip entirely. */
   tooltip?: CartesianTooltipConfig<T> | false
@@ -110,6 +119,8 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     thresholds,
     refLines,
     xTicks,
+    formatX,
+    cursorResolution,
     tooltip,
     areaFill,
     height,
@@ -140,6 +151,8 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
       {...(xZones !== undefined && { xZones })}
       {...(refLines !== undefined && { refLines })}
       {...(xTicks !== undefined && { xTicks })}
+      {...(formatX !== undefined && { formatX })}
+      {...(cursorResolution !== undefined && { cursorResolution })}
       {...(tooltip !== undefined && { tooltip })}
       {...(height !== undefined && { height })}
       {...(legend !== undefined && { legend })}

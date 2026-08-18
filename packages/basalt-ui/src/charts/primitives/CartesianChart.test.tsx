@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { ChartCursorScope } from '../cursor/scope'
 import type { ChartSeries } from '../series'
 import { CartesianChart, resolveAxisDomain } from './CartesianChart'
 
@@ -44,9 +45,27 @@ describe('resolveAxisDomain', () => {
     expect(min).toBeLessThanOrEqual(-40)
   })
 
-  test('autoMaxFloor raises a low upper bound', () => {
+  test('autoMaxFloor raises a low upper bound, then pads it (mirrors autoMinCeil)', () => {
+    // The floor clamps the RAW upper bound first (44 -> 500), padding applies after: 500 * 1.1.
     const [, max] = resolveAxisDomain({ autoMaxFloor: 500 }, rows, both)
-    expect(max).toBe(500)
+    expect(max).toBeCloseTo(550, 5)
+  })
+
+  test('autoMaxFloor at exactly the padded case (dataMax 3.2, pad 1.1, floor 6) yields 6.6', () => {
+    const single: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: () => 3.2 }]
+    const [, max] = resolveAxisDomain({ autoMaxFloor: 6, autoPad: 1.1 }, rows, single)
+    expect(max).toBeCloseTo(6.6, 5)
+  })
+
+  test('autoMaxFloor and autoMinCeil pad symmetrically — both clamp first, pad second', () => {
+    // Upper: floor 6 clamps 3.2 -> 6, then pads to 6.6 (multiply, away from zero).
+    const positive: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: () => 3.2 }]
+    const [, max] = resolveAxisDomain({ autoMaxFloor: 6, autoPad: 1.1 }, rows, positive)
+    expect(max).toBeCloseTo(6.6, 5)
+    // Lower: ceil -6 clamps -3.2 -> -6, then pads to -6.6 (multiply, away from zero) — the mirror.
+    const negative: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: () => -3.2 }]
+    const [min] = resolveAxisDomain({ autoMinCeil: -6, autoPad: 1.1 }, rows, negative)
+    expect(min).toBeCloseTo(-6.6, 5)
   })
 
   test('the domain follows the VISIBLE series — hiding the tall one shrinks the axis', () => {
@@ -66,6 +85,33 @@ describe('resolveAxisDomain', () => {
 
   test('empty data falls back to a usable unit domain', () => {
     expect(resolveAxisDomain(undefined, [], both)).toEqual([0, 1])
+  })
+})
+
+describe('resolveAxisDomain — autoMaxFloor composed with an all-negative series', () => {
+  // getValue -> -d.a - 20 over rows a=[10, 40, 25] yields [-30, -60, -45]: data max is -30, data
+  // min is -60 — deliberately NOT a flat series, so this exercises the real clamp-then-pad path
+  // rather than the degenerate flat-collapse branch covered separately below.
+  const allNegative: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: (d) => -d.a - 20 }]
+
+  test('a floor above the data max clamps to the floor, then pads TOWARD zero', () => {
+    const [, max] = resolveAxisDomain({ autoMaxFloor: -10 }, rows, allNegative)
+    // clamp: Math.max(-30, -10) = -10; padAutoUpper divides for a negative candidate (toward zero).
+    expect(max).toBeCloseTo(-10 / 1.1, 10)
+  })
+
+  test('without a floor, the existing all-negative behavior is unchanged', () => {
+    const [, max] = resolveAxisDomain(undefined, rows, allNegative)
+    // no floor -> candidate stays the raw data max, -30.
+    expect(max).toBeCloseTo(-30 / 1.1, 10)
+  })
+
+  test('autoMaxFloor / autoMinCeil clamp-then-pad symmetrically through resolveAxisDomain', () => {
+    // Mirror series: same magnitudes, positive instead of negative (data min 30, not data max -30).
+    const allPositive: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: (d) => d.a + 20 }]
+    const [, maxFromFloor] = resolveAxisDomain({ autoMaxFloor: -10 }, rows, allNegative)
+    const [minFromCeil] = resolveAxisDomain({ autoMinCeil: 10 }, rows, allPositive)
+    expect(maxFromFloor).toBeCloseTo(-minFromCeil, 10)
   })
 })
 
@@ -124,6 +170,69 @@ describe('AxisConfig.nice — threaded to BOTH the probe and the real scale', ()
 
   test('nice: true rounds the scale outward — a tick beyond the raw domain max appears', () => {
     expect(renderChart(true)).toContain('>100<')
+  })
+})
+
+describe('cursorResolution — threads through to sibling resolution (CartesianChart)', () => {
+  // Daily calendar Aug 01–14, plus a sibling folded into 2 weekly buckets keyed by each week's
+  // leading day (Aug 01, Aug 08) — the exact shape of the playground's "Weekly digest" pairing.
+  const dailyRows: Row[] = Array.from({ length: 14 }, (_, i) => ({
+    date: `2026-08-${String(i + 1).padStart(2, '0')}`,
+    a: i,
+    b: i,
+  }))
+  const foldedRows: Row[] = [
+    { date: '2026-08-01', a: 0, b: 0 },
+    { date: '2026-08-08', a: 1, b: 1 },
+  ]
+
+  function renderPair(cursorResolution?: 'leading') {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={dailyRows}
+          chartId="daily"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Daily"
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={foldedRows}
+          chartId="folded"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Folded"
+          {...(cursorResolution !== undefined && { cursorResolution })}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+  }
+
+  // Drives the daily chart to Aug 05 — the back half of the Aug 01–07 bucket (its midpoint is
+  // Aug 04) — via 5 keyboard ArrowRights from an unfocused slider (1st press lands on index 0).
+  function driveDailyToAug05() {
+    const dailySlider = screen.getByRole('slider', { name: 'Daily' })
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(dailySlider, { key: 'ArrowRight' })
+  }
+
+  test("cursorResolution='leading' resolves the back-half day to the bucket it's INSIDE, not the following one", () => {
+    renderPair('leading')
+    driveDailyToAug05()
+    const foldedSlider = screen.getByRole('slider', { name: 'Folded' })
+    // Aug 05 is inside the Aug01-07 bucket — 'leading' must resolve to its leading key, Aug 01.
+    expect(foldedSlider.getAttribute('aria-valuetext')).toBe('01.08')
+  })
+
+  test("without the prop (default 'nearest'), the same daily hover lands on the FOLLOWING bucket — proves cursorResolution actually threads through, not just the resolver it wraps", () => {
+    renderPair()
+    driveDailyToAug05()
+    const foldedSlider = screen.getByRole('slider', { name: 'Folded' })
+    // Aug 05 is closer to Aug 08 (distance 3) than Aug 01 (distance 4) — 'nearest' picks Aug 08.
+    expect(foldedSlider.getAttribute('aria-valuetext')).toBe('08.08')
   })
 })
 

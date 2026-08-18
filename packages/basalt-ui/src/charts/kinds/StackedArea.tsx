@@ -1,6 +1,7 @@
 import { curveMonotoneX } from '@visx/curve'
 import { AreaStack } from '@visx/shape'
 import { memo, useCallback, useMemo } from 'react'
+import type { CursorResolution } from '../cursor/resolve'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import type { ChartLegendConfig, ChartSeries } from '../series'
@@ -21,6 +22,14 @@ export type StackedAreaProps<T> = {
   y?: AxisConfig<T>
   /** X tick count override. Default: as many as fit. */
   xTicks?: number
+  /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
+  formatX?: (key: string) => string
+  /**
+   * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
+   * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
+   * keyed by its Monday) — see `CursorResolution`.
+   */
+  cursorResolution?: CursorResolution
   /** Legend config forwarded to `CartesianChart`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
@@ -44,7 +53,20 @@ export type StackedAreaProps<T> = {
  * to restore the original bottom-to-top stacking order for `AreaStack`'s `keys`.
  */
 function StackedAreaInner<T>(props: StackedAreaProps<T>) {
-  const { data, chartId, getX, series, y, xTicks, height, legend, ariaLabel, isPending } = props
+  const {
+    data,
+    chartId,
+    getX,
+    series,
+    y,
+    xTicks,
+    formatX,
+    cursorResolution,
+    height,
+    legend,
+    ariaLabel,
+    isPending,
+  } = props
 
   // The plotted quantity is the CUMULATIVE stack top, not any one series' value — the built-in
   // 'auto' domain (per-series max) would clip a multi-band stack. Skipped when the caller already
@@ -99,6 +121,8 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       y={yConfig}
       cursorValue={stackedCursorValue}
       {...(xTicks !== undefined && { xTicks })}
+      {...(formatX !== undefined && { formatX })}
+      {...(cursorResolution !== undefined && { cursorResolution })}
       {...(height !== undefined && { height })}
       {...(legend !== undefined && { legend })}
       {...(ariaLabel !== undefined && { ariaLabel })}

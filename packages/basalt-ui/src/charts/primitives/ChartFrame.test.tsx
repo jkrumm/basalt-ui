@@ -13,9 +13,11 @@
  * to the DOM harness would only be worth it if a future assertion here needed a real measured size
  * (a live `ResizeObserver` reading) rather than this SSR fallback rect.
  */
+import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartFrame } from './ChartFrame'
+import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
 
 const series: SeriesStyle[] = [{ key: 'a', label: 'Series A', color: '#000', mark: 'line' }]
@@ -63,6 +65,46 @@ describe('a non-pending ChartFrame is unaffected — the legend and body both re
 
   test('no aria-busy attribute is present', () => {
     expect(markup).not.toContain('aria-busy')
+  })
+})
+
+describe('ariaLabel: the label is announced WITHOUT swallowing the interactive slider', () => {
+  // The regression this guards: `role="img"` marks every descendant presentational per the ARIA
+  // spec, so a screen reader would announce the label and then never expose `HoverOverlay`'s
+  // `role="slider"` at all — the keyboard-scrubbable affordance becomes unreachable with no error
+  // anywhere. `role="group"` announces the same label while keeping descendants in the tree.
+  test('the outer container is role="group" with the label, never role="img"', () => {
+    const { container } = render(
+      <ChartFrame series={series} ariaLabel="Revenue over time" legend={false}>
+        {() => <svg />}
+      </ChartFrame>,
+    )
+    const outer = container.firstElementChild as HTMLElement
+    expect(outer.getAttribute('role')).toBe('group')
+    expect(outer.getAttribute('aria-label')).toBe('Revenue over time')
+    expect(container.querySelector('[role="img"]')).toBeNull()
+  })
+
+  test('the slider stays a reachable descendant of the labeled container', () => {
+    const { container } = render(
+      <ChartFrame series={series} ariaLabel="Revenue over time" legend={false}>
+        {() => (
+          <svg>
+            <HoverOverlay
+              width={100}
+              height={100}
+              onMove={() => {}}
+              onLeave={() => {}}
+              onKeyDown={() => {}}
+            />
+          </svg>
+        )}
+      </ChartFrame>,
+    )
+    const outer = container.firstElementChild as HTMLElement
+    expect(outer.getAttribute('role')).toBe('group')
+    const slider = outer.querySelector('[role="slider"]')
+    expect(slider).not.toBeNull()
   })
 })
 

@@ -1,6 +1,7 @@
 import { localPoint } from '@visx/event'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
+import type { CursorResolution } from '../cursor/resolve'
 import { buildDomainIndex, resolveCursorPoint } from '../cursor/resolve'
 import { useCursorState, useCursorStore } from '../cursor/scope'
 
@@ -38,6 +39,7 @@ export function useChartCursor<T>({
   getKey,
   xScale,
   marginLeft,
+  resolution = 'nearest',
 }: {
   data: readonly T[]
   chartId: string
@@ -45,6 +47,12 @@ export function useChartCursor<T>({
   /** Own x scale — maps a domain key to a plot-local x offset. */
   xScale: (key: string) => number | undefined
   marginLeft: number
+  /**
+   * How a sibling's broadcast key resolves against this chart's own points. Default `'nearest'`
+   * (point domains). Pass `'leading'` when `getKey` returns a bucket's leading edge (a weekly
+   * series keyed by its Monday, a monthly series keyed by its 1st) — see {@link CursorResolution}.
+   */
+  resolution?: CursorResolution
 }): ChartCursor<T> {
   const store = useCursorStore()
   const cursor = useCursorState()
@@ -58,7 +66,10 @@ export function useChartCursor<T>({
   const xScaleRef = useRef(xScale)
   xScaleRef.current = xScale
 
-  const index = useMemo(() => buildDomainIndex(data, getKeyRef.current), [data])
+  const index = useMemo(
+    () => buildDomainIndex(data, getKeyRef.current, resolution),
+    [data, resolution],
+  )
 
   const frameRef = useRef<number | null>(null)
   const pendingRef = useRef<CursorAnchor | null>(null)

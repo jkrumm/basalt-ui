@@ -96,8 +96,9 @@ export type ChartSeries<T> = SeriesStyle & {
    * alongside the value so a row can read fields beyond the plotted number (e.g. `97.5 kg (92.5 ×
    * 3)`). */
   formatValue?: (v: number, d: T) => string
-  /** PR star / status dot. Return null for no marker at that point. */
-  getMarker?: (d: T) => { color?: string; r?: number } | null
+  /** PR star / status dot. Return null for no marker at that point. `ring` defaults true (today's
+   * punched-out stroke, unchanged); `false` omits the stroke entirely. `fillOpacity` defaults 1. */
+  getMarker?: (d: T) => { color?: string; r?: number; fillOpacity?: number; ring?: boolean } | null
 }
 
 /** A single derived tooltip row, ready for `TooltipRow`. */

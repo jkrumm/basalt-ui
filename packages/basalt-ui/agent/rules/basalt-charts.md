@@ -137,7 +137,14 @@ ships no map kind.
    `tickFormat` (`TickFormatter<string>`, defaults to `fmtAxisDate` — `DD.MM`) — the only supported
    exit for a sub-day window, where the default collapses every tick to the same label and a raw
    `<AxisBottom>` isn't an option. `CartesianChart`'s own `formatX` prop is the higher-level way to
-   set this without touching the axis component at all.
+   set this without touching the axis component at all — and every cartesian kind (`Bars`/
+   `MultiLine`/`StackedArea`/`ZonedLine`/`DualPanel`) forwards its own `formatX?: (key) => string`
+   now too, not just `CartesianChart` itself. Without it, the only route to a custom x label was
+   pre-formatting it into the domain key, which makes one string serve as display value, scale
+   identity, AND cursor key simultaneously — and a truncating formatter then collapses two points
+   onto one domain value, silently dropping one from the plot (see #6 below for why that's the
+   cursor's problem too). `Heatmap` is deliberately excluded: its existing `colLabel`/`rowLabel`
+   already are that seam, and a second prop over one concern would fork them.
 6. **The cursor is shared by default.** No provider needed — `useChartCursor` reads a module-level
    external store (`useSyncExternalStore`), so every `CartesianChart`/`ChartFrame`-composed chart on
    the page shares one cursor out of the box. `ChartCursorScope` **isolates** a subtree onto a
@@ -160,10 +167,26 @@ ships no map kind.
    into weekly buckets still tracks a hover from a sibling plotting daily points, with no extra
    wiring — `resolveKey` no longer exists because there is nothing left for it to patch.
 
+   `CursorResolution = 'nearest' | 'leading'` (exported from `basalt-ui/charts`) picks WHICH own
+   point wins that resolution, reachable as `cursorResolution` on `CartesianChart`/every cartesian
+   kind/`DualPanel` and as `useChartCursor`'s `resolution` option — default `'nearest'`, unchanged.
+   Reach for `'leading'` when `getX` returns a bucket's LEADING EDGE (a weekly series keyed by its
+   Monday, a monthly series keyed by its 1st): under `'nearest'`, a hover landing in the back half
+   of a bucket resolves to the FOLLOWING bucket instead of the one it's actually inside, so the
+   shared crosshair sits one column right of the data being pointed at — reproducibly, for every
+   back-half hover.
+
 7. **Keyboard-operable by construction.** The hover overlay `CartesianChart` renders is focusable;
    `←`/`→` scrub the shared cursor one point at a time, `Escape` clears it. The tooltip is
    `aria-live="polite"`. This comes for free from composing `CartesianChart`/`ChartFrame` — nothing
-   to wire per chart.
+   to wire per chart. That's exactly why `ChartFrame`'s outer container uses `role="group"` on its
+   `ariaLabel`, **never** `role="img"`: per the ARIA spec every descendant of a `role="img"`
+   element is presentational, which would erase the hover overlay's `role="slider"` from the
+   accessibility tree entirely — the label still announces, but the keyboard-scrubbable control
+   underneath it becomes unreachable, silently, with no error anywhere. jsdom does not implement
+   that pruning, so no `getByRole` test can ever catch this regression; it is a structural rule, not
+   a test-covered one. Do not "simplify" `ChartFrame`'s container role back to `img` — it looks like
+   a no-op refactor and it is not.
 8. **Theme-aware colors** via `VX.*` tokens + `alpha()`. **Never** a raw hex literal in a chart file.
    **Never** `localStorage.getItem('theme')` — the scheme resolves via CSS vars (see Dark/light
    below).
@@ -197,6 +220,13 @@ and its crosshair dots entirely):
   the crosshair at the plot's top edge instead, which reads better across a column of charts sharing
   one cursor (every tooltip lines up on the same x). Anchoring costs one `getBoundingClientRect` per
   hovered frame, which is why following is the default.
+- `formatHeader?: (key, d) => string` — overrides the tooltip header's date text (also
+  `TooltipHeader`'s own `format` prop directly, and the identical seam on `DualPanel`'s
+  `formatHeader`, so the two never diverge). Default: today's `fmtTooltipDate` behavior, unchanged.
+  The seam exists because `fmtTooltipDate` regexes `YYYY-MM-DD` out of the domain key and builds a
+  LOCAL `Date` from it — a UTC ISO key then names a different day than `formatX`, the tooltip badge,
+  and every sibling chart, all of which resolve locally; the only prior workaround was carrying a
+  local-offset ISO key. Receives the raw `getX` key alongside the hovered datum.
 
 Per-series, `SeriesStyle.tooltip: false` means "draw the mark and legend it, but never give it a
 tooltip row" — it lives on the series, not on the kind. `ChartSeries.formatValue` is
@@ -261,7 +291,10 @@ per-series `getValue` accessors on `ChartSeries<T>`):
 - **`MultiLine`** — N series on a shared y-axis (or two, via `y2`): legend-hover dimming, per-series
   synced dots, dashed companion (MA) lines, per-point markers (PR stars / status dots), zones +
   refLines, fixed or auto domain (covers z-score/σ via a fixed symmetric domain + zero refLine).
-  Composes `CartesianChart`.
+  Composes `CartesianChart`. `ChartSeries.getMarker` returns `{ color?, r?, fillOpacity?, ring? }`
+  — `ring` defaults `true` (today's punched-out stroke, unchanged), `ring: false` omits the stroke
+  entirely, `fillOpacity` defaults `1`. Existed because a consumer's plain `fillOpacity: 0.7` dots
+  were unreproducible after moving their chart onto the kind — the old shape had no seam for either.
 - **`DualPanel`** — top line-pane + bottom signed-histogram pane sharing one x-scale and one cursor;
   optional fill-between two top lines, zones, refLines, per-point markers on the top pane
   (`ChartSeries.getMarker`). Composes `ChartFrame` directly (two panes, not one plot rect). The
@@ -311,7 +344,7 @@ One object per axis on `CartesianChart` and every kind that composes it — this
 ```tsx
 y={{
   domain: 'auto',        // 'auto' (default) | [min, max] | (data, visible) => [min, max]
-  autoMaxFloor: 100,      // when 'auto': upper bound is at least this
+  autoMaxFloor: 100,      // when 'auto': raw upper bound is at least this, clamped BEFORE padding
   autoMinCeil: 0,         // when 'auto': lower bound is at most this (Infinity = pad from raw min)
   autoPad: 1.1,           // when 'auto': padding multiplier away from the data
   ticks: 5,
@@ -320,6 +353,15 @@ y={{
   nice: false,            // default false — opt in to d3's scale.nice() domain rounding
 }}
 ```
+
+**Behavior change (2026-08-19) — the one item in this doc that can move an existing chart's
+rendering:** `autoMaxFloor` now clamps the raw upper bound BEFORE padding, mirroring `autoMinCeil`,
+which has always clamped first and padded second — two different laws used to live in one function.
+The old order padded the raw max, then applied the floor last, so when the floor won it landed
+exactly on the axis top with zero headroom: a target line sitting at precisely the floor value was
+glued to the plot edge. Measured case: dataMax 3.2, pad 1.1, floor 6 → axis top was 6.0, is now
+6.6. A consumer relying on the old ordering will see their axis top move — lower the floor or pin
+`domain` explicitly to opt back out.
 
 `nice` defaults `false` deliberately: flipping the default would move the domain of every
 already-migrated chart, so it's opt-in per axis.

@@ -53,9 +53,16 @@ export type ChartFrameProps = {
    */
   isPending?: boolean
   /**
-   * Accessible text alternative for the chart, applied as `aria-label` (+ `role="img"`) on the
+   * Accessible text alternative for the chart, applied as `aria-label` (+ `role="group"`) on the
    * outer container so screen readers announce something other than an unlabeled graphic. Every
    * kind composing `ChartFrame` should accept and forward this from its own props.
+   *
+   * MUST stay `role="group"`, never `role="img"`. Per the ARIA spec, every descendant of an
+   * `role="img"` element is presentational, which erases the `HoverOverlay`'s `role="slider"` from
+   * the accessibility tree entirely — a screen reader announces the label and then the
+   * keyboard-scrubbable slider underneath it is simply unreachable, silently, with no error
+   * anywhere. `role="group"` announces the same label while keeping descendants exposed. Do not
+   * "simplify" this back to `img` — it looks like a no-op refactor and it is not.
    */
   ariaLabel?: string
   /** Draw the SVG marks given the plot rect that already excludes the legend band, plus the set
@@ -189,7 +196,7 @@ export function ChartFrame({
     <div
       ref={containerRef}
       style={outerStyle(fill, vertical)}
-      {...(ariaLabel !== undefined && { role: 'img', 'aria-label': ariaLabel })}
+      {...(ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
       {...(isPending && { 'aria-busy': 'true' })}
     >
       {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
