@@ -1,10 +1,9 @@
 import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
-import { memo, useMemo } from 'react'
-import type { ReactNode } from 'react'
-import { ChartTooltip, TooltipBody, TooltipRow, useTooltipStyles } from '../primitives/ChartTooltip'
+import { memo, useMemo, useState } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
+import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
-import { useChartTooltip } from '../hooks/useChartTooltip'
 import { VX } from '../../tokens'
 import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
@@ -60,10 +59,11 @@ export type DonutProps<K extends string = SeriesKey> = {
 /**
  * Radial slice-share chart with a punched-out center label. Composes `ChartFrame` for a
  * categorical legend derived from the slices (one `SeriesStyle` per slice, `mark: 'bar'`) so the
- * legend can never drift from what's plotted. No crosshair — meaningless for a radial layout.
- * Hover stays local to the pie (dimming siblings on hover) rather than joining the shared
- * `HoverContext`: a date-keyed cursor has no counterpart on a donut, and cross-kind category sync
- * (donut ↔ bar, via the generalized key) is a distinct, deliberately deferred feature.
+ * legend can never drift from what's plotted — legend-hidden slices drop out of the ring, the
+ * center total, and the tooltip's "Share" row together (`docs/CHARTS-SPEC.md` §5). No crosshair —
+ * meaningless for a radial layout. Hover stays local to the pie (dimming siblings on hover) rather
+ * than joining the shared cursor: a date-keyed cursor has no counterpart on a donut, and cross-kind
+ * category sync (donut ↔ bar, via a generalized key) is a distinct, deliberately deferred feature.
  */
 function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
   const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel, isPending } = props
@@ -88,8 +88,11 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
 }
 
 type DonutPlotProps<K extends string = SeriesKey> = DonutProps<K> & {
-  plot: { width: number; height: number }
+  plot: { width: number; height: number; hidden: ReadonlySet<string> }
 }
+
+/** A hovered slice plus the viewport anchor `ChartTooltipFloat` positions against. */
+type DonutTip<K extends string> = { key: K; value: number; anchor: { x: number; y: number } }
 
 /** The measured plot — split from {@link DonutInner} so it only draws once `ChartFrame` has
  * resolved a non-empty plot rect (radius/center depend on the measured size). */
@@ -106,26 +109,31 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
     innerRatio = 0.6,
     padAngle = 0.01,
   } = props
-  const { width, height } = plot
+  const { width, height, hidden } = plot
 
-  const tooltipStyles = useTooltipStyles()
+  const [tip, setTip] = useState<DonutTip<K> | null>(null)
+  const hoveredKey = tip?.key ?? null
 
-  const { tip, show, hide, tooltipRef } = useChartTooltip<DonutDatum<K>>()
-  const hoveredKey = tip?.data.key ?? null
+  const visibleData = useMemo(() => data.filter((d) => !hidden.has(d.key)), [data, hidden])
 
   const radius = Math.min(width, height) / 2 - 4
   const innerRadius = radius * innerRatio
   const centerX = width / 2
   const centerY = height / 2
 
-  const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data])
+  const total = useMemo(() => visibleData.reduce((sum, d) => sum + d.value, 0), [visibleData])
+
+  const show = (d: DonutDatum<K>, event: PointerEvent<SVGGElement>) => {
+    setTip({ key: d.key, value: d.value, anchor: { x: event.clientX, y: event.clientY } })
+  }
+  const hide = () => setTip(null)
 
   return (
     <div style={{ position: 'relative' }}>
       <svg width={width} height={height}>
         <Group left={centerX} top={centerY}>
           <Pie<DonutDatum<K>>
-            data={data}
+            data={visibleData}
             pieValue={(d) => d.value}
             pieSortValues={() => 0}
             outerRadius={radius}
@@ -210,24 +218,24 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
         </div>
       )}
 
-      <ChartTooltip tip={tip} tooltipRef={tooltipRef} styles={tooltipStyles}>
-        {tip && (
+      {tip !== null && (
+        <ChartTooltipFloat anchor={tip.anchor}>
           <TooltipBody>
             <TooltipRow
-              color={colorForKey(tip.data.key)}
-              label={seriesLabel(tip.data.key)}
-              value={formatValue(tip.data.value)}
+              color={colorForKey(tip.key)}
+              label={seriesLabel(tip.key)}
+              value={formatValue(tip.value)}
               shape="bar"
             />
             <TooltipRow
               color={VX.grid}
               label="Share"
-              value={`${total > 0 ? Math.round((tip.data.value / total) * 100) : 0}%`}
+              value={`${total > 0 ? Math.round((tip.value / total) * 100) : 0}%`}
               shape="bar"
             />
           </TooltipBody>
-        )}
-      </ChartTooltip>
+        </ChartTooltipFloat>
+      )}
     </div>
   )
 }

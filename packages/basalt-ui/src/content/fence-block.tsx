@@ -139,9 +139,8 @@ function lookupFenceRenderer(
 
 // ── Throw containment ────────────────────────────────────────────────────────────────────────────
 
-/** A `useRef(false)` handle, mutated in place — same per-instance "warn once" idiom as
- * `useHoverSync`'s `warnedRef` (`charts/hooks/useHoverSync.ts`) rather than a module-level
- * singleton: a singleton would make the FIRST fence anywhere in the process to throw silence the
+/** A `useRef(false)` handle, mutated in place — a per-instance "warn once" gate rather than a
+ * module-level singleton: a singleton would make the FIRST fence anywhere in the process to throw silence the
  * warning for every OTHER, unrelated broken fence for the rest of the run (and, worse, for every
  * later test in this suite — this file has module-singleton order-dependence history). Scoping the
  * gate to one `FenceBlock`'s `useRef` means each rendered fence position gets its own warning, reset

@@ -1,33 +1,15 @@
 import { curveMonotoneX } from '@visx/curve'
-import { GridRows } from '@visx/grid'
-import { Group } from '@visx/group'
-import { scaleLinear, scalePoint } from '@visx/scale'
 import { AreaClosed, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
 import { memo, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import { AreaGradient, areaFillUrl } from '../primitives/AreaGradient'
-import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
-import {
-  ChartTooltip,
-  TooltipBody,
-  TooltipHeader,
-  TooltipRow,
-  useTooltipStyles,
-} from '../primitives/ChartTooltip'
-import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
-import { Crosshair, SeriesDot } from '../primitives/Crosshair'
-import { HoverOverlay } from '../primitives/HoverOverlay'
-import { ZoneRects } from '../primitives/ZoneRects'
-import type { ZoneSpec } from '../primitives/ZoneRects'
-import { XZoneRects } from '../primitives/XZoneRects'
+import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
+import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
-import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import type { ZoneSpec } from '../primitives/ZoneRects'
+import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
-import { padAutoLower } from '../utils/domain'
-import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 /** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias for back-compat. */
 export type ZonedLineZone = ZoneSpec
@@ -47,53 +29,31 @@ export type ZonedLineRefLine = {
   dashed?: boolean
 }
 
-export type ZonedLineTooltipLabel = {
-  text: string
-  color: string
-}
-
 export type ZonedLineProps<T> = {
   data: T[]
-  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
   chartId: string
   /** Extracts the x-axis category (date string) from a data point. */
   getX: (d: T) => string
   /** Single-series line — the sole source of truth for color, dash, legend, and tooltip row. Pass
-   * exactly one entry (kept as an array for parity with the other kinds and so `ChartFrame` /
+   * exactly one entry (kept as an array for parity with the other kinds and so `CartesianChart` /
    * `deriveLegend` / `deriveTooltipRows` can consume it directly). */
   series: ChartSeries<T>[]
-  /** Fixed y-domain (e.g. [0, 100]) or 'auto' to compute from data. */
-  yDomain: [number, number] | 'auto'
-  /**
-   * When yDomain is 'auto': the upper bound is at least this value (caps data max).
-   * e.g. yAutoMaxFloor=2 guarantees the y-axis always reaches 2 even if data is smaller.
-   */
-  yAutoMaxFloor?: number
-  /**
-   * When yDomain is 'auto': the lower bound is at most this value.
-   * Default 0 — always includes zero when data is all positive. Pass a negative
-   * number (or Infinity to disable) for metrics that can legitimately swing both ways.
-   */
-  yAutoMinCeil?: number
-  /** Padding multiplier applied to auto-computed bounds. Default 1.1. The lower bound always pads
-   * DOWN from `min(dataMin, yAutoMinCeil)` (never up, which would clip data) — see
-   * {@link padAutoLower}. */
-  yAutoPad?: number
+  /** Y-axis. Collapses the old `yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` / `yAutoPad` /
+   * `numTicksY` / `formatYTick` prop soup into one object. */
+  y?: AxisConfig<T>
   zones?: ZonedLineZone[]
   /** Vertical x-range overlays (time windows), rendered behind the line. Bounds are `getX`
    * domain keys. */
   xZones?: XZoneSpec[]
   thresholds?: ZonedLineThreshold[]
   refLines?: ZonedLineRefLine[]
-  numTicksY?: number
-  numTicksX?: number
-  /** Label shown at the right of the tooltip header (e.g. zone name with zone color). */
-  tooltipLabel?: (d: T) => ZonedLineTooltipLabel | null
-  /** Formatter for the tooltip value. */
-  formatValue: (v: number) => string
-  /** Optional extra tooltip rows (rendered after the main row). */
-  renderExtraTooltipRows?: (d: T) => ReactNode
+  /** Exact number of x ticks. Default: as many as fit. */
+  xTicks?: number
+  /** Tooltip config — `label` for a right-aligned header badge (e.g. zone name with zone color),
+   * `extraRows` for rows appended after the derived row. `false` disables the tooltip entirely. */
+  tooltip?: CartesianTooltipConfig<T> | false
   /**
    * Opt-in soft gradient fill under the line. Pass a color token to tint the area
    * with that hue — the modern single-hue look. `true` falls back to the series color. Off by
@@ -101,84 +61,124 @@ export type ZonedLineProps<T> = {
    * via `--vx-area-top` / `--vx-area-bottom` (tunable in the dev theme lab).
    */
   areaFill?: string | boolean
-  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+  /** Legend config forwarded to `CartesianChart`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
-  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded to `CartesianChart` as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
-  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
 }
 
+type Valid<T> = T & { __y: number }
+
+/** The primary (and only) series' valid points — null values are dropped, creating line gaps. */
+function validPoints<T>(series: ChartSeries<T> | undefined, data: readonly T[]): Valid<T>[] {
+  if (!series) return []
+  const out: Valid<T>[] = []
+  for (const d of data) {
+    const y = series.getValue(d)
+    if (y !== null && y !== undefined && !Number.isNaN(y)) {
+      out.push(Object.assign({}, d, { __y: y }) as Valid<T>)
+    }
+  }
+  return out
+}
+
 /**
- * Line chart with zone backgrounds, threshold fills, reference lines, and a
- * shared-cursor tooltip. Covers the line-with-zones pattern. Does NOT handle
- * dual-panel charts (keep those bespoke).
+ * Single-series line chart with zone backgrounds, threshold fills, an optional area gradient,
+ * reference lines, and a shared-cursor tooltip. Covers the line-with-zones pattern. Does NOT
+ * handle dual-panel charts (keep those bespoke).
  *
- * Composes `ChartFrame` for measuring + the derived legend — single-series, so the legend is
- * optional in practice but present by default (gained relative to the pre-redesign kind).
+ * Composes `CartesianChart` for measuring, scales, grid, zones/x-zones, axes, the shared cursor,
+ * and the derived tooltip — this kind draws ONLY the marks (thresholds, area fill, and the line).
+ * Single-series, so the legend is optional in practice but present by default.
  *
  * X-axis is built from the full `data` array so the calendar is preserved even
  * when the series has nulls; the line itself skips null points (creating
  * visual gaps).
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
-  const { series, chartId, height, legend, ariaLabel, isPending } = props
-
-  // Default the line overlay to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied
-  // once here so the plotted line, the derived legend swatch, and the derived tooltip row agree.
-  const styledSeries = useMemo<ChartSeries<T>[]>(
-    () => series.map((s) => ({ ...s, strokeWidth: s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH })),
-    [series],
-  )
-
-  return (
-    <ChartFrame
-      series={styledSeries}
-      chartId={chartId}
-      {...(height !== undefined && { height })}
-      {...(ariaLabel !== undefined && { ariaLabel })}
-      {...(isPending !== undefined && { isPending })}
-      legend={resolveLegend(legend)}
-    >
-      {(plot) => <ZonedLinePlot {...props} series={styledSeries} plot={plot} />}
-    </ChartFrame>
-  )
-}
-
-type ZonedLinePlotProps<T> = ZonedLineProps<T> & {
-  plot: { width: number; height: number }
-}
-
-/** The measured plot — split from {@link ZonedLineInner} so its scale/hover-sync hooks only run
- * once `ChartFrame` has resolved a non-empty plot rect. */
-function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
   const {
     data,
     chartId,
     getX,
     series,
-    yDomain,
-    yAutoPad = 1.1,
-    yAutoMaxFloor,
-    yAutoMinCeil = 0,
-    zones = [],
-    xZones = [],
-    thresholds = [],
-    refLines = [],
-    numTicksY = 5,
-    numTicksX,
-    tooltipLabel,
-    formatValue,
-    renderExtraTooltipRows,
+    y,
+    zones,
+    xZones,
+    thresholds,
+    refLines,
+    xTicks,
+    tooltip,
     areaFill,
-    plot,
+    height,
+    legend,
+    ariaLabel,
+    isPending,
   } = props
 
-  const primary = series[0]
-  const MARGIN = VX.margin
-  const xMax = plot.width - MARGIN.left - MARGIN.right
-  const yMax = plot.height - MARGIN.top - MARGIN.bottom
+  // Default the line overlay to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied
+  // once here so the plotted line, the derived legend swatch, and the derived tooltip row agree.
+  const styledSeries = useMemo<ChartSeries<T>[]>(
+    () =>
+      series.map((s) => ({
+        ...s,
+        strokeWidth: s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH,
+      })),
+    [series],
+  )
+
+  return (
+    <CartesianChart
+      data={data}
+      chartId={chartId}
+      getX={getX}
+      series={styledSeries}
+      {...(y !== undefined && { y })}
+      {...(zones !== undefined && { zones })}
+      {...(xZones !== undefined && { xZones })}
+      {...(refLines !== undefined && { refLines })}
+      {...(xTicks !== undefined && { xTicks })}
+      {...(tooltip !== undefined && { tooltip })}
+      {...(height !== undefined && { height })}
+      {...(legend !== undefined && { legend })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
+    >
+      {(ctx: PlotContext<T>) => (
+        <ZonedLineMarks
+          getX={getX}
+          chartId={chartId}
+          thresholds={thresholds ?? []}
+          areaFill={areaFill}
+          ctx={ctx}
+        />
+      )}
+    </CartesianChart>
+  )
+}
+
+/** Draws the threshold fills, the optional area gradient, and the line for the (single) visible
+ * series. Hidden via the legend toggle draws nothing, same as every other kind. */
+function ZonedLineMarks<T>({
+  getX,
+  chartId,
+  thresholds,
+  areaFill,
+  ctx,
+}: {
+  getX: (d: T) => string
+  chartId: string
+  thresholds: ZonedLineThreshold[]
+  areaFill: string | boolean | undefined
+  ctx: PlotContext<T>
+}) {
+  const { data, visible, xScale, yScale, yMax } = ctx
+  const primary = visible[0]
+  // Memoized: the shared cursor re-renders every chart on every pointer frame, and this both
+  // walks the full series and clones an object per point.
+  const valid = useMemo(() => validPoints(primary, data), [primary, data])
 
   // Area is opt-in: pass a color token to get a cohesive single-hue fill under the line.
   // (A neutral fill under the neutral line just reads as grey haze, so there is no default-on.)
@@ -186,166 +186,51 @@ function ZonedLinePlot<T>(props: ZonedLinePlotProps<T>) {
   const areaColor = typeof areaFill === 'string' ? areaFill : primary?.color
   const areaId = `${chartId}-area`
 
-  type Valid = T & { __y: number }
-  const valid = useMemo<Valid[]>(() => {
-    const out: Valid[] = []
-    for (const d of data) {
-      const y = primary?.getValue(d) ?? null
-      if (y !== null && y !== undefined && !Number.isNaN(y)) {
-        out.push(Object.assign({}, d, { __y: y }) as Valid)
-      }
-    }
-    return out
-  }, [data, primary])
-
-  const xScale = useMemo(
-    () =>
-      scalePoint<string>({
-        // Full calendar — axis does not compress across nulls.
-        domain: data.map(getX),
-        range: [0, xMax],
-        padding: 0.3,
-      }),
-    [data, xMax, getX],
-  )
-
-  const yScale = useMemo(() => {
-    if (yDomain === 'auto') {
-      const ys = valid.map((d) => d.__y)
-      const dataMax = ys.length ? Math.max(...ys) : 0
-      const dataMin = ys.length ? Math.min(...ys) : 0
-      const upper = Math.max(dataMax, yAutoMaxFloor ?? dataMax) * yAutoPad
-      const lower = padAutoLower(Math.min(dataMin, yAutoMinCeil), yAutoPad)
-      return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
-    }
-    return scaleLinear<number>({ domain: yDomain, range: [yMax, 0] })
-  }, [valid, yDomain, yMax, yAutoPad, yAutoMaxFloor, yAutoMinCeil])
-
-  const tooltipStyles = useTooltipStyles()
-  const { tip, tooltipRef, syncedPoint, isDirectHover, handleMouse, handleLeave } =
-    useHoverSync<Valid>({
-      data: valid,
-      chartId,
-      getKey: getX,
-      xScale,
-      marginLeft: MARGIN.left,
-    })
-
-  const tickValues = useMemo(
-    () =>
-      numTicksX ? smartTicksEvery(data.map(getX), numTicksX) : smartTicks(data.map(getX), xMax),
-    [data, xMax, getX, numTicksX],
-  )
-
-  const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
-
   return (
     <>
-      <svg width={plot.width} height={plot.height}>
-        <Group left={MARGIN.left} top={MARGIN.top}>
-          <GridRows scale={yScale} width={xMax} stroke={VX.grid} numTicks={numTicksY} />
+      {thresholds.map((t, i) => (
+        <Threshold<Valid<T>>
+          key={`thr-${i}`}
+          id={`${chartId}-thr-${i}`}
+          data={valid}
+          x={(d) => xScale(getX(d)) ?? 0}
+          y0={() => yScale(t.value)}
+          y1={(d) => yScale(d.__y)}
+          clipAboveTo={0}
+          clipBelowTo={yMax}
+          curve={curveMonotoneX}
+          belowAreaProps={{ fill: t.side === 'above' ? t.fill : 'transparent' }}
+          aboveAreaProps={{ fill: t.side === 'below' ? t.fill : 'transparent' }}
+        />
+      ))}
 
-          <XZoneRects zones={xZones} height={yMax} xScale={xScale} />
+      {showArea && areaColor !== undefined && (
+        <>
+          <defs>
+            <AreaGradient id={areaId} color={areaColor} />
+          </defs>
+          <AreaClosed<Valid<T>>
+            data={valid}
+            x={(d) => xScale(getX(d)) ?? 0}
+            y={(d) => yScale(d.__y)}
+            yScale={yScale}
+            curve={curveMonotoneX}
+            fill={areaFillUrl(areaId)}
+          />
+        </>
+      )}
 
-          <ZoneRects zones={zones} width={xMax} leftScale={yScale} />
-
-          {thresholds.map((t, i) => (
-            <Threshold<Valid>
-              key={`thr-${i}`}
-              id={`${chartId}-thr-${i}`}
-              data={valid}
-              x={(d) => xScale(getX(d)) ?? 0}
-              y0={() => yScale(t.value)}
-              y1={(d) => yScale(d.__y)}
-              clipAboveTo={0}
-              clipBelowTo={yMax}
-              curve={curveMonotoneX}
-              belowAreaProps={{ fill: t.side === 'above' ? t.fill : 'transparent' }}
-              aboveAreaProps={{ fill: t.side === 'below' ? t.fill : 'transparent' }}
-            />
-          ))}
-
-          {showArea && areaColor !== undefined && (
-            <>
-              <defs>
-                <AreaGradient id={areaId} color={areaColor} />
-              </defs>
-              <AreaClosed<Valid>
-                data={valid}
-                x={(d) => xScale(getX(d)) ?? 0}
-                y={(d) => yScale(d.__y)}
-                yScale={yScale}
-                curve={curveMonotoneX}
-                fill={areaFillUrl(areaId)}
-              />
-            </>
-          )}
-
-          {refLines.map((r, i) => (
-            <line
-              key={`ref-${i}`}
-              x1={0}
-              x2={xMax}
-              y1={yScale(r.value)}
-              y2={yScale(r.value)}
-              stroke={r.color}
-              strokeDasharray={r.dashed ? VX.dashArray : undefined}
-            />
-          ))}
-
-          {primary && (
-            <LinePath<Valid>
-              data={valid}
-              x={(d) => xScale(getX(d)) ?? 0}
-              y={(d) => yScale(d.__y)}
-              stroke={primary.color}
-              strokeWidth={primary.strokeWidth ?? VX.lineWidth}
-              strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}
-              curve={curveMonotoneX}
-            />
-          )}
-
-          {syncedPoint && primary && (
-            <>
-              <Crosshair x={xScale(getX(syncedPoint)) ?? 0} top={0} bottom={yMax} />
-              <SeriesDot
-                cx={xScale(getX(syncedPoint)) ?? 0}
-                cy={yScale(syncedPoint.__y)}
-                color={primary.color}
-              />
-            </>
-          )}
-
-          <AxisLeftNumeric scale={yScale} numTicks={numTicksY} />
-          <AxisBottomDate top={yMax} scale={xScale} tickValues={tickValues} />
-
-          <HoverOverlay width={xMax} height={yMax} onMove={handleMouse} onLeave={handleLeave} />
-        </Group>
-      </svg>
-      <ChartTooltip tip={isDirectHover ? tip : null} tooltipRef={tooltipRef} styles={tooltipStyles}>
-        {tip && isDirectHover && (
-          <>
-            <TooltipHeader
-              date={getX(tip.data)}
-              {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
-            />
-            <TooltipBody>
-              {deriveTooltipRows(series, tip.data, formatValue).map((row) => (
-                <TooltipRow
-                  key={row.key}
-                  color={row.color}
-                  label={row.label}
-                  value={row.value}
-                  shape={row.shape}
-                  dashed={row.dashed}
-                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-                />
-              ))}
-              {renderExtraTooltipRows?.(tip.data)}
-            </TooltipBody>
-          </>
-        )}
-      </ChartTooltip>
+      {primary && (
+        <LinePath<Valid<T>>
+          data={valid}
+          x={(d) => xScale(getX(d)) ?? 0}
+          y={(d) => yScale(d.__y)}
+          stroke={primary.color}
+          strokeWidth={primary.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
+          strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}
+          curve={curveMonotoneX}
+        />
+      )}
     </>
   )
 }

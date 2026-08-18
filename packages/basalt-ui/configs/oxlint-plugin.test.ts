@@ -28,6 +28,8 @@ beforeEach(() => {
         'basalt/no-raw-font-size': 'error',
         'basalt/card-inset': 'error',
         'basalt/chart-in-raw-surface': 'error',
+        'basalt/hand-rolled-plot': 'error',
+        'basalt/chart-legend-literal': 'error',
         'basalt/visx-boundary': 'error',
         'basalt/visx-tooltip': 'error',
         'basalt/token-layer-boundary': 'error',
@@ -475,4 +477,109 @@ describe('basalt agent rules promotion', () => {
       expect(repoLocal.rules[rule]).toBe('error')
     },
   )
+})
+
+// ── hand-rolled-plot ─────────────────────────────────────────────────────────
+
+const CHARTS_IMPORT = `import { AxisLeftNumeric, CartesianChart, ChartLegend, Crosshair, HoverOverlay } from 'basalt-ui/charts'\n`
+
+describe('basalt/hand-rolled-plot', () => {
+  it('flags an axis primitive in a file that never composes CartesianChart', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => <svg><AxisLeftNumeric scale={s} /></svg>\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  it('does NOT flag the same primitive when CartesianChart is composed', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => <CartesianChart>{() => <AxisLeftNumeric scale={s} />}</CartesianChart>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  it('reports ONCE per file — declaring the exception is a file-level decision', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => (
+  <svg>
+    {/* theme-allow: multi-pane shape, not a single cartesian plot */}
+    <AxisLeftNumeric scale={a} />
+    <HoverOverlay width={1} height={1} />
+    <Crosshair x={0} top={0} bottom={1} />
+  </svg>
+)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  it('does NOT flag a same-named component that is NOT a basalt chart primitive', () => {
+    const { code, rules } = run(
+      `import { Crosshair } from './my-own-widgets'
+export const C = () => <svg><Crosshair x={0} /></svg>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  it('does NOT flag the module that DEFINES CartesianChart (function form)', () => {
+    const { code, rules } = run(
+      `import { AxisBottomDate } from '../primitives/Axes'
+export function CartesianChart() {
+  return <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>
+}\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  it('does NOT flag the module that DEFINES CartesianChart (const form)', () => {
+    const { code, rules } = run(
+      `import { AxisBottomDate } from '../primitives/Axes'
+export const CartesianChart = () => <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+})
+
+// ── chart-legend-literal ─────────────────────────────────────────────────────
+
+describe('basalt/chart-legend-literal', () => {
+  it('flags a hand-authored items array', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={[{ key: 'a', label: 'A', color: 'red' }]} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('chart-legend-literal')
+  })
+
+  it('does NOT flag items derived from the series descriptor', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={deriveLegend(series)} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
+
+  it('does NOT flag a derived-and-extended list — that is legitimate composition', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => <ChartLegend items={[...deriveLegend(series), note]} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
+
+  it('honors a theme-allow escape', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => (
+  // theme-allow: static reference legend, no series behind it
+  <ChartLegend items={[{ key: 'a', label: 'A', color: 'red' }]} />
+)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
 })

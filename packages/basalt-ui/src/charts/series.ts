@@ -43,6 +43,8 @@ export type ChartLegendConfig = {
   groups?: boolean
   /** Wrap cap → "+N more" rollup at high cardinality. */
   maxRows?: number
+  /** Clicking an entry hides that series. Default: on whenever there is more than one entry. */
+  toggle?: boolean
 }
 
 /** Visual identity of a series — everything the legend + tooltip swatch need. No accessors, no `T`. */
@@ -58,10 +60,19 @@ export type SeriesStyle = {
   strokeWidth?: number
   /** bar/area: the swatch honors this so it cannot lie. */
   fillOpacity?: number
+  /** Which y-axis this series is measured against. Default 'left'. `'right'` is what makes a
+   * chart dual-axis — `CartesianChart` reads it for the crosshair dots and the tooltip. */
+  axis?: 'left' | 'right'
   /** Default 'series'. */
   role?: SeriesRole
   /** Default true; false = companion folded under `parent`. */
   legend?: boolean
+  /**
+   * Default true; false = drawn and legended, but NEVER listed as a tooltip row. The replacement
+   * for the per-kind `hideBarTooltipRows` escape the old layer had: it belongs to the series, not to the kind, so
+   * one series can opt out without the kind growing a prop for it.
+   */
+  tooltip?: boolean
   /** e.g. an MA line names its parent so hover-dimming keeps the pair. */
   parent?: string
   /** Short qualifier rendered after the label in muted text — e.g. a flat-at-zero series that is
@@ -140,7 +151,8 @@ export function deriveLegend(series: readonly SeriesStyle[]): LegendEntry[] {
 
 /**
  * Derive tooltip rows from a series descriptor array + the hovered datum. Skips rows where
- * `getValue(datum) === null`; honors per-series `formatValue` over the shared `fallbackFormat`.
+ * `getValue(datum) === null` or `tooltip === false`; honors per-series `formatValue` over the
+ * shared `fallbackFormat`.
  * Kinds pass `series.toReversed()` for stacked charts so the tooltip stack matches the visual stack.
  */
 export function deriveTooltipRows<T>(
@@ -150,6 +162,7 @@ export function deriveTooltipRows<T>(
 ): TooltipRowData[] {
   const rows: TooltipRowData[] = []
   for (const s of series) {
+    if (s.tooltip === false) continue
     const value = s.getValue(datum)
     if (value === null) continue
     const format = s.formatValue ?? fallbackFormat

@@ -7,21 +7,22 @@ import { Threshold } from '@visx/threshold'
 import { memo, useMemo } from 'react'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
-  ChartTooltip,
+  ChartTooltipFloat,
   TooltipBody,
   TooltipHeader,
   TooltipRow,
-  useTooltipStyles,
 } from '../primitives/ChartTooltip'
 import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
 import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { useHoverSync } from '../hooks/useHoverSync'
+import { useChartCursor } from '../hooks/useChartCursor'
+import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
 import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesStyle } from '../series'
 import { VX } from '../../tokens'
+import { fmtAxisDate } from '../utils/format'
 import { smartTicks } from '../utils/ticks'
 
 export type DualPanelProps<T> = {
@@ -113,10 +114,10 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
 }
 
 type DualPanelPlotProps<T> = DualPanelProps<T> & {
-  plot: { width: number; height: number }
+  plot: { width: number; height: number; hidden: ReadonlySet<string> }
 }
 
-/** The measured plot — split from {@link DualPanelInner} so its scale/hover-sync hooks only run
+/** The measured plot — split from {@link DualPanelInner} so its scale/cursor hooks only run
  * once `ChartFrame` has resolved a non-empty plot rect. */
 function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
   const {
@@ -139,28 +140,29 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     plot,
   } = props
 
-  const MARGIN = VX.margin
-  const xMax = plot.width - MARGIN.left - MARGIN.right
-  // Inner plot height shared by both panes (excludes top/bottom margin + gutter).
-  const plotH = plot.height - MARGIN.top - MARGIN.bottom - PANE_GAP
-  const topH = Math.max(Math.round(plotH * topFraction), 1)
-  const bottomH = Math.max(plotH - topH, 1)
-  const bottomTop = topH + PANE_GAP
-  // Full inner span — the synced crosshair line covers BOTH panes.
-  const innerH = topH + PANE_GAP + bottomH
+  const { hidden } = plot
+  // Legend-hidden series drop out of the domain, the drawn lines/dots, and the tooltip together
+  // (`docs/CHARTS-SPEC.md` §5) — the synthesized `__divergence` key gates the bottom histogram the
+  // same way.
+  const visibleSeries = useMemo(() => series.filter((s) => !hidden.has(s.key)), [series, hidden])
+  const barVisible = !hidden.has('__divergence')
 
-  const xScale = useMemo(
-    () => scalePoint<string>({ domain: data.map(getX), range: [0, xMax], padding: 0.3 }),
-    [data, xMax, getX],
-  )
-
-  const topYScale = useMemo(() => {
-    if (topYDomain !== 'auto') {
-      return scaleLinear<number>({ domain: topYDomain, range: [topH, 0] })
-    }
+  // ── Pass 1: y domains + tick labels, both independent of the pixel rect ─────────────────────
+  // A linear scale's domain (and, with `nice`, its rounded bounds) is a pure function of the
+  // input domain — not of its pixel range — so the tick labels used to MEASURE the margin can be
+  // read off a throwaway [1, 0] range before the real [topH, 0] / [bottomH, 0] range is known.
+  const useNiceTop = topYDomain === 'auto'
+  // Deliberately NOT `resolveAxisDomain`'s law, and not drift: that one anchors to a zero baseline
+  // and pads multiplicatively, which is right for a magnitude chart. This pane plots a signal line
+  // whose interesting range is a narrow band far from zero (MACD, a price series) — a zero
+  // baseline would squash it into a sliver at the top of the pane. Hence a SPAN-relative symmetric
+  // pad instead. If a third pane-shaped kind ever wants this law, promote it into
+  // `layout/auto-margin.ts` beside `probeAxisLabels` rather than copying it again.
+  const topDomain = useMemo<[number, number]>(() => {
+    if (topYDomain !== 'auto') return topYDomain
     let lo = Infinity
     let hi = -Infinity
-    for (const s of series) {
+    for (const s of visibleSeries) {
       for (const d of data) {
         const v = s.getValue(d)
         if (v === null || v === undefined || Number.isNaN(v)) continue
@@ -173,50 +175,137 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
       hi = 1
     }
     const span = hi - lo || Math.abs(hi) || 1
-    return scaleLinear<number>({
-      domain: [lo - span * 0.08, hi + span * 0.08],
-      range: [topH, 0],
-      nice: true,
-    })
-  }, [data, series, topYDomain, topH])
+    return [lo - span * 0.08, hi + span * 0.08]
+  }, [data, visibleSeries, topYDomain])
 
-  // Bottom pane: symmetric signed scale around zero.
-  const bottomYScale = useMemo(() => {
-    let maxAbs = 0
+  const topLabels = useMemo(
+    () =>
+      probeAxisLabels({ domain: topDomain, ticks: 4, format: formatTop, nice: useNiceTop }).labels,
+    [topDomain, useNiceTop, formatTop],
+  )
+
+  // Bottom pane: symmetric signed domain around zero.
+  const maxAbs = useMemo(() => {
+    let m = 0
     for (const d of data) {
       const v = getBar(d)
       if (v === null || v === undefined || Number.isNaN(v)) continue
       const a = Math.abs(v)
-      if (a > maxAbs) maxAbs = a
+      if (a > m) m = a
     }
-    if (maxAbs === 0) maxAbs = 1
-    return scaleLinear<number>({
-      domain: [-maxAbs, maxAbs],
-      range: [bottomH, 0],
-      nice: true,
-    })
-  }, [data, getBar, bottomH])
+    return m === 0 ? 1 : m
+  }, [data, getBar])
 
-  const tooltipStyles = useTooltipStyles()
-  const { tip, tooltipRef, syncedPoint, isDirectHover, handleMouse, handleLeave } = useHoverSync<T>(
-    {
-      data,
-      chartId,
-      getKey: getX,
-      xScale,
-      marginLeft: MARGIN.left,
-    },
+  const bottomLabels = useMemo(
+    () =>
+      probeAxisLabels({
+        domain: [-maxAbs, maxAbs],
+        ticks: 3,
+        format: formatBottom,
+        nice: true,
+      }).labels,
+    [maxAbs, formatBottom],
   )
+
+  // Full (untinned) x labels are enough to measure the bottom/right gutters — thinning only drops
+  // labels, never widens the max, so measuring against the full set is a safe over-estimate.
+  const xLabelsAll = useMemo(() => data.map((d) => fmtAxisDate(getX(d))), [data, getX])
+
+  const margin = useMemo(
+    () => autoMargin({ left: [...topLabels, ...bottomLabels], bottom: xLabelsAll }),
+    [topLabels, bottomLabels, xLabelsAll],
+  )
+
+  // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────
+  const xMax = Math.max(plot.width - margin.left - margin.right, 0)
+  // Inner plot height shared by both panes (excludes top/bottom margin + gutter).
+  const plotH = plot.height - margin.top - margin.bottom - PANE_GAP
+  const topH = Math.max(Math.round(plotH * topFraction), 1)
+  const bottomH = Math.max(plotH - topH, 1)
+  const bottomTop = topH + PANE_GAP
+  // Full inner span — the synced crosshair line covers BOTH panes.
+  const innerH = topH + PANE_GAP + bottomH
+
+  const xScale = useMemo(
+    () => scalePoint<string>({ domain: data.map(getX), range: [0, xMax], padding: 0.3 }),
+    [data, xMax, getX],
+  )
+
+  const topYScale = useMemo(
+    () =>
+      scaleLinear<number>({
+        domain: topDomain,
+        range: [topH, 0],
+        ...(useNiceTop && { nice: true }),
+      }),
+    [topDomain, useNiceTop, topH],
+  )
+
+  const bottomYScale = useMemo(
+    () => scaleLinear<number>({ domain: [-maxAbs, maxAbs], range: [bottomH, 0], nice: true }),
+    [maxAbs, bottomH],
+  )
+
+  const cursor = useChartCursor<T>({
+    data,
+    chartId,
+    getKey: getX,
+    xScale,
+    marginLeft: margin.left,
+  })
 
   const tickValues = useMemo(() => smartTicks(data.map(getX), xMax), [data, xMax, getX])
 
   const barWidth = data.length > 0 ? Math.max((xMax / data.length) * 0.6, 2) : 2
 
+  type HistogramBar = {
+    key: string
+    x: number
+    y: number
+    width: number
+    height: number
+    fill: string
+  }
+
+  // Bottom-pane histogram geometry — memoized since the shared cursor re-renders every mounted
+  // chart on every pointer frame, and this walks the full `data` array building fresh bar
+  // geometry each time otherwise (parity with Bars' barGroups).
+  const histogramBars = useMemo<HistogramBar[]>(() => {
+    if (!barVisible) return []
+    const y0 = bottomYScale(0)
+    const bars: HistogramBar[] = []
+    for (const d of data) {
+      const v = getBar(d)
+      if (v === null || v === undefined || Number.isNaN(v)) continue
+      const cx = xScale(getX(d)) ?? 0
+      const yVal = bottomYScale(v)
+      bars.push({
+        key: `bar-${getX(d)}`,
+        x: cx - barWidth / 2,
+        y: Math.min(y0, yVal),
+        width: barWidth,
+        height: Math.max(Math.abs(yVal - y0), 1),
+        fill: v >= 0 ? barColorPositive : barColorNegative,
+      })
+    }
+    return bars
+  }, [
+    barVisible,
+    data,
+    getBar,
+    getX,
+    xScale,
+    bottomYScale,
+    barWidth,
+    barColorPositive,
+    barColorNegative,
+  ])
+
   type FillPt = { __d: T; __from: number; __to: number }
   const fillPts = useMemo<FillPt[]>(() => {
     if (!fillBetween) return []
-    const fromLine = series.find((s) => s.key === fillBetween.from)
-    const toLine = series.find((s) => s.key === fillBetween.to)
+    const fromLine = visibleSeries.find((s) => s.key === fillBetween.from)
+    const toLine = visibleSeries.find((s) => s.key === fillBetween.to)
     if (!fromLine || !toLine) return []
     const out: FillPt[] = []
     for (const d of data) {
@@ -227,14 +316,14 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
       out.push({ __d: d, __from: f, __to: t })
     }
     return out
-  }, [data, fillBetween, series])
+  }, [data, fillBetween, visibleSeries])
 
   type LinePt = { __d: T; __y: number }
-  // Per-line valid points, computed once per (data, series) — not re-walked inside the render map
-  // every paint (parity with MultiLine's seriesPts).
+  // Per-line valid points, computed once per (data, visibleSeries) — not re-walked inside the
+  // render map every paint (parity with MultiLine's seriesPts).
   const lineValid = useMemo(() => {
     const out = new Map<string, LinePt[]>()
-    for (const s of series) {
+    for (const s of visibleSeries) {
       const pts: LinePt[] = []
       for (const d of data) {
         const v = s.getValue(d)
@@ -243,16 +332,17 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
       out.set(s.key, pts)
     }
     return out
-  }, [data, series])
+  }, [data, visibleSeries])
 
-  const sx = syncedPoint ? (xScale(getX(syncedPoint)) ?? 0) : 0
-  const syncedBar = syncedPoint ? getBar(syncedPoint) : null
+  const point = cursor.point
+  const sx = point !== null ? (xScale(getX(point)) ?? 0) : 0
+  const syncedBar = point !== null ? getBar(point) : null
 
   return (
     <>
       <svg width={plot.width} height={plot.height}>
         {/* Top pane: line series + fill-between + zones + ref lines. */}
-        <Group left={MARGIN.left} top={MARGIN.top}>
+        <Group left={margin.left} top={margin.top}>
           <GridRows scale={topYScale} width={xMax} stroke={VX.grid} numTicks={4} />
 
           <ZoneRects zones={topZones} width={xMax} leftScale={topYScale} />
@@ -284,7 +374,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             />
           ))}
 
-          {series.map((s) => {
+          {visibleSeries.map((s) => {
             const valid = lineValid.get(s.key) ?? []
             if (valid.length === 0) return null
             return (
@@ -302,10 +392,10 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
           })}
 
           {/* Dots only — the crosshair LINE is the single continuous span drawn below. */}
-          {syncedPoint && (
+          {point !== null && (
             <>
-              {series.map((s) => {
-                const v = s.getValue(syncedPoint)
+              {visibleSeries.map((s) => {
+                const v = s.getValue(point)
                 if (v === null || v === undefined || Number.isNaN(v)) return null
                 return (
                   <SeriesDot key={`top-dot-${s.key}`} cx={sx} cy={topYScale(v)} color={s.color} />
@@ -314,20 +404,28 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             </>
           )}
 
+          {/* theme-allow basalt/hand-rolled-plot: TWO panes over one x scale is not a single
+              cartesian plot, so `CartesianChart` (one plot rect, one or two y axes) cannot express
+              it. This file therefore assembles the plot itself — but from the SAME parts every
+              other chart gets: `ChartFrame`, `autoMargin` + `probeAxisLabels`, `useChartCursor`,
+              `ChartTooltipFloat`. If a second multi-pane kind ever appears, promote the shared
+              choreography rather than copying this file. */}
           <AxisLeftNumeric scale={topYScale} numTicks={4} tickFormat={formatTop} />
-          {/* One HoverOverlay per pane, both driving the SAME useHoverSync — snap-to-nearest is
+          {/* One HoverOverlay per pane, both driving the SAME shared cursor — snap-to-nearest is
               x-only, so either overlay yields the same point. The top overlay extends over the gutter
               (height = topH + PANE_GAP) so there's no dead zone between the panes. */}
           <HoverOverlay
             width={xMax}
             height={topH + PANE_GAP}
-            onMove={handleMouse}
-            onLeave={handleLeave}
+            onMove={cursor.onPointerMove}
+            onLeave={cursor.onPointerLeave}
+            onKeyDown={cursor.onKeyDown}
+            onBlur={cursor.onBlur}
           />
         </Group>
 
         {/* Bottom pane: signed histogram around a zero baseline. */}
-        <Group left={MARGIN.left} top={MARGIN.top + bottomTop}>
+        <Group left={margin.left} top={margin.top + bottomTop}>
           <line
             x1={0}
             x2={xMax}
@@ -337,80 +435,77 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             strokeWidth={1}
           />
 
-          {data.map((d) => {
-            const v = getBar(d)
-            if (v === null || v === undefined || Number.isNaN(v)) return null
-            const cx = xScale(getX(d)) ?? 0
-            const y0 = bottomYScale(0)
-            const yVal = bottomYScale(v)
-            return (
-              <Bar
-                key={`bar-${getX(d)}`}
-                x={cx - barWidth / 2}
-                y={Math.min(y0, yVal)}
-                width={barWidth}
-                height={Math.max(Math.abs(yVal - y0), 1)}
-                fill={v >= 0 ? barColorPositive : barColorNegative}
-                fillOpacity={0.7}
-                rx={1.4}
-              />
-            )
-          })}
+          {histogramBars.map((b) => (
+            <Bar
+              key={b.key}
+              x={b.x}
+              y={b.y}
+              width={b.width}
+              height={b.height}
+              fill={b.fill}
+              fillOpacity={0.7}
+              rx={1.4}
+            />
+          ))}
 
-          {syncedPoint && (
-            <>
-              {syncedBar !== null && syncedBar !== undefined && !Number.isNaN(syncedBar) && (
-                <SeriesDot
-                  cx={sx}
-                  cy={bottomYScale(syncedBar)}
-                  color={syncedBar >= 0 ? barColorPositive : barColorNegative}
-                />
-              )}
-            </>
-          )}
+          {barVisible &&
+            point !== null &&
+            syncedBar !== null &&
+            syncedBar !== undefined &&
+            !Number.isNaN(syncedBar) && (
+              <SeriesDot
+                cx={sx}
+                cy={bottomYScale(syncedBar)}
+                color={syncedBar >= 0 ? barColorPositive : barColorNegative}
+              />
+            )}
 
           <AxisLeftNumeric scale={bottomYScale} numTicks={3} tickFormat={formatBottom} />
           <AxisBottomDate top={bottomH} scale={xScale} tickValues={tickValues} />
+          {/* Pointer only — deliberately NO `onKeyDown`, which is what makes an overlay focusable.
+              Both panes scrub the same single x cursor, so a second tab stop would be a second
+              control for one logical axis: a keyboard user would tab twice through one chart and
+              find the arrow keys doing the same thing. The top overlay owns the keyboard. */}
           <HoverOverlay
             width={xMax}
-            height={bottomH + MARGIN.bottom}
-            onMove={handleMouse}
-            onLeave={handleLeave}
+            height={bottomH + margin.bottom}
+            onMove={cursor.onPointerMove}
+            onLeave={cursor.onPointerLeave}
           />
         </Group>
 
         {/* Continuous crosshair spanning the gutter between panes. */}
-        {syncedPoint && (
-          <Group left={MARGIN.left} top={MARGIN.top}>
+        {point !== null && (
+          <Group left={margin.left} top={margin.top}>
             <Crosshair x={sx} top={0} bottom={innerH} />
           </Group>
         )}
       </svg>
 
-      <ChartTooltip tip={isDirectHover ? tip : null} tooltipRef={tooltipRef} styles={tooltipStyles}>
-        {tip && isDirectHover && (
-          <>
-            <TooltipHeader
-              date={getX(tip.data)}
-              {...(() => {
-                const lbl = tooltipLabel?.(tip.data) ?? null
-                return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
-              })()}
-            />
-            <TooltipBody>
-              {deriveTooltipRows(series, tip.data, formatTop).map((row) => (
-                <TooltipRow
-                  key={row.key}
-                  color={row.color}
-                  label={row.label}
-                  value={row.value}
-                  shape={row.shape}
-                  dashed={row.dashed}
-                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-                />
-              ))}
-              {(() => {
-                const v = getBar(tip.data)
+      {cursor.isSource && point !== null && (
+        <ChartTooltipFloat anchor={cursor.anchor}>
+          <TooltipHeader
+            date={getX(point)}
+            {...(() => {
+              const lbl = tooltipLabel?.(point) ?? null
+              return lbl !== null ? { label: lbl.text, labelColor: lbl.color } : {}
+            })()}
+          />
+          <TooltipBody>
+            {deriveTooltipRows(visibleSeries, point, formatTop).map((row) => (
+              <TooltipRow
+                key={row.key}
+                color={row.color}
+                label={row.label}
+                value={row.value}
+                shape={row.shape}
+                dashed={row.dashed}
+                {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
+              />
+            ))}
+            {barVisible &&
+              (() => {
+                const v = getBar(point)
                 if (v === null || v === undefined || Number.isNaN(v)) return null
                 return (
                   <TooltipRow
@@ -421,10 +516,9 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
                   />
                 )
               })()}
-            </TooltipBody>
-          </>
-        )}
-      </ChartTooltip>
+          </TooltipBody>
+        </ChartTooltipFloat>
+      )}
     </>
   )
 }

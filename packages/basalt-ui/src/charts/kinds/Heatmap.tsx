@@ -1,24 +1,29 @@
 import { Group } from '@visx/group'
-import type { ReactNode } from 'react'
-import { memo, useMemo } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
+import { memo, useMemo, useState } from 'react'
 import {
-  ChartTooltip,
+  ChartTooltipFloat,
   TooltipBody,
   TooltipHeader,
   TooltipRow,
-  useTooltipStyles,
 } from '../primitives/ChartTooltip'
-import { ChartPending } from '../primitives/ChartPending'
-import { useChartTooltip } from '../hooks/useChartTooltip'
+import { ChartFrame } from '../primitives/ChartFrame'
 import { VX, alpha } from '../../tokens'
 
 /** A single resolved heatmap cell — the unit the tooltip and hover operate on. */
 type HeatmapCell = { row: string; col: string; value: number }
 
+/** A hovered cell plus the viewport anchor `ChartTooltipFloat` positions against. */
+type HeatmapTip = HeatmapCell & { anchor: { x: number; y: number } }
+
 export type HeatmapProps<T> = {
   data: T[]
-  width: number
-  height: number
+  /** Fixed height in pixels. Used when neither `aspectRatio` nor `fill` is set. Default 240. */
+  height?: number
+  /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set. */
+  aspectRatio?: number
+  /** Fill the parent flex/grid cell's measured height instead of a fixed/derived one. */
+  fill?: boolean
   chartId: string
   /** Extracts the y-axis category (row) from a data point. */
   getRow: (d: T) => string
@@ -48,13 +53,9 @@ export type HeatmapProps<T> = {
   renderTooltip?: (cell: HeatmapCell) => ReactNode
   /** Optional gradient legend strip below the grid (faint → solid color). */
   legend?: { min: string; max: string }
-  /**
-   * The query behind this chart hasn't resolved yet. Renders `ChartPending` (see its JSDoc for the
-   * three-state rationale) over the full `width` × `height` box in place of the grid, suppressing
-   * the legend strip and every cell/label/tooltip along with it. Unlike the other six kinds,
-   * `Heatmap` doesn't compose `ChartFrame` (it takes `width`/`height` directly rather than
-   * measuring), so this is handled locally instead of forwarded.
-   */
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  ariaLabel?: string
+  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
 }
 
@@ -92,14 +93,42 @@ const LEGEND_LABEL_H = 16
  * Category × category intensity grid. Each cell is a rounded rect filled with the base
  * color at an opacity derived from its value; empty cells stay a faint neutral track.
  * Generalizes argo's day-of-week × hour-of-day heatmap. Categorical axes are rendered as
- * plain themed `<text>` (cells are not date-categorical, so no useHoverSync / shared
- * cursor) — per-cell hover drives the local tooltip directly.
+ * plain themed `<text>` (cells are not date-categorical, so there's no shared cursor here) —
+ * per-cell hover drives the local tooltip directly.
+ *
+ * Composes `ChartFrame` purely for measuring (`height`/`aspectRatio`/`fill`, the same three
+ * sizing modes every other kind exposes) — `legend={false}` and an empty `series` opt out of
+ * `ChartFrame`'s own derived legend, since Heatmap already ships its own gradient strip.
  */
 function HeatmapInner<T>(props: HeatmapProps<T>) {
+  const { chartId, height, aspectRatio, fill, ariaLabel, isPending } = props
+
+  return (
+    <ChartFrame
+      series={[]}
+      chartId={chartId}
+      legend={false}
+      {...(height !== undefined && { height })}
+      {...(aspectRatio !== undefined && { aspectRatio })}
+      {...(fill !== undefined && { fill })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
+    >
+      {(plot) => <HeatmapPlot {...props} plot={plot} />}
+    </ChartFrame>
+  )
+}
+
+type HeatmapPlotProps<T> = HeatmapProps<T> & {
+  plot: { width: number; height: number; hidden: ReadonlySet<string> }
+}
+
+/** The measured plot — split from {@link HeatmapInner} so the grid only draws once `ChartFrame`
+ * has resolved a non-empty plot rect. */
+function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
   const {
     data,
-    width,
-    height,
+    plot,
     chartId,
     getRow,
     getCol,
@@ -115,11 +144,10 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
     colLabel = (c) => c,
     renderTooltip,
     legend,
-    isPending,
   } = props
+  const { width, height } = plot
 
-  const tooltipStyles = useTooltipStyles()
-  const { tip, show, hide, tooltipRef } = useChartTooltip<HeatmapCell>()
+  const [tip, setTip] = useState<HeatmapTip | null>(null)
 
   const rows = useMemo(() => rowsProp ?? firstSeen(data, getRow), [rowsProp, data, getRow])
   const cols = useMemo(() => colsProp ?? firstSeen(data, getCol), [colsProp, data, getCol])
@@ -136,18 +164,17 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
     return { lookup: map, max: m }
   }, [data, getRow, getCol, getValue])
 
-  // Every hook above must still run on a pending render (Rules of Hooks) — the early return comes
-  // after them. No `ChartFrame` to forward to here (Heatmap measures via required `width`/`height`
-  // props, not `useChartSize`), so the placeholder is rendered directly in its place, same footprint,
-  // legend strip and all other content omitted along with it.
-  if (isPending) return <ChartPending width={width} height={height} />
-
   const legendH = legend ? LEGEND_H + LEGEND_LABEL_H : 0
   const gridW = Math.max(0, width - PAD_LEFT)
   const gridH = Math.max(0, height - PAD_TOP - PAD_BOTTOM - legendH)
   const cellW = cols.length > 0 ? gridW / cols.length : 0
   const cellH = rows.length > 0 ? gridH / rows.length : 0
   const legendGradientId = `${chartId}-heat-legend`
+
+  const show = (row: string, col: string, value: number, event: PointerEvent<SVGRectElement>) => {
+    setTip({ row, col, value, anchor: { x: event.clientX, y: event.clientY } })
+  }
+  const hide = () => setTip(null)
 
   return (
     <div style={{ position: 'relative' }}>
@@ -157,7 +184,7 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
             cols.map((col, ci) => {
               const value = lookup.get(cellKey(row, col))
               const has = value !== undefined
-              const fill = has ? alpha(color, intensity(value, max)) : alpha(VX.neutral, 0.04)
+              const cellFill = has ? alpha(color, intensity(value, max)) : alpha(VX.neutral, 0.04)
               return (
                 <rect
                   key={cellKey(row, col)}
@@ -166,9 +193,9 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
                   width={Math.max(0, cellW - cellGap)}
                   height={Math.max(0, cellH - cellGap)}
                   rx={cellRadius}
-                  fill={fill}
+                  fill={cellFill}
                   style={{ cursor: has ? 'pointer' : 'default' }}
-                  onPointerMove={(e) => has && show({ row, col, value }, e)}
+                  onPointerMove={(e) => has && show(row, col, value, e)}
                   onPointerLeave={hide}
                   onPointerCancel={hide}
                 />
@@ -245,22 +272,20 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
         )}
       </svg>
 
-      <ChartTooltip tip={tip} tooltipRef={tooltipRef} styles={tooltipStyles}>
-        {tip !== null && (
-          <>
-            <TooltipHeader date={rowLabel(tip.data.row)} label={colLabel(tip.data.col)} />
-            <TooltipBody>
-              <TooltipRow
-                color={alpha(color, 0.9)}
-                shape="bar"
-                label="Value"
-                value={formatValue(tip.data.value)}
-              />
-              {renderTooltip?.(tip.data)}
-            </TooltipBody>
-          </>
-        )}
-      </ChartTooltip>
+      {tip !== null && (
+        <ChartTooltipFloat anchor={tip.anchor}>
+          <TooltipHeader date={rowLabel(tip.row)} label={colLabel(tip.col)} />
+          <TooltipBody>
+            <TooltipRow
+              color={alpha(color, 0.9)}
+              shape="bar"
+              label="Value"
+              value={formatValue(tip.value)}
+            />
+            {renderTooltip?.(tip)}
+          </TooltipBody>
+        </ChartTooltipFloat>
+      )}
     </div>
   )
 }

@@ -47,6 +47,9 @@ const LEGEND_ITEM_BUTTON: CSSProperties = {
 
 const GROUP_ORDER: SeriesRole[] = ['series', 'overlay', 'reference']
 
+/** Stable empty set — a fresh `new Set()` default would be a new identity on every render. */
+const NO_HIDDEN: ReadonlySet<string> = new Set()
+
 const roleOf = (item: LegendEntry): SeriesRole => item.role ?? 'series'
 
 /** Order entries series → overlay → reference and record where a divider belongs. */
@@ -245,11 +248,17 @@ function LegendChild({ item }: { item: LegendEntry }) {
  * reference bands instead of one flat smear. `maxRows` caps the number of rendered entries and
  * rolls the remainder into a `+N more` chip (row-accurate wrap measurement is `ChartFrame`'s job —
  * this is an entry-count cap, a deliberate simplification until that primitive lands).
+ *
+ * `onToggle` makes an entry a real toggle: clicking it hides the series in the plot, the tooltip,
+ * and the auto y-domain together (`ChartFrame` owns the `hidden` set — see `docs/CHARTS-SPEC.md`
+ * §5). Omit it for a static legend; a hidden entry is announced via `aria-pressed`.
  */
 export function ChartLegend({
   items,
   highlighted = null,
   onHighlight,
+  hidden = NO_HIDDEN,
+  onToggle,
   chartId = '',
   placement = 'bottom',
   groups = false,
@@ -258,6 +267,10 @@ export function ChartLegend({
   items: LegendEntry[]
   highlighted?: string | null
   onHighlight?: (key: string | null) => void
+  /** Keys currently toggled off. */
+  hidden?: ReadonlySet<string>
+  /** Present = entries are clickable toggles. */
+  onToggle?: (key: string) => void
   chartId?: string
   placement?: LegendPlacement
   groups?: boolean
@@ -268,6 +281,10 @@ export function ChartLegend({
     if (key !== undefined) onHighlight?.(key)
   }
   const handleLeave = () => onHighlight?.(null)
+  const handleToggle = (e: MouseEvent<HTMLButtonElement>) => {
+    const key = e.currentTarget.dataset['legendKey']
+    if (key !== undefined) onToggle?.(key)
+  }
 
   const idPrefix = chartId ? `${chartId}-` : ''
   const vertical = placement === 'left' || placement === 'right'
@@ -286,10 +303,20 @@ export function ChartLegend({
         // The note is the whole point for a series that is invisible in the plot, so it has to
         // reach a screen reader too — an explicit aria-label would otherwise replace it.
         aria-label={item.note ? `${item.label} — ${item.note}` : item.label}
+        {...(onToggle !== undefined && { 'aria-pressed': !hidden.has(item.key) })}
         style={{
           ...LEGEND_ITEM_BUTTON,
-          opacity: highlighted === null || highlighted === item.key ? 1 : 0.3,
+          cursor: onToggle === undefined ? 'default' : 'pointer',
+          // Toggled-off wins over hover-dimming: a hidden series must read as hidden even while
+          // it is the one being hovered.
+          opacity: hidden.has(item.key)
+            ? 0.35
+            : highlighted === null || highlighted === item.key
+              ? 1
+              : 0.3,
+          textDecoration: hidden.has(item.key) ? 'line-through' : 'none',
         }}
+        {...(onToggle !== undefined && { onClick: handleToggle })}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
         onFocus={handleEnter}

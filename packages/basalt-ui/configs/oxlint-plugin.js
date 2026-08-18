@@ -803,6 +803,156 @@ const aiSdkMajor = {
   },
 }
 
+// ── Rule 12 — hand-rolled-plot ───────────────────────────────────────────────────────────────────
+
+/**
+ * The primitives `CartesianChart` assembles. Rendering one of these directly means the file is
+ * re-implementing the plot assembly — margins, scales, axes, cursor, crosshair, tooltip — that the
+ * primitive owns for every other chart, which is exactly how charts drift apart from each other.
+ */
+const PLOT_ASSEMBLY_TAGS = new Set([
+  'AxisLeftNumeric',
+  'AxisRightNumeric',
+  'AxisBottomDate',
+  'HoverOverlay',
+  'Crosshair',
+])
+
+/**
+ * Composing this means the file is USING the chart system rather than re-implementing it.
+ * `ChartFrame` deliberately does NOT count: composing the frame directly and then hand-assembling
+ * axes and a cursor on top of it IS the drift this rule exists to catch. A genuinely non-single-
+ * plot shape does exactly that — and declares it with a `theme-allow` comment, so the exception is
+ * a decision someone wrote down rather than a default anyone can fall into.
+ */
+const PLOT_OWNER_TAGS = new Set(['CartesianChart'])
+
+/**
+ * Import sources that make a JSX tag one of BASALT's chart primitives rather than a component the
+ * consumer happens to have named `Crosshair`. Matching bare tag names would false-positive on any
+ * app with its own overlay component — and this rule ships to consumers, so that matters.
+ */
+const CHART_IMPORT_SOURCE = /(^|\/)basalt-ui\/charts|(^|\/)charts(\/|$)|(^|\.\.\/)primitives\//
+
+/** Local names imported from a basalt charts entry — the only tags either chart rule considers. */
+function collectChartImports(node, into) {
+  if (!CHART_IMPORT_SOURCE.test(node.source?.value ?? '')) return
+  for (const spec of node.specifiers ?? []) {
+    if (spec.local?.name !== undefined) into.add(spec.local.name)
+  }
+}
+
+const HAND_ROLLED_PLOT_MESSAGE =
+  'Chart assembly primitive rendered without composing CartesianChart — that primitive already ' +
+  'owns the measured margins, both y scales, the axes, grid, shared cursor, crosshair and ' +
+  'tooltip. Hand-assembling them is how two charts stop matching. Compose CartesianChart and ' +
+  'render only marks. A genuinely non-single-plot shape (multi-pane, radial, matrix) composes ' +
+  'ChartFrame instead — add a theme-allow comment to declare that. (basalt/hand-rolled-plot)'
+
+const handRolledPlot = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Disallow assembling a cartesian plot by hand instead of composing CartesianChart.',
+    },
+    schema: [],
+  },
+  create(context) {
+    // File-scoped, not node-scoped: the verdict depends on whether a plot OWNER appears anywhere
+    // in the file, which is only known once the whole file has been walked.
+    const assemblyNodes = []
+    const chartImports = new Set()
+    let ownsPlot = false
+    let definesOwner = false
+
+    // A rule that says "compose CartesianChart" cannot fire inside the module that DEFINES
+    // CartesianChart — that file is the assembly. Detected by declaration rather than by path so
+    // it stays honest: this is definitional, not basalt exempting itself for convenience (the
+    // self-exemption habit is what let the 1.4.0 regression reach consumers — see docs/STATUS.md).
+    const notesOwnerDefinition = (name) => {
+      if (name === 'CartesianChart') definesOwner = true
+    }
+
+    return {
+      ImportDeclaration(node) {
+        collectChartImports(node, chartImports)
+      },
+      FunctionDeclaration(node) {
+        notesOwnerDefinition(node.id?.name)
+      },
+      VariableDeclarator(node) {
+        notesOwnerDefinition(node.id?.name)
+      },
+      JSXOpeningElement(node) {
+        const tagName = node.name?.name
+        if (PLOT_OWNER_TAGS.has(tagName)) ownsPlot = true
+        else if (PLOT_ASSEMBLY_TAGS.has(tagName)) assemblyNodes.push(node)
+      },
+      'Program:exit'() {
+        if (ownsPlot || definesOwner) return
+        // Only the FIRST site is reported, and the whole check is FILE-scoped rather than
+        // component-scoped. Both are deliberate. File scope is forced by the shape of the correct
+        // pattern: `<CartesianChart>{() => <AxisLeftNumeric …/>}</CartesianChart>` puts the axis
+        // inside a render-prop arrow, a different function from the component that owns the chart
+        // — component scope would flag the canonical usage. One report because declaring an
+        // exception is a decision about the FILE ("this shape isn't a single cartesian plot"), so
+        // one `theme-allow` settles it instead of one comment per axis and overlay.
+        const [first] = assemblyNodes.filter((node) => chartImports.has(node.name?.name))
+        if (first === undefined || hasThemeAllow(context, first)) return
+        context.report({ node: first, message: HAND_ROLLED_PLOT_MESSAGE })
+      },
+    }
+  },
+}
+
+// ── Rule 13 — chart-legend-literal ───────────────────────────────────────────────────────────────
+
+const CHART_LEGEND_LITERAL_MESSAGE =
+  'Hand-authored ChartLegend items — the legend must be DERIVED from the same `series` array the ' +
+  'chart draws (deriveLegend, or just let ChartFrame/CartesianChart do it). A hand-written list ' +
+  'is a second source of truth that silently goes stale: it keeps naming a series after the plot ' +
+  'stops drawing it. (basalt/chart-legend-literal)'
+
+const chartLegendLiteral = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Require ChartLegend items to be derived from the series descriptor.' },
+    schema: [],
+  },
+  create(context) {
+    const chartImports = new Set()
+
+    return {
+      ImportDeclaration(node) {
+        collectChartImports(node, chartImports)
+      },
+      JSXOpeningElement(node) {
+        if (node.name?.name !== 'ChartLegend' || !chartImports.has('ChartLegend')) return
+        const items = node.attributes?.find(
+          (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'items',
+        )
+        const expression = items?.value?.expression
+        if (expression?.type !== 'ArrayExpression') return
+        // Only a list that is ENTIRELY object literals is a hand-authored legend. An array that
+        // spreads or calls something (`[...deriveLegend(series), note]`) is derived-and-extended,
+        // which is legitimate — flagging it would push people to disable the rule.
+        //
+        // Known and accepted gap: hoisting the literal to a `const` one line up
+        // (`const items = [...]; <ChartLegend items={items} />`) reads as an Identifier here and
+        // is not flagged. Following that would mean local flow analysis for a bypass nobody
+        // reaches by accident; the rule targets the shape people actually write.
+        const allObjectLiterals =
+          expression.elements.length > 0 &&
+          expression.elements.every((el) => el?.type === 'ObjectExpression')
+        if (!allObjectLiterals) return
+        if (hasThemeAllow(context, node)) return
+        context.report({ node, message: CHART_LEGEND_LITERAL_MESSAGE })
+      },
+    }
+  },
+}
+
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
 
 export default {
@@ -812,6 +962,8 @@ export default {
     'raw-size-literal': rawSizeLiteral,
     'card-inset': cardInset,
     'chart-in-raw-surface': chartInRawSurface,
+    'hand-rolled-plot': handRolledPlot,
+    'chart-legend-literal': chartLegendLiteral,
     'raw-scroll-container': rawScrollContainer,
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,

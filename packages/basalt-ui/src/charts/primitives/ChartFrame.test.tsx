@@ -65,3 +65,36 @@ describe('a non-pending ChartFrame is unaffected — the legend and body both re
     expect(markup).not.toContain('aria-busy')
   })
 })
+
+const twoSeries: SeriesStyle[] = [
+  { key: 'a', label: 'Series A', color: '#000', mark: 'line' },
+  { key: 'b', label: 'Series B', color: '#111', mark: 'bar' },
+]
+
+describe('legend toggling', () => {
+  test('a multi-series legend is interactive by default', () => {
+    const markup = renderToStaticMarkup(<ChartFrame series={twoSeries}>{() => <svg />}</ChartFrame>)
+    expect(markup).toContain('aria-pressed="true"')
+  })
+
+  test('a single-series legend is not — hiding the only series a chart draws is never useful', () => {
+    const markup = renderToStaticMarkup(<ChartFrame series={series}>{() => <svg />}</ChartFrame>)
+    expect(markup).not.toContain('aria-pressed')
+  })
+
+  test('`toggle: false` opts out even with several series', () => {
+    const markup = renderToStaticMarkup(
+      <ChartFrame series={twoSeries} legend={{ toggle: false }}>
+        {() => <svg />}
+      </ChartFrame>,
+    )
+    expect(markup).not.toContain('aria-pressed')
+  })
+
+  test('the child receives the (initially empty) hidden set', () => {
+    const markup = renderToStaticMarkup(
+      <ChartFrame series={twoSeries}>{({ hidden }) => <svg>size:{hidden.size}</svg>}</ChartFrame>,
+    )
+    expect(markup).toContain('size:0')
+  })
+})

@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode, RefObject } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { VX } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'
@@ -18,42 +19,6 @@ const TOOLTIP_STYLES: CSSProperties = {
   color: VX.ink,
   boxShadow: VX.shadowCard,
   minWidth: 140,
-}
-
-/** Theme-aware tooltip container styles — use with useChartTooltip(). */
-export function useTooltipStyles(): CSSProperties {
-  return TOOLTIP_STYLES
-}
-
-/**
- * Outer tooltip shell. Renders nothing when tip is null. Renders to `document.body` via a
- * portal, so it may be authored anywhere in the tree, including inside `<svg>`.
- */
-export function ChartTooltip({
-  tip,
-  tooltipRef,
-  styles,
-  children,
-}: {
-  tip: { x: number; y: number } | null
-  tooltipRef?: RefObject<HTMLDivElement | null>
-  styles: CSSProperties
-  children: ReactNode
-}) {
-  if (!tip) return null
-  // SSR guard: react-dom/server (renderToStaticMarkup, used by this repo's tests — see
-  // dashboard/stat-card.test.tsx) has no jsdom and does not support portals.
-  if (typeof document === 'undefined') return null
-  // Portal to document.body for two reasons: (1) authoring this inside an <svg> tree would
-  // otherwise create the div in the SVG namespace, where it mounts, accepts every prop, and
-  // is never painted; (2) TOOLTIP_STYLES' position: 'fixed' breaks inside any transformed
-  // ancestor unless the node is portalled out to the body.
-  return createPortal(
-    <div ref={tooltipRef} style={{ ...styles, left: tip.x, top: tip.y }}>
-      {children}
-    </div>,
-    document.body,
-  )
 }
 
 /** Tooltip header — shows formatted date + optional right-aligned label with color. */
@@ -167,4 +132,69 @@ export function TooltipRow({
 
 export function TooltipBody({ children }: { children: ReactNode }) {
   return <div style={{ padding: '5px 0' }}>{children}</div>
+}
+
+/** Gap between the anchor point and the tooltip box, and the minimum distance kept from the
+ * viewport edge. */
+const TOOLTIP_GAP = 12
+const VIEWPORT_MARGIN = 8
+
+/**
+ * Floating tooltip positioned against a viewport-space anchor, with flip + clamp handled once for
+ * every chart instead of per call site (this used to be recomputed inside each chart's own `useChartTooltip`, and only for
+ * charts that remembered to use it).
+ *
+ * The box is measured after mount via `useLayoutEffect`, so the first paint of a given tooltip is
+ * hidden rather than misplaced — a tooltip that flashes at the wrong corner reads as a bug.
+ */
+export function ChartTooltipFloat({
+  anchor,
+  children,
+}: {
+  anchor: { x: number; y: number } | null
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState<{ width: number; height: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (el === null) return
+    const { offsetWidth, offsetHeight } = el
+    setBox((prev) =>
+      prev !== null && prev.width === offsetWidth && prev.height === offsetHeight
+        ? prev
+        : { width: offsetWidth, height: offsetHeight },
+    )
+  }, [children, anchor])
+
+  if (anchor === null) return null
+  // SSR guard: react-dom/server has no jsdom and does not support portals.
+  if (typeof document === 'undefined') return null
+
+  const width = box?.width ?? 0
+  const height = box?.height ?? 0
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+
+  const flipsLeft = anchor.x + TOOLTIP_GAP + width + VIEWPORT_MARGIN > vw
+  const left = flipsLeft
+    ? Math.max(VIEWPORT_MARGIN, anchor.x - TOOLTIP_GAP - width)
+    : anchor.x + TOOLTIP_GAP
+  const top = Math.min(
+    Math.max(VIEWPORT_MARGIN, anchor.y - TOOLTIP_GAP),
+    Math.max(VIEWPORT_MARGIN, vh - height - VIEWPORT_MARGIN),
+  )
+
+  return createPortal(
+    <div
+      ref={ref}
+      role="tooltip"
+      aria-live="polite"
+      style={{ ...TOOLTIP_STYLES, left, top, visibility: box === null ? 'hidden' : 'visible' }}
+    >
+      {children}
+    </div>,
+    document.body,
+  )
 }
