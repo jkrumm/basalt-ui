@@ -3,10 +3,11 @@
 > **Single source of truth for current state.** As of **2026-08-18**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `master` is the released 1.x line; `feat/chart-api-consumer-gaps` carries the
-consumer-gap batch below.
-**Version:** `1.15.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
-rebuild (`docs/CHARTS-SPEC.md`) shipped there. The consumer-gap batch below is the next candidate.
+**Branch:** `master` is the released 1.x line; `feat/chart-consumer-round-two` carries the
+round-two batch below.
+**Version:** `1.16.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
+rebuild (`docs/CHARTS-SPEC.md`) shipped in 1.15.0 and the first consumer-gap batch in 1.16.0. The
+round-two batch below is the next candidate.
 
 ## TL;DR
 
@@ -124,6 +125,71 @@ Two regressions were caught during migration and fixed in the primitive rather t
 per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
 (now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
 legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
+
+## Chart-API round two — `feat/chart-consumer-round-two` (2026-08-19)
+
+1.16.0 went out and **both** consumers upgraded within a day: argo took all four reversals (chart
+source 7206 → 5717 lines, −1489 total, up from −1019 at 1.15.0; the four charts forced out of the
+`Bars` kind collapsed back from +77/+91/+93/+116 to +2/−16/+6/+7), and linewatch took one item and
+correctly rejected the rest as not applying to it.
+
+The value of a two-consumer round is visible in the shape of the reports. argo's is a migration
+ledger — what collapsed, by how much. linewatch's is an audit against 1.16.0's SOURCE rather than
+against the handover, and it found four things the handover had not mentioned because nobody had
+looked. Every item below was verified in source here before being worked on; two turned out to be
+worse than reported.
+
+1. **`autoMaxFloor` was applied on the wrong side of the pad** — the one BEHAVIOUR CHANGE in this
+   batch. `resolveAxisDomain` padded and then clamped the floor, while the lower bound had always
+   clamped `autoMinCeil` and then padded. Two laws in one function, and argo proved the divergence
+   numerically: dataMax 3.2, pad 1.1, floor 6 → 6.0 before, 6.6 now. The old law landed a winning
+   floor exactly on the axis top with zero headroom, so a target line pinned to that floor sat glued
+   to the plot edge — something the lower bound never did. Now `padAutoUpper(max(dataMax, floor))`,
+   the exact mirror of `padAutoLower`. A consumer depending on the old ordering will see their axis
+   top move.
+2. **`TooltipHeader` had no formatter seam** — the highest-value find, because it is a wrong date on
+   screen rather than a missing convenience. `fmtTooltipDate` regexes `YYYY-MM-DD` out of the domain
+   key and builds a LOCAL `Date`, so a UTC ISO key made the header name a different day than
+   `formatX`, the badge, and every sibling chart. The only workaround was carrying a local-offset ISO
+   key. Now `tooltip.formatHeader`, defaulting to today's behaviour.
+3. **No kind forwarded `formatX` — all six, not the one reported.** `CartesianChart` always took it;
+   `Bars`/`MultiLine`/`StackedArea`/`ZonedLine`/`DualPanel` did not expose it, so the only route to a
+   custom x label was pre-formatting it into the domain key — making one string serve as display
+   value, scale identity and cursor key at once. This repo's own rules already warn that a truncating
+   formatter then collapses two points onto one domain value and silently stops drawing one of them.
+   `Heatmap` stays excluded: `colLabel`/`rowLabel` already ARE that seam.
+4. **Cursor resolution was nearest-only, never containing.** For a chart whose keys are bucket
+   leading edges, a hover in the back half of a bucket resolved to the FOLLOWING bucket — the shared
+   crosshair one column right of the data being pointed at, reproducibly, for every back-half hover.
+   Now an opt-in `cursorResolution: 'leading'` on every cartesian kind and `useChartCursor`.
+5. **`getMarker` could not express a plain filled dot.** Both kinds rendered it with a punched-out
+   ring, so argo's previous `fillOpacity: 0.7` circles were unreproducible after moving onto the
+   kind. Return type widened with `ring` and `fillOpacity`.
+6. **`role="img"` was erasing the chart's own keyboard slider.** `ChartFrame` labelled itself
+   `role="img"`, and every descendant of `role="img"` is presentational per ARIA — so `HoverOverlay`'s
+   `role="slider"`, the entire keyboard-scrubbing story 1.15.0 shipped, never reached the
+   accessibility tree. The label announced; the control silently unreachable. Now `role="group"`.
+   Worth recording how it hid: **jsdom does not implement that pruning**, so a `getByRole('slider')`
+   test passes under the bug. The regression guard had to be structural, and no role-based test
+   could ever have caught it.
+
+7. **`DualPanel`'s keyboard slider was unnamed and reported no position** — found by writing the
+   regression tests for item 6, not by either consumer. Its `ariaLabel` reached only `ChartFrame`'s
+   outer container, never its own focusable `HoverOverlay`, and neither overlay ever received
+   `valueNow`/`valueMax`/`valueText`. So a consumer passing `ariaLabel` got a labelled chart
+   containing an unnamed control reporting nothing — the same class of defect as item 6, one layer
+   down. It survived because every prior `DualPanel` test rendered a single chart and never needed a
+   named or value-texted slider. Now at parity with `CartesianChart`; the bottom overlay stays
+   pointer-only by design, and a test pins that there is exactly ONE focusable slider per chart.
+
+Not built, deliberately: a **two-bar-pane kind with independent scales** (linewatch's throughput
+chart, whose two strips genuinely have no y dimension). One consumer, one chart — this repo extracts
+a kind on the third repeat, so the `theme-allow` exemption stands until a second appears.
+
+Also corrected here: the 1.16.0 handover told argo to re-enable legend toggling on the four charts
+carrying `legend={{ toggle: false }}`. linewatch pushed back correctly — `toggle: false` is a
+legitimate choice when a legend is a key rather than a control, and the reversal only applies where
+it was adopted BECAUSE `prependRows` could not see the hidden set.
 
 ## Chart-API consumer gaps — `feat/chart-api-consumer-gaps` (2026-08-18)
 
