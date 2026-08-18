@@ -60,6 +60,23 @@ rm -f "$LISTFILE"
 echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
 node scripts/check-dist-layering.mjs
 
+# Install into a scratch consumer: quiet on success, but dump the installer's full output on
+# failure. These four installs used to be `bun add ... >/dev/null 2>&1`, so a failed install exited
+# the gate with NOTHING printed — indistinguishable in CI from a real resolution regression in the
+# artifact, which is the one thing this script exists to detect. Silence on failure is the worst
+# possible output for a gate.
+scratch_install() {
+  local log
+  log=$(mktemp)
+  if ! bun add "$@" >"$log" 2>&1; then
+    echo "pack-test: scratch install FAILED — this is an install error, not a resolution failure:"
+    cat "$log"
+    rm -f "$log"
+    exit 1
+  fi
+  rm -f "$log"
+}
+
 echo "==> scratch-consumer resolution test (with optional peers)"
 ABS_TGZ="$PWD/$TGZ"
 SCRATCH=$(mktemp -d)
@@ -69,7 +86,7 @@ SCRATCH4=""
 trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" \
+scratch_install "$ABS_TGZ" \
   react react-dom \
   @mantine/core @mantine/hooks \
   @mantine/form @mantine/notifications @mantine/spotlight @mantine/modals \
@@ -85,7 +102,7 @@ bun add "$ABS_TGZ" \
   "@visx/threshold@4.0.0" \
   "motion@12.42.0" "remend@1.3.0" \
   "@fontsource-variable/hubot-sans@5.2.8" "@fontsource-variable/jetbrains-mono@5.2.8" \
-  "@fontsource-variable/nunito-sans@5.2.7" >/dev/null 2>&1
+  "@fontsource-variable/nunito-sans@5.2.7"
 cat >test.mjs <<'JS'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -312,10 +329,10 @@ echo "==> charts/tokens-only (no-Mantine) resolution + render"
 SCRATCH2=$(mktemp -d)
 cd "$SCRATCH2"
 echo '{ "name": "scratch-free", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" react react-dom \
+scratch_install "$ABS_TGZ" react react-dom \
   "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
   "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
-  "@visx/threshold@4.0.0" >/dev/null 2>&1
+  "@visx/threshold@4.0.0"
 cat >free.mjs <<'JS'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -372,9 +389,9 @@ echo "==> agent-chat + root-entry minimal-peer resolution (motion required, reme
 SCRATCH4=$(mktemp -d)
 cd "$SCRATCH4"
 echo '{ "name": "scratch-agent-chat", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" react react-dom \
+scratch_install "$ABS_TGZ" react react-dom \
   @mantine/core @mantine/hooks \
-  "motion@12.42.0" "@tanstack/react-query@^5.101.0" >/dev/null 2>&1
+  "motion@12.42.0" "@tanstack/react-query@^5.101.0"
 if [ -d node_modules/remend ]; then
   echo "FAILED: remend ended up in a scratch install that never requested it — test setup is broken, not a package defect"
   exit 1
@@ -429,7 +446,7 @@ echo "==> tokens-only install is light (no peers at all)"
 SCRATCH3=$(mktemp -d)
 cd "$SCRATCH3"
 echo '{ "name": "scratch-light", "private": true, "type": "module" }' >package.json
-bun add "$ABS_TGZ" >/dev/null 2>&1
+scratch_install "$ABS_TGZ"
 if [ -d node_modules/@visx/scale ]; then
   echo "FAILED: @visx/scale present in a tokens-only install — dependency weight regression"
   exit 1
