@@ -5,7 +5,8 @@
 
 **Branch:** `master` is the released 1.x line; `feat/framework-free-tokens` carries the
 framework-free token work below; `feat/linewatch-chart-gaps` carries the chart-layer batch below;
-`feat/chart-x-bands-margin-legend-note` carries the x-band/margin/legend-note batch below.
+`feat/chart-x-bands-margin-legend-note` carries the x-band/margin/legend-note batch below **and the
+chart-layer rebuild** (`docs/CHARTS-SPEC.md`).
 **Version:** `1.8.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the adoption-gap
 work below shipped across 1.7.0 and 1.8.0. The chart-layer batch is the next candidate.
 
@@ -59,6 +60,72 @@ there for the first time reported all of it in one pass. Three separate causes, 
    nothing measured" and stays untinted, so `good` is a positive assertion a consumer opts into, not
    a default a card without a reading can fall into. Second data point for the same lesson: the gap
    a shipped composite leaves is found by the consumer, one case at a time, not by the framework.
+
+## Chart-layer rebuild — one mandatory cartesian primitive (2026-08-18)
+
+Design + rationale: **`docs/CHARTS-SPEC.md`** (ground truth). Prompted by a field report from the
+one consumer building charts daily: tooltips, legends and responsive sizing all needed pushing
+around per chart, and nothing felt strictly wired. Diagnosis was not visx — it was that basalt's own
+layer had two tiers with no rung between them, so anything that wasn't a shipped kind fell to ~130
+lines of hand-rolled margin math, scales, axes, overlay and tooltip assembly, and every cartesian
+kind repeated that same preamble internally.
+
+TanStack Charts (v0.14.0, released the same month) was evaluated as a replacement and **rejected**:
+it is pre-alpha, its own README says not production-ready, and there is no 1.0 date. Its
+architecture is the better one — grammar of graphics, framework-neutral scene, renderer-neutral
+contracts — and the four ideas worth stealing were stolen instead: measured guides, a cursor
+controller separate from crosshair presentation, one responsive path, and tooltips/legends/axes as
+first-class parts of the chart definition rather than per-call-site assembly. Revisit the library
+itself if it reaches 1.0.
+
+What shipped:
+
+1. **`CartesianChart`** — the missing rung. Owns measured margins, both y scales + their domains,
+   the x scale and tick thinning, grid, zones, axes, the shared cursor, the crosshair and its
+   per-series dots, the hover/keyboard overlay, and the derived tooltip. A kind (or a bespoke
+   chart) supplies `series` + a child that draws ONLY marks. Every single-plot cartesian kind was
+   rewritten onto it, and the two bespoke playground charts collapsed with it (the dual-axis one
+   from ~145 lines to 29). `DualPanel` (two panes, one x scale) and the non-cartesian
+   `Heatmap`/`Donut` stay hand-composed on `ChartFrame` + `useChartCursor` + `autoMargin` — they
+   share the machinery, not the single-plot assembly.
+2. **Margins are measured, not tokenized.** `autoMargin` sizes each gutter from the formatted tick
+   labels that will actually be painted (`measureText`, offscreen canvas, memoized, SSR fallback).
+   `VX.margin` becomes a FLOOR — no chart gets tighter than before, and a wide label widens its own
+   gutter instead of clipping. `chartMargin({ rightAxis })` is no longer needed: passing `y2` is
+   what makes a chart dual-axis, and the right gutter follows from measurement.
+3. **The cursor is shared by default.** It moved from a React context that had to be mounted to a
+   module-level external store read through `useSyncExternalStore`. `ChartHoverSync` is deleted;
+   `ChartCursorScope` now ISOLATES a subtree instead. Resolution is domain-aware (exact match, else
+   nearest parsed date/number within one domain step), which retires the `resolveKey` escape hatch
+   and the folded-domain desync recorded in the chart-layer batch below.
+4. **Legends toggle.** Clicking an entry hides that series from the plot, the tooltip and the auto
+   domain together (on by default at ≥2 entries; `legend={{ toggle: false }}` opts out).
+5. **Tooltip and keyboard.** `ChartTooltipFloat` does portal + flip + viewport clamp +
+   measure-before-show once for every chart; pointer moves are rAF-coalesced. The hover overlay is
+   focusable and scrubs on ←/→, Escape clears.
+
+**The contract is mechanically enforced, not advisory.** Two oxlint plugin rules ship with it:
+`basalt/hand-rolled-plot` fails a file that renders a chart-assembly primitive (`AxisLeftNumeric`/
+`AxisRightNumeric`/`AxisBottomDate`/`HoverOverlay`/`Crosshair`) without composing `CartesianChart`
+— a `theme-allow` comment on the first site is how a genuinely non-single-plot shape declares
+itself, and `DualPanel` carries the only one in the repo; `basalt/chart-legend-literal` fails a
+hand-written `ChartLegend items={[…]}` array, since the legend must derive from the same `series`
+the chart draws or it goes stale naming a series nobody plots. Both are `error` repo-local and
+`warn` in the shipped consumer preset for one minor per the grace-minor doctrine — promoting them
+to `error` is a one-line change in the next minor. Everything else the rebuild removed is enforced
+harder than lint: the old APIs are gone, so the old patterns do not resolve.
+
+Deleted outright (greenfield, one lockstep consumer, no shims): `ResponsiveChart`, `ChartHoverSync`,
+`HoverContext`, `useHoverSync`, `useChartTooltip`, the tip-based `ChartTooltip` + `useTooltipStyles`,
+`BarsAxisConfig`, `ZonedLineTooltipLabel`, and the whole `yDomain`/`yAutoMaxFloor`/`yAutoMinCeil`/
+`yAutoPad`/`numTicksY`/`formatYTick` prop family on every kind (now one `AxisConfig` object per
+axis). `Heatmap` measures itself via `ChartFrame` and takes `height`/`aspectRatio`/`fill` like every
+other kind. Ships as a plain `feat:` on the 1.x line — majors stay banned.
+
+Two regressions were caught during migration and fixed in the primitive rather than worked around
+per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
+(now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
+legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
 
 ## Chart-layer batch — `feat/linewatch-chart-gaps` (2026-08-02)
 

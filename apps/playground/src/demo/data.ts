@@ -49,6 +49,21 @@ export const SERIES_DATA: DayPoint[] = DAY_LABELS.map((date, i) => ({
   health: HEALTH[i] ?? 0,
 }))
 
+// ── Weekly digest — demonstrates a FOLDED domain still sharing the cursor ───
+//
+// Two weekly buckets over the same Mar 01–14 calendar as `SERIES_DATA`. Hovering the 14-point
+// daily chart broadcasts a daily key this 2-point chart never owns exactly; the shared cursor
+// resolves it to the nearest week instead of going silent (`docs/CHARTS-SPEC.md` §3).
+
+export type WeeklyPoint = { date: string; sessions: number }
+
+const sum = (arr: readonly number[]): number => arr.reduce((s, v) => s + v, 0)
+
+export const WEEKLY_DIGEST: WeeklyPoint[] = [
+  { date: 'Mar 01', sessions: sum(SESSIONS.slice(0, 7)) },
+  { date: 'Mar 08', sessions: sum(SESSIONS.slice(7, 14)) },
+]
+
 // ── Date-range data generator ────────────────────────────────────────────────
 
 /** Base daily values used as the seed for all range generators. */

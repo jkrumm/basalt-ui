@@ -190,9 +190,8 @@ function AcquisitionCard({ series }: { series: DayPoint[] }) {
             formatValue: (v) => `${v.toFixed(0)}%`,
           },
         ]}
-        leftAxis={{ domain: 'auto', formatTick: (v) => fmtInt(v) }}
-        rightAxis={{ domain: [0, 10], formatTick: (v) => `${v}%`, numTicks: 6 }}
-        formatValue={(v) => fmtInt(v)}
+        y={{ domain: 'auto', format: (v) => fmtInt(v) }}
+        y2={{ domain: [0, 10], format: (v) => `${v}%`, ticks: 6 }}
       />
     </ChartCard>
   )
