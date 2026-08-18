@@ -30,7 +30,7 @@ OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
-Description: visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)
+Description: CartesianChart + visx chart primitives, kinds, sparklines, hooks, and token re-exports (Mantine-free)
 Layer: headless
 Rule: basalt-charts
 

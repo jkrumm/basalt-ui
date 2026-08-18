@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { useCallback, useState } from 'react'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
@@ -20,6 +21,13 @@ export type ChartFrameLegend = {
   /** Hover-dim wiring lifted from the kind — optional. */
   highlighted?: string | null
   onHighlight?: (key: string | null) => void
+  /**
+   * Clicking a legend entry hides that series. Defaults to true whenever there is more than one
+   * entry to toggle between — hiding the only series a chart draws is never useful. The hidden
+   * key set reaches the marks through the `children` render prop, so a hidden series leaves the
+   * plot, the tooltip, and the auto domain together (`docs/CHARTS-SPEC.md` §5).
+   */
+  toggle?: boolean
 }
 
 export type ChartFrameProps = {
@@ -50,8 +58,16 @@ export type ChartFrameProps = {
    * kind composing `ChartFrame` should accept and forward this from its own props.
    */
   ariaLabel?: string
-  /** Draw the SVG marks given the plot rect that already excludes the legend band. */
-  children: (plot: { width: number; height: number }) => ReactNode
+  /** Draw the SVG marks given the plot rect that already excludes the legend band, plus the set
+   * of series keys the legend has toggled off. */
+  children: (plot: PlotRect) => ReactNode
+}
+
+/** What `ChartFrame` hands its child: the resolved plot rect plus legend-toggle state. */
+export type PlotRect = {
+  width: number
+  height: number
+  hidden: ReadonlySet<string>
 }
 
 const outerStyle = (fill: boolean, vertical: boolean): CSSProperties => ({
@@ -89,6 +105,7 @@ export function resolveLegend(
     placement: config?.placement ?? 'bottom',
     ...(config?.groups !== undefined && { groups: config.groups }),
     ...(config?.maxRows !== undefined && { maxRows: config.maxRows }),
+    ...(config?.toggle !== undefined && { toggle: config.toggle }),
     ...(hover !== undefined && { highlighted: hover.highlighted, onHighlight: hover.onHighlight }),
   }
 }
@@ -119,6 +136,16 @@ export function ChartFrame({
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
   const { ref: legendRef, width: legendW, height: legendH } = useChartSize()
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set())
+
+  const toggleKey = useCallback((key: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
 
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
@@ -138,12 +165,17 @@ export function ChartFrame({
     height: resolvedHeight - topBottomLegendHeight,
   }
 
+  const legendItems = legend === false ? [] : deriveLegend(series)
+  const togglable = legend !== false && (legend.toggle ?? legendItems.length > 1)
+
   const legendNode =
     legend === false || isPending ? null : (
       <div ref={legendRef} style={legendWrapperStyle(vertical)}>
         <ChartLegend
-          items={deriveLegend(series)}
+          items={legendItems}
           placement={placement}
+          hidden={hidden}
+          {...(togglable && { onToggle: toggleKey })}
           {...(chartId !== undefined && { chartId })}
           {...(legend.groups !== undefined && { groups: legend.groups })}
           {...(legend.maxRows !== undefined && { maxRows: legend.maxRows })}
@@ -163,7 +195,11 @@ export function ChartFrame({
       {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
       {plot.width > 0 &&
         plot.height > 0 &&
-        (isPending ? <ChartPending width={plot.width} height={plot.height} /> : children(plot))}
+        (isPending ? (
+          <ChartPending width={plot.width} height={plot.height} />
+        ) : (
+          children({ ...plot, hidden })
+        ))}
       {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}
     </div>
   )

@@ -211,7 +211,8 @@ export const SURFACES = {
     rule: 'charts',
     skill: ['basalt-charts'],
     guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'unframed-chart'],
-    description: 'visx chart primitives, sparklines, hooks, and token re-exports (Mantine-free)',
+    description:
+      'CartesianChart + visx chart primitives, kinds, sparklines, hooks, and token re-exports (Mantine-free)',
     globs: {
       shipped: ['**/charts/**'],
       repo: ['packages/basalt-ui/src/charts/**'],

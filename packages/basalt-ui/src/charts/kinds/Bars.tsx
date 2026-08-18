@@ -1,29 +1,14 @@
 import { curveMonotoneX } from '@visx/curve'
-import { GridRows } from '@visx/grid'
-import { Group } from '@visx/group'
-import { scaleLinear, scalePoint } from '@visx/scale'
 import { LinePath } from '@visx/shape'
-import { memo, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from '../primitives/Axes'
-import {
-  ChartTooltip,
-  TooltipBody,
-  TooltipHeader,
-  TooltipRow,
-  useTooltipStyles,
-} from '../primitives/ChartTooltip'
-import { ChartFrame, resolveLegend } from '../primitives/ChartFrame'
-import { Crosshair, SeriesDot } from '../primitives/Crosshair'
-import { HoverOverlay } from '../primitives/HoverOverlay'
-import { ZoneRects } from '../primitives/ZoneRects'
+import { memo, useMemo } from 'react'
+import { VX } from '../../tokens'
+import type { ChartMargin } from '../../tokens'
+import { CartesianChart } from '../primitives/CartesianChart'
+import type { AxisConfig, CartesianTooltipConfig, PlotContext } from '../primitives/CartesianChart'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { useHoverSync } from '../hooks/useHoverSync'
-import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
-import { chartMargin, VX } from '../../tokens'
 import { padAutoLower } from '../utils/domain'
-import { smartTicks, smartTicksEvery } from '../utils/ticks'
 
 export type BarsBar = {
   /** Field key — `getValue(d, key)` extracts the number (null = skip this slot, not domain hole). */
@@ -33,7 +18,7 @@ export type BarsBar = {
   /** Fill color (a resolved CSS color / token ref). Per `docs/DESIGN-SPEC.md` §5, the primary bar
    * series should typically resolve to `VX.accent`, a secondary companion to `VX.faint`. */
   color: string
-  /** Per-series tooltip value formatter — overrides top-level formatValue. */
+  /** Per-series tooltip value formatter — overrides the left/right axis's own format. */
   formatValue?: (v: number) => string
   /** Y axis to plot against. Honored only in grouped layout. Default 'left'. */
   axisSide?: 'left' | 'right'
@@ -62,25 +47,9 @@ export type BarsRefLine = {
   axisSide?: 'left' | 'right'
 }
 
-export type BarsAxisConfig = {
-  /** Fixed [min, max] or 'auto' (computed from bars + lines + zones + refLines on this axis). */
-  domain: [number, number] | 'auto'
-  /** Auto-domain padding multiplier. Default 1.1. The lower bound always pads DOWN from
-   * `min(dataMin, autoMinCeil)` (never up, which would clip data) — see {@link padAutoLower}. */
-  autoPad?: number
-  /** Auto-domain lower bound ceiling — never above this. Default 0. */
-  autoMinCeil?: number
-  /** Auto-domain upper bound floor — never below this. */
-  autoMaxFloor?: number
-  /** Tick label formatter (e.g. (v) => `${v}h`). */
-  formatTick?: (v: number) => string
-  /** Number of ticks. Default 5. */
-  numTicks?: number
-}
-
 export type BarsProps<T> = {
   data: T[]
-  /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
+  /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
   chartId: string
   getX: (d: T) => string
@@ -100,10 +69,15 @@ export type BarsProps<T> = {
   /** Dashed/solid horizontal reference lines. */
   refLines?: BarsRefLine[]
 
-  /** Left axis config (always present — bars live here). */
-  leftAxis: BarsAxisConfig
-  /** Right axis config — only required when at least one line/zone/refLine uses 'right'. */
-  rightAxis?: BarsAxisConfig
+  /** Left axis config — bars always live here. In `barLayout: 'stacked'` (the default), `domain`
+   * defaults to the summed per-point stack total (bars + any left-axis lines), not a per-series
+   * max — the same function-domain seam `StackedArea` uses — unless overridden with a fixed tuple
+   * or a custom function. Optional, like every other kind's — omit it for a plain auto domain. */
+  y?: AxisConfig<T>
+  /** Right axis config. Passing it is what makes the chart dual-axis: it draws the right axis and
+   * widens the right margin by measurement. Line overlays (and grouped-layout bars) opt in with
+   * `axisSide: 'right'`. */
+  y2?: AxisConfig<T>
 
   /** Bar width as fraction of slot width. Default 0.6. */
   barWidthRatio?: number
@@ -119,27 +93,19 @@ export type BarsProps<T> = {
   /** Per-bar opacity override. Receives the data point + bar key. Default 0.85. */
   barOpacity?: (d: T, key: string) => number
 
-  /** Tooltip badge — appears at the right of the tooltip header. */
-  tooltipLabel?: (d: T) => { text: string; color: string } | null
-  /** Tooltip rows rendered BEFORE the generated bar/line rows. */
-  renderPrefixTooltipRows?: (d: T) => ReactNode
-  /** Tooltip rows rendered AFTER the generated bar/line rows. */
-  renderExtraTooltipRows?: (d: T) => ReactNode
-  /** Skip the auto-generated positive/negative bar rows in the tooltip (chart still renders them). */
-  hideBarTooltipRows?: boolean
-  /** Default value formatter if a series doesn't define its own. */
-  formatValue?: (v: number) => string
-  /** X-axis tick count override. */
-  numTicksX?: number
-  /** Override the left margin (defaults to VX.margin.left = 44). Useful when
-   * y-axis labels are unusually wide (e.g. five-digit step counts). */
-  marginLeft?: number
-  /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
+  /** X tick count override. Default: as many as fit. */
+  xTicks?: number
+
+  /** `false` disables the tooltip entirely (and with it the crosshair dots). */
+  tooltip?: CartesianTooltipConfig<T> | false
+  /** Per-side overrides of the measured margins — the escape hatch, applied last. */
+  margin?: Partial<ChartMargin>
+  /** Legend config forwarded to `CartesianChart`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
-  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded as `aria-label` (+ `role="img"`). */
   ariaLabel?: string
-  /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
+  /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
 }
 
@@ -148,27 +114,37 @@ export type BarsProps<T> = {
  * overlays on left/right axes, horizontal zones, and reference lines. Covers
  * diverging-stack + bar+line + any future stacked-bar preset.
  *
- * Composes `ChartFrame` for measuring + the derived legend — the legend was previously pushed
- * entirely to the consumer; it is now derived from `positiveBars` + `negativeBars` + `lines` and
- * owns its own hover-dim state (the legend-hover wiring that used to require a consumer-supplied
- * `highlightedKey` prop).
+ * Composes `CartesianChart` (`docs/CHARTS-SPEC.md` §2) — margin, scales, grid, axes, the shared
+ * cursor, the crosshair + per-series dots, and the tooltip are ALL the primitive's job. This file
+ * draws only the bar rects, the line overlays, and (for a diverging stack) the zero baseline.
  *
  * X-axis is built from the full `data` array so the calendar is preserved even
  * with per-bar nulls (nulls become visual gaps, not domain holes).
  */
 function BarsInner<T>(props: BarsProps<T>) {
   const {
+    data,
+    height,
+    chartId,
+    getX,
+    getValue,
     positiveBars,
     negativeBars = [],
     lines = [],
-    getValue,
-    chartId,
-    height,
+    zones,
+    refLines,
+    y,
+    y2,
+    barWidthRatio = 0.6,
+    barLayout = 'stacked',
+    barOpacity,
+    xTicks,
+    tooltip,
+    margin,
     legend,
     ariaLabel,
     isPending,
   } = props
-  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
 
   const barSeries = useMemo<ChartSeries<T>[]>(
     () =>
@@ -178,6 +154,7 @@ function BarsInner<T>(props: BarsProps<T>) {
         color: b.color,
         mark: 'bar' as const,
         fillOpacity: 0.85,
+        ...(b.axisSide !== undefined && { axis: b.axisSide }),
         getValue: (d: T) => getValue(d, b.key),
         ...(b.formatValue !== undefined && { formatValue: b.formatValue }),
       })),
@@ -193,440 +170,330 @@ function BarsInner<T>(props: BarsProps<T>) {
         mark: 'line' as const,
         dash: ln.dashed ? ('dashed' as const) : ('solid' as const),
         strokeWidth: ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH,
+        ...(ln.axisSide !== undefined && { axis: ln.axisSide }),
         getValue: (d: T) => getValue(d, ln.key),
         ...(ln.formatValue !== undefined && { formatValue: ln.formatValue }),
       })),
     [lines, getValue],
   )
 
-  const legendSeries = useMemo<ChartSeries<T>[]>(
+  const series = useMemo<ChartSeries<T>[]>(
     () => [...barSeries, ...lineSeries],
     [barSeries, lineSeries],
   )
 
-  return (
-    <ChartFrame
-      series={legendSeries}
-      chartId={chartId}
-      {...(height !== undefined && { height })}
-      {...(ariaLabel !== undefined && { ariaLabel })}
-      {...(isPending !== undefined && { isPending })}
-      legend={resolveLegend(legend, {
-        highlighted: highlightedKey,
-        onHighlight: setHighlightedKey,
-      })}
-    >
-      {(plot) => (
-        <BarsPlot
-          {...props}
-          plot={plot}
-          highlightedKey={highlightedKey}
-          barSeries={barSeries}
-          lineSeries={lineSeries}
-        />
-      )}
-    </ChartFrame>
-  )
-}
-
-type BarsPlotProps<T> = BarsProps<T> & {
-  plot: { width: number; height: number }
-  highlightedKey: string | null
-  barSeries: ChartSeries<T>[]
-  lineSeries: ChartSeries<T>[]
-}
-
-/** The measured plot — split from {@link BarsInner} so its scale/hover-sync hooks only run once
- * `ChartFrame` has resolved a non-empty plot rect. */
-function BarsPlot<T>(props: BarsPlotProps<T>) {
-  const {
-    data,
-    chartId,
-    getX,
-    getValue,
-    positiveBars,
-    negativeBars = [],
-    lines = [],
-    zones = [],
-    refLines = [],
-    leftAxis,
-    rightAxis,
-    barWidthRatio = 0.6,
-    barLayout = 'stacked',
-    barOpacity,
-    tooltipLabel,
-    renderPrefixTooltipRows,
-    renderExtraTooltipRows,
-    hideBarTooltipRows = false,
-    formatValue = (v) => String(Math.round(v)),
-    numTicksX,
-    marginLeft,
-    plot,
-    highlightedKey,
-    barSeries,
-    lineSeries,
-  } = props
-
-  const dimOpacity = (key: string): number =>
-    highlightedKey === null || highlightedKey === key ? 1 : 0.15
-
-  // Widen right margin when a right axis is rendered — labels need ~36px to fit "100"/"60m" etc.
-  const MARGIN = useMemo(
-    () =>
-      chartMargin({
-        rightAxis: Boolean(rightAxis),
-        ...(marginLeft !== undefined && { left: marginLeft }),
-      }),
-    [rightAxis, marginLeft],
-  )
-  const xMax = plot.width - MARGIN.left - MARGIN.right
-  const yMax = plot.height - MARGIN.top - MARGIN.bottom
-
-  const xScale = useMemo(
-    () => scalePoint<string>({ domain: data.map(getX), range: [0, xMax], padding: 0.3 }),
-    [data, xMax, getX],
-  )
-
-  const leftYScale = useMemo(() => {
-    if (leftAxis.domain === 'auto') {
-      const autoPad = leftAxis.autoPad ?? 1.1
-      let maxSum = 0
-      let minSum = 0
-      if (barLayout === 'stacked') {
-        for (const d of data) {
+  // `stacked` needs the SUMMED per-point total (bars stack on top of each other), not a per-series
+  // max — the built-in 'auto' domain (per-series max) would clip a multi-bar stack. Left-axis line
+  // overlays fold into the same min/max comparison, matching the pre-CartesianChart auto-domain
+  // math. Skipped when the caller already supplies a fixed tuple or their own domain function.
+  const yConfig = useMemo<AxisConfig<T>>(() => {
+    // `y ?? {}` INSIDE the memo, never a `y = {}` destructuring default: the default builds a
+    // fresh object every render, which busts this memo and cascades into `CartesianChart`'s own
+    // margin/scale memos. Same pattern as `StackedArea`.
+    const base = y ?? {}
+    if (barLayout !== 'stacked' || (base.domain !== undefined && base.domain !== 'auto'))
+      return base
+    const pad = base.autoPad ?? 1.1
+    return {
+      ...base,
+      // Visible-only, so a legend toggle shrinks the axis rather than leaving a gap.
+      domain: (rows: readonly T[], visible: readonly ChartSeries<T>[]) => {
+        const shown = new Set(visible.map((s) => s.key))
+        let maxSum = 0
+        let minSum = 0
+        for (const d of rows) {
           let pos = 0
           for (const b of positiveBars) {
+            if (!shown.has(b.key)) continue
             const v = getValue(d, b.key)
             if (v !== null && !Number.isNaN(v) && v > 0) pos += v
           }
           let neg = 0
           for (const b of negativeBars) {
+            if (!shown.has(b.key)) continue
             const v = getValue(d, b.key)
             if (v !== null && !Number.isNaN(v) && v > 0) neg -= v
           }
           if (pos > maxSum) maxSum = pos
           if (neg < minSum) minSum = neg
         }
-      } else {
-        for (const d of data) {
-          for (const b of positiveBars) {
-            if ((b.axisSide ?? 'left') !== 'left') continue
-            const v = getValue(d, b.key)
+        for (const ln of lines) {
+          if ((ln.axisSide ?? 'left') !== 'left' || !shown.has(ln.key)) continue
+          for (const d of rows) {
+            const v = getValue(d, ln.key)
             if (v === null || Number.isNaN(v)) continue
             if (v > maxSum) maxSum = v
+            if (v < minSum) minSum = v
           }
         }
-      }
-      for (const ln of lines) {
-        if ((ln.axisSide ?? 'left') !== 'left') continue
-        for (const d of data) {
-          const v = getValue(d, ln.key)
-          if (v === null || Number.isNaN(v)) continue
-          if (v > maxSum) maxSum = v
-          if (v < minSum) minSum = v
-        }
-      }
-      const upper = Math.max(maxSum, leftAxis.autoMaxFloor ?? maxSum) * autoPad
-      const ceil = leftAxis.autoMinCeil ?? 0
-      const lower = padAutoLower(Math.min(minSum, ceil), autoPad)
-      return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
+        const upper = Math.max(maxSum, base.autoMaxFloor ?? maxSum) * pad
+        const ceil = base.autoMinCeil ?? 0
+        return [padAutoLower(Math.min(minSum, ceil), pad), upper]
+      },
     }
-    return scaleLinear<number>({ domain: leftAxis.domain, range: [yMax, 0] })
-  }, [data, leftAxis, positiveBars, negativeBars, lines, getValue, yMax, barLayout])
+  }, [y, barLayout, positiveBars, negativeBars, lines, getValue])
 
-  const rightYScale = useMemo(() => {
-    if (!rightAxis) return null
-    if (rightAxis.domain === 'auto') {
-      const autoPad = rightAxis.autoPad ?? 1.1
-      let max = -Infinity
-      let min = Infinity
-      if (barLayout === 'grouped') {
-        for (const d of data) {
-          for (const b of positiveBars) {
-            if ((b.axisSide ?? 'left') !== 'right') continue
-            const v = getValue(d, b.key)
-            if (v === null || Number.isNaN(v)) continue
-            if (v > max) max = v
-            if (v < min) min = v
-          }
-        }
-      }
-      for (const ln of lines) {
-        if ((ln.axisSide ?? 'left') !== 'right') continue
-        for (const d of data) {
-          const v = getValue(d, ln.key)
-          if (v === null || Number.isNaN(v)) continue
-          if (v > max) max = v
-          if (v < min) min = v
-        }
-      }
-      for (const z of zones) {
-        if ((z.axisSide ?? 'left') !== 'right') continue
-        if (Number.isFinite(z.to) && z.to > max) max = z.to
-        if (Number.isFinite(z.from) && z.from < min) min = z.from
-      }
-      for (const r of refLines) {
-        if ((r.axisSide ?? 'left') !== 'right') continue
-        if (r.value > max) max = r.value
-        if (r.value < min) min = r.value
-      }
-      const safeMax = Number.isFinite(max) ? max : 0
-      const safeMin = Number.isFinite(min) ? min : 0
-      const upper = Math.max(safeMax, rightAxis.autoMaxFloor ?? safeMax) * autoPad
-      const ceil = rightAxis.autoMinCeil ?? 0
-      const lower = padAutoLower(Math.min(safeMin, ceil), autoPad)
-      return scaleLinear<number>({ domain: [lower, upper], range: [yMax, 0], nice: true })
-    }
-    return scaleLinear<number>({ domain: rightAxis.domain, range: [yMax, 0] })
-  }, [data, rightAxis, lines, zones, refLines, positiveBars, getValue, yMax, barLayout])
-
-  const tooltipStyles = useTooltipStyles()
-  const { tip, tooltipRef, syncedPoint, isDirectHover, handleMouse, handleLeave } = useHoverSync<T>(
-    {
-      data,
-      chartId,
-      getKey: getX,
-      xScale,
-      marginLeft: MARGIN.left,
-    },
-  )
-
-  const tickValues = useMemo(
+  const mappedRefLines = useMemo(
     () =>
-      numTicksX ? smartTicksEvery(data.map(getX), numTicksX) : smartTicks(data.map(getX), xMax),
-    [data, xMax, getX, numTicksX],
+      refLines?.map((r) => ({
+        value: r.value,
+        color: r.color,
+        ...(r.dashed !== undefined && { dashed: r.dashed }),
+        ...(r.axisSide !== undefined && { axis: r.axisSide }),
+      })),
+    [refLines],
   )
 
-  const groupWidth = Math.max((xMax / Math.max(data.length, 1)) * barWidthRatio, 2)
-  // Per-bar widths + offsets for grouped layout (weighted distribution).
-  const groupedBarWidths = useMemo(() => {
-    if (barLayout !== 'grouped') return [] as number[]
-    const totalWeight = positiveBars.reduce((s, b) => s + (b.weight ?? 1), 0) || 1
-    return positiveBars.map((b) => Math.max(groupWidth * ((b.weight ?? 1) / totalWeight), 1))
-  }, [positiveBars, groupWidth, barLayout])
-  const groupedBarOffsets = useMemo(() => {
-    const out: number[] = []
+  return (
+    <CartesianChart
+      data={data}
+      chartId={chartId}
+      getX={getX}
+      series={series}
+      y={yConfig}
+      {...(y2 !== undefined && { y2 })}
+      {...(xTicks !== undefined && { xTicks })}
+      {...(zones !== undefined && { zones })}
+      {...(mappedRefLines !== undefined && { refLines: mappedRefLines })}
+      {...(height !== undefined && { height })}
+      {...(legend !== undefined && { legend })}
+      {...(tooltip !== undefined && { tooltip })}
+      {...(margin !== undefined && { margin })}
+      {...(ariaLabel !== undefined && { ariaLabel })}
+      {...(isPending !== undefined && { isPending })}
+    >
+      {(ctx) => (
+        <BarsMarks
+          getX={getX}
+          getValue={getValue}
+          positiveBars={positiveBars}
+          negativeBars={negativeBars}
+          lines={lines}
+          barWidthRatio={barWidthRatio}
+          barLayout={barLayout}
+          {...(barOpacity !== undefined && { barOpacity })}
+          ctx={ctx}
+        />
+      )}
+    </CartesianChart>
+  )
+}
+
+type BarRectDatum = {
+  key: string
+  x: number
+  y: number
+  width: number
+  height: number
+  fill: string
+  fillOpacity: number
+}
+
+type LinePt<T> = { __d: T; __y: number }
+
+type BarsMarksProps<T> = {
+  getX: (d: T) => string
+  getValue: (d: T, key: string) => number | null
+  positiveBars: BarsBar[]
+  negativeBars: BarsBar[]
+  lines: BarsLine[]
+  barWidthRatio: number
+  barLayout: 'stacked' | 'grouped'
+  barOpacity?: (d: T, key: string) => number
+  ctx: PlotContext<T>
+}
+
+/**
+ * The bars, line overlays, and zero baseline. A component rather than an inline render-prop body
+ * so the per-row rect geometry can be memoized: the cursor is a shared store, so every pointer
+ * frame re-renders every mounted chart, and re-walking rows × bar-series (building fresh rect data
+ * + allocating a `<rect>`/`<g>` per bar) each frame is pure waste (parity with StackedAreaMarks /
+ * MultiLineMarks).
+ */
+function BarsMarks<T>({
+  getX,
+  getValue,
+  positiveBars,
+  negativeBars,
+  lines,
+  barWidthRatio,
+  barLayout,
+  barOpacity,
+  ctx,
+}: BarsMarksProps<T>) {
+  const { data: rows, xScale, yScale, y2Scale, xMax, hidden, highlighted } = ctx
+
+  // Per-row bar rects — memoized on every input that drives the geometry (not on `hidden`/
+  // `highlighted` alone: a legend toggle or hover must still recompute, a hover-frame re-render of
+  // an unrelated chart must not). `scaleForSide`/`dim` are declared INSIDE the factory (rather than
+  // shared with the JSX below) so exhaustive-deps traces their `yScale`/`y2Scale`/`highlighted`
+  // reads directly instead of demanding the closures themselves as deps — those are recreated every
+  // render and would bust the memo every render if listed.
+  const barGroups = useMemo(() => {
+    const scaleForSide = (side: 'left' | 'right' | undefined) =>
+      side === 'right' && y2Scale ? y2Scale : yScale
+    const dim = (key: string) => (highlighted === null || highlighted === key ? 1 : 0.15)
+
+    const groupWidth = Math.max((xMax / Math.max(rows.length, 1)) * barWidthRatio, 2)
+    const totalWeight =
+      barLayout === 'grouped' ? positiveBars.reduce((s, b) => s + (b.weight ?? 1), 0) || 1 : 1
+    const groupedBarWidths =
+      barLayout === 'grouped'
+        ? positiveBars.map((b) => Math.max(groupWidth * ((b.weight ?? 1) / totalWeight), 1))
+        : []
+    const groupedBarOffsets: number[] = []
     let cursor = 0
     for (const w of groupedBarWidths) {
-      out.push(cursor)
+      groupedBarOffsets.push(cursor)
       cursor += w
     }
+
+    return rows.map((d) => {
+      const cx = xScale(getX(d)) ?? 0
+      const groupLeft = cx - groupWidth / 2
+      const rects: BarRectDatum[] = []
+
+      if (barLayout === 'stacked') {
+        let posOffset = 0
+        for (const b of positiveBars) {
+          if (hidden.has(b.key)) continue
+          const v = getValue(d, b.key)
+          if (v === null || Number.isNaN(v) || v <= 0) continue
+          const top = posOffset + v
+          const yTop = yScale(top)
+          const yBottom = yScale(posOffset)
+          rects.push({
+            key: `${getX(d)}-${b.key}`,
+            x: groupLeft,
+            y: yTop,
+            width: groupWidth,
+            height: yBottom - yTop,
+            fill: b.color,
+            fillOpacity: (barOpacity?.(d, b.key) ?? 0.85) * dim(b.key),
+          })
+          posOffset = top
+        }
+        let negOffset = 0
+        for (const b of negativeBars) {
+          if (hidden.has(b.key)) continue
+          const v = getValue(d, b.key)
+          if (v === null || Number.isNaN(v) || v <= 0) continue
+          const top = negOffset + v
+          const yTop = yScale(-negOffset)
+          const yBottom = yScale(-top)
+          rects.push({
+            key: `${getX(d)}-${b.key}-neg`,
+            x: groupLeft,
+            y: yTop,
+            width: groupWidth,
+            height: yBottom - yTop,
+            fill: b.color,
+            fillOpacity: (barOpacity?.(d, b.key) ?? 0.85) * dim(b.key),
+          })
+          negOffset = top
+        }
+      } else {
+        positiveBars.forEach((b, i) => {
+          if (hidden.has(b.key)) return
+          const v = getValue(d, b.key)
+          if (v === null || Number.isNaN(v) || v <= 0) return
+          const scale = scaleForSide(b.axisSide)
+          const yTop = scale(v)
+          const yBottom = scale(0)
+          rects.push({
+            key: `${getX(d)}-${b.key}`,
+            x: groupLeft + (groupedBarOffsets[i] ?? 0),
+            y: yTop,
+            width: groupedBarWidths[i] ?? 0,
+            height: yBottom - yTop,
+            fill: b.color,
+            fillOpacity: (barOpacity?.(d, b.key) ?? 0.85) * dim(b.key),
+          })
+        })
+      }
+
+      return { rowKey: getX(d), rects }
+    })
+  }, [
+    rows,
+    xScale,
+    yScale,
+    y2Scale,
+    xMax,
+    hidden,
+    highlighted,
+    positiveBars,
+    negativeBars,
+    barLayout,
+    barWidthRatio,
+    barOpacity,
+    getX,
+    getValue,
+  ])
+
+  // Per-line valid points — walked once per (lines, rows), not re-walked inside the render map
+  // every paint (parity with DualPanel's lineValid / MultiLine's pointsBySeries).
+  const lineValid = useMemo(() => {
+    const out = new Map<string, LinePt<T>[]>()
+    for (const ln of lines) {
+      const valid: LinePt<T>[] = []
+      for (const d of rows) {
+        const v = getValue(d, ln.key)
+        if (v !== null && !Number.isNaN(v)) valid.push({ __d: d, __y: v })
+      }
+      out.set(ln.key, valid)
+    }
     return out
-  }, [groupedBarWidths])
+  }, [lines, rows, getValue])
 
-  const scaleFor = (side: 'left' | 'right' | undefined) =>
-    side === 'right' && rightYScale ? rightYScale : leftYScale
-
-  const tooltipLbl = tip ? (tooltipLabel?.(tip.data) ?? null) : null
+  // Cheap per-render closures for the JSX below — unlike `barGroups`' O(rows × series) walk,
+  // calling these a handful of times per paint (once per line/baseline) isn't worth memoizing.
+  const scaleForSide = (side: 'left' | 'right' | undefined) =>
+    side === 'right' && y2Scale ? y2Scale : yScale
+  const dim = (key: string) => (highlighted === null || highlighted === key ? 1 : 0.15)
 
   return (
     <>
-      <svg width={plot.width} height={plot.height}>
-        <Group left={MARGIN.left} top={MARGIN.top}>
-          <GridRows
-            scale={leftYScale}
-            width={xMax}
-            stroke={VX.grid}
-            numTicks={leftAxis.numTicks ?? 5}
+      {barGroups.map((group) => (
+        <g key={`bars-${group.rowKey}`}>
+          {group.rects.map((r) => (
+            <rect
+              key={r.key}
+              x={r.x}
+              y={r.y}
+              width={r.width}
+              height={r.height}
+              rx={1.4}
+              fill={r.fill}
+              fillOpacity={r.fillOpacity}
+            />
+          ))}
+        </g>
+      ))}
+
+      {lines.map((ln) => {
+        if (hidden.has(ln.key)) return null
+        const scale = scaleForSide(ln.axisSide)
+        const valid = lineValid.get(ln.key) ?? []
+        if (valid.length === 0) return null
+        return (
+          <LinePath<LinePt<T>>
+            key={`line-${ln.key}`}
+            data={valid}
+            x={(p) => xScale(getX(p.__d)) ?? 0}
+            y={(p) => scale(p.__y)}
+            stroke={ln.color}
+            strokeWidth={ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
+            strokeDasharray={ln.dashed ? VX.dashArray : undefined}
+            strokeOpacity={dim(ln.key)}
+            curve={curveMonotoneX}
           />
+        )
+      })}
 
-          <ZoneRects zones={zones} width={xMax} leftScale={leftYScale} rightScale={rightYScale} />
-
-          {refLines.map((r, i) => {
-            const scale = scaleFor(r.axisSide)
-            return (
-              <line
-                key={`ref-${i}`}
-                x1={0}
-                x2={xMax}
-                y1={scale(r.value)}
-                y2={scale(r.value)}
-                stroke={r.color}
-                strokeDasharray={r.dashed ? VX.dashArray : undefined}
-              />
-            )
-          })}
-
-          {data.map((d) => {
-            const cx = xScale(getX(d)) ?? 0
-            const groupLeft = cx - groupWidth / 2
-
-            const els: ReactNode[] = []
-
-            if (barLayout === 'stacked') {
-              let posOffset = 0
-              for (const b of positiveBars) {
-                const v = getValue(d, b.key)
-                if (v === null || Number.isNaN(v) || v <= 0) continue
-                const top = posOffset + v
-                const yTop = leftYScale(top)
-                const yBottom = leftYScale(posOffset)
-                els.push(
-                  <rect
-                    key={`${getX(d)}-${b.key}`}
-                    x={groupLeft}
-                    y={yTop}
-                    width={groupWidth}
-                    height={yBottom - yTop}
-                    rx={1.4}
-                    fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
-                  />,
-                )
-                posOffset = top
-              }
-              let negOffset = 0
-              for (const b of negativeBars) {
-                const v = getValue(d, b.key)
-                if (v === null || Number.isNaN(v) || v <= 0) continue
-                const top = negOffset + v
-                const yTop = leftYScale(-negOffset)
-                const yBottom = leftYScale(-top)
-                els.push(
-                  <rect
-                    key={`${getX(d)}-${b.key}-neg`}
-                    x={groupLeft}
-                    y={yTop}
-                    width={groupWidth}
-                    height={yBottom - yTop}
-                    rx={1.4}
-                    fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
-                  />,
-                )
-                negOffset = top
-              }
-            } else {
-              positiveBars.forEach((b, i) => {
-                const v = getValue(d, b.key)
-                if (v === null || Number.isNaN(v) || v <= 0) return
-                const scale = scaleFor(b.axisSide)
-                const yTop = scale(v)
-                const yBottom = scale(0)
-                els.push(
-                  <rect
-                    key={`${getX(d)}-${b.key}`}
-                    x={groupLeft + (groupedBarOffsets[i] ?? 0)}
-                    y={yTop}
-                    width={groupedBarWidths[i] ?? 0}
-                    height={yBottom - yTop}
-                    rx={1.4}
-                    fill={b.color}
-                    fillOpacity={(barOpacity?.(d, b.key) ?? 0.85) * dimOpacity(b.key)}
-                  />,
-                )
-              })
-            }
-
-            return <g key={`bars-${getX(d)}`}>{els}</g>
-          })}
-
-          {lines.map((ln) => {
-            const scale = scaleFor(ln.axisSide)
-            type LinePt = { __d: T; __y: number }
-            const valid: LinePt[] = []
-            for (const d of data) {
-              const v = getValue(d, ln.key)
-              if (v !== null && !Number.isNaN(v)) valid.push({ __d: d, __y: v })
-            }
-            if (valid.length === 0) return null
-            return (
-              <LinePath<LinePt>
-                key={`line-${ln.key}`}
-                data={valid}
-                x={(p) => xScale(getX(p.__d)) ?? 0}
-                y={(p) => scale(p.__y)}
-                stroke={ln.color}
-                strokeWidth={ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
-                strokeDasharray={ln.dashed ? VX.dashArray : undefined}
-                strokeOpacity={dimOpacity(ln.key)}
-                curve={curveMonotoneX}
-              />
-            )
-          })}
-
-          {negativeBars.length > 0 && (
-            <line
-              x1={0}
-              x2={xMax}
-              y1={leftYScale(0)}
-              y2={leftYScale(0)}
-              stroke={VX.grid}
-              strokeWidth={1}
-            />
-          )}
-
-          {syncedPoint &&
-            (() => {
-              const sx = xScale(getX(syncedPoint)) ?? 0
-              return (
-                <>
-                  <Crosshair x={sx} top={0} bottom={yMax} />
-                  {lines.map((ln) => {
-                    const v = getValue(syncedPoint, ln.key)
-                    if (v === null || Number.isNaN(v)) return null
-                    const scale = scaleFor(ln.axisSide)
-                    return (
-                      <SeriesDot key={`dot-${ln.key}`} cx={sx} cy={scale(v)} color={ln.color} />
-                    )
-                  })}
-                </>
-              )
-            })()}
-
-          <AxisLeftNumeric
-            scale={leftYScale}
-            numTicks={leftAxis.numTicks ?? 5}
-            {...(leftAxis.formatTick !== undefined && { tickFormat: leftAxis.formatTick })}
-          />
-          {rightYScale && rightAxis && (
-            <AxisRightNumeric
-              scale={rightYScale}
-              left={xMax}
-              numTicks={rightAxis.numTicks ?? 5}
-              {...(rightAxis.formatTick !== undefined && { tickFormat: rightAxis.formatTick })}
-            />
-          )}
-          <AxisBottomDate top={yMax} scale={xScale} tickValues={tickValues} />
-
-          <HoverOverlay width={xMax} height={yMax} onMove={handleMouse} onLeave={handleLeave} />
-        </Group>
-      </svg>
-      <ChartTooltip tip={isDirectHover ? tip : null} tooltipRef={tooltipRef} styles={tooltipStyles}>
-        {tip && isDirectHover && (
-          <>
-            <TooltipHeader
-              date={getX(tip.data)}
-              {...(tooltipLbl !== null && { label: tooltipLbl.text, labelColor: tooltipLbl.color })}
-            />
-            <TooltipBody>
-              {renderPrefixTooltipRows?.(tip.data)}
-              {!hideBarTooltipRows &&
-                deriveTooltipRows(barSeries, tip.data, formatValue).map((row) => (
-                  <TooltipRow
-                    key={row.key}
-                    color={row.color}
-                    label={row.label}
-                    value={row.value}
-                    shape={row.shape}
-                  />
-                ))}
-              {deriveTooltipRows(lineSeries, tip.data, formatValue).map((row) => (
-                <TooltipRow
-                  key={row.key}
-                  color={row.color}
-                  label={row.label}
-                  value={row.value}
-                  shape={row.shape}
-                  dashed={row.dashed}
-                  {...(row.strokeWidth !== undefined && { strokeWidth: row.strokeWidth })}
-                />
-              ))}
-              {renderExtraTooltipRows?.(tip.data)}
-            </TooltipBody>
-          </>
-        )}
-      </ChartTooltip>
+      {negativeBars.length > 0 && (
+        <line x1={0} x2={xMax} y1={yScale(0)} y2={yScale(0)} stroke={VX.grid} strokeWidth={1} />
+      )}
     </>
   )
 }

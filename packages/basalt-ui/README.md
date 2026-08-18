@@ -222,7 +222,7 @@ deleted rather than silently surviving into the next real skew.
 | Subpath             | Mantine? | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThreadWorkspace` + thread-chat components, shell types — the root entry still re-exports the thread-chat components; `./agent-chat` takes the same components standalone, without `BasaltProvider`, the shell, the dashboard composites, or `./connectivity`                                                                                                                    |
-| `./charts`          | **free** | visx chart primitives, sparklines, hooks, and token re-exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `./charts`          | **free** | `CartesianChart` + visx primitives, kinds, sparklines, hooks, token re-exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `loadOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps; `basaltAppPlugin(opts)` — PWA head, manifest, and icon metadata derived from the token palette                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -331,9 +331,45 @@ bun add @visx/axis @visx/curve @visx/event @visx/grid @visx/group @visx/responsi
 dependency-free: it needs the nine `@visx/*` packages, all pinned exact at `4.0.0`. They ship as
 optional peers, not bundled dependencies, so a `./tokens`-only consumer never installs them.
 
+`CartesianChart` is the entry point: it owns the measured margins, both y scales and their
+domains, the axes, grid, the page-shared cursor, the crosshair and the derived tooltip, so a chart
+supplies its `series` and draws only marks. Legends toggle series, margins size themselves from
+the tick labels actually painted, and charts share a cursor with no provider.
+
 ```tsx
-import { Bars, VxThemeProvider } from 'basalt-ui/charts'
+import { CartesianChart, LinePath, VX } from 'basalt-ui/charts'
+;<CartesianChart
+  data={rows}
+  chartId="sessions"
+  getX={(d) => d.date}
+  series={[
+    {
+      key: 'sessions',
+      label: 'Sessions',
+      color: VX.accent,
+      mark: 'line',
+      getValue: (d) => d.sessions,
+    },
+  ]}
+  y={{ format: (v) => v.toFixed(0) }}
+  height={260}
+>
+  {({ visible, xScale, yScale }) =>
+    visible.map((s) => (
+      <LinePath
+        key={s.key}
+        data={rows}
+        x={(d) => xScale(d.date) ?? 0}
+        y={(d) => yScale(s.getValue(d) ?? 0)}
+        stroke={s.color}
+      />
+    ))
+  }
+</CartesianChart>
 ```
+
+Shipped kinds (`Bars`, `MultiLine`, `StackedArea`, `ZonedLine`, `Donut`, `DualPanel`, `Heatmap`)
+are that same composition, pre-wired.
 
 ### `./query` — TanStack Query adapter
 

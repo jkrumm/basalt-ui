@@ -20,6 +20,8 @@
     "basalt/raw-size-literal": "warn",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
+    "basalt/hand-rolled-plot": "warn",
+    "basalt/chart-legend-literal": "warn",
     "basalt/raw-scroll-container": "error",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",

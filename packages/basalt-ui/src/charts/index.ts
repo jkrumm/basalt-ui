@@ -2,8 +2,9 @@
  * `./charts` — Mantine-free visx chart system (ZERO `@mantine/*` imports, lint-enforced).
  *
  * Re-exports the framework token layer (so chart consumers have one import surface), the chart
- * theme context, the shared-cursor hover context, the primitives, kinds, sparklines, hooks, utils,
- * and a curated set of raw @visx primitives for bespoke charts.
+ * theme context, the shared cursor (module-level store — charts sync with no provider; see
+ * `docs/CHARTS-SPEC.md` §3), the primitives, kinds, sparklines, hooks, utils, and a curated set of
+ * raw @visx primitives for bespoke charts.
  *
  * The framework ships ONLY generic primitives + framework palette data — no domain series tree
  * (apps rebuild that app-side with `seriesTokens` / `groupTokens` against their own series maps).
@@ -27,10 +28,15 @@ export {
 // ── Design seam type (type-only; erased at runtime — no @mantine value) ─
 export type { SeriesKey } from '../register'
 
-// ── Chart theme + hover context ──────────────────────────────────────────
+// ── Chart theme + shared cursor ──────────────────────────────────────────
 export { VxThemeProvider, useVxTheme, type VxTheme } from './theme'
-export { HoverContext, DEFAULT_NO_OP_SET_HOVER, type HoverCtx } from './hover-context'
-export { ChartHoverSync, type ChartHoverSyncProps } from './hover-sync'
+export { ChartCursorScope, type ChartCursorScopeProps, useCursorState } from './cursor/scope'
+export {
+  createCursorStore,
+  globalCursorStore,
+  type CursorState,
+  type CursorStore,
+} from './cursor/store'
 
 // ── Series descriptor (the legend/tooltip single source of truth) ────────
 export {
@@ -46,8 +52,21 @@ export {
 } from './series'
 
 // ── Primitives ───────────────────────────────────────────────────────────
-export { ResponsiveChart, type ResponsiveChartProps } from './primitives/ResponsiveChart'
-export { ChartFrame, type ChartFrameProps, type ChartFrameLegend } from './primitives/ChartFrame'
+export {
+  CartesianChart,
+  resolveAxisDomain,
+  type CartesianChartProps,
+  type CartesianTooltipConfig,
+  type AxisConfig,
+  type PlotContext,
+} from './primitives/CartesianChart'
+export {
+  ChartFrame,
+  type ChartFrameProps,
+  type ChartFrameLegend,
+  type PlotRect,
+  resolveLegend,
+} from './primitives/ChartFrame'
 export {
   ChartCenter,
   type ChartCenterProps,
@@ -58,11 +77,10 @@ export { Crosshair, SeriesDot } from './primitives/Crosshair'
 export { ChartCard } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
 export {
-  ChartTooltip,
+  ChartTooltipFloat,
   TooltipHeader,
   TooltipRow,
   TooltipBody,
-  useTooltipStyles,
 } from './primitives/ChartTooltip'
 export { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './primitives/Axes'
 export { HoverOverlay } from './primitives/HoverOverlay'
@@ -71,13 +89,14 @@ export { XZoneRects, type XZoneSpec } from './primitives/XZoneRects'
 export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
 
 // ── Hooks ────────────────────────────────────────────────────────────────
-export { useChartTooltip, type TooltipState } from './hooks/useChartTooltip'
-export { useHoverSync } from './hooks/useHoverSync'
+export { useChartCursor, type ChartCursor, type CursorAnchor } from './hooks/useChartCursor'
 export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
 // ── Utils ────────────────────────────────────────────────────────────────
 export { fmtAxisDate, fmtTooltipDate } from './utils/format'
-export { smartTicks } from './utils/ticks'
+export { smartTicks, smartTicksEvery } from './utils/ticks'
+export { autoMargin, probeAxisLabels, type AutoMarginInput } from './layout/auto-margin'
+export { measureText, maxTextWidth } from './utils/measure-text'
 
 // ── Kind components (owned by a sibling agent under ./kinds) ──────────────
 export {
@@ -86,7 +105,6 @@ export {
   type ZonedLineZone,
   type ZonedLineThreshold,
   type ZonedLineRefLine,
-  type ZonedLineTooltipLabel,
 } from './kinds/ZonedLine'
 
 export {
@@ -96,7 +114,6 @@ export {
   type BarsLine,
   type BarsZone,
   type BarsRefLine,
-  type BarsAxisConfig,
 } from './kinds/Bars'
 
 export { StackedArea, type StackedAreaProps } from './kinds/StackedArea'
