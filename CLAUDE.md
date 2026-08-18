@@ -85,7 +85,7 @@ bun run dev:playground     # start the playground consumer
 bun run lint               # oxlint
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
-bun run typecheck          # tsc across package + playground
+bun run typecheck          # tsc across package + playground (see the dist footgun below)
 bun run pre                # fmt:check && lint && typecheck (run before committing)
 ```
 
@@ -94,6 +94,15 @@ bun run pre                # fmt:check && lint && typecheck (run before committi
 ```bash
 cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + tsc declarations
 ```
+
+**Footgun: the playground's typecheck reads `dist`, not `src`.** Vite aliases `basalt-ui` to the
+package's `src/` (`apps/playground/vite.config.ts`), so the RUNNING playground always exercises
+source — but `apps/playground/tsconfig.json` declares no `paths`, so `tsc` resolves `basalt-ui/*`
+through node_modules → the package's `exports` → `dist/**/*.d.ts`. A new export or a widened
+signature is therefore invisible to `bun run typecheck` until `bun run build` runs, and the
+playground half can report green against types the package no longer has. Same class as the
+`check-theme`-reads-dist footgun in `packages/basalt-ui/CLAUDE.md`: **build before trusting a
+typecheck that spans both.**
 
 **Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
 playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
