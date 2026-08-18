@@ -69,11 +69,11 @@ The system is a combination of three studied design systems — the best of each
 Three tiers, matching the W3C Design Tokens model. The structure is the law; basalt's `--vx-*`
 prefix is the framework instantiation.
 
-| Tier          | What                 | Where (basalt)                                  | Example                            |
-| ------------- | -------------------- | ----------------------------------------------- | ---------------------------------- |
-| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                      | a designed hue stop                |
+| Tier          | What                 | Where (basalt)                                              | Example                                         |
+| ------------- | -------------------- | ----------------------------------------------------------- | ----------------------------------------------- |
+| **Primitive** | Raw designed hues    | palette data (`BP`, `p()`)                                  | a designed hue stop                             |
 | **Semantic**  | Intent-bearing pairs | `STATUS`/`SEMANTIC`/`NEUTRAL`/`SURFACE` → `--vx-*` → `VX.*` | `VX.status.good`, `VX.line`, `VX.surface.panel` |
-| **Component** | Element-specific     | Mantine theme + chart primitives                | `ChartCard`, Mantine `color="blue"` |
+| **Component** | Element-specific     | Mantine theme + chart primitives                            | `ChartCard`, Mantine `color="blue"`             |
 
 **Flow** — three layers, strictly separated:
 
@@ -128,17 +128,18 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
   drop shadow" framing below the ring; when this section and that spec disagree on a concrete
   value, the spec wins). Elevation tiers:
 
-  | Level        | Treatment                                        | Use                                |
-  | ------------ | ------------------------------------------------- | ----------------------------------- |
-  | 0 (flat)     | No border, no shadow                               | Body text, page background         |
-  | 1 (surface)  | `surface-1` on `canvas`                            | Cards, panels                      |
+  | Level        | Treatment                                           | Use                                |
+  | ------------ | --------------------------------------------------- | ---------------------------------- |
+  | 0 (flat)     | No border, no shadow                                | Body text, page background         |
+  | 1 (surface)  | `surface-1` on `canvas`                             | Cards, panels                      |
   | 2 (elevated) | `surface-2` + `shadow-card` (whisper shadow + ring) | Chart area, tooltips, lifted cards |
-  | 3 (focus)    | 2px primary outline                                | Focused input / control             |
+  | 3 (focus)    | 2px primary outline                                 | Focused input / control            |
 
   `Card`/`Paper` default to the `shadow-card` token (a low-opacity shadow with the 1px ring baked
   into the shadow itself, no `border` property) — depth comes from that whisper shadow, not a bare
   hairline. There **is** a card-shadow token (`--vx-shadow-card`); reach for a plain Mantine
   `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
+
 - **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: default `sm` for
   controls, cards at `md`, pills/badges at `pill`. Owned in the theme, not inherited.
 - **Type carried by size + weight.** System-sans, no display/body family split. Numbers render in a
@@ -149,18 +150,26 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
 The signature surface. The discipline is structural: a small set of primitives, always composed; a
 kind-registry for recurring shapes; never loosen the primitives to fit a one-off.
 
-### The primitive contract (every non-sparkline chart composes ALL of these)
+### The primitive contract (see `docs/CHARTS-SPEC.md`)
 
-1. **ChartCard** — the wrapper; never a raw `<Card>`. Gives title + info-tooltip + extra slot,
-   consistent margin.
-2. **ChartLegend** — never hand-rolled legend markup. Supports `line | bar | split | splitLine`
-   shapes and optional highlight state.
-3. **ChartTooltip** + `TooltipHeader` + `TooltipRow` + `TooltipBody` — never import `@visx/tooltip`
-   directly.
-4. **AxisLeftNumeric** + **AxisBottomDate** — never raw `<AxisLeft>`/`<AxisBottom>` (they miss theme
-   tokens + smart ticks).
-5. **HoverOverlay** for mouse capture + **HoverContext** / hover-sync for cross-chart crosshair sync;
-   **useChartTooltip** for tip state.
+1. **`CartesianChart`** — every single-plot cartesian chart **MUST** compose it, and compose
+   nothing else from this list by hand. It owns the measured margins, both y scales and their
+   domains, the x scale and tick thinning, grid, zones, axes, the shared cursor, the crosshair and
+   its dots, the hover/keyboard overlay, and the derived tooltip. The caller supplies `series` + a
+   child that draws ONLY marks. Reaching past it for an axis, a tooltip or a margin means the chart
+   has drifted from every other chart. Mechanically enforced: `basalt/hand-rolled-plot` fails the
+   build on a chart-assembly primitive rendered in a file that doesn't compose `CartesianChart`
+   (escape: a `theme-allow` comment, for a genuinely non-single-plot shape — see #5).
+2. **ChartCard** — the wrapper; never a raw `<Card>`. Title + info-tooltip + extra slot.
+3. **`series` is the single source of truth** — legend entries and tooltip rows are DERIVED from it
+   (`deriveLegend` / `deriveTooltipRows`). A chart cannot show a row or a legend key it does not
+   draw. Never hand-author a legend or a tooltip row in parallel; `basalt/chart-legend-literal`
+   fails the build on a hand-written array literal passed to `ChartLegend`'s `items`.
+4. **The cursor is shared by default** (module-level store, no provider). `ChartCursorScope`
+   ISOLATES a subtree; it does not enable sharing.
+5. **Non-single-plot shapes** (`DualPanel`'s two panes, `Heatmap`, `Donut`) compose `ChartFrame` +
+   `useChartCursor` + `autoMargin` + `ChartTooltipFloat` directly — same machinery, different
+   assembly. Never raw `<AxisLeft>`/`<AxisBottom>`; never import `@visx/tooltip`.
 6. **Theme-aware colours** via `VX.*` tokens. **Never** raw hex literals in chart files. **Never**
    `localStorage.getItem('theme')`.
 
@@ -171,8 +180,8 @@ kind-registry for recurring shapes; never loosen the primitives to fit a one-off
 ### Kinds vs bespoke (Rule of Three)
 
 A **kind** is a recurring chart shape reusable across datasets (`ZonedLine`, `Bars`, `StackedArea`,
-`Donut`). Props are declarative — `data`, `width`, `height`, `chartId`, `getX`/`getY` accessors,
-zones/thresholds/refLines as plain arrays, `seriesLabel`/`formatValue` — config-first, no
+`Donut`). Props are declarative — `data`, `chartId`, `getX` accessor, `height`/`aspectRatio`/`fill`,
+zones/thresholds/refLines as plain arrays, one `AxisConfig` object per axis — config-first, no
 god-object `config` prop.
 
 1. **Second instance of an existing pattern?** Extract a kind and migrate both call sites. (Rule of

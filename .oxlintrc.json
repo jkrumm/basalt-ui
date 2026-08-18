@@ -24,6 +24,8 @@
     "basalt/raw-size-literal": "error",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
+    "basalt/hand-rolled-plot": "error",
+    "basalt/chart-legend-literal": "error",
     "basalt/raw-scroll-container": "error",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",

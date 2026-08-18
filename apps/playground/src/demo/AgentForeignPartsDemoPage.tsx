@@ -224,7 +224,7 @@ const foreignRenderers = definePartRenderers({
           getValue={(d) => d.value}
           isPending={!settled}
           positiveBars={[{ key: 'value', label: 'Stock', color: VX.line }]}
-          leftAxis={{ domain: 'auto' }}
+          y={{ domain: 'auto' }}
         />
       </ChartCard>
     </Stack>

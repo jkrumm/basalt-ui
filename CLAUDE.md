@@ -99,6 +99,19 @@ cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + t
 playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
 artifact resolves.
 
+## Charts: one mandatory primitive
+
+Every single-plot cartesian chart composes **`CartesianChart`** (`src/charts/primitives/`), which
+owns the measured margins, both y scales and their domains, the axes, grid, the page-shared cursor,
+the crosshair and its dots, the hover/keyboard overlay and the derived tooltip — the caller supplies
+`series` and draws only marks. This is enforced by `basalt/hand-rolled-plot`, not left to
+discipline; the non-single-plot shapes (`DualPanel`, `Donut`, `Heatmap`) are the declared
+exceptions and compose `ChartFrame` + `useChartCursor` + `autoMargin` + `ChartTooltipFloat` behind a
+`theme-allow` comment. Legends and tooltip rows are DERIVED from `series` and never hand-authored
+(`basalt/chart-legend-literal`). Margins measure themselves from the labels actually painted
+(`autoMargin`); `VX.margin` is only a floor. The cursor is shared page-wide by default with no
+provider — `ChartCursorScope` isolates a subtree. Ground truth: **`docs/CHARTS-SPEC.md`**.
+
 ## Mantine-Free Boundary (enforced)
 
 `src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`; `@visx/*` may **only** be
