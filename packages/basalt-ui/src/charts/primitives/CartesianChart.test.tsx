@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
@@ -265,5 +265,177 @@ describe('tooltip extraRows — ctx.visible/ctx.hidden track legend toggling', (
     fireEvent.click(screen.getByRole('button', { name: 'b' }))
 
     expect((await screen.findByTestId('extra-ctx')).textContent).toContain('visible:a|hidden:b')
+  })
+})
+
+describe('tooltip.onFollow — the follower renders when a SIBLING owns the cursor', () => {
+  function renderPair(onFollow?: boolean) {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="of-source"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="of-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, ...(onFollow !== undefined && { onFollow }) }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+  }
+
+  test('onFollow: true renders the follower tooltip rows while the source owns the cursor', async () => {
+    renderPair(true)
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    expect(await screen.findByText('b')).toBeTruthy()
+  })
+
+  test('without onFollow (default false), the follower renders no tooltip at all', async () => {
+    renderPair()
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    // The SOURCE still renders its own tooltip ('a') — only the follower ('b') stays silent.
+    expect(await screen.findByText('a')).toBeTruthy()
+    expect(screen.queryByText('b')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
+  })
+
+  // `follow` is deliberately left at its default (true, pointer-tracking) here — unlike every
+  // other case in this file, which hardcodes `follow: false` on the follower. That hardcoding
+  // means `useAnchoredPosition`'s FIRST clause (`tooltipCfg?.follow === false`) always already
+  // satisfies the anchored branch, so those tests can't tell `|| isFollowerRender` apart from a
+  // no-op. With `follow` left at its pointer-tracking default, anchoring can only come from
+  // `isFollowerRender` — and a follower's own `cursor.anchor` (set only by pointer/keyboard
+  // events ON THIS CHART, never by a sibling's) stays null for the whole test, since only the
+  // SOURCE is ever interacted with. So: `isFollowerRender` present → anchored position resolves
+  // from the crosshair and the tooltip mounts; `isFollowerRender` absent → the pointer-tracking
+  // branch falls through to the follower's own (never-set) `cursor.anchor`, which is null, and
+  // `ChartTooltipFloat` renders nothing at all for a null anchor. Presence/absence of the
+  // follower tooltip is what's observable here — happy-dom zeroes every `getBoundingClientRect`,
+  // so the anchor's actual pixel coordinates can't discriminate the two branches.
+  test('onFollow: true with follow left at its pointer-tracking default still anchors to the crosshair', async () => {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="of-anchor-source"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="of-anchor-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    expect(await screen.findByText('b')).toBeTruthy()
+  })
+})
+
+describe('tooltip.onFollow — aria-live stays SOURCE-only', () => {
+  test('the source tooltip is aria-live; the follower tooltip is not', async () => {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="al-source"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="al-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+    await screen.findByText('b')
+
+    const tooltips = screen.getAllByRole('tooltip')
+    expect(tooltips).toHaveLength(2)
+    const sourceTooltip = tooltips.find((t) => within(t).queryByText('a') !== null)
+    const followerTooltip = tooltips.find((t) => within(t).queryByText('b') !== null)
+    expect(sourceTooltip?.getAttribute('aria-live')).toBe('polite')
+    expect(followerTooltip?.hasAttribute('aria-live')).toBe(false)
+  })
+})
+
+describe('tooltip.onFollow — a follower whose domain never resolves the broadcast key renders nothing', () => {
+  test('an unrelated calendar stays silent, not an empty tooltip shell', async () => {
+    const foreignRows: Row[] = [{ date: '2027-01-15', a: 99, b: 99 }]
+
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="unres-source"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={foreignRows}
+          chartId="unres-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    // The SOURCE still renders its own tooltip — only the follower with no resolvable point stays
+    // silent, rather than mounting an empty tooltip shell.
+    expect(await screen.findByText('a')).toBeTruthy()
+    expect(screen.queryByText('b')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
   })
 })

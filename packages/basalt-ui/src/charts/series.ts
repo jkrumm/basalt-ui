@@ -66,6 +66,11 @@ export type SeriesStyle = {
    * that lies is the thing the derived-legend rule exists to prevent). The TOOLTIP ROW swatch and
    * the CROSSHAIR DOT deliberately do NOT honor it: those are 12px value-readout chips where a
    * sub-1 opacity reads as a rendering bug, not as data.
+   *
+   * Applies to STROKES only, so it silently no-ops on a `mark: 'bar'`/`'area'` series — a bar
+   * swatch has no stroke to dim. Dim those with `fillOpacity` instead. This bites the
+   * zone/reference-legend idiom in particular (`mark: 'bar'`, `getValue: () => null`), where
+   * reaching for `strokeOpacity` looks right and does nothing.
    */
   strokeOpacity?: number
   /** Which y-axis this series is measured against. Default 'left'. `'right'` is what makes a
