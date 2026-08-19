@@ -13,7 +13,10 @@
  * resolution the rest of this page's charts still use). Every chart is also keyboard-operable with
  * no extra wiring: tab into its plot and scrub with ←/→, Escape clears — and clicking any legend
  * entry hides that series from the plot, tooltip, and axis domain together (try it on "Weekly
- * channel volume", 8 legend entries).
+ * channel volume", 8 legend entries). "Health score", "Training load", and "Sessions vs revenue"
+ * additionally opt into `tooltip.onFollow` (`DualPanel`'s own `onFollow` prop) — each renders its
+ * own tooltip, anchored to the shared crosshair, when a SIBLING owns the cursor rather than only
+ * when it's the one hovered, so scrubbing any one of the three reads all three at once.
  *
  * Exercises: ZonedLine (zones/x-zones/thresholds/refLines/areaFill/tooltip.label, plus
  * `tooltip.extraRows` reading `{ visible, hidden }` and an edge-aligned `XZoneSpec` widening a
@@ -171,6 +174,9 @@ function SessionsRevenueChart({ data, chartId }: { data: DayPoint[]; chartId: st
       y2={{ format: (v) => `$${v.toFixed(1)}k` }}
       height={260}
       legend={{ placement: 'bottom' }}
+      // onFollow: this chart also renders its tooltip as a cursor FOLLOWER — hover "Health score" or
+      // "Training load" below and this one reads along, anchored to the shared crosshair.
+      tooltip={{ onFollow: true }}
     >
       {({ visible, xScale, yScale, y2Scale }) =>
         visible.map((s) => (
@@ -423,7 +429,7 @@ export function ChartsPage() {
         <ChartCard
           title="Health score"
           subtitle="A composite 0–100 with zone bands, an x-range band, and a target threshold"
-          tooltip="Zones frame at-risk / watch / healthy; the shaded taper-week band marks Mar 08–14; a second, edge-aligned band pins the Mar 12 peak to one full step (align: 'edge' — the same from === to band would render nothing under the default 'center' alignment); the dashed reference marks the 80 goal. The tooltip appends an extraRow comparing today's score to that goal, gated on the same hidden set the legend toggles."
+          tooltip="Zones frame at-risk / watch / healthy; the shaded taper-week band marks Mar 08–14; a second, edge-aligned band pins the Mar 12 peak to one full step (align: 'edge' — the same from === to band would render nothing under the default 'center' alignment); the dashed reference marks the 80 goal. The tooltip appends an extraRow comparing today's score to that goal, gated on the same hidden set the legend toggles. tooltip.onFollow: true also makes THIS chart render its tooltip when a sibling below owns the cursor, not only when it's the hovered one."
         >
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
@@ -448,7 +454,11 @@ export function ChartsPage() {
             thresholds={[{ value: 80, side: 'above', fill: alpha(VX.goodSolid, 0.14) }]}
             refLines={[{ value: 80, color: VX.goodRef, dashed: true }]}
             areaFill={demoColors.sessions}
-            tooltip={{ label: (d) => zoneLabel(d.health), extraRows: healthExtraRow }}
+            tooltip={{
+              label: (d) => zoneLabel(d.health),
+              extraRows: healthExtraRow,
+              onFollow: true,
+            }}
             ariaLabel="Health score trend, 0 to 100, March 1 to 14"
           />
         </ChartCard>
@@ -478,7 +488,7 @@ export function ChartsPage() {
           <ChartCard
             title="Training load"
             subtitle="Acute vs chronic, with the signed gap below"
-            tooltip="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded; a warning dot flags overreach days (divergence ≥ 10) via getMarker, drawn flat via ring: false + fillOpacity instead of the default punched-out ring. Bottom: the signed acute − chronic divergence — its tooltip row cites building/recovering via formatBar (formatBottom keeps owning the ticks). Both panes share one cursor with every other chart on this page. bottomMaxAbsFloor is set to 8, below this data's real max-abs of 13, so it's a floor that doesn't currently amplify anything — not a clamp."
+            tooltip="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded; a warning dot flags overreach days (divergence ≥ 10) via getMarker, drawn flat via ring: false + fillOpacity instead of the default punched-out ring. Bottom: the signed acute − chronic divergence — its tooltip row cites building/recovering via formatBar (formatBottom keeps owning the ticks). Both panes share one cursor with every other chart on this page. bottomMaxAbsFloor is set to 8, below this data's real max-abs of 13, so it's a floor that doesn't currently amplify anything — not a clamp. onFollow renders this chart's tooltip when a SIBLING owns the cursor too, anchored to the shared crosshair, not only when this chart is the one hovered."
           >
             <DualPanel<LoadPoint>
               data={LOAD_TREND}
@@ -522,6 +532,9 @@ export function ChartsPage() {
               }
               bottomYDomain="auto"
               bottomMaxAbsFloor={8}
+              // Renders its own tooltip as a cursor FOLLOWER too, anchored to the shared crosshair —
+              // hover "Health score" above and this one reads along instead of showing a bare line.
+              onFollow
             />
           </ChartCard>
         </SimpleGrid>
@@ -530,7 +543,7 @@ export function ChartsPage() {
           <ChartCard
             title="Sessions vs revenue"
             subtitle="Two series, same date axis, independent scales — left axis counts, right axis $k"
-            tooltip="Dual-axis composition: sessions and revenue share the calendar but not a y-scale. Composed straight from CartesianChart (series + y2) since no kind exposes independent left/right line axes."
+            tooltip="Dual-axis composition: sessions and revenue share the calendar but not a y-scale. Composed straight from CartesianChart (series + y2) since no kind exposes independent left/right line axes. tooltip.onFollow: true also renders this chart's tooltip as a cursor FOLLOWER, anchored to the shared crosshair, when Health score or Training load is hovered instead."
           >
             <SessionsRevenueChart data={SERIES_DATA} chartId="charts-sessions-revenue" />
           </ChartCard>

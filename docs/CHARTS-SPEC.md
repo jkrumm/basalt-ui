@@ -175,6 +175,35 @@ seam, and a second prop over one concern would fork them.
 margin, cursorPoint, highlighted }`. Draw `visible` — never the `series` prop — so a legend toggle
 actually removes the mark.
 
+### The x axis is CATEGORICAL — a documented constraint, not an oversight
+
+`CartesianChart` builds its x scale as `scalePoint<string>({ domain: keys })`, and every kind
+composes it. **N points are N evenly spaced positions, whatever the values behind the keys.** There
+is no linear or time x scale, opt-in or otherwise.
+
+This is invisible and correct for a domain that is already a regular grid — 288 five-minute buckets
+are evenly spaced because they ARE evenly spaced. It is wrong the moment a series is event-shaped:
+speed-test runs, deploys, sessions, anything that happens when it happens. Two consequences, both
+silent:
+
+- **Geometry lies about spacing.** Event points draw at equal intervals, so on a page sharing one
+  cursor the crosshair lands on the correct point at a different screen x than a regularly-sampled
+  sibling. The correlation stays legible in the numbers and not in the geometry.
+- **A repeated key drops a point.** The domain value must be unique, so two events at the same
+  instant collapse onto one position and one stops being drawn. On a proportional axis they would
+  simply overplot.
+
+It is written down here because it is not inferable from the API: `getX` returning a date string
+reads like a time axis and is not one. A chart whose x is a measured quantity (a distance, an
+azimuth, an instant that must be positioned proportionally) currently cannot use `CartesianChart`
+at all and must take a `basalt/hand-rolled-plot` exemption — which is worth noting is a DIFFERENT
+kind of exemption from the sanctioned ones: `DualPanel` (two panes) and `Heatmap` (a matrix) are
+exempt by SHAPE, whereas this one is a single cartesian plot with one y axis that is excluded only
+by scale type. An escape hatch absorbing that is a sign the primitive's scope is drawn slightly
+wrong, and it is tracked as issue #52 rather than resolved here: the change reaches the cursor's
+`xScale` inversion, `XZoneRects` (whose bounds are domain KEYS today), the bar kinds' band width and
+`smartTicks`, so it is a design pass, not a prop.
+
 ## 3. Cursor: shared by default
 
 The cursor moves from a React context that must be mounted to a **module-level external store**
