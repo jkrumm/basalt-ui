@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/jkrumm/basalt-ui/compare/v1.17.0...v1.18.0) (2026-08-19)
+
+
+### Features
+
+* render tooltips on cursor followers, and gate managed-doc drift ([6b46613](https://github.com/jkrumm/basalt-ui/commit/6b466136e1b1dbd88934d339420179768b3e9f8b)), closes [#52](https://github.com/jkrumm/basalt-ui/issues/52)
+
 # [1.17.0](https://github.com/jkrumm/basalt-ui/compare/v1.16.0...v1.17.0) (2026-08-18)
 
 
