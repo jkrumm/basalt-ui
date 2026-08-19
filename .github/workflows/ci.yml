@@ -56,5 +56,8 @@ jobs:
       - name: Coverage check (SURFACES projection gate)
         run: bun ./packages/basalt-ui/bin/basalt-ui.mjs check-coverage
 
+      - name: Agent doc drift check (removed-API guard on agent/**)
+        run: bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
+
       - name: Pack test (dist resolution gate)
         run: bun --filter basalt-ui pack-test
