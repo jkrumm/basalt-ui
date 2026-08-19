@@ -6,7 +6,7 @@
  * `Bars.test.tsx`) — DualPanel has two `HoverOverlay`s sharing one cursor, but only the TOP one is
  * keyboard-focusable, so `getByRole('slider')` is unambiguous.
  */
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
@@ -437,5 +437,85 @@ describe('DualPanel — cursorResolution threads through to sibling resolution',
     driveDailyToAug05()
     const foldedSlider = screen.getByRole('slider', { name: 'Folded' })
     expect(foldedSlider.getAttribute('aria-valuetext')).toBe('08.08')
+  })
+})
+
+describe('DualPanel — onFollow (follower behaviour parity with CartesianChart)', () => {
+  type SourceRow = { date: string; shown: number }
+  const sourceRows: SourceRow[] = [{ date: '2026-08-01', shown: 10 }]
+  const sourceSeries: ChartSeries<SourceRow>[] = [
+    { key: 'shown', label: 'Shown', color: '#111', mark: 'line', getValue: (d) => d.shown },
+  ]
+
+  function renderPair(onFollow?: boolean, followerRows: Row[] = rows) {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<SourceRow>
+          data={sourceRows}
+          chartId="dp-of-source"
+          getX={(d) => d.date}
+          series={sourceSeries}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <DualPanel<Row>
+          data={followerRows}
+          chartId="dp-of-follower"
+          getX={(d) => d.date}
+          series={series}
+          getBar={(d) => d.bar}
+          barLabel="Bar"
+          barColorPositive="#0a0"
+          barColorNegative="#a00"
+          formatTop={(v) => String(v)}
+          formatBottom={(v) => v.toFixed(2)}
+          ariaLabel="Follower"
+          legend={false}
+          {...(onFollow !== undefined && { onFollow })}
+        />
+      </ChartCursorScope>,
+    )
+  }
+
+  test('onFollow: true renders the DualPanel tooltip while a sibling owns the cursor', async () => {
+    renderPair(true)
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    expect(await screen.findByText('V')).toBeTruthy()
+  })
+
+  test('without onFollow (default false), DualPanel renders no tooltip as a follower', async () => {
+    renderPair()
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    // The SOURCE still renders its own tooltip — only the DualPanel follower stays silent.
+    expect(await screen.findByText('Shown')).toBeTruthy()
+    expect(screen.queryByText('V')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
+  })
+
+  test('the follower tooltip is not aria-live; the source is', async () => {
+    renderPair(true)
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+    await screen.findByText('V')
+
+    const tooltips = screen.getAllByRole('tooltip')
+    expect(tooltips).toHaveLength(2)
+    const sourceTooltip = tooltips.find((t) => within(t).queryByText('Shown') !== null)
+    const followerTooltip = tooltips.find((t) => within(t).queryByText('V') !== null)
+    expect(sourceTooltip?.getAttribute('aria-live')).toBe('polite')
+    expect(followerTooltip?.hasAttribute('aria-live')).toBe(false)
+  })
+
+  test('a follower whose domain never resolves the broadcast key renders no tooltip shell', async () => {
+    const foreignRows: Row[] = [{ date: '2027-01-15', v: 99, bar: 0.5 }]
+    renderPair(true, foreignRows)
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    expect(await screen.findByText('Shown')).toBeTruthy()
+    expect(screen.queryByText('V')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
   })
 })

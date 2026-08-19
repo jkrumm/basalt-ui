@@ -101,6 +101,23 @@ export type CartesianTooltipConfig<T> = {
   prependRows?: (d: T, ctx: CartesianTooltipRowContext<T>) => ReactNode
   /** Rows appended after the derived per-series rows. Same `ctx` as {@link prependRows}. */
   extraRows?: (d: T, ctx: CartesianTooltipRowContext<T>) => ReactNode
+  /**
+   * Render this chart's tooltip when it is a cursor FOLLOWER (the crosshair came from a sibling
+   * chart sharing the cursor), not only when this chart is the SOURCE. Default false — today's
+   * behaviour, nothing moves. A follower has no pointer under it, so its tooltip is always ANCHORED
+   * to the crosshair — the same positioning `follow: false` gives the source — regardless of what
+   * `follow` is set to on this chart: there is no other valid position for a chart nobody is
+   * hovering. `follow` keeps governing the SOURCE's own tooltip exactly as before; the two options
+   * only interact for a follower, where `onFollow` always wins on positioning. Only the SOURCE's
+   * tooltip is `aria-live` — followers announce nothing, so a shared-cursor page doesn't fire N
+   * live-region updates per pointer move.
+   *
+   * Cost, since it scales with the page rather than the chart: anchoring reads one
+   * `getBoundingClientRect` per hovered frame (the same cost `follow: false` documents), so N
+   * opted-in followers pay N of them per frame. That is the reason this is opt-in per chart rather
+   * than a page-level switch — turn it on for the charts a reader actually correlates.
+   */
+  onFollow?: boolean
 }
 
 /** Everything a mark renderer needs. Handed to `CartesianChart`'s child on every render. */
@@ -479,10 +496,17 @@ function CartesianPlot<T>({
   const rows =
     tooltipEnabled && point !== null ? deriveTooltipRows(tooltipSeries, point, leftFormat) : []
 
+  // This chart renders its tooltip either as the cursor SOURCE (always) or, opted in via
+  // `onFollow`, as a FOLLOWER (a sibling owns the cursor). A follower has no pointer under it, so
+  // it is always positioned via the anchored (crosshair) path below, regardless of `follow`.
+  const isFollowerRender = !cursor.isSource && tooltipCfg?.onFollow === true
+  const showTooltip = tooltipEnabled && point !== null && (cursor.isSource || isFollowerRender)
+
   // Anchored mode resolves the crosshair's plot-local x into viewport space; following mode uses
-  // the pointer position `useChartCursor` already recorded.
-  const anchorX =
-    tooltipCfg?.follow === false && point !== null && cursorX !== null ? cursorX : null
+  // the pointer position `useChartCursor` already recorded. A follower render always anchors, since
+  // `follow`'s pointer-tracking path has no pointer to read on this chart.
+  const useAnchoredPosition = tooltipCfg?.follow === false || isFollowerRender
+  const anchorX = useAnchoredPosition && point !== null && cursorX !== null ? cursorX : null
   const svgRect = anchorX === null ? undefined : svgRef.current?.getBoundingClientRect()
   const tooltipAnchor =
     svgRect === undefined || anchorX === null
@@ -595,8 +619,8 @@ function CartesianPlot<T>({
         </Group>
       </svg>
 
-      {tooltipEnabled && cursor.isSource && point !== null && (
-        <ChartTooltipFloat anchor={tooltipAnchor}>
+      {showTooltip && (
+        <ChartTooltipFloat anchor={tooltipAnchor} ariaLive={cursor.isSource}>
           <TooltipHeader
             date={getX(point)}
             {...(formatHeader !== undefined && {

@@ -155,9 +155,15 @@ const VIEWPORT_MARGIN = 8
  */
 export function ChartTooltipFloat({
   anchor,
+  ariaLive = true,
   children,
 }: {
   anchor: { x: number; y: number } | null
+  /** Whether this tooltip announces itself to screen readers on every position change. Default
+   * true. Pass false for a cursor FOLLOWER's tooltip — N followers on a shared-cursor page all
+   * announcing on every pointer move would make the page unusable with a screen reader; only the
+   * cursor SOURCE should be `aria-live`. */
+  ariaLive?: boolean
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -196,7 +202,7 @@ export function ChartTooltipFloat({
     <div
       ref={ref}
       role="tooltip"
-      aria-live="polite"
+      {...(ariaLive && { 'aria-live': 'polite' as const })}
       style={{ ...TOOLTIP_STYLES, left, top, visibility: box === null ? 'hidden' : 'visible' }}
     >
       {children}

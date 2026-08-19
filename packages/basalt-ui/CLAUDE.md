@@ -542,6 +542,32 @@ finding. The three boundary rules above deliberately do **not** — an architect
 comment can switch off is the silent bypass they exist to prevent. Turn one off by name or not
 at all.
 
+## Shipping a rendering change — what a minor may move
+
+Majors are banned here, so the version number can never warn a consumer that their charts will look
+different. This is the rule that replaces it, and the sibling of "Shipping a stricter guard" above.
+
+- **A change that moves rendering for EVERY chart ships as an opt-in prop defaulted to the OLD
+  behaviour.** `AxisConfig.nice` is the reference case: niceing a scale is better, and it still
+  defaults `false`, because turning it on would move the domain of every already-migrated chart.
+- **A change that moves rendering only for charts passing a specific opt-in prop, AND restores a
+  documented or internally-consistent law, may ship as a plain `feat:`** — with the measured
+  before/after in the commit body, the release notes and the consumer handover, plus a named
+  opt-out. `autoMaxFloor`'s clamp order is the reference case.
+- The line is **blast radius plus correction-vs-preference**, not how much better the new behaviour
+  is. "It's obviously right" is not a licence to move every chart.
+
+**And the rule that would have prevented the case which produced this section: a rewrite that
+reimplements an existing law must pin that law with a test BEFORE the rewrite.** `autoMaxFloor` was
+clamp-then-pad through 1.13 (`Math.max(safeMax, yAutoMaxFloor ?? safeMax) * yAutoPad`, per kind).
+The 1.15 `CartesianChart` rebuild reimplemented it as pad-then-clamp and **nobody noticed** — there
+was no test on the ordering, only on the padding's sign-safety. It shipped as a silent behaviour
+regression, survived a full release, and was found only when a consumer proved the divergence
+numerically two minors later; 1.17 restored 1.13's law. From outside, that reads as the semantics
+moving twice in five minors, and the cost to a consumer is identical either way: every hand-written
+domain function reproducing one ordering became dead weight. `padAutoLower` came through the same
+rebuild unchanged precisely because its law WAS pinned by a test.
+
 ## Development Guidelines
 
 - Strict TS, no `any`, explicit types on public exports; typed object params, low nesting, early

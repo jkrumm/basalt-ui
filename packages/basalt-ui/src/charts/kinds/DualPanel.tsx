@@ -4,7 +4,7 @@ import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { Bar, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
@@ -84,6 +84,13 @@ export type DualPanelProps<T> = {
    * alongside the hovered datum.
    */
   formatHeader?: (key: string, d: T) => string
+  /**
+   * Render this chart's tooltip when it is a cursor FOLLOWER, not only when it is the SOURCE —
+   * same seam and same anchored-positioning behaviour as `CartesianTooltipConfig.onFollow`. Default
+   * false (today's behaviour). Only the SOURCE's tooltip is `aria-live`; a follower's is visual
+   * only.
+   */
+  onFollow?: boolean
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
@@ -175,6 +182,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     bottomMaxAbsFloor,
     tooltipLabel,
     formatHeader,
+    onFollow,
     plot,
   } = props
 
@@ -424,13 +432,27 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     [visibleSeries, lineValid, xScale, topYScale, getX],
   )
 
+  const svgRef = useRef<SVGSVGElement>(null)
   const point = cursor.point
   const sx = point !== null ? (xScale(getX(point)) ?? 0) : 0
   const syncedBar = point !== null ? getBar(point) : null
 
+  // Same seam as `CartesianChart`: this chart renders its tooltip as the cursor SOURCE (always) or,
+  // opted in via `onFollow`, as a FOLLOWER. A follower has no pointer under it, so it is always
+  // positioned via the anchored (crosshair) path — `cursor.anchor` stays null on a chart nobody is
+  // hovering, so following it here would render nothing.
+  const isFollowerRender = !cursor.isSource && onFollow === true
+  const showTooltip = point !== null && (cursor.isSource || isFollowerRender)
+  const anchorX = isFollowerRender && point !== null ? sx : null
+  const svgRect = anchorX === null ? undefined : svgRef.current?.getBoundingClientRect()
+  const tooltipAnchor =
+    svgRect === undefined || anchorX === null
+      ? cursor.anchor
+      : { x: svgRect.left + margin.left + anchorX, y: svgRect.top + margin.top }
+
   return (
     <>
-      <svg width={plot.width} height={plot.height}>
+      <svg ref={svgRef} width={plot.width} height={plot.height}>
         {/* Top pane: line series + fill-between + zones + ref lines. */}
         <Group left={margin.left} top={margin.top}>
           <GridRows scale={topYScale} width={xMax} stroke={VX.grid} numTicks={4} />
@@ -593,8 +615,8 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
         )}
       </svg>
 
-      {cursor.isSource && point !== null && (
-        <ChartTooltipFloat anchor={cursor.anchor}>
+      {showTooltip && (
+        <ChartTooltipFloat anchor={tooltipAnchor} ariaLive={cursor.isSource}>
           <TooltipHeader
             date={getX(point)}
             {...(formatHeader !== undefined && {
