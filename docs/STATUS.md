@@ -3,11 +3,11 @@
 > **Single source of truth for current state.** As of **2026-08-18**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `master` is the released 1.x line; `feat/chart-consumer-round-two` carries the
-round-two batch below.
-**Version:** `1.16.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
-rebuild (`docs/CHARTS-SPEC.md`) shipped in 1.15.0 and the first consumer-gap batch in 1.16.0. The
-round-two batch below is the next candidate.
+**Branch:** `master` is the released 1.x line; `feat/follower-tooltips-and-doc-guard` carries the
+round-three batch below.
+**Version:** `1.17.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
+rebuild (`docs/CHARTS-SPEC.md`) shipped in 1.15.0, the first consumer-gap batch in 1.16.0, and
+round two in 1.17.0. The round-three batch below is the next candidate.
 
 ## TL;DR
 
@@ -125,6 +125,61 @@ Two regressions were caught during migration and fixed in the primitive rather t
 per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
 (now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
 legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
+
+## Chart-API round three — `feat/follower-tooltips-and-doc-guard` (2026-08-19)
+
+Round three is smaller and differently shaped: two filed issues, two small gaps, and one piece of
+process criticism that turned out to be the most valuable item in the batch.
+
+1. **Follower tooltips (`tooltip.onFollow`, issue #51).** A page sharing one cursor gave every
+   follower a crosshair and its own series dots but a tooltip only on the SOURCE — so hovering a
+   spike moved a bare vertical line across every sibling and showed numbers on none of them. The
+   reader got the position and not the reading. It was a capability REGRESSION: a consumer carried a
+   hand-written synced value chip and deleted it in the 1.15.0 migration, with no supported way to
+   restore it, because `CartesianChart` has no seam for a tooltip no pointer event produced. Default
+   `false`; a follower always anchors to its own crosshair (there is no pointer to track), and only
+   the SOURCE's tooltip is `aria-live` — N followers announcing per pointer move would be strictly
+   worse than the silence being fixed.
+2. **Managed-doc drift, for the second time — so this time it got a gate.** `sync` was still placing
+   `basalt-design/SKILL.md` naming `ChartTooltip`, a component deleted in 1.15.0, in a file
+   consumers are told not to hand-edit. 1.16.0 had fixed exactly this class in the CLAUDE.md block;
+   this was the same miss one file further down, found by a human reading rather than by any gate.
+   `scripts/check-agent-doc-drift.ts` now runs in CI with two complementary checks: bolded-backtick
+   identifiers (the "compose this primitive" form) must exist in the export surface, and an explicit
+   removed-API denylist is banned outright in any form — with a self-check that fails if a
+   denylisted name ever reappears as a real export, so the list cannot silently ban a live API. Both
+   historical misses were verified to fail it, each caught by the check designed for its form.
+3. **`strokeOpacity` silently no-ops on bar/area swatches** — it is a stroke property, and a bar
+   swatch has no stroke. Documented, with `fillOpacity` named as the equivalent. It bites the
+   zone/reference-legend idiom (`mark: 'bar'`, `getValue: () => null`) specifically, where reaching
+   for it looks right and does nothing.
+4. **The x axis is categorical, and the docs never said so (issue #52).** `scalePoint<string>` means
+   N points are N evenly spaced positions whatever the values behind the keys. Now stated
+   prominently in both `CHARTS-SPEC.md` and the consumer-facing rule, with both silent consequences:
+   geometry that lies about spacing for event-shaped series, and a repeated key dropping a point.
+   The scale itself is NOT built — it reaches the cursor's `xScale` inversion, `XZoneRects` (bounds
+   are domain keys today), the bar kinds' band width and `smartTicks`, so it is a design pass, not a
+   prop. The design direction is recorded on the issue: the root problem is that `getX` serves as
+   cursor key, scale domain value AND tick-label source at once; `formatX` split off the third in
+   1.17.0, and `PlotContext.xPos` would split off position, after which a linear scale is an
+   internal change rather than a fork of the render-prop contract.
+
+**The process finding, which outranks all four.** A consumer observed that `autoMaxFloor`'s clamp
+order had moved twice in five minors while `AxisConfig.nice` was defaulted `false` specifically to
+avoid moving anything — an inconsistency in how much rendering movement a minor is allowed. Checking
+the history made it worse and clearer: 1.13 was clamp-then-pad (`MultiLine.tsx:200`), the 1.15
+`CartesianChart` rebuild reimplemented it as pad-then-clamp, and **nobody noticed**, because the
+ordering had no test — only the padding's sign-safety did. It shipped as a silent behaviour
+regression, survived a full release, and was found only when a consumer proved the divergence
+numerically. So it was not policy churn; it was one unnoticed regression and one restoration. The
+cost to a consumer is identical either way.
+
+Two rules came out of it, both now in `packages/basalt-ui/CLAUDE.md` under "Shipping a rendering
+change": what blast radius a minor may move (every chart → opt-in prop defaulted to the old
+behaviour; only opt-in-prop users AND restoring a documented law → plain `feat:` with measured
+before/after and a named opt-out), and the one that would actually have prevented this —
+**a rewrite that reimplements an existing law must pin that law with a test BEFORE the rewrite.**
+`padAutoLower` came through the same rebuild unchanged precisely because its law was pinned.
 
 ## Chart-API round two — `feat/chart-consumer-round-two` (2026-08-19)
 
