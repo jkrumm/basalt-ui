@@ -16,7 +16,7 @@ declare const classes: {
   readonly menuLabel: string
   readonly sheet: string
   readonly sheetTitle: string
-  readonly grabber: string
+  readonly sheetHeader: string
   readonly row: string
   readonly rowNested: string
 }
