@@ -163,8 +163,8 @@ export const AGENT_SCENARIOS = [
       },
       ...tokens(
         `Based on the docs, **${input}** comes down to two pieces:\n\n` +
-          `1. The shell stays **router-agnostic** — you wire \`active\`/\`renderNavLink\` from your ` +
-          `own router at the seam.\n` +
+          `1. The shell stays **router-agnostic** — one \`useNav(NAV)\` call resolves \`active\` and ` +
+          `builds every row's anchor from your own router.\n` +
           `2. Colors resolve through the central \`--vx-*\` variables, so chrome and charts share ` +
           `one scheme-reactive identity.\n\n` +
           `See the two cited pages above for the full contract.\n`,

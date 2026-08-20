@@ -270,7 +270,9 @@ via autocomplete. Key rules that won't fit in a JSDoc bullet:
 
 - Page components accept the param as a **prop**, never via `useSearch({ from:
 '/dashboard' })` — sibling routes fail that `from`.
-- Dashboard `<Link>`s use `search={true}` guarded by `href.startsWith('/dashboard')`
-  so sub-page switches preserve the filter; non-dashboard links get no search injection.
+- Dashboard destinations carry the filter through a click-time `search:` thunk over
+  the store's `readStored()`, set per destination in the `defineNav` definition —
+  never `search: true` (a store-backed route always returns the param, so the router
+  requires a value and the flag is a type error), and never a global link callback.
 - The localStorage fallback in `validateSearch` restores the value when navigating
   back; the filter's `navigate({ search: (prev) => (...) })` keeps it current.

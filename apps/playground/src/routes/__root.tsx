@@ -1,28 +1,31 @@
 /**
  * Root route — the persistent app shell for the playground.
  *
- * This is the mature counterpart to the old `useState` page-switcher: the playground is now a real
- * TanStack Router app on browser history, so the URL is the single source of truth for "where am
- * I". The shell stays exactly as router-agnostic as it ships — we drive it through the documented
- * seams:
- *   - `active` comes from the shipped `useBasaltNav().isActive(href)` adapter (reactive to the URL),
- *   - `renderNavLink` renders a real TanStack `<Link>` so clicks update the URL + enable
- *     intent-preloading + back/forward,
- *   - the shell's own breadcrumb (`findActiveCrumb`) follows `active`, so it tracks the route for
- *     free.
+ * The whole navigation is ONE typed definition (`demo/nav-model.tsx`), resolved here by
+ * `useNav(NAV)`. That hook does everything this file used to do by hand: it matches every
+ * destination against the live router for `active`, builds each one's TanStack `<Link>` anchor
+ * (so intent-preloading, middle-click and back/forward all keep working), and returns the two
+ * props `BasaltShell` needs — `sections` for the desktop sidebar and `mobileNav` for the bottom
+ * bar. The shell stays exactly as router-agnostic as it ships; the router coupling lives in that
+ * one hook rather than in a pair of render callbacks.
+ *
+ * The shell's breadcrumb follows `active` across `sections`, and its parent crumb navigates
+ * through the same anchor every nav row uses — so it tracks the route for free, with no second
+ * seam to wire.
+ *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { NavLink as MantineNavLink, Text, useMantineColorScheme } from '@mantine/core'
-import { Link, Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
+import { Text, useMantineColorScheme } from '@mantine/core'
+import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
-import type { BasaltAccountActions, BreadcrumbLinkRenderer, NavLinkRenderer } from 'basalt-ui'
-import { useBasaltNav } from 'basalt-ui/router-tanstack'
+import type { BasaltAccountActions } from 'basalt-ui'
+import { useNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { openSpotlight } from 'basalt-ui/commands'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { DashboardDateFilter } from '../demo/DashboardDateFilter'
 import { registerColorSchemeControl } from '../demo/commands'
-import { NAV_MODEL, withActive } from '../demo/nav-model'
+import { NAV } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
@@ -30,8 +33,24 @@ import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-s
 // oxlint-disable-next-line no-underscore-dangle
 declare const __APP_VERSION__: string
 
+/**
+ * Pinned to the bottom of the mobile More surface. It replaces the old desktop-only sidebar
+ * footer slot: below the `sm` breakpoint there is no sidebar at all, so anything that used to
+ * live in its footer has to be reachable from the bar or it is not reachable at all.
+ */
+const moreExtra = (
+  <Text size="xs" c="dimmed" ta="center" py={4}>
+    basalt-ui playground
+  </Text>
+)
+
+/**
+ * Live per-destination badges. Static here, so it is hoisted: `useNav`'s memo deps include this
+ * object, and a fresh literal per render would defeat it. A real app memoizes its query result.
+ */
+const navBadges = { dashboard: 4 }
+
 function RootLayout() {
-  const { isActive } = useBasaltNav()
   const navigate = useNavigate()
   const [scenario, setScenario] = useUserScenario()
   const { setColorScheme } = useMantineColorScheme()
@@ -50,48 +69,16 @@ function RootLayout() {
     onManageBilling: () => navigate({ to: '/settings', hash: 'billing' }),
   }
 
-  /** Renders breadcrumb parent segments as client-side TanStack Links. */
-  const renderBreadcrumbLink = useCallback<BreadcrumbLinkRenderer>(
-    (href, label) => (
-      <Text size="sm" c="dimmed" truncate component={Link} to={href as never}>
-        {label}
-      </Text>
-    ),
-    [],
-  )
-
-  /**
-   * Router-agnostic link renderer wired to a real TanStack `<Link>`. Dashboard
-   * links use `search={true}` to preserve the current `?range=` param across
-   * sub-page switches. Non-dashboard links get no search injection — the
-   * localStorage fallback in `validateSearch` restores the selection when
-   * navigating back to `/dashboard/*`.
-   */
-  const renderNavLink = useCallback<NavLinkRenderer>((item, { active }) => {
-    const href = item.href ?? '/'
-    const isDashboard = href === '/dashboard' || href.startsWith('/dashboard/')
-    return (
-      <MantineNavLink
-        component={Link}
-        to={href as never}
-        {...(isDashboard ? { search: true as never } : {})}
-        label={item.label}
-        leftSection={item.icon}
-        rightSection={item.badge}
-        active={active}
-      />
-    )
-  }, [])
-
-  const sections = useMemo(() => withActive(NAV_MODEL, isActive), [isActive])
+  // `badges` keys autocomplete from the definition's id union — a typo is a compile error, not a
+  // silently missing badge. A `number` becomes `item.count`: a NavCountBadge on the desktop row
+  // and an accent dot on the mobile slot icon (a count glyph is unreadable in a 56px slot).
+  const nav = useNav(NAV, { badges: navBadges, moreExtra })
 
   return (
     <BasaltShell
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
-      sections={sections}
+      {...nav}
       search={{ onOpen: () => openSpotlight() }}
-      renderNavLink={renderNavLink}
-      renderBreadcrumbLink={renderBreadcrumbLink}
       globalActions={
         <>
           <DashboardDateFilter />
@@ -99,11 +86,6 @@ function RootLayout() {
           <NotificationBell />
           <ThemeToggle />
         </>
-      }
-      sidebarFooterExtra={
-        <Text size="xs" c="dimmed" ta="center" py={4}>
-          basalt-ui playground
-        </Text>
       }
       account={{ state: accountState, actions: accountActions }}
     >
