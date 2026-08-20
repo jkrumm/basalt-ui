@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/jkrumm/basalt-ui/compare/v1.19.0...v1.19.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* cap the mobile bottom-sheet height to its content ([04093ac](https://github.com/jkrumm/basalt-ui/commit/04093ac902d894249ebea3e6381755497670e305))
+
 # [1.19.0](https://github.com/jkrumm/basalt-ui/compare/v1.18.0...v1.19.0) (2026-08-20)
 
 
