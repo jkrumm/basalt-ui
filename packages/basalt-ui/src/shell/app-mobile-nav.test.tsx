@@ -366,4 +366,38 @@ describe('MobileNav', () => {
     expect(dropdown.querySelectorAll('.mantine-Menu-divider')).toHaveLength(0)
     expect(dropdown.querySelectorAll('.mantine-Menu-item')).toHaveLength(1)
   })
+
+  /**
+   * Regression guard for the mobile-sheet-content-height fix. Neither half is pixel-assertable
+   * under happy-dom (no layout, and CSS-module class hashes are unavailable under `bun test` per
+   * the file header) — so this pins the two DOM-observable facts instead: the sheet is no longer
+   * wired through the dead `size="auto"` → `--drawer-size-auto` custom property (see `.sheet` in
+   * the CSS module for why that was never wired to anything), and the redundant grabber is gone
+   * now that the header's own close button is the sheet's sole dismiss affordance.
+   */
+  test('11. the sheet drops the no-op size prop and the redundant grabber', async () => {
+    renderBar([
+      {
+        label: 'Reports',
+        mobile: { tab: true },
+        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+      },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    fireEvent.click(screen.getByLabelText('Reports'))
+    await waitFor(() => expect(drawer()).not.toBeNull())
+
+    // `size="auto"` resolves to `var(--drawer-size-auto)`, a custom property @mantine/core defines
+    // nowhere — its presence anywhere in the tree would be the old bug reappearing.
+    expect(document.querySelector('[style*="drawer-size-auto"]')).toBeNull()
+
+    // The header (title + Mantine's own close button) is the ONLY dismiss affordance now — the
+    // grabber div that used to precede the scroll area is gone, so the body wraps exactly the
+    // `ScrollArea.Autosize` root and nothing else.
+    const header = document.querySelector('.mantine-Drawer-header')
+    expect(header).not.toBeNull()
+    expect(header?.querySelector('.mantine-Drawer-close')).not.toBeNull()
+    expect(document.querySelector('.mantine-Drawer-body')?.children).toHaveLength(1)
+  })
 })

@@ -170,6 +170,27 @@
   border-top-right-radius: var(--mantine-radius-lg);
   /* A Drawer is NOT an AppShell section, so Mantine adds no inset of its own here. */
   padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  /*
+   * THE `--drawer-size-auto` TRAP — do not "fix" this by restoring `size="auto"` on the Drawer.
+   * `getSize('auto', 'drawer-size')` (Mantine's `get-size.mjs`) resolves ANY non-numeric size to
+   * `var(--drawer-size-auto)`, and `@mantine/core` defines that custom property NOWHERE — grepped
+   * the full shipped `styles.css`. On a bottom Drawer that dead var flows straight into
+   * `--drawer-height`, so `size="auto"` was never wired to anything; the sheet rendered at
+   * `calc(100% - offset*2)`, i.e. the full viewport, no matter how little content it held. That is
+   * why this component no longer passes a `size` prop at all — it would resolve to *some* value,
+   * but this rule below overrides Mantine's `height`/`max-height` regardless of what that value is.
+   *
+   * This works with NO `!important`: `packages/basalt-ui/styles.css` wraps every Mantine rule in
+   * `@layer mantine` (verified against the installed `styles.layer.css`), and this CSS module is
+   * unlayered — an unlayered rule always wins over a layered one, independent of specificity or
+   * source order. `height: auto` lets the sheet hug its content; `max-height` is a hard ceiling on
+   * the whole sheet (header + body), sized with headroom ABOVE the `ScrollArea.Autosize`'s
+   * `mah="62dvh"` in the JSX — that autosize cap is what actually decides when the sheet starts
+   * scrolling internally, so the two never fight over which one owns "the maximum".
+   */
+  height: auto;
+  max-height: min(70dvh, 100%);
 }
 
 /* Sheet title = a micro-label (docs/DESIGN-SPEC.md §3), matching the sidebar's `.sectionLabel`. */
@@ -182,14 +203,18 @@
   color: var(--vx-faint);
 }
 
-/* The dismiss affordance. There is no swipe-to-dismiss: Mantine ships no drag primitive and
- * writing `transform` to Drawer.Content fights its own Transition on the same node. */
-.grabber {
-  width: 36px;
-  height: 4px;
-  margin: 0 auto 8px;
-  border-radius: 999px;
-  background-color: color-mix(in srgb, var(--vx-ink) 18%, transparent);
+/*
+ * Mantine's `ModalBase` header forces a `min-height` of `calc(3.75rem * var(--mantine-scale))`
+ * (60px) — sized for a real dialog title, not a 10px micro-label, and a big share of "unnecessarily
+ * big". `--vx-space-mobile-nav-row-height` pins it to the same 44px touch-target floor as every
+ * other row in this bar instead. The header's close button IS the dismiss affordance now — no
+ * separate grabber: there was never swipe-to-dismiss behind it (Mantine ships no drag primitive),
+ * so a plain decorative bar bought nothing an explicit, focusable close control doesn't already
+ * give for free, including to keyboard/screen-reader users the grabber never reached.
+ */
+.sheetHeader {
+  min-height: var(--vx-space-mobile-nav-row-height);
+  padding: 0 var(--mantine-spacing-md);
 }
 
 /* Large tap rows inside the sheet. NavLink rows reuse the sidebar's neutral active fill.

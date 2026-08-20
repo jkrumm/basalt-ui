@@ -428,18 +428,29 @@ export function MobileNav({
         opened={openKey === slot.key}
         onClose={close}
         position="bottom"
-        size="auto"
+        // NO `size` prop — `size="auto"` used to be here, but it is a no-op on a bottom Drawer in
+        // Mantine 9.3.0 (see the `.sheet` rule in the CSS module for the full trap). The sheet's
+        // actual height/max-height comes entirely from that unlayered CSS rule, which overrides
+        // Mantine's own regardless of what `size` resolves to.
         padding="md"
+        // `title` is both the sheet's accessible name (Mantine wires `aria-labelledby` to it
+        // automatically) and what makes the header render at all — dropping it would need an
+        // explicit `aria-label` on the Drawer instead. `classNames.header` slims Mantine's 60px
+        // title bar down to this bar's touch-target row height; its close button is the sheet's
+        // ONLY dismiss affordance now (see `.sheetHeader` in the CSS module for why the grabber
+        // that used to sit here is gone rather than the header).
         title={slot.label}
-        classNames={{ content: classes.sheet, title: classes.sheetTitle }}
+        classNames={{
+          content: classes.sheet,
+          title: classes.sheetTitle,
+          header: classes.sheetHeader,
+        }}
         transitionProps={{
           transition: 'slide-up',
           duration: reduceMotion ? 0 : 220,
           timingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
-        {/* The dismiss affordance. No swipe-to-dismiss — see `.grabber` in the CSS module. */}
-        <div className={classes.grabber} aria-hidden />
         <ScrollArea.Autosize mah="62dvh" type="scroll">
           <Stack gap="xs">
             {slot.groups.map((group) => (
