@@ -131,7 +131,7 @@
   },
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tests/layout/tsconfig.json",
     "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",
     "prepack": "bun run build",

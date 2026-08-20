@@ -1,0 +1,7 @@
+# Deliberately EMPTY of `preload`. The root bunfig registers happy-dom into every `bun test`
+# process, and that is not merely redundant here — VERIFIED, happy-dom replaces globalThis.fetch
+# with an implementation that fails against Bun.serve ("NetworkError: … Parse Error"). This suite
+# serves its own fixture. Reached via `bun --config=<this> test …`; `bun test -c` does NOT work
+# (`-c` parses as a test-name filter).
+[test]
+timeout = 60000
