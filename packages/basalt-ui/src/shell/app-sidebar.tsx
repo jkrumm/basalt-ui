@@ -4,14 +4,15 @@
  * optional version label).
  *
  * Router-agnostic by design: active detection, typed navigation and the collapse store stay in the
- * consumer (or in `BasaltShell`), which feeds resolved `sections` + `collapsed`/`onToggleCollapse`/
- * `onClose` here. Each item renders through `renderNavLink` when supplied, else a plain `<a href>`
- * with `item.onClick` — never a router primitive. Active state arrives as `item.active`.
+ * consumer (or in `BasaltShell`), which feeds resolved `sections` + `collapsed`/`onToggleCollapse`
+ * here. Each destination renders through its own `SidebarItem.Anchor` when supplied (the
+ * consumer's router `Link`), else a plain `<a href>` with `item.onClick` — never a router
+ * primitive. Active state arrives as `item.active`.
  *
- * Collapse is desktop-only: the rail styling is gated behind a `min-width: sm` media query so the
- * mobile drawer always shows full labels regardless of the persisted `collapsed` flag. The close
- * button is mobile-only (`hiddenFrom="sm"`); the collapse chevron is desktop-only (`visibleFrom`).
- * Grounded verbatim in argo `apps/dashboard/src/components/app-shell/app-sidebar.tsx`.
+ * DESKTOP ONLY. There is no mobile sidebar drawer any more: below the `sm` breakpoint the navbar
+ * is permanently collapsed and the bottom bar (`app-mobile-nav.tsx`) is the whole nav. The rail
+ * styling is still gated behind a `min-width: sm` media query, and the collapse chevron is
+ * `visibleFrom="sm"`. Grounded in argo `apps/dashboard/src/components/app-shell/app-sidebar.tsx`.
  */
 import {
   ActionIcon,
@@ -28,9 +29,11 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { useRef, useState } from 'react'
-import type { MouseEvent, ReactNode } from 'react'
-import type { BrandConfig, SettingsMenuItem, SidebarItem, SidebarSection } from './index'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import type { BrandConfig, SettingsMenuItem } from './index'
+import type { SidebarItem, SidebarSection } from '../nav/types'
+import { NavCountBadge } from './nav-count-badge'
 import { SidebarAccount } from './app-sidebar-account'
 import type { BasaltAccountProps } from './account-types'
 import { SidebarSearch } from './sidebar-search'
@@ -39,39 +42,11 @@ import { VX } from '../tokens'
 import { useBasaltSpacing } from '../theme'
 import classes from './app-sidebar.module.css'
 
-/**
- * Renders a single nav item. The consumer's router `Link` lives here; `active` is precomputed.
- *
- * `opts.close` (item 20) is the mobile "More" drawer's close handle — invoke-safe when absent, a
- * no-op on desktop. Call it from the rendered link's own `onClick` (e.g. before/after navigating)
- * so tapping a nav row in the mobile drawer also closes it; the built-in fallback `<a>` path does
- * this automatically.
- *
- * `opts.navLinkClassName` (item 18) is the internal `.link` CSS-module class the fallback `<a>`
- * path uses for inactive/hover treatment — present whenever `AppSidebar` renders this callback.
- * Apply it to the rendered link's `className` to match that styling exactly instead of
- * re-deriving it.
- */
-export type NavLinkRenderer = (
-  item: SidebarItem,
-  opts: {
-    active: boolean
-    close?: (() => void) | undefined
-    navLinkClassName?: string | undefined
-  },
-) => ReactNode
-
 export type AppSidebarProps = {
   brand: BrandConfig
   sections: SidebarSection[]
   collapsed: boolean
   onToggleCollapse: () => void
-  onClose: () => void
-  /**
-   * Optional consumer link renderer (e.g. a router `<Link>`). Receives the precomputed `active`
-   * flag. When omitted, items fall back to a plain `<a href>` + `item.onClick`.
-   */
-  renderNavLink?: NavLinkRenderer
   /**
    * Footer settings-menu entries (theme switcher, devtools, …) — supplied by the consumer.
    * The pinned footer "Settings" row renders ONLY when this is a non-empty list — apps that put
@@ -79,8 +54,6 @@ export type AppSidebarProps = {
    * `brand.version` label renders inside this menu, so it also only shows when the row does.
    */
   settingsMenuItems?: SettingsMenuItem[]
-  /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
-  footerExtra?: ReactNode
   /**
    * Optional account row rendered below the settings menu in the sidebar footer (see
    * `SidebarAccount` / `BasaltAccountProps`), separated by its own top hairline. Omitting it
@@ -170,25 +143,6 @@ function IconGear() {
   )
 }
 
-function IconClose() {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M18 6l-12 12" />
-      <path d="M6 6l12 12" />
-    </svg>
-  )
-}
-
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
 
@@ -199,39 +153,27 @@ function hasActiveDescendant(item: SidebarItem): boolean {
 }
 
 /**
- * Renders a nav link body without the Tooltip/Box wrapper. `close` (item 20) closes the mobile
- * "More" drawer; forwarded to `renderNavLink` for the consumer to invoke, and wired directly into
- * the fallback `<a>` path's own click so it closes without any consumer wiring.
+ * Renders a nav link body without the Tooltip/Box wrapper.
+ *
+ * `item.Anchor` is the router seam and the ONLY one: basalt owns every pixel of the row (the
+ * `.link` class, the label, the icon, the badge) and merely hosts the consumer's `Link` as the
+ * element. That is what replaced the old render callback — a callback had to re-derive basalt's
+ * own styling to look right, and every consumer got it subtly wrong.
  */
-function NavLinkBody({
-  item,
-  active,
-  renderNavLink,
-  close,
-}: {
-  item: SidebarItem
-  active: boolean
-  renderNavLink?: NavLinkRenderer | undefined
-  close?: (() => void) | undefined
-}) {
-  if (renderNavLink) {
-    return <>{renderNavLink(item, { active, close, navLinkClassName: classes.link })}</>
+function NavLinkBody({ item, active }: { item: SidebarItem; active: boolean }) {
+  const Anchor = item.Anchor
+  const shared = {
+    classNames: { root: classes.link },
+    label: item.label,
+    leftSection: item.icon,
+    rightSection: item.badge ?? (item.count ? <NavCountBadge count={item.count} /> : undefined),
+    active,
+    ...(item.onClick !== undefined && { onClick: item.onClick }),
   }
-  return (
-    <NavLink
-      classNames={{ root: classes.link }}
-      component="a"
-      label={item.label}
-      leftSection={item.icon}
-      rightSection={item.badge}
-      active={active}
-      {...(item.href !== undefined && { href: item.href })}
-      onClick={(e: MouseEvent) => {
-        item.onClick?.(e)
-        close?.()
-      }}
-    />
-  )
+  if (Anchor) {
+    return <NavLink component={Anchor} {...shared} />
+  }
+  return <NavLink component="a" {...(item.href !== undefined && { href: item.href })} {...shared} />
 }
 
 /**
@@ -249,20 +191,13 @@ function SectionLabel({ children, flush }: { children: ReactNode; flush?: boolea
   )
 }
 
-function NavItemRow({
-  item,
-  collapsed,
-  renderNavLink,
-  closeMobile,
-}: {
-  item: SidebarItem
-  collapsed: boolean
-  renderNavLink?: NavLinkRenderer | undefined
-  /** Closes the mobile "More" drawer (item 20) — forwarded to `NavLinkBody` as `close`. */
-  closeMobile?: (() => void) | undefined
-}) {
+function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean }) {
   const [opened, { open, close }] = useDisclosure(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // The hover-popover timers outlive the row when a nav re-render unmounts it mid-delay, and a
+  // fired `open()` on an unmounted component is a React warning plus a leaked timer.
+  useEffect(() => () => clearTimeout(timer.current), [])
 
   const scheduleOpen = () => {
     clearTimeout(timer.current)
@@ -297,12 +232,7 @@ function NavItemRow({
     return (
       <Tooltip key={item.key} label={item.label} position="right" withArrow disabled={!collapsed}>
         <Box className={classes.navItem}>
-          <NavLinkBody
-            item={item}
-            active={active}
-            renderNavLink={renderNavLink}
-            close={closeMobile}
-          />
+          <NavLinkBody item={item} active={active} />
         </Box>
       </Tooltip>
     )
@@ -317,12 +247,7 @@ function NavItemRow({
       <Box key={item.key}>
         <Tooltip label={item.label} position="right" withArrow disabled={!collapsed}>
           <Box className={classes.navItem}>
-            <NavLinkBody
-              item={item}
-              active={active}
-              renderNavLink={renderNavLink}
-              close={closeMobile}
-            />
+            <NavLinkBody item={item} active={active} />
           </Box>
         </Tooltip>
         <Stack gap={0} className={classes.childList}>
@@ -344,12 +269,7 @@ function NavItemRow({
             const childActive = Boolean(child.active)
             return (
               <Box key={child.key}>
-                <NavLinkBody
-                  item={child}
-                  active={childActive}
-                  renderNavLink={renderNavLink}
-                  close={closeMobile}
-                />
+                <NavLinkBody item={child} active={childActive} />
               </Box>
             )
           })}
@@ -379,12 +299,7 @@ function NavItemRow({
             onFocus={scheduleOpen}
             onBlur={scheduleClose}
           >
-            <NavLinkBody
-              item={item}
-              active={active}
-              renderNavLink={renderNavLink}
-              close={closeMobile}
-            />
+            <NavLinkBody item={item} active={active} />
           </Box>
         </Tooltip>
       </Popover.Target>
@@ -416,50 +331,15 @@ function NavItemRow({
             const childActive = Boolean(child.active)
             return (
               <Box key={child.key}>
-                <NavLinkBody
-                  item={child}
-                  active={childActive}
-                  renderNavLink={renderNavLink}
-                  close={closeMobile}
-                />
+                <NavLinkBody item={child} active={childActive} />
               </Box>
             )
           })}
         </Stack>
       </Popover.Dropdown>
 
-      {/* Inline children when active */}
-      {isExpanded && (
-        <Stack gap={0} className={classes.childList}>
-          {item.children!.map((child) => {
-            if (child.disabled) {
-              return (
-                <Tooltip key={child.key} label="Coming soon" position="right" withArrow>
-                  <Box>
-                    <NavLink
-                      classNames={{ root: classes.link }}
-                      label={child.label}
-                      leftSection={child.icon}
-                      data-disabled
-                    />
-                  </Box>
-                </Tooltip>
-              )
-            }
-            const childActive = Boolean(child.active)
-            return (
-              <Box key={child.key}>
-                <NavLinkBody
-                  item={child}
-                  active={childActive}
-                  renderNavLink={renderNavLink}
-                  close={closeMobile}
-                />
-              </Box>
-            )
-          })}
-        </Stack>
-      )}
+      {/* No inline child list here: `isExpanded` early-returns above, so this branch is only ever
+       * reached when the children are NOT visible inline — that is what the popover is for. */}
     </Popover>
   )
 }
@@ -469,10 +349,7 @@ export function AppSidebar({
   sections,
   collapsed,
   onToggleCollapse,
-  onClose,
-  renderNavLink,
   settingsMenuItems,
-  footerExtra,
   account,
   search,
   navExtra,
@@ -489,36 +366,12 @@ export function AppSidebar({
   )
 
   const renderSectionItems = (section: SidebarSection) =>
-    section.items.map((item) => (
-      <NavItemRow
-        key={item.key}
-        item={item}
-        collapsed={collapsed}
-        renderNavLink={renderNavLink}
-        closeMobile={onClose}
-      />
-    ))
-
-  // Mobile-only footer controls (close + consumer extras) — must render regardless of whether
-  // the settings row does, or the mobile drawer loses its close affordance.
-  const mobileControls = (
-    <Group gap={2} wrap="nowrap" hiddenFrom="sm">
-      {footerExtra}
-      <ActionIcon
-        variant="subtle"
-        className={classes.ghostIcon}
-        onClick={onClose}
-        aria-label="Close navigation"
-      >
-        <IconClose />
-      </ActionIcon>
-    </Group>
-  )
+    section.items.map((item) => <NavItemRow key={item.key} item={item} collapsed={collapsed} />)
 
   // The pinned footer "Settings" row is OPT-IN: it renders only when the consumer supplies
   // settings-menu entries. Most apps put Settings in a nav section instead — rendering the row
-  // unconditionally produced a duplicate "Settings" the consumer couldn't remove. Without it,
-  // the mobile controls still render standalone (invisible on desktop via hiddenFrom).
+  // unconditionally produced a duplicate "Settings" the consumer couldn't remove. On mobile the
+  // same entries are reachable as flat rows in the bottom bar's More surface.
   const hasSettingsMenu = (settingsMenuItems?.length ?? 0) > 0
   const settingsRow = hasSettingsMenu ? (
     <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
@@ -547,18 +400,8 @@ export function AppSidebar({
           )}
         </Menu.Dropdown>
       </Menu>
-      {mobileControls}
     </Group>
-  ) : (
-    <Group
-      {...(account ? {} : { className: classes.footer })}
-      gap="xs"
-      wrap="nowrap"
-      hiddenFrom="sm"
-    >
-      {mobileControls}
-    </Group>
-  )
+  ) : null
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
@@ -585,7 +428,7 @@ export function AppSidebar({
           // control-height override. Reproduces Mantine's own static `--ai-size-md` (28px).
           size={28}
           visibleFrom="sm"
-          className={`${classes.collapseBtn} ${classes.ghostIcon}`}
+          className={classes.ghostIcon}
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >

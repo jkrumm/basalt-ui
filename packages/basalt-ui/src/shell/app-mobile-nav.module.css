@@ -1,3 +1,8 @@
+/*
+ * The mobile bottom bar. Slots are DESTINATIONS: a tap navigates, so the bar must read as a tab
+ * bar rather than as chrome — hence a pill behind the icon for the active slot instead of a
+ * full-tab fill, and a press that depresses the icon without moving the hit box.
+ */
 .bar {
   display: flex;
   align-items: stretch;
@@ -5,6 +10,21 @@
   height: 100%;
   background: var(--mantine-color-body);
   border-top: 1px solid var(--mantine-color-default-border);
+  -webkit-tap-highlight-color: transparent;
+  /* NO padding-bottom / env() here: Mantine's own AppShell `.footer` rule already does
+   * `height: calc(var(--app-shell-footer-height) + env(safe-area-inset-bottom))` +
+   * `padding-bottom: env(safe-area-inset-bottom)`. Adding it here double-counts the inset. */
+}
+
+/* Mantine sets --app-shell-footer-OFFSET to the raw height WITHOUT the inset, so Main's
+ * padding-bottom is short by exactly one inset. This is the only real safe-area gap. */
+@media (max-width: 47.99375em) {
+  .mainSafeArea {
+    padding-bottom: calc(
+      var(--app-shell-footer-offset, 0rem) + var(--app-shell-padding) +
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
 }
 
 .tab {
@@ -16,18 +36,127 @@
   justify-content: center;
   gap: var(--vx-space-mobile-nav-tab-gap);
   color: var(--mantine-color-dimmed);
+  /* Kills the 300ms double-tap-zoom delay and the text-selection flash on a fast repeat tap. */
+  touch-action: manipulation;
+  user-select: none;
 }
 
-/* Active = neutral surface fill + plain text color. Never the identity blue (DESIGN.md). */
+.tabIcon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Deliberately sub-scale: the active pill hugs a 24px glyph, so it is a shape inset rather than
+   * layout spacing — the xs..xl scale has no step this tight. */
+  padding: 2px 12px; /* theme-allow */
+  border-radius: var(--vx-radius-ctrl);
+  transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* A consumer's sidebar icons are typically 18px; the bar normalizes them in CSS so the same
+ * `SidebarItem.icon` renders at slot size with zero consumer change. */
+.tabIcon > svg {
+  width: var(--vx-space-mobile-nav-icon-size);
+  height: var(--vx-space-mobile-nav-icon-size);
+}
+
+.tab:active .tabIcon {
+  transform: scale(0.9);
+}
+
+/* Active = a neutral pill behind the ICON only, plus plain text color. A full-tab fill is what
+ * makes the bar read as chrome instead of a tab bar. Never the identity blue (DESIGN.md). */
 .tab[data-active] {
   color: var(--mantine-color-text);
+}
+
+.tab[data-active] .tabIcon {
   background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
 }
 
+.tab[data-active] .label {
+  font-weight: 600;
+}
+
+/* Unread dot. This is a BADGE, not the active state — the "never the identity blue" rule above
+ * governs the active fill and is unchanged. A count GLYPH is unreadable in a 56px slot. */
+.tabDot {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--vx-accent);
+  box-shadow: 0 0 0 2px var(--mantine-color-body);
+}
+
+/* `text-overflow: clip`, never an ellipsis — a truncated word with a "…" in a 72px tab reads as
+ * broken rather than as abbreviated. `SidebarItem.short` is the fix, not the ellipsis. */
 .label {
   font-size: var(--vx-text-micro);
   line-height: 1;
   font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* The menu pops UP out of its tab and is configured `flip: false` — flipping a bottom-anchored
+ * menu would put it under the footer. `menuMax` is what guarantees it fits (§2.2). */
+.menuDropdown {
+  padding: 4px;
+  max-height: min(60dvh, 360px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The theme's `Menu.extend` pins `styles.item` padding + font-size to the dense DESKTOP values
+ * INLINE, so a touch-sized mobile row needs `!important` — same cascade problem, same reason, as
+ * `.row` below. */
+.menuItem {
+  min-height: var(--vx-space-mobile-nav-row-height) !important;
+  align-items: center;
+}
+
+.menuItem :global(.mantine-Menu-itemLabel) {
+  font-size: var(--mantine-font-size-md) !important;
+}
+
+/* An active destination reads the same in the More surface as it does in the sheet. */
+.menuItem[aria-current='page'] {
+  background-color: color-mix(in srgb, var(--vx-ink) 13%, transparent);
+  font-weight: 600;
+}
+
+/*
+ * A disabled destination still RENDERS in the menu (§2.3 rule 11) — it just must not be reachable.
+ * Mantine's `Menu.css` styles `[data-disabled]` with a dimmed color and nothing else, and the row
+ * is polymorphic (`component="a"`), so the native `disabled` attribute does not apply either: with
+ * no rule here the row stays fully clickable. `pointer-events: none` is the real guard; `menuRow`
+ * carries a matching handler guard for the paths pointers do not cover (keyboard, synthetic
+ * clicks, a consumer stylesheet that resets this).
+ */
+.menuItem[data-disabled] {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Nesting survives to mobile — a child destination is an indented row, not a sibling of its own
+ * parent (which is what today's flattened projection makes it). */
+.menuItemNested {
+  padding-inline-start: calc(var(--mantine-spacing-md) + 12px) !important;
+}
+
+/* Overflow section heading inside the menu — inherits the theme's mono micro-label. */
+.menuLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vx-faint);
 }
 
 /*
@@ -39,6 +168,8 @@
   box-shadow: var(--vx-shadow-card);
   border-top-left-radius: var(--mantine-radius-lg);
   border-top-right-radius: var(--mantine-radius-lg);
+  /* A Drawer is NOT an AppShell section, so Mantine adds no inset of its own here. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Sheet title = a micro-label (docs/DESIGN-SPEC.md §3), matching the sidebar's `.sectionLabel`. */
@@ -51,7 +182,17 @@
   color: var(--vx-faint);
 }
 
-/* Large tap rows inside the group sheet. NavLink rows reuse the sidebar's neutral active fill.
+/* The dismiss affordance. There is no swipe-to-dismiss: Mantine ships no drag primitive and
+ * writing `transform` to Drawer.Content fights its own Transition on the same node. */
+.grabber {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 8px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--vx-ink) 18%, transparent);
+}
+
+/* Large tap rows inside the sheet. NavLink rows reuse the sidebar's neutral active fill.
  * `padding` needs `!important`: the theme's `NavLink.extend` forces the dense desktop row padding
  * (6px 10px) INLINE on every NavLink root, which would shrink these touch targets otherwise. */
 .row {
@@ -59,13 +200,23 @@
   align-items: center;
   gap: var(--mantine-spacing-sm);
   width: 100%;
+  min-height: var(--vx-space-mobile-nav-row-height);
   padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) !important;
   border-radius: var(--mantine-radius-sm);
   color: var(--mantine-color-text);
+  touch-action: manipulation;
+  user-select: none;
 }
 
-.row:hover {
-  background-color: color-mix(in srgb, var(--vx-ink) 8%, transparent);
+/* Hover must be gated: on touch an ungated :hover leaves the last-tapped row stuck lit. */
+@media (hover: hover) {
+  .row:hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 8%, transparent);
+  }
+}
+
+.row:active {
+  background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
 }
 
 /*
@@ -76,8 +227,7 @@
  * `classNames` are always injected, so the icon needs its own `!important` override here to hold
  * the mobile-only "never accent" doctrine.
  */
-.row[data-active],
-.row[data-active]:hover {
+.row[data-active] {
   --nl-color: var(--mantine-color-text);
   color: var(--mantine-color-text);
   background-color: color-mix(in srgb, var(--vx-ink) 13%, transparent);
@@ -88,13 +238,18 @@
   color: var(--mantine-color-text) !important;
 }
 
-.rowLabel {
-  font-size: var(--mantine-font-size-md);
-  line-height: 1.2;
+.rowNested {
+  padding-inline-start: calc(var(--mantine-spacing-md) + 12px) !important;
 }
 
-/* NavLink-rendered rows match `.rowLabel` — the theme pins the label at the dense desktop 13px
- * INLINE (`styles.label`), so `!important` is required to restore the mobile size. */
+/* Sheet rows read at the mobile body size — the theme pins the label at the dense desktop 13px
+ * INLINE (`styles.label`), so `!important` is required to restore it. */
 .row :global(.mantine-NavLink-label) {
   font-size: var(--mantine-font-size-md) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabIcon {
+    transition: none;
+  }
 }

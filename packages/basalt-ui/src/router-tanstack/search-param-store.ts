@@ -49,16 +49,26 @@
  *       return <Charts data={data} range={range} />
  *     }
  *
- * **5. Nav links** — carry the param across sub-pages via search={true},
- * guarded by a path-prefix check so non-dashboard links stay clean:
+ * **5. Nav links** — carry the param across sub-pages, set per destination in
+ * the nav definition so only the dashboard sub-tree inherits it and every
+ * other link stays clean. Use a CLICK-TIME THUNK over `readStored`:
  *
- *     const renderNavLink = (item, { active }) => {
- *       const isDashboard = item.href?.startsWith('/dashboard/')
- *         || item.href === '/dashboard'
- *       return <MantineNavLink component={Link} to={item.href}
- *         {...(isDashboard ? { search: true } : {})}
- *         label={item.label} active={active} />
- *     }
+ *     const dashSearch = () => ({ range: dashboardRange.readStored() ?? '30d' })
+ *
+ *     navGroup({ id: 'dash', label: 'Dashboard' }, [
+ *       { id: 'dash-overview', label: 'Overview', icon: <IconHome />,
+ *         link: linkOptions({ to: '/dashboard', search: dashSearch }) },
+ *       { id: 'dash-activity', label: 'Activity', icon: <IconPulse />,
+ *         link: linkOptions({ to: '/dashboard/activity', search: dashSearch }) },
+ *     ])
+ *
+ * NOT `search: true`. That flag means "keep the current search" and TanStack
+ * only offers it where the target's search is OPTIONAL — a route wired to a
+ * store's `validateSearch` always returns the param, so the router requires a
+ * value and `search: true` is a type error. The thunk is also the better
+ * behaviour: `<Link>` re-evaluates it at click time, so arriving from OUTSIDE
+ * the sub-tree restores the last selection instead of landing on the factory
+ * default, and a definition evaluated once at module scope never goes stale.
  */
 
 import { createPersistedState, readPersistedValue } from '../state'

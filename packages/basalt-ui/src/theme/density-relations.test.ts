@@ -161,9 +161,25 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     }
   })
 
-  test('the mobile header actions row (appHeaderMobileActionsHeight — the closest in-scope, density-tracked mobile nav target size; the app-mobile-nav tab bar itself is a fixed AppShell footer height, out of scope for this pass)', () => {
+  test('the mobile header actions row (appHeaderMobileActionsHeight)', () => {
     for (const level of ALL_LEVELS) {
       expect(deriveSpacing(level).step.appHeaderMobileActionsHeight).toBeGreaterThanOrEqual(24)
+    }
+  })
+
+  // The mobile bar's own two targets clear a HIGHER bar than WCAG 2.5.8's 24px: a thumb on a phone
+  // is not a mouse pointer, so `deriveSpacing` floors them at Apple HIG 44pt / WCAG 2.5.5 AAA
+  // instead. Without those floors the 1 + 0.1*level multiplier takes 56 -> 39 and 44 -> 31 at level
+  // -3 — both under even the 24px floor the rest of this block asserts.
+  test('the mobile nav bar height never drops below its own 48px floor', () => {
+    for (const level of ALL_LEVELS) {
+      expect(deriveSpacing(level).step.mobileNavBarHeight).toBeGreaterThanOrEqual(48)
+    }
+  })
+
+  test('a mobile nav menu/sheet row never drops below its own 44px floor', () => {
+    for (const level of ALL_LEVELS) {
+      expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(44)
     }
   })
 
@@ -212,6 +228,8 @@ function oldLawFlatten(level: number): Record<string, number> {
     step[k] = scaleSpace(v, level, multiplier)
   }
   step['sidebarSearchTriggerHeight'] = Math.max(24, step['sidebarSearchTriggerHeight']!)
+  step['mobileNavBarHeight'] = Math.max(48, step['mobileNavBarHeight']!)
+  step['mobileNavRowHeight'] = Math.max(44, step['mobileNavRowHeight']!)
   step['stickyHeaderClearance'] = step['appShellHeaderHeight']! + anchors['stackMd']!
   step['stickyHeaderClearanceMobile'] = step['appShellHeaderMobileHeight']! + anchors['stackMd']!
   return { ...anchors, ...scale, ...step }

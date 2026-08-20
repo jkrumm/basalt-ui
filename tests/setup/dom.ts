@@ -92,6 +92,30 @@ if (typeof window.ResizeObserver === 'undefined') {
   window.ResizeObserver = ResizeObserverShim as unknown as typeof ResizeObserver
 }
 
+/**
+ * `IntersectionObserver` — happy-dom does not implement it, and `@floating-ui/dom`'s `autoUpdate`
+ * mounts one on every open floating element. That means ANY Mantine `Menu`/`Popover`/`Tooltip` test
+ * throws on open, with an error that reads like a Mantine bug rather than a missing DOM API. A
+ * no-op is correct here: the harness never scrolls, so no intersection ever changes, and every
+ * position `autoUpdate` would recompute is untestable under happy-dom anyway (`matchMedia` is
+ * pinned to `matches: false` and layout is not evaluated).
+ */
+if (typeof window.IntersectionObserver === 'undefined') {
+  class IntersectionObserverShim {
+    readonly root = null
+    readonly rootMargin = '0px'
+    readonly thresholds: ReadonlyArray<number> = []
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
+  }
+
+  window.IntersectionObserver = IntersectionObserverShim as unknown as typeof IntersectionObserver
+}
+
 if (typeof window.matchMedia === 'undefined') {
   window.matchMedia = (query: string): MediaQueryList =>
     ({

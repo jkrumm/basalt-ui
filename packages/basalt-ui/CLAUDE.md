@@ -29,7 +29,7 @@ in `../../docs/archive/BLUEPRINT.md`.
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic unwrap, lazy `BasaltQueryDevtools`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`, `createSearchParamStore` / `createMultiSearchParamStore` (single-/multi-select URL-state stores)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `./router-tanstack` | **free** | TanStack Router bridge: `defineNav` / `navGroup` / `navTarget` / `flattenNav` (ONE typed nav definition) + `useNav` (→ `{ sections, mobileNav }`, spread onto `BasaltShell`), `useBasaltNav` (active route) + `useRouterBreadcrumbs`, `createSearchParamStore` / `createMultiSearchParamStore` (single-/multi-select URL-state stores)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `./commands`        | coupled  | typed command bus + overlay controller, `toSpotlightActions` / `toRouteActions` (projects a nav model to Spotlight page actions), `ShortcutsHelp`, `BasaltOverlays`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -324,9 +324,55 @@ durations/easings scattered per component.
 
 `BasaltShell` composes `AppSidebar` / `MobileNav` / `AppBreadcrumbs` / page-header
 (`PageHeaderProvider` / `PageActions` / `PageActionsOutlet`). Brand, `SidebarSection[]`, a
-`globalActions` slot, footer/settings extras; collapse persisted via `@mantine/hooks`
+`globalActions` slot, settings/account extras; collapse persisted via `@mantine/hooks`
 `useLocalStorage`. Router-agnostic — badge/active/navigate wiring stays consumer-side; ship
 `NavCountBadge` for the count-badge pattern. No zustand, no router adapter.
+
+**The router seam is ONE component, not a render callback.** `SidebarItem.Anchor` (a `NavAnchor`,
+declared in `src/nav/types.ts`) is the consumer's router `<Link>`; basalt renders every pixel of
+chrome around it — the desktop row, the 56px mobile slot, the 44px sheet row — and only hosts that
+component. When `Anchor` is absent the row falls back to `<a href>` + `onClick`, so a no-router
+consumer still works. There is no `renderNavLink` / `renderBreadcrumbLink` / `MobileNav sections=`
+callback surface any more: one anchor per destination, three render paths, zero duplication. On the
+breadcrumb bar the same seam is `parentAnchor`, rendered as `<Anchor component={parentAnchor}>` so
+basalt keeps Mantine's link semantics.
+
+**Mobile nav (`MobileNav` + `projectMobileNav`, `src/shell/mobile-nav-model.ts`).** The bottom bar
+is a TAB BAR, not a menu: a slot is a destination, so a tap navigates through the consumer's router
+with no overlay to dismiss. The full-height mobile `AppShell.Navbar` drawer is **gone** — the
+navbar is permanently `collapsed: { mobile: true }`, and everything the drawer used to hold (nav,
+account, settings, theme switcher) is reachable from the trailing More slot instead, rendered as
+flat rows derived from `BasaltAccountProps` / `SettingsMenuItem[]` rather than by mounting
+`SidebarAccount` (which would open a menu inside a menu).
+
+`projectMobileNav(sections, { config, extraMoreRows })` is a PURE projection — no React, no
+Mantine, no DOM — and it decides everything: which destinations get a slot, which slot is a plain
+link and which raises a surface, and whether that surface is a `Menu` or a bottom-sheet `Drawer`.
+The surface is INFERRED from row count, never configured: 0 drops the slot, 1 collapses to a plain
+link (a group of one IS a destination), ≤ `menuMax` (6) is a menu, more is a sheet. Six is
+arithmetic — 6 × 44px + 8px padding = 272px against 415px of headroom on the smallest supported
+viewport — which is why the menu runs `flip: false` and can never render below the fold. Placement
+per destination is `SidebarItem.mobile` (`'tab'` / `'more'` (default) / `'hidden'`); a section
+claims its own slot with `mobile: { tab: true }` or leaves mobile with `mobile: false`. With
+nothing configured the first `maxTabs - 1` non-disabled top-level destinations take slots.
+`MobileNavConfig` (`tabs`, `maxTabs`, `menuMax`, `moreLabel`, `moreExtra`, `getScrollElement`) is
+the escape hatch, not the interface.
+
+Two things in the mobile CSS that look like bugs and are not:
+
+- **`.bar` carries no `env(safe-area-inset-bottom)`.** Mantine's own `AppShell` `.footer` rule
+  already does `height: calc(var(--app-shell-footer-height) + env(safe-area-inset-bottom))` plus a
+  matching `padding-bottom`; adding it again double-counts the inset. The one real gap is
+  `--app-shell-footer-offset`, which Mantine sets to the RAW height, leaving `AppShell.Main`'s
+  padding short by exactly one inset — closed by `.mainSafeArea`, applied to `Main` by the shell.
+  The sheet gets its own inset padding because a `Drawer` is not an `AppShell` section.
+- **The active indicator is a neutral ink-10% pill behind the ICON only**, never the identity blue
+  and never a full-tab fill (that reads as chrome instead of as a tab bar). The accent DOES appear
+  on the 8px unread dot driven by `SidebarItem.count` — that is a badge, not the active state, so
+  the "never the identity blue" rule is untouched.
+
+Bar height and row height are density-tracked tokens (`mobileNavBarHeight` 56, `mobileNavRowHeight` 44) with hard floors at 48/44 in `deriveSpacing` — the `1 + 0.1 * level` law would take them to
+39/31 at level −3 and silently break the minimum touch target.
 
 **Sidebar account (`account` prop, optional).** `SidebarAccount` is a presentational footer row
 over a provider-agnostic contract (`account-types.ts`: `BasaltAccountState` — loading /
@@ -345,10 +391,9 @@ tree/filter panel/project list that doesn't fit `SidebarItem`s (e.g. a note tree
 second sidebar column beside the shell). Renders as the last child of the scrolling nav column so
 it scrolls with the rest of the nav. Hidden on the collapsed desktop rail via CSS (`.navExtra`
 under the same `min-width: sm` media query as `.childList`) — never a JS check on `collapsed`,
-since that one flag is shared by the rail AND the mobile drawer, and only the media query tells
-them apart; a JS gate would also drop the slot from the drawer, which opens at full width. Pass
-`sections={[]}` to use the slot exclusively; an empty `sections` produces no orphan divider above
-it.
+which is a persisted user preference rather than a viewport fact; the media query is what actually
+tells the rail apart from the expanded sidebar. Pass `sections={[]}` to use the slot exclusively;
+an empty `sections` produces no orphan divider above it.
 
 ## CLI (`basalt-ui`)
 

@@ -2,7 +2,6 @@
  * Typed CSS-module declaration (the S4 CSS-modules path). Named string props — not an index
  * signature — so dot access (`classes.link`) stays verbatim under the package's strict flags
  * (`noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`).
- * `collapseBtn` is referenced by the component for parity with argo though it has no CSS rule.
  */
 declare const classes: {
   readonly root: string
@@ -15,7 +14,6 @@ declare const classes: {
   readonly navScroll: string
   readonly navViewport: string
   readonly nav: string
-  readonly collapseBtn: string
   readonly footer: string
   readonly footerBtn: string
   readonly footerText: string
