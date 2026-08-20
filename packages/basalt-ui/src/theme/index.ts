@@ -549,10 +549,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // panel-filled row read as a button sitting in the nav rather than as the current location.
       // Selection is carried by the tint + ink text + weight 600 + the accent icon instead. Forced
       // here at the THEME level via NavLink's `--nl-*` vars so it holds for every render path —
-      // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
-      // module; the active ICON is accent-colored via `nav-link.module.css` (targets the
-      // `[data-position='left']` leftSection, which the flat `vars`/`styles` API can't express
-      // conditionally on `[data-active]`).
+      // including a consumer's router `<Link>` hosted through `SidebarItem.Anchor`, which never
+      // sees the shell CSS module; the active ICON is accent-colored via `nav-link.module.css`
+      // (targets the `[data-position='left']` leftSection, which the flat `vars`/`styles` API
+      // can't express conditionally on `[data-active]`).
       //
       // `--nl-hover` (ink-13%) only ever reaches an ACTIVE row in practice — the inactive hover is
       // set at ink-6% by higher-specificity `:not([data-active])` rules in `nav-link.module.css` /
@@ -568,9 +568,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           children: {},
         }),
         // Dense, rounded nav rows — applied at the THEME level so they survive EVERY render path,
-        // including a consumer's router `<Link>` via `renderNavLink`, which never sees the shell CSS
-        // module (the module's `.link` only reaches the shell's own fallback `<NavLink>`). Same
-        // reasoning as the `--nl-*` fill above: layout is single-sourced here, not in two places.
+        // including a consumer's router `<Link>` hosted through `SidebarItem.Anchor`, which never
+        // sees the shell CSS module (the module's `.link` only reaches the shell's own fallback
+        // `<NavLink>`). Same reasoning as the `--nl-*` fill above: layout is single-sourced here,
+        // not in two places.
         // The active-weight/shadow/icon-accent state selectors can't live in `styles` (flat inline
         // props only) — they're in nav-link.module.css, wired via `classNames` so they reach the
         // same every-render-path scope.

@@ -148,13 +148,13 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 95 of the 104 spacing variables, taking the set from 230 to 135', () => {
-    // 198 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
-    // (default `legacyAliases: true`) = 230; the alias set is spacing-free, so it rides along
+  it('drops 97 of the 106 spacing variables, taking the set from 232 to 135', () => {
+    // 200 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
+    // (default `legacyAliases: true`) = 232; the alias set is spacing-free, so it rides along
     // unchanged in both `all` and `core`.
-    expect(all.size).toBe(230)
+    expect(all.size).toBe(232)
     expect(core.size).toBe(135)
-    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(104)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(106)
     expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(9)
   })
 
@@ -171,7 +171,7 @@ describe('buildPaletteCss core-only spacing', () => {
   it('touches spacing only — color, radius, type and status are identical', () => {
     const dropped = [...all].filter((n) => !core.has(n))
     expect(dropped.every((n) => n.startsWith('space-'))).toBe(true)
-    expect(dropped).toHaveLength(95)
+    expect(dropped).toHaveLength(97)
   })
 })
 
@@ -249,7 +249,7 @@ describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
   it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
     const withAliases = varNames(buildPaletteCss())
     const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
-    expect(withoutAliases.size).toBe(198)
+    expect(withoutAliases.size).toBe(200)
     expect(withAliases.size).toBe(withoutAliases.size + 32)
     for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })

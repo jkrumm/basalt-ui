@@ -1,38 +1,60 @@
 /**
- * Mobile bottom tab bar for the primary nav groups. Rendered inside an `AppShell.Footer`
- * (`hiddenFrom="sm"`, height collapsed to 0 on desktop) so it only appears below the navbar
- * breakpoint. One tab per group plus a trailing "More" opener; tapping a group tab raises a
- * bottom sheet listing that group's destinations as large tap rows. Active state is a neutral
- * fill, never the identity blue ("ink earns its color", DESIGN.md).
+ * The mobile bottom bar. Rendered inside an `AppShell.Footer` (`hiddenFrom="sm"`, height collapsed
+ * to 0 on desktop) so it only exists below the navbar breakpoint.
  *
- * Router-agnostic: each row renders through `renderNavLink` when supplied (the consumer's router
- * `Link`), else a plain `<a href>` + `item.onClick`. Active state arrives as `item.active`.
- * Grounded verbatim in argo `apps/dashboard/src/components/app-shell/app-mobile-nav.tsx`.
+ * A SLOT IS A DESTINATION. Tapping one navigates through the consumer's router anchor — no
+ * overlay, no animation, nothing to dismiss — which is the whole point of the rewrite: reaching a
+ * page used to cost a tap to open a sheet plus a tap to pick a row. An overlay now exists only
+ * where a slot genuinely holds more than one destination (the trailing "More" slot, or an opt-in
+ * group slot), and its surface is INFERRED from the row count rather than configured: a content-
+ * sized `Menu` that pops out of the tab up to `menuMax` rows, a bottom `Drawer` past it.
+ *
+ * This component paints a finished `MobileNavModel` and owns exactly one piece of state — which
+ * slot's surface is open. Every selection decision lives in `mobile-nav-model.ts`, which is pure.
+ *
+ * Router-agnostic: each slot and row renders through `SidebarItem.Anchor` when supplied (the
+ * consumer's router `Link`), else a plain `<a href>` + `item.onClick`. Active state arrives
+ * precomputed as `item.active`.
  */
-import { Box, Drawer, NavLink, Stack, Text, UnstyledButton } from '@mantine/core'
-import { useState } from 'react'
-import type { MouseEvent, ReactNode } from 'react'
+import { Drawer, Menu, NavLink, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core'
+import { useReducedMotion } from '@mantine/hooks'
+import { Fragment, useState } from 'react'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import type {
+  MobileNavConfig,
+  MobileNavGroup,
+  MobileNavModel,
+  MobileNavSlot,
+  SidebarItem,
+} from '../nav/types'
+import type { BasaltAccountProps } from './account-types'
+import type { SettingsMenuItem } from './index'
+import { NavCountBadge } from './nav-count-badge'
+import { useBasaltSpacing } from '../theme'
 import classes from './app-mobile-nav.module.css'
 
-export type MobileNavItem = {
-  key: string
-  label: string
-  icon: ReactNode
-  href?: string
-  active?: boolean
-  onClick?: (e: MouseEvent) => void
-}
+/**
+ * Floating-ui middlewares for a tab menu. `flip: false` is correct, not lazy: flipping a
+ * bottom-anchored menu puts it UNDER the footer, off-screen — `menuMax` is what guarantees it fits
+ * above the bar (§2.2). `shift.padding` is a viewport inset in px, not a layout spacing token.
+ */
+const MENU_MIDDLEWARES = { flip: false, shift: { padding: 8 } } // theme-allow
 
-export type MobileNavSection = {
-  key: string
-  label: string
-  icon: ReactNode
-  active: boolean
-  items: MobileNavItem[]
-}
+/** A slot that navigates on tap. */
+type LinkSlot = Extract<MobileNavSlot, { kind: 'link' }>
+/** A slot that raises a surface. `menu` and `sheet` share one shape — only the renderer differs. */
+type SurfaceSlot = Exclude<MobileNavSlot, LinkSlot>
 
-/** Renders a single sheet row. The consumer's router `Link` lives here; `active` is precomputed. */
-export type MobileNavLinkRenderer = (item: MobileNavItem, opts: { active: boolean }) => ReactNode
+export type MobileNavProps = {
+  /** The projection from `projectMobileNav` — `BasaltShell` builds it, memoized. */
+  model: MobileNavModel
+  config?: MobileNavConfig | undefined
+  /** Rendered as FLAT ROWS in the More surface, never by mounting `SidebarAccount` (which opens
+   *  its own `Menu` — a menu inside a menu). This is what makes the mobile sidebar drawer
+   *  deletable: everything it used to hold is reachable from More. */
+  account?: BasaltAccountProps | undefined
+  settingsMenuItems?: SettingsMenuItem[] | undefined
+}
 
 /** Inline "More" glyph — keeps the shell icon-dependency-free. */
 function IconMore() {
@@ -56,91 +78,403 @@ function IconMore() {
   )
 }
 
-export function MobileNav({
-  sections,
-  onOpenMore,
-  renderNavLink,
-}: {
-  sections: MobileNavSection[]
-  onOpenMore: () => void
-  renderNavLink?: MobileNavLinkRenderer
-}) {
-  // The open group sheet; null = closed. A single Drawer is reused across all groups.
-  const [openSection, setOpenSection] = useState<MobileNavSection | null>(null)
+/** A row the More surface derives from `account`/`settingsMenuItems` — never a destination. */
+type ActionRow = {
+  key: string
+  label: string
+  icon?: ReactNode
+  danger?: boolean
+  onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined
+}
 
+/**
+ * Flattens `BasaltAccountProps` into rows. `SidebarAccount`'s own dropdown cannot be reused here —
+ * it is a `Menu`, and the More surface is already one.
+ */
+function accountRows(account: BasaltAccountProps | undefined): ActionRow[] {
+  if (!account || account.state.status === 'loading') return []
+  const actions = account.actions
+  if (account.state.status === 'unauthenticated') {
+    return [{ key: 'basalt-account-sign-in', label: 'Sign in', onClick: actions?.onSignIn }]
+  }
+  const rows: ActionRow[] = []
+  if (actions?.onManageAccount) {
+    rows.push({
+      key: 'basalt-account-manage',
+      label: 'Account settings',
+      onClick: actions.onManageAccount,
+    })
+  }
+  if (actions?.onManageBilling) {
+    rows.push({
+      key: 'basalt-account-billing',
+      label: 'Billing & payment',
+      onClick: actions.onManageBilling,
+    })
+  }
+  if (account.state.plan?.isFree && actions?.onUpgrade) {
+    rows.push({ key: 'basalt-account-upgrade', label: 'Upgrade', onClick: actions.onUpgrade })
+  }
+  for (const item of actions?.extraMenuItems ?? []) {
+    rows.push({
+      key: item.key,
+      label: item.label,
+      icon: item.icon,
+      ...(item.danger !== undefined && { danger: item.danger }),
+      onClick: item.onClick,
+    })
+  }
+  if (actions?.onSignOut) {
+    const onSignOut = actions.onSignOut
+    rows.push({
+      key: 'basalt-account-sign-out',
+      label: 'Sign out',
+      danger: true,
+      onClick: () => void onSignOut(),
+    })
+  }
+  return rows
+}
+
+/**
+ * How many rows `account` contributes to the More surface — DELEGATED to `accountRows` rather than
+ * re-derived, because `BasaltShell` needs this number BEFORE the projection runs (it feeds
+ * `extraMoreRows`, which picks `menu` vs `sheet` against `menuMax`) while only this module knows
+ * how many rows an account actually expands into. Two independent counts is how a "1 row" account
+ * shipped a 9-row menu into headroom sized for 6, and how a `loading` account — which renders NO
+ * rows — still conjured a More slot that opened empty.
+ */
+export function accountRowCount(account: BasaltAccountProps | undefined): number {
+  return accountRows(account).length
+}
+
+/** Settings entries already carry the row shape — they just lose the sidebar's `Menu` wrapper. */
+function settingsRows(items: SettingsMenuItem[] | undefined): ActionRow[] {
+  return (items ?? []).map((item) => ({
+    key: item.key,
+    label: item.label,
+    icon: item.icon,
+    onClick: item.onClick,
+  }))
+}
+
+/** One destination row, in a `Menu` dropdown. `depth` indents a nested child. */
+const menuRow = (item: SidebarItem, depth: number): ReactElement => {
+  // `.menuItem[data-disabled] { pointer-events: none }` is the primary guard, but it cannot be the
+  // only one: Mantine's `MenuItem` composes the CALLER's `onClick` first and only then checks
+  // `data-disabled` itself, so anything that reaches the node without a pointer — a keyboard
+  // activation, a synthetic click, a consumer stylesheet resetting `pointer-events` — would still
+  // fire the destination's handler on a row the projection deliberately rendered dead (§2.9).
+  const onClick = (event: MouseEvent<HTMLElement>) => {
+    if (item.disabled) {
+      event.preventDefault()
+      return
+    }
+    item.onClick?.(event)
+  }
+  const shared = {
+    className: depth > 0 ? `${classes.menuItem} ${classes.menuItemNested}` : classes.menuItem,
+    leftSection: item.icon,
+    disabled: Boolean(item.disabled),
+    // Mantine emits `data-disabled` (a STYLING hook) and nothing else, so the ARIA state is ours
+    // to set — a disabled destination still renders (§2.3 rule 11), so it has to announce itself.
+    'aria-disabled': item.disabled || undefined,
+    'aria-current': item.active ? ('page' as const) : undefined,
+    rightSection: item.count ? <NavCountBadge count={item.count} /> : undefined,
+    onClick,
+  }
+  const Anchor = item.Anchor
+  if (Anchor && !item.disabled) {
+    return (
+      <Menu.Item key={item.key} component={Anchor} {...shared}>
+        {item.label}
+      </Menu.Item>
+    )
+  }
   return (
-    <>
-      <nav className={classes.bar}>
-        {sections.map((section) => (
-          <UnstyledButton
-            key={section.key}
-            onClick={() => setOpenSection(section)}
-            className={classes.tab}
-            data-active={section.active || undefined}
-            aria-current={section.active ? 'page' : undefined}
-            aria-label={section.label}
-          >
-            {section.icon}
-            <Text className={classes.label}>{section.label}</Text>
-          </UnstyledButton>
-        ))}
-        <UnstyledButton onClick={onOpenMore} className={classes.tab} aria-label="More">
-          <IconMore />
-          <Text className={classes.label}>More</Text>
-        </UnstyledButton>
-      </nav>
+    <Menu.Item
+      key={item.key}
+      component="a"
+      {...(item.href !== undefined && !item.disabled && { href: item.href })}
+      {...shared}
+    >
+      {item.label}
+    </Menu.Item>
+  )
+}
 
+/** Depth-first: parent, then its children as indented rows — nesting survives to mobile. */
+const rows = (
+  items: readonly SidebarItem[],
+  depth: number,
+  render: (item: SidebarItem, depth: number) => ReactElement,
+): ReactElement[] =>
+  items.flatMap((item) => [render(item, depth), ...rows(item.children ?? [], depth + 1, render)])
+
+/** An account/settings row, in a `Menu` dropdown. */
+const menuActionRow = (row: ActionRow) => (
+  <Menu.Item
+    key={row.key}
+    className={classes.menuItem}
+    leftSection={row.icon}
+    {...(row.danger ? { color: 'red' } : {})}
+    onClick={(event: MouseEvent<HTMLElement>) => row.onClick?.(event)}
+  >
+    {row.label}
+  </Menu.Item>
+)
+
+/** The sheet has no `Menu.Label` equivalent, so the section heading is a plain micro-label. */
+const sheetGroupLabel = (group: MobileNavGroup) =>
+  group.label ? (
+    <Text component="div" className={classes.menuLabel}>
+      {group.label}
+    </Text>
+  ) : null
+
+export function MobileNav({
+  model,
+  config,
+  account,
+  settingsMenuItems,
+}: MobileNavProps): ReactElement {
+  // `openKey` is the ONLY state here, and it is keyed by slot rather than holding a slot object:
+  // `sections` identity churning on every consumer render must not close an open menu.
+  const [openKey, setOpenKey] = useState<string | null>(null)
+  // `DEFAULT_THEME.respectReducedMotion` is false in Mantine 9.3 and `createBasaltTheme` does not
+  // set it, so the preference has to be read explicitly at the call site.
+  const reduceMotion = useReducedMotion()
+  const { step } = useBasaltSpacing()
+
+  const close = () => setOpenKey(null)
+
+  /** §2.5 — re-tapping the ACTIVE slot scrolls to top instead of pushing a redundant history entry. */
+  const scrollToTop = () => {
+    const target =
+      config?.getScrollElement?.() ?? document.scrollingElement ?? document.documentElement
+    target.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
+  }
+
+  const extraRows = [...accountRows(account), ...settingsRows(settingsMenuItems)]
+
+  /** True when any destination in the slot carries an unread count — the icon dot (§2.4). */
+  const hasCount = (slot: MobileNavSlot): boolean =>
+    slot.kind === 'link'
+      ? Boolean(slot.item.count)
+      : slot.groups.some((g) => groupHasCount(g.items))
+
+  const tabInner = (slot: MobileNavSlot) => (
+    <>
+      <span className={classes.tabIcon}>
+        {slot.icon ?? (slot.kind !== 'link' && slot.isMore ? <IconMore /> : null)}
+        {hasCount(slot) ? <span className={classes.tabDot} aria-hidden /> : null}
+      </span>
+      <Text className={classes.label}>{slot.short}</Text>
+    </>
+  )
+
+  /**
+   * The trigger for a `menu`/`sheet` slot. A plain button: Mantine's `Menu.Target` clones
+   * `aria-haspopup`/`aria-expanded`/`aria-controls` onto it (`withRoles` default), so hand-setting
+   * them here would double them up (§2.9).
+   */
+  const surfaceTab = (slot: SurfaceSlot, onClick?: () => void) => (
+    <UnstyledButton
+      className={classes.tab}
+      data-active={slot.active || undefined}
+      aria-current={slot.active ? 'page' : undefined}
+      aria-label={slot.label}
+      {...(onClick ? { onClick } : {})}
+    >
+      {tabInner(slot)}
+    </UnstyledButton>
+  )
+
+  /** A `link` slot: the consumer's router anchor IS the tab, so preload/back/middle-click all work. */
+  const linkTab = (slot: LinkSlot) => {
+    const onClick = (e: MouseEvent<HTMLElement>) => {
+      // VERIFIED in @tanstack/react-router: `Link` composes the caller's handler FIRST and returns
+      // early when `defaultPrevented`, so this suppresses navigation without touching preload.
+      if (slot.active) {
+        e.preventDefault()
+        scrollToTop()
+      }
+      slot.item.onClick?.(e)
+    }
+    const shared = {
+      className: classes.tab,
+      'data-active': slot.active || undefined,
+      'aria-current': slot.active ? ('page' as const) : undefined,
+      'aria-label': slot.label,
+      onClick,
+    }
+    const Anchor = slot.item.Anchor
+    if (Anchor) {
+      return (
+        <UnstyledButton key={slot.key} component={Anchor} {...shared}>
+          {tabInner(slot)}
+        </UnstyledButton>
+      )
+    }
+    return (
+      <UnstyledButton
+        key={slot.key}
+        component="a"
+        {...(slot.item.href !== undefined && { href: slot.item.href })}
+        {...shared}
+      >
+        {tabInner(slot)}
+      </UnstyledButton>
+    )
+  }
+
+  /** One destination row, in the sheet. 44px minimum, per the touch-target floor. */
+  const sheetRow = (item: SidebarItem, depth: number): ReactElement => {
+    const onClick = (e: MouseEvent<HTMLElement>) => {
+      item.onClick?.(e)
+      close()
+    }
+    const shared = {
+      classNames: {
+        root: depth > 0 ? `${classes.row} ${classes.rowNested}` : classes.row,
+      },
+      label: item.label,
+      leftSection: item.icon,
+      rightSection: item.count ? <NavCountBadge count={item.count} /> : undefined,
+      active: Boolean(item.active),
+      disabled: Boolean(item.disabled),
+      // Same as the menu row above: `NavLink`'s `disabled` is a `mod`, i.e. `data-disabled` only.
+      'aria-disabled': item.disabled || undefined,
+      'aria-current': item.active ? ('page' as const) : undefined,
+      onClick,
+    }
+    const Anchor = item.Anchor
+    if (Anchor && !item.disabled) {
+      return <NavLink key={item.key} component={Anchor} {...shared} />
+    }
+    return (
+      <NavLink
+        key={item.key}
+        component="a"
+        {...(item.href !== undefined && !item.disabled && { href: item.href })}
+        {...shared}
+      />
+    )
+  }
+
+  const sheetActionRow = (row: ActionRow) => (
+    <NavLink
+      key={row.key}
+      classNames={{ root: classes.row }}
+      label={row.label}
+      leftSection={row.icon}
+      {...(row.danger ? { color: 'red' } : {})}
+      onClick={(event: MouseEvent<HTMLElement>) => {
+        row.onClick?.(event)
+        close()
+      }}
+    />
+  )
+
+  const menuSlot = (slot: SurfaceSlot) => (
+    <Menu
+      key={slot.key}
+      opened={openKey === slot.key}
+      onChange={(opened) => setOpenKey(opened ? slot.key : null)}
+      position={slot.isMore ? 'top-end' : 'top'}
+      offset={8}
+      width={step.mobileNavMenuWidth}
+      withinPortal
+      // AppShell itself sits at z-index 100 (`getDefaultZIndex('app')`), so the menu must clear it.
+      zIndex={400}
+      middlewares={MENU_MIDDLEWARES}
+      trapFocus
+      returnFocus
+      closeOnItemClick
+      closeOnClickOutside
+      closeOnEscape
+      // Required for a navigation menu following the WAI-ARIA disclosure pattern — Mantine's own
+      // note on the prop. Without it every row is `tabindex="-1"`.
+      menuItemTabIndex={0}
+      transitionProps={{
+        transition: slot.isMore ? 'pop-bottom-right' : 'pop',
+        duration: reduceMotion ? 0 : 140,
+        exitDuration: reduceMotion ? 0 : 100,
+      }}
+      classNames={{ dropdown: classes.menuDropdown, label: classes.menuLabel }}
+    >
+      <Menu.Target>{surfaceTab(slot)}</Menu.Target>
+      <Menu.Dropdown>
+        {slot.groups.flatMap((group) => [
+          ...(group.label
+            ? [<Menu.Label key={`${group.key}-label`}>{group.label}</Menu.Label>]
+            : []),
+          ...rows(group.items, 0, menuRow),
+        ])}
+        {/* A separator separates. With nothing above it — a More slot raised purely by the account
+            and settings rows — it would render as the dropdown's first child, a rule under the
+            top edge. Both sides have to exist. */}
+        {slot.isMore && extraRows.length > 0 && slotHasRows(slot) ? <Menu.Divider /> : null}
+        {slot.isMore ? extraRows.map(menuActionRow) : null}
+        {slot.isMore ? config?.moreExtra : null}
+      </Menu.Dropdown>
+    </Menu>
+  )
+
+  const sheetSlot = (slot: SurfaceSlot) => (
+    <Fragment key={slot.key}>
+      {surfaceTab(slot, () => setOpenKey(slot.key))}
       <Drawer
-        opened={openSection !== null}
-        onClose={() => setOpenSection(null)}
+        opened={openKey === slot.key}
+        onClose={close}
         position="bottom"
         size="auto"
         padding="md"
-        title={openSection?.label}
+        title={slot.label}
         classNames={{ content: classes.sheet, title: classes.sheetTitle }}
+        transitionProps={{
+          transition: 'slide-up',
+          duration: reduceMotion ? 0 : 220,
+          timingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
       >
-        <Stack gap={2}>
-          {openSection?.items.map((item) => {
-            const handleClick = (e: MouseEvent) => {
-              item.onClick?.(e)
-              setOpenSection(null)
-            }
-            const active = Boolean(item.active)
-
-            if (renderNavLink) {
-              return (
-                <Box key={item.key} onClick={() => setOpenSection(null)}>
-                  {renderNavLink(item, { active })}
-                </Box>
-              )
-            }
-
-            // Items with an href stay anchors so the consumer's router can preload them.
-            return item.href ? (
-              <NavLink
-                key={item.key}
-                classNames={{ root: classes.row }}
-                component="a"
-                href={item.href}
-                label={item.label}
-                leftSection={item.icon}
-                active={active}
-                onClick={handleClick}
-              />
-            ) : (
-              <UnstyledButton
-                key={item.key}
-                onClick={handleClick}
-                className={classes.row}
-                data-active={active || undefined}
-              >
-                {item.icon}
-                <Text className={classes.rowLabel}>{item.label}</Text>
-              </UnstyledButton>
-            )
-          })}
-        </Stack>
+        {/* The dismiss affordance. No swipe-to-dismiss — see `.grabber` in the CSS module. */}
+        <div className={classes.grabber} aria-hidden />
+        <ScrollArea.Autosize mah="62dvh" type="scroll">
+          <Stack gap="xs">
+            {slot.groups.map((group) => (
+              <Stack key={group.key} gap={2}>
+                {sheetGroupLabel(group)}
+                {rows(group.items, 0, sheetRow)}
+              </Stack>
+            ))}
+            {slot.isMore && extraRows.length > 0 ? (
+              <Stack gap={2}>{extraRows.map(sheetActionRow)}</Stack>
+            ) : null}
+            {slot.isMore ? config?.moreExtra : null}
+          </Stack>
+        </ScrollArea.Autosize>
       </Drawer>
-    </>
+    </Fragment>
   )
+
+  return (
+    <nav className={classes.bar} aria-label="Primary">
+      {model.slots.map((slot) => {
+        if (slot.kind === 'link') return linkTab(slot)
+        if (slot.kind === 'menu') return menuSlot(slot)
+        return sheetSlot(slot)
+      })}
+    </nav>
+  )
+}
+
+/** Whether a surface slot paints any destination row at all (as opposed to only derived rows). */
+function slotHasRows(slot: SurfaceSlot): boolean {
+  return slot.groups.some((group) => group.items.length > 0)
+}
+
+/** Any destination in the tree carrying a non-zero count. */
+function groupHasCount(items: readonly SidebarItem[]): boolean {
+  return items.some((item) => Boolean(item.count) || groupHasCount(item.children ?? []))
 }

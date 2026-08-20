@@ -151,6 +151,14 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   useTooltipStyles: 'ChartTooltipFloat',
   BarsAxisConfig: 'AxisConfig',
   ZonedLineTooltipLabel: 'TooltipRow',
+  // ── 1.19.0 native mobile nav: the render-callback seam became a component seam ──
+  // `SidebarItem.Anchor` (a `NavAnchor`) replaces all three render callbacks, and the mobile
+  // model's own row/section types moved into `src/nav/types.ts`.
+  NavLinkRenderer: 'NavAnchor',
+  MobileNavLinkRenderer: 'NavAnchor',
+  BreadcrumbLinkRenderer: 'NavAnchor',
+  MobileNavItem: 'SidebarItem',
+  MobileNavSection: 'MobileNavSlot',
 }
 
 /**

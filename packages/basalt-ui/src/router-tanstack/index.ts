@@ -1,8 +1,10 @@
 /**
  * ./router-tanstack — headless TanStack Router bridge for the app shell.
  * Optional peer: @tanstack/react-router.
- * Augments StaticDataRouteOption with title/icon/navSection for breadcrumb
- * and nav-active wiring — no Mantine, no JSX, no navigate() helper.
+ * Carries the typed navigation definition (`defineNav`/`navGroup`/`navTarget`/`flattenNav`) and
+ * `useNav`, which resolves it into `BasaltShell`'s `sections` + `mobileNav` props; plus the
+ * StaticDataRouteOption augmentation (title/icon/navSection) for router-derived breadcrumbs and
+ * the search-param stores — no Mantine, no JSX.
  */
 
 export {
@@ -15,6 +17,23 @@ export {
   type MultiSearchParamStore,
   type MultiSearchParamStoreOptions,
 } from './multi-search-param-store'
+export { defineNav, navGroup, navTarget, flattenNav } from './nav'
+export type {
+  NavItemMeta,
+  NavGroupMeta,
+  AnyNavItem,
+  AnyNavGroup,
+  AnyNavLink,
+  FlatNavItem,
+  NavConfig,
+  NavItemId,
+  NavGroupId,
+  NavTabId,
+  NavIndex,
+} from './nav'
+export { useNav } from './use-nav'
+export type { UseNavOptions, NavBinding } from './use-nav'
+export type { NavAnchor, NavAnchorProps, NavMobilePlacement } from '../nav/types'
 import type { ReactNode } from 'react'
 import { useLocation, useMatches } from '@tanstack/react-router'
 

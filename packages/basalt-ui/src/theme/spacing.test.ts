@@ -352,6 +352,13 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['appShellNavbarWidth', 216, null],
   ['appShellNavbarRailWidth', 48, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
+  // JS-number-only, and for the same two reasons the six above are: `shell/index.tsx` hands
+  // `mobileNavBarHeight` to AppShell's `footer.height` (a number, not a `var()` string), and
+  // `app-mobile-nav.tsx` hands `mobileNavMenuWidth` to `<Menu width={…}>`.
+  ['mobileNavBarHeight', 56, null],
+  ['mobileNavIconSize', 24, 'space-mobile-nav-icon-size'],
+  ['mobileNavRowHeight', 44, 'space-mobile-nav-row-height'],
+  ['mobileNavMenuWidth', 232, null],
   ['agentRailInsetX', 10, 'space-agent-rail-inset-x'],
   ['agentPartGapTop', 6, 'space-agent-part-gap-top'],
   ['agentCodeInset', 8, 'space-agent-code-inset'],
@@ -404,6 +411,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
       'appShellHeaderMobileHeight',
       'appShellNavbarWidth',
       'appShellNavbarRailWidth',
+      'mobileNavBarHeight',
+      'mobileNavMenuWidth',
       'chartLegendGap',
       'chartMarginTop',
       'chartMarginRight',
@@ -420,6 +429,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
     expect(css).not.toContain('--vx-space-app-shell-header-mobile-height')
     expect(css).not.toContain('--vx-space-app-shell-navbar-width')
     expect(css).not.toContain('--vx-space-app-shell-navbar-rail-width')
+    expect(css).not.toContain('--vx-space-mobile-nav-bar-height')
+    expect(css).not.toContain('--vx-space-mobile-nav-menu-width')
     expect(css).not.toContain('--vx-space-chart-legend-gap')
     expect(css).not.toContain('--vx-space-progress-bar-size')
     expect(css).not.toContain('--vx-space-timeline-bullet')

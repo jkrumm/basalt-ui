@@ -609,6 +609,17 @@ const SPACE_STEP_BASE = {
   // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
   /** Tab's icon-to-label gap. */
   mobileNavTabGap: 3,
+  /** Bar height, EXCLUDING the safe-area inset — Mantine's own `AppShell.footer` rule adds
+   *  `env(safe-area-inset-bottom)` to it. JS-consumed (AppShell `footer.height`), no `--vx-*` var,
+   *  same shape as `appShellHeaderHeight`. Floored at 48px in `deriveSpacing`. */
+  mobileNavBarHeight: 56,
+  /** Slot icon box. */
+  mobileNavIconSize: 24,
+  /** Menu/sheet row height. Floored at 44px in `deriveSpacing` (Apple HIG 44pt / WCAG 2.5.5 AAA). */
+  mobileNavRowHeight: 44,
+  /** More/group `<Menu width={…}>`. JS-consumed, no var — same rationale as
+   *  `sidebarSettingsMenuWidth` directly above. */
+  mobileNavMenuWidth: 232,
 
   // ── charts (tokens/index.ts's `VX` object — structural, tracks density) ──────────────────────
   // `VX.lineWidth`/`VX.line2Width` are DELIBERATELY absent here — they are stroke WEIGHTS (line
@@ -927,6 +938,11 @@ export function deriveSpacing(level: number): SpaceValues {
   // WCAG 2.5.8 minimum interactive-target size — see this function's doc for why the trigger's
   // density-tracking height alone can't be trusted to stay accessible at a negative level.
   mappedStep.sidebarSearchTriggerHeight = Math.max(24, mappedStep.sidebarSearchTriggerHeight)
+  // Touch targets: the 1 + 0.1*level multiplier would take 56 -> 39 and 44 -> 31 at level -3,
+  // silently breaking the minimum interactive-target size. Same guardrail, same reason, as the
+  // sidebar search trigger's 24px floor directly above.
+  mappedStep.mobileNavBarHeight = Math.max(48, mappedStep.mobileNavBarHeight)
+  mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
   const step: SpaceValues['step'] = {
     ...mappedStep,
     // RESPONSIVE, one per AppShell breakpoint — each DERIVED from its own header, plus

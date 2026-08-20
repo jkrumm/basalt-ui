@@ -400,14 +400,15 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * only invite someone to think it does.
  *
  * Deliberately DOES NOT emit a var for every `SpaceValues` number — `space.scale.*` (the generic
- * Mantine spacing scale) and fourteen `space.step.*` keys have ZERO `var()` consumers anywhere in
+ * Mantine spacing scale) and seventeen `space.step.*` keys have ZERO `var()` consumers anywhere in
  * the framework or its tests beyond the CSS-emission test itself. Each is read straight off the
  * resolved `SpaceValues` as a JS NUMBER instead, in one of three ways:
  * `{timelineBullet,progressBarSize}` are Mantine `defaultProps` (`theme/index.ts`'s Timeline/
- * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,appShellHeaderHeight,
- * appShellHeaderMobileHeight,appShellNavbarWidth,appShellNavbarRailWidth}` are numeric Mantine
- * component props (Menu `width`, AppShell `header`/`navbar`); and `{chartLegendGap,chartMarginTop,
- * chartMarginRight,chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
+ * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,mobileNavMenuWidth,
+ * appShellHeaderHeight,appShellHeaderMobileHeight,appShellNavbarWidth,appShellNavbarRailWidth,
+ * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
+ * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,chartMarginRightAxis,
+ * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
  * `VX.legendGap`/`VX.margin`/`VX.dotR` in this file's own `VX` object. The full list is locked
  * against the `SpaceValues` key set by `tokens/density.test.ts`'s declaration-set test, so adding a
  * one-off silently omits nothing. A `--vx-space-*` declaration for any of them would be dead weight
@@ -531,6 +532,8 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-sidebar-child-row-indent', `${space.step.sidebarChildRowIndent}px`),
     decl('space-app-header-mobile-actions-height', `${space.step.appHeaderMobileActionsHeight}px`),
     decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
+    decl('space-mobile-nav-icon-size', `${space.step.mobileNavIconSize}px`),
+    decl('space-mobile-nav-row-height', `${space.step.mobileNavRowHeight}px`),
     decl('space-agent-rail-inset-x', `${space.step.agentRailInsetX}px`),
     decl('space-agent-part-gap-top', `${space.step.agentPartGapTop}px`),
     decl('space-agent-code-inset', `${space.step.agentCodeInset}px`),

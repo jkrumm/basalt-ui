@@ -11,10 +11,9 @@
  * a consumer's bundler.
  */
 import { Anchor, Group, Text } from '@mantine/core'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties } from 'react'
+import type { NavAnchor } from '../nav/types'
 import { VX } from '../tokens'
-
-export type BreadcrumbLinkRenderer = (href: string, label: string) => ReactNode
 
 /** Parent/section crumbs — faint. */
 const crumbStyle: CSSProperties = { fontSize: VX.text.md, color: 'var(--vx-faint)' }
@@ -34,21 +33,20 @@ const currentStyle: CSSProperties = {
 export function AppBreadcrumbs({
   section,
   parent,
+  parentAnchor,
   parentHref,
-  renderBreadcrumbLink,
   page,
 }: {
   section?: string
   /** Parent item label — shown when the active page is a nested child (e.g. "Dashboard"). */
   parent?: string | undefined
-  /** Parent item href — when provided, the parent label renders as a clickable link. */
-  parentHref?: string | undefined
   /**
-   * Optional router link renderer for the parent breadcrumb segment. When provided, the parent
-   * label is rendered through this callback instead of a plain `<a href>`, enabling client-side
-   * navigation (e.g. TanStack `<Link>`).
+   * The parent destination's router anchor (`SidebarItem.Anchor`), so the crumb navigates
+   * client-side. basalt still owns every pixel of the crumb — the anchor only hosts the label.
    */
-  renderBreadcrumbLink?: BreadcrumbLinkRenderer | undefined
+  parentAnchor?: NavAnchor | undefined
+  /** Parent item href — the no-router fallback; ignored when `parentAnchor` is present. */
+  parentHref?: string | undefined
   page?: string
 }) {
   if (!page) return null
@@ -62,19 +60,23 @@ export function AppBreadcrumbs({
           <Text style={separatorStyle}>/</Text>
         </>
       )}
-      {parent && parentHref && (
+      {parent && parentAnchor && (
         <>
-          {renderBreadcrumbLink ? (
-            renderBreadcrumbLink(parentHref, parent)
-          ) : (
-            <Anchor style={crumbStyle} underline="never" href={parentHref} truncate>
-              {parent}
-            </Anchor>
-          )}
+          <Anchor style={crumbStyle} underline="never" component={parentAnchor} truncate>
+            {parent}
+          </Anchor>
           <Text style={separatorStyle}>/</Text>
         </>
       )}
-      {parent && !parentHref && (
+      {parent && !parentAnchor && parentHref && (
+        <>
+          <Anchor style={crumbStyle} underline="never" href={parentHref} truncate>
+            {parent}
+          </Anchor>
+          <Text style={separatorStyle}>/</Text>
+        </>
+      )}
+      {parent && !parentAnchor && !parentHref && (
         <>
           <Text style={crumbStyle} truncate>
             {parent}

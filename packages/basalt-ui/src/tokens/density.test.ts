@@ -239,6 +239,8 @@ describe('buildDensityCss', () => {
       'space-app-shell-header-mobile-height',
       'space-app-shell-navbar-width',
       'space-app-shell-navbar-rail-width',
+      'space-mobile-nav-bar-height', // AppShell footer.height prop
+      'space-mobile-nav-menu-width', // Menu width prop
       'space-chart-legend-gap', // VX.legendGap / VX.margin / VX.dotR — visx SVG props
       'space-chart-margin-top',
       'space-chart-margin-right',

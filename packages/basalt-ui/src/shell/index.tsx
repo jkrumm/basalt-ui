@@ -1,32 +1,40 @@
 /**
  * BasaltShell — the application shell (collapsible sidebar rail + slim top bar + mobile bottom
- * nav). Grounded in argo's app-shell: the `SidebarItem`/`SidebarSection` types come verbatim from
- * `apps/dashboard/src/components/app-shell/app-sidebar.tsx`, and the layout mirrors the `AppShell`
- * composition in `apps/dashboard/src/routes/__root.tsx`.
+ * bar). Grounded in argo's app-shell; the layout mirrors the `AppShell` composition in
+ * `apps/dashboard/src/routes/__root.tsx`.
+ *
+ * ONE nav definition drives both halves. `sections` renders the desktop sidebar, and
+ * `projectMobileNav` projects the SAME sections onto the mobile bar — so a destination is declared
+ * once and `SidebarItem.mobile` decides where it lands. There is no mobile sidebar drawer: below
+ * the `sm` breakpoint the navbar is permanently collapsed and the bottom bar IS the nav, which is
+ * why the More surface must also carry the account and settings rows the sidebar footer holds on
+ * desktop.
  *
  * Router-agnostic: argo's router coupling (typed `navigate`, `useMatchRoute` active detection, the
  * sidebar-collapse zustand store) stays consumer-side. The consumer resolves `item.active`,
- * `item.onClick`, `item.badge` and (optionally) passes a `renderNavLink` so its router `<Link>`
- * renders each nav row. The breadcrumb is derived from the active item across `sections`, not from a
- * router hook. Collapse is persisted via `@mantine/hooks` `useLocalStorage` keyed by `storageKey`.
+ * `item.onClick`, `item.badge`/`item.count` and supplies `item.Anchor` — its router `<Link>`,
+ * which basalt HOSTS rather than delegating rendering to. The breadcrumb is derived from the
+ * active item across `sections`, not from a router hook. Collapse is persisted via
+ * `@mantine/hooks` `useLocalStorage` keyed by `storageKey`.
  */
-import { AppShell, Badge } from '@mantine/core'
-import { useDisclosure, useLocalStorage } from '@mantine/hooks'
+import { AppShell } from '@mantine/core'
+import { useLocalStorage } from '@mantine/hooks'
+import { useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 import { AppSidebar } from './app-sidebar'
-import type { NavLinkRenderer } from './app-sidebar'
-import { MobileNav } from './app-mobile-nav'
-import type { MobileNavItem, MobileNavSection } from './app-mobile-nav'
+import { MobileNav, accountRowCount } from './app-mobile-nav'
+import { projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
-import type { BreadcrumbLinkRenderer } from './app-breadcrumbs'
 import { PageActionsOutlet, PageHeaderProvider } from './page-header'
 import type { BasaltAccountProps } from './account-types'
 import type { SidebarSearchConfig } from './sidebar-search'
-import { VX } from '../tokens'
+import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
 import { useBasaltSpacing } from '../theme'
 import headerClasses from './app-header.module.css'
+import mobileNavClasses from './app-mobile-nav.module.css'
 
-export { AppSidebar, type AppSidebarProps, type NavLinkRenderer } from './app-sidebar'
+export { AppSidebar, type AppSidebarProps } from './app-sidebar'
+export { NavCountBadge } from './nav-count-badge'
 export { SidebarSearch, type SidebarSearchConfig } from './sidebar-search'
 export { SidebarAccount } from './app-sidebar-account'
 export type {
@@ -39,46 +47,35 @@ export type {
   BasaltAccountActions,
   BasaltAccountProps,
 } from './account-types'
+export { MobileNav, type MobileNavProps } from './app-mobile-nav'
 export {
-  MobileNav,
-  type MobileNavItem,
-  type MobileNavSection,
-  type MobileNavLinkRenderer,
-} from './app-mobile-nav'
-export { AppBreadcrumbs, type BreadcrumbLinkRenderer } from './app-breadcrumbs'
+  projectMobileNav,
+  type ProjectMobileNavOptions,
+  MOBILE_MAX_TABS_DEFAULT,
+  MOBILE_MENU_MAX_DEFAULT,
+  MOBILE_MORE_KEY,
+} from './mobile-nav-model'
+export { AppBreadcrumbs } from './app-breadcrumbs'
 export { PageHeaderProvider, PageActions, PageActionsOutlet } from './page-header'
 
-/** A single sidebar destination. Grounded verbatim in argo's `SidebarItem`. */
-export type SidebarItem = {
-  key: string
-  label: string
-  /** Short label for the mobile bottom-nav; falls back to `label`. */
-  short?: string
-  /** Whether this destination appears in the mobile bottom-nav. */
-  mobile?: boolean
-  icon: ReactNode
-  href?: string
-  active?: boolean
-  disabled?: boolean
-  onClick?: (e: MouseEvent) => void
-  badge?: ReactNode
-  /** Nested sub-navigation items — surfaced in a hover popover and inline when active. */
-  children?: SidebarItem[]
-}
-
-/** A labelled group of sidebar items. Grounded verbatim in argo's `SidebarSection`. */
-export type SidebarSection = {
-  label: string
-  items: SidebarItem[]
-  /** Group icon, used by the mobile tabs. */
-  icon?: ReactNode
-  /** Desktop: render a clickable group header that collapses its items. */
-  collapsible?: boolean
-  /** Initial collapsed state when `collapsible`. */
-  defaultCollapsed?: boolean
-  /** `false` excludes the section from the primary mobile group tabs. */
-  mobileTab?: boolean
-}
+/**
+ * The shared nav vocabulary lives in `src/nav/types.ts` so the headless router bridge can `import
+ * type` it without reaching into the Mantine layer. Re-exported here so `SidebarItem` /
+ * `SidebarSection` keep resolving straight from `basalt-ui`, exactly as before.
+ */
+export type {
+  NavAnchor,
+  NavAnchorProps,
+  NavMobilePlacement,
+  NavSectionMobile,
+  SidebarItem,
+  SidebarSection,
+  MobileNavConfig,
+  MobileNavGroup,
+  MobileNavModel,
+  MobileNavSlot,
+  MobileNavSurface,
+} from '../nav/types'
 
 /** Brand identity shown in the sidebar header (logo + name). */
 export type BrandConfig = {
@@ -103,25 +100,21 @@ export type SettingsMenuItem = {
 export type BasaltShellProps = {
   /** Brand identity for the sidebar header. */
   brand: BrandConfig
-  /** Grouped nav sections rendered in the sidebar (and projected to the mobile bottom nav). */
+  /** Grouped nav sections — the ONE definition, rendered as the sidebar and projected to the bar. */
   sections: SidebarSection[]
   /**
-   * Optional consumer link renderer (e.g. a router `<Link>`). Receives the precomputed `active`
-   * flag. When omitted, items fall back to a plain `<a href>` + `item.onClick`. This is the router
-   * seam — no router primitive is imported by the shell.
+   * Mobile bar tuning. Every field optional — the defaults ARE the design, and a nav with nothing
+   * configured still produces a working bar (see `projectMobileNav`'s zero-config fallback).
    */
-  renderNavLink?: NavLinkRenderer
+  mobileNav?: MobileNavConfig
   /** Persistent, shell-owned top-bar slot (timer, refresh, notifications). */
   globalActions?: ReactNode
-  /** Extra content appended to the sidebar footer, beside the settings menu (mobile close, etc.). */
-  sidebarFooterExtra?: ReactNode
   /**
-   * Arbitrary content appended after `sections` inside the sidebar's nav scroll region (a tree, a
-   * filter panel, a project list, …). Hidden on the collapsed desktop rail; still present in the
-   * mobile drawer, which opens at full width — see `AppSidebarProps.navExtra`'s JSDoc for why.
-   * `AppSidebar` renders once and serves both the desktop rail and the mobile drawer (collapse
-   * styling is gated behind a `min-width: sm` media query, not a second render), so this slot
-   * reaches both.
+   * DESKTOP ONLY. Arbitrary content appended after `sections` inside the sidebar's nav scroll
+   * region (a tree, a filter panel, a project list, …), for anything a set of `SidebarItem`s can't
+   * express. Hidden on the collapsed desktop rail; the sidebar itself no longer exists below the
+   * `sm` breakpoint, so this slot has no mobile representation — put mobile-reachable extras in
+   * `mobileNav.moreExtra` instead.
    */
   sidebarNavExtra?: ReactNode
   /** Entries appended to the sidebar settings menu. */
@@ -151,59 +144,19 @@ export type BasaltShellProps = {
    * a no-op when omitted.
    */
   onCollapsedChange?: (collapsed: boolean) => void
-  /**
-   * Optional router link renderer for the breadcrumb parent segment. When provided, the parent
-   * breadcrumb label is rendered through this callback (e.g. a TanStack `<Link>`) instead of a
-   * plain `<a href>`, enabling client-side navigation.
-   */
-  renderBreadcrumbLink?: BreadcrumbLinkRenderer | undefined
   /** Page content. */
   children?: ReactNode
 }
 
-/**
- * Sidebar nav count badge (docs/DESIGN-SPEC.md §5): mono 10.5px, ink-8% bg, radius 5, height 16,
- * padding 0 5px, muted text; `marginLeft: auto` pins it to the row end on any render path.
- * `styles` (inline) rather than a token color prop, since none of Mantine's variant/color
- * combinations land on the ink-tint idiom. Returns `null` for a zero/empty count so the badge slot
- * stays clean ("ink earns its color", DESIGN.md).
- */
-export function NavCountBadge({ count }: { count: number }) {
-  if (!count) return null
-  return (
-    <Badge
-      size="sm"
-      styles={{
-        root: {
-          backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)',
-          color: 'var(--vx-muted)',
-          fontFamily: 'var(--basalt-font-mono)',
-          fontSize: VX.text.micro,
-          fontWeight: 500,
-          height: 16,
-          padding: '0 5px',
-          marginLeft: 'auto',
-          borderRadius: 'var(--vx-radius-tight)',
-        },
-      }}
-    >
-      {count}
-    </Badge>
-  )
-}
-
-/** Active nav item across all sections → `{ section, parent?, parentHref?, page }` for the breadcrumb. */
-function findActiveCrumb(
-  sections: SidebarSection[],
-):
-  | { section: string; parent?: string | undefined; parentHref?: string | undefined; page: string }
-  | undefined {
+/** Active nav item across all sections → the breadcrumb's `{ section, parent?, …, page }`. */
+function findActiveCrumb(sections: SidebarSection[]): ActiveCrumb | undefined {
   for (const section of sections) {
     const found = findActiveWithParent(section.items)
     if (found)
       return {
         section: section.label,
         parent: found.parent,
+        parentAnchor: found.parentAnchor,
         parentHref: found.parentHref,
         page: found.page,
       }
@@ -211,72 +164,46 @@ function findActiveCrumb(
   return undefined
 }
 
-/** Recursively search for the deepest active item, returning the parent label + href when nested. */
-function findActiveWithParent(
-  items: SidebarItem[],
-  parentLabel?: string | undefined,
-  parentHref?: string | undefined,
-): { parent?: string | undefined; parentHref?: string | undefined; page: string } | undefined {
-  for (const item of items) {
-    // Recurse into children first — deeper active match wins over a prefix-matched parent.
-    if (item.children) {
-      const found = findActiveWithParent(item.children, item.label, item.href)
-      if (found) return found
-    }
-    if (item.active) return { parent: parentLabel, parentHref, page: item.label }
-  }
-  return undefined
+type ActiveCrumb = {
+  section: string
+  parent?: string | undefined
+  parentAnchor?: NavAnchor | undefined
+  parentHref?: string | undefined
+  page: string
 }
 
 /**
- * Mobile bottom-nav projection: one tab per (non-`mobileTab:false`) section, each raising a bottom
- * sheet of that section's destinations. Children are flattened into the section's item list so
- * subpages appear in the mobile drawer.
+ * Recursively search for the deepest active item, returning the parent's label and its ROUTER
+ * ANCHOR (not just an href) when nested — the crumb navigates client-side through the same seam
+ * every nav row uses, so no second render callback is needed for it.
  */
-function toMobileSections(sections: SidebarSection[], closeMobile: () => void): MobileNavSection[] {
-  return sections
-    .filter((s) => s.mobileTab !== false)
-    .map((s) => ({
-      key: s.label,
-      label: s.label,
-      icon: s.icon,
-      active: s.items.some((i) => i.active),
-      items: flattenSidebarItems(s.items).map(
-        (i): MobileNavItem => ({
-          key: i.key,
-          label: i.label,
-          icon: i.icon,
-          ...(i.href !== undefined && { href: i.href }),
-          ...(i.active !== undefined && { active: i.active }),
-          onClick: (e: MouseEvent) => {
-            i.onClick?.(e)
-            closeMobile()
-          },
-        }),
-      ),
-    }))
-}
-
-/** Flatten a tree of SidebarItems (including children) into a single-level array. */
-function flattenSidebarItems(items: SidebarItem[]): SidebarItem[] {
-  return items.flatMap((item) => [
-    item,
-    ...(item.children ? flattenSidebarItems(item.children) : []),
-  ])
+function findActiveWithParent(
+  items: SidebarItem[],
+  parentLabel?: string | undefined,
+  parentAnchor?: NavAnchor | undefined,
+  parentHref?: string | undefined,
+): Omit<ActiveCrumb, 'section'> | undefined {
+  for (const item of items) {
+    // Recurse into children first — deeper active match wins over a prefix-matched parent.
+    if (item.children) {
+      const found = findActiveWithParent(item.children, item.label, item.Anchor, item.href)
+      if (found) return found
+    }
+    if (item.active) return { parent: parentLabel, parentAnchor, parentHref, page: item.label }
+  }
+  return undefined
 }
 
 export function BasaltShell({
   brand,
   sections,
-  renderNavLink,
+  mobileNav,
   globalActions,
-  sidebarFooterExtra,
   sidebarNavExtra,
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
   collapsed: collapsedProp,
   onCollapsedChange,
-  renderBreadcrumbLink,
   account,
   search,
   children,
@@ -286,7 +213,6 @@ export function BasaltShell({
   // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal
   // container squeezes progressively worse as density rises.
   const { step } = useBasaltSpacing()
-  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure()
   const [storedCollapsed, setStoredCollapsed] = useLocalStorage({
     key: storageKey,
     defaultValue: false,
@@ -303,7 +229,18 @@ export function BasaltShell({
   }
 
   const activeCrumb = findActiveCrumb(sections)
-  const mobileSections = toMobileSections(sections, closeMobile)
+  // The account row and every settings entry render as flat rows in the More surface (there is no
+  // mobile sidebar to reach them through any more), so they count toward BOTH `needsMore` and the
+  // menu-vs-sheet threshold. `accountRowCount` is the SAME function that renders those rows, not a
+  // second estimate of them: an account is worth 0 rows while `loading` and up to seven once
+  // authenticated, and §2.2's whole guarantee (`menuMax` rows fit the headroom above the bar, and
+  // the menu runs `flip: false` so it cannot escape upward) is arithmetic over this number.
+  const extraMoreRows =
+    accountRowCount(account) + (settingsMenuItems?.length ?? 0) + (mobileNav?.moreExtra ? 1 : 0)
+  const model = useMemo(
+    () => projectMobileNav(sections, { config: mobileNav, extraMoreRows }),
+    [sections, mobileNav, extraMoreRows],
+  )
 
   return (
     <PageHeaderProvider>
@@ -319,15 +256,18 @@ export function BasaltShell({
             sm: collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth,
           },
           breakpoint: 'sm',
-          collapsed: { mobile: !mobileOpened },
+          // No mobile sidebar drawer, ever — the bottom bar is the entire mobile nav.
+          collapsed: { mobile: true },
         }}
-        footer={{ height: { base: 52, sm: 0 } }}
+        // A plain number, NOT a `calc(... + env(safe-area-inset-bottom))` string: Mantine's own
+        // `.footer` rule already adds the inset to both the height and the padding (§2.7).
+        footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
         padding="sm"
       >
         <AppShell.Header px="md" withBorder={false}>
           <div className={headerClasses.bar}>
             <div className={headerClasses.lead}>
-              <AppBreadcrumbs {...activeCrumb} renderBreadcrumbLink={renderBreadcrumbLink} />
+              <AppBreadcrumbs {...activeCrumb} />
             </div>
             <PageActionsOutlet className={headerClasses.pageActions} />
             {globalActions && <div className={headerClasses.global}>{globalActions}</div>}
@@ -340,23 +280,24 @@ export function BasaltShell({
             sections={sections}
             collapsed={collapsed}
             onToggleCollapse={toggleCollapse}
-            onClose={closeMobile}
-            footerExtra={sidebarFooterExtra}
             navExtra={sidebarNavExtra}
-            {...(renderNavLink !== undefined && { renderNavLink })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
             {...(account !== undefined && { account })}
             {...(search !== undefined && { search })}
           />
         </AppShell.Navbar>
 
-        <AppShell.Main>{children}</AppShell.Main>
+        {/* `mainSafeArea` closes the one real safe-area gap: Mantine sets
+         * `--app-shell-footer-offset` to the RAW footer height, so Main's own padding-bottom is
+         * short by exactly `env(safe-area-inset-bottom)` (§2.7). */}
+        <AppShell.Main className={mobileNavClasses.mainSafeArea}>{children}</AppShell.Main>
 
-        <AppShell.Footer hiddenFrom="sm" p={0}>
+        <AppShell.Footer hiddenFrom="sm" p={0} withBorder={false}>
           <MobileNav
-            sections={mobileSections}
-            onOpenMore={toggleMobile}
-            {...(renderNavLink !== undefined && { renderNavLink })}
+            model={model}
+            config={mobileNav}
+            {...(account !== undefined && { account })}
+            {...(settingsMenuItems !== undefined && { settingsMenuItems })}
           />
         </AppShell.Footer>
       </AppShell>

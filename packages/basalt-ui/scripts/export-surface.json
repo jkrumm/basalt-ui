@@ -11,6 +11,9 @@
     "DangerZone",
     "DeltaBadge",
     "EmptyState",
+    "MOBILE_MAX_TABS_DEFAULT",
+    "MOBILE_MENU_MAX_DEFAULT",
+    "MOBILE_MORE_KEY",
     "MOTION_DURATION",
     "MOTION_EASE_STANDARD",
     "MOTION_SPRING",
@@ -40,6 +43,7 @@
     "createThreadsStore",
     "cssVariablesResolver",
     "heuristicOutcome",
+    "projectMobileNav",
     "readPersistedValue",
     "threadPartRenderers",
     "threadsStoreAdapterContract",
@@ -230,7 +234,12 @@
   "./router-tanstack": [
     "createMultiSearchParamStore",
     "createSearchParamStore",
+    "defineNav",
+    "flattenNav",
+    "navGroup",
+    "navTarget",
     "useBasaltNav",
+    "useNav",
     "useRouterBreadcrumbs"
   ],
   "./data": [
