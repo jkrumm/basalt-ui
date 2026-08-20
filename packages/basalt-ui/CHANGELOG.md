@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/jkrumm/basalt-ui/compare/v1.18.0...v1.19.0) (2026-08-20)
+
+
+### Features
+
+* make the mobile bar navigate, driven by one typed nav definition ([1ebba92](https://github.com/jkrumm/basalt-ui/commit/1ebba9267267ff26e988c876f17839b05d61689d))
+
 # [1.18.0](https://github.com/jkrumm/basalt-ui/compare/v1.17.0...v1.18.0) (2026-08-19)
 
 
