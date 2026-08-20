@@ -49,6 +49,21 @@ jobs:
       - name: Tests
         run: bun test
 
+      - name: Layout tests (real Chrome geometry)
+        run: |
+          # playwright-core's channel:'chrome' table resolves /opt/google/chrome/chrome on linux,
+          # which is exactly what ubuntu-latest's Chrome .deb installs. Fail here with a readable
+          # message rather than 40 lines down as an opaque launch error.
+          CHROME=/opt/google/chrome/chrome
+          if [ ! -x "$CHROME" ]; then
+            echo "FAILED: no Chrome at $CHROME — playwright-core has nothing to launch."
+            echo "        The runner image changed. Either restore Chrome, or switch this suite to"
+            echo "        'bunx playwright-core install --only-shell chromium' and drop the channel."
+            exit 1
+          fi
+          echo "==> driving $("$CHROME" --version)"
+          bun run test:layout
+
       - name: Theme guard (dogfood check-theme on basalt's own src)
         working-directory: packages/basalt-ui
         run: bun ./bin/basalt-ui.mjs check-theme
