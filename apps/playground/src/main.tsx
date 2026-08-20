@@ -62,9 +62,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// The full palette action list — Pages (nav model → breadcrumb trails) + the command bus, each
-// with a kind badge. `projectCommands={false}` below hands the whole list here so nothing is
-// projected twice. `as never` mirrors the typed-router cast `renderNavLink` uses for `to`.
+// The full palette action list — Pages (nav definition → breadcrumb trails) + the command bus,
+// each with a kind badge. `projectCommands={false}` below hands the whole list here so nothing is
+// projected twice. The one `as never` is at `router.navigate`'s own untyped boundary over a
+// heterogeneous action list — the nav definition itself carries zero casts.
 const spotlightActions = buildPaletteActions((href) => void router.navigate({ to: href as never }))
 
 const root = document.getElementById('root')

@@ -1,322 +1,322 @@
-import type { SidebarItem, SidebarSection } from 'basalt-ui'
-import { NavCountBadge } from 'basalt-ui'
+/**
+ * The playground's navigation — ONE typed definition, and the only place a destination is stated.
+ *
+ * `defineNav` wraps TanStack's own `linkOptions`, so every `to`/`search` below rides the router's
+ * validator against the generated route tree: a typo in a path, a missing required search object,
+ * an unknown metadata key or a `mobile.tabs` id that names nothing are all compile errors. There
+ * is no `active` plumbing here — `useNav(NAV)` in `routes/__root.tsx` resolves it from the router
+ * and builds each destination's `<Link>` anchor, which is what deleted the old `withActive` walk
+ * and the two render callbacks.
+ *
+ * Consumed by `routes/__root.tsx` (sidebar + mobile bar) and `demo/palette-actions.tsx` (Spotlight
+ * pages). It imports NOTHING from `routes/` or `routeTree.gen`, so either side can read it without
+ * a cycle.
+ *
+ * ## What the mobile bar does with this
+ *
+ * `SidebarItem.mobile` is the placement field and the ONLY mobile configuration here. The bar this
+ * definition produces shows all three slot surfaces side by side, which is the point of the
+ * playground — it is the surface where the design gets looked at:
+ *
+ *   Home · Activity · Charts · Batteries · More
+ *   └──── three `link` slots ────┘ └ menu ┘ └ sheet ┘
+ *
+ * - `mobile: 'tab'` on `dashboard` / `activity` / `charts` makes each a **link** slot: one tap,
+ *   one navigation, no overlay to dismiss.
+ * - `mobile: { tab: true }` on the **Batteries** group makes the whole section one slot. It holds
+ *   six destinations, and six is exactly the ceiling for a menu that pops out of the bar without
+ *   ever rendering below the fold — so it resolves to a **menu**. Add a seventh and it becomes a
+ *   sheet on its own, with no config change.
+ * - Everything else (Components, Content, the sixteen Agent pages, System, plus the dashboard
+ *   sub-pages) falls into **More**, which is far past six rows and so resolves to a **sheet**.
+ */
+import { linkOptions } from '@tanstack/react-router'
+import { defineNav, navGroup } from 'basalt-ui/router-tanstack'
+import { articleCategory, articleTags } from './article-filter-stores'
+import { dashboardRange } from './dashboard-range-store'
 import {
   IconActivity,
+  IconBattery,
+  IconBook,
   IconChart,
   IconComponents,
   IconDashboard,
+  IconPalette,
+  IconSearch,
   IconSettings,
   IconSparkle,
+  IconTrash,
   IconUser,
+  IconWifi,
 } from './icons'
 
 /**
- * The playground's route/navigation model — the single source of truth for both the sidebar
- * sections (with `active` injected per render, see `withActive`) and the Spotlight page actions
- * (`toRouteActions(NAV_MODEL, ...)` in main.tsx).
+ * The dashboard's default search, read at click time. `readStored` is the store's non-React door,
+ * so this is a plain function rather than a hook — a nav definition is module-scope data.
  */
-export const NAV_MODEL: SidebarSection[] = [
-  {
-    label: 'Overview',
-    icon: <IconDashboard />,
-    items: [
+const dashboardSearch = () => ({ range: dashboardRange.readStored() ?? ('30d' as const) })
+
+export const NAV = defineNav({
+  groups: [
+    navGroup({ id: 'overview', label: 'Overview', icon: <IconDashboard /> }, [
       {
-        key: 'dashboard',
+        id: 'dashboard',
         label: 'Dashboard',
         short: 'Home',
-        mobile: true,
+        mobile: 'tab',
         icon: <IconDashboard />,
-        href: '/dashboard',
-        badge: <NavCountBadge count={4} />,
-        // Child items render text-only against the left rail (no icon) — SidebarItem.icon is
-        // a required ReactNode slot, so `undefined` opts out of rendering a left section
-        // (see AppSidebar's `leftSection={child.icon}`) rather than omitting the key.
+        // Step 5 of the createSearchParamStore recipe — carry the filter across sub-page
+        // switches, set PER DESTINATION so only the /dashboard sub-tree inherits it and every
+        // other link below stays clean.
+        //
+        // A bare `search: true` ("keep the current search") is NOT available here: TanStack only
+        // offers that flag where the target's search is optional, and `/dashboard`'s
+        // `validateSearch` always returns a `range`, so the router requires the key. The typed
+        // equivalent is this thunk — `linkOptions` accepts a function form and the `<Link>`
+        // re-evaluates it at CLICK time, so it reads whatever the filter last persisted rather
+        // than whatever was in the URL when this module was first evaluated. It is also strictly
+        // better than "keep the current search": arriving from a non-dashboard route restores the
+        // last selection instead of landing on the factory default.
+        link: linkOptions({ to: '/dashboard', search: dashboardSearch }),
+        // Child rows render text-only against the sidebar's left rail — omitting `icon` is what
+        // opts out of a left section, and the mobile More sheet indents them the same way.
         children: [
           {
-            key: 'dashboard-sessions',
+            id: 'dashboard-sessions',
             label: 'Sessions',
-            icon: undefined,
-            href: '/dashboard/sessions',
+            link: linkOptions({ to: '/dashboard/sessions', search: dashboardSearch }),
           },
           {
-            key: 'dashboard-traffic',
+            id: 'dashboard-traffic',
             label: 'Traffic',
-            icon: undefined,
-            href: '/dashboard/traffic',
+            link: linkOptions({ to: '/dashboard/traffic', search: dashboardSearch }),
           },
           {
-            key: 'dashboard-revenue',
+            id: 'dashboard-revenue',
             label: 'Revenue',
-            icon: undefined,
-            href: '/dashboard/revenue',
+            link: linkOptions({ to: '/dashboard/revenue', search: dashboardSearch }),
           },
         ],
       },
       {
-        key: 'activity',
+        id: 'activity',
         label: 'Activity',
-        mobile: true,
+        mobile: 'tab',
         icon: <IconActivity />,
-        href: '/activity',
+        link: linkOptions({ to: '/activity' }),
       },
-    ],
-  },
-  {
-    label: 'Charts & components',
-    icon: <IconChart />,
-    collapsible: true,
-    items: [
-      {
-        key: 'charts',
-        label: 'Charts',
-        mobile: true,
-        icon: <IconChart />,
-        href: '/charts',
-      },
-      {
-        key: 'components',
-        label: 'Components',
-        mobile: true,
-        icon: <IconComponents />,
-        href: '/components',
-      },
-      {
-        key: 'reports',
-        label: 'Reports',
-        icon: <IconActivity />,
-        disabled: true, // renders the "Coming soon" tooltip path
-      },
-    ],
-  },
-  {
-    label: 'Batteries',
-    icon: <IconActivity />,
-    items: [
-      {
-        key: 'query',
-        label: 'Query',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/query',
-      },
-      {
-        key: 'router',
-        label: 'Router',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/router',
-      },
-      {
-        key: 'forms',
-        label: 'Forms',
-        mobile: true,
-        icon: <IconComponents />,
-        href: '/forms',
-      },
-      {
-        key: 'notifications',
-        label: 'Notifications',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/notifications',
-      },
-      {
-        key: 'commands',
-        label: 'Commands',
-        mobile: true,
-        icon: <IconComponents />,
-        href: '/commands',
-      },
-      {
-        key: 'data',
-        label: 'Data',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/data',
-      },
-    ],
-  },
-  {
-    label: 'Content',
-    icon: <IconActivity />,
-    items: [
-      {
-        key: 'content',
-        label: 'Content',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/content',
-      },
-      {
-        key: 'content-overview',
-        label: 'Content overview',
-        icon: <IconActivity />,
-        href: '/content-overview',
-      },
-      {
-        key: 'content-sanitize',
-        label: 'Content sanitize',
-        icon: <IconActivity />,
-        href: '/content-sanitize',
-      },
-    ],
-  },
-  {
-    label: 'Agent',
-    icon: <IconSparkle />,
-    items: [
-      {
-        key: 'agent',
-        label: 'Agent',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent',
-      },
-      {
-        key: 'agent-ai-sdk',
-        label: 'Agent (AI SDK)',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-ai-sdk',
-      },
-      {
-        key: 'threads',
-        label: 'Threads',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/threads',
-      },
-      {
-        key: 'agent-chat-subpath',
-        label: 'Agent chat (subpath)',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-chat-subpath',
-      },
-      {
-        key: 'agent-wedge',
-        label: 'Agent wedge recovery',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-wedge',
-      },
-      {
-        key: 'agent-foreign-parts',
-        label: 'Agent foreign parts',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-foreign-parts',
-      },
-      {
-        key: 'agent-tool-lifecycle',
-        label: 'Agent tool lifecycle',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-tool-lifecycle',
-      },
-      {
-        key: 'agent-render-budget',
-        label: 'Agent render budget',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-render-budget',
-      },
-      {
-        key: 'agent-stop-mid-stream',
-        label: 'Agent stop mid-stream',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-stop-mid-stream',
-      },
-      {
-        key: 'agent-fence-registry',
-        label: 'Agent fence registry',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-fence-registry',
-      },
-      {
-        key: 'agent-composer',
-        label: 'Agent composer',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-composer',
-      },
-      {
-        key: 'threads-adapter',
-        label: 'Threads adapter',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/threads-adapter',
-      },
-      {
-        key: 'agent-thread-feed-inline',
-        label: 'Agent thread feed (inline)',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-thread-feed-inline',
-      },
-      {
-        key: 'agent-transcript-virtualize',
-        label: 'Agent transcript virtualize',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-transcript-virtualize',
-      },
-      {
-        key: 'agent-inline-feed-virtualized',
-        label: 'Agent inline feed (virtualized row)',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-inline-feed-virtualized',
-      },
-      {
-        key: 'agent-anchor-to-end',
-        label: 'Agent anchor to end (streaming)',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/agent-anchor-to-end',
-      },
-    ],
-  },
-  {
-    label: 'System',
-    icon: <IconSettings />,
-    items: [
-      {
-        key: 'connectivity',
-        label: 'Connectivity',
-        mobile: true,
-        icon: <IconActivity />,
-        href: '/connectivity',
-      },
-      {
-        key: 'settings',
-        label: 'Settings',
-        mobile: true,
-        icon: <IconSettings />,
-        href: '/settings',
-      },
-      {
-        key: 'user',
-        label: 'User',
-        icon: <IconUser />,
-        href: '/user',
-        mobile: true,
-      },
-    ],
-  },
-]
+    ]),
 
-/** Inject the reactive `active` flag from the router onto every href-bearing item (and child). */
-export function withActive(
-  sections: SidebarSection[],
-  isActive: (href: string) => boolean,
-): SidebarSection[] {
-  const mapItem = (item: SidebarItem): SidebarItem => ({
-    ...item,
-    ...(item.href !== undefined && { active: isActive(item.href) }),
-    ...(item.children !== undefined && { children: item.children.map(mapItem) }),
-  })
-  return sections.map((section) => ({ ...section, items: section.items.map(mapItem) }))
-}
+    navGroup(
+      { id: 'charts', label: 'Charts & components', icon: <IconChart />, collapsible: true },
+      [
+        {
+          id: 'charts-page',
+          label: 'Charts',
+          mobile: 'tab',
+          icon: <IconChart />,
+          link: linkOptions({ to: '/charts' }),
+        },
+        {
+          id: 'components',
+          label: 'Components',
+          icon: <IconComponents />,
+          link: linkOptions({ to: '/components' }),
+        },
+        {
+          id: 'reports',
+          label: 'Reports',
+          icon: <IconActivity />,
+          // The "Coming soon" tooltip path. A disabled destination still needs a `link` — it is
+          // never followed (`disabled` short-circuits before the anchor is used), so it points at
+          // a real route rather than inventing one. Deliberately NOT `/charts`: a placeholder
+          // pointing at a route that owns a bar slot would make BOTH that slot and More read as
+          // active on it, so it borrows the route of a sibling that already lives inside More.
+          disabled: true,
+          link: linkOptions({ to: '/components' }),
+        },
+      ],
+    ),
+
+    // `mobile: { tab: true }` — the one SECTION that owns a bar slot. The surface is inferred
+    // from how many rows it holds, never configured: six destinations, so it is a menu that
+    // grows upward out of the tab.
+    navGroup(
+      { id: 'batteries', label: 'Batteries', icon: <IconBattery />, mobile: { tab: true } },
+      [
+        {
+          id: 'query',
+          label: 'Query',
+          icon: <IconActivity />,
+          link: linkOptions({ to: '/query' }),
+        },
+        {
+          id: 'router',
+          label: 'Router',
+          icon: <IconActivity />,
+          link: linkOptions({ to: '/router' }),
+        },
+        {
+          id: 'forms',
+          label: 'Forms',
+          icon: <IconComponents />,
+          link: linkOptions({ to: '/forms' }),
+        },
+        {
+          id: 'notifications',
+          label: 'Notifications',
+          short: 'Notify',
+          icon: <IconActivity />,
+          link: linkOptions({ to: '/notifications' }),
+        },
+        {
+          id: 'commands',
+          label: 'Commands',
+          icon: <IconPalette />,
+          link: linkOptions({ to: '/commands' }),
+        },
+        { id: 'data', label: 'Data', icon: <IconActivity />, link: linkOptions({ to: '/data' }) },
+      ],
+    ),
+
+    navGroup({ id: 'content', label: 'Content', icon: <IconBook /> }, [
+      {
+        id: 'content',
+        label: 'Content',
+        icon: <IconBook />,
+        link: linkOptions({ to: '/content' }),
+      },
+      {
+        id: 'content-overview',
+        label: 'Content overview',
+        short: 'Overview',
+        icon: <IconSearch />,
+        // Same click-time-thunk shape as the dashboard, over the two stores this route composes.
+        link: linkOptions({
+          to: '/content-overview',
+          search: () => ({
+            category: articleCategory.readStored() ?? 'all',
+            tags: articleTags.readStored() ?? [],
+          }),
+        }),
+      },
+      {
+        id: 'content-sanitize',
+        label: 'Content sanitize',
+        short: 'Sanitize',
+        icon: <IconTrash />,
+        link: linkOptions({ to: '/content-sanitize' }),
+      },
+    ]),
+
+    navGroup({ id: 'agent', label: 'Agent', icon: <IconSparkle /> }, [
+      { id: 'agent', label: 'Agent', icon: <IconSparkle />, link: linkOptions({ to: '/agent' }) },
+      {
+        id: 'agent-ai-sdk',
+        label: 'Agent (AI SDK)',
+        icon: <IconSparkle />,
+        link: linkOptions({ to: '/agent-ai-sdk' }),
+      },
+      {
+        id: 'threads',
+        label: 'Threads',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/threads' }),
+      },
+      {
+        id: 'threads-adapter',
+        label: 'Threads adapter',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/threads-adapter' }),
+      },
+      {
+        id: 'agent-chat-subpath',
+        label: 'Agent chat (subpath)',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-chat-subpath' }),
+      },
+      {
+        id: 'agent-wedge',
+        label: 'Agent wedge recovery',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-wedge' }),
+      },
+      {
+        id: 'agent-foreign-parts',
+        label: 'Agent foreign parts',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-foreign-parts' }),
+      },
+      {
+        id: 'agent-tool-lifecycle',
+        label: 'Agent tool lifecycle',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-tool-lifecycle' }),
+      },
+      {
+        id: 'agent-render-budget',
+        label: 'Agent render budget',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-render-budget' }),
+      },
+      {
+        id: 'agent-stop-mid-stream',
+        label: 'Agent stop mid-stream',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-stop-mid-stream' }),
+      },
+      {
+        id: 'agent-fence-registry',
+        label: 'Agent fence registry',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-fence-registry' }),
+      },
+      {
+        id: 'agent-composer',
+        label: 'Agent composer',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-composer' }),
+      },
+      {
+        id: 'agent-thread-feed-inline',
+        label: 'Agent thread feed (inline)',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-thread-feed-inline' }),
+      },
+      {
+        id: 'agent-transcript-virtualize',
+        label: 'Agent transcript virtualize',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-transcript-virtualize' }),
+      },
+      {
+        id: 'agent-inline-feed-virtualized',
+        label: 'Agent inline feed (virtualized row)',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-inline-feed-virtualized' }),
+      },
+      {
+        id: 'agent-anchor-to-end',
+        label: 'Agent anchor to end (streaming)',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/agent-anchor-to-end' }),
+      },
+    ]),
+
+    navGroup({ id: 'system', label: 'System', icon: <IconSettings /> }, [
+      {
+        id: 'connectivity',
+        label: 'Connectivity',
+        icon: <IconWifi />,
+        link: linkOptions({ to: '/connectivity' }),
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: <IconSettings />,
+        link: linkOptions({ to: '/settings' }),
+      },
+      { id: 'user', label: 'User', icon: <IconUser />, link: linkOptions({ to: '/user' }) },
+    ]),
+  ],
+})

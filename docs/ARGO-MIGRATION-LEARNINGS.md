@@ -83,14 +83,22 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
 17. **Fixed dimensions, no knobs**: header 96/48, navbar 216/48, footer 52, padding `sm` are
     hardcoded; argo came from 108/56, 240/72, 56, `md`. Fine for adopting the doctrine, but a
     density/size prop tier would ease visual review of big migrations.
-18. **`renderNavLink` bypasses the internal `.link` CSS-module styling** — router-integrated nav
-    rows lose the inactive/hover treatment that fallback rows get. Expose the class or move the
-    treatment to theme level.
+18. **Router-integrated nav rows used to lose the internal `.link` styling.** The 1.0 shell took a
+    `renderNavLink` render callback, and a consumer returning their own router `<Link>` replaced
+    basalt's whole row — inactive/hover treatment and all — so router-integrated rows looked
+    different from fallback ones. `renderNavLink` (with `renderBreadcrumbLink` and
+    `sidebarFooterExtra`) is **removed**; the seam is now one COMPONENT, `SidebarItem.Anchor`,
+    typed `NavAnchor`. basalt renders every pixel of chrome — the desktop row, the 56px mobile
+    slot, the 44px sheet row — and only hosts the consumer's component inside it, so the styling
+    cannot be bypassed and there is nothing to keep in sync across three render paths. On the
+    breadcrumb bar the same seam is `parentAnchor`. A consumer with no router passes neither and
+    still gets `href` + `onClick`. See `docs/STATUS.md` → "Migration (removed exports)".
 19. **No external collapse control** — consumer hotkeys (argo had `Cmd+B`) can't drive collapse;
     `storageKey` is the only seam.
-20. **Mobile "More" full-drawer doesn't close on navigation** — `mobileOpened`/`closeMobile` are
-    internal with no callback surface for `renderNavLink` clicks. Narrow but real regression vs
-    argo's shell.
+20. **Mobile "More" full-drawer doesn't close on navigation** — RESOLVED. The full-height mobile
+    sidebar drawer no longer exists: below `sm` the navbar is permanently collapsed and the bottom
+    bar IS the nav. A tab that holds one destination navigates on tap with no surface to close, and
+    a `menu`/`sheet` slot closes itself on item click.
 21. **`settingsMenuItems` is flat** — no submenu support; argo's Theme + DevTools submenus became
     six flat rows.
 

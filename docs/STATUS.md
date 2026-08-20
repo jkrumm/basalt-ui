@@ -1,21 +1,23 @@
 # Basalt UI — Status
 
-> **Single source of truth for current state.** As of **2026-08-18**. The other docs in `docs/`
+> **Single source of truth for current state.** As of **2026-08-20**. The other docs in `docs/`
 > are historical process artifacts or superseded scope ledgers — this file is what's true now.
 
-**Branch:** `master` is the released 1.x line; `feat/follower-tooltips-and-doc-guard` carries the
-round-three batch below.
-**Version:** `1.17.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
-rebuild (`docs/CHARTS-SPEC.md`) shipped in 1.15.0, the first consumer-gap batch in 1.16.0, and
-round two in 1.17.0. The round-three batch below is the next candidate.
+**Branch:** `master` is the released 1.x line; `feat/native-mobile-nav` carries the nav rewrite
+below.
+**Version:** `1.18.0` on `master`, **published** to npm (Trusted Publisher OIDC) — the chart-layer
+rebuild (`docs/CHARTS-SPEC.md`) shipped in 1.15.0, the first consumer-gap batch in 1.16.0, round
+two in 1.17.0 and round three in 1.18.0. The nav rewrite below is the next candidate.
 
 ## TL;DR
 
 The 1.0 Mantine pivot shipped and the 1.x line is live on npm. The theme-config surface is closed:
 all four of `createBasaltTheme`'s dimensions (`derive`, `fonts`, `radius`, `density`) are released as
-of 1.2.0. Current work is framework-free token consumption — making the `--vx-*` system usable from a
-static site with no React, no Mantine and no bundler. The June-era roadmap/handover docs still phrase
-built work as "remaining"; that language is historical, see the banner on each.
+of 1.2.0. Current work is the nav rewrite below — the mobile bar navigates instead of raising a
+drawer, and one `defineNav` definition drives both the sidebar and the bar. Framework-free token
+consumption (making the `--vx-*` system usable from a static site with no React, no Mantine and no
+bundler) is still open. The June-era roadmap/handover docs still phrase built work as "remaining";
+that language is historical, see the banner on each.
 
 ## Adoption gap — closed in 1.7.0 (2026-08-02)
 
@@ -125,6 +127,87 @@ Two regressions were caught during migration and fixed in the primitive rather t
 per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
 (now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
 legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
+
+## Native mobile nav + one typed nav definition — `feat/native-mobile-nav` (2026-08-20)
+
+Two changes that turned out to be one change. The mobile bottom bar stopped being a menu, and the
+consumer's navigation stopped being five restatements of the same destination.
+
+### The bar navigates
+
+A slot is now a DESTINATION. Tapping it navigates through the consumer's router `Link` with no
+overlay, no animation and nothing to dismiss — previously every tab raised a full-viewport
+`Drawer`, so reaching a page took two taps and opened one overlay. The full-height mobile
+`AppShell.Navbar` drawer is deleted outright (`collapsed: { mobile: true }`, permanently) and
+everything it held — account, settings, theme switcher, the rest of the nav — moved into the
+trailing More slot as flat rows.
+
+Overlays now exist only where a slot genuinely holds more than one destination, and the surface is
+INFERRED rather than configured: 0 rows drops the slot, 1 collapses to a plain link, ≤ 6 is a
+`Menu` that pops out of the tab, more is a bottom sheet. Six is arithmetic (6 × 44px + 8px against
+415px of headroom on the smallest supported viewport), which is why the menu runs `flip: false` and
+can never render below the fold. Move a destination in or out of More and the surface changes
+itself.
+
+`projectMobileNav` (`src/shell/mobile-nav-model.ts`) is the pure projection that decides all of it —
+no React, no Mantine, no DOM — so the whole interaction law is unit-testable with no renderer.
+`MobileNav` only paints the result. Three behaviours that were bugs and are now rules:
+
+- A **disabled** destination used to be dropped silently and shipped as a live row. It now appears
+  in the overflow rendered disabled, and can never be a link slot.
+- A slot's `active` now includes **nested children**, so a tab no longer goes dark when a child
+  route is current. Consequence to know: re-tapping a parent tab while a child route is active
+  scrolls to top (the Material/iOS pop-to-root idiom) rather than navigating to the parent.
+- Every `:hover` moved behind `@media (hover: hover)`; ungated, the last-tapped row stayed lit.
+
+Safe-area handling is the part most likely to be "fixed" back into a bug: Mantine's own
+`AppShell.footer` rule already grows the footer box by `env(safe-area-inset-bottom)` AND pads its
+content, so adding either to `.bar` double-counts. The one real gap is `--app-shell-footer-offset`,
+set to the raw height, which leaves `AppShell.Main` short by exactly one inset — closed by
+`.mainSafeArea`.
+
+Two new density-tracked tokens (`mobileNavBarHeight` 56, `mobileNavRowHeight` 44) carry hard floors
+at 48/44 in `deriveSpacing`, because the `1 + 0.1 * level` law would take them to 39/31 at level −3
+and silently break the minimum touch target.
+
+### One typed nav definition
+
+`defineNav` / `navGroup` / `navTarget` / `flattenNav` / `useNav` (`basalt-ui/router-tanstack`)
+replace the whole hand-wired nav layer. One `defineNav({ groups: [...] })` in a leaf module
+produces the desktop sidebar AND the mobile bar; `useNav(NAV, { badges })` resolves active state
+through `useMatchRoute` and builds each destination's anchor, returning `{ sections, mobileNav }`
+to spread onto `BasaltShell`. In the reference consumer that is ~237 nav lines in `__root.tsx`
+collapsing to 4 (plus a 95-line leaf), a destination stated once instead of five times, and zero
+`as never` casts, zero render callbacks and zero hand-written `useMatchRoute` calls.
+
+Route options ride inside a `link: linkOptions({...})` key rather than flat on the item. That is
+not cosmetic: TanStack's `Constrain` is an ASSIGNABILITY check, and assignability does no
+excess-property checking, so a flat `{ id, label, to, colour: 'red' }` compiles silently. A config
+whose selling point is "typos are compile errors" cannot have a hole exactly where metadata typos
+live. Compile-verified both ways.
+
+**The risk that comes with it, stated plainly:** without the consumer's `Register` module
+augmentation, `RegisteredRouter` degrades to `AnyRouter`, every `to` widens to `string`, and the
+whole definition validates NOTHING while reporting zero errors. The API looks like it is working.
+`agent/rules/basalt-router.md` says so, and the playground type-guard fixture is the only defence
+inside this repo.
+
+A compile-time cap on `mobile.tabs.length` was tried and **rejected**: both forms that make the
+length check work silently degrade `NavTabId<G>` to `string`, killing the far more valuable id-union
+validation. The cap is a runtime DEV warn in `projectMobileNav` instead.
+
+### Migration (removed exports — no major, per the no-majors doctrine)
+
+`renderNavLink`, `renderBreadcrumbLink` and `sidebarFooterExtra` are gone from `BasaltShellProps`,
+along with the exported types `NavLinkRenderer`, `MobileNavLinkRenderer`, `BreadcrumbLinkRenderer`,
+`MobileNavItem` and `MobileNavSection`. The replacement for all three callbacks is one component
+seam — `SidebarItem.Anchor`, typed `NavAnchor` — and on the breadcrumb bar, `parentAnchor`.
+`sidebarFooterExtra` rendered inside `mobileControls`, which was `hiddenFrom="sm"`: it was invisible
+on desktop, a latent bug, and its only host is the drawer being removed. A consumer with no router
+needs no migration at all — `href` + `onClick` still work.
+
+`MobileNav`'s own props changed from `sections` to a `model` built by `projectMobileNav`; the shell
+does that itself, so only a consumer composing the sub-components by hand is affected.
 
 ## Chart-API round three — `feat/follower-tooltips-and-doc-guard` (2026-08-19)
 

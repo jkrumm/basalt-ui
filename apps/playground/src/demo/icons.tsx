@@ -210,3 +210,28 @@ export function IconWifi() {
     </Glyph>
   )
 }
+
+/** Battery glyph for the "Batteries" nav section — the one section that owns a mobile bar slot. */
+export function IconBattery() {
+  return (
+    <Glyph>
+      <path d="M3 8m0 2a2 2 0 0 1 2 -2h11a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2z" />
+      <path d="M21 11v2" />
+      <path d="M7 11v2" />
+      <path d="M11 11v2" />
+    </Glyph>
+  )
+}
+
+/** Open-book glyph for the "Content" nav section (prose, markdown, guides). */
+export function IconBook() {
+  return (
+    <Glyph>
+      <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+      <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+      <path d="M3 6v13" />
+      <path d="M12 6v13" />
+      <path d="M21 6v13" />
+    </Glyph>
+  )
+}
