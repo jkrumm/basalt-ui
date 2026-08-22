@@ -48,4 +48,6 @@ export {
   type ColumnHelper,
   type PaginationState,
   type ColumnPinningState,
+  // The type `onColumnFiltersChange` hands back — needed at the call site for server-side faceting.
+  type ColumnFiltersState,
 } from '@tanstack/react-table'
