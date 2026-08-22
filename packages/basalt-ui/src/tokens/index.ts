@@ -760,13 +760,13 @@ export type BuildPaletteOpts = {
    */
   mediaFallback?: boolean
   /**
-   * How much of the SPACING set to emit. Default: `'all'` (every one of the 104 `--vx-space-*`
+   * How much of the SPACING set to emit. Default: `'all'` (every one of the 108 `--vx-space-*`
    * declarations the framework's own components read).
    *
    * `'core'` keeps the 9 generic anchors — the stack rhythm, the two control heights, the row
-   * insets — and drops the 95 named for a specific basalt component
+   * insets — and drops the 99 named for a specific basalt component
    * (`--vx-space-agent-transcript-inset`, `--vx-space-toc-sub-indent`, …), taking the emitted set
-   * from 197 variables to 102. Nothing outside basalt's own React components reads those, so a
+   * from 202 variables to 103. Nothing outside basalt's own React components reads those, so a
    * framework-free consumer is carrying them for nothing.
    *
    * This is a SPACING filter only: color, radius, shadow, type and status variables are identical
