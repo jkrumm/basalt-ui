@@ -126,10 +126,10 @@ export function BasaltVirtualList<T>({
 
   if (isLoading) {
     return (
-      // theme-allow — matches the virtualizer's own scroll box below, so the skeleton doesn't reflow.
+      // theme-allow raw-scroll-container — matches the virtualizer's own scroll box below, so the skeleton doesn't reflow.
       <Box style={{ height, overflow: 'auto' }}>
         {Array.from({ length: skeletonRows }, (_, i) => (
-          <div
+          <Box
             key={`skeleton-${i}`}
             style={{
               height: estimateSize,
@@ -144,7 +144,7 @@ export function BasaltVirtualList<T>({
               height={`calc(${estimateSize}px - 2 * var(--vx-space-virtual-row-inset-y))`}
               radius="sm"
             />
-          </div>
+          </Box>
         ))}
       </Box>
     )
@@ -155,12 +155,12 @@ export function BasaltVirtualList<T>({
       ref={parentRef}
       style={{
         height,
-        // theme-allow — TanStack Virtual measures this element as the scroll container.
+        // theme-allow raw-scroll-container — TanStack Virtual measures this element as the scroll container.
         overflow: 'auto',
       }}
     >
       {/* Inner sizer — defines total scroll height for the virtualizer */}
-      <div
+      <Box
         style={{
           height: rowVirtualizer.getTotalSize(),
           position: 'relative',
@@ -170,7 +170,7 @@ export function BasaltVirtualList<T>({
           const item = items[virtualItem.index]
           if (item === undefined) return null
           return (
-            <div
+            <Box
               key={virtualItem.key}
               style={{
                 position: 'absolute',
@@ -182,10 +182,10 @@ export function BasaltVirtualList<T>({
               }}
             >
               {renderItem(item, virtualItem.index)}
-            </div>
+            </Box>
           )
         })}
-      </div>
+      </Box>
     </Box>
   )
 }

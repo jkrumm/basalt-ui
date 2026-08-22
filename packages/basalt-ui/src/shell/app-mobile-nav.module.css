@@ -46,9 +46,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Deliberately sub-scale: the active pill hugs a 24px glyph, so it is a shape inset rather than
-   * layout spacing — the xs..xl scale has no step this tight. */
-  padding: 2px 12px; /* theme-allow */
+  /* The 2px vertical is genuinely sub-scale — the active pill hugs a 24px glyph, a shape inset
+   * rather than layout spacing. The 12px horizontal is NOT: it is the one value in this file with
+   * no `--vx-space-mobile-nav-*` step, so it alone does not track density. */
+  padding: 2px 12px; /* theme-allow inline-spacing — 12px pill inset still awaits a space step */
   border-radius: var(--vx-radius-ctrl);
   transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
 }

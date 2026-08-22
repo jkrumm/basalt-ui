@@ -135,7 +135,7 @@ export function ThreadDetailPanel({
         <BasaltStickToBottom
           style={{
             height: '100%',
-            // theme-allow — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx).
+            // theme-allow raw-scroll-container — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx).
             overflowY: 'auto',
             padding: 'var(--vx-space-agent-transcript-inset)',
           }}

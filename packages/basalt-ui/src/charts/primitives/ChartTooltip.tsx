@@ -121,7 +121,7 @@ export function TooltipRow({
             style={{
               width: 8,
               height: 8,
-              borderRadius: 2, // theme-allow: sub-scale tooltip micro-corner, below the 4px radius floor
+              borderRadius: 2, // theme-allow raw-surface — sub-scale tooltip micro-corner, below the 4px radius floor
               backgroundColor: color,
               flexShrink: 0,
             }}

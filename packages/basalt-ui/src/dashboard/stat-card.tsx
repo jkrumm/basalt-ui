@@ -110,7 +110,7 @@ export function StatCard({
         // explicit for intent.
         padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         minHeight: 118,
-        display: 'flex', // theme-allow: Card root as a flex column — Mantine Card takes no layout props
+        display: 'flex', // theme-allow inline-display — Card root as a flex column; Mantine Card takes no layout props
         flexDirection: 'column',
         gap: 'var(--vx-space-stat-card-gap)',
         overflow: 'hidden',
