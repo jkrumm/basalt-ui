@@ -73,7 +73,7 @@ export type ZonedLineProps<T> = {
   /** Legend config forwarded to `CartesianChart`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
-  /** Accessible text alternative, forwarded to `CartesianChart` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded to `CartesianChart` as `aria-label` (+ `role="group"`). */
   ariaLabel?: string
   /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean

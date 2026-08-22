@@ -94,7 +94,7 @@ export type DualPanelProps<T> = {
   /** Legend config forwarded to `ChartFrame`; `false` disables the legend (sparkline escape).
    * Default `{ placement: 'bottom' }`. */
   legend?: ChartLegendConfig | false
-  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="group"`). */
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean

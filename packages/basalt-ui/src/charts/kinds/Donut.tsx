@@ -50,7 +50,7 @@ export type DonutProps<K extends string = SeriesKey> = {
   centerContent?: ReactNode
   innerRatio?: number
   padAngle?: number
-  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="group"`). */
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
