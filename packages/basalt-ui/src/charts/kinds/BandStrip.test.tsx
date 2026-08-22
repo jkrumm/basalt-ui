@@ -87,13 +87,77 @@ describe('BandStrip — fills derive from series', () => {
     // Overridden: the ramp value, not the series default.
     expect(fills).toContain('color-mix(in srgb, #a00 62%, transparent)')
   })
+})
 
-  test('a state key absent from `series` draws nothing rather than an unlegended mark', () => {
-    const { container } = renderStrip({ getBand: () => ({ state: 'nope' }) })
-    const painted = [...container.querySelectorAll('rect[fill]')].filter(
-      (r) => r.getAttribute('fill') !== 'transparent',
+/**
+ * The old contract here was "a state key absent from `series` draws nothing". On a strip whose
+ * whole vocabulary is measured/not-measured, a missing band is not "unknown" — it is a coverage
+ * gap, so a typo'd key silently asserted an absence nobody measured. These pin the replacement:
+ * loud where it is a bug being written, honest where it is a feed that grew a state.
+ */
+/** Run `fn` with the production dev-gate, restoring whatever the runner had set. */
+function inProd(fn: () => void): void {
+  const previous = process.env['NODE_ENV']
+  process.env['NODE_ENV'] = 'production'
+  try {
+    fn()
+  } finally {
+    if (previous === undefined) delete process.env['NODE_ENV']
+    else process.env['NODE_ENV'] = previous
+  }
+}
+
+describe('BandStrip — an unresolvable state key can never read as absence', () => {
+  test('a state naming no `series` entry THROWS in dev, naming the key and the known ones', () => {
+    expect(() => renderStrip({ getBand: () => ({ state: 'nope' }) })).toThrow(
+      /BandSpan.state "nope" names no `series` entry \(known: clean, loss, absent\)/,
     )
-    expect(painted).toHaveLength(0)
+  })
+
+  test('a marker naming no `series` entry throws in dev too', () => {
+    expect(() =>
+      renderStrip({ getBand: (d: Slot) => ({ ...getBand(d), marker: { state: 'typo' } }) }),
+    ).toThrow(/BandSpan.marker.state "typo"/)
+  })
+
+  test('in production it draws a dashed neutral band — never nothing, never a state fill', () => {
+    inProd(() => {
+      const { container } = renderStrip({ getBand: () => ({ state: 'nope' }) })
+      const painted = [...container.querySelectorAll('rect[fill]')].filter(
+        (r) => r.getAttribute('fill') !== 'transparent',
+      )
+      expect(painted).toHaveLength(3)
+      // The unknown treatment belongs to no legend entry: dashed outline, neutral fill, and none of
+      // the three series colours.
+      for (const rect of painted) {
+        expect(rect.getAttribute('stroke-dasharray')).toBe('3 2')
+        expect(rect.getAttribute('fill')).toBe(
+          'color-mix(in srgb, var(--vx-neutral) 20%, transparent)',
+        )
+      }
+    })
+  })
+
+  test('in production the tooltip names the unresolved key instead of a state the legend carries', async () => {
+    process.env['NODE_ENV'] = 'production'
+    try {
+      renderStrip({ getBand: () => ({ state: 'nope' }), ariaLabel: 'Availability' })
+      fireEvent.keyDown(screen.getByRole('slider'), { key: 'ArrowRight' })
+      const tip = await screen.findByRole('tooltip')
+      expect(tip.textContent).toContain('Unknown state')
+      expect(tip.textContent).toContain('nope')
+      expect(tip.textContent).not.toContain('Not measured')
+    } finally {
+      delete process.env['NODE_ENV']
+    }
+  })
+
+  test('`absentState` naming no `series` entry throws in EVERY environment — it is a prop, not a datum', () => {
+    inProd(() => {
+      expect(() => renderStrip({ absentState: 'ghost' })).toThrow(
+        /absentState "ghost" names no `series` entry/,
+      )
+    })
   })
 })
 
@@ -191,6 +255,24 @@ describe('BandStrip — the tooltip row is DERIVED from the hovered band’s sta
     const tip2 = screen.getByRole('tooltip')
     expect(tip2.textContent).toContain('Packet loss')
     expect(tip2.textContent).not.toContain('No loss')
+  })
+
+  test('formatValue returning null renders an em dash, not an empty value', async () => {
+    const series: BandStripSeries<Slot>[] = SERIES.map((entry) =>
+      entry.key === 'absent'
+        ? { ...entry, formatValue: (d: Slot) => (d.loss === null ? null : `${d.loss}%`) }
+        : entry,
+    )
+    renderStrip({ series, ariaLabel: 'Availability' })
+    const slider = screen.getByRole('slider')
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+
+    const tip = await screen.findByRole('tooltip')
+    expect(tip.textContent).toContain('Not measured')
+    // Distinct from `''`, which renders the label with no value at all.
+    expect(tip.textContent).toContain('\u2014')
   })
 
   test('the focusable overlay carries the chart’s own aria-label, not a generic one', () => {
