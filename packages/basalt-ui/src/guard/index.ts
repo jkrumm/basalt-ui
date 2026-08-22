@@ -400,7 +400,7 @@ const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
 // alternative so their `>` never terminates the tag early. A bare `>` comparison inside a prop
 // expression still ends the match (accepted limitation of the bounded scan).
 const CHART_ENTRY_POINT_TAG =
-  /<(?:MultiLine|Bars|Donut|DualPanel|Heatmap|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
+  /<(?:MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
 
 // Raw lowercase form-control element — line-scoped, same shape as RAW_VISX_AXIS. `\b` after the
