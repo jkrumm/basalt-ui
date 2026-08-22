@@ -14,10 +14,13 @@ import {
   checkSource,
   DEFAULT_GUARD_CONFIG,
   GENERATED_HEADER_LINE,
+  guardKindRemedy,
+  guardWaiverHint,
   GUARD_RULES,
   TOKENS_ONLY_DISABLED_KINDS,
+  unmatchedExemptPatterns,
 } from './index'
-import type { Finding, GuardKind } from './types'
+import type { Finding, GuardConfig, GuardKind } from './types'
 
 const PATH = 'src/Dashboard.tsx'
 const CHART_PATH = 'src/charts/kinds/Foo.tsx'
@@ -1586,6 +1589,99 @@ describe('exemptRules', () => {
     expect(kinds(f)).toContain('inline-display')
   })
 
+  // ── Relative paths and globs ────────────────────────────────────────────────
+  //
+  // Only the bare-segment shape existed, and it is the one nobody guesses. rollhook wrote the
+  // obvious, correct `"public/site.webmanifest"`, matched nothing, got no diagnostic, and kept
+  // reporting — while `exemptRules` had just become the ONLY waiver route for a whole file class.
+
+  const HEX_MANIFEST = '{ "theme_color": "#27272a" }'
+  const exemptedAt = (relPath: string, patterns: string[]): GuardKind[] =>
+    kinds(
+      checkSource(HEX_MANIFEST, relPath, {
+        ...DEFAULT_GUARD_CONFIG,
+        exemptRules: { 'raw-hex': patterns },
+      }),
+    )
+
+  it('matches a real relative path to one file', () => {
+    expect(exemptedAt('public/site.webmanifest', ['public/site.webmanifest'])).not.toContain(
+      'raw-hex',
+    )
+  })
+
+  it('matches a relative directory prefix', () => {
+    expect(exemptedAt('public/icons/theme.json', ['public/icons'])).not.toContain('raw-hex')
+  })
+
+  it("normalizes a leading './' and a trailing '/'", () => {
+    expect(exemptedAt('public/site.webmanifest', ['./public/'])).not.toContain('raw-hex')
+  })
+
+  it('matches a glob, with `*` stopping at a slash', () => {
+    expect(exemptedAt('public/site.webmanifest', ['public/*.webmanifest'])).not.toContain('raw-hex')
+    expect(exemptedAt('public/nested/site.webmanifest', ['public/*.webmanifest'])).toContain(
+      'raw-hex',
+    )
+  })
+
+  it('matches a `**` glob across slashes', () => {
+    expect(exemptedAt('src/a/b/theme.json', ['src/**/theme.json'])).not.toContain('raw-hex')
+  })
+
+  it('matches a slash-free glob against the BASENAME, like a bare segment does', () => {
+    const f = checkSource(`.a { padding: 18px }`, 'src/features/Card.module.css', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'inline-spacing': ['*.module.css'] },
+    })
+    expect(kinds(f)).not.toContain('inline-spacing')
+  })
+
+  it('still fires at a path the path/glob does not match', () => {
+    expect(exemptedAt('public/other.webmanifest', ['public/site.webmanifest'])).toContain('raw-hex')
+  })
+
+  // The other half of the fix. An exemption is a CLAIM, and a claim that resolves to nothing reads
+  // as coverage in a config review while enforcing exactly as much as an empty object.
+  describe('unmatchedExemptPatterns', () => {
+    const scanned = ['src/App.tsx', 'public/site.webmanifest']
+
+    it('reports a pattern that matches no scanned file', () => {
+      const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-hex': ['public/manifest.json'] } }
+      expect(unmatchedExemptPatterns(cfg, scanned)).toEqual([
+        { kind: 'raw-hex', pattern: 'public/manifest.json', reason: 'no-match' },
+      ])
+    })
+
+    it('says nothing about a pattern that DOES match', () => {
+      const cfg = {
+        ...DEFAULT_GUARD_CONFIG,
+        exemptRules: { 'raw-hex': ['public/site.webmanifest'] },
+      }
+      expect(unmatchedExemptPatterns(cfg, scanned)).toEqual([])
+    })
+
+    it("reports a typo'd KIND — an exemption for a rule that does not exist", () => {
+      const cfg = {
+        ...DEFAULT_GUARD_CONFIG,
+        exemptRules: { 'raw-hexx': ['src'] } as unknown as GuardConfig['exemptRules'],
+      }
+      expect(unmatchedExemptPatterns(cfg, scanned)).toEqual([
+        { kind: 'raw-hexx', pattern: 'src', reason: 'unknown-kind' },
+      ])
+    })
+
+    it('reports the exact shape rollhook wrote before the path matcher existed', () => {
+      const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-hex': ['site.webmanifest'] } }
+      expect(unmatchedExemptPatterns(cfg, ['public/site.webmanifest'])).toEqual([])
+      expect(unmatchedExemptPatterns(cfg, ['src/App.tsx'])).toHaveLength(1)
+    })
+
+    it('is silent on an empty config', () => {
+      expect(unmatchedExemptPatterns(DEFAULT_GUARD_CONFIG, scanned)).toEqual([])
+    })
+  })
+
   it('does NOT suppress a different kind on the same line/path', () => {
     const f = checkSource(`const c = '#ff0000'; ${TEXT}`, 'src/agent/x.tsx', {
       ...DEFAULT_GUARD_CONFIG,
@@ -1922,6 +2018,201 @@ describe('theme-allow scoping', () => {
   // The annotation itself lives in a comment; a `theme-allow` in real code must not waive anything.
   it('ignores the token when it is not inside a comment', () => {
     const f = find(`const label = 'theme-allow'\nconst c = '#ff0000'`)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+})
+
+// ── 22b. theme-allow — the prefix rule and the two scopes, exhaustively ──────
+//
+// Three holes in one contract across two rounds, so this is a matrix rather than a case.
+
+describe('theme-allow — annotation vs prose (the prefix rule)', () => {
+  const HEX = `const c = '#ff0000'`
+
+  /** `comment` on its own line directly above a raw hex — the placement that waives the line below. */
+  function above(comment: string): GuardKind[] {
+    return kinds(find(`${comment}\n${HEX}`))
+  }
+
+  // ── ACCEPTED — every shape a consumer actually writes ──────────────────────
+
+  it.each([
+    '// theme-allow raw-hex — vendor brand',
+    '//theme-allow raw-hex — no space after the marker',
+    '  // theme-allow raw-hex — indented',
+    '/* theme-allow raw-hex — a block comment */',
+    '{/* theme-allow raw-hex — a JSX expression comment */}',
+    '/**\n * theme-allow raw-hex — a docblock gutter line\n */',
+    '// theme-allow',
+  ])('%s is an annotation and waives the line below', (comment) => {
+    expect([comment, above(comment).includes('raw-hex')]).toEqual([comment, false])
+  })
+
+  it('a trailing annotation waives its own line', () => {
+    expect(kinds(find(`${HEX} // theme-allow raw-hex — vendor brand`))).not.toContain('raw-hex')
+  })
+
+  // The reason wrapping to a second line — or a docblock's own `*/` — used to absorb the whole
+  // waiver, so the natural multi-line shape silently waived nothing. argo hit it three times in one
+  // upgrade, each time on a comment that looked correct.
+  it('a wrapped reason still reaches the code line under it', () => {
+    const f = find(
+      `// theme-allow raw-hex — the vendor brand hex, kept in sync with
+// the marketing site's own palette
+${HEX}`,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('a blank line ends the block — the waiver does not jump it', () => {
+    expect(
+      kinds(
+        find(`// theme-allow raw-hex — about something else
+
+${HEX}`),
+      ),
+    ).toContain('raw-hex')
+  })
+
+  it('a trailing annotation does NOT walk forward — it stays on its own line', () => {
+    expect(kinds(find(`const ok = 1 // theme-allow raw-hex — about this line\n${HEX}`))).toContain(
+      'raw-hex',
+    )
+  })
+
+  // ── REJECTED — prose that MENTIONS the token ──────────────────────────────
+
+  // The linewatch defect, and the one that made this a false NEGATIVE: a file documenting its own
+  // waivers disarmed itself. Every shape here is lifted from real consumer or basalt source.
+  it.each([
+    '// see the `theme-allow` contract for how exceptions are written',
+    '/* Since 1.20.0 a `theme-allow` that names a rule declares the file */',
+    '/**\n * A `theme-allow` with a reason declares the whole FILE wherever it is written.\n */',
+    '// each chart carries a theme-allow saying why',
+    '// documented at theme-allow raw-hex — this sentence is prose, not a waiver',
+  ])('%s is prose and waives nothing', (comment) => {
+    expect([comment, above(comment).includes('raw-hex')]).toEqual([comment, true])
+  })
+
+  // A kind name written in prose used to consume no id, fall through to `rules: []`, and read as
+  // the blanket form — so a sentence about the reporting rule switched every rule off.
+  it('a comment starting with the longer word `theme-allow-unscoped` is not an annotation', () => {
+    expect(above('// theme-allow-unscoped is what reports a bare waiver')).toContain('raw-hex')
+  })
+
+  it('the token inside a string literal is code, not an annotation', () => {
+    expect(kinds(find(`const doc = 'theme-allow raw-hex — x'\n${HEX}`))).toContain('raw-hex')
+  })
+
+  // Prose is not an annotation for REPORTING either — otherwise every sentence documenting the
+  // escape hatch becomes a theme-allow-unscoped finding (this package's own guard/types.ts).
+  it('prose mentioning the token is not reported as an unscoped waiver', () => {
+    expect(above('// see the `theme-allow` contract')).not.toContain('theme-allow-unscoped')
+  })
+})
+
+describe('theme-allow-file — whole-file scope', () => {
+  const SRC = [`const a = '#ff0000'`, `const b = '#00ff00'`, `const c = '#0000ff'`].join('\n')
+
+  it('waives every line in the file, not just the one below it', () => {
+    const f = find(`// theme-allow-file raw-hex — the vendor brand sheet\n${SRC}`)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('reaches BACKWARDS too — a declaration at the bottom covers the top', () => {
+    const f = find(`${SRC}\n// theme-allow-file raw-hex — the vendor brand sheet`)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('waives only the kinds it names', () => {
+    const f = find(
+      `// theme-allow-file raw-hex — vendor brand\n${SRC}\n<Box style={{ display: 'flex' }} />`,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+    expect(kinds(f)).toContain('inline-display')
+  })
+
+  // File scope is the widest waiver in the contract, so it is the one that has to name what it
+  // waives. A bare `theme-allow-file` is `exemptRules` without the config review.
+  it('a BARE theme-allow-file waives nothing, and is reported as unscoped', () => {
+    const f = find(`// theme-allow-file — everything in here is bespoke\n${SRC}`)
+    expect(kinds(f)).toContain('raw-hex')
+    expect(kinds(f)).toContain('theme-allow-unscoped')
+  })
+
+  it("a theme-allow-file naming a typo'd id waives nothing", () => {
+    const f = find(`// theme-allow-file raw-hexx — vendor brand\n${SRC}`)
+    expect(kinds(f)).toContain('raw-hex')
+    expect(kinds(f)).toContain('theme-allow-unscoped')
+  })
+
+  it('an id-and-reason theme-allow-file is accountable — no unscoped finding', () => {
+    const f = find(`// theme-allow-file raw-hex — the vendor brand sheet\n${SRC}`)
+    expect(kinds(f)).not.toContain('theme-allow-unscoped')
+  })
+
+  // The complement, and the half 1.20.0 did not deliver: naming a rule AND giving a reason used to
+  // promote a waiver to the whole file in the oxlint plugin, so whole-file was the only expressible
+  // scope. The guard's plain `theme-allow` has always been line-scoped, and stays that way.
+  it('a plain theme-allow with an id and a reason stays line-scoped', () => {
+    const f = find(`// theme-allow raw-hex — vendor brand\n${SRC}`)
+    expect(kinds(f).filter((k) => k === 'raw-hex')).toHaveLength(2)
+  })
+})
+
+/** A two-hex manifest with `extra` (an annotation member, or nothing) inserted at the top. */
+const MANIFEST = (extra: string) =>
+  `{\n${extra}  "theme_color": "#27272a",\n  "background_color": "#27272a"\n}\n`
+
+describe('theme-allow in JSON — the "basalt:theme-allow" member', () => {
+  it('a webmanifest hex reports with no annotation — the 1.20.0 baseline', () => {
+    const f = checkSource(MANIFEST(''), 'public/site.webmanifest', DEFAULT_GUARD_CONFIG)
+    expect(kinds(f).filter((k) => k === 'raw-hex')).toHaveLength(2)
+  })
+
+  // JSON has no comments, so from 1.20.0 the whole file class was permanently unwaivable and the
+  // printed remedy prescribed a comment the file cannot carry. Both consumers that hit it fell back
+  // to a blanket `exemptRules` entry — the shape the release was spent retiring.
+  it('a "basalt:theme-allow-file" member declares the file', () => {
+    const f = checkSource(
+      MANIFEST('  "basalt:theme-allow-file": "raw-hex — a manifest cannot read a CSS variable",\n'),
+      'public/site.webmanifest',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('a "basalt:theme-allow" member is line-scoped — its own line and the one below', () => {
+    const f = checkSource(
+      MANIFEST('  "basalt:theme-allow": "raw-hex — the theme color only",\n'),
+      'public/site.webmanifest',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f).filter((k) => k === 'raw-hex')).toHaveLength(1)
+  })
+
+  it('the member must name its ids — a bare one waives nothing', () => {
+    const f = checkSource(
+      MANIFEST('  "basalt:theme-allow-file": "everything in here is bespoke",\n'),
+      'public/site.webmanifest',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('works in a plain .json too, not only a manifest', () => {
+    const f = checkSource(
+      MANIFEST('  "basalt:theme-allow-file": "raw-hex — vendor brand data",\n'),
+      'src/brand.json',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  // The member is JSON-only: in TS that string is a value, and a value that could switch off a rule
+  // is the hole `stripComments` exists to close.
+  it('the same string in a TS file is code, not an annotation', () => {
+    const f = find(`const cfg = { "basalt:theme-allow-file": "raw-hex — x" }\nconst c = '#ff0000'`)
     expect(kinds(f)).toContain('raw-hex')
   })
 })
@@ -2291,5 +2582,154 @@ describe("profile: 'tokens-only'", () => {
       "const s = { display: 'flex', padding: 18 }\nexport const D = () => <div style={s} />"
     expect(kinds(checkSource(src, PATH, DEFAULT_GUARD_CONFIG))).toContain('hidden-inline-style')
     expect(kinds(checkSource(src, PATH, TOKENS_ONLY))).not.toContain('hidden-inline-style')
+  })
+})
+
+// ── 31. remedy + waiver hint — what a report actually PRINTS ─────────────────
+
+describe('guardKindRemedy', () => {
+  // `check-theme`'s `Fix:` epilogue read a hand-duplicated subset of these, and the subset was
+  // missing every kind added at 1.20.0. All five of those ship `warn` under grace, so the findings
+  // whose whole argument is "this looks correct and is not" arrived with no argument — only "add a
+  // `theme-allow`", which reads as advice to waive. Sourcing it from the registry retires the
+  // duplicate instead of extending it, and this test is what stops a new kind shipping without one.
+  it('gives every kind a remedy, prefixed with the kind id', () => {
+    for (const kind of Object.keys(GUARD_RULES) as GuardKind[]) {
+      const remedy = guardKindRemedy(kind)
+      expect([kind, remedy.startsWith(`${kind}: `)]).toEqual([kind, true])
+      expect([kind, remedy.length > kind.length + 20]).toEqual([kind, true])
+    }
+  })
+
+  it('covers the five 1.20.0 kinds that the duplicated table did not', () => {
+    for (const kind of [
+      'surface-shadow-override',
+      'css-raw-surface',
+      'inline-font-size',
+      'hidden-inline-style',
+      'theme-allow-unscoped',
+    ] as GuardKind[]) {
+      expect([kind, guardKindRemedy(kind)]).toEqual([kind, `${kind}: ${GUARD_RULES[kind].message}`])
+    }
+  })
+
+  // argo: the kind fires on a fixed dock replacing card depth, where the right answer is the
+  // overlay tier — and `SHADOW_KEEPS_CARD_DEPTH` accepts any `--vx-shadow-*`, so the message was
+  // narrower than the check and pointed away from the correct token.
+  it('surface-shadow-override names the overlay tier, not only the card one', () => {
+    expect(guardKindRemedy('surface-shadow-override')).toContain('--vx-shadow-overlay')
+  })
+})
+
+describe('guardWaiverHint', () => {
+  // The `Fix:` closer prescribed a `theme-allow` COMMENT for every file class, including the one
+  // 1.20.0 had just started scanning and which cannot hold a comment at all.
+  it('never prescribes a comment to a file that cannot carry one', () => {
+    for (const relPath of ['public/site.webmanifest', 'src/brand.json']) {
+      expect([relPath, /theme-allow[^-]/.test(guardWaiverHint(relPath))]).toEqual([relPath, false])
+      expect([relPath, guardWaiverHint(relPath)]).toEqual([
+        relPath,
+        expect.stringContaining('basalt:theme-allow-file'),
+      ])
+    }
+  })
+
+  // rollhook's sharper point: a manifest hex can never be RIGHT, because a manifest cannot
+  // reference a CSS variable — so the value is a hand-copy that drifts. Both consumers that hit it
+  // found a dead colour. The remedy is to stop hand-writing the file.
+  it('points a manifest at basaltAppPlugin first, and the annotation second', () => {
+    const hint = guardWaiverHint('public/site.webmanifest')
+    expect(hint).toContain('basaltAppPlugin')
+    expect(hint.indexOf('basaltAppPlugin')).toBeLessThan(hint.indexOf('basalt:theme-allow-file'))
+  })
+
+  it('prescribes the comment form everywhere a comment exists', () => {
+    for (const relPath of ['src/App.tsx', 'src/app.css', 'index.html']) {
+      expect([relPath, guardWaiverHint(relPath)]).toEqual([
+        relPath,
+        expect.stringContaining('theme-allow <rule-id>'),
+      ])
+    }
+  })
+
+  it('names both scopes, so the narrow one is the one a reader reaches for first', () => {
+    const hint = guardWaiverHint('src/App.tsx')
+    expect(hint.indexOf('theme-allow <rule-id>')).toBeLessThan(hint.indexOf('theme-allow-file'))
+  })
+
+  // Every hint has to name a mechanism that EXISTS — the defect it replaces was a hint that did
+  // not. These two assert the guard actually honours what each hint prescribes.
+  it('the JSON hint names a member the guard honours', () => {
+    const f = checkSource(
+      '{\n  "basalt:theme-allow-file": "raw-hex — a manifest cannot read a CSS variable",\n  "theme_color": "#27272a"\n}\n',
+      'public/site.webmanifest',
+      DEFAULT_GUARD_CONFIG,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('the comment hint names a form the guard honours', () => {
+    expect(kinds(find(`// theme-allow raw-hex — vendor brand\nconst c = '#ff0000'`))).not.toContain(
+      'raw-hex',
+    )
+    expect(
+      kinds(find(`// theme-allow-file raw-hex — vendor brand\nconst c = '#ff0000'`)),
+    ).not.toContain('raw-hex')
+  })
+})
+
+// ── 32. inline-spacing — a property bag that never reaches CSS ───────────────
+
+describe('inline-spacing — the style-object test', () => {
+  const inlineSpacing = (src: string): GuardKind[] =>
+    kinds(find(src)).filter((k) => k === 'inline-spacing')
+
+  // argo: `const FIT_BOUNDS_OPTIONS = { padding: 48, duration: 0 }` is a maplibre `fitBounds`
+  // viewport inset measured in MAP pixels. There is no Mantine token that could express it, and
+  // "use p/m/gap with xs..xl" is not a thing that can be done to it. The class recurs in any
+  // consumer wrapping a map or a canvas library — basalt's own shell carries one (a floating-ui
+  // `shift: { padding: 8 }`), which is how it stayed invisible.
+  it('does NOT flag a unitless number in a plain options bag', () => {
+    expect(inlineSpacing('const FIT_BOUNDS_OPTIONS = { padding: 48, duration: 0 }')).toEqual([])
+  })
+
+  it('does NOT flag a unitless number in a call argument', () => {
+    expect(inlineSpacing('map.fitBounds(bounds, { padding: 48 })')).toEqual([])
+  })
+
+  it('does NOT flag a nested non-style bag (floating-ui middleware)', () => {
+    expect(inlineSpacing('const M = { flip: false, shift: { padding: 8 } }')).toEqual([])
+  })
+
+  // Everything the kind was built for still reports.
+  it.each([
+    '<Box style={{ padding: 16 }} />',
+    '<Box\n  style={{\n    padding: 16,\n  }}\n/>',
+    '<Input styles={{ input: { paddingLeft: 12 } }} />',
+    'const wrapperStyle = { padding: 16 }',
+    'const s: CSSProperties = { marginTop: 12 }',
+  ])('still flags %s', (src) => {
+    expect([src, inlineSpacing(src)]).toEqual([src, ['inline-spacing']])
+  })
+
+  // The hoisted form the name alone does not give away — resolved from the `style={…}` use site,
+  // the same seam `hidden-inline-style` already walks.
+  it('flags a hoisted object the file hands to a style prop', () => {
+    expect(
+      inlineSpacing('const s = { padding: 16 }\nexport const D = () => <div style={s} />'),
+    ).toEqual(['inline-spacing'])
+  })
+
+  // A UNIT is evidence the number is CSS wherever it was written, so it never consults the context.
+  it.each([`const OPTS = { padding: '16px' }`, `const OPTS = { marginTop: '1.5rem' }`])(
+    '%s carries a unit and is flagged regardless of context',
+    (src) => {
+      expect([src, inlineSpacing(src)]).toEqual([src, ['inline-spacing']])
+    },
+  )
+
+  it('CSS is untouched by the test — there is no object context to consult', () => {
+    const f = checkSource('.a { padding: 18px }', 'src/Card.module.css', DEFAULT_GUARD_CONFIG)
+    expect(kinds(f)).toContain('inline-spacing')
   })
 })
