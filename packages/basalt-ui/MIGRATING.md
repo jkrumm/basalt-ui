@@ -8,9 +8,9 @@ renamed exports per minor, with the replacement.
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
 cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every replacement below
 was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
-row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.20.1 section was
-written against source, not against its commit messages. Check the types, not this table, if the two
-disagree.
+row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.21.0 and 1.21.1
+sections were written against source, not against their commit messages. Check the types, not this
+table, if the two disagree.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -20,12 +20,95 @@ between your version and the target.
 > `## [1.` finds only the patches.
 
 **Minors with no public API delta:** 1.1.0, 1.3.0, 1.4.0, 1.5.0, 1.6.0, 1.7.0, 1.8.0, 1.9.0,
-1.10.0, 1.13.0, 1.14.0, 1.16.0, 1.18.0 — and every patch. Additive-only subpaths: `./tokens.css`
+1.10.0, 1.13.0, 1.14.0, 1.16.0, 1.18.0 — and every patch except 1.21.1. Additive-only subpaths: `./tokens.css`
 at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
 
-## 1.20.1 — the `theme-allow` grammar
+## 1.21.1 — the toolchain stops overclaiming
+
+**No export removed or renamed; four added.** Nothing you wrote changed. Every entry below is a
+check that reported an answer it had not earned, so a green CI on 1.21.0 was, for several of them,
+green over an empty set.
+
+**`sync` refuses where it used to scaffold.** Run from a sub-package that depends on basalt-ui but
+holds no `.basalt/manifest.json` — `apps/dashboard`, `apps/web` — it printed `0 updated, 20
+recreated`, wrote a second `basalt` key, and stood up a complete competing install beside the real
+one at the repo root. argo and rb both reverted it by hand. It now resolves its project exactly as
+`check-theme` and `doctor` do, and **exits 1** when the resolved project has no manifest, naming the
+install it found above instead. The refusal runs before the `basalt.roots` backfill, which was half
+the damage. Two ways to unblock it:
+
+```bash
+cd <the package holding .basalt/manifest.json> && bunx basalt-ui sync
+BASALT_CWD=<that package> bunx basalt-ui sync   # or from anywhere
+```
+
+The summary line gained a `created` counter. **`recreated` now means what it always claimed** — the
+ledger placed that file once and it went missing. Twenty first-time writes were never that.
+
+**`--audit-allows` judges plugin-rule annotations.** They used to print "not a check-theme kind" and
+drop out of the exit-1 gate, so the gate covered an empty set wherever the waivers were plugin
+rules: argo's whole tally was `0 live, 0 dead, 8 outside reach`, and 11 of linewatch's 14 went the
+same way. Each is now probed by re-running oxlint over that one file with the annotation
+neutralized. Judged now: argo 8 of 8, linewatch 14 of 14, basalt's own tree 23 of 23.
+
+**It requires oxlint to be reachable.** The probe writes one neutralized sibling file and re-runs
+oxlint over it (oxlint has no stdin mode), removing it in a `finally`. Where oxlint cannot run, the
+annotation is reported as **"cannot judge"**, never as dead. The report now also prints the scope it
+audited — `0 dead` over `basalt.roots` was reading as `0 dead anywhere`.
+
+**`doctor`'s `lefthook-preset` check asks a different question.** It tested whether the config text
+contained the `extends` string. It now asks whether the gate EXISTS, via `lefthook dump`, which
+resolves `extends`, `include` and per-command `root:`. linewatch wires all three jobs with
+`root: 'web/'` precisely because `extends` merges commands _without_ their working directory — it
+was correctly configured, got warned, and the old advice would have broken it. Three outcomes: a
+broken `extends` target is still a hard fail, a provably absent gate is a warn, and where
+`lefthook dump` could not run you get an advisory warning naming what it could not see.
+
+**`basalt/shadow-basalt-export` narrowed twice.** It now gates on `isBasaltScopedFile` like every
+other rule in the file, and needs a component-SHAPED declaration — a function, an arrow, a
+`memo`/`forwardRef` wrapper, or a class extending one. It had been firing on a `SlugTracker` class
+in a React-free package carrying no basalt-ui dependency, telling it to import from basalt-ui. The
+stated limit is unchanged: exact-name-only, a tripwire, not coverage.
+
+**`basaltAppPlugin({ icons: false })` now omits the manifest's `icons` member too.** It skipped the
+head `<link>` icons and emitted the two PNG manifest entries anyway, so `{ manifest: true, icons:
+false }` shipped an installable app pointing at two 404s. **If you went hybrid over this** — the
+plugin for the head, a hand-written manifest for the rest — **you can drop the hand-written half.**
+The option's JSDoc said "skips the head `<link>` icons"; it now says what the option does.
+
+**Two `theme-allow` comment shapes were silently broken and now work.** Plainly: this is the fourth
+hole found in this one contract in three rounds. The full thirteen-shape matrix is now pinned in
+both halves — `src/guard/check-source.test.ts` and `configs/oxlint-plugin.test.ts` — so the two
+parsers can no longer disagree about what an annotation IS.
+
+| Shape                                         | What it did                                                                                                                | Now                                     |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `/** theme-allow <id> — <why> */` on one line | waived under oxlint, reported under `check-theme`                                                                          | both halves honour it                   |
+| `{/*` + token on the next line + `*/}`        | comment-stripping left a bare `}`, so the line read as CODE and the annotation was classified trailing — scoped to a brace | scoped to the node below it, as written |
+
+**linewatch writes that wrapped shape for every hand-composed chart axis**, so any _guard_ kind
+annotated that way was silently unwaivable. It only appeared to work because the rules it names
+(`hand-rolled-plot`) live in the oxlint plugin, whose placement test is comment-node-based and never
+saw the brace.
+
+**New, additive — `./guard` gains four runtime exports**, the reader half of the audit:
+
+| Export                                       | Note                                                                                                                                                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `findAllowAnnotations(text, relPath, cfg)`   | every annotation as written, ids split into `guardKinds` / `pluginRules` / `unknownRules`. Shares `collectAllowAnnotations` with `checkSource`, so it cannot list a line the scan does not honour |
+| `neutralizeAllowAnnotation(text, line, cfg)` | one annotation rewritten to the token below, every other left intact — the probe half of an audit                                                                                                 |
+| `NEUTRALIZED_ALLOW_TOKEN`                    | so a guard probe and an oxlint probe neutralize identically                                                                                                                                       |
+| `PLUGIN_RULE_IDS`                            | the ids only oxlint can judge                                                                                                                                                                     |
+
+The `AllowAnnotationSite` type ships alongside them.
+
+**Known gaps, reported and not fixed:** `--audit-allows` says nothing about `basalt.exempt` — a
+whole file removed from the scan, the broadest exception the config surface has — and its
+`scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`.
+
+## 1.21.0 — the `theme-allow` grammar
 
 **No export removed or renamed.** One break, and it is in the escape hatch itself: **file scope must
 now be spelled `theme-allow-file`.** At 1.20.0 an annotation that named a rule and gave a reason —
@@ -73,7 +156,7 @@ manifest, `basaltAppPlugin` is the first remedy, since a hand-copied hex drifts 
 | Change                                                                     | What to do                                                                                                                                                                                                                                                |
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `createSearchParamStore` / `createMultiSearchParamStore` gain `linkSearch` | replace every nav link's `search: { <param>: '<literal>' }` with `search: <store>.linkSearch`, passed BY REFERENCE. A module-scope literal pins the fallback on every click — argo's reader had ZERO call sites, so "remember my window" had never worked |
-| `BasaltShell` collapse moves to `createPersistedState`                     | the key is now `basalt:<storageKey>` holding `{ v, value }`; read it with `readPersistedValue(storageKey, 1)`. A one-time migration adopts the raw pre-1.20.1 value, so the sidebar does not re-expand on upgrade                                         |
+| `BasaltShell` collapse moves to `createPersistedState`                     | the key is now `basalt:<storageKey>` holding `{ v, value }`; read it with `readPersistedValue(storageKey, 1)`. A one-time migration adopts the raw pre-1.21.0 value, so the sidebar does not re-expand on upgrade                                         |
 
 **New, additive:**
 
@@ -157,7 +240,7 @@ the rule AND giving a reason is what `hasFileDeclaration` matches, at any line �
 intended for one node silences the file. Dropping the reason keeps it node-scoped in the oxlint
 plugin, but then `check-theme` reports `theme-allow-unscoped ("no reason")`. The two halves of the
 contract intersect at exactly one legal shape and that shape is whole-file. Write the declaration in
-the component's docblock, where it reads as the file-level decision it is. **Fixed in 1.20.1** —
+the component's docblock, where it reads as the file-level decision it is. **Fixed in 1.21.0** —
 see that section; the declaration moves to `theme-allow-file`.
 
 **`doctor` will go red.** `SKIPPED` is a third outcome beside pass/warn/fail and exits non-zero on
@@ -293,9 +376,9 @@ deleting an entry forces the level flip in the same commit.
 | `basalt/agent-no-raw-usechat`      | 1.10.0 as `warn` | **1.13.0**                                                               |
 | `basalt/agent-resume-guard`        | 1.10.0 as `warn` | **1.13.0**                                                               |
 | `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                                                               |
-| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened again at 1.20.1; grace restarts with the widening |
+| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened again at 1.21.0; grace restarts with the widening |
 | `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0                                         |
-| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.20.1                          |
+| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.21.0, narrowed at 1.21.1      |
 | `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                                                        |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
@@ -308,7 +391,7 @@ in the shipped preset). A config still naming `import-boundary` after 1.1.0 disa
 
 ## Deprecated, not yet removed
 
-The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.20.1**.
+The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.21.0**.
 `buildPaletteCss({ legacyAliases: false })` / `tokens:css --no-legacy-aliases` opts out now; a later
 minor flips the default.
 
