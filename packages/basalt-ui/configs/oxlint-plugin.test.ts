@@ -946,4 +946,13 @@ describe('theme-allow with an unrecognized rule id', () => {
     expect(code).toBe(1)
     expect(rules).toContain('no-raw-font-size')
   })
+
+  // The id slot closes at the first space no comma opened — mirrors `parseAllowAnnotation`.
+  it('reads an unknown word after a resolved id as the reason, not as a second id', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz={10} /> // theme-allow no-raw-font-size sub-scale micro label\n`,
+    )
+    expect(rules).not.toContain('no-raw-font-size')
+    expect(code).toBe(0)
+  })
 })

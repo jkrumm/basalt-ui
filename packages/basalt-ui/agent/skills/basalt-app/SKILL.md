@@ -59,7 +59,7 @@ script (`oxlint . && basalt-ui check-theme`). Everything derives from `roots` �
 seeded CI `oxfmt` globs, the default exemption — so a workspace repo without it scaffolds a guard
 that scans zero files while every gate reports green. Correct it if your sources live elsewhere. A
 Mantine-free consumer adds `"basalt": { "profile": "tokens-only" }` by hand; `check-theme` never
-infers that, because inferring it from a missing `@mantine/core` would silence 16 kinds on a repo
+infers that, because inferring it from a missing `@mantine/core` would silence 17 kinds on a repo
 that simply keeps Mantine in another workspace package.
 
 **`init` on an EXISTING app is a lint-debt event, not a no-op.** Adopting the shipped preset turns
@@ -179,8 +179,9 @@ both.
 - **Not a React app?** `bunx basalt-ui tokens:css --out src/tokens.css` emits the `--vx-*` layer with
   no package in your dependency tree, `--selector-class dark` for the Tailwind `<html class="dark">`
   convention, and `fonts:css` emits the shipped `--basalt-font-*` stacks. Both carry the two-line
-  `@generated basalt-ui` header the guard skips on — that header verbatim plus a `.css` body of
-  nothing but basalt custom properties, so the marker pasted into a `.tsx` suppresses nothing — and
+  `@generated basalt-ui` header the guard skips on — that header verbatim, and then only the LINES
+  that are basalt custom properties, selectors, `}` or self-closing comments, so the marker pasted
+  into a `.tsx` suppresses nothing and a declaration added to such a file is still reported — and
   both take `--check` as a CI drift gate. See `docs/FRAMEWORK-FREE.md` in the basalt-ui repo.
 - The framework ships **no** icon or notification dep — pass icons as `ReactNode` and wire toasts
   yourself (e.g. `ThemeLabControls`' `copyIcon` / `onCopy`).

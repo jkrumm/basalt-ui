@@ -85,7 +85,7 @@ blanket-disabling a plugin.
   to wire this and nothing wrote it.
 - **`basalt.profile: 'tokens-only'`** — for a consumer on the `--vx-*` layer with no Mantine. It
   must be DECLARED (or passed as `--tokens-only`); `check-theme` deliberately never infers it,
-  because inferring from a missing `@mantine/core` would silence 16 kinds on any repo that keeps
+  because inferring from a missing `@mantine/core` would silence 17 kinds on any repo that keeps
   Mantine in a different workspace package. `doctor` does infer it, because its profile only changes
   which ADVICE it prints and never what it enforces — and it names the key to write down.
 

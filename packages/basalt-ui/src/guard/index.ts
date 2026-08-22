@@ -550,6 +550,14 @@ type AllowDeclaration = { readonly line: number; readonly annotation: AllowAnnot
  * it — with a separator (`—`, `–`, `-`, `:`) — which is what keeps `theme-allow: bespoke mono
  * micro-label` a blanket waiver while `theme-allow raw-hexx — …` waives nothing.
  *
+ * **The id slot closes at the first space that no comma opened.** The FIRST word after the token
+ * always sits in the id slot, because that is where a typo'd id lands and failing closed there is
+ * the whole point. After a resolved id, only a `,` keeps the list open: an unknown word arriving
+ * across a comma is a claimed id (`raw-hex, raw-surfacee`) and gets recorded, an unknown word
+ * arriving across a space is prose (`raw-surface sub-scale legend corner`, one em-dash away from
+ * annotations this package itself ships) and starts the reason. Reporting the second as a typo was
+ * a live false-positive class on a waiver that was in fact scoped and reasoned.
+ *
  * `Object.hasOwn`, not `in`: `in` walks the prototype chain, so a reason beginning with the word
  * `constructor` (or `toString`, `valueOf`, …) resolved as a real rule id and silently scoped the
  * waiver to a kind that does not exist.
@@ -558,16 +566,19 @@ function parseAllowAnnotation(rest: string): AllowAnnotation {
   const rules: string[] = []
   const unknownRules: string[] = []
   let remainder = rest.replace(/^[\s,]+/, '')
+  let inIdSlot = true
   for (;;) {
     const token = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/.exec(remainder)
     const id = token?.[1]
     if (token === null || id === undefined) break
     if (!(Object.hasOwn(GUARD_RULES, id) || PLUGIN_RULE_IDS.has(id))) {
-      unknownRules.push(id)
+      if (inIdSlot) unknownRules.push(id)
       break
     }
     rules.push(id)
-    remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
+    const after = remainder.slice(token[0].length)
+    remainder = after.replace(/^[\s,]+/, '')
+    inIdSlot = /^\s*,/.test(after)
   }
   const reason = remainder.replace(/^(?:—|–|-{1,2}|:)\s*/, '').trim()
   return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
@@ -594,11 +605,22 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  * Everything allowed between the comment opener (or the start of the line) and the annotation
  * token, for the token to count as an ANNOTATION rather than prose that mentions one.
  *
- * The asymmetry is deliberate. WAIVING stays loose — any `theme-allow` inside a comment suppresses,
- * exactly as before, so no upgrade takes a build down over comment placement. REPORTING
+ * The asymmetry is deliberate, and it is about PLACEMENT only. WAIVING does not care where in the
+ * comment the token sits — any `theme-allow` inside a comment is read as an annotation, exactly as
+ * before, so no upgrade takes a build down over comment placement. REPORTING
  * `theme-allow-unscoped` is strict, because otherwise every sentence documenting the escape hatch
  * becomes a finding: this package's own `guard/types.ts` explains the syntax in five lines of
  * JSDoc, and all five were reported.
+ *
+ * What the annotation then WAIVES is a separate, fail-closed question — see
+ * {@link parseAllowAnnotation}. A word in the id slot that names no rule waives nothing, so
+ * `// theme-allow legacy vendor asset` (a prose reason with no separator introducing it) no longer
+ * suppresses. That IS a break, deliberately: the alternative is one mistyped character silently
+ * widening a scoped waiver into a blanket one. No consumer writes that shape today — every
+ * annotation across all seven repos introduces its reason with `—`, `–`, `-` or `:` — which is why
+ * it ships as a documented break rather than a `GRACE_PERIOD_KINDS` entry. Grace could not express
+ * it anyway: the kind that fires is the UNSUPPRESSED one (`raw-hex`), not `theme-allow-unscoped`,
+ * and downgrading `raw-hex` to waive-by-default is the hole this closed.
  */
 const ANNOTATION_PREFIX = /(?:^|\/\/|\/\*|<!--|^\s*\*)\s*$/
 
@@ -715,9 +737,15 @@ function stripMarkupComments(text: string): string {
  * The marker exists because `check-theme` reported the file a sibling command had just written:
  * 116 of rollhook's 117 violations were inside the emitted token stylesheet, which is nothing but
  * hex and `rgba()` by construction.
+ *
+ * **Command-NEUTRAL by necessity.** Line 1 is compared verbatim, so it cannot name the command
+ * that produced the file without needing one accepted marker per command — and a second accepted
+ * marker is a second forgery surface. It points at the provenance line instead, which does name
+ * the command. It used to say `regenerate with \`bunx basalt-ui tokens:css\`` on a `fonts:css`
+ * file too: following that instruction overwrote a font sheet with the palette sheet.
  */
 export const GENERATED_HEADER_LINE =
-  '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
+  '/* @generated basalt-ui — do not edit; regenerate with the command on the next line */'
 
 /** Line 2 of the header: the emitting version and the exact invocation that produced the file. */
 const GENERATED_PROVENANCE_LINE =
@@ -726,42 +754,89 @@ const GENERATED_PROVENANCE_LINE =
 /** The header is exactly the two lines `generatedHeader()` writes — nothing further in counts. */
 const GENERATED_HEADER_LINES = 2
 
-/**
- * A line a generated token stylesheet can contain. The emitters produce nothing else: a comment, a
- * blank, a selector (or a selector-list continuation ending in `,`), a `}`, an at-rule, or a
- * declaration of a custom property in basalt's OWN namespace.
- */
-const GENERATED_BODY_LINE =
-  /^\s*(?:--(?:vx|basalt)-[A-Za-z0-9_-]*\s*:[^{}]*;?|\}|@[^{}]*[{;]?|\/\*.*|[^{};]*[,{])\s*$/
+/** A comment that OPENS AND CLOSES on its own line — the only comment shape the emitters write. */
+const GENERATED_COMMENT_LINE = /^\/\*(?:[^*]|\*(?!\/))*\*\/$/
+
+/** Outside a block: a selector, a selector-list continuation ending in `,`, or an at-rule opener. */
+const GENERATED_SELECTOR_LINE = /^[^{};]*[,{]$/
+
+/** Inside a block: a declaration of a custom property in basalt's OWN namespace, or the close. */
+const GENERATED_DECL_LINE = /^(?:--(?:vx|basalt)-[A-Za-z0-9_-]*\s*:[^{};]*;|\})$/
+
+/** No line is skipped in a file that is not one basalt emitted — the shared empty answer. */
+const NO_GENERATED_LINES: ReadonlySet<number> = new Set()
+
+/** Net brace depth a line moves the parser by — CSS blocks, counted the cheap way. */
+function braceDelta(line: string): number {
+  let delta = 0
+  for (const ch of line) {
+    if (ch === '{') delta++
+    else if (ch === '}') delta--
+  }
+  return delta
+}
 
 /**
- * Is this file one basalt itself emitted?
+ * The (1-based) lines of a stylesheet basalt itself emitted, which the scan may skip. Empty for
+ * every other file.
  *
  * The marker used to be honoured on its own: any file whose first five lines contained the string
  * `@generated basalt-ui` was skipped ENTIRELY. That made a two-word comment a whole-file guard
- * bypass — prepend it to any `.tsx` and every finding in it disappears, including the escape-hatch
- * accountability this round added. Three conditions now have to hold together, and the third is
- * the one a hand-written comment cannot satisfy:
+ * bypass — prepend it to any `.tsx` and every finding in it disappears. The replacement gated the
+ * whole file on a header plus a line-shape allowlist, and the allowlist was loose enough to forge:
+ * `--vx-pad: 0; box-shadow: 0 0 0 1px #ff0000;` passed as "a basalt custom property" because the
+ * value pattern permitted `;`, and `/* x *\/ .btn { color: #ff0000; }` passed as "a comment"
+ * because the comment pattern never required the comment to close. Both are browser-effective CSS,
+ * and either one bought a whole-file exemption.
  *
- * 1. It is a `.css` file. The CLI emits CSS and nothing else, so the marker is meaningless — and
- *    therefore ignored — in `.ts`/`.tsx`/`.html`/`.json`, which is where the guard has its teeth.
- * 2. Line 1 is the canonical header verbatim and line 2 is the provenance line naming the emitting
- *    version and command. A header, not something smuggled in further down.
- * 3. The BODY is a generated token sheet: every line is a `--vx-*` / `--basalt-*` custom-property
- *    declaration, a selector, a `}`, an at-rule, a comment, or blank. A file with any ordinary
- *    declaration in it (`color: #fff`) is consumer CSS wearing a costume, and stays scanned.
+ * Two changes close that, and the second is the structural one:
  *
- * What is left of the bypass is a file consisting of nothing but declarations of basalt's own
- * custom properties — i.e. exactly the artifact class the exemption exists for, whose only
- * suppressible findings are the token values themselves.
+ * 1. **The exemption is PER LINE, not per file.** A line-shape allowlist that misses now costs one
+ *    line, not the whole file — the blast radius of the next mistake is bounded by construction.
+ *    It also reports the smuggled line precisely instead of burying it under 300 token values.
+ * 2. **The allowlist is brace-depth-aware.** CSS declarations only take effect INSIDE a block, so
+ *    at depth ≥ 1 the only skippable line is a `--vx-*`/`--basalt-*` declaration whose value
+ *    carries no `;`, a `}`, a self-closing comment, or a blank. `box-shadow: … #ff0000,` is a
+ *    depth-1 line and is scanned no matter how it is shaped. At depth 0 a loose selector pattern
+ *    is safe precisely because nothing there is a declaration.
+ *
+ * Three conditions still gate the file itself: a `.css` path (the CLI emits CSS and nothing else,
+ * so the marker is ignored in `.ts`/`.tsx`/`.html`/`.json`, which is where the guard has its
+ * teeth), the canonical header verbatim on line 1, and the provenance line on line 2.
+ *
+ * A line carrying the allow comment is never skipped: an emitted sheet contains no `theme-allow`,
+ * and skipping one would suppress the `theme-allow-unscoped` report of a waiver hidden in a file
+ * wearing the header.
+ *
+ * Residual, knowingly accepted: at depth 0 a forger can hide a finding inside something shaped
+ * like a selector (`.a[data-x='#ff0000'] {`), and inside a block they can hide the value of a
+ * custom property they declare in basalt's own namespace. Neither is browser-effective as a style
+ * and the second IS the artifact class this exemption exists for.
  */
-function isGeneratedArtifact(relPath: string, lines: readonly string[]): boolean {
-  if (!relPath.endsWith('.css')) return false
-  if ((lines[0] ?? '').trim() !== GENERATED_HEADER_LINE) return false
-  if (!GENERATED_PROVENANCE_LINE.test((lines[1] ?? '').trim())) return false
-  return lines
-    .slice(GENERATED_HEADER_LINES)
-    .every((line) => line.trim() === '' || GENERATED_BODY_LINE.test(line))
+function generatedTokenLines(
+  relPath: string,
+  lines: readonly string[],
+  allowComment: string,
+): ReadonlySet<number> {
+  if (!relPath.endsWith('.css')) return NO_GENERATED_LINES
+  if ((lines[0] ?? '').trim() !== GENERATED_HEADER_LINE) return NO_GENERATED_LINES
+  if (!GENERATED_PROVENANCE_LINE.test((lines[1] ?? '').trim())) return NO_GENERATED_LINES
+
+  const skippable = new Set<number>([1, 2])
+  let depth = 0
+  for (let i = GENERATED_HEADER_LINES; i < lines.length; i++) {
+    const line = lines[i] ?? ''
+    const trimmed = line.trim()
+    const shaped =
+      trimmed === '' ||
+      GENERATED_COMMENT_LINE.test(trimmed) ||
+      (depth === 0 ? GENERATED_SELECTOR_LINE : GENERATED_DECL_LINE).test(trimmed)
+    if (shaped && !line.includes(allowComment)) skippable.add(i + 1)
+    depth += braceDelta(line)
+    // Unbalanced braces mean this is not the emitters' output at all — fail closed on the rest.
+    if (depth < 0) return NO_GENERATED_LINES
+  }
+  return skippable
 }
 
 /**
@@ -1262,9 +1337,10 @@ function ruleApplies(kind: GuardKind, relPath: string): boolean {
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
   const lines = text.split('\n')
 
-  // A file basalt itself generated is not consumer source — `tokens:css` emits nothing BUT hex and
-  // rgba() by construction. See isGeneratedArtifact for why the marker alone is not enough.
-  if (isGeneratedArtifact(relPath, lines)) return []
+  // Lines basalt itself generated are not consumer source — `tokens:css` emits nothing BUT hex and
+  // rgba() by construction. See generatedTokenLines for why the marker alone is not enough, and
+  // why the exemption is per line rather than per file.
+  const generatedLines = generatedTokenLines(relPath, lines, cfg.allowComment)
 
   // Severity and text are stamped once at the end rather than at each of the ~20 push sites — both
   // are derived from state the push sites don't need: severity from the KIND and the config, text
@@ -1311,9 +1387,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   for (const { line, annotation } of declared) {
     if (annotation.unknownRules.length === 0 && annotation.rules.length > 0 && annotation.hasReason)
       continue
+    // "waives nothing" is only true when NO id resolved. With one that did, the typo costs its own
+    // id and nothing else — saying otherwise contradicts the findings the same run suppressed.
+    const unknown = `unknown rule id '${annotation.unknownRules.join("', '")}'`
     const missing =
       annotation.unknownRules.length > 0
-        ? `unknown rule id '${annotation.unknownRules.join("', '")}' — waives nothing`
+        ? annotation.rules.length === 0
+          ? `${unknown} — waives nothing`
+          : `${unknown} — not waived`
         : annotation.rules.length === 0
           ? 'no rule id'
           : 'no reason'
@@ -1579,6 +1660,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   // Post-filters, applied once here so they uniformly cover every kind regardless of whether it was
   // emitted via the GUARD_RULES registry loop above or one of the inline-handled kinds:
+  //   • generated     — the lines of a stylesheet basalt itself emitted (empty for every other file);
   //   • §exemptRules — per-rule, per-path consumer exemptions;
   //   • markup       — an HTML document / JSON manifest has no JSX and no CSS-in-JS, so only the
   //                    color/typography kinds are meaningful there;
@@ -1588,6 +1670,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // split — never `codeLines` — so a finding on a line whose comment was stripped still reports the
   // real source text a human would read.
   return findings
+    .filter((f) => !generatedLines.has(f.line))
     .filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
     .filter((f) => syntax !== 'markup' || MARKUP_KINDS.has(f.kind))
     .filter((f) => cfg.profile !== 'tokens-only' || !TOKENS_ONLY_DISABLED_KINDS.has(f.kind))

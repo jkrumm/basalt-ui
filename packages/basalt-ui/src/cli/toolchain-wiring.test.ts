@@ -513,8 +513,11 @@ describe('check-theme — tokens-only profile', () => {
 })
 
 describe('tokens:css — a committable artifact', () => {
+  // Restated verbatim on purpose: the guard compares line 1 byte-for-byte, so a reword is a
+  // contract change. It is command-NEUTRAL — it used to name `tokens:css`, which told anyone
+  // reading a fonts:css file to overwrite it with the palette sheet.
   const GENERATED_FIRST_LINE =
-    '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
+    '/* @generated basalt-ui — do not edit; regenerate with the command on the next line */'
 
   function emit(flags: string[], out = 'out.css'): string {
     write('package.json', JSON.stringify({ name: 'fixture' }))
@@ -669,6 +672,16 @@ describe('fonts:css — the typeface half of the token layer', () => {
     write('src/app.tsx', 'export const App = () => null\n')
     expect(fontsCss(['--out', 'src/fonts.css'], dir)).toBe(0)
     expect(capture(() => checkTheme(dir)).code).toBe(0)
+  })
+
+  // The header used to hard-code `regenerate with \`bunx basalt-ui tokens:css\`` on every emitted
+  // file — following it on a fonts sheet overwrote the typefaces with the palette.
+  it('never tells the reader to regenerate a fonts sheet with tokens:css', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    expect(fontsCss(['--out', 'fonts.css'], dir)).toBe(0)
+    const [marker, provenance] = read('fonts.css').split('\n')
+    expect(marker).not.toContain('tokens:css')
+    expect(provenance).toContain('`basalt-ui fonts:css')
   })
 
   it('has the same --check drift gate as tokens:css', () => {

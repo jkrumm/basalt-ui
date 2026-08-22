@@ -225,6 +225,7 @@ Fix the source, don't silence it — reach for the right token first. Only add `
 genuine, documented exception (a third-party widget needing a literal), scoped to the rule id, with
 a reason: a bare `// theme-allow` passes the check, tells the next reader nothing, and now reports
 `theme-allow-unscoped` besides. The palette-definition files are listed in your `exempt` set so they
-don't self-trip. A stylesheet emitted by `basalt-ui tokens:css` needs no entry — the guard skips a
-`.css` file carrying that exact two-line `@generated basalt-ui` header whose body is nothing but
-basalt custom properties. Pasting the marker anywhere else suppresses nothing.
+don't self-trip. A stylesheet emitted by `basalt-ui tokens:css` needs no entry — in a `.css` file
+carrying that exact two-line `@generated basalt-ui` header, the guard skips the LINES that are
+basalt custom properties, selectors, `}` or self-closing comments. Pasting the marker anywhere else
+suppresses nothing, and an ordinary declaration added to such a file is still reported.
