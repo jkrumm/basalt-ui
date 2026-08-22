@@ -41,6 +41,7 @@ import {
   IconChart,
   IconComponents,
   IconDashboard,
+  IconDots,
   IconPalette,
   IconSearch,
   IconSettings,
@@ -126,7 +127,7 @@ export const NAV = defineNav({
         {
           id: 'mobile-nav-pill',
           label: 'Mobile nav pill',
-          icon: <IconComponents />,
+          icon: <IconDots />,
           link: linkOptions({ to: '/mobile-nav-pill' }),
         },
         {
