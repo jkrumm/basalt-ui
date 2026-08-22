@@ -63,6 +63,15 @@ pass / build pass — the gates are green, and all three findings sit outside th
   had no grace-tracking mechanism at all. That was the actual defect, and 1.20.0's
   `PLUGIN_RULE_GRACE` is the fix.
 
+**What 1.20.0 costs the consumers, measured — both consumer-side work for the next round, neither a
+basalt bug:**
+
+- The markup scan finds REAL raw hex today: argo 4 (`index.html` + `site.webmanifest`), linewatch 2
+  (`index.html` `theme-color`). Both now fail `check-theme` at exit 1 — the scan working as built.
+- rollhook's committed `basalt-tokens.css` was emitted by 1.19.1 and carries no header, so it keeps
+  reporting 116 until the consumer re-runs `bun run tokens`. The 116 → 0 payoff requires that
+  regeneration; it is not automatic on upgrade.
+
 ## Round-4 batch — 1.20.0, on `master`, unreleased
 
 Five repos hit one bug in five shapes: every gate passed and nothing was enforced. The fix is that
@@ -79,9 +88,12 @@ real `oxfmt` output: it reflows a long `background-color` so the hex lands ABOVE
 preceding-line support alone does not fix.
 
 **`theme-allow <rule-id> — <reason>` scopes the exception to that one kind.** A bare comment still
-waives everything (no upgrade breaks a build) but reports the new `theme-allow-unscoped` kind. Every
-consumer had bare comments, basalt included — its own 22 are rescoped in the same batch, verified by
-neutering each annotation and reading what the two engines then reported rather than by guessing.
+waives everything (no upgrade breaks a build) but reports the new `theme-allow-unscoped` kind. A
+word in the id slot that names no rule is recorded as unknown and waives **nothing** — an annotation
+that reached for an id covers exactly the ids it got right, so a typo can never be more permissive
+than the correct spelling. Every consumer had bare comments, basalt included — its own 22 are
+rescoped in the same batch, verified by neutering each annotation and reading what the two engines
+then reported rather than by guessing.
 `basalt/hand-rolled-plot` no longer grants whole-file immunity off whatever comment happened to sit
 on its first assembly node; every node is waived on its own, and a file-scoped waiver needs a
 written declaration naming the rule and giving a reason.
@@ -140,8 +152,11 @@ three separate times in this file.
   root. `.json` is never blanket-scanned; `basalt.include` is the only route to one.
 - **`tokens:css` / `fonts:css` output is commit-clean**: the `@generated basalt-ui` marker on line
   1, version + invocation on line 2, a trailing newline, normalized `rgba()` spacing, and a
-  `--check` drift gate. `check-theme` skips any file carrying that marker in its first 5 lines —
-  which is what fixed rollhook's 116 violations _inside the file `tokens:css` itself wrote_.
+  `--check` drift gate. `check-theme` skips a file only when all three hold: a `.css` path, that
+  header verbatim on lines 1 and 2, and a body of nothing but `--vx-*` / `--basalt-*` declarations,
+  selectors, `}`, at-rules and comments — the leg a pasted comment cannot satisfy. The marker alone,
+  anywhere in the first 5 lines of any extension, was a hand-writable whole-file guard bypass.
+  Skipping is what fixed rollhook's 116 violations _inside the file `tokens:css` itself wrote_.
   `tokens:css --selector-class dark` emits the Tailwind `<html class="dark">` form (CLI-only; there
   is no `scheme: { class }` API). `fonts:css` emits the shipped `--basalt-font-*` stacks, read out
   of `styles.css` so the two can never name different typefaces.
