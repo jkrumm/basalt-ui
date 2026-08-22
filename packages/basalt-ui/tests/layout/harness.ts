@@ -39,6 +39,14 @@ export const SHEET = '.mantine-Drawer-content'
 export const SHEET_ROWS = `${SHEET} .mantine-NavLink-root`
 export const SHEET_BODY = `${SHEET} .mantine-ScrollArea-viewport`
 export const MENU = '.mantine-Menu-dropdown'
+/**
+ * The ACTIVE PILL. It is the slot's icon span — the pill is that span's own background, which is
+ * why an icon-less consumer used to get a 24x4px dash instead of an indicator. `> span` is a
+ * direct child, so it never matches the nested unread dot, and the label renders as a `<p>`.
+ */
+export const ACTIVE_PILL = `${BAR} [data-active] > span`
+/** The glyph inside the active pill — the bar normalizes it to the icon-size token. */
+export const ACTIVE_PILL_ICON = `${ACTIVE_PILL} > svg`
 export const CONTENT_END = '[data-testid="content-end"]'
 
 /** A bar slot by accessible name — `aria-label={slot.label}` on both link and surface tabs. */
@@ -523,5 +531,44 @@ export function above(bar: Named, viewport: Viewport): Named {
       right: viewport.width,
       bottom: bar.box.top,
     },
+  }
+}
+
+/**
+ * Two boxes have the same SIZE (position is deliberately not compared — the caller is asking
+ * whether one configuration renders the same shape as another, not in the same place).
+ */
+export function expectSameSize(a: Named, b: Named, why: string, tolerance = 0.5): void {
+  const dw = Math.abs(a.box.width - b.box.width)
+  const dh = Math.abs(a.box.height - b.box.height)
+  if (dw <= tolerance && dh <= tolerance) return
+  fail(
+    why,
+    `${a.name} and ${b.name} identical in size (±${px(tolerance)})`,
+    `width differs by ${px(dw)}, height differs by ${px(dh)}`,
+    [a, b],
+  )
+}
+
+/**
+ * A measured series strictly increases. The density defects live here: a value that GROWS is not
+ * the same claim as a value that TRACKS density, and a frozen term inside a growing sum hides
+ * behind any "is it bigger?" assertion.
+ */
+export function expectStrictlyIncreasing(
+  name: string,
+  samples: readonly (readonly [label: string, value: number])[],
+  why: string,
+): void {
+  for (let i = 1; i < samples.length; i++) {
+    const [prevLabel, prev] = samples[i - 1]!
+    const [label, value] = samples[i]!
+    if (value > prev) continue
+    fail(
+      why,
+      `${name} strictly increases: ${prevLabel} < ${label}`,
+      samples.map(([l, v]) => `${l} = ${px(v)}`).join(', '),
+      [],
+    )
   }
 }

@@ -28,6 +28,12 @@ export type FixtureSpec = {
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
   /** −3..+3 density knob. Every touch-target floor must hold at every level. */
   density?: number
+  /**
+   * `false` builds every destination WITHOUT an `icon` — a consumer shipping no icon dependency,
+   * which basalt supports. The active pill is the icon slot's own background, so this is the shape
+   * that used to collapse it to a 24x4px dash.
+   */
+  icons?: boolean
   /** −5..+5 radius knob. */
   radius?: number
   colorScheme?: 'light' | 'dark'

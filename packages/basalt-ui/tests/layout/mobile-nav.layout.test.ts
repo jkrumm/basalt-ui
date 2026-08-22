@@ -15,6 +15,8 @@
 import { afterAll, describe, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
 import {
+  ACTIVE_PILL,
+  ACTIVE_PILL_ICON,
   BAR,
   BAR_SLOTS,
   CONTENT_END,
@@ -32,7 +34,9 @@ import {
   expectHeightAtLeast,
   expectHeightAtMost,
   expectNoNewOverlay,
+  expectSameSize,
   expectScrolls,
+  expectStrictlyIncreasing,
   initLayoutSuite,
   openFixture,
   tab,
@@ -54,6 +58,25 @@ const sheetSpec = (rows: number, extra: Partial<FixtureSpec> = {}): FixtureSpec 
   sections: [
     { label: 'Home', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
     { label: 'Library', tab: true, items: pages(rows, 'lib') },
+  ],
+  ...extra,
+})
+
+/**
+ * Three plain link slots, the first ACTIVE — the shape the active-pill invariants measure. No
+ * surface slot: the pill is a property of a link slot, and a menu/sheet would only add mount cost.
+ */
+const pillSpec = (extra: Partial<FixtureSpec> = {}): FixtureSpec => ({
+  nav: { maxTabs: 5 },
+  sections: [
+    {
+      label: 'Main',
+      items: [
+        { key: 'home', label: 'Home', mobile: 'tab', active: true },
+        { key: 'reports', label: 'Reports', mobile: 'tab' },
+        { key: 'alerts', label: 'Alerts', mobile: 'tab' },
+      ],
+    },
   ],
   ...extra,
 })
@@ -358,5 +381,83 @@ layout('mobile nav — real layout', () => {
       }
       await p.dismiss()
     }
+  })
+
+  /**
+   * INVARIANT 7 — the active indicator survives an icon-less consumer.
+   *
+   * basalt ships no icon dependency and supports a consumer that ships none either (image-share
+   * does). The pill is the icon span's OWN background, so with nothing inside it the span
+   * collapsed: measured at 390x844, **24x4px** — a dash, at every density level, against the
+   * 48x28 pill an icon-carrying app gets. The fix floors the icon slot at the icon box plus its
+   * inset, so the pill's box no longer depends on its contents.
+   *
+   * The sharp assertion is the EQUALITY: an icon-less bar must render the same indicator as an
+   * icon-carrying one. The proportional floor underneath it is the blunt backstop that a
+   * re-collapse (4/56 = 0.07 of the bar) fails on its own.
+   */
+  test('the active pill is identical with and without an icon, at every density', async () => {
+    const p = await openFixture(pillSpec())
+
+    for (const density of [-3, 0, 3]) {
+      await p.remount(pillSpec({ density }))
+      const withIcon = await p.box(`pill with icon @density ${density}`, ACTIVE_PILL)
+
+      await p.remount(pillSpec({ icons: false, density }))
+      const withoutIcon = await p.box(`pill icon-less @density ${density}`, ACTIVE_PILL)
+      const bar = await p.box(`bar @density ${density}`, BAR)
+
+      expectSameSize(
+        withoutIcon,
+        withIcon,
+        'an icon-less consumer must get the same active indicator — the pill is the icon slot ' +
+          "background, so it may not depend on the slot's contents",
+      )
+      // Measured: 28 of 56 (d=0), 19 of 48 (d=−3), 37 of 73 (d=+3) — never below 0.39. The
+      // collapsed dash was 4 of 56 = 0.07.
+      expectHeightAtLeast(
+        withoutIcon,
+        bar.box.height * 0.3,
+        'a pill that is a thin dash against the bar it sits in is not an indicator',
+      )
+    }
+  })
+
+  /**
+   * INVARIANT 8 — the pill's INSET tracks density, not just its total size.
+   *
+   * `padding: 2px 12px` was untokenized, so at any non-zero density the glyph scaled and its
+   * inset did not. That is invisible to a "did the pill get bigger?" assertion, because the pill
+   * did get bigger — measured pre-fix, the horizontal inset was 12px at density −3, 0 AND +3
+   * while the glyph went 17 → 24 → 31. So the assertion is on the inset itself, derived as
+   * (pill − glyph) / 2 in each axis.
+   *
+   * Measured post-fix at 390x844 — horizontal 8 / 12 / 16, vertical 1 / 2 / 3 at density −3 / 0 /
+   * +3, against a glyph of 17 / 24 / 31.
+   */
+  test('the active pill inset scales with density instead of staying frozen', async () => {
+    const p = await openFixture(pillSpec())
+    const horizontal: [string, number][] = []
+    const vertical: [string, number][] = []
+
+    for (const density of [-3, 0, 3]) {
+      await p.remount(pillSpec({ density }))
+      const pill = await p.box(`pill @density ${density}`, ACTIVE_PILL)
+      const glyph = await p.box(`glyph @density ${density}`, ACTIVE_PILL_ICON)
+      horizontal.push([`density ${density}`, (pill.box.width - glyph.box.width) / 2])
+      vertical.push([`density ${density}`, (pill.box.height - glyph.box.height) / 2])
+    }
+
+    expectStrictlyIncreasing(
+      'pill horizontal inset',
+      horizontal,
+      'the 12px pill inset must ride `--vx-space-mobile-nav-tab-inset-x` — frozen, the whole bar ' +
+        'scales around a pill that does not',
+    )
+    expectStrictlyIncreasing(
+      'pill vertical inset',
+      vertical,
+      'the 2px pill inset must ride `--vx-space-mobile-nav-tab-inset-y` for the same reason',
+    )
   })
 })

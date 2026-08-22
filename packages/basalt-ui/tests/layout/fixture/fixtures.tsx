@@ -49,10 +49,13 @@ function anchorFor(path: string): NavAnchor {
   return Anchor
 }
 
-const toItem = (spec: ItemSpec): SidebarItem => ({
+const toItem = (spec: ItemSpec, icons: boolean): SidebarItem => ({
   key: spec.key,
   label: spec.label,
-  icon: <Glyph />,
+  // `icon` is a REQUIRED field carrying a `ReactNode`, so an icon-less consumer passes
+  // `undefined` — exactly what `useNav` produces for an item that omits it (image-share's real
+  // shape). Dropping the key entirely would not type-check and is not the configuration.
+  icon: icons ? <Glyph /> : undefined,
   href: `/${spec.key}`,
   Anchor: anchorFor(`/${spec.key}`),
   ...(spec.short !== undefined && { short: spec.short }),
@@ -60,13 +63,16 @@ const toItem = (spec: ItemSpec): SidebarItem => ({
   ...(spec.active !== undefined && { active: spec.active }),
   ...(spec.disabled !== undefined && { disabled: spec.disabled }),
   ...(spec.count !== undefined && { count: spec.count }),
-  ...(spec.children !== undefined && { children: spec.children.map(toItem) }),
+  ...(spec.children !== undefined && {
+    children: spec.children.map((child) => toItem(child, icons)),
+  }),
 })
 
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
+  const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
     label: section.label,
-    items: section.items.map(toItem),
+    items: section.items.map((item) => toItem(item, icons)),
     ...(section.tab ? { mobile: { tab: true as const } } : {}),
   }))
   return (
