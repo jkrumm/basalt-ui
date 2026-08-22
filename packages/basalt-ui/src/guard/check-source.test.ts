@@ -800,6 +800,79 @@ describe('chart-missing-aria-label', () => {
     const f = find(text)
     expect(kinds(f)).not.toContain('chart-missing-aria-label')
   })
+
+  // ── tag provenance ─────────────────────────────────────────────────────────
+  //
+  // The rule keys on a tag NAME, so a consumer's OWN component sharing a shipped kind's name
+  // collected an unactionable `ariaLabel` demand (reported against 1.23.0: a hand-composed local
+  // `MirroredBars`, 235 lines, nothing to do with the kind). The gate is a one-directional
+  // narrowing — skip only what this file DEFINES and does not import from basalt-ui.
+
+  it('does NOT flag a tag this file DEFINES itself (a local component sharing a kind name)', () => {
+    const text = [
+      'function MirroredBars({ data }: Props) {',
+      '  return <svg />',
+      '}',
+      'export function Panel() {',
+      '  return <MirroredBars data={points} />',
+      '}',
+    ].join('\n')
+    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
+  })
+
+  it('skips a locally defined kind name however it is declared (const/memo, not just function)', () => {
+    const text = ['const BandStrip = memo(Inner)', '<BandStrip data={rows} />'].join('\n')
+    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
+  })
+
+  it('STILL flags when the same file also imports that name from basalt-ui (a real shadow)', () => {
+    const text = [
+      "import { MirroredBars } from 'basalt-ui/charts'",
+      'function Panel() {',
+      '  return <MirroredBars data={points} />',
+      '}',
+    ].join('\n')
+    expect(kinds(find(text))).toContain('chart-missing-aria-label')
+  })
+
+  it('STILL flags a tag imported from a consumer BARREL that re-exports the kind', () => {
+    const text = ["import { MultiLine } from '../charts'", '<MultiLine data={points} />'].join('\n')
+    expect(kinds(find(text))).toContain('chart-missing-aria-label')
+  })
+
+  it('STILL flags a file with no imports and no local definition (coverage is not import-gated)', () => {
+    expect(kinds(find('<Donut data={slices} />'))).toContain('chart-missing-aria-label')
+  })
+
+  it('honours an aliased basalt import, since the alias is the tag the JSX writes', () => {
+    const text = [
+      "import { Bars as BasaltBars } from 'basalt-ui/charts'",
+      'const Bars = () => null',
+      '<Bars data={points} />',
+    ].join('\n')
+    // `Bars` is defined locally here and only `BasaltBars` came from basalt — the local one is skipped.
+    expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
+  })
+})
+
+describe('unframed-chart — the same provenance gate', () => {
+  it('does NOT flag a consumer’s OWN ChartLegend taking an items array', () => {
+    const text = [
+      'function ChartLegend({ items }: Props) {',
+      '  return <ul />',
+      '}',
+      'const view = <ChartLegend items={[{ label: "a" }]} />',
+    ].join('\n')
+    expect(kinds(find(text))).not.toContain('unframed-chart')
+  })
+
+  it('still flags the shipped ChartLegend built from an inline array', () => {
+    const text = [
+      "import { ChartLegend } from 'basalt-ui/charts'",
+      'const view = <ChartLegend items={[{ label: "a" }]} />',
+    ].join('\n')
+    expect(kinds(find(text))).toContain('unframed-chart')
+  })
 })
 
 // ── 16. card-with-border ─────────────────────────────────────────────────────
