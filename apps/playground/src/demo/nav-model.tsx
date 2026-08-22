@@ -170,6 +170,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/query' }),
         },
         {
+          id: 'query-state',
+          label: 'Query state',
+          short: 'State',
+          icon: <IconActivity />,
+          link: linkOptions({ to: '/query-state' }),
+        },
+        {
           id: 'router',
           label: 'Router',
           icon: <IconActivity />,
@@ -195,6 +202,13 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/commands' }),
         },
         { id: 'data', label: 'Data', icon: <IconActivity />, link: linkOptions({ to: '/data' }) },
+        {
+          id: 'data-table-chrome',
+          label: 'Table chrome',
+          short: 'Table',
+          icon: <IconActivity />,
+          link: linkOptions({ to: '/data-table-chrome' }),
+        },
       ],
     ),
 
