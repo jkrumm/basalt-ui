@@ -79,11 +79,15 @@ Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with m
 `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook` so the agent can't write off-palette
 colors without a `theme-allow` comment.
 
-**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind. It is honoured
-on the reported line, on a comment-only line directly above it, and — in CSS — from a trailing
-comment back over the declaration it terminates. A bare `theme-allow` still waives everything but
-reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing — only a
-genuinely bare comment is the blanket form.
+**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind and to that one
+node/line. It must START its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or whitespace),
+and is honoured on the reported line, on a comment-only line directly above it (reaching the first
+CODE line below, through the rest of its comment block), and — in CSS — from a trailing comment back
+over the declaration it terminates. Whole-file scope is `theme-allow-file <id>… — <why>`; a bare
+`theme-allow-file` waives nothing. A bare `theme-allow` still waives everything on its placement but
+reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing.
+`.json`/`.webmanifest` use a `"basalt:theme-allow[-file]"` member. Audit them all with
+`basalt-ui check-theme --audit-allows`, which exits 1 on a waiver that suppresses nothing.
 
 > **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the
 > basalt-ui repo itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports). It

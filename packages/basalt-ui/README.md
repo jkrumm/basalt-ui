@@ -193,12 +193,19 @@ and everything derives from it — the guard's scan, the seeded CI `oxfmt` globs
 exemption:
 
 ```json
-// package.json — `roots` is written by init; the rest are yours to add
+// package.json — `roots` is written by init and backfilled by sync; the rest are yours to add
 {
   "basalt": {
     "roots": ["apps/web/src"],
     "include": ["app/manifest.json"],
-    "profile": "tokens-only"
+    "profile": "tokens-only",
+    "exemptRules": {
+      "inline-display": ["agent"],
+      "raw-hex": {
+        "paths": ["public/site.webmanifest"],
+        "reason": "a PWA manifest theme_color MUST be a literal hex — JSON cannot reference a CSS var"
+      }
+    }
   }
 }
 ```
@@ -214,6 +221,19 @@ which would silence half the guard on any repo keeping Mantine in a different wo
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
 `BasaltConfig` type.
 
+**`exemptRules`** turns one kind off along a path. A pattern is a relative path
+(`public/site.webmanifest`, or `src/agent` for everything under it), a glob (`*` stops at `/`, `**`
+does not, and a slash-free glob is also tried against the basename, so `*.module.css` works), or a
+bare path segment — the legacy shape, and the one nobody guesses, since before 1.20.1 it was the
+ONLY shape and a real relative path matched nothing and said nothing. The object form records the
+reason, which is what a `theme-allow` always carried and this key could not. A pattern that
+suppresses nothing is now reported by a normal run and fails `--audit-allows`.
+
+`sync` **backfills `roots`** when the key is absent — only `init` used to write it, so every
+existing consumer stayed on the undeclared `src` default while `guard-scan` passed anyway. A
+declared value is never overwritten; a layout it does not cover is reported as one line, because
+`roots` being a subset is the normal case in a monorepo, not drift.
+
 Basalt-emitted LINES are skipped, not whole files. The file has to earn it first — a `.css` path,
 the `@generated basalt-ui` header verbatim on line 1, the version + invocation line on line 2 — and
 then each line does too: at brace depth 0 a selector or a self-closing comment, inside a block only
@@ -222,12 +242,26 @@ stylesheet `tokens:css` just wrote is not reported back at you, pasting the mark
 suppresses nothing, and an ordinary declaration smuggled into a sheet wearing the header is
 reported on its own line.
 
-**The escape hatch is scoped.** `theme-allow <rule-id> — <reason>` waives that one kind, on the
-reported line, on a comment-only line directly above it (the only form JSX can express), or — in
-CSS — from a trailing comment back over the declaration it terminates. A bare `theme-allow` still
-waives everything but reports `theme-allow-unscoped`. The id slot is read strictly: a word there
-that names no rule waives nothing, so an annotation covers exactly the ids it got right and a typo
-is never the blanket form.
+**The escape hatch is scoped, and since 1.20.1 the two scopes are spelled apart:**
+
+```text
+theme-allow                                  → this node/line, EVERY rule   (reports theme-allow-unscoped)
+theme-allow <id>[, <id>…] [— <why>]          → this node/line, those rules
+theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules; a bare one waives NOTHING
+"basalt:theme-allow[-file]": "<id>… — <why>" → the same two, for JSON / .webmanifest
+```
+
+An annotation must **start** its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or
+whitespace) — before 1.20.1 any comment merely mentioning the token parsed as the bare blanket form,
+so a file documenting its own waivers disarmed itself. Placements: the reported line, a comment-only
+line directly above it (the only form JSX can express, and it reaches the first CODE line below,
+walking through the rest of its comment block), or — in CSS — a trailing comment reaching back over
+the declaration it terminates. The id slot is read strictly: a word there that names no rule waives
+nothing, so a typo is never the blanket form.
+
+`basalt-ui check-theme --audit-allows` reports every annotation and every `exemptRules` entry with
+what it still suppresses, proved by re-running the guard with that one waiver neutralized. Exits 1
+on a dead waiver, so it is usable as a CI gate.
 
 `doctor`'s `ai-major-parity` hard check fails a monorepo where workspace packages declare different
 `ai` package majors — unless the split is intentional and written down. A producer pinned to an

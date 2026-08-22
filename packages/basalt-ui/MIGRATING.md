@@ -8,8 +8,9 @@ renamed exports per minor, with the replacement.
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
 cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every replacement below
 was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
-row that was wrong. That pass corrected 4 table rows and 3 prose claims. Check the types, not this
-table, if the two disagree.
+row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.20.1 section was
+written against source, not against its commit messages. Check the types, not this table, if the two
+disagree.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -23,6 +24,79 @@ between your version and the target.
 at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
+
+## 1.20.1 — the `theme-allow` grammar
+
+**No export removed or renamed.** One break, and it is in the escape hatch itself: **file scope must
+now be spelled `theme-allow-file`.** At 1.20.0 an annotation that named a rule and gave a reason —
+the exact shape the rule's own message asks for — was promoted to a whole-file declaration, which is
+why per-node scoping never actually shipped. The two forms are now distinct:
+
+```text
+theme-allow                                  → this node/line, EVERY rule   (reports theme-allow-unscoped)
+theme-allow <id>[, <id>…] [— <why>]          → this node/line, those rules
+theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules; a bare one waives NOTHING
+"basalt:theme-allow[-file]": "<id>… — <why>" → the same two, for JSON / .webmanifest
+```
+
+**The migration is one word per file declaration.** Measured across the consumer sweep: linewatch
+0 → 11 findings, argo 0 → 6, rb 0 → 0 — all `warn`, so **no build changes colour**.
+
+```diff
+-// theme-allow hand-rolled-plot — two panes over one x scale
++// theme-allow-file hand-rolled-plot — two panes over one x scale
+```
+
+**An annotation must now START its comment** — after `//`, `/*`, `<!--`, a block-comment gutter `*`,
+or nothing but whitespace. Both parsers used a bare substring search, so a comment that merely
+_mentioned_ the token parsed as the legacy blanket form and switched every rule off on the line
+below. linewatch documented its own waivers in a docblock and thereby disarmed the file — a false
+NEGATIVE, and the reason this ships as a break rather than a grace period. Every annotation anyone
+actually writes still qualifies; a sentence about the escape hatch no longer waives anything.
+
+**A comment-only annotation now reaches the first CODE line below it**, walking through the rest of
+its own comment block. Before, a reason that wrapped onto a second line, or a docblock's `*/`,
+absorbed the waiver and the natural shape silently waived nothing — argo hit that three times in one
+upgrade. A blank line still ends the block.
+
+**`.json` / `.webmanifest` finally have a waiver.** They have been scanned since 1.20.0 and cannot
+hold a comment, so their findings were unwaivable and the printed remedy prescribed something
+impossible; both consumers fell back to a blanket `exemptRules`. Use a member key — but for a
+manifest, `basaltAppPlugin` is the first remedy, since a hand-copied hex drifts from the palette:
+
+```json
+{ "basalt:theme-allow-file": "raw-hex — a PWA manifest theme_color must be a literal hex" }
+```
+
+**Two API-shaped fixes worth acting on:**
+
+| Change                                                                     | What to do                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createSearchParamStore` / `createMultiSearchParamStore` gain `linkSearch` | replace every nav link's `search: { <param>: '<literal>' }` with `search: <store>.linkSearch`, passed BY REFERENCE. A module-scope literal pins the fallback on every click — argo's reader had ZERO call sites, so "remember my window" had never worked |
+| `BasaltShell` collapse moves to `createPersistedState`                     | the key is now `basalt:<storageKey>` holding `{ v, value }`; read it with `readPersistedValue(storageKey, 1)`. A one-time migration adopts the raw pre-1.20.1 value, so the sidebar does not re-expand on upgrade                                         |
+
+**New, additive:**
+
+| Surface                                              | Note                                                                                                                                                                                                                                          |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check-theme --audit-allows`                         | every waiver and every `exemptRules` entry with what it still suppresses, proved by re-running the guard with that one occurrence neutralized. Exits 1 on a dead waiver — wire it into CI                                                     |
+| `basalt.exemptRules` takes paths, globs and a reason | relative paths and directory prefixes (`public/site.webmanifest`, `src/agent`), globs (`*` stops at `/`, `**` does not, a slash-free glob also matches the basename), and `{ paths, reason }`. Entries that suppress nothing are now reported |
+| `doctor` → `lefthook-preset`                         | hard-fails a broken `extends` target. lefthook merges a missing target into ZERO commands and exits 0, so a stale path leaves a repo with no pre-commit gate and a clean `lefthook dump`. `sync` reports the same seam                        |
+| `basaltAppPlugin({ colorScheme })`                   | `'dark'` (default) / `'light'` / `'auto'` / `false`. Set it to whatever the app passes as `defaultColorScheme` — before this, a light-scheme consumer got dark native controls permanently                                                    |
+| `VX.text.nano` (10px) + `VX.text.display` (30px)     | the two rungs `inline-font-size` could previously only be waived for. A 20px rung was rejected: 21/20 = 1.05 is below the ladder's 1.06×–1.17× band, so `h2` is the remedy                                                                    |
+| `sync` backfills `basalt.roots`                      | only `init` wrote it, so every existing consumer sat on the undeclared `src` default while `guard-scan` passed. A declared value is never overwritten                                                                                         |
+| `basalt/shadow-basalt-export` reads all nine barrels | the charts layer included. Still exact-name-only — a **tripwire, not coverage**                                                                                                                                                               |
+
+Also: `check-theme`'s `inline-spacing` no longer reads a unitless number in a plain options bag as
+CSS (`fitBounds({ padding: 48 })` stops reporting); the shipped `oxfmt` pre-commit job drops back to
+`*.{ts,tsx,js,jsx,css}` and gains `--no-error-on-unmatched-pattern`; `tokens:css` emits `0.1` rather
+than `0.10`, so a committed sheet stops failing prettier — re-run the command to pick it up.
+
+**The lefthook preset overrides YOU, not the other way round.** An `extends` target wins on a
+colliding key: declare `pre-commit.commands.oxfmt.run` (or `glob:`) in your own file and **yours**
+is the one silently discarded. Only keys the preset does not define merge in. The guard job runs
+`${BASALT_BIN:-bunx --no-install basalt-ui}`; that shell default is the sanctioned seam, set via
+`env:`, which does merge.
 
 ## 1.20.0 — enforcement
 
@@ -83,7 +157,8 @@ the rule AND giving a reason is what `hasFileDeclaration` matches, at any line �
 intended for one node silences the file. Dropping the reason keeps it node-scoped in the oxlint
 plugin, but then `check-theme` reports `theme-allow-unscoped ("no reason")`. The two halves of the
 contract intersect at exactly one legal shape and that shape is whole-file. Write the declaration in
-the component's docblock, where it reads as the file-level decision it is. Fix in flight for 1.20.1.
+the component's docblock, where it reads as the file-level decision it is. **Fixed in 1.20.1** —
+see that section; the declaration moves to `theme-allow-file`.
 
 **`doctor` will go red.** `SKIPPED` is a third outcome beside pass/warn/fail and exits non-zero on
 its own — "All checks passed" is only printable when every check RAN. Three new hard checks:
@@ -210,18 +285,18 @@ live in `configs/oxlint.json`, and since 1.20.0 their grace is tracked by `PLUGI
 named export beside the plugin — a test asserts it against the shipped preset in both directions, so
 deleting an entry forces the level flip in the same commit.
 
-| Rule                               | Landed           | Became `error`                     |
-| ---------------------------------- | ---------------- | ---------------------------------- |
-| `mantine-shade-index` (guard kind) | 1.7.0 as `warn`  | **1.11.0**                         |
-| `basalt/raw-scroll-container`      | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0** |
-| `basalt/ai-sdk-major`              | 1.10.0 as `warn` | **1.13.0**                         |
-| `basalt/agent-no-raw-usechat`      | 1.10.0 as `warn` | **1.13.0**                         |
-| `basalt/agent-resume-guard`        | 1.10.0 as `warn` | **1.13.0**                         |
-| `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                         |
-| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened at 1.20.0   |
-| `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0   |
-| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently        |
-| `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                  |
+| Rule                               | Landed           | Became `error`                                                           |
+| ---------------------------------- | ---------------- | ------------------------------------------------------------------------ |
+| `mantine-shade-index` (guard kind) | 1.7.0 as `warn`  | **1.11.0**                                                               |
+| `basalt/raw-scroll-container`      | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0**                                       |
+| `basalt/ai-sdk-major`              | 1.10.0 as `warn` | **1.13.0**                                                               |
+| `basalt/agent-no-raw-usechat`      | 1.10.0 as `warn` | **1.13.0**                                                               |
+| `basalt/agent-resume-guard`        | 1.10.0 as `warn` | **1.13.0**                                                               |
+| `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                                                               |
+| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened again at 1.20.1; grace restarts with the widening |
+| `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0                                         |
+| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.20.1                          |
+| `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                                                        |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
 the other original guard kinds have been `error` since before 1.2.0 — they never had a grace minor.
@@ -233,7 +308,7 @@ in the shipped preset). A config still naming `import-boundary` after 1.1.0 disa
 
 ## Deprecated, not yet removed
 
-The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.20.0**.
+The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.20.1**.
 `buildPaletteCss({ legacyAliases: false })` / `tokens:css --no-legacy-aliases` opts out now; a later
 minor flips the default.
 
