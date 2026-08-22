@@ -533,6 +533,8 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-app-header-mobile-actions-height', `${space.step.appHeaderMobileActionsHeight}px`),
     decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
     decl('space-mobile-nav-icon-size', `${space.step.mobileNavIconSize}px`),
+    decl('space-mobile-nav-tab-inset-y', `${space.step.mobileNavTabInsetY}px`),
+    decl('space-mobile-nav-tab-inset-x', `${space.step.mobileNavTabInsetX}px`),
     decl('space-mobile-nav-row-height', `${space.step.mobileNavRowHeight}px`),
     decl('space-agent-rail-inset-x', `${space.step.agentRailInsetX}px`),
     decl('space-agent-part-gap-top', `${space.step.agentPartGapTop}px`),

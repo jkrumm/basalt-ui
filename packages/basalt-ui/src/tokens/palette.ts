@@ -613,8 +613,14 @@ const SPACE_STEP_BASE = {
    *  `env(safe-area-inset-bottom)` to it. JS-consumed (AppShell `footer.height`), no `--vx-*` var,
    *  same shape as `appShellHeaderHeight`. Floored at 48px in `deriveSpacing`. */
   mobileNavBarHeight: 56,
-  /** Slot icon box. */
+  /** Slot icon box. Also the MIN box of the icon slot itself, so the active pill keeps its shape
+   *  when a destination ships no icon (an icon-less consumer is a supported configuration). */
   mobileNavIconSize: 24,
+  /** Active-pill inset around the slot icon, vertical. Sub-scale on its own, but it is one half of
+   *  a pair with `mobileNavTabInsetX` — a step keeps the pill's shape tracking density. */
+  mobileNavTabInsetY: 2,
+  /** Active-pill inset around the slot icon, horizontal. */
+  mobileNavTabInsetX: 12,
   /** Menu/sheet row height. Floored at 44px in `deriveSpacing` (Apple HIG 44pt / WCAG 2.5.5 AAA). */
   mobileNavRowHeight: 44,
   /** More/group `<Menu width={…}>`. JS-consumed, no var — same rationale as

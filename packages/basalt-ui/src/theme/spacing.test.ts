@@ -357,6 +357,8 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // `app-mobile-nav.tsx` hands `mobileNavMenuWidth` to `<Menu width={…}>`.
   ['mobileNavBarHeight', 56, null],
   ['mobileNavIconSize', 24, 'space-mobile-nav-icon-size'],
+  ['mobileNavTabInsetY', 2, 'space-mobile-nav-tab-inset-y'],
+  ['mobileNavTabInsetX', 12, 'space-mobile-nav-tab-inset-x'],
   ['mobileNavRowHeight', 44, 'space-mobile-nav-row-height'],
   ['mobileNavMenuWidth', 232, null],
   ['agentRailInsetX', 10, 'space-agent-rail-inset-x'],

@@ -46,10 +46,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* The 2px vertical is genuinely sub-scale — the active pill hugs a 24px glyph, a shape inset
-   * rather than layout spacing. The 12px horizontal is NOT: it is the one value in this file with
-   * no `--vx-space-mobile-nav-*` step, so it alone does not track density. */
-  padding: 2px 12px; /* theme-allow inline-spacing — 12px pill inset still awaits a space step */
+  /* This span IS the active pill, so its box may not depend on what it contains: shipping no icon
+   * dependency is a supported configuration, and an empty span collapsed the pill to a 24x4px
+   * dash. The floor is the icon box PLUS its inset — everything is border-box under Mantine's
+   * reset — so the pill renders identically with and without a glyph, at every density. */
+  min-width: calc(
+    var(--vx-space-mobile-nav-icon-size) + 2 * var(--vx-space-mobile-nav-tab-inset-x)
+  );
+  min-height: calc(
+    var(--vx-space-mobile-nav-icon-size) + 2 * var(--vx-space-mobile-nav-tab-inset-y)
+  );
+  padding: var(--vx-space-mobile-nav-tab-inset-y) var(--vx-space-mobile-nav-tab-inset-x);
   border-radius: var(--vx-radius-ctrl);
   transition: transform 140ms cubic-bezier(0.32, 0.72, 0, 1);
 }
