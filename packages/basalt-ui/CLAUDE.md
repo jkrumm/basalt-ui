@@ -22,13 +22,13 @@ in `../../docs/archive/BLUEPRINT.md`.
 
 | Subpath             | Mantine? | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `SidebarSearch` + `SidebarSearchConfig` (the sidebar search field), `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThemeToggle`, shell types, dashboard composites (`DeltaBadge`, `StatCard`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `.`                 | coupled  | `BasaltProvider`, `createBasaltTheme` / `baseTheme` / `cssVariablesResolver`, `BasaltShell` + sidebar / mobile-nav / breadcrumbs / page-header, `SidebarSearch` + `SidebarSearchConfig` (the sidebar search field), `NavCountBadge`, `SidebarAccount` + the provider-agnostic account contract (`BasaltAccountProps`/`State`/`Actions`), `ThemeToggle`, shell types, dashboard composites (`DeltaBadge`, `StatCard`, `EmptyState`, `SettingsSection`/`SettingsRow`/`DangerZone`), and the query-branch trio `QueryState` / `LoadingState` / `ErrorState` (see below — they live under `src/dashboard/`, not `src/query/`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `./charts`          | **free** | visx primitives / kinds / sparklines / hooks (re-exports the token layer too). Centrepiece is **`CartesianChart`** — the primitive that owns measured margins, both y scales, axes, grid, zones, the shared cursor, crosshair + dots, and the derived tooltip, so a kind draws only marks (`docs/CHARTS-SPEC.md`). Plus `ChartCursorScope` (ISOLATES a subtree — the cursor is shared by default, no provider), `autoMargin`, `useChartCursor`, `ChartTooltipFloat`, `XZoneRects` + `type XZoneSpec` (vertical x-range bands, `getX`-domain-keyed)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `./tokens`          | **free** | `VX`, `alpha`, `BP` + `p` (raw hue families + pair-picker), `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin` + `type ChartMargin`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `COLOR_GROUPS` (parameterized)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core; plus the annotation reader `--audit-allows` is built on: `findAllowAnnotations`, `neutralizeAllowAnnotation`, `NEUTRALIZED_ALLOW_TOKEN`, `PLUGIN_RULE_IDS`, `AllowAnnotationSite`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `./state`           | **free** | `createPersistedState` (versioned localStorage) + `useOnlineStatus` — Mantine-free state primitives                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic unwrap, lazy `BasaltQueryDevtools`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic unwrap, lazy `BasaltQueryDevtools`, `toErrorMessage` / `errorStatus` (the ONLY route to those two — the root barrel does not re-export them)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `./router-tanstack` | **free** | TanStack Router bridge: `defineNav` / `navGroup` / `navTarget` / `flattenNav` (ONE typed nav definition) + `useNav` (→ `{ sections, mobileNav }`, spread onto `BasaltShell`), `useBasaltNav` (active route) + `useRouterBreadcrumbs`, `createSearchParamStore` / `createMultiSearchParamStore` (single-/multi-select URL-state stores)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -395,6 +395,88 @@ which is a persisted user preference rather than a viewport fact; the media quer
 tells the rail apart from the expanded sidebar. Pass `sections={[]}` to use the slot exclusively;
 an empty `sections` produces no orphan divider above it.
 
+## Query branches (`QueryState`, `.`)
+
+**The gap was correctness, not convenience.** basalt owned both ends of the file — `EmptyState` and
+`toErrorMessage` — and nothing in between, so a consumer rendering a query wrote the four-way switch
+itself and got it wrong in the direction the shape suggested: image-share's library rendered
+`No images` on a **500**, and a share detail rendered `Share not found` on a dropped connection,
+until 204 hand-rolled lines stopped it. Shipping the empty branch alone steered a consumer into
+claiming "nothing here" for "the server failed".
+
+- **A component, not a hook.** The product IS the branch precedence, and a hook hands every call
+  site the same four-way switch back. Implemented order: `isError && data === undefined` → error
+  page; `data === undefined && fetchStatus === 'idle'` → empty; `data === undefined` → loading;
+  otherwise → children (or empty, per `isEmpty`), with a **section-variant banner above them when
+  `isError` and cached data exists**. That last branch hardcodes `Showing cached data` /
+  `The last refresh failed.` and `variant="section"` — `errorTitle` / `errorFallback` /
+  `errorAction` reach the no-data error branch ONLY. Deliberate; don't document them as covering
+  both.
+- **It lives in `src/dashboard/`, not `src/query/`.** `check-dist-layering.mjs` asserts
+  `dist/query/index.js` reaches no `@mantine/*`, and `QueryState` renders Mantine. `query` is typed
+  as a five-field structural subset (`QueryStateLike`: `data`, `isError`, `error`, `fetchStatus`,
+  `refetch`) rather than TanStack's `UseQueryResult`, so the component couples to no query-library
+  version and a composed, derived or hand-rolled result passes with no cast — **3 of image-share's
+  10 call sites are exactly that.** **The honest scope of that:** it does not make the
+  root barrel `@tanstack/react-query`-free — `src/connectivity/connectivity-provider.tsx` already
+  imports `onlineManager` as a value, and the root entry has always required the peer. The JSDoc at
+  `query-state.tsx:29` states the stronger claim; it is not true of the barrel today.
+- **The subset removes the compiler, so the shape is asserted at runtime.**
+  `assertQueryStateLike` throws before any branch on a missing `data` key, a non-boolean `isError`,
+  a `fetchStatus` outside `'fetching' | 'paused' | 'idle'`, or a missing `refetch()`. A missing
+  `isError` is precisely the "500 renders _No images_" bug, so it must not degrade quietly.
+  (`error` is named in the message and is the one field NOT validated.)
+- `children` is `ReactNode | ((data: TData) => ReactNode)`, and the function form is invoked only
+  when data exists and is not empty. `empty` is `{ title, description?, icon?, action? }`;
+  `EmptyState.description` is now optional, which five argo features had been wrapping the component
+  to work around.
+- `toErrorMessage(err, fallback?)` and `errorStatus(err)` ship on `./query` (split into
+  `src/query/error-message.ts` so the dashboard decodes without importing the peer). Both had live
+  bugs the port found: an opaque envelope rendered the literal `"{}"` (now the `UNUSABLE` set, with
+  an HTTP status folded into the fallback), and `toErrorMessage(undefined)` returned the `undefined`
+  VALUE despite a `string` return type.
+
+**Port result — image-share, all 10 call sites plus a standalone `ErrorState`, by changing one
+import line each.** Zero renames, zero prop changes, zero casts. Total 2467 → 2221; **code-only
+2056 → 1882, −174**; `query-state.tsx` 204 → 0.
+
+## `BasaltDataTable` chrome — the port got LONGER, and that is the finding
+
+New props: `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `meta.align`,
+`meta.numeral`, `verticalSpacing`, `horizontalSpacing`, `withRowBorders`, `withTableBorder`, and
+`striped` widened to `boolean | 'odd' | 'even'`.
+
+**argo's three tables went 341 → 370 lines. 29 longer.** argo named these props as the reason the
+tables stayed hand-rolled; adding them shortened nothing. Column defs cost more lines than JSX rows
+when every cell is bespoke — eight accessor blocks at 4–6 lines each against an eight-`<Table.Td>`
+row at ~3. **The ask was mis-specified**, and that is the counterexample to the band kinds: the
+port-before-shipping rule earns its keep by producing this number BEFORE the props are sold as a
+line saving. What the port does buy is ownership, not brevity — the `type="native"` footgun, the
+alignment duplication (`textAlign: 'right'` on both `th` and `td`, six times in one file) and
+sorting/filter/pagination stop being consumer-owned.
+
+- `maxHeight` (or `minWidth`) renders **`Table.ScrollContainer type="native"`**; `maxHeight` alone
+  passes `minWidth={0}`. `type="native"` is required, not preferred — `ScrollArea`'s custom viewport
+  is the positioning context a sticky `<thead>` resolves against, so the default type pins the
+  header to the page viewport instead of the table's box. The prop's JSDoc calls this "the same node
+  the docs sanction as the raw escape", and **that was not true when it was written**: nothing under
+  `agent/rules/` or `docs/` had ever named `Table.ScrollContainer`, and
+  `basalt/raw-scroll-container` steers raw `overflow: auto`, not a Mantine component.
+  `agent/rules/basalt-data.md` now prescribes the identical node for a bespoke table, which is what
+  makes the two lanes provably the same DOM.
+- `align` is a `ColumnMeta` module augmentation (`align?: DataTableAlign`, `numeral?: boolean`), so
+  a typo'd key is a tsc error and a wrong VALUE throws naming the column. `numeral` is read only as
+  `!== false` — an opt-OUT of the mono-numeral cell style, never an opt-in.
+- `withTableBorder` is the one prop basalt defaults (`true`, forwarded unconditionally, overriding
+  Mantine's `false`); every other new prop is a conditional spread, so omitting it leaves Mantine's
+  own default.
+
+**Not shipped, known:** `emptyState` renders inside a `<td colSpan={columns.length}>` so the header
+row survives an empty table — there is no `emptyState="replace"` mode, and the span counts the raw
+`columns` prop, not visible leaf columns. The empty branch also keys on `data.length === 0`, not on
+the filtered row model. basalt adds no per-column sorting prop of its own; TanStack's own
+`ColumnDef.enableSorting` still reaches `getCanSort()` and works.
+
 ## CLI (`basalt-ui`)
 
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger's package (an
@@ -403,6 +485,25 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
 fonts:css | help` (Bun runtime). Every subcommand takes `--help`/`-h`; `check-theme`, `doctor` and
 `sync` honour `BASALT_CWD` and relocate to the single workspace package carrying a basalt config when
 invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
+
+**`resolveProjectDir` ascends as well as descends, and announces both the same way.** Order:
+`BASALT_CWD` → cwd itself → declared workspace packages → `descendantProjects` (depth 2) →
+`ascendantProject` → cwd unchanged. The ascend was the last silent hole: from a package with no
+`basalt` key, `check-theme` used to **fabricate** `roots: ["src"]` and report the invention back
+under the name `basalt.roots`. From `basalt-ui-obsidian`'s `apps/demo` that scanned **22 of the
+repo's 44 guarded files, printed a clean pass, and made `--audit-allows` report 0 live waivers in a
+repo carrying 1** — exit 0, no note. The audit exists so that `0 dead` cannot read as `0 dead
+anywhere`; it could be made to say zero by standing in the wrong directory. `ascendantProject` walks
+up to the nearest ancestor that carries a manifest **or** a `package.json` `basalt` key
+(`hasBasaltProject`), bounded inclusively by `findRepoRoot`. **No `.git` above cwd means no ascend**,
+so a standalone unconfigured consumer keeps the built-in defaults exactly as before. Ascend and
+descend share one sentence per command — only the rendered relative path differs (`./web` vs
+`../..`).
+
+**`sync` shares the resolver, so it ascends too.** From a sub-package it relocates to the parent
+install and refreshes it, announced, rather than refusing. It still **cannot scaffold a second
+consumer**: the refusal is keyed on the RESOLVED directory and runs before the `basalt.roots`
+backfill, so an unscaffolded project is still an exit 1 naming what it would have written.
 
 **Nothing fails open.** `--version` / `-v` / `version` print one bare greppable line and exit 0,
 resolved before dispatch alongside `--help` so answering "which basalt-ui is this" can never run a
@@ -440,8 +541,31 @@ fails loudly rather than downloading a stranger, and `BASALT_BIN` is the sanctio
   `oxlint . && basalt-ui check-theme`, which `init` seeds as the `lint:basalt` script.
   **Scan reach beyond `roots`**: each root's PARENT contributes its `index.html` and its `public/`
   tree (the Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its
-  configured root. `.html`/`.webmanifest`/`.json` resolve as markup (colour kinds only), but `.json`
-  is never blanket-scanned; `basalt.include` names one explicitly and is the only route to it.
+  configured root. **Four guard syntaxes** (`guardSyntaxFor`): `.css` → `css`;
+  `.html`/`.htm`/`.webmanifest`/`.json` → `markup` (`MARKUP_KINDS` — `raw-hex`, `raw-color-fn`,
+  `raw-font-family`, 3 of the 25); `.astro`/`.vue` → **`sfc`**; everything else, `.jsx` included,
+  → `ts`. `sfc` strips the markup region and then the script region — markup FIRST, so an HTML
+  comment holding an unterminated `/*` cannot open one that runs to EOF — and keeps the **full
+  25-kind set**: an `.astro` template is JSX-shaped and a `.vue` `<script setup>` is real TS, so
+  classifying them as `markup` would have dropped 22 kinds. Both call sites (`checkSource`,
+  `findAllowAnnotations`) go through one `stripGuardComments`, so the scan and `--audit-allows`
+  cannot disagree about what a comment is. `.json` is never blanket-scanned; `basalt.include` names
+  one explicitly and is the only route to it (`SCANNABLE_EXT` is
+  `tsx?|jsx|astro|vue|css|html?|webmanifest`).
+  **Two `sfc` limits, asserted rather than left ambiguous, both false-NEGATIVE-only**:
+  `css-raw-surface` and the kebab-CSS kinds do not fire inside a `<style>` fence (that branch keys
+  on `syntax === 'css'`, and an SFC is one file with three dialects), and stripping is region-blind,
+  so a `<!--` inside a script string over-strips. Pinned in `check-source.test.ts` § `known limits`.
+  **`raw-hex` no longer reads an HTML numeric character reference as a colour** — `&#123;` used to
+  report `#123`. The hole was in the KIND, not the extension (the same string fired in `.html`,
+  `.tsx` and `.css`); `.astro` only walked into it first. The exclusion is precise, not blanket:
+  `HEX` rejects a full reference — `&#`, digits, `;` — so `color: red&#fff` still flags and nothing
+  is exempted by file type. No sibling kind shares the blind spot and none structurally can: a
+  character reference contains no `(`, and every other raw-text kind anchors on a property name,
+  `var(`, or a JSX `=`.
+  **A known non-fix, deliberate:** an all-hex URL fragment or SVG reference (`href="#cafe"`,
+  `fill="url(#abcdef)"`) still reports. It is text-indistinguishable from a colour, so the fix would
+  cost real findings; `theme-allow` is the escape. JSDoc-only — no test pins it.
   **`profile: 'tokens-only'`** disables the 17 kinds whose remedy is a Mantine component, prop or the
   React theme factory. `check-theme` requires it DECLARED (the key, or `--tokens-only`) and never
   infers it: inferring from a missing `@mantine/core` would silence those kinds on any repo keeping
@@ -514,7 +638,15 @@ fails loudly rather than downloading a stranger, and `BASALT_BIN` is the sanctio
   `basaltAppPlugin({ icons })` out of the consumer's vite config** rather than hardcoding six
   filenames (`readAppIconsOption`): a named array is checked against itself, `false`/`[]` is nothing
   to check, and an unparseable or absent config falls back to the six defaults — so adopting 1.23.0's
-  icons array stopped being a way to earn a warning. A tokens-only consumer is
+  icons array stopped being a way to earn a warning. **That check used to read cwd alone, which made
+  it unreachable from the only directory where `doctor` exits 0**: on rb's and argo's layouts
+  `vite.config.ts` lives in the app package, so the root run omitted the line entirely — with no
+  `⊘ SKIPPED`, which is the exact failure mode `SKIPPED` was introduced to eliminate — while the
+  app-package run failed on two artefacts of standing in a non-install package. `findAppPluginDir`
+  now resolves the app package off `basalt.roots`, walking each root back up toward cwd and never
+  past it, and reports the absence rather than hiding it: **no `basaltAppPlugin(` anywhere and no
+  `public/` is a PASS that says so; a plugin call with no `public/` beside it is a `⊘ SKIPPED`**,
+  which exits non-zero on its own. Framework profile only. A tokens-only consumer is
   auto-detected (no manifest + no `@mantine/core`; `--tokens-only` / `--framework` force it) and is
   no longer told to run `init` — which also makes the CLI-vs-installed version check reachable in
   CI. **Version**: installed `node_modules/basalt-ui` vs the manifest's `basaltVersion` (plus
@@ -557,11 +689,20 @@ fails loudly rather than downloading a stranger, and `BASALT_BIN` is the sanctio
   top is **file framing for an artifact a consumer COMMITS**, and nothing else: the
   `@generated basalt-ui` marker as line 1 — imported from the guard as `GENERATED_HEADER_LINE`, one
   source of truth rather than the two hand-kept copies it replaced — version + invocation as line 2,
-  a trailing newline, and `rgba()` argument spacing normalized to the spaced form. **`--check` blanks
-  line 2 before comparing**: the provenance line carries the emitting version, and gating the file
-  byte-for-byte made every basalt release a mandatory no-op commit in a tokens-only consumer, where
-  byte-equality IS the gate. A stale provenance line is now a note on a passing check. The header is
-  still emitted byte-identical — the line stays, it just stops gating.
+  a trailing newline, and `rgba()` argument spacing normalized to the spaced form. **`--check`
+  neutralizes only the VERSION TOKEN of line 2** (`withoutProvenanceVersion` splices a `<version>`
+  sentinel through the 3-group `PROVENANCE_VERSION` regex). Gating the file byte-for-byte made every
+  basalt release a mandatory no-op commit in a tokens-only consumer, where byte-equality IS the
+  gate — but 1.23.1 blanked the whole line, and line 2 also carries **the exact invocation line 1
+  tells the reader to regenerate with**. Rewriting `--only core --no-legacy-aliases` to
+  `--only all --with-legacy-aliases` passed clean. A line that fails to parse as a provenance line
+  is now compared verbatim, so a deleted or reworded header fails instead of being blanked into
+  agreement. The success message **parses** both versions and names them, and orders them only when
+  the semver triples order (`describeVersionSkew` → `'a different'` otherwise) — it used to assert
+  the file "still names an older basalt-ui" without reading it, so `0.0.1-nonsense` got the same
+  sentence. The guard keeps its own copy of the shape as `GENERATED_PROVENANCE_LINE`
+  (`src/guard/index.ts`, unexported) so the `@generated` line-skip exemption holds against the same
+  grammar.
   `--selector-class` is the one
   structural rewrite — `buildPaletteCss` emits attribute selectors only, so the class form is
   produced by emitting against a CLI-chosen sentinel attribute and rewriting exactly those
@@ -580,6 +721,17 @@ promotes to `error`.** That covers a new `GuardKind` and an existing kind reachi
 Mechanically: add the kind to `GRACE_PERIOD_KINDS` in `src/guard/index.ts` with its promotion note
 in the same commit that ships it; deleting that entry one minor later IS the promotion, and belongs
 in its own commit so the changelog reads "enforcement got stricter".
+
+**A `SCANNABLE_EXT` widening is outside the mechanism, by design — do not force one into it.**
+`GRACE_PERIOD_KINDS` is keyed per KIND; widening the file set widens all 25 at once, so there is no
+kind to key an entry on. The nearest one is whichever actually fires, and adding `.astro`/`.jsx`/
+`.vue` fired `raw-hex` — an entry for it would demote basalt's most load-bearing kind to `warn` in
+every `.tsx` and `.css` in all seven consumers for a minor, to buy runway on a file type one
+consumer has. Measured before shipping at `error`: rollhook's marketing site scans 6 files with 0
+findings, and **no other consumer holds a single `.astro`, `.vue` or `.jsx` file** — grace would
+have covered zero incumbent violations. Widen at `error`, but only after measuring the incumbent
+violations across every consumer; if the count is nonzero the answer is fixing them, not a table
+entry that cannot express the case.
 
 **A rule the current minor WIDENS does not promote in that same minor.** Widening is a strictness
 change, so it restarts the grace — promoting a widened rule in the minor that widens it is the one
