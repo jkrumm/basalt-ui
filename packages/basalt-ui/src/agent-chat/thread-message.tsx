@@ -615,7 +615,7 @@ type VirtualizedTranscriptProps = {
  */
 function NonVirtualizedRows({ rows, height }: VirtualizedTranscriptProps): JSX.Element {
   return (
-    // theme-allow — degrade target owns its own scroll node, same as the real virtualizer below.
+    // theme-allow raw-scroll-container — degrade target owns its own scroll node, same as the real virtualizer below.
     <Box style={{ height, overflow: 'auto' }}>
       <Stack gap="sm">
         {rows.map((row) => (
@@ -895,7 +895,7 @@ const LazyVirtualizedRows = lazy(() =>
         })
 
         return (
-          // theme-allow — TanStack Virtual measures/scrolls this element (never nest in BasaltStickToBottom, see ./virtualize).
+          // theme-allow raw-scroll-container — TanStack Virtual measures/scrolls this element (never nest in BasaltStickToBottom, see ./virtualize).
           <Box ref={parentRef} style={{ height, overflow: 'auto' }}>
             <Box style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
               {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -938,7 +938,7 @@ const LazyVirtualizedRows = lazy(() =>
  * flash without paying that cost — it settles state before any row has meaningfully mounted.
  */
 function VirtualizeSuspenseFallback({ height }: { readonly height: number | string }): JSX.Element {
-  // theme-allow — placeholder owns its own scroll node, matching the real virtualizer's shape.
+  // theme-allow raw-scroll-container — placeholder owns its own scroll node, matching the real virtualizer's shape.
   return <Box style={{ height, overflow: 'auto' }} />
 }
 

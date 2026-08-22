@@ -97,12 +97,12 @@ export const p = (fam: readonly string[], light = 2, dark = 3): ColorPair => ({
  */
 export const SHADOW = {
   card: {
-    light: '0 1px 2px rgba(28,25,23,0.05), 0 0 0 1px var(--vx-surface-hairline)',
-    dark: '0 1px 3px rgba(0,0,0,0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)',
+    light: '0 1px 2px rgba(28, 25, 23, 0.05), 0 0 0 1px var(--vx-surface-hairline)',
+    dark: '0 1px 3px rgba(0, 0, 0, 0.4), inset 0 0 0 1px color-mix(in srgb, #ffffff 4%, transparent)',
   },
   ctrl: {
-    light: '0 1px 2px rgba(28,25,23,0.12)',
-    dark: '0 1px 2px rgba(0,0,0,0.35)',
+    light: '0 1px 2px rgba(28, 25, 23, 0.12)',
+    dark: '0 1px 2px rgba(0, 0, 0, 0.35)',
   },
   /**
    * Interactive-control depth — the ONE value every raised Button/ActionIcon/Input variant shares
@@ -132,16 +132,16 @@ export const SHADOW = {
    * ever needs more, raise the DROP. Do not reintroduce an edge; both shapes have been tried.
    */
   raised: {
-    light: '0 1px 2px rgba(28,25,23,0.10)',
-    dark: '0 1px 2px rgba(0,0,0,0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent)',
+    light: '0 1px 2px rgba(28, 25, 23, 0.10)',
+    dark: '0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent)',
   },
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a REAL drop shadow, a
   // step above `card`, so detached surfaces read as lifted off the page (`docs/DESIGN-SPEC.md` §5).
   // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--vx-surface-border` so
   // Mantine's rotated-square arrow inherits a proper edge.
   overlay: {
-    light: '0 8px 24px rgba(28,25,23,0.10)',
-    dark: '0 8px 24px rgba(0,0,0,0.5)',
+    light: '0 8px 24px rgba(28, 25, 23, 0.10)',
+    dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
   },
 } as const
 
@@ -1059,22 +1059,22 @@ function buildPaletteDataUncached(config: DeriveConfig) {
   const NEUTRAL = {
     line: { light: BP.gray[0], dark: BP.gray[4] }, // primary line
     line2: { light: BP.gray[1], dark: BP.gray[2] }, // secondary line
-    axis: { light: inkRgba(inkLight, 0.6), dark: 'rgba(255,255,255,0.6)' },
-    axisStroke: { light: inkRgba(inkLight, 0.12), dark: 'rgba(255,255,255,0.12)' },
-    grid: { light: inkRgba(inkLight, 0.07), dark: 'rgba(255,255,255,0.06)' },
-    crosshair: { light: inkRgba(inkLight, 0.32), dark: 'rgba(255,255,255,0.42)' },
+    axis: { light: inkRgba(inkLight, 0.6), dark: 'rgba(255, 255, 255, 0.6)' },
+    axisStroke: { light: inkRgba(inkLight, 0.12), dark: 'rgba(255, 255, 255, 0.12)' },
+    grid: { light: inkRgba(inkLight, 0.07), dark: 'rgba(255, 255, 255, 0.06)' },
+    crosshair: { light: inkRgba(inkLight, 0.32), dark: 'rgba(255, 255, 255, 0.42)' },
     dotStroke: { light: BP.white, dark: BP.darkGray[1] }, // matches chart-area bg
-    tooltipBg: { light: BP.white, dark: 'rgba(39,39,42,0.96)' },
-    tooltipText: { light: inkRgba(inkLight, 0.88), dark: 'rgba(255,255,255,0.88)' },
-    tooltipMuted: { light: inkRgba(inkLight, 0.5), dark: 'rgba(255,255,255,0.5)' },
+    tooltipBg: { light: BP.white, dark: 'rgba(39, 39, 42, 0.96)' },
+    tooltipText: { light: inkRgba(inkLight, 0.88), dark: 'rgba(255, 255, 255, 0.88)' },
+    tooltipMuted: { light: inkRgba(inkLight, 0.5), dark: 'rgba(255, 255, 255, 0.5)' },
     tooltipBorder: { light: `1px solid ${BP.lightGray[1]}`, dark: 'none' },
     tooltipShadow: {
       light: `0 2px 8px ${inkRgba(inkLight, 0.1)}`,
-      dark: '0 2px 8px rgba(0,0,0,0.35)',
+      dark: '0 2px 8px rgba(0, 0, 0, 0.35)',
     },
     // Chart legend text — same DERIVED-ink treatment as axis/grid/tooltip* above (light keys off
     // `inkLight`; dark stays flat white like every other neutral chart-chrome pair here).
-    legendText: { light: inkRgba(inkLight, 0.82), dark: 'rgba(255,255,255,0.92)' },
+    legendText: { light: inkRgba(inkLight, 0.82), dark: 'rgba(255, 255, 255, 0.92)' },
     // Base neutral for hairlines / muted / DIMMED text / overlays — apply opacity via alpha().
     // Binds to --mantine-color-dimmed, so it is THE dimmed-text lever. Equal to `INK.muted` (the
     // spec's "muted (secondary text)" row) — kept as its own pair for the pre-existing `--vx-neutral`

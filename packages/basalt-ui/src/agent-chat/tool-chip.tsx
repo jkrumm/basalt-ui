@@ -138,7 +138,7 @@ export function ToolChip({
                 width: 6,
                 height: 6,
                 flexShrink: 0,
-                borderRadius: '50%', // theme-allow: a 6px state dot is a circle, not a surface corner — no radius token expresses it
+                borderRadius: '50%', // theme-allow raw-surface — a 6px state dot is a circle, not a surface corner
                 backgroundColor: dotToken,
               }}
             />

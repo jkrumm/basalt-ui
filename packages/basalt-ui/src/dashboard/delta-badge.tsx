@@ -49,9 +49,9 @@ export function DeltaBadge({
           height: 'auto',
         },
         label: {
-          display: 'inline-flex', // theme-allow: Mantine Badge styles.label part — CSS-in-JS, not a layout node
+          display: 'inline-flex', // theme-allow inline-display — a Badge `styles.label` part, not a layout node Flex could replace
           alignItems: 'center',
-          gap: 3, // theme-allow: sub-scale badge glyph-to-label gap, below the token scale
+          gap: 3, // theme-allow inline-spacing — sub-scale glyph-to-label gap, below the smallest scale stop
           fontFamily: 'var(--basalt-font-mono)',
           fontSize: VX.text.xs,
           fontWeight: 600,
@@ -66,7 +66,7 @@ export function DeltaBadge({
       {format(value)}
       {period && (
         <span
-          style={{ marginLeft: 4, fontWeight: 500, opacity: 0.6 }} // theme-allow: sub-scale optical period offset, below the token scale
+          style={{ marginLeft: 4, fontWeight: 500, opacity: 0.6 }} // theme-allow inline-spacing — sub-scale optical period offset, below the smallest scale stop
         >
           {period}
         </span>

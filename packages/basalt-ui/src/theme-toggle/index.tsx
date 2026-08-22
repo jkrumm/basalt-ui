@@ -84,7 +84,7 @@ function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: bool
       {dark ? (
         <motion.span
           key="moon"
-          style={{ display: 'inline-flex' }} // theme-allow: framer-motion element — inline-flex glyph wrapper, not a Mantine node
+          style={{ display: 'inline-flex' }} // theme-allow inline-display — a framer-motion glyph wrapper, not a Mantine layout node
           initial={{ opacity: 0, scale: 0.6, rotate: 30 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.6, rotate: -30 }}
@@ -95,7 +95,7 @@ function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: bool
       ) : (
         <motion.span
           key="sun"
-          style={{ display: 'inline-flex' }} // theme-allow: framer-motion element — inline-flex glyph wrapper, not a Mantine node
+          style={{ display: 'inline-flex' }} // theme-allow inline-display — a framer-motion glyph wrapper, not a Mantine layout node
           initial={{ opacity: 0, scale: 0.6, rotate: -30 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.6, rotate: 30 }}

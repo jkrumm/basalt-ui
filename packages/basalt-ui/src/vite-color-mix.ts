@@ -28,8 +28,8 @@
  * what a color parser must never do.
  */
 const NAMED_COLORS: Record<string, string> = {
-  white: '#ffffff', // theme-allow — CSS keyword definition, not a design color
-  black: '#000000', // theme-allow — CSS keyword definition, not a design color
+  white: '#ffffff', // theme-allow raw-hex — the CSS keyword's definition, not a design color
+  black: '#000000', // theme-allow raw-hex — the CSS keyword's definition, not a design color
 }
 
 function normalizeHex(hex: string): string {
