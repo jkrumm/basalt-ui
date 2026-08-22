@@ -162,7 +162,7 @@
     "saveOverrides"
   ],
   "./vite": ["basaltAppPlugin", "basaltViteConfig"],
-  "./guard": ["DEFAULT_GUARD_CONFIG", "GUARD_RULES", "checkSource"],
+  "./guard": ["DEFAULT_GUARD_CONFIG", "GUARD_RULES", "TOKENS_ONLY_DISABLED_KINDS", "checkSource"],
   "./forms": [
     "FormErrorSummary",
     "field",
