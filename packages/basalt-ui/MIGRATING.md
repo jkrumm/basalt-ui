@@ -10,7 +10,7 @@ cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every
 was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
 row that was wrong. That pass corrected 4 table rows and 3 prose claims. Every section from 1.21.0
 on was written against source, not against its commit messages — which is not a formality: one
-1.23.0 commit message describes a change it did not make (see `Unreleased` § Corrections). Check
+1.23.0 commit message describes a change it did not make (see `1.23.1` § Corrections). Check
 the types, not this table, if the two disagree.
 
 **The newest section is headed `## Unreleased`, and stays that way until npm serves it.** This file
@@ -39,6 +39,138 @@ version npm never served — `1.20.1`, then `1.21.1` — because this file is wr
 version `CHANGELOG.md` does not record. This file is not in that set; the same discipline applies
 by convention. Rename the section at release, or leave it — a reader can resolve `Unreleased`
 against `CHANGELOG.md`, and could never resolve `1.21.1`.
+
+**Nothing removed or renamed. Twelve new runtime exports on `.`/`./query`, plus table props.** Every
+API entry is additive; the behaviour changes are in the guard and the CLI, listed after them.
+
+### `QueryState` — the branch precedence, shipped as a component
+
+`QueryState`, `LoadingState`, `ErrorState` (+ `QueryStateProps`, `QueryStateLike`,
+`QueryStateVariant`, `QueryEmptyCopy`, `LoadingStateProps`, `ErrorStateProps`) on the root barrel,
+beside `EmptyState`. `toErrorMessage` and `errorStatus` on `basalt-ui/query`.
+
+basalt owned both ends of this file — `EmptyState` and `toErrorMessage` — and nothing in between, so
+a consumer wrote the four-way switch and got it wrong in the direction the shape suggested:
+image-share's library rendered `No images` on a **500** and a share detail rendered
+`Share not found` on a dropped connection, until 204 hand-rolled lines stopped it. Open since round
+4, re-reported in round 6.
+
+- **A component, not a hook** — the product IS the precedence, and a hook returns the same four-way
+  switch to every call site.
+- **It lives under `src/dashboard/`, not `src/query/`**: `check-dist-layering.mjs` asserts
+  `dist/query/index.js` reaches no `@mantine/*`, and this renders Mantine. `query` is typed as a
+  five-field structural subset (`QueryStateLike`), so basalt couples to no query-library version and
+  a hand-composed object is legal. The subset gives up the compiler, so the shape is asserted at
+  **runtime**: a missing `isError` throws naming the field, because a missing `isError` is precisely
+  the "500 renders _No images_" bug.
+- `errorTitle` / `errorFallback` / `errorAction` apply to the no-cached-data error branch only; the
+  error-with-cached-data branch renders a fixed section banner above `children`.
+- **`EmptyState.description` is now optional.** Five argo features wrapped the component solely
+  because a compact panel had to invent a second sentence. Existing calls are unaffected.
+- `toErrorMessage(err, fallback?)` and `errorStatus(err)` had two live bugs the port found: an
+  opaque envelope rendered the literal `"{}"`, and `toErrorMessage(undefined)` returned the
+  `undefined` VALUE despite a `string` return type. Both fixed; a status is folded into the fallback
+  when the body decodes to nothing readable. Split into `src/query/error-message.ts` so the
+  dashboard decodes without importing the peer.
+
+**Port result:** image-share, all 10 call sites plus a standalone `ErrorState`, **by changing one
+import line each** — no renames, no prop changes, no casts. Total 2467 → 2221; code-only 2056 →
+1882, **−174**; `query-state.tsx` 204 → 0.
+
+### `BasaltDataTable` body chrome — and the honest number
+
+New: `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `verticalSpacing`,
+`horizontalSpacing`, `withRowBorders`, `withTableBorder`, per-column `meta.align` and
+`meta.numeral`; `striped` widens from `boolean` to `boolean | 'odd' | 'even'`. `withTableBorder`
+defaults to `true` in basalt, overriding Mantine's `false`; every other one is a conditional
+pass-through, so omitting it keeps Mantine's default.
+
+**Porting argo's three tables onto them made them 341 → 370 lines. 29 LONGER.** argo named these
+props as the reason the tables stayed hand-rolled, and adding them shortened nothing: column defs
+cost more than JSX rows when every cell is bespoke — eight accessor blocks at 4–6 lines each against
+an eight-`<Table.Td>` row at ~3. **The ask was mis-specified.** Adopt them for what they buy —
+the `type="native"` footgun, alignment stated once instead of on both `th` and `td` six times in one
+file, and sorting/filtering/pagination no longer consumer-owned — not for a line count. This is the
+counterexample to the band kinds, and the reason the port-before-shipping rule earns its keep.
+
+- `maxHeight` (or `minWidth`) renders **`Table.ScrollContainer type="native"`**, and
+  `agent/rules/basalt-data.md` now prescribes that same node for a bespoke table — so the blessed
+  lane and the escape cannot contradict, and `type="scrollarea"`, which breaks a sticky `thead`, is
+  unreachable through the props. (The prop's JSDoc claimed the docs already sanctioned it; they had
+  never named `Table.ScrollContainer` at all.)
+- `meta.align` is a `ColumnMeta` module augmentation: a typo'd key is a tsc error, a wrong value
+  throws naming the column. `meta.numeral` is read only as `!== false` — an opt-OUT of the
+  mono-numeral cell style, never an opt-in.
+- **Not shipped, known:** `emptyState` renders inside a `<td colSpan>` so the header row survives an
+  empty table — there is no `emptyState="replace"` mode. No per-column `enableSorting` of basalt's
+  own; TanStack's `ColumnDef.enableSorting` still reaches `getCanSort()` and works.
+
+### Four false greens
+
+1. **`check-theme` fabricated a config on the ascend path and passed silently.** From a package with
+   no `basalt` key it invented `roots: ["src"]` and reported the invention back under the name
+   `basalt.roots`. In `basalt-ui-obsidian`, run from `apps/demo`, that scanned **22 of 44** guarded
+   files and made `--audit-allows` report **0 live waivers in a repo carrying 1** — exit 0, no note.
+   The audit exists so `0 dead` cannot read as `0 dead anywhere`, and it could be made to say zero
+   by standing in the wrong directory. `resolveProjectDir` now ascends to the nearest ancestor
+   carrying a basalt project, bounded by the repo root, and announces it in the sentence descend
+   already used. **No `.git` above cwd means no ascend**, so a standalone consumer keeps the
+   built-in defaults exactly as before. After: 44 files, the real 1.
+2. **`tokens:css --check` stopped verifying the regeneration command.** 1.23.1 blanked all of line 2
+   so a version bump would stop forcing a no-op commit — but line 2 also carries the exact
+   invocation line 1 tells the reader to regenerate with. Rewriting `--only core` to `--only all` in
+   that line **passed clean**. Only the version token is neutralized now; a line that does not parse
+   as a provenance line is compared verbatim, so a deleted or reworded header fails. The success
+   message also **parses** the versions instead of asserting them — it used to claim the file "still
+   names an older basalt-ui" without reading it, so `0.0.1-nonsense` earned the same sentence.
+3. **`doctor`'s icons check was unreachable from the only directory where `doctor` exits 0.** On a
+   monorepo the root run omitted it with no `⊘ SKIPPED` line — the exact failure mode `SKIPPED` was
+   introduced to eliminate — while the app-package run failed on artefacts of standing in a
+   non-install package. It resolves the app package off `basalt.roots` now. No `basaltAppPlugin(`
+   anywhere and no `public/` is a pass that says so; a plugin call with no `public/` beside it is a
+   `⊘ SKIPPED`, which exits non-zero on its own.
+4. **`SCANNABLE_EXT` gained `.astro`, `.jsx` and `.vue`.** rollhook's marketing site is Astro and its
+   two `.astro` templates are its entire markup layer — unguarded, while `check-theme` reported a
+   clean 4-file scan. It scans 6 now.
+
+**Behaviour change to name: `sync` ascends too.** It shares the resolver, so from a sub-package it
+relocates to the parent install and refreshes it — announced — rather than refusing. It still cannot
+scaffold a second consumer: the refusal is keyed on the RESOLVED project and runs before the
+`basalt.roots` backfill.
+
+### Guard changes the widening exposed
+
+- **`raw-hex` no longer matches inside an HTML numeric character reference.** `&#123;` — the escaped
+  brace a template writes to show a literal `${…}` in prose — read as the hex colour `#123`. The
+  hole was in the KIND, not the extension: the same string produced the same findings in `.html`,
+  `.tsx`, `.css` and `.vue`, so `.astro` only walked into it first. The fix is precise, not blanket:
+  `HEX` rejects a full reference (`&#`, digits, `;`), so **`color: red&#fff` still flags** and
+  nothing is exempted by file type. Every neighbouring raw-text kind was checked and structurally
+  cannot share the blind spot — a character reference contains no `(`, and the rest anchor on a
+  property name, `var(`, or a JSX `=`.
+- **A fourth guard syntax, `sfc`, for `.astro`/`.vue`.** They used to fall through to the `ts`
+  dialect, so `<!-- … -->` was never stripped: a `theme-allow` written in an HTML comment waived
+  nothing and a colour inside a commented-out block still reported. `sfc` strips both regions —
+  markup first, so an HTML comment holding an unterminated `/*` cannot open one that runs to EOF —
+  and keeps the **full 25-kind set**. A `markup` classification would have dropped 22 of them: an
+  `.astro` template is JSX-shaped and a `.vue` `<script setup>` is real TS. `.jsx` needs no branch.
+  Both the scan and `--audit-allows` now share one `stripGuardComments`, so they cannot disagree
+  about what a comment is.
+- **Two limits, asserted rather than left ambiguous, both false-negative-only:** `css-raw-surface`
+  does not fire inside a `<style>` fence, and stripping is region-blind, so a `<!--` inside a script
+  string over-strips.
+- **A known non-fix, deliberate:** an all-hex URL fragment or SVG reference (`href="#cafe"`,
+  `fill="url(#abcdef)"`) still reports. It is text-indistinguishable from a colour, so a fix would
+  cost real findings; `theme-allow` is the escape.
+- **The widening ships at `error` with no `GRACE_PERIOD_KINDS` entry, and that table cannot express
+  it.** The table is keyed per KIND; widening `SCANNABLE_EXT` widens the file set for all 25 at
+  once. An entry for `raw-hex` — the kind that actually fired — would demote basalt's most
+  load-bearing kind to `warn` across every `.tsx` and `.css` in all seven consumers to buy runway on
+  a file type one consumer has. Measured: rollhook's marketing site scans 6 files with 0 findings,
+  and no other consumer holds a single `.astro`, `.vue` or `.jsx` file, so grace would have covered
+  zero incumbent violations.
+
+## 1.23.1 — the band-state throw, the tag gate, a CLI that answers
 
 **One type widened, nothing removed or renamed.** `BandStripSeries.formatValue` is now
 `(d: T) => string | null`. `null` renders an em dash — an absent READING — which `''` never could:
@@ -99,7 +231,9 @@ instead of dumping help and letting the dump read like a choice.
 - **`tokens:css --check` blanks the provenance line (line 2) before comparing**, so a version bump
   alone no longer forces a no-op commit in a tokens-only consumer, where the gate is byte-equality.
   A stale provenance line is now a note on an otherwise-passing check. The `@generated` header is
-  still emitted byte-identical — the line stays, it just stops gating.
+  still emitted byte-identical — the line stays, it just stops gating. **Superseded in `Unreleased`:
+  blanking the WHOLE line also stopped gating the regeneration command it carries. Only the version
+  token is neutralized now.**
 
 ### Corrections to the record
 
@@ -229,8 +363,8 @@ install it found above instead. The refusal runs before the `basalt.roots` backf
 the damage. Two ways to unblock it:
 
 ```bash
-cd <the package holding .basalt/manifest.json> && bunx basalt-ui sync
-BASALT_CWD=<that package> bunx basalt-ui sync   # or from anywhere
+cd <the package holding .basalt/manifest.json> && ./node_modules/.bin/basalt-ui sync
+BASALT_CWD=<that package> ./node_modules/.bin/basalt-ui sync   # or from anywhere
 ```
 
 The summary line gained a `created` counter. **`recreated` now means what it always claimed** — the
