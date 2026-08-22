@@ -82,7 +82,8 @@ colors without a `theme-allow` comment.
 **The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind. It is honoured
 on the reported line, on a comment-only line directly above it, and — in CSS — from a trailing
 comment back over the declaration it terminates. A bare `theme-allow` still waives everything but
-reports `theme-allow-unscoped`.
+reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing — only a
+genuinely bare comment is the blanket form.
 
 > **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the
 > basalt-ui repo itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports). It

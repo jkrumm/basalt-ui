@@ -178,9 +178,10 @@ both.
   cross-package `ai` major parity. All via `bunx basalt-ui …`.
 - **Not a React app?** `bunx basalt-ui tokens:css --out src/tokens.css` emits the `--vx-*` layer with
   no package in your dependency tree, `--selector-class dark` for the Tailwind `<html class="dark">`
-  convention, and `fonts:css` emits the shipped `--basalt-font-*` stacks. Both carry an
-  `@generated basalt-ui` header the guard skips, and both take `--check` as a CI drift gate. See
-  `docs/FRAMEWORK-FREE.md` in the basalt-ui repo.
+  convention, and `fonts:css` emits the shipped `--basalt-font-*` stacks. Both carry the two-line
+  `@generated basalt-ui` header the guard skips on — that header verbatim plus a `.css` body of
+  nothing but basalt custom properties, so the marker pasted into a `.tsx` suppresses nothing — and
+  both take `--check` as a CI drift gate. See `docs/FRAMEWORK-FREE.md` in the basalt-ui repo.
 - The framework ships **no** icon or notification dep — pass icons as `ReactNode` and wire toasts
   yourself (e.g. `ThemeLabControls`' `copyIcon` / `onCopy`).
 - The framework DOES ship `motion` (motion.dev, formerly framer-motion) as a bundled dependency —

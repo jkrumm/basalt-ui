@@ -214,13 +214,18 @@ which would silence half the guard on any repo keeping Mantine in a different wo
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
 `BasaltConfig` type.
 
-A file whose first 5 lines carry the `@generated basalt-ui` marker is skipped — so the stylesheet
-`tokens:css` just wrote is not reported back at you.
+A file is skipped as basalt-emitted only when all three hold: a `.css` path, the `@generated
+basalt-ui` header verbatim on line 1 with the version + invocation line on line 2, and a body of
+nothing but `--vx-*` / `--basalt-*` declarations, selectors, `}`, at-rules and comments. So the
+stylesheet `tokens:css` just wrote is not reported back at you, and pasting the marker into a `.tsx`
+suppresses nothing.
 
 **The escape hatch is scoped.** `theme-allow <rule-id> — <reason>` waives that one kind, on the
 reported line, on a comment-only line directly above it (the only form JSX can express), or — in
 CSS — from a trailing comment back over the declaration it terminates. A bare `theme-allow` still
-waives everything but reports `theme-allow-unscoped`.
+waives everything but reports `theme-allow-unscoped`. The id slot is read strictly: a word there
+that names no rule waives nothing, so an annotation covers exactly the ids it got right and a typo
+is never the blanket form.
 
 `doctor`'s `ai-major-parity` hard check fails a monorepo where workspace packages declare different
 `ai` package majors — unless the split is intentional and written down. A producer pinned to an
