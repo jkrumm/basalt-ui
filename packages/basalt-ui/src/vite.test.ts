@@ -234,6 +234,85 @@ describe('basaltAppPlugin — base handling', () => {
     const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
     expect(manifest.icons[0].src).toBe('/brand/web-app-manifest-192x192.png')
   })
+
+  // ── the consumer-named array form ─────────────────────────────────────────
+  //
+  // `{ dir }` can move basalt's six filenames but not rename one, so an app whose only icon is
+  // `favicon.svg` could pick between a manifest naming two PNGs it does not ship and a manifest
+  // with no icons at all. Both are wrong for an installable app, and the second is why rb still
+  // kept a hand-written manifest one release after `icons: false` was fixed.
+
+  // rb's REAL icon set, copied from apps/web/public/manifest.webmanifest — the manifest this
+  // option exists to let the plugin generate.
+  const RB_ICONS = [
+    { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+  ] as const
+
+  test("generates rb's hand-written manifest icons member verbatim", () => {
+    const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons: RB_ICONS })
+    const middleware = getDevMiddleware(plugin, '/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
+
+    expect(manifest.icons).toEqual([
+      { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+    ])
+    expect(JSON.stringify(manifest)).not.toContain('.png')
+    expect(manifest.name).toBe('rb')
+    expect(manifest.display).toBe('standalone')
+  })
+
+  test('a named icon reaches the head only when it asks for a rel', () => {
+    const iconLinks = (icons: NonNullable<BasaltAppOptions['icons']>): HtmlTagDescriptor[] => {
+      const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons })
+      resolveConfig(plugin, '/')
+      return transformHtml(plugin, HTML_NO_VIEWPORT).filter(
+        (tag) => tag.tag === 'link' && String(tag.attrs?.['rel']).includes('icon'),
+      )
+    }
+
+    // rb's index.html already links favicon.svg — the manifest gets fixed, the head is left alone.
+    expect(iconLinks(RB_ICONS)).toHaveLength(0)
+
+    const withRel = iconLinks([{ src: 'favicon.svg', type: 'image/svg+xml', rel: 'icon' }])
+    expect(withRel).toHaveLength(1)
+    expect(withRel[0]?.attrs).toEqual({
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/favicon.svg',
+    })
+  })
+
+  test('a named icon src is base-prefixed, with or without its leading slash', () => {
+    const plugin = getPlugin({
+      name: 'rb',
+      themeColor: THEME_COLOR,
+      icons: [
+        { src: 'favicon.svg', sizes: 'any' },
+        { src: '/icon-512.png', sizes: '512x512' },
+      ],
+    })
+    const middleware = getDevMiddleware(plugin, '/myapp/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/myapp/site.webmanifest') ?? '{}')
+
+    expect(manifest.icons.map((icon: { src: string }) => icon.src)).toEqual([
+      '/myapp/favicon.svg',
+      '/myapp/icon-512.png',
+    ])
+  })
+
+  test('an empty array reads as icons: false — no member, not an empty one', () => {
+    const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons: [] })
+    const middleware = getDevMiddleware(plugin, '/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
+    expect(manifest.icons).toBeUndefined()
+  })
+
+  test('the array form omits keys the consumer did not write', () => {
+    const plugin = getPlugin({ name: 'rb', themeColor: THEME_COLOR, icons: [{ src: '/a.svg' }] })
+    const middleware = getDevMiddleware(plugin, '/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
+    expect(manifest.icons).toEqual([{ src: '/a.svg' }])
+  })
 })
 
 describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
