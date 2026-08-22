@@ -1,3 +1,12 @@
+## [1.23.1](https://github.com/jkrumm/basalt-ui/compare/v1.23.0...v1.23.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* gate the two chart tag rules on where the tag came from ([0075224](https://github.com/jkrumm/basalt-ui/commit/007522416bf9a3269e5f45b7ae7f45203434bae7))
+* make the CLI answer which version ran, and stop it failing open ([0edf50e](https://github.com/jkrumm/basalt-ui/commit/0edf50e1d6f61b349f989fd10fe384d4a91a9af1))
+* stop a typo'd band state from asserting absence ([6c1515c](https://github.com/jkrumm/basalt-ui/commit/6c1515c3ecbf019d9971e5b247e81e5cce3ae316))
+
 # [1.23.0](https://github.com/jkrumm/basalt-ui/compare/v1.22.0...v1.23.0) (2026-08-22)
 
 
