@@ -187,10 +187,12 @@ export type BasaltConfig = {
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (which skips ALL rules for a
    * file) and the hardcoded per-kind `appliesTo` scoping (e.g. `raw-visx-axis` → chart files
-   * only). Each value is a list of path-segment patterns matched against a finding's relative
-   * path: a pattern matches when the path split on `/` includes it as a WHOLE segment (`'agent'`
-   * matches `src/agent/x.tsx` but not `src/agenting.ts`; a trailing `/` is stripped, so `'agent'`
-   * and `'agent/'` are equivalent). Default: `{}` (no exemptions).
+   * only). Each value is a list of patterns matched against a finding's relative path. A pattern
+   * may be a whole path segment (`'agent'` matches `src/agent/x.tsx`, not `src/agenting.ts`), a
+   * relative path (`'public/site.webmanifest'`), a directory prefix, or a glob — `*` stops at `/`,
+   * `**` does not, and a slash-free glob also matches the basename, so `'*.module.css'` works.
+   * A trailing `/` is stripped. An entry that suppresses nothing is reported, and
+   * `check-theme --audit-allows` exits 1 on it. Default: `{}` (no exemptions).
    *
    * Two forms per kind. The bare array is paths only. The object form adds the REASON, which is
    * the half a `theme-allow` carries and this key could not: JSON has no comments, so a
