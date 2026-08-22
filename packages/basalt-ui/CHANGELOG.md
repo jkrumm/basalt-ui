@@ -1,3 +1,23 @@
+# [1.20.0](https://github.com/jkrumm/basalt-ui/compare/v1.19.1...v1.20.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* exempt generated LINES, not files, and stop flagging prose as a typo'd id ([a83abfb](https://github.com/jkrumm/basalt-ui/commit/a83abfb77888f31528f44e5923b26d3710ddf005))
+* give the mobile-nav-pill demo row its own glyph ([4620590](https://github.com/jkrumm/basalt-ui/commit/4620590204a99afd07ec27eb923cd229acdfce84))
+* hold basalt to its own scoped theme-allow contract ([b67718c](https://github.com/jkrumm/basalt-ui/commit/b67718cecf8e7ce60b61b7481bcdbd4795f79d40))
+* make the escape hatch and the generated-file marker fail closed ([526cdb7](https://github.com/jkrumm/basalt-ui/commit/526cdb7f11395f27183828e34297b0ac6bc846c8))
+* make the mobile-nav active pill track density and survive an icon-less app ([0a7d756](https://github.com/jkrumm/basalt-ui/commit/0a7d7560f9eae6db4c02ff029ba47088a084e511))
+* snapshot the tokens-only guard export ([b63dc24](https://github.com/jkrumm/basalt-ui/commit/b63dc242bfd46359476f7fcae80957db244f727f))
+
+
+### Features
+
+* demo the mobile-nav active pill with and without an icon dependency ([9620905](https://github.com/jkrumm/basalt-ui/commit/9620905409efdf39bb10b40edaa128ce2b61c741))
+* make the escape hatch usable and close the holes round 4 found ([5b8420d](https://github.com/jkrumm/basalt-ui/commit/5b8420d24647b84818dfbb65e9f0c52ea1e79c2c))
+* scan the app shell, wire the tokens-only profile, ship __APP_VERSION__ ([61b1792](https://github.com/jkrumm/basalt-ui/commit/61b1792e8ea1bff3c59128ba65137b27d40df81a))
+* stop the toolchain reporting green while enforcing nothing ([d3d8e34](https://github.com/jkrumm/basalt-ui/commit/d3d8e3434893516e62413acafdd166be13b86541))
+
 ## [1.19.1](https://github.com/jkrumm/basalt-ui/compare/v1.19.0...v1.19.1) (2026-08-20)
 
 
