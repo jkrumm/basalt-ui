@@ -149,6 +149,14 @@ section divider, not card depth) are both fine.
   consumer code must compose Mantine layout/surface primitives — `Box`, `Flex`, `Grid`,
   `SimpleGrid`, `Stack`, `Group`, `Paper`, `Card` — instead of raw `<div>`/`<span>` with inline
   `style`. Raw HTML with inline layout/surface styling defeats the token system.
+  - **The second fix is a CSS Module, and it is the right one in list code.** What
+    `raw-html-layout` actually objects to is the inline `style` literal, not the `<div>`. Moving the
+    rule into a `.module.css` class that reads `var(--vx-*)` satisfies the guard, keeps the values
+    in the token system, and costs zero runtime — where a Mantine primitive costs one component
+    instance per row. In a row renderer that paints hundreds of items, or in a downstream library
+    that must not force `@mantine/core` on its consumers, take the CSS Module. `check-theme` scans
+    `.css` and `.module.css`, so the tokens stay policed there. The guard's fix text names only the
+    Mantine route; both are sanctioned.
 - **Mechanical enforcement.** `basalt-ui check-theme` adds six surface guard kinds (each a config knob,
   default ON; `theme-allow` line-comment escape): `off-system-surface-var` (raw ramp-step vars),
   `card-with-border` (`withBorder` on a `Card`/`Paper`), `mantine-shade-index` (a shade-pinned color —
