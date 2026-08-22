@@ -386,16 +386,16 @@ inferring is free there. `check-theme` silences 17 kinds, and inferring that fro
 missing `@mantine/core` would switch off half the guard on any repo that simply
 keeps Mantine in a different workspace package. Write the key down.
 
-The emitted stylesheet is nearly commit-clean: the `@generated` marker on line 1,
-the version and the exact invocation on line 2, `rgba()` arguments spaced the way a
-formatter writes them, and a trailing newline.
+The emitted stylesheet is commit-clean: the `@generated` marker on line 1, the version
+and the exact invocation on line 2, `rgba()` arguments spaced and alphas written the way
+a formatter writes them, and a trailing newline.
 
-**Still not lintable, as of 1.20.0.** Prettier's `format/prettier` rule reports 2
-errors on the real emit — `rgba(28, 25, 23, 0.10)` in `--vx-shadow-raised` and
-`--vx-shadow-overlay` (light block), which prettier normalizes to `0.1`. Spacing was
-fixed; trailing-zero alphas were not, and `--fix` is not a workaround because it puts
-the file straight into `tokens:css --check` drift. Keep the formatter-ignore entry on
-the emitted file until the emitter drops the trailing zero.
+**Lintable since the trailing-zero fix.** The last two `format/prettier` errors were
+`rgba(28, 25, 23, 0.10)` in `--vx-shadow-raised` and `--vx-shadow-overlay`; the shadow
+palette now emits `0.1` at source, so it reaches `buildPaletteCss`, `tokens.css` and the
+CLI alike. A formatter-ignore entry on the emitted file is no longer needed — drop it.
+Never run `--fix` on the file regardless: it puts you straight into `tokens:css --check`
+drift.
 
 `--check` writes nothing and exits 1 when the file on disk differs from what the
 command emits today — wire it as a CI gate so a basalt bump can't leave the committed
