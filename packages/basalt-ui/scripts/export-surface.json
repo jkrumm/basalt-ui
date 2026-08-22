@@ -167,7 +167,10 @@
     "GENERATED_HEADER_LINE",
     "GUARD_RULES",
     "TOKENS_ONLY_DISABLED_KINDS",
-    "checkSource"
+    "checkSource",
+    "guardKindRemedy",
+    "guardWaiverHint",
+    "unmatchedExemptPatterns"
   ],
   "./forms": [
     "FormErrorSummary",

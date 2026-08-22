@@ -247,10 +247,92 @@ const INLINE_SPACING = new RegExp(
  * there is no prop form, and the emitted `--vx-space-*` set is basalt's own component one-offs
  * (`--vx-space-toc-sub-indent`), not a consumer surface. Without this escape a consumer's CSS
  * module had no legal way to write a 4px cluster gap: no token to reach for, `theme-allow` on every
- * line (which `basalt-tokens.md` explicitly warns against), or `exemptRules` — which matches whole
- * path segments and so cannot express `*.module.css`.
+ * line (which `basalt-tokens.md` explicitly warns against), or `exemptRules` — which at the time
+ * matched whole path segments only and so could not express `*.module.css` (it can now, see
+ * `exemptPatternMatches`; the escape stays because a per-file exemption is still the wrong shape
+ * for a value that has no token).
  */
 const MICRO_SPACING_CEILING_PX = 10
+
+/**
+ * Object-literal openers that make the properties under them CSS.
+ *
+ * A UNITLESS spacing number is only a length by React's inline-style convention, and that
+ * convention only holds inside a style object. `const FIT_BOUNDS_OPTIONS = { padding: 48, duration:
+ * 0 }` is a maplibre viewport inset measured in MAP pixels — there is no Mantine token that could
+ * express it, and "use p/m/gap with xs..xl" is not a thing that can be done to it. The same shape
+ * arrives from every canvas/map/layout library a consumer wraps, so this is a class, not a case.
+ *
+ * A value carrying a UNIT (`'12px'`, `1.5rem`) is exempt from this test entirely — a unit IS the
+ * evidence that the number is CSS, wherever it was written.
+ */
+/** `style={{`, `styles={{`, `sx={{`, `css={{` — the object under it IS CSS by construction. */
+const STYLE_ATTRIBUTE_OPENER = /\b(?:style|styles|sx|css)\s*=\s*\{?\s*$/
+
+/** `const wrapperStyle: CSSProperties = {` — the hoisted form; name and type are both evidence. */
+const OBJECT_DECLARATION = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::([^=]*))?=\s*$/
+
+/** A name that says "these are styles" on its own, without a `style={…}` use site to confirm it. */
+const STYLE_OBJECT_NAME = /(?:Style|Styles|Css)$|^(?:style|styles|css|sx)$/
+
+/** A type annotation that says the same thing — `CSSProperties`, `CSSObject`, `MantineStyleProp`. */
+const STYLE_OBJECT_TYPE = /\bCSS(?:Properties|Object)\b|\bStyle(?:s|Prop)?\b/
+
+/** `style={someStyleConst}` / `styles={parts}` — collected file-wide, so a hoisted object is known. */
+const STYLE_BOUND_IDENTIFIER = /\b(?:style|styles|sx|css)=\{\s*([A-Za-z_$][\w$]*)\s*\}/g
+
+/** A property key introducing a nested object — `input: {`, `'&:hover': {`, `root: {`. */
+const NESTED_OBJECT_KEY = /(?:[\w$]+|'[^']*'|"[^"]*"|\[[^\]]*\])\s*:\s*$/
+
+/** How far back {@link isStyleObjectContext} walks before giving up. Bounded so a huge file can't stall. */
+const MAX_STYLE_CONTEXT_SCAN = 4000
+
+/**
+ * Is the match at `at` inside an inline-style object literal?
+ *
+ * Walks out through enclosing `{` openers (a nested part like `styles={{ input: { … } }}` keeps
+ * walking) and asks what introduced the outermost one: a style ATTRIBUTE, or a `const` whose name
+ * says styles or which some `style={…}` in the file binds. Everything else — a call argument, an
+ * options bag, a plain record — is not CSS.
+ *
+ * Consulted only for a UNITLESS number, where the alternative is reporting a violation with no
+ * possible remedy. A value carrying a unit is CSS wherever it was written and never reaches here.
+ */
+function isStyleObjectContext(
+  codeText: string,
+  at: number,
+  styleIdentifiers: ReadonlySet<string>,
+): boolean {
+  let depth = 0
+  const stop = Math.max(0, at - MAX_STYLE_CONTEXT_SCAN)
+  for (let i = at - 1; i >= stop; i--) {
+    const ch = codeText[i]
+    if (ch === '}') depth++
+    else if (ch === '{') {
+      if (depth > 0) {
+        depth--
+        continue
+      }
+      const before = codeText.slice(Math.max(0, i - 120), i)
+      if (STYLE_ATTRIBUTE_OPENER.test(before)) return true
+      const declaration = OBJECT_DECLARATION.exec(before)
+      if (declaration !== null) {
+        const [, name = '', annotation = ''] = declaration
+        return (
+          STYLE_OBJECT_NAME.test(name) ||
+          STYLE_OBJECT_TYPE.test(annotation) ||
+          styleIdentifiers.has(name)
+        )
+      }
+      // `{{` — a JSX expression container around the style object; keep walking out to the `=`.
+      if (before.endsWith('{')) continue
+      // A nested style part (`styles={{ input: { … } }}`) — the key names a part, not a context.
+      if (NESTED_OBJECT_KEY.test(before)) continue
+      return false
+    }
+  }
+  return false
+}
 
 /** The root font size `rem` values resolve against — the same 16 the token layer's `pxRem` uses. */
 const ROOT_FONT_SIZE_PX = 16
@@ -457,13 +539,6 @@ function isChartFile(relPath: string): boolean {
 }
 
 /**
- * Whether `kind` is exempted at `relPath` via `cfg.exemptRules` — the config-driven, per-rule
- * counterpart to `isChartFile`'s hardcoded path scoping. A pattern matches when `relPath` split on
- * `/` includes it as a WHOLE segment (a trailing `/` is stripped first, so `'agent'` and `'agent/'`
- * are equivalent); a substring match against one longer segment (e.g. `'age'` against `agent`)
- * never counts.
- */
-/**
  * Kinds that inherit another kind's `exemptRules` entry. A grace-minor kind that exists only to
  * carry a WIDENING of an established kind is the same rule to a consumer, so an exemption written
  * for the parent must cover it — otherwise the widening arrives as noise in exactly the paths
@@ -475,6 +550,59 @@ const EXEMPT_RULE_ALIASES: Partial<Record<GuardKind, GuardKind>> = {
   'css-raw-surface': 'raw-surface',
 }
 
+/** `./` and any trailing `/` are noise — `'agent'`, `'agent/'` and `'./agent'` are one pattern. */
+function normalizeExemptPattern(pattern: string): string {
+  return pattern.trim().replace(/^\.\//, '').replace(/\/+$/, '')
+}
+
+/** `*` stops at a `/`, `**` does not, `?` is one non-`/` character. Everything else is literal. */
+function exemptGlobToRegExp(pattern: string): RegExp {
+  const body = pattern
+    .split(/(\*\*\/|\*\*|\*|\?)/)
+    .map((part) => {
+      if (part === '**/') return '(?:.*/)?'
+      if (part === '**') return '.*'
+      if (part === '*') return '[^/]*'
+      if (part === '?') return '[^/]'
+      return part.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    })
+    .join('')
+  return new RegExp(`^${body}$`)
+}
+
+/**
+ * Does one `exemptRules` pattern match `relPath`?
+ *
+ * Three shapes, tried in the order a consumer reaches for them:
+ *
+ * 1. **A relative path** — `public/site.webmanifest` for one file, `public` or `src/agent` for
+ *    everything under a directory.
+ * 2. **A glob** — `public/*.webmanifest`, `**\/*.module.css`; a glob with no `/` in it is also
+ *    tried against the BASENAME, so `*.module.css` works the way `site.webmanifest` does.
+ * 3. **A bare path segment** — the legacy shape, matching a whole segment anywhere in the path.
+ *
+ * Only (3) existed, and it was the one shape nobody guesses: rollhook wrote the obvious, correct
+ * `"public/site.webmanifest"`, matched nothing, got no diagnostic, and kept reporting. That is a
+ * silent no-op exemption, and it became load-bearing the minute `.webmanifest`/`.json` entered the
+ * scan — see {@link unmatchedExemptPatterns} for the other half of the fix.
+ */
+function exemptPatternMatches(pattern: string, relPath: string): boolean {
+  const p = normalizeExemptPattern(pattern)
+  if (p === '') return false
+  if (relPath === p || relPath.startsWith(`${p}/`)) return true
+  if (/[*?]/.test(p)) {
+    const re = exemptGlobToRegExp(p)
+    if (re.test(relPath)) return true
+    if (!p.includes('/') && re.test(relPath.split('/').pop() ?? '')) return true
+    return false
+  }
+  return !p.includes('/') && relPath.split('/').includes(p)
+}
+
+/**
+ * Whether `kind` is exempted at `relPath` via `cfg.exemptRules` — the config-driven, per-rule
+ * counterpart to `isChartFile`'s hardcoded path scoping.
+ */
 function isRuleExempt(
   kind: GuardKind,
   relPath: string,
@@ -484,8 +612,46 @@ function isRuleExempt(
   if (alias !== undefined && isRuleExempt(alias, relPath, exemptRules)) return true
   const patterns = exemptRules?.[kind]
   if (patterns === undefined || patterns.length === 0) return false
-  const segments = relPath.split('/')
-  return patterns.some((pattern) => segments.includes(pattern.replace(/\/$/, '')))
+  return patterns.some((pattern) => exemptPatternMatches(pattern, relPath))
+}
+
+/** One `exemptRules` entry that suppressed nothing, and why — see {@link unmatchedExemptPatterns}. */
+export type UnmatchedExemptPattern = {
+  readonly kind: string
+  readonly pattern: string
+  readonly reason: 'unknown-kind' | 'no-match'
+}
+
+/**
+ * Every `exemptRules` entry that matched no scanned file, so a run can say so instead of passing.
+ *
+ * An exemption is a claim ("this rule does not apply here"), and a claim that resolves to nothing is
+ * not harmless — it reads as coverage in a config review while enforcing exactly as much as an empty
+ * object. rollhook's `["public/site.webmanifest"]` was correct, matched nothing under the
+ * segments-only matcher, and reported no diagnostic; the finding it was written for kept failing the
+ * build with the config sitting right there looking like the answer. A silent no-op exemption is the
+ * same false-green family as a guard that reports green while enforcing nothing.
+ *
+ * Called once per run by the CLI with every relative path it scanned. Kind keys are checked too: a
+ * typo'd kind name is an exemption for a rule that does not exist.
+ */
+export function unmatchedExemptPatterns(
+  cfg: GuardConfig,
+  scannedRelPaths: readonly string[],
+): UnmatchedExemptPattern[] {
+  const out: UnmatchedExemptPattern[] = []
+  for (const [kind, patterns] of Object.entries(cfg.exemptRules ?? {})) {
+    const known = Object.hasOwn(GUARD_RULES, kind)
+    for (const pattern of patterns ?? []) {
+      if (!known) {
+        out.push({ kind, pattern, reason: 'unknown-kind' })
+        continue
+      }
+      if (scannedRelPaths.some((relPath) => exemptPatternMatches(pattern, relPath))) continue
+      out.push({ kind, pattern, reason: 'no-match' })
+    }
+  }
+  return out
 }
 
 // ── theme-allow annotations ──────────────────────────────────────────────────────────────────────
@@ -520,9 +686,22 @@ const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
 const MIN_ALLOW_REASON_LENGTH = 4
 
 /**
+ * How far one annotation reaches.
+ *
+ * `line` is the default and covers the placements in {@link collectAllowAnnotations}. `file` is the
+ * whole-file declaration, and it has to be SPELLED (`theme-allow-file`) rather than inferred: at
+ * 1.20.0 a `theme-allow <id> — <reason>` written anywhere in a file was silently promoted to a file
+ * declaration by the oxlint plugin, so naming a rule AND giving a reason — the exact shape the
+ * guard's own message asks for — was the only legal annotation and it was always whole-file. A
+ * consumer who wanted to waive one node and stay policed on the rest could not say so.
+ */
+type AllowScope = 'line' | 'file'
+
+/**
  * One parsed `theme-allow` annotation.
  *
- * `rules` empty AND `unknownRules` empty is the legacy bare form, and only that covers every kind.
+ * `rules` empty AND `unknownRules` empty is the legacy bare form, and only that covers every kind —
+ * and only at `line` scope, never `file` (see {@link annotationCovers}).
  * `unknownRules` holds words that occupied the rule-id slot but name no rule — a typo. Its presence
  * is what makes the parse FAIL CLOSED: `theme-allow raw-hexx — reason` used to consume no id, fall
  * through to `rules: []`, and be read as the blanket form, so one mistyped character escalated a
@@ -533,6 +712,7 @@ type AllowAnnotation = {
   readonly rules: readonly string[]
   readonly unknownRules: readonly string[]
   readonly hasReason: boolean
+  readonly scope: AllowScope
 }
 
 /** One annotation at the (1-based) line it was WRITTEN on — where `theme-allow-unscoped` reports. */
@@ -562,7 +742,7 @@ type AllowDeclaration = { readonly line: number; readonly annotation: AllowAnnot
  * `constructor` (or `toString`, `valueOf`, …) resolved as a real rule id and silently scoped the
  * waiver to a kind that does not exist.
  */
-function parseAllowAnnotation(rest: string): AllowAnnotation {
+function parseAllowAnnotation(rest: string, scope: AllowScope): AllowAnnotation {
   const rules: string[] = []
   const unknownRules: string[] = []
   let remainder = rest.replace(/^[\s,]+/, '')
@@ -581,11 +761,14 @@ function parseAllowAnnotation(rest: string): AllowAnnotation {
     inIdSlot = /^\s*,/.test(after)
   }
   const reason = remainder.replace(/^(?:—|–|-{1,2}|:)\s*/, '').trim()
-  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH, scope }
 }
 
 /** How far back a trailing CSS annotation reaches for the declaration it terminates. */
 const MAX_CSS_CONTINUATION_LINES = 8
+
+/** How far a comment-only annotation reaches forward through the rest of its own comment block. */
+const MAX_COMMENT_BLOCK_LINES = 8
 
 /**
  * A comment opener sitting immediately before the annotation token.
@@ -605,12 +788,16 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  * Everything allowed between the comment opener (or the start of the line) and the annotation
  * token, for the token to count as an ANNOTATION rather than prose that mentions one.
  *
- * The asymmetry is deliberate, and it is about PLACEMENT only. WAIVING does not care where in the
- * comment the token sits — any `theme-allow` inside a comment is read as an annotation, exactly as
- * before, so no upgrade takes a build down over comment placement. REPORTING
- * `theme-allow-unscoped` is strict, because otherwise every sentence documenting the escape hatch
- * becomes a finding: this package's own `guard/types.ts` explains the syntax in five lines of
- * JSDoc, and all five were reported.
+ * **This gates WAIVING as well as reporting.** It used to gate only `theme-allow-unscoped`, on the
+ * argument that a stricter waiver could take a build down over comment placement. The cost of that
+ * asymmetry was the opposite and worse: a comment that merely MENTIONS the token in prose parsed as
+ * the bare blanket form and switched every kind off on the line below it. linewatch documented its
+ * own waivers in a docblock and thereby disarmed the file — the third hole found in this contract
+ * in two rounds, and the only one that was a false NEGATIVE.
+ *
+ * So an annotation must START its comment, or start a line inside one: after `//`, `/*`, `<!--`, a
+ * block-comment gutter `*`, or nothing but leading whitespace. Everything a consumer actually
+ * writes qualifies; a sentence about the escape hatch does not.
  *
  * What the annotation then WAIVES is a separate, fail-closed question — see
  * {@link parseAllowAnnotation}. A word in the id slot that names no rule waives nothing, so
@@ -624,17 +811,69 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  */
 const ANNOTATION_PREFIX = /(?:^|\/\/|\/\*|<!--|^\s*\*)\s*$/
 
+/** Escape a config-supplied string for literal use inside a RegExp. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
- * Every line an allow annotation WAIVES, keyed by 0-based line index. Three placements, each one a
- * shape people actually write — and the union of them is what makes the escape survive a formatter.
+ * The annotation token itself, with its optional `-file` suffix.
+ *
+ * `(?![\w-])` is what keeps the two forms apart and keeps a longer word from being read as the bare
+ * form: `theme-allow-file` is the file declaration, `theme-allow-unscoped` (the KIND NAME, written
+ * in prose constantly) is neither — before this it consumed no id, fell through to `rules: []` and
+ * parsed as a blanket waiver.
+ */
+function allowTokenRe(allowComment: string): RegExp {
+  return new RegExp(`${escapeRegExp(allowComment)}(-file)?(?![\\w-])`, 'g')
+}
+
+/**
+ * The JSON dialect of the annotation — `"basalt:theme-allow-file": "<ids> — <why>"`.
+ *
+ * JSON has no comments, so from 1.20.0 (when the scan reached `.webmanifest` / `.json`) every
+ * finding in that file class was permanently unwaivable and the printed remedy prescribed a comment
+ * the file cannot carry. Two consumers were pushed into a blanket `exemptRules` entry instead — the
+ * un-reviewable shape this contract exists to retire. A member key is the one annotation JSON can
+ * hold, it carries ids and a reason exactly like the comment form, and every manifest consumer
+ * ignores members it does not know.
+ */
+function jsonAllowKeyRe(allowComment: string): RegExp {
+  return new RegExp(`"basalt:${escapeRegExp(allowComment)}(-file)?"\\s*:\\s*"([^"]*)"`, 'g')
+}
+
+/**
+ * Every line an allow annotation WAIVES, keyed by 0-based line index, plus the file-scoped
+ * declarations and every annotation as WRITTEN (for `theme-allow-unscoped`).
+ *
+ * **The grammar, in full:**
+ *
+ * ```text
+ * theme-allow                                  → this placement, EVERY kind   (reports unscoped)
+ * theme-allow <id>[, <id>…] [— <why>]          → this placement, those kinds  (unscoped without a why)
+ * theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those kinds
+ * "basalt:theme-allow[-file]": "<id>… — <why>" → the same two, for JSON/.webmanifest
+ * ```
+ *
+ * Three rules make it unambiguous: the token must START its comment (see {@link ANNOTATION_PREFIX});
+ * `-file` is part of the token, not the first word of the reason (see {@link allowTokenRe}); and a
+ * bare `theme-allow-file` waives NOTHING, because whole-file blanket immunity off one unnamed
+ * comment is the exact thing this contract exists to price (see {@link annotationCovers}).
+ *
+ * Line scope has three placements, each one a shape people actually write — and the union of them
+ * is what makes the escape survive a formatter.
  *
  * 1. **Its own line.** The original rule, unchanged.
- * 2. **The line below, when the annotation line is a comment and nothing else.** This is the
- *    placement the oxlint plugin has always honored and the only one JSX can express: the reported
- *    line is usually a multi-line opening tag or a `{expr}` child, where a trailing `//` is a
- *    syntax error or renders as visible text. Requiring the annotation line to be comment-ONLY is
+ * 2. **The first CODE line below, when the annotation line is a comment and nothing else.** This is
+ *    the placement the oxlint plugin has always honored and the only one JSX can express: the
+ *    reported line is usually a multi-line opening tag or a `{expr}` child, where a trailing `//` is
+ *    a syntax error or renders as visible text. Requiring the annotation line to be comment-ONLY is
  *    what keeps a TRAILING comment scoped to its own line — otherwise
- *    `const a = '#f00' // theme-allow` would silently waive the next line too.
+ *    `const a = '#f00' // theme-allow` would silently waive the next line too. The rest of the
+ *    comment BLOCK is walked through rather than counted as the target line: a docblock's `*\/`, or
+ *    a reason that wrapped onto a second line, used to absorb the whole waiver and the natural
+ *    shape silently waived nothing. A blank line ends the block — that separation is how people say
+ *    "this comment is not about the next statement".
  * 3. **The rest of the CSS declaration it terminates.** The shipped `oxfmt` reflows
  *    `background-color: var(--x, #232326); /* theme-allow *\/` into four lines with the hex on one
  *    and the comment on another — two shipped tools pulling in opposite directions, and the
@@ -653,8 +892,13 @@ function collectAllowAnnotations(
   codeLines: readonly string[],
   allowComment: string,
   syntax: GuardSyntax,
-): { waivers: Map<number, AllowAnnotation[]>; declared: AllowDeclaration[] } {
+): {
+  waivers: Map<number, AllowAnnotation[]>
+  fileScoped: AllowAnnotation[]
+  declared: AllowDeclaration[]
+} {
   const byLine = new Map<number, AllowAnnotation[]>()
+  const fileScoped: AllowAnnotation[] = []
   const declared: AllowDeclaration[] = []
   const add = (index: number, annotation: AllowAnnotation): void => {
     const list = byLine.get(index) ?? []
@@ -662,45 +906,90 @@ function collectAllowAnnotations(
     byLine.set(index, list)
   }
 
+  /** Place one parsed annotation: file declarations reach everywhere, line ones the 3 placements. */
+  const record = (index: number, annotation: AllowAnnotation, trailing: boolean): void => {
+    declared.push({ line: index + 1, annotation })
+    if (annotation.scope === 'file') {
+      fileScoped.push(annotation)
+      return
+    }
+    add(index, annotation)
+    if (!trailing) {
+      // The first line below that is not itself comment. A docblock's `*/` (or the rest of a
+      // wrapped reason) sits between the annotation and the code it is about, so `index + 1` alone
+      // meant the natural multi-line shape silently waived nothing — argo hit it three times in one
+      // upgrade, each looking like a correct annotation. A BLANK line still ends the block: that is
+      // the separation people use to mean "this comment is not about the next statement".
+      for (let ahead = 1; ahead <= MAX_COMMENT_BLOCK_LINES; ahead++) {
+        const raw = lines[index + ahead] ?? ''
+        add(index + ahead, annotation)
+        if (raw.trim() !== '' && (codeLines[index + ahead] ?? '').trim() !== '') break
+        if (raw.trim() === '') break
+      }
+      return
+    }
+    if (syntax !== 'css') return
+    for (let back = 1; back <= MAX_CSS_CONTINUATION_LINES; back++) {
+      const previous = (codeLines[index - back] ?? '').trim()
+      if (previous === '' || /[;{}]$/.test(previous)) break
+      add(index - back, annotation)
+    }
+  }
+
+  const token = allowTokenRe(allowComment)
+  const jsonKey = jsonAllowKeyRe(allowComment)
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? ''
     const stripped = codeLines[i] ?? ''
     const isCommentOnlyLine = stripped.trim() === '' || COMMENT_ONLY_LINE.test(line)
-    let from = 0
-    for (;;) {
-      const at = line.indexOf(allowComment, from)
-      if (at === -1) break
-      from = at + allowComment.length
-      // Not inside a comment (neither witness agrees) → real code, e.g. this file's own rule table.
-      if (stripped[at] !== ' ' && !COMMENT_OPENER_BEFORE.test(line.slice(0, at))) continue
-      const annotation = parseAllowAnnotation(line.slice(from))
-      if (ANNOTATION_PREFIX.test(line.slice(0, at))) declared.push({ line: i + 1, annotation })
-      add(i, annotation)
-      if (isCommentOnlyLine) {
-        add(i + 1, annotation)
-        continue
-      }
-      if (syntax !== 'css') continue
-      for (let back = 1; back <= MAX_CSS_CONTINUATION_LINES; back++) {
-        const previous = (codeLines[i - back] ?? '').trim()
-        if (previous === '' || /[;{}]$/.test(previous)) break
-        add(i - back, annotation)
+
+    // The JSON member form. Markup-only: in TS/CSS that string would be code, not an annotation.
+    if (syntax === 'markup') {
+      for (const m of line.matchAll(jsonKey)) {
+        record(i, parseAllowAnnotation(m[2] ?? '', m[1] === undefined ? 'line' : 'file'), false)
       }
     }
+
+    for (const m of line.matchAll(token)) {
+      const at = m.index
+      const before = line.slice(0, at)
+      // Not inside a comment (neither witness agrees) → real code, e.g. this file's own rule table.
+      if (stripped[at] !== ' ' && !COMMENT_OPENER_BEFORE.test(before)) continue
+      // Inside a comment, but not at the START of one → prose that mentions the token, not an
+      // annotation. See ANNOTATION_PREFIX: this is what stops a file documenting its own waivers
+      // from disarming itself.
+      if (!ANNOTATION_PREFIX.test(before)) continue
+      const rest = line.slice(at + m[0].length)
+      record(
+        i,
+        parseAllowAnnotation(rest, m[1] === undefined ? 'line' : 'file'),
+        !isCommentOnlyLine,
+      )
+    }
   }
-  return { waivers: byLine, declared }
+  return { waivers: byLine, fileScoped, declared }
 }
 
 /**
- * Does any annotation on this line cover `kind`?
+ * Does one annotation cover `kind`?
  *
- * Only a BARE annotation (no ids at all, known or unknown) covers every kind. One that reached for
- * a rule id and missed covers exactly the ids it got right — nothing widens on a typo.
+ * Only a BARE **line** annotation (no ids at all, known or unknown) covers every kind. One that
+ * reached for a rule id and missed covers exactly the ids it got right — nothing widens on a typo.
+ *
+ * A bare `theme-allow-file` covers NOTHING. The blanket form is tolerable on one line, where a
+ * reader sees what it sits on; over a whole file it is `exemptRules` without the config review, and
+ * the widest waiver in the contract must be the one that has to name what it waives.
  */
+function annotationCovers(annotation: AllowAnnotation, kind: GuardKind): boolean {
+  if (annotation.rules.includes(kind)) return true
+  if (annotation.scope === 'file') return false
+  return annotation.rules.length === 0 && annotation.unknownRules.length === 0
+}
+
+/** Does any annotation on this line cover `kind`? */
 function annotationsCover(annotations: AllowAnnotation[] | undefined, kind: GuardKind): boolean {
-  return (annotations ?? []).some(
-    (a) => (a.rules.length === 0 && a.unknownRules.length === 0) || a.rules.includes(kind),
-  )
+  return (annotations ?? []).some((a) => annotationCovers(a, kind))
 }
 
 /** The 3 comment dialects the stripper understands, resolved from the file's own extension. */
@@ -1282,14 +1571,14 @@ export const GUARD_RULES = {
     kind: 'theme-allow-unscoped',
     pattern: /theme-allow/, // handled inline (annotation pass); entry keeps the registry complete
     message:
-      'theme-allow without a usable rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff. An id that names no rule is a typo, not a blanket waiver — it suppresses nothing.',
+      'theme-allow without a usable rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff. An id that names no rule is a typo, not a blanket waiver — it suppresses nothing. `theme-allow-file <rule-id> — <why>` declares the whole file, and must name its ids: a bare one waives nothing.',
   },
   'surface-shadow-override': {
     kind: 'surface-shadow-override',
     pattern: SHADOW_DECL, // handled inline (value is judged, not just matched)
     enabled: (cfg: GuardConfig) => cfg.rawSurface,
     message:
-      'Token-composed boxShadow that REPLACES card depth — a card whose shadow drops --vx-shadow-card is the one card in the app with no depth. Compose with it (`${VX.shadowCard}, <your ring>`) rather than instead of it.',
+      'Token-composed boxShadow that REPLACES surface depth — a card whose shadow drops --vx-shadow-card is the one card in the app with no depth. Compose with the depth token for its tier (`${VX.shadowCard}, <your ring>`; a fixed/floating surface wants --vx-shadow-overlay) rather than instead of it.',
   },
   'css-raw-surface': {
     kind: 'css-raw-surface',
@@ -1315,6 +1604,54 @@ export const GUARD_RULES = {
       'Raw font-size literal — route through VX.text.* (numbers) / --vx-text-* (CSS), or the Mantine fz token. Same rule the oxlint plugin enforces as basalt/no-raw-font-size; this is the half a check-theme-only CI can see.',
   },
 } as const satisfies Record<GuardKind, GuardRule>
+
+/**
+ * The one-line remedy for `kind`, as a report reads it: `raw-hex: Route color through VX.* / …`.
+ *
+ * The registry has always carried a remedy per kind; `check-theme`'s `Fix:` epilogue read a
+ * hand-duplicated subset instead, and the subset was missing every kind added at 1.20.0. Since all
+ * five of those ship `warn` under grace, the findings whose whole argument is "this looks correct
+ * and is not" arrived with no argument at all — just "add a `theme-allow`", which reads as advice to
+ * waive. Sourcing the epilogue from here retires the duplicate rather than extending it.
+ */
+export function guardKindRemedy(kind: GuardKind): string {
+  return `${kind}: ${(GUARD_RULES[kind] as GuardRule).message}`
+}
+
+/** JSON and its manifest dialect — the file class with no comment syntax to carry an annotation. */
+const JSON_FAMILY_FILE = /\.(?:webmanifest|json)$/
+
+/**
+ * How to waive a finding **in this file's syntax** — the closer a report prints under `Fix:`.
+ *
+ * `check-theme` printed one closer for every file class, and from 1.20.0 (when the scan reached
+ * `.webmanifest` / `.json`) it prescribed a `theme-allow` comment to files that cannot hold a
+ * comment. Two consumers read that, found no route, and fell back to a blanket `exemptRules` entry —
+ * the un-reviewable shape the release was spent retiring.
+ *
+ * A manifest gets the sharper answer first, because a hex there can never be *right*: a manifest
+ * cannot reference a CSS custom property, so the value is a hand-copy of a token that drifts the day
+ * the palette moves (which is exactly what both consumers found — two dead colours). The remedy is
+ * to stop hand-writing the file: `basaltAppPlugin` emits it from `SURFACE.bg`. The annotation is the
+ * fallback for a manifest basalt does not generate.
+ */
+export function guardWaiverHint(relPath: string): string {
+  if (relPath.endsWith('.webmanifest')) {
+    return (
+      'A manifest cannot reference a CSS variable, so a hex here is a hand-copy that drifts: let ' +
+      'basaltAppPlugin emit it (`manifest: { … }` in vite.config.ts) instead of hand-writing it. ' +
+      'For a manifest basalt does not generate, declare the exception with a ' +
+      '`"basalt:theme-allow-file": "raw-hex — <why>"` member.'
+    )
+  }
+  if (JSON_FAMILY_FILE.test(relPath)) {
+    return (
+      'JSON has no comments — declare a deliberate exception with a ' +
+      '`"basalt:theme-allow-file": "<rule-id> — <why>"` member.'
+    )
+  }
+  return 'Add a `theme-allow <rule-id> — <why>` comment for a deliberate exception (`theme-allow-file` declares the whole file).'
+}
 
 /** Whether `kind`'s rule fires for `relPath` — `appliesTo` is opt-in; absent means always applies. */
 function ruleApplies(kind: GuardKind, relPath: string): boolean {
@@ -1365,11 +1702,24 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   const syntax = guardSyntaxFor(relPath)
   const codeText = syntax === 'markup' ? stripMarkupComments(text) : stripComments(text, syntax)
   const codeLines = codeText.split('\n')
-  const { waivers, declared } = collectAllowAnnotations(lines, codeLines, cfg.allowComment, syntax)
+  const { waivers, fileScoped, declared } = collectAllowAnnotations(
+    lines,
+    codeLines,
+    cfg.allowComment,
+    syntax,
+  )
 
-  /** Is `kind` waived at (1-based) `line`? See `collectAllowAnnotations` for the three placements. */
+  /** Kinds a `theme-allow-file` declared for the whole file — resolved once, not per finding. */
+  const fileWaived = new Set<GuardKind>()
+  for (const annotation of fileScoped) {
+    for (const rule of annotation.rules) {
+      if (Object.hasOwn(GUARD_RULES, rule)) fileWaived.add(rule as GuardKind)
+    }
+  }
+
+  /** Is `kind` waived at (1-based) `line`? See `collectAllowAnnotations` for the full grammar. */
   const isAllowed = (line: number, kind: GuardKind): boolean =>
-    annotationsCover(waivers.get(line - 1), kind)
+    fileWaived.has(kind) || annotationsCover(waivers.get(line - 1), kind)
 
   const isAllowedInRange = (start: number, end: number, kind: GuardKind): boolean => {
     for (let n = start; n <= end; n++) if (isAllowed(n, kind)) return true
@@ -1408,6 +1758,18 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   /** Lines the line-scoped `raw-html-layout` already owns, so `hidden-inline-style` can't double-report. */
   const rawHtmlLayoutLines = new Set<number>()
+
+  /** Offset of each line's start in `codeText` — lets a line-scoped match ask about its surroundings. */
+  const lineStarts: number[] = []
+  for (let n = 0, i = 0; i < codeLines.length; i++) {
+    lineStarts.push(n)
+    n += (codeLines[i] ?? '').length + 1
+  }
+
+  /** Every identifier the file hands to a `style=`/`styles=` prop — see `isStyleObjectContext`. */
+  const styleIdentifiers = new Set(
+    [...codeText.matchAll(STYLE_BOUND_IDENTIFIER)].map((m) => m[1] ?? ''),
+  )
 
   for (let i = 0; i < lines.length; i++) {
     const line = codeLines[i] ?? ''
@@ -1511,10 +1873,18 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       push('raw-html-layout', i + 1, '<raw-html style>')
     }
 
-    // inline-spacing — pattern + gating from GUARD_RULES, plus the CSS-only sub-scale escape.
+    // inline-spacing — pattern + gating from GUARD_RULES, plus the CSS-only sub-scale escape and
+    // the TS-only style-object test for a unitless number (see isStyleObjectContext).
     if (GUARD_RULES['inline-spacing'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['inline-spacing'].pattern as RegExp)) {
         if (syntax === 'css' && isSubScaleCssSpacing(line, m.index)) continue
+        const hasUnit = /^[a-z%]/.test(line.slice(m.index + m[0].length))
+        if (
+          syntax === 'ts' &&
+          !hasUnit &&
+          !isStyleObjectContext(codeText, lineStarts[i]! + m.index, styleIdentifiers)
+        )
+          continue
         push('inline-spacing', i + 1, m[0])
       }
     }

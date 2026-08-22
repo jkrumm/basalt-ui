@@ -9,10 +9,13 @@
  * `./oxlint-plugin.js` — a consumer `extends`-ing that preset inherits `jsPlugins` too, and the
  * path resolves relative to the preset file, not the consumer's own config.
  *
- * The four design-guard rules below support the same `theme-allow` escape as `src/guard`: skip a
- * reported node if a line comment containing `theme-allow` sits on the node's own line or the line
- * immediately above it. The three boundary rules deliberately do NOT — see their own comment for
- * why.
+ * The design-guard rules below support the same `theme-allow` escape as `src/guard`, and the same
+ * two-scope grammar: `theme-allow [<id>…] [— <why>]` at the START of a comment on the reported
+ * node's own line or the line above skips THAT node; `theme-allow-file <id>… — <why>` anywhere in
+ * the file skips every node of the named rules in it. Both halves are load-bearing — see
+ * {@link parseThemeAllows} for why the prefix matters and {@link hasFileDeclaration} for why file
+ * scope has to be spelled. The three boundary rules deliberately honour neither — see their own
+ * comment for why.
  *
  * ── The two agent-chat guard rules (`agent-resume-guard` / `agent-no-raw-usechat`) + `ai-sdk-major` ──
  * These are also correctness/architecture boundaries, not design guidance, so they do NOT honour
@@ -141,27 +144,30 @@ const ALLOW_REASON_SEPARATOR = /^(?:—|–|-{1,2}|:)\s*/
 const MIN_ALLOW_REASON_LENGTH = 4
 
 /**
- * Parse one comment's `theme-allow` annotation, or `null` when it carries none.
+ * The annotation token, with its optional `-file` suffix.
  *
- * `{ rules: [], unknownRules: [] }` is the legacy bare form and covers every rule; a non-empty
- * `rules` scopes the exception to exactly those ids. A word that occupies the id slot but names no
- * known rule lands in `unknownRules` and FAILS CLOSED — the annotation then waives only the ids it
- * got right, never everything. `theme-allow raw-hexx — reason` used to consume no id, fall through
- * to the empty-`rules` branch and be read as the blanket form, so one mistyped character escalated
- * a scoped waiver into a whole-line one, i.e. weaker than before the scoping existed.
- *
- * A prose reason is therefore introduced with a separator (`—`, `–`, `-`, `:`), which is how every
- * annotation in the wild already writes it. Mirrors `parseAllowAnnotation` in `src/guard/index.ts`.
- *
- * The id slot closes at the first space that no comma opened: the first word is always a claimed
- * id (that is where a typo lands), but after a resolved id only a `,` keeps the list open, so
- * `theme-allow raw-surface sub-scale legend corner` reads `sub-scale` as prose rather than as a
- * typo. See the guard's copy for the full reasoning.
+ * `(?![\w-])` keeps the two forms apart AND stops a longer word from parsing as the bare form:
+ * `theme-allow-unscoped` — the KIND NAME, written in prose constantly — used to consume no id, fall
+ * through to `rules: []` and read as a blanket waiver.
  */
-function parseThemeAllow(commentValue) {
-  const at = commentValue.indexOf('theme-allow')
-  if (at === -1) return null
-  let remainder = commentValue.slice(at + 'theme-allow'.length).replace(/^[\s,]+/, '')
+const ALLOW_TOKEN = /theme-allow(-file)?(?![\w-])/
+
+/**
+ * Everything permitted between the start of a line INSIDE the comment and the token.
+ *
+ * The annotation has to START its comment (or a line of one — the `*` is a block-comment gutter).
+ * Without this the parser did a bare `indexOf('theme-allow')`, so a comment that merely MENTIONED
+ * the token in prose parsed as the blanket form and switched every rule off on the node below it.
+ * linewatch documented its own waivers in a docblock and thereby disarmed the file: a false
+ * NEGATIVE, and worse than the whole-file hole 1.20.0 closed. `src/guard`'s `ANNOTATION_PREFIX` is
+ * the same test against raw source text (which still carries its `//` / `/*` opener; a comment
+ * NODE's `value` does not, hence the two spellings).
+ */
+const ALLOW_LINE_PREFIX = /^\s*\*?\s*$/
+
+/** Parse the text following the token — ids, then the reason. See {@link parseThemeAllows}. */
+function parseAllowBody(rest, scope) {
+  let remainder = rest.replace(/^[\s,]+/, '')
   const rules = []
   const unknownRules = []
   let inIdSlot = true
@@ -178,48 +184,105 @@ function parseThemeAllow(commentValue) {
     inIdSlot = /^\s*,/.test(after)
   }
   const reason = remainder.replace(ALLOW_REASON_SEPARATOR, '').trim()
-  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH, scope }
 }
 
 /**
- * True when a `theme-allow` covering `ruleId` sits on `node`'s own source line or the line above.
+ * Every annotation one comment carries. A docblock can hold more than one, so this returns a list.
+ *
+ * The grammar, and it is the same one `src/guard` parses:
+ *
+ * ```text
+ * theme-allow                             → this node, EVERY rule (the legacy bare form)
+ * theme-allow <id>[, <id>…] [— <why>]     → this node, those rules
+ * theme-allow-file <id>[, <id>…] — <why>  → the WHOLE FILE, those rules
+ * ```
+ *
+ * `{ rules: [], unknownRules: [] }` is the bare form; a non-empty `rules` scopes the exception to
+ * exactly those ids. A word that occupies the id slot but names no known rule lands in
+ * `unknownRules` and FAILS CLOSED — the annotation then waives only the ids it got right, never
+ * everything. `theme-allow raw-hexx — reason` used to consume no id, fall through to the
+ * empty-`rules` branch and be read as the blanket form, so one mistyped character escalated a
+ * scoped waiver into a whole-line one, i.e. weaker than before the scoping existed.
+ *
+ * A prose reason is therefore introduced with a separator (`—`, `–`, `-`, `:`), which is how every
+ * annotation in the wild already writes it.
+ *
+ * The id slot closes at the first space that no comma opened: the first word is always a claimed
+ * id (that is where a typo lands), but after a resolved id only a `,` keeps the list open, so
+ * `theme-allow raw-surface sub-scale legend corner` reads `sub-scale` as prose rather than as a
+ * typo. See the guard's copy for the full reasoning.
+ */
+function parseThemeAllows(commentValue) {
+  const out = []
+  for (const rawLine of commentValue.split('\n')) {
+    const token = ALLOW_TOKEN.exec(rawLine)
+    if (token === null) continue
+    if (!ALLOW_LINE_PREFIX.test(rawLine.slice(0, token.index))) continue
+    const rest = rawLine.slice(token.index + token[0].length)
+    out.push(parseAllowBody(rest, token[1] === undefined ? 'line' : 'file'))
+  }
+  return out
+}
+
+/**
+ * Does one annotation cover `ruleId`?
+ *
+ * Only a BARE **node** annotation covers every rule. A bare `theme-allow-file` covers nothing: the
+ * blanket form is tolerable on one line, where a reader sees what it sits on; over a whole file it
+ * is a config exemption without the config review, so the widest waiver in the contract is the one
+ * that has to name what it waives.
+ */
+function allowCovers(allow, ruleId) {
+  if (allow.rules.includes(ruleId)) return true
+  if (allow.scope === 'file') return false
+  return allow.rules.length === 0 && allow.unknownRules.length === 0
+}
+
+function allComments(context) {
+  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+  return sourceCode?.getAllComments?.() ?? []
+}
+
+/**
+ * True when a NODE-scoped `theme-allow` covering `ruleId` sits on `node`'s own source line or the
+ * line above — or when the file carries a `theme-allow-file` declaration for it.
  *
  * The `ruleId` argument is what stops one exemption from being a blanket one: a `theme-allow
  * raw-hex — …` written for a color no longer silently switches off `card-inset` on the same line.
- * Only a BARE `theme-allow` still covers everything — that is the shape every existing consumer
- * has, and `src/guard`'s `theme-allow-unscoped` is the (warning) nudge off it, not a hard break.
  * An annotation that reached for an id and missed covers only the ids it got right.
  */
 function hasThemeAllow(context, node, ruleId) {
-  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
-  const comments = sourceCode?.getAllComments?.() ?? []
+  if (hasFileDeclaration(context, ruleId)) return true
   const nodeLine = node.loc.start.line
-  return comments.some((comment) => {
+  return allComments(context).some((comment) => {
     if (comment.loc.end.line !== nodeLine && comment.loc.end.line !== nodeLine - 1) return false
-    const allow = parseThemeAllow(comment.value)
-    if (allow === null) return false
-    if (allow.rules.includes(ruleId)) return true
-    return allow.rules.length === 0 && allow.unknownRules.length === 0
+    return parseThemeAllows(comment.value).some(
+      (allow) => allow.scope === 'line' && allowCovers(allow, ruleId),
+    )
   })
 }
 
 /**
- * True when the FILE carries a written declaration for `ruleId` — a `theme-allow` that both names
- * the rule and gives a reason, anywhere in the file.
+ * True when the FILE carries a written declaration for `ruleId` — a `theme-allow-file` naming it,
+ * anywhere in the file.
  *
- * This is what a file-scoped exception costs now. `hand-rolled-plot` used to grant a whole file
- * permanent immunity off any `theme-allow` that happened to sit on its first assembly node — a
- * 604-line chart file went unpoliced forever, and a comment written about a colour disabled the
- * chart rule as a side effect. Splitting the two placements apart is the fix: a bare or unrelated
- * comment waives ONE node, a named-with-a-reason comment declares the whole file.
+ * File scope has to be SPELLED, and that is the second half of the 1.20.0 fix rather than a new
+ * idea. The first half landed: `hand-rolled-plot` stopped granting a whole file permanent immunity
+ * off any comment that happened to sit on its first assembly node, and now reports every node. The
+ * second half did not, because the promotion rule was "names a rule AND gives a reason" — which is
+ * exactly what the rule's own message asks a consumer to write, and what `theme-allow-unscoped`
+ * reports them for omitting. So there was one legal annotation shape and it was whole-file:
+ * `hasFileDeclaration` still returned early for every node, forever. linewatch ended up with one
+ * whole-file declaration per chart file — the thing 1.20.0 set out to eliminate — because per-node
+ * scoping was not expressible. Now it is: `theme-allow` is the node, `theme-allow-file` is the file.
  */
 function hasFileDeclaration(context, ruleId) {
-  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
-  const comments = sourceCode?.getAllComments?.() ?? []
-  return comments.some((comment) => {
-    const allow = parseThemeAllow(comment.value)
-    return allow !== null && allow.hasReason && allow.rules.includes(ruleId)
-  })
+  return allComments(context).some((comment) =>
+    parseThemeAllows(comment.value).some(
+      (allow) => allow.scope === 'file' && allow.rules.includes(ruleId),
+    ),
+  )
 }
 
 /** Test/spec files — design guidance does not apply to a fixture. Mirrors `src/cli`'s own SKIP. */
@@ -973,18 +1036,26 @@ function readPackageJson(pkgPath) {
  * that the file sits under. A declared `basalt.roots` that the file is NOT under is a positive
  * statement that this code is not basalt's — the walk stops there rather than continuing up to a
  * workspace root that happens to carry the dependency.
+ *
+ * **`roots` is consulted BEFORE the dependency, within one manifest**, and that ordering is the
+ * whole fix. `init` produces exactly the layout that breaks the other way round: a monorepo ROOT
+ * carrying `basalt-ui` as the devDependency the CLI is run from, AND `basalt.roots: ["apps/web/
+ * src"]` naming where the app actually is. Dep-first returned in-scope on that root before `roots`
+ * was ever read, so rb's `apps/api` — no basalt dependency, deliberately on a different `ai` major,
+ * explicitly outside the declared roots — took three errors and needed a permanent override. The
+ * more specific statement wins: `roots` says WHERE, the dependency only says whether.
  */
 function isBasaltScopedFile(filename) {
   let dir = dirname(filename)
   for (;;) {
     const pkg = readPackageJson(resolvePath(dir, 'package.json'))
     if (pkg !== null) {
-      const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }
-      if (deps['basalt-ui'] !== undefined) return true
       const roots = pkg.basalt?.roots
       if (Array.isArray(roots) && roots.length > 0) {
         return roots.some((root) => filename.startsWith(`${resolvePath(dir, root)}/`))
       }
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }
+      if (deps['basalt-ui'] !== undefined) return true
     }
     const parent = dirname(dir)
     if (parent === dir) return false
@@ -1093,7 +1164,9 @@ const HAND_ROLLED_PLOT_MESSAGE =
   'owns the measured margins, both y scales, the axes, grid, shared cursor, crosshair and ' +
   'tooltip. Hand-assembling them is how two charts stop matching. Compose CartesianChart and ' +
   'render only marks. A genuinely non-single-plot shape (multi-pane, radial, matrix) composes ' +
-  'ChartFrame instead — add a theme-allow comment to declare that. (basalt/hand-rolled-plot)'
+  'ChartFrame instead — declare that with `theme-allow-file hand-rolled-plot — <why>` anywhere in ' +
+  'the file. To waive just THIS node and stay policed on the rest, write `theme-allow ' +
+  'hand-rolled-plot — <why>` on its own line above it. (basalt/hand-rolled-plot)'
 
 const handRolledPlot = {
   meta: {
@@ -1265,19 +1338,53 @@ const PACKAGE_ROOT = resolvePath(PLUGIN_DIR, '..')
 const COMPONENT_NAME = /^[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*$/
 
 /**
- * Every component-shaped VALUE export of the root barrel, read once at module load from
- * `../dist/index.d.ts` — the real barrel, not a hand-maintained list that would go stale the first
- * time an export was renamed. `type` specifiers are skipped: a local `StatCardProps` is a normal
- * thing to write, a local `StatCard` is not.
+ * The barrels a consumer can import a component FROM. The root one is not the whole surface: a
+ * chart-layer fork (`ChartFrame`, `CartesianChart`, `ChartCard`, …) collided with nothing, because
+ * `./charts` is deliberately NOT re-exported from `.` — so a consumer whose forks all live in the
+ * chart layer, which is the layer forks actually live in, could never trip the rule. It was
+ * correctly silent there for the wrong reason.
+ *
+ * Enumerated rather than globbed: `dist/**\/index.d.ts` would also sweep internal directory
+ * barrels that are not published subpaths, and a name that is not importable is not a fork of
+ * anything. Keep this in step with the `exports` map in package.json.
+ */
+const BASALT_BARRELS = [
+  ['index.d.ts'],
+  ['charts', 'index.d.ts'],
+  ['content', 'index.d.ts'],
+  ['data', 'index.d.ts'],
+  ['forms', 'index.d.ts'],
+  ['agent', 'index.d.ts'],
+  ['commands', 'index.d.ts'],
+  ['notifications', 'index.d.ts'],
+  ['connectivity', 'index.d.ts'],
+]
+
+/**
+ * Every component-shaped VALUE export of basalt's published barrels, read once at module load from
+ * the real `.d.ts` files — not a hand-maintained list that would go stale the first time an export
+ * was renamed. `type` specifiers are skipped: a local `StatCardProps` is a normal thing to write, a
+ * local `StatCard` is not.
  *
  * Empty (rule silent) when `dist` is unreadable, exactly like `BASALT_AI_MAJOR` — a lint run must
  * not depend on a build having happened.
  */
-const BASALT_ROOT_EXPORTS = (() => {
+const BASALT_EXPORTS = (() => {
   const names = new Set()
-  try {
-    const text = readFileSync(resolvePath(PACKAGE_ROOT, 'dist', 'index.d.ts'), 'utf8')
-    for (const block of text.matchAll(/export\s*\{([^}]*)\}/g)) {
+  for (const segments of BASALT_BARRELS) {
+    let text
+    try {
+      text = readFileSync(resolvePath(PACKAGE_ROOT, 'dist', ...segments), 'utf8')
+    } catch {
+      continue
+    }
+    for (const block of text.matchAll(/export\s*\{([^}]*)\}(?:\s*from\s*['"]([^'"]*)['"])?/g)) {
+      // A pass-through re-export of a THIRD-PARTY name is not a basalt composite. `./charts`
+      // re-exports `Bar`, `Line`, `Pie`, `AreaClosed` … straight from `@visx/shape`, and a local
+      // `Bar` is not a fork of anything basalt wrote — the playground's own demo tripped on it the
+      // moment this rule started reading the charts barrel. Relative sources only.
+      const source = block[2]
+      if (source !== undefined && !source.startsWith('.')) continue
       for (const raw of block[1].split(',')) {
         const part = raw.trim()
         if (part === '' || part.startsWith('type ')) continue
@@ -1285,8 +1392,6 @@ const BASALT_ROOT_EXPORTS = (() => {
         if (COMPONENT_NAME.test(name)) names.add(name)
       }
     }
-  } catch {
-    return names
   }
   return names
 })()
@@ -1296,7 +1401,10 @@ function shadowBasaltExportMessage(name) {
     `Local component '${name}' collides with the basalt-ui export of the same name — import it ` +
     "from 'basalt-ui' instead of re-rolling it. This is the one signal a forked composite emits: " +
     'the palette guard can never see it, because a fork written by a token-fluent author uses ' +
-    'exactly the right tokens and passes every other check. (basalt/shadow-basalt-export)'
+    'exactly the right tokens and passes every other check. A NAME collision is the whole of the ' +
+    'signal, so this is a tripwire, not coverage: rename the fork and the rule goes quiet ' +
+    "(linewatch's forks are `Cell` and `Box`, rb's is `Stat`). Silence here is not evidence that " +
+    'nothing is forked. (basalt/shadow-basalt-export)'
   )
 }
 
@@ -1318,11 +1426,11 @@ const shadowBasaltExport = {
   create(context) {
     const filename = getFilename(context)
     // basalt's own source DEFINES these names; a consumer's does not.
-    if (BASALT_ROOT_EXPORTS.size === 0 || filename.startsWith(`${PACKAGE_ROOT}/`)) return {}
+    if (BASALT_EXPORTS.size === 0 || filename.startsWith(`${PACKAGE_ROOT}/`)) return {}
     if (isTestFile(context)) return {}
 
     const report = (node, name) => {
-      if (typeof name !== 'string' || !BASALT_ROOT_EXPORTS.has(name)) return
+      if (typeof name !== 'string' || !BASALT_EXPORTS.has(name)) return
       if (hasThemeAllow(context, node, 'shadow-basalt-export')) return
       context.report({ node, message: shadowBasaltExportMessage(name) })
     }
@@ -1356,7 +1464,8 @@ const HAND_ROLLED_SHELL_MESSAGE =
   'bar and its More sheet, breadcrumbs, the page header and the collapse state, all driven by ONE ' +
   'typed nav definition (defineNav + useNav). A hand-rolled AppShell + burger drawer is the exact ' +
   'layer the 1.19 nav contract replaces, and no palette guard can see it — it uses the right ' +
-  'tokens. (basalt/hand-rolled-shell)'
+  'tokens. Declare a deliberate exception with `theme-allow-file hand-rolled-shell — <why>`. ' +
+  '(basalt/hand-rolled-shell)'
 
 /**
  * The `hand-rolled-plot` shape, one layer up. rb shipped 266 lines of `AppShell` + `NavLink` +
@@ -1429,15 +1538,19 @@ const handRolledShell = {
  */
 export const PLUGIN_RULE_GRACE = {
   'hand-rolled-plot':
-    'widened in the round-4 guard minor (suppression scoped to the node; a file-scoped waiver now ' +
-    'needs a written declaration) — promote to error one minor later, once consumers have moved ' +
-    'their bare `theme-allow` comments to the declaration form.',
+    'widened AGAIN in the round-5 guard minor (file scope must now be spelled `theme-allow-file`, ' +
+    'so the named-with-a-reason shape every consumer wrote at 1.20.0 is a NODE waiver and the ' +
+    'remaining assembly nodes report) — grace restarts with the widening, per the "a rule the ' +
+    'current minor widens does not promote in that minor" doctrine. Promote one minor after ' +
+    'consumers have moved their file declarations to `theme-allow-file`.',
   'chart-legend-literal':
     'widened in the round-4 guard minor (a `.map()` over a non-series array now counts) — promote ' +
     'to error one minor later, for the same reason as hand-rolled-plot above.',
   'shadow-basalt-export':
-    'new in the round-4 guard minor — promote to error one minor later, if ever. A name collision ' +
-    'is strong evidence and not proof; this may be a permanent warn.',
+    'new in the round-4 guard minor, widened in round-5 (reads every published barrel, not just ' +
+    'the root one, so a chart-layer fork is visible) — promote to error one minor later, if ever. ' +
+    'A name collision is strong evidence and not proof, and renaming defeats it outright, so this ' +
+    'may be a permanent warn.',
   'hand-rolled-shell': 'new in the round-4 guard minor — promote to error one minor later.',
 }
 

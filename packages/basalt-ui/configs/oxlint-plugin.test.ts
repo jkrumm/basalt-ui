@@ -51,7 +51,10 @@ afterEach(() => {
 })
 
 /** Writes `source` as the sole fixture file and runs oxlint against the temp fixture repo. */
-function run(source: string, filename = 'fixture.tsx'): { code: number; rules: Set<string> } {
+function run(
+  source: string,
+  filename = 'fixture.tsx',
+): { code: number; rules: Set<string>; output: string } {
   const filePath = resolve(dir, filename)
   mkdirSync(dirname(filePath), { recursive: true })
   writeFileSync(filePath, source)
@@ -60,7 +63,7 @@ function run(source: string, filename = 'fixture.tsx'): { code: number; rules: S
   const rules = new Set(
     [...output.matchAll(/\(basalt\/([\w-]+)\)/g)].map((match) => match[1] as string),
   )
-  return { code: result.exitCode ?? 0, rules }
+  return { code: result.exitCode ?? 0, rules, output }
 }
 
 // ── no-raw-font-size ─────────────────────────────────────────────────────────
@@ -467,6 +470,29 @@ describe('basalt/ai-sdk-major', () => {
     expect(rules).not.toContain('ai-sdk-major')
   })
 
+  // The ORDERING half of the scoping fix, and the layout `init` produces for a monorepo: one
+  // manifest carrying BOTH the workspace-root CLI devDependency and `basalt.roots` naming the app.
+  // Dep-first returned in-scope on that root before `roots` was ever read, so rb's `apps/api` — no
+  // basalt dependency, deliberately on a different `ai` major, explicitly outside the roots — kept
+  // taking 3 errors and kept its `.oxlintrc.json` override.
+  it('reads basalt.roots BEFORE the basalt-ui dependency in the same manifest', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({
+        basalt: { roots: ['apps/web/src'] },
+        devDependencies: { 'basalt-ui': '^1.20.0' },
+        dependencies: { ai: '5.0.196' },
+      }),
+    )
+    const outside = run(`import { streamText } from 'ai'\n`, 'apps/api/src/llm.ts')
+    expect(outside.code).toBe(0)
+    expect(outside.rules).not.toContain('ai-sdk-major')
+
+    // …and the declared root itself is still in scope, so the reorder narrows nothing it shouldn't.
+    const inside = run(`import { streamText } from 'ai'\n`, 'apps/web/src/llm.ts')
+    expect(inside.rules).toContain('ai-sdk-major')
+  })
+
   it('DOES flag a file inside a declared basalt.roots', () => {
     writeFileSync(
       resolve(dir, 'package.json'),
@@ -559,13 +585,13 @@ describe('basalt/hand-rolled-plot', () => {
     expect(rules).not.toContain('hand-rolled-plot')
   })
 
-  // A `theme-allow` that NAMES the rule and gives a reason is a written declaration about the file,
-  // and still covers every assembly node in it — the DualPanel shape.
-  it('a named-with-a-reason declaration covers the whole file', () => {
+  // `theme-allow-file` is the written declaration about the file, and it covers every assembly node
+  // in it — the DualPanel shape.
+  it('a theme-allow-file declaration covers the whole file', () => {
     const { code, rules } = run(
       `${CHARTS_IMPORT}export const C = () => (
   <svg>
-    {/* theme-allow basalt/hand-rolled-plot: multi-pane shape, not a single cartesian plot */}
+    {/* theme-allow-file basalt/hand-rolled-plot: multi-pane shape, not a single cartesian plot */}
     <AxisLeftNumeric scale={a} />
     <HoverOverlay width={1} height={1} />
     <Crosshair x={0} top={0} bottom={1} />
@@ -574,6 +600,23 @@ describe('basalt/hand-rolled-plot', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  // The other half of the 1.20.0 fix. Naming the rule AND giving a reason used to promote the
+  // waiver to the whole file, which made whole-file the ONLY expressible scope: the shape the rule's
+  // own message asks for was the shape that granted immunity. It is now what it reads as — one node.
+  it('a named-with-a-reason theme-allow waives its own node ONLY, not the file', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => (
+  <svg>
+    {/* theme-allow basalt/hand-rolled-plot — this one axis is drawn against a second scale */}
+    <AxisLeftNumeric scale={a} />
+    <HoverOverlay width={1} height={1} />
+  </svg>
+)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-plot')
   })
 
   // The linewatch defect: a BARE comment used to buy the whole file permanent immunity, because
@@ -616,24 +659,151 @@ export const C = () => <svg><Crosshair x={0} /></svg>\n`,
     expect(rules).not.toContain('hand-rolled-plot')
   })
 
+  // `code` is 1 in both of these and that is correct: a CONSUMER file declaring `CartesianChart`
+  // shadows a basalt export, which `shadow-basalt-export` now sees since it reads the charts barrel
+  // too. The assertion under test is that `hand-rolled-plot` stays silent — a rule saying "compose
+  // X" cannot fire inside X.
   it('does NOT flag the module that DEFINES CartesianChart (function form)', () => {
-    const { code, rules } = run(
+    const { rules } = run(
       `import { AxisBottomDate } from '../primitives/Axes'
 export function CartesianChart() {
   return <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>
 }\n`,
     )
-    expect(code).toBe(0)
     expect(rules).not.toContain('hand-rolled-plot')
   })
 
   it('does NOT flag the module that DEFINES CartesianChart (const form)', () => {
-    const { code, rules } = run(
+    const { rules } = run(
       `import { AxisBottomDate } from '../primitives/Axes'
 export const CartesianChart = () => <svg><AxisBottomDate scale={s} top={0} tickValues={[]} /></svg>\n`,
     )
+    expect(rules).not.toContain('hand-rolled-plot')
+  })
+})
+
+// ── theme-allow grammar — the accepted and rejected shapes, exhaustively ─────
+//
+// Two rounds produced three holes in this one contract, so it gets a matrix rather than a case.
+// `hand-rolled-plot` is the vehicle: it is the only rule with BOTH scopes, so one fixture shape
+// exercises the node waiver, the file declaration and the prefix rule at once.
+
+describe('theme-allow grammar', () => {
+  /** Two assembly nodes, with `annotation` placed as a comment-only line above the first. */
+  function twoNodes(annotation: string): { code: number; rules: Set<string> } {
+    return run(
+      `${CHARTS_IMPORT}export const C = () => (
+  <svg>
+    ${annotation}
+    <AxisLeftNumeric scale={a} />
+    <HoverOverlay width={1} height={1} />
+  </svg>
+)\n`,
+    )
+  }
+
+  const waivesFirstNodeOnly = (annotation: string) => {
+    const { rules } = twoNodes(annotation)
+    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, true])
+  }
+  const waivesWholeFile = (annotation: string) => {
+    const { rules } = twoNodes(annotation)
+    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, false])
+  }
+
+  // ── ACCEPTED as a NODE waiver (the second node still reports) ──────────────
+
+  it.each([
+    '{/* theme-allow */}',
+    '{/* theme-allow hand-rolled-plot */}',
+    '{/* theme-allow hand-rolled-plot — a reason */}',
+    '{/* theme-allow basalt/hand-rolled-plot: a reason */}',
+    '{/* theme-allow hand-rolled-plot, raw-hex — two ids */}',
+    '{/*theme-allow hand-rolled-plot — no space after the opener*/}',
+  ])('%s waives its own node and leaves the rest policed', waivesFirstNodeOnly)
+
+  // ── ACCEPTED as a FILE declaration (nothing in the file reports) ───────────
+
+  it.each([
+    '{/* theme-allow-file hand-rolled-plot — a reason */}',
+    '{/* theme-allow-file basalt/hand-rolled-plot: a reason */}',
+    '{/* theme-allow-file hand-rolled-plot */}',
+    '{/* theme-allow-file hand-rolled-plot, chart-legend-literal — two ids */}',
+  ])('%s declares the whole file', waivesWholeFile)
+
+  it('a theme-allow-file inside a docblock, detached from any node, declares the file', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}/**
+ * A two-pane shape.
+ *
+ * theme-allow-file hand-rolled-plot — two panes over one x scale is not a single plot
+ */
+export const C = () => (
+  <svg>
+    <AxisLeftNumeric scale={a} />
+    <HoverOverlay width={1} height={1} />
+  </svg>
+)\n`,
+    )
     expect(code).toBe(0)
     expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  // ── REJECTED — prose that merely MENTIONS the token (the linewatch defect) ─
+
+  // The whole class: a file documenting its own waivers used to disarm itself. Every one of these
+  // parsed as the bare blanket form under the old `indexOf('theme-allow')` and silenced the node
+  // below it. All four are shapes taken from real consumer source.
+  it.each([
+    '{/* Since 1.20.0 a `theme-allow` that names a rule is a file declaration */}',
+    '{/* see the theme-allow contract for how this file is waived */}',
+    '{/* `theme-allow` with a reason declares the whole FILE wherever it is written */}',
+    '{/* each with a theme-allow saying why */}',
+  ])('%s is prose, not an annotation — it waives nothing', (annotation) => {
+    const { code, rules } = twoNodes(annotation)
+    expect([annotation, code]).toEqual([annotation, 1])
+    expect([annotation, rules.has('hand-rolled-plot')]).toEqual([annotation, true])
+  })
+
+  it('a prose docblock line mentioning theme-allow-file does not declare the file', () => {
+    const { rules } = twoNodes(
+      '{/* the shape to write here is a theme-allow-file hand-rolled-plot — see the docs */}',
+    )
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  // ── REJECTED — a longer word that merely STARTS with the token ─────────────
+
+  // `theme-allow-unscoped` is a KIND NAME, written in prose constantly. It used to consume no id,
+  // fall through to the empty-`rules` branch, and read as a blanket waiver.
+  it('a comment starting with the kind name `theme-allow-unscoped` is not an annotation', () => {
+    const { rules } = twoNodes('{/* theme-allow-unscoped is what reports a bare waiver */}')
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  // ── REJECTED — a bare file declaration, and a typo'd id ────────────────────
+
+  it('a BARE theme-allow-file waives nothing — file scope must name its ids', () => {
+    const { code, rules } = twoNodes('{/* theme-allow-file — everything in here is bespoke */}')
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  it("a theme-allow-file naming a typo'd id waives nothing", () => {
+    const { rules } = twoNodes('{/* theme-allow-file hand-rolled-plott — a reason */}')
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  it('a theme-allow-file scoped to a DIFFERENT rule does not waive this one', () => {
+    const { rules } = twoNodes('{/* theme-allow-file raw-hex — the swatch is a measured pixel */}')
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  // ── REJECTED — the token inside a string literal, not a comment ────────────
+
+  it('the token inside a string literal is code, not an annotation', () => {
+    const { rules } = twoNodes("{'theme-allow hand-rolled-plot — a reason'}")
+    expect(rules).toContain('hand-rolled-plot')
   })
 })
 
@@ -695,6 +865,42 @@ describe('basalt/shadow-basalt-export', () => {
     const { code, rules } = run(`export function ExerciseSummaryCard() { return null }\n`)
     expect(code).toBe(0)
     expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // The rule read ONLY the root barrel, and `./charts` is deliberately not re-exported from it —
+  // so a consumer whose forks all live in the chart layer, which is the layer forks actually live
+  // in, could never trip it. Correctly silent, for the wrong reason.
+  it('sees the charts layer, not just the root barrel', () => {
+    const { code, rules } = run(`export function ChartCard() { return null }\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('sees the content layer too', () => {
+    const { rules } = run(`export function ReadingProgress() { return null }\n`)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  // …but a barrel is not only basalt's own names. `./charts` re-exports `Bar`, `Line`, `Pie`,
+  // `AreaClosed` … straight from `@visx/shape`, and a local `Bar` is not a fork of anything basalt
+  // wrote. The playground's own demo tripped on it the moment the rule started reading that barrel.
+  it('does NOT flag a name the barrel merely re-exports from a third party', () => {
+    const { code, rules } = run(`export function Bar() { return null }\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // A NAME collision is the whole of the signal, so renaming defeats the rule in one keystroke —
+  // linewatch's forks are `Cell` and `Box`, rb's is `Stat`, and all three are invisible here. That
+  // limit cannot be closed without intent analysis, so the rule STATES it rather than implying
+  // coverage it does not have.
+  it('a renamed fork is invisible, and the message says so rather than implying coverage', () => {
+    expect(run(`export function Stat() { return null }\n`).rules).not.toContain(
+      'shadow-basalt-export',
+    )
+    const { output } = run(`export function EmptyState() { return null }\n`)
+    expect(output).toContain('tripwire, not coverage')
+    expect(output).toContain('Silence here is not evidence')
   })
 
   // The export list is derived from the real barrel, so a TYPE export must not create a collision:

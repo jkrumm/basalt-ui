@@ -521,7 +521,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
             </>
           )}
 
-          {/* theme-allow basalt/hand-rolled-plot: TWO panes over one x scale is not a single
+          {/* theme-allow-file basalt/hand-rolled-plot: TWO panes over one x scale is not a single
               cartesian plot, so `CartesianChart` (one plot rect, one or two y axes) cannot express
               it. This file therefore assembles the plot itself — but from the SAME parts every
               other chart gets: `ChartFrame`, `autoMargin` + `probeAxisLabels`, `useChartCursor`,
