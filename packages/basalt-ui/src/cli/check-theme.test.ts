@@ -742,3 +742,38 @@ describe('severity — warnings report, errors fail', () => {
     expect(err).toContain('✖ Theme guard')
   })
 })
+
+// ── the manifest waiver hint, gated on the profile ────────────────────────────────────────────
+//
+// rollhook. The hint leads with `basaltAppPlugin`, which is right for a Mantine app — a hex in a
+// manifest can never be right, and the plugin removes the hand-copy entirely. A `tokens-only`
+// consumer has definitionally opted out of that layer: rollhook's Astro site has no index.html to
+// transform, imports no basalt JavaScript at all, and owns maskable icons the plugin does not emit.
+// Leading with it there is advice the consumer cannot take.
+
+describe('check-theme — the manifest waiver hint follows the profile', () => {
+  function manifestFixture(basalt: Record<string, unknown>): void {
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'fixture', basalt }))
+    mkdirSync(resolve(dir, 'src'), { recursive: true })
+    writeFileSync(resolve(dir, 'src', 'app.tsx'), 'export const App = () => null\n')
+    mkdirSync(resolve(dir, 'public'), { recursive: true })
+    writeFileSync(
+      resolve(dir, 'public', 'site.webmanifest'),
+      JSON.stringify({ name: 'x', theme_color: '#18181b' }, null, 2),
+    )
+  }
+
+  it('offers basaltAppPlugin first to a framework consumer', () => {
+    manifestFixture({ roots: ['src'] })
+    const { err } = run()
+    expect(err).toContain('let basaltAppPlugin emit it')
+  })
+
+  it('leads with the member for a tokens-only consumer, and says which remedy it withheld', () => {
+    manifestFixture({ roots: ['src'], profile: 'tokens-only' })
+    const { err } = run()
+    expect(err).toContain('JSON has no comments — declare a deliberate exception')
+    expect(err).not.toContain('let basaltAppPlugin emit it')
+    expect(err).toContain('a tokens-only consumer has opted out of')
+  })
+})

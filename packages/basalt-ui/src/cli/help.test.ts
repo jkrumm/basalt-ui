@@ -4,7 +4,7 @@
  * matched `cmd === 'sync'` first and `--help` was just another item in `flags`, ignored).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
@@ -86,6 +86,10 @@ describe('run() --help short-circuits before dispatch', () => {
   })
 
   it('`sync` without --help still runs for real and writes the manifest (control case)', () => {
+    // `sync` refuses to scaffold where nothing was ever installed, so the control case has to be a
+    // repo that HAS an install — which is what `sync` is for.
+    mkdirSync(resolve(dir, '.basalt'), { recursive: true })
+    writeFileSync(resolve(dir, MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
     const { code } = capture(() => run(['sync'], dir))
     expect(code).toBe(0)
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
