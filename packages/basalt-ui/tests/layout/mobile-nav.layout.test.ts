@@ -42,8 +42,11 @@ import {
   tab,
 } from './harness'
 
-const available = await initLayoutSuite()
-const layout = available ? describe : describe.skip
+// Booted at MODULE TOP LEVEL, the same shape as `boot-color-scheme.layout.test.ts`. Not a
+// `beforeAll`: Bun caps a hook at an undeclared 5000 ms and the cold boot measures ~4.4 s on a
+// GitHub runner. `initLayoutSuite()` carries its own budget instead.
+const ready = await initLayoutSuite()
+const layout = ready ? describe : describe.skip
 
 const pages = (n: number, prefix: string) =>
   Array.from({ length: n }, (_, i) => ({

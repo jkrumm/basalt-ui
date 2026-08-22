@@ -151,11 +151,40 @@ export function fixtureHtml(): Promise<string> {
   return Bun.file(FIXTURE_HTML).text()
 }
 
-async function buildFixture(): Promise<void> {
-  outDir = await mkdtemp(join(tmpdir(), 'basalt-layout-'))
+/**
+ * How long the whole boot — bundle, serve, launch Chrome — may take before it is called a hang.
+ *
+ * NOT a performance assertion; a hang detector that says something. MEASURED: the cold boot is
+ * ~0.4 s locally and ~4.4 s on a GitHub runner (the first file pays the cold disk and the JIT; a
+ * second file in the same process boots warm in ~0.2 s / ~1.5 s). 60 s is the budget
+ * `bunfig.toml` already grants a single test, and ~14x the slowest boot observed here.
+ *
+ * It exists because the previous number was Bun's UNDECLARED 5000 ms `beforeAll` default, which
+ * the cold boot had quietly been running at 87% of. A runner half a second slower than usual
+ * crossed it and the suite reported `(fail) (unnamed)` — a number, no phase, no cause.
+ */
+const BOOT_BUDGET_MS = 60_000
+
+type BootPhase = 'bundling the fixture' | 'serving the fixture' | 'launching Chrome'
+
+let phase: BootPhase = 'bundling the fixture'
+
+/**
+ * Invalidation token. Both layout files share THIS module — `bun test` runs them in one process —
+ * so a boot that was abandoned (watchdog fired, or Bun killed its Chrome as a dangling process)
+ * must never publish or tear down state that by then belongs to the NEXT file.
+ *
+ * Not hypothetical. That is exactly how a single 5001 ms `beforeAll` timeout in
+ * `boot-color-scheme` turned into 13 `ERR_CONNECTION_REFUSED` failures in `mobile-nav`: the
+ * abandoned launch rejected late, its cleanup ran over the module-level `server` — which by then
+ * was the other file's live one — and every subsequent test blamed the network.
+ */
+let generation = 0
+
+async function buildFixture(dir: string): Promise<void> {
   const build = await Bun.build({
     entrypoints: [FIXTURE_ENTRY],
-    outdir: outDir,
+    outdir: dir,
     naming: '[name].[ext]',
     target: 'browser',
     // basalt source reads `process.env["NODE_ENV"]` in BRACKET form, which Bun's
@@ -175,18 +204,21 @@ async function buildFixture(): Promise<void> {
 }
 
 /**
- * Build, serve, and launch. Returns `false` (with a loud warning) when Chrome is missing LOCALLY;
- * throws when `CI` is set. A runner that loses Chrome must go red, not quietly green.
- *
- * The build output lives in `mkdtemp`, never in the repo — VERIFIED: a bundle inside
- * `packages/basalt-ui/` poisons `bun run lint` with hundreds of `no-var`/`no-unused-vars` errors
- * from minified vendor code.
+ * The boot itself. Everything it creates stays in LOCALS until Chrome is up and this boot is still
+ * the current one — so a failed or abandoned boot disposes of its own resources and cannot reach
+ * the module-level state another file is using.
  */
-export async function initLayoutSuite(): Promise<boolean> {
-  await buildFixture()
+async function bootLayoutSuite(gen: number): Promise<boolean> {
+  const started = performance.now()
 
+  phase = 'bundling the fixture'
+  const dir = await mkdtemp(join(tmpdir(), 'basalt-layout-'))
+  await buildFixture(dir)
+  const bundled = performance.now()
+
+  phase = 'serving the fixture'
   const html = await Bun.file(FIXTURE_HTML).text()
-  server = Bun.serve({
+  const local = Bun.serve({
     port: 0, // ephemeral — parallel bun test files never collide
     async fetch(request) {
       const path = new URL(request.url).pathname
@@ -196,15 +228,23 @@ export async function initLayoutSuite(): Promise<boolean> {
       if (extra !== undefined) {
         return new Response(extra, { headers: { 'content-type': 'text/html' } })
       }
-      const file = Bun.file(join(outDir, path))
+      const file = Bun.file(join(dir, path))
       if (!(await file.exists())) return new Response(`not built: ${path}`, { status: 404 })
       return new Response(file)
     },
   })
-  origin = server.url.origin
+  const served = performance.now()
 
+  const discard = async (chrome?: Browser): Promise<void> => {
+    await chrome?.close()
+    local.stop(true)
+    await rm(dir, { recursive: true, force: true })
+  }
+
+  phase = 'launching Chrome'
+  let chrome: Browser
   try {
-    browser = await chromium.launch({
+    chrome = await chromium.launch({
       // playwright-core's own per-platform table resolves `/opt/google/chrome/chrome` on linux —
       // exactly what ubuntu-latest's Chrome .deb installs — and the .app bundle on darwin. NOTHING
       // is ever downloaded. Use the channel, not `executablePath`, which Playwright documents as
@@ -216,9 +256,8 @@ export async function initLayoutSuite(): Promise<boolean> {
       // protected. Locally the sandbox works, so keep it.
       chromiumSandbox: !process.env['CI'],
     })
-    return true
   } catch (error) {
-    await closeLayoutSuite()
+    await discard()
     if (process.env['CI']) {
       throw new Error(
         'FAILED: could not launch Google Chrome and CI is set. ubuntu-latest ships ' +
@@ -234,15 +273,76 @@ export async function initLayoutSuite(): Promise<boolean> {
     )
     return false
   }
+
+  if (gen !== generation) {
+    await discard(chrome)
+    return false
+  }
+
+  browser = chrome
+  server = local
+  outDir = dir
+  origin = local.url.origin
+
+  const launched = performance.now()
+  // oxlint-disable-next-line no-console -- the boot budget is invisible until the day it is blown
+  console.error(
+    `[layout] booted in ${(launched - started).toFixed(0)}ms ` +
+      `(bundle ${(bundled - started).toFixed(0)}ms, serve ${(served - bundled).toFixed(0)}ms, ` +
+      `chrome ${(launched - served).toFixed(0)}ms) — budget ${BOOT_BUDGET_MS}ms`,
+  )
+  return true
+}
+
+/**
+ * Build, serve, and launch, under an explicit budget. Returns `false` (with a loud warning) when
+ * Chrome is missing LOCALLY; throws when `CI` is set. A runner that loses Chrome must go red, not
+ * quietly green.
+ *
+ * CALL THIS AT MODULE TOP LEVEL, never inside `beforeAll` — Bun caps a hook at an undeclared
+ * 5000 ms that the cold boot does not reliably fit inside, and reports the overrun as an
+ * `(unnamed)` failure that names neither the file nor the phase.
+ *
+ * The build output lives in `mkdtemp`, never in the repo — VERIFIED: a bundle inside
+ * `packages/basalt-ui/` poisons `bun run lint` with hundreds of `no-var`/`no-unused-vars` errors
+ * from minified vendor code.
+ */
+export async function initLayoutSuite(): Promise<boolean> {
+  const gen = ++generation
+  const boot = bootLayoutSuite(gen)
+  // The race owns the outcome; a rejection arriving after the watchdog must not crash the process.
+  boot.catch(() => {})
+
+  let watchdogTimer: ReturnType<typeof setTimeout> | undefined
+  const watchdog = new Promise<never>((_, reject) => {
+    watchdogTimer = setTimeout(() => {
+      generation++ // whatever the abandoned boot produces must never be published
+      reject(
+        new Error(
+          `FAILED: the layout suite did not boot within ${BOOT_BUDGET_MS}ms — still ${phase}. ` +
+            'Nothing is listening, so every test in this file would have reported ' +
+            'ERR_CONNECTION_REFUSED against a server that never came up.',
+        ),
+      )
+    }, BOOT_BUDGET_MS)
+  })
+
+  try {
+    return await Promise.race([boot, watchdog])
+  } finally {
+    clearTimeout(watchdogTimer)
+  }
 }
 
 export async function closeLayoutSuite(): Promise<void> {
+  generation++ // anything still booting is abandoned and must not publish over this teardown
   await browser?.close()
   server?.stop(true)
   if (outDir) await rm(outDir, { recursive: true, force: true })
   browser = null
   server = null
   outDir = ''
+  origin = ''
   extraDocuments.clear()
 }
 
@@ -253,7 +353,16 @@ export async function openFixture(
   viewport: Viewport = PHONE,
   documentPath = '/',
 ): Promise<LayoutPage> {
-  if (!browser) throw new Error('initLayoutSuite() was not awaited in this file')
+  // Named here, once, rather than as N identical ERR_CONNECTION_REFUSED stack traces further down.
+  // `server` is checked as well as `browser`: a torn-down or abandoned boot leaves nothing
+  // listening, and Playwright would blame the network for what is a harness lifecycle bug.
+  if (!browser || !server) {
+    throw new Error(
+      'FAILED: the layout suite is not booted — initLayoutSuite() was not awaited at the top ' +
+        'level of this file, it failed, or a previous file tore it down. Every assertion below ' +
+        'would have reported ERR_CONNECTION_REFUSED and named nothing.',
+    )
+  }
 
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
