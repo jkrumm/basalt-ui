@@ -31,6 +31,22 @@ rule is the operational checklist; it is enforced mechanically by **`basalt-ui c
 (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); set `roots` to your source dirs and `exempt`
 to the files that legitimately define palette values.
 
+**`roots` is not optional in practice.** Omitted, it falls back to `src` relative to the cwd. A
+single-app repo is fine; a workspace, a monorepo, or anything with the app under `apps/*/src`
+matches zero files and `check-theme` exits 1 with `0 files scanned — no "basalt.roots" configured`.
+`basalt-ui init` does not write one. `basalt-ui doctor` reports green regardless — it does not check
+that `roots` resolves — so a repo can look fully wired while the gate scans nothing.
+
+**`theme-allow` placement is not the same in both engines** (as of 1.19.1 — a guard rework is in
+flight; re-check `MIGRATING.md` after the next minor). The oxlint plugin rules accept the
+comment on the flagged node's own line _or the line directly above it_. `check-theme` accepts it
+**only on the reported line** (`isSkippedLine` is a substring test on that one line). In JSX the
+violation is usually on a nested attribute line, so a comment written above the element does nothing
+— put it on the exact line the report names. Two further consequences: the shipped `oxfmt` can
+reflow that line and carry the comment away from the token it was excusing, and on
+`hand-rolled-plot` a single allow-comment exempts the whole file. Re-run `check-theme` after
+`fmt`.
+
 ## Filled surfaces — the fill band
 
 A filled control is a SURFACE, not ink, and it does not invert across schemes. It is squeezed from
@@ -158,5 +174,8 @@ export const paletteGroups = { [`${GROUP}-`]: SERIES } // -> { 'activity-': SERI
 ## When the guard fires
 
 Fix the source, don't silence it — reach for the right token first. Only add `theme-allow` for a
-genuine, documented exception (e.g. a third-party widget needing a literal). The palette-definition
-files are listed in your `exempt` set so they don't self-trip.
+genuine, documented exception (e.g. a third-party widget needing a literal), on the exact line the
+report names, with the rule id and the reason in the comment — a bare `// theme-allow` passes the
+check and tells the next reader nothing. The palette-definition files are listed in your `exempt`
+set so they don't self-trip; a stylesheet emitted by `basalt-ui tokens:css` belongs there too, or
+the guard flags every hex it just wrote.

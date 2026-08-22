@@ -85,3 +85,9 @@ colors without a `theme-allow` comment.
 
 See `basalt-ui/llms.txt` (importable via the package specifier) for the full surface map: one
 entry per published subpath with import specifier, description, layer, and optional peer packages.
+
+## Upgrading across minors
+
+`CHANGELOG.md` lists every release; `MIGRATING.md` lists what **broke** — removed and renamed
+exports per minor, with the replacement. No majors ship here, so a minor bump can require code
+changes. Read `MIGRATING.md` before jumping more than one minor.
