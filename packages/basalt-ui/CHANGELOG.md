@@ -1,3 +1,22 @@
+# [1.23.0](https://github.com/jkrumm/basalt-ui/compare/v1.22.0...v1.23.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* make sync resolve, and report, what the other two commands already do ([fcc5d3b](https://github.com/jkrumm/basalt-ui/commit/fcc5d3b862e90db03be9ae3daddbde56da15e415))
+* make the two annotation parsers agree, and pin the whole shape grid ([5a25825](https://github.com/jkrumm/basalt-ui/commit/5a25825342930236e35a4c8ecd1157fc6c3c8eda))
+* stop a non-finite absent share painting a band that never renders ([e8fae5b](https://github.com/jkrumm/basalt-ui/commit/e8fae5b205a9f74b31289591f8948f50a3e647eb))
+* teach chart-in-raw-surface the two new kinds ([fc34a3b](https://github.com/jkrumm/basalt-ui/commit/fc34a3bed4e05083288dcd22fc1e4b2cc81a1863))
+* teach unframed-chart the two new kinds too ([cb4e5b7](https://github.com/jkrumm/basalt-ui/commit/cb4e5b7977ff8a141bc4ec78d3c18b515fc41fed))
+
+
+### Features
+
+* give CartesianChart the x tick-VALUES seam its band siblings already have ([d94137d](https://github.com/jkrumm/basalt-ui/commit/d94137d20d496e8da1e0e0869c01d2d4c1577560))
+* let basaltAppPlugin's icons option name a real icon file ([c0b182e](https://github.com/jkrumm/basalt-ui/commit/c0b182e580c6289b5018be9d840a588e29dea5d3))
+* playground routes for BandStrip and MirroredBars ([ba6172d](https://github.com/jkrumm/basalt-ui/commit/ba6172d9ad40cf7b1e3c183e2598e79b5326c2e7))
+* two banded chart kinds — BandStrip and MirroredBars ([0e4f5f7](https://github.com/jkrumm/basalt-ui/commit/0e4f5f7107e71be92eb3b6bec6ebf5587d5c607b))
+
 # [1.22.0](https://github.com/jkrumm/basalt-ui/compare/v1.21.0...v1.22.0) (2026-08-22)
 
 
