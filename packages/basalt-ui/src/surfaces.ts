@@ -467,7 +467,7 @@ export const SURFACES = {
     kind: 'tooling',
     layer: 'non-js-asset',
     description:
-      'Prebuilt --vx-* token stylesheet — the default buildPaletteCss() output as a plain file, for a consumer with no bundler, no React and no Mantine; retune the selector or trim the spacing set with `basalt-ui tokens:css`',
+      'Prebuilt --vx-* token stylesheet — the default buildPaletteCss() output as a plain file, for a consumer that has a bundler to resolve the subpath but no React and no Mantine; with no bundler, emit a file you own via `basalt-ui tokens:css`',
     forbiddenImports: [],
   },
   './configs/*': {
