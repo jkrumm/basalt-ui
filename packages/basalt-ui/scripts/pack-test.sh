@@ -24,9 +24,18 @@ echo "==> attw (are-the-types-wrong)"
 bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./llms.txt
 
 echo "==> assert tarball contents"
-LIST=$(tar -tzf "$TGZ")
-require() { echo "$LIST" | grep -qx "package/$1" || { echo "MISSING in tarball: $1"; exit 1; }; }
-forbid() { if echo "$LIST" | grep -qx "package/$1"; then echo "FORBIDDEN in tarball: $1"; exit 1; fi; }
+# Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
+# `grep -q` exits at its first match and echo's remaining writes take SIGPIPE, so the PIPELINE
+# reports 141 and a file that IS in the tarball is reported MISSING. bash buffers stdout to a
+# pipe in ~4KB chunks, so "did echo finish before grep exited" is a scheduling race — which is
+# exactly why this gate failed nondeterministically, on a different file each run, and only ever
+# on entries near the START of the 1104-line listing. grep over a regular file has no writer to
+# kill. `-F` additionally stops a path being read as a regex (every filename contains `.`).
+LISTFILE=$(mktemp)
+trap 'rm -f "$LISTFILE"' EXIT
+tar -tzf "$TGZ" >"$LISTFILE"
+require() { grep -qxF "package/$1" "$LISTFILE" || { echo "MISSING in tarball: $1"; exit 1; }; }
+forbid() { if grep -qxF "package/$1" "$LISTFILE"; then echo "FORBIDDEN in tarball: $1"; exit 1; fi; }
 for f in \
   dist/index.js dist/index.d.ts dist/index.d.ts.map \
   dist/charts/index.js dist/charts/index.d.ts \
@@ -52,10 +61,7 @@ for f in src/index.css src/starlight.css tailwind.config.js \
 echo "tarball contents OK"
 
 echo "==> tarball parity (every CLI-read source ships in the artifact)"
-LISTFILE=$(mktemp)
-echo "$LIST" >"$LISTFILE"
 node scripts/check-tarball-parity.mjs "$LISTFILE"
-rm -f "$LISTFILE"
 
 echo "==> dist layering guard (Mantine-free subpaths + root-barrel re-export)"
 node scripts/check-dist-layering.mjs
@@ -83,7 +89,7 @@ SCRATCH=$(mktemp -d)
 SCRATCH2=""
 SCRATCH3=""
 SCRATCH4=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4"' EXIT
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4"; rm -f "$LISTFILE"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 scratch_install "$ABS_TGZ" \
@@ -187,11 +193,14 @@ JSON
 cat >lint-fixture.ts <<'TS'
 export const scratchLintFixture = 1
 TS
+# Captured to a file, then grepped from the file — same reason as `require` above: a
+# `echo "$VAR" | grep -q` pipeline can report SIGPIPE (141) instead of grep's own verdict.
+OXLINT_LOG=$(mktemp)
 set +e
-OXLINT_OUTPUT=$(bunx oxlint lint-fixture.ts 2>&1)
+bunx oxlint lint-fixture.ts >"$OXLINT_LOG" 2>&1
 set -e
-echo "$OXLINT_OUTPUT"
-if echo "$OXLINT_OUTPUT" | grep -qi "failed to parse"; then
+cat "$OXLINT_LOG"
+if grep -qiF "failed to parse" "$OXLINT_LOG"; then
   echo "FAILED: shipped oxlint preset does not parse for a real consumer (config parse failure)"
   exit 1
 fi
@@ -236,29 +245,30 @@ cat >guard-fixture/ok.module.css <<'CSS'
   padding: 4px 8px;
 }
 CSS
+GUARD_LOG=$(mktemp)
 set +e
-GUARD_OUTPUT=$(bunx basalt-ui check-theme 2>&1)
+bunx basalt-ui check-theme >"$GUARD_LOG" 2>&1
 GUARD_EXIT=$?
 set -e
-echo "$GUARD_OUTPUT"
+cat "$GUARD_LOG"
 if [ "$GUARD_EXIT" -eq 0 ]; then
   echo "FAILED: check-theme passed a tree containing a raw hex — the shipped guard is not enforcing"
   exit 1
 fi
-if ! echo "$GUARD_OUTPUT" | grep -q "raw-hex"; then
+if ! grep -qF "raw-hex" "$GUARD_LOG"; then
   echo "FAILED: check-theme did not report the raw hex in guard-fixture/violation.tsx"
   exit 1
 fi
-if ! echo "$GUARD_OUTPUT" | grep -q "raw-spacing"; then
+if ! grep -qF "raw-spacing" "$GUARD_LOG"; then
   echo "FAILED: the guard's spacing steps have drifted from deriveSpacing()'s scale — a prop value"
   echo "        equal to the shipped \`md\` stop went unflagged. This is the 1.2.0 bug."
   exit 1
 fi
-if echo "$GUARD_OUTPUT" | grep -q "ok.module.css"; then
+if grep -qF "ok.module.css" "$GUARD_LOG"; then
   echo "FAILED: check-theme flagged sub-scale CSS micro-spacing, which basalt-tokens.md allows raw"
   exit 1
 fi
-rm -rf guard-fixture
+rm -rf guard-fixture "$GUARD_LOG" "$OXLINT_LOG"
 echo "scratch-consumer theme guard OK"
 
 echo "==> dist-vantage tsc assertion (catches .d.ts declaration-emit regressions)"
