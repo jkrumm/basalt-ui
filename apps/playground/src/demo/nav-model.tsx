@@ -119,6 +119,18 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/charts' }),
         },
         {
+          id: 'band-strip',
+          label: 'Band strip',
+          icon: <IconChart />,
+          link: linkOptions({ to: '/band-strip' }),
+        },
+        {
+          id: 'mirrored-bars',
+          label: 'Mirrored bars',
+          icon: <IconChart />,
+          link: linkOptions({ to: '/mirrored-bars' }),
+        },
+        {
           id: 'components',
           label: 'Components',
           icon: <IconComponents />,
