@@ -365,8 +365,14 @@ function readBasaltConfig(cwd: string): BasaltConfig {
  * Extensions the walker collects. `html?`/`webmanifest` close argo's finding that raw hex ships in
  * `index.html`'s `theme-color` and the webmanifest's `theme_color`/`background_color` — the two
  * places whose colors nothing re-derives on a scheme change, and which the scan never reached.
+ *
+ * `astro`/`jsx`/`vue` close the same gap one component layer up. rollhook's marketing site is
+ * Astro: `apps/marketing/src` holds two `.astro` templates that are its ENTIRE markup layer, and
+ * check-theme reported a clean 4-file scan without ever opening either. The colour and typography
+ * kinds apply to them exactly as they do to `.html`, which was already scanned; `.jsx` and `.vue`
+ * were missing from the same regex, so a plain-JS or Vue consumer was unguarded end to end.
  */
-const SCANNABLE_EXT = /\.(?:tsx?|css|html?|webmanifest)$/
+const SCANNABLE_EXT = /\.(?:tsx?|jsx|astro|vue|css|html?|webmanifest)$/
 
 /**
  * Recursively collect scannable files under a root, skipping dependency/build dirs. Node+Bun-safe.
@@ -539,6 +545,36 @@ function descendantProjects(cwd: string, depth = 2): string[] {
   return out
 }
 
+/**
+ * The nearest ANCESTOR of `cwd`, within the same repo, that is a basalt project — or null.
+ *
+ * The descend direction was handled and announced; ascend was not, and it fabricated instead. From
+ * `apps/demo` in a two-root repo, `readBasaltConfig` answered `{}`, `resolveRoots` substituted the
+ * built-in `['src']`, and check-theme scanned 22 of the repo's 44 guarded files, reported
+ * `✓ no off-palette colors`, and printed the invention back as `basalt.roots (src)`. Its
+ * `--audit-allows` then reported `0 live` for a repo carrying a live waiver — a clean slate from
+ * the one command whose entire job is to deny one. `doctor`, standing in that same directory,
+ * already resolved the parent install and named it, so the two commands disagreed about the same
+ * repo.
+ *
+ * Bounded by {@link findRepoRoot}, inclusive: an ancestor outside the repo is not this project's
+ * config. `repoRoot === cwd` means either cwd IS the root (nothing above it to ascend to) or there
+ * is no `.git` anywhere (no bound to walk within) — both answer null, which leaves a standalone
+ * unconfigured consumer on the built-in defaults exactly as before.
+ */
+function ascendantProject(cwd: string): string | null {
+  const repoRoot = findRepoRoot(cwd)
+  if (repoRoot === cwd) return null
+  let current = dirname(cwd)
+  for (;;) {
+    if (hasBasaltProject(current)) return current
+    if (current === repoRoot) return null
+    const parent = dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
 function resolveProjectDir(cwd: string): ProjectResolution {
   const override = process.env['BASALT_CWD']
   if (override !== undefined && override.length > 0) {
@@ -558,6 +594,13 @@ function resolveProjectDir(cwd: string): ProjectResolution {
     return { dir: candidates[0] as string, relocatedFrom: cwd, ambiguous: null }
   }
   if (candidates.length > 1) return { dir: cwd, relocatedFrom: null, ambiguous: candidates }
+
+  // Nothing at cwd and nothing below it: look UP before falling back to a default. See
+  // {@link ascendantProject} — the fabricated `roots: ['src']` this replaces is what let a scan
+  // pass over half a repo and an audit report zero waivers for a repo that has one.
+  const above = ascendantProject(cwd)
+  if (above !== null) return { dir: above, relocatedFrom: cwd, ambiguous: null }
+
   return { dir: cwd, relocatedFrom: null, ambiguous: null }
 }
 
@@ -3325,8 +3368,10 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      demonstrably not the installed package — see the check).
  *   5. The running CLI's own version matches the installed basalt-ui (catches a stale
  *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
- *   9. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
- *      a public/ dir exists at all — skipped otherwise).
+ *   9. The icon files `basaltAppPlugin` (basalt-ui/vite) references exist under the app package's
+ *      public/ — the package found via `basalt.roots`, not just cwd, so a root-invoked run still
+ *      reaches it. Never silently omitted: no plugin call anywhere is a pass that says so, a
+ *      plugin call with no public/ beside it is a SKIPPED.
  *   10 (second half). A declared `basalt.aiMajorSkewReason` when the ai majors currently AGREE — the
  *      exemption is stale and can be deleted; an exemption nobody revisits is how a real, later
  *      skew slips through unnoticed.
@@ -3698,14 +3743,33 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // ── Warn check 8: the icon files basaltAppPlugin actually references exist ────
   // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references six filenames by default
   // (the realfavicongenerator convention), but since 1.23.0 an app can NAME its own — so the option
-  // is read (see {@link readAppIconsOption}) rather than assumed. Only runs when a public/ dir
-  // exists at all: apps that don't use the plugin, or don't use Vite's public-dir convention, get
-  // no false warning.
-  const publicDir = resolve(cwd, 'public')
-  if (profile === 'framework' && existsSync(publicDir)) {
-    const icons = readAppIconsOption(cwd)
-    if (icons.kind === 'none') {
+  // is read (see {@link readAppIconsOption}) rather than assumed.
+  //
+  // It used to read `cwd` alone, and in a monorepo the vite config lives in the app PACKAGE while
+  // the only invocation that exits 0 is the repo root. The check therefore vanished from the root
+  // run with no line at all — the failure mode SKIPPED exists to eliminate — leaving no single
+  // invocation that both passes and checks the icons. It now resolves the app package the same way
+  // the scan does, off `basalt.roots`; see {@link findAppPluginDir}.
+  if (profile === 'framework') {
+    const appDir = findAppPluginDir(cwd, cfg)
+    const iconsIn = appDir ?? cwd
+    const icons = readAppIconsOption(iconsIn)
+    const here = appDir === null || appDir === cwd ? '' : `${relativePosix(cwd, appDir)}/`
+    const publicDir = resolve(iconsIn, 'public')
+    if (appDir === null && !existsSync(publicDir)) {
+      // No `basaltAppPlugin(` anywhere under the declared roots and no public/ here: nothing in
+      // this project references icon files, so there is nothing to check — and saying so is the
+      // point. A check that vanishes without a word is indistinguishable from one that passed.
+      pass('app icons: no `basaltAppPlugin(` under this project and no public/ — nothing to check')
+    } else if (icons.kind === 'none') {
       pass('basaltAppPlugin is configured with no icons — nothing to check')
+    } else if (!existsSync(publicDir)) {
+      skip(
+        `app icons — ${here === '' ? 'this package' : here.replace(/\/$/, '')} configures ` +
+          'basaltAppPlugin, but there is no `public/` beside its vite config, so the files it ' +
+          "references cannot be located. Use Vite's public-dir convention, or set `icons: false` " +
+          'if this app ships none.',
+      )
     } else if (icons.kind === 'explicit') {
       // The app NAMED its icons, so those are the only files it owes. Checking the six defaults
       // here is what told 1.23.0's flagship adopter to generate five files it deliberately lacks.
@@ -3714,19 +3778,20 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       )
       if (missing.length > 0) {
         warn(
-          `basaltAppPlugin declares icon(s) that are not in public/: ${missing.join(', ')} — the ` +
-            'manifest and the head links will point at a 404. Place them, or drop them from the ' +
-            '`icons` array.',
+          `basaltAppPlugin declares icon(s) that are not in ${here}public/: ${missing.join(', ')} — ` +
+            'the manifest and the head links will point at a 404. Place them, or drop them from ' +
+            'the `icons` array.',
         )
       } else {
         pass(
-          `public/ has all ${icons.sources.length} icon file(s) basaltAppPlugin's \`icons\` option names`,
+          `${here}public/ has all ${icons.sources.length} icon file(s) basaltAppPlugin's ` +
+            '`icons` option names',
         )
       }
     } else {
       const dir = icons.kind === 'default' ? icons.dir : null
       const iconRoot = dir === null ? publicDir : resolve(publicDir, dir.replace(/^\//, ''))
-      const shown = dir === null ? 'public/' : `public/${dir.replace(/^\//, '')}`
+      const shown = dir === null ? `${here}public/` : `${here}public/${dir.replace(/^\//, '')}`
       const missingIcons = DEFAULT_APP_ICON_FILES.filter((f) => !existsSync(resolve(iconRoot, f)))
       if (missingIcons.length > 0) {
         warn(
@@ -3963,6 +4028,43 @@ const VITE_CONFIG_FILES = [
 ] as const
 
 /**
+ * The directory whose vite config actually calls `basaltAppPlugin(` — cwd, or the app package the
+ * declared roots point into. Null when no vite config under this project calls it.
+ *
+ * `basalt.roots: ["apps/web/src"]` already names where the app is; the icon check just never used
+ * it, so from the repo root — the only invocation that can exit 0 on a monorepo layout — it found
+ * no vite config and silently emitted nothing. Each root is walked from its own directory up to
+ * cwd, nearest first, so `apps/web/src` resolves to `apps/web`, the package that owns both the
+ * vite config and the `public/` tree.
+ */
+function findAppPluginDir(cwd: string, cfg: BasaltConfig): string | null {
+  const seen = new Set<string>()
+  const candidates: string[] = []
+  const add = (dir: string): void => {
+    if (seen.has(dir)) return
+    seen.add(dir)
+    candidates.push(dir)
+  }
+  add(cwd)
+  for (const root of resolveRoots(cfg)) {
+    let current = resolve(cwd, root)
+    // A root that escapes cwd (`../shared`) is not this project's app package — never walk out.
+    while (current !== cwd && !relative(cwd, current).startsWith('..')) {
+      add(current)
+      const parent = dirname(current)
+      if (parent === current) break
+      current = parent
+    }
+  }
+  for (const dir of candidates) {
+    const configPath = VITE_CONFIG_FILES.map((f) => resolve(dir, f)).find((f) => existsSync(f))
+    if (configPath === undefined) continue
+    if (readIfExists(configPath)?.includes('basaltAppPlugin(') === true) return dir
+  }
+  return null
+}
+
+/**
  * What `basaltAppPlugin`'s `icons` option says this app actually has.
  *
  * `unknown` = no vite config, no `basaltAppPlugin(` call, or an `icons` value this bounded read
@@ -4060,29 +4162,81 @@ function generatedHeader(version: string, command: string, flags: string[]): str
 }
 
 /**
- * The generated file with its provenance line (line 2) blanked — what `--check` actually compares.
+ * The provenance line, split so only the VERSION token can be neutralized.
  *
- * Line 2 carries the EMITTING VERSION, and `--check` gated the whole file byte-for-byte, so every
- * basalt-ui release forced a mandatory no-op commit in every consumer that commits a generated
- * sheet: regenerate, one line changes, nothing else, ship it. That is the rot pattern removed from
- * DESIGN.md this cycle, made worse by a gate that is byte-equality.
- *
- * The version STAYS in the file rather than being dropped the way DESIGN.md's was, because the
- * consumer this command exists for — a framework-free site running `bunx basalt-ui tokens:css` with
- * no basalt in its dependency tree at all — has no other record of which version emitted it, and no
- * `doctor` to ask. What changes is that the line no longer gates: drift is measured over the token
- * VALUES, which is the only part of the file a release can meaningfully change.
- *
- * Blanked, not dropped, so the two sides stay line-aligned and the reported line counts still match
- * the files on disk. The `@generated` exemption is untouched by all of this — the guard requires
- * line 1 verbatim and line 2 parsing as the provenance line, and both are still emitted exactly as
- * {@link generatedHeader} builds them.
+ * Deliberately the same shape as the guard's `GENERATED_PROVENANCE_LINE` (`src/guard/index.ts`),
+ * which is what the `@generated` exemption tests line 2 against — the two must keep agreeing, so
+ * this is written to match, not to be lenient. A line that does not match is left VERBATIM, which
+ * is what makes a deleted, reworded or forged header fail `--check` instead of being blanked into
+ * agreement.
  */
-function withoutProvenanceLine(css: string): string {
+const PROVENANCE_VERSION =
+  /^(\/\* basalt-ui )(\d+\.\d+\.\d+\S*)( — `basalt-ui (?:tokens:css|fonts:css)[^`]*` \*\/)$/
+
+/** The provenance line's version token, or null when line 2 is not a provenance line at all. */
+function provenanceVersion(css: string): string | null {
+  const match = PROVENANCE_VERSION.exec(css.split('\n')[1] ?? '')
+  return match === null ? null : (match[2] as string)
+}
+
+/**
+ * The generated file with only the provenance line's VERSION TOKEN neutralized — what `--check`
+ * actually compares.
+ *
+ * `--check` used to gate the whole file byte-for-byte, so every basalt-ui release forced a
+ * mandatory no-op commit in every consumer that commits a generated sheet. 1.23.1 fixed that by
+ * blanking the whole of line 2 — and line 2 is the line that carries the exact invocation, which
+ * line 1 tells the reader to regenerate with. The gate stopped verifying the one instruction it
+ * hands out: rollhook's header was rewritten from `--only core --no-legacy-aliases` to `--only all
+ * --with-legacy-aliases` and `--check` passed clean.
+ *
+ * So the version token is replaced by a sentinel and the rest of the line still gates. A release
+ * alone never trips the check; a changed flag, a reworded header, and a header that is simply gone
+ * all do.
+ *
+ * The version STAYS in the file rather than being dropped, because the consumer this command exists
+ * for — a framework-free site running `bunx basalt-ui tokens:css` with no basalt in its dependency
+ * tree at all — has no other record of which version emitted it, and no `doctor` to ask.
+ *
+ * Line-aligned, never dropped, so the reported line counts still match the files on disk. The
+ * `@generated` exemption is untouched by all of this: nothing here changes what
+ * {@link generatedHeader} emits, and {@link PROVENANCE_VERSION} is matched to the guard's own
+ * provenance regex rather than replacing it.
+ */
+function withoutProvenanceVersion(css: string): string {
   const lines = css.split('\n')
-  if (lines.length < 2) return css
-  lines[1] = ''
+  const line = lines[1]
+  if (line === undefined) return css
+  const match = PROVENANCE_VERSION.exec(line)
+  if (match === null) return css
+  lines[1] = `${match[1] as string}<version>${match[3] as string}`
   return lines.join('\n')
+}
+
+/** The leading `major.minor.patch` of a version string as numbers, or null when it has none. */
+function versionTriple(version: string): number[] | null {
+  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
+  return match === null ? null : [Number(match[1]), Number(match[2]), Number(match[3])]
+}
+
+/**
+ * How the on-disk provenance version relates to the one that just ran — measured, not assumed.
+ *
+ * The success message asserted the file "still names an older basalt-ui" without ever reading the
+ * token, so `0.0.1-nonsense` got the same sentence. Both sides are parsed; the numeric triples are
+ * compared and anything that does not order cleanly is reported as merely different.
+ */
+function describeVersionSkew(onDisk: string, current: string): string {
+  const a = versionTriple(onDisk)
+  const b = versionTriple(current)
+  if (a === null || b === null) return 'a different'
+  for (let i = 0; i < 3; i++) {
+    const left = a[i] as number
+    const right = b[i] as number
+    if (left < right) return 'an older'
+    if (left > right) return 'a newer'
+  }
+  return 'a different'
 }
 
 /**
@@ -4147,22 +4301,46 @@ function emitGeneratedCss(content: string, flags: string[], cwd: string, command
       )
       return 1
     }
-    if (withoutProvenanceLine(onDisk) === withoutProvenanceLine(content)) {
-      const staleProvenance = onDisk.split('\n')[1] !== content.split('\n')[1]
-      console.log(
-        `✓ ${command} --check: ${shown} is up to date.` +
-          (staleProvenance
-            ? ' (Its provenance line still names an older basalt-ui; that line is deliberately not ' +
-              'gated — re-run without --check whenever you want it refreshed.)'
-            : ''),
-      )
+    if (withoutProvenanceVersion(onDisk) === withoutProvenanceVersion(content)) {
+      const diskVersion = provenanceVersion(onDisk)
+      const currentVersion = provenanceVersion(content)
+      const skew =
+        diskVersion !== null && currentVersion !== null && diskVersion !== currentVersion
+          ? ` (Its provenance line names basalt-ui ${diskVersion}, ` +
+            `${describeVersionSkew(diskVersion, currentVersion)} release than the ` +
+            `${currentVersion} that just ran — only that version token is excluded from the ` +
+            'comparison. Re-run without --check whenever you want it refreshed.)'
+          : ''
+      console.log(`✓ ${command} --check: ${shown} is up to date.${skew}`)
       return 0
+    }
+    // Name the provenance line when it is the ONLY thing that moved: the diff is one line the
+    // reader is about to scroll past, and a rewritten invocation is the failure that bought this
+    // branch — line 1 tells them to regenerate with line 2, so line 2 has to be true.
+    const diskLines = onDisk.split('\n')
+    const wantLines = content.split('\n')
+    const provenanceOnly =
+      diskLines.length === wantLines.length &&
+      diskLines.every((line, i) => i === 1 || line === wantLines[i]) &&
+      diskLines[1] !== wantLines[1]
+    if (provenanceOnly) {
+      console.error(
+        `✖ ${command} --check: ${shown}'s \`@generated\` provenance line does not match the ` +
+          'command that produced this content — the token values agree, line 2 does not.\n' +
+          `  on disk: ${diskLines[1]}\n` +
+          `  emitted: ${wantLines[1]}\n` +
+          'Line 1 tells the reader to regenerate with line 2, so line 2 is gated: run the emitted ' +
+          'invocation without --check and commit the result, or change the flags this check runs ' +
+          'with to the ones the file was really built from. Only the version token is exempt.',
+      )
+      return 1
     }
     console.error(
       `✖ ${command} --check: ${shown} differs from what \`basalt-ui ${command}\` emits today ` +
-        `(on disk ${onDisk.split('\n').length} lines, emitted ${content.split('\n').length}) — ` +
-        "re-run the same command without --check and commit the result. The `@generated` header's " +
-        'provenance line is excluded from this comparison, so a version bump alone never trips it.',
+        `(on disk ${diskLines.length} lines, emitted ${wantLines.length}) — ` +
+        're-run the same command without --check and commit the result. Only the `@generated` ' +
+        "provenance line's VERSION token is excluded from this comparison, so a release alone " +
+        'never trips it — but its flags do.',
     )
     return 1
   }

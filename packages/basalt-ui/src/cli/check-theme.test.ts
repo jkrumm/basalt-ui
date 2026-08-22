@@ -654,6 +654,40 @@ describe('check-theme scans .css', () => {
   })
 })
 
+// Round 9, rollhook: `SCANNABLE_EXT` stopped at `tsx?|css|html?|webmanifest`, so the marketing
+// site's two `.astro` templates — its ENTIRE markup layer — were never opened, and check-theme
+// reported a clean 4-file scan. `.jsx` and `.vue` were missing from the same regex, so a plain-JS
+// or Vue consumer was unguarded end to end.
+describe('check-theme scans the component extensions it was skipping', () => {
+  it('flags a raw hex in an .astro template', () => {
+    fixtureAt('pages/index.astro', '<style>\n  .hero { color: #ff0000; }\n</style>\n')
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-hex')
+    expect(err).toContain('index.astro')
+  })
+
+  it('flags a raw hex in a .vue single-file component', () => {
+    fixtureAt('components/Hero.vue', '<style>\n  .hero { color: #ff0000; }\n</style>\n')
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('Hero.vue')
+  })
+
+  it('flags a raw inline border in a .jsx component', () => {
+    fixtureAt('Card.jsx', `export const C = () => <div style={{ border: '1px solid #ccc' }} />\n`)
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('raw-surface')
+    expect(err).toContain('Card.jsx')
+  })
+
+  it('stays quiet on a clean .astro file — the extension is scanned, not condemned', () => {
+    fixtureAt('pages/index.astro', '<style>\n  .hero { color: var(--vx-ink); }\n</style>\n')
+    expect(run().code).toBe(0)
+  })
+})
+
 describe('check-theme comment skipping', () => {
   it('does NOT flag a banned element mentioned in a pure line comment', () => {
     fixtureAt(

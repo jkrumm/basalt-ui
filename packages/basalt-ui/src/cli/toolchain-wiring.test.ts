@@ -1210,3 +1210,149 @@ describe('DESIGN.md carries no version, and sync heals the ones already written'
     expect(read('DESIGN.md')).toBe(owned)
   })
 })
+
+// ── The ascend direction ──────────────────────────────────────────────────────
+// Round 9, basalt-ui-obsidian: from `apps/demo` — a package with no `basalt` key of its own —
+// `check-theme` invented `roots: ["src"]`, scanned 22 of the repo's 44 guarded files, printed
+// `✓ no off-palette colors`, and reported the invention back as `basalt.roots (src)`. Its
+// `--audit-allows` then reported `0 live` for a repo carrying one live waiver: a clean slate from
+// the one command whose entire job is to deny one. `doctor`, standing in the same directory,
+// already resolved the parent. The descend direction announced itself; only ascend was silent.
+describe('check-theme / doctor — ascend to the parent config instead of fabricating one', () => {
+  /** Repo root owns the config and names TWO roots; neither package declares anything. */
+  function twoRootRepo(): void {
+    write('.git/HEAD', 'ref: refs/heads/master\n')
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        workspaces: ['packages/*', 'apps/*'],
+        basalt: { roots: ['packages/lib/src', 'apps/demo/src'] },
+      }),
+    )
+    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
+    write('apps/demo/package.json', JSON.stringify({ name: 'demo' }))
+    write('apps/demo/src/App.tsx', 'export const App = () => null\n')
+  }
+
+  it('scans the WHOLE declared surface from a package that declares nothing, and says so', () => {
+    twoRootRepo()
+    // The violation sits in the sibling root — the half the fabricated `src` default never read.
+    write('packages/lib/src/Card.tsx', `export const C = () => <div style={{ borderRadius: 8 }} />`)
+
+    const { code, log } = capture(() => checkTheme(join(dir, 'apps/demo')))
+    expect(log).toContain('running in ../.., where it lives')
+    expect(code).toBe(1)
+    expect(log).toContain('raw-surface')
+  })
+
+  it('--audit-allows reports the repo’s real waiver count, not zero', () => {
+    twoRootRepo()
+    write(
+      'packages/lib/src/Card.tsx',
+      'export const C = () => <div style={{ borderRadius: 8 }} /> // theme-allow: legacy widget\n',
+    )
+
+    const { code, log } = capture(() => checkTheme(join(dir, 'apps/demo'), ['--audit-allows']))
+    expect(code).toBe(0)
+    expect(log).toContain('1 live, 0 dead')
+    expect(log).toContain('basalt.roots (packages/lib/src, apps/demo/src)')
+  })
+
+  it('doctor and check-theme now answer with the SAME project dir', () => {
+    twoRootRepo()
+    write('packages/lib/src/Card.tsx', 'export const C = () => null\n')
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
+    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
+    installBasalt()
+
+    const { log } = capture(() => doctor(join(dir, 'apps/demo')))
+    expect(log).toContain('reporting on ../.., where it lives')
+    expect(log).toContain(`basalt-ui doctor — ${dir}`)
+  })
+
+  it('never ascends out of the repo — no .git above cwd means no ancestor to read', () => {
+    // No `.git` anywhere: the walk has no bound, so it refuses to walk at all and the built-in
+    // defaults apply exactly as they did before. A standalone consumer is untouched by this.
+    write('package.json', JSON.stringify({ name: 'root', basalt: { roots: ['packages/lib/src'] } }))
+    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
+    write('packages/lib/src/App.tsx', 'export const App = () => null\n')
+
+    const { code, log } = capture(() => checkTheme(join(dir, 'packages/lib')))
+    expect(log).not.toContain('where it lives')
+    expect(code).toBe(0)
+  })
+
+  it('BASALT_CWD still wins over the ascend', () => {
+    twoRootRepo()
+    write('packages/lib/src/Card.tsx', 'export const C = () => null\n')
+    write('apps/demo/package.json', JSON.stringify({ name: 'demo', basalt: { roots: ['src'] } }))
+    process.env['BASALT_CWD'] = join(dir, 'apps/demo')
+    try {
+      const { code, log } = capture(() => checkTheme(dir, ['--audit-allows']))
+      expect(code).toBe(0)
+      expect(log).toContain('basalt.roots (src)')
+    } finally {
+      delete process.env['BASALT_CWD']
+    }
+  })
+})
+
+// ── The icons check, reachable wherever doctor runs ───────────────────────────
+// Round 9, rb and argo: the root run — the ONLY invocation that can exit 0 on a monorepo layout —
+// omitted the icons check entirely, with no `⊘ SKIPPED` line. It read `cwd/public` and `cwd`'s
+// vite config, and in a monorepo both live in the app package. A check that vanishes without a
+// word is indistinguishable from one that passed.
+describe('doctor — the icons check is reachable from the root, or says why not', () => {
+  /** A monorepo whose app package owns the vite config, the public/ tree and nothing else. */
+  function appPackageRepo(viteConfig: string): void {
+    write('.git/HEAD', 'ref: refs/heads/master\n')
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['apps/web/src'] } }))
+    write('apps/web/src/app.tsx', 'export const App = () => null\n')
+    write('apps/web/vite.config.ts', viteConfig)
+    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
+    installBasalt()
+  }
+
+  it('reads the app package’s `icons` array from a ROOT-invoked run', () => {
+    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
+    write('apps/web/public/favicon.svg', '<svg/>')
+
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain("apps/web/public/ has all 1 icon file(s) basaltAppPlugin's `icons`")
+  })
+
+  it('reports a missing icon from the root too — it is not just reachable, it judges', () => {
+    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
+    write('apps/web/public/.keep', '')
+
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain('basaltAppPlugin declares icon(s) that are not in ./apps/web/public/')
+  })
+
+  it('SKIPS loudly when the plugin is configured but has no public/ beside it', () => {
+    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
+
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('⊘ SKIPPED — app icons — ./apps/web configures basaltAppPlugin')
+    expect(code).toBe(1)
+  })
+
+  it('states the absence rather than omitting the line when nothing uses the plugin', () => {
+    write('.git/HEAD', 'ref: refs/heads/master\n')
+    healthyFixture()
+
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('no `basaltAppPlugin(` under this project')
+    expect(code).toBe(0)
+  })
+
+  it('`icons: false` is nothing to check, from the root as from the package', () => {
+    appPackageRepo('export default basaltAppPlugin({ icons: false })\n')
+
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('basaltAppPlugin is configured with no icons')
+    expect(code).toBe(0)
+  })
+})

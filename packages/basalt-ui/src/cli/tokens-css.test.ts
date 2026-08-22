@@ -14,7 +14,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { GENERATED_HEADER_LINE } from '../guard'
+import { DEFAULT_GUARD_CONFIG, GENERATED_HEADER_LINE, checkSource } from '../guard'
 import { buildPaletteCss } from '../tokens'
 import { normalizeColorFunctions, run, tokensCss } from './index'
 
@@ -121,12 +121,17 @@ describe('tokens:css', () => {
 })
 
 /**
- * `--check` gates the token VALUES, never the provenance line.
+ * `--check` gates the token VALUES and the provenance INVOCATION — only the version token is free.
  *
  * Line 2 of the generated header carries the emitting version, and `--check` used to compare the
- * whole file byte for byte — so every basalt-ui release forced a mandatory no-op commit in every
- * consumer that commits a generated sheet: regenerate, one line moves, nothing else, ship it. That
- * is the rot pattern removed from DESIGN.md this cycle, on a file whose gate is byte-equality.
+ * whole file byte for byte, so every basalt-ui release forced a mandatory no-op commit in every
+ * consumer that commits a generated sheet. 1.23.1 fixed that by blanking the whole of line 2 —
+ * which is also the line carrying the exact invocation line 1 tells the reader to regenerate with.
+ * rollhook's header was rewritten from `--only core --no-legacy-aliases` to `--only all
+ * --with-legacy-aliases` and `--check` passed clean.
+ *
+ * Three-way contract, one test each below: a version-only change passes, a line-2 flag change
+ * fails, a token drift fails.
  */
 describe('tokens:css --check and the provenance line', () => {
   /** Capture stdout/stderr so the check's own sentence can be asserted. */
@@ -156,7 +161,54 @@ describe('tokens:css --check and the provenance line', () => {
     const { code, log } = check('out.css')
     expect(code).toBe(0)
     expect(log).toContain('is up to date')
-    expect(log).toContain('provenance line still names an older basalt-ui')
+    // Parsed, not asserted: the old sentence claimed "an older basalt-ui" without ever reading
+    // the token, so `0.0.1-nonsense` got the same claim. Both versions are named now.
+    expect(log).toContain('names basalt-ui 0.0.1, an older release than the')
+  })
+
+  it('calls a NEWER on-disk version newer — the old sentence said "older" either way', () => {
+    const lines = emit([]).split('\n')
+    lines[1] = (lines[1] as string).replace(/basalt-ui [\d.]+ —/, 'basalt-ui 999.0.0 —')
+    writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
+
+    const { code, log } = check('out.css')
+    expect(code).toBe(0)
+    expect(log).toContain('names basalt-ui 999.0.0, a newer release than the')
+    expect(log).not.toContain('an older release')
+  })
+
+  it('calls a same-triple prerelease merely different rather than ordering it', () => {
+    const lines = emit([]).split('\n')
+    const current = /basalt-ui (\d+\.\d+\.\d+)/.exec(lines[1] as string)?.[1] as string
+    lines[1] = (lines[1] as string).replace(`basalt-ui ${current} —`, `basalt-ui ${current}-rc.1 —`)
+    writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
+
+    const { code, log } = check('out.css')
+    expect(code).toBe(0)
+    expect(log).toContain(`names basalt-ui ${current}-rc.1, a different release than the`)
+  })
+
+  it('FAILS when line 2 names different flags — the invocation line 1 points at is gated', () => {
+    const emitted = emit([])
+    const lines = emitted.split('\n')
+    lines[1] = (lines[1] as string).replace(
+      '`basalt-ui tokens:css --out out.css`',
+      '`basalt-ui tokens:css --only all --with-legacy-aliases --out out.css`',
+    )
+    writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
+
+    const { code, log } = check('out.css')
+    expect(code).toBe(1)
+    expect(log).toContain('provenance line does not match the command that produced this content')
+    expect(log).toContain('--only all --with-legacy-aliases')
+  })
+
+  it('FAILS when the provenance line is deleted outright — a blank line is not a free pass', () => {
+    const lines = emit([]).split('\n')
+    lines[1] = ''
+    writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
+
+    expect(check('out.css').code).toBe(1)
   })
 
   it('says nothing about provenance when the file is byte-identical', () => {
@@ -174,9 +226,24 @@ describe('tokens:css --check and the provenance line', () => {
     expect(log).toContain('differs from what')
   })
 
+  it('STILL fails on token drift even when the version token ALSO differs', () => {
+    const lines = emit([]).replace('--vx-neutral', '--vx-neutrall').split('\n')
+    lines[1] = (lines[1] as string).replace(/basalt-ui [\d.]+ —/, 'basalt-ui 0.0.1 —')
+    writeFileSync(resolve(dir, 'out.css'), lines.join('\n'))
+    expect(check('out.css').code).toBe(1)
+  })
+
   it('the header itself is unchanged — the `@generated` exemption needs both lines verbatim', () => {
     const lines = emit([]).split('\n')
     expect(lines[0]).toBe(GENERATED_HEADER_LINE)
     expect(lines[1]).toMatch(/^\/\* basalt-ui [\d.]+ — `basalt-ui tokens:css --out out\.css` \*\/$/)
+  })
+
+  it('the emitted header is still guard-exempt — checkSource reports nothing in it', () => {
+    // The exemption requires line 1 verbatim AND line 2 parsing as the provenance line. `--check`
+    // now reads line 2 too, so the two shapes have to keep agreeing; this is the assertion that
+    // notices if the emitter drifts to satisfy the gate.
+    const emitted = emit([])
+    expect(checkSource(emitted, 'src/tokens.css', DEFAULT_GUARD_CONFIG)).toEqual([])
   })
 })
