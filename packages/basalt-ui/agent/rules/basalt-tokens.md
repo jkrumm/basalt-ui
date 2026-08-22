@@ -57,6 +57,11 @@ Scope it. `theme-allow <rule-id> — <reason>` waives that ONE kind; the id is a
 - **A bare `theme-allow` still waives everything**, so no upgrade takes a build down over comment
   placement — but it now reports `theme-allow-unscoped` (`warn` for one minor, then `error`).
   Rescope the ones you have; that is the whole migration.
+- **Spell the id right — a typo waives nothing.** A word in the id slot that names no rule is
+  recorded as unknown and suppresses nothing; the annotation covers exactly the ids it got right.
+  Only a genuinely bare `theme-allow` is the blanket form. Because the id slot is read strictly, a
+  prose reason has to be introduced by a separator: `theme-allow: <why>` or
+  `theme-allow <id> — <why>`, never `theme-allow <why>`.
 - **Three placements work and both engines agree on all three**: the reported line, a comment-ONLY
   line directly above it (the only form JSX can express — the reported line is usually a multi-line
   opening tag or a `{expr}` child), and in CSS a trailing annotation reaching back over the
@@ -70,7 +75,7 @@ Scope it. `theme-allow <rule-id> — <reason>` waives that ONE kind; the id is a
 
 | Kind                      | Fires on                                                                                                            |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `theme-allow-unscoped`    | a `theme-allow` with no rule id and no reason                                                                       |
+| `theme-allow-unscoped`    | a `theme-allow` with no rule id, no reason, or an id that names no rule                                             |
 | `surface-shadow-override` | a `boxShadow` built FROM tokens that REPLACES `--vx-shadow-card` instead of composing with it                       |
 | `css-raw-surface`         | the kebab dialect of the surface kinds in CSS (`border-radius: 6px`); sub-scale corners and circle/pill values pass |
 | `inline-font-size`        | `style={{ fontSize: 11 }}` — the `check-theme` half of `basalt/no-raw-font-size`, for a CI that runs only the guard |
@@ -220,5 +225,6 @@ Fix the source, don't silence it — reach for the right token first. Only add `
 genuine, documented exception (a third-party widget needing a literal), scoped to the rule id, with
 a reason: a bare `// theme-allow` passes the check, tells the next reader nothing, and now reports
 `theme-allow-unscoped` besides. The palette-definition files are listed in your `exempt` set so they
-don't self-trip. A stylesheet emitted by `basalt-ui tokens:css` needs no entry — its `@generated
-basalt-ui` header line makes the guard skip it.
+don't self-trip. A stylesheet emitted by `basalt-ui tokens:css` needs no entry — the guard skips a
+`.css` file carrying that exact two-line `@generated basalt-ui` header whose body is nothing but
+basalt custom properties. Pasting the marker anywhere else suppresses nothing.

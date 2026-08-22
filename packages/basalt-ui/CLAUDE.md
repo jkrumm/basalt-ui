@@ -423,9 +423,12 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   Mantine in a different workspace package. `doctor` DOES infer it, because its profile only changes
   which advice it prints, never what it enforces — and it names the key to write down. The asymmetry
   is the safety property, not an inconsistency.
-  Any file whose first 5 lines carry the `@generated basalt-ui` marker is skipped outright — that is
+  A file is skipped as basalt-emitted only when all three hold: a `.css` path, the canonical
+  `@generated basalt-ui` header verbatim on line 1 plus the provenance line on line 2, and a body of
+  nothing but `--vx-*` / `--basalt-*` declarations, selectors, `}`, at-rules and comments. That is
   what stopped the guard reporting 116 violations inside the stylesheet `tokens:css` had just
-  written.
+  written. The marker on its own (first 5 lines, any extension) was a hand-writable whole-file
+  bypass; the body test is the leg a pasted comment cannot satisfy.
   **Footgun: `check-theme` (and `pre`, which runs it) validates the last BUILT `dist`, not the
   working tree.** `bin/basalt-ui.mjs` imports `../dist/cli/index.js` — a source change under
   `src/guard/**` or `src/cli/**` is invisible to `check-theme` until `bun run build` runs, and a
@@ -502,8 +505,10 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   Token VALUES come from `buildPaletteCss` and only from there — the CLI and the API must not be able
   to disagree about what basalt's tokens are (`src/cli/tokens-css.test.ts`). What the command adds on
   top is **file framing for an artifact a consumer COMMITS**, and nothing else: the
-  `@generated basalt-ui` marker as line 1 (the guard's skip contract), version + invocation as line
-  2, a trailing newline, and `rgba()` argument spacing normalized to the spaced form. `--selector-class` is the one
+  `@generated basalt-ui` marker as line 1 — imported from the guard as `GENERATED_HEADER_LINE`, one
+  source of truth rather than the two hand-kept copies it replaced — version + invocation as line 2,
+  a trailing newline, and `rgba()` argument spacing normalized to the spaced form.
+  `--selector-class` is the one
   structural rewrite — `buildPaletteCss` emits attribute selectors only, so the class form is
   produced by emitting against a CLI-chosen sentinel attribute and rewriting exactly those
   selectors; there is no `scheme: { class }` API. All of it was reported by the one framework-free
