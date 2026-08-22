@@ -16,8 +16,9 @@ Astro docs is obsolete — that doctrine no longer applies.
 
 ## Working Instructions
 
-The full S0→S5 argo extraction is **implemented** on `feat/s0-mantine-pivot` — `packages/basalt-ui/src/**`
-is real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). The historical plan
+The full S0→S5 argo extraction is **implemented and on `master`** — `packages/basalt-ui/src/**` is
+real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). The stale
+`feat/s0-mantine-pivot` branch is superseded; don't work from it. The historical plan
 lives in `docs/archive/BLUEPRINT.md`. `docs/STATUS.md` is the live single-source-of-truth for
 current state; `docs/archive/MATURATION-REVIEW.md` is the (now-executed) quality ledger. Do what is
 explicitly requested — don't autonomously execute large roadmap phases.

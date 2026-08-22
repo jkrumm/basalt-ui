@@ -3,11 +3,14 @@
 basalt-ui has zero runtime dependencies. `bun add basalt-ui` with no peers
 installed pulls in exactly one package — itself. No React, no Mantine, no
 bundler, and no d3/visx chart stack riding along for a component you never
-render. A static site can carry the same 200 `--vx-*` variables the framework's
+render. A static site can carry the same 202 `--vx-*` variables the framework's
 own components read, and stay in sync with them, without any of that weight.
 
-Counts on this page are verified against the published **1.19.1** tarball
-(`npm pack basalt-ui@1.19.1`), not against `src`.
+Counts on this page are for **1.20.0** and reproduce from the emitter itself:
+
+```bash
+bunx basalt-ui tokens:css --no-legacy-aliases | grep -oE '^ +--vx-[a-z0-9-]+' | sort -u | wc -l
+```
 
 This page is for that consumer: an Astro site, a Hugo theme, a plain
 `index.html`, a design system in another stack that wants basalt's palette
@@ -36,9 +39,9 @@ tokens-only `bun add basalt-ui` never pulls in `@visx/scale`).
 `basalt-ui/styles.css` is a different thing and you almost certainly do not want
 it — it is the framework's base layer, it `@import`s three `@fontsource-variable`
 packages, and its `@layer basalt` block assumes Mantine's own layered bundle
-underneath. It is also the **only** place the default `--basalt-font-*` stacks
-exist, so declining it means declining basalt's typeface (see "What you don't
-get").
+underneath. It is not the only route to the default `--basalt-font-*` stacks any
+more — `basalt-ui fonts:css` reads them out of it and emits them as plain CSS (see
+"What you don't get").
 
 ## Retargeting the color-scheme selector
 
@@ -102,35 +105,53 @@ preference is a fallback, never an override.
 
 ### Class selectors (`<html class="dark">`)
 
-The emitter keys on an **attribute** only. Tailwind's universal convention is a
-class — `@custom-variant dark (&:where(.dark, .dark *))` over `<html class="dark">`
-— and there is no attribute anywhere in that setup for the default output to
-match. At 1.19.1 the two workarounds are:
+Tailwind's universal convention is a class — `@custom-variant dark (&:where(.dark,
+.dark *))` over `<html class="dark">` — and there is no attribute anywhere in that
+setup for an attribute selector to match. Since 1.20.0, `--selector-class` emits
+the class form directly:
 
-- **Single-scheme site.** `--default-scheme dark` puts the dark primitives on the
-  bare `:root` and keys the light block off an attribute nothing ever sets. Both
-  rollhook apps ship this way. Costs you the light scheme entirely.
-- **Both schemes.** Re-declare the light block yourself under `.light`, or set the
-  attribute alongside the class from your toggle.
+```bash
+bunx basalt-ui tokens:css --selector-class dark --out src/tokens.css
+```
 
-> **Planned, not shipped.** A `--selector-class` flag (`tokens:css --selector-class dark`
-> / `buildPaletteCss({ scheme: { class: 'dark' } })`) is in flight and lands in the
-> next minor. Unverified against a release — check the CHANGELOG before relying on it.
+```css
+:root {
+  /* theme-independent scalars */
+}
+:root,
+:root.dark {
+  /* dark primitives */
+}
+:root.light {
+  /* light primitives */
+}
+```
+
+`--light-class` renames the light block (default `light`); `--selector-class` and
+`--selector-attribute` are alternatives, and passing both is an error. **This is
+CLI-only.** `buildPaletteCss` emits attribute selectors and takes no
+`scheme: { class }` — the CLI produces the class form by emitting against a
+sentinel attribute it chose itself and rewriting exactly those selectors, so the
+token values still come from one emitter.
+
+Before 1.20.0 the only route was `--default-scheme dark`, which parks dark on the
+bare `:root` and costs you the light scheme entirely. Both rollhook apps shipped
+that way; they no longer have to.
 
 ## `only: 'core'` — drop the component spacing
 
-106 of the 200 variables are `--vx-space-*`, and 97 of those are named for a
+108 of the 202 variables are `--vx-space-*`, and 99 of those are named for a
 basalt React component: `--vx-space-agent-transcript-inset`,
 `--vx-space-toc-sub-indent`, `--vx-space-sidebar-child-row-indent`. Outside this
 framework they are dead weight.
 
 `--only core` keeps the 9 generic anchors — the `stack-xs`…`stack-xl` rhythm,
 `control-height`, `input-height`, `row-inset-x`, `row-inset-y` — and takes the
-emitted set from 200 variables to 103. It is a spacing filter only: color,
+emitted set from 202 variables to 103. It is a spacing filter only: color,
 radius, shadow, type and status are identical in both modes.
 
 All three counts exclude the 32 deprecated camelCase aliases below, which the
-default output still emits (232 declarations in the file, 200 canonical names).
+default output still emits (234 declarations in the file, 202 canonical names).
 `--no-legacy-aliases` drops them.
 
 ## Tailwind v4 — the `@theme inline` bridge
@@ -285,12 +306,19 @@ arrow to inherit an edge.
 
 ## What you don't get
 
-- **Fonts.** `tokens.css` emits no `--basalt-font-*`. The defaults (Nunito Sans /
-  Hubot Sans / JetBrains Mono, plus the 88% heading stretch) live only in
-  `styles.css`, and `buildFontsCss(fonts)` returns `''` unless you pass your own
-  overrides — so it cannot re-emit the shipped stack either. Declare the stack
-  yourself. A `fonts:css` command is planned for the next minor; unverified
-  against a release.
+- **Fonts, unless you ask for them.** `tokens.css` emits no `--basalt-font-*`, and
+  `buildFontsCss(fonts)` returns `''` without overrides, so it cannot re-emit the
+  shipped stack. Since 1.20.0 `basalt-ui fonts:css` can — it reads the four
+  declarations out of `styles.css` itself, so the two can never name different
+  typefaces:
+
+  ```bash
+  bunx basalt-ui fonts:css --out src/fonts.css
+  ```
+
+  You still install the `@fontsource-variable` packages yourself (or accept the
+  system fallback chains, which are part of every stack).
+
 - **The base layer.** No preflight, no iOS 16px input floor, no `h1`–`h6` type,
   no font smoothing. `styles.css` has all of it and is Mantine-coupled; a
   framework-free consumer owns its own `@layer base`.
@@ -305,20 +333,29 @@ arrow to inherit an edge.
 - **Component behavior.** Tokens are values. The shell, charts, forms and the
   agent layer are React.
 
-## Known rough edges at 1.19.1
+## The toolchain, tokens-only
 
-`check-theme` and `doctor` assume a Mantine React app. Against a tokens-only
-consumer they misfire, and the shipped fixes point at packages you must not
-install:
+All four of round 4's rough edges are fixed in 1.20.0.
 
-| Symptom                                                                           | Reality                                                                     |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `check-theme` reports ~100 `raw-hex` / `raw-color-fn` in your emitted tokens file | It is scanning the file `tokens:css` just wrote. Add it to `basalt.exempt`. |
-| `raw-form-control` says "use `TextInput` from `@mantine/core`"                    | Not applicable. There is no tokens-only profile yet.                        |
-| `raw-font-family` flags `font-family: var(--font-sans)`                           | A `var()` reference read as a literal.                                      |
-| `doctor` exits 1 with "manifest missing — run `basalt-ui init`"                   | `init` scaffolds a React app. Skip `doctor`.                                |
+| Was                                                                                                  | Now                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check-theme` reported ~100 `raw-hex` / `raw-color-fn` inside the file `tokens:css` had just written | the output opens with an `@generated basalt-ui` marker and the guard skips any file carrying it in its first 5 lines. No `basalt.exempt` entry needed                                                |
+| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` (or `--tokens-only`) disables the 16 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live |
+| `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                          |
+| `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                               |
 
-The emitted stylesheet is also not commit-clean out of the box: no trailing
-newline, no version header, `rgba(255,255,255,0.6)` rather than a formatter's
-spacing, and no `--check` drift mode. Run your own formatter over it after
-`tokens:css`, and regenerate on every basalt bump.
+**The profile is declared for `check-theme` and inferred for `doctor`, deliberately.**
+`doctor`'s profile only changes which advice it prints, never what it enforces, so
+inferring is free there. `check-theme` silences 16 kinds, and inferring that from a
+missing `@mantine/core` would switch off half the guard on any repo that simply
+keeps Mantine in a different workspace package. Write the key down.
+
+The emitted stylesheet is commit-clean now: the `@generated` marker on line 1, the
+version and the exact invocation on line 2, `rgba()` arguments spaced the way a
+formatter writes them, and a trailing newline. `--check` writes nothing and exits 1
+when the file on disk differs from what the command emits today — wire it as a CI
+gate so a basalt bump can't leave the committed copy stale:
+
+```bash
+bunx basalt-ui tokens:css --selector-class dark --out src/tokens.css --check
+```
