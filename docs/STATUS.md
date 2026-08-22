@@ -4,15 +4,16 @@
 > than 1.19 moved to `docs/archive/STATUS-HISTORY.md`; the rest of `docs/archive/` is superseded
 > scope ledgers. This file is what's true now.
 
-**Version:** **1.19.1** is the published npm `latest` (Trusted Publisher OIDC). `master` carries the
-**unreleased 1.20.0** work — the round-4 guard and CLI batch below, plus two mobile-nav fixes. There
-is no unmerged feature branch. Anything marked 1.20.0 on this page is on `master` and not yet on
-npm.
+**Version:** **1.20.0** is the published npm `latest` (Trusted Publisher OIDC), released 2026-08-22 —
+the round-4 guard and CLI batch below, plus two mobile-nav fixes. All seven consumers are on it.
+`master` carries the round-5 corrections toward **1.20.1**; there is no unmerged feature branch.
+
+_This version line is the one line a release must touch and semantic-release does not touch it._
+Round 5 read it on release day and concluded there was nothing to upgrade to.
 
 ## TL;DR
 
-Everything below this line is built. Everything except the 1.20.0 row is on npm. Nothing in this
-document is a plan.
+Everything below this line is built and on npm. Nothing in this document is a plan.
 
 | Capability                                                                                             | Shipped                        |
 | ------------------------------------------------------------------------------------------------------ | ------------------------------ |
@@ -23,14 +24,53 @@ document is a plan.
 | Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                  | 1.15.0                         |
 | Chart-API consumer rounds one / two / three                                                            | 1.16.0 / 1.17.0 / 1.18.0       |
 | Native mobile nav + `defineNav`                                                                        | 1.19.0                         |
-| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0 (unreleased)            |
+| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0                         |
 
-Adopted downstream: seven consumer repos, all on 1.19.1 as of the round-4 sweep. `rollhook` runs
+Adopted downstream: seven consumer repos, all on 1.20.0 as of the round-5 sweep. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
 `basalt-ui-obsidian` is a downstream _library_, not an app.
 
 The June-era roadmap/handover docs in `docs/archive/` still phrase built work as "remaining"; that
 language is historical, see the banner on each.
+
+## Round-5 consumer sweep (2026-08-22)
+
+Seven repos upgraded to 1.20.0 and reported back. The release does what it claimed — `basalt-resolves`,
+the per-line generated-file skip, `--tokens-only`, the markup scan and the preceding-line
+`theme-allow` all verified in the field. What round 5 found instead was **documentation making
+false load-bearing claims**, which is the failure `MIGRATING.md` exists to prevent. Full reports:
+`.claude/feedback/round-5/`.
+
+1. **`theme-allow` per-node scoping is half-delivered, and the doc claimed it whole.**
+   `hand-rolled-plot` reports per node, but a waiver naming the rule AND giving a reason matches
+   `hasFileDeclaration` at any line, so it silences the file; dropping the reason keeps it
+   node-scoped in the plugin and then `check-theme` reports `theme-allow-unscoped`. The two halves
+   intersect at one legal shape and it is whole-file. **Not fixed** — a sibling change targets 1.20.1.
+   `MIGRATING.md` now describes 1.20.0's real behaviour.
+2. **Four wrong rows in `MIGRATING.md`**, found by re-auditing every replacement against the built
+   `.d.ts` rather than the commit it came from. The one a consumer caught: `ZonedLine`/`MultiLine`
+   `formatValue` was mapped to `tooltip`, with "**not** `y`" — backwards; `CartesianTooltipConfig`
+   carries no value formatter and the format resolves from `y.format`. rb got it right by reading
+   the types and would have got it wrong by trusting the doc.
+3. **A correction that lands only in a repo-internal file has not shipped.** The
+   `createSearchParamStore` scoping was correct in this repo's `CLAUDE.md` and absent from
+   `agent/rules/*`, which is what `init`/`sync` copy into consumers. It now lives in
+   `basalt-router.md`. Same class: the managed `CLAUDE.md` block told agents to read
+   `node_modules/basalt-ui/llms.txt` — the exact path 1.20.0 taught `doctor` to reject in a monorepo.
+4. **`basalt/shadow-basalt-export` misses the renamed majority.** It reads only the root barrel (so
+   never the charts layer) and matches only exact names — linewatch's forks are `Cell` and `Box`,
+   rb's is `Stat`. **Detection does not substitute for expressiveness**; the shipped rules now say so.
+5. **`fonts:css` is correct and was not adopted by the consumer it was built for.** rollhook reported
+   having no route to basalt's typefaces; 1.20.0 shipped one; adopting it would rebrand a public
+   marketing site with a display face rollhook never had (0.4.2 was Instrument Sans, 1.x is Nunito
+   Sans + Hubot Sans — the faces changed at 1.0). A feature can be correct and still not be the fix
+   for the consumer that motivated it.
+
+Open, not fixed here: the emitted stylesheet still fails `format/prettier` on two `rgba(…, 0.10)`
+alphas; `exemptRules` matches single path segments, so a real relative path silently matches nothing
+— the only waiver route for the JSON/webmanifest file class 1.20.0 started scanning; `doctor`'s
+`oxlint-preset` check string-matches the `extends` entry with no `existsSync`, so it prints green in
+a tree where `oxlint` refuses to start.
 
 ## Round 4 consumer sweep (2026-08-22)
 
@@ -72,7 +112,7 @@ basalt bug:**
   reporting 116 until the consumer re-runs `bun run tokens`. The 116 → 0 payoff requires that
   regeneration; it is not automatic on upgrade.
 
-## Round-4 batch — 1.20.0, on `master`, unreleased
+## Round-4 batch — shipped in 1.20.0
 
 Five repos hit one bug in five shapes: every gate passed and nothing was enforced. The fix is that
 all of it is now reported rather than inferred. **Consumers will see `doctor` go red where it was
@@ -95,8 +135,9 @@ than the correct spelling. Every consumer had bare comments, basalt included —
 rescoped in the same batch, verified by neutering each annotation and reading what the two engines
 then reported rather than by guessing.
 `basalt/hand-rolled-plot` no longer grants whole-file immunity off whatever comment happened to sit
-on its first assembly node; every node is waived on its own, and a file-scoped waiver needs a
-written declaration naming the rule and giving a reason.
+on its first assembly node; a file-scoped waiver needs a written declaration naming the rule and
+giving a reason. **Half-delivered:** every node is now REPORTED on its own, but not waivable on its
+own — see the round-5 sweep above. Fix targets 1.20.1.
 
 ### Guard holes and false positives
 
@@ -150,7 +191,8 @@ three separate times in this file.
 - **Markup scan reach:** each root's PARENT contributes its `index.html` and `public/` tree (the
   Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its configured
   root. `.json` is never blanket-scanned; `basalt.include` is the only route to one.
-- **`tokens:css` / `fonts:css` output is commit-clean**: the `@generated basalt-ui` marker on line
+- **`tokens:css` / `fonts:css` output is nearly commit-clean** (two `rgba(…, 0.10)` alphas still
+  fail prettier — round 5): the `@generated basalt-ui` marker on line
   1, version + invocation on line 2, a trailing newline, normalized `rgba()` spacing, and a
   `--check` drift gate. `check-theme` skips LINES, not files: the file first has to earn it (a
   `.css` path, that header verbatim on lines 1 and 2), and then each line does too — at brace depth
@@ -392,9 +434,10 @@ does that itself, so only a consumer composing the sub-components by hand is aff
 First real non-Mantine consumer: `rollhook`, round 4 — two Tailwind v4 apps, one on
 `import 'basalt-ui/tokens.css'`, one on a committed `tokens:css` output.
 
-**All four gaps that migration found are closed in 1.20.0** — `--selector-class`, `fonts:css`, a
-declared tokens-only profile, and a commit-clean emitter with a `--check` drift gate. See the
-round-4 batch section above and `docs/FRAMEWORK-FREE.md`.
+**Three and a half of the four gaps that migration found are closed in 1.20.0** —
+`--selector-class`, `fonts:css`, a declared tokens-only profile, and a `--check` drift gate. The
+half: the emitter still writes `rgba(…, 0.10)`, which `format/prettier` rejects, and `--fix` puts
+the file into `--check` drift. See `docs/FRAMEWORK-FREE.md`.
 
 **Follow-ups the original work deliberately did NOT fold in:**
 

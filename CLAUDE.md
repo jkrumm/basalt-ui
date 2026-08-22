@@ -281,7 +281,10 @@ Where it doesn't fit, it doesn't apply. A route whose `validateSearch` is a real
 (image-share carries an 11-key and a 5-key schema, rb a 10-key one) cannot be expressed
 through the store at all, and three consumers hit that wall in round 4. **Hand-write
 `validateSearch` there.** A `createSearchSchemaStore({ key, schema, persist })` is planned
-for the next minor and is not shipped — do not write code against it.
+and **not shipped** — it did not land in 1.20.0 either; do not write code against it.
+
+This scoping is shipped to consumers in `agent/rules/basalt-router.md`. Keeping it only here
+is how round 5 found consumers still reading the unconditional mandate.
 
 See the JSDoc on `createSearchParamStore` for the full 5-step recipe — it ships with every
 consumer via autocomplete. Key rules that won't fit in a JSDoc bullet:
