@@ -89,8 +89,30 @@ export const alpha = (token: string, a: number): string =>
  * `theme/index.ts`), so the component surface scales with the user's browser font-size AND with
  * `--mantine-scale`. `md` is the body step; `lg` is pinned at exactly 16px because it doubles as
  * the iOS input floor (see the `styles.css` floor — Safari zooms the viewport on focus below 16px).
+ *
+ * ## Adding a rung
+ *
+ * The ladder is hand-tuned per ROLE, not generated — but it is not arbitrary either, and the
+ * constraint is what keeps a "just add the size I need" request from dissolving it. Every adjacent
+ * pair sits between **1.06× and 1.17×**, so a new rung must too:
+ *
+ *  • Below the range, two rungs are visually the same size and the ladder stops being a choice —
+ *    the guard would then report a size for which two tokens are equally "right".
+ *  • Above it, the jump reads as a different type system rather than the next step of this one.
+ *
+ * That test is what admitted `nano` (11/10 = 1.10) and `display` (30/26 = 1.154, the second-widest
+ * step, which is the shape a display tier is supposed to have), and what rejected a 20px rung
+ * between `xl` (18) and `h2` (21): 21/20 = 1.05 is below the floor, and `h2` is already 1px away
+ * from any 20px site. A size the ladder declines to grow a rung for is a size that should snap to
+ * its nearest step — not a `theme-allow`.
+ *
+ * A rung is also a ROLE, not just a number. `nano` and `display` are both deliberately named for
+ * where they belong (a label engraved inside a drawn object; a numeral read from across a room)
+ * rather than for a position, because the failure mode of a bare `xxs`/`xxl` is that it becomes the
+ * escape hatch for every size the ladder was meant to prevent.
  */
 const TEXT = {
+  nano: 10, // engraved/graphic label INSIDE a drawn object (a plate face, a dial, a chip) — never UI copy or prose
   micro: 11, // mono uppercase micro-label (table th, Menu.Label, sidebar/section headers, axis ticks)
   xs: 12.5, // delta badges, tooltip meta, dense chrome, StatCard labels
   sm: 13.5, // table/stat numerals, chart tooltip, legend
@@ -100,6 +122,7 @@ const TEXT = {
   h2: 21, // article-density Prose h2 (docs/CONTENT-SPEC.md §5)
   kpi: 24, // the StatCard hero numeral (density pass: 31 → 24, tighter/less shouty)
   h1: 26, // article-density Prose h1 (docs/CONTENT-SPEC.md §5)
+  display: 30, // a numeral read at arm's length (a keypad readout, a timer, a kiosk figure) — not a heading
 } as const
 
 export const VX = {

@@ -138,6 +138,7 @@
   --vx-fill-hover-lime: color-mix(in srgb, var(--vx-fill-lime) 88%, #000);
   --vx-fill-hover-yellow: color-mix(in srgb, var(--vx-fill-yellow) 88%, #000);
   --vx-fill-hover-orange: color-mix(in srgb, var(--vx-fill-orange) 88%, #000);
+  --vx-text-nano: 10px;
   --vx-text-micro: 11px;
   --vx-text-xs: 12.5px;
   --vx-text-sm: 13.5px;
@@ -147,6 +148,7 @@
   --vx-text-h2: 21px;
   --vx-text-kpi: 24px;
   --vx-text-h1: 26px;
+  --vx-text-display: 30px;
   --vx-area-top: 22%;
   --vx-area-bottom: 1%;
   --vx-good: color-mix(in srgb, var(--vx-good-solid) 18%, transparent);
