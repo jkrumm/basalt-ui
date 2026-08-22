@@ -45,35 +45,50 @@ CartesianChart            ← the missing rung: owns margin, scales, axes, grid,
 
 A kind becomes a mark renderer plus its own domain logic. Nothing else.
 
-**One exception, by shape:** `DualPanel` (two panes over one x scale) and the non-cartesian
-`Heatmap`/`Donut` compose `ChartFrame` + `useChartCursor` + `autoMargin` directly rather than
-`CartesianChart`, whose contract is a single plot rect with one or two numeric y axes. They share
-the same cursor, tooltip and margin machinery — just not the single-plot assembly. `DualPanel`'s
-top pane honors `ChartSeries.getMarker`, same as `CartesianChart` — `getMarker` returns `{ color?,
-r?, fillOpacity?, ring? }`: `ring` defaults `true` (today's punched-out stroke, unchanged), `ring:
+**Five exceptions, by shape:** `DualPanel` (two line/bar panes over one x scale), the
+non-cartesian `Heatmap`/`Donut`, and the two band kinds `BandStrip` (no y dimension) /
+`MirroredBars` (two bar panes, two domains) compose `ChartFrame` + `useChartCursor` + `autoMargin`
+directly rather than `CartesianChart`, whose contract is a single plot rect with one or two numeric
+y axes. They share the same cursor, tooltip and margin machinery — just not the single-plot
+assembly. Three of the five carry a `theme-allow-file hand-rolled-plot` declaration — `DualPanel`,
+`BandStrip`, `MirroredBars`. `Donut` and `Heatmap` render no assembly primitive at all, so the rule
+never fires on them and there is nothing to waive.
+
+`DualPanel`'s top pane honors `ChartSeries.getMarker`, same as `CartesianChart` — `getMarker`
+returns `{ color?, r?, fillOpacity?, ring? }`: `ring` defaults `true` (today's punched-out stroke, unchanged), `ring:
 false` omits the stroke entirely, `fillOpacity` defaults `1`. The widened shape exists because a
 consumer's plain `fillOpacity: 0.7` dots were unreproducible when they moved their chart onto the
 kind — the old `{ color?, r? }` had no seam for opacity or a strokeless marker. `DualPanel`'s
 bottom pane's tooltip row is `formatBar` (separate from `formatBottom`'s tick labels), and the
 pane's own domain is configurable via `bottomYDomain`/`bottomMaxAbsFloor`.
 
-**Recorded decision: no two-bar-pane kind with independent per-pane scales.** One consumer asked
-for a chart whose two strips genuinely have no shared y dimension — `DualPanel` forces both panes
-onto the one shared x scale but still gives each pane its own y domain, which covers this case
-without a new kind. basalt-ui extracts a kind on the third repeat (Rule of Three, see "How to add
-a chart" in `basalt-charts.md`); one consumer, one chart, doesn't clear that bar. The `theme-allow`
-exemption for that bespoke composition stays until a second consumer asks for the same shape — this
-is a decision with its trigger recorded, not a TODO.
+**Reversed 2026-08-22 — `MirroredBars` ships, and the decision it replaces was recorded against
+the wrong blocker.** The old entry read _"no two-bar-pane kind with independent per-pane scales"_,
+with _"a second consumer asks for the same shape"_ as its trigger. That trigger never fired. Round 4
+framed the blocker as **independent scales**, and linewatch corrected the framing: `DualPanel`
+already had `topYDomain` and `bottomYDomain`, so per-pane domains were never what stood in the way.
+
+What actually blocked it is structural, and neither half is a domain question. `DualPanel`'s top
+pane is a **line** pane drawn with `LinePath`, and its bottom pane takes a single **signed**
+`getBar` over a symmetric domain. Two independent magnitudes are not one signed quantity, and two
+bar panes are not a line over a histogram — covering both from one kind means a mark switch, a
+second accessor, and a per-pane domain law contradicting the symmetric one `DualPanel` documents.
+`MirroredBars` is a sibling kind for that reason, not an extension.
+
+The lesson is not "wait for a second consumer". **A decision recorded against the wrong blocker
+outlives its own refutation**, because the stated trigger keeps pointing somewhere else. What
+re-opens a shape decision is a corrected diagnosis.
 
 ## The contract, in force today
 
 Every non-sparkline single-plot cartesian chart **MUST** compose `CartesianChart`. It owns the
 measured margins, both y scales and their domains, the axes, the grid, the shared cursor, the
 crosshair + dots, the hover/keyboard overlay, and the derived tooltip; the caller supplies `series`
-and draws only marks. A non-single-plot shape — multi-pane (`DualPanel`), radial (`Donut`), matrix
-(`Heatmap`) — composes `ChartFrame` + `useChartCursor` + `autoMargin` + `ChartTooltipFloat`
-directly instead, and must declare that with a `theme-allow-file hand-rolled-plot — <why>` comment
-(see "Mechanical enforcement" below).
+and draws only marks. A non-single-plot shape — multi-pane (`DualPanel`, `MirroredBars`), radial
+(`Donut`), matrix (`Heatmap`), or the y-less `BandStrip` — composes `ChartFrame` +
+`useChartCursor` + `autoMargin` + `ChartTooltipFloat` directly instead, and declares that with a
+`theme-allow-file hand-rolled-plot — <why>` comment wherever it renders an assembly primitive (see
+"Mechanical enforcement" below).
 
 **Accessibility fix (2026-08-19):** `ChartFrame`'s outer container carries `role="group"`, never
 `role="img"`, when `ariaLabel` is set. Per the ARIA spec every descendant of a `role="img"` element
@@ -93,7 +108,8 @@ above a build failure, not just a convention:
   `AxisRightNumeric`, `AxisBottomDate`, `HoverOverlay`, `Crosshair`) in a file that does not
   compose `CartesianChart` is a lint failure, per NODE. Escape: `theme-allow hand-rolled-plot —
 <why>` on the one node, or `theme-allow-file hand-rolled-plot — <why>` anywhere in the file, which
-  is how a genuinely non-single-plot shape declares itself (`DualPanel` carries one). `-file` is the
+  is how a genuinely non-single-plot shape declares itself (`DualPanel`, `BandStrip` and
+  `MirroredBars` carry one each — the repo's three). `-file` is the
   1.21.0 spelling and it is required — at 1.20.0 the node form was silently promoted to whole-file.
   The file that DEFINES `CartesianChart` is exempt definitionally, not by path.
 - **`basalt/chart-legend-literal`** — passing a hand-written array literal to `ChartLegend`'s
@@ -114,12 +130,20 @@ No layout thrash: the canvas is offscreen and never attached.
 `autoMargin` (`layout/auto-margin.ts`) resolves the plot rect from the labels that will actually be
 painted:
 
-| Side     | Law                                                                                                                                                          |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `left`   | `max(VX.margin.left, widest left tick label + TICK_GAP)`                                                                                                     |
-| `right`  | right axis present → `max(VX.margin.right, widest right tick label + TICK_GAP)`; else `max(VX.margin.right, ½ last x label)` so the final x tick cannot clip |
-| `bottom` | `max(VX.margin.bottom, x label height + TICK_GAP)`, plus rotation bound when rotated                                                                         |
-| `top`    | `VX.margin.top` (unchanged — nothing measures into it)                                                                                                       |
+| Side              | Law                                                                                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `left`            | `max(VX.margin.left, widest left tick label + TICK_GAP)`                                                                                                        |
+| `left`, no y axis | `autoMargin` stops at `VX.margin.left`; `useBandPlot` then raises it to `max(that, ½ widest x label)` — a BAND axis puts its first tick on the plot's left edge |
+| `right`           | right axis present → `max(VX.margin.right, widest right tick label + TICK_GAP)`; else `max(VX.margin.right, ½ widest x label)` so the final x tick cannot clip  |
+| `bottom`          | `max(VX.margin.bottom, x label height + TICK_GAP)`, plus rotation bound when rotated                                                                            |
+| `top`             | `VX.margin.top` (unchanged — nothing measures into it)                                                                                                          |
+
+The **no-left-axis row is `BandStrip`'s whole shape** and did not exist before the band kinds. It
+comes with a cap, also band-plot-only: a gutter that exists solely to keep a TERMINAL label from
+clipping is capped at `max(VX.margin.<side>, 14% of width)` on the left and `12%` on the right.
+Uncapped, half a `DD.MM HH:MM` label is 48px of a 338px chart — the label wins and the plot loses.
+`MirroredBars` probes real tick labels from both panes, so it takes the plain measured `left` and
+neither the floor nor the cap applies to it.
 
 `VX.margin` becomes a **floor**, never a ceiling. An explicit `margin` prop still wins last, so the
 escape hatch survives; `chartMargin()` stays for charts outside `CartesianChart`.
@@ -172,6 +196,18 @@ itself, making one string serve as display value, scale identity, AND cursor key
 a truncating formatter then collapses two points onto one domain value, silently dropping one from
 the plot. `Heatmap` is deliberately excluded: its existing `colLabel`/`rowLabel` already are that
 seam, and a second prop over one concern would fork them.
+
+`xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]` picks the x ticks
+outright, resolving AHEAD of `xTicks`. Order: explicit VALUES → explicit COUNT → as many as fit
+(`smartTicks`). `xTicks` is unchanged and still works; omit both and nothing moves. Forwarded by
+`Bars`, `MultiLine`, `StackedArea`, `ZonedLine` and both band kinds — the band kinds never had
+`xTicks`, so for them it is values-or-`smartTicks`.
+
+**A count cannot express a legible dense time axis.** `smartTicks`/`smartTicksEvery` append the
+final key unconditionally, so a count that does not land exactly on the last index paints two
+labels on top of each other at the right edge — at every count, not at an unlucky one. Measured on
+the consumer that reported it: linewatch's `lib/axis.ts` goes 200 → 160 lines. It shrinks, it does
+not die; the surviving 160 are domain formatters basalt has no business owning.
 
 `PlotContext` handed to `children`: `{ data, visible, hidden, xScale, yScale, y2Scale, xMax, yMax,
 margin, cursorPoint, highlighted }`. Draw `visible` — never the `series` prop — so a legend toggle
@@ -282,6 +318,70 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
 `ResponsiveChart` is deleted. `ChartFrame` is the only measurer; `Heatmap` composes it like every
 other kind. `fill` / `aspectRatio` / fixed `height` are the three sizing modes, resolved in that
 order.
+
+## 7. Band plots — `BandStrip` and `MirroredBars`
+
+Two shapes `CartesianChart` structurally cannot host. It renders `AxisLeftNumeric` unconditionally
+and builds x as `scalePoint` — positions, no widths. A strip has no y dimension to axis; a mirrored
+pair has two, and needs band widths.
+
+- **`BandStrip<T>`** — one rect per slot over a shared x axis, no y dimension at all. Props:
+  `data · chartId · getX · series: BandStripSeries<T>[] · getBand: (d) => BandSpan · height ·
+fill · formatX · xTickValues · fold · cursorResolution · tooltip · legend · absentState ·
+margin · ariaLabel · isPending`. `BandSpan = { state, fill?, absentFraction?, marker? }` — the three
+  qualifications a state strip cannot do without: an intensity ramp inside one state (`fill`), the
+  share of a folded slot nothing measured (`absentFraction`, drawn hatched), and a fact that must
+  not be readable off the ramp (`marker`). `series` IS the state set: it drives the legend, each
+  band's fill and the one derived tooltip row, so a strip cannot name a state it does not draw.
+  `cursorResolution` defaults `'leading'` here, not `'nearest'` — a band IS a bucket.
+- **`MirroredBars<T>`** — two bar panes over one x scale, mirrored around one baseline, each in its
+  own domain. `up`/`down` are `MirroredBarPane = { key, max?: number | 'auto', autoMaxFloor?,
+ticks?, format }` (`format` required, `ticks` default 3). Plus `upFraction` (default 0.35 — the
+  up pane's share of the band height, which is where the shared baseline sits), `getAbsentFraction`
+  and `getBarOpacity`.
+
+Shared machinery lives in `hooks/useBandPlot.ts` — width-driven folding with a consumer merge, the
+measured gutters, the band scale and its half-bandwidth cursor correction, and the source/follower
+tooltip anchor arithmetic. The hook itself is **not exported**; what ships on `basalt-ui/charts` is
+`foldBands` (so a consumer can test their merge against the grouping that will actually run), the
+`BandFold` / `BandTooltipConfig` / `BandTooltipRowContext` types, and
+`HatchPattern` / `hatchFill` / `hatchSizeFor` for the absence fill.
+
+### The kinds were proven by porting, not by review
+
+Built against linewatch's real charts in a scratch copy, and measured there:
+
+| File                                      | Before   | After   |
+| ----------------------------------------- | -------- | ------- |
+| `availability-strip.tsx`                  | 613      | 321     |
+| `link-speed-strip.tsx`                    | 642      | 389     |
+| `throughput-chart.tsx`                    | 532      | 247     |
+| `follower-anchor.ts` (+ its 70-line test) | 97       | 0       |
+| **total**                                 | **1884** | **957** |
+
+All 11 of linewatch's `hand-rolled-plot` waivers retire; its live `theme-allow` count goes 14 → 3,
+none of the three chart-related. The port also caught two live bugs nothing else had: a `NaN`
+series value painted `y="NaN" height="NaN"` bars, and a non-finite `absentFraction` painted
+`width="NaN"` bands. Both fail silently — no error, no warning — and on a monitoring strip a
+missing mark reads as missing coverage rather than as a bug.
+
+**Doctrine, and the point of the exercise: a new kind is proven by porting a real consumer's call
+sites and reporting what it could NOT express.** A demo page proves nothing, because a demo is
+written against the API that exists. `StatCard.tone` shipped in 1.7.0 with no such check and four
+consumers re-rolled the card anyway.
+
+### What the two kinds still cannot express
+
+Reported from that port, not deferred silently:
+
+- **No `bandHeight` prop.** Band height is derived and floored by `VX.margin`, so linewatch had to
+  raise its axis height rather than lower the band.
+- **`getBand` / `getAbsentFraction` never see the fold's bookkeeping.** The accessor gets the
+  merged datum; how many members were folded into it, and how many of those measured anything, are
+  the consumer's own fields to carry.
+- **`ChartTooltipFloat` still has no viewport gate** — the tooltip can leave the visible area.
+- **`BandStrip` derives exactly one tooltip row.** Anything beyond it stays hand-authored in
+  `tooltip.extraRows`.
 
 ## Invariants (unchanged)
 

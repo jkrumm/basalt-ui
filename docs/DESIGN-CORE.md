@@ -168,7 +168,8 @@ kind-registry for recurring shapes; never loosen the primitives to fit a one-off
    fails the build on a hand-written array literal passed to `ChartLegend`'s `items`.
 4. **The cursor is shared by default** (module-level store, no provider). `ChartCursorScope`
    ISOLATES a subtree; it does not enable sharing.
-5. **Non-single-plot shapes** (`DualPanel`'s two panes, `Heatmap`, `Donut`) compose `ChartFrame` +
+5. **Non-single-plot shapes** — five of them: `DualPanel`'s two panes, `MirroredBars`' two bar
+   panes, `BandStrip`'s missing y dimension, `Heatmap`, `Donut`. They compose `ChartFrame` +
    `useChartCursor` + `autoMargin` + `ChartTooltipFloat` directly — same machinery, different
    assembly. Never raw `<AxisLeft>`/`<AxisBottom>`; never import `@visx/tooltip`.
 6. **Theme-aware colours** via `VX.*` tokens. **Never** raw hex literals in chart files. **Never**

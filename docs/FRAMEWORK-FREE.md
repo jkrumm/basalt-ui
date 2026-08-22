@@ -370,8 +370,8 @@ arrow to inherit an edge.
 
 ## The toolchain, tokens-only
 
-Three and a half of round 4's four rough edges are fixed in 1.20.0 — the commit-clean row is the
-half, see below the table.
+All four of round 4's rough edges are fixed — the first three in 1.20.0, the emitted stylesheet's
+commit-cleanliness in 1.21.0 (see below the table).
 
 | Was                                                                                                  | Now                                                                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -379,6 +379,10 @@ half, see below the table.
 | `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` in **`package.json`** (or `--tokens-only`) disables the 17 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                |
 | `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                                                                               |
 | `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                                                                                    |
+
+`sync` reads the same declared profile: a tokens-only consumer has no scaffold to reconcile, so it
+prints `n/a` and exits 0 rather than prescribing `basalt-ui init` — which means `sync --check` is
+wirable into a tokens-only repo's CI beside `tokens:css --check`.
 
 **The profile is declared for `check-theme` and inferred for `doctor`, deliberately.**
 `doctor`'s profile only changes which advice it prints, never what it enforces, so

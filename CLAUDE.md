@@ -117,9 +117,11 @@ Every single-plot cartesian chart composes **`CartesianChart`** (`src/charts/pri
 owns the measured margins, both y scales and their domains, the axes, grid, the page-shared cursor,
 the crosshair and its dots, the hover/keyboard overlay and the derived tooltip — the caller supplies
 `series` and draws only marks. This is enforced by `basalt/hand-rolled-plot`, not left to
-discipline; the non-single-plot shapes (`DualPanel`, `Donut`, `Heatmap`) are the declared
-exceptions and compose `ChartFrame` + `useChartCursor` + `autoMargin` + `ChartTooltipFloat` behind a
-`theme-allow` comment. Legends and tooltip rows are DERIVED from `series` and never hand-authored
+discipline; the five non-single-plot shapes (`DualPanel`, `MirroredBars`, `BandStrip`, `Donut`,
+`Heatmap`) are the declared exceptions and compose `ChartFrame` + `useChartCursor` + `autoMargin` +
+`ChartTooltipFloat` directly — the first three behind a `theme-allow-file hand-rolled-plot`
+declaration, `Donut`/`Heatmap` render no assembly primitive so nothing fires on them. Legends and
+tooltip rows are DERIVED from `series` and never hand-authored
 (`basalt/chart-legend-literal`). Margins measure themselves from the labels actually painted
 (`autoMargin`); `VX.margin` is only a floor. The cursor is shared page-wide by default with no
 provider — `ChartCursorScope` isolates a subtree. Ground truth: **`docs/CHARTS-SPEC.md`**.
