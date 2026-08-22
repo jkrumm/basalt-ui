@@ -6,7 +6,7 @@
  * `Bars.test.tsx`) — DualPanel has two `HoverOverlay`s sharing one cursor, but only the TOP one is
  * keyboard-focusable, so `getByRole('slider')` is unambiguous.
  */
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
@@ -499,10 +499,16 @@ describe('DualPanel — onFollow (follower behaviour parity with CartesianChart)
   test('the follower tooltip is not aria-live; the source is', async () => {
     renderPair(true)
     fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
-    await screen.findByText('V')
 
-    const tooltips = screen.getAllByRole('tooltip')
-    expect(tooltips).toHaveLength(2)
+    // The FOLLOWER anchors synchronously off its own svg rect; the SOURCE positions against
+    // `cursor.anchor`, which `useChartCursor` coalesces through `requestAnimationFrame` — one frame
+    // later. So waiting on the follower's 'V' is no barrier for the source tooltip. Wait for the
+    // PAIR, which is what's being asserted.
+    const tooltips = await waitFor(() => {
+      const found = screen.getAllByRole('tooltip')
+      expect(found).toHaveLength(2)
+      return found
+    })
     const sourceTooltip = tooltips.find((t) => within(t).queryByText('Shown') !== null)
     const followerTooltip = tooltips.find((t) => within(t).queryByText('V') !== null)
     expect(sourceTooltip?.getAttribute('aria-live')).toBe('polite')
