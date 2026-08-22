@@ -771,8 +771,45 @@ function parseAllowAnnotation(rest: string, scope: AllowScope): AllowAnnotation 
 /** How far back a trailing CSS annotation reaches for the declaration it terminates. */
 const MAX_CSS_CONTINUATION_LINES = 8
 
-/** How far a comment-only annotation reaches forward through the rest of its own comment block. */
-const MAX_COMMENT_BLOCK_LINES = 8
+/**
+ * The 0-based line the annotation's OWN comment closes on.
+ *
+ * A comment-only annotation waives the first line below its comment that is not itself comment, so
+ * the walk needs to know how far the annotation's own comment reaches. It used to substitute a
+ * budget — walk forward at most eight lines — which was wrong in two ways nothing could see:
+ *
+ * 1. **A comment block longer than the budget.** A docblock with ~12 lines of reason between the
+ *    token and its `*\/` ran the walk out before it reached the code, while the oxlint plugin
+ *    (which reads the comment NODE, so length is free) waived it. Nothing about the shape said so;
+ *    the annotation just stopped working past a line count nobody could count.
+ * 2. **A blank line inside the block.** Outside a comment a blank line SEPARATES — it is how people
+ *    say "this comment is not about the next statement" — but a blank gutter line in the middle of
+ *    a docblock is just prose, and ending the walk there dropped the waiver.
+ *
+ * Knowing where the comment ends settles both: inside it, keep going; past it, the ordinary
+ * comment-run rules apply (see the walk in {@link collectAllowAnnotations}, and
+ * {@link isCommentOnly} for the third hole this pass closed).
+ *
+ * An unterminated block comment reports its own line — the conservative answer for a file that does
+ * not parse anyway, and it keeps the walk from running to EOF.
+ */
+function commentBlockEnd(
+  lines: readonly string[],
+  index: number,
+  tokenAt: number,
+  syntax: GuardSyntax,
+): number {
+  const line = lines[index] ?? ''
+  // A line comment closes at its own end of line. CSS has no `//`, so the test is TS-only: there,
+  // a `//`-looking sequence is text and the conservative same-line answer is the right one anyway.
+  if (syntax === 'ts' && /\/\/\s*$/.test(line.slice(0, tokenAt))) return index
+  const closer = syntax === 'markup' ? '-->' : '*/'
+  if (line.slice(tokenAt).includes(closer)) return index
+  for (let ahead = index + 1; ahead < lines.length; ahead++) {
+    if ((lines[ahead] ?? '').includes(closer)) return ahead
+  }
+  return index
+}
 
 /**
  * A comment opener sitting immediately before the annotation token.
@@ -804,6 +841,22 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  * line rather than reaching the statement below.
  */
 const JSX_COMMENT_CLOSE = /\*\/\s*\}\s*$/
+
+/**
+ * Is this line NOTHING but comment? — one definition, used both to classify the annotation's own
+ * line (own-line vs trailing) and to walk the lines under it.
+ *
+ * The two used to be written out separately, and the walk's copy was the one missing the
+ * {@link JSX_COMMENT_CLOSE} clause: a `*\/}` alone on its line read as the code `}`, so the walk
+ * stopped ON the closer and the annotation waived a brace. Two consumers isolated that
+ * independently — `{/* … *\/}` and `{/** … *\/}` — each with a probe pair differing by one newline,
+ * while the oxlint plugin (whose test is comment-node-based and never sees the brace) waived both.
+ * A shared predicate is what stops the two placements from drifting apart again.
+ */
+function isCommentOnly(raw: string, stripped: string): boolean {
+  const code = stripped.trim()
+  return code === '' || COMMENT_ONLY_LINE.test(raw) || (code === '}' && JSX_COMMENT_CLOSE.test(raw))
+}
 
 /**
  * Everything allowed between the comment opener (or the start of the line) and the annotation
@@ -933,7 +986,12 @@ function collectAllowAnnotations(
   }
 
   /** Place one parsed annotation: file declarations reach everywhere, line ones the 3 placements. */
-  const record = (index: number, annotation: AllowAnnotation, trailing: boolean): void => {
+  const record = (
+    index: number,
+    annotation: AllowAnnotation,
+    trailing: boolean,
+    tokenAt: number,
+  ): void => {
     declared.push({ line: index + 1, annotation })
     if (annotation.scope === 'file') {
       fileScoped.push(annotation)
@@ -941,16 +999,20 @@ function collectAllowAnnotations(
     }
     add(index, annotation)
     if (!trailing) {
-      // The first line below that is not itself comment. A docblock's `*/` (or the rest of a
-      // wrapped reason) sits between the annotation and the code it is about, so `index + 1` alone
-      // meant the natural multi-line shape silently waived nothing — argo hit it three times in one
-      // upgrade, each looking like a correct annotation. A BLANK line still ends the block: that is
-      // the separation people use to mean "this comment is not about the next statement".
-      for (let ahead = 1; ahead <= MAX_COMMENT_BLOCK_LINES; ahead++) {
-        const raw = lines[index + ahead] ?? ''
-        add(index + ahead, annotation)
-        if (raw.trim() !== '' && (codeLines[index + ahead] ?? '').trim() !== '') break
+      // The first CODE line below the comment. A docblock's `*/` (or the rest of a wrapped reason)
+      // sits between the annotation and the code it is about, so `index + 1` alone meant the
+      // natural multi-line shape silently waived nothing — argo hit it three times in one upgrade,
+      // each looking like a correct annotation. A BLANK line outside the comment still ends the
+      // block: that is the separation people use to mean "this comment is not about the next
+      // statement". Inside it, a blank gutter line is just prose.
+      const closesAt = commentBlockEnd(lines, index, tokenAt, syntax)
+      for (let ahead = 1; index + ahead < lines.length; ahead++) {
+        const at = index + ahead
+        add(at, annotation)
+        if (at <= closesAt) continue
+        const raw = lines[at] ?? ''
         if (raw.trim() === '') break
+        if (!isCommentOnly(raw, codeLines[at] ?? '')) break
       }
       return
     }
@@ -968,14 +1030,17 @@ function collectAllowAnnotations(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? ''
     const stripped = codeLines[i] ?? ''
-    const code = stripped.trim()
-    const isCommentOnlyLine =
-      code === '' || COMMENT_ONLY_LINE.test(line) || (code === '}' && JSX_COMMENT_CLOSE.test(line))
+    const isCommentOnlyLine = isCommentOnly(line, stripped)
 
     // The JSON member form. Markup-only: in TS/CSS that string would be code, not an annotation.
     if (syntax === 'markup') {
       for (const m of line.matchAll(jsonKey)) {
-        record(i, parseAllowAnnotation(m[2] ?? '', m[1] === undefined ? 'line' : 'file'), false)
+        record(
+          i,
+          parseAllowAnnotation(m[2] ?? '', m[1] === undefined ? 'line' : 'file'),
+          false,
+          m.index,
+        )
       }
     }
 
@@ -993,6 +1058,7 @@ function collectAllowAnnotations(
         i,
         parseAllowAnnotation(rest, m[1] === undefined ? 'line' : 'file'),
         !isCommentOnlyLine,
+        at,
       )
     }
   }
