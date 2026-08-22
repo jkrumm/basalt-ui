@@ -19,6 +19,7 @@
  * safe to import under plain Node. Config is read from the consuming package.json `"basalt"` key;
  * argo's hardcoded values are the DEFAULTS.
  */
+import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
   existsSync,
@@ -36,9 +37,11 @@ import {
   checkSource,
   DEFAULT_GUARD_CONFIG,
   GENERATED_HEADER_LINE,
+  findAllowAnnotations,
   guardKindRemedy,
   GUARD_RULES,
   guardWaiverHint,
+  neutralizeAllowAnnotation,
   TOKENS_ONLY_DISABLED_KINDS,
   unmatchedExemptPatterns,
 } from '../guard'
@@ -637,6 +640,37 @@ function appShellFiles(rootAbs: string): string[] {
 }
 
 /**
+ * A path in the JSON family that is NOT a manifest — the sentinel that gets `guardWaiverHint`'s
+ * plain-JSON closer. Used only by {@link waiverHintFor}; see its doc for why.
+ */
+const PLAIN_JSON_HINT_PATH = 'manifest.json'
+
+/**
+ * The waiver closer for a file, gated on the profile.
+ *
+ * `guardWaiverHint` keys off the file class, and for a `.webmanifest` it leads with
+ * `basaltAppPlugin` — right for a Mantine app, since a hex in a manifest can never be *right* and
+ * the plugin removes the hand-copy entirely. A `profile: tokens-only` consumer has definitionally
+ * opted out of that layer: rollhook's Astro site has no `index.html` for the plugin to transform,
+ * imports no basalt JavaScript at all, and owns maskable icons the plugin does not emit. Leading
+ * with the plugin there is advice the consumer cannot take, in the one release that finally gave
+ * that file class a remedy.
+ *
+ * So under tokens-only a manifest is treated as what it is to that consumer — plain JSON, with the
+ * member as the whole answer — plus one sentence saying which remedy is being withheld and why.
+ * The remedy text still comes from the guard's own registry; only the class mapping is decided here.
+ */
+function waiverHintFor(relPath: string, profile: DoctorProfile): string {
+  if (profile !== 'tokens-only' || !relPath.endsWith('.webmanifest')) {
+    return guardWaiverHint(relPath)
+  }
+  return (
+    `${guardWaiverHint(PLAIN_JSON_HINT_PATH)} (basaltAppPlugin would emit the file instead, but ` +
+    "it needs basalt's Vite/React layer, which a tokens-only consumer has opted out of.)"
+  )
+}
+
+/**
  * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
  * GuardConfig, walks roots, calls checkSource per file, collects Finding[], groups/reports, returns
  * 0 (clean) / 1 (violations). A `theme-allow` comment exempts a line.
@@ -796,7 +830,9 @@ export function checkTheme(
   const presentKinds = [...new Set(findings.map((f) => f.kind))].toSorted()
   // And the closer is per FILE CLASS: prescribing a `theme-allow` comment to a .webmanifest (which
   // has no comment syntax) is what pushed two consumers into a blanket exemption instead.
-  const waiverHints = [...new Set(findings.map((f) => guardWaiverHint(f.relPath)))].toSorted()
+  const waiverHints = [
+    ...new Set(findings.map((f) => waiverHintFor(f.relPath, profile))),
+  ].toSorted()
   console.error(['Fix:', ...presentKinds.map(guardKindRemedy), ...waiverHints].join(' '))
 
   // A violation in a file that looks like the palette source itself is likely intentional — point
@@ -814,48 +850,148 @@ export function checkTheme(
 
 // ── check-theme --audit-allows — every waiver, and whether it still suppresses anything ─────────
 
-/** The token an audit probe substitutes for `theme-allow`. Contains no substring of it, on purpose. */
-const AUDIT_NEUTRALIZED_TOKEN = 'basalt-audit-neutralized'
-
 /** `relPath:line:kind` — a finding's identity for set arithmetic across two runs of the same file. */
 function findingKey(f: Finding): string {
   return `${f.relPath}:${f.line}:${f.kind}`
 }
 
-/**
- * Everything allowed between a comment opener (or the start of the line) and the token, for it to
- * be an ANNOTATION rather than prose mentioning one.
- *
- * Mirrors the guard's `ANNOTATION_PREFIX`, which is module-private. It decides only which lines
- * this REPORT lists — what each one suppresses is answered by re-running `checkSource`, so the two
- * cannot disagree about enforcement, only about whether a doc sentence gets a line in the audit.
- * Worth an export from the guard if it ever gains a third caller.
- */
-const AUDIT_ANNOTATION_PREFIX = /(?:^|\/\/|\/\*|<!--|^\s*\*)\s*$/
-
-/**
- * The rule ids an annotation NAMES, as written. Classification only — what it actually waives is
- * decided by re-running the guard.
- *
- * It exists for one distinction the behavioural probe cannot make: an annotation scoped to an
- * oxlint PLUGIN rule (`hand-rolled-plot`, `raw-scroll-container`, …) suppresses nothing `checkSource`
- * can see, because those rules live in the plugin. Calling it dead would tell someone to delete a
- * live waiver — the exact failure this command exists to prevent, pointed the other way.
- */
-function annotationRuleIds(rest: string): string[] {
-  const head = (rest.replace(/^-file\b/, '').split(/—|–|:|\s-\s/)[0] ?? '').trim()
-  return head
-    .split(',')
-    .map((word) => word.trim().replace(/^basalt\//, ''))
-    .filter((word) => /^[a-z][a-z0-9-]*$/.test(word))
+/** One annotation the guard cannot judge, queued for the oxlint half of the audit. */
+type PluginProbe = {
+  /** Index into the report's line array, so the verdict lands where the placeholder sits. */
+  readonly slot: number
+  readonly rel: string
+  /** 1-based line of the annotation, as {@link findAllowAnnotations} reports it. */
+  readonly line: number
+  readonly ids: readonly string[]
+  readonly site: string
+  readonly suffix: string
 }
 
-/** True when the token on this line opens an annotation — comment form, or the JSON member form. */
-function isAllowAnnotationLine(line: string, token: string): boolean {
-  const at = line.indexOf(token)
-  if (at === -1) return false
-  if (line.includes(`"basalt:${token}`)) return true
-  return AUDIT_ANNOTATION_PREFIX.test(line.slice(0, at))
+/** One oxlint diagnostic, as `--format=json` renders it — only the fields the audit reads. */
+type OxlintDiagnostic = {
+  code?: unknown
+  filename?: unknown
+  labels?: { span?: { line?: unknown } }[]
+}
+
+/** The nearest `node_modules/.bin/<name>` walking up from `dir`, else `name` if it is on PATH. */
+function resolveToolBin(dir: string, name: string): string | null {
+  let current = dir
+  for (;;) {
+    const candidate = resolve(current, 'node_modules/.bin', name)
+    if (existsSync(candidate)) return candidate
+    const parent = resolve(current, '..')
+    if (parent === current) break
+    current = parent
+  }
+  const probe = spawnSync(name, ['--version'], { stdio: 'ignore', timeout: 10_000 })
+  return probe.error === undefined && probe.status === 0 ? name : null
+}
+
+/** `line:rule` counts for one file's diagnostics — a multiset, so two findings on a line differ. */
+function diagnosticCounts(
+  diagnostics: readonly OxlintDiagnostic[],
+  filename: string,
+): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const d of diagnostics) {
+    if (d.filename !== filename) continue
+    const code = typeof d.code === 'string' ? d.code : ''
+    const rule = /^basalt\((.+)\)$/.exec(code)?.[1]
+    if (rule === undefined) continue
+    const line = d.labels?.[0]?.span?.line
+    const key = `${typeof line === 'number' ? line : 0}:${rule}`
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return counts
+}
+
+/**
+ * The oxlint half of the audit: what each plugin-rule annotation still suppresses.
+ *
+ * The `check-theme` half proves a verdict by re-running `checkSource` with one occurrence
+ * neutralized. The `error`-severity design rules do not live there — they live in the oxlint
+ * plugin — so the audit declined to judge them and printed "not a check-theme kind". In a
+ * chart-heavy consumer that was 8 of 8 and 11 of 14: a CI gate that exited 0 having inspected
+ * nothing. The method generalizes exactly, one level over: neutralize the annotation, re-run
+ * oxlint over that file, and the findings that appear are what it covers.
+ *
+ * oxlint has no stdin mode, so a probe has to be a real file. It is written BESIDE the original —
+ * same directory, so the same `.oxlintrc.json`, the same `charts/` path segment, the same nearest
+ * `package.json` — and removed in a `finally`. Returns null when oxlint cannot be run at all, which
+ * is a "cannot judge", never a "dead".
+ */
+function probePluginRules(
+  cwd: string,
+  guardCfg: GuardConfig,
+  probes: readonly PluginProbe[],
+  sources: ReadonlyMap<string, string>,
+): Map<number, string[]> | null {
+  if (probes.length === 0) return new Map()
+  const bin = resolveToolBin(cwd, 'oxlint')
+  if (bin === null) return null
+
+  const written: string[] = []
+  const probePaths = new Map<number, string>()
+  try {
+    for (const probe of probes) {
+      // Neutralized by the guard's own helper, so the oxlint probe and the checkSource probe can
+      // never differ by a substitution detail — a verdict that disagrees between the two halves of
+      // one audit is worse than no verdict.
+      const probed = neutralizeAllowAnnotation(sources.get(probe.rel) ?? '', probe.line, guardCfg)
+      const dot = probe.rel.lastIndexOf('.')
+      const rel =
+        dot === -1
+          ? `${probe.rel}.basalt-audit-${probe.slot}`
+          : `${probe.rel.slice(0, dot)}.basalt-audit-${probe.slot}${probe.rel.slice(dot)}`
+      const abs = resolve(cwd, rel)
+      if (existsSync(abs)) continue
+      writeFileSync(abs, probed, 'utf8')
+      written.push(abs)
+      probePaths.set(probe.slot, rel)
+    }
+    if (probePaths.size === 0) return null
+
+    const targets = [...new Set(probes.map((p) => p.rel)), ...probePaths.values()]
+    const run = spawnSync(bin, ['--format=json', '--no-error-on-unmatched-pattern', ...targets], {
+      cwd,
+      encoding: 'utf8',
+      timeout: 120_000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    if (run.error !== undefined || typeof run.stdout !== 'string') return null
+    let diagnostics: OxlintDiagnostic[]
+    try {
+      diagnostics =
+        (JSON.parse(run.stdout) as { diagnostics?: OxlintDiagnostic[] }).diagnostics ?? []
+    } catch {
+      return null
+    }
+
+    const verdicts = new Map<number, string[]>()
+    for (const probe of probes) {
+      const probeRel = probePaths.get(probe.slot)
+      if (probeRel === undefined) continue
+      const before = diagnosticCounts(diagnostics, probe.rel)
+      const after = diagnosticCounts(diagnostics, probeRel)
+      const revealed: string[] = []
+      for (const [key, count] of after) {
+        if (count <= (before.get(key) ?? 0)) continue
+        const [line = '', rule = ''] = key.split(':')
+        revealed.push(`${rule}@${line}`)
+      }
+      verdicts.set(probe.slot, revealed.toSorted())
+    }
+    return verdicts
+  } finally {
+    for (const abs of written) {
+      try {
+        unlinkSync(abs)
+      } catch {
+        // The probe is a temp file basalt owns; a failed unlink must not mask the audit's verdict.
+      }
+    }
+  }
 }
 
 /**
@@ -893,6 +1029,7 @@ function auditAllows(
 
   // ── theme-allow annotations ─────────────────────────────────────────────────
   const waiverLines: string[] = []
+  const pluginProbes: PluginProbe[] = []
   const sources = new Map<string, string>()
   for (const rel of scanned) sources.set(rel, readFileSync(resolve(cwd, rel), 'utf8'))
 
@@ -906,33 +1043,75 @@ function auditAllows(
     const unscopedAt = new Map(
       baseline.filter((f) => f.kind === 'theme-allow-unscoped').map((f) => [f.line, f.token]),
     )
-    const fileLines = text.split('\n')
-    for (const [index, line] of fileLines.entries()) {
-      if (!isAllowAnnotationLine(line ?? '', token)) continue
-      const probe = [...fileLines]
-      probe[index] = (line ?? '').replaceAll(token, AUDIT_NEUTRALIZED_TOKEN)
-      const revealed = checkSource(probe.join('\n'), rel, guardCfg)
+    // Enumerated by the guard, never by a regex kept here: `findAllowAnnotations` shares its
+    // collector with `checkSource`, so the audit lists exactly the annotations the scan honours.
+    // The private mirror this replaced was already one comment shape behind.
+    for (const site of findAllowAnnotations(text, rel, guardCfg)) {
+      const revealed = checkSource(
+        neutralizeAllowAnnotation(text, site.line, guardCfg),
+        rel,
+        guardCfg,
+      )
         .filter((f) => f.kind !== 'theme-allow-unscoped' && !baselineKeys.has(findingKey(f)))
         .map((f) => `${f.kind}@${f.line}`)
-      const note = unscopedAt.get(index + 1)
+      const note = unscopedAt.get(site.line)
       if (note !== undefined) unaccountable++
-      const site = `  ${rel}:${index + 1}`.padEnd(52)
+      const label = `  ${rel}:${site.line}`.padEnd(52)
       const suffix = note === undefined ? '' : ` [${note}]`
-      const ids = annotationRuleIds((line ?? '').slice((line ?? '').indexOf(token) + token.length))
       if (revealed.length > 0) {
         live++
-        waiverLines.push(`${site} suppresses ${[...new Set(revealed)].join(', ')}${suffix}`)
-      } else if (ids.length > 0 && !ids.some((id) => Object.hasOwn(GUARD_RULES, id))) {
+        waiverLines.push(`${label} suppresses ${[...new Set(revealed)].join(', ')}${suffix}`)
+        continue
+      }
+      // Nothing in check-theme's reach moved. If the annotation names a PLUGIN rule, the oxlint
+      // half decides it — a placeholder holds the slot so the report stays in file/line order.
+      if (site.pluginRules.length > 0 && site.guardKinds.length === 0) {
+        pluginProbes.push({
+          slot: waiverLines.length,
+          rel,
+          line: site.line,
+          ids: site.pluginRules,
+          site: label,
+          suffix,
+        })
+        waiverLines.push('')
+        continue
+      }
+      if (site.guardKinds.length === 0 && site.unknownRules.length > 0) {
         outOfReach++
         waiverLines.push(
-          `${site} scoped to ${ids.join(', ')} — not a check-theme kind, so this audit cannot ` +
-            `judge it (an oxlint plugin rule, or a typo theme-allow-unscoped would report)${suffix}`,
+          `${label} scoped to ${site.unknownRules.join(', ')} — names no guard kind and no ` +
+            'plugin rule, so this audit cannot judge it (most likely a typo, which ' +
+            `theme-allow-unscoped reports)${suffix}`,
         )
-      } else {
-        dead++
-        waiverLines.push(`${site} SUPPRESSES NOTHING — dead, delete it${suffix}`)
+        continue
       }
+      dead++
+      waiverLines.push(`${label} SUPPRESSES NOTHING — dead, delete it${suffix}`)
     }
+  }
+
+  // ── the oxlint half — plugin-rule annotations, judged the same way ──────────
+  const pluginVerdicts = probePluginRules(cwd, guardCfg, pluginProbes, sources)
+  for (const probe of pluginProbes) {
+    const revealed = pluginVerdicts?.get(probe.slot)
+    if (revealed === undefined) {
+      outOfReach++
+      waiverLines[probe.slot] =
+        `${probe.site} scoped to ${probe.ids.join(', ')} — an oxlint plugin rule, and oxlint ` +
+        `could not be run here, so this audit cannot judge it${probe.suffix}`
+      continue
+    }
+    if (revealed.length > 0) {
+      live++
+      waiverLines[probe.slot] =
+        `${probe.site} suppresses ${revealed.join(', ')} (oxlint)${probe.suffix}`
+      continue
+    }
+    dead++
+    waiverLines[probe.slot] =
+      `${probe.site} SUPPRESSES NOTHING — dead, delete it (proved by re-running oxlint over the ` +
+      `file with this annotation neutralized)${probe.suffix}`
   }
 
   lines.push(`${token} annotations (${waiverLines.length}):`)
@@ -994,8 +1173,16 @@ function auditAllows(
   lines.push(...(exemptLines.length === 0 ? ['  (none)'] : exemptLines))
 
   lines.push(
-    `\n${live} live, ${dead} dead, ${outOfReach} outside check-theme's reach, ${unaccountable} ` +
+    `\n${live} live, ${dead} dead, ${outOfReach} unjudgeable, ${unaccountable} ` +
       'unaccountable (reported as theme-allow-unscoped by a normal run).',
+  )
+  // The audit reads exactly what `check-theme` reads, and that is `basalt.roots`. A waiver in a
+  // file outside them is invisible here — not because it is fine, but because nothing scanned it.
+  // Saying the scope out loud is the difference between "0 dead" and "0 dead, over these files".
+  lines.push(
+    `Scope: the ${scanned.length} file(s) check-theme scans under basalt.roots ` +
+      `(${resolveRoots(cfg).join(', ')}). A waiver outside them is not audited — widen roots to ` +
+      'cover it, or accept that nothing polices that file.',
   )
   if (dead > 0) {
     lines.push(
@@ -2004,6 +2191,83 @@ function inspectLefthookSeam(repoRoot: string): ExtendsSeam {
     : { kind: 'broken', file, entry }
 }
 
+/** A `run:` value that invokes the theme guard — the one command that IS the pre-commit gate. */
+const LEFTHOOK_GUARD_RUN = /^\s*run:\s*.*\bcheck-theme\b/m
+
+/**
+ * The merged lefthook config as `lefthook dump` renders it, or null when it cannot be obtained.
+ *
+ * Authoritative where the YAML text is not: `dump` resolves `extends`, `include`, remote configs
+ * and per-command `root:`, so it answers "does a gate exist" for a repo that wired the jobs its own
+ * way. Best-effort by design — lefthook is a consumer tool basalt neither installs nor requires, so
+ * an absent binary downgrades the verdict to advisory rather than inventing one.
+ */
+function lefthookDump(repoRoot: string): string | null {
+  const localBin = resolve(repoRoot, 'node_modules/.bin/lefthook')
+  const bin = existsSync(localBin) ? localBin : 'lefthook'
+  try {
+    const result = spawnSync(bin, ['dump'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 10_000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    if (result.error !== undefined || result.status !== 0) return null
+    return result.stdout
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Whether the repo's pre-commit hook genuinely runs basalt's gates — not whether it `extends` the
+ * shipped preset.
+ *
+ * The 1.21.0 check tested for the extends STRING, and a consumer whose root config spells the same
+ * three jobs out with a per-command `root:` (because `extends` merges commands WITHOUT their
+ * working directory, which would run `bunx oxlint` where there is no `.oxlintrc.json`) was warned
+ * at, and told to make a change that would have broken it. A check that is confidently wrong is
+ * worse than one that admits its limit, so this one asks the question three ways and says which
+ * answer it got:
+ *
+ * - `lefthook dump` — authoritative, resolves extends/include/remote/`root:` the same way lefthook
+ *   itself does.
+ * - the config text — enough to see a gate spelled out in the root file, which is the shape that
+ *   produced the false positive.
+ * - neither — `advisory`, reported as a warning that names what it could not see.
+ */
+type LefthookGate =
+  | { readonly kind: 'no-file' }
+  | { readonly kind: 'extends-ok'; readonly file: string; readonly entry: string }
+  | { readonly kind: 'extends-broken'; readonly file: string; readonly entry: string }
+  /** A command runs the guard directly. `proof` names what established it. */
+  | { readonly kind: 'wired'; readonly file: string; readonly proof: 'dump' | 'config' }
+  /** `lefthook dump` merged everything and no command runs the guard — provably no gate. */
+  | { readonly kind: 'absent'; readonly file: string }
+  /** No dump, no extends, no guard command in the text — unknown, not absent. */
+  | { readonly kind: 'advisory'; readonly file: string }
+
+function inspectLefthookGate(repoRoot: string): LefthookGate {
+  const seam = inspectLefthookSeam(repoRoot)
+  if (seam.kind === 'no-file') return { kind: 'no-file' }
+  // A resolvable extends is the wiring basalt seeds; report it as itself rather than as a generic
+  // "a command exists", since the remedy for a BROKEN one is specific and worth keeping.
+  if (seam.kind === 'ok') return { kind: 'extends-ok', file: seam.file, entry: seam.entry }
+  if (seam.kind === 'broken') {
+    return { kind: 'extends-broken', file: seam.file, entry: seam.entry }
+  }
+
+  const dump = lefthookDump(repoRoot)
+  if (dump !== null) {
+    return LEFTHOOK_GUARD_RUN.test(dump)
+      ? { kind: 'wired', file: seam.file, proof: 'dump' }
+      : { kind: 'absent', file: seam.file }
+  }
+  const raw = readIfExists(resolve(repoRoot, seam.file)) ?? ''
+  if (LEFTHOOK_GUARD_RUN.test(raw)) return { kind: 'wired', file: seam.file, proof: 'config' }
+  return { kind: 'advisory', file: seam.file }
+}
+
 /**
  * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init --merge-lint`). Opt-in, not
  * automatic: turning the framework on adds real lint debt to previously-clean code (see the
@@ -2258,13 +2522,75 @@ function readOxlintPresetPlugins(pkgRoot: string): string[] {
 type SyncOptions = { force?: boolean; check?: boolean }
 
 /**
+ * The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null.
+ *
+ * `resolveProjectDir` relocates DOWNWARD — a root-invoked hook finding the one workspace package
+ * that holds the config. The opposite direction is the shape that produced this function: a
+ * consumer standing in `apps/dashboard`, the package that actually depends on basalt-ui, whose
+ * install lives at the repo root above it. Nothing walks up, so `sync` read "no manifest here" as
+ * "nothing scaffolded yet" and wrote a complete second consumer beside the real one.
+ */
+function findManifestAbove(dir: string): string | null {
+  let current = resolve(dir, '..')
+  for (;;) {
+    if (existsSync(resolve(current, MANIFEST_PATH))) return current
+    const parent = resolve(current, '..')
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+/**
  * Reconcile managed files with the shipped versions via a sha256 three-way compare.
  *
  * - `--check` makes NO writes; exits non-zero if any managed file is out-of-date or locally drifted
  *   (a CI freshness gate), exit 0 when all current.
  * - `--force` overwrites locally-drifted files instead of skipping them.
+ *
+ * Runs against `resolveProjectDir(cwd)`, exactly as `check-theme` and `doctor` do — and then
+ * REFUSES rather than scaffolding when the resolved project has no manifest. See
+ * {@link findManifestAbove} for the failure that bought this: `sync` is the drift refresh and
+ * `init` is the scaffold, so placing twenty files on a cwd that was never a consumer is a decision
+ * `sync` does not get to make silently.
  */
-export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): number {
+export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
+  const project = resolveProjectDir(invocationCwd)
+  if (project.ambiguous !== null) {
+    console.error(
+      `✖ basalt-ui sync: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
+        `workspace packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        'run it from one of them, or set BASALT_CWD to pick.',
+    )
+    return 1
+  }
+  const cwd = project.dir
+  if (project.relocatedFrom !== null) {
+    console.log(
+      `basalt-ui sync: no basalt config at ${project.relocatedFrom} — running in ` +
+        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.`,
+    )
+  }
+
+  // The refusal runs BEFORE reconcileRoots, which WRITES `basalt.roots` into package.json — that
+  // key is half the damage: a second `basalt` block means check-theme scans a different tree
+  // depending on which directory it was invoked from.
+  if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
+    const elsewhere = findManifestAbove(cwd)
+    const wouldWrite = managedFiles(resolvePeerFlags(cwd, {}), resolvePlacement(cwd)).length
+    console.error(
+      `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
+        `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
+        `decision, and continuing here would write ${wouldWrite} managed file(s) into this ` +
+        'directory.' +
+        (elsewhere === null
+          ? ' No manifest exists at any ancestor either — run `basalt-ui init` here if this ' +
+            'package really is meant to be a consumer.'
+          : ` This repo's install is at ${relativePosix(cwd, elsewhere)} (${elsewhere}) — run ` +
+            'sync there, or set BASALT_CWD to it.'),
+    )
+    return 1
+  }
+
   // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd)
@@ -2275,6 +2601,11 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   const files = managedFiles(peers, placement)
 
   let updated = 0
+  // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
+  // scaffold printed — a word that means "it was here, it went missing, I put it back" describing
+  // twenty files this directory never had. The ledger already knows which: an entry in
+  // `manifest.files` is basalt saying it placed the file once.
+  let created = 0
   let recreated = 0
   let skippedDrift = 0
   let staleForCheck = 0
@@ -2288,11 +2619,14 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
       continue
     }
 
+    const tracked = manifest.files[file.dest] !== undefined
+
     // `seed` is written once, then owned by the consumer — never reconciled, never reported.
     if (file.mode === 'seed') {
       if (state.current === null && !opts.check) {
         manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-        recreated++
+        if (tracked) recreated++
+        else created++
       }
       continue
     }
@@ -2318,8 +2652,9 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
     staleForCheck++
     if (opts.check) continue
     manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-    if (kind === 'missing') recreated++
-    else updated++
+    if (kind !== 'missing') updated++
+    else if (tracked) recreated++
+    else created++
   }
 
   // Placement notices — informational, never affect the exit code (a skipped tooling seed or a
@@ -2391,7 +2726,8 @@ export function sync(opts: SyncOptions = {}, cwd: string = process.cwd()): numbe
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
   console.log(
-    `basalt-ui sync: ${updated} updated, ${recreated} recreated, ${skippedDrift} skipped (drift).`,
+    `basalt-ui sync: ${updated} updated, ${created} created, ${recreated} recreated, ` +
+      `${skippedDrift} skipped (drift).`,
   )
   if (driftLines.length > 0) {
     console.log('Locally-edited files were skipped (run with --force to overwrite):')
@@ -3158,34 +3494,64 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Hard check 8: the lefthook preset's extends target actually exists ─────
+  // ── Check 8: the pre-commit hook actually runs the guard ───────────────────
   // The loudest silent failure in the toolchain: lefthook merges a MISSING extends target into
   // zero commands and exits 0 — `lefthook dump` prints the extends line, no commands, and a clean
   // exit — so a repo whose path went stale has no pre-commit gate and nothing anywhere says so.
   // Unlike oxlint there is no error to notice, which is why this has to be a check rather than a
   // remedy line someone reads after a failure.
+  //
+  // But a BROKEN extends is the only half of this that can be asserted from the string. Whether a
+  // gate EXISTS is a different question, and 1.21.0 answered it by testing for the extends target
+  // — warning at a correctly-wired repo and prescribing a change that would have broken it. See
+  // {@link inspectLefthookGate}: `lefthook dump` where it runs, the config text where it doesn't,
+  // and an advisory that names the gap where neither settles it.
   const repoRoot = findRepoRoot(cwd)
-  const lefthookSeam =
-    profile === 'tokens-only' ? { kind: 'n/a' as const } : inspectLefthookSeam(repoRoot)
+  const lefthookGate =
+    profile === 'tokens-only' ? { kind: 'n/a' as const } : inspectLefthookGate(repoRoot)
   const lefthookCorrect = shippedAssetPath(install, repoRoot, 'configs/lefthook.yml')
-  if (lefthookSeam.kind === 'n/a') {
+  if (lefthookGate.kind === 'n/a') {
     pass('lefthook-preset: n/a — a tokens-only consumer wires its own hooks')
-  } else if (lefthookSeam.kind === 'no-file') {
+  } else if (lefthookGate.kind === 'no-file') {
     pass(`lefthook-preset: n/a — no lefthook config at ${repoRoot}`)
-  } else if (lefthookSeam.kind === 'unwired') {
-    warn(
-      `${lefthookSeam.file} does not extend the shipped lefthook preset — the oxlint / oxfmt / ` +
-        `check-theme pre-commit jobs are not wired. Add "extends: [${lefthookCorrect}]" to it.`,
+  } else if (lefthookGate.kind === 'extends-ok') {
+    pass(`${lefthookGate.file} extends the shipped lefthook preset (${lefthookGate.entry})`)
+  } else if (lefthookGate.kind === 'wired') {
+    // Extending the preset is basalt's recommendation, not the contract. The contract is that a
+    // commit cannot land without the guard running, and a repo spelling the jobs out with a
+    // per-command `root:` satisfies it — `extends` merges commands without their working
+    // directory, so for that repo the preset is the thing that would NOT work.
+    pass(
+      `lefthook-preset: ${lefthookGate.file} does not extend the shipped preset, but a pre-commit ` +
+        `command runs check-theme directly — the gate exists (read from ` +
+        (lefthookGate.proof === 'dump'
+          ? '`lefthook dump`, so extends/include/root: are all resolved).'
+          : 'the config text; `lefthook dump` was not runnable here, so an `include:` or a ' +
+            'remote config was not consulted).'),
     )
-  } else if (lefthookSeam.kind === 'broken') {
+  } else if (lefthookGate.kind === 'extends-broken') {
     fail(
-      `${lefthookSeam.file} extends "${lefthookSeam.entry}", which does not exist ` +
-        `(${resolve(repoRoot, lefthookSeam.entry)}) — lefthook merges a missing extends ` +
+      `${lefthookGate.file} extends "${lefthookGate.entry}", which does not exist ` +
+        `(${resolve(repoRoot, lefthookGate.entry)}) — lefthook merges a missing extends ` +
         'target into ZERO commands and still exits 0, so this repo has no pre-commit gate and ' +
         `\`lefthook dump\` looks clean. Repoint it at "${lefthookCorrect}".`,
     )
+  } else if (lefthookGate.kind === 'absent') {
+    // Warn, not fail — same tier the string-matching version used. A consumer may deliberately
+    // gate in CI only, and doctor does not get to promote its own advice to a build break.
+    warn(
+      `${lefthookGate.file}: \`lefthook dump\` resolves the merged config and NO pre-commit ` +
+        'command runs check-theme — the theme guard is not gating commits. Either add ' +
+        `"extends: [${lefthookCorrect}]", or add your own command running ` +
+        '`bunx basalt-ui check-theme` (with `root:` if it must run in a subdirectory).',
+    )
   } else {
-    pass(`${lefthookSeam.file} extends the shipped lefthook preset (${lefthookSeam.entry})`)
+    warn(
+      `${lefthookGate.file} names no basalt gate and \`lefthook dump\` could not be run here, so ` +
+        'this check cannot tell a missing gate from one wired through an `include:` or a remote ' +
+        'config it never read — treat it as advisory. If the guard really is unwired, add ' +
+        `"extends: [${lefthookCorrect}]" or your own command running \`bunx basalt-ui check-theme\`.`,
+    )
   }
 
   // ── Warn check 8: basaltAppPlugin's default icon files exist in public/ ────

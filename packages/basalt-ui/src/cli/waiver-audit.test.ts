@@ -10,11 +10,22 @@
  * Run: bun test packages/basalt-ui/src/cli/waiver-audit.test.ts
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { checkTheme } from './index.ts'
+
+const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 
 let dir: string
 
@@ -79,16 +90,25 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     expect(code).toBe(0)
   })
 
-  it('refuses to judge a waiver scoped to an oxlint plugin rule instead of calling it dead', () => {
+  it('says oxlint could not be run rather than calling a plugin-rule waiver dead', () => {
     // `hand-rolled-plot` lives in the plugin, so `checkSource` can never see what it suppresses.
-    // Reporting "delete it" here would be the command telling someone to remove a live waiver.
+    // With no oxlint reachable from the fixture the honest answer is "cannot judge" — reporting
+    // "delete it" here would be the command telling someone to remove a live waiver.
     fixture(
       '// theme-allow hand-rolled-plot — DualPanel is not a single cartesian plot\nexport const c = 1\n',
     )
     const { code, log } = audit()
-    expect(log).toContain('not a check-theme kind')
+    expect(log).toContain('oxlint could not be run here')
     expect(log).not.toContain('SUPPRESSES NOTHING')
     expect(code).toBe(0)
+  })
+
+  it('names the scope it audited, so "0 dead" is never read as "0 dead anywhere"', () => {
+    // The audit reads exactly what check-theme reads. A waiver in a file outside `basalt.roots` is
+    // invisible to it — not because it is fine, but because nothing scanned it.
+    fixture("export const c = '#ff0000' // theme-allow raw-hex — brand literal\n")
+    const { log } = audit()
+    expect(log).toContain('Scope: the 1 file(s) check-theme scans under basalt.roots (src)')
   })
 
   it('marks an unaccountable waiver while still reporting what it covers', () => {
@@ -127,5 +147,65 @@ describe('check-theme --audit-allows — basalt.exemptRules', () => {
     const { code, log } = audit()
     expect(log).toContain('matches no scanned file')
     expect(code).toBe(1)
+  })
+})
+
+// ── the oxlint half ───────────────────────────────────────────────────────────────────────────
+//
+// The `error`-severity design rules live in the oxlint plugin, not in `checkSource`. Until this,
+// the audit declined to judge them — 8 of 8 annotations in argo, 11 of 14 in linewatch — so the
+// exit-1 gate covered an empty set. These prove the method generalizes: neutralize the annotation,
+// re-run oxlint over that one file, and the findings that appear are what it covers.
+
+const REPO_ROOT = resolve(PKG_ROOT, '../..')
+const OXLINT_BIN = resolve(REPO_ROOT, 'node_modules/.bin/oxlint')
+
+/** Make oxlint reachable from the fixture and point it at the shipped preset (plugin included). */
+function withOxlint(): void {
+  mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true })
+  symlinkSync(OXLINT_BIN, join(dir, 'node_modules/.bin/oxlint'))
+  write('.oxlintrc.json', JSON.stringify({ extends: [resolve(PKG_ROOT, 'configs/oxlint.json')] }))
+}
+
+describe.skipIf(!existsSync(OXLINT_BIN))('check-theme --audit-allows — oxlint plugin rules', () => {
+  it('proves a plugin-rule waiver LIVE, naming the rule and the line it covers', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/charts/plot.tsx',
+      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
+        'export const Plot = () => <AxisLeftNumeric />\n',
+    )
+    withOxlint()
+    const { code, log } = audit()
+    expect(log).toContain('suppresses hand-rolled-plot@4 (oxlint)')
+    expect(code).toBe(0)
+  })
+
+  it('calls a plugin-rule waiver over nothing DEAD, and exits 1 — the gate now covers them', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/charts/plot.tsx',
+      '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
+        'export const Plot = () => null\n',
+    )
+    withOxlint()
+    const { code, log } = audit()
+    expect(log).toContain('SUPPRESSES NOTHING')
+    expect(log).toContain('re-running oxlint')
+    expect(code).toBe(1)
+  })
+
+  it('leaves no probe file behind — the neutralized copy is a temp file basalt owns', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write(
+      'src/charts/plot.tsx',
+      "import { AxisLeftNumeric } from 'basalt-ui/charts'\n\n" +
+        '// theme-allow hand-rolled-plot — this pane is not a single cartesian plot\n' +
+        'export const Plot = () => <AxisLeftNumeric />\n',
+    )
+    withOxlint()
+    audit()
+    expect(readdirSync(join(dir, 'src/charts'))).toEqual(['plot.tsx'])
   })
 })
