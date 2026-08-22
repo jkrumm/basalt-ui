@@ -8,6 +8,7 @@
  * 2. `useStore` — React hook: `const [values, persist] = store.useStore()`.
  *    Call `persist(next)` alongside `navigate` so the selection survives navigation.
  * 3. `readStored` — plain function for non-React contexts (tests, guards).
+ * 4. `linkSearch` — the click-time `search:` thunk for a nav link, ready-made.
  *
  * Headless — no Mantine, no JSX. Same tier as `createSearchParamStore`.
  *
@@ -77,6 +78,16 @@ export type MultiSearchParamStore<T extends string, P extends string = string> =
   useStore: () => readonly [readonly T[], (next: readonly T[]) => void]
   /** Plain read — for use outside React (tests, guards, fallback reads). */
   readStored: () => readonly T[] | null
+  /**
+   * The click-time `search:` thunk for a nav link — `() => ({ [param]: readStored() ?? fallback })`.
+   * Pass it BY REFERENCE (`search: store.linkSearch`), never call it; see `createSearchParamStore`
+   * for why a module-scope literal silently defeats the store.
+   *
+   * No dev warning rides on this one, unlike the single-value store: an empty array in the URL is
+   * indistinguishable from an absent param here (`validateSearch` falls back to storage for both),
+   * so a link declaring `{ tags: [] }` restores correctly and there is no broken state to detect.
+   */
+  linkSearch: () => { [K in P]: readonly T[] }
 }
 
 // ── Implementation ─────────────────────────────────────────────────────────
@@ -104,6 +115,10 @@ export function createMultiSearchParamStore<const T extends string, const P exte
     return normalize(raw)
   }
 
+  const linkSearch = (): { [K in P]: readonly T[] } => {
+    return { [opts.param]: readStored() ?? fallback } as { [K in P]: readonly T[] }
+  }
+
   const validateSearch = (search: Record<string, unknown>): { [K in P]: readonly T[] } => {
     const fromUrl = normalize(search[opts.param])
     if (fromUrl.length > 0) {
@@ -118,5 +133,5 @@ export function createMultiSearchParamStore<const T extends string, const P exte
     initial: fallback,
   })
 
-  return { validateSearch, useStore, readStored }
+  return { validateSearch, useStore, readStored, linkSearch }
 }
