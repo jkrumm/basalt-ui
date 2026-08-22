@@ -195,6 +195,30 @@ Generate the set with `@vite-pwa/assets-generator` (or realfavicongenerator.net)
 source image — it lives in the CONSUMER's own devDependencies, not basalt-ui's. `basalt-ui doctor`
 warns (does not fail) when `public/` exists but is missing one of these files.
 
+**If your `public/` does not match those six filenames, name your icons instead.** `icons` takes
+`false | { dir?: string } | readonly BasaltAppIcon[]`, and an array uses the manifest's own field
+names verbatim:
+
+```ts
+basaltAppPlugin({
+  name: 'rb',
+  icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }],
+})
+```
+
+`BasaltAppIcon` is `{ src, sizes?, type?, purpose?, rel? }`, `rel` being one of `'icon'`,
+`'shortcut icon'`, `'apple-touch-icon'`, `'mask-icon'`. **Every entry becomes a manifest icon; an
+entry reaches the head only when it names a `rel`** — which is what lets an app whose `index.html`
+already links its favicon take the generated manifest without a duplicate tag. An empty array reads
+as `false` (no `icons` member, rather than an empty one). `{ dir }` and the default are byte-identical
+to what they always emitted.
+
+One SVG at `sizes: 'any'` is a complete, installable icon set for a single-page app — and it is the
+shape every non-scaffolded consumer already has. If you keep a hand-written `manifest.webmanifest`
+only because the plugin could not name your icon, delete it: the generated manifest reproduces it
+member for member, including the two hexes derived from `SURFACE.bg` rather than hand-copied, and it
+takes the permanent `theme-allow-file` on that file with it.
+
 `basaltAppPlugin` also emits `site.webmanifest` (served in dev too) with explicit `id`/`scope`/
 `start_url` — pass `manifest: false` to skip it, or `icons: false` to skip the icons. Since 1.22.0
 `icons: false` omits BOTH the head `<link>` tags and the manifest's `icons` member; before that it
