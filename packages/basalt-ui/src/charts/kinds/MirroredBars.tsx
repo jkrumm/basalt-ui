@@ -231,7 +231,7 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
     const out: ReactNode[] = []
     bands.forEach((d, i) => {
       const x = i * step
-      const absent = Math.min(Math.max(getAbsentFraction?.(d) ?? 0, 0), 1)
+      const absent = clampFraction(getAbsentFraction?.(d))
       const measuredWidth = bandWidth * (1 - absent)
       const hatchWidth = bandWidth - measuredWidth
       const opacity = getBarOpacity?.(d) ?? 1
@@ -411,6 +411,12 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
       )}
     </>
   )
+}
+
+/** A 0..1 share, non-finite included — see `BandStrip`'s identical guard. */
+function clampFraction(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return 0
+  return Math.min(Math.max(value, 0), 1)
 }
 
 /** A drawable value, or null. See the call site for why NaN is not drawable. */
