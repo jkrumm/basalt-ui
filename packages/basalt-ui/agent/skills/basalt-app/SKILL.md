@@ -120,7 +120,9 @@ Lint wires as `oxlint . && basalt-ui check-theme` (seeded as the `lint:basalt` s
 guard is the teeth behind the token doctrine. Before writing any composite, check whether basalt
 already ships it: round 4 found ~15 forked copies of shipped components across seven repos, all
 passing every gate, because a fork by a token-fluent author uses exactly the right tokens.
-`basalt/shadow-basalt-export` warns on the name collision; nothing catches the rest.
+`basalt/shadow-basalt-export` warns only on an **exact** name collision with a **root-barrel** export
+— it cannot see the charts layer, and round 5 found the renamed forks (`Cell`, `Box`, `Stat`) sail
+straight past it. Nothing catches the rest. Ask before you build; do not wait to be told.
 
 The consumer series file (`<first basalt.root>/lib/series.ts` by default — so `src/lib/series.ts` on
 a plain app, `apps/web/src/lib/series.ts` on a monorepo; override via `basalt.seriesModulePath`) is

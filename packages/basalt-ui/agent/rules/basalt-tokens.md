@@ -91,9 +91,19 @@ Two new oxlint rules ship at `warn` alongside them: **`basalt/shadow-basalt-expo
 Round 4 swept seven consumer repos: every gate green, and ~15 independently re-rolled copies of
 components basalt already ships (`StatCard` in 4 of 4 apps, `EmptyState`, a 266-line hand-rolled
 `AppShell`). A fork written by a token-fluent author uses exactly the right tokens, so no palette
-guard can ever see it. **`basalt/shadow-basalt-export` is the cheap detector** — it warns when a
-local component's name collides with a live basalt export, read from the real shipped barrel. The
-habit it stands in for: check whether basalt already ships the thing before building it.
+guard can ever see it. **`basalt/shadow-basalt-export` is a cheap detector, not a safety net.** Two
+limits, both by construction:
+
+- **Root barrel only.** It reads `dist/index.d.ts`. A fork of anything reachable only through a
+  subpath — the whole `basalt-ui/charts` layer included — is invisible to it.
+- **Exact name match only.** Round 5 confirmed the miss rate: linewatch's forks are named `Cell` and
+  `Box`, rb's is `Stat`. Rename the fork and the rule goes quiet, which is what a fork's author
+  naturally does.
+
+So the renamed majority goes unreported. **Detection does not substitute for expressiveness**: a
+composite that cannot express a common case gets routed around by compliant-looking code, and a
+name-collision rule only catches the authors who did not bother to rename. The habit it stands in
+for is the actual control: check whether basalt already ships the thing before building it.
 
 ## Filled surfaces — the fill band
 

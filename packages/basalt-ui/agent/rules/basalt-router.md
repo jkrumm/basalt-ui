@@ -65,6 +65,18 @@ function ResourcePage() {
 
 ## validateSearch
 
+**Scope of the `createSearchParamStore` mandate — read this before reaching for the store.**
+`createSearchParamStore` covers ONE param whose values are a string enum
+(`{ key, param, values, fallback }`); `createMultiSearchParamStore` is the multi-select of the same
+shape. Where that fits — a range picker, a tab, a single filter — it is **mandatory**: use it, don't
+hand-roll persistence.
+
+Where it doesn't fit, it doesn't apply. A route whose `validateSearch` is a real Zod object (10+
+keys, nested shapes, cross-field defaults) cannot be expressed through the store at all — three
+consumers hit that wall. **Hand-write `validateSearch` there**, per the rules below. There is no
+schema-backed store: `createSearchSchemaStore` is planned and **not shipped** — do not write code
+against it.
+
 - Always parse with the schema-function form: `(raw) => SearchSchema.parse(raw)`.
 - Default values live in the schema (`.default()`), not in the component.
 - Access via `const search = Route.useSearch()`.

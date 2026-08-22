@@ -6,8 +6,10 @@ nav definition" does not say `ChartHoverSync` was deleted. This file is that hal
 renamed exports per minor, with the replacement.
 
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
-cross-checked against the repo's `scripts/export-surface.json` snapshot. Verified 2026-08-22; the
-1.20.0 section below is written from the commits on `master` that produce it.
+cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every replacement below
+was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
+row that was wrong. That pass corrected 4 table rows and 3 prose claims. Check the types, not this
+table, if the two disagree.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -25,8 +27,10 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 ## 1.20.0 — enforcement
 
 **No export removed or renamed.** The whole delta is that things which used to pass now report. If
-your build goes red on this upgrade, that is the release working; every new kind and rule lands
-`warn`, so nothing here fails a build on its own.
+your build goes red on this upgrade, that is the release working. Every new **kind** and **rule**
+lands `warn` — but two other changes in this release do fail a build: `basalt/raw-size-literal`
+promotes to `error`, and the widened markup scan reads `index.html` / `.webmanifest`, where a raw
+hex is an `error`-severity colour kind. Two consumers exited 1 on exactly that.
 
 | Change                                                           | What you'll see                                                                                                 | What to do                                                                                |
 | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -69,9 +73,17 @@ line is usually a multi-line opening tag or a `{expr}` child), and in CSS a trai
 reaching back over the declaration it terminates, which is what survives the shipped `oxfmt`
 reflowing a long `background-color` so the hex lands above the comment.
 
-**`basalt/hand-rolled-plot` no longer grants whole-file immunity.** Every assembly node is reported
-and waived individually. A file-scoped exception now needs a written declaration naming the rule and
-giving a reason, anywhere in the file: `// theme-allow hand-rolled-plot — two panes over one x scale`.
+**`basalt/hand-rolled-plot` waivers must now be written deliberately.** Every assembly node is
+reported individually, and a waiver is no longer picked up off whatever comment happened to sit on
+the file's first assembly node — it needs a written declaration naming the rule and giving a reason,
+anywhere in the file: `// theme-allow hand-rolled-plot — two panes over one x scale`.
+
+**But the waiver is still whole-file, and per-node scoping is not expressible at 1.20.0.** Naming
+the rule AND giving a reason is what `hasFileDeclaration` matches, at any line — so a comment
+intended for one node silences the file. Dropping the reason keeps it node-scoped in the oxlint
+plugin, but then `check-theme` reports `theme-allow-unscoped ("no reason")`. The two halves of the
+contract intersect at exactly one legal shape and that shape is whole-file. Write the declaration in
+the component's docblock, where it reads as the file-level decision it is. Fix in flight for 1.20.1.
 
 **`doctor` will go red.** `SKIPPED` is a third outcome beside pass/warn/fail and exits non-zero on
 its own — "All checks passed" is only printable when every check RAN. Three new hard checks:
@@ -98,18 +110,18 @@ each root's PARENT now contributes its `index.html` and `public/` tree.
 
 ## 1.19.0 — nav
 
-| Removed / renamed                                                 | Replacement                                                                             | Note                                                                |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `NavLinkRenderer` (type)                                          | `defineNav` + `{...useNav(NAV)}` (`basalt-ui/router-tanstack`), or `SidebarItem.Anchor` | basalt now paints every nav pixel                                   |
-| `BasaltShellProps.renderNavLink`, `AppSidebarProps.renderNavLink` | same                                                                                    |                                                                     |
-| `BreadcrumbLinkRenderer` (type)                                   | `AppBreadcrumbs.parentAnchor`                                                           |                                                                     |
-| `BasaltShellProps.renderBreadcrumbLink`                           | same                                                                                    |                                                                     |
-| `BasaltShellProps.sidebarFooterExtra`                             | `mobileNav.moreExtra`                                                                   | its only host was the mobile drawer; it rendered nowhere on desktop |
-| `AppSidebarProps.footerExtra`, `AppSidebarProps.onClose`          | —                                                                                       | the full-height mobile sidebar drawer is deleted                    |
-| `MobileNavItem` (type)                                            | `MobileNavSlot`                                                                         |                                                                     |
-| `MobileNavSection` (type)                                         | `MobileNavGroup`                                                                        |                                                                     |
-| `MobileNavLinkRenderer` (type)                                    | `MobileNavModel`                                                                        |                                                                     |
-| `SidebarSection.mobileTab`                                        | `SidebarSection.mobile`: `'tab' \| 'more' \| 'hidden'` (`true`/`false` still accepted)  |                                                                     |
+| Removed / renamed                                                 | Replacement                                                                                                                      | Note                                                                                                                                                        |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NavLinkRenderer` (type)                                          | `defineNav` + `{...useNav(NAV)}` (`basalt-ui/router-tanstack`), or `SidebarItem.Anchor`                                          | basalt now paints every nav pixel                                                                                                                           |
+| `BasaltShellProps.renderNavLink`, `AppSidebarProps.renderNavLink` | same                                                                                                                             |                                                                                                                                                             |
+| `BreadcrumbLinkRenderer` (type)                                   | `AppBreadcrumbs.parentAnchor`                                                                                                    |                                                                                                                                                             |
+| `BasaltShellProps.renderBreadcrumbLink`                           | same                                                                                                                             |                                                                                                                                                             |
+| `BasaltShellProps.sidebarFooterExtra`                             | `mobileNav.moreExtra`                                                                                                            | its only host was the mobile drawer; it rendered nowhere on desktop                                                                                         |
+| `AppSidebarProps.footerExtra`, `AppSidebarProps.onClose`          | —                                                                                                                                | the full-height mobile sidebar drawer is deleted                                                                                                            |
+| `MobileNavItem` (type)                                            | `MobileNavSlot`                                                                                                                  |                                                                                                                                                             |
+| `MobileNavSection` (type)                                         | `MobileNavGroup`                                                                                                                 |                                                                                                                                                             |
+| `MobileNavLinkRenderer` (type)                                    | `MobileNavModel`                                                                                                                 |                                                                                                                                                             |
+| `SidebarSection.mobileTab`                                        | `SidebarSection.mobile?: false \| NavSectionMobile` — an OBJECT (`{ tab: true, label?, icon? }`), or `false` to hide the section | `'tab' \| 'more' \| 'hidden'` is `SidebarItem.mobile` (`NavMobilePlacement`, `true` ≡ `'tab'`, `false` ≡ `'hidden'`) — a different prop on a different type |
 
 A consumer with no router needs no migration — `href` + `onClick` still work.
 
@@ -130,20 +142,21 @@ never `search: true`.
 
 The largest delta in the 1.x line. No shims were shipped.
 
-| Removed / renamed                                                                                                                                                    | Replacement                                                                                       | Note                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `ChartHoverSync`, `ChartHoverSyncProps`                                                                                                                              | `globalCursorStore` / `createCursorStore` / `useChartCursor` / `useCursorState` — **no provider** | `ChartCursorScope` now _isolates_ a subtree; it is the inverse of the old provider, not a rename |
-| `HoverContext`, `HoverCtx`, `useHoverSync`, `DEFAULT_NO_OP_SET_HOVER`                                                                                                | `useChartCursor`, `useCursorState`, `CursorState`, `CursorStore`                                  | context → `useSyncExternalStore`                                                                 |
-| `ResponsiveChart`, `ResponsiveChartProps`                                                                                                                            | `CartesianChart` / `CartesianChartProps` (+ `autoMargin`, `PlotContext`, `PlotRect`)              | now mandatory for every single-plot cartesian chart, enforced by `basalt/hand-rolled-plot`       |
-| `ChartTooltip` (tip-based), `useChartTooltip`, `useTooltipStyles`                                                                                                    | `ChartTooltipFloat` + the `tooltip: CartesianTooltipConfig` prop                                  | portal / flip / clamp done once                                                                  |
-| `BarsAxisConfig`                                                                                                                                                     | `AxisConfig` + `resolveAxisDomain`                                                                |                                                                                                  |
-| `ZonedLineTooltipLabel`                                                                                                                                              | `tooltip` config on the kind                                                                      |                                                                                                  |
-| `ZonedLine`/`MultiLine`: `yDomain`, `yAutoPad`, `yAutoMaxFloor`, `yAutoMinCeil`, `numTicksY`, `formatYTick`                                                          | one `y?: AxisConfig<T>`                                                                           | `y` is **optional** where `yDomain` was required                                                 |
-| `ZonedLine`/`MultiLine`: `formatValue`, `tooltipLabel`, `renderExtraTooltipRows`                                                                                     | `tooltip?: CartesianTooltipConfig`                                                                | **not** `y` — these are tooltip concerns                                                         |
-| `ZonedLine`/`MultiLine`: `numTicksX`                                                                                                                                 | `xTicks`                                                                                          | `xZones` added alongside                                                                         |
-| `Bars`: `formatValue`, `hideBarTooltipRows`, `leftAxis`, `rightAxis`, `marginLeft`, `numTicksX`, `tooltipLabel`, `renderExtraTooltipRows`, `renderPrefixTooltipRows` | `y` / `y2` (`AxisConfig`), `tooltip`, `SeriesStyle.tooltip`, measured `autoMargin`                | passing `y2` is what makes a chart dual-axis; `chartMargin({ rightAxis })` is gone               |
-| `StackedArea`: `formatValue`, `numTicksX`, `numTicksY`, `yAutoMaxFloor`, `yLabel`                                                                                    | `y`, `tooltip`, `xTicks`                                                                          |                                                                                                  |
-| `Heatmap.width`                                                                                                                                                      | measures itself; takes `height` / `aspectRatio` / `fill`                                          |                                                                                                  |
+| Removed / renamed                                                                                                                                                    | Replacement                                                                                                                                                | Note                                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ChartHoverSync`, `ChartHoverSyncProps`                                                                                                                              | `globalCursorStore` / `createCursorStore` / `useChartCursor` / `useCursorState` — **no provider**                                                          | `ChartCursorScope` now _isolates_ a subtree; it is the inverse of the old provider, not a rename                                                                                                                                             |
+| `HoverContext`, `HoverCtx`, `useHoverSync`, `DEFAULT_NO_OP_SET_HOVER`                                                                                                | `useChartCursor`, `useCursorState`, `CursorState`, `CursorStore`                                                                                           | context → `useSyncExternalStore`                                                                                                                                                                                                             |
+| `ResponsiveChart`, `ResponsiveChartProps`                                                                                                                            | `CartesianChart` / `CartesianChartProps` (+ `autoMargin`, `PlotContext`, `PlotRect`)                                                                       | now mandatory for every single-plot cartesian chart, enforced by `basalt/hand-rolled-plot`                                                                                                                                                   |
+| `ChartTooltip` (tip-based), `useChartTooltip`, `useTooltipStyles`                                                                                                    | `ChartTooltipFloat` + the `tooltip: CartesianTooltipConfig` prop                                                                                           | portal / flip / clamp done once                                                                                                                                                                                                              |
+| `BarsAxisConfig`                                                                                                                                                     | `AxisConfig` + `resolveAxisDomain`                                                                                                                         |                                                                                                                                                                                                                                              |
+| `ZonedLineTooltipLabel`                                                                                                                                              | `tooltip` config on the kind                                                                                                                               |                                                                                                                                                                                                                                              |
+| `ZonedLine`/`MultiLine`: `yDomain`, `yAutoPad`, `yAutoMaxFloor`, `yAutoMinCeil`, `numTicksY`, `formatYTick`                                                          | one `y?: AxisConfig<T>`                                                                                                                                    | `y` is **optional** where `yDomain` was required                                                                                                                                                                                             |
+| `ZonedLine`/`MultiLine`: `tooltipLabel`, `renderExtraTooltipRows`                                                                                                    | `tooltip.label`, `tooltip.extraRows` (`CartesianTooltipConfig`)                                                                                            | there is no `appendRows`; the field is `extraRows`                                                                                                                                                                                           |
+| `ZonedLine`/`MultiLine`: `formatValue`                                                                                                                               | **`y.format`** — or per-series `ChartSeries.formatValue` for one row                                                                                       | `CartesianTooltipConfig` has no value formatter: the axis format IS the tooltip value format                                                                                                                                                 |
+| `ZonedLine`/`MultiLine`: `numTicksX`                                                                                                                                 | `xTicks`                                                                                                                                                   | `xZones` added alongside                                                                                                                                                                                                                     |
+| `Bars`: `formatValue`, `hideBarTooltipRows`, `leftAxis`, `rightAxis`, `marginLeft`, `numTicksX`, `tooltipLabel`, `renderExtraTooltipRows`, `renderPrefixTooltipRows` | `y` / `y2` (`AxisConfig`), `xTicks`, `tooltip.{label,extraRows,prependRows}`, per-bar `BarsBar.formatValue` / `.tooltip`, measured `autoMargin` + `margin` | passing `y2` is what makes a chart dual-axis. `chartMargin({ rightAxis })` is **not** removed — it is still exported from `basalt-ui` and `basalt-ui/charts`; it is simply no longer needed, since the right gutter follows from measurement |
+| `StackedArea`: `formatValue`, `numTicksX`, `numTicksY`, `yAutoMaxFloor`, `yLabel`                                                                                    | `y` (incl. `y.format`), `xTicks`; per-series `ChartSeries.formatValue`                                                                                     | `StackedAreaProps` has **no** `tooltip` prop — its tooltip is entirely derived from `series`                                                                                                                                                 |
+| `Heatmap.width`                                                                                                                                                      | measures itself; takes `height` / `aspectRatio` / `fill`                                                                                                   |                                                                                                                                                                                                                                              |
 
 ## 1.12.0 — agent-chat, behaviour only
 
@@ -175,6 +188,12 @@ Semver-breaking in a minor; the commit body says so.
 Names that have no 1.x equivalent: the `--chart-blue-1..8` sequential ramp (1.x is categorical
 `--vx-fill-*` only), the default font stacks as a token (they live in `styles.css`), `purple` as a
 text color, `black`, `blue-400`/`green-400`.
+
+**The typefaces changed at 1.0, not just their delivery.** 0.4.2 shipped Instrument Sans; 1.x ships
+Nunito Sans (body) + Hubot Sans (condensed headings), mono unchanged at JetBrains Mono. `fonts:css`
+emits the 1.x stacks — for a 0.4.2 migrant that is a **rebrand**, not a restoration. It also emits
+`--basalt-font-head-stretch: 88%`, tuned for Hubot Sans specifically; pointed at another face it
+silently condenses it.
 
 ## 1.0.1 — CLI binary renamed
 
@@ -223,6 +242,10 @@ minor flips the default.
 - Props declared inline on a component (`function X({ a }: { a: string })`) rather than on an
   exported type are outside the diff method used here. Spot checks on the shell and charts modules
   found none, but the negative is unproven.
-- `AppBreadcrumbs.parentAnchor` as the replacement for `renderBreadcrumbLink` comes from the 1.19.0
-  commit body, not from a diffable exported type — `AppBreadcrumbsProps` is not in the public export
-  set at either tag.
+- The 0.4.2 `./css` line counts in the 1.0.0 table (877 lines / 307 custom props / 19 utilities) come
+  from the removal commit, not from a re-read of the 0.4.2 tarball.
+
+`AppBreadcrumbs.parentAnchor` was listed here through 1.20.0 and is now verified: it is declared on
+the shipped `dist/shell/app-breadcrumbs.d.ts` (`parentAnchor?: NavAnchor`, with `parentHref` as the
+no-router fallback). The type is inline on the component rather than an exported `AppBreadcrumbsProps`,
+which is why the export-surface diff never saw it.
