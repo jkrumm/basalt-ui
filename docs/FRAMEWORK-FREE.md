@@ -337,16 +337,16 @@ arrow to inherit an edge.
 
 All four of round 4's rough edges are fixed in 1.20.0.
 
-| Was                                                                                                  | Now                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `check-theme` reported ~100 `raw-hex` / `raw-color-fn` inside the file `tokens:css` had just written | the output opens with the `@generated basalt-ui` header, and the guard skips a `.css` file carrying it verbatim on lines 1 and 2 whose body is nothing but basalt custom properties. No `basalt.exempt` entry needed |
-| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` (or `--tokens-only`) disables the 16 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                 |
-| `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                                          |
-| `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                                               |
+| Was                                                                                                  | Now                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check-theme` reported ~100 `raw-hex` / `raw-color-fn` inside the file `tokens:css` had just written | the output opens with the `@generated basalt-ui` header, and in a `.css` file carrying it verbatim on lines 1 and 2 the guard skips the lines that are basalt custom properties, selectors, `}` or self-closing comments. No `basalt.exempt` entry needed |
+| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` (or `--tokens-only`) disables the 17 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                                      |
+| `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                                                                               |
+| `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                                                                                    |
 
 **The profile is declared for `check-theme` and inferred for `doctor`, deliberately.**
 `doctor`'s profile only changes which advice it prints, never what it enforces, so
-inferring is free there. `check-theme` silences 16 kinds, and inferring that from a
+inferring is free there. `check-theme` silences 17 kinds, and inferring that from a
 missing `@mantine/core` would switch off half the guard on any repo that simply
 keeps Mantine in a different workspace package. Write the key down.
 
