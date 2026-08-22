@@ -30,14 +30,119 @@ be released yet; the version column says when a capability landed, not what npm 
 | Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0                         |
 | Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                      | 1.21.0                         |
 | Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                               | 1.22.0                         |
-| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                 | unreleased                     |
+| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                 | 1.23.0                         |
+| Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                      | unreleased                     |
 
-Adopted downstream: seven consumer repos, all on 1.22.0 as of the round-7 sweep. `rollhook` runs
+Adopted downstream: seven consumer repos, all on 1.23.0 as of the round-8 sweep. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
 `basalt-ui-obsidian` is a downstream _library_, not an app.
 
 The June-era roadmap/handover docs in `docs/archive/` still phrase built work as "remaining"; that
 language is historical, see the banner on each.
+
+## Round-8 consumer sweep (2026-08-22)
+
+Seven repos on 1.23.0. **No finding forced a change in any of them** — the only code that moved was
+linewatch's deliberate band-kind port, below. Two waiver tallies moved and both are the consumer's
+own doing: linewatch 14 → 3 through the port, rb 6 → 5 because the `icons` array let it delete the
+hand-written `manifest.webmanifest` its sixth waiver lived on (expect 5 there now, not 6). Full
+reports: `.claude/feedback/round-8/`.
+
+| Found                                                                                                                                                                       | By                                    |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `basalt-ui --version` did not exist — the one control introduced after round 7's stale-`bunx` incident, and six reports independently reached for it and fell back          | six of seven                          |
+| An unrecognized FLAG was silently ignored and the command exited 0: `doctor --json` ran doctor and passed                                                                   | nobody — found while fixing the above |
+| `doctor` from a non-install package prescribed `basalt-ui init` where `sync`, same directory, names the parent — following it scaffolds the second consumer 1.22.0 prevents | argo, image-gen, rb, obsidian         |
+| `init`'s script and CI templates had seeded `bunx basalt-ui` into ten places across three consumers, one of them a `.claude` PreToolUse hook                                | argo, image-gen, rb                   |
+| `chart-missing-aria-label` fired on a consumer's OWN 235-line `MirroredBars`, demanding a prop it does not accept, as a correctness finding                                 | linewatch                             |
+| `doctor`'s icon check demanded six filenames from the app that adopted the `icons` array — the app the feature was written for                                              | rb                                    |
+| `tokens:css --check` gates on a line carrying the emitting version, so every release forces a no-op commit in a tokens-only consumer                                        | rollhook                              |
+| A `BandSpan.state` naming no `series` entry drew nothing, which on a measured/not-measured strip is a coverage claim                                                        | linewatch                             |
+
+### The band-kind adoption result — and the ~150 lines it missed
+
+linewatch put all six of its charts on shipped kinds. This is the first kind proven by porting a
+real consumer rather than by demo, so the port's own promise is the thing to check.
+
+| Source                              | Promised   | Actual          |
+| ----------------------------------- | ---------- | --------------- |
+| `availability-strip.tsx`            | 613 → 321  | 613 → **391**   |
+| `link-speed-strip.tsx`              | 642 → 389  | 642 → **441**   |
+| `throughput-chart.tsx`              | 532 → 247  | 532 → **276**   |
+| `charts/follower-anchor.ts` (+test) | → 0        | deleted         |
+| `charts/hatch.tsx`                  | unpromised | 49 → 0, deleted |
+| **total**                           | 1884 → 957 | 1884 → **1108** |
+
+**On code-only lines the port is 1148 → 649, −43% — larger than the raw-line −41%.** The whole miss
+is comment prose, which a scratch port does not carry: linewatch keeps its arguments in docblocks by
+house rule, and every rationale still true was preserved rather than trimmed to hit a number.
+`lib/axis.ts` landed at 200 → 170 against a promised 160, the miss again a docblock, which GREW
+because the helper stopped being a fallback and became the one seam six charts pass through.
+
+**The claim that mattered held exactly.** All 11 `hand-rolled-plot` waivers retired, none replaced;
+14 `theme-allow` → 3, and none of the three survivors is chart-related (two `inline-spacing` on a
+prose verdict line, one `raw-surface` on a status dot).
+
+One line worth keeping: **a scratch port is honest about structure and optimistic about totals.**
+Read its file-by-file shape; discount its arithmetic.
+
+**Known gaps — reported, not fixed.** No `bandHeight` prop, so band height is derived and floored
+and linewatch hand-copies `AXIS_HEIGHT = 30` into three files — a restatement of `VX.margin.bottom`,
+which is density-derived upstream, with no guard on the drift. `getBand`/`getAbsentFraction` never
+see the fold's bookkeeping. **`ChartTooltipFloat` still has no viewport gate**: linewatch's 57-line
+`use-in-viewport.ts` survives, now threaded into all six charts. `BandStrip` derives exactly one
+tooltip row, so extras stay hand-authored in `extraRows`. No `init --tokens-only` to seed the three
+scripts a tokens-only consumer's gates need. No `inline-spacing` exemption for `src/charts/**`,
+where the rule's own remedy is a Mantine prop the boundary forbids — the same argument that already
+exempts `inline-display` and `raw-html-layout` there.
+
+## Round-8 batch — unreleased
+
+Three `fix:` commits. Per-export detail in `packages/basalt-ui/MIGRATING.md` § `Unreleased`.
+
+- **A typo'd band state stops asserting absence** (`c51b9a0`) — a `BandSpan.state` naming no
+  `series` entry used to be skipped, drawing a coverage GAP on a strip whose whole vocabulary is
+  measured/not-measured. It now **throws in dev** naming the key and the valid set, and in
+  production draws a dashed neutral outline band — a treatment no legend entry and no state fill
+  uses — plus an `Unknown state` tooltip row. The split is deliberate: `state` comes off the DATUM,
+  so a feed growing a new state must degrade rather than take a dashboard down, while a typo, the
+  same input, still fails loudly where it is written. `marker.state` follows it. `absentState` and
+  `MirroredBars`' `up.key`/`down.key` are PROPS, so they throw everywhere — an unresolvable pane key
+  hid the pane AND its axis, which reads as a measured zero. `BandStripSeries.formatValue` is now
+  `(d) => string | null`; `null` renders an em dash, distinct from `''`.
+- **The two chart tag rules gate on where the tag came from** (`ba2ea5f`) — a tag is skipped only
+  when the file DEFINES a component of that name and does not also import it from `basalt-ui`.
+  One-directional on purpose: a basalt import, a consumer barrel re-export and an unattributable tag
+  all still fire, where a positive-import gate would have switched both rules off for every
+  barrel-wrapping consumer and every file with no imports. Verified old-vs-new over **945 files
+  across six repos: 0 findings lost, 0 gained.**
+- **The CLI answers which version ran, and stops failing open** (`498b011`) — `--version` / `-v` /
+  `version` print one bare line and exit 0, resolved before dispatch. The larger half: **every
+  subcommand validates its flags** and exits 1 naming the one it does not accept. `doctor` reads
+  `basaltAppPlugin({ icons })` instead of hardcoding six filenames; `doctor` and `sync` share
+  `parentInstallAdvice()`; every seeded invocation goes through `basaltBinCommand()`/`BASALT_BIN`,
+  so the ten `bunx` sites the seed produced become the local bin; `tokens:css --check` blanks the
+  provenance line before comparing, so a version bump alone stops forcing a no-op commit.
+
+**Corrections to the record.** Three, and all three are ours:
+
+1. **All six reports said `--version` "exits 0 printing usage". It exited 1, to stderr** — the
+   dispatcher's `default:` branch has always been `console.error(USAGE); return 1`. The real
+   fail-open was an unknown FLAG, which no report tested, and the misdiagnosis was relayed verbatim
+   into the fix brief. Report the symptom you measured, not the one you inferred from it.
+2. **`cb4e5b7`'s message is wrong**, and it is on `master` where it cannot be rewritten. It claims
+   it taught `unframed-chart` the two new kinds; it widened `CHART_ENTRY_POINT_TAG`, which only
+   `chart-missing-aria-label` reads. `unframed-chart` keys on `<ChartLegend items={[` and has no
+   kind list — there was never an asymmetric pair. Round 7's handoff below named the same wrong
+   rule. The correction lives in `packages/basalt-ui/CLAUDE.md`, where the next reader of that
+   commit will be.
+3. **Open question, not a plan:** the import gate does not make `CHART_ENTRY_POINT_TAG` or the
+   plugin's `CHART_TAGS` redundant — the list still answers _which_ tags owe an `ariaLabel`. The
+   gate only turns a missed kind from a false positive into an under-report. Collapsing the two
+   lists is a larger change and has not been made.
+
+**Handoff:** `agent/templates/CLAUDE-block.md.tpl` still names `DualPanel`/`Donut`/`Heatmap` as the
+declared non-single-plot exceptions; there are five. `templates/` was outside this pass.
 
 ## Round-7 consumer sweep (2026-08-22)
 
@@ -58,7 +163,7 @@ package. Third round in which a consumer diagnosis was directionally wrong on ca
 caused by the measuring harness rather than the code — round 6's was `$?` after a pipe. **Check an
 upgrade against the local bin.**
 
-## Round-7 batch — unreleased
+## Round-7 batch — 1.23.0
 
 The first batch this cycle that widens the framework rather than the guard.
 
@@ -68,8 +173,9 @@ The first batch this cycle that widens the framework rather than the guard.
   baseline, independent domains). Neither can compose `CartesianChart`, which renders
   `AxisLeftNumeric` unconditionally and builds x as `scalePoint`. Shared choreography in an internal
   `useBandPlot`; `foldBands` + `HatchPattern`/`hatchFill`/`hatchSizeFor` ship.
-  **Proven by porting, not by demo:** linewatch's real charts, 1884 → 957 source lines, all 11 of
-  its `hand-rolled-plot` waivers retired, 14 `theme-allow` → 3. The port caught two live bugs —
+  **Proven by porting, not by demo:** linewatch's real charts — promised 1884 → 957 source lines,
+  delivered 1108 (code-only 1148 → 649, −43%; the miss is docblock, see the round-8 sweep), and the
+  waiver claim held exactly: all 11 `hand-rolled-plot` retired, 14 `theme-allow` → 3. The port caught two live bugs —
   a `NaN` series value painting `y="NaN" height="NaN"` bars and a non-finite `absentFraction`
   painting `width="NaN"` bands, both silently invisible. **Doctrine now: a kind is proven by porting
   a real consumer's call sites and reporting what it could NOT express.** `StatCard.tone` shipped in
@@ -101,11 +207,11 @@ The first batch this cycle that widens the framework rather than the guard.
 **Known gaps — reported, not fixed:** no `bandHeight` prop (band height is derived and floored by
 `VX.margin`, so linewatch raised its axis height instead); `getBand`/`getAbsentFraction` never see
 the fold's bookkeeping; `ChartTooltipFloat` still has no viewport gate; `BandStrip` derives exactly
-one tooltip row, so extra rows stay hand-authored. **Handoff:** the guard's `unframed-chart` kind
-(`CHART_ENTRY_POINT_TAG`, `src/guard/index.ts`) still names only the nine older kinds — `cc4903d`
-taught the oxlint plugin's `chart-in-raw-surface` about the two new ones, the regex twin was missed.
-`agent/templates/CLAUDE-block.md.tpl` still says `DualPanel`/`Donut`/`Heatmap` are the declared
-exceptions.
+one tooltip row, so extra rows stay hand-authored. **Handoff, and it named the wrong rule:** `CHART_ENTRY_POINT_TAG` (`src/guard/index.ts`) is read by
+`chart-missing-aria-label`, not by `unframed-chart`, which keys on `<ChartLegend items={[` and
+carries no kind list. `cb4e5b7` widened the regex and its own message repeats the error — see the
+round-8 batch's corrections. Still open: `agent/templates/CLAUDE-block.md.tpl` says
+`DualPanel`/`Donut`/`Heatmap` are the declared exceptions; there are five.
 
 ## Round-6 consumer sweep (2026-08-22)
 
@@ -157,26 +263,24 @@ Full per-export detail in `packages/basalt-ui/MIGRATING.md` § 1.22.0; the shape
 
 ## Round-5 consumer sweep (2026-08-22)
 
-Seven repos upgraded to 1.20.0. The release did what it claimed; what round 5 found instead was
-**documentation making false load-bearing claims**, which is the failure `MIGRATING.md` exists to
-prevent. Full reports: `.claude/feedback/round-5/`. Everything it left open is closed in 1.21.0.
+Seven repos on 1.20.0. The release did what it claimed; what round 5 found instead was
+**documentation making false load-bearing claims** — the failure `MIGRATING.md` exists to prevent.
+Everything it left open is closed in 1.21.0. Full reports: `.claude/feedback/round-5/`.
 
 1. **Per-node `theme-allow` scoping was half-delivered and the doc claimed it whole** — the two
-   halves intersected at one legal shape and it was whole-file. Closed: file scope is now spelled
-   `theme-allow-file`.
+   halves intersected at one legal shape, and it was whole-file. File scope is spelled
+   `theme-allow-file` now.
 2. **Four wrong rows in `MIGRATING.md`**, found by re-auditing every replacement against the built
-   `.d.ts` rather than the commit it came from. The one a consumer caught: `ZonedLine`/`MultiLine`
-   `formatValue` mapped to `tooltip`, which carries no value formatter — the format resolves from
-   `y.format`. rb got it right by reading the types and would have got it wrong trusting the doc.
+   `.d.ts` rather than the commit it came from. The one a consumer caught: `formatValue` mapped to
+   `tooltip`, which carries no value formatter. rb got it right by reading the types and would have
+   got it wrong trusting the doc.
 3. **A correction that lands only in a repo-internal file has not shipped.** The
    `createSearchParamStore` scoping was right in this repo's `CLAUDE.md` and absent from
-   `agent/rules/*`, which is what `init`/`sync` copy into consumers. It now lives in
-   `basalt-router.md`.
+   `agent/rules/*`, which is what `init`/`sync` copy into consumers.
 4. **`shadow-basalt-export` misses the renamed majority** — linewatch's forks are `Cell` and `Box`,
    rb's is `Stat`. Structural. **Detection does not substitute for expressiveness.**
 5. **`fonts:css` is correct and was not adopted by the consumer it was built for** — adopting it
-   would rebrand rollhook's public site with a display face it never had. A feature can be correct
-   and still not be the fix for the consumer that motivated it.
+   would rebrand rollhook's public site with a display face it never had.
 
 ## Round 4 consumer sweep (2026-08-22)
 
@@ -184,22 +288,21 @@ Seven repos, every gate green, all three findings outside them. Full reports:
 `.claude/feedback/round-4/`.
 
 1. **The escape hatch was broken** — line-scoped, the two engines disagreeing about which line, a
-   bare comment accountable to nobody. **Answered in 1.20.0**, completed in 1.21.0.
+   bare comment accountable to nobody. Answered in 1.20.0, completed in 1.21.0.
 2. **The guard sees palette, not vocabulary.** ~15 independent re-rolls of shipped components, all
-   green — `StatCard` alone re-rolled by 4 of 4 app consumers. **Partly answered**:
-   `shadow-basalt-export` and `hand-rolled-shell` detect the two cheapest shapes. **The
-   expressiveness half is still not built** — `StatCard`'s missing props, a query loading/error
-   sibling to `EmptyState`, `createSearchSchemaStore`. `BandStrip` and independent bar-pane domains
-   are answered in round 7 (`BandStrip`/`MirroredBars`). image-share re-reported both in round 6:
-   204 lines of `query-state.tsx` over 10 call sites, and 290 lines of hand-rolled URL state.
-3. **There is no API-delta story** — semantic-release's one-line-per-commit format never names a
-   removed export. Answered by `packages/basalt-ui/MIGRATING.md`.
+   green — `StatCard` alone re-rolled by 4 of 4 app consumers. `shadow-basalt-export` and
+   `hand-rolled-shell` detect the two cheapest shapes; **the expressiveness half is still not
+   built** (`StatCard`'s missing props, a query loading/error sibling to `EmptyState`,
+   `createSearchSchemaStore`). The chart half was answered in round 7 by `BandStrip`/`MirroredBars`.
+   image-share re-reported both in round 6: 204 lines of `query-state.tsx` over 10 call sites, and
+   290 lines of hand-rolled URL state.
+3. **There is no API-delta story** — semantic-release never names a removed export. Answered by
+   `packages/basalt-ui/MIGRATING.md`.
 
-**Corrected findings** — both reported and both wrong: _"no release notes for any minor"_ (the
-shipped `CHANGELOG.md` writes minors as `#` and patches as `##`; a grep for `## [x.y.z]` matches the
-9 patches and none of the 23 minors), and _"the chart rules are outside `GRACE_PERIOD_KINDS`"_ (true
-but not meaningful — they are oxlint plugin rules, whose severity had no grace mechanism at all;
-`PLUGIN_RULE_GRACE` is the fix).
+**Corrected findings** — both reported, both wrong: _"no release notes for any minor"_ (minors are
+`#`, patches `##`, so a grep for `## [x.y.z]` matches the 9 patches and none of the 23 minors), and
+_"the chart rules are outside `GRACE_PERIOD_KINDS`"_ (true but not meaningful — they are plugin
+rules, whose severity had no grace mechanism at all; `PLUGIN_RULE_GRACE` is the fix).
 
 ## Round-5 batch — shipped in 1.21.0
 
@@ -232,220 +335,114 @@ JSDoc nobody had to read. Per-export detail in `MIGRATING.md` § 1.21.0.
 
 ## Round-4 batch — shipped in 1.20.0
 
-Five repos hit one bug in five shapes: every gate passed and nothing was enforced. The fix is that
-all of it is now reported rather than inferred. **Consumers will see `doctor` go red where it was
-green — that is the point.** Migration notes ship in `packages/basalt-ui/MIGRATING.md`.
+Five repos hit one bug in five shapes: every gate passed and nothing was enforced. All of it is
+reported rather than inferred now, and consumers saw `doctor` go red where it had been green — that
+was the point. Per-export detail in `packages/basalt-ui/MIGRATING.md` § 1.20.0; mechanics in
+`packages/basalt-ui/CLAUDE.md`.
 
-### The escape hatch
+- **The escape hatch became usable.** `theme-allow` honours a standalone comment on the PRECEDING
+  line — the two engines used to disagree, which made it unwritable in JSX — and
+  `theme-allow <rule-id> — <reason>` scopes it to one kind. A word naming no rule waives
+  **nothing**, so a typo can never be more permissive than the correct spelling. Half-delivered:
+  per-node waiving landed in 1.21.0.
+- **Five guard kinds and two oxlint rules, all `warn` for one minor** — `surface-shadow-override`,
+  `css-raw-surface`, `inline-font-size`, `hidden-inline-style`, `theme-allow-unscoped`,
+  `basalt/shadow-basalt-export`, `basalt/hand-rolled-shell` — plus six false positives fixed and
+  `.html`/`.webmanifest`/`.json` resolved as markup. **`PLUGIN_RULE_GRACE`** is the plugin's
+  counterpart to `GRACE_PERIOD_KINDS`, tested both ways so deleting an entry forces the level flip
+  in the same commit; its absence is why three rules sat at `warn` for up to twelve minors.
+- **`doctor`: `SKIPPED` is a third outcome** and exits non-zero on its own; new `basalt-resolves`,
+  `guard-scan` and `oxlint-preset` hard checks. A **tokens-only profile** is auto-detected by doctor
+  but must be DECLARED for `check-theme` — doctor's profile changes only advice, check-theme's
+  silences 17 kinds.
+- **`init` writes real `basalt.roots`**, a `lint:basalt` script and the lint-debt notice; each
+  root's PARENT contributes its `index.html` and `public/` tree. **`tokens:css`/`fonts:css` output
+  is commit-clean** — `@generated` marker, `--check` drift gate, and the guard skips LINES against
+  that header, not files.
+- **Mobile nav:** two defects in `.tabIcon`, the rule that IS the active pill — a `12px` inset that
+  did not scale with density, behind a bare `theme-allow` claiming it was sub-scale, and a pill with
+  no minimum box, which gave an app shipping no icon dependency a ~24×4px dash. Two new tokens, both
+  invariants pinned in `tests/layout`.
 
-`theme-allow` now honours a standalone comment on the **preceding** line, matching the oxlint
-plugin — they used to disagree, which made it unusable in JSX, where the reported line is a
-multi-line opening tag or a `{expr}` child and a trailing `//` is a syntax error or visible text.
-A trailing annotation in CSS also reaches back over the declaration it terminates, verified against
-real `oxfmt` output: it reflows a long `background-color` so the hex lands ABOVE the comment, which
-preceding-line support alone does not fix.
-
-**`theme-allow <rule-id> — <reason>` scopes the exception to that one kind.** A bare comment still
-waives everything (no upgrade breaks a build) but reports the new `theme-allow-unscoped` kind. A
-word in the id slot that names no rule is recorded as unknown and waives **nothing** — an annotation
-that reached for an id covers exactly the ids it got right, so a typo can never be more permissive
-than the correct spelling. Every consumer had bare comments, basalt included — its own 22 are
-rescoped in the same batch, verified by neutering each annotation and reading what the two engines
-then reported rather than by guessing.
-`basalt/hand-rolled-plot` no longer grants whole-file immunity off whatever comment happened to sit
-on its first assembly node; a file-scoped waiver needs a written declaration naming the rule and
-giving a reason. **Half-delivered:** every node is now REPORTED on its own, but not waivable on its
-own — see the round-5 sweep above. Fix targets 1.21.0.
-
-### Guard holes and false positives
-
-New kinds, all `warn` for one minor: `surface-shadow-override` (a `boxShadow` built FROM tokens that
-replaces `--vx-shadow-card` — the shape a token-fluent consumer writes, which the old `var()`/`${}`
-skip waved straight through), `css-raw-surface` (the kebab dialect of the surface kinds),
-`inline-font-size`, `hidden-inline-style`, `theme-allow-unscoped`.
-
-Two new oxlint rules, both `warn`: **`basalt/shadow-basalt-export`** (a local component whose name
-collides with a live basalt export, read from the real `dist/index.d.ts` barrel — the cheapest
-detector for a forked composite, which no palette guard can see) and **`basalt/hand-rolled-shell`**.
-`basalt/raw-size-literal` promoted `warn` → `error`; `hand-rolled-plot` and `chart-legend-literal`
-were deliberately NOT promoted, because this minor widens both and promoting a widened rule in the
-minor that widens it is exactly what the grace doctrine forbids.
-
-`check-theme` resolves `.html` / `.webmanifest` / `.json` as markup (colour kinds only). False
-positives fixed: `jsx-a11y/prefer-tag-over-role` off (it made basalt's own `ChartFrame` a11y pattern
-unwritable), `no-underscore-dangle` allows `__APP_VERSION__`, `raw-color-fn` skips a computed colour
-function, `raw-font-family` accepts any `var(--…)`, `no-raw-font-size` requires a style context and
-skips test files, `ai-sdk-major` is scoped to packages depending on basalt or under declared roots.
-
-**Known limit, deliberate:** a DOM-drawn chart is structurally invisible to `hand-rolled-plot`,
-which keys on the visx assembly primitives. Every alternative detector tried flagged either basalt's
-own `Donut`/`Heatmap` or an icon in a card header, and a noisy shipped rule gets switched off.
-
-### Grace tracking
-
-**`PLUGIN_RULE_GRACE`** is the plugin's counterpart to `GRACE_PERIOD_KINDS` — a named export beside
-the plugin (`oxlint.json` cannot hold it; its top-level keys are fixed by oxlint's parser), with a
-test asserting both directions against the shipped preset, so deleting an entry forces the level
-flip in the same commit. Read promotion state there. Its absence is why three rules sat at `warn`
-for up to twelve minors with nothing tracking them.
-
-### CLI
-
-- **`doctor`: `SKIPPED` is a third outcome** beside pass/warn/fail and exits non-zero on its own.
-  "All checks passed" is only printable when every check RAN. New hard checks: `basalt-resolves`,
-  `guard-scan` (check-theme would cover more than zero files — check-theme already exited 1 on that,
-  and doctor disagreeing with it in the same repo WAS the bug), `oxlint-preset` (JSONC parsed, not
-  rejected; one repo ran five minors with the whole lint half off).
-- **A tokens-only profile.** `doctor` auto-detects it; **`check-theme` requires it declared**
-  (`basalt.profile: "tokens-only"` or `--tokens-only`). The asymmetry is a safety property:
-  doctor's profile only changes which ADVICE it prints, while check-theme's silences 17 kinds, and
-  inferring that from a missing `@mantine/core` would switch off half the guard on any repo keeping
-  Mantine in a different workspace package.
-- **`init`** writes real `basalt.roots`, adds a `lint:basalt` script, names every kept file AND what
-  keeping it costs, and prints the lint-debt notice — adopting the preset on an existing app turns
-  on whole oxlint plugins the repo was never linted against. `--merge-lint` splices the preset into
-  an existing `.oxlintrc.json`, refusing on a commented config rather than deleting the comments.
-- **Markup scan reach:** each root's PARENT contributes its `index.html` and `public/` tree (the
-  Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its configured
-  root. `.json` is never blanket-scanned; `basalt.include` is the only route to one.
-- **`tokens:css` / `fonts:css` output is commit-clean** — the `@generated basalt-ui` marker on line
-  1, version + invocation on line 2, normalized `rgba()` spacing, a `--check` drift gate. Against
-  that header `check-theme` skips LINES, not files, and depth-aware: the whole-file marker it
-  replaced was a hand-writable guard bypass, and so was the body test after it. Skipping is what
-  fixed rollhook's 116 violations _inside the file `tokens:css` itself wrote_. Mechanics in
-  `packages/basalt-ui/CLAUDE.md`.
-- **`__APP_VERSION__`** ships its ambient declaration via `src/register.ts`, re-exported by the root
-  barrel — a subpath-only consumer does not get it, which is the same set as the consumers not on
-  basalt's Vite preset anyway.
-
-### Mobile nav
-
-Two defects in `.tabIcon`, the rule that IS the active pill. Its `12px` inset sat behind a bare
-`theme-allow` claiming the value was sub-scale, so the bar and glyph scaled with density and the
-inset alone did not (12px held across density −3/0/+3 while the glyph went 17 → 24 → 31); and the
-pill is the icon span's own background, which had no minimum box, so an app shipping no icon
-dependency got a ~24×4px dash at every density. Two new tokens
-(`--vx-space-mobile-nav-tab-inset-{y,x}`), the span floors at the icon box plus its inset, and
-`tests/layout` gained both invariants, verified to fail on the pre-fix CSS. Token counts move with
-them: 202 canonical names, the `--vx-space-*` half 108, `only: 'core'` unchanged at 103.
+**Known limit, deliberate:** a DOM-drawn chart is invisible to `hand-rolled-plot`, which keys on the
+visx assembly primitives. Every alternative detector tried flagged either basalt's own
+`Donut`/`Heatmap` or an icon in a card header, and a noisy shipped rule gets switched off.
 
 ## Adoption gap — closed in 1.7.0 (2026-08-02)
 
-Prompted by the first outside-of-argo consumer (LineWatch). Its dashboard had grown seven
-hand-rolled `<Card withBorder radius="md" padding="lg">` across six files, next to `StatCard`s —
-two card idioms, visibly different borders/shadows/heights on one screen. Running `check-theme`
-there for the first time reported all of it in one pass. Three separate causes, all now addressed:
+Prompted by the first outside-of-argo consumer (LineWatch), whose dashboard had grown seven
+hand-rolled `<Card withBorder radius="md" padding="lg">` next to `StatCard`s — two card idioms,
+visibly different on one screen. Three separate causes:
 
 1. **basalt was installed as a component library and nothing else.** No `.oxlintrc.json`, no
-   `.basalt/manifest.json`, no lint script, no CI — `basalt-ui init` had never been run, so every
-   enforcement mechanism the package ships was inert and nothing said so. `basaltViteConfig` now
-   prints a one-time notice when no `.basalt/manifest.json` is found at or above the cwd. It is the
-   only basalt seam that runs on every dev start and every build, which makes it the only place that
-   can catch this while it is still cheap. Notice, never an error (`enforcementNotice: false` opts
-   out) — declining the toolchain is a legitimate choice; failing a build over a missing lint preset
-   would be a worse bug than the one it prevents.
-2. **Two real holes in the guard.** `size="10px"` passed because `basalt/no-raw-font-size` only
-   ever tested for a NUMERIC literal → new `basalt/raw-size-literal` oxlint rule (CSS-length strings
-   on `size`/`fz`/`fontSize`; `warn` in the shipped preset for its grace minor). `c="yellow.7"`
-   passed because no kind covered a shade-pinned Mantine color — `off-identity-accent` polices which
-   hue, not which index → new `mantine-shade-index` guard kind (`warn` from 1.7.0, **promoted to
-   `error` in 1.11.0**). Its grace ran across four minors rather than the doctrinal one — deferred by
-   1.8.0 (shipped the same day as 1.7.0), by 1.9.0 (which carried the chart-layer batch the same
-   consumer was waiting on), and then 1.10.0 shipped without the promotion at all. Promoted only
-   after verifying the consumer: argo's `check-theme` reports zero violations of any kind, so nothing
-   that was passing now fails. `GRACE_PERIOD_KINDS` went empty again and stayed empty until the
-   round-4 batch, which put five new kinds into it.
+   manifest, no lint script, no CI: `basalt-ui init` had never been run, so every enforcement
+   mechanism the package ships was inert and nothing said so. `basaltViteConfig` now prints a
+   one-time notice when no `.basalt/manifest.json` is found at or above the cwd — the only basalt
+   seam that runs on every dev start and every build, so the only place that catches this while it
+   is cheap. Notice, never an error (`enforcementNotice: false` opts out): declining the toolchain is
+   a legitimate choice, and failing a build over a missing lint preset would be the worse bug.
+2. **Two real holes in the guard.** `size="10px"` passed because `basalt/no-raw-font-size` tested
+   only for a NUMERIC literal → `basalt/raw-size-literal`. `c="yellow.7"` passed because no kind
+   covered a shade-pinned Mantine color → `mantine-shade-index` (`warn` at 1.7.0, **`error` at
+   1.11.0** — a grace that ran four minors instead of one, which is why `GRACE_PERIOD_KINDS` exists
+   as a tracked list).
 3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
    `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
-   that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a
-   card would fork the one component every stat was drawn with. That is a well-behaved consumer
-   hitting a wall and inventing visual vocabulary anyway. `StatCard` now takes `tone="warn" | "bad"`
-   and draws the rail itself (plus a `VisuallyHidden` label — colour alone never carries a verdict).
-   The lesson generalizes: a composite that cannot express a common case gets routed around by
-   compliant-looking code the guard has no way to recognize, so the gap is invisible until someone
-   looks at a screenshot.
-
-   **Follow-up in 1.8.0 — the tone set is three-valued.** The same consumer hit the same wall one
-   step further in: a Downtime card where **zero is the earned state**, which the two-tone set could
-   only render as red (wrong) or untinted (indistinguishable from "nothing measured"). `tone` now
-   takes `"good"` as well. `undefined` is unchanged and still load-bearing — it means "fine, or
-   nothing measured" and stays untinted, so `good` is a positive assertion a consumer opts into, not
-   a default a card without a reading can fall into. Second data point for the same lesson: the gap
-   a shipped composite leaves is found by the consumer, one case at a time, not by the framework.
+   that `StatCard.value` is typed `string` so the number could not be tinted. A well-behaved
+   consumer hitting a wall and inventing visual vocabulary anyway. `StatCard` took `tone`, and 1.8.0
+   widened it to three values when the same consumer hit the same wall one step further in — a
+   Downtime card where **zero is the earned state**, which two tones could render only as red
+   (wrong) or untinted (indistinguishable from "nothing measured"). `undefined` stays untinted and
+   load-bearing. **The lesson, twice over: a composite that cannot express a common case gets routed
+   around by compliant-looking code the guard cannot recognize, and the gap is found by the
+   consumer, one case at a time.**
 
 ## Chart-layer rebuild — one mandatory cartesian primitive, shipped 1.15.0 (2026-08-18)
 
-Design + rationale: **`docs/CHARTS-SPEC.md`** (ground truth). Prompted by a field report from the
-one consumer building charts daily: tooltips, legends and responsive sizing all needed pushing
-around per chart, and nothing felt strictly wired. Diagnosis was not visx — it was that basalt's own
-layer had two tiers with no rung between them, so anything that wasn't a shipped kind fell to ~130
-lines of hand-rolled margin math, scales, axes, overlay and tooltip assembly, and every cartesian
-kind repeated that same preamble internally.
+Design + rationale: **`docs/CHARTS-SPEC.md`** (ground truth). Prompted by the one consumer building
+charts daily: tooltips, legends and responsive sizing all needed pushing around per chart. The
+diagnosis was not visx — basalt's own layer had two tiers with no rung between them, so anything
+that was not a shipped kind fell to ~130 lines of hand-rolled margin math, scales, axes, overlay and
+tooltip assembly, and every cartesian kind repeated that preamble internally.
 
-TanStack Charts (v0.14.0, released the same month) was evaluated as a replacement and **rejected**:
-it is pre-alpha, its own README says not production-ready, and there is no 1.0 date. Its
-architecture is the better one — grammar of graphics, framework-neutral scene, renderer-neutral
-contracts — and the four ideas worth stealing were stolen instead: measured guides, a cursor
-controller separate from crosshair presentation, one responsive path, and tooltips/legends/axes as
-first-class parts of the chart definition rather than per-call-site assembly. Revisit the library
-itself if it reaches 1.0.
+TanStack Charts (v0.14.0, same month) was evaluated as a replacement and **rejected** — pre-alpha,
+its own README says not production-ready, no 1.0 date. Its architecture is the better one, and the
+four ideas worth stealing were: measured guides, a cursor controller separate from crosshair
+presentation, one responsive path, and tooltips/legends/axes as first-class parts of the chart
+definition. Revisit the library if it reaches 1.0.
 
-What shipped:
+1. **`CartesianChart`** — the missing rung. Owns measured margins, both y scales + domains, the x
+   scale and tick thinning, grid, zones, axes, the shared cursor, the crosshair and its per-series
+   dots, the hover/keyboard overlay and the derived tooltip. A kind supplies `series` + a child that
+   draws ONLY marks. Every single-plot cartesian kind was rewritten onto it; the bespoke dual-axis
+   playground chart went ~145 → 29 lines.
+2. **Margins are measured, not tokenized.** `autoMargin` sizes each gutter from the tick labels that
+   will actually be painted (`measureText`, offscreen canvas, memoized, SSR fallback). `VX.margin`
+   becomes a FLOOR, and passing `y2` is what makes a chart dual-axis.
+3. **The cursor is shared by default** — a module-level external store read through
+   `useSyncExternalStore`, not a context that had to be mounted. `ChartHoverSync` is deleted;
+   `ChartCursorScope` ISOLATES a subtree instead. Resolution is domain-aware, which retired the
+   `resolveKey` escape hatch and the folded-domain desync.
+4. **Legends toggle** (on at ≥2 entries), hiding the series from plot, tooltip and auto domain
+   together. **`ChartTooltipFloat`** does portal + flip + viewport clamp + measure-before-show once
+   for every chart; the hover overlay is focusable and scrubs on ←/→.
 
-1. **`CartesianChart`** — the missing rung. Owns measured margins, both y scales + their domains,
-   the x scale and tick thinning, grid, zones, axes, the shared cursor, the crosshair and its
-   per-series dots, the hover/keyboard overlay, and the derived tooltip. A kind (or a bespoke
-   chart) supplies `series` + a child that draws ONLY marks. Every single-plot cartesian kind was
-   rewritten onto it, and the two bespoke playground charts collapsed with it (the dual-axis one
-   from ~145 lines to 29). `DualPanel` (two panes, one x scale) and the non-cartesian
-   `Heatmap`/`Donut` stay hand-composed on `ChartFrame` + `useChartCursor` + `autoMargin` — they
-   share the machinery, not the single-plot assembly.
-2. **Margins are measured, not tokenized.** `autoMargin` sizes each gutter from the formatted tick
-   labels that will actually be painted (`measureText`, offscreen canvas, memoized, SSR fallback).
-   `VX.margin` becomes a FLOOR — no chart gets tighter than before, and a wide label widens its own
-   gutter instead of clipping. `chartMargin({ rightAxis })` is no longer needed: passing `y2` is
-   what makes a chart dual-axis, and the right gutter follows from measurement.
-3. **The cursor is shared by default.** It moved from a React context that had to be mounted to a
-   module-level external store read through `useSyncExternalStore`. `ChartHoverSync` is deleted;
-   `ChartCursorScope` now ISOLATES a subtree instead. Resolution is domain-aware (exact match, else
-   nearest parsed date/number within one domain step), which retires the `resolveKey` escape hatch
-   and the folded-domain desync recorded in the chart-layer batch (`docs/archive/STATUS-HISTORY.md`).
-4. **Legends toggle.** Clicking an entry hides that series from the plot, the tooltip and the auto
-   domain together (on by default at ≥2 entries; `legend={{ toggle: false }}` opts out).
-5. **Tooltip and keyboard.** `ChartTooltipFloat` does portal + flip + viewport clamp +
-   measure-before-show once for every chart; pointer moves are rAF-coalesced. The hover overlay is
-   focusable and scrubs on ←/→, Escape clears.
-
-**The contract is mechanically enforced, not advisory.** Two oxlint plugin rules ship with it:
-`basalt/hand-rolled-plot` fails a file that renders a chart-assembly primitive (`AxisLeftNumeric`/
-`AxisRightNumeric`/`AxisBottomDate`/`HoverOverlay`/`Crosshair`) without composing `CartesianChart`
-— a `theme-allow` comment on the first site is how a genuinely non-single-plot shape declares
-itself, and `DualPanel` carries the only one in the repo; `basalt/chart-legend-literal` fails a
-hand-written `ChartLegend items={[…]}` array, since the legend must derive from the same `series`
-the chart draws or it goes stale naming a series nobody plots. Both are `error` repo-local and
-`warn` in the shipped consumer preset, nominally for one minor per the grace-minor doctrine.
-
-Both sat at `warn` for four minors with nothing tracking them, as did `basalt/raw-size-literal`
-from 1.7.0 — twelve minors. That was the same promotion drift the 1.7.0 section above diagnoses for
-`mantine-shade-index`, made worse because `GRACE_PERIOD_KINDS` governs `GuardKind`s only, so there
-was no map to empty and nothing to remind anyone. **1.20.0's `PLUGIN_RULE_GRACE` is that map**
-(`configs/oxlint-plugin.js`), asserted against the shipped preset in both directions by a test —
-read the current level and its promotion note there rather than from a list in a doc, which is what
-drifted. `raw-size-literal` promoted to `error` in 1.20.0; these two stayed `warn` because 1.20.0
-widens both. Everything else the rebuild removed is enforced harder than lint: the old APIs are
-gone, so the old patterns do not resolve.
+**The contract is mechanically enforced, not advisory** — `basalt/hand-rolled-plot` and
+`basalt/chart-legend-literal`. Both sat at `warn` for four minors with nothing tracking them, as did
+`basalt/raw-size-literal` for twelve: `GRACE_PERIOD_KINDS` governs `GuardKind`s only, so there was
+no map to empty. **1.20.0's `PLUGIN_RULE_GRACE` is that map** — read the current level there, not
+from a doc, which is what drifted.
 
 Deleted outright (greenfield, one lockstep consumer, no shims): `ResponsiveChart`, `ChartHoverSync`,
 `HoverContext`, `useHoverSync`, `useChartTooltip`, the tip-based `ChartTooltip` + `useTooltipStyles`,
 `BarsAxisConfig`, `ZonedLineTooltipLabel`, and the whole `yDomain`/`yAutoMaxFloor`/`yAutoMinCeil`/
-`yAutoPad`/`numTicksY`/`formatYTick` prop family on every kind (now one `AxisConfig` object per
-axis). `Heatmap` measures itself via `ChartFrame` and takes `height`/`aspectRatio`/`fill` like every
-other kind. Ships as a plain `feat:` on the 1.x line — majors stay banned.
+`yAutoPad`/`numTicksY`/`formatYTick` prop family on every kind (now one `AxisConfig` per axis).
+Ships as a plain `feat:` on the 1.x line — majors stay banned.
 
-Two regressions were caught during migration and fixed in the primitive rather than worked around
-per kind: a stacked band's crosshair dot sat at its raw value instead of the cumulative band top
-(now the `cursorValue` seam), and an `AxisConfig.domain` function could not see which series the
-legend had hidden, so a stacked domain never shrank (the function now receives `visible`).
+Two regressions were caught during migration and fixed in the primitive rather than per kind: a
+stacked band's crosshair dot sat at its raw value instead of the cumulative band top (now the
+`cursorValue` seam), and an `AxisConfig.domain` function could not see which series the legend had
+hidden, so a stacked domain never shrank (it now receives `visible`).
 
 ## Native mobile nav + one typed nav definition — shipped 1.19.0 (2026-08-20)
 
@@ -599,7 +596,10 @@ charts/tokens API, the shell, or the query/forms/notifications/commands batterie
   `CHARTS-SPEC.md`, `CONTENT-SPEC.md`, `AGENT-CHAT-SPEC.md`,
   `FRAMEWORK-FREE.md` (consuming the token system with no React/Mantine/bundler).
 - **Ships to consumers** — `packages/basalt-ui/MIGRATING.md` (per-minor API delta: what was removed
-  or renamed and what replaces it), `README.md`, `llms.txt`, `AGENTS.md`, `agent/rules/*`.
+  or renamed and what replaces it), `README.md`, `llms.txt`, `AGENTS.md`, `agent/rules/*`,
+  `agent/skills/*`. **Nothing under `docs/` is in the tarball** — a shipped file citing
+  `docs/CHARTS-SPEC.md` was pointing a consumer at a path they do not have, so those references are
+  GitHub URLs now, marked as outside the package. Check that before adding one.
 - **`docs/archive/`** — superseded scope ledgers and historical process artifacts, kept for
   provenance only:
   - Per-release narratives — `STATUS-HISTORY.md` (chart-API rounds one to three, the 2026-08-02
