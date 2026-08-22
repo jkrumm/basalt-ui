@@ -201,6 +201,39 @@ describe('basaltAppPlugin — base handling', () => {
       false,
     )
   })
+
+  // The head half of `icons: false` shipped; the manifest half did not. `{ manifest: true, icons:
+  // false }` emitted a site.webmanifest naming two PNGs the app never ships — an installable app
+  // with two 404s, which is why rb went hybrid rather than use the plugin's manifest at all.
+  test('icons: false reaches the MANIFEST, not just the head links', () => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, icons: false })
+    const middleware = getDevMiddleware(plugin, '/myapp/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/myapp/site.webmanifest') ?? '{}')
+
+    expect(manifest.icons).toBeUndefined()
+    expect(JSON.stringify(manifest)).not.toContain('.png')
+    // …and the rest of the manifest is unaffected.
+    expect(manifest.start_url).toBe('/myapp/')
+    expect(manifest.name).toBe('Test App')
+  })
+
+  test('the default (icons on) still carries both manifest icon entries', () => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    const middleware = getDevMiddleware(plugin, '/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
+    expect(manifest.icons).toHaveLength(2)
+  })
+
+  test('icons.dir still redirects the manifest icon srcs', () => {
+    const plugin = getPlugin({
+      name: 'Test App',
+      themeColor: THEME_COLOR,
+      icons: { dir: '/brand' },
+    })
+    const middleware = getDevMiddleware(plugin, '/')
+    const manifest = JSON.parse(runMiddleware(middleware, '/site.webmanifest') ?? '{}')
+    expect(manifest.icons[0].src).toBe('/brand/web-app-manifest-192x192.png')
+  })
 })
 
 describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
