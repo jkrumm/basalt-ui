@@ -1332,10 +1332,36 @@ const chartLegendLiteral = {
 const PACKAGE_ROOT = resolvePath(PLUGIN_DIR, '..')
 
 /**
- * A component-shaped name: starts uppercase and carries a lowercase letter, which excludes the
+ * A component-shaped NAME: starts uppercase and carries a lowercase letter, which excludes the
  * SCREAMING_CASE constants and the two-letter token namespaces in the same barrel.
+ *
+ * A name test alone is not a component test — see {@link isComponentInit}. Every PascalCase binding
+ * passes this, which is how obsidian's `SlugTracker` (a plain data class in a React-free package)
+ * became a "forked component" the moment 1.21.0 widened the rule to all nine barrels.
  */
 const COMPONENT_NAME = /^[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*$/
+
+/** The two wrappers a function component is legitimately declared inside. */
+const COMPONENT_WRAPPERS = new Set(['memo', 'forwardRef'])
+
+/**
+ * Is this initializer component-SHAPED — a function, an arrow, or one wrapped in `memo` /
+ * `forwardRef`?
+ *
+ * The second half of the fix for obsidian's false positive. `const Foo = new Map()` and
+ * `class SlugTracker {}` share a name with a basalt export and nothing else; a fork of a component
+ * is a function (or, historically, a class that `extends` one). Narrowing here costs the rule
+ * nothing it was ever meant to catch and removes the whole "PascalCase binding" false-positive
+ * class, which the nine-barrel widening made large.
+ */
+function isComponentInit(init) {
+  if (init === null || init === undefined) return false
+  if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') return true
+  if (init.type !== 'CallExpression') return false
+  const callee = init.callee
+  const name = callee?.type === 'MemberExpression' ? callee.property?.name : callee?.name
+  return typeof name === 'string' && COMPONENT_WRAPPERS.has(name)
+}
 
 /**
  * The barrels a consumer can import a component FROM. The root one is not the whole surface: a
@@ -1428,6 +1454,11 @@ const shadowBasaltExport = {
     // basalt's own source DEFINES these names; a consumer's does not.
     if (BASALT_EXPORTS.size === 0 || filename.startsWith(`${PACKAGE_ROOT}/`)) return {}
     if (isTestFile(context)) return {}
+    // Scoped exactly like `ai-sdk-major`, and for the same reason: a package with no basalt-ui
+    // dependency (or one outside a declared `basalt.roots`) cannot import the export it is accused
+    // of forking, so the advice — "import it from 'basalt-ui' instead" — is not followable there.
+    // obsidian's React-free `obsidian-vault-core` took the report and had to waive it.
+    if (filename.length === 0 || !isBasaltScopedFile(filename)) return {}
 
     const report = (node, name) => {
       if (typeof name !== 'string' || !BASALT_EXPORTS.has(name)) return
@@ -1440,9 +1471,14 @@ const shadowBasaltExport = {
         report(node, node.id?.name)
       },
       VariableDeclarator(node) {
+        if (!isComponentInit(node.init)) return
         report(node, node.id?.name)
       },
+      // A class only counts when it EXTENDS something — a legacy class component. basalt ships no
+      // class components, so a standalone `class X {}` sharing a name with one of its exports is a
+      // collision between two unrelated things, not a fork.
       ClassDeclaration(node) {
+        if (node.superClass === null || node.superClass === undefined) return
         report(node, node.id?.name)
       },
     }
