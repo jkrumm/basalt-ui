@@ -124,6 +124,12 @@ export const NAV = defineNav({
           link: linkOptions({ to: '/components' }),
         },
         {
+          id: 'mobile-nav-pill',
+          label: 'Mobile nav pill',
+          icon: <IconComponents />,
+          link: linkOptions({ to: '/mobile-nav-pill' }),
+        },
+        {
           id: 'reports',
           label: 'Reports',
           icon: <IconActivity />,
