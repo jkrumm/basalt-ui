@@ -25,17 +25,30 @@ import { fmtAxisDate } from '../utils/format'
  * numeric value to plot — `formatValue` reads the datum directly.
  */
 export type BandStripSeries<T> = SeriesStyle & {
-  /** The derived tooltip row's value for a band in this state. Omit for a state whose NAME is the
-   * whole reading ("Not measured"), which then renders as a label with an empty value. */
-  formatValue?: (d: T) => string
+  /**
+   * The derived tooltip row's value for a band in this state.
+   *
+   * Return `null` for a datum in this state whose reading is ABSENT — the row renders
+   * {@link NO_READING} instead, which is the escape `ChartSeries.getValue` has and this shape did
+   * not: with no value accessor, an absent reading had to come back as `''` and render as a label
+   * with an empty value, indistinguishable from a state whose name is the whole reading.
+   *
+   * Omit the function entirely for a state whose NAME *is* the whole reading ("Not measured").
+   */
+  formatValue?: (d: T) => string | null
 }
 
 /** One drawn band — which state it is in, and the three ways a state can be qualified. */
 export type BandSpan = {
   /**
    * Series key naming this band's state: the tie to its legend entry, its fill, and its derived
-   * tooltip row. A key not present in `series` draws nothing — the loud failure is deliberate,
-   * since the alternative is a mark no legend entry accounts for.
+   * tooltip row.
+   *
+   * A key not present in `series` is a bug TypeScript cannot catch (this is a `string`), and it
+   * used to draw NOTHING — which on a strip whose vocabulary is measured/not-measured is
+   * indistinguishable from a real coverage gap, so a typo silently asserted "not measured". It now
+   * throws in development and draws an explicit unknown band in production; see
+   * {@link unknownStateError} for why the two differ.
    */
   state: string
   /**
@@ -99,7 +112,8 @@ export type BandStripProps<T> = {
   legend?: ChartLegendConfig | false
   /** Colour of the absence hatch. Names a `series` entry, so absence is legended like any other
    * state — a hatched band is the one mark a reader cannot decode from an axis. Default
-   * `VX.neutral`, unnamed. */
+   * `VX.neutral`, unnamed. A key naming no `series` entry throws (a PROP, so a typo can only be a
+   * wiring error) rather than falling back to the unnamed default. */
   absentState?: string
   /** Per-side overrides of the measured margins — applied last. */
   margin?: Partial<ChartMargin>
@@ -111,6 +125,52 @@ export type BandStripProps<T> = {
 }
 
 const DEFAULT_MARKER_INSET = 6
+
+/** Rendered by a `formatValue` that returned `null` — an absent reading, told apart from a state
+ * whose name is the whole reading (which renders no value at all). */
+const NO_READING = '\u2014'
+
+/**
+ * The one band treatment that belongs to no legend entry. A dashed neutral outline appears nowhere
+ * else on a strip — not as a state fill, not as the absence hatch — so an unresolvable key reads as
+ * "unnamed", never as data.
+ */
+const UNKNOWN_MARK = {
+  fill: alpha(VX.neutral, 0.2),
+  stroke: VX.neutral,
+  strokeWidth: 1,
+  strokeDasharray: '3 2',
+} as const
+
+/** The house dev gate (`src/provider`, `src/agent-chat` use the same expression): `basaltViteConfig`
+ * defines `process.env.NODE_ENV`, so a production bundle constant-folds this to `false` and drops
+ * the throw. Read per call, never hoisted to a module const, so a test can flip it. */
+function isDev(): boolean {
+  return process.env['NODE_ENV'] !== 'production'
+}
+
+/**
+ * A `state` (or `marker.state`) naming no `series` entry.
+ *
+ * Dev throws, production draws {@link UNKNOWN_MARK}: `state` comes off the DATUM, so a feed that
+ * grows a state basalt has never seen must degrade to an honest unknown rather than take the page
+ * down — while a typo, which is the same input, still fails loudly everywhere it is being written.
+ * The one outcome ruled out in both is the old one: dropping the band, which renders as absence.
+ */
+function unknownStateError(what: string, key: string, known: Iterable<string>): Error {
+  return new Error(
+    `BandStrip: ${what} "${key}" names no \`series\` entry (known: ${[...known].join(', ')}) — so ` +
+      'it has no legend entry, no colour and no tooltip row. Add the state to `series`, or map the ' +
+      'datum onto one that is there.',
+  )
+}
+
+/** A band's tooltip value: `null` from `formatValue` is an absent reading, `undefined` (no
+ * `formatValue` at all) is a state whose label is the whole row. */
+function formatBandValue<T>(style: BandStripSeries<T>, datum: T): string {
+  if (style.formatValue === undefined) return ''
+  return style.formatValue(datum) ?? NO_READING
+}
 
 /**
  * A 1-D categorical band strip: one rect per slot over a shared x axis, no y dimension at all.
@@ -187,6 +247,9 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
   const { bands, margin, plotWidth, scale, cursor, point, crosshairX, step, bandWidth } = band
   const stripHeight = Math.max(plot.height - margin.top - margin.bottom, 1)
   const hatchId = `${chartId}-band-absent`
+  if (absentState !== undefined && !styleByKey.has(absentState)) {
+    throw unknownStateError('absentState', absentState, styleByKey.keys())
+  }
   const absentColor =
     (absentState === undefined ? undefined : styleByKey.get(absentState)?.color) ?? VX.neutral
 
@@ -195,16 +258,35 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
     bands.forEach((d, i) => {
       const span = getBand(d)
       const style = styleByKey.get(span.state)
-      if (style === undefined || hidden.has(span.state)) return
+      const x = i * step
+      if (style === undefined) {
+        if (isDev()) throw unknownStateError('BandSpan.state', span.state, styleByKey.keys())
+        out.push(
+          <rect
+            key={getX(d)}
+            {...UNKNOWN_MARK}
+            x={x}
+            y={0}
+            width={bandWidth}
+            height={stripHeight}
+            rx={1}
+            pointerEvents="none"
+          />,
+        )
+        return
+      }
+      if (hidden.has(span.state)) return
       // Clamped AND finite-checked. `foldedFrom` is carried by the consumer's datum, so a
       // 0/0 on an un-folded slot arrives here as NaN — which `Math.min`/`Math.max` propagate
       // straight into `width="NaN"`, a band that silently fails to paint.
       const absent = clampFraction(span.absentFraction)
       const measuredWidth = bandWidth * (1 - absent)
       const hatchWidth = bandWidth - measuredWidth
-      const x = i * step
       const markerKey = span.marker?.state ?? span.state
       const markerColor = styleByKey.get(markerKey)?.color
+      if (span.marker !== undefined && markerColor === undefined && isDev()) {
+        throw unknownStateError('BandSpan.marker.state', markerKey, styleByKey.keys())
+      }
       const inset = span.marker?.inset ?? DEFAULT_MARKER_INSET
       out.push(
         <g key={getX(d)}>
@@ -230,14 +312,14 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
               pointerEvents="none"
             />
           )}
-          {span.marker !== undefined && markerColor !== undefined && measuredWidth > 0 && (
+          {span.marker !== undefined && measuredWidth > 0 && (
             <rect
+              {...(markerColor === undefined ? UNKNOWN_MARK : { fill: markerColor })}
               x={x}
               y={inset}
               width={measuredWidth}
               height={Math.max(stripHeight - 2 * inset, 2)}
               rx={1}
-              fill={markerColor}
               pointerEvents="none"
             />
           )}
@@ -347,11 +429,22 @@ function deriveBandRow<T>(
   datum: T,
 ): { color: string; label: string; value: string; shape: 'line' | 'bar'; dashed: boolean } | null {
   const style = styleByKey.get(span.state)
-  if (style === undefined || style.tooltip === false || hidden.has(span.state)) return null
+  // Production-only: dev threw while drawing. The row names the KEY rather than a state, so the
+  // tooltip cannot read back a state the legend does not carry.
+  if (style === undefined) {
+    return {
+      color: VX.neutral,
+      label: 'Unknown state',
+      value: span.state,
+      shape: 'bar',
+      dashed: true,
+    }
+  }
+  if (style.tooltip === false || hidden.has(span.state)) return null
   return {
     color: style.color,
     label: style.label,
-    value: style.formatValue?.(datum) ?? '',
+    value: formatBandValue(style, datum),
     shape: style.mark === 'line' ? 'line' : 'bar',
     dashed: style.dash === 'dashed',
   }

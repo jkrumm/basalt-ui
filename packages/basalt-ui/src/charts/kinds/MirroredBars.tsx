@@ -25,7 +25,8 @@ import { fmtAxisDate } from '../utils/format'
 
 /** One of the two panes. Each resolves its own domain — that is the whole point of the kind. */
 export type MirroredBarPane = {
-  /** Key of the `series` entry this pane draws: its colour, its legend entry, its tooltip row. */
+  /** Key of the `series` entry this pane draws: its colour, its legend entry, its tooltip row.
+   * A key naming no entry throws — see {@link assertPaneKey}. */
   key: string
   /**
    * The pane's upper bound. `'auto'` (default) is its own visible maximum; a number pins it.
@@ -85,7 +86,8 @@ export type MirroredBarsProps<T> = {
   cursorResolution?: CursorResolution
   tooltip?: BandTooltipConfig<T> | false
   legend?: ChartLegendConfig | false
-  /** Series key whose colour the absence hatch is drawn in. Default `VX.neutral`. */
+  /** Series key whose colour the absence hatch is drawn in. Default `VX.neutral`. A key naming no
+   * `series` entry throws rather than falling back to the unnamed default. */
   absentState?: string
   margin?: Partial<ChartMargin>
   ariaLabel?: string
@@ -94,6 +96,31 @@ export type MirroredBarsProps<T> = {
 
 const DEFAULT_UP_FRACTION = 0.35
 const DEFAULT_PANE_TICKS = 3
+
+/**
+ * A pane key naming no `series` entry.
+ *
+ * This is `BandStrip`'s silent-drop bug in the shape this kind has: an unresolvable `up.key` left
+ * `upSeries` undefined, which made `upVisible` false, which hid the pane AND its axis — rendering
+ * as "that half measured nothing", the measured-and-idle state the whole kind exists to keep
+ * distinguishable from absence. Unlike `BandSpan.state`, a pane key is a PROP and never comes off a
+ * datum, so a typo can only ever be a wiring error: this throws in every environment, with no
+ * production fallback, because there is no honest way to draw a pane whose colour and legend entry
+ * do not exist.
+ */
+function assertPaneKey<T>(
+  side: 'up' | 'down',
+  key: string,
+  resolved: ChartSeries<T> | undefined,
+  series: readonly ChartSeries<T>[],
+): void {
+  if (resolved !== undefined) return
+  throw new Error(
+    `MirroredBars: ${side}.key "${key}" names no \`series\` entry ` +
+      `(known: ${series.map((s) => s.key).join(', ')}) — the pane would silently vanish, which ` +
+      'reads as a measured zero. Add the series, or point the pane at one that exists.',
+  )
+}
 
 /**
  * Two bar panes over ONE x scale and one cursor, mirrored around a shared baseline, each in its
@@ -159,6 +186,8 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
   const seriesByKey = useMemo(() => new Map(series.map((s) => [s.key, s])), [series])
   const upSeries = seriesByKey.get(up.key)
   const downSeries = seriesByKey.get(down.key)
+  assertPaneKey('up', up.key, upSeries, series)
+  assertPaneKey('down', down.key, downSeries, series)
   const upVisible = upSeries !== undefined && !hidden.has(up.key)
   const downVisible = downSeries !== undefined && !hidden.has(down.key)
 
@@ -221,6 +250,13 @@ function MirroredBarsPlot<T>(props: MirroredBarsPlotProps<T>) {
   )
 
   const hatchId = `${chartId}-mirrored-absent`
+  if (absentState !== undefined && !seriesByKey.has(absentState)) {
+    throw new Error(
+      `MirroredBars: absentState "${absentState}" names no \`series\` entry ` +
+        `(known: ${series.map((s) => s.key).join(', ')}) — the hatch would fall back to an unnamed ` +
+        'neutral, and a hatched bar is the one mark a reader cannot decode from either axis.',
+    )
+  }
   const absentColor =
     (absentState === undefined ? undefined : seriesByKey.get(absentState)?.color) ?? VX.neutral
 

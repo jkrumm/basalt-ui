@@ -191,3 +191,42 @@ describe('MirroredBars — tooltip rows are derived, each in its own pane’s un
     expect(tip.textContent).not.toContain('Upload')
   })
 })
+
+/**
+ * The `BandStrip` silent-drop class, in this kind's shape. An unresolvable pane key left the pane
+ * AND its axis unrendered — which on a chart whose point is that idle and unmeasured must stay
+ * distinguishable reads as "that half measured nothing".
+ */
+describe('MirroredBars — an unresolvable key can never read as a measured zero', () => {
+  test('a pane key naming no `series` entry throws instead of hiding the pane', () => {
+    expect(() => renderChart({ up: { key: 'uplaod', format: (v) => `${v}u`, ticks: 2 } })).toThrow(
+      /up.key "uplaod" names no `series` entry \(known: down, up, absent\)/,
+    )
+  })
+
+  test('it throws in production too — a pane key is a PROP, so a typo is always a wiring error', () => {
+    const previous = process.env['NODE_ENV']
+    process.env['NODE_ENV'] = 'production'
+    try {
+      expect(() =>
+        renderChart({ down: { key: 'donw', format: (v) => `${v}d`, ticks: 2 } }),
+      ).toThrow(/down.key "donw"/)
+    } finally {
+      if (previous === undefined) delete process.env['NODE_ENV']
+      else process.env['NODE_ENV'] = previous
+    }
+  })
+
+  test('`absentState` naming no `series` entry throws rather than hatching in an unnamed neutral', () => {
+    expect(() => renderChart({ absentState: 'ghost' })).toThrow(
+      /absentState "ghost" names no `series` entry/,
+    )
+  })
+
+  test('a resolvable absentState still draws the hatch in that entry’s colour', () => {
+    const { container } = renderChart({ absentState: 'absent' })
+    expect(container.querySelector('pattern line')?.getAttribute('stroke')).toBe(
+      'color-mix(in srgb, #555 70%, transparent)',
+    )
+  })
+})
