@@ -37,7 +37,8 @@
     "llms.txt",
     "AGENTS.md",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "MIGRATING.md"
   ],
   "type": "module",
   "sideEffects": [
