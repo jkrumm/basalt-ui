@@ -20,6 +20,7 @@ import {
   init,
   MANIFEST_PATH,
   normalizeColorFunctions,
+  sync,
   tokensCss,
 } from './index.ts'
 
@@ -68,6 +69,9 @@ function installBasalt(at = ''): void {
     join(at, 'node_modules/basalt-ui/package.json'),
     JSON.stringify({ name: 'basalt-ui', version: CLI_VERSION }),
   )
+  // The shipped preset itself — `doctor`'s oxlint-preset check resolves the `extends` target now,
+  // so an install without it is (correctly) a failure.
+  write(join(at, 'node_modules/basalt-ui/configs/oxlint.json'), '{}')
 }
 
 /** A repo where every framework-profile doctor check passes. */
@@ -538,6 +542,18 @@ describe('tokens:css — a committable artifact', () => {
     expect(css).toContain('rgba(255, 255, 255, 0.6)')
   })
 
+  it('emits no trailing-zero alpha — the last thing keeping the sheet out of a linter', () => {
+    // prettier rewrites `rgba(28, 25, 23, 0.10)` → `0.1`, so the two light shadow tokens failed
+    // `format/prettier` while `--fix` put the file straight into `tokens:css --check` drift. The
+    // consumer's eslint-ignore entry for it survived two releases.
+    const css = emit([])
+    expect(css).not.toMatch(/rgba\([^)]*\d\.\d*0\)/)
+    expect(css).toContain('rgba(28, 25, 23, 0.1)')
+    expect(normalizeColorFunctions('a: rgba(1, 2, 3, 0.10); b: rgba(1, 2, 3, 1.0);')).toBe(
+      'a: rgba(1, 2, 3, 0.1); b: rgba(1, 2, 3, 1);',
+    )
+  })
+
   it('changes no token VALUE — the body is buildPaletteCss modulo the formatting', () => {
     const body = emit([]).split('\n').slice(2).join('\n')
     expect(body).toBe(`${normalizeColorFunctions(buildPaletteCss())}\n`)
@@ -690,5 +706,151 @@ describe('fonts:css — the typeface half of the token layer', () => {
     expect(capture(() => fontsCss(['--out', 'fonts.css', '--check'], dir)).code).toBe(0)
     write('fonts.css', ':root {}\n')
     expect(capture(() => fontsCss(['--out', 'fonts.css', '--check'], dir)).code).toBe(1)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Round 5: the same false-green class, one layer in — inside the checks that
+// were added to prevent it.
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('doctor — the oxlint-preset check resolves the path, not just the string', () => {
+  it('hard-fails when the extends entry names a path that does not exist', () => {
+    healthyFixture()
+    // Exactly the state a monorepo consumer upgrades into: a well-shaped root-relative entry, and
+    // basalt installed beside the package that depends on it. `bunx oxlint .` dies with NotFound
+    // here, and 1.20.0's own check printed ✓ in the same tree.
+    rmSync(join(dir, 'node_modules/basalt-ui/configs/oxlint.json'))
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('does not exist')
+    expect(log).toContain('NotFound')
+    expect(log).not.toContain('✓ .oxlintrc.json extends')
+  })
+
+  it('names the RESOLVED install path as the remedy when the entry points somewhere else', () => {
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'root',
+        workspaces: ['packages/*'],
+        basalt: { roots: ['packages/web/src'] },
+      }),
+    )
+    write('packages/web/package.json', JSON.stringify({ name: 'web' }))
+    write('packages/web/src/app.tsx', 'export const App = () => null\n')
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
+    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
+    installBasalt('packages/web')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('packages/web/node_modules/basalt-ui/configs/oxlint.json')
+  })
+
+  it('passes — and quotes the entry — when the target really is there', () => {
+    healthyFixture()
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('extends the shipped basalt-ui oxlint preset')
+  })
+})
+
+describe('doctor — the lefthook extends target, the seam that fails SILENTLY', () => {
+  it('hard-fails on a missing target: lefthook merges it to zero commands and exits 0', () => {
+    healthyFixture()
+    write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('ZERO commands')
+  })
+
+  it('passes when the target resolves', () => {
+    healthyFixture()
+    write('node_modules/basalt-ui/configs/lefthook.yml', 'pre-commit:\n  commands: {}\n')
+    write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('extends the shipped lefthook preset')
+  })
+
+  it('warns (never fails) on a lefthook.yml that wires its own hooks instead', () => {
+    healthyFixture()
+    write('lefthook.yml', 'pre-commit:\n  commands:\n    mine:\n      run: echo hi\n')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('does not extend the shipped lefthook preset')
+  })
+
+  it('is not applicable when the repo runs no lefthook at all', () => {
+    healthyFixture()
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('lefthook-preset: n/a')
+  })
+})
+
+describe('sync — basalt.roots is drift, and sync is the drift command', () => {
+  it('backfills the inferred roots when the key was never written', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    capture(() => init(dir))
+    // Undo init's write to reproduce a repo scaffolded before roots existed, then upgrade.
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    const { log } = capture(() => sync({}, dir))
+    expect(log).toContain('"roots": ["src"]')
+    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['src'])
+  })
+
+  it('never overwrites a declared roots — it names what the declaration does not cover', () => {
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'root',
+        workspaces: ['packages/*'],
+        basalt: { roots: ['packages/web/src'] },
+      }),
+    )
+    write(
+      'packages/web/package.json',
+      JSON.stringify({ name: 'web', dependencies: { 'basalt-ui': '*' } }),
+    )
+    write('packages/web/src/app.tsx', 'export const App = () => null\n')
+    write(
+      'packages/api/package.json',
+      JSON.stringify({ name: 'api', dependencies: { 'basalt-ui': '*' } }),
+    )
+    write('packages/api/src/server.ts', 'export const server = null\n')
+    const { log } = capture(() => sync({}, dir))
+    expect((readPkg()['basalt'] as { roots: string[] }).roots).toEqual(['packages/web/src'])
+    expect(log).toContain('keeping your "basalt.roots"')
+    expect(log).toContain('packages/api/src')
+  })
+
+  it('--check writes nothing, but still says the key is missing', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    const { log } = capture(() => sync({ check: true }, dir))
+    expect(readPkg()['basalt']).toBeUndefined()
+    expect(log).toContain('"basalt.roots" is not set')
+  })
+
+  it('reports a lefthook extends target that no longer resolves', () => {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
+    const { log } = capture(() => sync({}, dir))
+    expect(log).toContain('ZERO commands')
+  })
+})
+
+describe('init — the seeded lefthook.yml pins the guard to the local bin', () => {
+  it('renders a BASALT_BIN env override, the one key an extends target cannot eat', () => {
+    write('package.json', JSON.stringify({ name: 'fixture' }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    installBasalt()
+    capture(() => init(dir))
+    const seeded = read('lefthook.yml')
+    expect(seeded).toContain('BASALT_BIN: node_modules/.bin/basalt-ui')
+    expect(seeded).toContain('extends:')
   })
 })

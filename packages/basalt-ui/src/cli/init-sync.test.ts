@@ -151,6 +151,8 @@ describe('doctor — CLI vs installed basalt-ui version', () => {
       'node_modules/basalt-ui/package.json',
       JSON.stringify({ name: 'basalt-ui', version: cliVersion }),
     )
+    // The `extends` above has to RESOLVE, not merely read correctly — see the oxlint-preset check.
+    writeFixture('node_modules/basalt-ui/configs/oxlint.json', '{}')
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
     expect(log).toContain('matches the installed basalt-ui')
