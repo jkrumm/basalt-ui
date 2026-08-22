@@ -1,3 +1,22 @@
+# [1.21.0](https://github.com/jkrumm/basalt-ui/compare/v1.20.0...v1.21.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* delete a waiver that stopped covering anything ([3984281](https://github.com/jkrumm/basalt-ui/commit/3984281fff6313c225bdf1e185de4a427d2ef4df))
+* emit 0.1, not 0.10, from the shadow palette itself ([48adfff](https://github.com/jkrumm/basalt-ui/commit/48adfffcc9ad7713cacc07c1fc090b219fd175fa))
+* let the real color scheme win, and keep <meta charset> in its window ([8708c85](https://github.com/jkrumm/basalt-ui/commit/8708c85f1488b25e6a059ee879dcadf6350278a2))
+* make an annotation start its comment, and let it scope to one node ([a4cf78c](https://github.com/jkrumm/basalt-ui/commit/a4cf78c546d291c33a27bf94d7636758072a1005))
+* persist sidebar collapse through basalt's own state primitive ([c576040](https://github.com/jkrumm/basalt-ui/commit/c576040172dfeb8d66b52909bbcf55b7b1f91c70))
+* resolve the paths the wiring checks only matched, and audit the waivers ([c595181](https://github.com/jkrumm/basalt-ui/commit/c5951817ed01d7729f031bba2f3da50c3bf60666))
+* restore the palette fixture to emitter bytes ([605e240](https://github.com/jkrumm/basalt-ui/commit/605e240387a417f57ae8070f97bad79d97545d60))
+
+
+### Features
+
+* give the type ladder the two rungs consumers could only waive ([29b9ef3](https://github.com/jkrumm/basalt-ui/commit/29b9ef3767282dffb51fb52138d6ae4f1d24dd62))
+* make the search-param store's reader reachable from the API ([6924970](https://github.com/jkrumm/basalt-ui/commit/6924970f410b82ba5cfc65fd1d5088124934fc8f))
+
 # [1.20.0](https://github.com/jkrumm/basalt-ui/compare/v1.19.1...v1.20.0) (2026-08-22)
 
 
