@@ -3,10 +3,10 @@
 basalt-ui has zero runtime dependencies. `bun add basalt-ui` with no peers
 installed pulls in exactly one package — itself. No React, no Mantine, no
 bundler, and no d3/visx chart stack riding along for a component you never
-render. A static site can carry the same 202 `--vx-*` variables the framework's
+render. A static site can carry the same 204 `--vx-*` variables the framework's
 own components read, and stay in sync with them, without any of that weight.
 
-Counts on this page are for **1.20.0** and reproduce from the emitter itself:
+Counts on this page are for **1.20.1** and reproduce from the emitter itself:
 
 ```bash
 bunx basalt-ui tokens:css --no-legacy-aliases | grep -oE '^ +--vx-[a-z0-9-]+' | sort -u | wc -l
@@ -144,18 +144,18 @@ that way; they no longer have to.
 
 ## `only: 'core'` — drop the component spacing
 
-108 of the 202 variables are `--vx-space-*`, and 99 of those are named for a
+108 of the 204 variables are `--vx-space-*`, and 99 of those are named for a
 basalt React component: `--vx-space-agent-transcript-inset`,
 `--vx-space-toc-sub-indent`, `--vx-space-sidebar-child-row-indent`. Outside this
 framework they are dead weight.
 
 `--only core` keeps the 9 generic anchors — the `stack-xs`…`stack-xl` rhythm,
 `control-height`, `input-height`, `row-inset-x`, `row-inset-y` — and takes the
-emitted set from 202 variables to 103. It is a spacing filter only: color,
+emitted set from 204 variables to 105. It is a spacing filter only: color,
 radius, shadow, type and status are identical in both modes.
 
 All three counts exclude the 32 deprecated camelCase aliases below, which the
-default output still emits (234 declarations in the file, 202 canonical names).
+default output still emits (236 declarations in the file, 204 canonical names).
 `--no-legacy-aliases` drops them.
 
 ## Tailwind v4 — the `@theme inline` bridge

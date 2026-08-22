@@ -6,7 +6,8 @@
 
 **Version:** **1.20.0** is the published npm `latest` (Trusted Publisher OIDC), released 2026-08-22 —
 the round-4 guard and CLI batch below, plus two mobile-nav fixes. All seven consumers are on it.
-`master` carries the round-5 corrections toward **1.20.1**; there is no unmerged feature branch.
+`master` carries the round-5 batch toward **1.20.1**, committed and unreleased; there is no unmerged
+feature branch.
 
 _This version line is the one line a release must touch and semantic-release does not touch it._
 Round 5 read it on release day and concluded there was nothing to upgrade to.
@@ -25,6 +26,7 @@ Everything below this line is built and on npm. Nothing in this document is a pl
 | Chart-API consumer rounds one / two / three                                                            | 1.16.0 / 1.17.0 / 1.18.0       |
 | Native mobile nav + `defineNav`                                                                        | 1.19.0                         |
 | Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0                         |
+| Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                      | 1.20.1 (unreleased)            |
 
 Adopted downstream: seven consumer repos, all on 1.20.0 as of the round-5 sweep. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
@@ -45,8 +47,9 @@ false load-bearing claims**, which is the failure `MIGRATING.md` exists to preve
    `hand-rolled-plot` reports per node, but a waiver naming the rule AND giving a reason matches
    `hasFileDeclaration` at any line, so it silences the file; dropping the reason keeps it
    node-scoped in the plugin and then `check-theme` reports `theme-allow-unscoped`. The two halves
-   intersect at one legal shape and it is whole-file. **Not fixed** — a sibling change targets 1.20.1.
-   `MIGRATING.md` now describes 1.20.0's real behaviour.
+   intersect at one legal shape and it is whole-file. **Completed in 1.20.1** — file scope is now
+   spelled `theme-allow-file`, `theme-allow` is the node waiver, and `MIGRATING.md` carries both the
+   1.20.0 behaviour and the 1.20.1 migration.
 2. **Four wrong rows in `MIGRATING.md`**, found by re-auditing every replacement against the built
    `.d.ts` rather than the commit it came from. The one a consumer caught: `ZonedLine`/`MultiLine`
    `formatValue` was mapped to `tooltip`, with "**not** `y`" — backwards; `CartesianTooltipConfig`
@@ -57,20 +60,19 @@ false load-bearing claims**, which is the failure `MIGRATING.md` exists to preve
    `agent/rules/*`, which is what `init`/`sync` copy into consumers. It now lives in
    `basalt-router.md`. Same class: the managed `CLAUDE.md` block told agents to read
    `node_modules/basalt-ui/llms.txt` — the exact path 1.20.0 taught `doctor` to reject in a monorepo.
-4. **`basalt/shadow-basalt-export` misses the renamed majority.** It reads only the root barrel (so
-   never the charts layer) and matches only exact names — linewatch's forks are `Cell` and `Box`,
-   rb's is `Stat`. **Detection does not substitute for expressiveness**; the shipped rules now say so.
+4. **`basalt/shadow-basalt-export` misses the renamed majority.** It matched only exact names —
+   linewatch's forks are `Cell` and `Box`, rb's is `Stat`. 1.20.1 widens it to all nine published
+   barrels (the charts layer was invisible), but the rename miss is structural. **Detection does not
+   substitute for expressiveness**; the shipped rules now say so, and so does the rule's own message.
 5. **`fonts:css` is correct and was not adopted by the consumer it was built for.** rollhook reported
    having no route to basalt's typefaces; 1.20.0 shipped one; adopting it would rebrand a public
    marketing site with a display face rollhook never had (0.4.2 was Instrument Sans, 1.x is Nunito
    Sans + Hubot Sans — the faces changed at 1.0). A feature can be correct and still not be the fix
    for the consumer that motivated it.
 
-Open, not fixed here: the emitted stylesheet still fails `format/prettier` on two `rgba(…, 0.10)`
-alphas; `exemptRules` matches single path segments, so a real relative path silently matches nothing
-— the only waiver route for the JSON/webmanifest file class 1.20.0 started scanning; `doctor`'s
-`oxlint-preset` check string-matches the `extends` entry with no `existsSync`, so it prints green in
-a tree where `oxlint` refuses to start.
+All four items left open at the end of round 5 — the `rgba(…, 0.10)` alphas, segment-only
+`exemptRules`, the unresolved `oxlint-preset` path, and the half-delivered per-node scoping — are
+**closed in 1.20.1** below.
 
 ## Round 4 consumer sweep (2026-08-22)
 
@@ -111,6 +113,49 @@ basalt bug:**
 - rollhook's committed `basalt-tokens.css` was emitted by 1.19.1 and carries no header, so it keeps
   reporting 116 until the consumer re-runs `bun run tokens`. The 116 → 0 payoff requires that
   regeneration; it is not automatic on upgrade.
+
+## Round-5 batch — 1.20.1 (committed, unreleased)
+
+Round 5 found the same false-green class one layer in: waivers nobody re-checked, wiring checks that
+matched a string instead of resolving it, and an API whose whole point was reachable only through a
+JSDoc nobody had to read.
+
+- **The `theme-allow` grammar** (`268fb43`) — both parsers did a bare substring search, so a comment
+  merely _mentioning_ the token parsed as the blanket form and switched every rule off on the line
+  below; linewatch disarmed a file by documenting its own waivers. An annotation must now START its
+  comment. File scope is spelled `theme-allow-file <id>… — <why>`, a bare one waives nothing, and
+  plain `theme-allow` is the node/line waiver — **the half of 1.20.0 that never shipped**. A
+  **consumer break**, measured: linewatch 0 → 11, argo 0 → 6, rb 0 → 0, all `warn`, one word per
+  declaration. `.json`/`.webmanifest` get a `"basalt:theme-allow[-file]"` member; their findings had
+  been unwaivable since the markup scan landed. A comment-only annotation now reaches the first CODE
+  line below, so a wrapped reason or a docblock's `*/` stops absorbing it (argo hit that 3×).
+- **`check-theme --audit-allows`** (`25323be`) — every waiver, with what it still suppresses, proved
+  by re-running the guard with that occurrence neutralized rather than by reading its text. Exits 1
+  on a dead one. Found one in basalt's own shell (`8f785a1`). `exemptRules` now takes relative
+  paths, directory prefixes, globs and `{ paths, reason }`; entries matching nothing are reported.
+- **Toolchain seams** (`25323be`) — `oxlint-preset` resolves the `extends` target instead of
+  matching the string; new `lefthook-preset` check, because a missing target merges to ZERO commands
+  and exits 0, leaving a repo with no pre-commit gate and a clean `lefthook dump`. `sync` reports
+  both seams and backfills `basalt.roots` (only `init` ever wrote it, so every existing consumer sat
+  on the undeclared `src` default while `guard-scan` passed). An `extends` target WINS on a
+  colliding key — hence `${BASALT_BIN:-bunx --no-install basalt-ui}`, the one overridable seam.
+- **`store.linkSearch`** (`ad2b5bc`) — `createSearchParamStore`'s persistence lived entirely behind
+  `validateSearch`, so adopting the store and never wiring the reader was usual, not merely
+  possible. Argo adopted it in three features, hand-rolled the persistence in all three, and its
+  reader had **zero call sites**: a nav link's module-scope `search: { window: '30d' }` pins the
+  fallback on every click. The remedy is now a property autocomplete offers while you type
+  `search:`, plus a dev warning that fires only in the provably broken state. No warning on the
+  multi store — an empty array is indistinguishable from an absent param.
+- **The rest** — `basaltAppPlugin` gains `colorScheme` and scopes its anti-FOUC rule to
+  `html:not([data-mantine-color-scheme])` (an unlayered `color-scheme:dark` had been giving every
+  light consumer dark native controls permanently), and hoists `<meta charset>` back inside the
+  spec's 1024-byte window, 1653 → 46 (`d6426f0`). The type ladder gains `nano` (10) and `display`
+  (30) — the two rungs `inline-font-size` could only be waived for; a 20px rung was **rejected**,
+  21/20 = 1.05 being below the now-explicit 1.06×–1.17× band (`0d03db3`). `BasaltShell` persists
+  collapse through `createPersistedState`, SSR-safe (`129a31b`) — which **retracts a round-4
+  finding**: argo's raw `localStorage` read was compliance with the shipped component, not drift.
+  `shadow-basalt-export` reads all nine published barrels and calls itself a **tripwire, not
+  coverage**. `tokens:css` emits `0.1`, not `0.10` (`cf55a20`).
 
 ## Round-4 batch — shipped in 1.20.0
 
