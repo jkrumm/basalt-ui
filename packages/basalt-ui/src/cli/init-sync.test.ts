@@ -119,6 +119,12 @@ describe('doctor — CLI vs installed basalt-ui version', () => {
   ).version
 
   it('warns when node_modules/basalt-ui version differs from the running CLI', () => {
+    // A Mantine dependency puts doctor in the framework profile — without one it reads as a
+    // tokens-only consumer, where the missing scaffold is not a failure at all.
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@mantine/core': '^9' } }),
+    )
     writeFixture(
       'node_modules/basalt-ui/package.json',
       JSON.stringify({ name: 'basalt-ui', version: '0.4.2' }),
@@ -132,6 +138,14 @@ describe('doctor — CLI vs installed basalt-ui version', () => {
   })
 
   it('passes when node_modules/basalt-ui version matches the running CLI', () => {
+    // A full fixture, not just the manifest: doctor also asserts the guard scans something and the
+    // oxlint preset is wired, and a green exit has to mean all of it.
+    writeFixture('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    writeFixture('src/app.tsx', 'export const App = () => null\n')
+    writeFixture(
+      '.oxlintrc.json',
+      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }',
+    )
     writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
     writeFixture(
       'node_modules/basalt-ui/package.json',
@@ -142,11 +156,13 @@ describe('doctor — CLI vs installed basalt-ui version', () => {
     expect(log).toContain('matches the installed basalt-ui')
   })
 
-  it('is silent (no node_modules/basalt-ui present) when the package cannot be resolved', () => {
+  it('reports the version checks as SKIPPED when the package cannot be resolved', () => {
     writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
-    const { log } = capture(() => doctor(dir))
-    expect(log).not.toContain('differs from the installed basalt-ui')
+    const { code, log } = capture(() => doctor(dir))
     expect(log).not.toContain('matches the installed basalt-ui')
+    // Silence was the bug: two of five checks used to vanish while the footer still read green.
+    expect(log).toContain('SKIPPED')
+    expect(code).toBe(1)
   })
 })
 

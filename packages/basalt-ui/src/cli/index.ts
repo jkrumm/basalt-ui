@@ -362,15 +362,181 @@ const GUARD_KIND_EXPLANATIONS: Partial<Record<GuardKind, string>> = {
     '--basalt-font-sans|head|mono vars instead of a hardcoded fontFamily literal.',
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Resolution — where basalt is installed, and where the consumer's basalt config lives
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** A path relative to `fromDir`, POSIX-separated and always explicitly relative (`./` / `../`). */
+function relativePosix(fromDir: string, toPath: string): string {
+  const rel = relative(fromDir, toPath).replace(/\\/g, '/')
+  if (rel === '') return '.'
+  return rel.startsWith('.') ? rel : `./${rel}`
+}
+
+/**
+ * Where `basalt-ui` actually resolves from, seen from a consumer directory.
+ *
+ * Every toolchain seam basalt seeds (`.oxlintrc.json`'s `extends`, `lefthook.yml`'s `extends`, the
+ * CI `run:` steps) used to hardcode `./node_modules/basalt-ui` at the repo ROOT. Under bun's
+ * isolated linker a library package that declares basalt a peer + devDependency gets
+ * `<pkg>/node_modules/basalt-ui` and NOTHING at the root, so all three silently failed to resolve
+ * and `bunx` fetched a second, different copy from npm instead. Resolution therefore walks
+ * OUTWARD from the consumer dir first, then across the workspace packages — and every caller
+ * renders its paths from the answer rather than assuming the root.
+ */
+type BasaltInstall = {
+  /** Absolute path of the resolved `node_modules/basalt-ui` directory, or null when unresolvable. */
+  dir: string | null
+  /** The resolved copy's own version, or null. */
+  version: string | null
+  /** How it was found — `null` when unresolved. `'workspace'` is the isolated-linker case. */
+  how: 'cwd' | 'ancestor' | 'workspace' | null
+}
+
+const UNRESOLVED_INSTALL: BasaltInstall = { dir: null, version: null, how: null }
+
+/** `<dir>/node_modules/basalt-ui` when it holds a readable package.json, else null. */
+function basaltInstallAt(dir: string): { dir: string; version: string | null } | null {
+  const installDir = resolve(dir, 'node_modules', 'basalt-ui')
+  const raw = readIfExists(resolve(installDir, 'package.json'))
+  if (raw === null) return null
+  try {
+    const pkg = JSON.parse(raw) as { version?: string }
+    return { dir: installDir, version: pkg.version ?? null }
+  } catch {
+    return { dir: installDir, version: null }
+  }
+}
+
+/** Resolve the installed basalt-ui: cwd, then every ancestor, then the workspace packages. */
+function findBasaltInstall(cwd: string): BasaltInstall {
+  const own = basaltInstallAt(cwd)
+  if (own !== null) return { ...own, how: 'cwd' }
+
+  let current = dirname(cwd)
+  for (;;) {
+    const found = basaltInstallAt(current)
+    if (found !== null) return { ...found, how: 'ancestor' }
+    const parent = dirname(current)
+    if (parent === current) break
+    current = parent
+  }
+
+  for (const pkg of collectWorkspacePackages(cwd).packages) {
+    if (pkg.dir === cwd) continue
+    const found = basaltInstallAt(pkg.dir)
+    if (found !== null) return { ...found, how: 'workspace' }
+  }
+  return UNRESOLVED_INSTALL
+}
+
+/**
+ * The `extends`/`run:` path a seeded config should carry to reach a shipped asset — rendered from
+ * where basalt ACTUALLY resolves, relative to the directory the config lives in. Falls back to the
+ * root-relative form when nothing resolves (a pre-install `init`), so the seed is still the shape a
+ * later `bun install` makes true.
+ */
+function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string): string {
+  if (install.dir === null) return `./node_modules/basalt-ui/${asset}`
+  return `${relativePosix(fromDir, install.dir)}/${asset}`
+}
+
+/** True when `dir` is a basalt-configured project — it carries the manifest or a `basalt` key. */
+function hasBasaltProject(dir: string): boolean {
+  if (existsSync(resolve(dir, MANIFEST_PATH))) return true
+  const raw = readIfExists(resolve(dir, 'package.json'))
+  if (raw === null) return false
+  try {
+    return (JSON.parse(raw) as { basalt?: unknown }).basalt !== undefined
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Which directory a project-scoped command (`check-theme`, `doctor`) should actually read.
+ *
+ * The shipped lefthook preset and every `bunx basalt-ui …` in the seeded CI run at the REPO ROOT,
+ * while in a monorepo the `basalt` config and the manifest live in a package below it — verified to
+ * produce `0 files scanned` and a `manifest missing` failure, i.e. a gate that never gates. Rather
+ * than make every consumer hand-write a `--cwd`, a command with no basalt project at its own cwd
+ * relocates to the single workspace package that has one, and says so. Two or more candidates is
+ * genuinely ambiguous and reported as such; `BASALT_CWD` is the explicit override.
+ */
+type ProjectResolution = {
+  /** The directory to read. Equals the invocation cwd unless a relocation happened. */
+  dir: string
+  /** The invocation cwd when the command relocated away from it, else null. */
+  relocatedFrom: string | null
+  /** Candidate project dirs when relocation was impossible because several exist, else null. */
+  ambiguous: string[] | null
+}
+
+function resolveProjectDir(cwd: string): ProjectResolution {
+  const override = process.env['BASALT_CWD']
+  if (override !== undefined && override.length > 0) {
+    const dir = isAbsolute(override) ? override : resolve(cwd, override)
+    return { dir, relocatedFrom: dir === cwd ? null : cwd, ambiguous: null }
+  }
+  if (hasBasaltProject(cwd)) return { dir: cwd, relocatedFrom: null, ambiguous: null }
+
+  const candidates = collectWorkspacePackages(cwd)
+    .packages.filter((pkg) => pkg.dir !== cwd && hasBasaltProject(pkg.dir))
+    .map((pkg) => pkg.dir)
+  if (candidates.length === 1) {
+    return { dir: candidates[0] as string, relocatedFrom: cwd, ambiguous: null }
+  }
+  if (candidates.length > 1) return { dir: cwd, relocatedFrom: null, ambiguous: candidates }
+  return { dir: cwd, relocatedFrom: null, ambiguous: null }
+}
+
+/**
+ * The relative paths `check-theme` would actually scan for a given config — the ONE place the walk
+ * + `SKIP` + `exempt` filtering lives, so `doctor`'s "the guard sees zero files" check can never
+ * disagree with what `check-theme` does.
+ */
+function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
+  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
+  const out: string[] = []
+  for (const root of resolveRoots(cfg)) {
+    for (const f of walkSourceFiles(resolve(cwd, root))) {
+      // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
+      // identical on Windows (where `relative` yields backslashes) and POSIX.
+      const rel = relative(cwd, f).replace(/\\/g, '/')
+      if (SKIP.test(rel) || exempt.has(rel)) continue
+      out.push(rel)
+    }
+  }
+  return out
+}
+
 /**
  * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
  * GuardConfig, walks roots, calls checkSource per file, collects Finding[], groups/reports, returns
  * 0 (clean) / 1 (violations). A `theme-allow` comment exempts a line.
+ *
+ * Runs against `resolveProjectDir(cwd)`, not `cwd` — see that type's doc for why a root-invoked
+ * hook or CI step has to find the package the config lives in rather than scan nothing and pass.
  */
-export function checkTheme(cwd: string = process.cwd()): number {
+export function checkTheme(invocationCwd: string = process.cwd()): number {
+  const project = resolveProjectDir(invocationCwd)
+  if (project.ambiguous !== null) {
+    console.error(
+      `✖ basalt-ui check-theme: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
+        `workspace packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        'run it from one of them, or set BASALT_CWD to pick.',
+    )
+    return 1
+  }
+  const cwd = project.dir
+  if (project.relocatedFrom !== null) {
+    console.log(
+      `basalt-ui check-theme: no basalt config at ${project.relocatedFrom} — running in ` +
+        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.`,
+    )
+  }
   const cfg = readBasaltConfig(cwd)
-  const roots = cfg.roots ?? DEFAULT_ROOTS
-  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
+  const roots = resolveRoots(cfg)
 
   const guardCfg: GuardConfig = {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
@@ -395,20 +561,12 @@ export function checkTheme(cwd: string = process.cwd()): number {
   }
 
   const findings: Finding[] = []
-  let scannedCount = 0
-  for (const root of roots) {
-    for (const f of walkSourceFiles(resolve(cwd, root))) {
-      // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
-      // identical on Windows (where `relative` yields backslashes) and POSIX.
-      const rel = relative(cwd, f).replace(/\\/g, '/')
-      if (SKIP.test(rel) || exempt.has(rel)) continue
-      scannedCount += 1
-      const text = readFileSync(f, 'utf8')
-      findings.push(...checkSource(text, rel, guardCfg))
-    }
+  const scanned = scannableFiles(cwd, cfg)
+  for (const rel of scanned) {
+    findings.push(...checkSource(readFileSync(resolve(cwd, rel), 'utf8'), rel, guardCfg))
   }
 
-  if (scannedCount === 0) {
+  if (scanned.length === 0) {
     // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
     // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
     // consumer — both cases fail loud instead of warn-plus-green.
@@ -557,6 +715,16 @@ type TemplateVars = {
   SERIES_MODULE_PATH: string
   /** The consumer's configured roots as space-separated quoted oxfmt globs, e.g. `'apps/web/src/**'`. */
   ROOTS_GLOBS: string
+  /** Path to the shipped oxlint preset from the consumer dir — RESOLVED, never assumed at the root. */
+  OXLINT_PRESET_PATH: string
+  /** Path to the shipped lefthook preset from the consumer dir — same resolution. */
+  LEFTHOOK_PRESET_PATH: string
+  /**
+   * How a seeded script or CI step invokes the CLI. The locally-installed bin when basalt resolves
+   * (so the step can never silently run a DIFFERENT version that `bunx` fetched from npm), and
+   * `bunx basalt-ui` only as the pre-install fallback.
+   */
+  BASALT_BIN: string
 }
 
 // The block markers the CLAUDE.md template emits. The begin marker carries the framework version
@@ -603,12 +771,20 @@ function readFrameworkVersion(pkgRoot: string): string {
 
 /** Build the template-variable map from the framework root + consumer cwd/config. */
 function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): TemplateVars {
+  const install = findBasaltInstall(cwd)
+  const binDir = install.dir === null ? null : resolve(install.dir, '..', '.bin')
   return {
     APP_NAME: readPackageName(cwd),
     BASALT_VERSION: readFrameworkVersion(pkgRoot),
     ACCENT_HUE: cfg.accentHue ?? 'blue',
     SERIES_MODULE_PATH: resolveSeriesModulePath(cfg),
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
+    OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/oxlint.json'),
+    LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
+    BASALT_BIN:
+      binDir === null
+        ? 'bunx basalt-ui'
+        : `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`,
   }
 }
 
@@ -658,7 +834,12 @@ function applyBlock(host: string, block: string): string {
  * Explicit `--with-router` / `--with-query` CLI flags force-include a router/query scaffold even
  * when the peer isn't detected in the consumer's package.json yet (e.g. it's about to be added).
  */
-type ScaffoldFlags = { withRouter?: boolean; withQuery?: boolean }
+type ScaffoldFlags = {
+  withRouter?: boolean
+  withQuery?: boolean
+  /** `--merge-lint`: splice the shipped preset's `extends` into an `.oxlintrc.json` init would keep. */
+  mergeLint?: boolean
+}
 
 /** Router/query peer presence, resolved from detection + explicit flags. */
 type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
@@ -854,12 +1035,15 @@ function managedFiles(peers: PeerFlags, placement: PlacementFlags = ROOT_PLACEME
     dest: 'lefthook.yml',
     mode: 'seed',
     source: 'configs/lefthook.yml',
-    render: () =>
+    render: (ctx) =>
       '# Seeded by basalt-ui init — you own this file; sync never touches it again.\n' +
       '# The extends target supplies oxlint + oxfmt + check-theme pre-commit jobs and\n' +
       '# auto-updates with the basalt-ui package. Add your own commands alongside.\n' +
+      '# The path is RESOLVED from where basalt-ui actually installed, not assumed at the\n' +
+      '# repo root — under an isolated linker it lives beside the package that depends on it.\n' +
+      '# Run `lefthook install` once: the file is inert until the git hooks are written.\n' +
       'extends:\n' +
-      '  - node_modules/basalt-ui/configs/lefthook.yml\n',
+      `  - ${ctx.vars.LEFTHOOK_PRESET_PATH.replace(/^\.\//, '')}\n`,
   }
 
   // CI is inherently repo-shaped (a monorepo's check.yml needs its own scripts), and GitHub Actions
@@ -885,7 +1069,7 @@ function managedFiles(peers: PeerFlags, placement: PlacementFlags = ROOT_PLACEME
     dest: '.oxlintrc.json',
     mode: 'seed',
     source: 'configs/oxlint.json',
-    render: () => '{\n  "extends": ["./node_modules/basalt-ui/configs/oxlint.json"]\n}\n',
+    render: (ctx) => `{\n  "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"]\n}\n`,
   }
 
   // ── Seed scaffolds: written by init, never overwritten by sync ─────────────
@@ -1157,17 +1341,227 @@ function renderContext(cwd: string): RenderContext {
   return { pkgRoot, vars: buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd)) }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// init — describing the repo it is actually in
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Read → mutate → write the consumer's package.json, preserving its own indentation and trailing
+ * newline. `mutate` returns false to abort the write (nothing to change). Returns whether a write
+ * happened. Deliberately a JSON round-trip rather than a textual splice: key ORDER is preserved by
+ * `JSON.parse`/`stringify`, and anything fancier would be a formatter this CLI has no business being.
+ */
+function patchPackageJson(cwd: string, mutate: (pkg: Record<string, unknown>) => boolean): boolean {
+  const abs = resolve(cwd, 'package.json')
+  const raw = readIfExists(abs)
+  if (raw === null) return false
+  let pkg: Record<string, unknown>
+  try {
+    pkg = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    return false
+  }
+  if (!mutate(pkg)) return false
+  const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
+  writeFileSync(abs, JSON.stringify(pkg, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
+  return true
+}
+
+/**
+ * The source roots for THIS repo, inferred from its actual layout — the fix for the single most
+ * reported false-green: without `basalt.roots` a workspace repo scaffolds a `check-theme` that
+ * scans zero files and a CI `oxfmt 'src/**'` that matches nothing, while `doctor` reports green.
+ *
+ * A workspace repo resolves to the `src/` of every workspace package that depends on basalt or
+ * Mantine (a backend package's `src/` has nothing for a design guard to say); with no such package
+ * it falls back to every workspace `src/`, and a single-package repo to plain `src`. Empty when
+ * nothing plausible exists — `init` says so rather than writing a root that matches nothing.
+ */
+function detectRoots(cwd: string): string[] {
+  const workspacePackages = collectWorkspacePackages(cwd).packages.filter((pkg) => pkg.dir !== cwd)
+  const withSrc = workspacePackages.filter((pkg) => existsSync(resolve(pkg.dir, 'src')))
+  const uiPackages = withSrc.filter(
+    (pkg) => hasDependency(pkg.dir, 'basalt-ui') || hasDependency(pkg.dir, '@mantine/core'),
+  )
+  const chosen = uiPackages.length > 0 ? uiPackages : withSrc
+  if (chosen.length > 0) {
+    return chosen.map((pkg) => relativePosix(cwd, resolve(pkg.dir, 'src')).replace(/^\.\//, ''))
+  }
+  return existsSync(resolve(cwd, DEFAULT_ROOT)) ? [DEFAULT_ROOT] : []
+}
+
+/**
+ * Strip JSONC comments (and trailing commas) so `.oxlintrc.json` can be READ. oxlint accepts JSONC
+ * and real consumer configs use it — a plain `JSON.parse` there reported "not valid JSON" on a
+ * perfectly good config. String-aware, so a `//` inside a value survives.
+ *
+ * Only ever used for reading. The trailing-comma pass is a plain regex and could in principle mangle
+ * a `, }` sequence inside a string; the failure direction is a parse error, which the caller already
+ * treats as "cannot tell", never as "passes".
+ */
+function stripJsonc(text: string): string {
+  let out = ''
+  let inString = false
+  let escaped = false
+  let i = 0
+  while (i < text.length) {
+    const ch = text[i] as string
+    if (inString) {
+      out += ch
+      if (escaped) escaped = false
+      else if (ch === '\\') escaped = true
+      else if (ch === '"') inString = false
+      i += 1
+      continue
+    }
+    if (ch === '"') {
+      inString = true
+      out += ch
+      i += 1
+      continue
+    }
+    if (ch === '/' && text[i + 1] === '/') {
+      while (i < text.length && text[i] !== '\n') i += 1
+      continue
+    }
+    if (ch === '/' && text[i + 1] === '*') {
+      i += 2
+      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i += 1
+      i += 2
+      continue
+    }
+    out += ch
+    i += 1
+  }
+  return out.replace(/,(\s*[}\]])/g, '$1')
+}
+
+/** Parse a JSONC document, or null when it does not parse at all. */
+function parseJsonc(text: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(stripJsonc(text)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+/** Outcome of splicing the shipped preset into an `.oxlintrc.json` the consumer already had. */
+type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
+
+/** True when an `extends` entry points at the shipped preset, wherever basalt resolved from. */
+function extendsBasaltPreset(entries: unknown): boolean {
+  return (
+    Array.isArray(entries) &&
+    entries.some(
+      (entry) => typeof entry === 'string' && entry.endsWith('basalt-ui/configs/oxlint.json'),
+    )
+  )
+}
+
+/**
+ * Splice the shipped preset into an EXISTING `.oxlintrc.json` (`init --merge-lint`). Opt-in, not
+ * automatic: turning the framework on adds real lint debt to previously-clean code (see the
+ * lint-debt notice `init` prints), and that is a decision, not a scaffold step. Prepends the preset
+ * so the consumer's own `extends` entries still win.
+ */
+function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
+  const abs = resolve(cwd, '.oxlintrc.json')
+  const raw = readIfExists(abs)
+  if (raw === null) return 'absent'
+  const cfg = parseJsonc(raw)
+  if (cfg === null) return 'unreadable'
+  if (extendsBasaltPreset(cfg['extends'])) return 'already'
+  // Rewriting a JSONC config through JSON.stringify would silently delete the consumer's comments,
+  // which in a lint config are usually the WHY of every disabled rule. Refuse and say so.
+  if (stripJsonc(raw) !== raw) return 'has-comments'
+  const existing = Array.isArray(cfg['extends'])
+    ? (cfg['extends'] as unknown[]).filter((entry) => typeof entry === 'string')
+    : []
+  // Rebuild rather than spread, so `extends` keeps its original position when it was already there
+  // and lands first when it wasn't — a diff a human reviews should not reshuffle the whole file.
+  const merged: Record<string, unknown> = 'extends' in cfg ? {} : { extends: [presetPath] }
+  for (const [key, value] of Object.entries(cfg)) {
+    merged[key] = key === 'extends' ? [presetPath, ...existing] : value
+  }
+  const indent = /\n([ \t]+)"/.exec(raw)?.[1] ?? '  '
+  writeFileSync(abs, JSON.stringify(merged, null, indent) + (raw.endsWith('\n') ? '\n' : ''))
+  return 'added'
+}
+
+/**
+ * What a consumer LOSES by `init` keeping a file it already had — the half the aggregate
+ * `20 written, 2 kept` never said. A kept `.oxlintrc.json` is the headline case: the framework's
+ * whole lint half stays off, and every gate downstream reports green over it.
+ */
+const KEPT_FILE_COST: Record<string, string> = {
+  '.oxlintrc.json':
+    'the shipped oxlint preset (the basalt/* design rules AND the jsx-a11y / import / promise / ' +
+    'unicorn plugins) is NOT active — nothing else turns it on, and every gate stays green ' +
+    'without it. Re-run with `--merge-lint` to splice the extends in, or add it by hand.',
+  'lefthook.yml':
+    'the pre-commit oxlint / oxfmt / check-theme jobs are not wired — add `extends: ' +
+    '[<preset>]` to your own file.',
+  '.github/workflows/check.yml':
+    'CI does not run check-theme or the sync drift gate — copy those steps into your own workflow.',
+  '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
+  'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
+}
+
 /** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
 export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
+  // ── Describe the repo BEFORE rendering anything ───────────────────────────
+  // Every roots-derived seed (the CI oxfmt globs, DESIGN.md's series path, the default scan
+  // exemption) renders from `basalt.roots`, so the key has to exist first. Writing it is what
+  // stops a workspace repo scaffolding a guard that scans zero files while doctor reports green.
+  const install = findBasaltInstall(cwd)
+  if (install.dir === null) {
+    console.error(
+      `⚠ basalt-ui init: basalt-ui does not resolve from ${cwd} or any directory above it — the ` +
+        'seeded `extends` paths and CI steps are being written against the repo root by assumption. ' +
+        'Install basalt-ui here (or at the repo root) and re-run `basalt-ui init` so they resolve.',
+    )
+  }
+
+  let seededRoots: string[] | null = null
+  let rootsUndetectable = false
+  if (readBasaltConfig(cwd).roots === undefined) {
+    const detected = detectRoots(cwd)
+    if (detected.length === 0) {
+      rootsUndetectable = true
+    } else if (
+      patchPackageJson(cwd, (pkg) => {
+        const basalt = (pkg['basalt'] ?? {}) as Record<string, unknown>
+        if (basalt['roots'] !== undefined) return false
+        pkg['basalt'] = { ...basalt, roots: detected }
+        return true
+      })
+    ) {
+      seededRoots = detected
+    }
+  }
+
+  // Built AFTER the roots patch — every roots-derived template variable reads the key just written.
   const ctx = renderContext(cwd)
+
+  // `basalt-tokens.md` tells the consumer to wire `oxlint . && basalt-ui check-theme` into their
+  // lint, and init's own closing message says to run check-theme next — but nothing ever added a
+  // script, so the guard stayed manual for exactly as long as someone remembered it.
+  const lintScript = `oxlint . && ${ctx.vars.BASALT_BIN} check-theme`
+  const seededLintScript = patchPackageJson(cwd, (pkg) => {
+    const scripts = (pkg['scripts'] ?? {}) as Record<string, unknown>
+    if (scripts['lint:basalt'] !== undefined) return false
+    pkg['scripts'] = { ...scripts, 'lint:basalt': lintScript }
+    return true
+  })
+
   const manifest = readManifest(cwd)
   migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
   const peers = resolvePeerFlags(cwd, scaffoldFlags)
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
 
-  let written = 0
-  let skipped = 0
+  const writtenFiles: string[] = []
+  const keptFiles: string[] = []
   const missingSources: string[] = []
 
   for (const file of files) {
@@ -1186,24 +1580,69 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       // as locally drifted (skip unless --force), never silently clobbering a file the consumer
       // authored before init.
       manifest.files[file.dest] = sha256(normalizeForLedger(state.desired))
-      skipped++
+      keptFiles.push(file.dest)
       continue
     }
 
     const hash = writeUnit(file, cwd, state.desired)
     manifest.files[file.dest] = hash
-    written++
+    writtenFiles.push(file.dest)
   }
+
+  const mergeLint: MergeLintResult | null =
+    scaffoldFlags.mergeLint === true ? mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH) : null
 
   manifest.basaltVersion = ctx.vars.BASALT_VERSION
   manifest.spacingScale = { ...deriveSpacing(0).scale }
   writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
 
-  console.log(`basalt-ui init: ${written} written, ${skipped} kept, manifest at ${MANIFEST_PATH}`)
+  console.log(
+    `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
+  )
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
     )
+  }
+  // Naming the kept files is the fix for the report's headline false-green: `20 written, 2 kept`
+  // named neither the file nor the consequence, so a repo that already had an `.oxlintrc.json`
+  // ended up with the framework's lint half off and every gate downstream reporting green.
+  if (keptFiles.length > 0) {
+    console.log(`\nKept (already present — basalt did not touch them):`)
+    for (const dest of keptFiles) {
+      const cost = KEPT_FILE_COST[dest]
+      console.log(cost === undefined ? `  · ${dest}` : `  · ${dest} — ${cost}`)
+    }
+  }
+  if (mergeLint !== null) {
+    const mergeMessage: Record<MergeLintResult, string> = {
+      added: `spliced "${ctx.vars.OXLINT_PRESET_PATH}" into the existing .oxlintrc.json extends`,
+      already: '.oxlintrc.json already extends the shipped preset — nothing to do',
+      absent:
+        'no existing .oxlintrc.json to merge into (the seeded one already extends the preset)',
+      unreadable: '.oxlintrc.json is not valid JSON — merge the extends entry by hand',
+      'has-comments':
+        '.oxlintrc.json carries comments; rewriting it would delete them (usually the reason each ' +
+        `rule is off). Add "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"] as the first entry by hand.`,
+    }
+    console.log(`basalt-ui init: --merge-lint — ${mergeMessage[mergeLint]}`)
+  }
+  if (seededRoots !== null) {
+    console.log(
+      `basalt-ui init: wrote "basalt": { "roots": ${JSON.stringify(seededRoots)} } to package.json ` +
+        '— check-theme, the CI oxfmt globs and the default scan exemption all derive from it. ' +
+        'Correct it if your sources live elsewhere.',
+    )
+  }
+  if (rootsUndetectable) {
+    console.error(
+      '⚠ basalt-ui init: could not infer "basalt.roots" — no src/ here and no workspace package ' +
+        'with one. Set "basalt": { "roots": [...] } in package.json by hand, or check-theme will ' +
+        'fail with "0 files scanned".',
+    )
+  }
+  if (seededLintScript) {
+    console.log(`basalt-ui init: added the "lint:basalt" script (${lintScript}) to package.json.`)
   }
   // lefthook.yml / .github/workflows/check.yml are repo-root-shaped — neither lefthook nor GitHub
   // Actions reads config from anywhere but the repo root, so a package living in a subdirectory
@@ -1212,12 +1651,15 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     console.log(
       `basalt-ui init: skipped lefthook.yml (this package is not the repo root — repo root ` +
         `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
-        'node_modules/basalt-ui/configs/lefthook.yml from your root lefthook.yml instead.',
+        `${ctx.vars.LEFTHOOK_PRESET_PATH} from your root lefthook.yml instead, and give its ` +
+        `check-theme command \`env: { BASALT_CWD: ${relativePosix(placement.repoRoot, cwd)} }\` ` +
+        'so the guard runs where your basalt config actually lives.',
     )
     console.log(
       `basalt-ui init: skipped .github/workflows/check.yml (this package is not the repo root — ` +
         `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
-        'repo root; extend node_modules/basalt-ui/configs/check.yml from your root CI workflow instead.',
+        `repo root; copy the steps from ${shippedAssetPath(install, placement.repoRoot, 'configs/check.yml')} ` +
+        'into your root CI workflow instead.',
     )
   }
   if (placement.relocatedQueryClient !== null) {
@@ -1254,13 +1696,44 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       `    ]\n` +
       `  }`,
   )
+  // `init` on an existing app is a LINT-DEBT EVENT, not a no-op — the shipped preset turns on whole
+  // oxlint plugins the repo was never linted against, so previously-clean code lands with real
+  // findings on the first run. Naming the plugins (derived from the preset, so the count can't
+  // drift) is what turns that from a nasty surprise into a scheduled triage.
+  const presetPlugins = readOxlintPresetPlugins(ctx.pkgRoot)
+  if (presetPlugins.length > 0) {
+    console.log(
+      `\nLint debt: adopting the shipped oxlint preset on an EXISTING app is not a no-op — it turns ` +
+        `on ${presetPlugins.length} plugins (${presetPlugins.join(', ')}) plus the basalt/* design ` +
+        'rules, on code never linted against them. Run `oxlint .` now and triage the count before ' +
+        'your next commit; turn a rule off in your own .oxlintrc.json with a written reason rather ' +
+        'than blanket-disabling a plugin.',
+    )
+  }
+  console.log(
+    'Activate the hooks: `lefthook install` — the seeded lefthook.yml is inert until the git hooks ' +
+      'are written, and looks configured either way.',
+  )
   // First adoption on a previously guard-clean repo can surface a wall of findings (the 1.0 guard
   // adds several rule kinds beyond a legacy local guard) — steer toward tuning config, not mass-allow.
   console.log(
-    '\nFirst run: run `basalt-ui check-theme` next, then tune the per-rule `basalt.*` config keys ' +
-      'in package.json for anything that fires — do not mass-`theme-allow` findings.',
+    `\nFirst run: run \`${ctx.vars.BASALT_BIN} check-theme\` next (or \`bun run lint:basalt\`), then ` +
+      'tune the per-rule `basalt.*` config keys in package.json for anything that fires — do not ' +
+      'mass-`theme-allow` findings. Then `basalt-ui doctor` to confirm the wiring actually took.',
   )
   return 0
+}
+
+/** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
+function readOxlintPresetPlugins(pkgRoot: string): string[] {
+  const raw = readSource(pkgRoot, 'configs/oxlint.json')
+  if (raw === null) return []
+  try {
+    const plugins = (JSON.parse(raw) as { plugins?: unknown }).plugins
+    return isStringArray(plugins) ? plugins : []
+  } catch {
+    return []
+  }
 }
 
 type SyncOptions = { force?: boolean; check?: boolean }
@@ -1577,7 +2050,24 @@ type DoctorResult = {
   hardFailures: number
   /** Number of warnings (informational only). */
   warnings: number
+  /**
+   * Number of checks that could not RUN (as opposed to ran and passed). Counted separately and
+   * exits non-zero on its own: under bun's isolated linker `doctor` used to drop two of its five
+   * checks and still print "All checks passed", which is the same false-green this whole surface
+   * exists to remove. A check that cannot run is not a check that passed.
+   */
+  skipped: number
 }
+
+/**
+ * Which shape of consumer `doctor` is looking at.
+ *
+ * `framework` — the Mantine app the scaffold is for. `tokens-only` — a consumer that took the
+ * `--vx-*` layer and nothing else (rollhook: no Mantine, no manifest, `tokens:css` output). Telling
+ * the second to "run `basalt-ui init`" is the wrong instruction: init scaffolds Mantine rules,
+ * skills and a DESIGN.md it will never read. Auto-detected, forced by `--framework` / `--tokens-only`.
+ */
+type DoctorProfile = 'framework' | 'tokens-only'
 
 type WorkspacePackage = { readonly name: string; readonly dir: string }
 
@@ -1811,11 +2301,26 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      stale and can be deleted; an exemption nobody revisits is how a real, later skew slips
  *      through unnoticed.
  *
- * Returns the exit code: 0 = all good, 1 = one or more hard failures.
+ * Three additions close the false-greens consumers reported, all of the same shape — doctor said
+ * green while nothing was enforced:
+ *   8. `guard-scan`: `check-theme` would scan MORE than zero files. `check-theme` already exits 1
+ *      on "0 files scanned"; doctor disagreeing with it in the same repo is the bug.
+ *   9. `oxlint-preset`: the consumer's `.oxlintrc.json` actually `extends` the shipped preset.
+ *      `init` keeps an existing config, so the framework's whole lint half can be off with nothing
+ *      to say so — one repo carried six real violations invisibly across five minors that way.
+ *  10. `basalt-resolves`: basalt-ui resolves from here. Unresolvable used to make checks silently
+ *      VANISH from the report (5 checks became 3) while the footer still read "All checks passed".
+ *
+ * SKIPPED is now a third outcome beside pass/warn/fail and exits non-zero on its own — a check that
+ * cannot run is not a check that passed. "Not applicable to this profile" is a pass, not a skip.
+ *
+ * Returns the exit code: 0 = all good, 1 = one or more hard failures or unrunnable checks.
  */
-export function doctor(cwd: string = process.cwd()): number {
+export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
+  const project = resolveProjectDir(invocationCwd)
+  const cwd = project.ambiguous === null ? project.dir : invocationCwd
   const cfg = readBasaltConfig(cwd)
-  const result: DoctorResult = { hardFailures: 0, warnings: 0 }
+  const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
 
   function pass(msg: string): void {
@@ -1825,32 +2330,89 @@ export function doctor(cwd: string = process.cwd()): number {
     lines.push(`  ⚠ ${msg}`)
     result.warnings++
   }
+  function skip(msg: string): void {
+    lines.push(`  ⊘ SKIPPED — ${msg}`)
+    result.skipped++
+  }
   function fail(msg: string): void {
     lines.push(`  ✖ ${msg}`)
     result.hardFailures++
   }
 
-  // ── Hard check 1: manifest exists ──────────────────────────────────────────
+  if (project.ambiguous !== null) {
+    fail(
+      `no basalt config at ${invocationCwd}, and ${project.ambiguous.length} workspace packages ` +
+        `carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        'run doctor from one of them, or set BASALT_CWD to pick.',
+    )
+  } else if (project.relocatedFrom !== null) {
+    lines.push(
+      `  → no basalt config at ${project.relocatedFrom} — reporting on ` +
+        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.\n`,
+    )
+  }
+
+  // ── Profile ────────────────────────────────────────────────────────────────
   const manifestAbs = resolve(cwd, MANIFEST_PATH)
   const manifestExists = existsSync(manifestAbs)
-  if (manifestExists) {
+  const profile: DoctorProfile = flags.includes('--tokens-only')
+    ? 'tokens-only'
+    : flags.includes('--framework')
+      ? 'framework'
+      : !manifestExists && !hasDependency(cwd, '@mantine/core')
+        ? 'tokens-only'
+        : 'framework'
+  if (profile === 'tokens-only') {
+    lines.push(
+      '  profile: tokens-only (no .basalt/manifest.json and no @mantine/core) — checking the token\n' +
+        '  layer only. The scaffold checks below are not applicable; `basalt-ui init` is NOT the fix\n' +
+        '  here, it places a Mantine doctrine you have no use for. Pass --framework to force the\n' +
+        '  full profile.\n',
+    )
+  }
+
+  // ── Hard check 1: manifest exists ──────────────────────────────────────────
+  if (profile === 'tokens-only') {
+    pass(`${MANIFEST_PATH}: n/a — a tokens-only consumer has no scaffold to reconcile`)
+  } else if (manifestExists) {
     pass(`${MANIFEST_PATH} exists`)
   } else {
     fail(`${MANIFEST_PATH} missing — run \`basalt-ui init\` to scaffold the consumer repo`)
   }
 
+  // ── Hard check 10: basalt-ui resolves from here ────────────────────────────
+  // Unresolvable used to make checks 2 and 4 VANISH from the report while the footer still read
+  // "All checks passed" — 5 checks silently became 3. It is also the moment `bunx basalt-ui`
+  // stops using the pinned copy and quietly downloads a different one from npm, so the failure
+  // has to be loud rather than absent.
+  const install = findBasaltInstall(cwd)
+  const installedVersion = install.version
+  if (install.dir === null) {
+    fail(
+      `basalt-ui does not resolve from ${cwd}, any directory above it, or any workspace package — ` +
+        'so every version check below is unrunnable, `extends: [<preset>]` cannot resolve, and ' +
+        '`bunx basalt-ui` will silently fetch a DIFFERENT copy from npm instead of your pinned ' +
+        'one. Add basalt-ui as a dependency here (or at the repo root) and re-run.',
+    )
+  } else if (install.how === 'cwd') {
+    pass(
+      `basalt-ui resolves at ./node_modules/basalt-ui (${installedVersion ?? 'unknown version'})`,
+    )
+  } else {
+    pass(
+      `basalt-ui resolves at ${relativePosix(cwd, install.dir)} (${installedVersion ?? 'unknown version'}, ` +
+        `found via the ${install.how}) — seeded \`extends\` paths and CI steps must use that path, ` +
+        'not ./node_modules/basalt-ui.',
+    )
+  }
+
   // ── Warn check 2: installed basalt-ui version matches the manifest ─────────
   // THE one version axis. The manifest records the version whose init/sync placed the doctrine;
   // node_modules is what the app actually resolves. A mismatch means "upgrade landed, sync didn't".
-  const consumerPkgRaw = readIfExists(resolve(cwd, 'node_modules', 'basalt-ui', 'package.json'))
-  let installedVersion: string | null = null
-  if (consumerPkgRaw !== null) {
-    try {
-      const consumerPkg = JSON.parse(consumerPkgRaw) as { version?: string }
-      installedVersion = consumerPkg.version ?? null
-    } catch {
-      warn('could not parse node_modules/basalt-ui/package.json — version checks skipped')
-    }
+  if (profile === 'framework' && manifestExists && installedVersion === null) {
+    skip(
+      'installed-vs-manifest version — basalt-ui did not resolve, so there is nothing to compare',
+    )
   }
   if (manifestExists && installedVersion !== null) {
     const manifestVersion = readManifest(cwd).basaltVersion
@@ -1920,15 +2482,71 @@ export function doctor(cwd: string = process.cwd()): number {
   // Catches the failure mode where bunx fetches a stale published package instead of the local
   // install — the CLI that ran doctor and the package resolved from the consumer's node_modules
   // silently disagree.
-  if (installedVersion !== null) {
-    if (installedVersion !== cliVersion) {
-      warn(
-        `running CLI version (${cliVersion}) differs from the installed basalt-ui version in ` +
-          `node_modules (${installedVersion}) — likely a stale \`bunx basalt-ui\` fetch from npm; ` +
-          'add basalt-ui as a root devDependency so the bin hoists from your workspace.',
+  if (installedVersion === null) {
+    skip('CLI-vs-installed version — basalt-ui did not resolve, so there is no installed version')
+  } else if (installedVersion !== cliVersion) {
+    warn(
+      `running CLI version (${cliVersion}) differs from the installed basalt-ui version at ` +
+        `${install.dir === null ? 'node_modules' : relativePosix(cwd, install.dir)} (${installedVersion}) — ` +
+        'likely a stale `bunx basalt-ui` fetch from npm; run the local bin ' +
+        '(`node_modules/.bin/basalt-ui`, or a package.json script) so the pinned copy is the one ' +
+        'that runs.',
+    )
+  } else {
+    pass(`CLI version (${cliVersion}) matches the installed basalt-ui`)
+  }
+
+  // ── Hard check 8: the guard would actually scan something ──────────────────
+  // `check-theme` exits 1 on "0 files scanned" — doctor reporting all-green in the SAME repo is
+  // the disagreement consumers reported: init ran, doctor passed, and the palette guard was a
+  // no-op the whole time because no `basalt.roots` described the workspace layout.
+  if (profile === 'tokens-only') {
+    pass('guard-scan: n/a — the theme guard is a Mantine-app check')
+  } else {
+    const scanned = scannableFiles(cwd, cfg)
+    if (scanned.length === 0) {
+      fail(
+        `guard-scan: check-theme would scan 0 files — the roots (${resolveRoots(cfg).join(', ')}) ` +
+          `match nothing under ${cwd}, so the palette guard is a no-op that still exits green in ` +
+          'every gate that does not run it. Set "basalt": { "roots": [...] } in package.json.',
       )
     } else {
-      pass(`CLI version (${cliVersion}) matches the installed basalt-ui in node_modules`)
+      pass(
+        `guard-scan: check-theme covers ${scanned.length} file(s) under ${resolveRoots(cfg).join(', ')}`,
+      )
+    }
+  }
+
+  // ── Hard check 9: the consumer's oxlint config extends the shipped preset ──
+  // `init` KEEPS an existing `.oxlintrc.json`, so a repo can carry the whole scaffold with the
+  // framework's lint half switched off and nothing anywhere saying so. One repo ran five minors
+  // that way and surfaced six real `basalt/no-raw-font-size` errors the moment it was wired.
+  if (profile === 'tokens-only') {
+    pass('oxlint-preset: n/a — the shipped preset is a Mantine/React preset')
+  } else {
+    const oxlintrcRaw = readIfExists(resolve(cwd, '.oxlintrc.json'))
+    if (oxlintrcRaw === null) {
+      fail(
+        '.oxlintrc.json missing — the shipped oxlint preset (the basalt/* design rules) is not ' +
+          'active. Run `basalt-ui init` to seed it.',
+      )
+    } else {
+      // JSONC: oxlint accepts comments and real consumer configs carry them.
+      const parsed = parseJsonc(oxlintrcRaw)
+      if (parsed === null) {
+        skip(
+          '.oxlintrc.json does not parse as JSON/JSONC — cannot tell whether it extends the preset',
+        )
+      } else if (extendsBasaltPreset(parsed['extends'])) {
+        pass('.oxlintrc.json extends the shipped basalt-ui oxlint preset')
+      } else {
+        fail(
+          '.oxlintrc.json does NOT extend the shipped preset — every basalt/* design rule is off ' +
+            'and oxlint reports green without them. Add ' +
+            `"extends": ["${shippedAssetPath(install, cwd, 'configs/oxlint.json')}"], or re-run ` +
+            '`basalt-ui init --merge-lint` to splice it in.',
+        )
+      }
     }
   }
 
@@ -1938,7 +2556,7 @@ export function doctor(cwd: string = process.cwd()): number {
   // apps that don't use the plugin, or don't use Vite's public-dir convention, get no false
   // warning. Best-effort: a custom `icons.dir` isn't visible here, so this checks the root only.
   const publicDir = resolve(cwd, 'public')
-  if (existsSync(publicDir)) {
+  if (profile === 'framework' && existsSync(publicDir)) {
     const iconFiles = [
       'favicon.ico',
       'favicon.svg',
@@ -2014,17 +2632,22 @@ export function doctor(cwd: string = process.cwd()): number {
   }
 
   // ── Report ──────────────────────────────────────────────────────────────────
+  // "All checks passed" is only printable when every check ran AND passed. A skipped check counts
+  // against the exit code on its own — the report that dropped two of five checks and still
+  // claimed green is the bug this footer exists to make impossible.
   lines.push('')
-  if (result.hardFailures === 0 && result.warnings === 0) {
+  if (result.hardFailures === 0 && result.warnings === 0 && result.skipped === 0) {
     lines.push('All checks passed.')
   } else {
-    if (result.hardFailures > 0)
-      lines.push(`${result.hardFailures} hard failure(s), ${result.warnings} warning(s).`)
-    else lines.push(`${result.warnings} warning(s).`)
+    const parts: string[] = []
+    if (result.hardFailures > 0) parts.push(`${result.hardFailures} hard failure(s)`)
+    if (result.skipped > 0) parts.push(`${result.skipped} check(s) SKIPPED (could not run)`)
+    parts.push(`${result.warnings} warning(s)`)
+    lines.push(`${parts.join(', ')}.`)
   }
   lines.push('')
 
-  if (result.hardFailures > 0) {
+  if (result.hardFailures > 0 || result.skipped > 0) {
     console.error(lines.join('\n'))
     return 1
   }
@@ -2165,6 +2788,92 @@ function flagValue(flags: string[], name: string): string | undefined {
 }
 
 /**
+ * The FIRST line of every stylesheet this CLI emits, verbatim and never reworded.
+ *
+ * It is a contract with the theme guard, not decoration: `check-theme` skips any file whose first
+ * lines carry `@generated basalt-ui`. Without it the guard reported 116 violations (91 `raw-hex`,
+ * 25 `raw-color-fn`) inside the file `tokens:css` had just written — basalt failing basalt's own
+ * output. Changing this string breaks the skip; change it in the guard in the same commit or not
+ * at all.
+ */
+const GENERATED_HEADER_LINE =
+  '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
+
+/** The generated-file header: the marker line, then the version + flags that produced the file. */
+function generatedHeader(version: string, command: string, flags: string[]): string {
+  const shown = flags.filter((f) => f !== '--check')
+  const invocation = shown.length === 0 ? command : `${command} ${shown.join(' ')}`
+  return `${GENERATED_HEADER_LINE}\n/* basalt-ui ${version} — \`basalt-ui ${invocation}\` */\n`
+}
+
+/**
+ * Space-normalize the argument list of a legacy color function so the emitted file survives a
+ * normal repo's formatter.
+ *
+ * This is FORMATTING ONLY and deliberately the CLI's single deviation from "print exactly what
+ * `buildPaletteCss` returned": `rgba(255,255,255,0.6)` and `rgba(255, 255, 255, 0.6)` are the same
+ * colour, the shipped palette emits the first form on the dark side and the second on the light
+ * side, and a consumer committing the output ate a lint-ignore entry for the difference. The token
+ * VALUES are untouched — nothing here can change what basalt's tokens are.
+ *
+ * Exported for tests, so the expectation can be computed rather than restated.
+ */
+export function normalizeColorFunctions(css: string): string {
+  return css.replace(/\b(rgba?|hsla?)\(([^()]*)\)/g, (_match, fn: string, args: string) => {
+    const parts = args.split(',').map((part) => part.trim())
+    return `${fn}(${parts.join(', ')})`
+  })
+}
+
+/** A scheme-class emission uses this sentinel attribute, then rewrites it to a class selector. */
+const SCHEME_CLASS_SENTINEL = 'data-basalt-scheme-class'
+
+/**
+ * Write (or drift-check) a generated stylesheet. `--check` makes no writes and exits 1 when the
+ * file on disk differs from what would be emitted — the CI gate for a committed `tokens:css`
+ * artifact, mirroring `sync --check`. Without `--out` the content goes to stdout unchanged.
+ */
+function emitGeneratedCss(content: string, flags: string[], cwd: string, command: string): number {
+  const out = flagValue(flags, '--out')
+  const check = flags.includes('--check')
+  if (out === undefined) {
+    if (check) {
+      console.error(
+        `${command}: --check needs --out <path> — there is nothing to compare stdout to.`,
+      )
+      return 1
+    }
+    process.stdout.write(content)
+    return 0
+  }
+  const target = isAbsolute(out) ? out : resolve(cwd, out)
+  const shown = relative(cwd, target) || target
+  if (check) {
+    const onDisk = readIfExists(target)
+    if (onDisk === null) {
+      console.error(
+        `✖ ${command} --check: ${shown} does not exist — run without --check to write it.`,
+      )
+      return 1
+    }
+    if (onDisk === content) {
+      console.log(`✓ ${command} --check: ${shown} is up to date.`)
+      return 0
+    }
+    console.error(
+      `✖ ${command} --check: ${shown} differs from what \`basalt-ui ${command}\` emits today ` +
+        `(on disk ${onDisk.split('\n').length} lines, emitted ${content.split('\n').length}) — ` +
+        're-run the same command without --check and commit the result.',
+    )
+    return 1
+  }
+  mkdirSync(dirname(target), { recursive: true })
+  writeFileSync(target, content)
+  console.log(`wrote ${content.split('\n').length} lines → ${shown}`)
+  return 0
+}
+
+/**
  * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted.
  *
  * The escape hatch from installing anything: a static site runs this once (`bunx basalt-ui
@@ -2173,12 +2882,16 @@ function flagValue(flags: string[], name: string): string | undefined {
  * same artifact for a consumer that does install; this command exists for the ones that shouldn't
  * have to just to change a selector.
  *
- * It parses flags and calls `buildPaletteCss` — nothing else. No emission logic, no post-processing
- * of the returned string: the CLI and the API must not be able to disagree about what basalt's
- * tokens are.
+ * It parses flags and calls `buildPaletteCss` for the token VALUES — the CLI and the API must not
+ * be able to disagree about what basalt's tokens are. What it adds is strictly file framing for an
+ * artifact a consumer COMMITS: the `@generated` header (the guard's skip marker), a trailing
+ * newline, and `rgba()` argument spacing. All three were reported by the one framework-free
+ * consumer as the reasons the output could not simply be committed.
  */
 export function tokensCss(flags: string[], cwd: string = process.cwd()): number {
   const attribute = flagValue(flags, '--selector-attribute')
+  const schemeClass = flagValue(flags, '--selector-class')
+  const lightClass = flagValue(flags, '--light-class')
   const darkValue = flagValue(flags, '--dark-value')
   const lightValue = flagValue(flags, '--light-value')
   const defaultScheme = flagValue(flags, '--default-scheme')
@@ -2195,14 +2908,39 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
     console.error(`tokens:css: --only must be core or all (got '${only}')`)
     return 1
   }
-
-  const scheme = {
-    ...(attribute === undefined ? {} : { attribute }),
-    ...(darkValue === undefined ? {} : { darkValue }),
-    ...(lightValue === undefined ? {} : { lightValue }),
+  if (schemeClass !== undefined && attribute !== undefined) {
+    console.error(
+      'tokens:css: --selector-class and --selector-attribute are alternatives — pass one.',
+    )
+    return 1
+  }
+  if (schemeClass !== undefined && /[^\w-]/.test(schemeClass)) {
+    console.error(
+      `tokens:css: --selector-class must be a plain CSS class name (got '${schemeClass}')`,
+    )
+    return 1
+  }
+  if (lightClass !== undefined && /[^\w-]/.test(lightClass)) {
+    console.error(`tokens:css: --light-class must be a plain CSS class name (got '${lightClass}')`)
+    return 1
   }
 
-  const css = buildPaletteCss({
+  // A class selector is Tailwind's universal dark convention (`<html class="dark">`) and was
+  // reachable before only by parking dark on the bare `:root` via --default-scheme. `buildPaletteCss`
+  // emits attribute selectors, so the class form is produced by emitting against a sentinel
+  // attribute this CLI chose itself and rewriting exactly those selectors — a rewrite of strings
+  // the command generated deterministically, never of a token value.
+  const resolvedDarkValue = schemeClass !== undefined ? schemeClass : darkValue
+  const resolvedLightValue = schemeClass !== undefined ? (lightClass ?? 'light') : lightValue
+  const resolvedAttribute = schemeClass !== undefined ? SCHEME_CLASS_SENTINEL : attribute
+
+  const scheme = {
+    ...(resolvedAttribute === undefined ? {} : { attribute: resolvedAttribute }),
+    ...(resolvedDarkValue === undefined ? {} : { darkValue: resolvedDarkValue }),
+    ...(resolvedLightValue === undefined ? {} : { lightValue: resolvedLightValue }),
+  }
+
+  let css = buildPaletteCss({
     ...(Object.keys(scheme).length === 0 ? {} : { scheme }),
     ...(defaultScheme === undefined
       ? {}
@@ -2216,16 +2954,59 @@ export function tokensCss(flags: string[], cwd: string = process.cwd()): number 
     ...(flags.includes('--no-legacy-aliases') ? { legacyAliases: false } : {}),
   })
 
-  const out = flagValue(flags, '--out')
-  if (out === undefined) {
-    process.stdout.write(`${css}\n`)
-    return 0
+  if (schemeClass !== undefined) {
+    css = css.replace(
+      new RegExp(`\\[${SCHEME_CLASS_SENTINEL}='([\\w-]+)'\\]`, 'g'),
+      (_match, value: string) => `.${value}`,
+    )
   }
-  const target = isAbsolute(out) ? out : resolve(cwd, out)
-  mkdirSync(dirname(target), { recursive: true })
-  writeFileSync(target, css)
-  console.log(`wrote ${css.split('\n').length} lines → ${relative(cwd, target) || target}`)
-  return 0
+
+  const version = readFrameworkVersion(packageRoot())
+  const content = `${generatedHeader(version, 'tokens:css', flags)}${normalizeColorFunctions(css)}\n`
+  return emitGeneratedCss(content, flags, cwd, 'tokens:css')
+}
+
+/** Every `--basalt-font-*` declaration in the shipped stylesheet, in source order. */
+function readShippedFontDecls(pkgRoot: string): { name: string; value: string }[] {
+  const css = readSource(pkgRoot, 'dist/styles.css') ?? readSource(pkgRoot, 'src/styles.css')
+  if (css === null) return []
+  const decls: { name: string; value: string }[] = []
+  for (const match of css.matchAll(/(--basalt-font[\w-]*)\s*:\s*([^;]+);/g)) {
+    decls.push({
+      name: match[1] as string,
+      value: (match[2] as string).replace(/\s+/g, ' ').trim(),
+    })
+  }
+  return decls
+}
+
+/**
+ * fonts:css — emit the shipped `--basalt-font-*` stacks as plain CSS.
+ *
+ * The typeface half of the framework-free route, which had no supported path at all: `tokens.css`
+ * emits no font vars, `styles.css` is the one place the defaults live and a framework-free consumer
+ * is told not to import it, and `buildFontsCss` returns `''` unless the caller already knows the
+ * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks —
+ * which the theme guard then flagged as `raw-font-family`.
+ *
+ * The declarations are READ from the shipped stylesheet rather than restated here, so this command
+ * and `basalt-ui/styles.css` can never name different typefaces. Note the fonts themselves are
+ * `@fontsource-variable/*` packages: without them the stacks fall through to their own system
+ * fallbacks, which is the intended framework-free behaviour.
+ */
+export function fontsCss(flags: string[], cwd: string = process.cwd()): number {
+  const pkgRoot = packageRoot()
+  const decls = readShippedFontDecls(pkgRoot)
+  if (decls.length === 0) {
+    console.error(
+      'fonts:css: could not read the shipped font stacks from styles.css — this is a packaging ' +
+        'bug in basalt-ui, not a config error.',
+    )
+    return 1
+  }
+  const body = `:root {\n${decls.map((d) => `  ${d.name}: ${d.value};`).join('\n')}\n}\n`
+  const header = generatedHeader(readFrameworkVersion(pkgRoot), 'fonts:css', flags)
+  return emitGeneratedCss(`${header}${body}`, flags, cwd, 'fonts:css')
 }
 
 /**
@@ -2325,14 +3106,26 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 const USAGE =
-  'Usage: basalt-ui <init [--with-router] [--with-query] | sync [--force] [--check] | ' +
-  'check-theme | check-coverage | info [--json] | doctor | guard-hook | tokens:css | help>\n\n' +
-  'tokens:css [--out <path>] [--selector-attribute <attr>] [--dark-value <v>] [--light-value <v>]\n' +
+  'Usage: basalt-ui <init [--with-router] [--with-query] [--merge-lint] | sync [--force] [--check] |\n' +
+  '                  check-theme | check-coverage | info [--json] | doctor [--tokens-only|--framework] |\n' +
+  '                  guard-hook | tokens:css | fonts:css | help>\n\n' +
+  'tokens:css [--out <path>] [--check] [--selector-attribute <attr> | --selector-class <class>]\n' +
+  '           [--light-class <class>] [--dark-value <v>] [--light-value <v>]\n' +
   '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
   '           [--no-legacy-aliases]\n' +
   '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n' +
+  '  --selector-class emits `:root.dark` instead of an attribute selector (the Tailwind convention).\n' +
+  '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
   '  --no-legacy-aliases drops the deprecated camelCase spellings (--vx-accentFill and friends),\n' +
   '  which are emitted by default as aliases of the canonical kebab-case names.\n\n' +
+  'fonts:css [--out <path>] [--check]\n' +
+  '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
+  '  otherwise reachable only by importing styles.css.\n\n' +
+  'doctor [--tokens-only|--framework]\n' +
+  '  Auto-detects a tokens-only consumer (no manifest + no @mantine/core) and checks only what\n' +
+  '  applies. A check that cannot RUN is reported as SKIPPED and exits non-zero.\n\n' +
+  'check-theme / doctor honour BASALT_CWD, and relocate to the single workspace package carrying a\n' +
+  'basalt config when invoked from a repo root that has none.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
 /**
@@ -2363,6 +3156,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return init(cwd, {
         withRouter: flags.includes('--with-router'),
         withQuery: flags.includes('--with-query'),
+        mergeLint: flags.includes('--merge-lint'),
       })
     case 'sync':
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
@@ -2373,11 +3167,13 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'info':
       return info(flags)
     case 'doctor':
-      return doctor(cwd)
+      return doctor(cwd, flags)
     case 'guard-hook':
       return guardHook(cwd)
     case 'tokens:css':
       return tokensCss(flags, cwd)
+    case 'fonts:css':
+      return fontsCss(flags, cwd)
     default:
       console.error(USAGE)
       return 1

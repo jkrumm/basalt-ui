@@ -4,8 +4,17 @@
 #     - node_modules/basalt-ui/configs/lefthook.yml
 # lefthook merges these commands with the consumer's own, so this preset auto-updates
 # with the package. Runs oxlint + oxfmt on staged files and the theme guard on the whole
-# tree, pre-commit. Assumes oxlint/oxfmt are installed and your .oxlintrc.json extends
-# ./node_modules/basalt-ui/configs/oxlint.json.
+# tree, pre-commit. Assumes oxlint/oxfmt are installed.
+#
+# It does NOT assume your `.oxlintrc.json` extends the shipped preset — that assumption was
+# false for exactly the repos this seed exists for, since `init` KEEPS an existing oxlint
+# config. `basalt-ui doctor` now checks the extends and hard-fails when it is missing; run it
+# in CI (the seeded check.yml does) rather than trusting a comment nobody reads.
+#
+# `init` seeds the path RESOLVED from where basalt actually installed. Under bun's isolated
+# linker basalt lives beside the package that depends on it, not at the repo root, and a
+# root-relative `extends` there resolves to nothing — silently, because lefthook merges an
+# empty file without complaint.
 pre-commit:
   parallel: true
   commands:
@@ -28,5 +37,15 @@ pre-commit:
     # was written against: a guard that only runs when someone remembers to run it is not a guard.
     # Without this, a consumer accumulates violations indefinitely while `check-theme` is never
     # invoked, and the kinds it never ran are indistinguishable from the kinds that found nothing.
+    #
+    # Lefthook runs commands at the REPO ROOT, while in a monorepo the `basalt` config and the
+    # manifest live in a package below it — verified to produce `0 files scanned`, i.e. following
+    # this preset installed a gate that never gated. `check-theme` now relocates to the single
+    # workspace package carrying a basalt config and says so; with more than one, set BASALT_CWD
+    # in your own lefthook.yml to name the package:
+    #   pre-commit:
+    #     commands:
+    #       check-theme:
+    #         env: { BASALT_CWD: apps/web }
     check-theme:
       run: bunx basalt-ui check-theme

@@ -1,10 +1,13 @@
 /**
  * `basalt-ui tokens:css` — the install-free path to the token system.
  *
- * The contract these tests hold is that the command is a FLAG PARSER, nothing more: whatever it
- * prints must be exactly what `buildPaletteCss` returns for the same options. If the CLI ever grows
- * emission logic of its own, a consumer who ran `bunx basalt-ui tokens:css` and a consumer who
- * imported `basalt-ui/tokens` would be looking at two different design systems.
+ * The contract these tests hold is that the command holds no emission logic of its own: the token
+ * VALUES it prints must be exactly what `buildPaletteCss` returns for the same options, or a
+ * consumer who ran `bunx basalt-ui tokens:css` and one who imported `basalt-ui/tokens` would be
+ * looking at two different design systems. What the command DOES add is file framing for an
+ * artifact a consumer commits — the `@generated` header, a trailing newline, `rgba()` spacing —
+ * which `body()` below strips before every comparison. See `./toolchain-wiring.test.ts` for the
+ * framing's own tests.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -12,7 +15,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 import { buildPaletteCss } from '../tokens'
-import { run, tokensCss } from './index'
+import { normalizeColorFunctions, run, tokensCss } from './index'
 
 const FIXTURE = join(import.meta.dir, '..', '..', 'tests', 'fixtures', 'palette-default.css')
 
@@ -34,27 +37,37 @@ function emit(flags: string[], out = 'out.css'): string {
   return readFileSync(resolve(dir, out), 'utf8')
 }
 
+/** The emitted file minus the two-line generated header and the trailing newline. */
+function body(flags: string[], out = 'out.css'): string {
+  return emit(flags, out).split('\n').slice(2).join('\n').replace(/\n$/, '')
+}
+
+/** What `buildPaletteCss` returns, in the CLI's commit-safe formatting. */
+function expected(opts: Parameters<typeof buildPaletteCss>[0]): string {
+  return normalizeColorFunctions(buildPaletteCss(opts))
+}
+
 describe('tokens:css', () => {
-  it('with no flags emits the shipped default, byte for byte', () => {
-    expect(emit([])).toBe(readFileSync(FIXTURE, 'utf8'))
+  it('with no flags emits the shipped default, byte for byte under the header', () => {
+    expect(body([])).toBe(normalizeColorFunctions(readFileSync(FIXTURE, 'utf8')))
   })
 
   it('forwards the selector flags to buildPaletteCss and adds nothing of its own', () => {
     const flags = ['--selector-attribute', 'data-theme', '--default-scheme', 'light']
-    expect(emit(flags)).toBe(
-      buildPaletteCss({ scheme: { attribute: 'data-theme' }, defaultScheme: 'light' }),
+    expect(body(flags)).toBe(
+      expected({ scheme: { attribute: 'data-theme' }, defaultScheme: 'light' }),
     )
   })
 
   it('forwards the scheme VALUES and the media fallback', () => {
     const flags = ['--dark-value', 'night', '--light-value', 'day', '--media-fallback']
-    expect(emit(flags)).toBe(
-      buildPaletteCss({ scheme: { darkValue: 'night', lightValue: 'day' }, mediaFallback: true }),
+    expect(body(flags)).toBe(
+      expected({ scheme: { darkValue: 'night', lightValue: 'day' }, mediaFallback: true }),
     )
   })
 
   it('forwards --only core', () => {
-    expect(emit(['--only', 'core'])).toBe(buildPaletteCss({ only: 'core' }))
+    expect(body(['--only', 'core'])).toBe(expected({ only: 'core' }))
   })
 
   it('rejects an unknown --only instead of silently emitting everything', () => {
@@ -64,7 +77,7 @@ describe('tokens:css', () => {
 
   it('creates the parent directory of --out', () => {
     const css = emit([], 'nested/deep/tokens.css')
-    expect(css.startsWith(':root {')).toBe(true)
+    expect(css).toContain(':root {')
   })
 
   it('rejects an unknown --default-scheme instead of silently defaulting', () => {
@@ -87,7 +100,7 @@ describe('tokens:css', () => {
   })
 
   it('--no-legacy-aliases output is byte-identical to buildPaletteCss({ legacyAliases: false }) — the CLI holds no emission logic of its own', () => {
-    expect(emit(['--no-legacy-aliases'])).toBe(buildPaletteCss({ legacyAliases: false }))
+    expect(body(['--no-legacy-aliases'])).toBe(expected({ legacyAliases: false }))
   })
 
   it('`--help` short-circuits before the command runs — no file written', () => {
