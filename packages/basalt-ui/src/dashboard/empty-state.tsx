@@ -24,8 +24,12 @@ export type EmptyStateProps = {
   icon?: ReactNode
   /** Head-font title (18px, weight 550, ink). */
   title: string
-  /** Muted 15px description, capped at ~360px so it reads as a short explanation. */
-  description: string
+  /**
+   * Muted 15px description, capped at ~360px so it reads as a short explanation. Optional: a
+   * compact panel ("No data yet") should not have to invent a second sentence, and five argo
+   * features wrapped this component solely to avoid doing so.
+   */
+  description?: string
   /** Optional call-to-action rendered below the description. */
   action?: ReactNode
   /** `'page'` (default) = generous padding for a full-page state; `'section'` = compact. */
@@ -60,7 +64,9 @@ export function EmptyState({
       >
         {title}
       </span>
-      <span style={{ fontSize: VX.text.md, color: VX.muted, maxWidth: 360 }}>{description}</span>
+      {description !== undefined && (
+        <span style={{ fontSize: VX.text.md, color: VX.muted, maxWidth: 360 }}>{description}</span>
+      )}
       {action}
     </Stack>
   )

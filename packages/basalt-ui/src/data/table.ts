@@ -21,7 +21,12 @@
 
 // ── BasaltDataTable ───────────────────────────────────────────────────────────
 export { BasaltDataTable } from './data-table'
-export type { BasaltDataTableProps, DataTableFacet, DataTableFacetOption } from './data-table'
+export type {
+  BasaltDataTableProps,
+  DataTableAlign,
+  DataTableFacet,
+  DataTableFacetOption,
+} from './data-table'
 
 // ── @tanstack/react-table convenience re-exports ──────────────────────────────
 // These are the handful of table primitives a consumer needs at the call site;
