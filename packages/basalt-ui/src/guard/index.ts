@@ -400,8 +400,54 @@ const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
 // alternative so their `>` never terminates the tag early. A bare `>` comparison inside a prop
 // expression still ends the match (accepted limitation of the bounded scan).
 const CHART_ENTRY_POINT_TAG =
-  /<(?:MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
+  /<(MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
+
+// ── Tag provenance, shared by the two chart tag rules ────────────────────────────────────────────
+//
+// Both `chart-missing-aria-label` and `unframed-chart` key on a JSX tag NAME, which is the whole of
+// their signal — so a consumer's OWN component that merely shares a shipped kind's name collected
+// the finding too. Reported by a consumer on 1.23.0: a hand-composed local `<MirroredBars>` was
+// told to pass an `ariaLabel` prop it does not accept, by a rule that presents as a correctness
+// finding rather than as a naming one. `shadow-basalt-export` / `ai-sdk-major` scope through
+// `isBasaltScopedFile` (package-level); the analogous file-level signal here is where the name in
+// THIS file came from.
+//
+// The gate is deliberately a one-directional NARROWING: a tag is skipped only when the file DEFINES
+// a component of that name and does not also import it from basalt-ui. Everything else still fires
+// — a tag imported from basalt-ui, one imported from a consumer barrel that re-exports it (`import
+// { MultiLine } from '../charts'`, the shape a downstream component library uses), and one the scan
+// cannot attribute at all. Requiring a POSITIVE basalt import instead would have silently switched
+// both rules off for every barrel-wrapping consumer and for every file with no import statements —
+// a far bigger hole than the false positive it closes.
+const LOCAL_COMPONENT_DEF =
+  /(?:^|[\n;}])\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Z]\w*)/g
+// `from 'basalt-ui'` and every subpath (`basalt-ui/charts`, `basalt-ui/tokens`, …).
+const BASALT_NAMED_IMPORT =
+  /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]basalt-ui(?:\/[^'"]*)?['"]/g
+
+/** Component-shaped names DEFINED in this file — the provable "not the shipped kind" signal. */
+function localComponentNames(codeText: string): ReadonlySet<string> {
+  const out = new Set<string>()
+  for (const m of codeText.matchAll(LOCAL_COMPONENT_DEF)) out.add(m[1] as string)
+  return out
+}
+
+/** Names bound in this file by a named import from `basalt-ui` — the local binding, so
+ * `{ Bars as BasaltBars }` records `BasaltBars`, which is the name the JSX tag will use. */
+function basaltImportedNames(codeText: string): ReadonlySet<string> {
+  const out = new Set<string>()
+  for (const m of codeText.matchAll(BASALT_NAMED_IMPORT)) {
+    for (const raw of (m[1] as string).split(',')) {
+      const spec = raw.trim().replace(/^type\s+/, '')
+      if (spec.length === 0) continue
+      const parts = spec.split(/\s+as\s+/)
+      const bound = (parts[parts.length - 1] as string).trim()
+      if (bound.length > 0) out.add(bound)
+    }
+  }
+  return out
+}
 
 // Raw lowercase form-control element — line-scoped, same shape as RAW_VISX_AXIS. `\b` after the
 // tag name rejects a same-prefixed custom component (`<inputRef`, `<selectAll`).
@@ -2047,10 +2093,25 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
   }
 
+  // Both chart tag rules below gate on tag PROVENANCE (see the block above LOCAL_COMPONENT_DEF).
+  // Computed once, and only if one of the two actually runs.
+  const unframedChartRuns =
+    GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)
+  const ariaLabelRuns =
+    GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
+    ruleApplies('chart-missing-aria-label', relPath)
+  const localNames =
+    unframedChartRuns || ariaLabelRuns ? localComponentNames(codeText) : new Set<string>()
+  const basaltNames =
+    unframedChartRuns || ariaLabelRuns ? basaltImportedNames(codeText) : new Set<string>()
+  const isShippedTag = (tag: string): boolean => basaltNames.has(tag) || !localNames.has(tag)
+
   // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
   // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
-  // at the line of the `items={[` token itself.
-  if (GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)) {
+  // at the line of the `items={[` token itself. Skipped wholesale when `ChartLegend` is this file's
+  // OWN component: a consumer's legend taking an `items` array is not the shipped one that derives
+  // its entries, and the remedy ("pass deriveLegend(series)") is unreachable there.
+  if (unframedChartRuns && isShippedTag('ChartLegend')) {
     for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
       const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
       push('unframed-chart', lineNo, 'items={[')
@@ -2064,12 +2125,11 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // which is what `Finding.text` would then quote back — the closing bracket rather than the tag
   // that is missing the prop. The allow-comment is honored anywhere in the tag's span, so a
   // `theme-allow` that used to sit on the closing line keeps working.
-  if (
-    GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
-    ruleApplies('chart-missing-aria-label', relPath)
-  ) {
+  if (ariaLabelRuns) {
     for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
       const tagText = m[0]
+      // A tag this file defines itself is not the shipped kind — it does not take `ariaLabel`.
+      if (!isShippedTag(m[1] as string)) continue
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
       const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
       const endLine = startLine + (tagText.split('\n').length - 1)
