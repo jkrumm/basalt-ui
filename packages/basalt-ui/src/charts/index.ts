@@ -75,6 +75,7 @@ export {
   type ChartPendingProps,
 } from './primitives/ChartPending'
 export { Crosshair, SeriesDot } from './primitives/Crosshair'
+export { HatchPattern, hatchFill, hatchSizeFor } from './primitives/HatchPattern'
 export { ChartCard } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
 export {
@@ -91,6 +92,12 @@ export { AreaGradient, areaFillUrl } from './primitives/AreaGradient'
 
 // ── Hooks ────────────────────────────────────────────────────────────────
 export { useChartCursor, type ChartCursor, type CursorAnchor } from './hooks/useChartCursor'
+export {
+  foldBands,
+  type BandFold,
+  type BandTooltipConfig,
+  type BandTooltipRowContext,
+} from './hooks/useBandPlot'
 export type { CursorResolution } from './cursor/resolve'
 export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
@@ -124,6 +131,13 @@ export { Donut, type DonutProps, type DonutDatum } from './kinds/Donut'
 export { MultiLine, type MultiLineProps } from './kinds/MultiLine'
 export { DualPanel, type DualPanelProps } from './kinds/DualPanel'
 export { Heatmap, type HeatmapProps } from './kinds/Heatmap'
+export {
+  BandStrip,
+  type BandStripProps,
+  type BandStripSeries,
+  type BandSpan,
+} from './kinds/BandStrip'
+export { MirroredBars, type MirroredBarsProps, type MirroredBarPane } from './kinds/MirroredBars'
 
 // ── Sparklines ───────────────────────────────────────────────────────────
 export { LineSparkline, BarSparkline } from './sparklines'
