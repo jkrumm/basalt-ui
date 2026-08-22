@@ -296,7 +296,7 @@ consumer via autocomplete. Key rules that won't fit in a JSDoc bullet:
   module-scope literal (`search: { window: '30d' }` pins the fallback on every click and
   is why argo's reader had zero call sites), never `search: true` (a store-backed route
   always returns the param, so the router requires a value and the flag is a type
-  error), and never a global link callback. 1.20.1 also warns in dev when the URL pins
+  error), and never a global link callback. 1.21.0 also warns in dev when the URL pins
   the fallback, something else is persisted, and no reader was ever called.
 - The localStorage fallback in `validateSearch` restores the value when navigating
   back; the filter's `navigate({ search: (prev) => (...) })` keeps it current.

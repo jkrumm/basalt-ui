@@ -94,7 +94,7 @@ above a build failure, not just a convention:
   compose `CartesianChart` is a lint failure, per NODE. Escape: `theme-allow hand-rolled-plot —
 <why>` on the one node, or `theme-allow-file hand-rolled-plot — <why>` anywhere in the file, which
   is how a genuinely non-single-plot shape declares itself (`DualPanel` carries one). `-file` is the
-  1.20.1 spelling and it is required — at 1.20.0 the node form was silently promoted to whole-file.
+  1.21.0 spelling and it is required — at 1.20.0 the node form was silently promoted to whole-file.
   The file that DEFINES `CartesianChart` is exempt definitionally, not by path.
 - **`basalt/chart-legend-literal`** — passing a hand-written array literal to `ChartLegend`'s
   `items` prop is a lint failure; the legend must be derived from the same `series` array the chart
