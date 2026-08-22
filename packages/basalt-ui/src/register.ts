@@ -156,3 +156,35 @@ export namespace StandardSchemaV1 {
     T['~standard']['types']
   >['output']
 }
+
+// ── Ambient app globals ───────────────────────────────────────────────────────────────────────────
+
+declare global {
+  /**
+   * The app's version string, injected as a build-time constant by basalt's own Vite preset —
+   * `basaltViteConfig` defines it from `BUILD_VERSION`, falling back to the app package.json
+   * `version` (see `../vite`, the `define` block).
+   *
+   * Declared HERE rather than beside the define because a consumer's `src/**` never loads
+   * `basalt-ui/vite`'s types (that subpath is imported from `vite.config.ts`, which most apps keep
+   * in a separate tsconfig project). This file is re-exported from the root barrel, so an app that
+   * imports from `'basalt-ui'` at all has it in scope with no `/// <reference>` and no
+   * `src/vite-env.d.ts` entry — which is the point: basalt shipped the define and no declaration,
+   * so every consumer hand-wrote this block, one of them needing an `oxlint-disable` in a file that
+   * existed only because basalt asked for it.
+   *
+   * A consumer importing ONLY a subpath (`basalt-ui/tokens`, `basalt-ui/charts`) does not load this
+   * file and does not get the global. That gap is the same set as the applicability gap: reaching
+   * for the root barrel is what `BasaltProvider` requires, and an app that never does is not on
+   * basalt's Vite preset either, so there is no `__APP_VERSION__` to declare.
+   *
+   * Precondition: only defined when your Vite config actually goes through `basaltViteConfig` (or
+   * you define it yourself). An app that hand-rolls its Vite config and reads this gets a
+   * ReferenceError at runtime — TypeScript is trusting the preset, not proving it.
+   */
+  // The dangle IS the API: this declares the build-time constant basalt's own Vite preset defines,
+  // so the name is not ours to change. The SHIPPED preset allows it (configs/oxlint.json); this
+  // repo's own root .oxlintrc.json does not, hence the local suppression.
+  // oxlint-disable-next-line no-underscore-dangle
+  const __APP_VERSION__: string
+}
