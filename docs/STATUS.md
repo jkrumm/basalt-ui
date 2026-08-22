@@ -140,7 +140,7 @@ three separate times in this file.
   rejected; one repo ran five minors with the whole lint half off).
 - **A tokens-only profile.** `doctor` auto-detects it; **`check-theme` requires it declared**
   (`basalt.profile: "tokens-only"` or `--tokens-only`). The asymmetry is a safety property:
-  doctor's profile only changes which ADVICE it prints, while check-theme's silences 16 kinds, and
+  doctor's profile only changes which ADVICE it prints, while check-theme's silences 17 kinds, and
   inferring that from a missing `@mantine/core` would switch off half the guard on any repo keeping
   Mantine in a different workspace package.
 - **`init`** writes real `basalt.roots`, adds a `lint:basalt` script, names every kept file AND what
@@ -152,10 +152,13 @@ three separate times in this file.
   root. `.json` is never blanket-scanned; `basalt.include` is the only route to one.
 - **`tokens:css` / `fonts:css` output is commit-clean**: the `@generated basalt-ui` marker on line
   1, version + invocation on line 2, a trailing newline, normalized `rgba()` spacing, and a
-  `--check` drift gate. `check-theme` skips a file only when all three hold: a `.css` path, that
-  header verbatim on lines 1 and 2, and a body of nothing but `--vx-*` / `--basalt-*` declarations,
-  selectors, `}`, at-rules and comments — the leg a pasted comment cannot satisfy. The marker alone,
-  anywhere in the first 5 lines of any extension, was a hand-writable whole-file guard bypass.
+  `--check` drift gate. `check-theme` skips LINES, not files: the file first has to earn it (a
+  `.css` path, that header verbatim on lines 1 and 2), and then each line does too — at brace depth
+  0 a selector or a self-closing comment, inside a block only a `--vx-*` / `--basalt-*` declaration
+  whose value carries no `;`, a `}`, or a comment. The marker alone, anywhere in the first 5 lines
+  of any extension, was a hand-writable whole-file guard bypass; the whole-file body test that
+  replaced it was forgeable too (a `;` inside a custom-property value, a comment that never
+  closed), which is why the exemption is per line and depth-aware now — a miss costs one line.
   Skipping is what fixed rollhook's 116 violations _inside the file `tokens:css` itself wrote_.
   `tokens:css --selector-class dark` emits the Tailwind `<html class="dark">` form (CLI-only; there
   is no `scheme: { class }` API). `fonts:css` emits the shipped `--basalt-font-*` stacks, read out
