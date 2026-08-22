@@ -4,12 +4,15 @@
 > than 1.19 moved to `docs/archive/STATUS-HISTORY.md`; the rest of `docs/archive/` is superseded
 > scope ledgers. This file is what's true now.
 
-**Version:** **1.19.1**, published to npm (Trusted Publisher OIDC) and the `latest` tag. `master`
-carries it; there is no unmerged feature branch.
+**Version:** **1.19.1** is the published npm `latest` (Trusted Publisher OIDC). `master` carries the
+**unreleased 1.20.0** work — the round-4 guard and CLI batch below, plus two mobile-nav fixes. There
+is no unmerged feature branch. Anything marked 1.20.0 on this page is on `master` and not yet on
+npm.
 
 ## TL;DR
 
-Everything below this line is shipped and on npm. Nothing in this document is a plan.
+Everything below this line is built. Everything except the 1.20.0 row is on npm. Nothing in this
+document is a plan.
 
 | Capability                                                                                             | Shipped                        |
 | ------------------------------------------------------------------------------------------------------ | ------------------------------ |
@@ -20,6 +23,7 @@ Everything below this line is shipped and on npm. Nothing in this document is a 
 | Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                  | 1.15.0                         |
 | Chart-API consumer rounds one / two / three                                                            | 1.16.0 / 1.17.0 / 1.18.0       |
 | Native mobile nav + `defineNav`                                                                        | 1.19.0                         |
+| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0 (unreleased)            |
 
 Adopted downstream: seven consumer repos, all on 1.19.1 as of the round-4 sweep. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
@@ -34,15 +38,15 @@ Seven repos upgraded and reported back. Every app consumer finished at `check-th
 pass / build pass — the gates are green, and all three findings sit outside them. Full reports:
 `.claude/feedback/round-4/`.
 
-1. **The escape hatch is broken.** `theme-allow` is line-scoped and the two engines disagree about
-   which line: the oxlint plugin honours the flagged node's line _or the one above it_,
-   `checkTheme`'s `isSkippedLine` only the reported line — so the same comment works in a `.ts` file
-   and silently does nothing in JSX. It also takes a bare comment with no rule id and no reason, it
-   grants a whole file permanent immunity on `hand-rolled-plot`, and the shipped `oxfmt` can reflow
-   the line out from under it.
+1. **The escape hatch was broken** — `theme-allow` line-scoped, the two engines disagreeing about
+   which line, a bare comment accountable to nobody, whole-file immunity on `hand-rolled-plot`, and
+   `oxfmt` able to reflow the line out from under it. **Answered in 1.20.0** (see below).
 2. **The guard sees palette, not vocabulary.** Off-palette code fails; a forked component built from
    correct tokens passes. ~15 independent re-rolls of shipped components were all green —
-   `StatCard` alone was re-rolled by 4 of 4 app consumers across ~10 sites.
+   `StatCard` alone was re-rolled by 4 of 4 app consumers across ~10 sites. **Partly answered**:
+   `basalt/shadow-basalt-export` and `basalt/hand-rolled-shell` detect the two cheapest shapes. The
+   expressiveness half — `StatCard`'s missing props, a query loading/error sibling to `EmptyState`,
+   `createSearchSchemaStore`, `BandStrip`, `DualPanel` independent domains — is **not** built.
 3. **There is no API-delta story.** `CHANGELOG.md` ships and is complete, but
    semantic-release's one-line-per-commit format never names a removed export. Two agents
    reconstructed the delta by reading `dist/**/*.d.ts`. Answered by
@@ -56,7 +60,110 @@ pass / build pass — the gates are green, and all three findings sit outside th
 - _"The chart rules are outside `GRACE_PERIOD_KINDS`."_ True but not meaningful.
   `GRACE_PERIOD_KINDS` only governs `GuardKind`s; `hand-rolled-plot`, `chart-legend-literal` and
   `raw-size-literal` are oxlint plugin rules whose severity lives in `configs/oxlint.json`, which
-  has no grace-tracking mechanism at all. That is the actual defect — see the chart-layer section.
+  had no grace-tracking mechanism at all. That was the actual defect, and 1.20.0's
+  `PLUGIN_RULE_GRACE` is the fix.
+
+## Round-4 batch — 1.20.0, on `master`, unreleased
+
+Five repos hit one bug in five shapes: every gate passed and nothing was enforced. The fix is that
+all of it is now reported rather than inferred. **Consumers will see `doctor` go red where it was
+green — that is the point.** Migration notes ship in `packages/basalt-ui/MIGRATING.md`.
+
+### The escape hatch
+
+`theme-allow` now honours a standalone comment on the **preceding** line, matching the oxlint
+plugin — they used to disagree, which made it unusable in JSX, where the reported line is a
+multi-line opening tag or a `{expr}` child and a trailing `//` is a syntax error or visible text.
+A trailing annotation in CSS also reaches back over the declaration it terminates, verified against
+real `oxfmt` output: it reflows a long `background-color` so the hex lands ABOVE the comment, which
+preceding-line support alone does not fix.
+
+**`theme-allow <rule-id> — <reason>` scopes the exception to that one kind.** A bare comment still
+waives everything (no upgrade breaks a build) but reports the new `theme-allow-unscoped` kind. Every
+consumer had bare comments, basalt included — its own 22 are rescoped in the same batch, verified by
+neutering each annotation and reading what the two engines then reported rather than by guessing.
+`basalt/hand-rolled-plot` no longer grants whole-file immunity off whatever comment happened to sit
+on its first assembly node; every node is waived on its own, and a file-scoped waiver needs a
+written declaration naming the rule and giving a reason.
+
+### Guard holes and false positives
+
+New kinds, all `warn` for one minor: `surface-shadow-override` (a `boxShadow` built FROM tokens that
+replaces `--vx-shadow-card` — the shape a token-fluent consumer writes, which the old `var()`/`${}`
+skip waved straight through), `css-raw-surface` (the kebab dialect of the surface kinds),
+`inline-font-size`, `hidden-inline-style`, `theme-allow-unscoped`.
+
+Two new oxlint rules, both `warn`: **`basalt/shadow-basalt-export`** (a local component whose name
+collides with a live basalt export, read from the real `dist/index.d.ts` barrel — the cheapest
+detector for a forked composite, which no palette guard can see) and **`basalt/hand-rolled-shell`**.
+`basalt/raw-size-literal` promoted `warn` → `error`; `hand-rolled-plot` and `chart-legend-literal`
+were deliberately NOT promoted, because this minor widens both and promoting a widened rule in the
+minor that widens it is exactly what the grace doctrine forbids.
+
+`check-theme` resolves `.html` / `.webmanifest` / `.json` as markup (colour kinds only). False
+positives fixed: `jsx-a11y/prefer-tag-over-role` off (it made basalt's own `ChartFrame` a11y pattern
+unwritable), `no-underscore-dangle` allows `__APP_VERSION__`, `raw-color-fn` skips a computed colour
+function, `raw-font-family` accepts any `var(--…)`, `no-raw-font-size` requires a style context and
+skips test files, `ai-sdk-major` is scoped to packages depending on basalt or under declared roots.
+
+**Known limit, deliberate:** a DOM-drawn chart is structurally invisible to `hand-rolled-plot`,
+which keys on the visx assembly primitives. Every alternative detector tried flagged either basalt's
+own `Donut`/`Heatmap` or an icon in a card header, and a noisy shipped rule gets switched off.
+
+### Grace tracking
+
+**`PLUGIN_RULE_GRACE`** is the plugin's counterpart to `GRACE_PERIOD_KINDS` — a named export beside
+the plugin (`oxlint.json` cannot hold it; its top-level keys are fixed by oxlint's parser), with a
+test asserting both directions against the shipped preset, so deleting an entry forces the level
+flip in the same commit. Read promotion state there. Its absence is why three rules sat at `warn`
+for up to twelve minors with nothing tracking them, and why this same drift has now been recorded
+three separate times in this file.
+
+### CLI
+
+- **`doctor`: `SKIPPED` is a third outcome** beside pass/warn/fail and exits non-zero on its own.
+  "All checks passed" is only printable when every check RAN. New hard checks: `basalt-resolves`,
+  `guard-scan` (check-theme would cover more than zero files — check-theme already exited 1 on that,
+  and doctor disagreeing with it in the same repo WAS the bug), `oxlint-preset` (JSONC parsed, not
+  rejected; one repo ran five minors with the whole lint half off).
+- **A tokens-only profile.** `doctor` auto-detects it; **`check-theme` requires it declared**
+  (`basalt.profile: "tokens-only"` or `--tokens-only`). The asymmetry is a safety property:
+  doctor's profile only changes which ADVICE it prints, while check-theme's silences 16 kinds, and
+  inferring that from a missing `@mantine/core` would switch off half the guard on any repo keeping
+  Mantine in a different workspace package.
+- **`init`** writes real `basalt.roots`, adds a `lint:basalt` script, names every kept file AND what
+  keeping it costs, and prints the lint-debt notice — adopting the preset on an existing app turns
+  on whole oxlint plugins the repo was never linted against. `--merge-lint` splices the preset into
+  an existing `.oxlintrc.json`, refusing on a commented config rather than deleting the comments.
+- **Markup scan reach:** each root's PARENT contributes its `index.html` and `public/` tree (the
+  Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its configured
+  root. `.json` is never blanket-scanned; `basalt.include` is the only route to one.
+- **`tokens:css` / `fonts:css` output is commit-clean**: the `@generated basalt-ui` marker on line
+  1, version + invocation on line 2, a trailing newline, normalized `rgba()` spacing, and a
+  `--check` drift gate. `check-theme` skips any file carrying that marker in its first 5 lines —
+  which is what fixed rollhook's 116 violations _inside the file `tokens:css` itself wrote_.
+  `tokens:css --selector-class dark` emits the Tailwind `<html class="dark">` form (CLI-only; there
+  is no `scheme: { class }` API). `fonts:css` emits the shipped `--basalt-font-*` stacks, read out
+  of `styles.css` so the two can never name different typefaces.
+- **`__APP_VERSION__`** ships its ambient declaration via `src/register.ts` → `dist/register.d.ts`,
+  re-exported by the root barrel. A consumer importing from `basalt-ui` gets it with no
+  `/// <reference>`; a subpath-only consumer does not, which is the same set as the consumers not on
+  basalt's Vite preset anyway.
+
+### Mobile nav
+
+Two defects in `.tabIcon`, the rule that IS the active pill. Its inset sat behind a bare
+`theme-allow` claiming the value was sub-scale; only the `2px` was, and the `12px` was the one
+spacing value in the file with no token — so the bar and the glyph scaled with density and the
+pill's inset alone did not (measured: 12px held across density −3/0/+3 while the glyph went
+17 → 24 → 31). Two new tokens, `--vx-space-mobile-nav-tab-inset-{y,x}`. Separately the pill is the
+icon span's own background and that span had no minimum box, so an app shipping no icon dependency
+got a ~24×4px dash instead of an indicator, at every density; the span now floors at the icon box
+plus its inset. `tests/layout` gained both invariants, verified to fail on the pre-fix CSS.
+
+Token counts move with those two: 202 canonical names (was 200), the `--vx-space-*` half 108 (was
+106), `only: 'core'` unchanged at 103 — both new tokens are component-named spacing, which the core
+filter drops. `docs/FRAMEWORK-FREE.md` carries the corrected set.
 
 ## Adoption gap — closed in 1.7.0 (2026-08-02)
 
@@ -82,7 +189,8 @@ there for the first time reported all of it in one pass. Three separate causes, 
    1.8.0 (shipped the same day as 1.7.0), by 1.9.0 (which carried the chart-layer batch the same
    consumer was waiting on), and then 1.10.0 shipped without the promotion at all. Promoted only
    after verifying the consumer: argo's `check-theme` reports zero violations of any kind, so nothing
-   that was passing now fails. `GRACE_PERIOD_KINDS` is empty again.
+   that was passing now fails. `GRACE_PERIOD_KINDS` went empty again and stayed empty until the
+   round-4 batch, which put five new kinds into it.
 3. **An expressiveness failure, which no linter could have caught.** LineWatch wrote a 35-line
    `ThresholdRail` wrapper positioning a bar over a `StatCard`'s edge, with a docblock explaining
    that `StatCard.value` is typed `string` so the number could not be tinted, and that hand-rolling a
@@ -153,16 +261,15 @@ hand-written `ChartLegend items={[…]}` array, since the legend must derive fro
 the chart draws or it goes stale naming a series nobody plots. Both are `error` repo-local and
 `warn` in the shipped consumer preset, nominally for one minor per the grace-minor doctrine.
 
-**They are still `warn` at 1.19.1, four minors on** (`configs/oxlint.json`), and so is
-`basalt/raw-size-literal`, whose grace minor started at 1.7.0 — twelve minors ago. This is the same
-promotion drift the 1.7.0 section above diagnoses for `mantine-shade-index`, with one difference
-that makes it worse: `GRACE_PERIOD_KINDS` is a `Partial<Record<GuardKind, string>>` and these are
-oxlint plugin rules, not guard kinds, so there is no map to empty out and nothing to remind anyone.
-**Treat the grace as indefinite until the severity map itself carries an expiry.** Promoting three
-rule ids is a three-line diff in `configs/oxlint.json`; the reason it hasn't happened is that
-nothing tracks it, not that a consumer would break — all seven consumers report zero violations of
-all three. Everything else the rebuild removed is enforced
-harder than lint: the old APIs are gone, so the old patterns do not resolve.
+Both sat at `warn` for four minors with nothing tracking them, as did `basalt/raw-size-literal`
+from 1.7.0 — twelve minors. That was the same promotion drift the 1.7.0 section above diagnoses for
+`mantine-shade-index`, made worse because `GRACE_PERIOD_KINDS` governs `GuardKind`s only, so there
+was no map to empty and nothing to remind anyone. **1.20.0's `PLUGIN_RULE_GRACE` is that map**
+(`configs/oxlint-plugin.js`), asserted against the shipped preset in both directions by a test —
+read the current level and its promotion note there rather than from a list in a doc, which is what
+drifted. `raw-size-literal` promoted to `error` in 1.20.0; these two stayed `warn` because 1.20.0
+widens both. Everything else the rebuild removed is enforced harder than lint: the old APIs are
+gone, so the old patterns do not resolve.
 
 Deleted outright (greenfield, one lockstep consumer, no shims): `ResponsiveChart`, `ChartHoverSync`,
 `HoverContext`, `useHoverSync`, `useChartTooltip`, the tip-based `ChartTooltip` + `useTooltipStyles`,
@@ -267,19 +374,9 @@ does that itself, so only a consumer composing the sub-components by hand is aff
 First real non-Mantine consumer: `rollhook`, round 4 — two Tailwind v4 apps, one on
 `import 'basalt-ui/tokens.css'`, one on a committed `tokens:css` output.
 
-**Still open after that migration:**
-
-- **A class selector.** The emitter keys on an attribute; Tailwind's convention is
-  `<html class="dark">`. Both rollhook apps only worked via `--default-scheme dark`, which costs
-  them the light scheme. `--selector-class` is in flight.
-- **Fonts are unreachable.** `tokens.css` emits no `--basalt-font-*`, the defaults live only in the
-  Mantine-coupled `styles.css`, and `buildFontsCss(fonts)` returns `''` without overrides — so it
-  cannot re-emit the shipped stack. `fonts:css` is in flight.
-- **No tokens-only profile for `check-theme` / `doctor`.** `check-theme` flags ~100 `raw-hex` in
-  the file `tokens:css` just wrote, `raw-form-control` tells a Mantine-free app to import
-  `@mantine/core`, and `doctor` exits 1 telling a tokens-only consumer to run `basalt-ui init`.
-- **The emitted stylesheet is not commit-clean.** No trailing newline, no version header,
-  `rgba(255,255,255,0.6)` rather than formatted spacing, no `--check` drift mode.
+**All four gaps that migration found are closed in 1.20.0** — `--selector-class`, `fonts:css`, a
+declared tokens-only profile, and a commit-clean emitter with a `--check` drift gate. See the
+round-4 batch section above and `docs/FRAMEWORK-FREE.md`.
 
 **Follow-ups the original work deliberately did NOT fold in:**
 
