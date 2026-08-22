@@ -39,7 +39,10 @@ pre-commit:
     # thing tests/palette-css.test.ts pins. The hook would break the test it just staged.
     oxfmt:
       glob: '*.{js,jsx,ts,tsx,cjs,mjs,css,json,md,yml,yaml}'
-      run: bunx oxfmt --ignore-path=.gitignore --ignore-path=.oxfmtignore {staged_files}
+      # --no-error-on-unmatched-pattern: oxfmt exits 2 when EVERY staged file is excluded by the
+      # ignore paths above, so a commit touching only palette-default.css was impossible. The
+      # shipped preset already carries this flag; this file did not.
+      run: bunx oxfmt --ignore-path=.gitignore --ignore-path=.oxfmtignore --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
 commit-msg:
