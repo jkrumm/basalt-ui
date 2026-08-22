@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
@@ -389,10 +389,18 @@ describe('tooltip.onFollow — aria-live stays SOURCE-only', () => {
     )
 
     fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
-    await screen.findByText('b')
 
-    const tooltips = screen.getAllByRole('tooltip')
-    expect(tooltips).toHaveLength(2)
+    // The FOLLOWER anchors synchronously off its own svg rect, so its tooltip is in the DOM on the
+    // tick the broadcast lands. The SOURCE positions against `cursor.anchor`, which
+    // `useChartCursor` deliberately coalesces through `requestAnimationFrame` — one frame later.
+    // So waiting on the follower's 'b' is no barrier at all for the source tooltip: that only ever
+    // held because happy-dom mocks rAF with `setImmediate`, which usually — not reliably — lands
+    // before Testing Library's async drain. Wait for the PAIR, which is what's being asserted.
+    const tooltips = await waitFor(() => {
+      const found = screen.getAllByRole('tooltip')
+      expect(found).toHaveLength(2)
+      return found
+    })
     const sourceTooltip = tooltips.find((t) => within(t).queryByText('a') !== null)
     const followerTooltip = tooltips.find((t) => within(t).queryByText('b') !== null)
     expect(sourceTooltip?.getAttribute('aria-live')).toBe('polite')
