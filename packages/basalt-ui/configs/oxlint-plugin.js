@@ -77,16 +77,124 @@ import { fileURLToPath } from 'node:url'
 
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
 
-/** True when a `theme-allow` line comment sits on `node`'s own source line or the line above it. */
-function hasThemeAllow(context, node) {
+/**
+ * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
+ * by hand for the same reason `majorOf` is: this file loads standalone out of a consumer's
+ * node_modules and must not import from the package. The set exists so an annotation's HEAD can be
+ * told apart from a reason written without a separator: `theme-allow sub-scale corner` names no
+ * rule, and treating its words as ids would scope the exception to rules nobody has, silently
+ * un-suppressing a line that used to pass.
+ */
+const KNOWN_RULE_IDS = new Set([
+  // this plugin
+  'no-raw-font-size',
+  'raw-size-literal',
+  'card-inset',
+  'chart-in-raw-surface',
+  'hand-rolled-plot',
+  'chart-legend-literal',
+  'hand-rolled-shell',
+  'shadow-basalt-export',
+  'raw-scroll-container',
+  'visx-boundary',
+  'visx-tooltip',
+  'token-layer-boundary',
+  // src/guard kinds
+  'raw-hex',
+  'raw-color-fn',
+  'localstorage-theme',
+  'off-identity-accent',
+  'mantine-shade-index',
+  'raw-spacing',
+  'raw-radius',
+  'raw-surface',
+  'card-with-border',
+  'off-system-surface-var',
+  'raw-html-layout',
+  'inline-spacing',
+  'inline-display',
+  'raw-visx-axis',
+  'raw-motion-value',
+  'unframed-chart',
+  'chart-missing-aria-label',
+  'raw-form-control',
+  'sub-16-input-font',
+  'raw-font-family',
+  'theme-allow-unscoped',
+  'surface-shadow-override',
+  'css-raw-surface',
+  'inline-font-size',
+  'hidden-inline-style',
+])
+
+const ALLOW_RULE_TOKEN = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/
+const ALLOW_REASON_SEPARATOR = /^(?:—|–|-{1,2}|:)\s*/
+/** Shortest string accepted as a written reason — enough to exclude a stray separator. */
+const MIN_ALLOW_REASON_LENGTH = 4
+
+/**
+ * Parse one comment's `theme-allow` annotation, or `null` when it carries none.
+ * `{ rules: [] }` is the legacy bare form and covers every rule; a non-empty `rules` scopes the
+ * exception to exactly those ids. Mirrors `parseAllowAnnotation` in `src/guard/index.ts`.
+ */
+function parseThemeAllow(commentValue) {
+  const at = commentValue.indexOf('theme-allow')
+  if (at === -1) return null
+  let remainder = commentValue.slice(at + 'theme-allow'.length).replace(/^[\s,]+/, '')
+  const rules = []
+  for (;;) {
+    const token = ALLOW_RULE_TOKEN.exec(remainder)
+    if (token === null || !KNOWN_RULE_IDS.has(token[1])) break
+    rules.push(token[1])
+    remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
+  }
+  const reason = remainder.replace(ALLOW_REASON_SEPARATOR, '').trim()
+  return { rules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+}
+
+/**
+ * True when a `theme-allow` covering `ruleId` sits on `node`'s own source line or the line above.
+ *
+ * The `ruleId` argument is what stops one exemption from being a blanket one: a `theme-allow
+ * raw-hex — …` written for a color no longer silently switches off `card-inset` on the same line.
+ * A bare `theme-allow` still covers everything — that is the shape every existing consumer has, and
+ * `src/guard`'s `theme-allow-unscoped` is the (warning) nudge off it, not a hard break.
+ */
+function hasThemeAllow(context, node, ruleId) {
   const sourceCode = context.sourceCode ?? context.getSourceCode?.()
   const comments = sourceCode?.getAllComments?.() ?? []
   const nodeLine = node.loc.start.line
-  return comments.some(
-    (comment) =>
-      comment.value.includes('theme-allow') &&
-      (comment.loc.end.line === nodeLine || comment.loc.end.line === nodeLine - 1),
-  )
+  return comments.some((comment) => {
+    if (comment.loc.end.line !== nodeLine && comment.loc.end.line !== nodeLine - 1) return false
+    const allow = parseThemeAllow(comment.value)
+    return allow !== null && (allow.rules.length === 0 || allow.rules.includes(ruleId))
+  })
+}
+
+/**
+ * True when the FILE carries a written declaration for `ruleId` — a `theme-allow` that both names
+ * the rule and gives a reason, anywhere in the file.
+ *
+ * This is what a file-scoped exception costs now. `hand-rolled-plot` used to grant a whole file
+ * permanent immunity off any `theme-allow` that happened to sit on its first assembly node — a
+ * 604-line chart file went unpoliced forever, and a comment written about a colour disabled the
+ * chart rule as a side effect. Splitting the two placements apart is the fix: a bare or unrelated
+ * comment waives ONE node, a named-with-a-reason comment declares the whole file.
+ */
+function hasFileDeclaration(context, ruleId) {
+  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+  const comments = sourceCode?.getAllComments?.() ?? []
+  return comments.some((comment) => {
+    const allow = parseThemeAllow(comment.value)
+    return allow !== null && allow.hasReason && allow.rules.includes(ruleId)
+  })
+}
+
+/** Test/spec files — design guidance does not apply to a fixture. Mirrors `src/cli`'s own SKIP. */
+const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$|(?:^|[\\/])__tests__[\\/]/
+
+function isTestFile(context) {
+  return TEST_FILE.test(getFilename(context))
 }
 
 /**
@@ -146,6 +254,50 @@ const NO_RAW_FONT_SIZE_MESSAGE =
   'Raw font-size literal — route through VX.text.* (numbers) or --vx-text-* (CSS); em/relative ' +
   'ratios are allowed. (basalt/no-raw-font-size)'
 
+/** JSX attributes whose value IS a style object — the only object literals this rule reaches into. */
+const STYLE_ATTRS = new Set(['style', 'styles', 'sx'])
+/** A binding or key whose name says the object is styling — `wrapperStyle`, `styles`, `rowStyles`. */
+const STYLE_NAME = /styles?$/i
+/** How far up the tree the style-context walk goes before giving up. */
+const STYLE_CONTEXT_MAX_DEPTH = 12
+
+/**
+ * Is this object property part of a STYLE object?
+ *
+ * `fontSize` is not a reserved word. The rule used to report every object property spelled that
+ * way, which fired on an Obsidian `data.json` fixture — `{ settings: { fontSize: 16 } }` inside a
+ * string, in a package with no React and no Mantine — where the "route it through VX.text.*" advice
+ * is not merely unhelpful, it is about a different domain. Requiring a style context (a
+ * `style`/`styles`/`sx` JSX attribute, a `…Style(s)` binding or key, or a `CSSProperties`
+ * annotation) keeps every shape that is really styling and drops the ones that never reach CSS.
+ */
+function isInStyleContext(context, node) {
+  const sourceCode = context.sourceCode ?? context.getSourceCode?.()
+  let current = node.parent
+  for (let depth = 0; current !== undefined && current !== null; depth++) {
+    if (depth > STYLE_CONTEXT_MAX_DEPTH) return false
+    if (current.type === 'JSXAttribute') return STYLE_ATTRS.has(current.name?.name)
+    if (current.type === 'Property') {
+      const key = current.key
+      const name = key?.type === 'Identifier' ? key.name : key?.value
+      if (typeof name === 'string' && STYLE_NAME.test(name)) return true
+    }
+    if (current.type === 'VariableDeclarator') {
+      const id = current.id
+      if (typeof id?.name === 'string' && STYLE_NAME.test(id.name)) return true
+      const annotation = id?.typeAnnotation
+      return (
+        annotation !== undefined &&
+        annotation !== null &&
+        (sourceCode?.getText?.(annotation) ?? '').includes('CSSProperties')
+      )
+    }
+    if (current.type === 'FunctionDeclaration' || current.type === 'Program') return false
+    current = current.parent
+  }
+  return false
+}
+
 const noRawFontSize = {
   meta: {
     type: 'suggestion',
@@ -155,7 +307,7 @@ const noRawFontSize = {
     schema: [],
   },
   create(context) {
-    if (getFilename(context).includes('/src/tokens/')) return {}
+    if (getFilename(context).includes('/src/tokens/') || isTestFile(context)) return {}
 
     return {
       JSXAttribute(node) {
@@ -163,7 +315,7 @@ const noRawFontSize = {
         if (name !== 'fz' && name !== 'fontSize') return
         const value = unwrapExpressionContainer(node.value)
         if (!isNumericLiteral(value)) return
-        if (hasThemeAllow(context, node)) return
+        if (hasThemeAllow(context, node, 'no-raw-font-size')) return
         context.report({ node, message: NO_RAW_FONT_SIZE_MESSAGE })
       },
       Property(node) {
@@ -173,7 +325,8 @@ const noRawFontSize = {
           (key.type === 'Literal' && key.value === 'fontSize')
         if (!isFontSizeKey) return
         if (!isNumericLiteral(node.value)) return
-        if (hasThemeAllow(context, node)) return
+        if (!isInStyleContext(context, node)) return
+        if (hasThemeAllow(context, node, 'no-raw-font-size')) return
         context.report({ node, message: NO_RAW_FONT_SIZE_MESSAGE })
       },
     }
@@ -225,7 +378,7 @@ const rawSizeLiteral = {
         if (typeof name !== 'string' || !SIZE_ATTRS.has(name)) return
         const value = unwrapExpressionContainer(node.value)
         if (!isCssLengthString(value)) return
-        if (hasThemeAllow(context, node)) return
+        if (hasThemeAllow(context, node, 'raw-size-literal')) return
         context.report({ node, message: RAW_SIZE_LITERAL_MESSAGE })
       },
     }
@@ -276,7 +429,7 @@ const cardInset = {
           const isRadius = attrName === 'radius'
 
           if (!isOffPadding && !isOffPy && !isOffPx && !isRadius) continue
-          if (hasThemeAllow(context, attr)) continue
+          if (hasThemeAllow(context, attr, 'card-inset')) continue
           context.report({ node: attr, message: CARD_INSET_MESSAGE })
         }
       },
@@ -350,7 +503,7 @@ const chartInRawSurface = {
         if (!CARD_TAGS.has(tagName)) return
         const hasChartDescendant = node.children.some((child) => subtreeHasChart(child))
         if (!hasChartDescendant) return
-        if (hasThemeAllow(context, node)) return
+        if (hasThemeAllow(context, node, 'chart-in-raw-surface')) return
         context.report({ node, message: CHART_IN_RAW_SURFACE_MESSAGE })
       },
     }
@@ -396,7 +549,7 @@ const rawScrollContainer = {
           key.type === 'Identifier' ? key.name : key.type === 'Literal' ? key.value : undefined
         if (typeof keyName !== 'string' || !OVERFLOW_KEYS.has(keyName)) return
         if (!isStringLiteral(node.value) || !SCROLLING_VALUES.has(node.value.value)) return
-        if (hasThemeAllow(context, node)) return
+        if (hasThemeAllow(context, node, 'raw-scroll-container')) return
         context.report({ node, message: RAW_SCROLL_CONTAINER_MESSAGE })
       },
     }
@@ -760,6 +913,53 @@ function nearestAiMajor(startDir) {
   return result
 }
 
+// One parsed manifest per path — the scope walk below re-reads the same ancestors for every file.
+const packageJsonCache = new Map()
+
+function readPackageJson(pkgPath) {
+  if (packageJsonCache.has(pkgPath)) return packageJsonCache.get(pkgPath)
+  let pkg = null
+  try {
+    pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  } catch {
+    pkg = null
+  }
+  packageJsonCache.set(pkgPath, pkg)
+  return pkg
+}
+
+/**
+ * Is this file inside a package that actually consumes basalt-ui?
+ *
+ * Without this the rule compared EVERY package's `ai` major against basalt's own peer major, and
+ * fired three errors in an rb workspace package (`apps/api`) that has no basalt-ui dependency, is
+ * outside `basalt.roots`, and pins `ai@6` deliberately. `doctor`'s `ai-major-parity` scopes the same
+ * concern correctly — two shipped enforcement surfaces disagreeing about one fact leaves a consumer
+ * unable to tell which is right, which is worse than either being wrong.
+ *
+ * In scope when an ancestor package.json either depends on `basalt-ui`, or declares `basalt.roots`
+ * that the file sits under. A declared `basalt.roots` that the file is NOT under is a positive
+ * statement that this code is not basalt's — the walk stops there rather than continuing up to a
+ * workspace root that happens to carry the dependency.
+ */
+function isBasaltScopedFile(filename) {
+  let dir = dirname(filename)
+  for (;;) {
+    const pkg = readPackageJson(resolvePath(dir, 'package.json'))
+    if (pkg !== null) {
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies }
+      if (deps['basalt-ui'] !== undefined) return true
+      const roots = pkg.basalt?.roots
+      if (Array.isArray(roots) && roots.length > 0) {
+        return roots.some((root) => filename.startsWith(`${resolvePath(dir, root)}/`))
+      }
+    }
+    const parent = dirname(dir)
+    if (parent === dir) return false
+    dir = parent
+  }
+}
+
 function aiSdkMajorMessage(consumerMajor) {
   return (
     `This file's nearest package.json declares ai@${consumerMajor}, but basalt-ui declares the ` +
@@ -792,6 +992,7 @@ const aiSdkMajor = {
 
         const filename = getFilename(context)
         if (filename.length === 0) return
+        if (!isBasaltScopedFile(filename)) return
         const consumerMajor = nearestAiMajor(dirname(filename))
         if (consumerMajor === null) return // no `ai` in the nearest package.json — nothing to compare
         if (consumerMajor === BASALT_AI_MAJOR) return
@@ -817,6 +1018,19 @@ const PLOT_ASSEMBLY_TAGS = new Set([
   'HoverOverlay',
   'Crosshair',
 ])
+
+/**
+ * KNOWN LIMIT, deliberately not closed: a chart drawn out of DOM instead of the chart layer is
+ * structurally invisible here.
+ *
+ * argo has two — a 3×3 Mantine `SimpleGrid` matrix and absolutely-positioned `Box` bullet bars —
+ * that import only `ChartCard` and `VX`, render no basalt primitive, and therefore cannot trip any
+ * tag-name check. The candidate widenings all fail on false positives in a rule that SHIPS to
+ * consumers: adding `ChartTooltipFloat`/`useChartSize` to this set flags `Donut` and `Heatmap`,
+ * which compose them legitimately; "renders `ChartCard` and a raw `<svg>`" flags an inline icon in
+ * a card header. Detecting "this Box grid is a chart" needs intent, not syntax. Naming the gap here
+ * is the honest answer — a noisy rule gets switched off, and then it guards nothing at all.
+ */
 
 /**
  * Composing this means the file is USING the chart system rather than re-implementing it.
@@ -859,6 +1073,7 @@ const handRolledPlot = {
     schema: [],
   },
   create(context) {
+    if (isTestFile(context)) return {}
     // File-scoped, not node-scoped: the verdict depends on whether a plot OWNER appears anywhere
     // in the file, which is only known once the whole file has been walked.
     const assemblyNodes = []
@@ -891,16 +1106,26 @@ const handRolledPlot = {
       },
       'Program:exit'() {
         if (ownsPlot || definesOwner) return
-        // Only the FIRST site is reported, and the whole check is FILE-scoped rather than
-        // component-scoped. Both are deliberate. File scope is forced by the shape of the correct
-        // pattern: `<CartesianChart>{() => <AxisLeftNumeric …/>}</CartesianChart>` puts the axis
-        // inside a render-prop arrow, a different function from the component that owns the chart
-        // — component scope would flag the canonical usage. One report because declaring an
-        // exception is a decision about the FILE ("this shape isn't a single cartesian plot"), so
-        // one `theme-allow` settles it instead of one comment per axis and overlay.
-        const [first] = assemblyNodes.filter((node) => chartImports.has(node.name?.name))
-        if (first === undefined || hasThemeAllow(context, first)) return
-        context.report({ node: first, message: HAND_ROLLED_PLOT_MESSAGE })
+        // The CHECK stays file-scoped — forced by the shape of the correct pattern:
+        // `<CartesianChart>{() => <AxisLeftNumeric …/>}</CartesianChart>` puts the axis inside a
+        // render-prop arrow, a different function from the component that owns the chart, so
+        // component scope would flag the canonical usage.
+        //
+        // The SUPPRESSION no longer is. Reporting only the first node and testing the waiver there
+        // meant one comment — any comment, about anything — bought a whole file permanent immunity:
+        // every axis, overlay and crosshair added to that file afterwards went unreported forever
+        // (linewatch: three files, one 604 lines). Now every assembly node is reported and waived on
+        // its own, EXCEPT when the file carries a written declaration — a `theme-allow` that names
+        // `basalt/hand-rolled-plot` and gives a reason. That is the shape a genuinely non-single-plot
+        // kind already uses (`DualPanel`), and it is the difference between a line waiver and a
+        // decision about the file.
+        const nodes = assemblyNodes.filter((node) => chartImports.has(node.name?.name))
+        if (nodes.length === 0) return
+        if (hasFileDeclaration(context, 'hand-rolled-plot')) return
+        for (const node of nodes) {
+          if (hasThemeAllow(context, node, 'hand-rolled-plot')) continue
+          context.report({ node, message: HAND_ROLLED_PLOT_MESSAGE })
+        }
       },
     }
   },
@@ -914,6 +1139,40 @@ const CHART_LEGEND_LITERAL_MESSAGE =
   'is a second source of truth that silently goes stale: it keeps naming a series after the plot ' +
   'stops drawing it. (basalt/chart-legend-literal)'
 
+/**
+ * Does this expression derive from the chart's own `series`?
+ *
+ * The contract is derivation from `series` — not derivation from *an* array. `items={refLines.map(
+ * (r) => ({ key, label, color, shape }))}` and `items={PACE_ZONES.map(…)}` are hand-authored
+ * legends by any reading: every field is written at the call site, and the list can name a band the
+ * plot no longer draws exactly like a `[...]` literal can. Walks the base of a member/call chain so
+ * `visibleSeries.filter(…).map(…)` and `deriveLegend(series)` both read as derived.
+ */
+function derivesFromSeries(node, depth = 0) {
+  if (node === null || node === undefined || depth > 8) return false
+  if (node.type === 'Identifier') return /series$/i.test(node.name ?? '')
+  if (node.type === 'MemberExpression') {
+    return derivesFromSeries(node.object, depth + 1) || derivesFromSeries(node.property, depth + 1)
+  }
+  if (node.type === 'CallExpression') {
+    if (node.callee?.type === 'Identifier' && node.callee.name === 'deriveLegend') return true
+    return (
+      derivesFromSeries(node.callee, depth + 1) ||
+      (node.arguments ?? []).some((arg) => derivesFromSeries(arg, depth + 1))
+    )
+  }
+  return false
+}
+
+/** `X.map(…)` — the derivation-shaped form that is only derivation when `X` is the series. */
+function isMapCall(node) {
+  return (
+    node?.type === 'CallExpression' &&
+    node.callee?.type === 'MemberExpression' &&
+    node.callee.property?.name === 'map'
+  )
+}
+
 const chartLegendLiteral = {
   meta: {
     type: 'suggestion',
@@ -921,6 +1180,7 @@ const chartLegendLiteral = {
     schema: [],
   },
   create(context) {
+    if (isTestFile(context)) return {}
     const chartImports = new Set()
 
     return {
@@ -933,6 +1193,14 @@ const chartLegendLiteral = {
           (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'items',
         )
         const expression = items?.value?.expression
+        // The `.map()` half — a list built by mapping over something that is NOT the series. See
+        // `derivesFromSeries`. Reported under the same id as the array-literal half because it is
+        // the same defect (a second source of truth for the legend), just written as a call.
+        if (isMapCall(expression) && !derivesFromSeries(expression.callee?.object)) {
+          if (hasThemeAllow(context, node, 'chart-legend-literal')) return
+          context.report({ node, message: CHART_LEGEND_LITERAL_MESSAGE })
+          return
+        }
         if (expression?.type !== 'ArrayExpression') return
         // Only a list that is ENTIRELY object literals is a hand-authored legend. An array that
         // spreads or calls something (`[...deriveLegend(series), note]`) is derived-and-extended,
@@ -946,11 +1214,199 @@ const chartLegendLiteral = {
           expression.elements.length > 0 &&
           expression.elements.every((el) => el?.type === 'ObjectExpression')
         if (!allObjectLiterals) return
-        if (hasThemeAllow(context, node)) return
+        if (hasThemeAllow(context, node, 'chart-legend-literal')) return
         context.report({ node, message: CHART_LEGEND_LITERAL_MESSAGE })
       },
     }
   },
+}
+
+// ── Rule 14 — shadow-basalt-export ───────────────────────────────────────────────────────────────
+
+/** The package root — one directory above `configs/`, repo-locally AND inside node_modules. */
+const PACKAGE_ROOT = resolvePath(PLUGIN_DIR, '..')
+
+/**
+ * A component-shaped name: starts uppercase and carries a lowercase letter, which excludes the
+ * SCREAMING_CASE constants and the two-letter token namespaces in the same barrel.
+ */
+const COMPONENT_NAME = /^[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*$/
+
+/**
+ * Every component-shaped VALUE export of the root barrel, read once at module load from
+ * `../dist/index.d.ts` — the real barrel, not a hand-maintained list that would go stale the first
+ * time an export was renamed. `type` specifiers are skipped: a local `StatCardProps` is a normal
+ * thing to write, a local `StatCard` is not.
+ *
+ * Empty (rule silent) when `dist` is unreadable, exactly like `BASALT_AI_MAJOR` — a lint run must
+ * not depend on a build having happened.
+ */
+const BASALT_ROOT_EXPORTS = (() => {
+  const names = new Set()
+  try {
+    const text = readFileSync(resolvePath(PACKAGE_ROOT, 'dist', 'index.d.ts'), 'utf8')
+    for (const block of text.matchAll(/export\s*\{([^}]*)\}/g)) {
+      for (const raw of block[1].split(',')) {
+        const part = raw.trim()
+        if (part === '' || part.startsWith('type ')) continue
+        const name = (part.split(/\s+as\s+/).pop() ?? '').trim()
+        if (COMPONENT_NAME.test(name)) names.add(name)
+      }
+    }
+  } catch {
+    return names
+  }
+  return names
+})()
+
+function shadowBasaltExportMessage(name) {
+  return (
+    `Local component '${name}' collides with the basalt-ui export of the same name — import it ` +
+    "from 'basalt-ui' instead of re-rolling it. This is the one signal a forked composite emits: " +
+    'the palette guard can never see it, because a fork written by a token-fluent author uses ' +
+    'exactly the right tokens and passes every other check. (basalt/shadow-basalt-export)'
+  )
+}
+
+/**
+ * Flags a local declaration whose name collides with a live basalt export.
+ *
+ * The cheapest possible detector for the whole absorption class: argo shipped its own `EmptyState`
+ * (a full duplicate of the shipped one) and rb a local `StatCard`, and both passed `check-theme`,
+ * `oxlint` and `doctor` clean — off-palette code fails, a forked component that uses the correct
+ * tokens does not. `warn`, not `error`: a name collision is evidence, not proof, and a consumer
+ * with a genuinely different `Composer` should be told once, not blocked.
+ */
+const shadowBasaltExport = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a local component whose name collides with a basalt-ui export.' },
+    schema: [],
+  },
+  create(context) {
+    const filename = getFilename(context)
+    // basalt's own source DEFINES these names; a consumer's does not.
+    if (BASALT_ROOT_EXPORTS.size === 0 || filename.startsWith(`${PACKAGE_ROOT}/`)) return {}
+    if (isTestFile(context)) return {}
+
+    const report = (node, name) => {
+      if (typeof name !== 'string' || !BASALT_ROOT_EXPORTS.has(name)) return
+      if (hasThemeAllow(context, node, 'shadow-basalt-export')) return
+      context.report({ node, message: shadowBasaltExportMessage(name) })
+    }
+
+    return {
+      FunctionDeclaration(node) {
+        report(node, node.id?.name)
+      },
+      VariableDeclarator(node) {
+        report(node, node.id?.name)
+      },
+      ClassDeclaration(node) {
+        report(node, node.id?.name)
+      },
+    }
+  },
+}
+
+// ── Rule 15 — hand-rolled-shell ──────────────────────────────────────────────────────────────────
+
+/** Mantine parts that only ever appear when someone is assembling an application shell by hand. */
+// `NavLink` is deliberately NOT here: Mantine's NavLink is a legitimate standalone list row, and a
+// rule that fires on one inside a settings page would be switched off within a day. `Burger` and the
+// `AppShell.*` parts have no use outside assembling a shell.
+const SHELL_ASSEMBLY_TAGS = new Set(['Burger'])
+const SHELL_ASSEMBLY_MEMBER_OBJECT = 'AppShell'
+
+const HAND_ROLLED_SHELL_MESSAGE =
+  'Application shell assembled by hand — AppShell parts / Burger / NavLink in a file that does not ' +
+  'render BasaltShell. The shell is the framework: BasaltShell owns the sidebar, the mobile tab ' +
+  'bar and its More sheet, breadcrumbs, the page header and the collapse state, all driven by ONE ' +
+  'typed nav definition (defineNav + useNav). A hand-rolled AppShell + burger drawer is the exact ' +
+  'layer the 1.19 nav contract replaces, and no palette guard can see it — it uses the right ' +
+  'tokens. (basalt/hand-rolled-shell)'
+
+/**
+ * The `hand-rolled-plot` shape, one layer up. rb shipped 266 lines of `AppShell` + `NavLink` +
+ * `Burger` + `useDisclosure` mobile drawer and every gate passed it green.
+ *
+ * File-scoped and reported once: which shell a file uses is one decision, so one comment settles
+ * it. The module that DEFINES `BasaltShell` is exempt by declaration, not by path — a rule saying
+ * "compose X" cannot fire inside X.
+ */
+const handRolledShell = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Disallow assembling an app shell by hand instead of using BasaltShell.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+
+    const assemblyNodes = []
+    let mantineImported = false
+    let ownsShell = false
+
+    const notesOwnerDefinition = (name) => {
+      if (name === 'BasaltShell') ownsShell = true
+    }
+
+    return {
+      ImportDeclaration(node) {
+        if ((node.source?.value ?? '').startsWith('@mantine/')) mantineImported = true
+      },
+      FunctionDeclaration(node) {
+        notesOwnerDefinition(node.id?.name)
+      },
+      VariableDeclarator(node) {
+        notesOwnerDefinition(node.id?.name)
+      },
+      JSXOpeningElement(node) {
+        const name = node.name
+        if (name?.type === 'JSXMemberExpression') {
+          if (name.object?.name === SHELL_ASSEMBLY_MEMBER_OBJECT) assemblyNodes.push(node)
+          return
+        }
+        if (name?.name === 'BasaltShell') ownsShell = true
+        else if (SHELL_ASSEMBLY_TAGS.has(name?.name)) assemblyNodes.push(node)
+      },
+      'Program:exit'() {
+        if (ownsShell || !mantineImported) return
+        const [first] = assemblyNodes
+        if (first === undefined) return
+        if (hasThemeAllow(context, first, 'hand-rolled-shell')) return
+        if (hasFileDeclaration(context, 'hand-rolled-shell')) return
+        context.report({ node: first, message: HAND_ROLLED_SHELL_MESSAGE })
+      },
+    }
+  },
+}
+
+// ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Plugin rules still inside their grace minor — `warn` in the shipped consumer preset, `error`
+ * repo-locally, with the promotion note as the value. This is the plugin's counterpart to
+ * `src/guard`'s `GRACE_PERIOD_KINDS`, and it exists because its ABSENCE is what let three rules sit
+ * at `warn` for up to twelve minors with nothing tracking them: `configs/oxlint.json` is generated
+ * and its top-level keys are fixed by oxlint's own parser, so the ledger cannot live there.
+ *
+ * `oxlint-plugin.test.ts` asserts the two agree in both directions — a rule listed here must be
+ * `warn` in the shipped preset, and one absent from here must be `error`. Deleting an entry IS the
+ * promotion, and the test makes the config change mandatory in the same commit.
+ */
+export const PLUGIN_RULE_GRACE = {
+  'hand-rolled-plot':
+    'widened in the round-4 guard minor (suppression scoped to the node; a file-scoped waiver now ' +
+    'needs a written declaration) — promote to error one minor later, once consumers have moved ' +
+    'their bare `theme-allow` comments to the declaration form.',
+  'chart-legend-literal':
+    'widened in the round-4 guard minor (a `.map()` over a non-series array now counts) — promote ' +
+    'to error one minor later, for the same reason as hand-rolled-plot above.',
+  'shadow-basalt-export':
+    'new in the round-4 guard minor — promote to error one minor later, if ever. A name collision ' +
+    'is strong evidence and not proof; this may be a permanent warn.',
+  'hand-rolled-shell': 'new in the round-4 guard minor — promote to error one minor later.',
 }
 
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────
@@ -964,6 +1420,8 @@ export default {
     'chart-in-raw-surface': chartInRawSurface,
     'hand-rolled-plot': handRolledPlot,
     'chart-legend-literal': chartLegendLiteral,
+    'shadow-basalt-export': shadowBasaltExport,
+    'hand-rolled-shell': handRolledShell,
     'raw-scroll-container': rawScrollContainer,
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,

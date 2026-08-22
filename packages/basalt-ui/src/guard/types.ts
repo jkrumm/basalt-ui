@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 20 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 25 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 20 theme-guard violation kinds. */
+/** The 25 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -28,6 +28,11 @@ export type GuardKind =
   | 'raw-form-control'
   | 'sub-16-input-font'
   | 'raw-font-family'
+  | 'theme-allow-unscoped'
+  | 'surface-shadow-override'
+  | 'css-raw-surface'
+  | 'inline-font-size'
+  | 'hidden-inline-style'
 
 /**
  * How hard a finding lands. `error` fails the build; `warn` reports and passes.
@@ -151,10 +156,30 @@ export type GuardConfig = {
    */
   readonly sub16InputFont: boolean
   /**
-   * Allow-comment policy: a line containing this substring is skipped entirely.
-   * Default 'theme-allow'. Pure-comment lines (// * /\*) are always skipped.
+   * Allow-comment policy. The token that opens an exception annotation inside a COMMENT, on the
+   * finding's own line or the line directly above it (matching the oxlint plugin's placement, and
+   * surviving an `oxfmt` reflow that moves the comment off the offending line). Default
+   * `'theme-allow'`.
+   *
+   * The accountable form is `theme-allow <rule-id>[, <rule-id>] — <reason>`: the rule ids scope the
+   * exception to those kinds only, and the reason says why. A `theme-allow` missing either half
+   * still suppresses (so an upgrade never breaks a build over it) but reports
+   * {@link GuardKind} `theme-allow-unscoped` on its own line.
    */
   readonly allowComment: string
+  /**
+   * Which kinds apply to this consumer. `'mantine'` (default) is the full framework guard.
+   *
+   * `'tokens-only'` is for a consumer that installs the TOKEN LAYER and nothing else — no
+   * `@mantine/core`, often no React (`basalt-ui tokens:css` + `basalt-ui/tokens`). Every kind whose
+   * remedy is a Mantine component or prop is disabled there, because "use `TextInput` from
+   * `@mantine/core`" is not advice, it is a dependency the consumer deliberately does not have.
+   * The color/typography kinds stay on — those are the tokens, which is the whole surface they DO
+   * consume. See `TOKENS_ONLY_DISABLED_KINDS` in `./index` for the exact set.
+   *
+   * Optional so a caller built before this field existed keeps compiling; absent means `'mantine'`.
+   */
+  readonly profile?: 'mantine' | 'tokens-only'
   /**
    * Per-rule, per-path exemptions — complements whole-file `exempt` (BasaltConfig, which skips
    * ALL rules for a file) and code-level `appliesTo` (hardcoded per-kind path scoping, e.g.

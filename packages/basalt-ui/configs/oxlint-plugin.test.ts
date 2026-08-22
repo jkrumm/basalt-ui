@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
+// eslint-disable-next-line -- the plugin is plain JS; the grace ledger is a named export beside it
+import { PLUGIN_RULE_GRACE } from './oxlint-plugin.js'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
 const OXLINT_BIN = resolve(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'oxlint')
@@ -30,6 +32,8 @@ beforeEach(() => {
         'basalt/chart-in-raw-surface': 'error',
         'basalt/hand-rolled-plot': 'error',
         'basalt/chart-legend-literal': 'error',
+        'basalt/shadow-basalt-export': 'error',
+        'basalt/hand-rolled-shell': 'error',
         'basalt/visx-boundary': 'error',
         'basalt/visx-tooltip': 'error',
         'basalt/token-layer-boundary': 'error',
@@ -355,28 +359,40 @@ describe('basalt/agent-no-raw-usechat', () => {
 
 describe('basalt/ai-sdk-major', () => {
   it("flags when the nearest package.json declares a different ai major (5 vs basalt's 7)", () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '5.0.196' } }),
+    )
     const { code, rules } = run(`import { streamText } from 'ai'\n`, 'lib.ts')
     expect(code).toBe(1)
     expect(rules).toContain('ai-sdk-major')
   })
 
   it('does NOT flag when the nearest package.json declares the same major (^7.0.18)', () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '^7.0.18' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '^7.0.18' } }),
+    )
     const { code, rules } = run(`import { streamText } from 'ai'\n`, 'lib.ts')
     expect(code).toBe(0)
     expect(rules).not.toContain('ai-sdk-major')
   })
 
   it('does NOT flag when there is no ai in the nearest package.json', () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: {} }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1' } }),
+    )
     const { code, rules } = run(`import { streamText } from 'ai'\n`, 'lib.ts')
     expect(code).toBe(0)
     expect(rules).not.toContain('ai-sdk-major')
   })
 
   it('does NOT flag an unrelated import even with a skewed nearest package.json', () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '5.0.196' } }),
+    )
     const { code, rules } = run(`import { useState } from 'react'\n`, 'lib.ts')
     expect(code).toBe(0)
     expect(rules).not.toContain('ai-sdk-major')
@@ -385,14 +401,20 @@ describe('basalt/ai-sdk-major', () => {
   // The matcher covers TWO forms (source === 'ai' OR source.startsWith('@ai-sdk/')) — every
   // fixture above only exercises the bare 'ai' specifier; this pins the scoped-package half.
   it("flags a scoped '@ai-sdk/*' import when the nearest package.json declares a different ai major", () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '5.0.196' } }),
+    )
     const { code, rules } = run(`import { openai } from '@ai-sdk/openai'\n`, 'lib.ts')
     expect(code).toBe(1)
     expect(rules).toContain('ai-sdk-major')
   })
 
   it("does NOT flag a scoped '@ai-sdk/*' import when the nearest package.json declares the same major", () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '^7.0.18' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '^7.0.18' } }),
+    )
     const { code, rules } = run(`import { openai } from '@ai-sdk/openai'\n`, 'lib.ts')
     expect(code).toBe(0)
     expect(rules).not.toContain('ai-sdk-major')
@@ -402,7 +424,10 @@ describe('basalt/ai-sdk-major', () => {
   // token as its two agent-chat siblings above — not `theme-allow`. A skewed producer/consumer
   // import that is genuinely intentional (see doctor's `aiMajorSkewReason`) can mark the line.
   it('does NOT flag an import marked basalt-agent-allow, even with a skewed nearest package.json', () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '5.0.196' } }),
+    )
     const { code, rules } = run(
       `// basalt-agent-allow\nimport { streamText } from 'ai'\n`,
       'lib.ts',
@@ -412,8 +437,41 @@ describe('basalt/ai-sdk-major', () => {
   })
 
   it('STILL flags an import marked only theme-allow (wrong escape token)', () => {
-    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ dependencies: { 'basalt-ui': '^1.19.1', ai: '5.0.196' } }),
+    )
     const { code, rules } = run(`// theme-allow\nimport { streamText } from 'ai'\n`, 'lib.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('ai-sdk-major')
+  })
+
+  // The scoping fix: a workspace package with no basalt-ui dependency is not a basalt consumer, so
+  // its `ai` pin is none of this rule's business. rb's `apps/api` took 3 errors for exactly this,
+  // while `doctor` — which scopes the same concern by workspace — reported green.
+  it('does NOT flag a package that does not depend on basalt-ui at all', () => {
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ dependencies: { ai: '5.0.196' } }))
+    const { code, rules } = run(`import { streamText } from 'ai'\n`, 'lib.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('ai-sdk-major')
+  })
+
+  it('does NOT flag a file outside a declared basalt.roots', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ basalt: { roots: ['web/src'] }, dependencies: { ai: '5.0.196' } }),
+    )
+    const { code, rules } = run(`import { streamText } from 'ai'\n`, 'api/src/llm.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('ai-sdk-major')
+  })
+
+  it('DOES flag a file inside a declared basalt.roots', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ basalt: { roots: ['web/src'] }, dependencies: { ai: '5.0.196' } }),
+    )
+    const { code, rules } = run(`import { streamText } from 'ai'\n`, 'web/src/llm.ts')
     expect(code).toBe(1)
     expect(rules).toContain('ai-sdk-major')
   })
@@ -500,11 +558,13 @@ describe('basalt/hand-rolled-plot', () => {
     expect(rules).not.toContain('hand-rolled-plot')
   })
 
-  it('reports ONCE per file — declaring the exception is a file-level decision', () => {
+  // A `theme-allow` that NAMES the rule and gives a reason is a written declaration about the file,
+  // and still covers every assembly node in it — the DualPanel shape.
+  it('a named-with-a-reason declaration covers the whole file', () => {
     const { code, rules } = run(
       `${CHARTS_IMPORT}export const C = () => (
   <svg>
-    {/* theme-allow: multi-pane shape, not a single cartesian plot */}
+    {/* theme-allow basalt/hand-rolled-plot: multi-pane shape, not a single cartesian plot */}
     <AxisLeftNumeric scale={a} />
     <HoverOverlay width={1} height={1} />
     <Crosshair x={0} top={0} bottom={1} />
@@ -513,6 +573,37 @@ describe('basalt/hand-rolled-plot', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('hand-rolled-plot')
+  })
+
+  // The linewatch defect: a BARE comment used to buy the whole file permanent immunity, because
+  // only the first node was reported and the waiver was tested there. It now waives its own node
+  // and nothing else, so everything added to the file afterwards is still reported.
+  it('a bare theme-allow waives only the node it sits above, not the file', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => (
+  <svg>
+    {/* theme-allow */}
+    <AxisLeftNumeric scale={a} />
+    <HoverOverlay width={1} height={1} />
+  </svg>
+)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-plot')
+  })
+
+  // A comment written about something else must not double as a licence to hand-assemble a plot.
+  it('a theme-allow scoped to a DIFFERENT rule does not waive this one', () => {
+    const { code, rules } = run(
+      `${CHARTS_IMPORT}export const C = () => (
+  <svg>
+    {/* theme-allow raw-hex — the swatch below is a measured pixel */}
+    <AxisLeftNumeric scale={a} />
+  </svg>
+)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-plot')
   })
 
   it('does NOT flag a same-named component that is NOT a basalt chart primitive', () => {
@@ -581,5 +672,218 @@ describe('basalt/chart-legend-literal', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('chart-legend-literal')
+  })
+})
+
+// ── shadow-basalt-export ─────────────────────────────────────────────────────
+
+describe('basalt/shadow-basalt-export', () => {
+  it('flags a local component that collides with a basalt-ui root export', () => {
+    const { code, rules } = run(`export function EmptyState() { return null }\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('flags the arrow/const form too (rb shipped a local StatCard)', () => {
+    const { code, rules } = run(`const StatCard = () => null\nexport default StatCard\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('does NOT flag a name basalt does not export', () => {
+    const { code, rules } = run(`export function ExerciseSummaryCard() { return null }\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // The export list is derived from the real barrel, so a TYPE export must not create a collision:
+  // a local `StatCardProps` is an ordinary thing for a consumer to declare.
+  it('does NOT flag a name that basalt exports only as a type', () => {
+    const { code, rules } = run(`export type StatCardProps = { label: string }\n`, 'types.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('is waivable with a scoped theme-allow', () => {
+    const { code, rules } = run(
+      `// theme-allow basalt/shadow-basalt-export — domain-specific, unrelated to the shipped one\nexport function EmptyState() { return null }\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+})
+
+// ── hand-rolled-shell ────────────────────────────────────────────────────────
+
+describe('basalt/hand-rolled-shell', () => {
+  it('flags a hand-assembled Mantine AppShell', () => {
+    const { code, rules } = run(
+      `import { AppShell, Burger } from '@mantine/core'
+export const Shell = () => (
+  <AppShell>
+    <AppShell.Header><Burger opened={false} /></AppShell.Header>
+    <AppShell.Navbar>nav</AppShell.Navbar>
+  </AppShell>
+)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-shell')
+  })
+
+  it('does NOT flag a file that renders BasaltShell', () => {
+    const { code, rules } = run(
+      `import { AppShell } from '@mantine/core'
+import { BasaltShell } from 'basalt-ui'
+export const Shell = () => <BasaltShell sections={[]}><AppShell.Main>x</AppShell.Main></BasaltShell>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-shell')
+  })
+
+  // Exempt by DECLARATION, not by path — a rule saying "compose X" cannot fire inside X. (The
+  // fixture also trips `shadow-basalt-export`, which is correct for a consumer file and irrelevant
+  // here, so this asserts the rule set rather than the exit code.)
+  it('does NOT flag the module that DEFINES BasaltShell', () => {
+    const { rules } = run(
+      `import { AppShell } from '@mantine/core'
+export function BasaltShell() { return <AppShell.Navbar>nav</AppShell.Navbar> }\n`,
+    )
+    expect(rules).not.toContain('hand-rolled-shell')
+  })
+
+  it("does NOT flag a consumer's own AppShell-named component with no @mantine import", () => {
+    const { code, rules } = run(
+      `import { AppShell } from './my-layout'
+export const C = () => <AppShell.Navbar>nav</AppShell.Navbar>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-shell')
+  })
+
+  it('does NOT flag a standalone Mantine NavLink (deliberately not a trigger)', () => {
+    const { code, rules } = run(
+      `import { NavLink } from '@mantine/core'
+export const C = () => <NavLink label="Settings" />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-shell')
+  })
+})
+
+// ── grace ledger ↔ shipped preset ────────────────────────────────────────────
+
+describe('PLUGIN_RULE_GRACE', () => {
+  const shipped = JSON.parse(readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8')) as {
+    rules: Record<string, unknown>
+  }
+  const graceIds = Object.keys(PLUGIN_RULE_GRACE)
+  const shippedBasaltIds = Object.keys(shipped.rules).filter((id) => id.startsWith('basalt/'))
+
+  // The mechanism whose ABSENCE let three rules sit at `warn` for up to twelve minors with nothing
+  // tracking them. Deleting a ledger entry IS the promotion, and this test makes flipping the
+  // shipped level part of the same commit.
+  it('every ledger entry is warn in the shipped preset', () => {
+    for (const id of graceIds) expect(shipped.rules[`basalt/${id}`]).toBe('warn')
+  })
+
+  it('every shipped rule NOT in the ledger is error', () => {
+    for (const id of shippedBasaltIds) {
+      if (graceIds.includes(id.slice('basalt/'.length))) continue
+      expect([id, shipped.rules[id]]).toEqual([id, 'error'])
+    }
+  })
+
+  it('every ledger entry carries a written promotion note', () => {
+    for (const id of graceIds) {
+      expect((PLUGIN_RULE_GRACE as Record<string, string>)[id]?.length ?? 0).toBeGreaterThan(40)
+    }
+  })
+})
+
+// ── chart-legend-literal: the .map() half ────────────────────────────────────
+
+describe('basalt/chart-legend-literal — derived-from-series', () => {
+  const IMPORT = `import { ChartLegend } from 'basalt-ui/charts'\n`
+
+  // Deriving from *an* array is not deriving from *the* series: every field of a
+  // `refLines.map(...)` / `PACE_ZONES.map(...)` legend is authored at the call site, and the list
+  // can keep naming a band the plot no longer draws exactly like a `[...]` literal can.
+  it('flags a .map() over a non-series array', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const C = () => <ChartLegend items={refLines.map((r) => ({ key: r.k, label: r.l }))} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('chart-legend-literal')
+  })
+
+  it('does NOT flag a .map() over the series', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const C = () => <ChartLegend items={series.map((s) => ({ key: s.key }))} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
+
+  it('does NOT flag a .map() over a derived series binding', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const C = () => <ChartLegend items={visibleSeries.map((s) => ({ key: s.key }))} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
+
+  it('does NOT flag deriveLegend(series)', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const C = () => <ChartLegend items={deriveLegend(series)} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('chart-legend-literal')
+  })
+})
+
+// ── no-raw-font-size: style-context scoping ──────────────────────────────────
+
+describe('basalt/no-raw-font-size — style context', () => {
+  it('flags a fontSize inside a style attribute', () => {
+    const { code, rules } = run(`export const C = () => <div style={{ fontSize: 11 }} />\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
+  })
+
+  it('flags a fontSize inside a Mantine styles per-part object', () => {
+    const { code, rules } = run(
+      `export const C = () => <TextInput styles={{ input: { fontSize: 12 } }} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
+  })
+
+  it('flags a fontSize in a CSSProperties-annotated const', () => {
+    const { code, rules } = run(
+      `import type { CSSProperties } from 'react'\nconst rowLook: CSSProperties = { fontSize: 11 }\nexport { rowLook }\n`,
+      'look.ts',
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
+  })
+
+  // The obsidian false positive: a `fontSize` key in a plain data object, in a package with no
+  // React and no Mantine, where "route it through VX.text.*" is advice about another domain.
+  it('does NOT flag a fontSize key in a plain data object', () => {
+    const { code, rules } = run(
+      `export const iconizeData = { settings: { fontSize: 16 }, Inbox: 'LiInbox' }\n`,
+      'data.ts',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('no-raw-font-size')
+  })
+
+  it('does NOT run in a test file at all', () => {
+    const { code, rules } = run(
+      `export const C = () => <div style={{ fontSize: 11 }} />\n`,
+      'nav-config.test.tsx',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('no-raw-font-size')
   })
 })

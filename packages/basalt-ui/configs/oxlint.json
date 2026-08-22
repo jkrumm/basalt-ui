@@ -16,12 +16,21 @@
     "typescript/no-explicit-any": "warn",
     "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "no-underscore-dangle": [
+      "warn",
+      {
+        "allow": ["__APP_VERSION__"]
+      }
+    ],
     "basalt/no-raw-font-size": "error",
-    "basalt/raw-size-literal": "warn",
+    "basalt/raw-size-literal": "error",
     "basalt/card-inset": "error",
     "basalt/chart-in-raw-surface": "error",
     "basalt/hand-rolled-plot": "warn",
     "basalt/chart-legend-literal": "warn",
+    "basalt/shadow-basalt-export": "warn",
+    "basalt/hand-rolled-shell": "warn",
     "basalt/raw-scroll-container": "error",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",

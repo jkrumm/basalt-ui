@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 20 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 25 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'bun:test'
 import { pxRem } from '../tokens'
 import { SPACE_SCALE } from '../tokens/palette'
-import { checkSource, DEFAULT_GUARD_CONFIG } from './index'
+import { checkSource, DEFAULT_GUARD_CONFIG, TOKENS_ONLY_DISABLED_KINDS } from './index'
 import type { Finding, GuardKind } from './types'
 
 const PATH = 'src/Dashboard.tsx'
@@ -1004,14 +1004,19 @@ describe('raw-font-family', () => {
     expect(kinds(f)).toContain('raw-font-family')
   })
 
-  it('flags a fontFamily bound to a var(...) reference OUTSIDE the two allowed prefixes (the (b) bypass)', () => {
+  // A var() REFERENCE is not a literal, whichever custom property it names. The escape used to be
+  // restricted to `--basalt-font-*` / `--mantine-font-family-*`, which reported a framework-free
+  // consumer's `font-family: var(--font-sans)` as "a hardcoded fontFamily literal" and pointed the
+  // fix at the React-only `createBasaltTheme`. The single-entry-point invariant is doctrine for
+  // basalt's own theme layer; this regex cannot tell it apart from a consumer's own indirection.
+  it('does NOT flag a fontFamily bound to a var(...) reference outside basalt’s own prefixes', () => {
     const f = find(`fontFamily: 'var(--some-other-var)'`)
-    expect(kinds(f)).toContain('raw-font-family')
+    expect(kinds(f)).not.toContain('raw-font-family')
   })
 
-  it('flags a kebab-case font-family bound to a var(...) reference outside the allowed prefixes', () => {
-    const f = find(`font-family: var(--some-other-var);`)
-    expect(kinds(f)).toContain('raw-font-family')
+  it('does NOT flag a kebab-case font-family bound to a consumer var(...) reference', () => {
+    const f = find(`font-family: var(--font-sans);`)
+    expect(kinds(f)).not.toContain('raw-font-family')
   })
 
   it('does NOT flag a kebab-case font-family bound to var(--mantine-font-family-…)', () => {
@@ -1627,10 +1632,34 @@ describe('severity', () => {
     expect(f.find((v) => v.kind === 'raw-spacing')?.severity).toBe('error')
   })
 
-  it('ships no kind in its grace period today', () => {
-    // Every shipped kind is past its grace minor. This is a LEDGER, not a constraint: when a new
-    // kind lands warn-only, this expectation changes in the same commit, and changing it back is
-    // the promotion. A grace entry that outlives its minor shows up here as an unexplained diff.
+  // The grace ledger. Five kinds landed warn-only in the round-4 guard minor; deleting an entry
+  // from GRACE_PERIOD_KINDS is the promotion, and it shows up here as an explicit diff.
+  it.each([
+    'theme-allow-unscoped',
+    'surface-shadow-override',
+    'css-raw-surface',
+    'inline-font-size',
+    'hidden-inline-style',
+  ])('%s is still in its grace minor (warn)', (kind) => {
+    const cases: Record<string, [string, string]> = {
+      'theme-allow-unscoped': ['const x = 1 // theme-allow', PATH],
+      'surface-shadow-override': ['const s = { boxShadow: `0 0 0 2px ${VX.accent}` }', PATH],
+      'css-raw-surface': ['.a { border-radius: 6px; }', 'src/a.module.css'],
+      'inline-font-size': [`<div style={{ fontSize: 11 }} />`, PATH],
+      'hidden-inline-style': [
+        `const rowStyle = { display: 'flex', gap: 12 }\nexport const C = () => <div style={rowStyle} />`,
+        PATH,
+      ],
+    }
+    const [src, path] = cases[kind] as [string, string]
+    const hit = find(src, path).find((v) => v.kind === kind)
+    expect(hit?.severity).toBe('warn')
+  })
+
+  it('ships every OTHER kind past its grace period', () => {
+    // Not a constraint, a LEDGER: when a new kind lands warn-only, this expectation changes in the
+    // same commit, and changing it back is the promotion. A grace entry that outlives its minor
+    // shows up here as an unexplained diff.
     const cfg = DEFAULT_GUARD_CONFIG
     const everyKind = checkSource(
       `<Box p={${SPACE_SCALE.md}} radius={4} style={{ color: '#ff0000', gap: 3 }} />`,
@@ -1639,5 +1668,330 @@ describe('severity', () => {
     )
     expect(everyKind.length).toBeGreaterThan(0)
     expect(everyKind.every((v) => v.severity === 'error')).toBe(true)
+  })
+})
+
+// ── 21. theme-allow placement ────────────────────────────────────────────────
+
+describe('theme-allow placement', () => {
+  it('honours a standalone comment on the PRECEDING line (the JSX-legal form)', () => {
+    const f = find(
+      `export const C = () => (
+  {/* theme-allow raw-hex — brand asset, fixed by the vendor */}
+  <Box style={{ color: '#ff0000' }} />
+)`,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  // A TRAILING comment stays scoped to its own line: `const a = '#f00' // theme-allow` must not
+  // silently waive the next line as well.
+  it('does NOT let a trailing comment waive the line below it', () => {
+    const f = find(`const a = '#ff0000' // theme-allow raw-hex — vendor brand\nconst b = '#00ff00'`)
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+  })
+
+  // rb's defect: the shipped oxfmt reflows a long declaration and lands the comment on a different
+  // line than the value, so a same-line-only escape silently stops working. Verified against real
+  // oxfmt output — the hex ends up ABOVE the comment, which is why preceding-line support alone
+  // does not fix it and the walk goes backwards over the declaration.
+  it('reaches back over an oxfmt-reflowed CSS declaration', () => {
+    const f = find(
+      `.root {
+  background-color: var(
+    --mantine-color-body,
+    #232326
+  ); /* theme-allow raw-hex — Mantine body fallback for the pre-paint value */
+}`,
+      'src/styles.css',
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('stops the backward walk at the previous declaration', () => {
+    const f = find(
+      `.root {
+  color: #112233;
+  background: var(
+    #232326
+  ); /* theme-allow raw-hex — fallback */
+}`,
+      'src/styles.css',
+    )
+    expect(f.filter((x) => x.kind === 'raw-hex')).toHaveLength(1)
+    expect(f.find((x) => x.kind === 'raw-hex')?.line).toBe(2)
+  })
+})
+
+// ── 22. theme-allow rule scoping + accountability ────────────────────────────
+
+describe('theme-allow scoping', () => {
+  it('a scoped annotation waives only the kind it names', () => {
+    const f = find(
+      `<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} /> // theme-allow raw-hex — vendor brand`,
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+    expect(kinds(f)).toContain('raw-spacing')
+  })
+
+  it('a bare annotation still waives everything (back-compat) but is reported', () => {
+    const f = find(`<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} /> // theme-allow`)
+    expect(kinds(f)).not.toContain('raw-hex')
+    expect(kinds(f)).not.toContain('raw-spacing')
+    expect(kinds(f)).toContain('theme-allow-unscoped')
+  })
+
+  it('reports a reason-less scoped annotation too', () => {
+    const f = find(`<Box style={{ color: '#ff0000' }} /> // theme-allow raw-hex`)
+    expect(kinds(f)).toContain('theme-allow-unscoped')
+  })
+
+  it('accepts the accountable form silently', () => {
+    const f = find(
+      `<Box style={{ color: '#ff0000' }} /> // theme-allow raw-hex — vendor brand asset`,
+    )
+    expect(f).toHaveLength(0)
+  })
+
+  it('accepts a basalt/-prefixed plugin rule id as accountable', () => {
+    const f = find(`const x = 1 // theme-allow basalt/hand-rolled-plot — multi-pane, not one plot`)
+    expect(f).toHaveLength(0)
+  })
+
+  // A reason written without a separator must not be mistaken for a list of rule ids — that would
+  // scope the exception to rules nobody has and silently un-suppress a passing line.
+  it('treats an unknown word as the start of the reason, not a rule id', () => {
+    const f = find(`<Box style={{ color: '#ff0000' }} /> // theme-allow legacy vendor asset`)
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  it('ships theme-allow-unscoped as a warning, not a build failure', () => {
+    const f = find(`const x = 1 // theme-allow`)
+    expect(f.every((v) => v.severity === 'warn')).toBe(true)
+  })
+
+  // The annotation itself lives in a comment; a `theme-allow` in real code must not waive anything.
+  it('ignores the token when it is not inside a comment', () => {
+    const f = find(`const label = 'theme-allow'\nconst c = '#ff0000'`)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+})
+
+// ── 23. surface-shadow-override ──────────────────────────────────────────────
+
+describe('surface-shadow-override', () => {
+  it('flags a token-composed shadow that REPLACES card depth', () => {
+    const f = find('const s = { boxShadow: `0 0 0 2px ${VX.accent}` }')
+    expect(kinds(f)).toContain('surface-shadow-override')
+  })
+
+  it('does NOT flag one that composes WITH card depth', () => {
+    const f = find('const s = { boxShadow: `${VX.shadowCard}, 0 0 0 2px ${VX.accent}` }')
+    expect(kinds(f)).not.toContain('surface-shadow-override')
+  })
+
+  it('does NOT flag a var(--vx-shadow-…) reference', () => {
+    const f = find(`const s = { boxShadow: 'var(--vx-shadow-card)' }`)
+    expect(kinds(f)).not.toContain('surface-shadow-override')
+  })
+
+  it('still reports a fully literal shadow as raw-surface, not the new kind', () => {
+    const f = find(`const s = { boxShadow: '0 1px 3px black' }`)
+    expect(kinds(f)).toContain('raw-surface')
+    expect(kinds(f)).not.toContain('surface-shadow-override')
+  })
+
+  it('ships as a warning for its grace minor', () => {
+    const f = find('const s = { boxShadow: `0 0 0 2px ${VX.accent}` }')
+    expect(f.find((v) => v.kind === 'surface-shadow-override')?.severity).toBe('warn')
+  })
+})
+
+// ── 24. css-raw-surface ──────────────────────────────────────────────────────
+
+describe('css-raw-surface', () => {
+  it('flags a kebab-case border-radius literal in CSS', () => {
+    const f = find('.a { border-radius: 4px; }', 'src/a.module.css')
+    expect(kinds(f)).toContain('css-raw-surface')
+  })
+
+  it('does NOT flag a var(--vx-radius-…) reference', () => {
+    const f = find('.a { border-radius: var(--vx-radius-card); }', 'src/a.module.css')
+    expect(kinds(f)).not.toContain('css-raw-surface')
+  })
+
+  it('does NOT flag a sub-scale micro-corner below the 4px floor', () => {
+    const f = find('.a { border-radius: 2px; }', 'src/a.module.css')
+    expect(kinds(f)).not.toContain('css-raw-surface')
+  })
+
+  it('does NOT flag the circle/pill shape values', () => {
+    const f = find('.a { border-radius: 50%; }\n.b { border-radius: 9999px; }', 'src/a.module.css')
+    expect(kinds(f)).not.toContain('css-raw-surface')
+  })
+
+  it('flags a literal box-shadow in CSS', () => {
+    const f = find('.a { box-shadow: 0 1px 3px rgba(0,0,0,0.2); }', 'src/a.module.css')
+    expect(kinds(f)).toContain('css-raw-surface')
+  })
+
+  it('never fires in TSX (the camelCase dialect is raw-surface’s)', () => {
+    const f = find(`<div style={{ borderRadius: 8 }} />`)
+    expect(kinds(f)).not.toContain('css-raw-surface')
+    expect(kinds(f)).toContain('raw-surface')
+  })
+})
+
+// ── 25. inline-font-size ─────────────────────────────────────────────────────
+
+describe('inline-font-size', () => {
+  it('flags a unitless inline fontSize (the check-theme-only CI gap)', () => {
+    const f = find(`<div style={{ padding: '6px 8px', fontSize: 11 }} />`)
+    expect(kinds(f)).toContain('inline-font-size')
+  })
+
+  it('flags a px font-size in CSS', () => {
+    const f = find('.a { font-size: 13px; }', 'src/a.module.css')
+    expect(kinds(f)).toContain('inline-font-size')
+  })
+
+  it('does NOT flag a token reference', () => {
+    const f = find(`<div style={{ fontSize: VX.text.sm }} />`)
+    expect(kinds(f)).not.toContain('inline-font-size')
+  })
+
+  it('does NOT flag a relative unit', () => {
+    const f = find('.a { font-size: 0.8rem; }', 'src/a.module.css')
+    expect(kinds(f)).not.toContain('inline-font-size')
+  })
+})
+
+// ── 26. hidden-inline-style ──────────────────────────────────────────────────
+
+describe('hidden-inline-style', () => {
+  it('flags a multi-line-formatted raw div the line scan cannot see', () => {
+    const f = find(
+      `export const C = () => (
+  <div
+    className="x"
+    style={{
+      display: 'flex',
+      padding: 12,
+    }}
+  />
+)`,
+    )
+    expect(kinds(f)).toContain('hidden-inline-style')
+  })
+
+  it('flags a hoisted style const passed by identifier', () => {
+    const f = find(
+      `const wrapperStyle = { position: 'relative', width: '100%' }
+export const C = () => <div className="x" style={wrapperStyle} />`,
+    )
+    expect(kinds(f)).toContain('hidden-inline-style')
+  })
+
+  it('does NOT double-report what raw-html-layout already owns', () => {
+    const f = find(`<div style={{ display: 'flex', padding: 12 }} />`)
+    expect(kinds(f)).toContain('raw-html-layout')
+    expect(kinds(f)).not.toContain('hidden-inline-style')
+  })
+
+  it('does NOT flag a hoisted const with no layout/surface property', () => {
+    const f = find(
+      `const labelStyle = { fontWeight: 500 }
+export const C = () => <div style={labelStyle} />`,
+    )
+    expect(kinds(f)).not.toContain('hidden-inline-style')
+  })
+
+  it('ships as a warning for its grace minor', () => {
+    const f = find(
+      `const wrapperStyle = { position: 'relative', width: '100%' }
+export const C = () => <div style={wrapperStyle} />`,
+    )
+    expect(f.find((v) => v.kind === 'hidden-inline-style')?.severity).toBe('warn')
+  })
+})
+
+// ── 27. raw-color-fn on computed colors ──────────────────────────────────────
+
+describe('raw-color-fn — computed values', () => {
+  it('does NOT flag a color function whose first channel is interpolated', () => {
+    const f = find('const swatch = `rgb(${px[0]}, ${px[1]}, ${px[2]})`')
+    expect(kinds(f)).not.toContain('raw-color-fn')
+  })
+
+  it('still flags a literal color with only a variable alpha', () => {
+    const f = find('const s = `rgba(0, 0, 0, ${opacity})`')
+    expect(kinds(f)).toContain('raw-color-fn')
+  })
+})
+
+// ── 28. generated-file marker ────────────────────────────────────────────────
+
+describe('@generated basalt-ui marker', () => {
+  const EMITTED = `/* @generated basalt-ui 1.19.1 — do not edit */\n:root { --vx-fill-gray: #717176; --vx-axis: rgba(255,255,255,0.6); }\n`
+
+  it('skips a file basalt itself emitted', () => {
+    expect(find(EMITTED, 'src/styles/basalt-tokens.css')).toHaveLength(0)
+  })
+
+  it('honours the marker only as a HEADER', () => {
+    const buried = `${'\n'.repeat(8)}/* @generated basalt-ui */\n.a { color: #ff0000; }\n`
+    expect(kinds(find(buried, 'src/a.css'))).toContain('raw-hex')
+  })
+})
+
+// ── 29. markup files ─────────────────────────────────────────────────────────
+
+describe('markup files (index.html / *.webmanifest)', () => {
+  it('flags raw hex in index.html', () => {
+    const f = find(`<meta name="theme-color" content="#EDEFF2" />`, 'index.html')
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('flags raw hex in a webmanifest', () => {
+    const f = find(`{ "theme_color": "#242424" }`, 'public/site.webmanifest')
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('does not apply the JSX/CSS-in-JS kinds there', () => {
+    const f = find(`<div style="padding: 18px"><input /></div>`, 'index.html')
+    expect(kinds(f)).not.toContain('raw-form-control')
+    expect(kinds(f)).not.toContain('inline-spacing')
+  })
+
+  it('honours a theme-allow inside an HTML comment', () => {
+    const f = find(
+      `<!-- theme-allow raw-hex — favicon mask color -->\n<meta content="#EDEFF2" />`,
+      'index.html',
+    )
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+})
+
+// ── 30. tokens-only profile ──────────────────────────────────────────────────
+
+describe("profile: 'tokens-only'", () => {
+  const TOKENS_ONLY = { ...DEFAULT_GUARD_CONFIG, profile: 'tokens-only' as const }
+
+  it('drops the kinds whose remedy is a Mantine component', () => {
+    const src = `<input /> // a Mantine-free consumer has no TextInput to reach for`
+    expect(kinds(checkSource(src, PATH, DEFAULT_GUARD_CONFIG))).toContain('raw-form-control')
+    expect(kinds(checkSource(src, PATH, TOKENS_ONLY))).not.toContain('raw-form-control')
+  })
+
+  it('keeps the color kinds — the token layer IS what they consume', () => {
+    const f = checkSource(`.a { color: #ff0000; }`, 'src/a.css', TOKENS_ONLY)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('the disabled set names only Mantine-coupled kinds', () => {
+    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-hex')).toBe(false)
+    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-color-fn')).toBe(false)
+    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-font-family')).toBe(false)
+    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-form-control')).toBe(true)
   })
 })
