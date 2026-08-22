@@ -8,9 +8,10 @@ renamed exports per minor, with the replacement.
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
 cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every replacement below
 was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
-row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.21.0, 1.22.0 and
-`Unreleased` sections were written against source, not against their commit messages. Check the
-types, not this table, if the two disagree.
+row that was wrong. That pass corrected 4 table rows and 3 prose claims. Every section from 1.21.0
+on was written against source, not against its commit messages — which is not a formality: one
+1.23.0 commit message describes a change it did not make (see `Unreleased` § Corrections). Check
+the types, not this table, if the two disagree.
 
 **The newest section is headed `## Unreleased`, and stays that way until npm serves it.** This file
 is written before `semantic-release` picks the number, so a number written here is a guess — and it
@@ -38,6 +39,85 @@ version npm never served — `1.20.1`, then `1.21.1` — because this file is wr
 version `CHANGELOG.md` does not record. This file is not in that set; the same discipline applies
 by convention. Rename the section at release, or leave it — a reader can resolve `Unreleased`
 against `CHANGELOG.md`, and could never resolve `1.21.1`.
+
+**One type widened, nothing removed or renamed.** `BandStripSeries.formatValue` is now
+`(d: T) => string | null`. `null` renders an em dash — an absent READING — which `''` never could:
+`''` is a state whose label is the whole row. Every existing `(d) => string` still typechecks.
+
+**A typo'd `BandSpan.state` no longer renders as absence.** A state naming no `series` entry used to
+be skipped, so the band was simply not drawn — and on a measured/not-measured strip a missing band
+is a claim about the data, not an "unknown". A misspelling asserted a reading nobody took, in a mark
+indistinguishable from a real one.
+
+| Key comes off                                                 | Dev                                      | Production                                                               |
+| ------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| the DATUM — `BandSpan.state`, `marker.state`                  | throws, naming the key and the valid set | a dashed neutral outline band + an `Unknown state` / `<key>` tooltip row |
+| a PROP — `absentState`, `MirroredBars`' `up.key` / `down.key` | throws                                   | throws                                                                   |
+
+The split is the whole design. `state` comes off data, so a feed that grows a state basalt has never
+seen must degrade rather than take a dashboard down — while a typo, which is the same input, still
+fails loudly wherever it is being written. The dashed neutral outline belongs to no legend entry and
+no state fill, so it cannot read as data. Pane keys are props, never data-driven, so `assertPaneKey`
+throws in every environment: an unresolvable `up.key` used to hide the pane AND its axis, which
+reads as "that half measured zero" — the one thing `MirroredBars` exists to keep apart from absence.
+
+**`chart-missing-aria-label` and `unframed-chart` are gated on where the tag came from.** Both key
+on a JSX tag NAME, so a consumer's own 235-line `MirroredBars` — sharing nothing with the shipped
+kind but the name — was told to pass an `ariaLabel` prop it does not accept, by a rule that presents
+as a correctness finding. A tag is now skipped only when the file DEFINES a component of that name
+and does not also import it from `basalt-ui`. Deliberately one-directional: a tag imported from
+basalt-ui, one imported from a consumer barrel that re-exports it, and one the scan cannot attribute
+at all still all fire. Verified old-vs-new over **945 source files across six repos: 0 findings
+lost, 0 gained.**
+
+**CLI: `--version` exists, and no subcommand fails open on a flag.** `--version` / `-v` / `version`
+print one bare greppable line and exit 0, resolved BEFORE dispatch so it can never run a command to
+answer "which basalt-ui is this". Six consumer reports reached for it in one round; all six fell
+back to `info --json`.
+
+The larger fix sits underneath it. **Every subcommand validates its flags** and exits 1 naming the
+one it does not accept — `doctor --json` used to run doctor and exit **0**, and `check-theme
+--audit-allow` scanned and reported success. An unknown COMMAND now says so above the usage block
+instead of dumping help and letting the dump read like a choice.
+
+- **`doctor` reads `basaltAppPlugin({ icons })`** out of the consumer's vite config instead of
+  hardcoding six filenames, so adopting 1.23.0's icons array stops producing a warning to generate
+  five files you deliberately lack. A named array is checked against itself (an icon missing from
+  `public/` still warns); an unparseable or absent config falls back to the six-filename check. It
+  can only narrow, never blind.
+- **`doctor` and `sync` share one sentence about a parent install** (`parentInstallAdvice`). Run
+  from a package whose install is above it, `doctor` now names the parent and says `basalt-ui init`
+  is NOT the fix. Following its old advice literally scaffolded the second consumer that 1.22.0
+  exists to prevent.
+- **Every seeded invocation resolves the local bin** (`basaltBinCommand`, overridable via
+  `BASALT_BIN`): the `lint` script, the CI steps, the `.claude` PreToolUse hook and doctor's own
+  advice all render `./node_modules/.bin/basalt-ui`. `bunx` does not re-resolve a package it has
+  cached — that is what made a round-7 report file a P0 against a 1.20.0 cache while believing it
+  was on 1.22.0, and the seed was shipping `bunx` into consumer CI in ten places.
+  `configs/lefthook.yml`'s `${BASALT_BIN:-bunx --no-install basalt-ui}` default is unchanged and
+  deliberate: `--no-install` fails loudly instead of downloading a stranger.
+- **`tokens:css --check` blanks the provenance line (line 2) before comparing**, so a version bump
+  alone no longer forces a no-op commit in a tokens-only consumer, where the gate is byte-equality.
+  A stale provenance line is now a note on an otherwise-passing check. The `@generated` header is
+  still emitted byte-identical — the line stays, it just stops gating.
+
+### Corrections to the record
+
+- **All six round-8 reports said `basalt-ui --version` "exits 0 printing usage". It exited 1, to
+  stderr** — the dispatcher's `default:` branch has always been `console.error(USAGE); return 1`.
+  The real fail-open was an unknown FLAG, which no report tested, and the misdiagnosis was relayed
+  verbatim into the fix brief. Report the symptom you measured, not the one you inferred from it.
+- **`cb4e5b7`'s message is wrong** (`b9b99a6` on `origin/feat/round-7-band-kinds` is the same commit
+  pre-merge), and it is on `master` where it cannot be rewritten. It claims it taught
+  `unframed-chart` the two new kinds; it widened `CHART_ENTRY_POINT_TAG`, which only
+  `chart-missing-aria-label` reads. `unframed-chart` keys on `<ChartLegend items={[` and carries no
+  kind list at all — there was never an asymmetric pair to fix.
+- **Open question, not a plan.** The import gate does not make `CHART_ENTRY_POINT_TAG` or the oxlint
+  plugin's `CHART_TAGS` redundant: that list still answers _which_ tags owe an `ariaLabel`. The gate
+  only converts a kind missing from the list from a false positive into an under-report. Collapsing
+  the two lists is a separate, larger change and has not been made.
+
+## 1.23.0 — two band kinds, an x-tick seam, CLI resolution
 
 **No export removed or renamed; six new runtime exports and nine new types.** Nothing you wrote
 changed. Every entry is additive, and the batch runs the other way from the last three: those made
@@ -72,7 +152,9 @@ unchanged and still works; omit both and ticks are chosen to fit (`smartTicks`),
 Reach for it on a dense time axis: the tick choosers append the final key unconditionally, so a
 COUNT that does not land on the last index paints two labels on top of each other at the right edge
 — at every count, not at an unlucky one. On the consumer that reported it, the local tick helper
-went 200 → 160 lines; it shrinks, it does not disappear.
+went 200 → 170 lines; it shrinks, it does not disappear. (The promise was 160. The 10-line miss is
+docblock — the port's own JSDoc grew, because the helper stopped being a fallback and became the one
+seam every chart on the page passes through.)
 
 **`basaltAppPlugin`'s `icons` takes an array now.**
 

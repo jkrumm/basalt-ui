@@ -450,6 +450,16 @@ bar panes over one x scale and one baseline, each in its own domain. Both fold t
 width, hatch the share of a slot nothing measured, and share the page cursor like every other
 chart.
 
+On a strip, `series` IS the state set, so a `state` naming no entry has no colour, no legend entry
+and no tooltip row. It **throws in dev**, naming the key and the valid set; in production it draws a
+dashed neutral outline band — a treatment no legend entry and no state fill uses — plus an
+`Unknown state` tooltip row. Drawing nothing was the old behaviour and the wrong one: on a
+measured/not-measured strip a missing band claims a coverage gap. `absentState` and `MirroredBars`'
+`up.key`/`down.key` are PROPS rather than data, so those throw in every environment; an
+unresolvable pane key used to hide the pane and its axis, which reads as a measured zero.
+`BandStripSeries.formatValue` returns `string | null`, `null` rendering an em dash — an absent
+reading, distinct from `''`, which is a state whose label is the whole row.
+
 Which x ticks get painted is `xTickValues?: (keys, xMax) => readonly string[]`, on
 `CartesianChart` and forwarded by `Bars`/`MultiLine`/`StackedArea`/`ZonedLine` and both band kinds.
 It resolves ahead of the `xTicks` COUNT, which is unchanged; omit both and ticks are chosen to fit.
@@ -694,18 +704,23 @@ Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `
 ## CLI
 
 ```bash
-bunx basalt-ui init              # scaffold doctrine into a consumer repo
-bunx basalt-ui sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
-bunx basalt-ui sync --check      # CI drift gate — non-zero exit on any managed-file drift
-bunx basalt-ui check-theme       # palette guard — fails on colors that bypass the central --vx-* system
-bunx basalt-ui doctor            # integration health: basalt-resolves, guard-scan, oxlint-preset, manifest presence, node_modules-vs-manifest version, spacing-scale drift, and a cross-package `ai` major-version parity check (HARD failure — walks every workspace manifest, exemptable via `basalt.aiMajorSkewReason` — see above) + warn on missing basaltAppPlugin icon files under public/
-bunx basalt-ui doctor --tokens-only   # force the Mantine-free profile (auto-detected otherwise; --framework forces the full set)
+bunx basalt-ui init              # scaffold doctrine into a consumer repo — the one command with no install to resolve
+basalt-ui --version              # one bare line, exit 0 (also -v / version) — which CLI is actually running
+basalt-ui sync                   # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
+basalt-ui sync --check           # CI drift gate — non-zero exit on any managed-file drift
+basalt-ui check-theme            # palette guard — fails on colors that bypass the central --vx-* system
+basalt-ui doctor                 # integration health: basalt-resolves, guard-scan, oxlint-preset, lefthook-preset, manifest presence, node_modules-vs-manifest version, spacing-scale drift, and a cross-package `ai` major-version parity check (HARD failure — walks every workspace manifest, exemptable via `basalt.aiMajorSkewReason` — see above) + warn on an icon file basaltAppPlugin references and public/ does not have
+basalt-ui doctor --tokens-only   # force the Mantine-free profile (auto-detected otherwise; --framework forces the full set)
 bunx basalt-ui tokens:css --out src/tokens.css     # emit the --vx-* stylesheet as a file you own
 bunx basalt-ui fonts:css --out src/fonts.css       # emit the shipped --basalt-font-* stacks
-bunx basalt-ui info              # human-readable surface map: subpath, layer, rule, skills, optional peers
-bunx basalt-ui info --json       # same map as stable JSON (InfoOutput shape)
-bunx basalt-ui help              # full usage; every subcommand also takes --help / -h
+basalt-ui info --json            # surface map as stable JSON (InfoOutput shape); bare `info` is the human-readable form
+basalt-ui help                   # full usage; every subcommand also takes --help / -h
 ```
+
+**Nothing fails open.** `--version` resolves before dispatch, so it can never run a command to
+answer which CLI ran. Every subcommand validates its flags and exits 1 naming the first one it does
+not accept — `doctor --json` used to run doctor and exit **0**, and `check-theme --audit-allow`
+scanned and reported success. An unknown command says so above the usage block.
 
 `doctor` reports **`SKIPPED`** as a third outcome beside pass/warn/fail and exits non-zero on it —
 "All checks passed" is only printable when every check actually ran. **`check-theme`, `doctor` and
@@ -715,13 +730,15 @@ ambiguous, never guessed. The scan is what a repo declaring **no `workspaces` fi
 the install one level down and nothing declaring it, every command answered about the root and
 found nothing there: `check-theme` printed "no off-palette colors" having scanned zero files, and
 `doctor` inferred `tokens-only` for a full Mantine consumer. `tokens:css` and `fonts:css` both take
-`--check` as a CI drift gate.
+`--check` as a CI drift gate, comparing everything but the header's provenance line — so a
+basalt-ui version bump alone never forces a no-op commit in a tokens-only consumer.
 
-**Verify an upgrade against the local bin, not `bunx`.** `bunx` does not re-resolve a package it
-has already cached, so a `bunx basalt-ui …` run can execute a version you upgraded away from —
-which is exactly how a fixed defect gets re-reported. Prefer `./node_modules/.bin/basalt-ui` (or
-`bun run` a script that does) when the point of the run is to check what the installed version
-does.
+**Run the local bin, not `bunx`.** `bunx` does not re-resolve a package it has already cached, so a
+`bunx basalt-ui …` run can execute a version you upgraded away from — which is how one consumer
+filed a P0 against a 1.20.0 cache while pinned to 1.22.0. `init` and `sync` now render every seeded
+script, CI step, hook and piece of doctor advice with the resolved `./node_modules/.bin/basalt-ui`
+(`BASALT_BIN` overrides it, and `configs/lefthook.yml` keeps `bunx --no-install` as a deliberately
+loud fallback). `basalt-ui --version` is the one-second check.
 
 `sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff);
 missing → recreate. `--force` overwrites local edits. The summary counts `created` and `recreated`
@@ -736,7 +753,9 @@ release.
 `check-theme` and `doctor` do, and since 1.22.0 **exits 1** when the resolved project has no
 `.basalt/manifest.json`, naming the install it found above instead of scaffolding a second one
 beside it. Run it at the package that holds the manifest, or point `BASALT_CWD` at that package.
-Creating an install is `basalt-ui init`'s decision.
+Creating an install is `basalt-ui init`'s decision — and `doctor` now says the same sentence from
+the same directory, where it used to prescribe `init` and so recommend the very scaffold that
+refusal exists to prevent.
 
 ---
 
