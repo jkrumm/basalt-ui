@@ -242,7 +242,10 @@ export type BasaltAppOptions = {
   scope?: string
   /** Manifest `id`. Default: the resolved `startUrl` (default- or explicitly-derived, per above). */
   id?: string
-  /** Icon links + manifest icon paths. `false` skips the head `<link>` icons entirely. */
+  /**
+   * Icon links + manifest icon paths. `false` skips BOTH — the head `<link>` icons and the
+   * manifest's `icons` array — so a manifest is never emitted pointing at files that 404.
+   */
   icons?: false | { dir?: string }
   /** Emits `<meta name="darkreader-lock">` when `'lock'` (default). Pass `false` to omit it. */
   darkreader?: 'lock' | false
@@ -588,6 +591,7 @@ function buildManifestJson(input: {
   display: NonNullable<BasaltAppOptions['display']>
   schemeColor: string
   backgroundColor: string
+  iconsEnabled: boolean
   iconsDir: string | undefined
   base: string
 }): string {
@@ -600,6 +604,7 @@ function buildManifestJson(input: {
     display,
     schemeColor,
     backgroundColor,
+    iconsEnabled,
     iconsDir,
     base,
   } = input
@@ -615,19 +620,27 @@ function buildManifestJson(input: {
     // `<meta name="theme-color">` pair. Unchanged for the default (`'dark'`) and for `'auto'`.
     theme_color: schemeColor,
     background_color: backgroundColor,
-    icons: [
-      {
-        src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest192)),
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest512)),
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'any maskable',
-      },
-    ],
+    // `icons: false` reaches HERE too, not just the head links. The array was unconditional, so
+    // `{ manifest: true, icons: false }` shipped a manifest pointing at two PNGs the app never
+    // ships — an installable app with broken icons, and the reason rb went hybrid (plugin for the
+    // head, a hand-written manifest for the rest). A manifest with NO icons member is valid.
+    ...(iconsEnabled
+      ? {
+          icons: [
+            {
+              src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest192)),
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest512)),
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable',
+            },
+          ],
+        }
+      : {}),
   }
   return JSON.stringify(manifest, null, 2)
 }
@@ -680,6 +693,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         display,
         schemeColor,
         backgroundColor,
+        iconsEnabled,
         iconsDir,
         base,
       })
