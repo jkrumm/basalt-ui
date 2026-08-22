@@ -574,10 +574,12 @@ const cardInset = {
 // ── Rule 3 — chart-in-raw-surface ───────────────────────────────────────────────────────────────
 
 const CHART_TAGS = new Set([
+  'BandStrip',
   'Bars',
   'Donut',
   'DualPanel',
   'Heatmap',
+  'MirroredBars',
   'MultiLine',
   'StackedArea',
   'ZonedLine',
