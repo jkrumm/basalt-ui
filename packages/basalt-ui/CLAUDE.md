@@ -446,7 +446,7 @@ New props: `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `meta.
 `meta.numeral`, `verticalSpacing`, `horizontalSpacing`, `withRowBorders`, `withTableBorder`, and
 `striped` widened to `boolean | 'odd' | 'even'`.
 
-**argo's three tables went 341 → 370 lines. 29 longer.** argo named these props as the reason the
+**argo's three tables went 341 → 370–379 lines. 29–38 longer.** argo named these props as the reason the
 tables stayed hand-rolled; adding them shortened nothing. Column defs cost more lines than JSX rows
 when every cell is bespoke — eight accessor blocks at 4–6 lines each against an eight-`<Table.Td>`
 row at ~3. **The ask was mis-specified**, and that is the counterexample to the band kinds: the

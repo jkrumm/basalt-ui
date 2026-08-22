@@ -85,7 +85,7 @@ New: `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `verticalSpa
 defaults to `true` in basalt, overriding Mantine's `false`; every other one is a conditional
 pass-through, so omitting it keeps Mantine's default.
 
-**Porting argo's three tables onto them made them 341 → 370 lines. 29 LONGER.** argo named these
+**Porting argo's three tables onto them made them 341 → 370–379 lines. 29–38 LONGER.** argo named these
 props as the reason the tables stayed hand-rolled, and adding them shortened nothing: column defs
 cost more than JSX rows when every cell is bespoke — eight accessor blocks at 4–6 lines each against
 an eight-`<Table.Td>` row at ~3. **The ask was mis-specified.** Adopt them for what they buy —

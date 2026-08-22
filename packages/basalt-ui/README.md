@@ -625,7 +625,7 @@ const columns = [
 - `emptyState` renders inside a `<td colSpan>`, so the header row survives an empty table. There is
   no mode that replaces the whole table.
 
-**Honest result:** porting argo's three tables onto these props made them 341 → **370** lines, 29
+**Honest result:** porting argo's three tables onto these props made them 341 → **370–379** lines, 29–38
 longer. Column defs cost more than JSX rows when every cell is bespoke. Adopt the props for what
 they actually buy — the `type="native"` footgun, alignment stated once instead of on both `th` and
 `td`, and sorting/filtering/pagination owned by basalt — not for a line count.
