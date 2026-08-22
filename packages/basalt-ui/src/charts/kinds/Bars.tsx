@@ -107,8 +107,12 @@ export type BarsProps<T> = {
   /** Per-bar opacity override. Receives the data point + bar key. Default 0.85. */
   barOpacity?: (d: T, key: string) => number
 
-  /** X tick count override. Default: as many as fit. */
+  /** Exact number of x ticks. Default: as many as fit. Ignored when `xTickValues` is set. */
   xTicks?: number
+  /** Which domain keys get a tick, from the full key list and the resolved plot width. Takes
+   * precedence over `xTicks` — see `CartesianChartProps.xTickValues` for why a count is not
+   * always enough. */
+  xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
   /**
@@ -161,6 +165,7 @@ function BarsInner<T>(props: BarsProps<T>) {
     barLayout = 'stacked',
     barOpacity,
     xTicks,
+    xTickValues,
     formatX,
     cursorResolution,
     tooltip,
@@ -280,6 +285,7 @@ function BarsInner<T>(props: BarsProps<T>) {
       y={yConfig}
       {...(y2 !== undefined && { y2 })}
       {...(xTicks !== undefined && { xTicks })}
+      {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(zones !== undefined && { zones })}

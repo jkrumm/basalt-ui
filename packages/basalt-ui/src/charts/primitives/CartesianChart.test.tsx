@@ -439,3 +439,77 @@ describe('tooltip.onFollow — a follower whose domain never resolves the broadc
     expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
   })
 })
+
+/**
+ * `xTickValues` — the seam a tick COUNT cannot express.
+ *
+ * `smartTicks`/`smartTicksEvery` append the final key unconditionally, so when the step misses the
+ * last index that appended tick lands a partial step from its neighbour and two rich labels print
+ * on top of each other at the right edge. No count fixes that; only choosing the VALUES does. It is
+ * the same prop `BandStrip`/`MirroredBars` take, so the seam does not fork by kind.
+ */
+describe('CartesianChart — xTickValues', () => {
+  const many: Row[] = Array.from({ length: 12 }, (_, i) => ({
+    date: `2026-08-${String(i + 1).padStart(2, '0')}`,
+    a: i,
+    b: i,
+  }))
+
+  const axisText = (markup: string): string =>
+    (/<g class="visx-axis-bottom[\s\S]*?<\/g><\/g>/.exec(markup)?.[0] ?? markup).replace(
+      /<[^>]+>/g,
+      ' ',
+    )
+
+  const renderWith = (props: Partial<Parameters<typeof CartesianChart<Row>>[0]>): string =>
+    renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={many}
+        chartId="ctv"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        formatX={(key) => key}
+        {...props}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+
+  test('picks exactly the keys the callback returns, and is handed the width to pick from', () => {
+    const seen: { count: number; width: number }[] = []
+    const markup = renderWith({
+      xTickValues: (keys, xMax) => {
+        seen.push({ count: keys.length, width: xMax })
+        return ['2026-08-02', '2026-08-07']
+      },
+    })
+    // Every key reaches the callback, alongside the plot width the chart already measured —
+    // which is the second half of the seam: no `useChartSize` box outside the chart.
+    expect(seen[0]?.count).toBe(12)
+    expect(seen[0]?.width).toBeGreaterThan(0)
+
+    const text = axisText(markup)
+    expect(text).toContain('2026-08-02')
+    expect(text).toContain('2026-08-07')
+    // ...and nothing else. A count could never have produced this pair.
+    expect(text).not.toContain('2026-08-01')
+    expect(text).not.toContain('2026-08-12')
+  })
+
+  test('takes precedence over xTicks, which keeps working on its own', () => {
+    const both = axisText(renderWith({ xTicks: 6, xTickValues: () => ['2026-08-05'] }))
+    expect(both).toContain('2026-08-05')
+    expect(both).not.toContain('2026-08-01')
+
+    // The count form is untouched: `smartTicksEvery` still appends the final key.
+    const countOnly = axisText(renderWith({ xTicks: 3 }))
+    expect(countOnly).toContain('2026-08-01')
+    expect(countOnly).toContain('2026-08-12')
+  })
+
+  test('returning no values draws a bare axis rather than falling back to smartTicks', () => {
+    const text = axisText(renderWith({ xTickValues: () => [] }))
+    expect(text).not.toContain('2026-08-')
+  })
+})

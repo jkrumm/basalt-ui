@@ -20,8 +20,12 @@ export type StackedAreaProps<T> = {
    * chart needs, since the plotted quantity is the cumulative band top, not any one series' own
    * value. Pass a fixed tuple or your own function to override. */
   y?: AxisConfig<T>
-  /** X tick count override. Default: as many as fit. */
+  /** Exact number of x ticks. Default: as many as fit. Ignored when `xTickValues` is set. */
   xTicks?: number
+  /** Which domain keys get a tick, from the full key list and the resolved plot width. Takes
+   * precedence over `xTicks` — see `CartesianChartProps.xTickValues` for why a count is not
+   * always enough. */
+  xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
   /**
@@ -60,6 +64,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
     series,
     y,
     xTicks,
+    xTickValues,
     formatX,
     cursorResolution,
     height,
@@ -121,6 +126,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       y={yConfig}
       cursorValue={stackedCursorValue}
       {...(xTicks !== undefined && { xTicks })}
+      {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(height !== undefined && { height })}
