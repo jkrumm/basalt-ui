@@ -26,7 +26,7 @@ export type QueryStateVariant = 'page' | 'section'
  * The structural subset of a TanStack `UseQueryResult` these components read.
  *
  * Typed as a SUBSET rather than as `UseQueryResult<T>` on purpose: a composed, derived or
- * hand-rolled result must be passable without a cast (3 of image-share's 10 call sites are), and
+ * hand-rolled result must be passable without a cast, and
  * these components stay independent of which `@tanstack/react-query` major a consumer pins. This
  * is NOT a claim that the root barrel is free of that package — `./connectivity` imports
  * `onlineManager` as a value and is re-exported from `src/index.ts`. The cost of the subset is
