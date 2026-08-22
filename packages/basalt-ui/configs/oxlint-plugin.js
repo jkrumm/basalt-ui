@@ -245,8 +245,49 @@ function allComments(context) {
 }
 
 /**
- * True when a NODE-scoped `theme-allow` covering `ruleId` sits on `node`'s own source line or the
- * line above — or when the file carries a `theme-allow-file` declaration for it.
+ * Every comment that REACHES `nodeLine` — the comment on the node's own line, the one directly
+ * above it, and any further comment separated from that one by nothing but comment.
+ *
+ * This is the plugin's half of "which node does this annotation scope to", and it has to answer the
+ * same question `src/guard`'s forward walk answers: **an annotation reaches the first line below its
+ * comment that is not itself comment.** The test used to be a flat `end.line === nodeLine ||
+ * nodeLine - 1`, which is the same rule only when the annotation is the LAST comment above the node
+ * — so anything sitting between the annotation and the node, comment included, was reported here
+ * while the guard waived it:
+ *
+ * ```text
+ * // theme-allow raw-hex — the vendor brand hex, kept in sync with     ← a reason that wrapped
+ * // the marketing site's own palette                                     onto a second comment
+ * const BRAND = '#ff0000'
+ *
+ * {/* theme-allow card-inset — … *\/}
+ * {/* 3. the density row *\/}                                            ← an unrelated note
+ * <Card p={0} />
+ * ```
+ *
+ * The wrapped-reason one is not hypothetical: it is pinned in the guard's tests as a shape argo
+ * writes. A blank line still separates, because a blank line is not comment — which is what makes
+ * "this comment is not about the next statement" expressible in both halves.
+ *
+ * Returned bottom-up, which is also the cheap order to walk: stop at the first gap.
+ */
+function reachingComments(context, nodeLine) {
+  const comments = allComments(context).toSorted((a, b) => a.loc.start.line - b.loc.start.line)
+  const out = []
+  let reach = nodeLine
+  for (let i = comments.length - 1; i >= 0; i--) {
+    const comment = comments[i]
+    if (comment.loc.end.line > nodeLine) continue
+    if (comment.loc.end.line < reach - 1) break
+    out.push(comment)
+    reach = Math.min(reach, comment.loc.start.line)
+  }
+  return out
+}
+
+/**
+ * True when a NODE-scoped `theme-allow` covering `ruleId` reaches `node` (see
+ * {@link reachingComments}) — or when the file carries a `theme-allow-file` declaration for it.
  *
  * The `ruleId` argument is what stops one exemption from being a blanket one: a `theme-allow
  * raw-hex — …` written for a color no longer silently switches off `card-inset` on the same line.
@@ -254,13 +295,11 @@ function allComments(context) {
  */
 function hasThemeAllow(context, node, ruleId) {
   if (hasFileDeclaration(context, ruleId)) return true
-  const nodeLine = node.loc.start.line
-  return allComments(context).some((comment) => {
-    if (comment.loc.end.line !== nodeLine && comment.loc.end.line !== nodeLine - 1) return false
-    return parseThemeAllows(comment.value).some(
+  return reachingComments(context, node.loc.start.line).some((comment) =>
+    parseThemeAllows(comment.value).some(
       (allow) => allow.scope === 'line' && allowCovers(allow, ruleId),
-    )
-  })
+    ),
+  )
 }
 
 /**

@@ -984,55 +984,112 @@ describe('basalt/shadow-basalt-export', () => {
   })
 })
 
-// ── theme-allow comment shapes (the plugin half of the annotation contract) ───
+// ── theme-allow shape grid (the plugin half of the annotation contract) ──────
 
-// The prefix rule has had three holes found in three rounds, so every comment shape a consumer
-// actually writes is pinned here — and the guard's copy is pinned identically in
-// `src/guard/check-source.test.ts`. The two must agree on what an annotation IS.
-describe('theme-allow comment shapes', () => {
-  const flags = (source: string): boolean => run(source).rules.has('no-raw-font-size')
+/**
+ * The plugin's copy of the grid pinned in `src/guard/check-source.test.ts`, row name for row name.
+ *
+ * Five holes in four rounds, twice because the two parsers disagreed about what an annotation IS —
+ * so the shapes are enumerated over the axes that vary (comment style × token position × where the
+ * closer falls × what follows), not collected as anecdotes. Every row here has a twin there; the
+ * guard-only dialects (CSS continuation lines, HTML, the JSON member form) have no twin because
+ * oxlint never parses those files.
+ *
+ * `no-raw-font-size` is the vehicle — a JSXAttribute rule, so the reported node's line is exactly
+ * the line an annotation has to reach.
+ */
+/** Wraps JSX children in a component, so a `{/* … *\/}` child is legal source. */
+const jsxShape = (body: string): string =>
+  `export const C = () => (\n  <div>\n${body}\n  </div>\n)\n`
+
+describe('theme-allow shape grid', () => {
+  const REASON = 'deliberate legacy value'
+  const A = `theme-allow no-raw-font-size — ${REASON}`
+  const AF = `theme-allow-file no-raw-font-size — ${REASON}`
+  const T = `<Text fz={10} />`
+  const J = jsxShape
+
+  const waives = (source: string): boolean => !run(source).rules.has('no-raw-font-size')
 
   it.each([
+    ['// own line', `// ${A}\nexport const C = ${T}\n`],
+    ['// indented', `function f() {\n  // ${A}\n  return ${T}\n}\n`],
+    ['// no space after the marker', `//${A}\nexport const C = ${T}\n`],
+    ['// trailing', `export const C = ${T} // ${A}\n`],
     [
-      'own line //',
-      `// theme-allow no-raw-font-size — deliberate\nexport const C = <Text fz={10} />\n`,
+      '// reason wrapped onto a second // comment',
+      `// ${A},\n// continued here\nexport const C = ${T}\n`,
+    ],
+    ['/* */ own line', `/* ${A} */\nexport const C = ${T}\n`],
+    ['/* */ trailing', `export const C = ${T} /* ${A} */\n`],
+    ['/** */ own line (docblock opener)', `/** ${A} */\nexport const C = ${T}\n`],
+    ['/* opener + token, closer on its own line', `/* ${A}\n*/\nexport const C = ${T}\n`],
+    ['/* gutter token, closer on the token line', `/*\n ${A} */\nexport const C = ${T}\n`],
+    ['/* gutter token, closer on its own line', `/*\n ${A}\n*/\nexport const C = ${T}\n`],
+    ['/** star gutter, closer on the token line', `/**\n * ${A} */\nexport const C = ${T}\n`],
+    ['/** star gutter, closer on its own line', `/**\n * ${A}\n */\nexport const C = ${T}\n`],
+    ['/** token then 1 prose line', `/**\n * ${A}\n * more\n */\nexport const C = ${T}\n`],
+    [
+      '/** token then 12 prose lines',
+      `/**\n * ${A}\n${' * p\n'.repeat(12)} */\nexport const C = ${T}\n`,
     ],
     [
-      'trailing //',
-      `export const C = <Text fz={10} /> // theme-allow no-raw-font-size — deliberate\n`,
+      '/** prose first, token on a later gutter line',
+      `/**\n * some prose\n * ${A}\n */\nexport const C = ${T}\n`,
+    ],
+    ['{/* */} own line', J(`    {/* ${A} */}\n    ${T}`)],
+    ['{/* */} trailing on the target line', J(`    ${T} {/* ${A} */}`)],
+    ['{/* opener + token, closer on its own line', J(`    {/* ${A}\n    */}\n    ${T}`)],
+    ['{/* gutter token, closer on the token line', J(`    {/*\n      ${A} */}\n    ${T}`)],
+    ['{/* gutter token, closer on its own line', J(`    {/*\n      ${A}\n    */}\n    ${T}`)],
+    ['{/** star gutter, closer on the token line', J(`    {/**\n     * ${A} */}\n    ${T}`)],
+    ['{/** star gutter, closer on its own line', J(`    {/**\n     * ${A}\n     */}\n    ${T}`)],
+    [
+      '{/** token then 6 prose lines',
+      J(`    {/**\n     * ${A}\n${'     * p\n'.repeat(6)}     */}\n    ${T}`),
+    ],
+    ['{/* target on the closer line', J(`    {/*\n      ${A}\n    */}${T}`)],
+    ['{/* closer alone, tab indented', J(`\t{/*\n\t  ${A}\n\t*/}\n\t${T}`)],
+    ['{/* closer alone, space between */ and }', J(`    {/*\n      ${A}\n    */ }\n    ${T}`)],
+    [
+      '{/* closer alone, two annotations in one block',
+      J(`    {/*\n      ${A}\n      theme-allow card-inset — ${REASON}\n    */}\n    ${T}`),
     ],
     [
-      'trailing block',
-      `export const C = <Text fz={10} /* theme-allow no-raw-font-size — deliberate */ />\n`,
+      '/** */ then an unrelated // note',
+      `/** ${A} */\n// an unrelated note\nexport const C = ${T}\n`,
     ],
-    [
-      'JSX expression comment',
-      `export const C = () => (\n  <div>\n    {/* theme-allow no-raw-font-size — deliberate */}\n    <Text fz={10} />\n  </div>\n)\n`,
-    ],
-    [
-      'JSX expression comment, token on its own wrapped line',
-      `export const C = () => (\n  <div>\n    {/*\n      theme-allow no-raw-font-size — deliberate */}\n    <Text fz={10} />\n  </div>\n)\n`,
-    ],
-    [
-      'block gutter',
-      `/**\n * theme-allow no-raw-font-size — deliberate\n */\nexport const C = <Text fz={10} />\n`,
-    ],
-    [
-      'docblock opener',
-      `/** theme-allow no-raw-font-size — deliberate */\nexport const C = <Text fz={10} />\n`,
-    ],
+    ['{/* */} then an unrelated {/* */}', J(`    {/* ${A} */}\n    {/* unrelated */}\n    ${T}`)],
+    ['theme-allow-file, {/* closer on its own line', J(`    {/*\n      ${AF}\n    */}\n    ${T}`)],
+    ['theme-allow-file, /** star gutter', `/**\n * ${AF}\n */\nexport const C = ${T}\n`],
   ])('%s waives', (_name, source) => {
-    expect(flags(source as string)).toBe(false)
+    expect(waives(source as string)).toBe(true)
   })
 
-  // The false NEGATIVE the prefix rule exists to close: prose that MENTIONS the token is not an
-  // annotation. linewatch documented its own waivers in a docblock and disarmed the file.
-  it('prose that merely mentions the token does not waive', () => {
-    expect(
-      flags(
-        `// each chart here needs a theme-allow no-raw-font-size eventually\nexport const C = <Text fz={10} />\n`,
-      ),
-    ).toBe(true)
+  // ── UNSUPPORTED — asserted, so a hole can never pass for a design decision ──
+  it.each([
+    ['blank line after a // annotation', `// ${A}\n\nexport const C = ${T}\n`],
+    ['blank line after a {/* */} annotation', J(`    {/* ${A} */}\n\n    ${T}`)],
+    [
+      'blank line after a {/* closer on its own line',
+      J(`    {/*\n      ${A}\n    */}\n\n    ${T}`),
+    ],
+    ['mid-sentence in a line comment', `// we normally write a ${A} here\nexport const C = ${T}\n`],
+    [
+      'mid-sentence in a docblock gutter',
+      `/**\n * Each value is escaped with a ${A} annotation.\n */\nexport const C = ${T}\n`,
+    ],
+    [
+      'mid-sentence in a JSX expression comment',
+      J(`    {/* the shape here is a ${A} comment */}\n    ${T}`),
+    ],
+    [
+      'inside a string literal',
+      `const doc = 'theme-allow no-raw-font-size'\nexport const C = ${T}\n`,
+    ],
+    ['above a multi-line opening tag', J(`    {/* ${A} */}\n    <Text\n      fz={10}\n    />`)],
+  ])('%s does NOT waive', (_name, source) => {
+    expect(waives(source as string)).toBe(false)
   })
 })
 

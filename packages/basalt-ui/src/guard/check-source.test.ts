@@ -2738,59 +2738,134 @@ describe('inline-spacing — the style-object test', () => {
   })
 })
 
-// ── theme-allow comment shapes ───────────────────────────────────────────────────────────────────
+// ── theme-allow shape grid ───────────────────────────────────────────────────────────────────────
 
 /**
- * The prefix contract, pinned per comment shape.
+ * The whole shape space of an annotation, pinned cell by cell.
  *
- * Three holes have been found in this rule in three rounds — two false positives and one false
- * NEGATIVE (a docblock documenting a file's waivers disarmed the file). So every shape a consumer
- * actually writes gets a fixture, and the oxlint plugin's copy is pinned identically in
- * `configs/oxlint-plugin.test.ts`: the two halves of one contract must agree on what an annotation
- * IS, and may differ only on which rules each can judge.
+ * FIVE holes have been found in this one contract in four rounds — two false positives, one false
+ * negative, and twice the guard and the oxlint plugin disagreeing about what an annotation IS. Each
+ * was found by a consumer writing a shape nobody had thought to test, and round 6's answer (a
+ * thirteen-shape list of "every shape a consumer actually writes") missed the next three anyway,
+ * because a list of observed shapes cannot cover the ones not yet observed.
+ *
+ * So this is a GRID over the four things that actually vary, not a list of anecdotes:
+ *
+ * | axis | values |
+ * |-|-|
+ * | comment style | `//` · `/* *\/` · `/** *\/` · `{/* *\/}` · `{/** *\/}` · `<!-- -->` · JSON member |
+ * | token position | opener line · gutter line · trailing after code |
+ * | where the closer falls | the token's line · its own line · N lines below · n/a |
+ * | what follows | code · blank then code · comment then code · code on the closer's line |
+ *
+ * `configs/oxlint-plugin.test.ts` pins the same grid, under the same row names, for the subset the
+ * plugin can judge (TS/JSX — it never sees CSS, HTML or JSON). The two halves must agree on every
+ * shared cell; add a row to one and it goes in the other in the same commit.
+ *
+ * The unsupported cells are asserted too. "Unsupported" and "silently broken" read identically to a
+ * consumer, and the whole point of the grid is to make them different things.
  */
-describe('theme-allow comment shapes', () => {
-  const REASON = 'deliberate legacy value'
-  const waives = (relPath: string, src: string): boolean =>
-    checkSource(src, relPath, DEFAULT_GUARD_CONFIG).filter((f) => f.kind === 'raw-hex').length === 0
+/** Wraps JSX children in a component, so a `{/* … *\/}` child is legal source. */
+const jsxShape = (body: string): string =>
+  `export const C = () => (\n  <div>\n${body}\n  </div>\n)\n`
 
+/** Does the file waive its `raw-hex`? — the one question every grid row asks. */
+const shapeWaives = (relPath: string, src: string): boolean =>
+  checkSource(src, relPath, DEFAULT_GUARD_CONFIG).filter((f) => f.kind === 'raw-hex').length === 0
+
+describe('theme-allow shape grid', () => {
+  const REASON = 'deliberate legacy value'
+  const A = `theme-allow raw-hex — ${REASON}`
+  const AF = `theme-allow-file raw-hex — ${REASON}`
+  /** The statement the guard reports `raw-hex` on. */
+  const T = `const a = '#f00'`
+  /** The JSX child the guard reports `raw-hex` on. */
+  const JT = `<span style={{ color: '#f00' }} />`
+  const J = jsxShape
+  const waives = shapeWaives
+
+  // ── SUPPORTED — every cell of the grid that waives ────────────────────────
   it.each([
-    ['own line //', PATH, `// theme-allow raw-hex — ${REASON}\nconst a = '#f00'\n`],
+    // `//` — no closer to place.
+    ['// own line', PATH, `// ${A}\n${T}\n`],
+    ['// indented', PATH, `function f() {\n  // ${A}\n  ${T}\n}\n`],
+    ['// no space after the marker', PATH, `//${A}\n${T}\n`],
+    ['// trailing', PATH, `${T} // ${A}\n`],
+    ['// reason wrapped onto a second // comment', PATH, `// ${A},\n// continued here\n${T}\n`],
+    // `/* */` and `/** */` at statement level, closer in each of its three places.
+    ['/* */ own line', PATH, `/* ${A} */\n${T}\n`],
+    ['/* */ trailing', PATH, `${T} /* ${A} */\n`],
+    ['/** */ own line (docblock opener)', PATH, `/** ${A} */\n${T}\n`],
+    ['/* opener + token, closer on its own line', PATH, `/* ${A}\n*/\n${T}\n`],
+    ['/* gutter token, closer on the token line', PATH, `/*\n ${A} */\n${T}\n`],
+    ['/* gutter token, closer on its own line', PATH, `/*\n ${A}\n*/\n${T}\n`],
+    ['/** star gutter, closer on the token line', PATH, `/**\n * ${A} */\n${T}\n`],
+    ['/** star gutter, closer on its own line', PATH, `/**\n * ${A}\n */\n${T}\n`],
+    // Prose between the token and the closer — any amount of it.
+    ['/** token then 1 prose line', PATH, `/**\n * ${A}\n * more\n */\n${T}\n`],
+    ['/** token then 12 prose lines', PATH, `/**\n * ${A}\n${' * p\n'.repeat(12)} */\n${T}\n`],
     [
-      'indented //',
+      '/** prose first, token on a later gutter line',
       PATH,
-      `function f() {\n  // theme-allow raw-hex — ${REASON}\n  const a = '#f00'\n}\n`,
+      `/**\n * some prose\n * ${A}\n */\n${T}\n`,
     ],
-    ['trailing //', PATH, `const a = '#f00' // theme-allow raw-hex — ${REASON}\n`],
-    ['trailing block', PATH, `const a = '#f00' /* theme-allow raw-hex — ${REASON} */\n`],
+    // JSX expression containers — the family every disagreement so far has come from.
+    ['{/* */} own line', PATH, J(`    {/* ${A} */}\n    ${JT}`)],
+    ['{/* */} trailing on the target line', PATH, J(`    ${JT} {/* ${A} */}`)],
+    ['{/* opener + token, closer on its own line', PATH, J(`    {/* ${A}\n    */}\n    ${JT}`)],
+    ['{/* gutter token, closer on the token line', PATH, J(`    {/*\n      ${A} */}\n    ${JT}`)],
     [
-      'JSX expression comment',
+      '{/* gutter token, closer on its own line',
       PATH,
-      `export const C = () => (\n  <div>\n    {/* theme-allow raw-hex — ${REASON} */}\n    <span style={{ color: '#f00' }} />\n  </div>\n)\n`,
+      J(`    {/*\n      ${A}\n    */}\n    ${JT}`),
+    ],
+    ['{/** star gutter, closer on the token line', PATH, J(`    {/**\n     * ${A} */}\n    ${JT}`)],
+    [
+      '{/** star gutter, closer on its own line',
+      PATH,
+      J(`    {/**\n     * ${A}\n     */}\n    ${JT}`),
     ],
     [
-      'JSX expression comment, token on its own wrapped line',
+      '{/** token then 6 prose lines',
       PATH,
-      `export const C = () => (\n  <div>\n    {/*\n      theme-allow raw-hex — ${REASON} */}\n    <span style={{ color: '#f00' }} />\n  </div>\n)\n`,
+      J(`    {/**\n     * ${A}\n${'     * p\n'.repeat(6)}     */}\n    ${JT}`),
     ],
-    ['block gutter *', PATH, `/**\n * theme-allow raw-hex — ${REASON}\n */\nconst a = '#f00'\n`],
-    ['docblock opener /**', PATH, `/** theme-allow raw-hex — ${REASON} */\nconst a = '#f00'\n`],
-    ['css trailing', 'src/a.css', `a { color: #f00; /* theme-allow raw-hex — ${REASON} */ }\n`],
+    ['{/* target on the closer line', PATH, J(`    {/*\n      ${A}\n    */}${JT}`)],
+    ['{/* closer alone, tab indented', PATH, J(`\t{/*\n\t  ${A}\n\t*/}\n\t${JT}`)],
+    [
+      '{/* closer alone, space between */ and }',
+      PATH,
+      J(`    {/*\n      ${A}\n    */ }\n    ${JT}`),
+    ],
+    [
+      '{/* closer alone, two annotations in one block',
+      PATH,
+      J(`    {/*\n      ${A}\n      theme-allow raw-color-fn — ${REASON}\n    */}\n    ${JT}`),
+    ],
+    // A further comment between the annotation and the code is walked through; a blank line is not.
+    ['/** */ then an unrelated // note', PATH, `/** ${A} */\n// an unrelated note\n${T}\n`],
+    [
+      '{/* */} then an unrelated {/* */}',
+      PATH,
+      J(`    {/* ${A} */}\n    {/* unrelated */}\n    ${JT}`),
+    ],
+    // The file-declaration form, which is position-independent — pinned in two placements anyway,
+    // because "position-independent" is a claim the parser has to keep making.
+    [
+      'theme-allow-file, {/* closer on its own line',
+      PATH,
+      J(`    {/*\n      ${AF}\n    */}\n    ${JT}`),
+    ],
+    ['theme-allow-file, /** star gutter', PATH, `/**\n * ${AF}\n */\n${T}\n`],
+    // Dialects the plugin never sees — CSS continuation lines, HTML, and the JSON member form.
+    ['css trailing', 'src/a.css', `a { color: #f00; /* ${A} */ }\n`],
     [
       'css reflowed onto continuation lines',
       'src/a.css',
-      `a {\n  color: var(\n    --x,\n    #f00\n  ); /* theme-allow raw-hex — ${REASON} */\n}\n`,
+      `a {\n  color: var(\n    --x,\n    #f00\n  ); /* ${A} */\n}\n`,
     ],
-    [
-      'html comment',
-      'index.html',
-      `<!-- theme-allow raw-hex — ${REASON} -->\n<b style="color: #f00"></b>\n`,
-    ],
-    [
-      'html trailing comment',
-      'index.html',
-      `<b style="color: #f00"></b> <!-- theme-allow raw-hex — ${REASON} -->\n`,
-    ],
+    ['html comment own line', 'index.html', `<!-- ${A} -->\n<b style="color: #f00"></b>\n`],
+    ['html trailing comment', 'index.html', `<b style="color: #f00"></b> <!-- ${A} -->\n`],
     [
       'JSON member form',
       'public/site.webmanifest',
@@ -2800,25 +2875,46 @@ describe('theme-allow comment shapes', () => {
     expect(waives(relPath as string, src as string)).toBe(true)
   })
 
-  // The false negative the prefix rule closed: a sentence that MENTIONS the token is not one.
+  // ── UNSUPPORTED — asserted, so a hole can never pass for a design decision ──
   it.each([
+    // A blank line is the separation people use for "this comment is not about the next statement".
+    ['blank line after a // annotation', PATH, `// ${A}\n\n${T}\n`],
+    ['blank line after a {/* */} annotation', PATH, J(`    {/* ${A} */}\n\n    ${JT}`)],
     [
-      'mid-sentence in a line comment',
-      `// we normally write a theme-allow raw-hex here\nconst a = '#f00'\n`,
+      'blank line after a {/* closer on its own line',
+      PATH,
+      J(`    {/*\n      ${A}\n    */}\n\n    ${JT}`),
+    ],
+    // Prose that MENTIONS the token is not an annotation — the one false NEGATIVE in the set, and
+    // the reason the token has to START its comment.
+    ['mid-sentence in a line comment', PATH, `// we normally write a ${A} here\n${T}\n`],
+    [
+      'mid-sentence in a docblock gutter',
+      PATH,
+      `/**\n * Each value is escaped with a ${A} annotation.\n */\n${T}\n`,
     ],
     [
-      'mid-sentence in a docblock',
-      `/**\n * Each value below is escaped with a theme-allow raw-hex annotation.\n */\nconst a = '#f00'\n`,
+      'mid-sentence in a JSX expression comment',
+      PATH,
+      J(`    {/* the shape here is a ${A} comment */}\n    ${JT}`),
     ],
-    ['inside a string literal', `const doc = 'theme-allow raw-hex'\nconst a = '#f00'\n`],
-  ])('%s does NOT waive', (_name, src) => {
-    expect(waives(PATH, src as string)).toBe(false)
+    ['inside a string literal', PATH, `const doc = 'theme-allow raw-hex'\n${T}\n`],
+    // An annotation reaches the first line below its comment — not an arbitrary line further down.
+    // A multi-line opening tag therefore needs the annotation beside the attribute, not above the
+    // tag. Both halves agree, and both report rather than silently waiving the wrong node.
+    [
+      'above a multi-line opening tag',
+      PATH,
+      J(`    {/* ${A} */}\n    <span\n      style={{ color: '#f00' }}\n    />`),
+    ],
+  ])('%s does NOT waive', (_name, relPath, src) => {
+    expect(waives(relPath as string, src as string)).toBe(false)
   })
 
   // The narrowness of the `*/}` exception: a `}` that is REAL code keeps its trailing
   // classification, so the annotation does not reach the statement below it.
   it('a trailing annotation on a real closing brace stays on its own line', () => {
-    const src = `function f() {\n  const a = 1\n} // theme-allow raw-hex — ${REASON}\nconst b = '#0f0'\n`
+    const src = `function f() {\n  const a = 1\n} // ${A}\nconst b = '#0f0'\n`
     expect(
       checkSource(src, PATH, DEFAULT_GUARD_CONFIG)
         .filter((f) => f.kind === 'raw-hex')
@@ -2829,7 +2925,7 @@ describe('theme-allow comment shapes', () => {
   // A trailing annotation is scoped to its OWN line — otherwise `const a = '#f00' // theme-allow`
   // would silently waive the statement below it too.
   it('a trailing annotation does not reach the line below', () => {
-    const src = `const a = '#f00' // theme-allow raw-hex — ${REASON}\nconst b = '#0f0'\n`
+    const src = `const a = '#f00' // ${A}\nconst b = '#0f0'\n`
     expect(
       checkSource(src, PATH, DEFAULT_GUARD_CONFIG).filter((f) => f.kind === 'raw-hex'),
     ).toHaveLength(1)
