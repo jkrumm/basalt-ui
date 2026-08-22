@@ -1,3 +1,17 @@
+# [1.24.0](https://github.com/jkrumm/basalt-ui/compare/v1.23.1...v1.24.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* stop check-theme fabricating a config, and re-gate the provenance line ([99a45c0](https://github.com/jkrumm/basalt-ui/commit/99a45c0dc284850b4140a6ff7719dbade4795f09))
+* stop raw-hex reading HTML entities, and teach the guard the SFC dialect ([f1b0562](https://github.com/jkrumm/basalt-ui/commit/f1b0562efeb718921509253f9ee215bf461c3c01)), closes [#123](https://github.com/jkrumm/basalt-ui/issues/123) [#125](https://github.com/jkrumm/basalt-ui/issues/125)
+
+
+### Features
+
+* playground routes for QueryState and the table body chrome ([e150a00](https://github.com/jkrumm/basalt-ui/commit/e150a0051bf743137751a3d5c17f202c0984aaa7))
+* ship the query loading/error branch and the table body chrome ([963bf04](https://github.com/jkrumm/basalt-ui/commit/963bf047cf9ac4fac3cecceecbd0c378ee37f79d))
+
 ## [1.23.1](https://github.com/jkrumm/basalt-ui/compare/v1.23.0...v1.23.1) (2026-08-22)
 
 
