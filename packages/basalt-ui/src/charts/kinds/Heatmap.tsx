@@ -53,7 +53,7 @@ export type HeatmapProps<T> = {
   renderTooltip?: (cell: HeatmapCell) => ReactNode
   /** Optional gradient legend strip below the grid (faint → solid color). */
   legend?: { min: string; max: string }
-  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="img"`). */
+  /** Accessible text alternative, forwarded to `ChartFrame` as `aria-label` (+ `role="group"`). */
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
