@@ -400,9 +400,24 @@ an empty `sections` produces no orphan divider above it.
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger's package (an
 unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
 `basalt-ui init | sync | check-theme | check-coverage | info | doctor | guard-hook | tokens:css |
-fonts:css | help` (Bun runtime). Every subcommand takes `--help`/`-h`; `check-theme` and `doctor`
-honour `BASALT_CWD` and relocate to the single workspace package carrying a basalt config when
+fonts:css | help` (Bun runtime). Every subcommand takes `--help`/`-h`; `check-theme`, `doctor` and
+`sync` honour `BASALT_CWD` and relocate to the single workspace package carrying a basalt config when
 invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
+
+**Nothing fails open.** `--version` / `-v` / `version` print one bare greppable line and exit 0,
+resolved before dispatch alongside `--help` so answering "which basalt-ui is this" can never run a
+command. Every subcommand then validates its flags against `COMMAND_FLAGS` and exits 1 naming the
+first one it does not accept — `doctor --json` used to run doctor and exit **0**, and `check-theme
+--audit-allow` scanned and reported success. An unknown COMMAND prints `basalt-ui: unknown command '…'` above
+the usage block rather than dumping help and letting it read like a choice.
+
+**Every invocation the CLI EMITS goes through `basaltBinCommand()`** — the seeded `lint` script, the
+CI steps, the `.claude` PreToolUse hook, doctor's lefthook advice. It renders the resolved local bin
+(`./node_modules/.bin/basalt-ui`) and falls back to `bunx basalt-ui` only when nothing resolves.
+`bunx` does not re-resolve a cached package, which is how a consumer filed a P0 against a 1.20.0
+cache while pinned to 1.22.0 — and the seed was shipping `bunx` into consumer CI in ten places.
+`configs/lefthook.yml`'s `${BASALT_BIN:-bunx --no-install basalt-ui}` default stays: `--no-install`
+fails loudly rather than downloading a stranger, and `BASALT_BIN` is the sanctioned override.
 
 - `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
   palette. **Findings carry a severity** (`warn` | `error`): errors fail the build, warnings report
@@ -492,7 +507,14 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   correctly configured repo with advice that would have broken it. A broken `extends` target is
   still a hard fail — lefthook merges a missing target into ZERO commands and exits 0 — a provably
   absent gate is a warn, and an unresolvable one is an advisory warning naming what it could not
-  see), plus the three below. A tokens-only consumer is
+  see), plus the three below. **From a package whose install is ABOVE it, doctor names the parent and
+  says `basalt-ui init` is NOT the fix** — one sentence shared with `sync` via `parentInstallAdvice`,
+  because the two already shared `resolveProjectDir` but not the advice, and following doctor
+  literally performed the second-consumer scaffold 1.22.0 exists to prevent. Its **icon warn reads
+  `basaltAppPlugin({ icons })` out of the consumer's vite config** rather than hardcoding six
+  filenames (`readAppIconsOption`): a named array is checked against itself, `false`/`[]` is nothing
+  to check, and an unparseable or absent config falls back to the six defaults — so adopting 1.23.0's
+  icons array stopped being a way to earn a warning. A tokens-only consumer is
   auto-detected (no manifest + no `@mantine/core`; `--tokens-only` / `--framework` force it) and is
   no longer told to run `init` — which also makes the CLI-vs-installed version check reachable in
   CI. **Version**: installed `node_modules/basalt-ui` vs the manifest's `basaltVersion` (plus
@@ -524,7 +546,8 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   masked by a leftover declaration nobody re-checks.
 - `guard-hook` — PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies
   off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
-  `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook`.
+  `Write|Edit|MultiEdit` and command `./node_modules/.bin/basalt-ui guard-hook` — what `init` now
+  seeds, via `basaltBinCommand()`.
 - `tokens:css` — emit the `--vx-*` stylesheet (stdout, or `--out <path>`). Flags:
   `--selector-attribute` / `--selector-class <class>` (+ `--light-class`) / `--dark-value` /
   `--light-value` / `--default-scheme <dark|light|none>` / `--media-fallback` / `--only <core|all>` /
@@ -534,7 +557,11 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   top is **file framing for an artifact a consumer COMMITS**, and nothing else: the
   `@generated basalt-ui` marker as line 1 — imported from the guard as `GENERATED_HEADER_LINE`, one
   source of truth rather than the two hand-kept copies it replaced — version + invocation as line 2,
-  a trailing newline, and `rgba()` argument spacing normalized to the spaced form.
+  a trailing newline, and `rgba()` argument spacing normalized to the spaced form. **`--check` blanks
+  line 2 before comparing**: the provenance line carries the emitting version, and gating the file
+  byte-for-byte made every basalt release a mandatory no-op commit in a tokens-only consumer, where
+  byte-equality IS the gate. A stale provenance line is now a note on a passing check. The header is
+  still emitted byte-identical — the line stays, it just stops gating.
   `--selector-class` is the one
   structural rewrite — `buildPaletteCss` emits attribute selectors only, so the class form is
   produced by emitting against a CLI-chosen sentinel attribute and rewriting exactly those
@@ -622,9 +649,20 @@ shipped preset inherits it automatically, path resolved relative to the preset f
 - `basalt/chart-in-raw-surface` — flags a chart-kind element (`BandStrip`, `Bars`, `Donut`,
   `DualPanel`, `Heatmap`, `MirroredBars`, `MultiLine`, `StackedArea`, `ZonedLine`, `BarSparkline`,
   `LineSparkline`) rendered inside a raw `Card`/`Paper` instead of the shipped `ChartCard` wrapper.
-  **The guard's own `unframed-chart` kind still names only the nine older tags** — its
-  `CHART_ENTRY_POINT_TAG` regex (`src/guard/index.ts`) has no `BandStrip`/`MirroredBars`, so a new
-  kind rendered without an `ariaLabel` goes unreported. Adding a kind means both lists.
+  Its guard-side twin is **`chart-missing-aria-label`** (`CHART_ENTRY_POINT_TAG`,
+  `src/guard/index.ts`), which carries the same tag list; adding a kind means both.
+  **`cb4e5b7` says it taught `unframed-chart` the two new kinds. It did not** — that commit widened
+  `CHART_ENTRY_POINT_TAG`, and `unframed-chart` keys on `<ChartLegend items={[` with no kind list at
+  all. The message is on `master` and cannot be rewritten; this is the correction.
+  **Both tag rules are provenance-gated**: a tag is skipped only when the file DEFINES a
+  component of that name and does not also import it from `basalt-ui`. One-directional on purpose —
+  a basalt import, a consumer barrel re-export, and an unattributable tag all still fire; requiring
+  a POSITIVE basalt import would have switched both rules off for every barrel-wrapping consumer and
+  every file with no imports. Verified old-vs-new over 945 files across six repos: 0 findings lost,
+  0 gained. **The gate does not make the tag list redundant** — the list still answers _which_ tags
+  owe an `ariaLabel`; the gate only turns a kind missing from it into an under-report instead of a
+  false positive. Collapsing `CHART_ENTRY_POINT_TAG` and the plugin's `CHART_TAGS` into one source
+  is an open question, not a plan.
 - `basalt/hand-rolled-plot` — flags a chart-assembly primitive (`AxisLeftNumeric`,
   `AxisRightNumeric`, `AxisBottomDate`, `HoverOverlay`, `Crosshair`) rendered in a file that does
   not compose `CartesianChart`. **Composing `CartesianChart` is the contract for a single-plot

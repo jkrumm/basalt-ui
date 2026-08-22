@@ -62,29 +62,38 @@ duration/spring/ease literal in a `transition={{...}}` prop (enforced by `basalt
 
 ## Key commands
 
+`init` and `tokens:css`/`fonts:css` are the only commands with no install to resolve, so `bunx` is
+correct for them and wrong for everything else — see the note below.
+
 ```bash
-bunx basalt-ui init              # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed CLAUDE.md block, DESIGN.md seed, toolchain seeds
-bunx basalt-ui check-theme       # fail on off-palette colors in consumer source
-bunx basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block)
-bunx basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted
-bunx basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
-bunx basalt-ui tokens:css        # emit the --vx-* stylesheet (no React, no Mantine, no bundler)
-bunx basalt-ui fonts:css         # emit the shipped --basalt-font-* stacks
-bunx basalt-ui info              # print published surface map
-bunx basalt-ui info --json       # stable JSON surface map
-bunx basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
+bunx basalt-ui init         # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed CLAUDE.md block, DESIGN.md seed, toolchain seeds
+basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
+basalt-ui check-theme       # fail on off-palette colors in consumer source
+basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block)
+basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted
+basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
+bunx basalt-ui tokens:css   # emit the --vx-* stylesheet (no React, no Mantine, no bundler)
+bunx basalt-ui fonts:css    # emit the shipped --basalt-font-* stacks
+basalt-ui info --json       # stable JSON surface map
+basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
 ```
+
+Every subcommand rejects a flag it does not accept, exiting 1 and naming it; an unknown command says
+so above the usage block. Neither is ever ignored — `doctor --json` used to run doctor and exit 0.
 
 `check-theme`, `doctor` and `sync` resolve their project identically: `BASALT_CWD` wins, then the
 cwd, then the workspace packages the root declares, then a two-level layout scan (which is what a
 repo with no `workspaces` field and the install one level down needs). Two candidates is ambiguous
 and reported, never guessed. `sync` on a `tokens-only` consumer prints `n/a` and exits 0.
 
-**Checking what an upgrade actually does? Run the local bin, not `bunx`.** `bunx` does not
-re-resolve a cached package, so it can execute the version you just upgraded away from.
+**Run the local bin, not `bunx`.** `bunx` does not re-resolve a cached package, so it can execute
+the version you just upgraded away from — one consumer filed a P0 against a 1.20.0 cache while
+believing it was on 1.22.0. `init` and `sync` render every seeded script, CI step and hook with the
+resolved local bin for this reason (`BASALT_BIN` overrides it). `basalt-ui --version` is the
+one-second check.
 
 Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with matcher
-`Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook` so the agent can't write off-palette
+`Write|Edit|MultiEdit` and command `./node_modules/.bin/basalt-ui guard-hook` (what `init` seeds) so the agent can't write off-palette
 colors without a `theme-allow` comment.
 
 **The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind and to that one
