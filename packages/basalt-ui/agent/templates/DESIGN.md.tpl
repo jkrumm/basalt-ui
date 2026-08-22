@@ -1,6 +1,8 @@
 # {{APP_NAME}} — Design
 
-> Managed by basalt-ui ({{BASALT_VERSION}}). This is a **thin** instantiation — it records this
+> Managed by basalt-ui — run `basalt-ui doctor` for the version, never trust a number written into
+> a file (this one is a seed: written once at `init`, then owned by you, so any version stamped
+> here would be frozen at scaffold time). This is a **thin** instantiation — it records this
 > app's **deltas only** on top of the shipped `basalt-*` rules. The universal law (earned color,
 > neutral-by-default, three-tier `--vx-*` tokens, theme-is-data, the chart primitive contract, the
 > elevation/density/shape doctrine) lives in those rules and the `/basalt:design` skill, and is
