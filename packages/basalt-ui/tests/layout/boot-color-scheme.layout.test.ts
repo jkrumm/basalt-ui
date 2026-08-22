@@ -16,7 +16,7 @@
  * The probe documents are the fixture shell with one `<style>` inserted immediately after `<head>`
  * — head-prepend, the exact position Vite injects the plugin's tags into.
  */
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
 import {
   closeLayoutSuite,
   fixtureHtml,
@@ -27,7 +27,16 @@ import {
 import { basaltAppPlugin } from '../../src/vite'
 import type { BasaltAppOptions } from '../../src/vite'
 
-let ready = false
+/**
+ * Booted at MODULE TOP LEVEL, the same shape as `mobile-nav.layout.test.ts`.
+ *
+ * This used to be a `beforeAll`, and that asymmetry is the whole reason a slow runner read as
+ * `(fail) (unnamed) [5001.61ms]`: Bun caps a hook at an undeclared 5000 ms, the cold boot measures
+ * ~4.4 s on a GitHub runner, and top-level module evaluation has no such cap. `initLayoutSuite()`
+ * now carries its own budget and says which phase overran.
+ */
+const ready = await initLayoutSuite()
+const layout = ready ? describe : describe.skip
 
 /** The `<style>` body `basaltAppPlugin` emits for a given `colorScheme`, read off the real plugin. */
 function bootStyle(options: Partial<BasaltAppOptions>): string {
@@ -44,30 +53,21 @@ function bootStyle(options: Partial<BasaltAppOptions>): string {
   return style.children
 }
 
+const shell = ready ? await fixtureHtml() : ''
+
 /** Registers the fixture shell with `css` injected at head-prepend, and returns its path. */
-async function probe(css: string): Promise<string> {
-  const shell = await fixtureHtml()
+function probe(css: string): string {
   return serveDocument(shell.replace('<head>', `<head>\n    <style>${css}</style>`))
 }
 
 /** The 1.20.0 rule verbatim — kept so the regression is measured, not remembered. */
 const UNLAYERED_1_20_0 = 'html{background-color:#27272a;color-scheme:dark}'
 
-let unlayeredPath = ''
-let darkPath = ''
-let lightPath = ''
-let autoPath = ''
-let optOutPath = ''
-
-beforeAll(async () => {
-  ready = await initLayoutSuite()
-  if (!ready) return
-  unlayeredPath = await probe(UNLAYERED_1_20_0)
-  darkPath = await probe(bootStyle({}))
-  lightPath = await probe(bootStyle({ colorScheme: 'light' }))
-  autoPath = await probe(bootStyle({ colorScheme: 'auto' }))
-  optOutPath = await probe(bootStyle({ colorScheme: false }))
-})
+const unlayeredPath = ready ? probe(UNLAYERED_1_20_0) : ''
+const darkPath = ready ? probe(bootStyle({})) : ''
+const lightPath = ready ? probe(bootStyle({ colorScheme: 'light' })) : ''
+const autoPath = ready ? probe(bootStyle({ colorScheme: 'auto' })) : ''
+const optOutPath = ready ? probe(bootStyle({ colorScheme: false })) : ''
 
 afterAll(closeLayoutSuite)
 
@@ -81,33 +81,28 @@ async function resolvedScheme(path: string, scheme: 'light' | 'dark'): Promise<s
   return page.computed('html', 'color-scheme')
 }
 
-describe('anti-FOUC color-scheme', () => {
+layout('anti-FOUC color-scheme', () => {
   test('THE REGRESSION: the 1.20.0 unlayered rule pins light mode to dark', async () => {
-    if (!ready) return
     // This is the defect, reproduced. If this ever reports 'light', the cascade changed underneath
     // the fix and the scoping below is no longer what is doing the work.
     expect(await resolvedScheme(unlayeredPath, 'light')).toBe('dark')
   })
 
   test('the shipped rule lets Mantine win in BOTH schemes', async () => {
-    if (!ready) return
     expect(await resolvedScheme(darkPath, 'light')).toBe('light')
     expect(await resolvedScheme(darkPath, 'dark')).toBe('dark')
   })
 
   test('colorScheme: light and auto also yield to the resolved scheme', async () => {
-    if (!ready) return
     expect(await resolvedScheme(lightPath, 'dark')).toBe('dark')
     expect(await resolvedScheme(autoPath, 'light')).toBe('light')
   })
 
   test('colorScheme: false declares nothing and still paints the surface', async () => {
-    if (!ready) return
     expect(await resolvedScheme(optOutPath, 'light')).toBe('light')
   })
 
   test('the FOUC it prevents is still prevented — the rule applies before Mantine mounts', async () => {
-    if (!ready) return
     // Same document, but nothing mounted: `basaltMountFixture` has not run, so
     // `data-mantine-color-scheme` is absent and the boot rule is the only thing on <html>. That is
     // the pre-boot frame the rule exists for, and it must still paint.
