@@ -95,6 +95,15 @@ export {
   type SettingsRowProps,
   DangerZone,
   type DangerZoneProps,
+  QueryState,
+  type QueryStateProps,
+  type QueryStateLike,
+  type QueryStateVariant,
+  type QueryEmptyCopy,
+  LoadingState,
+  type LoadingStateProps,
+  ErrorState,
+  type ErrorStateProps,
 } from './dashboard'
 
 // ── Connectivity (auto-mounted by BasaltProvider) ────────────────────────────────────────────────

@@ -42,6 +42,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
+import type { MantineSpacing } from '@mantine/core'
 import type {
   Column,
   ColumnDef,
@@ -49,6 +50,7 @@ import type {
   ColumnPinningState,
   FilterFn,
   PaginationState,
+  RowData,
   SortingState,
   Table as TanstackTable,
   Updater,
@@ -64,6 +66,50 @@ import {
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { alpha, VX } from '../tokens'
+
+// ── Column alignment ──────────────────────────────────────────────────────────
+
+/** Horizontal alignment of a column's header AND its cells. */
+export type DataTableAlign = 'left' | 'center' | 'right'
+
+/**
+ * Alignment lives on the column def's `meta`, not on a parallel prop array, so it travels with the
+ * column it describes and survives reordering.
+ *
+ * Declared as a module augmentation of TanStack's own `ColumnMeta` so `meta: { aling: 'right' }` is
+ * a TYPE error (excess-property check on the object literal) rather than a silently ignored key —
+ * and a wrong VALUE (`'end'`, `'centre'`) throws at render. A misspelled alignment that quietly
+ * left-aligns a money column is the class of defect that looks correct in review.
+ */
+declare module '@tanstack/react-table' {
+  // TData/TValue are TanStack's own parameters — required to match its declaration, unused here.
+  // oxlint-disable-next-line no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    align?: DataTableAlign
+    /**
+     * Opt OUT of the automatic mono-numeral cell style. The table applies it whenever the cell's
+     * raw value is a number — which is right for a plain figure and wrong for a numeric accessor
+     * whose `cell` renders its own chrome (a coloured `Text`, a `Badge`, a sparkline), because the
+     * `<td>`'s mono font then overrides what the cell asked for.
+     */
+    numeral?: boolean
+  }
+}
+
+const ALIGNMENTS: ReadonlySet<string> = new Set<DataTableAlign>(['left', 'center', 'right'])
+
+/** Reads `meta.align` off a column, throwing on a value that is not one of the three. */
+function resolveAlign<T>(column: Column<T, unknown>): DataTableAlign | undefined {
+  const align = column.columnDef.meta?.align
+  if (align === undefined) return undefined
+  if (!ALIGNMENTS.has(align)) {
+    throw new Error(
+      `BasaltDataTable: column "${column.id}" has meta.align=${JSON.stringify(align)} — ` +
+        "expected 'left' | 'center' | 'right'.",
+    )
+  }
+  return align
+}
 
 // ── Facets ────────────────────────────────────────────────────────────────────
 
@@ -129,8 +175,8 @@ export type BasaltDataTableProps<T> = {
    * @default true
    */
   enableSorting?: boolean
-  /** Stripe alternate rows. Forwarded to Mantine `Table`. */
-  striped?: boolean
+  /** Stripe alternate rows. Forwarded to Mantine `Table` — `'odd'`/`'even'` pick the phase. */
+  striped?: boolean | 'odd' | 'even'
   /** Highlight hovered rows. Forwarded to Mantine `Table`. */
   highlightOnHover?: boolean
   /** Rendered when `data` is empty. Falls back to a simple message when omitted. */
@@ -257,6 +303,42 @@ export type BasaltDataTableProps<T> = {
   enablePinning?: boolean
   /** Initial column-pinning state — which column ids stick to the left/right edge. */
   initialColumnPinning?: ColumnPinningState
+
+  // ── Body chrome ─────────────────────────────────────────────────────────────
+
+  /**
+   * Caps the scrolling body (px number or CSS length) so a long table cannot blow a card out
+   * vertically — the header stays put and the rows scroll under it. Renders Mantine's
+   * `Table.ScrollContainer type="native"`, which is the same node the docs sanction as the raw
+   * escape for a bespoke table: the blessed lane and the escape hatch produce identical DOM, so
+   * adopting one does not contradict the other.
+   *
+   * `type="native"` is required rather than preferred: `ScrollArea`'s custom viewport is the
+   * positioning context a sticky `<thead>` resolves against, so the default `'scrollarea'` type
+   * pins the header to the page viewport instead of the table's box.
+   */
+  maxHeight?: number | string
+  /**
+   * `min-width` below which the body scrolls horizontally. Setting either this or `maxHeight`
+   * turns on the scroll container; `maxHeight` alone implies `minWidth: 0`.
+   */
+  minWidth?: number | string
+  /** Sticky header row. Pair with `maxHeight` to stick within the table rather than the page. */
+  stickyHeader?: boolean
+  /** Offset for a sticky header sitting under a fixed app header (px number or CSS length). */
+  stickyHeaderOffset?: number | string
+  /** Vertical cell padding. Forwarded to Mantine `Table`. */
+  verticalSpacing?: MantineSpacing
+  /** Horizontal cell padding. Forwarded to Mantine `Table`. */
+  horizontalSpacing?: MantineSpacing
+  /** Row separators. Forwarded to Mantine `Table`. @default true (Mantine's own default) */
+  withRowBorders?: boolean
+  /**
+   * Outer table border. Turn it OFF for a table that already sits inside a `Card`/`ChartCard`,
+   * where the card owns the frame and a second one reads as a nested box.
+   * @default true
+   */
+  withTableBorder?: boolean
 }
 
 // ── Sort indicator ────────────────────────────────────────────────────────────
@@ -390,6 +472,14 @@ export function BasaltDataTable<T>({
   pageCount,
   enablePinning = false,
   initialColumnPinning,
+  maxHeight,
+  minWidth,
+  stickyHeader,
+  stickyHeaderOffset,
+  verticalSpacing,
+  horizontalSpacing,
+  withRowBorders,
+  withTableBorder = true,
 }: BasaltDataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
   const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter ?? '')
@@ -496,7 +586,12 @@ export function BasaltDataTable<T>({
     <Table
       {...(striped !== undefined && { striped })}
       {...(highlightOnHover !== undefined && { highlightOnHover })}
-      withTableBorder
+      {...(stickyHeader !== undefined && { stickyHeader })}
+      {...(stickyHeaderOffset !== undefined && { stickyHeaderOffset })}
+      {...(verticalSpacing !== undefined && { verticalSpacing })}
+      {...(horizontalSpacing !== undefined && { horizontalSpacing })}
+      {...(withRowBorders !== undefined && { withRowBorders })}
+      withTableBorder={withTableBorder}
     >
       <Table.Thead>
         {headerGroups.map((headerGroup) => (
@@ -508,6 +603,7 @@ export function BasaltDataTable<T>({
               const pinnedStyle = enablePinning
                 ? getPinnedCellStyle(table, header.column)
                 : undefined
+              const align = resolveAlign(header.column)
               return (
                 <Table.Th
                   key={header.id}
@@ -533,6 +629,7 @@ export function BasaltDataTable<T>({
                   }
                   style={{
                     ...(canSort ? { cursor: 'pointer', userSelect: 'none' } : undefined),
+                    ...(align !== undefined && { textAlign: align }),
                     ...pinnedStyle,
                   }}
                 >
@@ -582,11 +679,16 @@ export function BasaltDataTable<T>({
                   const pinnedStyle = enablePinning
                     ? getPinnedCellStyle(table, cell.column)
                     : undefined
+                  const align = resolveAlign(cell.column)
                   return (
                     <Table.Td
                       key={cell.id}
                       style={{
-                        ...(typeof cell.getValue() === 'number' ? NUMERIC_CELL_STYLE : undefined),
+                        ...(typeof cell.getValue() === 'number' &&
+                        cell.column.columnDef.meta?.numeral !== false
+                          ? NUMERIC_CELL_STYLE
+                          : undefined),
+                        ...(align !== undefined && { textAlign: align }),
                         ...pinnedStyle,
                       }}
                     >
@@ -601,6 +703,10 @@ export function BasaltDataTable<T>({
       </Table.Tbody>
     </Table>
   )
+
+  // A capped body or a horizontal floor both need the same native scroll node; pinning keeps its
+  // simpler overflow-x Box when neither is set.
+  const scrolls = maxHeight !== undefined || minWidth !== undefined
 
   const paginationState = table.getState().pagination
   const total = table.getRowCount()
@@ -661,7 +767,19 @@ export function BasaltDataTable<T>({
           {toolbarActions}
         </Group>
       )}
-      {enablePinning ? <Box style={{ overflowX: 'auto' }}>{tableNode}</Box> : tableNode}
+      {scrolls ? (
+        <Table.ScrollContainer
+          type="native"
+          minWidth={minWidth ?? 0}
+          {...(maxHeight !== undefined && { maxHeight })}
+        >
+          {tableNode}
+        </Table.ScrollContainer>
+      ) : enablePinning ? (
+        <Box style={{ overflowX: 'auto' }}>{tableNode}</Box>
+      ) : (
+        tableNode
+      )}
       {enablePagination && (
         <Group justify="space-between" mt="xs" wrap="wrap" gap="xs" align="center">
           <Text style={RANGE_LABEL_STYLE}>
