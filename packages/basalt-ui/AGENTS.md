@@ -75,6 +75,14 @@ bunx basalt-ui info --json       # stable JSON surface map
 bunx basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
 ```
 
+`check-theme`, `doctor` and `sync` resolve their project identically: `BASALT_CWD` wins, then the
+cwd, then the workspace packages the root declares, then a two-level layout scan (which is what a
+repo with no `workspaces` field and the install one level down needs). Two candidates is ambiguous
+and reported, never guessed. `sync` on a `tokens-only` consumer prints `n/a` and exits 0.
+
+**Checking what an upgrade actually does? Run the local bin, not `bunx`.** `bunx` does not
+re-resolve a cached package, so it can execute the version you just upgraded away from.
+
 Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with matcher
 `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook` so the agent can't write off-palette
 colors without a `theme-allow` comment.
@@ -88,7 +96,7 @@ over the declaration it terminates. Whole-file scope is `theme-allow-file <id>�
 reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing.
 `.json`/`.webmanifest` use a `"basalt:theme-allow[-file]"` member. Audit them all with
 `basalt-ui check-theme --audit-allows`, which exits 1 on a waiver that suppresses nothing. It judges
-plugin-rule waivers too (since 1.21.1), by re-running oxlint — so it needs oxlint reachable;
+plugin-rule waivers too (since 1.22.0), by re-running oxlint — so it needs oxlint reachable;
 otherwise the verdict is "cannot judge", never "dead".
 
 > **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the

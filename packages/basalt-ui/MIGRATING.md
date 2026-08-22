@@ -8,9 +8,13 @@ renamed exports per minor, with the replacement.
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
 cross-checked against the repo's `scripts/export-surface.json` snapshot. **Every replacement below
 was re-audited against the built declaration files at 1.20.0 (2026-08-22)** after round 5 caught one
-row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.21.0 and 1.21.1
-sections were written against source, not against their commit messages. Check the types, not this
-table, if the two disagree.
+row that was wrong. That pass corrected 4 table rows and 3 prose claims. The 1.21.0, 1.22.0 and
+`Unreleased` sections were written against source, not against their commit messages. Check the
+types, not this table, if the two disagree.
+
+**The newest section is headed `## Unreleased`, and stays that way until npm serves it.** This file
+is written before `semantic-release` picks the number, so a number written here is a guess — and it
+was wrong three rounds running.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -20,12 +24,115 @@ between your version and the target.
 > `## [1.` finds only the patches.
 
 **Minors with no public API delta:** 1.1.0, 1.3.0, 1.4.0, 1.5.0, 1.6.0, 1.7.0, 1.8.0, 1.9.0,
-1.10.0, 1.13.0, 1.14.0, 1.16.0, 1.18.0 — and every patch except 1.21.1. Additive-only subpaths: `./tokens.css`
+1.10.0, 1.13.0, 1.14.0, 1.16.0, 1.18.0 — and every patch. Additive-only subpaths: `./tokens.css`
 at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
 
-## 1.21.1 — the toolchain stops overclaiming
+## Unreleased
+
+**The heading has no number on purpose.** Three rounds running, the newest heading here named a
+version npm never served — `1.20.1`, then `1.21.1` — because this file is written before
+`semantic-release` computes the number, and a `feat:` in the batch turns the guess into a phantom.
+`shipped-versions.test.ts` now fails any file `init`/`sync` copy into a consumer that names a
+version `CHANGELOG.md` does not record. This file is not in that set; the same discipline applies
+by convention. Rename the section at release, or leave it — a reader can resolve `Unreleased`
+against `CHANGELOG.md`, and could never resolve `1.21.1`.
+
+**No export removed or renamed; six new runtime exports and nine new types.** Nothing you wrote
+changed. Every entry is additive, and the batch runs the other way from the last three: those made
+the guard stricter, this one makes the framework more expressive.
+
+**Two chart kinds `CartesianChart` structurally could not host.** It renders `AxisLeftNumeric`
+unconditionally and builds x as `scalePoint` — positions, no widths. `BandStrip` has no y dimension
+to axis; `MirroredBars` has two, and needs band widths. Both compose `ChartFrame` directly and
+declare themselves with `theme-allow-file hand-rolled-plot`, alongside `DualPanel`.
+
+| New on `basalt-ui/charts`                                                | Note                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BandStrip` (+ `BandStripProps`, `BandStripSeries`, `BandSpan`)          | 1-D categorical bands. `getBand(d) => { state, fill?, absentFraction?, marker? }`; `series` IS the state set, so a strip cannot name a state it does not draw. `cursorResolution` defaults `'leading'`                                                    |
+| `MirroredBars` (+ `MirroredBarsProps`, `MirroredBarPane`)                | two bar panes, one x scale, one baseline, independent domains. `up`/`down` take `{ key, max?, autoMaxFloor?, ticks?, format }`; plus `upFraction` (the up pane's share of the band height, where the baseline sits), `getAbsentFraction`, `getBarOpacity` |
+| `foldBands` (+ `BandFold`, `BandTooltipConfig`, `BandTooltipRowContext`) | the width-driven fold both kinds run, exported so a consumer can test their `merge` against the real grouping                                                                                                                                             |
+| `HatchPattern`, `hatchFill`, `hatchSizeFor`                              | the absence fill                                                                                                                                                                                                                                          |
+
+The shared choreography lives in an internal `useBandPlot` — **not exported**, deliberately: it is
+the kinds' contract with each other, not a public seam.
+
+**`MirroredBars` reverses a recorded decision, and the recorded reason for it was wrong.** The old
+entry in `docs/CHARTS-SPEC.md` read _"no two-bar-pane kind with independent per-pane scales"_, with
+_"a second consumer asks"_ as its trigger. That trigger never fired. Round 4 framed the blocker as
+independent SCALES; `DualPanel` already had `topYDomain`/`bottomYDomain`, so that was never it. The
+real blockers are that `DualPanel`'s top pane is a LINE pane and its bottom takes one SIGNED
+`getBar` over a symmetric domain. A decision recorded against the wrong blocker outlives its own
+refutation.
+
+**`xTickValues?: (keys, xMax) => readonly string[]` on `CartesianChart`**, forwarded by `Bars`,
+`MultiLine`, `StackedArea`, `ZonedLine` and both band kinds. It resolves AHEAD of `xTicks`, which is
+unchanged and still works; omit both and ticks are chosen to fit (`smartTicks`), exactly as before.
+Reach for it on a dense time axis: the tick choosers append the final key unconditionally, so a
+COUNT that does not land on the last index paints two labels on top of each other at the right edge
+— at every count, not at an unlucky one. On the consumer that reported it, the local tick helper
+went 200 → 160 lines; it shrinks, it does not disappear.
+
+**`basaltAppPlugin`'s `icons` takes an array now.**
+
+```ts
+icons?: false | { dir?: string } | readonly BasaltAppIcon[]
+// BasaltAppIcon = { src, sizes?, type?, purpose?, rel? }
+icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }]
+```
+
+Every entry becomes a manifest icon; an entry reaches the head only when it names a `rel` (`'icon' |
+'shortcut icon' | 'apple-touch-icon' | 'mask-icon'`) — which is what lets an app whose `index.html`
+already links its favicon take the generated manifest without a duplicate tag. An empty array reads
+as `false`, i.e. no `icons` member rather than an empty one. `{ dir }` and the default are
+byte-identical to before. **If you kept a hand-written `manifest.webmanifest` because the plugin
+could not name your icon, you can delete it now** — with its permanent `theme-allow-file` — the
+generated manifest reproduces it member for member, plus an `id` a hand-written copy usually lacks.
+
+**CLI: a repo root with no `workspaces` field was invisible to everything.** With the install one
+level down and nothing declaring it, `check-theme` printed "no off-palette colors" having scanned
+**zero files** and `doctor` inferred `tokens-only` for a full Mantine consumer. `resolveProjectDir`
+now falls back to a bounded two-level layout scan when there is nothing declared to read; a declared
+`workspaces` still wins, and 2+ candidates stays ambiguous. `BASALT_CWD` is honoured by all three
+commands now, not two.
+
+- **`sync` is profile-aware.** A `"basalt": { "profile": "tokens-only" }` consumer has no scaffold
+  to reconcile, so `sync` prints `n/a` and exits 0 — `sync --check` is now wirable into a
+  tokens-only repo's CI. It used to refuse and prescribe `basalt-ui init`, the one command that
+  would have written a competing install.
+- **`DESIGN.md` version rot is healed, not re-stamped.** The stamp was never a constant: `DESIGN.md`
+  is a **seed**, written once and never reconciled, so the same line read 1.0.0 / 1.9.0 / 1.21.0 /
+  1.22.0 under one install. Reported as four doc bugs over three rounds; it was one. The template
+  names no version and `sync` rewrites openers already written.
+
+**The `theme-allow` shape grid is enumerated, not collected.** The reported fifth hole was three:
+the closer-alone-on-its-line shape that got reported, a `MAX_COMMENT_BLOCK_LINES = 8` budget
+truncating the walk inside a ~12-line docblock (not a JSX shape at all), and the plugin requiring
+the annotation's comment to be the LAST one above the node — so a reason wrapped onto a second `//`,
+a shape argo writes, reported under oxlint while the guard waived it. The grid now runs the four
+axes that vary (comment style × token position × where the closer falls × what follows), pinned row
+for row in `src/guard/check-source.test.ts` (37 supported + 8 asserted-unsupported) and
+`configs/oxlint-plugin.test.ts` (32 + 8; the guard's extra five rows are CSS/HTML/JSON dialects
+oxlint never sees). Zero disagreements, down from five — **and no waiver tally moved in any of the
+seven consumer repos.**
+
+Asserting the unsupported cells is the point: it stops "unsupported" and "silently broken" reading
+the same. What does NOT waive, in both halves:
+
+| Shape                                                                                                            | Why                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| a blank line between annotation and code — after `//`, after `{/* */}`, or after a `{/*` whose closer sits alone | a blank line is how you say "this comment is not about the next statement"                |
+| the token mid-sentence in a line comment, a docblock gutter, or a JSX expression comment                         | prose that MENTIONS the token is not an annotation — the reason it must START its comment |
+| the token inside a string literal                                                                                | same                                                                                      |
+| above a multi-line OPENING tag, with the finding on a later attribute line                                       | a waiver reaches the first line below its comment, not an arbitrary line further down     |
+
+**Corrected consumer findings.** _"`sync` scaffolds 19–20 files into a consumer root"_ **did not
+reproduce** — those runs used a stale `bunx` cache of 1.20.0, and `bunx` does not re-resolve a
+package it already has. Check an upgrade against the local bin. Round 6's _"`doctor` exits 0 on hard
+failures"_ was a pipe artifact (`$?` read after `| tail`) and was already withdrawn.
+
+## 1.22.0 — the toolchain stops overclaiming
 
 **No export removed or renamed; four added.** Nothing you wrote changed. Every entry below is a
 check that reported an answer it had not earned, so a green CI on 1.21.0 was, for several of them,
@@ -74,14 +181,20 @@ stated limit is unchanged: exact-name-only, a tripwire, not coverage.
 
 **`basaltAppPlugin({ icons: false })` now omits the manifest's `icons` member too.** It skipped the
 head `<link>` icons and emitted the two PNG manifest entries anyway, so `{ manifest: true, icons:
-false }` shipped an installable app pointing at two 404s. **If you went hybrid over this** — the
-plugin for the head, a hand-written manifest for the rest — **you can drop the hand-written half.**
-The option's JSDoc said "skips the head `<link>` icons"; it now says what the option does.
+false }` shipped an installable app pointing at two 404s. The manifest is now **honest** about
+icons — it is not yet **sufficient**. If you went hybrid over the 404s, dropping the hand-written
+half here costs you every icon unless your `public/` matches basalt's six filenames: at this
+release `icons` was still `false | { dir?: string }` over those six, so an app whose icon is
+`favicon.svg` could pick between a manifest naming two PNGs it never builds and a manifest with no
+`icons` member at all. The array form that fixes it is in `## Unreleased`. The option's JSDoc said
+"skips the head `<link>` icons"; it now says what the option does.
 
 **Two `theme-allow` comment shapes were silently broken and now work.** Plainly: this is the fourth
-hole found in this one contract in three rounds. The full thirteen-shape matrix is now pinned in
-both halves — `src/guard/check-source.test.ts` and `configs/oxlint-plugin.test.ts` — so the two
-parsers can no longer disagree about what an annotation IS.
+hole found in this one contract in three rounds. A thirteen-shape matrix — every shape a consumer
+had been SEEN to write — is pinned in both halves, `src/guard/check-source.test.ts` and
+`configs/oxlint-plugin.test.ts`. **The claim that followed it here, that the two parsers could
+therefore no longer disagree, was false when it was written**: a list of collected anecdotes cannot
+close a contract. Three more holes were open at this release. See `## Unreleased`.
 
 | Shape                                         | What it did                                                                                                                | Now                                     |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
@@ -378,7 +491,7 @@ deleting an entry forces the level flip in the same commit.
 | `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                                                               |
 | `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened again at 1.21.0; grace restarts with the widening |
 | `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0                                         |
-| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.21.0, narrowed at 1.21.1      |
+| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.21.0, narrowed at 1.22.0      |
 | `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                                                        |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and

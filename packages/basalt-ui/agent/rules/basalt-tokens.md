@@ -96,6 +96,22 @@ An id is a guard kind (`raw-surface`, `inline-spacing`, …) or an oxlint plugin
   still ends the block; that is how you say "this comment is not about the next statement".
 - **`basalt/hand-rolled-plot` grants whole-file immunity only through `theme-allow-file`.** Every
   assembly node is otherwise waived on its own.
+- **Eight shapes are asserted NOT to waive, in both halves.** They are pinned as unsupported rather
+  than merely left out, so "unsupported" and "silently broken" stop reading the same. Don't write
+  them:
+
+  | Shape                                                                                                                              | Why it does not waive                                                                                               |
+  | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+  | a blank line between the annotation and the code — after `//`, after `{/* */}`, or after a `{/*` whose closer sits on its own line | a blank line is how you say "this comment is not about the next statement"                                          |
+  | the token mid-sentence in a line comment, a docblock gutter, or a JSX expression comment                                           | prose that MENTIONS the token is not an annotation — the reason it must START its comment                           |
+  | the token inside a string literal                                                                                                  | same                                                                                                                |
+  | above a multi-line OPENING tag, when the finding sits on a later attribute line                                                    | a waiver reaches the first line below its comment, not an arbitrary line further down — put it beside the attribute |
+
+  The whole grid — four axes, comment style × token position × where the closer falls × what
+  follows — is pinned row for row in `src/guard/check-source.test.ts` (37 supported + these 8) and
+  `configs/oxlint-plugin.test.ts` (32 + 8; five of the guard's rows are CSS/HTML/JSON dialects
+  oxlint never sees). Zero disagreements between the two, and no waiver tally moved in any of the
+  seven consumer repos.
 
 ### Audit them: `basalt-ui check-theme --audit-allows`
 

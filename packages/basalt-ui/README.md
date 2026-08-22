@@ -261,7 +261,7 @@ nothing, so a typo is never the blanket form.
 
 `basalt-ui check-theme --audit-allows` reports every annotation and every `exemptRules` entry with
 what it still suppresses, proved by re-running the scan with that one waiver neutralized. Exits 1 on
-a dead waiver, so it is usable as a CI gate. Since 1.21.1 it runs **both** halves — `checkSource` for
+a dead waiver, so it is usable as a CI gate. Since 1.22.0 it runs **both** halves — `checkSource` for
 a guard kind, oxlint over one neutralized sibling file for a plugin rule — so a waiver naming
 `hand-rolled-plot` is judged rather than skipped. **It needs oxlint reachable**; where it is not, the
 verdict is "cannot judge", never "dead". The report prints the scope it audited, because `0 dead`
@@ -441,8 +441,20 @@ import { CartesianChart, LinePath, VX } from 'basalt-ui/charts'
 </CartesianChart>
 ```
 
-Shipped kinds (`Bars`, `MultiLine`, `StackedArea`, `ZonedLine`, `Donut`, `DualPanel`, `Heatmap`)
-are that same composition, pre-wired.
+Shipped kinds (`Bars`, `MultiLine`, `StackedArea`, `ZonedLine`, `Donut`, `DualPanel`, `Heatmap`,
+`BandStrip`, `MirroredBars`) are that same composition, pre-wired. The last five compose
+`ChartFrame` directly, because a ring, a matrix, two panes or a strip is not a single plot rect:
+**`BandStrip`** draws 1-D categorical bands with no y dimension at all (`CartesianChart` renders a
+left numeric axis unconditionally, so it could never host one), and **`MirroredBars`** draws two
+bar panes over one x scale and one baseline, each in its own domain. Both fold their domain by
+width, hatch the share of a slot nothing measured, and share the page cursor like every other
+chart.
+
+Which x ticks get painted is `xTickValues?: (keys, xMax) => readonly string[]`, on
+`CartesianChart` and forwarded by `Bars`/`MultiLine`/`StackedArea`/`ZonedLine` and both band kinds.
+It resolves ahead of the `xTicks` COUNT, which is unchanged; omit both and ticks are chosen to fit.
+Reach for values on a dense time axis — the tick chooser appends the final key unconditionally, so
+a count that misses the last index collides two labels at the right edge at every count.
 
 ### `./query` — TanStack Query adapter
 
@@ -644,8 +656,15 @@ bun add -D vite-plugin-pwa workbox-build workbox-window   # only if serviceWorke
 Without the peer installed, `serviceWorker: true` degrades to a one-line console warning (no
 service worker, no crash) — everything else (theme-color meta, anti-FOUC background,
 `site.webmanifest`, favicon/apple-touch-icon links, OG/Twitter defaults) works with zero extra
-dependencies. Full doctrine, plugin ordering, and the bring-your-own icon filenames:
-`agent/rules/basalt-app.md`.
+dependencies.
+
+`icons` takes `false | { dir?: string } | readonly BasaltAppIcon[]`. The array form names the icons
+the app actually has, with the manifest's own field names (`src`, `sizes`, `type`, `purpose`) plus
+an optional `rel` — every entry becomes a manifest icon, and only an entry naming a `rel` reaches
+the head. `icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }]` is a complete,
+installable icon set for a single-page app. An empty array reads as `false`; `{ dir }` and the
+default are byte-identical to what they always emitted. Full doctrine, plugin ordering, and the six
+default icon filenames: `agent/rules/basalt-app.md`.
 
 ---
 
@@ -689,17 +708,32 @@ bunx basalt-ui help              # full usage; every subcommand also takes --hel
 ```
 
 `doctor` reports **`SKIPPED`** as a third outcome beside pass/warn/fail and exits non-zero on it —
-"All checks passed" is only printable when every check actually ran. `check-theme` and `doctor`
-honour `BASALT_CWD`, and relocate to the single workspace package carrying a basalt config when
-invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
-`tokens:css` and `fonts:css` both take `--check` as a CI drift gate.
+"All checks passed" is only printable when every check actually ran. **`check-theme`, `doctor` and
+`sync` all resolve their project the same way**: `BASALT_CWD` wins, then the cwd itself, then the
+workspace packages the root declares, then a two-level layout scan. Two candidates is reported as
+ambiguous, never guessed. The scan is what a repo declaring **no `workspaces` field** needs — with
+the install one level down and nothing declaring it, every command answered about the root and
+found nothing there: `check-theme` printed "no off-palette colors" having scanned zero files, and
+`doctor` inferred `tokens-only` for a full Mantine consumer. `tokens:css` and `fonts:css` both take
+`--check` as a CI drift gate.
+
+**Verify an upgrade against the local bin, not `bunx`.** `bunx` does not re-resolve a package it
+has already cached, so a `bunx basalt-ui …` run can execute a version you upgraded away from —
+which is exactly how a fixed defect gets re-reported. Prefer `./node_modules/.bin/basalt-ui` (or
+`bun run` a script that does) when the point of the run is to check what the installed version
+does.
 
 `sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff);
 missing → recreate. `--force` overwrites local edits. The summary counts `created` and `recreated`
-apart: `recreated` means the ledger placed that file once and it went missing.
+apart: `recreated` means the ledger placed that file once and it went missing. On a
+`"basalt": { "profile": "tokens-only" }` consumer there is no scaffold to reconcile, so `sync`
+prints `n/a` and exits 0 — `sync --check` is wirable into a tokens-only repo's CI without a
+special case. `sync` also heals a `DESIGN.md` opener that still names a version: the file is a
+**seed**, written once and never reconciled, so any number stamped into it was stale by the next
+release.
 
 **`sync` refreshes an existing install; it does not create one.** It resolves its project exactly as
-`check-theme` and `doctor` do, and since 1.21.1 **exits 1** when the resolved project has no
+`check-theme` and `doctor` do, and since 1.22.0 **exits 1** when the resolved project has no
 `.basalt/manifest.json`, naming the install it found above instead of scaffolding a second one
 beside it. Run it at the package that holds the manifest, or point `BASALT_CWD` at that package.
 Creating an install is `basalt-ui init`'s decision.
