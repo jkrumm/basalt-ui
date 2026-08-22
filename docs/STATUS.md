@@ -29,19 +29,88 @@ be released yet; the version column says when a capability landed, not what npm 
 | Native mobile nav + `defineNav`                                                                        | 1.19.0                         |
 | Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0                         |
 | Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                      | 1.21.0                         |
-| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                               | 1.21.1                         |
+| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                               | 1.22.0                         |
+| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                 | unreleased                     |
 
-Adopted downstream: seven consumer repos, all on 1.21.0 as of the round-6 sweep. `rollhook` runs
+Adopted downstream: seven consumer repos, all on 1.22.0 as of the round-7 sweep. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
 `basalt-ui-obsidian` is a downstream _library_, not an app.
 
 The June-era roadmap/handover docs in `docs/archive/` still phrase built work as "remaining"; that
 language is historical, see the banner on each.
 
+## Round-7 consumer sweep (2026-08-22)
+
+Seven repos on 1.22.0. **Zero code changes needed in any of them** — no `check-theme` finding, no
+`basalt/*` oxlint finding, no waiver moved. Full reports: `.claude/feedback/round-7/`.
+
+| Found                                                                                                                                                                                                              | By                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| A repo root with no `workspaces` field and the install one level down is invisible: `check-theme` printed "no off-palette colors" over **zero files**, `doctor` inferred `tokens-only` for a full Mantine consumer | linewatch, image-share |
+| `sync` told a tokens-only consumer to run `basalt-ui init` — the advice `doctor` exists to prevent, same directory, same version                                                                                   | rollhook               |
+| The fifth `theme-allow` shape hole: the `{/*` whose closer sits alone on its line, honoured by oxlint, ignored by the guard                                                                                        | linewatch              |
+| `icons` still could not name a real icon file — six fixed filenames or nothing, and rb's icon is `favicon.svg`                                                                                                     | rb                     |
+| `MIGRATING.md`'s newest heading named `1.21.1`, a version npm never served — **third round running**                                                                                                               | all seven              |
+
+**Corrected findings.** _"`sync` scaffolds 19–20 files into a consumer root"_ did not reproduce:
+those runs executed a stale `bunx` cache of 1.20.0, and `bunx` does not re-resolve a cached
+package. Third round in which a consumer diagnosis was directionally wrong on cause, and the second
+caused by the measuring harness rather than the code — round 6's was `$?` after a pipe. **Check an
+upgrade against the local bin.**
+
+## Round-7 batch — unreleased
+
+The first batch this cycle that widens the framework rather than the guard.
+
+- **Two banded chart kinds** (`c1da509`; playground routes `f72611a`, the non-finite-`absentFraction`
+  fix `370b9be`, `chart-in-raw-surface` `cc4903d`) — `BandStrip`
+  (1-D categorical bands, no y dimension) and `MirroredBars` (two bar panes, one x scale, one
+  baseline, independent domains). Neither can compose `CartesianChart`, which renders
+  `AxisLeftNumeric` unconditionally and builds x as `scalePoint`. Shared choreography in an internal
+  `useBandPlot`; `foldBands` + `HatchPattern`/`hatchFill`/`hatchSizeFor` ship.
+  **Proven by porting, not by demo:** linewatch's real charts, 1884 → 957 source lines, all 11 of
+  its `hand-rolled-plot` waivers retired, 14 `theme-allow` → 3. The port caught two live bugs —
+  a `NaN` series value painting `y="NaN" height="NaN"` bars and a non-finite `absentFraction`
+  painting `width="NaN"` bands, both silently invisible. **Doctrine now: a kind is proven by porting
+  a real consumer's call sites and reporting what it could NOT express.** `StatCard.tone` shipped in
+  1.7.0 without that check and four consumers re-rolled the card anyway.
+- **`xTickValues` on `CartesianChart`** (`cdb083a`) — resolves ahead of `xTicks`, forwarded by the
+  four cartesian kinds and both band kinds. A tick COUNT cannot express a legible dense time axis:
+  `smartTicks` appends the final key unconditionally, so any count missing the last index collides
+  two labels at the right edge. The consumer's own helper went 200 → 160 lines — it shrinks, it does
+  not die.
+- **CLI resolution and reporting** (`791225b`) — `resolveProjectDir` falls back to a bounded
+  two-level layout scan when nothing is declared; `BASALT_CWD` honoured by all three commands;
+  `sync` is profile-aware (tokens-only → `n/a`, exit 0, so `sync --check` is CI-wirable); `sync`
+  heals `DESIGN.md` openers that still name a version (the file is a seed, so the stamp was never a
+  constant); new `shipped-versions.test.ts` fails any shipped asset naming a version `CHANGELOG.md`
+  does not record.
+- **The annotation grid is enumerated, not collected** (`28367af`) — the reported hole was three:
+  the closer-alone shape, a `MAX_COMMENT_BLOCK_LINES = 8` budget truncating the walk inside a
+  ~12-line docblock, and the plugin requiring the annotation to be the LAST comment above the node
+  (so a reason wrapped onto a second `//` reported under oxlint while the guard waived it). Pinned
+  now over four axes: guard 37 supported + 8 asserted-unsupported, plugin 32 + 8. **Zero
+  disagreements, down from five, with no tally change in any of the seven consumers.** The previous
+  round's "thirteen-shape matrix means the two parsers can no longer disagree" was false when
+  written — a list of anecdotes cannot close a contract.
+- **`basaltAppPlugin` icons can name a real file** (`ead3bac`) — `icons` also takes an array using
+  the manifest's own field names plus an optional `rel`; every entry becomes a manifest icon, only a
+  `rel` reaches the head, an empty array reads as `false`, `{ dir }` unchanged. rb can delete its
+  hand-written `manifest.webmanifest` and the permanent `theme-allow-file` on it.
+
+**Known gaps — reported, not fixed:** no `bandHeight` prop (band height is derived and floored by
+`VX.margin`, so linewatch raised its axis height instead); `getBand`/`getAbsentFraction` never see
+the fold's bookkeeping; `ChartTooltipFloat` still has no viewport gate; `BandStrip` derives exactly
+one tooltip row, so extra rows stay hand-authored. **Handoff:** the guard's `unframed-chart` kind
+(`CHART_ENTRY_POINT_TAG`, `src/guard/index.ts`) still names only the nine older kinds — `cc4903d`
+taught the oxlint plugin's `chart-in-raw-surface` about the two new ones, the regex twin was missed.
+`agent/templates/CLAUDE-block.md.tpl` still says `DualPanel`/`Donut`/`Heatmap` are the declared
+exceptions.
+
 ## Round-6 consumer sweep (2026-08-22)
 
 Seven repos on 1.21.0. Every finding was **a toolchain reporting an answer it had not earned** — the
-class the last two releases exist for, one layer in. All closed in the 1.21.1 batch below. Full
+class the last two releases exist for, one layer in. All closed in the 1.22.0 batch below. Full
 reports: `.claude/feedback/round-6/`.
 
 | Found                                                                                                                                                                                 | By                         |
@@ -53,61 +122,38 @@ reports: `.claude/feedback/round-6/`.
 | `basaltAppPlugin({ icons: false })` shipped a manifest naming two 404s                                                                                                                | rb                         |
 | Two `theme-allow` comment shapes waived nothing, one of them linewatch's chart-axis shape                                                                                             | linewatch                  |
 
-**Corrected finding** — argo reported _"`doctor` exits 0 on two hard failures"_. It does not.
-Reproduced on a faithful scratch tree, the exit was **1**; the `0` came from reading `$?` after a
-pipe (`… | tail -30; echo $?` returns tail's status). No code changed. `doctor`'s exit status is now
-pinned per outcome rather than only by printed text — pass → 0, warn → 0, one hard failure → 1, two
-→ 1, `SKIPPED` → 1, ambiguous project → 1. That gap is what let 1.20.0 ship a SKIPPED-exits-0 bug.
-Second consumer diagnosis in two rounds that was directionally wrong on cause; round 5's was
-image-share's `Fix:`-footer claim.
+**Corrected finding** — argo's _"`doctor` exits 0 on two hard failures"_ was a pipe artifact: `$?`
+read after `| tail` returns tail's status. The real exit was 1; no code changed. `doctor`'s exit
+status is now pinned per outcome rather than by printed text, which is what let 1.20.0 ship a
+SKIPPED-exits-0 bug.
 
-**Known gaps — reported, not fixed:**
+**Known gaps — reported, not fixed:** `--audit-allows` says nothing about `basalt.exempt` (a whole
+file removed from the scan, the broadest exception the config surface has), and its `scoped to …`
+line does not distinguish `theme-allow` from `theme-allow-file`. **Handoff:** the profile-gated
+`check-theme` manifest hint lives CLI-side behind a sentinel path (`PLAIN_JSON_HINT_PATH`,
+`src/cli/index.ts`); it belongs in the guard as `guardWaiverHint(relPath, { profile })`.
 
-- `--audit-allows` says nothing about `basalt.exempt`: a whole file removed from the scan, the
-  broadest exception the config surface has.
-- Its `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file` — the line that
-  exists to state a waiver's scope does not name which of the two scopes it is.
-- **Handoff, flagged by the CLI agent:** the profile-gated `check-theme` manifest hint lives CLI-side
-  behind a sentinel path (`PLAIN_JSON_HINT_PATH`, `src/cli/index.ts`). It belongs in the guard as
-  `guardWaiverHint(relPath, { profile })`.
+## Round-6 batch — 1.22.0
 
-## Round-6 batch — 1.21.1
+Full per-export detail in `packages/basalt-ui/MIGRATING.md` § 1.22.0; the shape of it:
 
-- **`sync` refuses instead of scaffolding** (`40d7fc6`) — it resolves its project exactly as
-  `check-theme`/`doctor` do, then exits 1 when the resolved project has no `.basalt/manifest.json`,
-  naming the install it found above. The refusal runs BEFORE the `basalt.roots` backfill, which was
-  half the damage. Unblock by running `sync` at that install, or setting `BASALT_CWD` to it.
-  `created` is its own counter now: `recreated` means the ledger placed a file once and it went
-  missing, which twenty first-time writes were not.
+- **`sync` refuses instead of scaffolding** (`40d7fc6`) — resolves its project as
+  `check-theme`/`doctor` do, then exits 1 when that project has no manifest, naming the install it
+  found above. The refusal runs BEFORE the `basalt.roots` backfill, which was half the damage.
+  `created` is its own counter now.
 - **`--audit-allows` gains the oxlint half** (`cfb4d1a`, `40d7fc6`) — a plugin-rule annotation is
-  probed by re-running oxlint over one neutralized sibling file (no stdin mode; removed in a
-  `finally`). Judged now: argo 8 of 8, linewatch 14 of 14, basalt's own tree 23 of 23. **It requires
-  oxlint reachable** — unreachable is "cannot judge", never "dead". The report prints the scope it
-  audited, because `0 dead` reading as `0 dead anywhere` was the same false-green in miniature. The
-  reader ships as four runtime exports on `./guard` (`findAllowAnnotations`,
-  `neutralizeAllowAnnotation`, `NEUTRALIZED_ALLOW_TOKEN`, `PLUGIN_RULE_IDS`, plus the
-  `AllowAnnotationSite` type), so the audit stops carrying a mirrored regex one comment shape
-  behind.
+  probed by re-running oxlint over one neutralized sibling file. Judged: argo 8/8, linewatch 14/14,
+  basalt's own tree 23/23. Unreachable oxlint is "cannot judge", never "dead". The reader ships as
+  four runtime exports on `./guard`, so the audit stops carrying a mirrored regex one shape behind.
 - **`doctor`'s `lefthook-preset` asks whether the gate EXISTS** (`40d7fc6`), via `lefthook dump`,
-  which resolves `extends`, `include` and per-command `root:` — not a string match on the config
-  text. A broken `extends` target stays a hard fail (lefthook merges a missing target into zero
-  commands and exits 0), a provably absent gate is a warn, and can't-tell is advisory.
-- **Two `theme-allow` comment shapes fixed** (`cfb4d1a`) — a `/** theme-allow … */` docblock opener
-  (the guard ignored it, the plugin honoured it), and the wrapped `{/*` + token-on-next-line + `*/}`
-  form, which left a bare `}` after comment-stripping and so scoped the waiver to a brace. linewatch
-  writes that shape for every hand-composed chart axis, so any GUARD kind annotated that way was
-  silently unwaivable. **This is the fourth hole found in this one contract in three rounds.** The
-  full thirteen-shape matrix is now pinned in both `src/guard/check-source.test.ts` and
-  `configs/oxlint-plugin.test.ts`.
-- **`shadow-basalt-export` narrowed** (`314eae8`) — gates on `isBasaltScopedFile` like every other
-  rule in the file, and needs a component-SHAPED declaration. A plain data class sharing a name with
-  a shipped export is a collision, not a fork. Narrowing does not restart grace.
-- **`basaltAppPlugin({ icons: false })` omits the manifest's `icons` member** (`9d6fbe0`) — it
-  emitted the two PNG paths unconditionally, so a manifest generated with icons off pointed at two
-  404s. The option's JSDoc said "skips the head `<link>` icons"; it now says what it does.
-- **`check-theme`'s manifest hint is profile-gated** (`40d7fc6`) — leading with `basaltAppPlugin` is
-  unreachable for a `tokens-only` consumer (rollhook: no `index.html`, no basalt JS, owns icons the
-  plugin does not emit).
+  which resolves `extends`, `include` and per-command `root:`. A broken `extends` target stays a
+  hard fail, a provably absent gate is a warn, can't-tell is advisory.
+- **Two `theme-allow` comment shapes fixed** (`cfb4d1a`) — a one-line docblock opener, and the
+  wrapped `{/*` whose bare `}` scoped the waiver to a brace. **Fourth hole in three rounds**; the
+  thirteen-shape matrix shipped with it did not close the contract (see round 7).
+- **`shadow-basalt-export` narrowed** (`314eae8`), **`icons: false` reaches the manifest**
+  (`9d6fbe0`), **`check-theme`'s manifest hint is profile-gated** (`40d7fc6`) — leading with
+  `basaltAppPlugin` is unreachable for a tokens-only consumer.
 
 ## Round-5 consumer sweep (2026-08-22)
 
@@ -143,9 +189,9 @@ Seven repos, every gate green, all three findings outside them. Full reports:
    green — `StatCard` alone re-rolled by 4 of 4 app consumers. **Partly answered**:
    `shadow-basalt-export` and `hand-rolled-shell` detect the two cheapest shapes. **The
    expressiveness half is still not built** — `StatCard`'s missing props, a query loading/error
-   sibling to `EmptyState`, `createSearchSchemaStore`, `BandStrip`, `DualPanel` independent domains.
-   image-share re-reported both in round 6: 204 lines of `query-state.tsx` over 10 call sites, and
-   290 lines of hand-rolled URL state.
+   sibling to `EmptyState`, `createSearchSchemaStore`. `BandStrip` and independent bar-pane domains
+   are answered in round 7 (`BandStrip`/`MirroredBars`). image-share re-reported both in round 6:
+   204 lines of `query-state.tsx` over 10 call sites, and 290 lines of hand-rolled URL state.
 3. **There is no API-delta story** — semantic-release's one-line-per-commit format never names a
    removed export. Answered by `packages/basalt-ui/MIGRATING.md`.
 
@@ -159,41 +205,30 @@ but not meaningful — they are oxlint plugin rules, whose severity had no grace
 
 Round 5 found the same false-green class one layer in: waivers nobody re-checked, wiring checks that
 matched a string instead of resolving it, and an API whose whole point was reachable only through a
-JSDoc nobody had to read.
+JSDoc nobody had to read. Per-export detail in `MIGRATING.md` § 1.21.0.
 
 - **The `theme-allow` grammar** (`268fb43`) — both parsers did a bare substring search, so a comment
-  merely _mentioning_ the token parsed as the blanket form and switched every rule off on the line
-  below; linewatch disarmed a file by documenting its own waivers. An annotation must now START its
-  comment. File scope is spelled `theme-allow-file <id>… — <why>`, a bare one waives nothing, and
-  plain `theme-allow` is the node/line waiver — **the half of 1.20.0 that never shipped**. A
-  **consumer break**, measured: linewatch 0 → 11, argo 0 → 6, rb 0 → 0, all `warn`, one word per
-  declaration. `.json`/`.webmanifest` get a `"basalt:theme-allow[-file]"` member; their findings had
-  been unwaivable since the markup scan landed. A comment-only annotation now reaches the first CODE
-  line below, so a wrapped reason or a docblock's `*/` stops absorbing it (argo hit that 3×).
+  merely _mentioning_ the token switched every rule off on the line below; linewatch disarmed a file
+  by documenting its own waivers. An annotation must now START its comment, file scope is spelled
+  `theme-allow-file`, and a bare one waives nothing. A **consumer break**, measured: linewatch
+  0 → 11 waivers, argo 0 → 6, rb 0 → 0, all `warn`, one word per declaration.
 - **`check-theme --audit-allows`** (`25323be`) — every waiver, with what it still suppresses, proved
-  by re-running the guard with that occurrence neutralized rather than by reading its text. Exits 1
-  on a dead one; found one in basalt's own shell (`8f785a1`). It could not judge a plugin-rule
-  waiver, which is round 6's finding. `exemptRules` now takes relative paths, directory prefixes,
-  globs and `{ paths, reason }`; entries matching nothing are reported.
+  by re-running the guard with that occurrence neutralized. Exits 1 on a dead one; found one in
+  basalt's own shell (`8f785a1`). `exemptRules` takes paths, prefixes, globs and `{ paths, reason }`.
 - **Toolchain seams** (`25323be`) — `oxlint-preset` resolves the `extends` target instead of
   matching the string; new `lefthook-preset` check, because a missing target merges to ZERO commands
-  and exits 0, leaving a repo with no pre-commit gate and a clean `lefthook dump`. `sync` reports
-  both seams and backfills `basalt.roots` (only `init` ever wrote it, so every existing consumer sat
-  on the undeclared `src` default while `guard-scan` passed). An `extends` target WINS on a
-  colliding key — hence `${BASALT_BIN:-bunx --no-install basalt-ui}`, the one overridable seam.
+  and exits 0. `sync` backfills `basalt.roots` — only `init` ever wrote it, so every existing
+  consumer sat on the undeclared `src` default. An `extends` target WINS on a colliding key, hence
+  `${BASALT_BIN:-bunx --no-install basalt-ui}`, the one overridable seam.
 - **`store.linkSearch`** (`ad2b5bc`) — `createSearchParamStore`'s persistence lived entirely behind
   `validateSearch`, so adopting the store and never wiring the reader was usual, not merely
-  possible. Argo adopted it in three features, hand-rolled the persistence in all three, and its
-  reader had **zero call sites**. The remedy is now a property autocomplete offers while you type
-  `search:`, plus a dev warning that fires only in the provably broken state.
-- **The rest** — `basaltAppPlugin` gains `colorScheme`, scopes its anti-FOUC rule to
-  `html:not([data-mantine-color-scheme])` and hoists `<meta charset>` back inside the spec's
-  1024-byte window, 1653 → 46 (`d6426f0`). The type ladder gains `nano` (10) and `display` (30); a
-  20px rung was **rejected**, 21/20 = 1.05 being below the 1.06×–1.17× band (`0d03db3`).
-  `BasaltShell` persists collapse through `createPersistedState`, SSR-safe (`129a31b`) — which
-  **retracts a round-4 finding**: argo's raw `localStorage` read was compliance with the shipped
-  component, not drift. `shadow-basalt-export` reads all nine published barrels and calls itself a
-  **tripwire, not coverage**. `tokens:css` emits `0.1`, not `0.10` (`cf55a20`).
+  possible: argo adopted it in three features and hand-rolled the persistence in all three.
+- **The rest** — `basaltAppPlugin` gains `colorScheme`, scopes its anti-FOUC rule and hoists
+  `<meta charset>` back inside the spec's 1024-byte window, 1653 → 46 (`d6426f0`). The type ladder
+  gains `nano` (10) and `display` (30); a 20px rung was **rejected**, 21/20 = 1.05 being below the
+  1.06×–1.17× band (`0d03db3`). `BasaltShell` persists collapse through `createPersistedState`
+  (`129a31b`), which **retracts a round-4 finding** — argo's raw `localStorage` read was compliance
+  with the shipped component, not drift. `tokens:css` emits `0.1`, not `0.10` (`cf55a20`).
 
 ## Round-4 batch — shipped in 1.20.0
 
