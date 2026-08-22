@@ -32,7 +32,12 @@ import {
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { checkSource, DEFAULT_GUARD_CONFIG, GUARD_RULES } from '../guard'
+import {
+  checkSource,
+  DEFAULT_GUARD_CONFIG,
+  GUARD_RULES,
+  TOKENS_ONLY_DISABLED_KINDS,
+} from '../guard'
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
 import { RULE_NAMES, SKILL_NAMES, SURFACES, TOKEN_LAYER_BOUNDARY_SURFACES } from '../surfaces'
@@ -45,6 +50,27 @@ export type BasaltConfig = {
   roots?: string[]
   /** Files exempt from the scan (they ARE the palette source). Default: argo's exempt set. */
   exempt?: string[]
+  /**
+   * Declares this package a tokens-only consumer: it uses the `--vx-*` layer and no Mantine. Turns
+   * off every guard kind whose remedy is a Mantine component, a Mantine prop or the React theme
+   * factory, leaving the color and typography kinds live. Default: `'mantine'`.
+   *
+   * Deliberately not inferred from a missing `@mantine/core`: silencing 16 rules is a decision, and
+   * a repo that keeps Mantine in a workspace package would otherwise switch off half its own guard
+   * without saying so. `basalt-ui doctor` detects the shape and tells you to set this.
+   */
+  profile?: 'mantine' | 'tokens-only'
+  /**
+   * Extra files to scan, named individually and relative to this package — for a design surface
+   * that lives outside every root and outside the `index.html` / `public/` conventions the walker
+   * already derives. Also the ONLY way a `.json` is ever scanned: the guard understands JSON as
+   * markup, but a consumer repo's JSON is overwhelmingly config, fixtures and lockfiles, so
+   * blanket-scanning it is a false-positive generator rather than a guard.
+   *
+   * @example
+   * { include: ['app/manifest.json', 'emails/template.html'] }
+   */
+  include?: string[]
   /** Named spacing-scale steps (px) flagged when used as a raw spacing prop. Default: 10/12/16/20/32. */
   spacingSteps?: number[]
   /** Per-kind severity override — `'warn'` reports without failing, `'error'` fails the build.
@@ -284,10 +310,22 @@ function readBasaltConfig(cwd: string): BasaltConfig {
 }
 
 /**
- * Recursively collect .ts/.tsx/.css files under a root, skipping dependency/build dirs.
- * Node+Bun-safe. `.css` is included so the theme guard reaches CSS modules / `styles.css` —
+ * Extensions the walker collects. `html?`/`webmanifest` close argo's finding that raw hex ships in
+ * `index.html`'s `theme-color` and the webmanifest's `theme_color`/`background_color` — the two
+ * places whose colors nothing re-derives on a scheme change, and which the scan never reached.
+ */
+const SCANNABLE_EXT = /\.(?:tsx?|css|html?|webmanifest)$/
+
+/**
+ * Recursively collect scannable files under a root, skipping dependency/build dirs. Node+Bun-safe.
  * `checkSource` is already syntax-aware per extension (`guardSyntaxFor`); the walker was the only
- * gap.
+ * gap, twice over — `.css` (CSS modules / `styles.css`) and now `.html`/`.webmanifest`.
+ *
+ * `.json` is deliberately NOT here even though the guard resolves it as markup: a consumer repo is
+ * full of JSON that is configuration, fixtures and lockfiles, and blanket-scanning it produces
+ * exactly the class of false positive already reported against a `data.json` test fixture. A JSON
+ * that IS a design surface (a `manifest.json` rather than a `*.webmanifest`) is reachable by naming
+ * it in `basalt.include`.
  */
 function walkSourceFiles(dir: string, out: string[] = []): string[] {
   let entries: string[]
@@ -306,7 +344,7 @@ function walkSourceFiles(dir: string, out: string[] = []): string[] {
       continue
     }
     if (isDir) walkSourceFiles(abs, out)
-    else if (/\.(?:tsx?|css)$/.test(name)) out.push(abs)
+    else if (SCANNABLE_EXT.test(name)) out.push(abs)
   }
   return out
 }
@@ -491,22 +529,102 @@ function resolveProjectDir(cwd: string): ProjectResolution {
 }
 
 /**
+ * Which shape of consumer a project-scoped command is looking at.
+ *
+ * A tokens-only consumer took the `--vx-*` layer and nothing else. Every guard kind whose remedy is
+ * a Mantine component or the React theme factory is meaningless there — telling a Mantine-free app
+ * to swap its `<select>` for `@mantine/core`'s `Select` is advice it must not take.
+ *
+ * DECLARED, never inferred, when the answer SILENCES something. The two callers want opposite
+ * failure directions and so do not share a default:
+ *
+ * - `check-theme` (`declaredProfile`) turns 16 kinds OFF, so it moves on an explicit signal only —
+ *   `--tokens-only`, or `"basalt": { "profile": "tokens-only" }`. Inferring it from the ABSENCE of
+ *   `@mantine/core` would silence the Mantine half of the guard on any repo that keeps its Mantine
+ *   dependency in a workspace package rather than the one holding the basalt config, which is
+ *   precisely this round's "reports green while enforcing nothing" failure with the guard's own
+ *   hand on the switch.
+ * - `doctor` ({@link inferredProfile}) only changes which ADVICE it prints, never what it enforces,
+ *   so it may infer from absence and then tell the consumer to write the key down.
+ */
+function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
+  if (flags.includes('--tokens-only')) return 'tokens-only'
+  if (flags.includes('--framework')) return 'framework'
+  return cfg.profile === 'tokens-only' ? 'tokens-only' : 'framework'
+}
+
+/** True when nothing anywhere in the workspace declares Mantine — see {@link inferredProfile}. */
+function workspaceHasMantine(cwd: string): boolean {
+  if (hasDependency(cwd, '@mantine/core')) return true
+  return collectWorkspacePackages(cwd).packages.some((pkg) =>
+    hasDependency(pkg.dir, '@mantine/core'),
+  )
+}
+
+/**
+ * `doctor`'s profile: the declaration if there is one, else inferred from no scaffold manifest and
+ * no `@mantine/core` anywhere in the workspace. Advice only — see {@link declaredProfile}.
+ */
+function inferredProfile(cwd: string, cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
+  if (
+    flags.includes('--tokens-only') ||
+    flags.includes('--framework') ||
+    cfg.profile !== undefined
+  ) {
+    return declaredProfile(cfg, flags)
+  }
+  return !existsSync(resolve(cwd, MANIFEST_PATH)) && !workspaceHasMantine(cwd)
+    ? 'tokens-only'
+    : 'framework'
+}
+
+/**
  * The relative paths `check-theme` would actually scan for a given config — the ONE place the walk
  * + `SKIP` + `exempt` filtering lives, so `doctor`'s "the guard sees zero files" check can never
  * disagree with what `check-theme` does.
  */
 function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
   const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
+  const seen = new Set<string>()
   const out: string[] = []
-  for (const root of resolveRoots(cfg)) {
-    for (const f of walkSourceFiles(resolve(cwd, root))) {
-      // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
-      // identical on Windows (where `relative` yields backslashes) and POSIX.
-      const rel = relative(cwd, f).replace(/\\/g, '/')
-      if (SKIP.test(rel) || exempt.has(rel)) continue
-      out.push(rel)
-    }
+  const add = (abs: string): void => {
+    // Normalize to forward slashes so path matching (SKIP, exempt, isChartFile) is
+    // identical on Windows (where `relative` yields backslashes) and POSIX.
+    const rel = relative(cwd, abs).replace(/\\/g, '/')
+    if (rel.startsWith('..') || SKIP.test(rel) || exempt.has(rel) || seen.has(rel)) return
+    seen.add(rel)
+    out.push(rel)
   }
+
+  for (const root of resolveRoots(cfg)) {
+    const rootAbs = resolve(cwd, root)
+    for (const f of walkSourceFiles(rootAbs)) add(f)
+    for (const f of appShellFiles(rootAbs)) add(f)
+  }
+  // Explicitly named files, the one route by which a `.json` is ever scanned.
+  for (const rel of cfg.include ?? []) add(resolve(cwd, rel))
+  return out
+}
+
+/**
+ * The app-shell files that sit BESIDE a source root rather than inside it — `index.html` and
+ * anything under `public/`.
+ *
+ * Widening the walker's extension filter alone would still have missed every one of them: argo
+ * configures `roots: ['apps/dashboard/src']`, while the raw hex lives in `apps/dashboard/index.html`
+ * and `apps/dashboard/public/site.webmanifest`. Both locations are the Vite convention basalt's own
+ * `basaltViteConfig`/`basaltAppPlugin` assume, so deriving them from each root's parent needs no
+ * config and holds for a monorepo package the same way it holds at a repo root. Nothing else in the
+ * parent is walked — a sibling `docs/` full of throwaway HTML stays unscanned.
+ */
+function appShellFiles(rootAbs: string): string[] {
+  const appDir = dirname(rootAbs)
+  const out: string[] = []
+  for (const name of ['index.html', 'index.htm']) {
+    const abs = resolve(appDir, name)
+    if (existsSync(abs)) out.push(abs)
+  }
+  out.push(...walkSourceFiles(resolve(appDir, 'public')))
   return out
 }
 
@@ -518,7 +636,10 @@ function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
  * Runs against `resolveProjectDir(cwd)`, not `cwd` — see that type's doc for why a root-invoked
  * hook or CI step has to find the package the config lives in rather than scan nothing and pass.
  */
-export function checkTheme(invocationCwd: string = process.cwd()): number {
+export function checkTheme(
+  invocationCwd: string = process.cwd(),
+  flags: readonly string[] = [],
+): number {
   const project = resolveProjectDir(invocationCwd)
   if (project.ambiguous !== null) {
     console.error(
@@ -537,6 +658,14 @@ export function checkTheme(invocationCwd: string = process.cwd()): number {
   }
   const cfg = readBasaltConfig(cwd)
   const roots = resolveRoots(cfg)
+  const profile = declaredProfile(cfg, flags)
+  if (profile === 'tokens-only') {
+    console.log(
+      'basalt-ui check-theme: tokens-only profile — ' +
+        `${TOKENS_ONLY_DISABLED_KINDS.size} Mantine-coupled kinds are off; the color and typography ` +
+        'kinds still apply. Pass --framework to force the full set.',
+    )
+  }
 
   const guardCfg: GuardConfig = {
     spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
@@ -558,6 +687,7 @@ export function checkTheme(invocationCwd: string = process.cwd()): number {
     allowComment: 'theme-allow',
     exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
     severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
+    ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
   }
 
   const findings: Finding[] = []
@@ -2355,20 +2485,22 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // ── Profile ────────────────────────────────────────────────────────────────
   const manifestAbs = resolve(cwd, MANIFEST_PATH)
   const manifestExists = existsSync(manifestAbs)
-  const profile: DoctorProfile = flags.includes('--tokens-only')
-    ? 'tokens-only'
-    : flags.includes('--framework')
-      ? 'framework'
-      : !manifestExists && !hasDependency(cwd, '@mantine/core')
-        ? 'tokens-only'
-        : 'framework'
+  const profile = inferredProfile(cwd, cfg, flags)
   if (profile === 'tokens-only') {
     lines.push(
-      '  profile: tokens-only (no .basalt/manifest.json and no @mantine/core) — checking the token\n' +
-        '  layer only. The scaffold checks below are not applicable; `basalt-ui init` is NOT the fix\n' +
-        '  here, it places a Mantine doctrine you have no use for. Pass --framework to force the\n' +
-        '  full profile.\n',
+      '  profile: tokens-only — checking the token layer only. The scaffold checks below are not\n' +
+        '  applicable; `basalt-ui init` is NOT the fix here, it places a Mantine doctrine you have no\n' +
+        '  use for. Pass --framework to force the full profile.\n',
     )
+    // check-theme will NOT infer this — it silences 16 kinds, so it moves only on a declaration.
+    // Doctor is the surface that can safely detect the shape, so it is the one that has to say so.
+    if (cfg.profile === undefined) {
+      lines.push(
+        '  → inferred (no .basalt/manifest.json and no @mantine/core in this workspace). Write it\n' +
+          '    down as "basalt": { "profile": "tokens-only" } in package.json — check-theme does not\n' +
+          '    infer it, so today it still reports the Mantine-only kinds against this repo.\n',
+      )
+    }
   }
 
   // ── Hard check 1: manifest exists ──────────────────────────────────────────
@@ -3067,6 +3199,9 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     allowComment: 'theme-allow',
     exemptRules: cfg.exemptRules ?? DEFAULT_GUARD_CONFIG.exemptRules,
     severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
+    // Same detection check-theme uses: the hook must never block an edit over advice the app
+    // cannot take ("use @mantine/core's Select") in a repo with no Mantine.
+    ...(declaredProfile(cfg, []) === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
   }
 
   // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
@@ -3161,7 +3296,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'sync':
       return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
     case 'check-theme':
-      return checkTheme(cwd)
+      return checkTheme(cwd, flags)
     case 'check-coverage':
       return checkCoverage()
     case 'info':

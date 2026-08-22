@@ -348,6 +348,90 @@ describe('check-theme — finds the config a root-invoked hook cannot see', () =
   })
 })
 
+describe('check-theme — the markup scan reaches the app shell', () => {
+  it('scans index.html and public/*.webmanifest beside a root, not just inside it', () => {
+    // The exact argo shape: roots point at `apps/dashboard/src`, the raw hex lives one level up in
+    // index.html and in public/site.webmanifest. Widening the extension filter alone missed both.
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['apps/web/src'] } }))
+    write('apps/web/src/app.tsx', 'export const App = () => null\n')
+    write('apps/web/index.html', '<meta name="theme-color" content="#EDEFF2" />\n')
+    write('apps/web/public/site.webmanifest', '{ "theme_color": "#242424" }\n')
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).toContain('apps/web/index.html')
+    expect(log).toContain('apps/web/public/site.webmanifest')
+    expect(code).toBe(1)
+  })
+
+  it('leaves a sibling docs/ full of throwaway HTML alone', () => {
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    write('docs/poc.html', '<div style="color: #ff0000">x</div>\n')
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).not.toContain('docs/poc.html')
+    expect(code).toBe(0)
+  })
+
+  it('never blanket-scans .json, but scans one named in basalt.include', () => {
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    write('src/fixtures/data.json', '{ "note": "#ff0000 in a test fixture" }\n')
+    expect(capture(() => checkTheme(dir)).code).toBe(0)
+
+    write(
+      'package.json',
+      JSON.stringify({ name: 'app', basalt: { roots: ['src'], include: ['app/manifest.json'] } }),
+    )
+    write('app/manifest.json', '{ "theme_color": "#EDEFF2" }\n')
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).toContain('app/manifest.json')
+    expect(log).not.toContain('data.json')
+    expect(code).toBe(1)
+  })
+})
+
+describe('check-theme — tokens-only profile', () => {
+  function mantineFreeApp(): void {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'site', basalt: { roots: ['src'], profile: 'tokens-only' } }),
+    )
+    write('src/form.tsx', "export const F = () => <input />\nexport const C = '#ff0000'\n")
+  }
+
+  it('drops the Mantine-coupled kinds while the color kinds keep firing', () => {
+    mantineFreeApp()
+    const { log } = capture(() => checkTheme(dir))
+    expect(log).toContain('tokens-only profile')
+    expect(log).not.toContain('raw-form-control')
+    expect(log).toContain('raw-hex')
+  })
+
+  it('--framework forces the full kind set back on', () => {
+    mantineFreeApp()
+    const { log } = capture(() => checkTheme(dir, ['--framework']))
+    expect(log).not.toContain('tokens-only profile')
+    expect(log).toContain('raw-form-control')
+  })
+
+  it('is never INFERRED — an undeclared Mantine-free repo keeps every kind live', () => {
+    // Silencing 16 kinds off the mere absence of @mantine/core is this round's own failure mode:
+    // a repo holding Mantine in a workspace package would switch off half its guard silently.
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
+    write('src/form.tsx', 'export const F = () => <input />\n')
+    const { log } = capture(() => checkTheme(dir))
+    expect(log).not.toContain('tokens-only profile')
+    expect(log).toContain('raw-form-control')
+  })
+
+  it('doctor infers the shape and tells the consumer to declare it', () => {
+    write('package.json', JSON.stringify({ name: 'site' }))
+    installBasalt()
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain('profile: tokens-only')
+    expect(log).toContain('"profile": "tokens-only"')
+  })
+})
+
 describe('tokens:css — a committable artifact', () => {
   const GENERATED_FIRST_LINE =
     '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
