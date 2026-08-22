@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/jkrumm/basalt-ui/compare/v1.24.0...v1.25.0) (2026-08-22)
+
+
+### Features
+
+* make manualPagination refuse every prop that would misreport ([d18e5f1](https://github.com/jkrumm/basalt-ui/commit/d18e5f1d8091af82a589a140ece7484cca654084))
+
 # [1.24.0](https://github.com/jkrumm/basalt-ui/compare/v1.23.1...v1.24.0) (2026-08-22)
 
 
