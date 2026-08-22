@@ -82,7 +82,7 @@ Two `feat:` commits and two `fix:`. Per-export detail in `packages/basalt-ui/MIG
   standalone `ErrorState` by changing one import line each, zero renames, prop changes or casts.**
 - **`BasaltDataTable` body chrome — and the result that did not go the promised way** (`91f612f`) —
   `maxHeight`, `minWidth`, `stickyHeader`, `stickyHeaderOffset`, `meta.align`, `meta.numeral`, and the
-  Mantine passthroughs. **argo's three tables came out 341 → 370 lines. 29 LONGER.** argo named these
+  Mantine passthroughs. **argo's three tables came out 341 → 370–379 lines. 29–38 LONGER.** argo named these
   props as the reason the tables stayed hand-rolled; adding them shortened nothing, because column
   defs cost more than JSX rows when every cell is bespoke — eight accessor blocks at 4–6 lines each
   against an eight-`<Table.Td>` row at ~3. **The ask was mis-specified**, which is the counterexample
