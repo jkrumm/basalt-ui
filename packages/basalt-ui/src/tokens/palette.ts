@@ -132,7 +132,7 @@ export const SHADOW = {
    * ever needs more, raise the DROP. Do not reintroduce an edge; both shapes have been tried.
    */
   raised: {
-    light: '0 1px 2px rgba(28, 25, 23, 0.10)',
+    light: '0 1px 2px rgba(28, 25, 23, 0.1)',
     dark: '0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px color-mix(in srgb, #ffffff 8%, transparent)',
   },
   // Floating-layer elevation (menus, popovers, tooltips, modals, drawers) — a REAL drop shadow, a
@@ -140,7 +140,7 @@ export const SHADOW = {
   // Unlike `card`, no embedded ring: floating surfaces carry a real 1px `--vx-surface-border` so
   // Mantine's rotated-square arrow inherits a proper edge.
   overlay: {
-    light: '0 8px 24px rgba(28, 25, 23, 0.10)',
+    light: '0 8px 24px rgba(28, 25, 23, 0.1)',
     dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
   },
 } as const
