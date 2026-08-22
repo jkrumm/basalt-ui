@@ -108,7 +108,11 @@ preference is a fallback, never an override.
 Tailwind's universal convention is a class — `@custom-variant dark (&:where(.dark,
 .dark *))` over `<html class="dark">` — and there is no attribute anywhere in that
 setup for an attribute selector to match. Since 1.20.0, `--selector-class` emits
-the class form directly:
+the class form directly.
+
+**This whole section is emit-route-only** (route 1). The prebuilt `basalt-ui/tokens.css`
+subpath ships the attribute form and takes no flag, so wanting the class convention
+AND tokens that track the version on upgrade is currently a choice of one:
 
 ```bash
 bunx basalt-ui tokens:css --selector-class dark --out src/tokens.css
@@ -182,6 +186,13 @@ mapped utilities keep switching scheme with the token.
   --radius-md: var(--vx-radius-ctrl);
   --radius-lg: var(--vx-radius-card);
   --radius-full: var(--vx-radius-pill);
+
+  /* --accent split its role at 1.x — pick per app, see below */
+  --color-accent: var(--vx-surface-panel-hover);
+
+  /* your own faces — basalt emits none */
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 }
 
 @layer base {
@@ -198,13 +209,21 @@ mapped utilities keep switching scheme with the token.
 }
 ```
 
-Three things that bite:
+Four things that bite:
 
 - **`--vx-fill-*` is tuned for chart marks, not for text.** It is too dark to read
   on `--vx-surface-bg`. For a tinted label, mix toward the ink:
   `color-mix(in srgb, var(--vx-fill-violet) 45%, var(--vx-ink))`.
-- **There is no `--font-*` to map.** `tokens.css` emits no font token at all — you
-  supply the stack (see "What you don't get").
+- **`--color-accent` has no single right answer.** In a shadcn-shaped theme (and in
+  basalt 0.4.2) one `--accent` meant both "hover surface" and "accent colour". 1.x
+  splits the role, so the old name maps to different tokens per app:
+  `var(--vx-surface-panel-hover)` where it tinted rows and hover states,
+  `var(--vx-accent)` where it was the brand colour. rollhook's two apps land on
+  opposite sides of that. Decide which one your `--accent` meant before mapping it.
+- **There is no `--font-*` to map.** `tokens.css` emits no font token at all, so
+  the `--font-sans` / `--font-mono` above are your own — omit them and Tailwind's
+  own defaults silently satisfy every `font-sans` utility, which reads as working
+  fonts and is not (see "What you don't get").
 - **The base layer is yours now.** Tailwind's preflight sets `border-color:
 currentColor`; without the `@layer base` block above, every `border` utility
   draws in the text color.
@@ -319,6 +338,22 @@ arrow to inherit an edge.
   You still install the `@fontsource-variable` packages yourself (or accept the
   system fallback chains, which are part of every stack).
 
+  **It emits basalt's 1.x faces, which are not the ones you had.** 0.4.2 shipped
+  Instrument Sans; 1.x ships Nunito Sans + Hubot Sans (mono was JetBrains in both).
+  For an upgrading consumer that is a rebrand, not a restoration — and until the two
+  `@fontsource-variable` packages are installed the emitted stacks fall through to
+  the system sans, so it degrades visibly before it improves. The emitted
+  `--basalt-font-head-stretch: 88%` is tuned for Hubot Sans specifically: pointed at
+  another face it silently condenses it. `fonts:css` has no `--sans` / `--mono`
+  override, so a consumer with its own faces gets a file it must not import; the
+  shape above is the thing to copy, not the file.
+
+  **Recorded because it is the general lesson:** `fonts:css` exists because rollhook
+  reported having no route to basalt's typefaces. It ships, it works, and rollhook
+  did not adopt it — it would have rebranded a public marketing site with a display
+  face that site never had. A feature can be correct and still not be the fix for
+  the consumer that motivated it.
+
 - **The base layer.** No preflight, no iOS 16px input floor, no `h1`–`h6` type,
   no font smoothing. `styles.css` has all of it and is Mantine-coupled; a
   framework-free consumer owns its own `@layer base`.
@@ -335,12 +370,13 @@ arrow to inherit an edge.
 
 ## The toolchain, tokens-only
 
-All four of round 4's rough edges are fixed in 1.20.0.
+Three and a half of round 4's four rough edges are fixed in 1.20.0 — the commit-clean row is the
+half, see below the table.
 
 | Was                                                                                                  | Now                                                                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `check-theme` reported ~100 `raw-hex` / `raw-color-fn` inside the file `tokens:css` had just written | the output opens with the `@generated basalt-ui` header, and in a `.css` file carrying it verbatim on lines 1 and 2 the guard skips the lines that are basalt custom properties, selectors, `}` or self-closing comments. No `basalt.exempt` entry needed |
-| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` (or `--tokens-only`) disables the 17 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                                      |
+| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` in **`package.json`** (or `--tokens-only`) disables the 17 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                |
 | `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                                                                               |
 | `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                                                                                    |
 
@@ -350,11 +386,20 @@ inferring is free there. `check-theme` silences 17 kinds, and inferring that fro
 missing `@mantine/core` would switch off half the guard on any repo that simply
 keeps Mantine in a different workspace package. Write the key down.
 
-The emitted stylesheet is commit-clean now: the `@generated` marker on line 1, the
-version and the exact invocation on line 2, `rgba()` arguments spaced the way a
-formatter writes them, and a trailing newline. `--check` writes nothing and exits 1
-when the file on disk differs from what the command emits today — wire it as a CI
-gate so a basalt bump can't leave the committed copy stale:
+The emitted stylesheet is nearly commit-clean: the `@generated` marker on line 1,
+the version and the exact invocation on line 2, `rgba()` arguments spaced the way a
+formatter writes them, and a trailing newline.
+
+**Still not lintable, as of 1.20.0.** Prettier's `format/prettier` rule reports 2
+errors on the real emit — `rgba(28, 25, 23, 0.10)` in `--vx-shadow-raised` and
+`--vx-shadow-overlay` (light block), which prettier normalizes to `0.1`. Spacing was
+fixed; trailing-zero alphas were not, and `--fix` is not a workaround because it puts
+the file straight into `tokens:css --check` drift. Keep the formatter-ignore entry on
+the emitted file until the emitter drops the trailing zero.
+
+`--check` writes nothing and exits 1 when the file on disk differs from what the
+command emits today — wire it as a CI gate so a basalt bump can't leave the committed
+copy stale:
 
 ```bash
 bunx basalt-ui tokens:css --selector-class dark --out src/tokens.css --check
