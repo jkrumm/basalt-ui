@@ -10,7 +10,32 @@ export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 
 // ── Static regex consts ──────────────────────────────────────────────────────────────────────────
 
-const HEX = /#[0-9a-fA-F]{3,8}\b/g
+/**
+ * A raw hex color literal.
+ *
+ * The `(?!(?<=&#)\d+;)` guard drops an HTML NUMERIC CHARACTER REFERENCE. `&#123;` is the escaped
+ * `{` and `&#125;` the escaped `}` — the two an Astro/JSX template writes to show a literal brace
+ * in prose — and their `#123` / `#125` read as three-digit hex. It is not markup-specific: the same
+ * string produced the same two findings in `.html`, `.tsx`, `.css` and `.vue`, so this was a hole
+ * in the kind itself that `.astro` merely walked into first (rollhook, round 9).
+ *
+ * The lookahead is deliberately the FULL reference — `&#`, digits, `;` — not a bare `(?<!&)`. Only
+ * the decimal form can collide at all (`&#x1F600;` never matches: `x` is not a hex digit), and a
+ * `#` that follows an `&` without terminating in `;` is not an entity, so `color: red&#fff` still
+ * flags. Nothing is exempted by file type; a real `#ff0000` in an `.astro` file fires exactly as it
+ * does in a `.tsx` one.
+ *
+ * The sibling raw-text kinds do NOT share this blind spot, and the reason is structural rather than
+ * lucky: a character reference contains no `(`, so `raw-color-fn`'s `rgba?|hsla?\(` anchor cannot
+ * occur inside one, and every other raw-text kind is anchored on a property name, `var(`, or a JSX
+ * `=`. Probed across `.html`/`.astro`/`.tsx` over 20 entity shapes — `raw-hex` was the only kind
+ * that fired.
+ *
+ * Known and NOT covered, because the fix would cost real findings: an all-hex URL fragment or SVG
+ * reference (`href="#cafe"`, `fill="url(#abcdef)"`) is indistinguishable from a color by text
+ * alone, and both still report. `theme-allow` is the escape there.
+ */
+const HEX = /#(?!(?<=&#)\d+;)[0-9a-fA-F]{3,8}\b/g
 
 /**
  * A raw `rgb()`/`rgba()`/`hsl()`/`hsla()` color function.
@@ -531,6 +556,21 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * into an unplanned refactor, which is exactly what the grace minor exists to prevent. The five
  * entries below all landed together in the round-4 guard minor and all promote one minor later.
  *
+ * **A `SCANNABLE_EXT` widening cannot be expressed here, and 1.23.2's was deliberately not.**
+ * Adding `.astro`/`.jsx`/`.vue` widens the FILE SET for all 25 kinds at once — there is no kind to
+ * key an entry on, and the nearest one (`raw-hex`, which is what actually fired) is keyed per KIND,
+ * not per extension: an entry for it would demote basalt's most load-bearing kind to `warn` in
+ * every `.tsx` and `.css` in every consumer for a minor, to buy runway on a file type only one
+ * consumer has. `css-raw-surface` is the shape that DOES fit — the new dialect got its own kind
+ * because kebab CSS is a distinct pattern set; more files running the same patterns is not.
+ *
+ * The measurement agreed with the structure. Once the two defects the widening exposed were fixed
+ * (`&#123;` read as a hex; `<!-- … -->` never stripped in an SFC), rollhook's marketing site scans
+ * 6 files with 0 findings, and no other consumer has a single `.astro`, `.vue` or `.jsx` file — so
+ * grace would have covered zero incumbent violations. The doctrine protects code that "passed every
+ * previous release"; a violation in a newly-scanned file type is code the consumer is writing now,
+ * with `theme-allow`, `basalt.severity` and `exemptRules` all still available.
+ *
  * @example
  * const GRACE: Partial<Record<GuardKind, string>> = {
  *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
@@ -846,15 +886,30 @@ function commentBlockEnd(
   syntax: GuardSyntax,
 ): number {
   const line = lines[index] ?? ''
+  // An SFC carries both dialects, so the closer is resolved from the opener the token actually sits
+  // behind rather than from the extension: whichever of `<!--` / `/*` is NEAREST on its left wins.
+  const markup = syntax === 'markup' || (syntax === 'sfc' && opensMarkupComment(line, tokenAt))
   // A line comment closes at its own end of line. CSS has no `//`, so the test is TS-only: there,
   // a `//`-looking sequence is text and the conservative same-line answer is the right one anyway.
-  if (syntax === 'ts' && /\/\/\s*$/.test(line.slice(0, tokenAt))) return index
-  const closer = syntax === 'markup' ? '-->' : '*/'
+  if (!markup && syntax !== 'css' && /\/\/\s*$/.test(line.slice(0, tokenAt))) return index
+  const closer = markup ? '-->' : '*/'
   if (line.slice(tokenAt).includes(closer)) return index
   for (let ahead = index + 1; ahead < lines.length; ahead++) {
     if ((lines[ahead] ?? '').includes(closer)) return ahead
   }
   return index
+}
+
+/**
+ * In an `sfc` file, is the comment the token sits in an HTML one?
+ *
+ * Both dialects are legal in the same file, so the extension cannot answer it — the nearest opener
+ * on the token's left does. A tie (neither present) reads as the JS dialect, which is what an
+ * annotation on a bare frontmatter line is.
+ */
+function opensMarkupComment(line: string, tokenAt: number): boolean {
+  const before = line.slice(0, tokenAt)
+  return before.lastIndexOf('<!--') > before.lastIndexOf('/*')
 }
 
 /**
@@ -1132,8 +1187,8 @@ function annotationsCover(annotations: AllowAnnotation[] | undefined, kind: Guar
   return (annotations ?? []).some((a) => annotationCovers(a, kind))
 }
 
-/** The 3 comment dialects the stripper understands, resolved from the file's own extension. */
-type GuardSyntax = 'ts' | 'css' | 'markup'
+/** The 4 comment dialects the stripper understands, resolved from the file's own extension. */
+type GuardSyntax = 'ts' | 'css' | 'markup' | 'sfc'
 
 /**
  * CSS (including `.module.css`) has no `//` line-comment syntax at all — an unquoted `//`, e.g.
@@ -1143,11 +1198,48 @@ type GuardSyntax = 'ts' | 'css' | 'markup'
  * `markup` covers the two files whose colors nothing re-derives on a theme change and which the
  * scan never reached — `index.html` and `*.webmanifest` (plus plain `.json`, which a webmanifest
  * often is). Only the color/typography kinds apply there; see `MARKUP_KINDS`.
+ *
+ * `sfc` is the single-file-component dialect — `.astro` and `.vue`, which carry BOTH regions:
+ * `<!-- … -->` in the template and `//` / `/* … *\/` in the frontmatter/`<script>` fence. They used
+ * to fall through to `ts`, so an HTML comment was never stripped: a `theme-allow` written in one
+ * waived nothing, and a color inside a commented-out block still reported (rollhook, round 9 —
+ * `.astro` became scannable in the same minor that exposed it). They are NOT `markup`: an `.astro`
+ * template is JSX-shaped and a `.vue` `<script setup>` is real TS, so restricting them to
+ * {@link MARKUP_KINDS} would drop 22 of the 25 kinds on a file type that can violate all of them.
+ *
+ * `.jsx` needs no entry — it is TS syntax with no HTML-comment region.
+ *
+ * **Two asserted limits, both false-NEGATIVE-only** (pinned in `check-source.test.ts`):
+ *
+ * 1. The kebab-CSS kinds (`css-raw-surface`) do not fire inside a `<style>` fence — that branch
+ *    keys on `syntax === 'css'`, and an SFC is one file with three dialects, not three files. The
+ *    color kinds, which are what an unguarded template layer actually leaks, do fire there.
+ * 2. Stripping is region-BLIND: `<!-- … -->` is blanked anywhere in the file, and `//` anywhere
+ *    outside a string. A `<!--` inside a script string, or an unquoted `https://` in template
+ *    prose, over-strips the rest of that construct. Both directions lose findings rather than
+ *    inventing them, which is the side of the trade a release-blocking false positive says to take.
  */
 function guardSyntaxFor(relPath: string): GuardSyntax {
   if (relPath.endsWith('.css')) return 'css'
   if (/\.(?:html?|webmanifest|json)$/.test(relPath)) return 'markup'
+  if (/\.(?:astro|vue)$/.test(relPath)) return 'sfc'
   return 'ts'
+}
+
+/**
+ * The comment-stripped twin of `text`, same length and same newline positions, for any dialect.
+ *
+ * One place rather than the two call sites (`checkSource` and `findAllowAnnotations`) that used to
+ * spell the `markup ? … : …` ternary out independently — adding `sfc` to one and not the other is
+ * exactly how the scan and `--audit-allows` drift apart on what counts as a comment.
+ *
+ * The SFC order is markup-first: an HTML comment may legally contain `//` or an unterminated `/*`,
+ * and blanking it before the TS pass keeps that text from opening a comment that runs to EOF.
+ */
+function stripGuardComments(text: string, syntax: GuardSyntax): string {
+  if (syntax === 'markup') return stripMarkupComments(text)
+  if (syntax === 'sfc') return stripComments(stripMarkupComments(text), 'ts')
+  return stripComments(text, syntax)
 }
 
 /** The only kinds meaningful in an HTML document or a JSON manifest — no JSX, no CSS-in-JS. */
@@ -1840,7 +1932,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // stripped text has already blanked out. Same length / same newline positions as `text`, so line
   // numbers computed off either one agree.
   const syntax = guardSyntaxFor(relPath)
-  const codeText = syntax === 'markup' ? stripMarkupComments(text) : stripComments(text, syntax)
+  const codeText = stripGuardComments(text, syntax)
   const codeLines = codeText.split('\n')
   const { waivers, fileScoped, declared } = collectAllowAnnotations(
     lines,
@@ -2020,7 +2112,9 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
         if (syntax === 'css' && isSubScaleCssSpacing(line, m.index)) continue
         const hasUnit = /^[a-z%]/.test(line.slice(m.index + m[0].length))
         if (
-          syntax === 'ts' &&
+          // An SFC's script fence IS TS, so it takes the same gate — without it a unitless
+          // `padding: 8` in `.astro`/`.vue` frontmatter reports with no style-object behind it.
+          (syntax === 'ts' || syntax === 'sfc') &&
           !hasUnit &&
           !isStyleObjectContext(codeText, lineStarts[i]! + m.index, styleIdentifiers)
         )
@@ -2256,7 +2350,7 @@ export function findAllowAnnotations(
 ): AllowAnnotationSite[] {
   const lines = text.split('\n')
   const syntax = guardSyntaxFor(relPath)
-  const codeText = syntax === 'markup' ? stripMarkupComments(text) : stripComments(text, syntax)
+  const codeText = stripGuardComments(text, syntax)
   const { declared } = collectAllowAnnotations(
     lines,
     codeText.split('\n'),
