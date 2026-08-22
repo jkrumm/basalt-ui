@@ -211,7 +211,21 @@ export type BasaltAppOptions = {
    * plugin exists. Pass an explicit `{ light, dark }` pair of already-flat CSS colors to override.
    */
   themeColor?: 'auto' | { light: string; dark: string }
-  /** Manifest `background_color` + anti-FOUC paint color. Default: the resolved dark theme color. */
+  /**
+   * Which scheme the anti-FOUC `<style>` paints before the app boots. Default `'dark'` —
+   * `BasaltProvider`'s own default. `'light'` paints the light surface, `'auto'` declares
+   * `color-scheme: light dark` and picks the background off `prefers-color-scheme`, and `false`
+   * paints the background but declares no `color-scheme` at all (leave native controls to Mantine).
+   *
+   * Set this to whatever the app passes as `defaultColorScheme` — a mismatch is a visible flash of
+   * the wrong surface, not a correctness bug: the boot rule stops applying the moment Mantine
+   * writes `data-mantine-color-scheme` on `<html>` (see `BOOT_SCOPE`).
+   */
+  colorScheme?: 'dark' | 'light' | 'auto' | false
+  /**
+   * Manifest `background_color` + anti-FOUC paint color. Default: the theme color matching
+   * `colorScheme` (the dark one for `'dark'` / `'auto'` / `false`, the light one for `'light'`).
+   */
   backgroundColor?: string
   /** Manifest `display` mode. Default: `'standalone'`. */
   display?: 'standalone' | 'minimal-ui' | 'fullscreen' | 'browser'
@@ -319,6 +333,91 @@ const VIEWPORT_TAG: HtmlTagDescriptor = {
   attrs: { name: 'viewport', content: 'width=device-width, initial-scale=1.0, viewport-fit=cover' },
 }
 
+// ── The anti-FOUC boot rule ───────────────────────────────────────────────────────────────────
+
+/**
+ * The selector every anti-FOUC declaration is scoped to.
+ *
+ * The rule paints the page before any stylesheet lands, so it is UNLAYERED by construction — and an
+ * unlayered declaration outranks every layered one regardless of specificity. Through 1.20.0 that
+ * meant a flat `html{color-scheme:dark}` permanently beat Mantine's own
+ * `@layer mantine{:root{color-scheme:var(--mantine-color-scheme)}}`: a light-scheme consumer got
+ * dark scrollbars, dark `<select>` popups and dark date pickers forever, with no opt-out (found
+ * independently by two consumers).
+ *
+ * `MantineProvider` writes `data-mantine-color-scheme` onto `<html>` as soon as it mounts, so
+ * scoping the boot rule to its ABSENCE makes it expire exactly when the real theme exists — which
+ * is the anti-FOUC contract stated honestly. A cascade layer would also work in principle and is
+ * deliberately NOT used: a layer's position is fixed by where its name is first encountered, and in
+ * dev Mantine's CSS is injected by JS after this `<style>` is already in the document, so the layer
+ * order would depend on bundler mode. Selector scoping depends on nothing.
+ */
+const BOOT_SCOPE = 'html:not([data-mantine-color-scheme])'
+
+/** The `color-scheme` value each boot mode declares. `false` declares none. */
+const BOOT_COLOR_SCHEME = { dark: 'dark', light: 'light', auto: 'light dark' } as const
+
+/**
+ * Builds the anti-FOUC stylesheet: paint the surface (and, unless opted out, tell the UA which
+ * native-control palette to use) for the frames between first paint and Mantine's stylesheet.
+ *
+ * `'auto'` with no explicit `backgroundColor` emits a `prefers-color-scheme` pair so the pre-boot
+ * paint follows the OS the same way `color-scheme: light dark` does; an explicit `backgroundColor`
+ * is used verbatim for both, since the consumer has named one color on purpose.
+ */
+function buildBootStyle(input: {
+  colorScheme: 'dark' | 'light' | 'auto' | false
+  themeColor: { light: string; dark: string }
+  backgroundColor: string
+  explicitBackground: boolean
+}): string {
+  const { colorScheme, themeColor, backgroundColor, explicitBackground } = input
+
+  if (colorScheme === false) return `${BOOT_SCOPE}{background-color:${backgroundColor}}`
+
+  const scheme = BOOT_COLOR_SCHEME[colorScheme]
+  if (colorScheme !== 'auto' || explicitBackground) {
+    return `${BOOT_SCOPE}{background-color:${backgroundColor};color-scheme:${scheme}}`
+  }
+  return (
+    `${BOOT_SCOPE}{background-color:${themeColor.light};color-scheme:${scheme}}` +
+    `@media(prefers-color-scheme:dark){${BOOT_SCOPE}{background-color:${themeColor.dark}}}`
+  )
+}
+
+// ── The encoding declaration ──────────────────────────────────────────────────────────────────
+
+/** `<meta charset="…">`, with the value in group 1/2/3 depending on the quoting style. */
+const CHARSET_META_RE =
+  /[ \t]*<meta\s+charset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>=]+))\s*\/?>[ \t]*\r?\n?/i
+/** The legacy `<meta http-equiv="Content-Type" charset=…>` form — left verbatim, never rewritten. */
+const HTTP_EQUIV_CHARSET_RE = /<meta\s[^>]*http-equiv\s*=\s*["']?content-type["']?[^>]*>/i
+const DEFAULT_CHARSET = 'UTF-8'
+
+/**
+ * Hoists the shell's encoding declaration ahead of everything this plugin injects.
+ *
+ * Every tag here defaults to `injectTo: 'head-prepend'`, which lands it immediately after `<head>`
+ * and therefore AHEAD of the consumer's own `<meta charset>`. On a realistic shell that pushed the
+ * declaration to byte 1653 — past the 1024-byte window the HTML spec gives it — and there is no
+ * consumer-side fix, because the plugin owns the injection point. So the plugin owns the hoist too:
+ * the consumer's tag is removed from the html and re-emitted as this plugin's FIRST head-prepend
+ * tag. A shell that declares no encoding at all gets `UTF-8`.
+ *
+ * The legacy `http-equiv` form is detected and left completely alone — rewriting a consumer's
+ * markup into a different (if equivalent) tag is not this plugin's business.
+ */
+function hoistCharset(html: string): { html: string; tag: HtmlTagDescriptor | undefined } {
+  if (HTTP_EQUIV_CHARSET_RE.test(html)) return { html, tag: undefined }
+
+  const match = CHARSET_META_RE.exec(html)
+  const charset = match?.[1] ?? match?.[2] ?? match?.[3] ?? DEFAULT_CHARSET
+  return {
+    html: match ? html.replace(CHARSET_META_RE, '') : html,
+    tag: { tag: 'meta', attrs: { charset } },
+  }
+}
+
 function buildSeoTags(input: {
   name: string
   description: string | undefined
@@ -374,7 +473,7 @@ function buildStaticTags(input: {
   options: BasaltAppOptions
   shortName: string
   themeColor: { light: string; dark: string }
-  backgroundColor: string
+  bootStyle: string
   iconsEnabled: boolean
   iconsDir: string | undefined
   darkreader: 'lock' | false
@@ -386,7 +485,7 @@ function buildStaticTags(input: {
     options,
     shortName,
     themeColor,
-    backgroundColor,
+    bootStyle,
     iconsEnabled,
     iconsDir,
     darkreader,
@@ -416,13 +515,11 @@ function buildStaticTags(input: {
     },
   )
 
-  // Anti-FOUC — BasaltProvider defaults to dark, so this paints the dark surface before any
-  // stylesheet loads. injectTo defaults to 'head-prepend', so this (and every tag below) lands
-  // immediately after <head>, ahead of the consumer's own <link rel="stylesheet"> tags.
-  tags.push({
-    tag: 'style',
-    children: `html{background-color:${backgroundColor};color-scheme:dark}`,
-  })
+  // Anti-FOUC — paints the boot surface before any stylesheet loads. injectTo defaults to
+  // 'head-prepend', so this (and every tag below) lands immediately after <head> and the hoisted
+  // <meta charset>, ahead of the consumer's own <link rel="stylesheet"> tags. Scoped to
+  // BOOT_SCOPE so it expires the moment Mantine resolves the real scheme — see buildBootStyle.
+  tags.push({ tag: 'style', children: bootStyle })
 
   if (iconsEnabled) {
     tags.push(
@@ -489,7 +586,7 @@ function buildManifestJson(input: {
   scope: string
   id: string
   display: NonNullable<BasaltAppOptions['display']>
-  themeColor: { light: string; dark: string }
+  schemeColor: string
   backgroundColor: string
   iconsDir: string | undefined
   base: string
@@ -501,7 +598,7 @@ function buildManifestJson(input: {
     scope,
     id,
     display,
-    themeColor,
+    schemeColor,
     backgroundColor,
     iconsDir,
     base,
@@ -514,7 +611,9 @@ function buildManifestJson(input: {
     start_url: startUrl,
     scope,
     display,
-    theme_color: themeColor.dark,
+    // A manifest carries ONE theme color, so it follows the boot scheme rather than the dual
+    // `<meta name="theme-color">` pair. Unchanged for the default (`'dark'`) and for `'auto'`.
+    theme_color: schemeColor,
     background_color: backgroundColor,
     icons: [
       {
@@ -542,7 +641,17 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
   const manifestEnabled = options.manifest !== false
 
   const themeColor = resolveThemeColors(options.themeColor)
-  const backgroundColor = options.backgroundColor ?? themeColor.dark
+  // The boot scheme picks which half of the pair is "the" single color (manifest theme_color, the
+  // default paint). `'auto'` and `false` keep the historical dark default.
+  const colorScheme = options.colorScheme ?? 'dark'
+  const schemeColor = colorScheme === 'light' ? themeColor.light : themeColor.dark
+  const backgroundColor = options.backgroundColor ?? schemeColor
+  const bootStyle = buildBootStyle({
+    colorScheme,
+    themeColor,
+    backgroundColor,
+    explicitBackground: options.backgroundColor !== undefined,
+  })
 
   // Icon hrefs, the manifest link, and the manifest's start_url/scope/icon src all depend on
   // Vite's resolved `base`, which is only known once `configResolved` fires — so manifestJson and
@@ -569,7 +678,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         scope,
         id,
         display,
-        themeColor,
+        schemeColor,
         backgroundColor,
         iconsDir,
         base,
@@ -579,7 +688,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         options,
         shortName,
         themeColor,
-        backgroundColor,
+        bootStyle,
         iconsEnabled,
         iconsDir,
         darkreader,
@@ -588,9 +697,20 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         manifestHref,
       })
     },
-    transformIndexHtml(html) {
-      const tags = hasViewportMeta(html) ? staticTags : [VIEWPORT_TAG, ...staticTags]
-      return { html, tags }
+    transformIndexHtml: {
+      // `pre` so this plugin's tags are the FIRST head-prepend contributions Vite collects — that
+      // ordering is what puts the hoisted <meta charset> at the very top of <head> rather than
+      // behind another plugin's tags. Vite injects all collected tags after every hook has run.
+      order: 'pre',
+      handler(html) {
+        const hoisted = hoistCharset(html)
+        const tags = [
+          ...(hoisted.tag ? [hoisted.tag] : []),
+          ...(hasViewportMeta(html) ? [] : [VIEWPORT_TAG]),
+          ...staticTags,
+        ]
+        return { html: hoisted.html, tags }
+      },
     },
     generateBundle() {
       if (!manifestEnabled) return
@@ -666,13 +786,21 @@ function createServiceWorkerPlugin(
  * manifest `theme_color` both need a FLAT color, so the flattening step is the contract this
  * plugin owes its output regardless of which shape the palette hands it.
  *
+ * Two behaviours worth knowing before adopting it, both of which the plugin owns because the
+ * consumer cannot reach them:
+ *  • It HOISTS the shell's `<meta charset>` ahead of everything it injects, so the encoding
+ *    declaration stays inside the spec's first 1024 bytes (see `hoistCharset`).
+ *  • The anti-FOUC `<style>` expires the moment Mantine resolves the real scheme, and `colorScheme`
+ *    selects which surface it paints until then (see `BOOT_SCOPE` / `buildBootStyle`).
+ *
  * @example
  * // vite.config.ts
  * import { basaltAppPlugin, basaltViteConfig } from 'basalt-ui/vite'
  *
  * export default {
  *   ...basaltViteConfig({ port: 5173 }),
- *   plugins: [react(), ...basaltAppPlugin({ name: 'Argo' })],
+ *   // colorScheme mirrors <BasaltProvider defaultColorScheme> — omit it for the dark default.
+ *   plugins: [react(), ...basaltAppPlugin({ name: 'Argo', colorScheme: 'auto' })],
  * }
  */
 export function basaltAppPlugin(options: BasaltAppOptions): PluginOption[] {

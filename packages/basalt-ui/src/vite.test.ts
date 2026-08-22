@@ -17,13 +17,20 @@ function resolveConfig(plugin: Plugin, base: string): void {
   configResolved({ base } as unknown as ResolvedConfig)
 }
 
+type HtmlTransformResult = { html: string; tags: HtmlTagDescriptor[] }
+
+/** Invokes the plugin's `transformIndexHtml` hook (object form, `order: 'pre'`). */
+function transform(plugin: Plugin, html: string): HtmlTransformResult {
+  const hook = plugin.transformIndexHtml as unknown as {
+    order: 'pre'
+    handler: (html: string) => HtmlTransformResult
+  }
+  return hook.handler(html)
+}
+
 /** Invokes the plugin's `transformIndexHtml` hook and returns the emitted tags. */
 function transformHtml(plugin: Plugin, html: string): HtmlTagDescriptor[] {
-  const transformIndexHtml = plugin.transformIndexHtml as unknown as (html: string) => {
-    html: string
-    tags: HtmlTagDescriptor[]
-  }
-  return transformIndexHtml(html).tags
+  return transform(plugin, html).tags
 }
 
 type FakeReq = { url: string }
@@ -63,6 +70,7 @@ describe('basaltAppPlugin — base handling', () => {
     const tags = transformHtml(plugin, HTML_NO_VIEWPORT)
 
     expect(tags).toEqual([
+      { tag: 'meta', attrs: { charset: 'UTF-8' } },
       {
         tag: 'meta',
         attrs: {
@@ -78,7 +86,11 @@ describe('basaltAppPlugin — base handling', () => {
         tag: 'meta',
         attrs: { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#111111' },
       },
-      { tag: 'style', children: 'html{background-color:#111111;color-scheme:dark}' },
+      {
+        tag: 'style',
+        children:
+          'html:not([data-mantine-color-scheme]){background-color:#111111;color-scheme:dark}',
+      },
       { tag: 'link', attrs: { rel: 'shortcut icon', href: '/favicon.ico' } },
       { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' } },
       { tag: 'link', attrs: { rel: 'icon', sizes: '96x96', href: '/favicon-96x96.png' } },
@@ -188,5 +200,112 @@ describe('basaltAppPlugin — base handling', () => {
     expect(tags.some((tag) => tag.tag === 'link' && iconRels.has(String(tag.attrs?.['rel'])))).toBe(
       false,
     )
+  })
+})
+
+describe('basaltAppPlugin — the anti-FOUC boot rule (V1)', () => {
+  const bootStyleOf = (options: Partial<BasaltAppOptions>): string => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
+    resolveConfig(plugin, '/')
+    const style = transformHtml(plugin, HTML_NO_VIEWPORT).find((tag) => tag.tag === 'style')
+    return String(style?.children ?? '')
+  }
+
+  test('every mode scopes the rule so Mantine can take it back', () => {
+    // The whole defect: an UNLAYERED `html{color-scheme:dark}` outranks Mantine's own layered
+    // `:root{color-scheme:var(--mantine-color-scheme)}`, so light mode kept dark native controls
+    // forever. Scoping to the absence of the attribute Mantine writes is what expires it.
+    for (const colorScheme of ['dark', 'light', 'auto', false] as const) {
+      const css = bootStyleOf({ colorScheme })
+      expect(css).toContain('html:not([data-mantine-color-scheme])')
+      expect(css).not.toMatch(/(^|[};])html\{/)
+    }
+  })
+
+  test('default is dark — byte-identical to 1.20.0 apart from the scope', () => {
+    expect(bootStyleOf({})).toBe(
+      'html:not([data-mantine-color-scheme]){background-color:#111111;color-scheme:dark}',
+    )
+  })
+
+  test('light paints the light surface and declares color-scheme: light', () => {
+    expect(bootStyleOf({ colorScheme: 'light' })).toBe(
+      'html:not([data-mantine-color-scheme]){background-color:#ffffff;color-scheme:light}',
+    )
+  })
+
+  test('auto declares `light dark` and follows prefers-color-scheme for the paint', () => {
+    expect(bootStyleOf({ colorScheme: 'auto' })).toBe(
+      'html:not([data-mantine-color-scheme]){background-color:#ffffff;color-scheme:light dark}' +
+        '@media(prefers-color-scheme:dark){html:not([data-mantine-color-scheme])' +
+        '{background-color:#111111}}',
+    )
+  })
+
+  test('an explicit backgroundColor wins over the auto media pair', () => {
+    expect(bootStyleOf({ colorScheme: 'auto', backgroundColor: '#abcdef' })).toBe(
+      'html:not([data-mantine-color-scheme]){background-color:#abcdef;color-scheme:light dark}',
+    )
+  })
+
+  test('colorScheme: false is the full opt-out — paint, no color-scheme at all', () => {
+    expect(bootStyleOf({ colorScheme: false })).toBe(
+      'html:not([data-mantine-color-scheme]){background-color:#111111}',
+    )
+  })
+
+  test('the manifest theme_color follows the boot scheme', () => {
+    const read = (options: Partial<BasaltAppOptions>): Record<string, unknown> => {
+      const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR, ...options })
+      const body = runMiddleware(getDevMiddleware(plugin, '/'), '/site.webmanifest')
+      return JSON.parse(body ?? '{}') as Record<string, unknown>
+    }
+    expect(read({})['theme_color']).toBe('#111111')
+    expect(read({ colorScheme: 'auto' })['theme_color']).toBe('#111111')
+    expect(read({ colorScheme: 'light' })['theme_color']).toBe('#ffffff')
+    expect(read({ colorScheme: 'light' })['background_color']).toBe('#ffffff')
+  })
+})
+
+describe('basaltAppPlugin — the encoding declaration (V2)', () => {
+  const SHELL =
+    '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="utf-8" />\n' +
+    '    <title>App</title>\n  </head>\n  <body></body>\n</html>'
+
+  test("the consumer's charset is hoisted out of the html and re-emitted first", () => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    resolveConfig(plugin, '/')
+    const result = transform(plugin, SHELL)
+
+    expect(result.html).not.toContain('charset')
+    expect(result.tags[0]).toEqual({ tag: 'meta', attrs: { charset: 'utf-8' } })
+    // The hoist takes the whole line — no orphaned indentation left behind.
+    expect(result.html).toContain('<head>\n    <title>App</title>')
+  })
+
+  test('a shell that declares no encoding gets one', () => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    resolveConfig(plugin, '/')
+    expect(transform(plugin, HTML_NO_VIEWPORT).tags[0]).toEqual({
+      tag: 'meta',
+      attrs: { charset: 'UTF-8' },
+    })
+  })
+
+  test('the legacy http-equiv form is left completely alone', () => {
+    const html =
+      '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
+      '</head><body></body></html>'
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    resolveConfig(plugin, '/')
+    const result = transform(plugin, html)
+
+    expect(result.html).toBe(html)
+    expect(result.tags.some((tag) => tag.attrs?.['charset'] !== undefined)).toBe(false)
+  })
+
+  test("the hook runs `pre` so no other plugin's tags can land ahead of the charset", () => {
+    const plugin = getPlugin({ name: 'Test App', themeColor: THEME_COLOR })
+    expect((plugin.transformIndexHtml as { order?: string }).order).toBe('pre')
   })
 })

@@ -95,6 +95,8 @@ export type LayoutPage = {
   box(name: string, selector: string): Promise<Named>
   boxes(selector: string): Promise<Box[]>
   count(selector: string): Promise<number>
+  /** A RESOLVED computed-style property — the only way to observe a cascade-layer outcome. */
+  computed(selector: string, property: string): Promise<string>
   /** `'page'` measures `document.scrollingElement`. */
   scroll(selector: string): Promise<ScrollInfo>
   census(): Promise<OverlayCensus>
@@ -126,6 +128,28 @@ let browser: Browser | null = null
 let server: ReturnType<typeof Bun.serve> | null = null
 let outDir = ''
 let origin = ''
+
+/**
+ * Ad-hoc documents served beside the fixture, keyed by path.
+ *
+ * `FIXTURE_HTML` is fixed, and one thing this suite has to measure is a `<head>` that
+ * `basaltAppPlugin` composed — an anti-FOUC rule's cascade position is a property of the DOCUMENT,
+ * not of a component, and `page.addStyleTag()` appends at the END of head, which is a different
+ * cascade position and would prove nothing.
+ */
+const extraDocuments = new Map<string, string>()
+
+/** Registers `html` at its own path and returns it, for `openFixture`'s `documentPath`. */
+export function serveDocument(html: string): string {
+  const path = `/doc-${extraDocuments.size}.html`
+  extraDocuments.set(path, html)
+  return path
+}
+
+/** The fixture shell verbatim — the base a probe document mutates. */
+export function fixtureHtml(): Promise<string> {
+  return Bun.file(FIXTURE_HTML).text()
+}
 
 async function buildFixture(): Promise<void> {
   outDir = await mkdtemp(join(tmpdir(), 'basalt-layout-'))
@@ -168,6 +192,10 @@ export async function initLayoutSuite(): Promise<boolean> {
       const path = new URL(request.url).pathname
       if (path === '/') return new Response(html, { headers: { 'content-type': 'text/html' } })
       if (path === '/favicon.ico') return new Response(null, { status: 204 })
+      const extra = extraDocuments.get(path)
+      if (extra !== undefined) {
+        return new Response(extra, { headers: { 'content-type': 'text/html' } })
+      }
       const file = Bun.file(join(outDir, path))
       if (!(await file.exists())) return new Response(`not built: ${path}`, { status: 404 })
       return new Response(file)
@@ -215,6 +243,7 @@ export async function closeLayoutSuite(): Promise<void> {
   browser = null
   server = null
   outDir = ''
+  extraDocuments.clear()
 }
 
 // ── The page API ──────────────────────────────────────────────────────────────────────────────
@@ -222,6 +251,7 @@ export async function closeLayoutSuite(): Promise<void> {
 export async function openFixture(
   spec: FixtureSpec,
   viewport: Viewport = PHONE,
+  documentPath = '/',
 ): Promise<LayoutPage> {
   if (!browser) throw new Error('initLayoutSuite() was not awaited in this file')
 
@@ -241,7 +271,7 @@ export async function openFixture(
   const pageErrors: Error[] = []
   page.on('pageerror', (error) => pageErrors.push(error))
 
-  await page.goto(origin)
+  await page.goto(origin + documentPath)
   // NOT `waitForSelector('[data-…="ready"]')` — Playwright's default `state: 'visible'` never
   // resolves for <html>, which cost a 30 s timeout the first time. Wait on the actual precondition.
   await page
@@ -304,6 +334,15 @@ export async function openFixture(
         selector,
       ) as Promise<Box[]>,
     count: (selector) => page.evaluate((s) => document.querySelectorAll(s).length, selector),
+    computed: (selector, property) =>
+      page.evaluate(
+        ([sel, prop]) => {
+          const element = document.querySelector(sel)
+          if (!element) throw new Error(`LAYOUT: no element matched \`${sel}\``)
+          return getComputedStyle(element).getPropertyValue(prop)
+        },
+        [selector, property] as [string, string],
+      ),
     scroll: (selector) =>
       page.evaluate((s) => {
         const element =
