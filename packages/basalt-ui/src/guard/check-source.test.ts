@@ -13,10 +13,14 @@ import { SPACE_SCALE } from '../tokens/palette'
 import {
   checkSource,
   DEFAULT_GUARD_CONFIG,
+  findAllowAnnotations,
   GENERATED_HEADER_LINE,
   guardKindRemedy,
   guardWaiverHint,
   GUARD_RULES,
+  neutralizeAllowAnnotation,
+  NEUTRALIZED_ALLOW_TOKEN,
+  PLUGIN_RULE_IDS,
   TOKENS_ONLY_DISABLED_KINDS,
   unmatchedExemptPatterns,
 } from './index'
@@ -2731,5 +2735,198 @@ describe('inline-spacing — the style-object test', () => {
   it('CSS is untouched by the test — there is no object context to consult', () => {
     const f = checkSource('.a { padding: 18px }', 'src/Card.module.css', DEFAULT_GUARD_CONFIG)
     expect(kinds(f)).toContain('inline-spacing')
+  })
+})
+
+// ── theme-allow comment shapes ───────────────────────────────────────────────────────────────────
+
+/**
+ * The prefix contract, pinned per comment shape.
+ *
+ * Three holes have been found in this rule in three rounds — two false positives and one false
+ * NEGATIVE (a docblock documenting a file's waivers disarmed the file). So every shape a consumer
+ * actually writes gets a fixture, and the oxlint plugin's copy is pinned identically in
+ * `configs/oxlint-plugin.test.ts`: the two halves of one contract must agree on what an annotation
+ * IS, and may differ only on which rules each can judge.
+ */
+describe('theme-allow comment shapes', () => {
+  const REASON = 'deliberate legacy value'
+  const waives = (relPath: string, src: string): boolean =>
+    checkSource(src, relPath, DEFAULT_GUARD_CONFIG).filter((f) => f.kind === 'raw-hex').length === 0
+
+  it.each([
+    ['own line //', PATH, `// theme-allow raw-hex — ${REASON}\nconst a = '#f00'\n`],
+    [
+      'indented //',
+      PATH,
+      `function f() {\n  // theme-allow raw-hex — ${REASON}\n  const a = '#f00'\n}\n`,
+    ],
+    ['trailing //', PATH, `const a = '#f00' // theme-allow raw-hex — ${REASON}\n`],
+    ['trailing block', PATH, `const a = '#f00' /* theme-allow raw-hex — ${REASON} */\n`],
+    [
+      'JSX expression comment',
+      PATH,
+      `export const C = () => (\n  <div>\n    {/* theme-allow raw-hex — ${REASON} */}\n    <span style={{ color: '#f00' }} />\n  </div>\n)\n`,
+    ],
+    [
+      'JSX expression comment, token on its own wrapped line',
+      PATH,
+      `export const C = () => (\n  <div>\n    {/*\n      theme-allow raw-hex — ${REASON} */}\n    <span style={{ color: '#f00' }} />\n  </div>\n)\n`,
+    ],
+    ['block gutter *', PATH, `/**\n * theme-allow raw-hex — ${REASON}\n */\nconst a = '#f00'\n`],
+    ['docblock opener /**', PATH, `/** theme-allow raw-hex — ${REASON} */\nconst a = '#f00'\n`],
+    ['css trailing', 'src/a.css', `a { color: #f00; /* theme-allow raw-hex — ${REASON} */ }\n`],
+    [
+      'css reflowed onto continuation lines',
+      'src/a.css',
+      `a {\n  color: var(\n    --x,\n    #f00\n  ); /* theme-allow raw-hex — ${REASON} */\n}\n`,
+    ],
+    [
+      'html comment',
+      'index.html',
+      `<!-- theme-allow raw-hex — ${REASON} -->\n<b style="color: #f00"></b>\n`,
+    ],
+    [
+      'html trailing comment',
+      'index.html',
+      `<b style="color: #f00"></b> <!-- theme-allow raw-hex — ${REASON} -->\n`,
+    ],
+    [
+      'JSON member form',
+      'public/site.webmanifest',
+      `{\n  "basalt:theme-allow-file": "raw-hex — ${REASON}",\n  "theme_color": "#f00"\n}\n`,
+    ],
+  ])('%s waives', (_name, relPath, src) => {
+    expect(waives(relPath as string, src as string)).toBe(true)
+  })
+
+  // The false negative the prefix rule closed: a sentence that MENTIONS the token is not one.
+  it.each([
+    [
+      'mid-sentence in a line comment',
+      `// we normally write a theme-allow raw-hex here\nconst a = '#f00'\n`,
+    ],
+    [
+      'mid-sentence in a docblock',
+      `/**\n * Each value below is escaped with a theme-allow raw-hex annotation.\n */\nconst a = '#f00'\n`,
+    ],
+    ['inside a string literal', `const doc = 'theme-allow raw-hex'\nconst a = '#f00'\n`],
+  ])('%s does NOT waive', (_name, src) => {
+    expect(waives(PATH, src as string)).toBe(false)
+  })
+
+  // The narrowness of the `*/}` exception: a `}` that is REAL code keeps its trailing
+  // classification, so the annotation does not reach the statement below it.
+  it('a trailing annotation on a real closing brace stays on its own line', () => {
+    const src = `function f() {\n  const a = 1\n} // theme-allow raw-hex — ${REASON}\nconst b = '#0f0'\n`
+    expect(
+      checkSource(src, PATH, DEFAULT_GUARD_CONFIG)
+        .filter((f) => f.kind === 'raw-hex')
+        .map((f) => f.line),
+    ).toEqual([4])
+  })
+
+  // A trailing annotation is scoped to its OWN line — otherwise `const a = '#f00' // theme-allow`
+  // would silently waive the statement below it too.
+  it('a trailing annotation does not reach the line below', () => {
+    const src = `const a = '#f00' // theme-allow raw-hex — ${REASON}\nconst b = '#0f0'\n`
+    expect(
+      checkSource(src, PATH, DEFAULT_GUARD_CONFIG).filter((f) => f.kind === 'raw-hex'),
+    ).toHaveLength(1)
+  })
+})
+
+// ── findAllowAnnotations / neutralizeAllowAnnotation ─────────────────────────────────────────────
+
+describe('findAllowAnnotations', () => {
+  const cfg = DEFAULT_GUARD_CONFIG
+
+  it('classifies each named id by whose reach it falls in', () => {
+    const src = [
+      `// theme-allow raw-hex — a guard kind`,
+      `const a = '#f00'`,
+      `// theme-allow hand-rolled-plot — a plugin rule, outside checkSource's reach`,
+      `const b = 1`,
+      `// theme-allow raw-hexx — a typo`,
+      `const c = 2`,
+      `// theme-allow`,
+      `const d = 3`,
+    ].join('\n')
+    const sites = findAllowAnnotations(src, PATH, cfg)
+
+    expect(sites.map((s) => s.line)).toEqual([1, 3, 5, 7])
+    expect(sites[0]).toMatchObject({ guardKinds: ['raw-hex'], pluginRules: [], bare: false })
+    expect(sites[1]).toMatchObject({ guardKinds: [], pluginRules: ['hand-rolled-plot'] })
+    expect(sites[2]).toMatchObject({ rules: [], unknownRules: ['raw-hexx'], bare: false })
+    expect(sites[3]).toMatchObject({ bare: true, hasReason: false })
+  })
+
+  it('records the file-declaration form once, at the line it is written on', () => {
+    const src = `// theme-allow-file raw-hex — the whole palette fixture\nconst a = '#f00'\n`
+    expect(findAllowAnnotations(src, PATH, cfg)).toMatchObject([
+      { line: 1, scope: 'file', guardKinds: ['raw-hex'] },
+    ])
+  })
+
+  it('carries the source line verbatim, and finds nothing in a file with no annotation', () => {
+    expect(findAllowAnnotations(`const a = '#f00'\n`, PATH, cfg)).toEqual([])
+    expect(
+      findAllowAnnotations(`  // theme-allow raw-hex — why not\nconst a = 1\n`, PATH, cfg)[0]?.text,
+    ).toBe('  // theme-allow raw-hex — why not')
+  })
+
+  // It shares `collectAllowAnnotations` with `checkSource`, so it cannot list a line the scan does
+  // not honour — the mirrored regex `--audit-allows` carried was already one alternation behind.
+  it('agrees with checkSource about what is prose and what is an annotation', () => {
+    expect(
+      findAllowAnnotations(`// a theme-allow raw-hex goes here\nconst a = 1\n`, PATH, cfg),
+    ).toEqual([])
+    expect(
+      findAllowAnnotations(`/** theme-allow raw-hex — deliberate */\nconst a = 1\n`, PATH, cfg),
+    ).toHaveLength(1)
+  })
+
+  it('finds the JSON member form in a manifest', () => {
+    const src = `{\n  "basalt:theme-allow-file": "raw-hex — brand color"\n}\n`
+    expect(findAllowAnnotations(src, 'public/site.webmanifest', cfg)).toMatchObject([
+      { line: 2, scope: 'file', guardKinds: ['raw-hex'] },
+    ])
+  })
+})
+
+describe('neutralizeAllowAnnotation', () => {
+  const cfg = DEFAULT_GUARD_CONFIG
+
+  it('neutralizes ONE annotation and reveals exactly what it suppressed', () => {
+    const src = [
+      `const a = '#f00' // theme-allow raw-hex — first`,
+      `const b = '#0f0' // theme-allow raw-hex — second`,
+    ].join('\n')
+    expect(checkSource(src, PATH, cfg).filter((f) => f.kind === 'raw-hex')).toEqual([])
+
+    const probe = neutralizeAllowAnnotation(src, 1, cfg)
+    expect(probe).toContain(NEUTRALIZED_ALLOW_TOKEN)
+    expect(
+      checkSource(probe, PATH, cfg)
+        .filter((f) => f.kind === 'raw-hex')
+        .map((f) => f.line),
+    ).toEqual([1])
+  })
+
+  it('leaves a line with no token, and an out-of-range line, untouched', () => {
+    const src = `const a = 1\nconst b = 2\n`
+    expect(neutralizeAllowAnnotation(src, 1, cfg)).toBe(src)
+    expect(neutralizeAllowAnnotation(src, 99, cfg)).toBe(src)
+  })
+
+  it('the neutralized token shares no substring with the annotation it replaces', () => {
+    expect(NEUTRALIZED_ALLOW_TOKEN).not.toContain(cfg.allowComment)
+    expect(NEUTRALIZED_ALLOW_TOKEN.includes('theme-allow')).toBe(false)
+  })
+})
+
+describe('PLUGIN_RULE_IDS', () => {
+  it('names no guard kind — the two registries are disjoint by construction', () => {
+    for (const id of PLUGIN_RULE_IDS) expect(Object.hasOwn(GUARD_RULES, id)).toBe(false)
   })
 })

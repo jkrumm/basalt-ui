@@ -661,8 +661,12 @@ export function unmatchedExemptPatterns(
  * but they ARE valid ids in a `theme-allow`, so an annotation scoped to one of them must parse as
  * accountable rather than be reported as unscoped. Kept as a literal list because the plugin is a
  * standalone `.js` file this module must not import (see the plugin's own header).
+ *
+ * Exported for `check-theme --audit-allows`: an annotation naming one of these is outside the
+ * guard's reach, and judging it needs a `oxlint` run rather than a `checkSource` one. Keep in step
+ * with the plugin's own `KNOWN_RULE_IDS`; `configs/oxlint-plugin.test.ts` asserts the two agree.
  */
-const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
+export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'no-raw-font-size',
   'raw-size-literal',
   'card-inset',
@@ -785,6 +789,23 @@ const COMMENT_OPENER_BEFORE = /(?:\/\/|\/\*|<!--)\s*$/
 const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
 
 /**
+ * A JSX expression container closing immediately after the comment that filled it — the `*\/}` of a
+ * `{/* … *\/}` whose annotation wrapped onto its own line.
+ *
+ * `stripComments` blanks the comment and leaves the bare `}` behind, so the line read as CODE and
+ * the annotation was classified TRAILING — scoped to a line that holds nothing but a brace, and
+ * therefore waiving nothing. That is the shape linewatch writes for every hand-composed chart axis
+ * (`{/*` on one line, the annotation and `*\/}` on the next), which worked only because the rules it
+ * names live in the oxlint plugin, whose own placement test is comment-node-based and never saw the
+ * brace. Any guard kind annotated this way was silently unwaivable.
+ *
+ * Deliberately narrow: the `}` must abut the comment CLOSE. A `}` that is real code (`} // theme-
+ * allow …` closing a block) keeps its trailing classification, so the annotation stays on its own
+ * line rather than reaching the statement below.
+ */
+const JSX_COMMENT_CLOSE = /\*\/\s*\}\s*$/
+
+/**
  * Everything allowed between the comment opener (or the start of the line) and the annotation
  * token, for the token to count as an ANNOTATION rather than prose that mentions one.
  *
@@ -795,9 +816,14 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  * own waivers in a docblock and thereby disarmed the file — the third hole found in this contract
  * in two rounds, and the only one that was a false NEGATIVE.
  *
- * So an annotation must START its comment, or start a line inside one: after `//`, `/*`, `<!--`, a
- * block-comment gutter `*`, or nothing but leading whitespace. Everything a consumer actually
- * writes qualifies; a sentence about the escape hatch does not.
+ * So an annotation must START its comment, or start a line inside one: after `//`, `/*` (or a
+ * docblock's `/**`), `<!--`, a block-comment gutter `*`, or nothing but leading whitespace.
+ * Everything a consumer actually writes qualifies; a sentence about the escape hatch does not.
+ *
+ * `/**` is in the alternation because the oxlint plugin's copy of this test always accepted it and
+ * this one did not: a one-line `/** theme-allow raw-hex — why *\/` waived under `oxlint` and
+ * reported under `check-theme`. The two halves of one contract must not disagree about what an
+ * annotation IS — only about which rules each can judge.
  *
  * What the annotation then WAIVES is a separate, fail-closed question — see
  * {@link parseAllowAnnotation}. A word in the id slot that names no rule waives nothing, so
@@ -809,7 +835,7 @@ const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
  * it anyway: the kind that fires is the UNSUPPRESSED one (`raw-hex`), not `theme-allow-unscoped`,
  * and downgrading `raw-hex` to waive-by-default is the hole this closed.
  */
-const ANNOTATION_PREFIX = /(?:^|\/\/|\/\*|<!--|^\s*\*)\s*$/
+const ANNOTATION_PREFIX = /(?:^|\/\/|\/\*\*?|<!--|^\s*\*)\s*$/
 
 /** Escape a config-supplied string for literal use inside a RegExp. */
 function escapeRegExp(value: string): string {
@@ -942,7 +968,9 @@ function collectAllowAnnotations(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? ''
     const stripped = codeLines[i] ?? ''
-    const isCommentOnlyLine = stripped.trim() === '' || COMMENT_ONLY_LINE.test(line)
+    const code = stripped.trim()
+    const isCommentOnlyLine =
+      code === '' || COMMENT_ONLY_LINE.test(line) || (code === '}' && JSX_COMMENT_CLOSE.test(line))
 
     // The JSON member form. Markup-only: in TS/CSS that string would be code, not an annotation.
     if (syntax === 'markup') {
@@ -2049,4 +2077,99 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       text: textForFinding(lines[f.line - 1], f.token),
       severity: severityOf(f.kind, cfg),
     }))
+}
+
+// ── Allow-annotation enumeration (check-theme --audit-allows) ─────────────────────────────────────
+
+/**
+ * One `theme-allow` annotation as WRITTEN, classified by whose reach its ids fall in.
+ *
+ * `guardKinds` is what `checkSource` can judge by re-running itself with the annotation
+ * neutralized. `pluginRules` is what only an `oxlint` run can judge. `unknownRules` names no rule
+ * at all. All three empty with `bare: true` is the legacy blanket form.
+ */
+export type AllowAnnotationSite = {
+  /** 1-based line the annotation is written on. */
+  readonly line: number
+  /** `'file'` for the `theme-allow-file` declaration form, `'line'` otherwise. */
+  readonly scope: 'line' | 'file'
+  /** Every id the annotation names that resolves to a real rule, `basalt/` prefix stripped. */
+  readonly rules: readonly string[]
+  /** The subset of `rules` `checkSource` owns. */
+  readonly guardKinds: readonly GuardKind[]
+  /** The subset of `rules` the oxlint plugin owns — outside `checkSource`'s reach. */
+  readonly pluginRules: readonly string[]
+  /** Words that occupied the id slot but name no rule. Their presence makes the parse fail closed. */
+  readonly unknownRules: readonly string[]
+  /** A written reason follows the ids. */
+  readonly hasReason: boolean
+  /** The legacy blanket form — no ids at all, known or unknown. Only covers anything at line scope. */
+  readonly bare: boolean
+  /** The source line, verbatim. */
+  readonly text: string
+}
+
+/**
+ * Every allow annotation in one file, with the ids it names classified by reach.
+ *
+ * Pure, and it shares `collectAllowAnnotations` with {@link checkSource} — so a caller enumerating
+ * annotations sees exactly the set the scan honours, rather than a second regex that can drift from
+ * it. `--audit-allows` carried such a mirror and it was already one alternation behind.
+ *
+ * A file-scoped declaration appears once, at the line it is written on.
+ *
+ * @example
+ * for (const site of findAllowAnnotations(text, rel, cfg)) {
+ *   if (site.pluginRules.length > 0) probeWithOxlint(neutralizeAllowAnnotation(text, site.line, cfg))
+ * }
+ */
+export function findAllowAnnotations(
+  text: string,
+  relPath: string,
+  cfg: GuardConfig,
+): AllowAnnotationSite[] {
+  const lines = text.split('\n')
+  const syntax = guardSyntaxFor(relPath)
+  const codeText = syntax === 'markup' ? stripMarkupComments(text) : stripComments(text, syntax)
+  const { declared } = collectAllowAnnotations(
+    lines,
+    codeText.split('\n'),
+    cfg.allowComment,
+    syntax,
+  )
+  return declared.map(({ line, annotation }) => ({
+    line,
+    scope: annotation.scope,
+    rules: [...annotation.rules],
+    guardKinds: annotation.rules.filter((id): id is GuardKind => Object.hasOwn(GUARD_RULES, id)),
+    pluginRules: annotation.rules.filter(
+      (id) => !Object.hasOwn(GUARD_RULES, id) && PLUGIN_RULE_IDS.has(id),
+    ),
+    unknownRules: [...annotation.unknownRules],
+    hasReason: annotation.hasReason,
+    bare: annotation.rules.length === 0 && annotation.unknownRules.length === 0,
+    text: lines[line - 1] ?? '',
+  }))
+}
+
+/** The token a neutralized annotation is rewritten to. Shares no substring with `theme-allow`. */
+export const NEUTRALIZED_ALLOW_TOKEN = 'basalt-audit-neutralized'
+
+/**
+ * `text` with the allow token on ONE (1-based) line rewritten to {@link NEUTRALIZED_ALLOW_TOKEN},
+ * leaving every other annotation intact.
+ *
+ * The probe half of an audit: re-scan the result and the findings that appear are exactly what that
+ * one annotation suppresses. Shipped rather than left to each caller so the guard probe and the
+ * oxlint probe neutralize identically — a `--audit-allows` verdict that differs between the two
+ * halves by a substitution detail is worse than no verdict.
+ *
+ * A line with no token comes back unchanged.
+ */
+export function neutralizeAllowAnnotation(text: string, line: number, cfg: GuardConfig): string {
+  const lines = text.split('\n')
+  const target = lines[line - 1]
+  if (target === undefined) return text
+  lines[line - 1] = target.replaceAll(cfg.allowComment, NEUTRALIZED_ALLOW_TOKEN)
+  return lines.join('\n')
 }
