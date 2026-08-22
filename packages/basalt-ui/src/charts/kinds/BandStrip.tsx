@@ -196,7 +196,10 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       const span = getBand(d)
       const style = styleByKey.get(span.state)
       if (style === undefined || hidden.has(span.state)) return
-      const absent = Math.min(Math.max(span.absentFraction ?? 0, 0), 1)
+      // Clamped AND finite-checked. `foldedFrom` is carried by the consumer's datum, so a
+      // 0/0 on an un-folded slot arrives here as NaN — which `Math.min`/`Math.max` propagate
+      // straight into `width="NaN"`, a band that silently fails to paint.
+      const absent = clampFraction(span.absentFraction)
       const measuredWidth = bandWidth * (1 - absent)
       const hatchWidth = bandWidth - measuredWidth
       const x = i * step
@@ -322,6 +325,13 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       )}
     </>
   )
+}
+
+/** A 0..1 share. Non-finite (a 0/0 fold count) reads as "nothing is absent" — the conservative
+ * end, since the alternative is a band that does not render at all. */
+function clampFraction(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return 0
+  return Math.min(Math.max(value, 0), 1)
 }
 
 /**

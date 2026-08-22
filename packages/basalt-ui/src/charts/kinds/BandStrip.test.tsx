@@ -117,6 +117,17 @@ describe('BandStrip — absenceFraction splits a folded band', () => {
     )
   })
 
+  test('a non-finite share (a 0/0 fold count) draws a full band, never a NaN width', () => {
+    const degenerate: Slot = { key: '2026-08-01', loss: 1, folded: 0, unmeasured: 0 }
+    const { container } = renderStrip({ data: [degenerate] })
+    expect(container.innerHTML).not.toContain('NaN')
+    const painted = [...container.querySelectorAll('rect[fill]')].filter(
+      (r) => r.getAttribute('fill') !== 'transparent',
+    )
+    expect(painted).toHaveLength(1)
+    expect(Number(painted[0]?.getAttribute('width'))).toBeGreaterThan(0)
+  })
+
   test('a fully absent band is all hatch and no fill', () => {
     const gone: Slot = { key: '2026-08-01', loss: 2, folded: 3, unmeasured: 3 }
     const { container } = renderStrip({ data: [gone] })
