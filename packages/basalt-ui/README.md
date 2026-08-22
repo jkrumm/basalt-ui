@@ -224,7 +224,7 @@ Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are d
 **`exemptRules`** turns one kind off along a path. A pattern is a relative path
 (`public/site.webmanifest`, or `src/agent` for everything under it), a glob (`*` stops at `/`, `**`
 does not, and a slash-free glob is also tried against the basename, so `*.module.css` works), or a
-bare path segment — the legacy shape, and the one nobody guesses, since before 1.20.1 it was the
+bare path segment — the legacy shape, and the one nobody guesses, since before 1.21.0 it was the
 ONLY shape and a real relative path matched nothing and said nothing. The object form records the
 reason, which is what a `theme-allow` always carried and this key could not. A pattern that
 suppresses nothing is now reported by a normal run and fails `--audit-allows`.
@@ -242,7 +242,7 @@ stylesheet `tokens:css` just wrote is not reported back at you, pasting the mark
 suppresses nothing, and an ordinary declaration smuggled into a sheet wearing the header is
 reported on its own line.
 
-**The escape hatch is scoped, and since 1.20.1 the two scopes are spelled apart:**
+**The escape hatch is scoped, and since 1.21.0 the two scopes are spelled apart:**
 
 ```text
 theme-allow                                  → this node/line, EVERY rule   (reports theme-allow-unscoped)
@@ -252,7 +252,7 @@ theme-allow-file <id>[, <id>…] — <why>       → the WHOLE FILE, those rules
 ```
 
 An annotation must **start** its comment (after `//`, `/*`, `<!--`, a block gutter `*`, or
-whitespace) — before 1.20.1 any comment merely mentioning the token parsed as the bare blanket form,
+whitespace) — before 1.21.0 any comment merely mentioning the token parsed as the bare blanket form,
 so a file documenting its own waivers disarmed itself. Placements: the reported line, a comment-only
 line directly above it (the only form JSX can express, and it reaches the first CODE line below,
 walking through the rest of its comment block), or — in CSS — a trailing comment reaching back over
@@ -260,8 +260,13 @@ the declaration it terminates. The id slot is read strictly: a word there that n
 nothing, so a typo is never the blanket form.
 
 `basalt-ui check-theme --audit-allows` reports every annotation and every `exemptRules` entry with
-what it still suppresses, proved by re-running the guard with that one waiver neutralized. Exits 1
-on a dead waiver, so it is usable as a CI gate.
+what it still suppresses, proved by re-running the scan with that one waiver neutralized. Exits 1 on
+a dead waiver, so it is usable as a CI gate. Since 1.21.1 it runs **both** halves — `checkSource` for
+a guard kind, oxlint over one neutralized sibling file for a plugin rule — so a waiver naming
+`hand-rolled-plot` is judged rather than skipped. **It needs oxlint reachable**; where it is not, the
+verdict is "cannot judge", never "dead". The report prints the scope it audited, because `0 dead`
+over `basalt.roots` is not `0 dead anywhere`. Two known gaps: `basalt.exempt` is not audited at all,
+and the `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`.
 
 `doctor`'s `ai-major-parity` hard check fails a monorepo where workspace packages declare different
 `ai` package majors — unless the split is intentional and written down. A producer pinned to an
@@ -294,7 +299,7 @@ deleted rather than silently surviving into the next real skew.
 | `./tokens`          | **free** | `VX` token refs, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `alpha`, `ColorPair` / `SeriesMap` types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `./theme-lab`       | coupled  | `ThemeLabControls`, `applyOverrides`, `loadOverrides`, `COLOR_GROUPS` for live theme inspection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `./vite`            | —        | `basaltViteConfig(opts)` — Vite preset for basalt-ui consumer apps; `basaltAppPlugin(opts)` — PWA head, manifest, and icon metadata derived from the token palette                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core; plus the annotation reader `--audit-allows` is built on: `findAllowAnnotations`, `neutralizeAllowAnnotation`, `NEUTRALIZED_ALLOW_TOKEN`, `PLUGIN_RULE_IDS`, `AllowAnnotationSite`                                                                                                                                                                                                                                                                                                                                                                                      |
 | `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `./router-tanstack` | **free** | TanStack Router bridge: `useBasaltNav` (active route) + `useRouterBreadcrumbs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -689,7 +694,15 @@ honour `BASALT_CWD`, and relocate to the single workspace package carrying a bas
 invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
 `tokens:css` and `fonts:css` both take `--check` as a CI drift gate.
 
-`sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff); missing → recreate. `--force` overwrites local edits.
+`sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff);
+missing → recreate. `--force` overwrites local edits. The summary counts `created` and `recreated`
+apart: `recreated` means the ledger placed that file once and it went missing.
+
+**`sync` refreshes an existing install; it does not create one.** It resolves its project exactly as
+`check-theme` and `doctor` do, and since 1.21.1 **exits 1** when the resolved project has no
+`.basalt/manifest.json`, naming the install it found above instead of scaffolding a second one
+beside it. Run it at the package that holds the manifest, or point `BASALT_CWD` at that package.
+Creating an install is `basalt-ui init`'s decision.
 
 ---
 

@@ -87,7 +87,9 @@ over the declaration it terminates. Whole-file scope is `theme-allow-file <id>�
 `theme-allow-file` waives nothing. A bare `theme-allow` still waives everything on its placement but
 reports `theme-allow-unscoped`. A word in the id slot that names no rule waives nothing.
 `.json`/`.webmanifest` use a `"basalt:theme-allow[-file]"` member. Audit them all with
-`basalt-ui check-theme --audit-allows`, which exits 1 on a waiver that suppresses nothing.
+`basalt-ui check-theme --audit-allows`, which exits 1 on a waiver that suppresses nothing. It judges
+plugin-rule waivers too (since 1.21.1), by re-running oxlint — so it needs oxlint reachable;
+otherwise the verdict is "cannot judge", never "dead".
 
 > **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the
 > basalt-ui repo itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports). It
