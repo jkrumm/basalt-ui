@@ -11,17 +11,32 @@ export type { Finding, GuardConfig, GuardKind, GuardSeverity }
 // ── Static regex consts ──────────────────────────────────────────────────────────────────────────
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g
-const FUNC = /\b(?:rgba?|hsla?)\(/g
+
+/**
+ * A raw `rgb()`/`rgba()`/`hsl()`/`hsla()` color function.
+ *
+ * The `(?!\s*\$\{)` guard drops a call whose FIRST channel is a `${…}` interpolation — that is a
+ * color being COMPUTED, not chosen: an imaging app reporting a sampled pixel
+ * (`` `rgb(${px[0]}, ${px[1]}, ${px[2]})` ``), a debug log quoting one, a readout label. There is
+ * no token that could be correct for a measurement, and the three cases image-gen reported were
+ * all this shape. A literal first channel (`rgba(0, 0, 0, ${o})`) is still a hardcoded color with
+ * a variable alpha, and still flags — `alpha(token, a)` is exactly the escape for it.
+ */
+const FUNC = /\b(?:rgba?|hsla?)\((?!\s*\$\{)/g
 const LOCALSTORAGE_THEME = /localStorage\s*\.\s*getItem\s*\(\s*['"]theme['"]\s*\)/g
 
 // A hardcoded fontFamily/font-family literal — camelCase (JSX prop / object property, quoted
 // value) or kebab-case (CSS text in a template literal, quoted OR bare value — kebab-case is never
 // a valid unquoted JS identifier, so a bare `font-family: Inter` can only be literal CSS text).
-// The escape is a `var(...)` reference restricted to the two entry-point prefixes
-// (`--basalt-font-*` / `--mantine-font-family-*`) — any OTHER var() reference still flags, so the
-// single-entry-point invariant holds. A CSS-wide keyword (inherit/initial/unset/revert) never
-// flags either: it defers to the cascade rather than hardcoding a font.
-const RAW_FONT_FAMILY_VAR_ESCAPE = /var\(\s*--(?:basalt-font-|mantine-font-family-)/.source
+// The escape is ANY `var(--…)` reference. It used to be restricted to the two entry-point prefixes
+// (`--basalt-font-*` / `--mantine-font-family-*`), which reported `font-family: var(--font-sans)`
+// — a variable REFERENCE — as "a hardcoded fontFamily literal", with a fix pointing at the
+// React-only `createBasaltTheme`. A framework-free consumer defining its own custom property IS
+// routing through a variable; the single-entry-point invariant is a doctrine for basalt's own
+// theme layer, not something this regex can tell apart from a legitimate consumer indirection.
+// A CSS-wide keyword (inherit/initial/unset/revert) never flags either: it defers to the cascade
+// rather than hardcoding a font.
+const RAW_FONT_FAMILY_VAR_ESCAPE = /var\(\s*--/.source
 const RAW_FONT_FAMILY_KEYWORD = /(?:inherit|initial|unset|revert)\b/.source
 const RAW_FONT_FAMILY = new RegExp(
   `\\bfontFamily\\s*[:=]\\s*\\{?(?!['"\`]?\\s*${RAW_FONT_FAMILY_VAR_ESCAPE})(?!['"\`]?\\s*${RAW_FONT_FAMILY_KEYWORD})['"\`][^'"\`]+['"\`]` +
@@ -39,7 +54,77 @@ const RAW_FONT_FAMILY = new RegExp(
 const SURFACE_BORDER =
   /\bborder(?:Top|Bottom|Left|Right)?\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))(?!['"`]?(?:none|transparent|inherit|unset|revert)\b)['"`][^'"`]+['"`]/g
 const SURFACE_RADIUS = /\bborderRadius\s*:\s*(?:[0-9]+|['"`](?!\s*var\()[^'"`]*[0-9])/g
-const SURFACE_SHADOW = /\bboxShadow\s*:\s*(?!['"`]?[^'"`]*(?:var\(|\$\{))['"`][^'"`]+['"`]/g
+
+/**
+ * A `boxShadow` / `box-shadow` declaration with its whole value captured, so the value can be
+ * JUDGED rather than merely pattern-excluded.
+ *
+ * The old `SURFACE_SHADOW` skipped any value containing `var(` or `${`, which reads as "already
+ * system-routed" and is wrong for the shape a token-fluent consumer actually writes:
+ * `` boxShadow: `0 0 0 2px ${VX.accent}` `` on a `Paper` is built entirely from tokens and still
+ * REPLACES `--vx-shadow-card`, leaving that one card with no depth while every other card in the
+ * app has it. Composing WITH card depth (`` `${VX.shadowCard}, 0 0 0 1px …` ``) is the legitimate
+ * shape and the one this must not touch — so the discriminator is whether the value still names
+ * card depth, not whether it contains a token at all. See `surface-shadow-override`.
+ */
+const SHADOW_DECL = /\b(?:boxShadow|box-shadow)\s*:\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g
+/** A shadow value that still carries basalt's card depth — composes with it rather than replacing it. */
+const SHADOW_KEEPS_CARD_DEPTH = /--vx-shadow-|\bVX\.shadow/
+/** A shadow value routed through SOME variable/interpolation (vs. a hardcoded literal). */
+const SHADOW_IS_COMPOSED = /var\(|\$\{/
+
+/**
+ * The kebab-case surface literals a CSS Module writes. `raw-surface` is camelCase-only — the TSX
+ * inline-style dialect — so `border-radius: 4px` beside a flagged `borderRadius: 2` was invisible.
+ * `src/guard/index.ts`'s `INLINE_SPACING` records that the same asymmetry was deliberately fixed
+ * for spacing; this is that fix for the surface kinds.
+ *
+ * Reaching CSS is a NEW file type for these checks, so they land under their own kind
+ * (`css-raw-surface`, warn for one minor) instead of widening `raw-surface` — see
+ * {@link GuardSeverity}. `border`/`border-top` are deliberately NOT covered: nearly every CSS
+ * module in every consumer declares one, and the token answer (`var(--vx-surface-border)`) is a
+ * COLOR, not a whole shorthand, so the rule would be advice nobody can act on line-by-line.
+ */
+const CSS_SURFACE_RADIUS = /(?<![\w-])border-radius\s*:\s*([^;}]+)/g
+const CSS_SURFACE_SHADOW = /(?<![\w-])box-shadow\s*:\s*([^;}]+)/g
+
+/** The largest CSS radius literal treated as a sub-scale micro-corner, in px — below the 4px floor. */
+const MICRO_RADIUS_CEILING_PX = 3
+/** Radius values that name a SHAPE rather than a surface corner — a circle and the pill idiom. */
+const SHAPE_RADIUS_VALUES = new Set(['50%', '9999px', '999px', '100%'])
+
+/**
+ * Is this `border-radius` value already system-routed or sub-scale? `var(...)` components are
+ * dropped first (same treatment as `isSubScaleCssSpacing`), then a value survives when every
+ * remaining literal is a shape keyword or a length at/below {@link MICRO_RADIUS_CEILING_PX}.
+ */
+function isAllowedCssRadius(value: string): boolean {
+  const rest = value.replace(/var\([^)]*\)/g, ' ').trim()
+  if (rest === '') return true
+  return rest.split(/\s+/).every((part) => {
+    if (SHAPE_RADIUS_VALUES.has(part)) return true
+    const literal = /^[-+]?(\d+(?:\.\d+)?|\.\d+)(px|rem)?$/.exec(part)
+    if (literal === null) return false
+    const px = literal[2] === 'rem' ? Number(literal[1]) * ROOT_FONT_SIZE_PX : Number(literal[1])
+    return px <= MICRO_RADIUS_CEILING_PX
+  })
+}
+
+/**
+ * An inline `fontSize` / `font-size` literal — the `check-theme` counterpart to the oxlint plugin's
+ * `basalt/no-raw-font-size`. A consumer whose CI runs only `check-theme` (the documented
+ * `configs/check.yml` step) never saw a `style={{ fontSize: 11 }}` at all.
+ *
+ * Unitless integers and `px` only, matching React's inline-style convention and CSS's absolute
+ * form. `rem`/`em`/`%` are deliberately out: they are ratios against something else, and the type
+ * scale has no opinion on a relative step.
+ */
+// The `(?<![\w-;])` guard is what keeps this out of query strings and URL fragments: argo builds a
+// Static Maps legend as `…;fontSize:10;dpi:96`, which is a REMOTE renderer's parameter, not a type
+// choice, and no `--vx-text-*` could be correct for it. A declaration written by a formatter always
+// has whitespace or an opening brace in front of the property; a packed key/value string does not.
+const INLINE_FONT_SIZE =
+  /(?<![\w-;])font-?[Ss]ize\s*:\s*['"]?(\d+(?:\.\d+)?)(?:px)?['"]?(?=[,;\s}]|$)/g
 
 // A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
 // ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
@@ -72,11 +157,41 @@ const OFF_SYSTEM_SURFACE_VAR = /var\(--mantine-color-(gray|dark)-\d/g
 const MANTINE_SHADE_INDEX =
   /\b(?:color|c|bg|backgroundColor|borderColor)\s*=\s*\{?\s*['"][a-z]+\.\d\b|var\(--mantine-color-(?!gray-|dark-)[a-z]+-\d/g
 
-// Raw lowercase JSX layout/surface element with inline style and layout/surface prop — line-scoped.
-const RAW_HTML_TAG = /<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\b/
+/**
+ * A raw lowercase JSX layout/surface element's own OPENING TAG — bounded full-text scan, the same
+ * shape `CARD_SURFACE_TAG` uses.
+ *
+ * This kind used to be a three-condition conjunction evaluated per LINE, so the identical
+ * violation was reported or not depending purely on how the formatter had broken the tag:
+ * `<div style={{ position: 'relative', … }}>` on one line fired, while the same `<div>` with
+ * `className=` and `style=` on separate lines did not. `card-with-border` already had the answer.
+ */
+const RAW_HTML_TAG_NAME = '<(?:div|span|section|header|nav|footer|aside|main|article|ul|ol)\\b'
+const RAW_HTML_TAG = new RegExp(RAW_HTML_TAG_NAME)
+const RAW_HTML_LAYOUT_TAG = new RegExp(`${RAW_HTML_TAG_NAME}(?:=>|[^>])*?>`, 'g')
 const INLINE_STYLE = /style=\{\{/
+/** `style={someStyleConst}` — the hoisted form that defeats every text-local check. */
+const STYLE_IDENTIFIER = /style=\{\s*([A-Za-z_$][\w$]*)\s*\}/
 const LAYOUT_SURFACE_PROP =
   /\b(?:display|padding|margin|gap|flex|grid|border|background|width|height)\b/
+
+/**
+ * The object body of a `const <name> = { … }` declaration, or `''` when there is none.
+ *
+ * Hoisting the style object out of the tag (`const wrapperStyle: CSSProperties = {…}` then
+ * `style={wrapperStyle}`) is the general escape from every text-local kind, and it is what a
+ * formatter nudges people toward. One non-nested lookup closes the common case; a style object
+ * assembled across statements is out of reach of a regex scanner and stays out of reach.
+ */
+function hoistedObjectBody(codeText: string, name: string): string {
+  // `name` comes from source text and reaches a RegExp — a `$`-prefixed identifier is legal JS and
+  // is an anchor in a pattern, so it gets escaped rather than trusted.
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const decl = new RegExp(`\\b(?:const|let|var)\\s+${escaped}\\b[^=;]*=\\s*\\{([^}]*)\\}`).exec(
+    codeText,
+  )
+  return decl?.[1] ?? ''
+}
 
 // Spacing/sizing literals — anchored on the property name; `var()` and a plain `0` pass.
 //
@@ -296,7 +411,26 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
  * }
  */
-const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {}
+const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
+  'theme-allow-unscoped':
+    'introduced in the round-4 guard minor — promote to error one minor later. Every consumer has ' +
+    'bare `theme-allow` comments today (basalt itself has ~20), and landing this as an error would ' +
+    'fail every one of their builds on an upgrade they took for the fixes.',
+  'surface-shadow-override':
+    'introduced in the round-4 guard minor — promote to error one minor later. Catches the shape a ' +
+    'TOKEN-FLUENT consumer writes, so the code it rejects is code that looks correct and passed ' +
+    'every previous release.',
+  'css-raw-surface':
+    'introduced in the round-4 guard minor — promote to error one minor later. The surface kinds ' +
+    'reaching CSS at all is the "existing kind, new file type" case the doctrine names explicitly.',
+  'inline-font-size':
+    'introduced in the round-4 guard minor — promote to error one minor later. The oxlint plugin ' +
+    'has enforced the same thing as `basalt/no-raw-font-size` for a while, so a consumer running ' +
+    'both sees nothing new; one running check-theme alone gets a minor of runway.',
+  'hidden-inline-style':
+    'introduced in the round-4 guard minor — promote by DELETING the kind and folding its two ' +
+    'scans into `raw-html-layout`, which is where they belong once the widening has had its minor.',
+}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
@@ -332,39 +466,249 @@ function isChartFile(relPath: string): boolean {
  * are equivalent); a substring match against one longer segment (e.g. `'age'` against `agent`)
  * never counts.
  */
+/**
+ * Kinds that inherit another kind's `exemptRules` entry. A grace-minor kind that exists only to
+ * carry a WIDENING of an established kind is the same rule to a consumer, so an exemption written
+ * for the parent must cover it — otherwise the widening arrives as noise in exactly the paths
+ * someone already decided the rule does not apply to. The entry disappears with the merge.
+ */
+const EXEMPT_RULE_ALIASES: Partial<Record<GuardKind, GuardKind>> = {
+  'hidden-inline-style': 'raw-html-layout',
+}
+
 function isRuleExempt(
   kind: GuardKind,
   relPath: string,
   exemptRules: GuardConfig['exemptRules'],
 ): boolean {
+  const alias = EXEMPT_RULE_ALIASES[kind]
+  if (alias !== undefined && isRuleExempt(alias, relPath, exemptRules)) return true
   const patterns = exemptRules?.[kind]
   if (patterns === undefined || patterns.length === 0) return false
   const segments = relPath.split('/')
   return patterns.some((pattern) => segments.includes(pattern.replace(/\/$/, '')))
 }
 
+// ── theme-allow annotations ──────────────────────────────────────────────────────────────────────
+
 /**
- * The allow-comment skip the full-text tag-scoped scans re-apply on their own resolved report
- * line: a line carrying the allow-comment is never a violation. Pure-comment lines need no
- * special case here anymore — they are handled upstream by `stripComments` (matches simply can't
- * land on blanked-out comment text), so this only ever runs against the ORIGINAL (unstripped)
- * line, since the allow-comment annotation itself lives inside a comment.
+ * The oxlint plugin's rule ids. Not guard kinds — they can never suppress a `checkSource` finding —
+ * but they ARE valid ids in a `theme-allow`, so an annotation scoped to one of them must parse as
+ * accountable rather than be reported as unscoped. Kept as a literal list because the plugin is a
+ * standalone `.js` file this module must not import (see the plugin's own header).
  */
-function isSkippedLine(line: string, cfg: GuardConfig): boolean {
-  return line.includes(cfg.allowComment)
+const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
+  'no-raw-font-size',
+  'raw-size-literal',
+  'card-inset',
+  'chart-in-raw-surface',
+  'hand-rolled-plot',
+  'chart-legend-literal',
+  'hand-rolled-shell',
+  'shadow-basalt-export',
+  'raw-scroll-container',
+  'visx-boundary',
+  'visx-tooltip',
+  'token-layer-boundary',
+])
+
+/** The shortest string accepted as a written reason — enough to exclude a stray separator. */
+const MIN_ALLOW_REASON_LENGTH = 4
+
+/** One parsed `theme-allow` annotation. `rules` empty means "every kind" (the legacy bare form). */
+type AllowAnnotation = {
+  readonly rules: readonly string[]
+  readonly hasReason: boolean
 }
 
-/** The 2 comment/regex dialects the stripper understands, resolved from the file's own extension. */
-type GuardSyntax = 'ts' | 'css'
+/** One annotation at the (1-based) line it was WRITTEN on — where `theme-allow-unscoped` reports. */
+type AllowDeclaration = { readonly line: number; readonly annotation: AllowAnnotation }
+
+/**
+ * Parse the text following the allow token on one line.
+ *
+ * Rule ids are consumed only while they are KNOWN ids (a guard kind or a plugin rule, optionally
+ * `basalt/`-prefixed, comma- or space-separated). That matters: `theme-allow sub-scale legend
+ * corner` is a reason written without a separator, and treating its words as rule ids would scope
+ * the exception to three rules that do not exist — silently un-suppressing a line that used to
+ * pass. An unknown word ends the id list and starts the reason.
+ */
+function parseAllowAnnotation(rest: string): AllowAnnotation {
+  const rules: string[] = []
+  let remainder = rest.replace(/^[\s,]+/, '')
+  for (;;) {
+    const token = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/.exec(remainder)
+    const id = token?.[1]
+    if (token === null || id === undefined || !(id in GUARD_RULES || PLUGIN_RULE_IDS.has(id))) break
+    rules.push(id)
+    remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
+  }
+  const reason = remainder.replace(/^(?:—|–|-{1,2}|:)\s*/, '').trim()
+  return { rules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+}
+
+/** How far back a trailing CSS annotation reaches for the declaration it terminates. */
+const MAX_CSS_CONTINUATION_LINES = 8
+
+/**
+ * A comment opener sitting immediately before the annotation token.
+ *
+ * `stripComments` is the primary evidence that an occurrence is inside a comment, but it is
+ * deliberately biased toward treating an ambiguous `/` as division (see its own doc), and JSX makes
+ * that bias fire constantly: in `<Box p={18} /> // theme-allow` the `/` of `/>` follows a `}`, so
+ * the stripper reads a regex literal and the trailing comment survives unstripped. This prefix test
+ * is the second witness — cheap, local, and exact for every shape that actually occurs.
+ */
+const COMMENT_OPENER_BEFORE = /(?:\/\/|\/\*|<!--)\s*$/
+
+/** A line that is NOTHING but a comment — the placement that waives the line below it. */
+const COMMENT_ONLY_LINE = /^\s*(?:\{\s*\/\*|\/\/|\/\*|\*|<!--)/
+
+/**
+ * Everything allowed between the comment opener (or the start of the line) and the annotation
+ * token, for the token to count as an ANNOTATION rather than prose that mentions one.
+ *
+ * The asymmetry is deliberate. WAIVING stays loose — any `theme-allow` inside a comment suppresses,
+ * exactly as before, so no upgrade takes a build down over comment placement. REPORTING
+ * `theme-allow-unscoped` is strict, because otherwise every sentence documenting the escape hatch
+ * becomes a finding: this package's own `guard/types.ts` explains the syntax in five lines of
+ * JSDoc, and all five were reported.
+ */
+const ANNOTATION_PREFIX = /(?:^|\/\/|\/\*|<!--|^\s*\*)\s*$/
+
+/**
+ * Every line an allow annotation WAIVES, keyed by 0-based line index. Three placements, each one a
+ * shape people actually write — and the union of them is what makes the escape survive a formatter.
+ *
+ * 1. **Its own line.** The original rule, unchanged.
+ * 2. **The line below, when the annotation line is a comment and nothing else.** This is the
+ *    placement the oxlint plugin has always honored and the only one JSX can express: the reported
+ *    line is usually a multi-line opening tag or a `{expr}` child, where a trailing `//` is a
+ *    syntax error or renders as visible text. Requiring the annotation line to be comment-ONLY is
+ *    what keeps a TRAILING comment scoped to its own line — otherwise
+ *    `const a = '#f00' // theme-allow` would silently waive the next line too.
+ * 3. **The rest of the CSS declaration it terminates.** The shipped `oxfmt` reflows
+ *    `background-color: var(--x, #232326); /* theme-allow *\/` into four lines with the hex on one
+ *    and the comment on another — two shipped tools pulling in opposite directions, and the
+ *    exception silently stopped working. Walking back over the continuation lines (stopping at the
+ *    first `;` / `{` / `}`, which CSS actually has) restores it. Deliberately CSS-only: oxfmt emits
+ *    NO semicolons in TS, so there is no statement terminator to stop at and the same walk would
+ *    waive arbitrary code above.
+ *
+ * An occurrence only counts when it sits inside a COMMENT, which is read off the stripped text:
+ * `stripComments` replaces comment characters 1:1 with spaces, so a position that is non-space in
+ * the source and space in the stripped copy was a comment. That is what keeps a `'theme-allow'`
+ * inside a string literal (or in this file's own rule table) from silently disabling a rule.
+ */
+function collectAllowAnnotations(
+  lines: readonly string[],
+  codeLines: readonly string[],
+  allowComment: string,
+  syntax: GuardSyntax,
+): { waivers: Map<number, AllowAnnotation[]>; declared: AllowDeclaration[] } {
+  const byLine = new Map<number, AllowAnnotation[]>()
+  const declared: AllowDeclaration[] = []
+  const add = (index: number, annotation: AllowAnnotation): void => {
+    const list = byLine.get(index) ?? []
+    list.push(annotation)
+    byLine.set(index, list)
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? ''
+    const stripped = codeLines[i] ?? ''
+    const isCommentOnlyLine = stripped.trim() === '' || COMMENT_ONLY_LINE.test(line)
+    let from = 0
+    for (;;) {
+      const at = line.indexOf(allowComment, from)
+      if (at === -1) break
+      from = at + allowComment.length
+      // Not inside a comment (neither witness agrees) → real code, e.g. this file's own rule table.
+      if (stripped[at] !== ' ' && !COMMENT_OPENER_BEFORE.test(line.slice(0, at))) continue
+      const annotation = parseAllowAnnotation(line.slice(from))
+      if (ANNOTATION_PREFIX.test(line.slice(0, at))) declared.push({ line: i + 1, annotation })
+      add(i, annotation)
+      if (isCommentOnlyLine) {
+        add(i + 1, annotation)
+        continue
+      }
+      if (syntax !== 'css') continue
+      for (let back = 1; back <= MAX_CSS_CONTINUATION_LINES; back++) {
+        const previous = (codeLines[i - back] ?? '').trim()
+        if (previous === '' || /[;{}]$/.test(previous)) break
+        add(i - back, annotation)
+      }
+    }
+  }
+  return { waivers: byLine, declared }
+}
+
+/** Does any annotation on this line cover `kind`? An annotation with no rule ids covers all kinds. */
+function annotationsCover(annotations: AllowAnnotation[] | undefined, kind: GuardKind): boolean {
+  return (annotations ?? []).some((a) => a.rules.length === 0 || a.rules.includes(kind))
+}
+
+/** The 3 comment dialects the stripper understands, resolved from the file's own extension. */
+type GuardSyntax = 'ts' | 'css' | 'markup'
 
 /**
  * CSS (including `.module.css`) has no `//` line-comment syntax at all — an unquoted `//`, e.g.
  * inside `url(https://…)`, is real CSS text, never a comment opener. Match on the `.css` suffix
  * (not a naive `split('.')`) so `foo.module.css` resolves the same as `foo.css`.
+ *
+ * `markup` covers the two files whose colors nothing re-derives on a theme change and which the
+ * scan never reached — `index.html` and `*.webmanifest` (plus plain `.json`, which a webmanifest
+ * often is). Only the color/typography kinds apply there; see `MARKUP_KINDS`.
  */
 function guardSyntaxFor(relPath: string): GuardSyntax {
-  return relPath.endsWith('.css') ? 'css' : 'ts'
+  if (relPath.endsWith('.css')) return 'css'
+  if (/\.(?:html?|webmanifest|json)$/.test(relPath)) return 'markup'
+  return 'ts'
 }
+
+/** The only kinds meaningful in an HTML document or a JSON manifest — no JSX, no CSS-in-JS. */
+const MARKUP_KINDS: ReadonlySet<GuardKind> = new Set(['raw-hex', 'raw-color-fn', 'raw-font-family'])
+
+/** Blanks out `<!-- … -->` 1:1 with spaces, preserving every offset. JSON has no comment syntax. */
+function stripMarkupComments(text: string): string {
+  return text.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' '))
+}
+
+/**
+ * The marker a basalt-generated stylesheet carries in its header — the contract between
+ * `basalt-ui tokens:css` and this scanner. `check-theme` used to report the file it had just
+ * written: 116 of rollhook's 117 violations were inside the emitted token stylesheet, which is
+ * nothing but hex and `rgba()` by construction.
+ */
+const GENERATED_MARKER = '@generated basalt-ui'
+/** How far into a file the marker is honoured — a header, not something buried mid-file. */
+const GENERATED_HEADER_LINES = 5
+
+/**
+ * Kinds disabled under `profile: 'tokens-only'` — every kind whose remedy is a Mantine component,
+ * a Mantine prop, or the React theme factory. See {@link GuardConfig.profile}.
+ *
+ * Exported so the CLI can name the profile in `--help`/`doctor` output without re-deriving the
+ * list, and so a test can assert the two halves (disabled vs. surviving) partition the registry.
+ */
+export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
+  'localstorage-theme',
+  'off-identity-accent',
+  'mantine-shade-index',
+  'raw-spacing',
+  'raw-radius',
+  'card-with-border',
+  'off-system-surface-var',
+  'raw-html-layout',
+  'inline-spacing',
+  'inline-display',
+  'raw-visx-axis',
+  'raw-motion-value',
+  'unframed-chart',
+  'chart-missing-aria-label',
+  'raw-form-control',
+  'sub-16-input-font',
+])
 
 // A `/` opens a regex literal (not division) when the previous significant token is one of these
 // punctuation marks, or one of the REGEX_PRECEDING_KEYWORDS below, or nothing has been scanned yet
@@ -435,7 +779,7 @@ const WORD_CHAR = /[A-Za-z0-9_$]/
  * regex-open would swallow real code as "protected regex content" and could hide a genuine
  * violation — the failure mode BUG 1 already showed is unacceptable.
  */
-function stripComments(text: string, syntax: GuardSyntax): string {
+function stripComments(text: string, syntax: 'ts' | 'css'): string {
   const out: string[] = Array.from<string>({ length: text.length })
   let inLineComment = false
   let inBlockComment = false
@@ -775,6 +1119,42 @@ export const GUARD_RULES = {
     message:
       'fontSize below 16 on a form control is dead code — the styles.css iOS floor is `!important` and always wins. Either drop the override, or be honest about 16px in the design.',
   },
+  'theme-allow-unscoped': {
+    kind: 'theme-allow-unscoped',
+    pattern: /theme-allow/, // handled inline (annotation pass); entry keeps the registry complete
+    message:
+      'theme-allow without a rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff.',
+  },
+  'surface-shadow-override': {
+    kind: 'surface-shadow-override',
+    pattern: SHADOW_DECL, // handled inline (value is judged, not just matched)
+    enabled: (cfg: GuardConfig) => cfg.rawSurface,
+    message:
+      'Token-composed boxShadow that REPLACES card depth — a card whose shadow drops --vx-shadow-card is the one card in the app with no depth. Compose with it (`${VX.shadowCard}, <your ring>`) rather than instead of it.',
+  },
+  'css-raw-surface': {
+    kind: 'css-raw-surface',
+    pattern: CSS_SURFACE_RADIUS, // handled inline (value is judged); entry keeps the registry complete
+    enabled: (cfg: GuardConfig) => cfg.rawSurface,
+    // The kebab dialect only exists in CSS text; the camelCase half is `raw-surface`.
+    appliesTo: (relPath) => relPath.endsWith('.css'),
+    message:
+      'Surface literal in CSS — use var(--vx-radius-card|--vx-radius-md) for a corner and var(--vx-shadow-card) for depth, the same tokens the TSX side is held to.',
+  },
+  'hidden-inline-style': {
+    kind: 'hidden-inline-style',
+    pattern: RAW_HTML_LAYOUT_TAG, // handled inline (full-text tag-scoped scan + hoisted-const lookup)
+    enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
+    appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
+    message:
+      'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Its own kind for one minor so the widening lands as a warning; it merges into raw-html-layout at the promotion.',
+  },
+  'inline-font-size': {
+    kind: 'inline-font-size',
+    pattern: INLINE_FONT_SIZE,
+    message:
+      'Raw font-size literal — route through VX.text.* (numbers) / --vx-text-* (CSS), or the Mantine fz token. Same rule the oxlint plugin enforces as basalt/no-raw-font-size; this is the half a check-theme-only CI can see.',
+  },
 } as const satisfies Record<GuardKind, GuardRule>
 
 /** Whether `kind`'s rule fires for `relPath` — `appliesTo` is opt-in; absent means always applies. */
@@ -796,9 +1176,17 @@ function ruleApplies(kind: GuardKind, relPath: string): boolean {
  * if (findings.some((f) => f.kind === 'raw-hex')) { ... }
  */
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
+  const lines = text.split('\n')
+
+  // A file basalt itself generated is not consumer source. `tokens:css` emits nothing BUT hex and
+  // rgba() by construction, so scanning its output made `check-theme` reject the artifact a sibling
+  // command had just written — 116 of rollhook's 117 findings were inside it. The marker is honored
+  // as a HEADER only, so it can't be smuggled in mid-file to silence a real violation.
+  if (lines.slice(0, GENERATED_HEADER_LINES).some((l) => l.includes(GENERATED_MARKER))) return []
+
   // Severity and text are stamped once at the end rather than at each of the ~20 push sites — both
   // are derived from state the push sites don't need: severity from the KIND and the config, text
-  // from the finding's own `line` against the source split below.
+  // from the finding's own `line` against the source split above.
   const findings: Omit<Finding, 'severity' | 'text'>[] = []
 
   // Derive the 3 dynamic regexes via GUARD_RULES pattern builders.
@@ -813,70 +1201,121 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   )
 
   // Comment-stripped text drives every match below; `lines` (the ORIGINAL, unstripped split) is
-  // kept only to resolve the allow-comment escape, since that annotation lives inside a comment
-  // the stripped text has already blanked out. Same length / same newline positions as `text`, so
-  // line numbers computed off either one agree.
-  const lines = text.split('\n')
+  // kept to resolve the allow-comment escape, since that annotation lives inside a comment the
+  // stripped text has already blanked out. Same length / same newline positions as `text`, so line
+  // numbers computed off either one agree.
   const syntax = guardSyntaxFor(relPath)
-  const codeText = stripComments(text, syntax)
+  const codeText = syntax === 'markup' ? stripMarkupComments(text) : stripComments(text, syntax)
   const codeLines = codeText.split('\n')
+  const { waivers, declared } = collectAllowAnnotations(lines, codeLines, cfg.allowComment, syntax)
+
+  /** Is `kind` waived at (1-based) `line`? See `collectAllowAnnotations` for the three placements. */
+  const isAllowed = (line: number, kind: GuardKind): boolean =>
+    annotationsCover(waivers.get(line - 1), kind)
+
+  const isAllowedInRange = (start: number, end: number, kind: GuardKind): boolean => {
+    for (let n = start; n <= end; n++) if (isAllowed(n, kind)) return true
+    return false
+  }
+
+  const push = (kind: GuardKind, line: number, token: string): void => {
+    if (isAllowed(line, kind)) return
+    findings.push({ relPath, line, token, kind })
+  }
+
+  // theme-allow accountability. Reported directly rather than through `push`: a bare annotation
+  // covers every kind, so routing it through the waiver check would let it waive the report of its
+  // own unaccountability. `basalt.severity` / `exemptRules` are the ways to turn it down.
+  for (const { line, annotation } of declared) {
+    if (annotation.rules.length > 0 && annotation.hasReason) continue
+    const missing = annotation.rules.length === 0 ? 'no rule id' : 'no reason'
+    findings.push({
+      relPath,
+      line,
+      token: `${cfg.allowComment} (${missing})`,
+      kind: 'theme-allow-unscoped',
+    })
+  }
+
+  /** Lines the line-scoped `raw-html-layout` already owns, so `hidden-inline-style` can't double-report. */
+  const rawHtmlLayoutLines = new Set<number>()
 
   for (let i = 0; i < lines.length; i++) {
     const line = codeLines[i] ?? ''
 
-    // Skip lines with the allow-comment (checked against the ORIGINAL line text).
-    if ((lines[i] ?? '').includes(cfg.allowComment)) continue
-
     // Always-on kinds (raw-hex, raw-color-fn, localstorage-theme) — patterns from GUARD_RULES.
     for (const m of line.matchAll(GUARD_RULES['raw-hex'].pattern as RegExp)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-hex' })
+      push('raw-hex', i + 1, m[0])
     }
     for (const m of line.matchAll(GUARD_RULES['raw-color-fn'].pattern as RegExp)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-color-fn' })
+      push('raw-color-fn', i + 1, m[0])
     }
     if (ruleApplies('localstorage-theme', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['localstorage-theme'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'localstorage-theme' })
+        push('localstorage-theme', i + 1, m[0])
       }
     }
     for (const m of line.matchAll(GUARD_RULES['raw-font-family'].pattern as RegExp)) {
-      findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-font-family' })
+      push('raw-font-family', i + 1, m[0])
+    }
+    for (const m of line.matchAll(GUARD_RULES['inline-font-size'].pattern as RegExp)) {
+      push('inline-font-size', i + 1, m[0])
     }
 
     // Dynamic-regex kinds — patterns already resolved above.
     if (ruleApplies('off-identity-accent', relPath)) {
       for (const m of line.matchAll(forbiddenAccentRe)) {
-        findings.push({ relPath, line: i + 1, token: m[1] ?? '', kind: 'off-identity-accent' })
+        push('off-identity-accent', i + 1, m[1] ?? '')
       }
     }
     if (ruleApplies('raw-spacing', relPath)) {
-      for (const m of line.matchAll(spacingPropRe)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-spacing' })
-      }
+      for (const m of line.matchAll(spacingPropRe)) push('raw-spacing', i + 1, m[0])
     }
     if (GUARD_RULES['raw-radius'].enabled!(cfg) && ruleApplies('raw-radius', relPath)) {
-      for (const m of line.matchAll(radiusPropRe)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-radius' })
-      }
+      for (const m of line.matchAll(radiusPropRe)) push('raw-radius', i + 1, m[0])
     }
 
-    // raw-surface: 3 separate regex checks, one kind — gated via GUARD_RULES entry.
+    // raw-surface + its two younger siblings, all gated on the same `rawSurface` knob:
+    //   • raw-surface            — the camelCase (TSX inline-style) literals, unchanged;
+    //   • css-raw-surface        — the kebab dialect, which the camelCase patterns never saw;
+    //   • surface-shadow-override — a shadow built FROM tokens that still drops card depth.
     if (GUARD_RULES['raw-surface'].enabled!(cfg)) {
-      for (const m of line.matchAll(SURFACE_BORDER)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
-      }
-      for (const m of line.matchAll(SURFACE_RADIUS)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
-      }
-      for (const m of line.matchAll(SURFACE_SHADOW)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-surface' })
+      for (const m of line.matchAll(SURFACE_BORDER)) push('raw-surface', i + 1, m[0])
+      for (const m of line.matchAll(SURFACE_RADIUS)) push('raw-surface', i + 1, m[0])
+
+      if (syntax === 'css') {
+        for (const m of line.matchAll(CSS_SURFACE_RADIUS)) {
+          const value = m[1] ?? ''
+          if (!/\d/.test(value) || isAllowedCssRadius(value)) continue
+          push('css-raw-surface', i + 1, m[0].trim())
+        }
+        for (const m of line.matchAll(CSS_SURFACE_SHADOW)) {
+          const value = m[1] ?? ''
+          // A var-composed shadow in a CSS MODULE is deliberately not judged. `surface-shadow-
+          // override` is about a Card/Paper losing `--vx-shadow-card`; a module's own
+          // `box-shadow: var(--field-depth)` is a focus ring, an inset, a notch — component
+          // styling with no card identity at stake. Only the CSS-in-JS dialect, where the shadow
+          // sits on a Mantine surface prop, carries that claim.
+          if (SHADOW_IS_COMPOSED.test(value) || /^\s*none\s*$/.test(value)) continue
+          push('css-raw-surface', i + 1, m[0].trim())
+        }
+      } else {
+        for (const m of line.matchAll(SHADOW_DECL)) {
+          const value = m[2] ?? ''
+          if (!SHADOW_IS_COMPOSED.test(value)) {
+            push('raw-surface', i + 1, m[0])
+            continue
+          }
+          if (SHADOW_KEEPS_CARD_DEPTH.test(value)) continue
+          push('surface-shadow-override', i + 1, m[0])
+        }
       }
     }
 
     // off-system-surface-var — pattern + gating from GUARD_RULES.
     if (GUARD_RULES['off-system-surface-var'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['off-system-surface-var'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'off-system-surface-var' })
+        push('off-system-surface-var', i + 1, m[0])
       }
     }
 
@@ -886,11 +1325,12 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     // pattern's own comment for why this kind carries no appliesTo gate.
     if (GUARD_RULES['mantine-shade-index'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['mantine-shade-index'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'mantine-shade-index' })
+        push('mantine-shade-index', i + 1, m[0])
       }
     }
 
     // raw-html-layout: 3-condition conjunction on the same line — gated via GUARD_RULES entry.
+    // Its widened, formatting-independent half is `hidden-inline-style`, scanned below.
     if (
       GUARD_RULES['raw-html-layout'].enabled!(cfg) &&
       ruleApplies('raw-html-layout', relPath) &&
@@ -898,21 +1338,22 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       INLINE_STYLE.test(line) &&
       LAYOUT_SURFACE_PROP.test(line)
     ) {
-      findings.push({ relPath, line: i + 1, token: '<raw-html style>', kind: 'raw-html-layout' })
+      rawHtmlLayoutLines.add(i + 1)
+      push('raw-html-layout', i + 1, '<raw-html style>')
     }
 
     // inline-spacing — pattern + gating from GUARD_RULES, plus the CSS-only sub-scale escape.
     if (GUARD_RULES['inline-spacing'].enabled!(cfg)) {
       for (const m of line.matchAll(GUARD_RULES['inline-spacing'].pattern as RegExp)) {
         if (syntax === 'css' && isSubScaleCssSpacing(line, m.index)) continue
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-spacing' })
+        push('inline-spacing', i + 1, m[0])
       }
     }
 
     // inline-display — pattern + gating from GUARD_RULES.
     if (GUARD_RULES['inline-display'].enabled!(cfg) && ruleApplies('inline-display', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['inline-display'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'inline-display' })
+        push('inline-display', i + 1, m[0])
       }
     }
 
@@ -923,37 +1364,63 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       GUARD_RULES['raw-visx-axis'].appliesTo!(relPath)
     ) {
       for (const m of line.matchAll(GUARD_RULES['raw-visx-axis'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-visx-axis' })
+        push('raw-visx-axis', i + 1, m[0])
       }
     }
 
     // raw-motion-value: 2 separate regex checks, one kind — gated via GUARD_RULES entry.
     if (GUARD_RULES['raw-motion-value'].enabled!(cfg) && ruleApplies('raw-motion-value', relPath)) {
-      for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
-      }
+      for (const m of line.matchAll(MOTION_TRANSITION_NUMERIC))
+        push('raw-motion-value', i + 1, m[0])
       for (const m of line.matchAll(MOTION_TRANSITION_EASE_ARRAY)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-motion-value' })
+        push('raw-motion-value', i + 1, m[0])
       }
     }
 
     // raw-form-control — pattern + gating from GUARD_RULES.
     if (GUARD_RULES['raw-form-control'].enabled!(cfg) && ruleApplies('raw-form-control', relPath)) {
       for (const m of line.matchAll(GUARD_RULES['raw-form-control'].pattern as RegExp)) {
-        findings.push({ relPath, line: i + 1, token: m[0], kind: 'raw-form-control' })
+        push('raw-form-control', i + 1, m[0])
       }
+    }
+  }
+
+  // hidden-inline-style — the formatting-independent half of raw-html-layout. Bounded full-text tag
+  // scan (the `card-with-border` model), plus one hoisted-const lookup, so neither `<div\n  style=`
+  // nor `style={wrapperStyle}` walks past a rule that catches the identical single-line form.
+  if (
+    GUARD_RULES['hidden-inline-style'].enabled!(cfg) &&
+    ruleApplies('hidden-inline-style', relPath)
+  ) {
+    for (const m of codeText.matchAll(RAW_HTML_LAYOUT_TAG)) {
+      const tagText = m[0]
+      let styleBody = ''
+      if (INLINE_STYLE.test(tagText)) styleBody = tagText
+      else {
+        const ident = STYLE_IDENTIFIER.exec(tagText)?.[1]
+        if (ident !== undefined) styleBody = hoistedObjectBody(codeText, ident)
+      }
+      if (styleBody === '' || !LAYOUT_SURFACE_PROP.test(styleBody)) continue
+      const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
+      if (rawHtmlLayoutLines.has(startLine)) continue
+      const endLine = startLine + (tagText.split('\n').length - 1)
+      if (isAllowedInRange(startLine, endLine, 'hidden-inline-style')) continue
+      findings.push({
+        relPath,
+        line: startLine,
+        token: '<raw-html style>',
+        kind: 'hidden-inline-style',
+      })
     }
   }
 
   // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
   // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
-  // at the line of the `items={[` token itself, honoring the same allow-comment escape as every
-  // per-line kind by checking the ORIGINAL reported line directly.
+  // at the line of the `items={[` token itself.
   if (GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)) {
     for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
       const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
-      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
-      findings.push({ relPath, line: lineNo, token: 'items={[', kind: 'unframed-chart' })
+      push('unframed-chart', lineNo, 'items={[')
     }
   }
 
@@ -973,14 +1440,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
       const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
       const endLine = startLine + (tagText.split('\n').length - 1)
-      let skipped = false
-      for (let n = startLine; n <= endLine; n++) {
-        if (isSkippedLine(lines[n - 1] ?? '', cfg)) {
-          skipped = true
-          break
-        }
-      }
-      if (skipped) continue
+      if (isAllowedInRange(startLine, endLine, 'chart-missing-aria-label')) continue
       findings.push({
         relPath,
         line: startLine,
@@ -998,8 +1458,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       const withBorder = WITH_BORDER_PROP.exec(m[0])
       if (withBorder === null) continue
       const lineNo = codeText.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
-      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
-      findings.push({ relPath, line: lineNo, token: 'withBorder', kind: 'card-with-border' })
+      push('card-with-border', lineNo, 'withBorder')
     }
   }
 
@@ -1016,8 +1475,7 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
       const lineNo = codeText.slice(0, (m.index ?? 0) + tagText.length).split('\n').length
-      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
-      findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
+      push('sub-16-input-font', lineNo, fontSizeMatch[0])
     }
 
     for (const m of codeText.matchAll(STYLES_INPUT_PART)) {
@@ -1027,20 +1485,24 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       const value = Number.parseFloat(fontSizeMatch[1] ?? '')
       if (!Number.isFinite(value) || value >= 16) continue
       const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
-      if (isSkippedLine(lines[lineNo - 1] ?? '', cfg)) continue
-      findings.push({ relPath, line: lineNo, token: fontSizeMatch[0], kind: 'sub-16-input-font' })
+      push('sub-16-input-font', lineNo, fontSizeMatch[0])
     }
   }
 
-  // Per-rule, per-path exemption post-filter (§exemptRules) — applied once here so it uniformly
-  // covers every kind regardless of whether it was emitted via the GUARD_RULES registry loop above
-  // or one of the inline-handled kinds (raw-surface, raw-html-layout, sub-16-input-font, …).
+  // Post-filters, applied once here so they uniformly cover every kind regardless of whether it was
+  // emitted via the GUARD_RULES registry loop above or one of the inline-handled kinds:
+  //   • §exemptRules — per-rule, per-path consumer exemptions;
+  //   • markup       — an HTML document / JSON manifest has no JSX and no CSS-in-JS, so only the
+  //                    color/typography kinds are meaningful there;
+  //   • profile      — a tokens-only consumer is not told to install @mantine/core.
   //
   // `text` is stamped here too, in the same single post-pass, off the ORIGINAL (unstripped) `lines`
   // split — never `codeLines` — so a finding on a line whose comment was stripped still reports the
   // real source text a human would read.
   return findings
     .filter((f) => !isRuleExempt(f.kind, f.relPath, cfg.exemptRules))
+    .filter((f) => syntax !== 'markup' || MARKUP_KINDS.has(f.kind))
+    .filter((f) => cfg.profile !== 'tokens-only' || !TOKENS_ONLY_DISABLED_KINDS.has(f.kind))
     .map((f) => ({
       ...f,
       text: textForFinding(lines[f.line - 1], f.token),

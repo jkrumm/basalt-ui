@@ -26,6 +26,8 @@
     "basalt/chart-in-raw-surface": "error",
     "basalt/hand-rolled-plot": "error",
     "basalt/chart-legend-literal": "error",
+    "basalt/shadow-basalt-export": "error",
+    "basalt/hand-rolled-shell": "error",
     "basalt/raw-scroll-container": "error",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",
