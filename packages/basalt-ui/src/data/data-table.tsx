@@ -171,15 +171,43 @@ export type BasaltDataTableProps<T> = {
   // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
   columns: ColumnDef<T, any>[]
   /**
-   * Enable column sorting via clickable headers.
+   * Enable column sorting via clickable headers. Client-side — the rows in `data` are what get
+   * reordered.
+   *
+   * Under `manualPagination` that is one page, so leaving this on without also passing
+   * `manualSorting` is a contract violation and throws in dev — see `manualPagination`.
    * @default true
    */
   enableSorting?: boolean
+  /**
+   * Hand sorting to the server: the table stops reordering `data` locally and renders it in the
+   * order given, while the headers keep toggling `SortingState` and reporting it through
+   * `onSortingChange` — which is where you re-request the sorted page.
+   *
+   * This is the required companion to `manualPagination` whenever sort headers are live; without
+   * it a server-paginated table sorts one page and the "of N" bar presents that as a sort of all N.
+   * @default false
+   * @example
+   * <BasaltDataTable
+   *   data={page.rows}
+   *   columns={columns}
+   *   enablePagination
+   *   manualPagination
+   *   manualSorting
+   *   rowCount={page.total}
+   *   onSortingChange={(s) => refetch({ sort: s[0] })}
+   * />
+   */
+  manualSorting?: boolean
   /** Stripe alternate rows. Forwarded to Mantine `Table` — `'odd'`/`'even'` pick the phase. */
   striped?: boolean | 'odd' | 'even'
   /** Highlight hovered rows. Forwarded to Mantine `Table`. */
   highlightOnHover?: boolean
-  /** Rendered when `data` is empty. Falls back to a simple message when omitted. */
+  /**
+   * Rendered when no rows are VISIBLE — `data` is empty, or a filter/page matches none of it.
+   * Falls back to a simple message when omitted. (Before 1.25.0 this tracked `data.length` alone,
+   * so a search matching nothing rendered a blank `<tbody>` with no message at all.)
+   */
   emptyState?: ReactNode
   /**
    * When true, renders skeleton placeholder rows instead of the empty-state branch.
@@ -241,6 +269,18 @@ export type BasaltDataTableProps<T> = {
    * facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
    */
   facets?: DataTableFacet[]
+  /** Called whenever the faceted column filters change — the seam for server-side faceting. */
+  onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+  /**
+   * Hand filtering to the server: the table stops narrowing `data` locally and renders every row
+   * given, while the search input and facets keep reporting through `onGlobalFilterChange` /
+   * `onColumnFiltersChange` — which is where you re-request the filtered page.
+   *
+   * Required alongside `manualPagination` whenever `enableGlobalFilter` or `facets` is set;
+   * without it the controls narrow one page while "of N" keeps counting the whole set.
+   * @default false
+   */
+  manualFiltering?: boolean
   /**
    * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
    * search input or facets are configured.
@@ -272,6 +312,21 @@ export type BasaltDataTableProps<T> = {
    * Disables local pagination slicing — pass the already-paginated page of `data` plus `rowCount`
    * (and optionally `pageCount`) for server-driven pagination. `onPaginationChange` is where you
    * fetch the next page.
+   *
+   * **It imposes a contract, enforced at render.** `data` is now one page, but the pagination bar
+   * says "Showing 1–25 of 412" — so every OTHER client-side control becomes a claim about 412 rows
+   * that it can only make about 25. Each has to be resolved explicitly, because only the call site
+   * knows whether the server does the work:
+   *
+   * - `rowCount` (or `pageCount`) must be given, or "of N" counts the page and the pager collapses
+   *   to a single page nobody can leave;
+   * - sorting must be handed over with `manualSorting`, or switched off with `enableSorting={false}`;
+   * - `enableGlobalFilter` / `facets`, if used, must be handed over with `manualFiltering`;
+   * - `enablePagination` must be on, or `manualPagination` is inert and the page renders as if it
+   *   were the whole table.
+   *
+   * Unresolved, each throws in dev and degrades to the honest render in production (no sort
+   * headers, no filter controls, no "of N") — never to the plausible wrong answer.
    * @default false
    * @example
    * <BasaltDataTable
@@ -423,14 +478,110 @@ function getPinnedCellStyle<T>(
   }
 }
 
+// ── The manual-pagination contract ────────────────────────────────────────────
+
+/** The house dev gate (`src/provider`, `src/charts/kinds/BandStrip` use the same expression):
+ * `basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle constant-folds this to
+ * `false` and drops the throw. Read per call, never hoisted, so a test can flip it. */
+function isDev(): boolean {
+  return process.env['NODE_ENV'] !== 'production'
+}
+
+/** One client-side control that `manualPagination` turns into a claim the table cannot support. */
+type ManualPaginationBreach = 'inert' | 'total' | 'sorting' | 'filtering'
+
+const BREACH_REMEDY: Record<ManualPaginationBreach, string> = {
+  inert:
+    '`enablePagination` is not set, so `manualPagination` never reaches the table and the server ' +
+    'page renders as if it were the whole set, with no bar to say otherwise. Pass ' +
+    '`enablePagination`, or drop `manualPagination`.',
+  total:
+    'neither `rowCount` nor `pageCount` was given, so "of N" counts only the rows on this page and ' +
+    'the pager collapses to one page nobody can leave. Pass `rowCount={total}`.',
+  sorting:
+    'client-side sorting is still armed. It reorders only the rows in `data` — one page — while the ' +
+    'header chevron and "of N" together present it as a sort of all of them. Pass `manualSorting` ' +
+    'and sort in the request you make from `onSortingChange`, or `enableSorting={false}`.',
+  filtering:
+    'the search input / facets still filter client-side. They narrow only the rows in `data` — one ' +
+    'page — while "of N" keeps counting the whole set. Pass `manualFiltering` and filter in the ' +
+    'request you make from `onGlobalFilterChange` / `onColumnFiltersChange`, or drop ' +
+    '`enableGlobalFilter` / `facets`.',
+}
+
+/**
+ * Every way the props on hand contradict `manualPagination`. Computed from PROPS only — never from
+ * the table instance, whose `getCanSort()` would read back the very `enableSorting` this decides.
+ */
+function manualPaginationBreaches(config: {
+  columns: readonly { enableSorting?: boolean }[]
+  enablePagination: boolean
+  manualPagination: boolean
+  rowCount: number | undefined
+  pageCount: number | undefined
+  enableSorting: boolean
+  manualSorting: boolean
+  enableGlobalFilter: boolean
+  hasFacets: boolean
+  manualFiltering: boolean
+}): ManualPaginationBreach[] {
+  if (!config.manualPagination) return []
+  if (!config.enablePagination) return ['inert']
+  const breaches: ManualPaginationBreach[] = []
+  if (config.rowCount === undefined && config.pageCount === undefined) breaches.push('total')
+  const anyColumnMaySort = config.columns.some((column) => column.enableSorting !== false)
+  if (config.enableSorting && anyColumnMaySort && !config.manualSorting) breaches.push('sorting')
+  if ((config.enableGlobalFilter || config.hasFacets) && !config.manualFiltering)
+    breaches.push('filtering')
+  return breaches
+}
+
+function manualPaginationMessage(breaches: ManualPaginationBreach[]): string {
+  return (
+    'BasaltDataTable: `manualPagination` is set, so `data` is one server page — but:\n  · ' +
+    breaches.map((breach) => BREACH_REMEDY[breach]).join('\n  · ') +
+    '\nEach has to be resolved explicitly: only the call site knows whether the server does the ' +
+    'work, so there is no default that is not a guess about the data.'
+  )
+}
+
+/** Bounded by the sixteen possible breach sets, so it cannot grow with render count. */
+const reportedBreaches = new Set<string>()
+
+/**
+ * Dev throws; production reports once and lets the caller degrade.
+ *
+ * Split deliberately from BandStrip's datum/prop rule rather than copied. That rule throws on a bad
+ * PROP because a prop is authored, deterministic, and caught the first time the component renders —
+ * all true here. What differs is that a bad `meta.align` has no honest render (every alignment we
+ * could pick might be the wrong one, and would look right in review), whereas this one does: a
+ * table with no sort headers, no filter controls and no "of N" asserts nothing false. Throwing in
+ * production would add no correctness the degradation does not already give, and would convert a
+ * misreport on a rarely-visited page into a blank one. The report is what keeps the degradation
+ * from being its own silence.
+ */
+function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): void {
+  if (breaches.length === 0) return
+  const message = manualPaginationMessage(breaches)
+  if (isDev()) throw new Error(message)
+  if (reportedBreaches.has(message)) return
+  reportedBreaches.add(message)
+  console.error(message)
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
  * A sortable data table backed by TanStack Table and rendered with Mantine primitives.
  * Generic over `T` — column types are inferred from `ColumnDef<T>`.
  *
- * Sorting is local/client-side (no `any`). When `enableSorting` is `false` the table
- * is read-only. An `emptyState` node is rendered when `data` is empty.
+ * Sorting is local/client-side by default (no `any`); `manualSorting` hands it to the server.
+ * When `enableSorting` is `false` the table is read-only. An `emptyState` node is rendered
+ * whenever no rows are visible — empty `data`, or a filter that matches none of it.
+ *
+ * `manualPagination` imposes a contract on the rest of the props (see its docblock): every
+ * client-side control it would turn into a false claim about the unseen rows must be handed to the
+ * server or switched off, and an unresolved one throws in dev rather than misreporting.
  *
  * Toolbar (search + facets), pagination, and column pinning are opt-in chrome layered on top —
  * see the corresponding props below. None of them change rendering unless explicitly enabled.
@@ -449,6 +600,7 @@ export function BasaltDataTable<T>({
   data,
   columns,
   enableSorting = true,
+  manualSorting = false,
   striped,
   highlightOnHover,
   emptyState,
@@ -462,6 +614,8 @@ export function BasaltDataTable<T>({
   initialGlobalFilter,
   onGlobalFilterChange,
   facets,
+  onColumnFiltersChange,
+  manualFiltering = false,
   toolbarActions,
   enablePagination = false,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
@@ -511,6 +665,17 @@ export function BasaltDataTable<T>({
     [onGlobalFilterChange],
   )
 
+  const handleColumnFiltersChange = useCallback(
+    (updater: Updater<ColumnFiltersState>) => {
+      setColumnFilters((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater
+        onColumnFiltersChange?.(next)
+        return next
+      })
+    },
+    [onColumnFiltersChange],
+  )
+
   const handlePaginationChange = useCallback(
     (updater: Updater<PaginationState>) => {
       setPagination((prev) => {
@@ -550,6 +715,27 @@ export function BasaltDataTable<T>({
     })
   }, [columns, facets])
 
+  // Enforced before the table is built, so the degraded options below are the ones TanStack gets —
+  // a degraded table must not merely hide a control, it must not compute the answer either.
+  const hasFacets = Boolean(facets && facets.length > 0)
+  const breaches = manualPaginationBreaches({
+    columns,
+    enablePagination,
+    manualPagination,
+    rowCount,
+    pageCount,
+    enableSorting,
+    manualSorting,
+    enableGlobalFilter,
+    hasFacets,
+    manualFiltering,
+  })
+  enforceManualPaginationContract(breaches)
+  // Unreachable in dev (the line above threw); in production these are the honest fallbacks.
+  const sortingEnabled = enableSorting && !breaches.includes('sorting')
+  const filteringEnabled = !breaches.includes('filtering')
+  const totalIsAuthoritative = !breaches.includes('total')
+
   const table = useReactTable<T>({
     data,
     columns: tableColumns,
@@ -562,25 +748,36 @@ export function BasaltDataTable<T>({
     },
     onSortingChange: handleSortingChange,
     onGlobalFilterChange: handleGlobalFilterChange,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnPinningChange: setColumnPinning,
     ...(enablePagination && { onPaginationChange: handlePaginationChange }),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    // Both row models stay installed and are BYPASSED by these flags, which is TanStack's own
+    // seam — so a degraded table renders `data` in the order and completeness the server sent it.
+    // Forced only by a BREACH, never by `enableSorting={false}` on its own: that pair still applies
+    // an `initialSorting` today (it disables the header control, not the row model) and a table
+    // that is not misreporting has no business losing it.
+    manualSorting: manualSorting || breaches.includes('sorting'),
+    manualFiltering: manualFiltering || breaches.includes('filtering'),
     ...(enablePagination && {
       getPaginationRowModel: getPaginationRowModel(),
       manualPagination,
       ...(manualPagination && rowCount !== undefined && { rowCount }),
       ...(manualPagination && pageCount !== undefined && { pageCount }),
     }),
-    enableSorting,
+    enableSorting: sortingEnabled,
     enableColumnPinning: enablePinning,
   })
 
-  const showToolbar =
-    enableGlobalFilter || Boolean(facets && facets.length > 0) || Boolean(toolbarActions)
+  const showSearch = enableGlobalFilter && filteringEnabled
+  const showFacets = hasFacets && filteringEnabled
+  const showToolbar = showSearch || showFacets || Boolean(toolbarActions)
   const headerGroups = enablePinning ? getOrderedHeaderGroups(table) : table.getHeaderGroups()
+  // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
+  // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
+  const rows = table.getRowModel().rows
 
   const tableNode = (
     <Table
@@ -597,7 +794,7 @@ export function BasaltDataTable<T>({
         {headerGroups.map((headerGroup) => (
           <Table.Tr key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
-              const canSort = enableSorting && header.column.getCanSort()
+              const canSort = sortingEnabled && header.column.getCanSort()
               const sorted = header.column.getIsSorted()
               const toggleSorting = header.column.getToggleSortingHandler()
               const pinnedStyle = enablePinning
@@ -654,7 +851,7 @@ export function BasaltDataTable<T>({
               ))}
             </Table.Tr>
           ))
-        ) : data.length === 0 ? (
+        ) : rows.length === 0 ? (
           <Table.Tr>
             <Table.Td colSpan={columns.length}>
               {emptyState ?? (
@@ -665,7 +862,7 @@ export function BasaltDataTable<T>({
             </Table.Td>
           </Table.Tr>
         ) : (
-          table.getRowModel().rows.map((row) => {
+          rows.map((row) => {
             const cells = enablePinning
               ? [
                   ...row.getLeftVisibleCells(),
@@ -718,7 +915,7 @@ export function BasaltDataTable<T>({
       {showToolbar && (
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="xs">
           <Group gap="xs" wrap="wrap" align="flex-end">
-            {enableGlobalFilter && (
+            {showSearch && (
               <TextInput
                 size="xs"
                 radius="md"
@@ -729,40 +926,41 @@ export function BasaltDataTable<T>({
                 w={220}
               />
             )}
-            {facets?.map((facet) => {
-              const column = table.getColumn(facet.columnId)
-              if (!column) return null
-              if (facet.multiple) {
-                const value = (column.getFilterValue() as string[] | undefined) ?? []
+            {showFacets &&
+              facets?.map((facet) => {
+                const column = table.getColumn(facet.columnId)
+                if (!column) return null
+                if (facet.multiple) {
+                  const value = (column.getFilterValue() as string[] | undefined) ?? []
+                  return (
+                    <MultiSelect
+                      key={facet.columnId}
+                      size="xs"
+                      radius="md"
+                      placeholder={facet.label}
+                      data={facet.options}
+                      value={value}
+                      onChange={(next) => column.setFilterValue(next.length > 0 ? next : undefined)}
+                      clearable
+                      w={200}
+                    />
+                  )
+                }
+                const value = (column.getFilterValue() as string | undefined) ?? null
                 return (
-                  <MultiSelect
+                  <Select
                     key={facet.columnId}
                     size="xs"
                     radius="md"
                     placeholder={facet.label}
                     data={facet.options}
                     value={value}
-                    onChange={(next) => column.setFilterValue(next.length > 0 ? next : undefined)}
+                    onChange={(next) => column.setFilterValue(next ?? undefined)}
                     clearable
-                    w={200}
+                    w={180}
                   />
                 )
-              }
-              const value = (column.getFilterValue() as string | undefined) ?? null
-              return (
-                <Select
-                  key={facet.columnId}
-                  size="xs"
-                  radius="md"
-                  placeholder={facet.label}
-                  data={facet.options}
-                  value={value}
-                  onChange={(next) => column.setFilterValue(next ?? undefined)}
-                  clearable
-                  w={180}
-                />
-              )
-            })}
+              })}
           </Group>
           {toolbarActions}
         </Group>
@@ -783,7 +981,8 @@ export function BasaltDataTable<T>({
       {enablePagination && (
         <Group justify="space-between" mt="xs" wrap="wrap" gap="xs" align="center">
           <Text style={RANGE_LABEL_STYLE}>
-            Showing {rangeStart}–{rangeEnd} of {total}
+            Showing {rangeStart}–{rangeEnd}
+            {totalIsAuthoritative ? ` of ${total}` : ''}
           </Text>
           <Group gap="xs" align="center">
             <Select

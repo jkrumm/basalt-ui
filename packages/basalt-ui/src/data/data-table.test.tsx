@@ -13,12 +13,13 @@
  *     (`apps/playground/src/data-table-align.type-guard.ts`); the value can only be caught here,
  *     and a silent fallback to left-aligned would look correct in review.
  */
-import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { MantineProvider, Text } from '@mantine/core'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './table'
 import type { BasaltDataTableProps } from './data-table'
+import type { ColumnFiltersState } from './table'
 
 type Row = { project: string; cost: number }
 const col = createColumnHelper<Row>()
@@ -154,5 +155,195 @@ describe('regression — the bare table is unchanged', () => {
     renderTable()
     expect(screen.getByText('argo')).toBeTruthy()
     expect(screen.getByText('linewatch')).toBeTruthy()
+  })
+})
+
+/**
+ * The manual-pagination contract (argo round 10, P1).
+ *
+ * `manualPagination` makes `data` one server page while the bar reads "Showing 1–25 of 412", so
+ * every remaining client-side control becomes a claim about 412 rows it can only make about 25.
+ * These pin the replacement for the old silence: loud where the props contradict each other, and
+ * honest — never plausible-but-wrong — where a production bundle has dropped the throw.
+ */
+
+/** Run `fn` with the production dev-gate, restoring whatever the runner had set. */
+function inProd(fn: () => void): void {
+  const previous = process.env['NODE_ENV']
+  process.env['NODE_ENV'] = 'production'
+  try {
+    fn()
+  } finally {
+    if (previous === undefined) delete process.env['NODE_ENV']
+    else process.env['NODE_ENV'] = previous
+  }
+}
+
+const SERVER_PAGE: Partial<BasaltDataTableProps<Row>> = {
+  enablePagination: true,
+  manualPagination: true,
+  rowCount: 412,
+}
+
+describe('manualPagination — the props that would misreport must be resolved', () => {
+  test('the bare adoption throws, naming the page-local sort and both ways out', () => {
+    expect(() => renderTable(SERVER_PAGE)).toThrow(
+      /client-side sorting is still armed[\s\S]*`manualSorting`[\s\S]*`enableSorting=\{false\}`/,
+    )
+  })
+
+  test('no rowCount and no pageCount throws — "of N" would count the page', () => {
+    expect(() =>
+      renderTable({ enablePagination: true, manualPagination: true, manualSorting: true }),
+    ).toThrow(/neither `rowCount` nor `pageCount`/)
+  })
+
+  test('manualPagination without enablePagination throws — the prop is inert, not harmless', () => {
+    expect(() => renderTable({ manualPagination: true })).toThrow(
+      /`enablePagination` is not set, so `manualPagination` never reaches the table/,
+    )
+  })
+
+  test('client-side search over one server page throws too — the same defect, one control over', () => {
+    expect(() =>
+      renderTable({ ...SERVER_PAGE, manualSorting: true, enableGlobalFilter: true }),
+    ).toThrow(/the search input \/ facets still filter client-side/)
+  })
+
+  test('facets trip the filtering breach even with no search input', () => {
+    expect(() =>
+      renderTable({
+        ...SERVER_PAGE,
+        manualSorting: true,
+        facets: [{ columnId: 'project', label: 'Project', options: [] }],
+      }),
+    ).toThrow(/still filter client-side/)
+  })
+
+  test('every unresolved breach is reported at once, not one per fix-and-rerun', () => {
+    expect(() => renderTable({ manualPagination: true, enablePagination: true })).toThrow(
+      /neither `rowCount`[\s\S]*client-side sorting is still armed/,
+    )
+  })
+})
+
+describe('manualPagination — the two sanctioned resolutions', () => {
+  test("enableSorting={false} renders, and no header claims to sort — argo's workaround", () => {
+    const { container } = renderTable({ ...SERVER_PAGE, enableSorting: false })
+    for (const th of container.querySelectorAll('th')) {
+      expect(th.getAttribute('aria-sort')).toBeNull()
+      expect(th.getAttribute('tabindex')).toBeNull()
+    }
+    expect(container.textContent).toContain('of 412')
+  })
+
+  test('manualSorting keeps the headers live but stops reordering the page locally', () => {
+    // asc by cost would put linewatch (3) above argo (12) — under manualSorting the server's
+    // order is what renders, because the server is the one that sorted.
+    const sorted = renderTable({
+      ...SERVER_PAGE,
+      manualSorting: true,
+      initialSorting: [{ id: 'cost', desc: false }],
+    })
+    expect(sorted.container.querySelector('tbody tr')?.textContent).toContain('argo')
+    expect(sorted.container.querySelector('th')?.getAttribute('aria-sort')).toBe('none')
+
+    // The control: the same initialSorting on a client-side table DOES reorder.
+    const local = renderTable({ initialSorting: [{ id: 'cost', desc: false }] })
+    expect(local.container.querySelector('tbody tr')?.textContent).toContain('linewatch')
+  })
+
+  test('manualFiltering hands the search to the server — the input filters nothing locally', () => {
+    const { container } = renderTable({
+      ...SERVER_PAGE,
+      manualSorting: true,
+      manualFiltering: true,
+      enableGlobalFilter: true,
+      initialGlobalFilter: 'zzzz',
+    })
+    // Client-side that term matches no row; the server page renders whole.
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(container.querySelector('input')).toBeTruthy()
+  })
+})
+
+describe('manualPagination — production degrades to the honest table, never the plausible one', () => {
+  test('no sort headers, no search input, and no "of N" it cannot stand behind', () => {
+    const errors: unknown[][] = []
+    const previous = console.error
+    console.error = (...args: unknown[]) => errors.push(args)
+    try {
+      inProd(() => {
+        const { container } = renderTable({
+          manualPagination: true,
+          enablePagination: true,
+          enableGlobalFilter: true,
+        })
+        // Sorting: the control is gone, so the table asserts nothing about the unseen rows.
+        for (const th of container.querySelectorAll('th')) {
+          expect(th.getAttribute('aria-sort')).toBeNull()
+        }
+        // Filtering: same — a control that can only narrow one page is not rendered.
+        expect(container.querySelector('input[placeholder="Search…"]')).toBeNull()
+        // The count: no rowCount was given, so the bar states the range and claims no total.
+        expect(container.textContent).toContain('Showing 1–2')
+        expect(container.textContent).not.toContain('of 2')
+      })
+    } finally {
+      console.error = previous
+    }
+    // The degradation is not its own silence.
+    expect(errors).toHaveLength(1)
+    expect(String(errors[0]?.[0])).toContain('BasaltDataTable: `manualPagination` is set')
+  })
+})
+
+/**
+ * Sibling defect found by reading, not by a consumer: the empty branch keyed off `data.length`,
+ * so any narrowing that left `data` non-empty but the row model empty rendered a `<tbody>` with
+ * nothing in it — no rows, no message. A blank body reads as a broken table, not as no matches.
+ */
+describe('the empty state tracks the rendered rows, not the raw array', () => {
+  test('a search matching nothing shows the empty state instead of a blank tbody', () => {
+    const { container } = renderTable({
+      enableGlobalFilter: true,
+      initialGlobalFilter: 'no-such-project',
+    })
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(1)
+    expect(container.textContent).toContain('No data to display.')
+  })
+
+  test('a custom emptyState is honoured on a filtered-to-nothing table too', () => {
+    const { container } = renderTable({
+      enableGlobalFilter: true,
+      initialGlobalFilter: 'no-such-project',
+      emptyState: <Text>Nothing matches that search.</Text>,
+    })
+    expect(container.textContent).toContain('Nothing matches that search.')
+  })
+
+  test('a page index past the end shows the empty state rather than an empty body', () => {
+    const { container } = renderTable({
+      enablePagination: true,
+      initialPagination: { pageIndex: 9, pageSize: 10 },
+    })
+    expect(container.textContent).toContain('No data to display.')
+  })
+})
+
+describe('onColumnFiltersChange — the seam server-side faceting needs', () => {
+  test('a facet selection reports the new columnFilters', async () => {
+    const seen: ColumnFiltersState[] = []
+    const { container } = renderTable({
+      facets: [
+        { columnId: 'project', label: 'Project', options: [{ value: 'argo', label: 'argo' }] },
+      ],
+      onColumnFiltersChange: (filters) => seen.push(filters),
+    })
+    const select = container.querySelector('input[placeholder="Project"]')
+    if (!select) throw new Error('expected the facet Select')
+    fireEvent.click(select)
+    fireEvent.click(await screen.findByRole('option', { name: 'argo' }))
+    await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
   })
 })
