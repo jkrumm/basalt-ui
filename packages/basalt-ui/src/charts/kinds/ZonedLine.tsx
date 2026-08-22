@@ -50,8 +50,12 @@ export type ZonedLineProps<T> = {
   xZones?: XZoneSpec[]
   thresholds?: ZonedLineThreshold[]
   refLines?: ZonedLineRefLine[]
-  /** Exact number of x ticks. Default: as many as fit. */
+  /** Exact number of x ticks. Default: as many as fit. Ignored when `xTickValues` is set. */
   xTicks?: number
+  /** Which domain keys get a tick, from the full key list and the resolved plot width. Takes
+   * precedence over `xTicks` — see `CartesianChartProps.xTickValues` for why a count is not
+   * always enough. */
+  xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
   /**
@@ -119,6 +123,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     thresholds,
     refLines,
     xTicks,
+    xTickValues,
     formatX,
     cursorResolution,
     tooltip,
@@ -151,6 +156,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
       {...(xZones !== undefined && { xZones })}
       {...(refLines !== undefined && { refLines })}
       {...(xTicks !== undefined && { xTicks })}
+      {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(tooltip !== undefined && { tooltip })}

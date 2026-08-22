@@ -151,8 +151,24 @@ export type CartesianChartProps<T> = {
   /** Passing `y2` is what makes the chart dual-axis: it draws the right axis and widens the
    * right margin by measurement. Series opt in with `axis: 'right'`. */
   y2?: AxisConfig<T>
-  /** Exact number of x ticks. Default: as many as fit (`smartTicks`). */
+  /** Exact number of x ticks. Default: as many as fit (`smartTicks`). Ignored when
+   * `xTickValues` is set. */
   xTicks?: number
+  /**
+   * Which domain keys get a tick, chosen from the full key list and the resolved plot width.
+   * Takes precedence over `xTicks`; omit both for `smartTicks`.
+   *
+   * A COUNT is not always enough. `smartTicks`/`smartTicksEvery` append the final key
+   * unconditionally, so when the step does not land on the last index that appended tick sits a
+   * partial step from its neighbour — measured on a 24h window, two `DD.MM HH:MM` labels printed
+   * on top of each other at the right edge, at every tick count. The only fix a count can express
+   * is thinning the whole axis to avoid one crowded pair. A consumer whose labels are richer than
+   * the default `DD.MM` needs to pick the VALUES, which until now meant measuring the container
+   * itself with `useChartSize` to derive a count — the chart already knows its own width.
+   *
+   * `BandStrip`/`MirroredBars` take the identical prop, so the seam does not fork by kind.
+   */
+  xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
   /** Value-range bands on the left scale, drawn behind the marks. */
@@ -267,6 +283,7 @@ export function CartesianChart<T>({
   y,
   y2,
   xTicks,
+  xTickValues,
   formatX = fmtAxisDate,
   zones,
   xZones,
@@ -305,6 +322,7 @@ export function CartesianChart<T>({
           {...(y !== undefined && { y })}
           {...(y2 !== undefined && { y2 })}
           {...(xTicks !== undefined && { xTicks })}
+          {...(xTickValues !== undefined && { xTickValues })}
           formatX={formatX}
           {...(zones !== undefined && { zones })}
           {...(xZones !== undefined && { xZones })}
@@ -343,6 +361,7 @@ function CartesianPlot<T>({
   y,
   y2,
   xTicks,
+  xTickValues,
   formatX = fmtAxisDate,
   zones,
   xZones,
@@ -459,9 +478,15 @@ function CartesianPlot<T>({
     [rightDomain, yMax, y2?.nice],
   )
 
+  // Resolution order: explicit VALUES win, then an explicit COUNT, then as many as fit.
   const tickValues = useMemo(
-    () => (xTicks === undefined ? smartTicks(keys, xMax) : smartTicksEvery(keys, xTicks)),
-    [keys, xMax, xTicks],
+    () =>
+      xTickValues !== undefined
+        ? [...xTickValues(keys, xMax)]
+        : xTicks === undefined
+          ? smartTicks(keys, xMax)
+          : smartTicksEvery(keys, xTicks),
+    [keys, xMax, xTicks, xTickValues],
   )
 
   const cursor = useChartCursor<T>({
