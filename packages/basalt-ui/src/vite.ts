@@ -198,6 +198,30 @@ const ICON_FILES = {
   manifest512: 'web-app-manifest-512x512.png',
 } as const
 
+/**
+ * One icon a consumer names itself — a manifest `icons` member, plus optionally the head `<link>`
+ * that points at the same file.
+ *
+ * The field names are the manifest's own, verbatim, so what a consumer writes here is what ships in
+ * `site.webmanifest`. `src` is root-relative (`'/favicon.svg'` or `'favicon.svg'`, both resolve the
+ * same) and is prefixed with Vite's `base` exactly like basalt's built-in set.
+ */
+export type BasaltAppIcon = {
+  /** Root-relative path under `public/`. Prefixed with Vite's resolved `base`. */
+  src: string
+  /** Manifest `sizes`. `'any'` for a scalable SVG; `'192x192'` for a raster. */
+  sizes?: string
+  /** MIME type, e.g. `'image/svg+xml'`. */
+  type?: string
+  /** Manifest `purpose`, e.g. `'any maskable'`. */
+  purpose?: string
+  /**
+   * Emit a head `<link rel="…">` for this icon too. Omitted → manifest only, which is what an app
+   * that links its own favicon from `index.html` wants.
+   */
+  rel?: 'icon' | 'shortcut icon' | 'apple-touch-icon' | 'mask-icon'
+}
+
 export type BasaltAppOptions = {
   /** App display name — used verbatim as the manifest `name` and (unless overridden) OG title. */
   name: string
@@ -243,10 +267,26 @@ export type BasaltAppOptions = {
   /** Manifest `id`. Default: the resolved `startUrl` (default- or explicitly-derived, per above). */
   id?: string
   /**
-   * Icon links + manifest icon paths. `false` skips BOTH — the head `<link>` icons and the
-   * manifest's `icons` array — so a manifest is never emitted pointing at files that 404.
+   * Which icons the plugin knows about — three forms, one question each.
+   *
+   * - **omitted / `{ dir }`** — basalt's own six-filename set (the realfavicongenerator layout argo
+   *   ships), optionally under a subdirectory of `public/`. Unchanged default.
+   * - **`false`** — no head `<link>` icons and no manifest `icons` member, so a manifest is never
+   *   emitted pointing at files that 404.
+   * - **an array** — the icons this app ACTUALLY has, named by the consumer.
+   *
+   * The array is the form for every app that was not scaffolded from basalt's icon set, which is
+   * most of them. `{ dir }` can only move the six fixed filenames; it cannot rename one, so an app
+   * whose single icon is `favicon.svg` had no way to say so and had to keep a hand-written manifest
+   * beside the generated head — the last thing standing between rb and deleting a file carrying a
+   * permanent `theme-allow-file`. One SVG at `sizes: 'any'` is a complete, installable icon set.
+   *
+   * Every entry becomes a manifest icon; an entry becomes a head `<link>` only when it names a
+   * {@link BasaltAppIcon.rel}. That split is deliberate — an app that already links its favicon
+   * from its own `index.html` wants the manifest fixed without a duplicate tag, and an app that
+   * wants the plugin to own the head says so per icon. An empty array reads as `false`.
    */
-  icons?: false | { dir?: string }
+  icons?: false | { dir?: string } | readonly BasaltAppIcon[]
   /** Emits `<meta name="darkreader-lock">` when `'lock'` (default). Pass `false` to omit it. */
   darkreader?: 'lock' | false
   /** Site-wide SEO metadata — only the keys provided are emitted, no per-page SEO. */
@@ -325,6 +365,39 @@ function withIconPath(dir: string | undefined, file: string): string {
  */
 function withBase(base: string, path: string): string {
   return base + path.slice(1)
+}
+
+/**
+ * The three `icons` forms, collapsed to what the two emitters actually need.
+ *
+ * `'none'` and `'default'` are the pre-existing behaviour verbatim — `'default'` still walks
+ * {@link ICON_FILES}, so an app on basalt's own icon layout emits byte-identical head tags and a
+ * byte-identical manifest. `'explicit'` is the new form. An EMPTY array collapses to `'none'`
+ * rather than to an empty `icons: []` member: a manifest declaring zero icons is a claim, and the
+ * honest way to say "this app has no icons" already exists.
+ */
+type ResolvedIcons =
+  | { mode: 'none' }
+  | { mode: 'default'; dir: string | undefined }
+  | { mode: 'explicit'; icons: readonly BasaltAppIcon[] }
+
+/** `Array.isArray` widens to `any[]` and does not narrow a `readonly T[]` OUT of a union. */
+function isIconList(
+  icons: { dir?: string } | readonly BasaltAppIcon[],
+): icons is readonly BasaltAppIcon[] {
+  return Array.isArray(icons)
+}
+
+function resolveIcons(icons: BasaltAppOptions['icons']): ResolvedIcons {
+  if (icons === false) return { mode: 'none' }
+  if (icons === undefined) return { mode: 'default', dir: undefined }
+  if (!isIconList(icons)) return { mode: 'default', dir: icons.dir }
+  return icons.length === 0 ? { mode: 'none' } : { mode: 'explicit', icons }
+}
+
+/** Root-relative `src` (with or without its leading slash) → base-prefixed href. */
+function iconHref(base: string, src: string): string {
+  return withBase(base, src.startsWith('/') ? src : `/${src}`)
 }
 
 function hasViewportMeta(html: string): boolean {
@@ -477,8 +550,7 @@ function buildStaticTags(input: {
   shortName: string
   themeColor: { light: string; dark: string }
   bootStyle: string
-  iconsEnabled: boolean
-  iconsDir: string | undefined
+  icons: ResolvedIcons
   darkreader: 'lock' | false
   manifestEnabled: boolean
   base: string
@@ -489,8 +561,7 @@ function buildStaticTags(input: {
     shortName,
     themeColor,
     bootStyle,
-    iconsEnabled,
-    iconsDir,
+    icons,
     darkreader,
     manifestEnabled,
     base,
@@ -524,13 +595,13 @@ function buildStaticTags(input: {
   // BOOT_SCOPE so it expires the moment Mantine resolves the real scheme — see buildBootStyle.
   tags.push({ tag: 'style', children: bootStyle })
 
-  if (iconsEnabled) {
+  if (icons.mode === 'default') {
     tags.push(
       {
         tag: 'link',
         attrs: {
           rel: 'shortcut icon',
-          href: withBase(base, withIconPath(iconsDir, ICON_FILES.favicon)),
+          href: withBase(base, withIconPath(icons.dir, ICON_FILES.favicon)),
         },
       },
       {
@@ -538,7 +609,7 @@ function buildStaticTags(input: {
         attrs: {
           rel: 'icon',
           type: 'image/svg+xml',
-          href: withBase(base, withIconPath(iconsDir, ICON_FILES.svg)),
+          href: withBase(base, withIconPath(icons.dir, ICON_FILES.svg)),
         },
       },
       {
@@ -546,7 +617,7 @@ function buildStaticTags(input: {
         attrs: {
           rel: 'icon',
           sizes: '96x96',
-          href: withBase(base, withIconPath(iconsDir, ICON_FILES.png96)),
+          href: withBase(base, withIconPath(icons.dir, ICON_FILES.png96)),
         },
       },
       {
@@ -554,10 +625,27 @@ function buildStaticTags(input: {
         attrs: {
           rel: 'apple-touch-icon',
           sizes: '180x180',
-          href: withBase(base, withIconPath(iconsDir, ICON_FILES.appleTouch)),
+          href: withBase(base, withIconPath(icons.dir, ICON_FILES.appleTouch)),
         },
       },
     )
+  }
+
+  // A consumer-named icon reaches the head only when it asks to, so the plugin can fix a manifest
+  // without duplicating a `<link>` the app's own index.html already writes.
+  if (icons.mode === 'explicit') {
+    for (const icon of icons.icons) {
+      if (icon.rel === undefined) continue
+      tags.push({
+        tag: 'link',
+        attrs: {
+          rel: icon.rel,
+          ...(icon.type === undefined ? {} : { type: icon.type }),
+          ...(icon.sizes === undefined ? {} : { sizes: icon.sizes }),
+          href: iconHref(base, icon.src),
+        },
+      })
+    }
   }
 
   tags.push(
@@ -582,6 +670,39 @@ function buildStaticTags(input: {
   return tags
 }
 
+/** The manifest's `icons` member, or nothing at all — never an empty array. */
+function manifestIcons(
+  icons: ResolvedIcons,
+  base: string,
+): { icons?: ReadonlyArray<Record<string, string>> } {
+  if (icons.mode === 'none') return {}
+  if (icons.mode === 'default') {
+    return {
+      icons: [
+        {
+          src: withBase(base, withIconPath(icons.dir, ICON_FILES.manifest192)),
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: withBase(base, withIconPath(icons.dir, ICON_FILES.manifest512)),
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable',
+        },
+      ],
+    }
+  }
+  return {
+    icons: icons.icons.map((icon) => ({
+      src: iconHref(base, icon.src),
+      ...(icon.sizes === undefined ? {} : { sizes: icon.sizes }),
+      ...(icon.type === undefined ? {} : { type: icon.type }),
+      ...(icon.purpose === undefined ? {} : { purpose: icon.purpose }),
+    })),
+  }
+}
+
 function buildManifestJson(input: {
   options: BasaltAppOptions
   shortName: string
@@ -591,8 +712,7 @@ function buildManifestJson(input: {
   display: NonNullable<BasaltAppOptions['display']>
   schemeColor: string
   backgroundColor: string
-  iconsEnabled: boolean
-  iconsDir: string | undefined
+  icons: ResolvedIcons
   base: string
 }): string {
   const {
@@ -604,8 +724,7 @@ function buildManifestJson(input: {
     display,
     schemeColor,
     backgroundColor,
-    iconsEnabled,
-    iconsDir,
+    icons,
     base,
   } = input
   const manifest = {
@@ -624,23 +743,9 @@ function buildManifestJson(input: {
     // `{ manifest: true, icons: false }` shipped a manifest pointing at two PNGs the app never
     // ships — an installable app with broken icons, and the reason rb went hybrid (plugin for the
     // head, a hand-written manifest for the rest). A manifest with NO icons member is valid.
-    ...(iconsEnabled
-      ? {
-          icons: [
-            {
-              src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest192)),
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: withBase(base, withIconPath(iconsDir, ICON_FILES.manifest512)),
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable',
-            },
-          ],
-        }
-      : {}),
+    // The `'explicit'` arm is the other half of that fix: honest about icons it cannot see was
+    // only worth having once a consumer could tell it which icons it DOES have.
+    ...manifestIcons(icons, base),
   }
   return JSON.stringify(manifest, null, 2)
 }
@@ -649,8 +754,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
   const shortName = options.shortName ?? options.name
   const display = options.display ?? 'standalone'
   const darkreader = options.darkreader ?? 'lock'
-  const iconsEnabled = options.icons !== false
-  const iconsDir = options.icons === false ? undefined : options.icons?.dir
+  const icons = resolveIcons(options.icons)
   const manifestEnabled = options.manifest !== false
 
   const themeColor = resolveThemeColors(options.themeColor)
@@ -693,8 +797,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         display,
         schemeColor,
         backgroundColor,
-        iconsEnabled,
-        iconsDir,
+        icons,
         base,
       })
 
@@ -703,8 +806,7 @@ function createMainPlugin(options: BasaltAppOptions): Plugin {
         shortName,
         themeColor,
         bootStyle,
-        iconsEnabled,
-        iconsDir,
+        icons,
         darkreader,
         manifestEnabled,
         base,
