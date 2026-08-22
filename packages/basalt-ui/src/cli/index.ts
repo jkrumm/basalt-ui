@@ -511,6 +511,34 @@ type ProjectResolution = {
   ambiguous: string[] | null
 }
 
+/**
+ * Basalt projects in `cwd`'s immediate subtree — the fallback for a repo that declares no
+ * `workspaces` field at all.
+ *
+ * {@link collectWorkspacePackages} is the primary source and it is exact, but it answers `[]` for
+ * every repo whose root `package.json` carries no `workspaces` key. linewatch is that shape: the
+ * entire basalt consumer lives in `web/`, with no workspace declaration anywhere. Measured at its
+ * repo root, all three project-scoped commands got that wrong in a different way — `check-theme`
+ * printed `✓ no off-palette colors` having scanned ZERO files, `doctor` inferred `tokens-only` for
+ * a full Mantine consumer, and `sync` refused while naming `basalt-ui init` as the remedy, which is
+ * the one command that WOULD have written a competing install at the root. A gate that reports
+ * green having looked at nothing is the failure this resolver exists to prevent, so the search
+ * falls back to the layout when there is no declaration to read.
+ *
+ * Bounded to two levels (`web/`, `apps/admin/`), dot-directories and `node_modules` skipped, and it
+ * never descends INTO a project it found — a consumer's own nested package is not a rival candidate.
+ */
+function descendantProjects(cwd: string, depth = 2): string[] {
+  if (depth === 0) return []
+  const out: string[] = []
+  for (const name of subdirNames(cwd, { skipDotDirs: true })) {
+    const dir = resolve(cwd, name)
+    if (hasBasaltProject(dir)) out.push(dir)
+    else out.push(...descendantProjects(dir, depth - 1))
+  }
+  return out
+}
+
 function resolveProjectDir(cwd: string): ProjectResolution {
   const override = process.env['BASALT_CWD']
   if (override !== undefined && override.length > 0) {
@@ -519,9 +547,13 @@ function resolveProjectDir(cwd: string): ProjectResolution {
   }
   if (hasBasaltProject(cwd)) return { dir: cwd, relocatedFrom: null, ambiguous: null }
 
-  const candidates = collectWorkspacePackages(cwd)
+  const declared = collectWorkspacePackages(cwd)
     .packages.filter((pkg) => pkg.dir !== cwd && hasBasaltProject(pkg.dir))
     .map((pkg) => pkg.dir)
+  // The workspace declaration wins whenever there is one — it is exact, and a repo that declares
+  // its packages has already said where they are. The layout scan only answers for the repos that
+  // declare nothing; see descendantProjects.
+  const candidates = declared.length > 0 ? declared : descendantProjects(cwd)
   if (candidates.length === 1) {
     return { dir: candidates[0] as string, relocatedFrom: cwd, ambiguous: null }
   }
@@ -692,7 +724,7 @@ export function checkTheme(
   if (project.ambiguous !== null) {
     console.error(
       `✖ basalt-ui check-theme: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
-        `workspace packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        `packages below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
         'run it from one of them, or set BASALT_CWD to pick.',
     )
     return 1
@@ -1176,13 +1208,21 @@ function auditAllows(
     `\n${live} live, ${dead} dead, ${outOfReach} unjudgeable, ${unaccountable} ` +
       'unaccountable (reported as theme-allow-unscoped by a normal run).',
   )
-  // The audit reads exactly what `check-theme` reads, and that is `basalt.roots`. A waiver in a
-  // file outside them is invisible here — not because it is fine, but because nothing scanned it.
-  // Saying the scope out loud is the difference between "0 dead" and "0 dead, over these files".
+  // The audit reads exactly what `check-theme` reads, and that is `scannableFiles` — which is
+  // WIDER than `basalt.roots`: it also takes each root's sibling `index.html` and `public/` tree
+  // (see appShellFiles) and anything named in `basalt.include`. Two consumers reported a live
+  // `public/site.webmanifest` waiver under a scope line saying files outside `roots` are not
+  // audited; the line was wrong, not the scan. Saying the scope out loud is the difference between
+  // "0 dead" and "0 dead, over these files" — so it has to name every class actually reached.
+  const includes = cfg.include ?? []
   lines.push(
-    `Scope: the ${scanned.length} file(s) check-theme scans under basalt.roots ` +
-      `(${resolveRoots(cfg).join(', ')}). A waiver outside them is not audited — widen roots to ` +
-      'cover it, or accept that nothing polices that file.',
+    `Scope: the ${scanned.length} file(s) check-theme scans — everything under basalt.roots ` +
+      `(${resolveRoots(cfg).join(', ')}), plus each root's sibling index.html and public/ tree, ` +
+      (includes.length === 0
+        ? 'plus anything named in basalt.include (none). '
+        : `plus basalt.include (${includes.join(', ')}). `) +
+      'A waiver in a file none of those reach is not audited — widen roots, or name it in ' +
+      'basalt.include, or accept that nothing polices that file.',
   )
   if (dead > 0) {
     lines.push(
@@ -1741,6 +1781,34 @@ function migrateLegacyOxfmt(cwd: string, pkgRoot: string, manifest: Manifest): v
   if (onDisk === null) return
   const shipped = readSource(pkgRoot, 'configs/oxfmt.json')
   if (shipped !== null && onDisk === shipped) unlinkSync(legacyAbs)
+}
+
+/** The frozen `> Managed by basalt-ui (1.9.0).` opener every pre-fix DESIGN.md seed carries. */
+const DESIGN_VERSION_LINE = /^(> Managed by basalt-ui) \(\d+\.\d+\.\d+\)\./m
+
+/**
+ * Strip the frozen version out of an already-seeded `DESIGN.md` opener.
+ *
+ * `DESIGN.md` is a `seed`: written once, then consumer-owned and never reconciled. It opened with
+ * `> Managed by basalt-ui ({{BASALT_VERSION}})`, which is accurate for exactly as long as it takes
+ * to run one upgrade — measured across the seven consumers the same line read 1.0.0, 1.9.0, 1.21.0
+ * and 1.22.0 under an identical 1.22.0 install, and three rounds of reports treated that as four
+ * separate doc bugs. It was one: a version number in a file nothing ever rewrites.
+ *
+ * Dropping it from the template fixes new scaffolds only — every existing consumer would carry its
+ * stale number forever, since sync does not touch a seed. So sync deletes the parenthetical in
+ * place, and only that: not a re-seed, not a three-way merge. Everything else in the file is left
+ * exactly as the consumer wrote it, and a DESIGN.md whose opener was already rewritten by hand
+ * does not match at all.
+ */
+function migrateDesignVersionLine(cwd: string): void {
+  const dest = resolve(cwd, 'DESIGN.md')
+  const onDisk = readIfExists(dest)
+  if (onDisk === null || !DESIGN_VERSION_LINE.test(onDisk)) return
+  writeFileEnsuringDir(
+    dest,
+    onDisk.replace(DESIGN_VERSION_LINE, '$1 — run `basalt-ui doctor` for the version.'),
+  )
 }
 
 function writeFileEnsuringDir(abs: string, content: string): void {
@@ -2519,7 +2587,12 @@ function readOxlintPresetPlugins(pkgRoot: string): string[] {
   }
 }
 
-type SyncOptions = { force?: boolean; check?: boolean }
+type SyncOptions = {
+  force?: boolean
+  check?: boolean
+  /** The raw flag list, read for `--tokens-only` / `--framework` exactly as check-theme reads it. */
+  flags?: readonly string[]
+}
 
 /**
  * The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null.
@@ -2554,11 +2627,16 @@ function findManifestAbove(dir: string): string | null {
  * `sync` does not get to make silently.
  */
 export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
+  const syncFlags = opts.flags ?? []
+  if (conflictingProfileFlags(syncFlags)) {
+    console.error('basalt-ui sync: --tokens-only and --framework are alternatives — pass one.')
+    return 1
+  }
   const project = resolveProjectDir(invocationCwd)
   if (project.ambiguous !== null) {
     console.error(
       `✖ basalt-ui sync: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
-        `workspace packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        `packages below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
         'run it from one of them, or set BASALT_CWD to pick.',
     )
     return 1
@@ -2569,6 +2647,24 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       `basalt-ui sync: no basalt config at ${project.relocatedFrom} — running in ` +
         `${relativePosix(project.relocatedFrom, cwd)}, where it lives.`,
     )
+  }
+
+  // Profile before the refusal, because in a tokens-only consumer the refusal's own advice is
+  // wrong: it names `basalt-ui init`, and `doctor` in the same directory at the same version says
+  // in so many words that init is NOT the fix there — it places a Mantine doctrine the consumer
+  // has no use for. Mirrors doctor's manifest row verbatim, and exits 0 so `sync --check` is
+  // wirable into a tokens-only repo's CI (the one drift gate every other consumer runs).
+  //
+  // DECLARED, never inferred — the same asymmetry check-theme applies, for the same reason: the
+  // answer SILENCES the whole reconciliation, and inferring it from a missing @mantine/core would
+  // turn a framework consumer that keeps Mantine in a sibling package into a silent no-op.
+  if (declaredProfile(readBasaltConfig(cwd), syncFlags) === 'tokens-only') {
+    console.log(
+      `basalt-ui sync: ${MANIFEST_PATH}: n/a — a tokens-only consumer has no scaffold to ` +
+        'reconcile. The token layer is refreshed by re-running `basalt-ui tokens:css`, and ' +
+        '`tokens:css --check` is its drift gate. Pass --framework to force the full profile.',
+    )
+    return 0
   }
 
   // The refusal runs BEFORE reconcileRoots, which WRITES `basalt.roots` into package.json — that
@@ -2595,7 +2691,10 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
   const ctx = renderContext(cwd)
   const manifest = readManifest(cwd)
-  if (!opts.check) migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
+  if (!opts.check) {
+    migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
+    migrateDesignVersionLine(cwd)
+  }
   const peers = resolvePeerFlags(cwd, {})
   const placement = resolvePlacement(cwd)
   const files = managedFiles(peers, placement)
@@ -3228,8 +3327,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   if (project.ambiguous !== null) {
     console.error(
       `\nbasalt-ui doctor — ${invocationCwd}\n\n` +
-        `  ✖ no basalt config at ${invocationCwd}, and ${project.ambiguous.length} workspace ` +
-        `packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        `  ✖ no basalt config at ${invocationCwd}, and ${project.ambiguous.length} packages ` +
+        `below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
         'run doctor from one of them, or set BASALT_CWD to pick.\n\n' +
         '1 hard failure(s), 0 warning(s).\n',
     )
@@ -4120,7 +4219,8 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
 
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 const USAGE =
-  'Usage: basalt-ui <init [--with-router] [--with-query] [--merge-lint] | sync [--force] [--check] |\n' +
+  'Usage: basalt-ui <init [--with-router] [--with-query] [--merge-lint] |\n' +
+  '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] | check-coverage | info [--json] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
@@ -4143,9 +4243,13 @@ const USAGE =
   'doctor [--tokens-only|--framework]\n' +
   '  Auto-detects a tokens-only consumer (no manifest + no @mantine/core) and checks only what\n' +
   '  applies. A check that cannot RUN is reported as SKIPPED and exits non-zero.\n\n' +
-  'check-theme / doctor honour BASALT_CWD, and relocate to the single workspace package carrying a\n' +
-  'basalt config when invoked from a repo root that has none — several carrying one is ambiguous\n' +
-  'and exits 1 in BOTH. --tokens-only and --framework are alternatives; passing both is an error.\n\n' +
+  'sync [--force] [--check] [--tokens-only|--framework]\n' +
+  '  Refreshes an EXISTING install; it never creates one (that is init). A tokens-only consumer\n' +
+  '  has no scaffold to reconcile, so sync reports n/a and exits 0 there — as doctor does.\n\n' +
+  'check-theme / doctor / sync all resolve their project the same way: they honour BASALT_CWD, and\n' +
+  'relocate to the single package below the cwd carrying a basalt config when invoked from a repo\n' +
+  'root that has none — several carrying one is ambiguous and exits 1 in ALL THREE.\n' +
+  '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
 /**
@@ -4179,7 +4283,10 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
         mergeLint: flags.includes('--merge-lint'),
       })
     case 'sync':
-      return sync({ force: flags.includes('--force'), check: flags.includes('--check') }, cwd)
+      return sync(
+        { force: flags.includes('--force'), check: flags.includes('--check'), flags },
+        cwd,
+      )
     case 'check-theme':
       return checkTheme(cwd, flags)
     case 'check-coverage':

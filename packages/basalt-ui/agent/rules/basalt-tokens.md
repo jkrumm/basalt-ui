@@ -141,7 +141,7 @@ nothing is forked.
 - **Exact name match only** — the one limit that is structural. Round 5 confirmed the miss rate:
   linewatch's forks are named `Cell` and `Box`, rb's is `Stat`. Rename the fork and the rule goes
   quiet, which is what a fork's author naturally does.
-- **Scope: basalt consumers only, and component-shaped declarations only.** Since 1.21.1 the rule
+- **Scope: basalt consumers only, and component-shaped declarations only.** Since 1.22.0 the rule
   gates on `isBasaltScopedFile` like every other rule in the file, and needs a function, an arrow, a
   `memo`/`forwardRef` wrapper or a class extending one. A plain data class sharing a name with a
   shipped export is a collision, not a fork — it fired on a `SlugTracker` class in a React-free

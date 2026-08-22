@@ -104,11 +104,15 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
   })
 
   it('names the scope it audited, so "0 dead" is never read as "0 dead anywhere"', () => {
-    // The audit reads exactly what check-theme reads. A waiver in a file outside `basalt.roots` is
-    // invisible to it — not because it is fine, but because nothing scanned it.
+    // The audit reads exactly what check-theme reads, and that is WIDER than `basalt.roots` — two
+    // consumers reported a live `public/site.webmanifest` waiver under a scope line claiming
+    // files outside roots are not audited. The line has to name every class the scan reaches, or
+    // it is a second false statement in the sentence that exists to prevent one.
     fixture("export const c = '#ff0000' // theme-allow raw-hex — brand literal\n")
     const { log } = audit()
-    expect(log).toContain('Scope: the 1 file(s) check-theme scans under basalt.roots (src)')
+    expect(log).toContain('Scope: the 1 file(s) check-theme scans — everything under basalt.roots')
+    expect(log).toContain('sibling index.html and public/ tree')
+    expect(log).toContain('basalt.include')
   })
 
   it('marks an unaccountable waiver while still reporting what it covers', () => {

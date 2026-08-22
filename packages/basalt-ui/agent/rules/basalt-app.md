@@ -99,7 +99,7 @@ Run `basalt-ui doctor` afterwards to confirm the wiring took. A check that canno
 ### The lefthook preset overrides YOU, not the other way round
 
 `doctor`'s `lefthook-preset` check asks whether a pre-commit gate EXISTS — not whether your config
-contains the extends string. Since 1.21.1 it asks `lefthook dump`, which resolves `extends`,
+contains the extends string. Since 1.22.0 it asks `lefthook dump`, which resolves `extends`,
 `include` and per-command `root:`. **Wiring the jobs yourself passes**: linewatch runs all three with
 `root: 'web/'` precisely because `extends` merges commands _without_ their working directory, and the
 old text match warned there and prescribed a change that would have broken it.
@@ -196,7 +196,7 @@ source image — it lives in the CONSUMER's own devDependencies, not basalt-ui's
 warns (does not fail) when `public/` exists but is missing one of these files.
 
 `basaltAppPlugin` also emits `site.webmanifest` (served in dev too) with explicit `id`/`scope`/
-`start_url` — pass `manifest: false` to skip it, or `icons: false` to skip the icons. Since 1.21.1
+`start_url` — pass `manifest: false` to skip it, or `icons: false` to skip the icons. Since 1.22.0
 `icons: false` omits BOTH the head `<link>` tags and the manifest's `icons` member; before that it
 skipped only the head, so a manifest shipped naming two PNGs the app never builds.
 

@@ -344,7 +344,7 @@ describe('check-theme — finds the config a root-invoked hook cannot see', () =
   it('reports ambiguity rather than guessing when two packages carry a config', () => {
     ambiguousWorkspace()
     const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('2 workspace packages carry one')
+    expect(log).toContain('2 packages below it carry one')
     expect(log).toContain('BASALT_CWD')
     expect(code).toBe(1)
   })
@@ -363,7 +363,7 @@ describe('doctor — an ambiguous project is terminal, exactly as it is for chec
   it('short-circuits instead of running every check against the wrong root', () => {
     ambiguousWorkspace()
     const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('2 workspace packages carry one')
+    expect(log).toContain('2 packages below it carry one')
     expect(log).toContain('BASALT_CWD')
     expect(code).toBe(1)
     // The bug this pins shut: falling back to the invocation cwd ran the remaining checks against
@@ -381,7 +381,7 @@ describe('doctor — an ambiguous project is terminal, exactly as it is for chec
   it('still runs normally once BASALT_CWD picks a package', () => {
     ambiguousWorkspace()
     const { code, log } = capture(() => doctor(join(dir, 'apps/a')))
-    expect(log).not.toContain('workspace packages carry one')
+    expect(log).not.toContain('packages below it carry one')
     expect(code).toBe(1) // no install / no manifest there — but the checks RAN
     expect(log).toContain('guard-scan')
   })
@@ -945,7 +945,7 @@ describe('sync — a scaffold is init’s decision, never a drift refresh’s', 
     ambiguousWorkspace()
     const { code, log } = capture(() => sync({}, dir))
     expect(code).toBe(1)
-    expect(log).toContain('2 workspace packages carry one')
+    expect(log).toContain('2 packages below it carry one')
     expect(log).toContain('BASALT_CWD')
   })
 
@@ -1041,5 +1041,172 @@ describe('doctor — exit status per outcome, not per printed string', () => {
   it('contradictory profile flags exit 1', () => {
     healthyFixture()
     expect(capture(() => doctor(dir, ['--tokens-only', '--framework'])).code).toBe(1)
+  })
+})
+
+// ── the project resolver, for a repo that declares no workspaces ───────────────────────────────
+//
+// linewatch keeps its whole basalt consumer in `web/` and declares no `workspaces` field anywhere.
+// Measured at its repo root, all three project-scoped commands got that wrong in a different way:
+// `check-theme` printed `✓ no off-palette colors` having scanned ZERO files, `doctor` inferred
+// `tokens-only` for a full Mantine consumer, and `sync` refused while naming `basalt-ui init` as
+// the remedy — the one command that WOULD have written a competing install at the root. The
+// workspace-declaration path already handled image-share's `apps/admin`; nothing handled this.
+
+/** linewatch's shape: no `workspaces` field, the whole consumer one directory down. */
+function undeclaredChild(child = 'web'): void {
+  write('package.json', JSON.stringify({ name: 'root' }))
+  write(`${child}/package.json`, JSON.stringify({ name: child, basalt: { roots: ['src'] } }))
+  write(`${child}/src/app.tsx`, "export const c = '#ff0000'\n")
+  write(join(child, MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
+}
+
+describe('resolveProjectDir — a repo that declares no workspaces still has a layout', () => {
+  it('sync relocates into the undeclared child instead of refusing with init as the advice', () => {
+    undeclaredChild()
+    const { log } = capture(() => sync({ check: true }, dir))
+    expect(log).toContain('running in ./web, where it lives')
+    expect(log).not.toContain('basalt-ui init')
+  })
+
+  it('sync writes NOTHING at the root it was invoked from', () => {
+    undeclaredChild()
+    capture(() => sync({}, dir))
+    expect(readdirSync(dir).toSorted()).toEqual(['package.json', 'web'])
+    expect(readPkg()['basalt']).toBeUndefined()
+  })
+
+  it('check-theme scans the child rather than reporting green over zero files', () => {
+    undeclaredChild()
+    const { code, log } = capture(() => checkTheme(dir, []))
+    expect(log).toContain('running in ./web, where it lives')
+    expect(log).not.toContain('no off-palette colors')
+    expect(code).toBe(1)
+  })
+
+  it('doctor reports on the child, so it cannot infer tokens-only from the empty root', () => {
+    undeclaredChild()
+    const { log } = capture(() => doctor(dir, []))
+    expect(log).toContain(join(dir, 'web'))
+    expect(log).not.toContain('profile: tokens-only')
+  })
+
+  it('two undeclared children are ambiguous, named, and never guessed between', () => {
+    undeclaredChild('web')
+    undeclaredChild('admin')
+    const { code, log } = capture(() => sync({}, dir))
+    expect(code).toBe(1)
+    expect(log).toContain('2 packages below it carry one')
+    expect(log).toContain('./admin')
+    expect(log).toContain('./web')
+    expect(readdirSync(dir)).not.toContain('DESIGN.md')
+  })
+
+  it('a declared workspaces field still wins — the layout scan is a fallback, not a union', () => {
+    // `stray/` carries a basalt key but is not a workspace package. Treating both as candidates
+    // would turn a working single-candidate repo into an ambiguity error on upgrade.
+    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
+    write('apps/web/package.json', JSON.stringify({ name: 'web', basalt: { roots: ['src'] } }))
+    write('apps/web/src/app.tsx', 'export const App = () => null\n')
+    write(join('apps/web', MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
+    write('stray/package.json', JSON.stringify({ name: 'stray', basalt: { roots: ['src'] } }))
+    const { log } = capture(() => sync({ check: true }, dir))
+    expect(log).toContain('running in ./apps/web, where it lives')
+  })
+})
+
+// ── sync honours the profile doctor already reads ──────────────────────────────────────────────
+//
+// rollhook is tokens-only in both apps and declares it. `sync` told it to run `basalt-ui init` —
+// the exact advice `doctor`, in the same directory at the same version, exists to prevent — and
+// exited 1, which also put `sync --check` out of reach of the one CI drift gate every other
+// consumer runs.
+
+describe('sync — tokens-only is a pass, not a refusal', () => {
+  function tokensOnly(): void {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'marketing', basalt: { roots: ['src'], profile: 'tokens-only' } }),
+    )
+    write('src/app.ts', 'export const c = 1\n')
+  }
+
+  it('reports n/a and exits 0, mirroring doctor’s manifest row', () => {
+    tokensOnly()
+    const { code, log } = capture(() => sync({}, dir))
+    expect(code).toBe(0)
+    expect(log).toContain('n/a — a tokens-only consumer has no scaffold to reconcile')
+    expect(log).not.toContain('basalt-ui init')
+  })
+
+  it('is wirable into CI: --check exits 0 instead of failing on a scaffold it must not have', () => {
+    tokensOnly()
+    expect(capture(() => sync({ check: true, flags: [] }, dir)).code).toBe(0)
+  })
+
+  it('writes nothing — no manifest, no DESIGN.md, no basalt.roots backfill', () => {
+    tokensOnly()
+    capture(() => sync({}, dir))
+    expect(readdirSync(dir).toSorted()).toEqual(['package.json', 'src'])
+  })
+
+  it('--framework forces the full profile back on', () => {
+    tokensOnly()
+    const { code, log } = capture(() => sync({ flags: ['--framework'] }, dir))
+    expect(code).toBe(1)
+    expect(log).toContain('refusing to scaffold')
+  })
+
+  it('contradictory profile flags exit 1, exactly as they do for check-theme and doctor', () => {
+    tokensOnly()
+    expect(capture(() => sync({ flags: ['--tokens-only', '--framework'] }, dir)).code).toBe(1)
+  })
+})
+
+// ── no shipped artifact carries a version number that goes stale ───────────────────────────────
+//
+// `DESIGN.md` is a seed: written once at init, then consumer-owned and never reconciled. Its
+// opener stamped `{{BASALT_VERSION}}`, so across the seven consumers the same line read 1.0.0,
+// 1.9.0, 1.21.0 and 1.22.0 under an identical 1.22.0 install — reported three rounds running as
+// four separate doc bugs. It was one bug: a version number in a file nothing ever rewrites.
+
+describe('DESIGN.md carries no version, and sync heals the ones already written', () => {
+  function seeded(): void {
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    capture(() => init(dir))
+  }
+
+  it('a fresh scaffold stamps no version at all', () => {
+    seeded()
+    expect(read('DESIGN.md')).not.toMatch(/Managed by basalt-ui \(\d+\.\d+\.\d+\)/)
+    expect(read('DESIGN.md')).toContain('run `basalt-ui doctor` for the version')
+  })
+
+  it('sync rewrites a stale opener in place and leaves the rest of the file alone', () => {
+    seeded()
+    const consumerOwned = '\n## Series\n\nOurs: hrv, rhr.\n'
+    write('DESIGN.md', `# app — Design\n\n> Managed by basalt-ui (1.9.0). Thin.\n${consumerOwned}`)
+    capture(() => sync({}, dir))
+    expect(read('DESIGN.md')).toContain(
+      '> Managed by basalt-ui — run `basalt-ui doctor` for the version. Thin.',
+    )
+    expect(read('DESIGN.md')).toContain(consumerOwned)
+  })
+
+  it('--check writes nothing, including the heal', () => {
+    seeded()
+    const stale = '# app — Design\n\n> Managed by basalt-ui (1.9.0). Thin.\n'
+    write('DESIGN.md', stale)
+    capture(() => sync({ check: true }, dir))
+    expect(read('DESIGN.md')).toBe(stale)
+  })
+
+  it('leaves an opener the consumer already rewrote by hand untouched', () => {
+    seeded()
+    const owned = '# app — Design\n\n> Our own words entirely.\n'
+    write('DESIGN.md', owned)
+    capture(() => sync({}, dir))
+    expect(read('DESIGN.md')).toBe(owned)
   })
 })
