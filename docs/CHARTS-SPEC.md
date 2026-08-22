@@ -72,8 +72,8 @@ measured margins, both y scales and their domains, the axes, the grid, the share
 crosshair + dots, the hover/keyboard overlay, and the derived tooltip; the caller supplies `series`
 and draws only marks. A non-single-plot shape — multi-pane (`DualPanel`), radial (`Donut`), matrix
 (`Heatmap`) — composes `ChartFrame` + `useChartCursor` + `autoMargin` + `ChartTooltipFloat`
-directly instead, and must declare that with a `theme-allow` comment (see "Mechanical enforcement"
-below).
+directly instead, and must declare that with a `theme-allow-file hand-rolled-plot — <why>` comment
+(see "Mechanical enforcement" below).
 
 **Accessibility fix (2026-08-19):** `ChartFrame`'s outer container carries `role="group"`, never
 `role="img"`, when `ariaLabel` is set. Per the ARIA spec every descendant of a `role="img"` element
@@ -91,8 +91,10 @@ above a build failure, not just a convention:
 
 - **`basalt/hand-rolled-plot`** — rendering a chart-assembly primitive (`AxisLeftNumeric`,
   `AxisRightNumeric`, `AxisBottomDate`, `HoverOverlay`, `Crosshair`) in a file that does not
-  compose `CartesianChart` is a lint failure. Escape: a `theme-allow` comment on the first such
-  site — that is how a genuinely non-single-plot shape declares itself (`DualPanel` carries one).
+  compose `CartesianChart` is a lint failure, per NODE. Escape: `theme-allow hand-rolled-plot —
+<why>` on the one node, or `theme-allow-file hand-rolled-plot — <why>` anywhere in the file, which
+  is how a genuinely non-single-plot shape declares itself (`DualPanel` carries one). `-file` is the
+  1.20.1 spelling and it is required — at 1.20.0 the node form was silently promoted to whole-file.
   The file that DEFINES `CartesianChart` is exempt definitionally, not by path.
 - **`basalt/chart-legend-literal`** — passing a hand-written array literal to `ChartLegend`'s
   `items` prop is a lint failure; the legend must be derived from the same `series` array the chart

@@ -291,9 +291,12 @@ consumer via autocomplete. Key rules that won't fit in a JSDoc bullet:
 
 - Page components accept the param as a **prop**, never via `useSearch({ from:
 '/dashboard' })` — sibling routes fail that `from`.
-- Dashboard destinations carry the filter through a click-time `search:` thunk over
-  the store's `readStored()`, set per destination in the `defineNav` definition —
-  never `search: true` (a store-backed route always returns the param, so the router
-  requires a value and the flag is a type error), and never a global link callback.
+- Dashboard destinations carry the filter through `search: <store>.linkSearch`, passed
+  BY REFERENCE and set per destination in the `defineNav` definition — never a
+  module-scope literal (`search: { window: '30d' }` pins the fallback on every click and
+  is why argo's reader had zero call sites), never `search: true` (a store-backed route
+  always returns the param, so the router requires a value and the flag is a type
+  error), and never a global link callback. 1.20.1 also warns in dev when the URL pins
+  the fallback, something else is persisted, and no reader was ever called.
 - The localStorage fallback in `validateSearch` restores the value when navigating
   back; the filter's `navigate({ search: (prev) => (...) })` keeps it current.

@@ -159,7 +159,8 @@ kind-registry for recurring shapes; never loosen the primitives to fit a one-off
    child that draws ONLY marks. Reaching past it for an axis, a tooltip or a margin means the chart
    has drifted from every other chart. Mechanically enforced: `basalt/hand-rolled-plot` fails the
    build on a chart-assembly primitive rendered in a file that doesn't compose `CartesianChart`
-   (escape: a `theme-allow` comment, for a genuinely non-single-plot shape — see #5).
+   (escape: `theme-allow-file hand-rolled-plot — <why>`, for a genuinely non-single-plot shape —
+   see #5; `theme-allow` alone now scopes to one node).
 2. **ChartCard** — the wrapper; never a raw `<Card>`. Title + info-tooltip + extra slot.
 3. **`series` is the single source of truth** — legend entries and tooltip rows are DERIVED from it
    (`deriveLegend` / `deriveTooltipRows`). A chart cannot show a row or a legend key it does not

@@ -151,15 +151,29 @@ props, which can't resolve `var()`) and `--vx-text-*` (CSS vars, for CSS modules
 theme). The Mantine theme re-expresses xs–xl through Mantine's `rem()`, so the component surface
 also honors the user's browser font-size and `--mantine-scale`.
 
-| Step    | Size   | Used for                                                                                                               |
-| ------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `micro` | 11px   | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks                                       |
-| `xs`    | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px)                 |
-| `sm`    | 13.5px | stat/table numerals, chart tooltip, chart legend                                                                       |
-| `md`    | 15px   | **body** — nav rows, menu items, timeline, labels, prose; **chart card titles** (density pass moved these 16px → 15px) |
-| `lg`    | 16px   | breadcrumb current page — **also the iOS input floor**                                                                 |
-| `xl`    | 18px   | section titles, brand                                                                                                  |
-| `kpi`   | 24px   | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24)                                   |
+| Step      | Size   | Used for                                                                                                               |
+| --------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `nano`    | 10px   | a label engraved INSIDE a drawn object — a plate face, a dial, a chip. Never UI copy or prose (1.20.1)                 |
+| `micro`   | 11px   | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks                                       |
+| `xs`      | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px)                 |
+| `sm`      | 13.5px | stat/table numerals, chart tooltip, chart legend                                                                       |
+| `md`      | 15px   | **body** — nav rows, menu items, timeline, labels, prose; **chart card titles** (density pass moved these 16px → 15px) |
+| `lg`      | 16px   | breadcrumb current page — **also the iOS input floor**                                                                 |
+| `xl`      | 18px   | section titles, brand                                                                                                  |
+| `h2`      | 21px   | article-density Prose h2 (`docs/CONTENT-SPEC.md` §5)                                                                   |
+| `kpi`     | 24px   | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24)                                   |
+| `h1`      | 26px   | article-density Prose h1 (`docs/CONTENT-SPEC.md` §5)                                                                   |
+| `display` | 30px   | a numeral read at arm's length — a keypad readout, a timer, a kiosk figure. Not a heading (1.20.1)                     |
+
+**Every adjacent pair sits between 1.06× and 1.17×, and a new rung must too** — hand-tuned per role,
+but not arbitrary, and `tokens/text-scale.test.ts` holds the ladder to it. Below that band two rungs
+are visually the same size and the guard reports a value for which two tokens are equally right;
+above it the jump reads as a different type system. That test is what admitted `nano` (11/10 = 1.10)
+and `display` (30/26 = 1.154) and what **rejected** a 20px rung between `xl` and `h2`: 21/20 = 1.05
+is below the floor, and `h2` is already 1px away. A size the ladder declines to grow a rung for
+snaps to its nearest step — it is not a `theme-allow`. Both new rungs are named for a ROLE, not a
+position, because a bare `xxs`/`xxl` becomes the escape hatch for every size the ladder exists to
+prevent.
 
 Weights and fonts stay as above: card titles and section titles take the head font at 88% stretch,
 weight ~550; every numeral and micro-label takes mono.
