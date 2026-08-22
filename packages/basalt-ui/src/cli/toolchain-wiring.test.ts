@@ -338,13 +338,93 @@ describe('check-theme — finds the config a root-invoked hook cannot see', () =
   })
 
   it('reports ambiguity rather than guessing when two packages carry a config', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-    write('apps/a/package.json', JSON.stringify({ name: 'a', basalt: { roots: ['src'] } }))
-    write('apps/b/package.json', JSON.stringify({ name: 'b', basalt: { roots: ['src'] } }))
+    ambiguousWorkspace()
     const { code, log } = capture(() => checkTheme(dir))
     expect(log).toContain('2 workspace packages carry one')
     expect(log).toContain('BASALT_CWD')
     expect(code).toBe(1)
+  })
+})
+
+/** A root with no basalt config and two workspace packages that each carry one. */
+function ambiguousWorkspace(): void {
+  write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
+  write('apps/a/package.json', JSON.stringify({ name: 'a', basalt: { roots: ['src'] } }))
+  write('apps/a/src/app.tsx', 'export const A = () => null\n')
+  write('apps/b/package.json', JSON.stringify({ name: 'b', basalt: { roots: ['src'] } }))
+  write('apps/b/src/app.tsx', 'export const B = () => null\n')
+}
+
+describe('doctor — an ambiguous project is terminal, exactly as it is for check-theme', () => {
+  it('short-circuits instead of running every check against the wrong root', () => {
+    ambiguousWorkspace()
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('2 workspace packages carry one')
+    expect(log).toContain('BASALT_CWD')
+    expect(code).toBe(1)
+    // The bug this pins shut: falling back to the invocation cwd ran the remaining checks against
+    // a root that has no config, burying the real error under failures caused by looking there.
+    expect(log).not.toContain('would scan 0 files')
+    expect(log).not.toContain('.oxlintrc.json missing')
+    expect(log).not.toContain('manifest.json missing')
+  })
+
+  it('agrees with check-theme on the same tree', () => {
+    ambiguousWorkspace()
+    expect(capture(() => doctor(dir)).code).toBe(capture(() => checkTheme(dir)).code)
+  })
+
+  it('still runs normally once BASALT_CWD picks a package', () => {
+    ambiguousWorkspace()
+    const { code, log } = capture(() => doctor(join(dir, 'apps/a')))
+    expect(log).not.toContain('workspace packages carry one')
+    expect(code).toBe(1) // no install / no manifest there — but the checks RAN
+    expect(log).toContain('guard-scan')
+  })
+})
+
+describe('doctor — no check may vanish from the report', () => {
+  it('SKIPS the spacing-scale check when there is no manifest, rather than printing nothing', () => {
+    // A Mantine app that never ran `init`: framework profile, no manifest to compare against.
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'app',
+        dependencies: { '@mantine/core': '^9.0.0' },
+        basalt: { roots: ['src'] },
+      }),
+    )
+    write('src/app.tsx', 'export const App = () => null\n')
+    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
+    installBasalt()
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('spacing scale')
+    expect(log).toContain('SKIPPED')
+    expect(code).toBe(1)
+  })
+
+  it('calls the spacing check n/a — not silent — for a tokens-only consumer', () => {
+    write('package.json', JSON.stringify({ name: 'site', basalt: { profile: 'tokens-only' } }))
+    installBasalt()
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain('spacing scale: n/a')
+  })
+})
+
+describe('--tokens-only and --framework are alternatives, not a precedence question', () => {
+  it('check-theme rejects both together', () => {
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    const { code, log } = capture(() => checkTheme(dir, ['--tokens-only', '--framework']))
+    expect(code).toBe(1)
+    expect(log).toContain('alternatives')
+  })
+
+  it('doctor rejects both together', () => {
+    healthyFixture()
+    const { code, log } = capture(() => doctor(dir, ['--tokens-only', '--framework']))
+    expect(code).toBe(1)
+    expect(log).toContain('alternatives')
   })
 })
 
@@ -414,7 +494,7 @@ describe('check-theme — tokens-only profile', () => {
   })
 
   it('is never INFERRED — an undeclared Mantine-free repo keeps every kind live', () => {
-    // Silencing 16 kinds off the mere absence of @mantine/core is this round's own failure mode:
+    // Silencing 17 kinds off the mere absence of @mantine/core is this round's own failure mode:
     // a repo holding Mantine in a workspace package would switch off half its guard silently.
     write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
     write('src/form.tsx', 'export const F = () => <input />\n')
@@ -509,6 +589,68 @@ describe('tokens:css — a committable artifact', () => {
   })
 })
 
+describe('the @generated marker, end to end — emit, then scan', () => {
+  /** A tokens-only consumer whose only CSS is the sheet `tokens:css` writes into its own src/. */
+  function siteWithEmittedTokens(flags: string[] = []): void {
+    write(
+      'package.json',
+      JSON.stringify({ name: 'site', basalt: { roots: ['src'], profile: 'tokens-only' } }),
+    )
+    write('src/app.tsx', 'export const App = () => null\n')
+    expect(tokensCss([...flags, '--out', 'src/tokens.css'], dir)).toBe(0)
+  }
+
+  it('the sheet tokens:css just wrote scans to zero findings — 116 was the round-4 bug', () => {
+    siteWithEmittedTokens(['--only', 'core'])
+    // Sanity: it really is full of the raw hex the guard would otherwise report.
+    expect(read('src/tokens.css').match(/#[0-9a-f]{6}/gi)?.length ?? 0).toBeGreaterThan(50)
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).not.toContain('src/tokens.css')
+    expect(code).toBe(0)
+  })
+
+  it('holds for every emission shape, not just the default', () => {
+    for (const flags of [
+      [],
+      ['--only', 'all'],
+      ['--selector-class', 'dark'],
+      ['--default-scheme', 'light'],
+    ]) {
+      rmSync(join(dir, 'src'), { recursive: true, force: true })
+      siteWithEmittedTokens(flags)
+      expect(capture(() => checkTheme(dir)).code).toBe(0)
+    }
+  })
+
+  it('a HAND-FORGED marker on ordinary source suppresses nothing', () => {
+    siteWithEmittedTokens(['--only', 'core'])
+    const header = read('src/tokens.css').split('\n').slice(0, 2).join('\n')
+    // Exactly what an agent (or anyone) could do: copy the two header lines onto a real file.
+    write('src/forged.css', `${header}\n.btn { color: #ff0000; }\n`)
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).toContain('src/forged.css')
+    expect(log).toContain('raw-hex')
+    expect(code).toBe(1)
+  })
+
+  it('a STRIPPED marker makes the emitted sheet ordinary source again', () => {
+    siteWithEmittedTokens(['--only', 'core'])
+    const stripped = read('src/tokens.css').split('\n').slice(2).join('\n')
+    write('src/tokens.css', stripped)
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).toContain('src/tokens.css')
+    expect(code).toBe(1)
+  })
+
+  it('appending a real rule to the emitted sheet un-exempts it', () => {
+    siteWithEmittedTokens(['--only', 'core'])
+    write('src/tokens.css', `${read('src/tokens.css')}.btn { color: #ff0000; }\n`)
+    const { code, log } = capture(() => checkTheme(dir))
+    expect(log).toContain('src/tokens.css')
+    expect(code).toBe(1)
+  })
+})
+
 describe('fonts:css — the typeface half of the token layer', () => {
   it('emits the shipped --basalt-font-* stacks under the generated header', () => {
     write('package.json', JSON.stringify({ name: 'fixture' }))
@@ -520,6 +662,13 @@ describe('fonts:css — the typeface half of the token layer', () => {
     expect(css).toContain('--basalt-font-mono:')
     expect(css).toContain('Nunito Sans Variable')
     expect(css.endsWith('}\n')).toBe(true)
+  })
+
+  it('emits a stylesheet check-theme accepts end to end', () => {
+    write('package.json', JSON.stringify({ name: 'site', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    expect(fontsCss(['--out', 'src/fonts.css'], dir)).toBe(0)
+    expect(capture(() => checkTheme(dir)).code).toBe(0)
   })
 
   it('has the same --check drift gate as tokens:css', () => {

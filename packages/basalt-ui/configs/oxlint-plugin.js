@@ -80,12 +80,15 @@ import { fileURLToPath } from 'node:url'
 /**
  * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
  * by hand for the same reason `majorOf` is: this file loads standalone out of a consumer's
- * node_modules and must not import from the package. The set exists so an annotation's HEAD can be
- * told apart from a reason written without a separator: `theme-allow sub-scale corner` names no
- * rule, and treating its words as ids would scope the exception to rules nobody has, silently
- * un-suppressing a line that used to pass.
+ * node_modules and must not import from the package.
+ *
+ * Exported, and `oxlint-plugin.test.ts` asserts it is EXACTLY the plugin's own rule ids plus
+ * `GUARD_RULES`'s keys. Forgetting an entry here is not a cosmetic omission — an id this set does
+ * not know is treated as a typo, so the annotation naming it waives nothing (see
+ * {@link parseThemeAllow}); before the fail-closed change it was worse still, silently widening to
+ * a blanket waiver.
  */
-const KNOWN_RULE_IDS = new Set([
+export const KNOWN_RULE_IDS = new Set([
   // this plugin
   'no-raw-font-size',
   'raw-size-literal',
@@ -99,6 +102,11 @@ const KNOWN_RULE_IDS = new Set([
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
+  // These three honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
+  // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
+  'agent-resume-guard',
+  'agent-no-raw-usechat',
+  'ai-sdk-major',
   // src/guard kinds
   'raw-hex',
   'raw-color-fn',
@@ -134,22 +142,35 @@ const MIN_ALLOW_REASON_LENGTH = 4
 
 /**
  * Parse one comment's `theme-allow` annotation, or `null` when it carries none.
- * `{ rules: [] }` is the legacy bare form and covers every rule; a non-empty `rules` scopes the
- * exception to exactly those ids. Mirrors `parseAllowAnnotation` in `src/guard/index.ts`.
+ *
+ * `{ rules: [], unknownRules: [] }` is the legacy bare form and covers every rule; a non-empty
+ * `rules` scopes the exception to exactly those ids. A word that occupies the id slot but names no
+ * known rule lands in `unknownRules` and FAILS CLOSED — the annotation then waives only the ids it
+ * got right, never everything. `theme-allow raw-hexx — reason` used to consume no id, fall through
+ * to the empty-`rules` branch and be read as the blanket form, so one mistyped character escalated
+ * a scoped waiver into a whole-line one, i.e. weaker than before the scoping existed.
+ *
+ * A prose reason is therefore introduced with a separator (`—`, `–`, `-`, `:`), which is how every
+ * annotation in the wild already writes it. Mirrors `parseAllowAnnotation` in `src/guard/index.ts`.
  */
 function parseThemeAllow(commentValue) {
   const at = commentValue.indexOf('theme-allow')
   if (at === -1) return null
   let remainder = commentValue.slice(at + 'theme-allow'.length).replace(/^[\s,]+/, '')
   const rules = []
+  const unknownRules = []
   for (;;) {
     const token = ALLOW_RULE_TOKEN.exec(remainder)
-    if (token === null || !KNOWN_RULE_IDS.has(token[1])) break
+    if (token === null) break
+    if (!KNOWN_RULE_IDS.has(token[1])) {
+      unknownRules.push(token[1])
+      break
+    }
     rules.push(token[1])
     remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
   }
   const reason = remainder.replace(ALLOW_REASON_SEPARATOR, '').trim()
-  return { rules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
 }
 
 /**
@@ -157,8 +178,9 @@ function parseThemeAllow(commentValue) {
  *
  * The `ruleId` argument is what stops one exemption from being a blanket one: a `theme-allow
  * raw-hex — …` written for a color no longer silently switches off `card-inset` on the same line.
- * A bare `theme-allow` still covers everything — that is the shape every existing consumer has, and
- * `src/guard`'s `theme-allow-unscoped` is the (warning) nudge off it, not a hard break.
+ * Only a BARE `theme-allow` still covers everything — that is the shape every existing consumer
+ * has, and `src/guard`'s `theme-allow-unscoped` is the (warning) nudge off it, not a hard break.
+ * An annotation that reached for an id and missed covers only the ids it got right.
  */
 function hasThemeAllow(context, node, ruleId) {
   const sourceCode = context.sourceCode ?? context.getSourceCode?.()
@@ -167,7 +189,9 @@ function hasThemeAllow(context, node, ruleId) {
   return comments.some((comment) => {
     if (comment.loc.end.line !== nodeLine && comment.loc.end.line !== nodeLine - 1) return false
     const allow = parseThemeAllow(comment.value)
-    return allow !== null && (allow.rules.length === 0 || allow.rules.includes(ruleId))
+    if (allow === null) return false
+    if (allow.rules.includes(ruleId)) return true
+    return allow.rules.length === 0 && allow.unknownRules.length === 0
   })
 }
 

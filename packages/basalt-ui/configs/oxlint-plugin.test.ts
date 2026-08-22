@@ -11,8 +11,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
-// eslint-disable-next-line -- the plugin is plain JS; the grace ledger is a named export beside it
-import { PLUGIN_RULE_GRACE } from './oxlint-plugin.js'
+// eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
+import basaltPlugin, { KNOWN_RULE_IDS, PLUGIN_RULE_GRACE } from './oxlint-plugin.js'
+import { GUARD_RULES } from '../src/guard/index.ts'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
 const OXLINT_BIN = resolve(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'oxlint')
@@ -885,5 +886,64 @@ describe('basalt/no-raw-font-size — style context', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('no-raw-font-size')
+  })
+})
+
+// ── KNOWN_RULE_IDS — the hand-maintained list a typo'd theme-allow is measured against ──────────
+
+describe('KNOWN_RULE_IDS', () => {
+  // Forgetting an entry is not cosmetic: an id this set does not know is treated as a typo, so the
+  // annotation naming it waives nothing. Before the fail-closed fix it was worse — an unknown id
+  // fell through to the empty-`rules` branch and became a BLANKET waiver, which is how a
+  // hand-maintained duplicate turned a missing entry into a hole in the guard.
+  it('contains every rule the plugin actually exports', () => {
+    for (const id of Object.keys(basaltPlugin.rules)) {
+      expect([id, KNOWN_RULE_IDS.has(id)]).toEqual([id, true])
+    }
+  })
+
+  it('contains every guard kind', () => {
+    for (const kind of Object.keys(GUARD_RULES)) {
+      expect([kind, KNOWN_RULE_IDS.has(kind)]).toEqual([kind, true])
+    }
+  })
+
+  it('contains nothing else — it is exactly the union of the two registries', () => {
+    const expected = [...Object.keys(basaltPlugin.rules), ...Object.keys(GUARD_RULES)].toSorted()
+    expect([...KNOWN_RULE_IDS].toSorted()).toEqual(expected)
+  })
+})
+
+// ── theme-allow fails closed on a typo ─────────────────────────────────────────────────────────
+
+describe('theme-allow with an unrecognized rule id', () => {
+  it('waives nothing rather than escalating to a blanket suppression', () => {
+    // `no-raw-font-size` would be waived by a bare `theme-allow`. A typo'd id must not do that.
+    const { code, rules } = run(
+      `export const C = () => <Text fz={10} /> // theme-allow no-raw-font-sizee — legacy\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
+  })
+
+  it('a correctly spelled id still waives', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz={10} /> // theme-allow no-raw-font-size — legacy\n`,
+    )
+    expect(rules).not.toContain('no-raw-font-size')
+    expect(code).toBe(0)
+  })
+
+  it('a bare theme-allow still waives everything', () => {
+    const { rules } = run(`export const C = () => <Text fz={10} /> // theme-allow\n`)
+    expect(rules).not.toContain('no-raw-font-size')
+  })
+
+  it('does not resolve an Object.prototype key as a rule id', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz={10} /> // theme-allow constructor — inherited key\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('no-raw-font-size')
   })
 })
