@@ -399,8 +399,10 @@ an empty `sections` produces no orphan divider above it.
 
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger's package (an
 unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
-`basalt-ui init | sync | check-theme | check-coverage | info | doctor | guard-hook | tokens:css`
-(Bun runtime).
+`basalt-ui init | sync | check-theme | check-coverage | info | doctor | guard-hook | tokens:css |
+fonts:css | help` (Bun runtime). Every subcommand takes `--help`/`-h`; `check-theme` and `doctor`
+honour `BASALT_CWD` and relocate to the single workspace package carrying a basalt config when
+invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
 
 - `check-theme` — **real**. Port of argo's theme guard; fails on colors bypassing the central
   palette. **Findings carry a severity** (`warn` | `error`): errors fail the build, warnings report
@@ -408,8 +410,22 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   `basalt.severity` — down, to upgrade now and migrate later, or up, to take a grace-period kind's
   enforcement immediately. Severity is not an off switch; each kind already has its own boolean and
   `exemptRules` scopes it to paths. Reads config from the consumer package.json `"basalt"` key
-  (`{ roots?, exempt?, spacingSteps?, forbiddenAccents? }`); default root is `src`, and a scan that
-  matches zero files fails loudly. Consumer lint = `oxlint . && basalt-ui check-theme`.
+  (`{ roots?, exempt?, include?, profile?, severity?, spacingSteps?, forbiddenAccents? }`); default
+  root is `src`, and a scan that matches zero files fails loudly. Consumer lint =
+  `oxlint . && basalt-ui check-theme`, which `init` seeds as the `lint:basalt` script.
+  **Scan reach beyond `roots`**: each root's PARENT contributes its `index.html` and its `public/`
+  tree (the Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its
+  configured root. `.html`/`.webmanifest`/`.json` resolve as markup (colour kinds only), but `.json`
+  is never blanket-scanned; `basalt.include` names one explicitly and is the only route to it.
+  **`profile: 'tokens-only'`** disables the 16 kinds whose remedy is a Mantine component, prop or the
+  React theme factory. `check-theme` requires it DECLARED (the key, or `--tokens-only`) and never
+  infers it: inferring from a missing `@mantine/core` would silence those kinds on any repo keeping
+  Mantine in a different workspace package. `doctor` DOES infer it, because its profile only changes
+  which advice it prints, never what it enforces — and it names the key to write down. The asymmetry
+  is the safety property, not an inconsistency.
+  Any file whose first 5 lines carry the `@generated basalt-ui` marker is skipped outright — that is
+  what stopped the guard reporting 116 violations inside the stylesheet `tokens:css` had just
+  written.
   **Footgun: `check-theme` (and `pre`, which runs it) validates the last BUILT `dist`, not the
   working tree.** `bin/basalt-ui.mjs` imports `../dist/cli/index.js` — a source change under
   `src/guard/**` or `src/cli/**` is invisible to `check-theme` until `bun run build` runs, and a
@@ -437,8 +453,20 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports); not a consumer
   command.
 - `info` (+ `--json`) — prints the published surface map; `--json` emits a stable JSON form.
-- `doctor` — verifies three reconciliation axes. **Version**: installed `node_modules/basalt-ui` vs
-  the manifest's `basaltVersion` (plus manifest presence and a stale-`bunx` CLI-version warning).
+- `doctor` — the wiring gate. **`SKIPPED` is a third outcome beside pass/warn/fail and exits
+  non-zero on its own**: under bun's isolated linker doctor silently dropped 2 of 5 checks and still
+  printed "All checks passed", so that footer is now only printable when every check RAN and passed.
+  Hard checks: **`basalt-resolves`** (walks cwd → ancestors → workspace packages; when basalt does
+  not resolve, every version check is unrunnable, `extends: [<preset>]` cannot resolve, and
+  `bunx basalt-ui` silently fetches a different copy from npm), **`guard-scan`** (would `check-theme`
+  cover more than zero files? — check-theme already exits 1 on that, and doctor disagreeing with it
+  in the same repo WAS the bug), **`oxlint-preset`** (does `.oxlintrc.json` actually extend the
+  shipped preset? `init` keeps an existing config, so one repo ran five minors with the whole lint
+  half off; JSONC is parsed, not rejected), plus the three below. A tokens-only consumer is
+  auto-detected (no manifest + no `@mantine/core`; `--tokens-only` / `--framework` force it) and is
+  no longer told to run `init` — which also makes the CLI-vs-installed version check reachable in
+  CI. **Version**: installed `node_modules/basalt-ui` vs the manifest's `basaltVersion` (plus
+  manifest presence and a stale-`bunx` CLI-version warning).
   **Spacing scale**: `deriveSpacing(0).scale` vs the manifest's `spacingScale`, stamped by
   `init`/`sync` — skipped outright when the running CLI's version and the installed one disagree,
   since the CLI's scale is then not the one the app renders with and a "matches" would be a false
@@ -468,11 +496,21 @@ unrelated `basalt` exists on npm — never print `bunx basalt` anywhere):
   off-palette writes. Register it in `.claude/settings.json` under `hooks.PreToolUse` with matcher
   `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook`.
 - `tokens:css` — emit the `--vx-*` stylesheet (stdout, or `--out <path>`). Flags:
-  `--selector-attribute` / `--dark-value` / `--light-value` / `--default-scheme <dark|light|none>` /
-  `--media-fallback`. No flags → byte-identical to the shipped `basalt-ui/tokens.css`. It is a flag
-  parser over `buildPaletteCss` and holds NO emission logic of its own — the CLI and the API must
-  not be able to disagree about what basalt's tokens are (`src/cli/tokens-css.test.ts`). This is the
-  command that removes the install entirely for a static, non-React consumer.
+  `--selector-attribute` / `--selector-class <class>` (+ `--light-class`) / `--dark-value` /
+  `--light-value` / `--default-scheme <dark|light|none>` / `--media-fallback` / `--only <core|all>` /
+  `--no-legacy-aliases` / `--check`. No flags → byte-identical to the shipped `basalt-ui/tokens.css`.
+  Token VALUES come from `buildPaletteCss` and only from there — the CLI and the API must not be able
+  to disagree about what basalt's tokens are (`src/cli/tokens-css.test.ts`). What the command adds on
+  top is **file framing for an artifact a consumer COMMITS**, and nothing else: the
+  `@generated basalt-ui` marker as line 1 (the guard's skip contract), version + invocation as line
+  2, a trailing newline, and `rgba()` argument spacing normalized to the spaced form. `--selector-class` is the one
+  structural rewrite — `buildPaletteCss` emits attribute selectors only, so the class form is
+  produced by emitting against a CLI-chosen sentinel attribute and rewriting exactly those
+  selectors; there is no `scheme: { class }` API. All of it was reported by the one framework-free
+  consumer as the reason the output could not simply be committed.
+- `fonts:css` — emit the shipped `--basalt-font-*` stacks as plain CSS (`--out`, `--check`). Read
+  out of `styles.css` itself, so the two can never name different typefaces. It is the only route to
+  basalt's typefaces for a consumer that declines the Mantine-coupled `styles.css`.
 
 ### Shipping a stricter guard — the grace minor
 
@@ -484,10 +522,20 @@ Mechanically: add the kind to `GRACE_PERIOD_KINDS` in `src/guard/index.ts` with 
 in the same commit that ships it; deleting that entry one minor later IS the promotion, and belongs
 in its own commit so the changelog reads "enforcement got stricter".
 
-**The same rule governs the oxlint plugin, which has no `GRACE_PERIOD_KINDS` of its own.** A new
-plugin rule ships `"warn"` in `configs/oxlint.json` (the consumer preset) and `"error"` in the
-repo-local `.oxlintrc.json` — basalt fixes its own violations immediately, consumers get a minor's
-runway. Promotion is flipping the shipped level, in its own commit. Corollary, and the reason
+**A rule the current minor WIDENS does not promote in that same minor.** Widening is a strictness
+change, so it restarts the grace — promoting a widened rule in the minor that widens it is the one
+thing this doctrine exists to prevent. 1.20.0 widened `hand-rolled-plot` and `chart-legend-literal`,
+so both stayed `warn`; `raw-size-literal` was untouched and unviolated in all seven consumers, so it
+promoted to `error`.
+
+**The same rule governs the oxlint plugin, which now has its own ledger: `PLUGIN_RULE_GRACE`**, a
+named export beside the plugin in `configs/oxlint-plugin.js` (it cannot live in `oxlint.json` — that
+file's top-level keys are fixed by oxlint's parser). A test asserts it against the shipped preset in
+BOTH directions, so deleting an entry forces the level flip in the same commit and a rule cannot sit
+at `warn` for twelve minors with nothing tracking it again. Read the promotion state there; never
+restate the list in prose. A new plugin rule ships `"warn"` in `configs/oxlint.json` (the consumer
+preset) and `"error"` in the repo-local `.oxlintrc.json` — basalt fixes its own violations
+immediately, consumers get a minor's runway. Promotion is flipping the shipped level, in its own commit. Corollary, and the reason
 `raw-size-literal` is a separate rule rather than three extra lines inside `no-raw-font-size`: an
 existing `error` rule cannot be widened to catch a new form, because a rule level is per-id and the
 widened form would land as `error` on upgrade with no grace at all. Catching a new form means a new

@@ -157,14 +157,18 @@ section divider, not card depth) are both fine.
     that must not force `@mantine/core` on its consumers, take the CSS Module. `check-theme` scans
     `.css` and `.module.css`, so the tokens stay policed there. The guard's fix text names only the
     Mantine route; both are sanctioned.
-- **Mechanical enforcement.** `basalt-ui check-theme` adds six surface guard kinds (each a config knob,
-  default ON; `theme-allow` line-comment escape): `off-system-surface-var` (raw ramp-step vars),
-  `card-with-border` (`withBorder` on a `Card`/`Paper`), `mantine-shade-index` (a shade-pinned color —
-  see below), `raw-html-layout` (raw `<div>`/`<span>` with inline layout/surface styling),
-  `inline-spacing` (inline spacing literals), `inline-display` (inline `display` literals). The
-  Mantine-free `src/charts/**` is the only place raw `<div>` is allowed — and it must still use `VX.*`
-  tokens. `oxlint` adds `basalt/card-inset`, which catches the other half of the same card drift: an
-  explicit `p`/`padding`/`radius` on a `Card`/`Paper` instead of the xs/sm inset and the theme radius.
+- **Mechanical enforcement.** `basalt-ui check-theme` adds eight surface guard kinds (each a config
+  knob, default ON; scoped `theme-allow <rule-id> — <reason>` escape): `off-system-surface-var` (raw
+  ramp-step vars), `card-with-border` (`withBorder` on a `Card`/`Paper`), `mantine-shade-index` (a
+  shade-pinned color — see below), `raw-html-layout` (raw `<div>`/`<span>` with inline layout/surface
+  styling), `inline-spacing` (inline spacing literals), `inline-display` (inline `display` literals),
+  and since 1.20.0 `css-raw-surface` (the same surface kinds in their kebab CSS dialect, so
+  `border-radius: 4px` in a CSS module is no longer invisible beside a flagged `borderRadius: 2`) and
+  `hidden-inline-style` (`raw-html-layout`'s formatting-independent half — a multi-line opening tag,
+  or a style object hoisted to a const). The Mantine-free `src/charts/**` is the only place raw
+  `<div>` is allowed — and it must still use `VX.*` tokens. `oxlint` adds `basalt/card-inset`, which
+  catches the other half of the same card drift: an explicit `p`/`padding`/`radius` on a
+  `Card`/`Paper` instead of the xs/sm inset and the theme radius.
 
 **Never pin a shade index on a color.** `c="yellow.7"`, `bg="blue.4"`, `var(--mantine-color-red-6)` —
 each names one fixed swatch that is identical in light and dark, so a shade legible on the dark page
@@ -286,8 +290,11 @@ shadow-surfaces.test.ts` mechanically enumerates every site that applies either 
 
 ## Composing the shell from sub-components
 
-`BasaltShell` is the canonical single-mount. When a fully custom layout is needed, the shell
-sub-components are available individually from `basalt-ui`:
+`BasaltShell` is the canonical single-mount, and since 1.20.0 `basalt/hand-rolled-shell` (`warn`)
+says so mechanically: `AppShell.*` parts or a `Burger` in a file that does not render `BasaltShell`
+is the layer the 1.19 nav contract replaces. It is file-scoped and reported once — which shell a
+file uses is one decision. When a fully custom layout is genuinely needed, the shell sub-components
+are available individually from `basalt-ui`:
 
 - `AppSidebar` — desktop sidebar (sections, collapse, brand, settings/account extras)
 - `MobileNav` — the bottom tab bar (takes a `MobileNavModel` from `projectMobileNav`)

@@ -65,6 +65,15 @@ That's the whole install — there is no plugin, no marketplace, and no second v
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
 - Toolchain seeds: `.oxlintrc.json` and `lefthook.yml` as `extends` stubs into `node_modules/basalt-ui/configs/` (the presets auto-update with the package), plus `.oxfmtrc.json` and `.github/workflows/check.yml` as starting copies
 - `.basalt/manifest.json` — sha256 per managed file + the basalt-ui version, for `sync` three-way diff and `doctor`
+- Two `package.json` patches: `basalt.roots` inferred from the real layout, and a `lint:basalt` script
+
+`init` on an **existing** app is a lint-debt event, not a no-op: the shipped preset switches on
+whole oxlint plugins the repo was never linted against, so previously-clean code lands with real
+findings on the first run. `init` names those plugins, and names every file it kept along with what
+keeping it costs — an `.oxlintrc.json` that does not extend the preset means the entire basalt lint
+half is inert and nothing else says so (`--merge-lint` splices the `extends` in; it refuses on a
+commented config rather than deleting the comments). Run `oxlint .` and triage before your next
+commit.
 
 Every file is either **managed** (basalt owns it, `sync` refreshes it, local edits are skipped and
 reported — exactly the files Claude reads, which cannot load from `node_modules`) or a **seed**
@@ -175,25 +184,43 @@ half — see the `./vite` adapter battery under [Adapter batteries](#adapter-bat
 
 ```ts
 // Lint — theme guard is the teeth behind the token doctrine
-// package.json scripts:
+// package.json scripts (init seeds this as "lint:basalt"):
 "lint": "oxlint . && basalt-ui check-theme"
 ```
 
-`check-theme` scans `src/` by default — a monorepo points it at its real roots via a `"basalt"`
-key in your `package.json`:
+`check-theme` scans `src/` by default; `init` writes a real `"basalt"` key from your actual layout,
+and everything derives from it — the guard's scan, the seeded CI `oxfmt` globs, the default scan
+exemption:
 
 ```json
-// package.json
+// package.json — `roots` is written by init; the rest are yours to add
 {
   "basalt": {
-    "roots": ["src"]
+    "roots": ["apps/web/src"],
+    "include": ["app/manifest.json"],
+    "profile": "tokens-only"
   }
 }
 ```
 
 `check-theme` fails loudly (instead of a false `✓`) when the configured roots resolve to zero
-scanned files. Other `"basalt"` config keys (`exempt`,
-`spacingSteps`, `forbiddenAccents`, …) are documented on the `BasaltConfig` type.
+scanned files, and `doctor`'s `guard-scan` check agrees with it. Each root's **parent** also
+contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
+and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
+blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
+"tokens-only"` turns off the 16 kinds whose remedy is a Mantine component or prop, and must be
+declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
+which would silence half the guard on any repo keeping Mantine in a different workspace package.
+Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
+`BasaltConfig` type.
+
+A file whose first 5 lines carry the `@generated basalt-ui` marker is skipped — so the stylesheet
+`tokens:css` just wrote is not reported back at you.
+
+**The escape hatch is scoped.** `theme-allow <rule-id> — <reason>` waives that one kind, on the
+reported line, on a comment-only line directly above it (the only form JSX can express), or — in
+CSS — from a trailing comment back over the declaration it terminates. A bare `theme-allow` still
+waives everything but reports `theme-allow-unscoped`.
 
 `doctor`'s `ai-major-parity` hard check fails a monorepo where workspace packages declare different
 `ai` package majors — unless the split is intentional and written down. A producer pinned to an
@@ -606,10 +633,20 @@ bunx basalt-ui init              # scaffold doctrine into a consumer repo
 bunx basalt-ui sync              # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
 bunx basalt-ui sync --check      # CI drift gate — non-zero exit on any managed-file drift
 bunx basalt-ui check-theme       # palette guard — fails on colors that bypass the central --vx-* system
-bunx basalt-ui doctor            # check consumer repo basalt integration health: manifest presence, node_modules-vs-manifest version, spacing-scale drift, and a cross-package `ai` major-version parity check (HARD failure — walks every workspace manifest, exemptable via `basalt.aiMajorSkewReason` — see above) + warn on missing basaltAppPlugin icon files under public/
+bunx basalt-ui doctor            # integration health: basalt-resolves, guard-scan, oxlint-preset, manifest presence, node_modules-vs-manifest version, spacing-scale drift, and a cross-package `ai` major-version parity check (HARD failure — walks every workspace manifest, exemptable via `basalt.aiMajorSkewReason` — see above) + warn on missing basaltAppPlugin icon files under public/
+bunx basalt-ui doctor --tokens-only   # force the Mantine-free profile (auto-detected otherwise; --framework forces the full set)
+bunx basalt-ui tokens:css --out src/tokens.css     # emit the --vx-* stylesheet as a file you own
+bunx basalt-ui fonts:css --out src/fonts.css       # emit the shipped --basalt-font-* stacks
 bunx basalt-ui info              # human-readable surface map: subpath, layer, rule, skills, optional peers
 bunx basalt-ui info --json       # same map as stable JSON (InfoOutput shape)
+bunx basalt-ui help              # full usage; every subcommand also takes --help / -h
 ```
+
+`doctor` reports **`SKIPPED`** as a third outcome beside pass/warn/fail and exits non-zero on it —
+"All checks passed" is only printable when every check actually ran. `check-theme` and `doctor`
+honour `BASALT_CWD`, and relocate to the single workspace package carrying a basalt config when
+invoked from a repo root that has none (two candidates is reported as ambiguous, never guessed).
+`tokens:css` and `fonts:css` both take `--check` as a CI drift gate.
 
 `sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff); missing → recreate. `--force` overwrites local edits.
 
