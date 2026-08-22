@@ -66,6 +66,58 @@ describe('raw-hex', () => {
     const f = find(`// use #ff0000 from the palette`)
     expect(kinds(f)).not.toContain('raw-hex')
   })
+
+  /**
+   * Round 9, rollhook: `&#123;` / `&#125;` — the escaped braces an Astro template writes to show a
+   * literal `${…}` in prose — were read as the hex colors `#123` / `#125`, and 4 findings blocked a
+   * release on a page with no color in it at all. The hole was in the KIND, not in the extension:
+   * the same string produced the same two findings in `.html`, `.tsx`, `.css` and `.vue`.
+   */
+  describe('HTML numeric character references', () => {
+    const ENTITIES = `<p>image: $&#123;IMAGE_TAG&#125;</p>`
+
+    for (const rel of [
+      'index.html',
+      'src/App.tsx',
+      'src/a.css',
+      'src/Hero.vue',
+      'src/pages/index.astro',
+    ]) {
+      it(`does NOT read &#123;/&#125; as a hex color in ${rel}`, () => {
+        expect(kinds(find(ENTITIES, rel))).not.toContain('raw-hex')
+      })
+    }
+
+    // The exemption is the ENTITY, never the file type — a template that hardcodes a color is
+    // exactly what making `.astro`/`.vue` scannable was for.
+    it('still flags a real hex in an .astro file', () => {
+      const f = find(`<div style="color: #ff0000">x</div>`, 'src/pages/index.astro')
+      expect(kinds(f)).toContain('raw-hex')
+      expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+    })
+
+    it('still flags a real hex in a .vue file', () => {
+      const f = find(`<style>\n  .hero { color: #ff0000; }\n</style>`, 'src/Hero.vue')
+      expect(kinds(f)).toContain('raw-hex')
+      expect(f.find((x) => x.kind === 'raw-hex')?.token).toBe('#ff0000')
+    })
+
+    it('flags a hex after a bare & — an entity needs its terminating semicolon', () => {
+      expect(kinds(find(`<p>a&#fff b</p>`, 'index.html'))).toContain('raw-hex')
+    })
+
+    it('flags a plain #123 with no entity around it', () => {
+      expect(kinds(find(`const c = '#123'`))).toContain('raw-hex')
+    })
+
+    // The neighbouring raw-text kinds were checked for the same blind spot and do NOT share it: a
+    // character reference contains no `(`, so `raw-color-fn`'s `rgba?|hsla?\(` anchor cannot occur
+    // inside one, and every other raw-text kind anchors on a property name, `var(`, or a JSX `=`.
+    it('leaves the sibling color kinds unchanged — nothing else fires inside an entity', () => {
+      const src = `<p>&amp; &mdash; &nbsp; &#8212; &hellip; &#x1F600; &copy;</p>`
+      expect(find(src, 'index.html')).toHaveLength(0)
+    })
+  })
 })
 
 // ── 2. raw-color-fn ──────────────────────────────────────────────────────────
@@ -2577,6 +2629,95 @@ describe('markup files (index.html / *.webmanifest)', () => {
       'index.html',
     )
     expect(kinds(f)).not.toContain('raw-hex')
+  })
+})
+
+// ── 29b. single-file components (.astro / .vue) ───────────────────────────────
+
+/**
+ * Round 9: `.astro` and `.vue` became scannable and fell through to the `ts` dialect, so `<!-- … -->`
+ * was never stripped — a `theme-allow` written in an HTML comment waived nothing there, and a color
+ * inside a commented-out block still reported. They resolve as `sfc` now: BOTH comment dialects,
+ * and the full 25-kind set (not `MARKUP_KINDS` — an `.astro` template is JSX-shaped and a `.vue`
+ * `<script setup>` is real TS).
+ */
+describe('single-file components (.astro / .vue)', () => {
+  const ASTRO = 'src/pages/index.astro'
+  const VUE = 'src/Hero.vue'
+
+  for (const rel of [ASTRO, VUE]) {
+    it(`strips an HTML comment in ${rel}`, () => {
+      expect(kinds(find(`<!-- <div style="color: #ff0000" /> -->`, rel))).not.toContain('raw-hex')
+    })
+
+    it(`honours a theme-allow inside an HTML comment in ${rel}`, () => {
+      const f = find(
+        `<!-- theme-allow raw-hex — brand asset -->\n<div style="color: #ff0000" />`,
+        rel,
+      )
+      expect(kinds(f)).not.toContain('raw-hex')
+    })
+
+    it(`honours a theme-allow-file inside an HTML comment in ${rel}`, () => {
+      const f = find(
+        `<!-- theme-allow-file raw-hex — brand asset -->\n<b style="color: #ff0000" />`,
+        rel,
+      )
+      expect(kinds(f)).not.toContain('raw-hex')
+    })
+
+    it(`honours a multi-line HTML comment annotation in ${rel}`, () => {
+      const f = find(
+        `<!--\n  theme-allow raw-hex — brand asset\n-->\n<b style="color: #ff0000" />`,
+        rel,
+      )
+      expect(kinds(f)).not.toContain('raw-hex')
+    })
+
+    it(`still strips the JS dialect in ${rel} — an SFC carries both`, () => {
+      expect(kinds(find(`// const c = '#ff0000'`, rel))).not.toContain('raw-hex')
+      expect(kinds(find(`/* const c = '#ff0000' */`, rel))).not.toContain('raw-hex')
+    })
+
+    it(`honours a theme-allow in the script fence of ${rel}`, () => {
+      const f = find(`// theme-allow raw-hex — brand asset\nconst c = '#ff0000'`, rel)
+      expect(kinds(f)).not.toContain('raw-hex')
+    })
+
+    it(`keeps the non-markup kinds — an SFC is not MARKUP_KINDS-restricted in ${rel}`, () => {
+      expect(kinds(find(`const s = { border: '1px solid #ccc' }`, rel))).toContain('raw-surface')
+      expect(kinds(find(`<div style={{ padding: 18 }} />`, rel))).toContain('inline-spacing')
+    })
+  }
+
+  it('does not let an HTML comment open a runaway JS block comment', () => {
+    const f = find(`<!-- a /* unclosed -->\n<div style="color: #ff0000" />`, ASTRO)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  /**
+   * Asserted LIMITS, so "unsupported" and "silently broken" don't read the same. Both are
+   * false-negative-only — the direction a release-blocking false positive says to take.
+   */
+  describe('known limits', () => {
+    it('does not fire the kebab-CSS surface kinds inside a <style> fence', () => {
+      const src = `<style>\n  .card { border-radius: 8px; }\n</style>`
+      expect(kinds(find(src, ASTRO))).not.toContain('css-raw-surface')
+      // The same text in a real .css file still reports — the limit is the SFC dialect, not the rule.
+      expect(kinds(find(src.replace(/<\/?style>/g, ''), 'src/a.css'))).toContain('css-raw-surface')
+    })
+
+    it('over-strips a `<!--` that lives inside a script string', () => {
+      expect(
+        kinds(find(`const s = '<!--'\nconst c = '#ff0000'\nconst e = '-->'`, ASTRO)),
+      ).not.toContain('raw-hex')
+    })
+
+    it('over-strips after an unquoted `https://` in template prose', () => {
+      expect(
+        kinds(find(`<p>see https://x.test <b style="color: #ff0000" /></p>`, ASTRO)),
+      ).not.toContain('raw-hex')
+    })
   })
 })
 
