@@ -166,10 +166,14 @@
     "DEFAULT_GUARD_CONFIG",
     "GENERATED_HEADER_LINE",
     "GUARD_RULES",
+    "NEUTRALIZED_ALLOW_TOKEN",
+    "PLUGIN_RULE_IDS",
     "TOKENS_ONLY_DISABLED_KINDS",
     "checkSource",
+    "findAllowAnnotations",
     "guardKindRemedy",
     "guardWaiverHint",
+    "neutralizeAllowAnnotation",
     "unmatchedExemptPatterns"
   ],
   "./forms": [
