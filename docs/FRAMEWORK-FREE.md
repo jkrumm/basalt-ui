@@ -3,8 +3,11 @@
 basalt-ui has zero runtime dependencies. `bun add basalt-ui` with no peers
 installed pulls in exactly one package — itself. No React, no Mantine, no
 bundler, and no d3/visx chart stack riding along for a component you never
-render. A static site can carry the same 197 `--vx-*` variables the framework's
+render. A static site can carry the same 200 `--vx-*` variables the framework's
 own components read, and stay in sync with them, without any of that weight.
+
+Counts on this page are verified against the published **1.19.1** tarball
+(`npm pack basalt-ui@1.19.1`), not against `src`.
 
 This page is for that consumer: an Astro site, a Hugo theme, a plain
 `index.html`, a design system in another stack that wants basalt's palette
@@ -31,8 +34,11 @@ no Mantine and renders from it, and a separate scratch-install asserts a
 tokens-only `bun add basalt-ui` never pulls in `@visx/scale`).
 
 `basalt-ui/styles.css` is a different thing and you almost certainly do not want
-it — it is the framework's base layer and assumes Mantine's own layered bundle
-underneath.
+it — it is the framework's base layer, it `@import`s three `@fontsource-variable`
+packages, and its `@layer basalt` block assumes Mantine's own layered bundle
+underneath. It is also the **only** place the default `--basalt-font-*` stacks
+exist, so declining it means declining basalt's typeface (see "What you don't
+get").
 
 ## Retargeting the color-scheme selector
 
@@ -94,17 +100,97 @@ The `mediaFallback` block is a bare `:root` inside `@media`, so an explicit
 attribute (0-2-0) outranks it on specificity rather than on order: the OS
 preference is a fallback, never an override.
 
+### Class selectors (`<html class="dark">`)
+
+The emitter keys on an **attribute** only. Tailwind's universal convention is a
+class — `@custom-variant dark (&:where(.dark, .dark *))` over `<html class="dark">`
+— and there is no attribute anywhere in that setup for the default output to
+match. At 1.19.1 the two workarounds are:
+
+- **Single-scheme site.** `--default-scheme dark` puts the dark primitives on the
+  bare `:root` and keys the light block off an attribute nothing ever sets. Both
+  rollhook apps ship this way. Costs you the light scheme entirely.
+- **Both schemes.** Re-declare the light block yourself under `.light`, or set the
+  attribute alongside the class from your toggle.
+
+> **Planned, not shipped.** A `--selector-class` flag (`tokens:css --selector-class dark`
+> / `buildPaletteCss({ scheme: { class: 'dark' } })`) is in flight and lands in the
+> next minor. Unverified against a release — check the CHANGELOG before relying on it.
+
 ## `only: 'core'` — drop the component spacing
 
-104 of the 197 variables are `--vx-space-*`, and 95 of those are named for a
+106 of the 200 variables are `--vx-space-*`, and 97 of those are named for a
 basalt React component: `--vx-space-agent-transcript-inset`,
 `--vx-space-toc-sub-indent`, `--vx-space-sidebar-child-row-indent`. Outside this
 framework they are dead weight.
 
 `--only core` keeps the 9 generic anchors — the `stack-xs`…`stack-xl` rhythm,
 `control-height`, `input-height`, `row-inset-x`, `row-inset-y` — and takes the
-emitted set from 197 variables to 102. It is a spacing filter only: color,
+emitted set from 200 variables to 103. It is a spacing filter only: color,
 radius, shadow, type and status are identical in both modes.
+
+All three counts exclude the 32 deprecated camelCase aliases below, which the
+default output still emits (232 declarations in the file, 200 canonical names).
+`--no-legacy-aliases` drops them.
+
+## Tailwind v4 — the `@theme inline` bridge
+
+basalt emits `--vx-*` and nothing else. Tailwind resolves utilities off its own
+`--color-*` / `--radius-*` / `--font-*` namespaces. Mapping one onto the other is
+most of the work, and it belongs in `@theme inline` — **inline**, so Tailwind
+stores the `var()` reference rather than the value it resolves to today, and the
+mapped utilities keep switching scheme with the token.
+
+```css
+@import 'tailwindcss';
+@import 'basalt-ui/tokens.css'; /* or your committed tokens:css output */
+
+@theme inline {
+  --color-background: var(--vx-surface-bg);
+  --color-foreground: var(--vx-ink);
+  --color-card: var(--vx-surface-panel);
+  --color-muted: var(--vx-surface-elevated);
+  --color-muted-foreground: var(--vx-muted);
+  --color-border: var(--vx-surface-border); /* NOT --vx-divider — see below */
+  --color-primary: var(--vx-accent-fill);
+  --color-primary-foreground: var(--vx-on-accent);
+  --color-destructive: var(--vx-status-bad);
+  --color-ring: var(--vx-accent);
+
+  --radius-sm: var(--vx-radius-fine);
+  --radius-md: var(--vx-radius-ctrl);
+  --radius-lg: var(--vx-radius-card);
+  --radius-full: var(--vx-radius-pill);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--vx-ink);
+    background-color: var(--vx-surface-bg);
+  }
+}
+```
+
+Three things that bite:
+
+- **`--vx-fill-*` is tuned for chart marks, not for text.** It is too dark to read
+  on `--vx-surface-bg`. For a tinted label, mix toward the ink:
+  `color-mix(in srgb, var(--vx-fill-violet) 45%, var(--vx-ink))`.
+- **There is no `--font-*` to map.** `tokens.css` emits no font token at all — you
+  supply the stack (see "What you don't get").
+- **The base layer is yours now.** Tailwind's preflight sets `border-color:
+currentColor`; without the `@layer base` block above, every `border` utility
+  draws in the text color.
+
+Worked reference: `rollhook`, `feat/basalt-framework-free` — two apps, one on
+`import 'basalt-ui/tokens.css'` with basalt as a dependency, one on a committed
+`tokens:css` output with basalt as a devDependency.
 
 ## Names are kebab-case; old camelCase spellings are aliases
 
@@ -163,10 +249,20 @@ The most reliable way to get basalt's surfaces wrong is to map a single
 | `--vx-divider`          | Soft rule _inside_ a surface — rows in a list, sections in a card.                                 |
 | `--vx-surface-hairline` | The card ring baked into `--vx-shadow-card`. Never reference it directly.                          |
 
-A single-hairline consumer maps it to **`--vx-divider`**. Reaching for
-`--vx-surface-hairline` on the strength of the name gives you a line tuned to sit
-_inside_ a shadow: `#eaeaee` on the light page, which all but vanishes against
-`#f2f2f5`. If you also apply `--vx-shadow-card`, you get that ring twice.
+A single-hairline consumer maps it to **`--vx-surface-border`** — the only one of
+the three that is a flat hex (`#e2e2e5` light / `#444447` dark). `--vx-divider` is
+itself a `color-mix` at 6% white on the dark page, so any consumer that applies
+its own opacity on top compounds: Tailwind's `border-border/40` lands at ~2.4%
+white, which is invisible. Worse, Tailwind wraps opacity modifiers in a
+`@supports (color: color-mix(…))` guard whose fallback branch drops the alpha
+entirely, so the two branches disagree about whether a border exists at all.
+Reach for `--vx-divider` only when you write the row rule directly, at full
+opacity, inside a surface.
+
+Reaching for `--vx-surface-hairline` on the strength of the name gives you a line
+tuned to sit _inside_ a shadow: `#eaeaee` on the light page, which all but
+vanishes against `#f2f2f5`. If you also apply `--vx-shadow-card`, you get that
+ring twice.
 
 ## Elevation is a shadow with the ring inside it
 
@@ -189,6 +285,17 @@ arrow to inherit an edge.
 
 ## What you don't get
 
+- **Fonts.** `tokens.css` emits no `--basalt-font-*`. The defaults (Nunito Sans /
+  Hubot Sans / JetBrains Mono, plus the 88% heading stretch) live only in
+  `styles.css`, and `buildFontsCss(fonts)` returns `''` unless you pass your own
+  overrides — so it cannot re-emit the shipped stack either. Declare the stack
+  yourself. A `fonts:css` command is planned for the next minor; unverified
+  against a release.
+- **The base layer.** No preflight, no iOS 16px input floor, no `h1`–`h6` type,
+  no font smoothing. `styles.css` has all of it and is Mantine-coupled; a
+  framework-free consumer owns its own `@layer base`.
+- **A sequential / quantitative color ramp.** 0.4.2 shipped `--chart-blue-1..8`;
+  1.x has categorical `--vx-fill-*` only. Interpolate yourself.
 - **Accent retuning.** `deriveRadius` and `deriveSpacing` are public, but the
   color derivation runs through `createBasaltTheme`, which is React and Mantine.
   A framework-free consumer takes the shipped palette as given. Tracked in
@@ -197,3 +304,21 @@ arrow to inherit an edge.
   through its React components. There is no plain-class `content.css` yet.
 - **Component behavior.** Tokens are values. The shell, charts, forms and the
   agent layer are React.
+
+## Known rough edges at 1.19.1
+
+`check-theme` and `doctor` assume a Mantine React app. Against a tokens-only
+consumer they misfire, and the shipped fixes point at packages you must not
+install:
+
+| Symptom                                                                           | Reality                                                                     |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `check-theme` reports ~100 `raw-hex` / `raw-color-fn` in your emitted tokens file | It is scanning the file `tokens:css` just wrote. Add it to `basalt.exempt`. |
+| `raw-form-control` says "use `TextInput` from `@mantine/core`"                    | Not applicable. There is no tokens-only profile yet.                        |
+| `raw-font-family` flags `font-family: var(--font-sans)`                           | A `var()` reference read as a literal.                                      |
+| `doctor` exits 1 with "manifest missing — run `basalt-ui init`"                   | `init` scaffolds a React app. Skip `doctor`.                                |
+
+The emitted stylesheet is also not commit-clean out of the box: no trailing
+newline, no version header, `rgba(255,255,255,0.6)` rather than a formatter's
+spacing, and no `--check` drift mode. Run your own formatter over it after
+`tokens:css`, and regenerate on every basalt bump.

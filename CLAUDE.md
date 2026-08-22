@@ -7,8 +7,10 @@ three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain conf
 `basalt-ui` CLI (bin named like the package — never `bunx basalt`).
 
 **Breaking 1.0** (`feat!:`, same npm name `basalt-ui`): the package pivoted from the old Tailwind
-CSS theme into the Mantine framework above. v0.4.2 had zero external consumers, so the pivot ships
-clean. The old `./css` and `./starlight` Tailwind exports are **dropped**. Anything below
+CSS theme into the Mantine framework above. The old `./css` and `./starlight` Tailwind exports are
+**dropped**. This was recorded at the time as costless ("zero external consumers") and it was not:
+`rollhook` consumed `basalt-ui/css` across two apps and sat pinned at a dead 0.4.2 until round 4,
+19 minors later. A dropped export with no `MIGRATING.md` entry is how a consumer stalls silently. Anything below
 referencing Tailwind / OKLCH foundation palettes / ShadCN / Tremor / Starlight / Biome / Prettier /
 Astro docs is obsolete — that doctrine no longer applies.
 
@@ -182,13 +184,19 @@ fails a mixed staging set.
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
 
-**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui is **greenfield —
-zero external consumers**; the only consumer is argo, in the same hands, upgraded in lockstep. A
+**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui has **seven consumer
+repos** as of 2026-08-22 — argo, linewatch, image-share, rb, image-gen, `basalt-ui-obsidian` (a
+downstream _library_, not an app) and rollhook (tokens only, no Mantine, no React). The doctrine
+does not rest on there being one consumer; it rests on **every consumer being in the same hands**,
+upgradeable in lockstep, with a private-repo blast radius. Two things follow: the downstream library
+means a basalt rename can propagate two hops, and `packages/basalt-ui/MIGRATING.md` is now the
+mandatory place a removed or renamed export gets written down. Revisit the doctrine only if
+basalt-ui gains a consumer outside these hands. A
 behavior change that would nominally be "breaking" (a component's resolved size shifting, a prop
 default moving, an export being renamed) ships as a plain `feat:` on the 1.x line. Document the
 change and the opt-out in the commit body; do not encode it in the version number. Cutting a major
 here buys nobody anything and costs a version-number reset — don't raise it, don't propose it,
-don't reach for the marker. Revisit only if basalt-ui ever gains an outside consumer.
+don't reach for the marker.
 
 ## Release Process
 
@@ -263,10 +271,19 @@ links to `basalt-ui.com` from that source:
 
 ## Search Param Persistence
 
-URL search params representing user-mutable state (date ranges, tabs, filters) MUST
-use `createSearchParamStore` from `basalt-ui/router-tanstack`. See the JSDoc on
-`createSearchParamStore` for the full 5-step recipe — it ships with every consumer
-via autocomplete. Key rules that won't fit in a JSDoc bullet:
+**Scope of the mandate.** `createSearchParamStore` covers ONE param whose values are a
+string enum (`{ key, param, values, fallback }`), and `createMultiSearchParamStore` the
+multi-select of the same shape. Where that fits — a range picker, a tab, a single filter —
+it is mandatory: use it, don't hand-roll persistence.
+
+Where it doesn't fit, it doesn't apply. A route whose `validateSearch` is a real Zod object
+(image-share carries an 11-key and a 5-key schema, rb a 10-key one) cannot be expressed
+through the store at all, and three consumers hit that wall in round 4. **Hand-write
+`validateSearch` there.** A `createSearchSchemaStore({ key, schema, persist })` is planned
+for the next minor and is not shipped — do not write code against it.
+
+See the JSDoc on `createSearchParamStore` for the full 5-step recipe — it ships with every
+consumer via autocomplete. Key rules that won't fit in a JSDoc bullet:
 
 - Page components accept the param as a **prop**, never via `useSearch({ from:
 '/dashboard' })` — sibling routes fail that `from`.
