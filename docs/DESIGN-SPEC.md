@@ -153,7 +153,7 @@ also honors the user's browser font-size and `--mantine-scale`.
 
 | Step      | Size   | Used for                                                                                                               |
 | --------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `nano`    | 10px   | a label engraved INSIDE a drawn object — a plate face, a dial, a chip. Never UI copy or prose (1.20.1)                 |
+| `nano`    | 10px   | a label engraved INSIDE a drawn object — a plate face, a dial, a chip. Never UI copy or prose (1.21.0)                 |
 | `micro`   | 11px   | mono uppercase micro-labels — sidebar/section headers, table headers, axis ticks                                       |
 | `xs`      | 12.5px | delta badges, tooltip meta, dense chrome, **StatCard labels** (density pass moved these 11px → 12.5px)                 |
 | `sm`      | 13.5px | stat/table numerals, chart tooltip, chart legend                                                                       |
@@ -163,7 +163,7 @@ also honors the user's browser font-size and `--mantine-scale`.
 | `h2`      | 21px   | article-density Prose h2 (`docs/CONTENT-SPEC.md` §5)                                                                   |
 | `kpi`     | 24px   | the StatCard hero numeral (weight 600, letter-spacing −0.02em; density pass 31 → 24)                                   |
 | `h1`      | 26px   | article-density Prose h1 (`docs/CONTENT-SPEC.md` §5)                                                                   |
-| `display` | 30px   | a numeral read at arm's length — a keypad readout, a timer, a kiosk figure. Not a heading (1.20.1)                     |
+| `display` | 30px   | a numeral read at arm's length — a keypad readout, a timer, a kiosk figure. Not a heading (1.21.0)                     |
 
 **Every adjacent pair sits between 1.06× and 1.17×, and a new rung must too** — hand-tuned per role,
 but not arbitrary, and `tokens/text-scale.test.ts` holds the ladder to it. Below that band two rungs

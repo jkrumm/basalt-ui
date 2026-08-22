@@ -6,7 +6,7 @@ bundler, and no d3/visx chart stack riding along for a component you never
 render. A static site can carry the same 204 `--vx-*` variables the framework's
 own components read, and stay in sync with them, without any of that weight.
 
-Counts on this page are for **1.20.1** and reproduce from the emitter itself:
+Counts on this page are for **1.21.0** and reproduce from the emitter itself:
 
 ```bash
 bunx basalt-ui tokens:css --no-legacy-aliases | grep -oE '^ +--vx-[a-z0-9-]+' | sort -u | wc -l
