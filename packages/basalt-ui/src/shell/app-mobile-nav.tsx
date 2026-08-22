@@ -38,7 +38,7 @@ import classes from './app-mobile-nav.module.css'
  * bottom-anchored menu puts it UNDER the footer, off-screen — `menuMax` is what guarantees it fits
  * above the bar (§2.2). `shift.padding` is a viewport inset in px, not a layout spacing token.
  */
-const MENU_MIDDLEWARES = { flip: false, shift: { padding: 8 } } // theme-allow inline-spacing — a floating-ui viewport inset, not layout spacing
+const MENU_MIDDLEWARES = { flip: false, shift: { padding: 8 } }
 
 /** A slot that navigates on tap. */
 type LinkSlot = Extract<MobileNavSlot, { kind: 'link' }>
