@@ -514,3 +514,153 @@ describe('basalt doctor — ai-major-parity, aiMajorSkewReason exemption', () =>
     expect(out).toContain('no longer needed')
   })
 })
+
+/**
+ * The icon check reads `basaltAppPlugin`'s `icons` option.
+ *
+ * 1.23.0 let `icons` name an app's real icon files, and this check kept demanding the six default
+ * filenames — so adopting the release's headline feature produced a brand-new warning, on the one
+ * repo the feature was written for. A warning that fires BECAUSE you adopted the new API is how a
+ * team learns to ignore doctor.
+ */
+describe('basalt doctor — basaltAppPlugin icons', () => {
+  function runDoctor(): { code: number; out: string } {
+    const original = console.log
+    let out = ''
+    console.log = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    try {
+      return { code: doctor(tmpDir), out }
+    } finally {
+      console.log = original
+    }
+  }
+
+  /** A framework-profile repo with a public/ dir — the only shape this check runs on. */
+  function setupApp(viteConfig: string | null, publicFiles: string[]): void {
+    setupPassingLayout()
+    writeFixture(
+      'node_modules/@mantine/core/package.json',
+      JSON.stringify({ name: '@mantine/core' }),
+    )
+    // The check only runs where a public/ dir exists at all, so it has to exist even when empty.
+    mkdirSync(join(tmpDir, 'public'), { recursive: true })
+    for (const file of publicFiles) writeFixture(`public/${file}`, 'x')
+    if (viteConfig !== null) writeFixture('vite.config.ts', viteConfig)
+  }
+
+  it('an app that NAMES its icons is judged on those, not on the six defaults', () => {
+    setupApp(
+      [
+        "import { basaltAppPlugin } from 'basalt-ui/vite'",
+        'export default {',
+        '  plugins: [',
+        '    basaltAppPlugin({',
+        "      name: 'rb',",
+        "      icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],",
+        '    }),',
+        '  ],',
+        '}',
+      ].join('\n'),
+      ['favicon.svg'],
+    )
+    const { out } = runDoctor()
+    expect(out).not.toContain('web-app-manifest-192x192.png')
+    expect(out).toContain("icon file(s) basaltAppPlugin's `icons` option names")
+  })
+
+  it('a declared icon that is NOT in public/ still warns — the manifest would 404', () => {
+    setupApp(
+      [
+        'export default {',
+        "  plugins: [basaltAppPlugin({ icons: [{ src: '/logo.png', sizes: '512x512' }] })],",
+        '}',
+      ].join('\n'),
+      ['favicon.svg'],
+    )
+    expect(runDoctor().out).toContain('declares icon(s) that are not in public/: /logo.png')
+  })
+
+  it('`icons: false` means there is nothing to check', () => {
+    setupApp('export default { plugins: [basaltAppPlugin({ icons: false })] }', [])
+    const { out } = runDoctor()
+    expect(out).toContain('no icons — nothing to check')
+    expect(out).not.toContain('favicon.ico')
+  })
+
+  it('`icons: { dir }` checks the six defaults UNDER that dir', () => {
+    setupApp("export default { plugins: [basaltAppPlugin({ icons: { dir: 'icons' } })] }", [])
+    const { out } = runDoctor()
+    expect(out).toContain('public/icons is missing basaltAppPlugin icon file(s)')
+  })
+
+  it('no vite config at all falls back to the six defaults — the gate never goes blind', () => {
+    setupApp(null, [])
+    expect(runDoctor().out).toContain('public/ is missing basaltAppPlugin icon file(s)')
+  })
+
+  it('the default six still pass when they are all there', () => {
+    setupApp('export default { plugins: [basaltAppPlugin({})] }', [
+      'favicon.ico',
+      'favicon.svg',
+      'favicon-96x96.png',
+      'apple-touch-icon.png',
+      'web-app-manifest-192x192.png',
+      'web-app-manifest-512x512.png',
+    ])
+    expect(runDoctor().out).toContain("public/ has all of basaltAppPlugin's default icon files")
+  })
+})
+
+/**
+ * `sync` refuses in a non-install package by NAMING the parent install (1.22.0's "stop scaffolding
+ * a second consumer" fix); `doctor` in the same directory kept prescribing `basalt-ui init`, so
+ * following it literally performed the exact mistake that fix prevents.
+ */
+describe('basalt doctor — a package under a configured repo is not an unscaffolded consumer', () => {
+  function runDoctorIn(dir: string): { code: number; out: string } {
+    const originalLog = console.log
+    const originalError = console.error
+    let out = ''
+    const sink = (...args: unknown[]) => {
+      out += `${args.join(' ')}\n`
+    }
+    console.log = sink
+    console.error = sink
+    try {
+      return { code: doctor(dir), out }
+    } finally {
+      console.log = originalLog
+      console.error = originalError
+    }
+  }
+
+  it('names the parent install instead of recommending init', () => {
+    setupPassingLayout()
+    // A sub-package carrying its own basalt config, so resolveProjectDir stays put rather than
+    // relocating: the "standing in apps/web" shape every consumer reported.
+    writeFixture(
+      'apps/web/package.json',
+      JSON.stringify({ name: 'web', basalt: { profile: 'framework', roots: ['src'] } }),
+    )
+    writeFixture('apps/web/src/app.tsx', 'export const App = () => null\n')
+
+    const { code, out } = runDoctorIn(join(tmpDir, 'apps/web'))
+    expect(code).toBe(1)
+    expect(out).toContain("This repo's install is at ../..")
+    expect(out).toContain('run doctor there, or set BASALT_CWD to it')
+    expect(out).toContain('`basalt-ui init` is NOT the fix')
+    expect(out).not.toContain('Run `basalt-ui init` to seed it.')
+  })
+
+  it('a genuinely unscaffolded repo still gets the init advice', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', basalt: { profile: 'framework', roots: ['src'] } }),
+    )
+    writeFixture('src/app.tsx', 'export const App = () => null\n')
+    const { out } = runDoctorIn(tmpDir)
+    expect(out).toContain('run `basalt-ui init` to scaffold the consumer repo')
+  })
+})

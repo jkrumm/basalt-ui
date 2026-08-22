@@ -4,7 +4,15 @@
  * matched `cmd === 'sync'` first and `--help` was just another item in `flags`, ignored).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
@@ -93,5 +101,70 @@ describe('run() --help short-circuits before dispatch', () => {
     const { code } = capture(() => run(['sync'], dir))
     expect(code).toBe(0)
     expect(existsSync(resolve(dir, MANIFEST_PATH))).toBe(true)
+  })
+})
+
+/**
+ * `--version` and the unknown-flag gate — one failure mode, two halves.
+ *
+ * Six consumer repos in one upgrade round reached for `basalt-ui --version` to prove WHICH CLI ran
+ * (a `bunx` cache does not re-resolve, so a pinned version and the version that gates you can
+ * differ) and got a usage dump with no version in it. The other half is the same shape: an
+ * unrecognized FLAG was silently ignored and the command exited 0, so a mistyped gate read as a
+ * passing gate.
+ */
+describe('run() --version and the unknown-flag gate', () => {
+  const version = (
+    JSON.parse(readFileSync(resolve(import.meta.dir, '../../package.json'), 'utf8')) as {
+      version: string
+    }
+  ).version
+
+  it('`--version` prints the bare resolved version and exits 0', () => {
+    const { code, log } = capture(() => run(['--version'], dir))
+    expect(code).toBe(0)
+    expect(log.trim()).toBe(version)
+  })
+
+  it('`-v` and `version` are the same thing', () => {
+    expect(capture(() => run(['-v'], dir)).log.trim()).toBe(version)
+    expect(capture(() => run(['version'], dir)).log.trim()).toBe(version)
+  })
+
+  it('the printed line is greppable on its own — no usage block around it', () => {
+    const { log } = capture(() => run(['--version'], dir))
+    expect(log).not.toContain('Usage: basalt')
+  })
+
+  it('an unrecognized flag exits 1 and NAMES it, on a command that would otherwise pass', () => {
+    const { code, log } = capture(() => run(['doctor', '--json'], dir))
+    expect(code).toBe(1)
+    expect(log).toContain("unrecognized flag '--json'")
+    expect(log).toContain('--tokens-only')
+  })
+
+  it('a near-miss flag does not slip through as a silent no-op', () => {
+    const { code, log } = capture(() => run(['check-theme', '--audit-allow'], dir))
+    expect(code).toBe(1)
+    expect(log).toContain("unrecognized flag '--audit-allow'")
+  })
+
+  it('a value-taking flag does not make its VALUE look like an unknown flag', () => {
+    const out = resolve(dir, 'tokens.css')
+    const { code } = capture(() => run(['tokens:css', '--out', out, '--only', 'core'], dir))
+    expect(code).toBe(0)
+  })
+
+  it('an unknown COMMAND names what it did not understand, above the usage block', () => {
+    const { code, log } = capture(() => run(['check-theme --audit-allows'], dir))
+    expect(code).toBe(1)
+    expect(log).toContain("unknown command 'check-theme --audit-allows'")
+    expect(log).toContain('Usage: basalt')
+  })
+
+  it('`--help` still wins over the flag gate, so a reader can always find out what is accepted', () => {
+    const { code, log } = capture(() => run(['doctor', '--json', '--help'], dir))
+    expect(code).toBe(0)
+    expect(log).toContain('Usage: basalt')
   })
 })

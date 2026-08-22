@@ -1352,10 +1352,25 @@ function readFrameworkVersion(pkgRoot: string): string {
   }
 }
 
+/**
+ * How a seeded script, a seeded CI step, or a piece of doctor advice should invoke the CLI.
+ *
+ * The LOCAL bin wherever basalt actually resolved; `bunx basalt-ui` only as the pre-install
+ * fallback. `bunx` does not re-resolve a package it has cached, so a seeded `bunx basalt-ui` lets a
+ * consumer pin one version and be gated by another — which is exactly what happened across three
+ * consumer repos, in CI, in package.json scripts and in a `.claude` PreToolUse hook, all of them
+ * placed here. Every emitted invocation goes through this function so there is one place for it to
+ * be right.
+ */
+function basaltBinCommand(install: BasaltInstall, cwd: string): string {
+  if (install.dir === null) return 'bunx basalt-ui'
+  const binDir = resolve(install.dir, '..', '.bin')
+  return `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`
+}
+
 /** Build the template-variable map from the framework root + consumer cwd/config. */
 function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): TemplateVars {
   const install = findBasaltInstall(cwd)
-  const binDir = install.dir === null ? null : resolve(install.dir, '..', '.bin')
   return {
     APP_NAME: readPackageName(cwd),
     BASALT_VERSION: readFrameworkVersion(pkgRoot),
@@ -1364,10 +1379,7 @@ function buildTemplateVars(pkgRoot: string, cwd: string, cfg: BasaltConfig): Tem
     ROOTS_GLOBS: resolveRoots(cfg).map(toRootGlob).join(' '),
     OXLINT_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/oxlint.json'),
     LEFTHOOK_PRESET_PATH: shippedAssetPath(install, cwd, 'configs/lefthook.yml'),
-    BASALT_BIN:
-      binDir === null
-        ? 'bunx basalt-ui'
-        : `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`,
+    BASALT_BIN: basaltBinCommand(install, cwd),
   }
 }
 
@@ -2542,7 +2554,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
       `    "PreToolUse": [\n` +
       `      {\n` +
       `        "matcher": "Write|Edit|MultiEdit",\n` +
-      `        "hooks": [{ "type": "command", "command": "bunx basalt-ui guard-hook" }]\n` +
+      `        "hooks": [{ "type": "command", "command": "${ctx.vars.BASALT_BIN} guard-hook" }]\n` +
       `      }\n` +
       `    ]\n` +
       `  }`,
@@ -2603,6 +2615,21 @@ type SyncOptions = {
  * install lives at the repo root above it. Nothing walks up, so `sync` read "no manifest here" as
  * "nothing scaffolded yet" and wrote a complete second consumer beside the real one.
  */
+/**
+ * The sentence `sync` prints when the cwd carries no install but an ancestor does.
+ *
+ * Shared with `doctor` deliberately. The two commands already share `resolveProjectDir`, but not
+ * the ADVICE: `sync` named the parent install (1.22.0's "stop scaffolding a second consumer" fix)
+ * while `doctor`, in the same directory, kept prescribing `basalt-ui init` — so following doctor
+ * literally performed the exact mistake that fix exists to prevent. One function, one sentence.
+ */
+function parentInstallAdvice(cwd: string, parent: string, verb: string): string {
+  return (
+    `This repo's install is at ${relativePosix(cwd, parent)} (${parent}) — run ${verb} there, ` +
+    'or set BASALT_CWD to it.'
+  )
+}
+
 function findManifestAbove(dir: string): string | null {
   let current = resolve(dir, '..')
   for (;;) {
@@ -2681,8 +2708,7 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
         (elsewhere === null
           ? ' No manifest exists at any ancestor either — run `basalt-ui init` here if this ' +
             'package really is meant to be a consumer.'
-          : ` This repo's install is at ${relativePosix(cwd, elsewhere)} (${elsewhere}) — run ` +
-            'sync there, or set BASALT_CWD to it.'),
+          : ` ${parentInstallAdvice(cwd, elsewhere, 'sync')}`),
     )
     return 1
   }
@@ -3365,6 +3391,10 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // ── Profile ────────────────────────────────────────────────────────────────
   const manifestAbs = resolve(cwd, MANIFEST_PATH)
   const manifestExists = existsSync(manifestAbs)
+  // Non-null ⇒ this directory is a package UNDER a configured repo, not an unscaffolded consumer.
+  // Every remedy below that would otherwise say "run `basalt-ui init`" points at the parent
+  // instead — see {@link parentInstallAdvice}.
+  const parentInstall = manifestExists ? null : findManifestAbove(cwd)
   const profile = inferredProfile(cwd, cfg, flags)
   if (profile === 'tokens-only') {
     lines.push(
@@ -3388,6 +3418,12 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     pass(`${MANIFEST_PATH}: n/a — a tokens-only consumer has no scaffold to reconcile`)
   } else if (manifestExists) {
     pass(`${MANIFEST_PATH} exists`)
+  } else if (parentInstall !== null) {
+    fail(
+      `${MANIFEST_PATH} missing here, but this is not an unscaffolded consumer. ` +
+        `${parentInstallAdvice(cwd, parentInstall, 'doctor')} \`basalt-ui init\` is NOT the fix: ` +
+        'it would scaffold a SECOND consumer beside the real one.',
+    )
   } else {
     fail(`${MANIFEST_PATH} missing — run \`basalt-ui init\` to scaffold the consumer repo`)
   }
@@ -3549,7 +3585,11 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     if (oxlintrcRaw === null) {
       fail(
         '.oxlintrc.json missing — the shipped oxlint preset (the basalt/* design rules) is not ' +
-          'active. Run `basalt-ui init` to seed it.',
+          'active. ' +
+          (parentInstall === null
+            ? 'Run `basalt-ui init` to seed it.'
+            : `${parentInstallAdvice(cwd, parentInstall, 'doctor')} The preset is seeded once, at ` +
+              'the install — not per package.'),
       )
     } else {
       // JSONC: oxlint accepts comments and real consumer configs carry them.
@@ -3642,40 +3682,61 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
       `${lefthookGate.file}: \`lefthook dump\` resolves the merged config and NO pre-commit ` +
         'command runs check-theme — the theme guard is not gating commits. Either add ' +
         `"extends: [${lefthookCorrect}]", or add your own command running ` +
-        '`bunx basalt-ui check-theme` (with `root:` if it must run in a subdirectory).',
+        `\`${basaltBinCommand(install, cwd)} check-theme\` (with \`root:\` if it must run in a ` +
+        'subdirectory).',
     )
   } else {
     warn(
       `${lefthookGate.file} names no basalt gate and \`lefthook dump\` could not be run here, so ` +
         'this check cannot tell a missing gate from one wired through an `include:` or a remote ' +
         'config it never read — treat it as advisory. If the guard really is unwired, add ' +
-        `"extends: [${lefthookCorrect}]" or your own command running \`bunx basalt-ui check-theme\`.`,
+        `"extends: [${lefthookCorrect}]" or your own command running ` +
+        `\`${basaltBinCommand(install, cwd)} check-theme\`.`,
     )
   }
 
-  // ── Warn check 8: basaltAppPlugin's default icon files exist in public/ ────
-  // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references these filenames by
-  // default (the realfavicongenerator convention). Only runs when a public/ dir exists at all —
-  // apps that don't use the plugin, or don't use Vite's public-dir convention, get no false
-  // warning. Best-effort: a custom `icons.dir` isn't visible here, so this checks the root only.
+  // ── Warn check 8: the icon files basaltAppPlugin actually references exist ────
+  // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references six filenames by default
+  // (the realfavicongenerator convention), but since 1.23.0 an app can NAME its own — so the option
+  // is read (see {@link readAppIconsOption}) rather than assumed. Only runs when a public/ dir
+  // exists at all: apps that don't use the plugin, or don't use Vite's public-dir convention, get
+  // no false warning.
   const publicDir = resolve(cwd, 'public')
   if (profile === 'framework' && existsSync(publicDir)) {
-    const iconFiles = [
-      'favicon.ico',
-      'favicon.svg',
-      'favicon-96x96.png',
-      'apple-touch-icon.png',
-      'web-app-manifest-192x192.png',
-      'web-app-manifest-512x512.png',
-    ]
-    const missingIcons = iconFiles.filter((f) => !existsSync(resolve(publicDir, f)))
-    if (missingIcons.length > 0) {
-      warn(
-        `public/ is missing basaltAppPlugin icon file(s): ${missingIcons.join(', ')} — generate ` +
-          'them (e.g. via realfavicongenerator.net) and place them at the public/ root.',
+    const icons = readAppIconsOption(cwd)
+    if (icons.kind === 'none') {
+      pass('basaltAppPlugin is configured with no icons — nothing to check')
+    } else if (icons.kind === 'explicit') {
+      // The app NAMED its icons, so those are the only files it owes. Checking the six defaults
+      // here is what told 1.23.0's flagship adopter to generate five files it deliberately lacks.
+      const missing = icons.sources.filter(
+        (src) => !existsSync(resolve(publicDir, src.replace(/^\//, ''))),
       )
+      if (missing.length > 0) {
+        warn(
+          `basaltAppPlugin declares icon(s) that are not in public/: ${missing.join(', ')} — the ` +
+            'manifest and the head links will point at a 404. Place them, or drop them from the ' +
+            '`icons` array.',
+        )
+      } else {
+        pass(
+          `public/ has all ${icons.sources.length} icon file(s) basaltAppPlugin's \`icons\` option names`,
+        )
+      }
     } else {
-      pass("public/ has all of basaltAppPlugin's default icon files")
+      const dir = icons.kind === 'default' ? icons.dir : null
+      const iconRoot = dir === null ? publicDir : resolve(publicDir, dir.replace(/^\//, ''))
+      const shown = dir === null ? 'public/' : `public/${dir.replace(/^\//, '')}`
+      const missingIcons = DEFAULT_APP_ICON_FILES.filter((f) => !existsSync(resolve(iconRoot, f)))
+      if (missingIcons.length > 0) {
+        warn(
+          `${shown} is missing basaltAppPlugin icon file(s): ${missingIcons.join(', ')} — generate ` +
+            `them (e.g. via realfavicongenerator.net) and place them at the ${shown} root, or name ` +
+            "the icons this app really has via the plugin's `icons` array.",
+        )
+      } else {
+        pass(`${shown} has all of basaltAppPlugin's default icon files`)
+      }
     }
   }
 
@@ -3882,6 +3943,100 @@ export function info(flags: string[]): number {
   return 0
 }
 
+/** The six filenames `basaltAppPlugin` references when `icons` is left at its default. */
+const DEFAULT_APP_ICON_FILES = [
+  'favicon.ico',
+  'favicon.svg',
+  'favicon-96x96.png',
+  'apple-touch-icon.png',
+  'web-app-manifest-192x192.png',
+  'web-app-manifest-512x512.png',
+] as const
+
+const VITE_CONFIG_FILES = [
+  'vite.config.ts',
+  'vite.config.mts',
+  'vite.config.cts',
+  'vite.config.js',
+  'vite.config.mjs',
+  'vite.config.cjs',
+] as const
+
+/**
+ * What `basaltAppPlugin`'s `icons` option says this app actually has.
+ *
+ * `unknown` = no vite config, no `basaltAppPlugin(` call, or an `icons` value this bounded read
+ * cannot classify — all three fall back to the six-default check, so the gate can only ever get
+ * NARROWER than it was, never blinder.
+ */
+type AppIconsOption =
+  | { kind: 'default'; dir: string | null }
+  | { kind: 'none' }
+  | { kind: 'explicit'; sources: readonly string[] }
+  | { kind: 'unknown' }
+
+/** The balanced `(`…`)` / `{`…`}` / `[`…`]` span starting at `open`, or null if it never closes. */
+function balancedSpan(text: string, open: number): string | null {
+  const pairs: Record<string, string> = { '(': ')', '{': '}', '[': ']' }
+  const closer = pairs[text[open] as string]
+  if (closer === undefined) return null
+  let depth = 0
+  for (let i = open; i < text.length; i++) {
+    const ch = text[i] as string
+    if (ch === text[open]) depth++
+    else if (ch === closer) {
+      depth--
+      if (depth === 0) return text.slice(open, i + 1)
+    }
+  }
+  return null
+}
+
+/**
+ * Read the `icons` option out of the consumer's vite config.
+ *
+ * 1.23.0 let `icons` name an app's REAL icon files; doctor's icon check kept demanding the six
+ * default filenames and never read the option, so adopting the release's headline feature produced
+ * a brand-new warning — on the very repo the feature was written for. A warning that fires BECAUSE
+ * you adopted the new API teaches people to ignore doctor.
+ *
+ * doctor does not run the build, so the plugin's resolved answer is not available to it; this is a
+ * bounded textual read of the config file, the same shape the guard uses on source. It is
+ * deliberately conservative: anything it cannot classify returns `unknown` and the old check runs.
+ */
+function readAppIconsOption(cwd: string): AppIconsOption {
+  const configPath = VITE_CONFIG_FILES.map((f) => resolve(cwd, f)).find((f) => existsSync(f))
+  if (configPath === undefined) return { kind: 'unknown' }
+  const text = readIfExists(configPath)
+  if (text === null) return { kind: 'unknown' }
+  const call = text.indexOf('basaltAppPlugin(')
+  if (call === -1) return { kind: 'unknown' }
+  const args = balancedSpan(text, call + 'basaltAppPlugin'.length)
+  if (args === null) return { kind: 'unknown' }
+  const key = args.search(/\bicons\s*:/)
+  if (key === -1) return { kind: 'default', dir: null }
+  const valueStart = args.indexOf(':', key) + 1
+  const rest = args.slice(valueStart).trimStart()
+  if (rest.startsWith('false')) return { kind: 'none' }
+  const offset = args.length - rest.length
+  if (rest.startsWith('[')) {
+    const list = balancedSpan(args, offset)
+    if (list === null) return { kind: 'unknown' }
+    const sources = [...list.matchAll(/\bsrc\s*:\s*['"`]([^'"`]+)['"`]/g)].map(
+      (m) => m[1] as string,
+    )
+    // An empty array means "this app has no icons" to the plugin, same as `false`.
+    return sources.length === 0 ? { kind: 'none' } : { kind: 'explicit', sources }
+  }
+  if (rest.startsWith('{')) {
+    const obj = balancedSpan(args, offset)
+    if (obj === null) return { kind: 'unknown' }
+    const dir = /\bdir\s*:\s*['"`]([^'"`]+)['"`]/.exec(obj)
+    return { kind: 'default', dir: dir === null ? null : (dir[1] as string) }
+  }
+  return { kind: 'unknown' }
+}
+
 /** Read the value that follows a `--flag` in an argv slice; `undefined` when absent or terminal. */
 function flagValue(flags: string[], name: string): string | undefined {
   const i = flags.indexOf(name)
@@ -3902,6 +4057,32 @@ function generatedHeader(version: string, command: string, flags: string[]): str
   const shown = flags.filter((f) => f !== '--check')
   const invocation = shown.length === 0 ? command : `${command} ${shown.join(' ')}`
   return `${GENERATED_HEADER_LINE}\n/* basalt-ui ${version} — \`basalt-ui ${invocation}\` */\n`
+}
+
+/**
+ * The generated file with its provenance line (line 2) blanked — what `--check` actually compares.
+ *
+ * Line 2 carries the EMITTING VERSION, and `--check` gated the whole file byte-for-byte, so every
+ * basalt-ui release forced a mandatory no-op commit in every consumer that commits a generated
+ * sheet: regenerate, one line changes, nothing else, ship it. That is the rot pattern removed from
+ * DESIGN.md this cycle, made worse by a gate that is byte-equality.
+ *
+ * The version STAYS in the file rather than being dropped the way DESIGN.md's was, because the
+ * consumer this command exists for — a framework-free site running `bunx basalt-ui tokens:css` with
+ * no basalt in its dependency tree at all — has no other record of which version emitted it, and no
+ * `doctor` to ask. What changes is that the line no longer gates: drift is measured over the token
+ * VALUES, which is the only part of the file a release can meaningfully change.
+ *
+ * Blanked, not dropped, so the two sides stay line-aligned and the reported line counts still match
+ * the files on disk. The `@generated` exemption is untouched by all of this — the guard requires
+ * line 1 verbatim and line 2 parsing as the provenance line, and both are still emitted exactly as
+ * {@link generatedHeader} builds them.
+ */
+function withoutProvenanceLine(css: string): string {
+  const lines = css.split('\n')
+  if (lines.length < 2) return css
+  lines[1] = ''
+  return lines.join('\n')
 }
 
 /**
@@ -3966,14 +4147,22 @@ function emitGeneratedCss(content: string, flags: string[], cwd: string, command
       )
       return 1
     }
-    if (onDisk === content) {
-      console.log(`✓ ${command} --check: ${shown} is up to date.`)
+    if (withoutProvenanceLine(onDisk) === withoutProvenanceLine(content)) {
+      const staleProvenance = onDisk.split('\n')[1] !== content.split('\n')[1]
+      console.log(
+        `✓ ${command} --check: ${shown} is up to date.` +
+          (staleProvenance
+            ? ' (Its provenance line still names an older basalt-ui; that line is deliberately not ' +
+              'gated — re-run without --check whenever you want it refreshed.)'
+            : ''),
+      )
       return 0
     }
     console.error(
       `✖ ${command} --check: ${shown} differs from what \`basalt-ui ${command}\` emits today ` +
         `(on disk ${onDisk.split('\n').length} lines, emitted ${content.split('\n').length}) — ` +
-        're-run the same command without --check and commit the result.',
+        "re-run the same command without --check and commit the result. The `@generated` header's " +
+        'provenance line is excluded from this comparison, so a version bump alone never trips it.',
     )
     return 1
   }
@@ -4217,9 +4406,68 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
   return 0
 }
 
+/**
+ * Every flag each subcommand accepts — the table the unknown-flag gate reads.
+ *
+ * An unrecognized flag used to be SILENTLY IGNORED and the command exited 0: `check-theme
+ * --audit-allow` scanned normally and reported success, `doctor --json` printed the human report.
+ * That is the same fail-open shape `--version` had, and it is worse on a CLI agents drive
+ * programmatically, where a typo'd gate reads as a passing gate.
+ */
+const COMMAND_FLAGS: Record<string, readonly string[]> = {
+  init: ['--with-router', '--with-query', '--merge-lint'],
+  sync: ['--force', '--check', '--tokens-only', '--framework'],
+  'check-theme': ['--audit-allows', '--tokens-only', '--framework'],
+  'check-coverage': [],
+  info: ['--json'],
+  doctor: ['--tokens-only', '--framework'],
+  'guard-hook': [],
+  'tokens:css': [
+    '--out',
+    '--check',
+    '--selector-attribute',
+    '--selector-class',
+    '--light-class',
+    '--dark-value',
+    '--light-value',
+    '--default-scheme',
+    '--media-fallback',
+    '--only',
+    '--no-legacy-aliases',
+  ],
+  'fonts:css': ['--out', '--check'],
+}
+
+/** Flags whose VALUE is the next argv token — skipped by the gate so `--out dist/x.css` does not
+ * read `dist/x.css` as a second flag. */
+const VALUE_FLAGS = new Set([
+  '--out',
+  '--selector-attribute',
+  '--selector-class',
+  '--light-class',
+  '--dark-value',
+  '--light-value',
+  '--default-scheme',
+  '--only',
+])
+
+/** The first flag `cmd` does not accept, or null. Unknown commands return null — the dispatcher's
+ * default branch already names those. */
+function unknownFlag(cmd: string, flags: readonly string[]): string | null {
+  const allowed = COMMAND_FLAGS[cmd]
+  if (allowed === undefined) return null
+  for (let i = 0; i < flags.length; i++) {
+    const flag = flags[i] as string
+    if (!flag.startsWith('-')) continue
+    if (!allowed.includes(flag)) return flag
+    if (VALUE_FLAGS.has(flag)) i++
+  }
+  return null
+}
+
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 const USAGE =
-  'Usage: basalt-ui <init [--with-router] [--with-query] [--merge-lint] |\n' +
+  'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
   '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] | check-coverage | info [--json] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
@@ -4250,7 +4498,10 @@ const USAGE =
   'relocate to the single package below the cwd carrying a basalt config when invoked from a repo\n' +
   'root that has none — several carrying one is ambiguous and exits 1 in ALL THREE.\n' +
   '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +
-  'Every subcommand accepts --help / -h to print this message and exit without running.'
+  'Every subcommand accepts --help / -h to print this message and exit without running.\n' +
+  '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
+  'WHICH basalt-ui ran, which a `bunx` cache can otherwise make a lie. An unknown command or an\n' +
+  'unrecognized flag exits 1 and names what it did not understand; neither is ever ignored.'
 
 /**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
@@ -4274,6 +4525,24 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   ) {
     console.log(USAGE)
     return 0
+  }
+  // Before dispatch, for the same reason --help is: this answers "which basalt-ui is running" and
+  // must never run a command to do it. `bunx` does not re-resolve a cached package, so a consumer
+  // can pin 1.23.0, invoke `bunx basalt-ui`, and be gated by a months-old copy — the version is the
+  // only thing that catches it, and it has to be one bare line an agent can compare.
+  if (cmd === '--version' || cmd === '-v' || cmd === 'version') {
+    console.log(readFrameworkVersion(packageRoot()))
+    return 0
+  }
+  if (cmd !== undefined) {
+    const bad = unknownFlag(cmd, flags)
+    if (bad !== null) {
+      console.error(
+        `basalt-ui ${cmd}: unrecognized flag '${bad}'. ` +
+          `Accepted: ${(COMMAND_FLAGS[cmd] ?? []).join(' ') || '(none)'} --help\n`,
+      )
+      return 1
+    }
   }
   switch (cmd) {
     case 'init':
@@ -4302,6 +4571,14 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'fonts:css':
       return fontsCss(flags, cwd)
     default:
+      // Named, not just implied by a usage dump: a full-screen help block with no error line reads
+      // like the command ran and chose to print help. Reported by a consumer who passed
+      // `"check-theme --audit-allows"` as ONE argument and could not tell what had been rejected.
+      console.error(
+        cmd === undefined
+          ? 'basalt-ui: no command given.\n'
+          : `basalt-ui: unknown command '${cmd}'.\n`,
+      )
       console.error(USAGE)
       return 1
   }
