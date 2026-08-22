@@ -410,8 +410,12 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   `basalt.severity` — down, to upgrade now and migrate later, or up, to take a grace-period kind's
   enforcement immediately. Severity is not an off switch; each kind already has its own boolean and
   `exemptRules` scopes it to paths. Reads config from the consumer package.json `"basalt"` key
-  (`{ roots?, exempt?, include?, profile?, severity?, spacingSteps?, forbiddenAccents? }`); default
-  root is `src`, and a scan that matches zero files fails loudly. Consumer lint =
+  (`{ roots?, exempt?, include?, profile?, severity?, exemptRules?, spacingSteps?, forbiddenAccents? }`);
+  default root is `src`, `sync` backfills `roots` when absent and never
+  overwrites a declared value, and a scan that matches zero files fails loudly. `exemptRules` takes
+  relative paths, directory prefixes, globs and `{ paths, reason }`, and reports a pattern that
+  suppressed nothing. `--audit-allows` re-runs the guard per waiver with that occurrence neutralized
+  and exits 1 on a dead one. Consumer lint =
   `oxlint . && basalt-ui check-theme`, which `init` seeds as the `lint:basalt` script.
   **Scan reach beyond `roots`**: each root's PARENT contributes its `index.html` and its `public/`
   tree (the Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its
@@ -536,7 +540,8 @@ in its own commit so the changelog reads "enforcement got stricter".
 change, so it restarts the grace — promoting a widened rule in the minor that widens it is the one
 thing this doctrine exists to prevent. 1.20.0 widened `hand-rolled-plot` and `chart-legend-literal`,
 so both stayed `warn`; `raw-size-literal` was untouched and unviolated in all seven consumers, so it
-promoted to `error`.
+promoted to `error`. 1.20.1 widened `hand-rolled-plot` again (the `theme-allow-file` split) and
+`shadow-basalt-export` (all nine barrels), restarting grace for both.
 
 **The same rule governs the oxlint plugin, which now has its own ledger: `PLUGIN_RULE_GRACE`**, a
 named export beside the plugin in `configs/oxlint-plugin.js` (it cannot live in `oxlint.json` — that
@@ -603,8 +608,10 @@ shipped preset inherits it automatically, path resolved relative to the preset f
   cartesian chart, not a suggestion** — it owns the measured margins, both y scales and their
   domains, the axes, grid, the shared cursor, the crosshair and the derived tooltip, and
   hand-assembling those is precisely how two charts stop matching (`docs/CHARTS-SPEC.md`). Only the
-  FIRST site in a file is reported, because declaring an exception is a decision about the file:
-  one `theme-allow` comment settles it. A genuinely non-single-plot shape (multi-pane `DualPanel`,
+  EVERY assembly node is reported and waived on its own (`theme-allow hand-rolled-plot — <why>`);
+  a decision about the whole file is spelled `theme-allow-file hand-rolled-plot — <why>`, which is
+  the 1.20.1 grammar and required — 1.20.0 silently promoted the node form. A genuinely
+  non-single-plot shape (multi-pane `DualPanel`,
   radial `Donut`, matrix `Heatmap`) is that exception and composes `ChartFrame` +
   `useChartCursor` + `autoMargin` + `ChartTooltipFloat` instead — `DualPanel` carries the repo's
   only declaration. The module that DEFINES `CartesianChart` is exempt by declaration detection,
@@ -639,9 +646,10 @@ oxlint's `no-restricted-imports` is last-writer-wins per glob — a consumer's o
 overlapping glob would silently replace the boundary instead of merging with it, whereas a plugin
 rule can only be turned off explicitly, by name.
 
-The six design-guard rules support the same `theme-allow` escape as `src/guard`: a line comment
-containing `theme-allow` on the flagged node's own line, or the line above it, suppresses the
-finding. The three boundary rules above deliberately do **not** — an architecture boundary a stray
+The six design-guard rules support the same `theme-allow` escape as `src/guard`, and the same
+two-scope grammar: an annotation at the START of a comment on the flagged node's own line or the
+line above scopes to THAT node, and `theme-allow-file <id>… — <why>` anywhere in the file scopes to
+the file. The three boundary rules above deliberately do **not** — an architecture boundary a stray
 comment can switch off is the silent bypass they exist to prevent. Turn one off by name or not
 at all.
 
