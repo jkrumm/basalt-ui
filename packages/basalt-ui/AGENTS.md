@@ -67,7 +67,9 @@ bunx basalt-ui init              # FIRST STEP: scaffold .claude/rules/ + .claude
 bunx basalt-ui check-theme       # fail on off-palette colors in consumer source
 bunx basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block)
 bunx basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted
-bunx basalt-ui doctor            # check consumer repo basalt integration health
+bunx basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
+bunx basalt-ui tokens:css        # emit the --vx-* stylesheet (no React, no Mantine, no bundler)
+bunx basalt-ui fonts:css         # emit the shipped --basalt-font-* stacks
 bunx basalt-ui info              # print published surface map
 bunx basalt-ui info --json       # stable JSON surface map
 bunx basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write/Edit payload on stdin, denies off-palette writes
@@ -76,6 +78,11 @@ bunx basalt-ui guard-hook        # PreToolUse theme-guard adapter: reads a Write
 Register `guard-hook` in `.claude/settings.json` under `hooks.PreToolUse` with matcher
 `Write|Edit|MultiEdit` and command `bunx basalt-ui guard-hook` so the agent can't write off-palette
 colors without a `theme-allow` comment.
+
+**The escape hatch is `theme-allow <rule-id> — <reason>`**, scoped to that one kind. It is honoured
+on the reported line, on a comment-only line directly above it, and — in CSS — from a trailing
+comment back over the declaration it terminates. A bare `theme-allow` still waives everything but
+reports `theme-allow-unscoped`.
 
 > **Framework-internal only** — `bunx basalt-ui check-coverage` is a self-consistency gate for the
 > basalt-ui repo itself (asserts SURFACES ↔ rule files ↔ skill files ↔ package.json exports). It

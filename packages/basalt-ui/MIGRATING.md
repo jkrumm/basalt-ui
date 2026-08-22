@@ -6,7 +6,8 @@ nav definition" does not say `ChartHoverSync` was deleted. This file is that hal
 renamed exports per minor, with the replacement.
 
 Reconstructed from `git diff` over the published export surface across `v1.0.0..v1.19.1`, then
-cross-checked against the repo's `scripts/export-surface.json` snapshot. Verified 2026-08-22.
+cross-checked against the repo's `scripts/export-surface.json` snapshot. Verified 2026-08-22; the
+1.20.0 section below is written from the commits on `master` that produce it.
 
 **No majors, by policy.** A rename or a removal ships as a plain `feat:` on the 1.x line, so a minor
 bump can require code changes. Skipping several at once is the expensive case — read every section
@@ -20,6 +21,61 @@ between your version and the target.
 at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
+
+## 1.20.0 — enforcement
+
+**No export removed or renamed.** The whole delta is that things which used to pass now report. If
+your build goes red on this upgrade, that is the release working; every new kind and rule lands
+`warn`, so nothing here fails a build on its own.
+
+| Change                                                           | What you'll see                                                                                                 | What to do                                                                                |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `basalt/raw-size-literal` `warn` → **`error`**                   | CSS-length strings on `size`/`fz`/`fontSize` now fail lint                                                      | use a token (`size="sm"`); `warn` since 1.7.0, zero violations across all seven consumers |
+| Five new guard kinds (`warn`)                                    | `theme-allow-unscoped`, `surface-shadow-override`, `css-raw-surface`, `inline-font-size`, `hidden-inline-style` | see below; promotion is tracked in `GRACE_PERIOD_KINDS`                                   |
+| Two new oxlint rules (`warn`)                                    | `basalt/shadow-basalt-export`, `basalt/hand-rolled-shell`                                                       | import the shipped component instead of the fork                                          |
+| `basalt/hand-rolled-plot`, `basalt/chart-legend-literal` widened | more sites report; both stay `warn`                                                                             | a widened rule does not promote in the minor that widens it                               |
+| `doctor` `SKIPPED` exits non-zero, + 3 new hard checks           | doctor goes red where it was green                                                                              | that is the finding — see below                                                           |
+
+**`theme-allow` has a new contract, and every existing comment keeps working.** A bare
+`theme-allow` still waives every kind, but now reports `theme-allow-unscoped`. Rescope it:
+
+```diff
+-// theme-allow
++// theme-allow raw-surface — third-party widget needs a literal corner
+```
+
+Two placements that used to fail now work, both matching what the oxlint plugin always did: a
+comment-ONLY line directly above the reported line (the only form JSX can express — the reported
+line is usually a multi-line opening tag or a `{expr}` child), and in CSS a trailing annotation
+reaching back over the declaration it terminates, which is what survives the shipped `oxfmt`
+reflowing a long `background-color` so the hex lands above the comment.
+
+**`basalt/hand-rolled-plot` no longer grants whole-file immunity.** Every assembly node is reported
+and waived individually. A file-scoped exception now needs a written declaration naming the rule and
+giving a reason, anywhere in the file: `// theme-allow hand-rolled-plot — two panes over one x scale`.
+
+**`doctor` will go red.** `SKIPPED` is a third outcome beside pass/warn/fail and exits non-zero on
+its own — "All checks passed" is only printable when every check RAN. Three new hard checks:
+`basalt-resolves` (walks cwd → ancestors → workspace packages), `guard-scan` (would `check-theme`
+cover more than zero files?), `oxlint-preset` (does `.oxlintrc.json` really extend the shipped
+preset? JSONC is parsed, not rejected — `init` keeps an existing config, so one repo ran five minors
+with the whole lint half off).
+
+**New, additive:**
+
+| Surface                                                          | Note                                                                                                                                                                                                           |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 16 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement |
+| `basalt.include: [...]`                                          | scan a named file outside `roots` — and the only route to a `.json`, which is never blanket-scanned                                                                                                            |
+| `basalt.roots` + a `lint:basalt` script                          | written by `init` from the real layout; `init` on an existing app is a lint-debt event, not a no-op                                                                                                            |
+| `tokens:css --check`, `--selector-class <c>` (+ `--light-class`) | drift gate; the Tailwind `<html class="dark">` convention. There is no `scheme: { class }` API — the class form is CLI-only                                                                                    |
+| `fonts:css [--out] [--check]`                                    | the shipped `--basalt-font-*` stacks as plain CSS, read out of `styles.css` — the only route to basalt's typefaces without the Mantine-coupled `styles.css`                                                    |
+| `__APP_VERSION__` ambient declaration                            | ships via `src/register.ts`, re-exported by the root barrel: delete your hand-written ambient block. A subpath-only consumer does not get it                                                                   |
+| `BASALT_CWD`                                                     | `check-theme`/`doctor` honour it, and relocate to the single workspace package carrying a basalt config when invoked from a root that has none                                                                 |
+| `@generated basalt-ui` header                                    | `tokens:css`/`fonts:css` output carries it on line 1 and `check-theme` skips such files — this is what fixed 116 violations reported inside the stylesheet `tokens:css` had just written                       |
+
+`check-theme` also resolves `.html` / `.webmanifest` / `.json` as markup (colour kinds only), and
+each root's PARENT now contributes its `index.html` and `public/` tree.
 
 ## 1.19.0 — nav
 
@@ -109,9 +165,12 @@ text color, `black`, `blue-400`/`green-400`.
 
 ## Lint and guard rules that tightened
 
-Two independent mechanisms. `GuardKind` severities (`basalt-ui check-theme`) default to `error` and
-are downgraded only by `GRACE_PERIOD_KINDS`, which is currently empty. `basalt/*` oxlint rule
-severities live in `configs/oxlint.json` and have no grace-tracking at all.
+Two independent mechanisms, each with its own ledger — read the ledger, not this table, for what is
+in grace TODAY. `GuardKind` severities (`basalt-ui check-theme`) default to `error` and are
+downgraded only by `GRACE_PERIOD_KINDS` (`src/guard/index.ts`). `basalt/*` oxlint rule severities
+live in `configs/oxlint.json`, and since 1.20.0 their grace is tracked by `PLUGIN_RULE_GRACE`, a
+named export beside the plugin — a test asserts it against the shipped preset in both directions, so
+deleting an entry forces the level flip in the same commit.
 
 | Rule                               | Landed           | Became `error`                     |
 | ---------------------------------- | ---------------- | ---------------------------------- |
@@ -120,9 +179,11 @@ severities live in `configs/oxlint.json` and have no grace-tracking at all.
 | `basalt/ai-sdk-major`              | 1.10.0 as `warn` | **1.13.0**                         |
 | `basalt/agent-no-raw-usechat`      | 1.10.0 as `warn` | **1.13.0**                         |
 | `basalt/agent-resume-guard`        | 1.10.0 as `warn` | **1.13.0**                         |
-| `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **still `warn` at 1.19.1**         |
-| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | **still `warn` at 1.19.1**         |
-| `basalt/chart-legend-literal`      | 1.15.0 as `warn` | **still `warn` at 1.19.1**         |
+| `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                         |
+| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened at 1.20.0   |
+| `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0   |
+| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently        |
+| `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                  |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
 the other original guard kinds have been `error` since before 1.2.0 — they never had a grace minor.
@@ -134,7 +195,7 @@ in the shipped preset). A config still naming `import-boundary` after 1.1.0 disa
 
 ## Deprecated, not yet removed
 
-The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.19.1**.
+The 32 camelCase `--vx-*` aliases deprecated in 1.5.0 are **still emitted at 1.20.0**.
 `buildPaletteCss({ legacyAliases: false })` / `tokens:css --no-legacy-aliases` opts out now; a later
 minor flips the default.
 
