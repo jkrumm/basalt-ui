@@ -116,7 +116,7 @@ describe('classify ledger: cross-version format-only drift vs a real edit', () =
     // older version token — this is what makes the scenario cross-version, not same-version.
     const olderBlock = currentBlock.replace(/basalt-ui/g, 'basalt')
     expect(olderBlock).not.toBe(currentBlock)
-    expect(olderBlock).toContain('bunx basalt sync')
+    expect(olderBlock).toContain('basalt sync')
 
     // What a PRE-1.0.2 CLI's writeUnit actually recorded at that sync: a RAW hash of the exact
     // bytes it wrote — the fix only normalizes hashes written by a CLI carrying it, so a genuine

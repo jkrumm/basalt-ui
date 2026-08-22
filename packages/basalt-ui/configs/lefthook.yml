@@ -2,19 +2,32 @@
 # `basalt-ui init` seeds a lefthook.yml that references this file:
 #   extends:
 #     - node_modules/basalt-ui/configs/lefthook.yml
-# lefthook merges these commands with the consumer's own, so this preset auto-updates
-# with the package. Runs oxlint + oxfmt on staged files and the theme guard on the whole
-# tree, pre-commit. Assumes oxlint/oxfmt are installed.
+# so this preset auto-updates with the package. Runs oxlint + oxfmt on staged files and the theme
+# guard on the whole tree, pre-commit. Assumes oxlint/oxfmt are installed.
+#
+# ── HOW OVERRIDING ACTUALLY WORKS (read before trying) ───────────────────────────────────────────
+# An `extends` target WINS over your own lefthook.yml on a colliding key. Verified with
+# `lefthook dump`: declare `pre-commit.commands.oxfmt.run` (or `glob:`) in your file and the
+# preset's value is what runs — yours is discarded silently, with no warning. Only keys this preset
+# does NOT define merge in from yours. So:
+#   • `env:`, `exclude:`, `skip:` and any command name not used here — yours, they merge.
+#   • `run:` and `glob:` on a command below — NOT overridable. Do not try.
+# The sanctioned seams are therefore:
+#   • `BASALT_BIN` (below) — set it via `env:` to point the guard at a specific CLI.
+#   • `exclude:` — carve files out of a glob you cannot narrow.
+#   • a differently-named command of your own, plus `skip: true` on the one here you are replacing.
 #
 # It does NOT assume your `.oxlintrc.json` extends the shipped preset — that assumption was
 # false for exactly the repos this seed exists for, since `init` KEEPS an existing oxlint
-# config. `basalt-ui doctor` now checks the extends and hard-fails when it is missing; run it
-# in CI (the seeded check.yml does) rather than trusting a comment nobody reads.
+# config. `basalt-ui doctor` now checks the extends and hard-fails when it is missing OR when it
+# points at a path that does not resolve; run it in CI (the seeded check.yml does) rather than
+# trusting a comment nobody reads.
 #
 # `init` seeds the path RESOLVED from where basalt actually installed. Under bun's isolated
 # linker basalt lives beside the package that depends on it, not at the repo root, and a
-# root-relative `extends` there resolves to nothing — silently, because lefthook merges an
-# empty file without complaint.
+# root-relative `extends` there resolves to nothing — silently, because lefthook merges a missing
+# file into ZERO commands and exits 0. `basalt-ui doctor`'s `lefthook-preset` check is the only
+# thing that can see that state; nothing else errors.
 pre-commit:
   parallel: true
   commands:
@@ -24,9 +37,20 @@ pre-commit:
     # `css` is load-bearing, not tidiness: oxfmt formats stylesheets, so without it a CSS-only
     # commit passes the hook and then fails the same check in CI. `oxlint` above deliberately
     # stops at JS — it has nothing to say about CSS.
+    #
+    # SOURCE EXTENSIONS ONLY, deliberately. This glob used to include `json,md,yml,yaml`, which
+    # reached every staged file at the repo ROOT — and oxfmt pads markdown table separators, so it
+    # blocked commits on a consumer's CLAUDE.md and docs/ over a house style basalt has no opinion
+    # about, in files their own `format` script does not own. Since you cannot narrow this glob
+    # (see the override note above), the preset has to be the one that is narrow. Markdown, YAML
+    # and JSON stay yours: add them to your own `format` script if you want them formatted.
+    #
+    # `--no-error-on-unmatched-pattern` covers the case where every staged file is excluded by an
+    # ignore file: oxfmt exits 2 on "Expected at least one target file", which failed a docs-only
+    # commit for any consumer carrying a .prettierignore — and, again, they could not add the flag.
     oxfmt:
-      glob: '*.{ts,tsx,js,jsx,css,json,md,yml,yaml}'
-      run: bunx oxfmt --check {staged_files}
+      glob: '*.{ts,tsx,js,jsx,css}'
+      run: bunx oxfmt --check --no-error-on-unmatched-pattern {staged_files}
 
     # NO glob, deliberately. This command scans the configured `basalt.roots` — it never reads
     # {staged_files} — so any glob here is a gate on WHETHER the guard runs, decided by the file
@@ -38,14 +62,23 @@ pre-commit:
     # Without this, a consumer accumulates violations indefinitely while `check-theme` is never
     # invoked, and the kinds it never ran are indistinguishable from the kinds that found nothing.
     #
+    # `$BASALT_BIN` is the one sanctioned override seam here, because `run:` itself is not
+    # overridable (see the note at the top). It defaults to `bunx --no-install basalt-ui`:
+    #   • `--no-install` because a plain `bunx basalt-ui` in a repo where basalt is not resolvable
+    #     from the ROOT (bun's isolated linker puts it beside the package that depends on it)
+    #     silently downloads a DIFFERENT copy from npm and gates the commit with a version nobody
+    #     pinned. With the flag it fails loudly instead, which is the answer you can act on.
+    #   • point it at the local bin to fix that, exactly as the seeded check.yml does:
+    #       pre-commit:
+    #         commands:
+    #           check-theme:
+    #             env: { BASALT_BIN: ./packages/web/node_modules/.bin/basalt-ui }
+    #
     # Lefthook runs commands at the REPO ROOT, while in a monorepo the `basalt` config and the
     # manifest live in a package below it — verified to produce `0 files scanned`, i.e. following
     # this preset installed a gate that never gated. `check-theme` now relocates to the single
     # workspace package carrying a basalt config and says so; with more than one, set BASALT_CWD
-    # in your own lefthook.yml to name the package:
-    #   pre-commit:
-    #     commands:
-    #       check-theme:
-    #         env: { BASALT_CWD: apps/web }
+    # in the same `env:` block to name the package:
+    #   env: { BASALT_CWD: apps/web }
     check-theme:
-      run: bunx basalt-ui check-theme
+      run: ${BASALT_BIN:-bunx --no-install basalt-ui} check-theme

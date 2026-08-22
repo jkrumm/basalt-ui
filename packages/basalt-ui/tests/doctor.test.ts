@@ -38,6 +38,9 @@ function setupPassingLayout(): void {
     'node_modules/basalt-ui/package.json',
     JSON.stringify({ name: 'basalt-ui', version: CLI_VERSION }),
   )
+  // The preset the `extends` above names has to BE there: matching the string alone passed in the
+  // exact tree where oxlint died with `NotFound`.
+  writeFixture('node_modules/basalt-ui/configs/oxlint.json', '{}')
 
   // 1. manifest
   writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
