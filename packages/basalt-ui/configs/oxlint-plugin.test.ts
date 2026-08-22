@@ -44,6 +44,13 @@ beforeEach(() => {
       },
     }),
   )
+  // `shadow-basalt-export` and `ai-sdk-major` both scope through `isBasaltScopedFile`, so a fixture
+  // repo with NO manifest is out of scope for both and every other assertion here would pass
+  // vacuously. Written per-test by the `ai-sdk-major` block, which needs its own `ai` pin.
+  writeFileSync(
+    resolve(dir, 'package.json'),
+    JSON.stringify({ name: 'fixture', version: '0.0.0', dependencies: { 'basalt-ui': '^1.21.0' } }),
+  )
 })
 
 afterEach(() => {
@@ -917,6 +924,115 @@ describe('basalt/shadow-basalt-export', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // The scoping fix, mirroring `ai-sdk-major`'s. obsidian's `packages/obsidian-vault-core` is
+  // React-free, carries no basalt-ui dependency, and sits outside the root's declared
+  // `basalt.roots` — so it CANNOT import the export it was told it had forked. The rule reported
+  // `SlugTracker` there anyway, because it was the one rule in this file that never asked.
+  it('does NOT flag a package that does not depend on basalt-ui at all', () => {
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'standalone' }))
+    const { code, rules } = run(`export function EmptyState() { return null }\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('does NOT flag a file outside a declared basalt.roots', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({
+        basalt: { roots: ['packages/ui/src'] },
+        devDependencies: { 'basalt-ui': '^1.21.0' },
+      }),
+    )
+    expect(
+      run(`export function EmptyState() { return null }\n`, 'packages/core/src/a.tsx').rules,
+    ).not.toContain('shadow-basalt-export')
+    // …and the declared root is still policed, so the narrowing costs no real coverage.
+    expect(
+      run(`export function EmptyState() { return null }\n`, 'packages/ui/src/a.tsx').rules,
+    ).toContain('shadow-basalt-export')
+  })
+
+  // The second half: a PascalCase name is not a component. The nine-barrel widening pulled every
+  // PascalCase value export into range, and a bare-PascalCase test then matched a plain data class
+  // (obsidian's `SlugTracker` — the same NAME basalt's `./content` exports, and nothing else).
+  it('does NOT flag a plain class that merely shares a name', () => {
+    const { code, rules } = run(`export class SlugTracker {}\n`, 'slug.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('DOES still flag a legacy class component (one that extends)', () => {
+    const { rules } = run(`export class EmptyState extends Component {}\n`)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('does NOT flag a non-function binding that shares a name', () => {
+    const { code, rules } = run(`export const EmptyState = { label: 'none' }\n`, 'consts.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('DOES still flag a memo/forwardRef-wrapped component', () => {
+    expect(run(`export const EmptyState = memo(() => null)\n`).rules).toContain(
+      'shadow-basalt-export',
+    )
+    expect(run(`export const EmptyState = React.forwardRef(() => null)\n`).rules).toContain(
+      'shadow-basalt-export',
+    )
+  })
+})
+
+// ── theme-allow comment shapes (the plugin half of the annotation contract) ───
+
+// The prefix rule has had three holes found in three rounds, so every comment shape a consumer
+// actually writes is pinned here — and the guard's copy is pinned identically in
+// `src/guard/check-source.test.ts`. The two must agree on what an annotation IS.
+describe('theme-allow comment shapes', () => {
+  const flags = (source: string): boolean => run(source).rules.has('no-raw-font-size')
+
+  it.each([
+    [
+      'own line //',
+      `// theme-allow no-raw-font-size — deliberate\nexport const C = <Text fz={10} />\n`,
+    ],
+    [
+      'trailing //',
+      `export const C = <Text fz={10} /> // theme-allow no-raw-font-size — deliberate\n`,
+    ],
+    [
+      'trailing block',
+      `export const C = <Text fz={10} /* theme-allow no-raw-font-size — deliberate */ />\n`,
+    ],
+    [
+      'JSX expression comment',
+      `export const C = () => (\n  <div>\n    {/* theme-allow no-raw-font-size — deliberate */}\n    <Text fz={10} />\n  </div>\n)\n`,
+    ],
+    [
+      'JSX expression comment, token on its own wrapped line',
+      `export const C = () => (\n  <div>\n    {/*\n      theme-allow no-raw-font-size — deliberate */}\n    <Text fz={10} />\n  </div>\n)\n`,
+    ],
+    [
+      'block gutter',
+      `/**\n * theme-allow no-raw-font-size — deliberate\n */\nexport const C = <Text fz={10} />\n`,
+    ],
+    [
+      'docblock opener',
+      `/** theme-allow no-raw-font-size — deliberate */\nexport const C = <Text fz={10} />\n`,
+    ],
+  ])('%s waives', (_name, source) => {
+    expect(flags(source as string)).toBe(false)
+  })
+
+  // The false NEGATIVE the prefix rule exists to close: prose that MENTIONS the token is not an
+  // annotation. linewatch documented its own waivers in a docblock and disarmed the file.
+  it('prose that merely mentions the token does not waive', () => {
+    expect(
+      flags(
+        `// each chart here needs a theme-allow no-raw-font-size eventually\nexport const C = <Text fz={10} />\n`,
+      ),
+    ).toBe(true)
   })
 })
 
