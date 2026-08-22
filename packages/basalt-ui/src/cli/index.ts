@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url'
 import {
   checkSource,
   DEFAULT_GUARD_CONFIG,
+  GENERATED_HEADER_LINE,
   GUARD_RULES,
   TOKENS_ONLY_DISABLED_KINDS,
 } from '../guard'
@@ -538,7 +539,7 @@ function resolveProjectDir(cwd: string): ProjectResolution {
  * DECLARED, never inferred, when the answer SILENCES something. The two callers want opposite
  * failure directions and so do not share a default:
  *
- * - `check-theme` (`declaredProfile`) turns 16 kinds OFF, so it moves on an explicit signal only —
+ * - `check-theme` (`declaredProfile`) turns 17 kinds OFF, so it moves on an explicit signal only —
  *   `--tokens-only`, or `"basalt": { "profile": "tokens-only" }`. Inferring it from the ABSENCE of
  *   `@mantine/core` would silence the Mantine half of the guard on any repo that keeps its Mantine
  *   dependency in a workspace package rather than the one holding the basalt config, which is
@@ -551,6 +552,16 @@ function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorPro
   if (flags.includes('--tokens-only')) return 'tokens-only'
   if (flags.includes('--framework')) return 'framework'
   return cfg.profile === 'tokens-only' ? 'tokens-only' : 'framework'
+}
+
+/**
+ * `--tokens-only` and `--framework` are alternatives, so passing both is a contradiction rather
+ * than a precedence question — the same reading `tokens:css` already applies to `--selector-class`
+ * vs `--selector-attribute`. Silently preferring one meant a CI step that accumulated both flags
+ * enforced whichever the code happened to test first.
+ */
+function conflictingProfileFlags(flags: readonly string[]): boolean {
+  return flags.includes('--tokens-only') && flags.includes('--framework')
 }
 
 /** True when nothing anywhere in the workspace declares Mantine — see {@link inferredProfile}. */
@@ -640,6 +651,12 @@ export function checkTheme(
   invocationCwd: string = process.cwd(),
   flags: readonly string[] = [],
 ): number {
+  if (conflictingProfileFlags(flags)) {
+    console.error(
+      'basalt-ui check-theme: --tokens-only and --framework are alternatives — pass one.',
+    )
+    return 1
+  }
   const project = resolveProjectDir(invocationCwd)
   if (project.ambiguous !== null) {
     console.error(
@@ -2083,7 +2100,7 @@ export function checkCoverage(): number {
   for (const exportKey of pkgExports) {
     if (exportKey === '.' || exportKey === './styles.css' || exportKey.startsWith('./configs/'))
       continue
-    if (!(exportKey in SURFACES)) {
+    if (!Object.hasOwn(SURFACES, exportKey)) {
       failures.push(`package.json exports key '${exportKey}' has no matching SURFACES entry`)
     }
   }
@@ -2403,9 +2420,20 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * .basalt/manifest.json at the last init/sync. File-level drift is `sync --check`'s job, not
  * doctor's.
  *
+ * The checks are numbered in the order they run and print — there is no gap, and the number in a
+ * section header below is the number in the report.
+ *
  * Hard failures (exit non-zero):
  *   1. .basalt/manifest.json exists (init was run).
- *   6. `ai-major-parity`: every workspace package that declares the `ai` package agrees on its
+ *   2. `basalt-resolves`: basalt-ui resolves from here. Unresolvable used to make checks silently
+ *      VANISH from the report (5 checks became 3) while the footer still read "All checks passed".
+ *      It is also the moment `bunx basalt-ui` stops using the pinned copy.
+ *   6. `guard-scan`: `check-theme` would scan MORE than zero files. `check-theme` already exits 1
+ *      on "0 files scanned"; doctor disagreeing with it in the same repo is the bug.
+ *   7. `oxlint-preset`: the consumer's `.oxlintrc.json` actually `extends` the shipped preset.
+ *      `init` keeps an existing config, so the framework's whole lint half can be off with nothing
+ *      to say so — one repo carried six real violations invisibly across five minors that way.
+ *   9. `ai-major-parity`: every workspace package that declares the `ai` package agrees on its
  *      major version. `basalt/ai-sdk-major` (the oxlint plugin rule) cannot catch this — it checks
  *      a linted file's NEAREST package.json, so a lint run scoped to one workspace package only
  *      ever sees that package's own `ai` major and is perfectly happy; the cross-package skew (one
@@ -2418,28 +2446,23 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  *      or invalid (empty/non-string) still hard-fails exactly as if the key were absent.
  *
  * Warnings (non-fatal):
- *   2. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
+ *   3. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
  *      (a mismatch means the package was upgraded but `sync` never ran — the placed doctrine is
  *      stale).
- *   3. The spacing scale still matches the one stamped into the manifest at the last init/sync
- *      (skipped when this CLI is demonstrably not the installed package — see the check).
- *   4. The running CLI's own version matches the installed basalt-ui (catches a stale
+ *   4. The spacing scale still matches the one stamped into the manifest at the last init/sync
+ *      (skipped when there is no manifest to compare against; a neutral pass when this CLI is
+ *      demonstrably not the installed package — see the check).
+ *   5. The running CLI's own version matches the installed basalt-ui (catches a stale
  *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
- *   5. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
+ *   8. `basaltAppPlugin`'s (basalt-ui/vite) default icon filenames exist under public/ (only when
  *      a public/ dir exists at all — skipped otherwise).
- *   7. A declared `basalt.aiMajorSkewReason` when the ai majors currently AGREE — the exemption is
- *      stale and can be deleted; an exemption nobody revisits is how a real, later skew slips
- *      through unnoticed.
+ *   9 (second half). A declared `basalt.aiMajorSkewReason` when the ai majors currently AGREE — the
+ *      exemption is stale and can be deleted; an exemption nobody revisits is how a real, later
+ *      skew slips through unnoticed.
  *
- * Three additions close the false-greens consumers reported, all of the same shape — doctor said
- * green while nothing was enforced:
- *   8. `guard-scan`: `check-theme` would scan MORE than zero files. `check-theme` already exits 1
- *      on "0 files scanned"; doctor disagreeing with it in the same repo is the bug.
- *   9. `oxlint-preset`: the consumer's `.oxlintrc.json` actually `extends` the shipped preset.
- *      `init` keeps an existing config, so the framework's whole lint half can be off with nothing
- *      to say so — one repo carried six real violations invisibly across five minors that way.
- *  10. `basalt-resolves`: basalt-ui resolves from here. Unresolvable used to make checks silently
- *      VANISH from the report (5 checks became 3) while the footer still read "All checks passed".
+ * An AMBIGUOUS project (no config here, several workspace packages carrying one) short-circuits
+ * before any of them, exactly as `check-theme` does: running the remaining checks against the wrong
+ * root buries the one real error under spurious ones.
  *
  * SKIPPED is now a third outcome beside pass/warn/fail and exits non-zero on its own — a check that
  * cannot run is not a check that passed. "Not applicable to this profile" is a pass, not a skip.
@@ -2447,8 +2470,26 @@ function resolveAiMajorSkewReason(cfg: BasaltConfig): {
  * Returns the exit code: 0 = all good, 1 = one or more hard failures or unrunnable checks.
  */
 export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
+  if (conflictingProfileFlags(flags)) {
+    console.error('basalt-ui doctor: --tokens-only and --framework are alternatives — pass one.')
+    return 1
+  }
   const project = resolveProjectDir(invocationCwd)
-  const cwd = project.ambiguous === null ? project.dir : invocationCwd
+  // Ambiguity is terminal, exactly as it is for check-theme. Falling back to `invocationCwd` ran
+  // every remaining check against the WRONG root and buried the one real error under spurious
+  // ones — guard-scan reporting 0 files, .oxlintrc.json "missing" — which is this round's own
+  // false-report bug class reappearing inside the fix for it.
+  if (project.ambiguous !== null) {
+    console.error(
+      `\nbasalt-ui doctor — ${invocationCwd}\n\n` +
+        `  ✖ no basalt config at ${invocationCwd}, and ${project.ambiguous.length} workspace ` +
+        `packages carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
+        'run doctor from one of them, or set BASALT_CWD to pick.\n\n' +
+        '1 hard failure(s), 0 warning(s).\n',
+    )
+    return 1
+  }
+  const cwd = project.dir
   const cfg = readBasaltConfig(cwd)
   const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
   const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
@@ -2469,13 +2510,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     result.hardFailures++
   }
 
-  if (project.ambiguous !== null) {
-    fail(
-      `no basalt config at ${invocationCwd}, and ${project.ambiguous.length} workspace packages ` +
-        `carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
-        'run doctor from one of them, or set BASALT_CWD to pick.',
-    )
-  } else if (project.relocatedFrom !== null) {
+  if (project.relocatedFrom !== null) {
     lines.push(
       `  → no basalt config at ${project.relocatedFrom} — reporting on ` +
         `${relativePosix(project.relocatedFrom, cwd)}, where it lives.\n`,
@@ -2492,7 +2527,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
         '  applicable; `basalt-ui init` is NOT the fix here, it places a Mantine doctrine you have no\n' +
         '  use for. Pass --framework to force the full profile.\n',
     )
-    // check-theme will NOT infer this — it silences 16 kinds, so it moves only on a declaration.
+    // check-theme will NOT infer this — it silences 17 kinds, so it moves only on a declaration.
     // Doctor is the surface that can safely detect the shape, so it is the one that has to say so.
     if (cfg.profile === undefined) {
       lines.push(
@@ -2512,8 +2547,8 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     fail(`${MANIFEST_PATH} missing — run \`basalt-ui init\` to scaffold the consumer repo`)
   }
 
-  // ── Hard check 10: basalt-ui resolves from here ────────────────────────────
-  // Unresolvable used to make checks 2 and 4 VANISH from the report while the footer still read
+  // ── Hard check 2: basalt-ui resolves from here ─────────────────────────────
+  // Unresolvable used to make checks 3 and 5 VANISH from the report while the footer still read
   // "All checks passed" — 5 checks silently became 3. It is also the moment `bunx basalt-ui`
   // stops using the pinned copy and quietly downloads a different one from npm, so the failure
   // has to be loud rather than absent.
@@ -2538,7 +2573,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     )
   }
 
-  // ── Warn check 2: installed basalt-ui version matches the manifest ─────────
+  // ── Warn check 3: installed basalt-ui version matches the manifest ─────────
   // THE one version axis. The manifest records the version whose init/sync placed the doctrine;
   // node_modules is what the app actually resolves. A mismatch means "upgrade landed, sync didn't".
   if (profile === 'framework' && manifestExists && installedVersion === null) {
@@ -2565,7 +2600,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
 
   const cliVersion = readFrameworkVersion(packageRoot())
 
-  // ── Warn check 3: the spacing scale has not moved under the app ────────────
+  // ── Warn check 4: the spacing scale has not moved under the app ────────────
   // The only check here that reports a change in RENDERED OUTPUT rather than in placed files. A
   // retune of the spacing bases moves every surface in an app calling `createBasaltTheme()` bare,
   // and majors are banned by design, so nothing in the version number says so — 1.2.0's retune
@@ -2577,14 +2612,23 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   // `deriveSpacing` here is the RUNNING CLI's, which a stale `bunx basalt-ui` fetch makes a
   // different package. Rather than load the installed tokens entry (async, and doctor is sync),
   // the comparison is skipped whenever the two versions are known to disagree: a false "matches"
-  // is worse than no answer. Check 4 below names that disagreement, so this stays a neutral note.
+  // is worse than no answer. Check 5 below names that disagreement, so this stays a neutral note.
   const cliIsTheInstall = installedVersion === null || installedVersion === cliVersion
-  if (manifestExists && !cliIsTheInstall) {
+  if (profile === 'tokens-only') {
+    pass('spacing scale: n/a — a tokens-only consumer renders no basalt Mantine theme')
+  } else if (!manifestExists) {
+    // Printing NOTHING is the failure SKIPPED exists to end: the check simply vanished from the
+    // report whenever there was no manifest, which is precisely when it is least safe to assume.
+    skip(
+      `spacing scale — no ${MANIFEST_PATH} records the scale this app last synced with, so there ` +
+        'is nothing to compare against',
+    )
+  } else if (!cliIsTheInstall) {
     pass(
       `spacing scale not compared — this CLI (${cliVersion}) is not the installed basalt-ui ` +
         `(${installedVersion}), so its scale is not the one the app renders with`,
     )
-  } else if (manifestExists) {
+  } else {
     const recorded = readManifest(cwd).spacingScale
     const current = deriveSpacing(0).scale as Record<string, number>
     if (recorded === undefined) {
@@ -2610,7 +2654,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Warn check 4: running CLI version matches the consumer's installed basalt-ui ────
+  // ── Warn check 5: running CLI version matches the consumer's installed basalt-ui ────
   // Catches the failure mode where bunx fetches a stale published package instead of the local
   // install — the CLI that ran doctor and the package resolved from the consumer's node_modules
   // silently disagree.
@@ -2628,7 +2672,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     pass(`CLI version (${cliVersion}) matches the installed basalt-ui`)
   }
 
-  // ── Hard check 8: the guard would actually scan something ──────────────────
+  // ── Hard check 6: the guard would actually scan something ──────────────────
   // `check-theme` exits 1 on "0 files scanned" — doctor reporting all-green in the SAME repo is
   // the disagreement consumers reported: init ran, doctor passed, and the palette guard was a
   // no-op the whole time because no `basalt.roots` described the workspace layout.
@@ -2649,7 +2693,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Hard check 9: the consumer's oxlint config extends the shipped preset ──
+  // ── Hard check 7: the consumer's oxlint config extends the shipped preset ──
   // `init` KEEPS an existing `.oxlintrc.json`, so a repo can carry the whole scaffold with the
   // framework's lint half switched off and nothing anywhere saying so. One repo ran five minors
   // that way and surfaced six real `basalt/no-raw-font-size` errors the moment it was wired.
@@ -2682,7 +2726,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Warn check 5: basaltAppPlugin's default icon files exist in public/ ────
+  // ── Warn check 8: basaltAppPlugin's default icon files exist in public/ ────
   // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references these filenames by
   // default (the realfavicongenerator convention). Only runs when a public/ dir exists at all —
   // apps that don't use the plugin, or don't use Vite's public-dir convention, get no false
@@ -2708,7 +2752,7 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
     }
   }
 
-  // ── Hard check 6: ai package major version parity across workspace packages ─
+  // ── Hard check 9: ai package major version parity across workspace packages ─
   // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
   // run scoped to one workspace package only ever sees that package's own `ai` major and is
   // perfectly happy. The real defect is CROSS-package (argo defect 1: apps/api on ai@5 producing a
@@ -2920,18 +2964,13 @@ function flagValue(flags: string[], name: string): string | undefined {
 }
 
 /**
- * The FIRST line of every stylesheet this CLI emits, verbatim and never reworded.
+ * The generated-file header: the canonical marker line (imported from the guard, which owns it),
+ * then the version + invocation that produced the file.
  *
- * It is a contract with the theme guard, not decoration: `check-theme` skips any file whose first
- * lines carry `@generated basalt-ui`. Without it the guard reported 116 violations (91 `raw-hex`,
- * 25 `raw-color-fn`) inside the file `tokens:css` had just written — basalt failing basalt's own
- * output. Changing this string breaks the skip; change it in the guard in the same commit or not
- * at all.
+ * Both lines are load-bearing, not decoration — `checkSource` only exempts a stylesheet whose line
+ * 1 is the marker verbatim AND whose line 2 parses as this provenance line. Reword either half and
+ * basalt starts reporting its own output again (116 findings in rollhook's token sheet).
  */
-const GENERATED_HEADER_LINE =
-  '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
-
-/** The generated-file header: the marker line, then the version + flags that produced the file. */
 function generatedHeader(version: string, command: string, flags: string[]): string {
   const shown = flags.filter((f) => f !== '--check')
   const invocation = shown.length === 0 ? command : `${command} ${shown.join(' ')}`
@@ -3260,7 +3299,8 @@ const USAGE =
   '  Auto-detects a tokens-only consumer (no manifest + no @mantine/core) and checks only what\n' +
   '  applies. A check that cannot RUN is reported as SKIPPED and exits non-zero.\n\n' +
   'check-theme / doctor honour BASALT_CWD, and relocate to the single workspace package carrying a\n' +
-  'basalt config when invoked from a repo root that has none.\n\n' +
+  'basalt config when invoked from a repo root that has none — several carrying one is ambiguous\n' +
+  'and exits 1 in BOTH. --tokens-only and --framework are alternatives; passing both is an error.\n\n' +
   'Every subcommand accepts --help / -h to print this message and exit without running.'
 
 /**

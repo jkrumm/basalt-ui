@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 19 violation kinds.
+ * GUARD_RULES: the closed registry of all 25 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
@@ -396,15 +396,12 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * someone remembering. Adding a kind here is part of shipping it; removing the entry IS the
  * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
  *
- * `mantine-shade-index` landed in 1.7.0 and is the sole entry — it rejects `c="yellow.7"`, which
- * previously passed, and the one real consumer has several. Its promotion is **deferred to 1.10.0**,
- * for the second time and for the same reason both times: the runway is measured in consumer
- * upgrades, not in version numbers. 1.8.0 shipped the same day as 1.7.0, so promoting there would
- * have given no runway at all. 1.9.0 then carried the chart-layer batch the same consumer asked
- * for — bundling a build-breaking promotion into the minor they upgrade for the fixes turns a
- * routine bump into an unplanned refactor, which is precisely what the grace minor exists to
- * prevent. 1.10.0 is the first minor they can take the promotion on its own. Promote it by deleting
- * the entry (its own commit).
+ * The runway is measured in consumer UPGRADES, not in version numbers: `mantine-shade-index`
+ * (the table's first tenant, promoted and gone) sat here across two minors because 1.8.0 shipped
+ * the same day as 1.7.0 and 1.9.0 carried the chart batch the same consumer was upgrading for —
+ * bundling a build-breaking promotion into the minor they take for the fixes turns a routine bump
+ * into an unplanned refactor, which is exactly what the grace minor exists to prevent. The five
+ * entries below all landed together in the round-4 guard minor and all promote one minor later.
  *
  * @example
  * const GRACE: Partial<Record<GuardKind, string>> = {
@@ -434,7 +431,7 @@ const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
-  return cfg.severity?.[kind] ?? (kind in GRACE_PERIOD_KINDS ? 'warn' : 'error')
+  return cfg.severity?.[kind] ?? (Object.hasOwn(GRACE_PERIOD_KINDS, kind) ? 'warn' : 'error')
 }
 
 /** The `Finding.text` cap, in characters — a minified CSS line must not blow up the report. */
@@ -474,6 +471,8 @@ function isChartFile(relPath: string): boolean {
  */
 const EXEMPT_RULE_ALIASES: Partial<Record<GuardKind, GuardKind>> = {
   'hidden-inline-style': 'raw-html-layout',
+  'surface-shadow-override': 'raw-surface',
+  'css-raw-surface': 'raw-surface',
 }
 
 function isRuleExempt(
@@ -510,14 +509,29 @@ const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
+  // These three honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
+  // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
+  'agent-resume-guard',
+  'agent-no-raw-usechat',
+  'ai-sdk-major',
 ])
 
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */
 const MIN_ALLOW_REASON_LENGTH = 4
 
-/** One parsed `theme-allow` annotation. `rules` empty means "every kind" (the legacy bare form). */
+/**
+ * One parsed `theme-allow` annotation.
+ *
+ * `rules` empty AND `unknownRules` empty is the legacy bare form, and only that covers every kind.
+ * `unknownRules` holds words that occupied the rule-id slot but name no rule — a typo. Its presence
+ * is what makes the parse FAIL CLOSED: `theme-allow raw-hexx — reason` used to consume no id, fall
+ * through to `rules: []`, and be read as the blanket form, so one mistyped character escalated a
+ * scoped waiver into a whole-line one. A waiver that names a rule must never be more permissive
+ * than the same waiver spelled correctly.
+ */
 type AllowAnnotation = {
   readonly rules: readonly string[]
+  readonly unknownRules: readonly string[]
   readonly hasReason: boolean
 }
 
@@ -527,24 +541,36 @@ type AllowDeclaration = { readonly line: number; readonly annotation: AllowAnnot
 /**
  * Parse the text following the allow token on one line.
  *
- * Rule ids are consumed only while they are KNOWN ids (a guard kind or a plugin rule, optionally
- * `basalt/`-prefixed, comma- or space-separated). That matters: `theme-allow sub-scale legend
- * corner` is a reason written without a separator, and treating its words as rule ids would scope
- * the exception to three rules that do not exist — silently un-suppressing a line that used to
- * pass. An unknown word ends the id list and starts the reason.
+ * The grammar is `theme-allow [<rule-id>[, <rule-id>]…] [<separator>] <reason>`. Ids are consumed
+ * while they are KNOWN (a guard kind or a plugin rule, optionally `basalt/`-prefixed). A word that
+ * occupies the id slot but names no rule ENDS the list as an UNKNOWN id rather than starting the
+ * reason — see {@link AllowAnnotation.unknownRules} for why that direction is the safe one.
+ *
+ * A prose reason therefore has to be introduced the way every annotation in the wild already writes
+ * it — with a separator (`—`, `–`, `-`, `:`) — which is what keeps `theme-allow: bespoke mono
+ * micro-label` a blanket waiver while `theme-allow raw-hexx — …` waives nothing.
+ *
+ * `Object.hasOwn`, not `in`: `in` walks the prototype chain, so a reason beginning with the word
+ * `constructor` (or `toString`, `valueOf`, …) resolved as a real rule id and silently scoped the
+ * waiver to a kind that does not exist.
  */
 function parseAllowAnnotation(rest: string): AllowAnnotation {
   const rules: string[] = []
+  const unknownRules: string[] = []
   let remainder = rest.replace(/^[\s,]+/, '')
   for (;;) {
     const token = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/.exec(remainder)
     const id = token?.[1]
-    if (token === null || id === undefined || !(id in GUARD_RULES || PLUGIN_RULE_IDS.has(id))) break
+    if (token === null || id === undefined) break
+    if (!(Object.hasOwn(GUARD_RULES, id) || PLUGIN_RULE_IDS.has(id))) {
+      unknownRules.push(id)
+      break
+    }
     rules.push(id)
     remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
   }
   const reason = remainder.replace(/^(?:—|–|-{1,2}|:)\s*/, '').trim()
-  return { rules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
+  return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
 }
 
 /** How far back a trailing CSS annotation reaches for the declaration it terminates. */
@@ -643,9 +669,16 @@ function collectAllowAnnotations(
   return { waivers: byLine, declared }
 }
 
-/** Does any annotation on this line cover `kind`? An annotation with no rule ids covers all kinds. */
+/**
+ * Does any annotation on this line cover `kind`?
+ *
+ * Only a BARE annotation (no ids at all, known or unknown) covers every kind. One that reached for
+ * a rule id and missed covers exactly the ids it got right — nothing widens on a typo.
+ */
 function annotationsCover(annotations: AllowAnnotation[] | undefined, kind: GuardKind): boolean {
-  return (annotations ?? []).some((a) => a.rules.length === 0 || a.rules.includes(kind))
+  return (annotations ?? []).some(
+    (a) => (a.rules.length === 0 && a.unknownRules.length === 0) || a.rules.includes(kind),
+  )
 }
 
 /** The 3 comment dialects the stripper understands, resolved from the file's own extension. */
@@ -675,14 +708,61 @@ function stripMarkupComments(text: string): string {
 }
 
 /**
- * The marker a basalt-generated stylesheet carries in its header — the contract between
- * `basalt-ui tokens:css` and this scanner. `check-theme` used to report the file it had just
- * written: 116 of rollhook's 117 violations were inside the emitted token stylesheet, which is
- * nothing but hex and `rgba()` by construction.
+ * The exact first line of every stylesheet the CLI emits — the contract between `basalt-ui
+ * tokens:css` / `fonts:css` and this scanner, and the single source of truth for it (`src/cli`
+ * imports this rather than keeping its own copy, which is how the two used to drift apart).
+ *
+ * The marker exists because `check-theme` reported the file a sibling command had just written:
+ * 116 of rollhook's 117 violations were inside the emitted token stylesheet, which is nothing but
+ * hex and `rgba()` by construction.
  */
-const GENERATED_MARKER = '@generated basalt-ui'
-/** How far into a file the marker is honoured — a header, not something buried mid-file. */
-const GENERATED_HEADER_LINES = 5
+export const GENERATED_HEADER_LINE =
+  '/* @generated basalt-ui tokens — do not edit; regenerate with `bunx basalt-ui tokens:css` */'
+
+/** Line 2 of the header: the emitting version and the exact invocation that produced the file. */
+const GENERATED_PROVENANCE_LINE =
+  /^\/\* basalt-ui \d+\.\d+\.\d+[^\s]* — `basalt-ui (?:tokens:css|fonts:css)[^`]*` \*\/$/
+
+/** The header is exactly the two lines `generatedHeader()` writes — nothing further in counts. */
+const GENERATED_HEADER_LINES = 2
+
+/**
+ * A line a generated token stylesheet can contain. The emitters produce nothing else: a comment, a
+ * blank, a selector (or a selector-list continuation ending in `,`), a `}`, an at-rule, or a
+ * declaration of a custom property in basalt's OWN namespace.
+ */
+const GENERATED_BODY_LINE =
+  /^\s*(?:--(?:vx|basalt)-[A-Za-z0-9_-]*\s*:[^{}]*;?|\}|@[^{}]*[{;]?|\/\*.*|[^{};]*[,{])\s*$/
+
+/**
+ * Is this file one basalt itself emitted?
+ *
+ * The marker used to be honoured on its own: any file whose first five lines contained the string
+ * `@generated basalt-ui` was skipped ENTIRELY. That made a two-word comment a whole-file guard
+ * bypass — prepend it to any `.tsx` and every finding in it disappears, including the escape-hatch
+ * accountability this round added. Three conditions now have to hold together, and the third is
+ * the one a hand-written comment cannot satisfy:
+ *
+ * 1. It is a `.css` file. The CLI emits CSS and nothing else, so the marker is meaningless — and
+ *    therefore ignored — in `.ts`/`.tsx`/`.html`/`.json`, which is where the guard has its teeth.
+ * 2. Line 1 is the canonical header verbatim and line 2 is the provenance line naming the emitting
+ *    version and command. A header, not something smuggled in further down.
+ * 3. The BODY is a generated token sheet: every line is a `--vx-*` / `--basalt-*` custom-property
+ *    declaration, a selector, a `}`, an at-rule, a comment, or blank. A file with any ordinary
+ *    declaration in it (`color: #fff`) is consumer CSS wearing a costume, and stays scanned.
+ *
+ * What is left of the bypass is a file consisting of nothing but declarations of basalt's own
+ * custom properties — i.e. exactly the artifact class the exemption exists for, whose only
+ * suppressible findings are the token values themselves.
+ */
+function isGeneratedArtifact(relPath: string, lines: readonly string[]): boolean {
+  if (!relPath.endsWith('.css')) return false
+  if ((lines[0] ?? '').trim() !== GENERATED_HEADER_LINE) return false
+  if (!GENERATED_PROVENANCE_LINE.test((lines[1] ?? '').trim())) return false
+  return lines
+    .slice(GENERATED_HEADER_LINES)
+    .every((line) => line.trim() === '' || GENERATED_BODY_LINE.test(line))
+}
 
 /**
  * Kinds disabled under `profile: 'tokens-only'` — every kind whose remedy is a Mantine component,
@@ -700,6 +780,10 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'card-with-border',
   'off-system-surface-var',
   'raw-html-layout',
+  // Same remedy as raw-html-layout, word for word ("use a Mantine layout primitive") — it is that
+  // kind's widening, so it has to share its gate here exactly as it shares it in
+  // EXEMPT_RULE_ALIASES. Splitting them told a Mantine-free consumer to import Box/Flex.
+  'hidden-inline-style',
   'inline-spacing',
   'inline-display',
   'raw-visx-axis',
@@ -928,7 +1012,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 20 guard kinds. The triad test asserts
+ * The closed registry of all 25 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -1123,7 +1207,7 @@ export const GUARD_RULES = {
     kind: 'theme-allow-unscoped',
     pattern: /theme-allow/, // handled inline (annotation pass); entry keeps the registry complete
     message:
-      'theme-allow without a rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff.',
+      'theme-allow without a usable rule id and a reason. Write `theme-allow <rule-id> — <why>`: the id scopes the exception to that one kind (a bare comment waives EVERY kind on the line, including ones added later), and the reason is what makes it reviewable in a diff. An id that names no rule is a typo, not a blanket waiver — it suppresses nothing.',
   },
   'surface-shadow-override': {
     kind: 'surface-shadow-override',
@@ -1178,11 +1262,9 @@ function ruleApplies(kind: GuardKind, relPath: string): boolean {
 export function checkSource(text: string, relPath: string, cfg: GuardConfig): Finding[] {
   const lines = text.split('\n')
 
-  // A file basalt itself generated is not consumer source. `tokens:css` emits nothing BUT hex and
-  // rgba() by construction, so scanning its output made `check-theme` reject the artifact a sibling
-  // command had just written — 116 of rollhook's 117 findings were inside it. The marker is honored
-  // as a HEADER only, so it can't be smuggled in mid-file to silence a real violation.
-  if (lines.slice(0, GENERATED_HEADER_LINES).some((l) => l.includes(GENERATED_MARKER))) return []
+  // A file basalt itself generated is not consumer source — `tokens:css` emits nothing BUT hex and
+  // rgba() by construction. See isGeneratedArtifact for why the marker alone is not enough.
+  if (isGeneratedArtifact(relPath, lines)) return []
 
   // Severity and text are stamped once at the end rather than at each of the ~20 push sites — both
   // are derived from state the push sites don't need: severity from the KIND and the config, text
@@ -1227,8 +1309,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // covers every kind, so routing it through the waiver check would let it waive the report of its
   // own unaccountability. `basalt.severity` / `exemptRules` are the ways to turn it down.
   for (const { line, annotation } of declared) {
-    if (annotation.rules.length > 0 && annotation.hasReason) continue
-    const missing = annotation.rules.length === 0 ? 'no rule id' : 'no reason'
+    if (annotation.unknownRules.length === 0 && annotation.rules.length > 0 && annotation.hasReason)
+      continue
+    const missing =
+      annotation.unknownRules.length > 0
+        ? `unknown rule id '${annotation.unknownRules.join("', '")}' — waives nothing`
+        : annotation.rules.length === 0
+          ? 'no rule id'
+          : 'no reason'
     findings.push({
       relPath,
       line,

@@ -10,7 +10,13 @@
 import { describe, expect, it } from 'bun:test'
 import { pxRem } from '../tokens'
 import { SPACE_SCALE } from '../tokens/palette'
-import { checkSource, DEFAULT_GUARD_CONFIG, TOKENS_ONLY_DISABLED_KINDS } from './index'
+import {
+  checkSource,
+  DEFAULT_GUARD_CONFIG,
+  GENERATED_HEADER_LINE,
+  GUARD_RULES,
+  TOKENS_ONLY_DISABLED_KINDS,
+} from './index'
 import type { Finding, GuardKind } from './types'
 
 const PATH = 'src/Dashboard.tsx'
@@ -1604,6 +1610,59 @@ describe('exemptRules', () => {
     expect(kinds(f)).toContain('inline-display')
     expect(kinds(f)).toContain('raw-html-layout')
   })
+
+  // ── EXEMPT_RULE_ALIASES: a grace-minor WIDENING inherits its parent's exemption ───────────────
+  // A kind that exists only to widen an established one is the same rule to a consumer, so an
+  // exemption already written for the parent has to cover it — otherwise the widening arrives as
+  // noise in exactly the paths someone decided the rule does not apply to.
+
+  const HIDDEN =
+    "const s = { display: 'flex', padding: 18 }\nexport const D = () => <div style={s} />"
+  const SHADOW = 'const s = { boxShadow: `0 0 0 2px ${VX.accent}` }'
+  const CSS_SURFACE = '.card { border-radius: 12px; }'
+
+  it("hidden-inline-style inherits raw-html-layout's exemption", () => {
+    expect(kinds(find(HIDDEN, 'src/agent/x.tsx'))).toContain('hidden-inline-style')
+    const f = checkSource(HIDDEN, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'raw-html-layout': ['agent'] },
+    })
+    expect(kinds(f)).not.toContain('hidden-inline-style')
+  })
+
+  it("surface-shadow-override and css-raw-surface inherit raw-surface's exemption", () => {
+    expect(kinds(find(SHADOW, 'src/agent/x.tsx'))).toContain('surface-shadow-override')
+    expect(kinds(find(CSS_SURFACE, 'src/agent/x.css'))).toContain('css-raw-surface')
+    const cfg = { ...DEFAULT_GUARD_CONFIG, exemptRules: { 'raw-surface': ['agent'] } }
+    expect(kinds(checkSource(SHADOW, 'src/agent/x.tsx', cfg))).not.toContain(
+      'surface-shadow-override',
+    )
+    expect(kinds(checkSource(CSS_SURFACE, 'src/agent/x.css', cfg))).not.toContain('css-raw-surface')
+  })
+
+  it('the inheritance is one-way — exempting the CHILD leaves the parent enforced', () => {
+    const f = checkSource(HIDDEN, 'src/agent/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'hidden-inline-style': ['agent'] },
+    })
+    expect(kinds(f)).not.toContain('hidden-inline-style')
+    expect(
+      kinds(
+        checkSource(TEXT, 'src/agent/x.tsx', {
+          ...DEFAULT_GUARD_CONFIG,
+          exemptRules: { 'hidden-inline-style': ['agent'] },
+        }),
+      ),
+    ).toContain('raw-html-layout')
+  })
+
+  it('an alias does not exempt a path the parent exemption never named', () => {
+    const f = checkSource(SHADOW, 'src/charts/x.tsx', {
+      ...DEFAULT_GUARD_CONFIG,
+      exemptRules: { 'raw-surface': ['agent'] },
+    })
+    expect(kinds(f)).toContain('surface-shadow-override')
+  })
 })
 
 // ── 20. severity ─────────────────────────────────────────────────────────────
@@ -1758,11 +1817,60 @@ describe('theme-allow scoping', () => {
     expect(f).toHaveLength(0)
   })
 
-  // A reason written without a separator must not be mistaken for a list of rule ids — that would
-  // scope the exception to rules nobody has and silently un-suppress a passing line.
-  it('treats an unknown word as the start of the reason, not a rule id', () => {
-    const f = find(`<Box style={{ color: '#ff0000' }} /> // theme-allow legacy vendor asset`)
+  // A prose reason is introduced with a separator — the shape every annotation in the wild
+  // already has (`theme-allow: …`, `theme-allow — …`). That is what keeps prose out of the rule-id
+  // slot without having to guess whether an unknown word is a reason or a typo.
+  it('reads a separated reason as a reason, not as rule ids', () => {
+    for (const annotation of ['theme-allow: legacy vendor asset', 'theme-allow — legacy vendor']) {
+      const f = find(`<Box style={{ color: '#ff0000' }} /> // ${annotation}`)
+      expect(kinds(f)).not.toContain('raw-hex')
+    }
+  })
+
+  // ── fail closed: a waiver that names a rule id must never widen into a blanket one ────────────
+
+  it('waives NOTHING when the named rule id is a typo', () => {
+    const f = find(
+      `<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} /> // theme-allow raw-hexx — vendor brand`,
+    )
+    // The old parse consumed no id, fell through to the empty-`rules` branch, and read the whole
+    // thing as the LEGACY BLANKET form: one mistyped character silenced every kind on the line.
+    expect(kinds(f)).toContain('raw-hex')
+    expect(kinds(f)).toContain('raw-spacing')
+  })
+
+  it('names the unknown id rather than reporting it as "no rule id"', () => {
+    const f = find(`const c = '#ff0000' // theme-allow raw-hexx — vendor brand`)
+    const unscoped = f.find((v) => v.kind === 'theme-allow-unscoped')
+    expect(unscoped?.token).toContain("unknown rule id 'raw-hexx'")
+  })
+
+  it('a typo is never more permissive than the same annotation spelled correctly', () => {
+    const correct = find(`const c = '#ff0000' // theme-allow raw-hex — vendor brand`)
+    const typo = find(`const c = '#ff0000' // theme-allow raw-hexx — vendor brand`)
+    expect(typo.length).toBeGreaterThanOrEqual(correct.length)
+  })
+
+  it('still waives the ids it got right in a mixed list', () => {
+    const f = find(
+      `<Box p={${SPACE_SCALE.md}} style={{ color: '#ff0000' }} /> // theme-allow raw-hex, raw-spacingg — mixed`,
+    )
     expect(kinds(f)).not.toContain('raw-hex')
+    expect(kinds(f)).toContain('raw-spacing')
+  })
+
+  // `in` walks the prototype chain, so `'constructor' in GUARD_RULES` was true and a reason
+  // starting with that word scoped the waiver to a rule that does not exist.
+  it('does not resolve an Object.prototype key as a rule id', () => {
+    const f = find(`const c = '#ff0000' // theme-allow constructor — inherited key, not a rule`)
+    expect(kinds(f)).toContain('raw-hex')
+  })
+
+  it('accepts an id belonging to a plugin rule that does not honour theme-allow', () => {
+    // Not a guard kind and not theme-allow-aware — but a REAL id, so it parses as accountable
+    // rather than being read as a typo (or, before, as a blanket waiver).
+    const f = find(`const x = 1 // theme-allow ai-sdk-major — intentional producer/consumer skew`)
+    expect(f).toHaveLength(0)
   })
 
   it('ships theme-allow-unscoped as a warning, not a build failure', () => {
@@ -1932,15 +2040,50 @@ describe('raw-color-fn — computed values', () => {
 // ── 28. generated-file marker ────────────────────────────────────────────────
 
 describe('@generated basalt-ui marker', () => {
-  const EMITTED = `/* @generated basalt-ui 1.19.1 — do not edit */\n:root { --vx-fill-gray: #717176; --vx-axis: rgba(255,255,255,0.6); }\n`
+  const HEADER = `${GENERATED_HEADER_LINE}\n/* basalt-ui 1.20.0 — \`basalt-ui tokens:css --only core\` */\n`
+  const BODY = ':root {\n  --vx-fill-gray: #717176;\n  --vx-axis: rgba(255, 255, 255, 0.6);\n}\n'
+  const EMITTED = `${HEADER}${BODY}`
 
   it('skips a file basalt itself emitted', () => {
     expect(find(EMITTED, 'src/styles/basalt-tokens.css')).toHaveLength(0)
   })
 
-  it('honours the marker only as a HEADER', () => {
-    const buried = `${'\n'.repeat(8)}/* @generated basalt-ui */\n.a { color: #ff0000; }\n`
-    expect(kinds(find(buried, 'src/a.css'))).toContain('raw-hex')
+  // ── the forgery half: the marker was a whole-file bypass anyone could hand-write ──────────────
+
+  it('ignores the marker entirely outside a .css file', () => {
+    const forged = `${HEADER}export const C = () => <div style={{ color: '#ff0000', padding: 18 }} />\n`
+    expect(kinds(find(forged, 'src/a.tsx'))).toContain('raw-hex')
+    expect(kinds(find(forged, 'src/a.tsx'))).toContain('inline-spacing')
+  })
+
+  it('does not exempt hand-written CSS wearing the header', () => {
+    const forged = `${HEADER}.btn { color: #ff0000; }\n`
+    expect(kinds(find(forged, 'src/a.css'))).toContain('raw-hex')
+  })
+
+  it('does not exempt a generated sheet with an ordinary rule smuggled onto the end', () => {
+    const smuggled = `${EMITTED}.btn { color: #ff0000; }\n`
+    expect(kinds(find(smuggled, 'src/tokens.css'))).toContain('raw-hex')
+  })
+
+  it('requires the provenance line, not just the marker', () => {
+    const bare = `${GENERATED_HEADER_LINE}\n${BODY}`
+    expect(kinds(find(bare, 'src/tokens.css'))).toContain('raw-hex')
+    const loose = `/* @generated basalt-ui */\n${BODY}`
+    expect(kinds(find(loose, 'src/tokens.css'))).toContain('raw-hex')
+  })
+
+  // ── the header WINDOW: exactly the two lines the emitter writes, and no more ──────────────────
+
+  it('honours the header only on lines 1-2', () => {
+    const onLineOne = `${HEADER}${BODY}`
+    expect(find(onLineOne, 'src/tokens.css')).toHaveLength(0)
+    // One blank line ahead of it is already outside the window — the boundary is exact, not "the
+    // first few lines", which is what let a marker be pasted in above unrelated content.
+    const shifted = `\n${HEADER}${BODY}`
+    expect(kinds(find(shifted, 'src/tokens.css'))).toContain('raw-hex')
+    const buried = `${'\n'.repeat(8)}${HEADER}${BODY}`
+    expect(kinds(find(buried, 'src/tokens.css'))).toContain('raw-hex')
   })
 })
 
@@ -1988,10 +2131,68 @@ describe("profile: 'tokens-only'", () => {
     expect(kinds(f)).toContain('raw-hex')
   })
 
-  it('the disabled set names only Mantine-coupled kinds', () => {
-    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-hex')).toBe(false)
-    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-color-fn')).toBe(false)
-    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-font-family')).toBe(false)
-    expect(TOKENS_ONLY_DISABLED_KINDS.has('raw-form-control')).toBe(true)
+  /**
+   * Every kind, classified by hand: is its remedy a Mantine component, a Mantine prop, or the React
+   * theme factory? The exhaustive literal IS the test — the previous spot check of four kinds is
+   * how `hidden-inline-style` shipped ENABLED under the profile, telling a Mantine-free app to
+   * import Box/Flex in a message copied word for word from `raw-html-layout`, which is disabled.
+   * A new kind fails the first assertion until it is classified here.
+   */
+  const MANTINE_COUPLED: Record<GuardKind, boolean> = {
+    'raw-hex': false,
+    'raw-color-fn': false,
+    'localstorage-theme': true,
+    'off-identity-accent': true,
+    'mantine-shade-index': true,
+    'raw-spacing': true,
+    'raw-radius': true,
+    'raw-surface': false,
+    'card-with-border': true,
+    'off-system-surface-var': true,
+    'raw-html-layout': true,
+    'inline-spacing': true,
+    'inline-display': true,
+    'raw-visx-axis': true,
+    'raw-motion-value': true,
+    'unframed-chart': true,
+    'chart-missing-aria-label': true,
+    'raw-form-control': true,
+    'sub-16-input-font': true,
+    'raw-font-family': false,
+    'theme-allow-unscoped': false,
+    'surface-shadow-override': false,
+    'css-raw-surface': false,
+    'inline-font-size': false,
+    'hidden-inline-style': true,
+  }
+
+  it('classifies every kind in the registry — the table is exhaustive', () => {
+    expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(25)
+  })
+
+  it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {
+    for (const [kind, coupled] of Object.entries(MANTINE_COUPLED) as [GuardKind, boolean][]) {
+      expect([kind, TOKENS_ONLY_DISABLED_KINDS.has(kind)]).toEqual([kind, coupled])
+    }
+    expect(TOKENS_ONLY_DISABLED_KINDS.size).toBe(
+      Object.values(MANTINE_COUPLED).filter(Boolean).length,
+    )
+  })
+
+  it('no surviving kind tells a Mantine-free app to reach for a Mantine component', () => {
+    const MANTINE_REMEDY =
+      /@mantine\/|\b(?:Box|Flex|Grid|Stack|Group|TextInput|NumberInput|Select|Textarea)\b/
+    for (const kind of Object.keys(GUARD_RULES) as GuardKind[]) {
+      if (TOKENS_ONLY_DISABLED_KINDS.has(kind)) continue
+      expect([kind, MANTINE_REMEDY.test(GUARD_RULES[kind].message)]).toEqual([kind, false])
+    }
+  })
+
+  it("hidden-inline-style is off — its remedy is raw-html-layout's, word for word", () => {
+    const src =
+      "const s = { display: 'flex', padding: 18 }\nexport const D = () => <div style={s} />"
+    expect(kinds(checkSource(src, PATH, DEFAULT_GUARD_CONFIG))).toContain('hidden-inline-style')
+    expect(kinds(checkSource(src, PATH, TOKENS_ONLY))).not.toContain('hidden-inline-style')
   })
 })
