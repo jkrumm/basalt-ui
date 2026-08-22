@@ -1,3 +1,17 @@
+# [1.22.0](https://github.com/jkrumm/basalt-ui/compare/v1.21.0...v1.22.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* let `icons: false` reach the manifest it was only skipping in the head ([58abe27](https://github.com/jkrumm/basalt-ui/commit/58abe27be10e5baf7c4659aa79904a7646ff092d))
+* scope the shadow-export tripwire to basalt consumers, and to components ([60716d4](https://github.com/jkrumm/basalt-ui/commit/60716d4ba00908c1a157f5568e192c6c50e438ec))
+* stop sync scaffolding a second consumer, and give the audit the oxlint half ([45cf3d3](https://github.com/jkrumm/basalt-ui/commit/45cf3d340f081e61f3f10f852d12f79928993d2a))
+
+
+### Features
+
+* give the waiver audit an annotation reader, and fix two shapes ([0dde850](https://github.com/jkrumm/basalt-ui/commit/0dde85052269780a61ead0688005db16e24f009a))
+
 # [1.21.0](https://github.com/jkrumm/basalt-ui/compare/v1.20.0...v1.21.0) (2026-08-22)
 
 
