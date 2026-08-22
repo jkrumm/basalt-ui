@@ -88,3 +88,55 @@ describe('BasaltShell extraMoreRows', () => {
     expect(screen.queryByLabelText('More')).toBeNull()
   })
 })
+
+/**
+ * Collapse persistence goes through the HOUSE api, not `@mantine/hooks`.
+ *
+ * Round 4 filed the reference consumer's raw `localStorage.getItem('basalt-sidebar-collapsed')` as
+ * consumer drift; round 5 corrected it — the shell itself used `useLocalStorage`, so the raw read
+ * was the only way to mirror what the shell wrote. These tests pin the shape a consumer now reads.
+ */
+describe('BasaltShell collapse persistence', () => {
+  const COLLAPSE_TOGGLE =
+    'button[aria-label="Collapse sidebar"], button[aria-label="Expand sidebar"]'
+
+  const renderShell = (storageKey: string) =>
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} storageKey={storageKey} />
+      </MantineProvider>,
+    )
+
+  test('writes the namespaced, versioned envelope — not a bare boolean at a bare key', () => {
+    const key = 'collapse-envelope'
+    localStorage.clear()
+    const { container } = renderShell(key)
+
+    fireEvent.click(container.querySelector(COLLAPSE_TOGGLE) as HTMLElement)
+
+    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
+    expect(localStorage.getItem(key)).toBeNull()
+  })
+
+  test('adopts a pre-1.20.1 raw value once, so an upgrade keeps the sidebar collapsed', () => {
+    const key = 'collapse-legacy'
+    localStorage.clear()
+    // Exactly what `@mantine/hooks`' useLocalStorage wrote: JSON at the un-namespaced key.
+    localStorage.setItem(key, 'true')
+
+    renderShell(key)
+
+    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
+  })
+
+  test('a value already in the house key wins over a stale legacy one', () => {
+    const key = 'collapse-both'
+    localStorage.clear()
+    localStorage.setItem(key, 'true')
+    localStorage.setItem(`basalt:${key}`, JSON.stringify({ v: 1, value: false }))
+
+    renderShell(key)
+
+    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: false }))
+  })
+})

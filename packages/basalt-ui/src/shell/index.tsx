@@ -14,11 +14,10 @@
  * sidebar-collapse zustand store) stays consumer-side. The consumer resolves `item.active`,
  * `item.onClick`, `item.badge`/`item.count` and supplies `item.Anchor` — its router `<Link>`,
  * which basalt HOSTS rather than delegating rendering to. The breadcrumb is derived from the
- * active item across `sections`, not from a router hook. Collapse is persisted via
- * `@mantine/hooks` `useLocalStorage` keyed by `storageKey`.
+ * active item across `sections`, not from a router hook. Collapse is persisted via basalt's own
+ * `createPersistedState` (`../state`) keyed by `storageKey` — see `collapseStore`.
  */
 import { AppShell } from '@mantine/core'
-import { useLocalStorage } from '@mantine/hooks'
 import { useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 import { AppSidebar } from './app-sidebar'
@@ -30,6 +29,7 @@ import type { BasaltAccountProps } from './account-types'
 import type { SidebarSearchConfig } from './sidebar-search'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
 import { useBasaltSpacing } from '../theme'
+import { createPersistedState } from '../state'
 import headerClasses from './app-header.module.css'
 import mobileNavClasses from './app-mobile-nav.module.css'
 
@@ -129,13 +129,20 @@ export type BasaltShellProps = {
    * `onOpen`, e.g. `() => openSpotlight()` from basalt-ui/commands.
    */
   search?: SidebarSearchConfig
-  /** localStorage key for the persisted sidebar-collapsed flag. Ignored when `collapsed` is set. */
+  /**
+   * localStorage key for the persisted sidebar-collapsed flag. Ignored when `collapsed` is set.
+   *
+   * Persisted through basalt's own `createPersistedState`, so the real storage key is
+   * `basalt:<storageKey>` and the value is the versioned `{ v, value }` envelope. A consumer
+   * mirroring this state reads it with `readPersistedValue(storageKey, 1)` from `basalt-ui/state`
+   * — never with a bare `localStorage.getItem`, which is what the pre-1.20.1 shell forced.
+   */
   storageKey?: string
   /**
-   * Controlled desktop-collapse value. When provided, the shell no longer owns the
-   * `useLocalStorage`-persisted collapse state — the consumer does (e.g. to drive it from its own
-   * `Cmd+B` hotkey). Pair with `onCollapsedChange` to receive toggle events; omitting both
-   * reproduces today's internal, persisted collapse behavior unchanged.
+   * Controlled desktop-collapse value. When provided, the shell no longer owns the persisted
+   * collapse state — the consumer does (e.g. to drive it from its own `Cmd+B` hotkey), and should
+   * own it through `createPersistedState` too. Pair with `onCollapsedChange` to receive toggle
+   * events; omitting both reproduces today's internal, persisted collapse behavior unchanged.
    */
   collapsed?: boolean
   /**
@@ -194,6 +201,54 @@ function findActiveWithParent(
   return undefined
 }
 
+/** Envelope version for the persisted collapse flag. Bump only if the value stops being a boolean. */
+const COLLAPSE_VERSION = 1
+
+/**
+ * One `createPersistedState` store per `storageKey`, memoized at module scope.
+ *
+ * Through 1.20.0 the shell persisted collapse with `@mantine/hooks`' `useLocalStorage` while
+ * `createPersistedState` was the documented house API — and this component's own docstring told
+ * consumers to mirror that when driving `collapsed` externally, so the reference consumer's raw
+ * `localStorage` call was COMPLIANCE with the shipped component rather than drift. A framework
+ * cannot ship a persistence rule its own shell breaks; this is the shell coming into line.
+ *
+ * The memo is required, not an optimization: `createPersistedState` is a per-key module FACTORY and
+ * `storageKey` is a runtime prop, so calling it during render would allocate a fresh store (and a
+ * fresh `useSyncExternalStore` subscription) on every commit. Swapping keys mid-life stays safe —
+ * every store's hook calls exactly one `useSyncExternalStore`, so the hook count never moves.
+ */
+const collapseStores = new Map<string, () => readonly [boolean, (next: boolean) => void]>()
+
+/**
+ * Seeds `basalt:<key>` from the raw pre-1.20.1 key once, so the switch doesn't silently re-expand
+ * every consumer's sidebar. Mantine's `useLocalStorage` wrote a bare `JSON.stringify(value)` at the
+ * un-namespaced key; only `'true'`/`'false'` are accepted, and only when the house key is empty.
+ * A one-upgrade bridge, not a supported format — delete it once no consumer predates 1.20.1.
+ */
+function migrateLegacyCollapse(key: string): void {
+  try {
+    if (window.localStorage.getItem(`basalt:${key}`) !== null) return
+    const legacy = window.localStorage.getItem(key)
+    if (legacy !== 'true' && legacy !== 'false') return
+    window.localStorage.setItem(
+      `basalt:${key}`,
+      JSON.stringify({ v: COLLAPSE_VERSION, value: legacy === 'true' }),
+    )
+  } catch {
+    // Storage blocked (private browsing, quota) — defaulting to expanded is a fine outcome.
+  }
+}
+
+function collapseStore(key: string): () => readonly [boolean, (next: boolean) => void] {
+  const cached = collapseStores.get(key)
+  if (cached) return cached
+  if (typeof window !== 'undefined') migrateLegacyCollapse(key)
+  const store = createPersistedState<boolean>({ key, version: COLLAPSE_VERSION, initial: false })
+  collapseStores.set(key, store)
+  return store
+}
+
 export function BasaltShell({
   brand,
   sections,
@@ -213,11 +268,7 @@ export function BasaltShell({
   // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal
   // container squeezes progressively worse as density rises.
   const { step } = useBasaltSpacing()
-  const [storedCollapsed, setStoredCollapsed] = useLocalStorage({
-    key: storageKey,
-    defaultValue: false,
-    getInitialValueInEffect: false,
-  })
+  const [storedCollapsed, setStoredCollapsed] = collapseStore(storageKey)()
   // Controlled/uncontrolled seam (item 19): an explicit `collapsed` prop overrides the internal
   // localStorage-persisted state entirely — the consumer becomes the source of truth.
   const isCollapseControlled = collapsedProp !== undefined
