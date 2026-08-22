@@ -1859,6 +1859,47 @@ describe('theme-allow scoping', () => {
     expect(kinds(f)).toContain('raw-spacing')
   })
 
+  it('says "not waived", not "waives nothing", when an id in the list DID resolve', () => {
+    const f = find(`const c = '#ff0000' // theme-allow raw-hex, raw-spacingg — mixed`)
+    const unscoped = f.find((v) => v.kind === 'theme-allow-unscoped')
+    expect(unscoped?.token).toBe("theme-allow (unknown rule id 'raw-spacingg' — not waived)")
+    // The claim has to match what the same run actually did: raw-hex IS waived here.
+    expect(kinds(f)).not.toContain('raw-hex')
+  })
+
+  // ── prose after a resolved id is prose, not a typo ────────────────────────────────────────────
+  //
+  // The id slot closes at the first space no comma opened. `theme-allow raw-surface sub-scale …`
+  // is one em-dash away from annotations this package itself ships (see ChartLegend), and reading
+  // `sub-scale` as an attempted id made a scoped, reasoned waiver report as unscoped.
+
+  it('reads an unknown word after a resolved id as the reason', () => {
+    const f = find(
+      'const s = { borderRadius: 3 } // theme-allow raw-surface sub-scale legend corner',
+    )
+    expect(f).toHaveLength(0)
+  })
+
+  it('still fails closed on a typo in the FIRST id slot, separator or not', () => {
+    for (const annotation of [
+      'theme-allow raw-hexx — vendor',
+      'theme-allow raw-hexx vendor asset',
+    ]) {
+      expect(kinds(find(`const c = '#ff0000' // ${annotation}`))).toContain('raw-hex')
+    }
+  })
+
+  // Documented break, not a regression: a reason with NO separator introducing it sits in the id
+  // slot, names no rule, and therefore waives nothing. Kept as a test so the behaviour is pinned
+  // rather than rediscovered — MIGRATING.md carries the consumer-facing half.
+  it('does not waive a reason written with no separator introducing it', () => {
+    const f = find(`const c = '#ff0000' // theme-allow legacy vendor asset`)
+    expect(f.find((v) => v.kind === 'raw-hex')?.severity).toBe('error')
+    expect(f.find((v) => v.kind === 'theme-allow-unscoped')?.token).toContain(
+      "unknown rule id 'legacy' — waives nothing",
+    )
+  })
+
   // `in` walks the prototype chain, so `'constructor' in GUARD_RULES` was true and a reason
   // starting with that word scoped the waiver to a rule that does not exist.
   it('does not resolve an Object.prototype key as a rule id', () => {
@@ -2084,6 +2125,62 @@ describe('@generated basalt-ui marker', () => {
     expect(kinds(find(shifted, 'src/tokens.css'))).toContain('raw-hex')
     const buried = `${'\n'.repeat(8)}${HEADER}${BODY}`
     expect(kinds(find(buried, 'src/tokens.css'))).toContain('raw-hex')
+  })
+
+  // ── the second forgery round: the line-shape allowlist itself was forgeable ───────────────────
+  //
+  // Both of the first two were demonstrated against the real `checkSource`, and both were valid,
+  // browser-effective CSS bought a WHOLE-FILE exemption. Every case below must report — a passing
+  // `toHaveLength(0)` here would mean the hole is open again.
+
+  const forgeries: ReadonlyArray<readonly [string, string]> = [
+    // A `;` inside a custom-property value smuggled two ordinary declarations onto a line the
+    // allowlist read as "a basalt custom property".
+    [
+      'a semicolon inside a custom-property value',
+      `${HEADER}:root {\n  --vx-pad: 0; box-shadow: 0 0 0 1px #ff0000; border-radius: 11px;\n}\n`,
+    ],
+    // The comment branch was `\/\*.*` — it never required the comment to CLOSE, so anything after
+    // `*/` rode along.
+    ['a comment that never closes', `${HEADER}/* x */ .btn { color: #ff0000; }\n`],
+    // A comment reopened mid-line: closing and reopening keeps the line comment-SHAPED at both
+    // ends while the middle is a live declaration.
+    ['a comment reopened mid-line', `${HEADER}:root {\n  /* a */ color: #ff0000 /* b */\n}\n`],
+    // The first line of a multi-line declaration ends in `,`, which is also how a selector list
+    // continues — the depth check is what tells them apart.
+    [
+      'a multi-line declaration whose first line ends in a comma',
+      `${HEADER}.btn {\n  box-shadow: 0 0 0 1px #ff0000,\n    0 0 2px #00ff00;\n}\n`,
+    ],
+    // The at-rule branch permitted `;`, so a declaration could ride behind `@…;`.
+    ['a declaration behind an at-rule', `${HEADER}@media all; color: #ff0000;\n`],
+    // No trailing `;` anywhere, so nothing to split on.
+    ['a whole rule on one line with no semicolon', `${HEADER}.btn { color: #ff0000 }\n`],
+    [
+      'a rule reopened after a closing brace',
+      `${HEADER}:root {\n  --vx-a: #fff;\n} .btn { color: #ff0000; }\n`,
+    ],
+    ['a nested block', `${HEADER}:root {\n  .btn {\n    color: #ff0000;\n  }\n}\n`],
+  ]
+
+  for (const [what, source] of forgeries) {
+    it(`reports ${what}`, () => {
+      expect(find(source, 'src/tokens.css').length).toBeGreaterThan(0)
+    })
+  }
+
+  it('never skips a line carrying theme-allow, so a hidden waiver still reports', () => {
+    // Without this the annotation would waive the line below AND its own unscoped report, because
+    // a bare `/* theme-allow */` is comment-SHAPED and would otherwise be a skippable line.
+    const smuggled = `${HEADER}/* theme-allow */\n.btn { color: #ff0000; }\n`
+    expect(kinds(find(smuggled, 'src/tokens.css'))).toContain('theme-allow-unscoped')
+  })
+
+  it('exempts LINES, not the file — a smuggled rule reports without burying it in token values', () => {
+    const smuggled = `${EMITTED}.btn { color: #ff0000; }\n`
+    const f = find(smuggled, 'src/tokens.css')
+    expect(f.map((x) => x.line)).toEqual([7])
+    expect(kinds(f)).toEqual(['raw-hex'])
   })
 })
 

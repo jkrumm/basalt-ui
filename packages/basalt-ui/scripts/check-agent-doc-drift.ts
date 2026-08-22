@@ -32,6 +32,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
+import { TOKENS_ONLY_DISABLED_KINDS } from '../src/guard/index'
+
 const pkgRoot = join(import.meta.dirname, '..')
 
 // ── valid names: value exports (export-surface.json) ∪ type exports (src/**/index.ts barrels) ─────
@@ -214,6 +216,50 @@ export function checkDenylistIsGenuinelyRemoved(validNames: ReadonlySet<string>)
   return failures
 }
 
+// ── Check C: the tokens-only kind count, restated by hand in eight docs ───────
+
+/**
+ * Every markdown file in the repo, minus the directories nothing here owns. Wider than Check A/B's
+ * `agent/**` on purpose — the count below is stated in the package README, both CLAUDE.mds,
+ * MIGRATING, two `agent/` docs and two root `docs/` pages.
+ */
+export function findRepoMdFiles(): string[] {
+  const repoRoot = join(pkgRoot, '..', '..')
+  const entries = readdirSync(repoRoot, { recursive: true }) as string[]
+  return entries
+    .filter((rel) => rel.endsWith('.md') && !/(^|[\\/])(node_modules|dist|\.git)[\\/]/.test(rel))
+    .map((rel) => join(repoRoot, rel))
+}
+
+/**
+ * The phrasing every doc uses for "how many kinds `profile: 'tokens-only'` disables". `hidden-
+ * inline-style` took the set from 16 to 17; code and tests were updated in that commit and eight
+ * docs were not — including the two under `agent/`, which `init`/`sync` PLACE INTO consumer repos,
+ * so the stale number shipped.
+ *
+ * Asserted rather than generated: templating one integer into prose costs a build step and a
+ * generated-file gate, while this is one regex in a check CI already runs, and it fails in the
+ * same commit that changes the set.
+ */
+const KIND_COUNT_CLAIM = /(?:disables|silences|turns off)\s+(?:the\s+)?(\d+)\s+kinds\b/g
+
+export type CheckCFailure = { file: string; line: number; claimed: number }
+
+export function checkC(mdFiles: readonly string[], actual: number): CheckCFailure[] {
+  const failures: CheckCFailure[] = []
+  for (const file of mdFiles) {
+    const lines = readFileSync(file, 'utf8').split('\n')
+    lines.forEach((lineText, idx) => {
+      for (const match of lineText.matchAll(KIND_COUNT_CLAIM)) {
+        const claimed = Number(match[1])
+        if (claimed === actual) continue
+        failures.push({ file: relative(pkgRoot, file), line: idx + 1, claimed })
+      }
+    })
+  }
+  return failures
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 
 function main(): void {
@@ -222,6 +268,7 @@ function main(): void {
 
   const aFailures = checkA(mdFiles, validNames)
   const bFailures = checkB(mdFiles)
+  const cFailures = checkC(findRepoMdFiles(), TOKENS_ONLY_DISABLED_KINDS.size)
   const selfFailures = checkDenylistIsGenuinelyRemoved(validNames)
 
   const messages: string[] = [
@@ -233,6 +280,11 @@ function main(): void {
     ...bFailures.map(
       (f) =>
         `${f.file}:${f.line}: references removed API '${f.name}' — use '${f.replacement}' instead`,
+    ),
+    ...cFailures.map(
+      (f) =>
+        `${f.file}:${f.line}: says tokens-only disables ${f.claimed} kinds, but ` +
+        `TOKENS_ONLY_DISABLED_KINDS has ${TOKENS_ONLY_DISABLED_KINDS.size}`,
     ),
     ...selfFailures,
   ]

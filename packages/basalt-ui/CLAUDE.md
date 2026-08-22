@@ -417,18 +417,23 @@ invoked from a repo root that has none (two candidates is reported as ambiguous,
   tree (the Vite layout `basaltViteConfig` assumes) — argo's raw hex lived one level up from its
   configured root. `.html`/`.webmanifest`/`.json` resolve as markup (colour kinds only), but `.json`
   is never blanket-scanned; `basalt.include` names one explicitly and is the only route to it.
-  **`profile: 'tokens-only'`** disables the 16 kinds whose remedy is a Mantine component, prop or the
+  **`profile: 'tokens-only'`** disables the 17 kinds whose remedy is a Mantine component, prop or the
   React theme factory. `check-theme` requires it DECLARED (the key, or `--tokens-only`) and never
   infers it: inferring from a missing `@mantine/core` would silence those kinds on any repo keeping
   Mantine in a different workspace package. `doctor` DOES infer it, because its profile only changes
   which advice it prints, never what it enforces — and it names the key to write down. The asymmetry
   is the safety property, not an inconsistency.
-  A file is skipped as basalt-emitted only when all three hold: a `.css` path, the canonical
-  `@generated basalt-ui` header verbatim on line 1 plus the provenance line on line 2, and a body of
-  nothing but `--vx-*` / `--basalt-*` declarations, selectors, `}`, at-rules and comments. That is
-  what stopped the guard reporting 116 violations inside the stylesheet `tokens:css` had just
-  written. The marker on its own (first 5 lines, any extension) was a hand-writable whole-file
-  bypass; the body test is the leg a pasted comment cannot satisfy.
+  **Basalt-emitted lines are skipped — LINES, not files.** The file has to earn the exemption
+  (a `.css` path, the canonical `@generated basalt-ui` header verbatim on line 1, the provenance
+  line on line 2), and then each line has to earn it too: at brace depth 0 a selector or a
+  self-closing comment, inside a block only a `--vx-*` / `--basalt-*` declaration whose value
+  carries no `;`, a `}`, or a comment. That is what stopped the guard reporting 116 violations
+  inside the stylesheet `tokens:css` had just written. The marker on its own (first 5 lines, any
+  extension) was a hand-writable whole-file bypass; a whole-file body test replaced it and was
+  itself forgeable twice over (a `;` inside a custom-property value, a comment that never closed).
+  Per-line + depth-aware is the fix: a declaration only takes effect inside a block, so inside a
+  block nothing but basalt's own custom properties is skippable, and a miss now costs one line
+  instead of the file. A line carrying `theme-allow` is never skipped.
   **Footgun: `check-theme` (and `pre`, which runs it) validates the last BUILT `dist`, not the
   working tree.** `bin/basalt-ui.mjs` imports `../dist/cli/index.js` — a source change under
   `src/guard/**` or `src/cli/**` is invisible to `check-theme` until `bun run build` runs, and a

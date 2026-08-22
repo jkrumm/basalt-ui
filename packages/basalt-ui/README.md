@@ -208,17 +208,19 @@ scanned files, and `doctor`'s `guard-scan` check agrees with it. Each root's **p
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
-"tokens-only"` turns off the 16 kinds whose remedy is a Mantine component or prop, and must be
+"tokens-only"` turns off the 17 kinds whose remedy is a Mantine component or prop, and must be
 declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
 which would silence half the guard on any repo keeping Mantine in a different workspace package.
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
 `BasaltConfig` type.
 
-A file is skipped as basalt-emitted only when all three hold: a `.css` path, the `@generated
-basalt-ui` header verbatim on line 1 with the version + invocation line on line 2, and a body of
-nothing but `--vx-*` / `--basalt-*` declarations, selectors, `}`, at-rules and comments. So the
-stylesheet `tokens:css` just wrote is not reported back at you, and pasting the marker into a `.tsx`
-suppresses nothing.
+Basalt-emitted LINES are skipped, not whole files. The file has to earn it first — a `.css` path,
+the `@generated basalt-ui` header verbatim on line 1, the version + invocation line on line 2 — and
+then each line does too: at brace depth 0 a selector or a self-closing comment, inside a block only
+a `--vx-*` / `--basalt-*` declaration whose value carries no `;`, a `}`, or a comment. So the
+stylesheet `tokens:css` just wrote is not reported back at you, pasting the marker into a `.tsx`
+suppresses nothing, and an ordinary declaration smuggled into a sheet wearing the header is
+reported on its own line.
 
 **The escape hatch is scoped.** `theme-allow <rule-id> — <reason>` waives that one kind, on the
 reported line, on a comment-only line directly above it (the only form JSX can express), or — in

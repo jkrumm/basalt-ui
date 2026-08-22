@@ -36,15 +36,32 @@ your build goes red on this upgrade, that is the release working; every new kind
 | `basalt/hand-rolled-plot`, `basalt/chart-legend-literal` widened | more sites report; both stay `warn`                                                                             | a widened rule does not promote in the minor that widens it                               |
 | `doctor` `SKIPPED` exits non-zero, + 3 new hard checks           | doctor goes red where it was green                                                                              | that is the finding — see below                                                           |
 
-**`theme-allow` has a new contract, and every existing comment keeps working.** A bare
-`theme-allow` still waives every kind, but now reports `theme-allow-unscoped`. Rescope it — and
-spell the id right, because a word in the id slot that names no rule now waives NOTHING rather than
-degrading to the blanket form:
+**`theme-allow` has a new contract, and one comment shape stops waiving.** A bare `theme-allow`
+still waives every kind, but now reports `theme-allow-unscoped`. Rescope it — and spell the id
+right, because a word in the id slot that names no rule now waives NOTHING rather than degrading to
+the blanket form:
 
 ```diff
 -// theme-allow
 +// theme-allow raw-surface — third-party widget needs a literal corner
 ```
+
+**The break: a reason with no separator introducing it.** `// theme-allow legacy vendor asset` used
+to waive the line; it now waives nothing and the un-suppressed finding reports at its own severity
+(`error` for `raw-hex`). The first word after the token is read as a rule id, and an id that names
+no rule fails closed — that is the whole point, since the alternative is one mistyped character
+silently widening a scoped waiver into a blanket one. No annotation in any of the seven consumer
+repos writes that shape; every one of them introduces its reason with `—`, `–`, `-` or `:`. Add a
+separator, or an id:
+
+```diff
+-// theme-allow legacy vendor asset
++// theme-allow raw-hex — legacy vendor asset
+```
+
+Prose AFTER a resolved id is safe and needs no separator —
+`// theme-allow raw-surface sub-scale legend corner` waives `raw-surface` and reports nothing. Only
+a comma keeps the id list open past the first id.
 
 Two placements that used to fail now work, both matching what the oxlint plugin always did: a
 comment-ONLY line directly above the reported line (the only form JSX can express — the reported
@@ -65,16 +82,16 @@ with the whole lint half off).
 
 **New, additive:**
 
-| Surface                                                          | Note                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 16 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                        |
-| `basalt.include: [...]`                                          | scan a named file outside `roots` — and the only route to a `.json`, which is never blanket-scanned                                                                                                                                                                                                                                                                                                   |
-| `basalt.roots` + a `lint:basalt` script                          | written by `init` from the real layout; `init` on an existing app is a lint-debt event, not a no-op                                                                                                                                                                                                                                                                                                   |
-| `tokens:css --check`, `--selector-class <c>` (+ `--light-class`) | drift gate; the Tailwind `<html class="dark">` convention. There is no `scheme: { class }` API — the class form is CLI-only                                                                                                                                                                                                                                                                           |
-| `fonts:css [--out] [--check]`                                    | the shipped `--basalt-font-*` stacks as plain CSS, read out of `styles.css` — the only route to basalt's typefaces without the Mantine-coupled `styles.css`                                                                                                                                                                                                                                           |
-| `__APP_VERSION__` ambient declaration                            | ships via `src/register.ts`, re-exported by the root barrel: delete your hand-written ambient block. A subpath-only consumer does not get it                                                                                                                                                                                                                                                          |
-| `BASALT_CWD`                                                     | `check-theme`/`doctor` honour it, and relocate to the single workspace package carrying a basalt config when invoked from a root that has none                                                                                                                                                                                                                                                        |
-| `@generated basalt-ui` header                                    | `tokens:css`/`fonts:css` output carries it on line 1, the version + invocation line on line 2, and `check-theme` skips a `.css` file with that exact header whose body is nothing but basalt custom properties — this is what fixed 116 violations reported inside the stylesheet `tokens:css` had just written. Committed output emitted by 1.19.1 has no header: re-run the command to get the skip |
+| Surface                                                          | Note                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 17 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                                                               |
+| `basalt.include: [...]`                                          | scan a named file outside `roots` — and the only route to a `.json`, which is never blanket-scanned                                                                                                                                                                                                                                                                                                                                          |
+| `basalt.roots` + a `lint:basalt` script                          | written by `init` from the real layout; `init` on an existing app is a lint-debt event, not a no-op                                                                                                                                                                                                                                                                                                                                          |
+| `tokens:css --check`, `--selector-class <c>` (+ `--light-class`) | drift gate; the Tailwind `<html class="dark">` convention. There is no `scheme: { class }` API — the class form is CLI-only                                                                                                                                                                                                                                                                                                                  |
+| `fonts:css [--out] [--check]`                                    | the shipped `--basalt-font-*` stacks as plain CSS, read out of `styles.css` — the only route to basalt's typefaces without the Mantine-coupled `styles.css`                                                                                                                                                                                                                                                                                  |
+| `__APP_VERSION__` ambient declaration                            | ships via `src/register.ts`, re-exported by the root barrel: delete your hand-written ambient block. A subpath-only consumer does not get it                                                                                                                                                                                                                                                                                                 |
+| `BASALT_CWD`                                                     | `check-theme`/`doctor` honour it, and relocate to the single workspace package carrying a basalt config when invoked from a root that has none                                                                                                                                                                                                                                                                                               |
+| `@generated basalt-ui` header                                    | `tokens:css`/`fonts:css` output carries it on line 1, the version + invocation line on line 2, and `check-theme`, in a `.css` file with that exact header, skips the LINES that are basalt custom properties, selectors, `}` or self-closing comments — this is what fixed 116 violations reported inside the stylesheet `tokens:css` had just written. Committed output emitted by 1.19.1 has no header: re-run the command to get the skip |
 
 `check-theme` also resolves `.html` / `.webmanifest` / `.json` as markup (colour kinds only), and
 each root's PARENT now contributes its `index.html` and `public/` tree.

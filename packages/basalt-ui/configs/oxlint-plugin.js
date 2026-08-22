@@ -152,6 +152,11 @@ const MIN_ALLOW_REASON_LENGTH = 4
  *
  * A prose reason is therefore introduced with a separator (`—`, `–`, `-`, `:`), which is how every
  * annotation in the wild already writes it. Mirrors `parseAllowAnnotation` in `src/guard/index.ts`.
+ *
+ * The id slot closes at the first space that no comma opened: the first word is always a claimed
+ * id (that is where a typo lands), but after a resolved id only a `,` keeps the list open, so
+ * `theme-allow raw-surface sub-scale legend corner` reads `sub-scale` as prose rather than as a
+ * typo. See the guard's copy for the full reasoning.
  */
 function parseThemeAllow(commentValue) {
   const at = commentValue.indexOf('theme-allow')
@@ -159,15 +164,18 @@ function parseThemeAllow(commentValue) {
   let remainder = commentValue.slice(at + 'theme-allow'.length).replace(/^[\s,]+/, '')
   const rules = []
   const unknownRules = []
+  let inIdSlot = true
   for (;;) {
     const token = ALLOW_RULE_TOKEN.exec(remainder)
     if (token === null) break
     if (!KNOWN_RULE_IDS.has(token[1])) {
-      unknownRules.push(token[1])
+      if (inIdSlot) unknownRules.push(token[1])
       break
     }
     rules.push(token[1])
-    remainder = remainder.slice(token[0].length).replace(/^[\s,]+/, '')
+    const after = remainder.slice(token[0].length)
+    remainder = after.replace(/^[\s,]+/, '')
+    inIdSlot = /^\s*,/.test(after)
   }
   const reason = remainder.replace(ALLOW_REASON_SEPARATOR, '').trim()
   return { rules, unknownRules, hasReason: reason.length >= MIN_ALLOW_REASON_LENGTH }
