@@ -121,8 +121,8 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
 ## Layout, elevation, shapes
 
 - **Density is the point.** This is a terminal, not a marketing page — sections separate by surface
-  change and shadow-carried depth, not by large air. Card interior padding defaults to the `md`
-  spacing step.
+  change and shadow-carried depth, not by large air. Card interior padding is `xs`/`sm` (11px/13px),
+  not the Mantine-default `md` — see `docs/DESIGN-SPEC.md` §8 for the exact inset.
 - **Depth = a whisper shadow + ring, not a bare hairline border** (see
   `docs/DESIGN-SPEC.md` §8 inversion #1 — this supersedes the older "surface + hairline, never a
   drop shadow" framing below the ring; when this section and that spec disagree on a concrete
@@ -140,10 +140,13 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
   hairline. There **is** a card-shadow token (`--vx-shadow-card`); reach for a plain Mantine
   `shadow` prop only for a genuinely one-off floating surface outside the standard card system.
 
-- **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: default `sm` for
-  controls, cards at `md`, pills/badges at `pill`. Owned in the theme, not inherited.
-- **Type carried by size + weight.** System-sans, no display/body family split. Numbers render in a
-  mono, tabular stack (a Coinbase pattern that keeps metric columns aligned).
+- **Tight radii.** Small radii read precise/technical (Linear), not soft/consumer: `defaultRadius`
+  is `md` (6px) for controls; cards read a separate 7px `--vx-radius-card`, not `md` itself.
+  Owned in the theme, not inherited.
+- **Type carried by size + weight.** A three-font system, not a single system-sans: body
+  (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
+  `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for numbers — a tabular stack that
+  keeps metric columns aligned (a Coinbase pattern). See `docs/DESIGN-SPEC.md` §3.
 
 ## Data visualization — the visx primitives contract
 

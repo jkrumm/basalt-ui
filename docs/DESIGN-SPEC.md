@@ -100,8 +100,8 @@ ChartCard, SettingsSection) keeps `shadow-card`. Detached FLOATING surfaces are 
 keep `shadow-overlay` — Tooltip, Popover, Menu, Combobox, Modal and Drawer all resolve it in
 `theme/index.ts`; they sit above the page rather than on it. Two controls that sit beside each
 other — a `size="md"` Input and a `size="md"` Button, pinned to the same height by
-`--vx-space-control-height`; the header's search trigger and icon button — must never end up on
-different tokens; that split is exactly what this token was introduced to close. That is what lets one value cover a saturated fill, a 13% tint and a neutral panel alike:
+`--vx-space-control-height`; the sidebar's search trigger and any adjacent icon button — must never
+end up on different tokens; that split is exactly what this token was introduced to close. That is what lets one value cover a saturated fill, a 13% tint and a neutral panel alike:
 an outset ring paints in the color of whatever it is drawn over, so `shadow-card`'s pale hairline
 would read as a grey outline around a colored button, while an inset edge is drawn over the
 control's own background. Its edge is a pure luminance shift — darkening on light, lightening on
@@ -171,7 +171,10 @@ are visually the same size and the guard reports a value for which two tokens ar
 above it the jump reads as a different type system. That test is what admitted `nano` (11/10 = 1.10)
 and `display` (30/26 = 1.154) and what **rejected** a 20px rung between `xl` and `h2`: 21/20 = 1.05
 is below the floor, and `h2` is already 1px away. A size the ladder declines to grow a rung for
-snaps to its nearest step — it is not a `theme-allow`. Both new rungs are named for a ROLE, not a
+should snap to its nearest step, not reach for a `theme-allow` — with one standing, pre-existing
+exception: §5's numeric segment labels (1D/7D/30D) at 11.5px, between `micro` (11) and `xs` (12.5),
+which predates this ladder-gap rule and ships behind its own `theme-allow` rather than snapping.
+It is not a precedent for new gaps. Both new rungs are named for a ROLE, not a
 position, because a bare `xxs`/`xxl` becomes the escape hatch for every size the ladder exists to
 prevent.
 
@@ -227,7 +230,7 @@ dead code against the `!important` floor.
   identically-rounded background box, like `ChartCard`, is legal). Mechanically enforced by
   `src/theme/shadow-surfaces.test.ts`.
 - **Card**: panel bg + `shadow-card` (ring lives IN the shadow — no `border` property), radius
-  7px, padding ~14–16px. Cards lift subtly off a slightly darker page.
+  7px, padding `xs`/`sm` (11px/13px). Cards lift subtly off a slightly darker page.
 - **Button / ActionIcon**: **depth says "this is a control surface"; it is not the emphasis axis.**
   Emphasis is carried entirely by fill weight (`filled` > `light`/`outline` > `subtle`) — the same
   way Material 3, Radix and Primer rank their variants, none of which rank by z-height. So every
@@ -273,21 +276,21 @@ dead code against the `!important` floor.
   micro-labels. Active item = ink-9% tint (NO panel fill, NO shadow — a selected row, not a raised
   control) + **accent-colored icon** + weight 600 ink text, hovering to ink-13%;
   inactive = muted text, faint icon; hover = ink-6% tint. Child items indent with a 1px
-  `divider` left border; active child = accent text, weight 600. Count badges: mono 10.5px,
-  ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (13px semibold) +
-  mono 9.5px uppercase faint meta line.
+  `divider` left border; active child = accent text, weight 600. Count badges: mono micro (11px),
+  ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (15px semibold) +
+  mono micro (11px) uppercase faint meta line.
 - **Header**: transparent, no bottom rule — it shares the page background with the body, so a
   separator would only draw a line across a continuous surface. Breadcrumb 13.5px: parents faint, separator
-  line-colored, current page in head font ~14.5px/550. Right side: search trigger (panel +
-  shadow-raised, radius 8, faint text, mono ⌘K badge), icon button (31px, panel + shadow-raised),
-  segmented range control. These two are a matched pair — they sit side by side, so they must never
-  drift onto different depth tokens.
+  line-colored, current page in head font ~14.5px/550. The search trigger moved to the sidebar
+  (`SidebarSearch`, below the brand) — it is not header chrome. The header's own right side is the
+  page-actions slot and the global-actions slot; any control dropped there (icon button, segmented
+  range) shares the header's depth tokens (`shadow-raised` for the control, never `shadow-card`).
 - **Segmented control**: track = ink-6% tint, radius 7, 2px padding, 2px gap; active segment =
   panel bg + `shadow-ctrl`, radius 5, ink text weight 600; inactive = muted, transparent. Numeric
   segment labels (1D/7D/30D) are mono 11.5px; word labels are sans 12px.
 - **Ghost icon button**: transparent, faint icon, hover ink-6% + ink icon, radius 6. Flat at rest
   AND on hover. Button's `subtle` behaves identically — neither takes depth in either state.
-- **Delta/status badge**: mono 11.5px weight 600, status-color text on status-13% tint, radius 6,
+- **Delta/status badge**: mono 12.5px weight 600, status-color text on status-13% tint, radius 6,
   2px 7px padding, optional ▲/▼ glyph at 9px, optional comparison-period suffix (`MoM`/`WoW`/`YTD`)
   in a dimmer shade of the same tone directly after the value.
 - **Stat card**: card-radius panel, spacing xs/sm inset, mono xs uppercase label + mono ~24px hero
@@ -315,7 +318,7 @@ dead code against the `!important` floor.
 - **Charts**: horizontal grid = hairline only (no vertical grid), baseline axis = line color;
   ticks mono 10.5px faint; primary series = accent, secondary = faint, tertiary/line overlay =
   status-warning at 1.9px stroke; bar pairs 6.4px wide, rx 1.4; legend centered below — 11px
-  radius-3 square swatches (16×3px radius-2 pill for line series), 12.5px muted labels, 22px gap.
+  radius-3 square swatches (16×3px radius-2 pill for line series), 13.5px muted labels, 22px gap.
 - **Sparklines**: single 1.6px faint line, no fill, no axes.
 - **Tooltip/popover/menu**: panel bg + `shadow-overlay` (the detached floating tier, a step above
   `shadow-card` — see §2), radius 7–8px (cards 7px; floating surfaces 8px).
