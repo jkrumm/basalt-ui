@@ -222,6 +222,15 @@ dead code against the `!important` floor.
 
 ## 5. Component idioms
 
+- **Control-tier height ladder** (`docs/CONTROLS-SPEC.md` §5): four density-tracking rungs below
+  the forms-only `controlHeight` (`size="md"`, 42px, unchanged) — `controlHeightTag` 20px (inline
+  chip / table-cell count tag), `controlHeightWidget` 24px (`size="icon"` ActionIcon,
+  `WidgetHeader tier="widget"` actions), `controlHeightCtl` 30px (`size="ctl"` — `PageBar`,
+  `Section`, table toolbar, sidebar blocks), and `touchControlHeight` 36px (the mobile hit-area
+  floor below `sm`, C15 — not a visible box). Every rung floors independently under the density
+  knob (18/22/28/30 at level −3) rather than collapsing toward the others. A raw control dropped
+  into a home slot (`PageBar.actions`, `Section.actions`, …) with no `size` prop renders `ctl` —
+  see `CtlSlot`/`CTL_THEME` (`theme/ctl-theme.tsx`).
 - **The ring lives IN the shadow — apply it to the box that carries the surface's `border-radius`.**
   `shadow-card`/`shadow-raised` bakes a 1px ring into the shadow value itself; the ring follows the
   shadowed box's OWN corners, so it only renders correctly there — never on a bare layout wrapper
@@ -287,7 +296,9 @@ dead code against the `!important` floor.
   range) shares the header's depth tokens (`shadow-raised` for the control, never `shadow-card`).
 - **Segmented control**: track = ink-6% tint, radius 7, 2px padding, 2px gap; active segment =
   panel bg + `shadow-ctrl`, radius 5, ink text weight 600; inactive = muted, transparent. Numeric
-  segment labels (1D/7D/30D) are mono 11.5px; word labels are sans 12px.
+  segment labels (1D/7D/30D) are mono `VX.text.xs` (12.5px) via a bare `data-numeric` attribute on
+  the control (`docs/CONTROLS-SPEC.md` §3, C7 — retires the per-consumer `theme-allow` inline-style
+  hack); word labels are sans 12px.
 - **Ghost icon button**: transparent, faint icon, hover ink-6% + ink icon, radius 6. Flat at rest
   AND on hover. Button's `subtle` behaves identically — neither takes depth in either state.
 - **Delta/status badge**: mono 12.5px weight 600, status-color text on status-13% tint, radius 6,
