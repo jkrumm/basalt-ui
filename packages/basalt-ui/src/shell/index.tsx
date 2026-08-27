@@ -120,7 +120,7 @@ export type BasaltShellProps = {
   /** Entries appended to the sidebar settings menu. */
   settingsMenuItems?: SettingsMenuItem[]
   /**
-   * Optional account row rendered above the settings menu in the sidebar footer (see
+   * Optional account row rendered below the settings menu in the sidebar footer (see
    * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps

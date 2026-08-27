@@ -110,18 +110,18 @@ const bodyClipStyle = {
   borderBottomLeftRadius: VX.radiusCard,
   borderBottomRightRadius: VX.radiusCard,
   overflow: 'hidden' as const,
-  padding: '2px var(--mantine-spacing-sm, 0.75rem) var(--mantine-spacing-xs, 0.625rem)',
+  padding: '2px var(--mantine-spacing-sm, 0.8125rem) var(--mantine-spacing-xs, 0.6875rem)',
 }
 const headerStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   // Card inset = spacing xs (vertical) / sm (horizontal). The `--mantine-spacing-*` vars carry
-  // basalt's OWNED scale (theme.spacing.xs 0.625rem / sm 0.75rem); the rem fallbacks keep a
+  // basalt's OWNED scale (theme.spacing.xs 0.6875rem / sm 0.8125rem); the rem fallbacks keep a
   // Mantine-free `./charts`-only consumer (no MantineProvider vars) padded identically. No
   // header/body divider — the title block and the plot read as one continuous surface; a rule here
   // only doubled the card's shadow-embedded ring and made the header feel heavier.
-  padding: 'var(--mantine-spacing-xs, 0.625rem) var(--mantine-spacing-sm, 0.75rem) 4px',
+  padding: 'var(--mantine-spacing-xs, 0.6875rem) var(--mantine-spacing-sm, 0.8125rem) 4px',
 }
 const titleColumnStyle = {
   display: 'inline-flex',

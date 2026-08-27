@@ -204,7 +204,8 @@ html[data-mantine-color-scheme] .inputWrapper[data-variant='default']:not([data-
 /*
  * Reduced motion drops the fade, never the shadow: a static shadow is not motion, and removing it
  * would strip the very hierarchy this pass exists to establish from the users who asked for less
- * animation. `subtle`'s hover depth still lands — it just lands instantly.
+ * animation. `default`/`filled`/`light`/`outline`'s hover depth still lands — it just lands
+ * instantly. `subtle` stays flat regardless, as it does in every other state (see above).
  */
 @media (prefers-reduced-motion: reduce) {
   .buttonRoot,

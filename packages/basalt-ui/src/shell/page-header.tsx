@@ -3,8 +3,9 @@
  * PAGE slot: the active route portals its full control row into the bar via `PageActions`, so each
  * page owns its actions without a separate in-body header.
  *
- * Grounded verbatim in argo `apps/dashboard/src/components/app-shell/page-header.tsx`. This is a
- * real, working implementation (the slot/portal mechanism has no app coupling) — not a stub.
+ * Originally extracted from argo's `apps/dashboard/src/components/app-shell/page-header.tsx`;
+ * argo has since deleted that file in favor of this package. This is a real, working
+ * implementation (the slot/portal mechanism has no app coupling) — not a stub.
  */
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'

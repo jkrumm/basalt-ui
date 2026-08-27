@@ -30,15 +30,7 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
 
-## Unreleased
-
-**The heading has no number on purpose.** Three rounds running, the newest heading here named a
-version npm never served — `1.20.1`, then `1.21.1` — because this file is written before
-`semantic-release` computes the number, and a `feat:` in the batch turns the guess into a phantom.
-`shipped-versions.test.ts` now fails any file `init`/`sync` copy into a consumer that names a
-version `CHANGELOG.md` does not record. This file is not in that set; the same discipline applies
-by convention. Rename the section at release, or leave it — a reader can resolve `Unreleased`
-against `CHANGELOG.md`, and could never resolve `1.21.1`.
+## 1.24.0 — `QueryState`, table body chrome, four false greens
 
 **Nothing removed or renamed. Twelve new runtime exports on `.`/`./query`, plus table props.** Every
 API entry is additive; the behaviour changes are in the guard and the CLI, listed after them.
@@ -169,6 +161,32 @@ scaffold a second consumer: the refusal is keyed on the RESOLVED project and run
   a file type one consumer has. Measured: rollhook's marketing site scans 6 files with 0 findings,
   and no other consumer holds a single `.astro`, `.vue` or `.jsx` file, so grace would have covered
   zero incumbent violations.
+
+## 1.25.0 — `manualPagination` imposes a contract
+
+**Nothing removed or renamed — a behaviour change, additive props only.** `manualPagination` made
+`data` one server page but left every other client-side control armed: sorting reordered that page
+under a header chevron while "Showing 1–25 of 412" presented it as a sort of all 412 — a plausible,
+wrong answer with nothing on screen to give it away. argo found it on 1.24.0 and worked around it
+with an explicit `enableSorting={false}`.
+
+Adopting `manualPagination` now imposes a contract, checked from props at render:
+
+| With `manualPagination`   | Resolve it with                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| the pagination bar itself | `enablePagination` (without it `manualPagination` is inert) + `rowCount`/`pageCount` |
+| sorting                   | the new `manualSorting` + sort in `onSortingChange`, or `enableSorting={false}`      |
+| `enableGlobalFilter`      | the new `manualFiltering` + filter in `onGlobalFilterChange`                         |
+| `facets`                  | `manualFiltering` + the new `onColumnFiltersChange`                                  |
+
+Unresolved, it **throws in dev** naming every breach at once; a production bundle degrades instead —
+no sort headers, no filter controls, no "of N" it cannot stand behind, plus one `console.error`. A
+bare `<BasaltDataTable data columns />` (no `manualPagination`) is byte-identical — no opt-out
+needed for a client-side table.
+
+Sibling defect fixed with it: the empty-state branch keyed off `data.length`, so a search or page
+index matching nothing left `data` non-empty and rendered a `<tbody>` with no rows AND no message.
+It now keys off the rendered row model.
 
 ## 1.23.1 — the band-state throw, the tag gate, a CLI that answers
 

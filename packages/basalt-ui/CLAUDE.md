@@ -324,9 +324,11 @@ durations/easings scattered per component.
 
 `BasaltShell` composes `AppSidebar` / `MobileNav` / `AppBreadcrumbs` / page-header
 (`PageHeaderProvider` / `PageActions` / `PageActionsOutlet`). Brand, `SidebarSection[]`, a
-`globalActions` slot, settings/account extras; collapse persisted via `@mantine/hooks`
-`useLocalStorage`. Router-agnostic — badge/active/navigate wiring stays consumer-side; ship
-`NavCountBadge` for the count-badge pattern. No zustand, no router adapter.
+`globalActions` slot, settings/account extras; collapse persisted via basalt's own
+`createPersistedState` (`../state`). The `.` entry itself is router-agnostic — badge/active/navigate
+wiring stays consumer-side; ship `NavCountBadge` for the count-badge pattern. No zustand; a router
+adapter does ship, at `./router-tanstack` (a headless TanStack Router bridge), for consumers who
+want it.
 
 **The router seam is ONE component, not a render callback.** `SidebarItem.Anchor` (a `NavAnchor`,
 declared in `src/nav/types.ts`) is the consumer's router `<Link>`; basalt renders every pixel of
@@ -380,10 +382,12 @@ unauthenticated / authenticated identity+role+plan — plus `BasaltAccountAction
 **no** auth dependency and ships **no** `./auth` subpath — the consumer maps its real auth client
 (Better Auth, Clerk, …) into this shape; the Better-Auth mapping recipe lives as JSDoc on
 `BasaltAccountProps` only. Pass `account` to `BasaltShell`/`AppSidebar` to render it below the
-settings menu (separated by its own top hairline); omitting it reproduces the pre-existing footer
-unchanged. The row shows a generic, non-personalized "person" icon (never an avatar/photo/initials)
-with plan/role badges nested under the name; the email is hidden unless `showEmail` is passed
-(privacy default).
+settings menu — no separating hairline, the row's own top padding supplies the separation;
+omitting it reproduces the pre-existing footer unchanged. The authenticated row leads with an
+initials block derived from `identity.name` (never an avatar/photo/image); the unauthenticated
+"Sign in" row falls back to a generic person glyph, since there's no identity yet to derive
+initials from. Plan/role badges nest under the name; the email is hidden unless `showEmail` is
+passed (privacy default).
 
 **Sidebar nav extra (`sidebarNavExtra` on `BasaltShell`, `navExtra` on `AppSidebar`, optional).**
 Arbitrary content appended after `sections` inside the nav `ScrollArea`, for a consumer with a
