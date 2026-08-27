@@ -1,3 +1,11 @@
+# [1.27.0](https://github.com/jkrumm/basalt-ui/compare/v1.26.0...v1.27.0) (2026-08-27)
+
+
+### Features
+
+* close the gaps the argo and linewatch migrations found ([79d9a6c](https://github.com/jkrumm/basalt-ui/commit/79d9a6ce69101309d8949f70a9bba2ed25dc513e))
+* dogfood NumberFilter and StatCard unit/breakdown in the playground ([7a690be](https://github.com/jkrumm/basalt-ui/commit/7a690bea7998a9d2e9b71d304817476f45066b04))
+
 # [1.26.0](https://github.com/jkrumm/basalt-ui/compare/v1.25.0...v1.26.0) (2026-08-27)
 
 
