@@ -4,8 +4,10 @@
  * (`noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`).
  */
 declare const classes: {
+  readonly row: string
   readonly trigger: string
   readonly label: string
   readonly railBtn: string
+  readonly actionBtn: string
 }
 export default classes

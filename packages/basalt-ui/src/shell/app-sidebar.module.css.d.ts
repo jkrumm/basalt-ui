@@ -10,6 +10,7 @@ declare const classes: {
   readonly brand: string
   readonly brandLead: string
   readonly brandName: string
+  readonly brandButton: string
   readonly searchSlot: string
   readonly navScroll: string
   readonly navViewport: string
@@ -27,7 +28,24 @@ declare const classes: {
   readonly sectionHeader: string
   readonly subnavDropdown: string
   readonly childList: string
-  readonly navExtra: string
   readonly ghostIcon: string
+  readonly block: string
+  readonly blockHeader: string
+  readonly blockHeaderButton: string
+  readonly blockIcon: string
+  readonly blockDot: string
+  readonly blockItems: string
+  readonly blockRow: string
+  readonly blockRowStatic: string
+  readonly blockRowLabel: string
+  readonly blockRowMeta: string
+  readonly blockToneDot: string
+  readonly blockMore: string
+  readonly blockProgress: string
+  readonly blockProgressHead: string
+  readonly blockRing: string
+  readonly footerLinks: string
+  readonly footerIconSlot: string
+  readonly footerVersion: string
 }
 export default classes

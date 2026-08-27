@@ -24,8 +24,6 @@ export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
   badges?: Partial<Record<NavItemId<G>, number | ReactNode>>
   /** Override active detection entirely. */
   isActive?: (item: AnyNavItem) => boolean
-  /** Passed straight through into the returned `mobileNav`. */
-  moreExtra?: ReactNode
   getScrollElement?: () => HTMLElement | null
 }
 
@@ -119,7 +117,6 @@ export function useNav<
   }, [config, matchRoute, href, badges, isActiveOverride])
 
   const mobile = config.mobile
-  const moreExtra = opts?.moreExtra
   const getScrollElement = opts?.getScrollElement
 
   const mobileNav = useMemo<MobileNavConfig>(() => {
@@ -137,10 +134,9 @@ export function useNav<
       ...(mobile?.maxTabs !== undefined && { maxTabs: mobile.maxTabs }),
       ...(mobile?.menuMax !== undefined && { menuMax: mobile.menuMax }),
       ...(mobile?.moreLabel !== undefined && { moreLabel: mobile.moreLabel }),
-      ...(moreExtra !== undefined && { moreExtra }),
       ...(getScrollElement !== undefined && { getScrollElement }),
     }
-  }, [config, mobile, moreExtra, getScrollElement])
+  }, [config, mobile, getScrollElement])
 
   return { sections, mobileNav }
 }

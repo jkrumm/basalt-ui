@@ -8,7 +8,21 @@
  * surface + shadow-card, control radius, faint icon/label, mono `Kbd` shortcut hint.
  */
 import { ActionIcon, Kbd, Text, UnstyledButton } from '@mantine/core'
+import type { ReactNode } from 'react'
+import { OverflowMenu } from '../controls/actions'
+import type { BarAction } from '../controls/actions'
 import classes from './sidebar-search.module.css'
+
+/**
+ * The ⌘K row's trailing icon buttons — ONE or TWO, by type (`docs/CONTROLS-SPEC.md` §2.3).
+ *
+ * The tuple IS the enforcement: a third button pushes the search trigger under the width where its
+ * placeholder stays readable, and there is no third thing a sidebar search row is for. Each entry
+ * renders icon-only at the `icon` tier (24px, `--ai-size-icon`) with `label` demoted to the
+ * accessible name; a `kind: 'menu'` entry becomes an `OverflowMenu` kebab, a `kind: 'custom'` one
+ * is mounted verbatim.
+ */
+export type SidebarSearchActions = [BarAction] | [BarAction, BarAction]
 
 export type SidebarSearchConfig = {
   /** Opens the search palette — e.g. `openSpotlight` from `basalt-ui/commands`. */
@@ -39,12 +53,55 @@ function IconSearch() {
   )
 }
 
+/** The first grapheme of a label — the fallback body for an action shipping no icon. */
+function initial(label: string): string {
+  return [...label][0]?.toUpperCase() ?? '?'
+}
+
+/**
+ * One trailing action as an icon-only button. `size="icon"` is EXPLICIT here, not inherited: the
+ * search row is chrome, not a control home, so no `CtlSlot` wraps it and nothing else would resolve
+ * the tier (`--ai-size-icon`, declared by `cssVariablesResolver` — spec §5).
+ */
+function SearchAction({ action }: { action: BarAction }): ReactNode {
+  if (action.kind === 'custom') return action.node
+  if (action.kind === 'menu') {
+    return <OverflowMenu actions={action.items} trigger="kebab" label={action.label} />
+  }
+  const shared = {
+    variant: 'subtle' as const,
+    size: 'icon',
+    className: classes.actionBtn,
+    'aria-label': action.label,
+    disabled: action.disabled === true,
+    ...(action.onClick !== undefined && { onClick: action.onClick }),
+  }
+  const body = action.icon ?? initial(action.label)
+  const Anchor = action.Anchor
+  if (Anchor !== undefined) {
+    return (
+      <ActionIcon component={Anchor} {...shared}>
+        {body}
+      </ActionIcon>
+    )
+  }
+  if (action.link !== undefined) {
+    return (
+      <ActionIcon component="a" href={action.link.to} {...shared}>
+        {body}
+      </ActionIcon>
+    )
+  }
+  return <ActionIcon {...shared}>{body}</ActionIcon>
+}
+
 export function SidebarSearch({
   onOpen,
   placeholder = 'Search…',
   shortcut,
+  actions,
   collapsed,
-}: SidebarSearchConfig & { collapsed?: boolean }) {
+}: SidebarSearchConfig & { actions?: SidebarSearchActions; collapsed?: boolean }) {
   // SSR-safe mac detection, matching the shell's other shortcut-hint logic.
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform)
   const hint = shortcut ?? (isMac ? '⌘K' : 'Ctrl K')
@@ -63,7 +120,7 @@ export function SidebarSearch({
     )
   }
 
-  return (
+  const trigger = (
     <UnstyledButton
       type="button"
       className={classes.trigger}
@@ -76,5 +133,17 @@ export function SidebarSearch({
       </Text>
       <Kbd size="xs">{hint}</Kbd>
     </UnstyledButton>
+  )
+
+  // No wrapper without actions — the trigger stays the row's only node, exactly as it shipped.
+  if (actions === undefined) return trigger
+
+  return (
+    <div className={classes.row}>
+      {trigger}
+      {actions.map((action) => (
+        <SearchAction key={action.key} action={action} />
+      ))}
+    </div>
   )
 }

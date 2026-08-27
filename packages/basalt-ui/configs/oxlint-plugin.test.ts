@@ -17,7 +17,8 @@ import basaltPlugin, {
   PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
 } from './oxlint-plugin.js'
-import { GUARD_RULES } from '../src/guard/index.ts'
+import { GUARD_RULES, PLUGIN_RULE_IDS } from '../src/guard/index.ts'
+import { PLUGIN_RULE_ID_LIST, SURFACES } from '../src/surfaces.ts'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
 const OXLINT_BIN = resolve(import.meta.dirname, '..', '..', '..', 'node_modules', '.bin', 'oxlint')
@@ -39,6 +40,15 @@ beforeEach(() => {
         'basalt/chart-legend-literal': 'error',
         'basalt/shadow-basalt-export': 'error',
         'basalt/hand-rolled-shell': 'error',
+        'basalt/raw-scroll-container': 'error',
+        'basalt/hand-rolled-filter': 'error',
+        'basalt/control-outside-home': 'error',
+        'basalt/control-size-literal': 'error',
+        'basalt/page-bar-budget': 'error',
+        'basalt/in-body-page-title': 'error',
+        'basalt/responsive-twin': 'error',
+        'basalt/search-literal-link': 'error',
+        'basalt/use-search-from-literal': 'error',
         'basalt/visx-boundary': 'error',
         'basalt/visx-tooltip': 'error',
         'basalt/token-layer-boundary': 'error',
@@ -1388,9 +1398,28 @@ describe('KNOWN_RULE_IDS', () => {
     }
   })
 
+  // Deduped, because ONE id is deliberately in both registries: `in-body-page-title` is a plugin
+  // rule AND a guard kind (law C8 has an AST half and a text half), so one `theme-allow
+  // in-body-page-title — <why>` waives both lanes rather than needing a different word per lane.
   it('contains nothing else — it is exactly the union of the two registries', () => {
-    const expected = [...Object.keys(basaltPlugin.rules), ...Object.keys(GUARD_RULES)].toSorted()
+    const expected = [
+      ...new Set([...Object.keys(basaltPlugin.rules), ...Object.keys(GUARD_RULES)]),
+    ].toSorted()
     expect([...KNOWN_RULE_IDS].toSorted()).toEqual(expected)
+  })
+
+  it('shares exactly one id between the two registries — the C8 pair', () => {
+    const shared = Object.keys(basaltPlugin.rules).filter((id) => Object.hasOwn(GUARD_RULES, id))
+    expect(shared).toEqual(['in-body-page-title'])
+  })
+
+  // The guard's own copy (`PLUGIN_RULE_IDS`) is what `check-theme --audit-allows` classifies an
+  // annotation against: an id in neither registry reads as a typo and is reported unscoped. A new
+  // plugin rule missing from it would make every waiver naming it look like a mistake.
+  it('every plugin rule is classifiable by the guard — its own id set or a guard kind', () => {
+    for (const id of Object.keys(basaltPlugin.rules)) {
+      expect([id, PLUGIN_RULE_IDS.has(id) || Object.hasOwn(GUARD_RULES, id)]).toEqual([id, true])
+    }
   })
 })
 
@@ -1434,5 +1463,560 @@ describe('theme-allow with an unrecognized rule id', () => {
     )
     expect(rules).not.toContain('no-raw-font-size')
     expect(code).toBe(0)
+  })
+})
+
+// ── the control-home rules (docs/CONTROLS-SPEC.md §6) ────────────────────────
+
+const MANTINE_IMPORT = `import { Button, ScrollArea, SegmentedControl, Select } from '@mantine/core'\n`
+
+describe('basalt/hand-rolled-filter', () => {
+  it('flags a raw Mantine Select handed to a PageBar filters slot', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <PageBar filters={<Select data={[]} />} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-filter')
+  })
+
+  it('flags it through a hoisted binding — the argo headerExtra shape', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}const pills = <Select data={[]} />\n` +
+        `export const C = () => <PageBar filters={pills} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-filter')
+  })
+
+  it('flags one inside an ARRAY slot value (filtersEnd={[…]})', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <PageBar filtersEnd={[<Select key="a" data={[]} />]} />\n`,
+    )
+    expect(rules).toContain('hand-rolled-filter')
+  })
+
+  // The body form is the whole reason the walk stops at the slot ATTRIBUTE: a Section's children
+  // are a page region, not a control home, and a form there is C1's third home.
+  // `control-outside-home` DOES report this one (a Section body is not a home either) — which is
+  // the point of the split: the body form is a warn about placement, never an error about the slot.
+  it("does NOT flag a Select in a Section's CHILDREN — the body form", () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <Section title="Filters">\n    <Select data={[]} />\n  </Section>\n)\n`,
+    )
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+
+  it("does NOT flag a slot prop on a tag that is not a home (a consumer's own Toolbar)", () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <Toolbar filters={<Select data={[]} />} />\n`,
+    )
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+
+  it('does NOT flag a same-named component that is not the Mantine binding', () => {
+    const { code, rules } = run(
+      `import { Select } from './my-select'\nexport const C = () => <PageBar filters={<Select data={[]} />} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+
+  it('does NOT flag a bound basalt control in the same slot', () => {
+    const { code, rules } = run(
+      `export const C = () => <PageBar filters={<RangeFilter field={f} />} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+
+  // The settled reading of law C1's THIRD home (docs/CONTROLS-SPEC.md §5/§6): a form row keeps
+  // Mantine's `md` tier, so a raw input bound to a setting is right there — and `control` /
+  // `SettingsRow` are absent from the slot set for exactly that reason.
+  it("does NOT flag a raw Select in a SettingsRow's control — the form-row home", () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <SettingsSection title="S">\n    <SettingsRow label="Channel" control={<Select data={[]} />} />\n  </SettingsSection>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('hand-rolled-filter')
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  it("still flags one in a SettingsSection's actions header slot — that IS tiered", () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <SettingsSection title="S" actions={<Select data={[]} />} />\n`,
+    )
+    expect(rules).toContain('hand-rolled-filter')
+  })
+
+  it('flags a member tag whose ROOT binding is Mantine (Chip.Group)', () => {
+    const { rules } = run(
+      `import { Chip } from '@mantine/core'\nexport const C = () => <PageBar filters={<Chip.Group multiple />} />\n`,
+    )
+    expect(rules).toContain('hand-rolled-filter')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <PageBar\n    filters={\n      // theme-allow hand-rolled-filter — not a store field\n      <Select data={[]} />\n    }\n  />\n)\n`,
+    )
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+
+  it('honors a theme-allow-file declaration', () => {
+    const { rules } = run(
+      `// theme-allow-file hand-rolled-filter — a legacy page, migrating next sprint\n` +
+        `${MANTINE_IMPORT}export const C = () => <PageBar filters={<Select data={[]} />} />\n`,
+    )
+    expect(rules).not.toContain('hand-rolled-filter')
+  })
+})
+
+describe('basalt/control-outside-home', () => {
+  it('flags a raw Mantine Select in no home at all', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <div><Select data={[]} /></div>\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('control-outside-home')
+  })
+
+  it('does NOT flag one inside a home slot — that is hand-rolled-filter s business', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <PageBar filters={<Select data={[]} />} />\n`,
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  it.each(['SettingsRow', 'Modal', 'Drawer', 'Composer'])(
+    'does NOT flag one under a declared non-home (%s)',
+    (host) => {
+      const { rules } = run(
+        `${MANTINE_IMPORT}export const C = () => <${host}><Select data={[]} /></${host}>\n`,
+      )
+      expect(rules).not.toContain('control-outside-home')
+    },
+  )
+
+  it('does NOT flag one under a member-expression non-home (Menu.Dropdown)', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <Menu.Dropdown><Select data={[]} /></Menu.Dropdown>\n`,
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  it('does NOT flag anything in a file that imports @mantine/form — a form is the third home', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}import { useForm } from '@mantine/form'\n` +
+        `export const C = () => <div><Select data={[]} /></div>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  // The owner exemption, `hand-rolled-plot`'s shape: the module that IS the bound control cannot be
+  // told to use one.
+  // `shadow-basalt-export` reports the same fixture (a local `ViewTabs` collides with the shipped
+  // one), so only this rule's own silence is asserted — the exit code belongs to that rule.
+  it('does NOT flag the module that DEFINES a basalt control', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export function ViewTabs() {\n  return <SegmentedControl data={[]} />\n}\n`,
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <div>\n    {/* theme-allow control-outside-home — a one-off admin picker */}\n    <Select data={[]} />\n  </div>\n)\n`,
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
+})
+
+describe('basalt/control-size-literal', () => {
+  it.each(['size="xs"', 'w={200}', 'fullWidth', 'visibleFrom="sm"', 'hiddenFrom="sm"'])(
+    'flags %s on an element inside a home slot',
+    (prop) => {
+      const { code, rules } = run(
+        `${MANTINE_IMPORT}export const C = () => <PageBar actions={<Button ${prop}>Go</Button>} />\n`,
+      )
+      expect(code).toBe(1)
+      expect(rules).toContain('control-size-literal')
+    },
+  )
+
+  it('flags it through a hoisted slot binding too', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}const acts = <Button size="xs">Go</Button>\n` +
+        `export const C = () => <PageBar actions={acts} />\n`,
+    )
+    expect(rules).toContain('control-size-literal')
+  })
+
+  it("does NOT flag a size prop in a SettingsRow's control — the form tier is Mantine's md", () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <SettingsRow label="L" control={<Button size="compact-sm">Go</Button>} />\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-size-literal')
+  })
+
+  it('does NOT flag a size prop on the HOME itself', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <PageBar w={200} actions={<Button>Go</Button>} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-size-literal')
+  })
+
+  it("does NOT flag a size prop in a Section's CHILDREN", () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <Section title="T">\n    <Button size="xs">Go</Button>\n  </Section>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-size-literal')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <PageBar\n    actions={\n      <Button\n        // theme-allow control-size-literal — a deliberate 24px tag\n        size="xs"\n      >\n        Go\n      </Button>\n    }\n  />\n)\n`,
+    )
+    expect(rules).not.toContain('control-size-literal')
+  })
+})
+
+describe('basalt/page-bar-budget', () => {
+  it('flags a second PageBar in one file', () => {
+    const { code, rules } = run(
+      `export const A = () => <PageBar />\nexport const B = () => <PageBar />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('page-bar-budget')
+  })
+
+  it('flags a 5-entry actions.secondary array', () => {
+    const five = [1, 2, 3, 4, 5].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
+    const { code, rules } = run(
+      `export const C = () => <PageBar actions={{ secondary: [${five}] }} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('page-bar-budget')
+  })
+
+  it('does NOT flag a 4-entry actions.secondary array', () => {
+    const four = [1, 2, 3, 4].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
+    const { code, rules } = run(
+      `export const C = () => <PageBar actions={{ secondary: [${four}] }} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('page-bar-budget')
+  })
+
+  it('flags a 4-entry Section actions array (budget 3)', () => {
+    const four = [1, 2, 3, 4].map((n) => `{ key: '${n}', label: '${n}' }`).join(', ')
+    const { rules } = run(`export const C = () => <Section actions={[${four}]} />\n`)
+    expect(rules).toContain('page-bar-budget')
+  })
+
+  it('flags a second variant="filled" inside one slot', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <PageBar actions={<><Button variant="filled">A</Button><Button variant="filled">B</Button></>} />\n)\n`,
+    )
+    expect(rules).toContain('page-bar-budget')
+  })
+
+  it('does NOT flag one filled action beside a default one', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => (\n  <PageBar actions={<><Button variant="filled">A</Button><Button variant="default">B</Button></>} />\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('page-bar-budget')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `export const A = () => <PageBar />\n// theme-allow page-bar-budget — the print-only variant\nexport const B = () => <PageBar />\n`,
+    )
+    expect(rules).not.toContain('page-bar-budget')
+  })
+})
+
+describe('basalt/in-body-page-title', () => {
+  it.each([1, 2])('flags <Title order={%i}> in the body', (order) => {
+    const { code, rules } = run(`export const C = () => <Title order={${order}}>Page</Title>\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('in-body-page-title')
+  })
+
+  it('does NOT flag order={3} — a section heading', () => {
+    const { code, rules } = run(`export const C = () => <Title order={3}>Section</Title>\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('in-body-page-title')
+  })
+
+  it.each(['Prose', 'ArticleLayout', 'Modal', 'Drawer'])(
+    'does NOT flag one under %s — that is a document heading',
+    (host) => {
+      const { rules } = run(
+        `export const C = () => <${host}><Title order={1}>Doc</Title></${host}>\n`,
+      )
+      expect(rules).not.toContain('in-body-page-title')
+    },
+  )
+
+  it('does NOT flag one under a content/ path segment', () => {
+    const { code, rules } = run(
+      `export const C = () => <Title order={1}>Doc</Title>\n`,
+      'content/page.tsx',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('in-body-page-title')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `// theme-allow in-body-page-title — a shell-less print view\nexport const C = () => <Title order={1}>Page</Title>\n`,
+    )
+    expect(rules).not.toContain('in-body-page-title')
+  })
+})
+
+describe('basalt/responsive-twin', () => {
+  it('flags the same control mounted under visibleFrom and hiddenFrom', () => {
+    const { code, rules } = run(
+      `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    <SegmentedControl hiddenFrom="sm" data={[]} />\n  </div>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('responsive-twin')
+  })
+
+  it('flags it when the control sits inside each half rather than being it', () => {
+    const { rules } = run(
+      `export const C = () => (\n  <div>\n    <Group visibleFrom="sm"><ViewTabs field={f} /></Group>\n    <Stack hiddenFrom="sm"><ViewTabs field={f} /></Stack>\n  </div>\n)\n`,
+    )
+    expect(rules).toContain('responsive-twin')
+  })
+
+  it('does NOT flag two halves on DIFFERENT breakpoints', () => {
+    const { code, rules } = run(
+      `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    <SegmentedControl hiddenFrom="md" data={[]} />\n  </div>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('responsive-twin')
+  })
+
+  it('does NOT flag a pair holding DIFFERENT controls', () => {
+    const { rules } = run(
+      `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    <Select hiddenFrom="sm" data={[]} />\n  </div>\n)\n`,
+    )
+    expect(rules).not.toContain('responsive-twin')
+  })
+
+  // Same fixture caveat as control-outside-home's owner test: the local `ViewTabs` name is itself a
+  // `shadow-basalt-export` finding, so only this rule's silence is asserted.
+  it('does NOT flag the module that DEFINES a basalt control — the CSS swap lives there', () => {
+    const { rules } = run(
+      `export function ViewTabs() {\n  return (\n    <div>\n      <SegmentedControl visibleFrom="sm" data={[]} />\n      <SegmentedControl hiddenFrom="sm" data={[]} />\n    </div>\n  )\n}\n`,
+    )
+    expect(rules).not.toContain('responsive-twin')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    {/* theme-allow responsive-twin — two genuinely different data sets */}\n    <SegmentedControl hiddenFrom="sm" data={[]} />\n  </div>\n)\n`,
+    )
+    expect(rules).not.toContain('responsive-twin')
+  })
+})
+
+describe('basalt/search-literal-link', () => {
+  const NAV = (search: string) =>
+    `export const nav = defineNav({\n  sections: [\n    { id: 'a', label: 'A', link: linkOptions({ to: '/dashboard'${search} }) },\n  ],\n})\n`
+
+  it('flags a `search` object literal inside defineNav', () => {
+    const { code, rules } = run(NAV(", search: { window: '30d' }"), 'nav.ts')
+    expect(code).toBe(1)
+    expect(rules).toContain('search-literal-link')
+  })
+
+  it('flags it inside navGroup too', () => {
+    const { rules } = run(
+      `export const g = navGroup({ id: 'g', label: 'G' }, [\n  { id: 'x', label: 'X', link: linkOptions({ to: '/d', search: { window: '30d' } }) },\n])\n`,
+      'nav.ts',
+    )
+    expect(rules).toContain('search-literal-link')
+  })
+
+  it('does NOT flag `search: store.linkSearch` passed by reference', () => {
+    const { code, rules } = run(NAV(', search: dashboardFilters.linkSearch'), 'nav.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('search-literal-link')
+  })
+
+  it('does NOT flag a linkOptions literal OUTSIDE a nav definition', () => {
+    const { code, rules } = run(
+      `export const target = linkOptions({ to: '/d', search: { window: '30d' } })\n`,
+      'nav.ts',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('search-literal-link')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `export const nav = defineNav({\n  sections: [\n    {\n      id: 'a',\n      label: 'A',\n      link: linkOptions({\n        to: '/d',\n        // theme-allow search-literal-link — a fixed report link, deliberately pinned\n        search: { window: '30d' },\n      }),\n    },\n  ],\n})\n`,
+      'nav.ts',
+    )
+    expect(rules).not.toContain('search-literal-link')
+  })
+})
+
+describe('basalt/use-search-from-literal', () => {
+  it('flags useSearch({ from: <literal> })', () => {
+    const { code, rules } = run(
+      `export const useRange = () => useSearch({ from: '/dashboard' })\n`,
+      'hooks.ts',
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('use-search-from-literal')
+  })
+
+  it('does NOT flag useSearch({ strict: false })', () => {
+    const { code, rules } = run(
+      `export const useRange = () => useSearch({ strict: false })\n`,
+      'hooks.ts',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('use-search-from-literal')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `export const useRange = () =>\n  useSearch({\n    // theme-allow use-search-from-literal — a route-owned loader, never rendered elsewhere\n    from: '/dashboard',\n  })\n`,
+      'hooks.ts',
+    )
+    expect(rules).not.toContain('use-search-from-literal')
+  })
+})
+
+// ── raw-scroll-container — the C7 widening ───────────────────────────────────
+
+describe('basalt/raw-scroll-container — the home widening (C7)', () => {
+  it('flags overflowX inside a home slot', () => {
+    const { rules } = run(
+      `export const C = () => <PageBar filters={<div style={{ overflowX: 'auto' }} />} />\n`,
+    )
+    expect(rules).toContain('raw-scroll-container')
+  })
+
+  it('flags overflowX anywhere under a Section', () => {
+    const { rules } = run(
+      `export const C = () => (\n  <Section title="T">\n    <div style={{ overflowX: 'scroll' }} />\n  </Section>\n)\n`,
+    )
+    expect(rules).toContain('raw-scroll-container')
+  })
+
+  it('flags <ScrollArea scrollbars="x"> inside a home slot', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <PageBar filters={<ScrollArea scrollbars="x" />} />\n`,
+    )
+    expect(rules).toContain('raw-scroll-container')
+  })
+
+  // The original doctrine, unchanged: a horizontal bar outside a home reserves no gutter width, so
+  // a code block or a pinned-column table stays its own legitimate pattern.
+  it('does NOT flag overflowX outside a home', () => {
+    const { code, rules } = run(`const s = { overflowX: 'auto' }\n`, 'lib.ts')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-scroll-container')
+  })
+
+  it('does NOT flag <ScrollArea scrollbars="x"> outside a home', () => {
+    const { code, rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <ScrollArea scrollbars="x" />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-scroll-container')
+  })
+
+  it('honors a scoped theme-allow on the widened half', () => {
+    const { rules } = run(
+      `export const C = () => (\n  <Section title="T">\n    {/* theme-allow raw-scroll-container — a pinned-column table owns its own scroll node */}\n    <div style={{ overflowX: 'auto' }} />\n  </Section>\n)\n`,
+    )
+    expect(rules).not.toContain('raw-scroll-container')
+  })
+})
+
+// ── shadow-basalt-export — the rename table ──────────────────────────────────
+
+describe('basalt/shadow-basalt-export — SHADOW_ALIASES', () => {
+  it.each([
+    ['PageHeader', 'PageBar'],
+    ['WindowSelector', 'RangeFilter'],
+    ['SectionTitle', 'Section'],
+    ['RefreshButton', 'SyncButton'],
+    ['HeroCard', 'StatCard'],
+  ])('flags a local %s and names %s as what it forks', (local, canonical) => {
+    const { code, rules, output } = run(`export function ${local}() {\n  return null\n}\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('shadow-basalt-export')
+    expect(output).toContain(canonical)
+  })
+
+  it('flags the const form too', () => {
+    const { rules } = run(`export const FilterBar = () => null\n`)
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('does NOT flag a name that is neither an export nor an alias', () => {
+    const { code, rules } = run(`export const RangePickerish = () => null\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('is waivable with a scoped theme-allow', () => {
+    const { rules } = run(
+      `// theme-allow shadow-basalt-export — a marketing hero, unrelated to StatCard\nexport const HeroCard = () => null\n`,
+    )
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+})
+
+// ── SURFACES ↔ the plugin registry ───────────────────────────────────────────
+
+describe('PLUGIN_RULE_ID_LIST ↔ the plugin', () => {
+  // surfaces.ts cannot import the plugin (it is dependency-free by contract, and the plugin is a
+  // standalone .js loaded out of a consumer's node_modules), so the list is hand-maintained and
+  // THIS is the gate that keeps it honest.
+  it('is exactly the plugin s registered rule ids', () => {
+    expect([...PLUGIN_RULE_ID_LIST].toSorted()).toEqual(Object.keys(basaltPlugin.rules).toSorted())
+  })
+
+  it('maps every plugin rule to exactly one surface', () => {
+    const owners = new Map<string, string[]>()
+    for (const [key, spec] of Object.entries(SURFACES)) {
+      if (spec.kind !== 'doctrine') continue
+      for (const id of spec.pluginRules) owners.set(id, [...(owners.get(id) ?? []), key])
+    }
+    for (const id of PLUGIN_RULE_ID_LIST) {
+      expect([id, owners.get(id)?.length ?? 0]).toEqual([id, 1])
+    }
+    // …and no surface claims an id the plugin does not register (the type already forbids it; this
+    // catches a list entry deleted without its surface).
+    for (const id of owners.keys()) {
+      expect([id, (PLUGIN_RULE_ID_LIST as readonly string[]).includes(id)]).toEqual([id, true])
+    }
+  })
+
+  it("puts the shell rule on the root barrel's surface (wave 6)", () => {
+    expect(SURFACES['.'].pluginRules).toContain('hand-rolled-shell')
+  })
+
+  it('gives ./controls the control-tier rules', () => {
+    expect([...SURFACES['./controls'].pluginRules].toSorted()).toEqual([
+      'control-outside-home',
+      'control-size-literal',
+      'hand-rolled-filter',
+      'responsive-twin',
+    ])
   })
 })

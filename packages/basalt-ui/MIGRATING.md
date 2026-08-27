@@ -32,7 +32,8 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ## Unreleased
 
-**One export removed and two deprecated — see § Stores below. Two other behaviour changes: the grace ledgers changed shape, and nine
+**One export removed and two deprecated — see § Stores below; two shell PROPS removed — see
+§ Sidebar. Two other behaviour changes: the grace ledgers changed shape, and nine
 long-stale entries (D4, `docs/archive/CONTROLS-SYNTHESIS.md`) are promoted.** C16
 (`docs/CONTROLS-SPEC.md` §1) is the new law behind both: a grace entry now carries `{ since,
 promote, why }` (semver strings) instead of a bare promotion-note string, and a version-gated test
@@ -182,6 +183,44 @@ A `field.range` keeps THREE URL params (preset + `from` + `to`, renamable via `p
 deep links and loaders keep their shape, and `field.<name>.toWindow(v)` replaces a hand-rolled
 `presetToParams`.
 
+### Sidebar — `sidebarBlocks` replaces the two `ReactNode` extras
+
+**Two props removed with no deprecation window, and two widened.** `sidebarNavExtra` and
+`mobileNav.moreExtra` were the same gap solved twice and badly: the first rendered on desktop only
+and vanished in the collapsed rail, the second was one anonymous row at the bottom of the More
+surface, and neither could be projected because basalt could not see inside a `ReactNode`. Every
+consumer that wanted an "Awaiting action" list therefore wrote it twice, once per prop, and got no
+rail badge either way. `SidebarBlock[]` is that whole shape as data (law C13,
+`docs/CONTROLS-SPEC.md` §2.3).
+
+| Removed / changed                  | Replacement                                                                                                                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BasaltShellProps.sidebarNavExtra` | `sidebarBlocks={[{ kind: 'custom', key, node }]}` — same DOM position (last child of the nav scroll region), same CSS-only hiding in the rail, still desktop-only                      |
+| `AppSidebarProps.navExtra`         | `blocks={[{ kind: 'custom', key, node }]}`                                                                                                                                             |
+| `MobileNavConfig.moreExtra`        | `sidebarBlocks={[{ kind: 'list', key, label, items }]}` — one More-sheet row (`Awaiting action · 3`) opening a nested sheet of its items, instead of one unlabelled row of raw content |
+| `useNav(NAV, { moreExtra })`       | drop the option; declare the block on `BasaltShell`                                                                                                                                    |
+| `BasaltShellProps.brand`           | widened to `BrandConfig & { menu?: AccountMenuItem[] }` — additive; `menu` makes the brand row a `Name ▾` workspace switcher                                                           |
+| `BasaltShellProps.search`          | widened to `SidebarSearchConfig & { actions?: SidebarSearchActions }` — additive; one or two icon-only buttons right of the ⌘K row                                                     |
+
+What changes at runtime even if you declare no blocks at all:
+
+- **Nav-section folds are now PERSISTED**, at `basalt:sidebar-section:<label-slug>` (e.g.
+  `basalt:sidebar-section:tools`). They were a `useState` keyed by label, so every reload re-opened
+  a section the user had closed. `defaultCollapsed` is now the SEED for that key rather than a value
+  that overrides the user on every mount. Block folds live at `basalt:sidebar-block:<key>`; both are
+  the standard `createPersistedState` envelope (`{ v: 1, value: boolean }`), readable with
+  `readPersistedValue` from `basalt-ui/state`. A "Show more" toggle is deliberately NOT persisted.
+- **`settingsMenuItems` renders FLAT at three entries or fewer** — one link row each, instead of a
+  gear "Settings" menu you had to open to see two rows. Four or more keeps the menu. `brand.version`
+  rides the flat rows as a faint label and the dropdown as a `Menu.Label`, as before.
+- **The footer is one wrapper deeper.** `settingsMenuItems` without `account` used to render its
+  `Group` as the footer element itself; both now sit inside one footer `Stack` alongside any
+  `placement: 'bottom'` block. No visual change — relevant only to a stylesheet reaching in by
+  structure.
+
+New types on `.`: `SidebarBlock`, `SidebarListBlock`, `SidebarProgressBlock`, `SidebarCustomBlock`,
+`SidebarBlockItem`, `SidebarBlockTone`, `SidebarSearchActions`.
+
 ### `DeltaBadge` — plain-element DOM, same props
 
 Nothing removed or renamed — a DOM contract change only, ahead of `WidgetHeader`
@@ -250,6 +289,53 @@ import { DateRangePicker } from 'basalt-ui/controls-dates'
 
 A consumer that uses `DateRangePicker` installs `@mantine/dates` and imports
 `@mantine/dates/styles.layer.css` with the other Mantine layer bundles, before `basalt-ui/styles.css`.
+
+### Guards — the control rules (docs/CONTROLS-SPEC.md §6)
+
+**Nothing removed. Eight new oxlint rules and two new guard kinds; two of the ten land `error`, the
+rest `warn` under a dated C16 grace entry.** Every one honours `theme-allow <id> — <why>` on the
+node and `theme-allow-file <id> — <why>` on the file, the same grammar as the rest.
+
+| Rule / kind                          | Fires on                                                                                                                                                                                                                               | Ships         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `basalt/hand-rolled-filter`          | A raw Mantine `Select`/`SegmentedControl`/… handed to a TIERED home slot (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/`WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`) | error         |
+| `basalt/page-bar-budget`             | A second `PageBar` in one file, >4 `actions.secondary`, >3 `Section` actions, a second `variant="filled"` in one slot                                                                                                                  | error         |
+| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, or in a file that DEFINES a basalt control                                                                    | warn → 1.29.0 |
+| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | warn → 1.29.0 |
+| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | warn → 1.29.0 |
+| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | warn → 1.29.0 |
+| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | warn → 1.29.0 |
+| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | warn → 1.29.0 |
+| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | warn → 1.29.0 |
+| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window                                                                                                                                                     | warn → 1.29.0 |
+
+**A `SettingsRow`'s `control` is not a tiered slot, so nothing in this table fires inside one.**
+It is law C1's third home — the form row — and a form keeps Mantine's `md` tier
+(`controlHeight` 42, unchanged). A raw `Select`/`Switch`/`Button` bound to a setting is correct
+there, and its `size` prop is what holds the row at the form tier, so neither `hand-rolled-filter`
+nor `control-size-literal` reaches into it; `control-outside-home` treats a settings row as a home
+and stays silent as well. Consumer settings pages need no change.
+
+**Two existing rules widened, neither with a new id.** `basalt/raw-scroll-container` now also fires
+on `overflowX: 'auto' \| 'scroll'` and on `<ScrollArea scrollbars="x">` **inside a home** (a slot, or
+anywhere under `Section`/`ChartCard`) — law C7, overflow folds into a `More` menu or a `Filters (n)`
+sheet rather than scrolling sideways. Outside a home, `overflowX` is still not policed at all.
+oxlint severities are per rule ID, not per branch, so this widening inherits the rule's existing
+`error` level with no grace runway of its own — the honest limitation, and the reason it is scoped to
+homes rather than shipped repo-wide. `basalt/shadow-basalt-export` gains a rename table
+(`PageHeader`/`FilterBar` → `PageBar`, `WindowSelector`/`RangeSelector`/`DateFilter` →
+`RangeFilter`, `PageSection`/`SectionTitle`/`SectionHeading` → `Section`, `ViewSwitch`/`ViewToggle`
+→ `ViewTabs`, `RefreshButton`/`SyncControl`/`SyncStatusButton` → `SyncButton`, `HeroCard`/`HeroStats`
+→ `StatCard`), so a fork that RENAMED the export is visible too. It stays a permanent advisory
+`warn`.
+
+**`profile: 'tokens-only'` now disables 19 kinds, not 17** — both new kinds are Mantine-coupled.
+
+**`SURFACES` gains `pluginRules`** (`src/surfaces.ts`, internal — not a published subpath): every
+doctrine surface names the oxlint rules that enforce it, every registered rule maps to exactly one
+surface, and `basalt-ui check-coverage` asserts both. `check-coverage` also takes `--write` /
+`--check` for the generated `<!-- basalt:coverage -->` header of each `agent/rules/*.md` file; a
+rule file with no block yet is reported, not failed.
 
 ## 1.24.0 — `QueryState`, table body chrome, four false greens
 
@@ -822,7 +908,7 @@ with the whole lint half off).
 
 | Surface                                                          | Note                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 17 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                                                               |
+| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 19 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                                                               |
 | `basalt.include: [...]`                                          | scan a named file outside `roots` — and the only route to a `.json`, which is never blanket-scanned                                                                                                                                                                                                                                                                                                                                          |
 | `basalt.roots` + a `lint:basalt` script                          | written by `init` from the real layout; `init` on an existing app is a lint-debt event, not a no-op                                                                                                                                                                                                                                                                                                                                          |
 | `tokens:css --check`, `--selector-class <c>` (+ `--light-class`) | drift gate; the Tailwind `<html class="dark">` convention. There is no `scheme: { class }` API — the class form is CLI-only                                                                                                                                                                                                                                                                                                                  |

@@ -47,8 +47,14 @@ import {
 } from '../guard'
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from '../guard'
 import { evaluateGuardHook } from '../guard/guard-hook'
-import { RULE_NAMES, SKILL_NAMES, SURFACES, TOKEN_LAYER_BOUNDARY_SURFACES } from '../surfaces'
-import type { DoctrineSpec, SurfaceSpec } from '../surfaces'
+import {
+  PLUGIN_RULE_ID_LIST,
+  RULE_NAMES,
+  SKILL_NAMES,
+  SURFACES,
+  TOKEN_LAYER_BOUNDARY_SURFACES,
+} from '../surfaces'
+import type { DoctrineSpec, RuleName, SurfaceSpec } from '../surfaces'
 import { buildPaletteCss, deriveSpacing } from '../tokens'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
@@ -2910,14 +2916,136 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — 8-assertion coverage gate
+// coverage headers — the generated `<!-- basalt:coverage -->` block per rule file
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** The block's delimiters. Both are HTML comments, so the block renders as nothing in a viewer. */
+export const COVERAGE_BLOCK_OPEN = '<!-- basalt:coverage -->'
+export const COVERAGE_BLOCK_CLOSE = '<!-- /basalt:coverage -->'
+
+const COVERAGE_BLOCK_RE = /<!-- basalt:coverage -->[\s\S]*?<!-- \/basalt:coverage -->/
+
+/**
+ * What actually enforces one rule file's doctrine, as the file itself should state it.
+ *
+ * Derived from SURFACES — the union over every doctrine surface carrying that `rule`, because
+ * `rule` is many-to-one (`data` covers `./data`, `./data/table`, `./data/virtual`; `mantine` covers
+ * `.` and `./connectivity`). Naming only one surface's coverage would understate the rule.
+ */
+export function coverageFor(rule: RuleName): {
+  guardKinds: string[]
+  pluginRules: string[]
+  advisoryLaws: string[]
+} {
+  const specs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
+    (s): s is DoctrineSpec => s.kind === 'doctrine' && s.rule === rule,
+  )
+  const unique = (values: readonly string[]): string[] => [...new Set(values)].toSorted()
+  return {
+    guardKinds: unique(specs.flatMap((s) => [...s.guardKinds])),
+    pluginRules: unique(specs.flatMap((s) => [...s.pluginRules])),
+    // NOT sorted, and not deduped across surfaces by content: an advisory law is a sentence, and
+    // its order is the order the spec argues it in.
+    advisoryLaws: specs.flatMap((s) => [...(s.advisoryLaws ?? [])]),
+  }
+}
+
+/**
+ * The generated block for one rule, verbatim — HTML comments only, one claim per line so a diff
+ * points at the claim that changed rather than at a reflowed paragraph.
+ *
+ * `not guarded` is printed even when empty, and that is the point: a rule file whose block says
+ * `not guarded: —` is claiming full coverage, which is a claim someone can check. A block that
+ * simply omitted the section would read as "nothing to declare" whether or not anyone had looked
+ * (D8 — see docs/CONTROLS-SPEC.md §6 "Honest coverage").
+ */
+export function coverageBlock(rule: RuleName): string {
+  const { guardKinds, pluginRules, advisoryLaws } = coverageFor(rule)
+  const backedBy = [
+    guardKinds.length > 0 ? `guard kinds — ${guardKinds.join(', ')}` : 'guard kinds — none',
+    pluginRules.length > 0
+      ? `oxlint rules — ${pluginRules.map((id) => `basalt/${id}`).join(', ')}`
+      : 'oxlint rules — none',
+  ].join(' · ')
+  const lines = [
+    COVERAGE_BLOCK_OPEN,
+    '<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->',
+    `<!-- backed by: ${backedBy} -->`,
+  ]
+  if (advisoryLaws.length === 0) lines.push('<!-- not guarded: — -->')
+  else for (const law of advisoryLaws) lines.push(`<!-- not guarded: ${law} -->`)
+  lines.push(COVERAGE_BLOCK_CLOSE)
+  return lines.join('\n')
+}
+
+/** The block a rule file currently carries, or null when it has none yet. */
+export function readCoverageBlock(text: string): string | null {
+  return COVERAGE_BLOCK_RE.exec(text)?.[0] ?? null
+}
+
+/**
+ * `text` with `block` in it — replacing the existing block, or inserted directly below the YAML
+ * frontmatter (the rule files' `paths:` header is load-bearing and must stay first).
+ */
+export function applyCoverageBlock(text: string, block: string): string {
+  if (COVERAGE_BLOCK_RE.test(text)) return text.replace(COVERAGE_BLOCK_RE, block)
+  const frontmatter = /^---\n[\s\S]*?\n---\n/.exec(text)
+  if (frontmatter === null) return `${block}\n\n${text}`
+  const end = frontmatter[0].length
+  return `${text.slice(0, end)}\n${block}\n${text.slice(end)}`
+}
+
+/**
+ * Reconcile every rule file's coverage block against SURFACES.
+ *
+ * `'write'` refreshes them; `'check'` is the CI gate. A rule file with NO block yet is REPORTED,
+ * never failed — the blocks are inserted by the agent-layer wave that rewrites those files, and a
+ * gate that failed before they exist would have to be landed disabled, which is how a gate stays
+ * disabled. A block that exists and DISAGREES is a hard failure: that is drift, and drift in a
+ * coverage claim is the defect the block was added for.
+ */
+export function reconcileCoverageBlocks(
+  pkgRoot: string,
+  mode: 'write' | 'check',
+): { failures: string[]; notes: string[] } {
+  const failures: string[] = []
+  const notes: string[] = []
+  for (const rule of RULE_NAMES) {
+    const rel = `agent/rules/basalt-${rule}.md`
+    const path = resolve(pkgRoot, rel)
+    if (!existsSync(path)) continue // assertion 2 already reports a missing rule file
+    const text = readFileSync(path, 'utf8')
+    const current = readCoverageBlock(text)
+    const expected = coverageBlock(rule)
+    if (mode === 'check') {
+      if (current === null) notes.push(`${rel}: no <!-- basalt:coverage --> block yet`)
+      else if (current !== expected) {
+        failures.push(
+          `${rel}: coverage block is out of sync with SURFACES (check-coverage --write)`,
+        )
+      }
+      continue
+    }
+    if (current === expected) {
+      notes.push(`${rel}: unchanged`)
+      continue
+    }
+    writeFileSync(path, applyCoverageBlock(text, expected), 'utf8')
+    notes.push(`${rel}: ${current === null ? 'block inserted' : 'block updated'}`)
+  }
+  return { failures, notes }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// check-coverage — 9-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Assert the 8 SURFACES invariants against the live SURFACES + GUARD_RULES + plugin.json.
- * Returns 0 when all pass; 1 when any fail (console.error each failure).
+ * Assert the 9 SURFACES invariants against the live SURFACES + GUARD_RULES + plugin.json, and
+ * (with `--write` / `--check`) reconcile the generated `<!-- basalt:coverage -->` header of every
+ * rule file against SURFACES. Returns 0 when all pass; 1 when any fail (console.error each failure).
  *
- * Eight assertions:
+ * Nine assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
  *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
@@ -2931,14 +3059,20 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
  *     the assertion's own comment below for why); basalt's own CI does
  *     (`tests/surfaces-coverage.test.ts`).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
+ *  9. Every registered oxlint plugin rule (PLUGIN_RULE_ID_LIST) maps to EXACTLY ONE surface's
+ *     `pluginRules` — so a new rule cannot ship homeless, and one rule cannot be counted twice as
+ *     coverage. Like assertion 7 this reads SURFACES only: whether the plugin really registers
+ *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`, which a
+ *     shipped CLI running from a consumer's node_modules cannot do.
  *
  * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
  * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
  * via the deduped skill union (no independent per-#-surface skill row).
  */
-export function checkCoverage(): number {
+export function checkCoverage(flags: readonly string[] = []): number {
   const pkgRoot = packageRoot()
   const failures: string[] = []
+  const notes: string[] = []
 
   const allSpecs = Object.entries(SURFACES) as [string, SurfaceSpec][]
   const doctrineSpecs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
@@ -3082,9 +3216,46 @@ export function checkCoverage(): number {
     }
   }
 
+  // ── Assertion 9: every plugin rule maps to exactly one surface ───────────────
+  // The plugin's own rules were the one half of the enforcement seam SURFACES did not model, so a
+  // generated coverage header could name a guard kind and stay silent about the AST rule doing the
+  // actual work (D8). Now every id has exactly one home, and "exactly" is both directions: an
+  // unmapped id is a rule no doc claims, a doubly-mapped one is coverage counted twice.
+  const surfacesPerPluginRule = new Map<string, string[]>()
+  for (const [key, spec] of allSpecs) {
+    if (spec.kind !== 'doctrine') continue
+    for (const id of spec.pluginRules) {
+      surfacesPerPluginRule.set(id, [...(surfacesPerPluginRule.get(id) ?? []), key])
+    }
+  }
+  for (const id of PLUGIN_RULE_ID_LIST) {
+    const owners = surfacesPerPluginRule.get(id) ?? []
+    if (owners.length === 1) continue
+    failures.push(
+      owners.length === 0
+        ? `Plugin rule 'basalt/${id}' maps to no surface — add it to one surface's pluginRules`
+        : `Plugin rule 'basalt/${id}' maps to ${owners.length} surfaces (${owners.join(', ')}) — exactly one`,
+    )
+  }
+
+  // ── Coverage headers (--write / --check) ─────────────────────────────────────
+  const write = flags.includes('--write')
+  const check = flags.includes('--check')
+  if (write && check) {
+    failures.push('--write and --check are alternatives; pass one')
+  } else if (write || check) {
+    const result = reconcileCoverageBlocks(pkgRoot, write ? 'write' : 'check')
+    failures.push(...result.failures)
+    notes.push(...result.notes)
+  }
+
   // ── Report ──────────────────────────────────────────────────────────────────
+  for (const note of notes) {
+    console.log(`  ${note}`)
+  }
+
   if (failures.length === 0) {
-    console.log('✓ check-coverage: all 8 assertions pass.')
+    console.log('✓ check-coverage: all 9 assertions pass.')
     return 0
   }
 
@@ -4596,7 +4767,7 @@ const COMMAND_FLAGS: Record<string, readonly string[]> = {
   init: ['--with-router', '--with-query', '--merge-lint'],
   sync: ['--force', '--check', '--tokens-only', '--framework'],
   'check-theme': ['--audit-allows', '--tokens-only', '--framework'],
-  'check-coverage': [],
+  'check-coverage': ['--write', '--check'],
   info: ['--json'],
   doctor: ['--tokens-only', '--framework'],
   'guard-hook': [],
@@ -4647,7 +4818,8 @@ function unknownFlag(cmd: string, flags: readonly string[]): string | null {
 const USAGE =
   'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
   '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
-  '                  check-theme [--audit-allows] | check-coverage | info [--json] |\n' +
+  '                  check-theme [--audit-allows] | check-coverage [--write|--check] |\n' +
+  '                  info [--json] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
@@ -4737,7 +4909,7 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
     case 'check-theme':
       return checkTheme(cwd, flags)
     case 'check-coverage':
-      return checkCoverage()
+      return checkCoverage(flags)
     case 'info':
       return info(flags)
     case 'doctor':

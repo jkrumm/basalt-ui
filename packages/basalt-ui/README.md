@@ -215,7 +215,7 @@ scanned files, and `doctor`'s `guard-scan` check agrees with it. Each root's **p
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
-"tokens-only"` turns off the 17 kinds whose remedy is a Mantine component or prop, and must be
+"tokens-only"` turns off the 19 kinds whose remedy is a Mantine component or prop, and must be
 declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
 which would silence half the guard on any repo keeping Mantine in a different workspace package.
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the

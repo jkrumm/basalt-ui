@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 25 violation kinds.
+ * GUARD_RULES: the closed registry of all 27 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
@@ -483,6 +483,52 @@ const RAW_FORM_CONTROL = /<(?:input|select|textarea)\b/g
 // for a sub-floor fontSize.
 const RAW_FORM_CONTROL_TAG = /<(?:input|select|textarea)\b(?:=>|[^>])*?>/g
 
+// ── Control-home patterns (docs/CONTROLS-SPEC.md §6 — the text lane of laws C1/C8) ──────────────
+//
+// Bounded full-text tag scans, the CARD_SURFACE_TAG / CHART_ENTRY_POINT_TAG shape: a `<Title>` and a
+// `<Select>` are both routinely formatted across lines, so a per-line regex would see neither.
+
+/** A `<Title …>` opening tag, however it is wrapped. `order` is judged separately, on the tag text. */
+const PAGE_TITLE_TAG = /<Title(?![\w.])(?:=>|[^>])*?>/g
+/** `order={1}` / `order={2}` — the two orders that name a PAGE rather than a section. */
+const PAGE_TITLE_ORDER_PROP = /\border\s*=\s*\{\s*([12])\s*\}/
+
+/**
+ * A raw Mantine selection control's opening tag — the text-lane twin of the oxlint plugin's
+ * RAW_FILTER_TAGS. `Chip.Group` carries a dot, so the name class allows one.
+ */
+const RAW_SELECTION_CONTROL_TAG =
+  /<(SegmentedControl|Select|MultiSelect|NativeSelect|DatePickerInput|DateInput|TagsInput|Chip\.Group)(?![\w])(?:=>|[^>])*?>/g
+
+/**
+ * A tag whose presence makes an `order={1|2}` Title a DOCUMENT heading rather than a page title.
+ * File-scoped on purpose — see the scan's own comment for why the coarser test is the honest one.
+ */
+const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
+
+/** An opening tag for one of the declared non-homes — a settings row, an overlay, a composer. */
+const CONTROL_HOST_TAG =
+  /<(?:SettingsRow|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer)(?![\w])/
+
+/**
+ * How far ABOVE a control the host-tag window reaches, in lines.
+ *
+ * The text lane has no ancestry, so "inside a SettingsRow" is approximated by "a SettingsRow opens
+ * within the last N lines". 12 covers every row shape in the five consumer repos (label +
+ * description + the `control={` line); past that the window would start swallowing the next row's
+ * control, which is the direction that makes the kind silent rather than noisy. The plugin rule
+ * (`basalt/control-outside-home`) is the one that answers this exactly — this kind exists for the
+ * PreToolUse hook lane, which sees one file's TEXT and no AST at all.
+ */
+const CONTROL_HOST_WINDOW_LINES = 12
+
+/** A name whose DECLARATION means this file DEFINES a basalt control rather than consuming one. */
+const CONTROL_OWNER_DEF =
+  /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
+
+/** `@mantine/form` — a form is C1's third home, and its inputs are not filters. */
+const MANTINE_FORM_IMPORT = /from\s+['"]@mantine\/form['"]/
+
 // A Mantine `styles={{ input: {...} }}` per-part style — the `input` key specifically targets the
 // rendered <input>/<textarea> part of TextInput/Select/Textarea/etc. Requires `input` be the FIRST
 // key in the styles object (see the sub-16-input-font doc comment for the scoping trade-off this
@@ -588,7 +634,26 @@ export type GraceEntry = { since: string; promote: string; why: string }
  *   'raw-font-family': { since: '1.4.0', promote: '1.5.0', why: 'introduced 1.4.0 — …' },
  * }
  */
-export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {}
+export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
+  'in-body-page-title': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its AST twin is the ' +
+      'oxlint rule of the SAME id, whose PLUGIN_RULE_GRACE entry carries the same dates — one law, ' +
+      'two lanes, one promotion. Warn for a minor because the fix is a route/breadcrumb change ' +
+      '(the page is named by staticData.title), not a prop edit, so a consumer needs to schedule it.',
+  },
+  'raw-selection-control': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
+      'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
+      'reading in the guard, and the reason this one lands warn rather than error even though its ' +
+      'law is settled. Promotion is gated with the plugin half on the wave-7 consumer run (≤3 waivers).',
+  },
+}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
@@ -755,6 +820,16 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'hand-rolled-shell',
   'shadow-basalt-export',
   'raw-scroll-container',
+  'hand-rolled-filter',
+  'control-outside-home',
+  'control-size-literal',
+  'page-bar-budget',
+  'responsive-twin',
+  'search-literal-link',
+  'use-search-from-literal',
+  // `in-body-page-title` is deliberately ABSENT: it is a plugin rule AND a guard kind under one id
+  // (one law, two lanes, one annotation), and this set is the ids OUTSIDE `checkSource`'s reach.
+  // `check-source.test.ts` asserts the two registries stay disjoint.
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
@@ -1381,6 +1456,11 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'chart-missing-aria-label',
   'raw-form-control',
   'sub-16-input-font',
+  // Both wave-6 control kinds: `<Title>` is a Mantine component and the remedy for either one is a
+  // Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over @mantine/core. Neither
+  // sentence is followable in a consumer that installs the token layer and nothing else.
+  'in-body-page-title',
+  'raw-selection-control',
 ])
 
 // A `/` opens a regex literal (not division) when the previous significant token is one of these
@@ -1601,7 +1681,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 25 guard kinds. The triad test asserts
+ * The closed registry of all 27 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -1821,6 +1901,22 @@ export const GUARD_RULES = {
     appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
       'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Promoted to error in the Unreleased minor (C16) with severity only — the kind stayed standalone rather than folding into raw-html-layout as originally planned; the merge is still open, tracked as a follow-up, not done here.',
+  },
+  'in-body-page-title': {
+    kind: 'in-body-page-title',
+    pattern: PAGE_TITLE_TAG, // handled inline (full-text tag-scoped scan); entry keeps the registry complete
+    // JSX-tag-shaped (`<Title order={1}>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
+    message:
+      'In-body page title — a page is named ONCE, by the breadcrumb (staticData.title) or by PageBar.title in a shell-less app, and every section/card/table title is a WidgetHeader (docs/CONTROLS-SPEC.md law C8). An <Title order={1|2}> in the body is a second name for the same page, and it drifts. Prose / ArticleLayout / an overlay and anything under a content/ path are document headings and never report. Same law the oxlint plugin enforces as basalt/in-body-page-title — one id, two lanes, so one theme-allow covers both.',
+  },
+  'raw-selection-control': {
+    kind: 'raw-selection-control',
+    pattern: RAW_SELECTION_CONTROL_TAG, // handled inline (full-text tag-scoped scan + host window)
+    // JSX-tag-shaped (`<Select …>`) — never appears in CSS text.
+    appliesTo: (relPath) => !relPath.endsWith('.css'),
+    message:
+      'Raw selection control with no home — a filter or tab belongs in a PageBar / Section / WidgetHeader slot and takes a `field` (a FieldHandle), so it owns the URL write and the localStorage mirror instead of carrying value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Use the bound control from basalt-ui/controls. A settings row, an overlay and an @mantine/form file are the declared non-homes and never report. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.',
   },
   'inline-font-size': {
     kind: 'inline-font-size',
@@ -2239,6 +2335,59 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
       if (withBorder === null) continue
       const lineNo = codeText.slice(0, (m.index ?? 0) + withBorder.index).split('\n').length
       push('card-with-border', lineNo, 'withBorder')
+    }
+  }
+
+  // in-body-page-title — full-text tag scan (the card-with-border shape), because a `<Title>` with
+  // its props on separate lines is the formatted default. `order` is judged on the tag's own text.
+  //
+  // Two file-level exemptions, both deliberately coarser than the plugin's node-level ones and both
+  // false-NEGATIVE-only: anything under a `content/` path segment, and any file that renders
+  // `<Prose>` / `<ArticleLayout>` / an overlay anywhere in it. A text scan has no ancestry, so
+  // "under Prose" is not answerable per node — and a document heading told to become a breadcrumb is
+  // the wrong advice, not merely noise. `basalt/in-body-page-title` (the AST lane, same id) is the
+  // half that scopes this exactly.
+  if (
+    ruleApplies('in-body-page-title', relPath) &&
+    !relPath.split('/').includes('content') &&
+    !PROSE_CONTEXT_TAG.test(codeText)
+  ) {
+    for (const m of codeText.matchAll(PAGE_TITLE_TAG)) {
+      const order = PAGE_TITLE_ORDER_PROP.exec(m[0])
+      if (order === null) continue
+      const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
+      const endLine = startLine + (m[0].split('\n').length - 1)
+      if (isAllowedInRange(startLine, endLine, 'in-body-page-title')) continue
+      findings.push({
+        relPath,
+        line: startLine,
+        token: `<Title order={${order[1]}}`,
+        kind: 'in-body-page-title',
+      })
+    }
+  }
+
+  // raw-selection-control — full-text tag scan plus the host WINDOW (see CONTROL_HOST_WINDOW_LINES).
+  // Two file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
+  // a file that DEFINES a basalt control cannot be told to use one, and a file importing
+  // `@mantine/form` is a form — C1's third home, whose inputs are not filters.
+  if (
+    ruleApplies('raw-selection-control', relPath) &&
+    !CONTROL_OWNER_DEF.test(codeText) &&
+    !MANTINE_FORM_IMPORT.test(codeText)
+  ) {
+    for (const m of codeText.matchAll(RAW_SELECTION_CONTROL_TAG)) {
+      const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
+      const windowStart = Math.max(0, startLine - 1 - CONTROL_HOST_WINDOW_LINES)
+      if (CONTROL_HOST_TAG.test(codeLines.slice(windowStart, startLine).join('\n'))) continue
+      const endLine = startLine + (m[0].split('\n').length - 1)
+      if (isAllowedInRange(startLine, endLine, 'raw-selection-control')) continue
+      findings.push({
+        relPath,
+        line: startLine,
+        token: `<${m[1] ?? 'Select'}`,
+        kind: 'raw-selection-control',
+      })
     }
   }
 

@@ -19,9 +19,11 @@ import type {
   MobileNavModel,
   MobileNavSlot,
   NavMobilePlacement,
+  SidebarBlock,
   SidebarItem,
   SidebarSection,
 } from '../nav/types'
+import { sidebarBlockMobile } from './sidebar-block-model'
 
 /** Hard cap on bar slots, INCLUDING More. Five 72px slots is the widest a 360px viewport holds. */
 export const MOBILE_MAX_TABS_DEFAULT = 5
@@ -39,11 +41,31 @@ export const MOBILE_MORE_KEY = '__more'
 export type ProjectMobileNavOptions = {
   config?: MobileNavConfig | undefined
   /**
-   * Extra rows the More surface will hold — account + settings + `moreExtra`. Drives both
+   * Extra rows the More surface will hold — account + settings + sidebar blocks. Drives both
    * `needsMore` and the menu-vs-sheet threshold. The model cannot see those rows (they are
    * Mantine-rendered chrome, not `SidebarItem`s), so the shell counts them and passes the total.
    */
   extraMoreRows?: number
+}
+
+/**
+ * How many More-surface rows `blocks` contribute — the `accountRowCount` sibling for sidebar
+ * blocks, and for the same reason: `BasaltShell` needs the number BEFORE the projection runs (it
+ * feeds `extraMoreRows`, which picks `menu` vs `sheet` against `menuMax`) while the renderer is
+ * what decides how many rows a block actually becomes.
+ *
+ * ONE row per block, never one per item: a list block projects to a single `Awaiting action · 3`
+ * row that opens a nested sheet of its items. Counting the items instead would push a 12-item
+ * block's More surface to a sheet on the strength of rows that surface never paints.
+ */
+export function blockRowCount(blocks: readonly SidebarBlock[] | undefined): number {
+  if (blocks === undefined) return 0
+  return blocks.filter((block) => {
+    if (sidebarBlockMobile(block) !== 'more') return false
+    // An empty list block would open a sheet with nothing in it — same failure as the `loading`
+    // account that used to conjure a More slot (`accountRowCount`).
+    return block.kind !== 'list' || block.items.length > 0
+  }).length
 }
 
 const DEV = process.env['NODE_ENV'] !== 'production'

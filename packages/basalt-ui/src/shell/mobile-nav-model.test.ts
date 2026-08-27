@@ -13,9 +13,26 @@
  *  - a `disabled` destination that is silently dropped instead of rendered disabled (rule 11).
  */
 import { describe, expect, test } from 'bun:test'
-import { MOBILE_MORE_KEY, projectMobileNav } from './mobile-nav-model'
+import { MOBILE_MORE_KEY, blockRowCount, projectMobileNav } from './mobile-nav-model'
 import type { ProjectMobileNavOptions } from './mobile-nav-model'
-import type { MobileNavGroup, MobileNavModel, MobileNavSlot, SidebarItem } from '../nav/types'
+import {
+  sidebarBlockFoldKey,
+  sidebarBlockMobile,
+  sidebarBlockPlacement,
+  sidebarBlockRail,
+  sidebarBlockVisibleCount,
+  sidebarSectionFoldKey,
+  slugifyLabel,
+} from './sidebar-block-model'
+import type {
+  MobileNavGroup,
+  MobileNavModel,
+  MobileNavSlot,
+  SidebarCustomBlock,
+  SidebarItem,
+  SidebarListBlock,
+  SidebarProgressBlock,
+} from '../nav/types'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -292,5 +309,125 @@ describe('projectMobileNav', () => {
     // `label` stays the FULL text — it is the accessible name, which is never abbreviated.
     expect(slotAt(model, 0).label).toBe('Dashboard')
     expect(slotAt(model, 1).short).toBe('Activity')
+  })
+})
+
+/**
+ * `blockRowCount` — the `accountRowCount` sibling for sidebar blocks (`docs/CONTROLS-SPEC.md`
+ * §2.3). It exists for one reason: `BasaltShell` needs the More-surface row count BEFORE the
+ * projection runs, because that count is what picks `menu` vs `sheet` against `menuMax`. A second,
+ * independent estimate of the same rows is exactly how a "1 row" account shipped a 9-row menu into
+ * headroom sized for 6.
+ */
+/** A three-item list block, the shape every row-count case counts against. */
+const list = (extra: Partial<SidebarListBlock> = {}): SidebarListBlock => ({
+  kind: 'list',
+  key: extra.key ?? 'awaiting',
+  label: 'Awaiting action',
+  items: [
+    { key: 'a', label: 'A' },
+    { key: 'b', label: 'B' },
+    { key: 'c', label: 'C' },
+  ],
+  ...extra,
+})
+
+describe('blockRowCount', () => {
+  test('undefined and an empty list are both zero', () => {
+    expect(blockRowCount(undefined)).toBe(0)
+    expect(blockRowCount([])).toBe(0)
+  })
+
+  test('ONE row per list block, never one per item — the row opens a nested sheet', () => {
+    expect(blockRowCount([list(), list({ key: 'second' })])).toBe(2)
+  })
+
+  test("mobile:'hidden' drops a list; a progress block is hidden until it asks otherwise", () => {
+    expect(blockRowCount([list({ mobile: 'hidden' })])).toBe(0)
+    const progress: SidebarProgressBlock = {
+      kind: 'progress',
+      key: 'onboarding',
+      label: 'Getting started',
+      value: 1,
+      total: 5,
+    }
+    expect(blockRowCount([progress])).toBe(0)
+    expect(blockRowCount([{ ...progress, mobile: 'more' }])).toBe(1)
+  })
+
+  test('a custom block never reaches mobile — it is desktop-only by kind', () => {
+    expect(blockRowCount([{ kind: 'custom', key: 'tree', node: null }])).toBe(0)
+  })
+
+  /** Same rule the renderer applies: an empty list would open a sheet with nothing in it. */
+  test('an empty list block contributes no row', () => {
+    expect(blockRowCount([list({ items: [] })])).toBe(0)
+  })
+
+  /** The threshold this number exists to move, asserted end to end against the projection. */
+  test('block rows push a six-destination More over the threshold into a sheet', () => {
+    const sections = [{ label: 'Main', items: [item('a', { mobile: 'tab' }), ...items(6)] }]
+    expect(slotAt(projectMobileNav(sections), 1).kind).toBe('menu')
+    expect(
+      slotAt(projectMobileNav(sections, { extraMoreRows: blockRowCount([list()]) }), 1).kind,
+    ).toBe('sheet')
+  })
+})
+
+/**
+ * The block-default resolvers. Three call sites read them — the sidebar (placement + rail), the
+ * renderer (paint) and `blockRowCount` (the count above) — and a default re-derived per call site
+ * is how the count and the renderer drift apart.
+ */
+describe('sidebar block defaults', () => {
+  const listBlock: SidebarListBlock = { kind: 'list', key: 'k', label: 'L', items: [] }
+  const progressBlock: SidebarProgressBlock = {
+    kind: 'progress',
+    key: 'p',
+    label: 'P',
+    value: 1,
+    total: 5,
+  }
+  const customBlock: SidebarCustomBlock = { kind: 'custom', key: 'c', node: null }
+
+  test('placement: list/custom default to nav, progress to bottom', () => {
+    expect(sidebarBlockPlacement(listBlock)).toBe('nav')
+    expect(sidebarBlockPlacement(customBlock)).toBe('nav')
+    expect(sidebarBlockPlacement(progressBlock)).toBe('bottom')
+    expect(sidebarBlockPlacement({ ...listBlock, placement: 'bottom' })).toBe('bottom')
+  })
+
+  test('rail: a dot only for a list with BOTH a count and an icon, a ring for progress', () => {
+    expect(sidebarBlockRail(listBlock)).toBe('hidden')
+    expect(sidebarBlockRail({ ...listBlock, count: 3, icon: null })).toBe('dot')
+    expect(sidebarBlockRail({ ...listBlock, count: 3, icon: null, rail: 'hidden' })).toBe('hidden')
+    // Neither half alone earns one — and an explicit `rail: 'dot'` cannot conjure the node either.
+    expect(sidebarBlockRail({ ...listBlock, count: 3 })).toBe('hidden')
+    expect(sidebarBlockRail({ ...listBlock, icon: null })).toBe('hidden')
+    expect(sidebarBlockRail({ ...listBlock, rail: 'dot' })).toBe('hidden')
+    expect(sidebarBlockRail(progressBlock)).toBe('ring')
+    expect(sidebarBlockRail({ ...progressBlock, rail: 'hidden' })).toBe('hidden')
+    expect(sidebarBlockRail(customBlock)).toBe('hidden')
+  })
+
+  test('mobile: a list is reachable from More by default, progress and custom are not', () => {
+    expect(sidebarBlockMobile(listBlock)).toBe('more')
+    expect(sidebarBlockMobile({ ...listBlock, mobile: 'hidden' })).toBe('hidden')
+    expect(sidebarBlockMobile(progressBlock)).toBe('hidden')
+    expect(sidebarBlockMobile({ ...progressBlock, mobile: 'more' })).toBe('more')
+    expect(sidebarBlockMobile(customBlock)).toBe('hidden')
+  })
+
+  test('visible count honours max, and a max past the count changes nothing', () => {
+    expect(sidebarBlockVisibleCount(6, 3)).toBe(3)
+    expect(sidebarBlockVisibleCount(6, undefined)).toBe(6)
+    expect(sidebarBlockVisibleCount(2, 9)).toBe(2)
+  })
+
+  /** The fold keys are a consumer-readable contract — a rename resets every user's sidebar. */
+  test('the fold keys namespace to basalt:sidebar-block:<key> / basalt:sidebar-section:<slug>', () => {
+    expect(sidebarBlockFoldKey('awaiting')).toBe('sidebar-block:awaiting')
+    expect(sidebarSectionFoldKey('Tools & More')).toBe('sidebar-section:tools-more')
+    expect(slugifyLabel('  Awaiting Action! ')).toBe('awaiting-action')
   })
 })

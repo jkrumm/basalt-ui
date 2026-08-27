@@ -113,6 +113,22 @@
   font-stretch: 88%;
 }
 
+/* Workspace switcher (`brand.menu`) — the brand name plus a chevron, as a row-shaped trigger. The
+ * chevron is faint until hover so the brand still reads as the brand, not as a control. */
+.brandButton {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-sidebar-section-label-gap);
+  min-width: 0;
+  padding: 0;
+  color: var(--vx-faint);
+  cursor: pointer;
+}
+
+.brandButton:hover {
+  color: var(--vx-ink);
+}
+
 /*
  * Nav scroll region — a Mantine ScrollArea, whose overlay scrollbar is absolutely positioned inside
  * the (position: relative; overflow: hidden) root, so it floats over the rows instead of reserving
@@ -294,6 +310,214 @@
 }
 
 /*
+ * ── Sidebar blocks (docs/CONTROLS-SPEC.md §2.3) ────────────────────────────────────────────────
+ *
+ * Same spacing-only separation law as the nav sections above: no rules, no bands, no fills. A
+ * block's rows are 32px (`--vx-space-sidebar-block-row-height`) — one step under a nav row, since
+ * a block row is reference material rather than a destination.
+ */
+.block {
+  min-width: 0;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-nav-icon-gap);
+  width: 100%;
+  padding: 0 var(--vx-space-row-inset-x);
+  margin-bottom: var(--vx-space-sidebar-section-label-gap);
+}
+
+/* The header's label takes the free width so a count badge / chevron sits hard right. */
+.blockHeader > div:first-of-type {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+/* Collapsible variant — text-only hover, exactly like `.sectionHeader`; never a band. */
+.blockHeaderButton {
+  color: var(--vx-faint);
+  cursor: pointer;
+}
+
+.blockHeaderButton:hover .sectionLabel {
+  color: var(--vx-ink);
+}
+
+.blockIcon {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  color: var(--vx-faint);
+}
+
+/*
+ * Rail dot — the collapsed rail's whole representation of a `count`. Hidden in the expanded
+ * sidebar, where the count renders as a real `NavCountBadge` instead: a dot and a number saying
+ * the same thing twice is noise, and the rail has no room for the number.
+ */
+.blockDot {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -3px;
+  display: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background-color: var(--vx-accent);
+  box-shadow: 0 0 0 2px var(--mantine-color-body);
+}
+
+.blockItems {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Block row — 32px, small text, muted; the same ink-6% hover every other sidebar row uses. */
+.blockRow {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-nav-icon-gap);
+  min-height: var(--vx-space-sidebar-block-row-height);
+  padding: 0 var(--vx-space-row-inset-x) !important;
+  border-radius: var(--vx-radius-ctrl) !important;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+.blockRow :global(.mantine-NavLink-label) {
+  font-size: var(--vx-text-sm);
+}
+
+.blockRow :global(.mantine-NavLink-section[data-position='left']) {
+  margin-inline-end: 0;
+  color: var(--vx-faint);
+}
+
+@media (hover: hover) {
+  .blockRow:not(.blockRowStatic):hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+    color: var(--vx-ink) !important;
+  }
+}
+
+/* A non-interactive row (the "Recents" shape) keeps the geometry and drops every affordance. */
+.blockRowStatic {
+  cursor: default;
+}
+
+.blockRowLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blockRowMeta {
+  flex: none;
+  font-size: var(--vx-text-micro);
+  color: var(--vx-faint);
+}
+
+/* Status dot standing in for a missing row icon — reads the per-scheme `--vx-status-*` solid. */
+.blockToneDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--vx-status-neutral);
+}
+
+.blockToneDot[data-tone='good'] {
+  background-color: var(--vx-status-good);
+}
+
+.blockToneDot[data-tone='warn'] {
+  background-color: var(--vx-status-warn);
+}
+
+.blockToneDot[data-tone='bad'] {
+  background-color: var(--vx-status-bad);
+}
+
+/* "Show more" — a text affordance, not a button surface. */
+.blockMore {
+  min-height: var(--vx-space-sidebar-block-row-height);
+  padding: 0 var(--vx-space-row-inset-x);
+  text-align: left;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-faint);
+}
+
+.blockMore:hover {
+  color: var(--vx-ink);
+}
+
+/* Progress block — label + `n of m` over a thin track. */
+.blockProgress {
+  display: block;
+  width: 100%;
+  padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
+  border-radius: var(--vx-radius-ctrl);
+  text-align: left;
+}
+
+.blockProgress:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+}
+
+.blockProgressHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vx-space-nav-icon-gap);
+  margin-bottom: var(--vx-space-sidebar-section-label-gap);
+}
+
+/* The rail's progress mark, rendered on the settings row (never inside the block). */
+.blockRing {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/*
+ * Flat footer links — `settingsMenuItems` at three or fewer, rendered as rows instead of a gear
+ * menu (see `AppSidebar`'s JSDoc for the threshold). Each row IS a `.footerBtn`, so the two
+ * renderings are the same geometry.
+ */
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fixed 18px icon column for a flat footer row — an icon-less row keeps the label aligned with
+ * its neighbours instead of sliding left. */
+.footerIconSlot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  color: var(--vx-faint);
+}
+
+.footerBtn:hover .footerIconSlot {
+  color: var(--vx-ink);
+}
+
+.footerVersion {
+  padding: var(--vx-space-row-inset-y) var(--vx-space-row-inset-x);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  color: var(--vx-faint);
+}
+
+/*
  * Inline child items — indent under the parent with the ONE allowed sidebar line: a 1px
  * `--vx-divider` left guide on the WRAPPER (not per row, so hover tints don't break the line).
  */
@@ -421,13 +645,51 @@
     display: none;
   }
 
-  /* `navExtra` has no sensible icon-rail representation (arbitrary consumer content, not a nav
-   * row) — hide it in the rail, same treatment as `.childList`. It stays mounted (never a JS
-   * conditional on `collapsed`): the sidebar's `AppShell.Navbar` is permanently
+  /*
+   * Block rail projection (`sidebarBlockRail`). `hidden` and `ring` blocks leave the rail entirely
+   * — a `custom` block is arbitrary consumer content with no icon-column representation (the
+   * treatment `navExtra` had), and a progress block's rail form is the ring on the settings row
+   * below, not a squashed track. A `dot` block keeps its icon and nothing else.
+   *
+   * All of it is CSS, never a JS conditional on `collapsed`: the navbar is permanently
    * `collapsed: { mobile: true }` (there is no mobile drawer — see `MobileNav`), so `collapsed`
-   * here means only the desktop expanded-vs-rail state, and this media query is what applies it —
-   * never JS. */
-  .root[data-collapsed] .navExtra {
+   * means only the desktop expanded-vs-rail state, and this media query is what applies it.
+   */
+  .root[data-collapsed] .block[data-rail='hidden'],
+  .root[data-collapsed] .block[data-rail='ring'] {
+    display: none;
+  }
+
+  .root[data-collapsed] .block[data-rail='dot'] .blockHeader {
+    justify-content: center;
+    padding: 0;
+    margin-bottom: 0;
+  }
+
+  .root[data-collapsed] .block[data-rail='dot'] .blockHeader > *:not(.blockIcon) {
+    display: none;
+  }
+
+  .root[data-collapsed] .block[data-rail='dot'] .blockItems {
+    display: none;
+  }
+
+  .root[data-collapsed] .blockDot {
+    display: block;
+  }
+
+  .root[data-collapsed] /* Fixed 18px icon column for a flat footer row — an icon-less row keeps the label aligned with
+ * its neighbours instead of sliding left. */
+.footerIconSlot {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    color: var(--vx-faint);
+  }
+
+  .footerVersion {
     display: none;
   }
 }

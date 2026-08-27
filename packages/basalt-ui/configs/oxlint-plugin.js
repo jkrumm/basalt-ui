@@ -102,6 +102,15 @@ export const KNOWN_RULE_IDS = new Set([
   'hand-rolled-shell',
   'shadow-basalt-export',
   'raw-scroll-container',
+  'hand-rolled-filter',
+  'control-outside-home',
+  'control-size-literal',
+  'page-bar-budget',
+  'responsive-twin',
+  'search-literal-link',
+  'use-search-from-literal',
+  // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
+  // annotation waives both. It is listed once, below, with the guard kinds.
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
@@ -136,6 +145,8 @@ export const KNOWN_RULE_IDS = new Set([
   'css-raw-surface',
   'inline-font-size',
   'hidden-inline-style',
+  'in-body-page-title',
+  'raw-selection-control',
 ])
 
 const ALLOW_RULE_TOKEN = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/
@@ -654,11 +665,34 @@ const RAW_SCROLL_CONTAINER_MESSAGE =
   'node (BasaltStickToBottom, BasaltVirtualList) — add a theme-allow comment there. ' +
   '(basalt/raw-scroll-container)'
 
-// `overflowX` is deliberately absent: a horizontal bar doesn't reserve gutter width in a chrome
-// column, so a horizontally-scrolling code block or pinned-column table is its own legitimate
-// pattern, not a ScrollArea candidate. Only the vertical axis carries the doctrine.
+// `overflowX` is absent from the UNIVERSAL set for the original reason: a horizontal bar doesn't
+// reserve gutter width in a chrome column, so a horizontally-scrolling code block or pinned-column
+// table is its own legitimate pattern, not a ScrollArea candidate. It IS policed inside a home,
+// where the doctrine is the opposite one — see RAW_SCROLL_CONTAINER_HOME_MESSAGE.
 const OVERFLOW_KEYS = new Set(['overflow', 'overflowY'])
 const SCROLLING_VALUES = new Set(['auto', 'scroll'])
+
+/** The two home elements a horizontal scroll region is banned UNDER, slot or body alike (law C7). */
+const SCROLL_HOME_TAGS = new Set(['Section', 'ChartCard'])
+
+const RAW_SCROLL_CONTAINER_HOME_MESSAGE =
+  'Horizontal scroll region inside a home — a page bar, a section header and a chart card never ' +
+  'scroll sideways and never wrap: overflow folds into a `More` menu (actions) or a `Filters (n)` ' +
+  'sheet (filters), computed by basalt from the typed BarAction[] (law C7). A sideways-scrolling ' +
+  'row of controls is the shape that law replaces. (basalt/raw-scroll-container)'
+
+/**
+ * Is this node inside a home — a slot attribute, or anywhere under a `Section` / `ChartCard`?
+ *
+ * The widened half of the rule (C7) is scoped by ANCESTRY only, with no hoisted-binding lookup: a
+ * style object hoisted to a `const` has no JSX ancestor at all, so a hoisted
+ * `{ overflowX: 'auto' }` used inside a Section is a known false negative here — the same gap
+ * `chart-legend-literal` documents for a hoisted `items` array, and for the same reason (following
+ * it means local flow analysis for a bypass nobody reaches by accident).
+ */
+function isInHomeContext(node) {
+  return enclosingSlotAttribute(node) !== undefined || hasAncestorTag(node, SCROLL_HOME_TAGS)
+}
 
 /**
  * Reports a `style` object property that turns a node into its own scroll container. Whether a raw
@@ -668,6 +702,15 @@ const SCROLLING_VALUES = new Set(['auto', 'scroll'])
  * `BasaltVirtualList`, `ThreadTranscript`'s virtualized pane) declares that ownership with the
  * comment and moves on. Severity went `off` → `warn` (1.12.0) → `error` (1.13.0) once every live
  * site in the repo carried that declaration; the opt-out mechanism is identical at either level.
+ *
+ * **The C7 widening (wave 6) inherits that `error` with no grace runway, and that is a LIMITATION,
+ * not a decision.** oxlint severity is per rule ID, so a widened branch cannot ship `warn` while
+ * the incumbent branch stays `error` — the only way to buy a runway would have been a second rule
+ * id, which is the bundled-vs-split trade the three boundary rules were split apart over, in the
+ * opposite direction. What the widening does instead is stay narrow: `overflowX` and
+ * `ScrollArea scrollbars="x"` are policed ONLY inside a home (see {@link isInHomeContext}), which
+ * is where C7 actually applies, so the set of newly-rejected code is small enough to fix rather
+ * than schedule. A consumer who disagrees turns the whole rule down in their own config.
  */
 const rawScrollContainer = {
   meta: {
@@ -683,10 +726,30 @@ const rawScrollContainer = {
         const key = node.key
         const keyName =
           key.type === 'Identifier' ? key.name : key.type === 'Literal' ? key.value : undefined
-        if (typeof keyName !== 'string' || !OVERFLOW_KEYS.has(keyName)) return
+        if (typeof keyName !== 'string') return
+        const universal = OVERFLOW_KEYS.has(keyName)
+        if (!universal && keyName !== 'overflowX') return
         if (!isStringLiteral(node.value) || !SCROLLING_VALUES.has(node.value.value)) return
+        // The C7 widening: `overflowX` is only a violation INSIDE a home (see isInHomeContext).
+        if (!universal && !isInHomeContext(node)) return
         if (hasThemeAllow(context, node, 'raw-scroll-container')) return
-        context.report({ node, message: RAW_SCROLL_CONTAINER_MESSAGE })
+        context.report({
+          node,
+          message: universal ? RAW_SCROLL_CONTAINER_MESSAGE : RAW_SCROLL_CONTAINER_HOME_MESSAGE,
+        })
+      },
+      // `<ScrollArea scrollbars="x">` — the same horizontal scroll region written as a component.
+      // Only inside a home, exactly like the `overflowX` half above; a ScrollArea is otherwise the
+      // shape this whole rule steers people TOWARD.
+      JSXAttribute(node) {
+        if (node.name?.name !== 'scrollbars') return
+        const value = unwrapExpressionContainer(node.value)
+        if (!isStringLiteral(value) || value.value !== 'x') return
+        const owner = node.parent
+        if (owner?.type !== 'JSXOpeningElement' || jsxTagName(owner.name) !== 'ScrollArea') return
+        if (!isInHomeContext(node)) return
+        if (hasThemeAllow(context, node, 'raw-scroll-container')) return
+        context.report({ node, message: RAW_SCROLL_CONTAINER_HOME_MESSAGE })
       },
     }
   },
@@ -1463,6 +1526,45 @@ const BASALT_EXPORTS = (() => {
   return names
 })()
 
+/**
+ * Renames that ARE the collision, spelled out because the name no longer collides.
+ *
+ * `BASALT_EXPORTS` catches a fork that kept basalt's name. The commoner shape is a fork that
+ * renamed it: argo's `PageHeader`, linewatch's `WindowSelector`, rb's `HeroCard`. Each of these is
+ * the same composite under a different word, so the tripwire has to name the words — and unlike the
+ * barrel read, this table is hand-maintained by construction: there is no artifact to derive
+ * "someone else's word for `Section`" from. Keep it in step with `docs/CONTROLS-SPEC.md` §6.
+ *
+ * Advisory, permanently (see {@link PLUGIN_RULE_ADVISORY}): a name is evidence, never proof.
+ */
+const SHADOW_ALIASES = {
+  PageSection: 'Section',
+  SectionTitle: 'Section',
+  SectionHeading: 'Section',
+  WindowSelector: 'RangeFilter',
+  RangeSelector: 'RangeFilter',
+  DateFilter: 'RangeFilter',
+  ViewSwitch: 'ViewTabs',
+  ViewToggle: 'ViewTabs',
+  RefreshButton: 'SyncButton',
+  SyncControl: 'SyncButton',
+  SyncStatusButton: 'SyncButton',
+  PageHeader: 'PageBar',
+  FilterBar: 'PageBar',
+  HeroCard: 'StatCard',
+  HeroStats: 'StatCard',
+}
+
+function shadowAliasMessage(name, canonical) {
+  return (
+    `Local component '${name}' is a renamed '${canonical}' — basalt ships that composite, and a ` +
+    'renamed fork is the shape the name-collision half of this rule can never see (laws C8/C12). ' +
+    `Import ${canonical} from 'basalt-ui' (or 'basalt-ui/controls') instead of re-rolling it; if ` +
+    'this genuinely is a different component, rename it and the rule goes quiet. ' +
+    '(basalt/shadow-basalt-export)'
+  )
+}
+
 function shadowBasaltExportMessage(name) {
   return (
     `Local component '${name}' collides with the basalt-ui export of the same name — import it ` +
@@ -1502,9 +1604,13 @@ const shadowBasaltExport = {
     if (filename.length === 0 || !isBasaltScopedFile(filename)) return {}
 
     const report = (node, name) => {
-      if (typeof name !== 'string' || !BASALT_EXPORTS.has(name)) return
+      if (typeof name !== 'string') return
+      const alias = Object.hasOwn(SHADOW_ALIASES, name) ? SHADOW_ALIASES[name] : undefined
+      if (!BASALT_EXPORTS.has(name) && alias === undefined) return
       if (hasThemeAllow(context, node, 'shadow-basalt-export')) return
-      context.report({ node, message: shadowBasaltExportMessage(name) })
+      const message =
+        alias === undefined ? shadowBasaltExportMessage(name) : shadowAliasMessage(name, alias)
+      context.report({ node, message })
     }
 
     return {
@@ -1600,6 +1706,763 @@ const handRolledShell = {
   },
 }
 
+// ── Control homes — the shared slot-ancestry walk (C1/C5, docs/CONTROLS-SPEC.md §6) ─────────────
+
+/**
+ * The slot props a control enters a TIERED home through (law C1). A control is only ever IN one of
+ * these homes by being the value of one of these props — never by sitting in a home's children,
+ * which is the body form (a `Section`'s own content, a `SettingsSection`'s rows) and carries no tier
+ * obligation at all.
+ *
+ * **`control` is deliberately absent, and `SettingsRow` with it** (see {@link SLOT_OWNER_TAGS}):
+ * `SettingsRow.control` is law C1's THIRD home, the form row, and a form keeps Mantine's own `md`
+ * tier (`controlHeight` 42 — `docs/CONTROLS-SPEC.md` §5, unchanged). So a raw `Select` bound to a
+ * setting is legitimate there and a `size` literal there is not a tier violation; only
+ * `control-outside-home` cares about a settings row at all, and it treats it as a home
+ * (`CONTROL_HOST_TAGS`) so nothing fires inside one. The two tier rules would otherwise have told
+ * every settings page in every consumer to drop a prop that is what keeps the row at the form tier
+ * — `src/dashboard/settings-section.tsx` wraps `actions` in `CtlSlot`, never `control`.
+ */
+const SLOT_ATTRS = new Set(['actions', 'filters', 'tabs', 'sync', 'filtersEnd'])
+
+/**
+ * The elements whose slot props ARE tiered homes. Both halves of the test matter: `actions` on a
+ * consumer's own `<Toolbar actions={…}>` is not a basalt home, and a `Section`'s CHILDREN are not
+ * a slot — so the walk stops at the slot ATTRIBUTE, never at the element.
+ *
+ * `SettingsSection` is here for its `actions` header slot (`CtlSlot`-wrapped); `SettingsRow` is
+ * NOT — its `control` is the form-row home and keeps Mantine's `md` tier. See {@link SLOT_ATTRS}.
+ */
+const SLOT_OWNER_TAGS = new Set([
+  'PageBar',
+  'Section',
+  'WidgetHeader',
+  'ChartCard',
+  'StatCard',
+  'BasaltDataTable',
+  'SettingsSection',
+  'FilterSet',
+])
+
+/**
+ * Raw Mantine selection controls — the shape a store-bound basalt filter replaces. Membership is
+ * checked against the file's `@mantine/*` IMPORTS, not the bare tag name: a consumer's own
+ * `<Select>` (a wrapper, a re-export, a different component entirely) is not the Mantine one, and
+ * these rules ship to consumers.
+ */
+const RAW_FILTER_TAGS = new Set([
+  'SegmentedControl',
+  'Select',
+  'MultiSelect',
+  'NativeSelect',
+  'DatePickerInput',
+  'DateInput',
+  'TagsInput',
+  'Chip.Group',
+])
+
+/** The bound controls a home is SUPPOSED to hold — `basalt-ui/controls`, each over a FieldHandle. */
+const BOUND_TAGS = new Set([
+  'RangeFilter',
+  'CompareFilter',
+  'SelectFilter',
+  'MultiSelectFilter',
+  'SearchFilter',
+  'ToggleFilter',
+  'ViewTabs',
+])
+
+/**
+ * The names whose DECLARATION means this file defines a basalt control rather than consuming one —
+ * the owner exemption, the same shape as `hand-rolled-plot`'s `notesOwnerDefinition`: a rule that
+ * says "use a bound control" cannot fire inside the module that IS the bound control.
+ */
+const CONTROL_OWNER_NAMES = new Set([
+  ...BOUND_TAGS,
+  'FilterSet',
+  'FilterPill',
+  'SyncButton',
+  'ActionGroup',
+  'OverflowMenu',
+  'CtlSlot',
+])
+
+/** How far an ancestry walk climbs before giving up — a JSX tree this deep is not a slot value. */
+const ANCESTRY_MAX_DEPTH = 60
+
+/** A JSX tag name as written: `Select`, or `Chip.Group` for a member tag. */
+function jsxTagName(nameNode) {
+  if (nameNode === null || nameNode === undefined) return undefined
+  if (typeof nameNode.name === 'string') return nameNode.name
+  const object = jsxTagName(nameNode.object)
+  const property = nameNode.property?.name
+  if (typeof object !== 'string' || typeof property !== 'string') return undefined
+  return `${object}.${property}`
+}
+
+/** The BINDING a JSX tag resolves through — `Chip` for `<Chip.Group>`, `Select` for `<Select>`. */
+function jsxRootName(nameNode) {
+  if (nameNode === null || nameNode === undefined) return undefined
+  if (typeof nameNode.name === 'string') return nameNode.name
+  return jsxRootName(nameNode.object)
+}
+
+/** Local names imported from any `@mantine/*` entry — the provenance test the tag rules apply. */
+function collectMantineImports(node, into) {
+  const source = node.source?.value
+  if (typeof source !== 'string' || !source.startsWith('@mantine/')) return
+  for (const spec of node.specifiers ?? []) {
+    if (spec.local?.name !== undefined) into.add(spec.local.name)
+  }
+}
+
+/** Is this JSXAttribute a home's slot prop — the right NAME on the right OWNER? */
+function isSlotAttribute(attr) {
+  if (attr === null || attr === undefined || attr.type !== 'JSXAttribute') return false
+  const name = attr.name?.name
+  if (typeof name !== 'string' || !SLOT_ATTRS.has(name)) return false
+  const owner = attr.parent
+  if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return false
+  return SLOT_OWNER_TAGS.has(jsxTagName(owner.name) ?? '')
+}
+
+/** The home slot attribute that ENCLOSES `node`, or undefined. Stops at the attribute, never the element. */
+function enclosingSlotAttribute(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return undefined
+    if (isSlotAttribute(current)) return current
+    current = current.parent
+  }
+  return undefined
+}
+
+/** The name of the nearest enclosing `const x = …` binding — the hoisted-slot-value lookup. */
+function enclosingDeclaratorName(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return undefined
+    if (current.type === 'VariableDeclarator') {
+      return typeof current.id?.name === 'string' ? current.id.name : undefined
+    }
+    current = current.parent
+  }
+  return undefined
+}
+
+/** True when any JSX ELEMENT ancestor of `node` opens with one of `tags`. */
+function hasAncestorTag(node, tags) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return false
+    if (current.type === 'JSXElement' && tags.has(jsxTagName(current.openingElement?.name) ?? '')) {
+      return true
+    }
+    current = current.parent
+  }
+  return false
+}
+
+/** Identifiers a slot attribute's value resolves through — `filters={pills}`, `actions={[a, b]}`. */
+function collectSlotValueIdentifiers(node, into, depth = 0) {
+  if (node === null || node === undefined || depth > 8) return
+  if (node.type === 'Identifier') {
+    into.add(node.name)
+    return
+  }
+  if (node.type === 'ArrayExpression') {
+    for (const el of node.elements) collectSlotValueIdentifiers(el, into, depth + 1)
+    return
+  }
+  if (node.type === 'ConditionalExpression') {
+    collectSlotValueIdentifiers(node.consequent, into, depth + 1)
+    collectSlotValueIdentifiers(node.alternate, into, depth + 1)
+    return
+  }
+  if (node.type === 'LogicalExpression') {
+    collectSlotValueIdentifiers(node.left, into, depth + 1)
+    collectSlotValueIdentifiers(node.right, into, depth + 1)
+  }
+}
+
+/**
+ * The shared "am I inside a home slot" resolver, and the one piece of state every control rule
+ * needs the WHOLE file to answer: a hoisted `const pills = <Select …/>` handed to `filters={pills}`
+ * further down is inside that slot (argo's hoisted `headerExtra`, `cost-over-time.tsx:54-68`), and
+ * the binding is only known to be slot-bound once the attribute has been seen.
+ *
+ * So the ancestry facts are CAPTURED during the visit — while `node.parent` is walkable — and
+ * resolved at `Program:exit`, when the slot-bound identifier set is complete. `capture()` returns a
+ * descriptor, `resolve()` turns it into a verdict; nothing re-walks the tree after traversal ends.
+ */
+function createSlotContext() {
+  const slotBoundIdentifiers = new Set()
+  return {
+    /** Feed every JSXAttribute here — a slot attribute contributes its value's identifiers. */
+    note(attr) {
+      if (!isSlotAttribute(attr)) return
+      collectSlotValueIdentifiers(unwrapExpressionContainer(attr.value), slotBoundIdentifiers)
+    },
+    /** Snapshot `node`'s ancestry while it is walkable. */
+    capture(node) {
+      return {
+        direct: enclosingSlotAttribute(node) !== undefined,
+        declaratorName: enclosingDeclaratorName(node),
+      }
+    },
+    /** Is a captured node inside a home slot — directly, or via a hoisted binding? */
+    resolve(captured) {
+      if (captured.direct) return true
+      return (
+        captured.declaratorName !== undefined && slotBoundIdentifiers.has(captured.declaratorName)
+      )
+    },
+  }
+}
+
+/** Collects an owner-definition flag for the control layer — see {@link CONTROL_OWNER_NAMES}. */
+function createControlOwnerProbe() {
+  const state = { definesControl: false }
+  const note = (name) => {
+    if (typeof name === 'string' && CONTROL_OWNER_NAMES.has(name)) state.definesControl = true
+  }
+  return {
+    state,
+    visitors: {
+      FunctionDeclaration(node) {
+        note(node.id?.name)
+      },
+      VariableDeclarator(node) {
+        note(node.id?.name)
+      },
+    },
+  }
+}
+
+// ── Rule 16 — hand-rolled-filter ────────────────────────────────────────────────────────────────
+
+const HAND_ROLLED_FILTER_MESSAGE =
+  'Raw Mantine selection control inside a home slot — a filter or tab in a PageBar / Section / ' +
+  'WidgetHeader slot takes a `field` (a FieldHandle) and owns both the URL write and the ' +
+  'localStorage mirror, so it cannot carry value/onChange at all (laws C1–C3). Use ' +
+  'RangeFilter / SelectFilter / MultiSelectFilter / SearchFilter / ToggleFilter / ViewTabs from ' +
+  "basalt-ui/controls. Two shapes are NOT this rule: a control in a home's CHILDREN (a Section " +
+  "body form), and a SettingsRow's `control` — the form-row home, where a raw input at Mantine's " +
+  'md tier is the right answer. (basalt/hand-rolled-filter)'
+
+/**
+ * A raw Mantine selection control handed to a home slot (laws C1/C3).
+ *
+ * Ships `error` from the start, unlike its sibling `control-outside-home`: "this element is inside
+ * a slot" is a structural fact with no heuristic in it, and the wave-1..4 migrations left no
+ * incumbents. Two shapes are deliberately outside the rule: the body form (the ancestry walk stops
+ * at the slot ATTRIBUTE, so a `<Select>` in a `Section`'s children never reaches it) and
+ * `SettingsRow.control`, the form-row home — see {@link SLOT_ATTRS} for why a raw input is right
+ * there.
+ */
+const handRolledFilter = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'Disallow a raw Mantine selection control inside a basalt home slot.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const slots = createSlotContext()
+    const mantineImports = new Set()
+    const candidates = []
+
+    return {
+      ImportDeclaration(node) {
+        collectMantineImports(node, mantineImports)
+      },
+      JSXAttribute(node) {
+        slots.note(node)
+      },
+      JSXOpeningElement(node) {
+        const tag = jsxTagName(node.name)
+        if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) return
+        candidates.push({ node, root: jsxRootName(node.name), captured: slots.capture(node) })
+      },
+      'Program:exit'() {
+        for (const { node, root, captured } of candidates) {
+          if (root === undefined || !mantineImports.has(root)) continue
+          if (!slots.resolve(captured)) continue
+          if (hasThemeAllow(context, node, 'hand-rolled-filter')) continue
+          context.report({ node, message: HAND_ROLLED_FILTER_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 17 — control-outside-home ──────────────────────────────────────────────────────────────
+
+/**
+ * Where a raw selection control legitimately lives outside a TIERED home: a settings row, an
+ * overlay, a composer. Every one of these is a place the tier does not apply, so the advice ("move
+ * it into a home slot") would be wrong rather than merely unwelcome.
+ *
+ * `SettingsRow` is the form row — law C1's third home, not an exception to C1 — so this rule
+ * treating it as a home is the whole of the enforcement a settings page gets, and the two tier
+ * rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
+ */
+const CONTROL_HOST_TAGS = new Set([
+  'SettingsRow',
+  'Modal',
+  'Drawer',
+  'Popover.Dropdown',
+  'Menu.Dropdown',
+  'Composer',
+])
+
+const CONTROL_OUTSIDE_HOME_MESSAGE =
+  'Raw Mantine selection control with no home — a filter, tab or action belongs in exactly one of ' +
+  'the three homes (a PageBar / Section / WidgetHeader slot, or a form row), and a home is entered ' +
+  'through a slot prop (law C1). A settings row, an overlay (Modal/Drawer/Popover/Menu) and a ' +
+  'form (@mantine/form) are the declared non-homes and never report. ' +
+  '(basalt/control-outside-home)'
+
+/**
+ * The cross-file half of C1, and the one rule here that is openly a HEURISTIC: "this control has
+ * no home" is a claim about layout intent, which no AST can see. It ships `warn` for that reason
+ * and stays warn until the playground and the five consumer repos run it with ≤3 waivers
+ * (docs/CONTROLS-SPEC.md §9 wave 7).
+ *
+ * Three exemptions carry the false-positive load: an overlay/settings-row ancestor, a file that
+ * imports `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
+ * exemption — a file DEFINING a basalt control cannot be told to use one.
+ */
+const controlOutsideHome = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a raw Mantine selection control that is in no basalt home.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const slots = createSlotContext()
+    const owner = createControlOwnerProbe()
+    const mantineImports = new Set()
+    const candidates = []
+    let importsMantineForm = false
+
+    return {
+      ...owner.visitors,
+      ImportDeclaration(node) {
+        collectMantineImports(node, mantineImports)
+        if ((node.source?.value ?? '') === '@mantine/form') importsMantineForm = true
+      },
+      JSXAttribute(node) {
+        slots.note(node)
+      },
+      JSXOpeningElement(node) {
+        const tag = jsxTagName(node.name)
+        if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) return
+        candidates.push({
+          node,
+          root: jsxRootName(node.name),
+          captured: slots.capture(node),
+          hosted: hasAncestorTag(node, CONTROL_HOST_TAGS),
+        })
+      },
+      'Program:exit'() {
+        if (importsMantineForm || owner.state.definesControl) return
+        for (const { node, root, captured, hosted } of candidates) {
+          if (root === undefined || !mantineImports.has(root)) continue
+          if (hosted || slots.resolve(captured)) continue
+          if (hasThemeAllow(context, node, 'control-outside-home')) continue
+          context.report({ node, message: CONTROL_OUTSIDE_HOME_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 18 — control-size-literal ──────────────────────────────────────────────────────────────
+
+/** The props a home already owns — the tier, the width, and the responsive swap (laws C5/C9). */
+const CONTROL_SIZE_ATTRS = new Set(['size', 'w', 'fullWidth', 'visibleFrom', 'hiddenFrom'])
+
+const CONTROL_SIZE_LITERAL_MESSAGE =
+  'Size/width/breakpoint prop inside a tiered home slot — the HOME sets the tier (`size="ctl"` = 30px, ' +
+  "mounted by the slot's own MantineThemeProvider), the control owns its own responsive swap, and " +
+  'the overflow fold is computed by basalt from typed data. A `size`/`w`/`fullWidth`/`visibleFrom`/' +
+  '`hiddenFrom` written here fights all three (laws C5/C7/C9) — drop the prop. ' +
+  '(basalt/control-size-literal)'
+
+/**
+ * Every element inside a tiered home slot, not just the raw filters: a `Button size="xs"` dropped
+ * into `PageBar.actions` is the same defect as a `Select size="xs"` there — one control in the bar
+ * that is not 30px. The slot's hoisted `MantineThemeProvider` already resolves the tier with no
+ * prop. A `SettingsRow`'s `control` is NOT a tiered slot (see {@link SLOT_ATTRS}): a form row keeps
+ * Mantine's `md`, so the `size` written there is load-bearing rather than redundant.
+ */
+const controlSizeLiteral = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a size/width/breakpoint prop written inside a home slot.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const slots = createSlotContext()
+    const candidates = []
+
+    return {
+      JSXAttribute(node) {
+        slots.note(node)
+        const name = node.name?.name
+        if (typeof name !== 'string' || !CONTROL_SIZE_ATTRS.has(name)) return
+        candidates.push({ node, captured: slots.capture(node) })
+      },
+      'Program:exit'() {
+        for (const { node, captured } of candidates) {
+          if (!slots.resolve(captured)) continue
+          if (hasThemeAllow(context, node, 'control-size-literal')) continue
+          context.report({ node, message: CONTROL_SIZE_LITERAL_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 19 — page-bar-budget ───────────────────────────────────────────────────────────────────
+
+/** `PageBar.actions.secondary` — 4, because the one `primary` makes 5 (law C6). */
+const PAGE_BAR_SECONDARY_BUDGET = 4
+/** A `Section`'s `actions` — 3 (law C6). */
+const SECTION_ACTION_BUDGET = 3
+
+const PAGE_BAR_BUDGET_MESSAGES = {
+  duplicate:
+    'Second PageBar in one file — a page has exactly one page bar, and row 1 portals into the app ' +
+    'shell header, so two of them race for the same node (law C6). (basalt/page-bar-budget)',
+  secondary:
+    `More than ${PAGE_BAR_SECONDARY_BUDGET} secondary PageBar actions — the bar holds ≤5 entries ` +
+    'including the one `primary`, and everything past that folds into the `More` menu basalt ' +
+    'computes from the typed BarAction[] (laws C6/C7). Move the rest into a `kind: "menu"` entry. ' +
+    '(basalt/page-bar-budget)',
+  section:
+    `More than ${SECTION_ACTION_BUDGET} Section actions — a section header holds ≤3 (law C6). ` +
+    '(basalt/page-bar-budget)',
+  filled:
+    'Second variant="filled" inside one slot — a home has exactly one primary action, and two ' +
+    'filled buttons side by side name neither (law C6). (basalt/page-bar-budget)',
+}
+
+/** The `actions` attribute of a JSXOpeningElement, unwrapped, or undefined. */
+function actionsAttributeValue(node) {
+  for (const attr of node.attributes ?? []) {
+    if (attr.type !== 'JSXAttribute' || attr.name?.name !== 'actions') continue
+    return { attr, value: unwrapExpressionContainer(attr.value) }
+  }
+  return undefined
+}
+
+/**
+ * The four countable halves of C6. `error` from the start: every one of them is arithmetic over a
+ * literal the file wrote down, with no heuristic and no layout intent to guess at.
+ */
+const pageBarBudget = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'Enforce the PageBar / Section action budgets and the single primary.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const pageBars = []
+    const findings = []
+    /** Slot attribute node → the `variant="filled"` attributes written inside it. */
+    const filledPerSlot = new Map()
+
+    return {
+      JSXOpeningElement(node) {
+        const tag = jsxTagName(node.name)
+        if (tag === 'PageBar') {
+          pageBars.push(node)
+          const actions = actionsAttributeValue(node)
+          if (actions?.value?.type === 'ObjectExpression') {
+            for (const prop of actions.value.properties) {
+              if (prop.type !== 'Property' || propertyKeyName(prop) !== 'secondary') continue
+              if (prop.value?.type !== 'ArrayExpression') continue
+              if (prop.value.elements.length <= PAGE_BAR_SECONDARY_BUDGET) continue
+              findings.push({ node: prop, message: PAGE_BAR_BUDGET_MESSAGES.secondary })
+            }
+          }
+          return
+        }
+        if (tag !== 'Section') return
+        const actions = actionsAttributeValue(node)
+        if (actions?.value?.type !== 'ArrayExpression') return
+        if (actions.value.elements.length <= SECTION_ACTION_BUDGET) return
+        findings.push({ node: actions.attr, message: PAGE_BAR_BUDGET_MESSAGES.section })
+      },
+      JSXAttribute(node) {
+        if (node.name?.name !== 'variant') return
+        const value = unwrapExpressionContainer(node.value)
+        if (!isStringLiteral(value) || value.value !== 'filled') return
+        const slot = enclosingSlotAttribute(node)
+        if (slot === undefined) return
+        const written = filledPerSlot.get(slot) ?? []
+        written.push(node)
+        filledPerSlot.set(slot, written)
+      },
+      'Program:exit'() {
+        for (const node of pageBars.slice(1)) {
+          findings.push({ node, message: PAGE_BAR_BUDGET_MESSAGES.duplicate })
+        }
+        for (const written of filledPerSlot.values()) {
+          for (const node of written.slice(1)) {
+            findings.push({ node, message: PAGE_BAR_BUDGET_MESSAGES.filled })
+          }
+        }
+        for (const { node, message } of findings) {
+          if (hasThemeAllow(context, node, 'page-bar-budget')) continue
+          context.report({ node, message })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 20 — in-body-page-title ────────────────────────────────────────────────────────────────
+
+/** Where an `order={1|2}` Title is a DOCUMENT heading rather than a page title. */
+const PAGE_TITLE_HOST_TAGS = new Set(['Prose', 'ArticleLayout', 'Modal', 'Drawer'])
+
+const IN_BODY_PAGE_TITLE_MESSAGE =
+  'In-body page title — the page is named ONCE, by the breadcrumb (`staticData.title`) or by ' +
+  '`PageBar.title` in a shell-less app, and every section/card/table title is a `WidgetHeader` ' +
+  '(law C8). An `<Title order={1|2}>` in the body is a second, drifting name for the same page. ' +
+  'Prose / ArticleLayout / an overlay and anything under a `content/` path are document headings ' +
+  'and never report. (basalt/in-body-page-title)'
+
+/** The `order` prop as a number literal, or undefined. */
+function titleOrderOf(node) {
+  for (const attr of node.attributes ?? []) {
+    if (attr.type !== 'JSXAttribute' || attr.name?.name !== 'order') continue
+    const value = unwrapExpressionContainer(attr.value)
+    return isNumericLiteral(value) ? value.value : undefined
+  }
+  return undefined
+}
+
+/**
+ * The AST half of C8. Its text-level twin is the `in-body-page-title` GUARD KIND — same id in both
+ * lanes on purpose, so one `theme-allow in-body-page-title — <why>` waives both rather than
+ * needing a different word per enforcement surface.
+ */
+const inBodyPageTitle = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on an in-body <Title order={1|2}> outside prose/overlay context.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context) || hasPathSegment(getFilename(context), 'content')) return {}
+
+    return {
+      JSXOpeningElement(node) {
+        if (jsxTagName(node.name) !== 'Title') return
+        const order = titleOrderOf(node)
+        if (order !== 1 && order !== 2) return
+        if (hasAncestorTag(node, PAGE_TITLE_HOST_TAGS)) return
+        if (hasThemeAllow(context, node, 'in-body-page-title')) return
+        context.report({ node, message: IN_BODY_PAGE_TITLE_MESSAGE })
+      },
+    }
+  },
+}
+
+// ── Rule 21 — responsive-twin ───────────────────────────────────────────────────────────────────
+
+const RESPONSIVE_TWIN_MESSAGE =
+  'The same control mounted twice under visibleFrom/hiddenFrom — a responsive swap belongs to the ' +
+  'CONTROL, which owns one mount and switches its own presentation in CSS (law C9). Two mounts are ' +
+  'two states: the hidden half keeps its own value, its own focus and its own store writes. ' +
+  'Render it once. (basalt/responsive-twin)'
+
+/** The breakpoint a `visibleFrom` / `hiddenFrom` prop names, as a string literal. */
+function breakpointAttr(element, attrName) {
+  for (const attr of element.openingElement?.attributes ?? []) {
+    if (attr.type !== 'JSXAttribute' || attr.name?.name !== attrName) continue
+    const value = unwrapExpressionContainer(attr.value)
+    return isStringLiteral(value) ? value.value : undefined
+  }
+  return undefined
+}
+
+/** Every control tag rendered anywhere in `node`'s subtree, itself included. */
+function subtreeControlTags(node, into = new Set(), depth = 0) {
+  if (node === null || node === undefined || depth > 16) return into
+  if (node.type === 'JSXElement') {
+    const tag = jsxTagName(node.openingElement?.name)
+    if (tag !== undefined && (RAW_FILTER_TAGS.has(tag) || BOUND_TAGS.has(tag))) into.add(tag)
+    for (const child of node.children ?? []) subtreeControlTags(child, into, depth + 1)
+    return into
+  }
+  if (node.type === 'JSXFragment') {
+    for (const child of node.children ?? []) subtreeControlTags(child, into, depth + 1)
+    return into
+  }
+  if (node.type === 'JSXExpressionContainer')
+    return subtreeControlTags(node.expression, into, depth + 1)
+  if (node.type === 'ConditionalExpression') {
+    subtreeControlTags(node.consequent, into, depth + 1)
+    return subtreeControlTags(node.alternate, into, depth + 1)
+  }
+  if (node.type === 'LogicalExpression') {
+    subtreeControlTags(node.left, into, depth + 1)
+    return subtreeControlTags(node.right, into, depth + 1)
+  }
+  return into
+}
+
+/**
+ * Law C9 — linewatch shipped three doubled controls this way. The pair test is deliberately narrow:
+ * two SIBLING elements, one `visibleFrom="X"` and one `hiddenFrom="X"` on the SAME breakpoint, whose
+ * subtrees both render the same control tag. A file that DEFINES a basalt control is exempt — the
+ * one legitimate double mount is the CSS swap inside the control itself.
+ */
+const responsiveTwin = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on one control mounted twice under visibleFrom/hiddenFrom.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const owner = createControlOwnerProbe()
+    const twins = []
+
+    const inspectChildren = (node) => {
+      const children = (node.children ?? []).filter((child) => child.type === 'JSXElement')
+      for (let i = 0; i < children.length; i++) {
+        for (let j = i + 1; j < children.length; j++) {
+          const a = children[i]
+          const b = children[j]
+          const visibleA = breakpointAttr(a, 'visibleFrom')
+          const hiddenA = breakpointAttr(a, 'hiddenFrom')
+          const visibleB = breakpointAttr(b, 'visibleFrom')
+          const hiddenB = breakpointAttr(b, 'hiddenFrom')
+          const paired =
+            (visibleA !== undefined && visibleA === hiddenB) ||
+            (hiddenA !== undefined && hiddenA === visibleB)
+          if (!paired) continue
+          const tagsA = subtreeControlTags(a)
+          if (tagsA.size === 0) continue
+          const shared = [...subtreeControlTags(b)].some((tag) => tagsA.has(tag))
+          if (!shared) continue
+          twins.push(b)
+        }
+      }
+    }
+
+    return {
+      ...owner.visitors,
+      JSXElement: inspectChildren,
+      JSXFragment: inspectChildren,
+      'Program:exit'() {
+        if (owner.state.definesControl) return
+        for (const node of twins) {
+          if (hasThemeAllow(context, node, 'responsive-twin')) continue
+          context.report({ node, message: RESPONSIVE_TWIN_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 22 — search-literal-link ───────────────────────────────────────────────────────────────
+
+/** The two calls that build a typed nav definition — `search:` inside one is a nav link's search. */
+const NAV_DEFINITION_CALLEES = new Set(['defineNav', 'navGroup'])
+
+const SEARCH_LITERAL_LINK_MESSAGE =
+  "Object literal as a nav link's `search` — it PINS those values on every click, so a nav link " +
+  'always navigates back to the fallback and the persisted selection is silently discarded (law ' +
+  "C10; argo's reader had zero call sites because of exactly this). Pass `store.linkSearch` BY " +
+  'REFERENCE instead — never a literal, never `search: true`, never a global link callback. ' +
+  '(basalt/search-literal-link)'
+
+/** True when `node` sits inside a `defineNav()` / `navGroup()` argument. */
+function insideNavDefinition(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return false
+    if (
+      current.type === 'CallExpression' &&
+      current.callee?.type === 'Identifier' &&
+      NAV_DEFINITION_CALLEES.has(current.callee.name)
+    ) {
+      return true
+    }
+    current = current.parent
+  }
+  return false
+}
+
+const searchLiteralLink = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a `search:` object literal inside defineNav/navGroup.' },
+    schema: [],
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (node.callee?.type !== 'Identifier' || node.callee.name !== 'linkOptions') return
+        const arg0 = node.arguments?.[0]
+        if (arg0 === undefined || arg0.type !== 'ObjectExpression') return
+        for (const prop of arg0.properties) {
+          if (prop.type !== 'Property' || propertyKeyName(prop) !== 'search') continue
+          if (prop.value?.type !== 'ObjectExpression') continue
+          if (!insideNavDefinition(node)) continue
+          if (hasThemeAllow(context, prop, 'search-literal-link')) continue
+          context.report({ node: prop, message: SEARCH_LITERAL_LINK_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 23 — use-search-from-literal ───────────────────────────────────────────────────────────
+
+const USE_SEARCH_FROM_LITERAL_MESSAGE =
+  "useSearch({ from: '<route>' }) — a `from` literal pins the reader to ONE route id, so the same " +
+  'component throws the moment it renders on a sibling or child route. A store field reads ' +
+  '`useSearch({ strict: false })` internally, which sees the merged search of every matched route ' +
+  '(law C10) — take the value as a prop, or read it through the store field. ' +
+  '(basalt/use-search-from-literal)'
+
+const useSearchFromLiteral = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: "Warn on useSearch({ from: '<literal>' })." },
+    schema: [],
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        const callee = node.callee
+        const name =
+          callee?.type === 'MemberExpression' ? callee.property?.name : (callee?.name ?? undefined)
+        if (name !== 'useSearch') return
+        const arg0 = node.arguments?.[0]
+        if (arg0 === undefined || arg0.type !== 'ObjectExpression') return
+        for (const prop of arg0.properties) {
+          if (prop.type !== 'Property' || propertyKeyName(prop) !== 'from') continue
+          if (!isStringLiteral(prop.value)) continue
+          if (hasThemeAllow(context, prop, 'use-search-from-literal')) continue
+          context.report({ node: prop, message: USE_SEARCH_FROM_LITERAL_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -1626,7 +2489,65 @@ const handRolledShell = {
  *
  * @type {Record<string, GraceEntry>}
  */
-export const PLUGIN_RULE_GRACE = {}
+export const PLUGIN_RULE_GRACE = {
+  'control-outside-home': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
+      'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
+      'is carried by three exemptions (overlay/settings-row ancestor, @mantine/form, owner ' +
+      'definition) rather than by certainty. Promotion is additionally gated on running the ' +
+      'shipped preset over argo, linewatch, image-share, rb, image-gen and the playground with ≤3 ' +
+      'total waivers (§9 wave 7); the spec dated it 1.28.0, which is the minor it SHIPS in, so the ' +
+      'gate would have fired on the release commit.',
+  },
+  'control-size-literal': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). Rejects a prop that was correct one ' +
+      'minor ago — every `size="xs"` written into a bar before the tier existed — so it takes the ' +
+      'grace minor the doctrine exists for. The spec dated it 1.27.0 when waves 3/4 were expected ' +
+      'to carry it; it lands in 1.28.0, so the promote moves with it (a promote at the shipping ' +
+      'version fails the C16 gate on the release commit itself).',
+  },
+  'in-body-page-title': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its text-level twin is the ' +
+      'guard kind of the SAME id, which carries the same dates in GRACE_PERIOD_KINDS — one law, ' +
+      'two lanes, one promotion. Warn because an in-body h1/h2 is a judgement about which name ' +
+      'the page already has, and the fix is a route/breadcrumb change rather than a prop edit.',
+  },
+  'responsive-twin': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C9 — linewatch shipped three ' +
+      'doubled controls). Warn for one minor because the fix is a real edit (delete one mount, ' +
+      'move the swap into the control), not a prop removal, and the pair test is a heuristic over ' +
+      'sibling structure.',
+  },
+  'search-literal-link': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10 — argo nav.tsx:132 pinned the ' +
+      'fallback on every click, which is why its reader had zero call sites). Warn for one minor ' +
+      'because the fix needs a store to exist at the call site, which is a wave-2 dependency for ' +
+      'consumers still on the old enum-only pair.',
+  },
+  'use-search-from-literal': {
+    since: '1.28.0',
+    promote: '1.29.0',
+    why:
+      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10). Same runway as ' +
+      'search-literal-link and for the same reason: the remedy is `createSearchStore` + a prop, ' +
+      'so a consumer needs the wave-2 store before the finding is actionable.',
+  },
+}
 
 /**
  * Plugin rules that stay `warn` in the shipped preset PERMANENTLY — outside the C16 version gate,
@@ -1665,6 +2586,14 @@ export default {
     'shadow-basalt-export': shadowBasaltExport,
     'hand-rolled-shell': handRolledShell,
     'raw-scroll-container': rawScrollContainer,
+    'hand-rolled-filter': handRolledFilter,
+    'control-outside-home': controlOutsideHome,
+    'control-size-literal': controlSizeLiteral,
+    'page-bar-budget': pageBarBudget,
+    'in-body-page-title': inBodyPageTitle,
+    'responsive-twin': responsiveTwin,
+    'search-literal-link': searchLiteralLink,
+    'use-search-from-literal': useSearchFromLiteral,
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,
     'token-layer-boundary': tokenLayerBoundary,

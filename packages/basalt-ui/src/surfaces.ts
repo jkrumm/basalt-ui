@@ -31,6 +31,48 @@ export type RuleName =
   | 'controls'
   | 'app'
 
+/**
+ * Every rule the shipped oxlint JS plugin registers (`configs/oxlint-plugin.js` → `rules`), as one
+ * literal union AND one runtime list — the type and the list are the same declaration, so they
+ * cannot drift from each other. What they CAN drift from is the plugin itself, which this module
+ * must not import (it is a standalone `.js` loaded through `jsPlugins` out of a consumer's
+ * node_modules, and `surfaces.ts` is dependency-free by contract). `oxlint-plugin.test.ts` closes
+ * that gap: it asserts this list is EXACTLY the plugin's own rule keys, and `check-coverage`
+ * asserts every id here maps to exactly one surface.
+ *
+ * @example
+ * const id: PluginRuleId = 'hand-rolled-filter' // ok
+ * // const bad: PluginRuleId = 'hand-rolled-filters' // tsc error
+ */
+export const PLUGIN_RULE_ID_LIST = [
+  'no-raw-font-size',
+  'raw-size-literal',
+  'card-inset',
+  'chart-in-raw-surface',
+  'hand-rolled-plot',
+  'chart-legend-literal',
+  'shadow-basalt-export',
+  'hand-rolled-shell',
+  'raw-scroll-container',
+  'hand-rolled-filter',
+  'control-outside-home',
+  'control-size-literal',
+  'page-bar-budget',
+  'in-body-page-title',
+  'responsive-twin',
+  'search-literal-link',
+  'use-search-from-literal',
+  'visx-boundary',
+  'visx-tooltip',
+  'token-layer-boundary',
+  'agent-resume-guard',
+  'agent-no-raw-usechat',
+  'ai-sdk-major',
+] as const
+
+/** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
+export type PluginRuleId = (typeof PLUGIN_RULE_ID_LIST)[number]
+
 /** The 3 shipped skill names (agent/skills/basalt-{name}/SKILL.md, placed into a consumer's
  * .claude/skills/ by `basalt-ui init`/`sync` — the same managed path the rules take).
  *
@@ -113,7 +155,8 @@ type BaseSurface = {
  *
  * @example
  * const s: DoctrineSpec = { kind: 'doctrine', layer: 'headless', rule: 'tokens',
- *   skill: ['basalt-design'], guardKinds: ['raw-hex'], forbiddenImports: [] }
+ *   skill: ['basalt-design'], guardKinds: ['raw-hex'], pluginRules: ['no-raw-font-size'],
+ *   forbiddenImports: [] }
  */
 export type DoctrineSpec = BaseSurface & {
   readonly kind: 'doctrine'
@@ -122,6 +165,23 @@ export type DoctrineSpec = BaseSurface & {
   readonly skill: readonly SkillName[]
   /** Required, but [] is legal for advisory surfaces (router/query: rule only, no guard). */
   readonly guardKinds: readonly GuardKind[]
+  /**
+   * The oxlint plugin rules this surface's doctrine is enforced by — the AST half of the same seam
+   * `guardKinds` covers with text scans. Required (`[]` is legal, and says "no AST rule guards
+   * this"), because the ABSENCE of the field is what let the generated coverage headers claim a
+   * rule was "backed by" a guard kind while the plugin rule doing the real work went unnamed (D8).
+   *
+   * Every id in {@link PLUGIN_RULE_ID_LIST} maps to EXACTLY ONE surface — asserted by
+   * `check-coverage` and by `oxlint-plugin.test.ts`, so a new plugin rule cannot ship without a
+   * home, and one rule cannot be counted as coverage for two surfaces.
+   */
+  readonly pluginRules: readonly PluginRuleId[]
+  /**
+   * Laws this surface states but nothing enforces — printed under `not guarded:` in the generated
+   * `<!-- basalt:coverage -->` header. The honest half of the block: claiming coverage that does
+   * not exist is D8, and the only way a reader can tell is if the doc says so itself.
+   */
+  readonly advisoryLaws?: readonly string[]
 }
 
 /**
@@ -137,6 +197,8 @@ export type ToolingSpec = BaseSurface & {
   readonly rule?: never
   readonly skill?: never
   readonly guardKinds?: never
+  readonly pluginRules?: never
+  readonly advisoryLaws?: never
 }
 
 /** The discriminated union — the SURFACES registry value type. */
@@ -194,6 +256,17 @@ export const SURFACES = {
       'sub-16-input-font',
       'mantine-shade-index',
     ],
+    // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
+    // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
+    // `BasaltShell` IS the root barrel's promise (docs/CONTROLS-SPEC.md §6 wave 6).
+    pluginRules: [
+      'hand-rolled-shell',
+      'card-inset',
+      'in-body-page-title',
+      'raw-scroll-container',
+      'page-bar-budget',
+      'shadow-basalt-export',
+    ],
     description:
       'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
     optionalPeers: [
@@ -212,6 +285,13 @@ export const SURFACES = {
     rule: 'charts',
     skill: ['basalt-charts'],
     guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'unframed-chart'],
+    pluginRules: [
+      'hand-rolled-plot',
+      'chart-legend-literal',
+      'chart-in-raw-surface',
+      'visx-boundary',
+      'visx-tooltip',
+    ],
     description:
       'CartesianChart + visx chart primitives, kinds, sparklines, hooks, and token re-exports (Mantine-free)',
     globs: {
@@ -231,6 +311,10 @@ export const SURFACES = {
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
     guardKinds: ['raw-hex', 'raw-color-fn', 'off-identity-accent', 'off-system-surface-var'],
+    // The type-scale rules live with the tokens, not with `.`: both police a value that left the
+    // `--vx-*` system, which is this surface's whole subject. `token-layer-boundary` is the
+    // repo-local-only rule that keeps the layer upstream of Mantine (see below).
+    pluginRules: ['no-raw-font-size', 'raw-size-literal', 'token-layer-boundary'],
     description:
       'VX token refs, buildPaletteCss, defineSeries, seriesTokens, groupTokens, alpha (Mantine-free)',
     globs: {
@@ -273,6 +357,7 @@ export const SURFACES = {
     rule: 'query',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
     optionalPeers: ['@tanstack/react-query-devtools'],
     globs: {
@@ -288,6 +373,8 @@ export const SURFACES = {
     rule: 'router',
     skill: ['basalt-app'],
     guardKinds: [],
+    // Law C10 — a nav link's `search` and a reader's `from` are both this bridge's contract.
+    pluginRules: ['search-literal-link', 'use-search-from-literal'],
     description:
       'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)',
     optionalPeers: ['@tanstack/react-router'],
@@ -304,6 +391,7 @@ export const SURFACES = {
     rule: 'forms',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)',
     optionalPeers: ['@mantine/form'],
@@ -315,6 +403,7 @@ export const SURFACES = {
     rule: 'notifications',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter',
     optionalPeers: ['@mantine/notifications'],
@@ -326,6 +415,7 @@ export const SURFACES = {
     rule: 'commands',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays',
     optionalPeers: ['@mantine/spotlight', '@mantine/modals', '@tanstack/react-hotkeys'],
@@ -337,6 +427,7 @@ export const SURFACES = {
     rule: 'data',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in',
     optionalPeers: ['@tanstack/react-table', '@tanstack/react-virtual'],
@@ -348,6 +439,7 @@ export const SURFACES = {
     rule: 'data',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)',
     optionalPeers: ['@tanstack/react-table'],
@@ -359,6 +451,7 @@ export const SURFACES = {
     rule: 'data',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)',
     optionalPeers: ['@tanstack/react-virtual'],
@@ -370,6 +463,8 @@ export const SURFACES = {
     rule: 'agent',
     skill: ['basalt-app'],
     guardKinds: [],
+    // The three agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
+    pluginRules: ['agent-resume-guard', 'agent-no-raw-usechat', 'ai-sdk-major'],
     description:
       'Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, isResumable/ResumableAgentTransport (stream-resumption seam), PartList, coalesceParts, the ForeignPart/definePartRenderers/narrowAgentPart open part-registry seam, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)',
     optionalPeers: ['ai', 'use-stick-to-bottom'],
@@ -386,6 +481,7 @@ export const SURFACES = {
     rule: 'agent',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).',
     optionalPeers: [
@@ -409,6 +505,7 @@ export const SURFACES = {
     rule: 'content',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), FilterSet/ViewTabs/MultiSelectFilter re-exported from ./controls (they replaced the controlled ArticleFilterBar), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface',
     optionalPeers: [
@@ -430,6 +527,23 @@ export const SURFACES = {
     rule: 'controls',
     skill: ['basalt-design'],
     guardKinds: [],
+    // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter` ships `error` — "inside a
+    // slot" is structural; the other three are grace entries in `PLUGIN_RULE_GRACE` until 1.29.0.
+    // The budget rules live on `.` with `PageBar` itself.
+    pluginRules: [
+      'hand-rolled-filter',
+      'control-outside-home',
+      'control-size-literal',
+      'responsive-twin',
+    ],
+    // docs/CONTROLS-SPEC.md §6 "Honest coverage" — verbatim, because a generated header claiming
+    // otherwise is D8 again.
+    advisoryLaws: [
+      'C1 as a cross-file law (a control placed in one file, its home declared in another)',
+      'hand-rolled section headings (argo writes `<Text fw={600} size="sm">` + children, which no AST heuristic matches without false positives)',
+      'C11 — a table/list stating its count when it is not a BasaltDataTable',
+      'C12 — one shape for refresh/sync (SyncButton); only the alias table sees a renamed copy',
+    ],
     description:
       'The control tier (docs/CONTROLS-SPEC.md §3): FilterSet (nowrap row + measured +N fold + the mobile Filters (n) sheet), RangeFilter/CompareFilter/SelectFilter/MultiSelectFilter/SearchFilter/ToggleFilter (each bound to a FieldHandle — no value/onChange/size, law C2/C5), ViewTabs, and the action/sync family (ActionGroup, OverflowMenu, SyncButton, BarAction/GlobalAction). Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.',
     optionalPeers: [],
@@ -441,6 +555,7 @@ export const SURFACES = {
     rule: 'controls',
     skill: ['basalt-design'],
     guardKinds: [],
+    pluginRules: [],
     description:
       "DateRangePicker — the @mantine/dates implementation of RangeFilter's customPicker seam. Its own subpath because @mantine/dates is an optional peer and basaltViteConfig pre-bundles the whole @mantine scope, so a consumer without the peer (linewatch) must never resolve it: nothing under src/controls may import it, statically or lazily (docs/CONTROLS-SPEC.md §3).",
     optionalPeers: ['@mantine/dates'],
@@ -452,6 +567,7 @@ export const SURFACES = {
     rule: 'state',
     skill: ['basalt-design'],
     guardKinds: ['localstorage-theme'],
+    pluginRules: [],
     description:
       'createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives',
     optionalPeers: [],
@@ -472,6 +588,7 @@ export const SURFACES = {
     rule: 'mantine',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     description:
       'ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider',
     optionalPeers: [],
@@ -516,6 +633,7 @@ export const SURFACES = {
     rule: 'app',
     skill: ['basalt-app'],
     guardKinds: [],
+    pluginRules: [],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
       // features/, etc. is also covered. The @visx/*-only-in-charts and Mantine-free charts/tokens
