@@ -23,7 +23,7 @@ Version: 1.25.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)
 Layer: mantine-coupled
 Rule: basalt-mantine
 OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0
@@ -65,7 +65,7 @@ OptionalPeers: @tanstack/react-query-devtools@^5.101.0
 
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
-Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchParamStore (single-select URL-state store) + createMultiSearchParamStore (multi-select URL-state store)
+Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)
 Layer: headless
 Rule: basalt-router
 OptionalPeers: @tanstack/react-router@^1.170.0
@@ -135,7 +135,7 @@ OptionalPeers: shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beau
 
 ## basalt-ui/state
 Import: import { ... } from 'basalt-ui/state'
-Description: createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives
+Description: createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives
 Layer: headless
 Rule: basalt-state
 

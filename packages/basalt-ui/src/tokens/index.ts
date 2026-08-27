@@ -159,6 +159,23 @@ export const VX = {
   // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
   radiusPill: 'var(--vx-radius-pill)',
 
+  // Controls tier sizing (`docs/CONTROLS-SPEC.md` §5) — `var()` refs onto the density-tracking
+  // `--vx-space-*` declarations `spaceDecls` emits above (same ref pattern as `radiusCard`/
+  // `radiusCtrl`), so a home/control reads ONE source for its tier height whether it's Mantine
+  // chrome (`cssVariablesResolver`/`CTL_THEME`) or a Mantine-free composed layout.
+  space: {
+    controlHeightTag: 'var(--vx-space-control-height-tag)',
+    controlHeightWidget: 'var(--vx-space-control-height-widget)',
+    controlHeightCtl: 'var(--vx-space-control-height-ctl)',
+    touchControlHeight: 'var(--vx-space-touch-control-height)',
+    pageBarRowHeight: 'var(--vx-space-page-bar-row-height)',
+    sectionHeaderHeight: 'var(--vx-space-section-header-height)',
+    widgetHeaderHeight: 'var(--vx-space-widget-header-height)',
+    sidebarBlockRowHeight: 'var(--vx-space-sidebar-block-row-height)',
+    controlGap: 'var(--vx-space-control-gap)',
+    sheetRowHeight: 'var(--vx-space-sheet-row-height)',
+  },
+
   // Secondary-line color (back-compat alias; now theme-aware via --vx-line2)
   line2Dark: 'var(--vx-line2)',
 
@@ -418,6 +435,15 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * the two lists can never drift apart — mirrors `frameworkDerived`'s own single-source reasoning for
  * the radii.
  *
+ * The ten controls-tier anchors/one-offs (`controlHeightTag`/`Widget`/`Ctl`, `touchControlHeight`,
+ * `pageBarRowHeight`, `sectionHeaderHeight`, `widgetHeaderHeight`, `sidebarBlockRowHeight`,
+ * `controlGap`, `sheetRowHeight` — `docs/CONTROLS-SPEC.md` §5) are a DELIBERATE exception to the
+ * "has at least one real consumer today" rule below: `theme/ctl-theme.tsx`'s `CTL_THEME` and the
+ * `cssVariablesResolver`'s `-ctl`/`-icon` var sets consume the four control-height anchors this
+ * commit; `PageBar`/`WidgetHeader`/the sidebar blocks (wave 3/4) consume the six one-offs. Emitted
+ * now, ahead of that second wave, rather than left as JS-only — unlike the seventeen genuinely
+ * dead-weight keys below, these are forward-declared framework surface, not vestigial.
+ *
  * `SPACE_FIXED` (Timeline `lineWidth`, 1px borders, the ReadingProgress bar height, SegmentedControl's
  * `segmentedTrackInset`) is deliberately NEVER part of this list — it never moves, so a var would
  * only invite someone to think it does.
@@ -465,6 +491,14 @@ function spaceDecls(space: SpaceValues): string[] {
     // `ActionIcon.extend` `vars`), single-sourced from the SAME `controlHeight` anchor
     // `space-input-height` reads from (`SPACE_ANCHORS_BASE`'s doc in `tokens/palette.ts`).
     decl('space-control-height', pxRem(space.anchors.controlHeight)),
+    // Controls tier heights (`docs/CONTROLS-SPEC.md` §5) — same rem-plus-`--mantine-scale`
+    // reconstruction as `space-input-height`/`space-control-height` above; `theme/ctl-theme.tsx`'s
+    // `CTL_THEME` and the `cssVariablesResolver`'s `-ctl`/`-icon` var sets both wrap these in the
+    // matching `calc(... * var(--mantine-scale))`.
+    decl('space-control-height-tag', pxRem(space.anchors.controlHeightTag)),
+    decl('space-control-height-widget', pxRem(space.anchors.controlHeightWidget)),
+    decl('space-control-height-ctl', pxRem(space.anchors.controlHeightCtl)),
+    decl('space-touch-control-height', pxRem(space.anchors.touchControlHeight)),
     decl('space-stack-xs', `${space.anchors.stackXs}px`),
     decl('space-stack-sm', `${space.anchors.stackSm}px`),
     decl('space-stack-md', `${space.anchors.stackMd}px`),
@@ -573,6 +607,15 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-stat-card-gap', `${space.step.statCardGap}px`),
     decl('space-virtual-row-inset-y', `${space.step.virtualRowInsetY}px`),
     decl('space-virtual-row-inset-x', `${space.step.virtualRowInsetX}px`),
+    // Controls tier row/gap heights (`docs/CONTROLS-SPEC.md` §5) — the current commit's consumers
+    // are `theme/ctl-theme.tsx` (`--vx-space-control-gap`) and the wave-3/4 homes (`PageBar`,
+    // `WidgetHeader`, sidebar blocks, the mobile `Filters (n)` sheet) landing next.
+    decl('space-page-bar-row-height', pxRem(space.step.pageBarRowHeight)),
+    decl('space-section-header-height', pxRem(space.step.sectionHeaderHeight)),
+    decl('space-widget-header-height', pxRem(space.step.widgetHeaderHeight)),
+    decl('space-sidebar-block-row-height', pxRem(space.step.sidebarBlockRowHeight)),
+    decl('space-control-gap', `${space.step.controlGap}px`),
+    decl('space-sheet-row-height', pxRem(space.step.sheetRowHeight)),
     // `chartLegendGap`/`chartMarginTop`/`chartMarginRight`/`chartMarginBottom`/`chartMarginLeft`/
     // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
     // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/

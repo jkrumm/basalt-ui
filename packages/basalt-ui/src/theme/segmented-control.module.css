@@ -12,3 +12,19 @@
   color: var(--vx-ink);
   font-weight: 600;
 }
+
+/*
+ * Numeric segment labels read mono `VX.text.xs` (`docs/CONTROLS-SPEC.md` §3 last paragraph, C7) —
+ * a consumer opts in with a bare `data-numeric` attribute on the `SegmentedControl` itself (an
+ * unrecognized native prop, forwarded onto the root `Box` via Mantine's own `...others` spread,
+ * `SegmentedControl.mjs`), retiring the per-consumer `theme-allow` + inline `styles={{ label: {
+ * fontFamily: 'var(--basalt-font-mono)', fontSize: 11.5 } }}` hack (`DashboardDateFilter.tsx`).
+ * `[data-numeric]` is a bare attribute selector, not a CSS-module class, so it is intentionally left
+ * unscoped — same ancestor-attribute pattern as `controls.module.css`'s
+ * `html[data-mantine-color-scheme] .inputWrapper[data-variant='default']`. `.label` here is the
+ * SAME scoped class `data-active` above targets, so both rules can co-apply (active + numeric).
+ */
+[data-numeric] .label {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+}

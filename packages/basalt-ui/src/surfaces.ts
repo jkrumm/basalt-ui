@@ -194,7 +194,7 @@ export const SURFACES = {
       'mantine-shade-index',
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
     optionalPeers: [
       'react-markdown',
       'remark-gfm',
@@ -288,7 +288,7 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     description:
-      'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchParamStore (single-select URL-state store) + createMultiSearchParamStore (multi-select URL-state store)',
+      'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)',
     optionalPeers: ['@tanstack/react-router'],
     globs: {
       shipped: [],
@@ -430,7 +430,7 @@ export const SURFACES = {
     skill: ['basalt-design'],
     guardKinds: ['localstorage-theme'],
     description:
-      'createPersistedState (versioned localStorage) + useOnlineStatus — Mantine-free state primitives',
+      'createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives',
     optionalPeers: [],
     // Consumers import basalt-ui/state from node_modules (lint-ignored), so there is nothing to
     // enforce consumer-side, and a shipped **/state* glob would wrongly hit consumers' own

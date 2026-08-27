@@ -3,10 +3,32 @@
  * Optional peer: @tanstack/react-router.
  * Carries the typed navigation definition (`defineNav`/`navGroup`/`navTarget`/`flattenNav`) and
  * `useNav`, which resolves it into `BasaltShell`'s `sections` + `mobileNav` props; plus the
- * StaticDataRouteOption augmentation (title/icon/navSection) for router-derived breadcrumbs and
- * the search-param stores — no Mantine, no JSX.
+ * StaticDataRouteOption augmentation (title/icon/navSection) for router-derived breadcrumbs, plus
+ * `createSearchStore` + the `field.*` vocabulary (and the two deprecated enum-only wrappers it
+ * replaced) — no Mantine, no JSX.
  */
 
+export { createSearchStore, type CreateSearchStoreOptions, type SearchStore } from './search-store'
+export { field } from './field'
+export type {
+  AnyField,
+  BooleanField,
+  EnumField,
+  FieldHandle,
+  FieldLane,
+  FieldOption,
+  FieldValue,
+  MultiField,
+  NumberField,
+  RangeField,
+  RangeParams,
+  RangePresets,
+  RangeValue,
+  ResolvedLane,
+  SearchValues,
+  StoredValues,
+  StringField,
+} from './field'
 export {
   createSearchParamStore,
   type SearchParamStore,

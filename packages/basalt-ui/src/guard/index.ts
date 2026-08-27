@@ -542,19 +542,31 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
 }
 
 /**
+ * A grace-ledger entry: `since` and `promote` are plain `x.y.z` semver strings (C16,
+ * `docs/CONTROLS-SPEC.md` §1). `grace.test.ts` fails the build once `package.json`'s version
+ * reaches `promote` while the entry is still here — the version-gate that replaces the honor
+ * system a bare promotion-note string used to run on. `since` must be strictly before `promote`,
+ * also asserted there.
+ */
+export type GraceEntry = { since: string; promote: string; why: string }
+
+/**
  * Kinds still inside their grace minor — reported, not fatal, until the next minor promotes them.
  * See {@link GuardSeverity} for the doctrine and why basalt-ui in particular needs it.
  *
- * The value is the promotion note, so the entry carries its own expiry rather than relying on
- * someone remembering. Adding a kind here is part of shipping it; removing the entry IS the
- * promotion, and belongs in its own commit so the changelog says enforcement got stricter.
+ * Adding a kind here is part of shipping it; removing the entry IS the promotion, and belongs in
+ * its own commit so the changelog says enforcement got stricter. `grace.test.ts` is the other half
+ * of "belongs in its own commit": it fails once `package.json`'s version reaches an entry's
+ * `promote` while the entry is still here, so a kind can no longer sit at `warn` with nothing
+ * tracking it — which is exactly what happened to the five entries this ledger shipped in the
+ * round-4 guard minor (D4, `docs/CONTROLS-SPEC.md` §6): all five stayed `warn` for five minors
+ * because deleting the entry was the only enforcement, and nothing checked that anyone had.
  *
  * The runway is measured in consumer UPGRADES, not in version numbers: `mantine-shade-index`
  * (the table's first tenant, promoted and gone) sat here across two minors because 1.8.0 shipped
  * the same day as 1.7.0 and 1.9.0 carried the chart batch the same consumer was upgrading for —
  * bundling a build-breaking promotion into the minor they take for the fixes turns a routine bump
- * into an unplanned refactor, which is exactly what the grace minor exists to prevent. The five
- * entries below all landed together in the round-4 guard minor and all promote one minor later.
+ * into an unplanned refactor, which is exactly what the grace minor exists to prevent.
  *
  * **A `SCANNABLE_EXT` widening cannot be expressed here, and 1.23.2's was deliberately not.**
  * Adding `.astro`/`.jsx`/`.vue` widens the FILE SET for all 25 kinds at once — there is no kind to
@@ -572,30 +584,11 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
  * with `theme-allow`, `basalt.severity` and `exemptRules` all still available.
  *
  * @example
- * const GRACE: Partial<Record<GuardKind, string>> = {
- *   'raw-font-family': 'introduced 1.4.0 — promote to error in 1.5.0',
+ * const GRACE: Partial<Record<GuardKind, GraceEntry>> = {
+ *   'raw-font-family': { since: '1.4.0', promote: '1.5.0', why: 'introduced 1.4.0 — …' },
  * }
  */
-const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, string>> = {
-  'theme-allow-unscoped':
-    'introduced in the round-4 guard minor — promote to error one minor later. Every consumer has ' +
-    'bare `theme-allow` comments today (basalt itself has ~20), and landing this as an error would ' +
-    'fail every one of their builds on an upgrade they took for the fixes.',
-  'surface-shadow-override':
-    'introduced in the round-4 guard minor — promote to error one minor later. Catches the shape a ' +
-    'TOKEN-FLUENT consumer writes, so the code it rejects is code that looks correct and passed ' +
-    'every previous release.',
-  'css-raw-surface':
-    'introduced in the round-4 guard minor — promote to error one minor later. The surface kinds ' +
-    'reaching CSS at all is the "existing kind, new file type" case the doctrine names explicitly.',
-  'inline-font-size':
-    'introduced in the round-4 guard minor — promote to error one minor later. The oxlint plugin ' +
-    'has enforced the same thing as `basalt/no-raw-font-size` for a while, so a consumer running ' +
-    'both sees nothing new; one running check-theme alone gets a minor of runway.',
-  'hidden-inline-style':
-    'introduced in the round-4 guard minor — promote by DELETING the kind and folding its two ' +
-    'scans into `raw-html-layout`, which is where they belong once the widening has had its minor.',
-}
+export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {}
 
 /** A kind's effective severity: consumer override first, then the grace table, then `error`. */
 function severityOf(kind: GuardKind, cfg: GuardConfig): GuardSeverity {
@@ -1827,7 +1820,7 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
     appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
-      'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Its own kind for one minor so the widening lands as a warning; it merges into raw-html-layout at the promotion.',
+      'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Promoted to error in the Unreleased minor (C16) with severity only — the kind stayed standalone rather than folding into raw-html-layout as originally planned; the merge is still open, tracked as a follow-up, not done here.',
   },
   'inline-font-size': {
     kind: 'inline-font-size',

@@ -5,9 +5,11 @@
     "BasaltErrorBoundary",
     "BasaltProvider",
     "BasaltShell",
+    "CTL_THEME",
     "Composer",
     "ConnectivityIndicator",
     "ConnectivityProvider",
+    "CtlSlot",
     "DangerZone",
     "DeltaBadge",
     "EmptyState",
@@ -38,10 +40,12 @@
     "ThreadTranscript",
     "ThreadWorkspace",
     "ToolChip",
+    "WidgetHeader",
     "assertNever",
     "baseTheme",
     "createAdapterThreadsStore",
     "createBasaltTheme",
+    "createLocalStore",
     "createPersistedState",
     "createThreadsStore",
     "cssVariablesResolver",
@@ -51,8 +55,7 @@
     "threadPartRenderers",
     "threadsStoreAdapterContract",
     "useAgentThreadRuns",
-    "useConnectivity",
-    "useOnlineStatus"
+    "useConnectivity"
   ],
   "./charts": [
     "AreaClosed",
@@ -174,6 +177,7 @@
   "./guard": [
     "DEFAULT_GUARD_CONFIG",
     "GENERATED_HEADER_LINE",
+    "GRACE_PERIOD_KINDS",
     "GUARD_RULES",
     "NEUTRALIZED_ALLOW_TOKEN",
     "PLUGIN_RULE_IDS",
@@ -257,7 +261,9 @@
   "./router-tanstack": [
     "createMultiSearchParamStore",
     "createSearchParamStore",
+    "createSearchStore",
     "defineNav",
+    "field",
     "flattenNav",
     "navGroup",
     "navTarget",
@@ -350,6 +356,13 @@
     "sortArticles",
     "toArticleActions"
   ],
-  "./state": ["createPersistedState", "readPersistedValue", "useOnlineStatus"],
+  "./state": [
+    "createLocalStore",
+    "createPersistedState",
+    "createStoreCore",
+    "field",
+    "readPersistedValue",
+    "resolveFieldCodec"
+  ],
   "./connectivity": ["ConnectivityIndicator", "ConnectivityProvider", "useConnectivity"]
 }

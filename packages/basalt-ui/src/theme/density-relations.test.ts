@@ -190,6 +190,25 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
       expect(anchors.inputHeight).toBeGreaterThanOrEqual(24)
     }
   })
+
+  // C15 (`docs/CONTROLS-SPEC.md` §5): "every touch target inside a home is ≥36px below `sm` (floor
+  // 30 at density −3)". Without the floor the 1 + 0.1*level multiplier takes 36 -> 25 at level -3,
+  // well under even the 24px WCAG floor above.
+  test('touchControlHeight never drops below its own 30px floor (C15)', () => {
+    for (const level of ALL_LEVELS) {
+      expect(deriveSpacing(level).anchors.touchControlHeight).toBeGreaterThanOrEqual(30)
+    }
+    expect(deriveSpacing(-3).anchors.touchControlHeight).toBe(30)
+  })
+
+  test('the remaining controls-tier anchors clear their own floors at every level', () => {
+    for (const level of ALL_LEVELS) {
+      const { anchors } = deriveSpacing(level)
+      expect(anchors.controlHeightTag).toBeGreaterThanOrEqual(18)
+      expect(anchors.controlHeightWidget).toBeGreaterThanOrEqual(22)
+      expect(anchors.controlHeightCtl).toBeGreaterThanOrEqual(28)
+    }
+  })
 })
 
 describe('Fix 5 — scaleSpace floors a sub-1 base at 1 (the inverted-clamp regression)', () => {

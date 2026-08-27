@@ -84,7 +84,7 @@ describe('check-theme raw-surface', () => {
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
     fixture(
-      `export const C = () => <div style={{ borderRadius: 8 }} /> // theme-allow: legacy widget\n`,
+      `export const C = () => <div style={{ borderRadius: 8 }} /> // theme-allow raw-surface — legacy widget\n`,
     )
     const { code, err } = run()
     expect(code).toBe(0)
@@ -110,10 +110,11 @@ describe('check-theme raw-surface', () => {
   })
 
   it('does NOT flag a var(--…) boxShadow token (regression)', () => {
-    fixture(`export const C = () => <div style={{ boxShadow: 'var(--mantine-shadow-sm)' }} />\n`)
+    fixture(`export const C = () => <div style={{ boxShadow: 'var(--vx-shadow-card)' }} />\n`)
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('raw-surface')
+    expect(err).not.toContain('surface-shadow-override')
   })
 
   it('does NOT flag a Mantine radius="md" prop (not inline surface styling)', () => {
@@ -216,7 +217,7 @@ describe('check-theme off-system-surface-var', () => {
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
     fixture(
-      `export const C = () => <Box bg="var(--mantine-color-gray-3)" /> // theme-allow: legacy\n`,
+      `export const C = () => <Box bg="var(--mantine-color-gray-3)" /> // theme-allow off-system-surface-var — legacy\n`,
     )
     const { code, err } = run()
     expect(code).toBe(0)
@@ -266,7 +267,9 @@ describe('check-theme raw-html-layout', () => {
   })
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
-    fixture(`export const C = () => <div style={{ display: 'flex' }} /> // theme-allow\n`)
+    fixture(
+      `export const C = () => <div style={{ display: 'flex' }} /> // theme-allow raw-html-layout inline-display — legacy\n`,
+    )
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('raw-html-layout')
@@ -377,7 +380,7 @@ describe('check-theme raw-visx-axis', () => {
   it('does NOT flag a chart-path <AxisLeft> carrying a theme-allow comment', () => {
     fixtureAt(
       'charts/kinds/Foo.tsx',
-      `export const Foo = () => <AxisLeft scale={s} /> // theme-allow: bespoke dual-panel\n`,
+      `export const Foo = () => <AxisLeft scale={s} /> // theme-allow raw-visx-axis — bespoke dual-panel\n`,
     )
     const { code, err } = run()
     expect(code).toBe(0)
@@ -490,7 +493,7 @@ describe('check-theme unframed-chart', () => {
   it('does NOT flag a line carrying a theme-allow comment', () => {
     fixtureAt(
       'charts/kinds/Foo.tsx',
-      `export const Foo = () => <ChartLegend items={[{ key: 'a', label: 'A' }]} /> // theme-allow: bespoke legend\n`,
+      `export const Foo = () => <ChartLegend items={[{ key: 'a', label: 'A' }]} /> // theme-allow unframed-chart — bespoke legend\n`,
     )
     const { code, err } = run()
     expect(code).toBe(0)
@@ -538,7 +541,9 @@ describe('check-theme raw-form-control', () => {
   })
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
-    fixture(`export const C = () => <input type="text" /> // theme-allow: legacy widget\n`)
+    fixture(
+      `export const C = () => <input type="text" /> // theme-allow raw-form-control — legacy widget\n`,
+    )
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('raw-form-control')
@@ -563,34 +568,46 @@ describe('check-theme sub-16-input-font', () => {
     expect(err).toContain('sub-16-input-font')
   })
 
-  it('does NOT flag a fontSize below 16 on a <Text> (not a form control)', () => {
+  it('does NOT flag sub-16-input-font on a <Text> (not a form control)', () => {
+    // The literal itself is still a raw font-size, so `inline-font-size` (an independent kind,
+    // no `sub16InputFont` gate) reports it — only `sub-16-input-font`'s form-control scoping is
+    // under test here.
     fixture(`export const C = () => <Text style={{ fontSize: 12 }}>caption</Text>\n`)
     const { code, err } = run()
-    expect(code).toBe(0)
+    expect(code).toBe(1)
     expect(err).not.toContain('sub-16-input-font')
+    expect(err).toContain('inline-font-size')
   })
 
-  it('does NOT flag a fontSize below 16 on a <span> (not a form control)', () => {
+  it('does NOT flag sub-16-input-font on a <span> (not a form control)', () => {
+    // Same as the <Text> case above: `inline-font-size` fires independently of the form-control
+    // scoping this test verifies for `sub-16-input-font`.
     fixture(`export const C = () => <span style={{ fontSize: 11 }}>micro</span>\n`)
     const { code, err } = run()
-    expect(code).toBe(0)
+    expect(code).toBe(1)
     expect(err).not.toContain('sub-16-input-font')
+    expect(err).toContain('inline-font-size')
   })
 
   it('respects the sub16InputFont:false config knob', () => {
+    // `inline-font-size` has no config knob and fires on any raw literal regardless — only
+    // `sub-16-input-font` itself is under test here.
     fixture(`export const C = () => <input style={{ fontSize: 12 }} />\n`, {
       roots: ['src'],
       rawFormControl: false,
       sub16InputFont: false,
     })
     const { code, err } = run()
-    expect(code).toBe(0)
+    expect(code).toBe(1)
     expect(err).not.toContain('sub-16-input-font')
+    expect(err).toContain('inline-font-size')
   })
 
   it('does NOT flag a line carrying a theme-allow comment', () => {
+    // Names both kinds the literal can trip: sub-16-input-font (scoped by rawFormControl above)
+    // and inline-font-size (ungated, fires on the literal regardless of element).
     fixture(
-      `export const C = () => <input style={{ fontSize: 12 }} /> // theme-allow: legacy widget\n`,
+      `export const C = () => <input style={{ fontSize: 12 }} /> // theme-allow sub-16-input-font inline-font-size — legacy widget\n`,
       { roots: ['src'], rawFormControl: false },
     )
     const { code, err } = run()
@@ -646,11 +663,18 @@ describe('check-theme scans .css', () => {
   })
 
   it('does NOT false-positive a JSX-shaped rule on genuine CSS', () => {
-    fixtureAt('theme/controls.module.css', '.foo {\n  display: flex;\n  border-radius: 8px;\n}\n')
+    // `border-radius: 8px` is a genuine, unrelated `css-raw-surface` violation (a raw literal
+    // with no `--vx-radius-*` token) — the point of this test is that the JSX-shaped rules
+    // (`inline-display`, `raw-html-layout`) do not also fire on plain CSS syntax.
+    fixtureAt(
+      'theme/controls.module.css',
+      '.foo {\n  display: flex;\n  border-radius: var(--vx-radius-card);\n}\n',
+    )
     const { code, err } = run()
     expect(code).toBe(0)
     expect(err).not.toContain('inline-display')
     expect(err).not.toContain('raw-html-layout')
+    expect(err).not.toContain('css-raw-surface')
   })
 })
 

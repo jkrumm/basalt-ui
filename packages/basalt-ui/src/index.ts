@@ -14,6 +14,8 @@ export {
 } from './provider'
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
+export { CTL_THEME, CtlSlot } from './theme'
+export type { CtlSlotProps } from './theme'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {
@@ -72,13 +74,37 @@ export {
   type StandardSchemaV1,
 } from './register'
 
-// ── Persisted state + online hook (state.ts) ─────────────────────────────────────────────────────
+// ── Persisted state + the headless store kernel (state.ts) ───────────────────────────────────────
+// The `field.*` VALUE is deliberately not re-exported here — `basalt-ui/forms` already owns the
+// name `field` on its own barrel. Import it from `basalt-ui/router-tanstack` (beside
+// `createSearchStore`) or from `basalt-ui/state` (beside `createLocalStore`).
 export {
   createPersistedState,
   type PersistedStateOptions,
-  useOnlineStatus,
   readPersistedValue,
+  createLocalStore,
+  type LocalStore,
+  type AnyField,
+  type BooleanField,
+  type EnumField,
+  type FieldHandle,
+  type FieldLane,
+  type FieldOption,
+  type FieldValue,
+  type MultiField,
+  type NumberField,
+  type RangeField,
+  type RangeParams,
+  type RangePresets,
+  type RangeValue,
+  type ResolvedLane,
+  type SearchValues,
+  type StoredValues,
+  type StringField,
 } from './state'
+
+// ── WidgetHeader (unified section/widget/card heading primitive, docs/CONTROLS-SPEC.md §2.2) ─────
+export { WidgetHeader, type WidgetHeaderProps } from './widget-header'
 
 // ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
 export {

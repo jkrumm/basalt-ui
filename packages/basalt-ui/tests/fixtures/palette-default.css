@@ -10,6 +10,10 @@
   --vx-space-row-line-height: 1.35;
   --vx-space-input-height: 2.625rem;
   --vx-space-control-height: 2.625rem;
+  --vx-space-control-height-tag: 1.25rem;
+  --vx-space-control-height-widget: 1.5rem;
+  --vx-space-control-height-ctl: 1.875rem;
+  --vx-space-touch-control-height: 2.25rem;
   --vx-space-stack-xs: 4px;
   --vx-space-stack-sm: 8px;
   --vx-space-stack-md: 12px;
@@ -113,6 +117,12 @@
   --vx-space-stat-card-gap: 8px;
   --vx-space-virtual-row-inset-y: 8px;
   --vx-space-virtual-row-inset-x: 12px;
+  --vx-space-page-bar-row-height: 2.5rem;
+  --vx-space-section-header-height: 2.25rem;
+  --vx-space-widget-header-height: 1.75rem;
+  --vx-space-sidebar-block-row-height: 2rem;
+  --vx-space-control-gap: 6px;
+  --vx-space-sheet-row-height: 2.75rem;
   --vx-prose-measure: 72ch;
   --vx-fill-gray: #717176;
   --vx-fill-red: #b7514e;
