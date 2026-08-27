@@ -9,9 +9,10 @@
  * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
- * nothing about the gate actually firing. The ledger now carries the two wave-6 control kinds
- * (`in-body-page-title`, `raw-selection-control`, both `promote: '1.27.0'`), and the real-ledger
- * check below runs against them.
+ * nothing about the gate actually firing. The ledger carries ONE wave-6 control kind at 1.27.0 —
+ * `raw-selection-control`, re-dated to `promote: '1.28.0'` with its AST twin
+ * `basalt/control-outside-home` (`in-body-page-title` promoted on schedule and its entry is gone) —
+ * and the real-ledger check below runs against it.
  *
  * This gate measures the version already PUBLISHED, so it can only go red after the release that
  * shipped a due entry. `scripts/check-grace.ts` is the other end — `scripts/release.sh` runs it
@@ -138,8 +139,16 @@ describe('scripts/check-grace.ts', () => {
     expect(stderr).toContain('basalt/control-outside-home')
   })
 
-  it('refuses the version the wave-6 entries are due in (1.27.0)', () => {
-    expect(runCheckGrace('1.27.0').code).toBe(1)
+  // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; what is
+  // LEFT is the C1 pair (`raw-selection-control` + `basalt/control-outside-home`), re-dated to
+  // 1.28.0 against a measurement rather than a hunch — see either entry's `why`. So the release
+  // this file used to refuse now passes, and the refusal moved with the pair.
+  it('passes 1.27.0 — the five entries due there promoted', () => {
+    expect(runCheckGrace('1.27.0').code).toBe(0)
+  })
+
+  it('refuses the version the remaining C1 pair is due in (1.28.0)', () => {
+    expect(runCheckGrace('1.28.0').code).toBe(1)
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {

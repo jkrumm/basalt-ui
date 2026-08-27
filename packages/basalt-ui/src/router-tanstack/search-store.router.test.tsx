@@ -17,11 +17,11 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import type { AnyField, FieldHandle } from '../state'
+import type { AnyField, FieldHandle, FieldSetOptions } from '../state'
 import { field } from './field'
 import { createSearchStore } from './search-store'
 
-type Probe = { value: unknown; set: (next: unknown) => void }
+type Probe = { value: unknown; set: (next: unknown, opts?: FieldSetOptions) => void }
 type Sink = { current: Probe | null }
 
 function sink(): Sink {
@@ -32,7 +32,7 @@ function sink(): Sink {
 function fieldProbe<F extends AnyField>(handle: FieldHandle<F>, into: Sink) {
   return function FieldProbe(): ReactNode {
     const [value, set] = handle.use()
-    into.current = { value, set: set as (next: unknown) => void }
+    into.current = { value, set: set as Probe['set'] }
     return null
   }
 }
@@ -419,7 +419,7 @@ describe('store hooks', () => {
     expect(count).toBe(2)
   })
 
-  test('useReset returns every field to its fallback in ONE navigate call', async () => {
+  test('useReset returns every field to its fallback in ONE navigate call, UNSETTING the mirror', async () => {
     const store = createSearchStore({
       key: 'r-reset',
       fields: {
@@ -451,12 +451,77 @@ describe('store hooks', () => {
     })
     expect(currentSearch(router)['compare']).toBe('none')
     expect(currentSearch(router)['from']).toBeUndefined()
-    expect(storedRecord('r-reset')).toEqual({
-      range: { preset: '30d' },
-      compare: 'none',
-      compact: false,
-    })
+    // Reset means UNSET: the persisted keys are DELETED, not overwritten with the resolved
+    // fallback — writing it would pin a thunk fallback into the mirror (see the lazy-fallback test
+    // below) and leave the field counted as active tomorrow.
+    expect(storedRecord('r-reset')).toEqual({})
     navigate.mockRestore()
+  })
+
+  test('useReset UNSETS a thunk fallback rather than pinning it into the mirror', async () => {
+    let today = '2026-08-27'
+    const store = createSearchStore({
+      key: 'r-lazy-reset',
+      fields: {
+        range: field.enum(['1d', '7d'], '7d'),
+        since: field.string({ fallback: () => today }, { url: false }),
+      },
+    })
+    persist('r-lazy-reset', { since: '2026-01-01' })
+    const probe = sink()
+    let reset: (() => void) | null = null
+    let count = -1
+
+    await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: () => {
+        reset = store.useReset()
+        count = store.useActiveCount()
+        return fieldProbe(store.field.since, probe)()
+      },
+    })
+    expect(probe.current?.value).toBe('2026-01-01')
+
+    await act(async () => {
+      reset?.()
+    })
+
+    expect(probe.current?.value).toBe('2026-08-27')
+    expect(storedRecord('r-lazy-reset')).toEqual({})
+    expect(count).toBe(0)
+
+    // The next day the same field reads TODAY, not the day the reset was pressed — which is the
+    // whole point of a thunk fallback, and what writing the resolved value took away.
+    today = '2026-08-28'
+    expect(store.field.since.fallback).toBe('2026-08-28')
+    expect(store.readStored()['since']).toBeUndefined()
+  })
+
+  test('field.clear() returns the URL param to the fallback and drops the mirror key', async () => {
+    const store = createSearchStore({
+      key: 'r-clear-url',
+      fields: { range: field.enum(['1d', '7d', '30d'], '7d') },
+    })
+    persist('r-clear-url', { range: '30d' })
+    const probe = sink()
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?range=30d',
+      Dashboard: fieldProbe(store.field.range, probe),
+    })
+    expect(probe.current?.value).toBe('30d')
+
+    await act(async () => {
+      store.field.range.clear()
+    })
+
+    await waitFor(() => {
+      expect(currentSearch(router)['range']).toBe('7d')
+    })
+    expect(storedRecord('r-clear-url')).toEqual({})
+    expect(probe.current?.value).toBe('7d')
   })
 
   test('useReset from a FOREIGN route persists only — it never navigates (A1)', async () => {
@@ -636,8 +701,31 @@ describe('the memory-only lane — url: false, persist: false', () => {
     })
     expect(probe.current?.value).toBe('a')
     expect(count).toBe(0)
-    // `useReset` wrote the MIRROR for the persisted field beside it; the memory field is not in it.
-    expect(storedRecord('r-memory')).toEqual({ range: '7d' })
+    // Nothing was ever persisted, so the reset had no key to drop and wrote no envelope — the
+    // mirror only ever holds values a control produced.
+    expect(storedRecord('r-memory')).toBeNull()
+  })
+
+  test('field.clear() drops the memory value, and only that one', async () => {
+    const store = memoryStore()
+    const probe = sink()
+
+    await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: fieldProbe(store.field.scratch, probe),
+    })
+
+    await act(async () => {
+      probe.current?.set('c')
+    })
+    expect(probe.current?.value).toBe('c')
+
+    await act(async () => {
+      store.field.scratch.clear()
+    })
+    expect(probe.current?.value).toBe('a')
+    expect(storedRecord('r-memory')).toBeNull()
   })
 
   test('two mounts of the same field see one value', async () => {
@@ -657,5 +745,138 @@ describe('the memory-only lane — url: false, persist: false', () => {
     })
 
     expect(b.current?.value).toBe('b')
+  })
+})
+
+/**
+ * `set(next, { patch })` — the sibling params a page owns and the store does not. Clearing one used
+ * to need a second `navigate` beside the setter, which either raced the field's own write or left
+ * two history entries where the reader made one change.
+ */
+describe('use() — a patched write', () => {
+  const store = createSearchStore({
+    key: 'r-patch',
+    fields: { tab: field.enum(['overview', 'detail'], 'overview') },
+  })
+
+  /** The store's params PLUS one the page owns — the shape a real route composes. */
+  const validateSearch = (raw: Record<string, unknown>): Record<string, unknown> => ({
+    ...store.validateSearch(raw),
+    detailDate: typeof raw['detailDate'] === 'string' ? raw['detailDate'] : undefined,
+  })
+
+  test('clears a sibling param the store does not own, in the same navigate', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?tab=detail&detailDate=2026-03-01',
+      Dashboard: fieldProbe(store.field.tab, probe),
+    })
+    expect(currentSearch(router)['detailDate']).toBe('2026-03-01')
+
+    await act(async () => {
+      probe.current?.set('overview', { patch: { detailDate: undefined } })
+    })
+
+    await waitFor(() => {
+      expect(currentSearch(router)['tab']).toBe('overview')
+    })
+    expect(currentSearch(router)['detailDate']).toBeUndefined()
+    expect(probe.current?.value).toBe('overview')
+    // The field's own lane is untouched by the patch — the write still mirrors.
+    expect(storedRecord('r-patch')).toEqual({ tab: 'overview' })
+  })
+
+  test('a patch cannot overwrite the value being set', async () => {
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?tab=overview',
+      Dashboard: fieldProbe(store.field.tab, probe),
+    })
+
+    await act(async () => {
+      probe.current?.set('detail', { patch: { tab: 'overview', detailDate: '2026-04-01' } })
+    })
+
+    await waitFor(() => {
+      expect(currentSearch(router)['tab']).toBe('detail')
+    })
+    expect(currentSearch(router)['detailDate']).toBe('2026-04-01')
+  })
+
+  test('a patch naming a param ANOTHER field owns is refused, not silently desynced', async () => {
+    const twoFields = createSearchStore({
+      key: 'r-patch-owned',
+      fields: {
+        tab: field.enum(['overview', 'detail'], 'overview'),
+        range: field.enum(['7d', '30d'], '30d'),
+      },
+    })
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch: twoFields.validateSearch,
+      entry: '/dashboard',
+      Dashboard: fieldProbe(twoFields.field.tab, probe),
+    })
+
+    // The URL would take `range=7d` while the mirror kept `30d`, so the next paramless visit and
+    // every `linkSearch` link would disagree with the page the write happened on.
+    expect(() => {
+      probe.current?.set('detail', { patch: { range: '7d' } })
+    }).toThrow(/field 'range' owns/)
+    expect(currentSearch(router)['tab']).toBe('overview')
+    expect(currentSearch(router)['range']).toBe('30d')
+  })
+
+  test('a patched write from a FOREIGN route drops the patch, and warns once', async () => {
+    const store = createSearchStore({
+      key: 'r-patch-foreign',
+      fields: { tab: field.enum(['overview', 'detail'], 'overview') },
+    })
+    const probe = sink()
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/other?detailDate=2026-03-01',
+      Other: fieldProbe(store.field.tab, probe),
+    })
+
+    await act(async () => {
+      probe.current?.set('detail', { patch: { detailDate: undefined } })
+    })
+
+    // The write persisted (A1); the patch had no navigate to merge into and is gone.
+    expect(storedRecord('r-patch-foreign')).toEqual({ tab: 'detail' })
+    expect(currentSearch(router)['detailDate']).toBe('2026-03-01')
+    expect(warn).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      probe.current?.set('overview', { patch: { detailDate: undefined } })
+    })
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  })
+
+  test('a field with no URL lane has no navigate to patch, and does not make one', async () => {
+    const local = createSearchStore({
+      key: 'r-patch-local',
+      fields: { compact: field.boolean(false, { url: false }) },
+    })
+    const probe = sink()
+    const router = await mountApp({
+      validateSearch,
+      entry: '/dashboard?tab=overview',
+      Dashboard: fieldProbe(local.field.compact, probe),
+    })
+
+    await act(async () => {
+      probe.current?.set(true, { patch: { detailDate: '2026-05-01' } })
+    })
+
+    expect(probe.current?.value).toBe(true)
+    expect(currentSearch(router)['detailDate']).toBeUndefined()
+    expect(storedRecord('r-patch-local')).toEqual({ compact: true })
   })
 })

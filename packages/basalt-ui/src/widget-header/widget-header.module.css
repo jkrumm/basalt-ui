@@ -199,6 +199,21 @@
   color: var(--vx-ink);
 }
 
+/*
+ * The unit beside the hero value. Mono like the number it qualifies (so `412 TSS` sits on one
+ * baseline grid), `--vx-text-sm` and `--vx-muted` so it never competes with the numeral — the whole
+ * point is that a unit is the SMALL half of the pair. `flex-shrink: 0`: the value is the row's
+ * shrinkable half (see `.value`), and a unit that ellipsized to `TS…` would state nothing.
+ */
+.unit {
+  flex-shrink: 0;
+  align-self: baseline;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+  color: var(--vx-muted);
+}
+
 /* The C1/C5 home for header actions — always pinned right, regardless of what else is present. */
 .actions {
   display: inline-flex;

@@ -189,6 +189,10 @@ function facetEnumHandle<T>(
         },
       ] as const
     },
+    // A facet column has no lane to unset: clearing the column filter IS its fallback state.
+    clear: () => {
+      column.setFilterValue(undefined)
+    },
     isDefault: (value) => value === FACET_ALL_VALUE,
   }
 }
@@ -214,6 +218,10 @@ function facetMultiHandle<T>(
           column.setFilterValue(next.length > 0 ? [...next] : undefined)
         },
       ] as const
+    },
+    // Same as the single-select facet: an empty column filter is this handle's fallback.
+    clear: () => {
+      column.setFilterValue(undefined)
     },
     isDefault: (value) => value.length === 0,
   }

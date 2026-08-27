@@ -41,6 +41,34 @@ const VERTICAL_FROM = 5
 /** `7d`, `30d`, `24h`, `90` — a label the mono numeric treatment is for. */
 const NUMERIC_LABEL = /^\d/
 
+/** The house dev gate — `basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle
+ *  constant-folds this to `false` and drops the warning. Read per call, never hoisted. */
+function isDev(): boolean {
+  return process.env['NODE_ENV'] !== 'production'
+}
+
+/** Once per label — a filter renders on every navigation, and the wiring is fixed at definition. */
+const noPickerWarned = new Set<string>()
+
+/**
+ * Dev-only: the field declares `custom: true` and no picker was injected, so the custom window is
+ * unreachable — the popover shows presets only and the sheet's `Custom range…` row never renders.
+ * A warning rather than a type error: `custom: true` with presets only is a legal (and tested)
+ * configuration, and the picker is INJECTED precisely because `@mantine/dates` may be absent, so
+ * the type cannot tell "deliberately preset-only" from "forgot the import".
+ */
+function warnCustomWithoutPicker(label: string, unreachable: boolean): void {
+  if (!unreachable || !isDev() || noPickerWarned.has(label)) return
+  noPickerWarned.add(label)
+  // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
+  console.warn(
+    `[basalt-ui] RangeFilter('${label}'): the field declares \`custom: true\` but no ` +
+      '`customPicker` was injected, so the custom window cannot be reached. Pass ' +
+      '`customPicker={DateRangePicker}` (`basalt-ui/controls-dates`), or drop `custom: true` from ' +
+      'the field. (dev only)',
+  )
+}
+
 /**
  * The contract a custom-range picker satisfies — `basalt-ui/controls-dates`' `DateRangePicker`, or a
  * consumer's own. Dates are ISO (`YYYY-MM-DD`), the same shape `field.range` stores and
@@ -51,28 +79,52 @@ export type RangeCustomPickerProps = {
   readonly onChange: (next: { from: string; to: string }) => void
 }
 
-export type RangeFilterProps<P extends string> = {
-  readonly field: FieldHandle<RangeField<P>>
+/** Everything about the props that does not depend on the field's `custom` flag. */
+type RangeFilterBase<P extends string, C extends boolean> = {
+  /**
+   * A range handle from either store factory. Generic over the field's `custom` flag so a
+   * `field.range({ ... })` WITHOUT `custom` (whose handle is `RangeField<P, false>`, and whose
+   * values therefore never include `'custom'`) binds with no cast — pinning `C` to its default
+   * `boolean` here made the setter contravariantly incompatible and forced one at every call site.
+   */
+  readonly field: FieldHandle<RangeField<P, C>>
   /** Leading pill icon. Defaults to a calendar glyph — a range filter reads as a date control, so
    *  the glyph is part of the control's identity, not a per-call-site decision. */
   readonly icon?: ReactNode
-  /** Rendered when the field declares `custom: true`. Omitted → presets only. */
-  readonly customPicker?: ComponentType<RangeCustomPickerProps>
   /** Sheet-form heading. The pill's own label is the VALUE, which is what a bar reads. @default 'Range' */
   readonly label?: string
 }
 
-export function RangeFilter<P extends string>({
-  field,
-  icon,
-  customPicker,
-  label = 'Range',
-}: RangeFilterProps<P>): ReactNode {
+export type RangeFilterProps<P extends string, C extends boolean = boolean> = RangeFilterBase<
+  P,
+  C
+> & {
+  /**
+   * Rendered when the field declares `custom: true`. Omitted → presets only, which stays LEGAL
+   * (a range that only ever shows presets is a real configuration) but warns once in dev when the
+   * field allows a custom window: the affordance is then unreachable, and nothing else says so.
+   */
+  readonly customPicker?: ComponentType<RangeCustomPickerProps>
+}
+
+export function RangeFilter<P extends string, C extends boolean = boolean>(
+  props: RangeFilterProps<P, C>,
+): ReactNode {
+  const {
+    field,
+    icon,
+    customPicker,
+    label = 'Range',
+    // One cast, at the one boundary a generic `C` cannot be read through: `C` only ever describes
+    // the FIELD's custom flag, and the body handles both.
+  } = props as unknown as RangeFilterBase<P, boolean> & {
+    readonly customPicker?: ComponentType<RangeCustomPickerProps>
+  }
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
   useFilterRegistration(!isDefault, () => {
-    setValue(field.fallback)
+    field.clear()
   })
 
   const options = field.options
@@ -81,6 +133,7 @@ export function RangeFilter<P extends string>({
   const numeric = presets.length > 0 && presets.every((option) => NUMERIC_LABEL.test(option.label))
   const inSheet = surface === 'sheet'
   const Picker = customPicker
+  warnCustomWithoutPicker(label, allowsCustom && Picker === undefined)
   // The track is a `radiogroup`; without this it announces unnamed, and the pill it hangs off reads
   // the VALUE (`30d`), not the filter.
   const { labelId, nameProps } = useControlName(label, inSheet)

@@ -46,13 +46,16 @@ export type ChoiceHandle<T extends string> = {
   readonly options: readonly FieldOption[]
   use(): readonly [T, (next: T) => void]
   isDefault(v: T): boolean
+  /** Removes the value on whichever lane the field is on — what both reset paths call, never a write
+   * of the fallback back over it. See `useFilterRegistration`'s doc for why. */
+  clear(): void
 }
 
 export type EnumFilterProps<T extends string> = {
   readonly field: ChoiceHandle<T>
   readonly label: string
   readonly icon?: ReactNode
-  /** Adds a `Clear` action that writes the field back to its fallback. */
+  /** Adds a `Clear` action that clears the field — the same `field.clear()` `Reset all` calls. */
   readonly clearable?: boolean
   /**
    * Overrides `field.options` at render — a runtime catalogue whose labels carry live data, or the
@@ -60,6 +63,12 @@ export type EnumFilterProps<T extends string> = {
    * into, and `exactOptionalPropertyTypes` rejects a possibly-undefined member on a bare optional.
    */
   readonly options?: readonly FilterOption[] | undefined
+  /**
+   * Mono pill label — forwarded to `FilterPill.numeric`. Set by `NumberFilter`, whose values ARE
+   * numbers (`1` / `2` / `7`), and by nothing else: the same law `[data-numeric]` applies to a
+   * numeric SegmentedControl label. A word-valued filter never sets it.
+   */
+  readonly numeric?: boolean | undefined
 }
 
 export function EnumFilter<T extends string>({
@@ -67,13 +76,14 @@ export function EnumFilter<T extends string>({
   label,
   icon,
   clearable,
+  numeric,
   options: optionsProp,
 }: EnumFilterProps<T>): ReactNode {
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
   useFilterRegistration(!isDefault, () => {
-    setValue(field.fallback)
+    field.clear()
   })
 
   // The prop wins whole, never merged: a catalogue that has dropped a value must be able to drop
@@ -138,7 +148,7 @@ export function EnumFilter<T extends string>({
           variant="subtle"
           size="ctl"
           onClick={() => {
-            setValue(field.fallback)
+            field.clear()
           }}
         >
           Clear
@@ -151,6 +161,7 @@ export function EnumFilter<T extends string>({
     <FilterPill
       label={selected?.label ?? label}
       active={!isDefault}
+      {...(numeric === true && { numeric: true })}
       {...(icon !== undefined && { icon })}
     >
       <div className={classes.optionList}>{body}</div>

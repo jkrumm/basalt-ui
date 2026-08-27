@@ -12,6 +12,7 @@ import type { ReactNode } from 'react'
 import { createLocalStore, field } from '../state'
 import { CompareFilter } from './compare-filter'
 import { MultiSelectFilter } from './multi-select-filter'
+import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'
 import { SearchFilter } from './search-filter'
 import { SelectFilter } from './select-filter'
@@ -27,6 +28,7 @@ const local = createLocalStore({
     range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
     errorsOnly: field.boolean(false),
     q: field.string(),
+    nights: field.number({ fallback: 2, min: 1, max: 14, int: true }),
   },
 })
 
@@ -70,6 +72,25 @@ function Rejected(): ReactNode {
       <SelectFilter field={local.field.q} label="Project" />
       {/* @ts-expect-error `options` does not widen a MULTI field into a single-select either. */}
       <SelectFilter field={local.field.channels} label="Channels" options={PROJECTS} />
+      {/* @ts-expect-error C2 — a number filter is store-bound too; there is no `value`. */}
+      <NumberFilter field={local.field.nights} label="Nights" value={3} />
+      {/* @ts-expect-error C5 — the home sets the tier. `step` is the stepper's increment, not a size. */}
+      <NumberFilter field={local.field.nights} label="Nights" size="xs" />
+      {/* @ts-expect-error an enum field is not a number field — the whole point of the control. */}
+      <NumberFilter field={local.field.currency} label="Nights" />
+      {/* @ts-expect-error `label` is required — the popover and the sheet both need a heading. */}
+      <NumberFilter field={local.field.nights} />
+      {/* NumberFilter's options are NUMBERS. A string here is the exact shape argo reached for when
+          it widened `nights` into an enum, and it has to be a type error rather than a silent
+          `Number('7')` at the boundary. */}
+      <NumberFilter
+        field={local.field.nights}
+        label="Nights"
+        // @ts-expect-error a numeric preset set takes `value: number`, never a numeral string.
+        options={[{ value: '7', label: 'A week' }]}
+      />
+      {/* @ts-expect-error `min`/`max` belong to the FIELD, which is what validates the URL. */}
+      <NumberFilter field={local.field.nights} label="Nights" min={1} />
     </>
   )
 }
@@ -94,6 +115,16 @@ function Accepted(): ReactNode {
       <ToggleFilter field={local.field.errorsOnly} label="Errors only" />
       <SearchFilter field={local.field.q} placeholder="Search" />
       <ViewTabs field={local.field.currency} />
+      {/* Both forms, spelled correctly: the preset set, and the open stepper. */}
+      <NumberFilter
+        field={local.field.nights}
+        label="Nights"
+        options={[
+          { value: 1, label: '1 night' },
+          { value: 7, label: 'A week' },
+        ]}
+      />
+      <NumberFilter field={local.field.nights} label="Nights" step={2} />
     </>
   )
 }

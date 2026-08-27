@@ -32,6 +32,262 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ## Unreleased
 
+**Nothing removed. Two exports added (`NumberFilter`, and three members on the number handle),
+one member added to every `FieldHandle` (`clear()`), four `StatCard` props added, and enforcement
+tightened: five oxlint rules plus one guard kind became `error`.** The store half of this minor also
+fixed four inference and notification defects consumers hit while porting, plus two ways a fallback
+got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
+grammar unchanged; only the severity of an unwaived finding moves.
+
+### Stores — the `custom` flag, patched writes, lazy fallbacks, derived windows
+
+**Additive, except one type that got narrower on purpose.** `field.range({ presets, fallback })`
+written INLINE inside `createSearchStore({ fields })` used to infer `custom` as `boolean` — the
+contextual `AnyField` return type won over the argument — so every value and search type carried a
+`'custom'` preset the field itself rejects at runtime, and `RangeFilter field={…}` needed a cast or
+an explicit `custom: false`. `field.range` is now three overloads: an omitted or `false` flag is
+`false`, a literal `true` is `true`, a value typed `boolean` stays widened.
+
+- **Delete the workaround, not the field.** An explicit `custom: false` still works (same
+  overload); a cast on `<RangeFilter field={…} />` can go, and `RangeFilterProps<P, C>` is generic
+  over the flag so a preset-only handle binds directly.
+- **What can newly type-error:** code that read `'custom'` out of a range whose field never declared
+  it — `if (search.range === 'custom')` on a preset-only field, or a `RangeValue<P | 'custom'>`
+  annotation over one. That branch was always dead at runtime; the type just stopped pretending.
+- **…and one more, in a consumer's own WRAPPER.** A prop typed `FieldHandle<RangeField<P>>` — `C`
+  defaulting to `boolean` — no longer accepts a handle from a `field.range` without `custom: true`,
+  because that handle's setter is now `RangeValue<P>`-typed and a setter is contravariant. Pin
+  `FieldHandle<RangeField<P, false>>` for the preset-only shape, `RangeField<P, true>` for a
+  picker-backed one, or make the wrapper generic over the flag
+  (`<P extends string, C extends boolean>` + `FieldHandle<RangeField<P, C>>`), which is what
+  `RangeFilter` does. An existing `as FieldHandle<RangeField<P>>` cast keeps compiling.
+
+**`toWindow()` resolves derived presets.** `field.range({ window: { '3m': (now) => ({ from, to }) } })`
+makes `toWindow({ preset: '3m' })` return `{ from, to }` (ISO dates, resolved at call time with the
+current `Date`) while `3m` stays one preset in the URL. A preset with no resolver keeps
+`{ window: preset }`, in the same field — which is what retires the last hand-rolled
+`presetToParams` a consumer kept beside the store for `3m` / `6m` / `1y` / `ytd`.
+
+**The resolved presets are gone from the return TYPE too**, which is the half that decides whether
+the switch is deleted or the cast just moves: the field now carries its resolver keys (`RangeField`'s
+fifth type parameter, inferred from `window`), and `toWindow` returns
+`{ window: Exclude<P, W> } | { from; to }`. A `resolveWindow` whose target is
+`{ window: '7d' | '30d' | '90d' | 'all' } | { from; to }` becomes a one-line delegation with no
+`as`. One guard survives on a `custom: true` field: a `'custom'` preset that arrives WITHOUT dates
+resolves to `{ window: 'custom' }`, so `'custom'` stays in the union by construction.
+
+**A field setter takes an optional second argument.** `set(next, { patch })` merges extra search
+params into the SAME navigate — URL lane only, for keys the store does not own (`{ patch: {
+detailDate: undefined } }` clears a sibling param the page put there). The field's own params always
+win over the patch, so it cannot corrupt the value being set. A local/memory-lane write has no
+navigate to merge into and ignores it.
+
+Two limits are now enforced rather than documented. A patch key **another field of the same store
+owns** is refused — it would reach the URL while the store's own write path never touched the mirror,
+so the next paramless visit and every `linkSearch` link resolve the OLD value: `createSearchStore`
+throws in dev, and in production keeps the write and logs it once. Write that field through its own
+setter instead. And a patched write **from a route that does not validate the field** persists (A1)
+but drops the patch with it — there is no navigate to merge into — which now warns once per field in
+dev instead of doing nothing.
+
+**A fallback may be a thunk.** `field.*({ fallback: () => T })` (every kind — `field.number`'s codec
+froze its thunk at store definition in the first cut of this minor and does not now) is resolved at
+READ time and re-resolved while nothing is written, and is never persisted on its own — a write
+stores what the control produced, as before. **Local and memory lanes only:** `createSearchStore` now
+THROWS at definition for a thunk on a URL-lane field, because `validateSearch` would evaluate it on
+every navigation and pin the result into the URL. Move the field off the URL lane (`{ url: false }`,
+or `createLocalStore`) or pass a value.
+
+**`FieldHandle` gained `clear()`, and a reset now UNSETS.** `useReset()` used to write
+`entry.codec.fallback` into the mirror for every persisted field, and every control's reset called
+`setValue(field.fallback)` — both of which pin a RESOLVED thunk: pressing `Reset all` over
+`field.string({ fallback: () => todayIso() }, { url: false })` stored today's date, so tomorrow the
+field read a value nobody chose and counted as active in `Filters (n)`. Both paths now delete the
+key instead (the memory lane always did), and `clear()` is the per-field door: the persist lane
+deletes its key, the memory lane drops its value, the URL lane navigates back to the fallback
+params.
+
+Nothing to change at a call site — every shipped control's reset calls it. A consumer that
+hand-rolled a reset should swap `setValue(field.fallback)` for `field.clear()`; a hand-built
+`FieldHandle` (a facet column, a test double) must add the member, which is the one type-error this
+adds.
+
+**`createPersistedState` notifies across instances (bug fix).** Two instances over one key — a
+page's store and a widget's own state naming the same key, or a store re-exported from two modules —
+kept per-instance listener sets, so a write through one left the other's components rendering the
+stale value **in the same tab** while the cross-tab `storage` path worked. Subscribers are now
+registered per storage key. No API change; if you were re-rendering something by hand to work around
+this, delete it.
+
+**`RangeFilter` warns once in dev** when the field declares `custom: true` and no `customPicker` was
+injected: the custom window is then unreachable (no popover picker, no `Custom range…` row in the
+sheet). Preset-only remains a legal configuration — the picker is injected precisely because
+`@mantine/dates` may be absent — so this is a warning, not a type error.
+
+### Controls — `NumberFilter`, the `field.number` lane
+
+**One export added, nothing removed.** `field.number` has existed since the store landed and had no
+control, so both consumers that needed one wrote around it in opposite directions: linewatch kept a
+raw `SegmentedControl` over `minDuration` (a `control-outside-home` warn, law C1), and argo widened
+`nights` into a string enum — which puts `'3'` in the URL and makes every downstream comparison a
+parse.
+
+```tsx
+import { NumberFilter } from 'basalt-ui/controls'
+
+// A preset set — a pill plus a radio list, the same body every enum filter renders.
+<NumberFilter field={booking.field.nights} label="Nights"
+  options={[{ value: 1, label: '1 night' }, { value: 7, label: 'A week' }]} />
+
+// No `options` → a pill whose popover holds a `ctl` NumberInput; the sheet renders it full-width.
+<NumberFilter field={lines.field.minDuration} label="Min duration" step={30} />
+```
+
+Three properties worth knowing before porting a call site:
+
+- **The URL keeps a NUMBER.** `options` takes `{ value: number; label: string }`, and a numeral
+  STRING there is a type error — the whole reason to stop widening a threshold into an enum.
+- **The stepper applies on blur or Enter, never per keystroke.** A number is typed digit by digit, so
+  a live write would navigate on `4`, `42`, `420` — three loader runs for one intended threshold,
+  two of them values nobody meant. `SearchFilter` debounces; a number has an explicit commit point.
+- **`min`/`max`/`int` come off the HANDLE, not the call site.** They are deliberately not props: the
+  field is what validates the URL, and a second copy at the call site is a second answer to the same
+  question. The number handle republishes all three (see § Stores — the number handle below), so the
+  stepper stops at the field's limit and an `int` field refuses decimals outright. A TYPED value is
+  clamped to those bounds when it commits, so the box reads what the store holds even when the store
+  does not move — a second out-of-range `9999` against `max: 600` over a stored `600` writes nothing,
+  and the readout still corrects itself to `600`. The codec's clamp stays the backstop for a value
+  that never came through the box at all — a hand-typed URL, a stale deep link.
+
+### Stores — the number handle republishes its bounds
+
+**Three members added to `FieldHandle<NumberField>`, nothing removed.** `min`, `max` and `int` now
+sit on the handle, filled from the field declaration (`NumberHandleExtras`, the shape
+`RangeHandleExtras`/`toWindow` already had). A control never sees the field descriptor — only the
+handle — so before this the only way one could learn its own limits was for the call site to pass
+them a second time.
+
+```ts
+const nights = store.field.nights // field.number({ fallback: 2, min: 1, max: 14, int: true })
+nights.min // 1        — `undefined` when the field declared none
+nights.max // 14
+nights.int // true     — `false`, never `undefined`, on a number handle
+```
+
+Non-number handles carry all three as `undefined`, the same way `toWindow` is `undefined` off a
+range handle. That is a type-level fact, not just a runtime one, and it matters for one collision in
+particular: `StringField` has its own `max`, which is NOT republished — a string handle's `max` is
+`undefined`.
+
+Nothing about the clamp changed. The codec has always clamped a number to the declared bounds on
+write, and still does; the handle is a readout of that law, which is what lets `NumberFilter` bound
+its stepper instead of letting the user watch the correction happen.
+
+### `StatCard` — `unit`, `breakdown` and the delta's own format
+
+**Four props added, nothing removed or renamed; every one defaults to today's rendering when
+omitted.**
+`value` is a pre-formatted `string`, so a card had exactly one text channel under the hero row
+(`subtitle`) and three consumers wanting a unit AND a basis AND a split hand-rolled the card instead
+— which is the fork `shadow-basalt-export` reports as a `HeroCard`.
+
+| Prop          | Type                                                               | Renders                                                                       |
+| ------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `unit`        | `string`                                                           | after the value on the hero row — muted, mono, `--vx-text-sm`                 |
+| `breakdown`   | `readonly { label: string; value: string; tone?: StatCardTone }[]` | compact rows under the hero, one `controlHeightTag` line each                 |
+| `deltaFormat` | `(delta: number) => string`                                        | the delta chip's label. Default unchanged: `Math.abs(delta).toFixed(1) + '%'` |
+| `deltaGlyph`  | `boolean`                                                          | the chip's ▲/▼. Default `true`; a zero delta never shows one                  |
+
+`unit` is forwarded to `WidgetHeader`, which gained the same prop, so `ChartCard` and `Section`
+headers get it too. It is NOT the basis: `412` + `TSS` is the pair, and `7-day rolling` is still
+`subtitle`. A thousands separator, a currency symbol or a `%` still belong in `value`.
+
+`breakdown` draws **no hairlines** — §2.1 puts a horizontal rule between OPTION rows and nowhere
+else, and `theme/divider-law.test.ts` inventories every one basalt draws. The rows separate by
+weight (muted label, mono ink value) instead. Keep it to two or three: past that the card is a
+table, and a table is `BasaltDataTable` in a `Section`. A row's `tone` reads the same per-scheme
+`--vx-status-*` solid the card's own rail does, and omitting it is untinted, never `'good'`.
+
+`deltaFormat` exists because **a delta is not always a percentage, and `StatCard` claimed it was**:
+`delta={0.3}` on a pace or speed card rendered `▲0.3%`, a wrong unit on a KPI — worse than no chip —
+so the one consumer that needed it kept the card hand-rolled and took the `shadow-basalt-export` warn
+instead. `DeltaBadge` had `format` all along; neither `WidgetHeader` nor `StatCard` forwarded it. Both now do.
+`ChartCard`/`Section` are unchanged: each declares its own header props and forwards them one by
+one, so a delta-bearing `ChartCard` or `Section` still prints the percentage — ask if you need it
+there.
+
+```tsx
+// A percentage, unchanged — no prop, no move.
+<StatCard title="Volume" value="1,204" delta={4.2} deltaPeriod="WoW" />
+
+// An absolute delta. The formatter gets the SIGNED number, so it may print the sign itself;
+// `deltaGlyph={false}` then stops the ▼ saying the same thing twice. No `deltaLabel` prop exists —
+// the function IS the escape hatch, and `delta` stays the number that drives the tone.
+<StatCard title="Pace" value="5:31" unit="/km" delta={-12} deltaGlyph={false}
+  deltaFormat={(s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`} />
+```
+
+### Guards — the 1.27.0 promotions, one narrowing and one new exemption
+
+**Five plugin rules and one guard kind became `error` in the shipped preset.** Their
+`PLUGIN_RULE_GRACE` / `GRACE_PERIOD_KINDS` entries are deleted, which IS the promotion (C16). A
+`theme-allow` written against any of them still works unchanged; only the severity of an UNWAIVED
+finding moves.
+
+| Promoted to `error`              | Waiver, if the finding is deliberate                                                          |
+| -------------------------------- | --------------------------------------------------------------------------------------------- |
+| `basalt/control-size-literal`    | `theme-allow control-size-literal — <why>` above the node, or `theme-allow-file` for the file |
+| `basalt/in-body-page-title`      | `theme-allow in-body-page-title — <why>` — ONE id, so it waives the guard kind's lane too     |
+| `in-body-page-title` (kind)      | the same annotation; the two lanes share the id by construction                               |
+| `basalt/responsive-twin`         | `theme-allow responsive-twin — <why>`; the real fix is deleting one mount                     |
+| `basalt/search-literal-link`     | `theme-allow search-literal-link — <why>`; the real fix is `search: <store>.linkSearch`       |
+| `basalt/use-search-from-literal` | `theme-allow use-search-from-literal — <why>`; the real fix is the param as a prop            |
+
+The commonest in-body-title case that is NOT a defect: **a shell-less surface naming itself** — an
+auth gate, an error boundary, a print view. There is no breadcrumb to carry the name, so write
+`theme-allow in-body-page-title — shell-less surface`.
+
+**`control-size-literal` also gained one exemption in the same minor, and it removes a waiver rather
+than adding one: a slot owned by `ChartCard` no longer reports.** `ChartCard` lives inside the
+Mantine-free chart layer, so its `actions` slot writes `data-basalt-tier` by hand and cannot mount
+the tier theme at all — a `Switch` there with no `size` renders at Mantine's default, not at `ctl`.
+The rule's message ("the HOME sets the tier, drop the prop") was simply false in that one slot, and
+because the rule fires on the `size` ATTRIBUTE it could not tell a correct `size="ctl"` from the
+`size="xs"` it exists to catch. Every other home still reports, and the owner test reads the
+IMPORTED name so `ChartCard as Card` is exempt too. `hand-rolled-filter` is deliberately NOT
+exempted there: a raw `Select` in `ChartCard.actions` is still a filter that should take a `field`.
+A HOISTED binding is exempt only when EVERY basalt home it was handed to is `ChartCard` — one
+`const acts = <Button size="xs"/>` given to both `<ChartCard actions>` and `<Section actions>` still
+renders in a tiered slot, and keying the exemption on a single owner made the verdict depend on which
+attribute came later in the file.
+
+**`basalt/control-outside-home` and `raw-selection-control` did NOT promote. They are re-dated to
+1.28.0, and the reason is a measurement rather than caution:** the wave-7 consumer run left 9 warns
+in argo, and every one is a control inside a modal/form module whose `<Modal>` is rendered by the
+PARENT route — law C1's cross-file case, which is advisory by declaration because no scan of one
+file can see it. Both lanes now exempt a file whose BASENAME matches
+`*-{modal,drawer,popover,panel,form}.tsx`, which is the convention those nine already follow.
+Outside the convention, an overlay body declares itself:
+`theme-allow-file control-outside-home — overlay`. The trade is stated plainly: a whole file goes
+unscanned on a naming convention, so a `Select` that genuinely belongs in a page bar goes unreported
+if it lives in `filters-panel.tsx` — the same bargain the `@mantine/form` exemption already buys,
+and a smaller one than promoting a rule with 9 known false positives.
+
+**`basalt/shadow-basalt-export` narrowed, and it stays a permanent advisory `warn`.** An ALIAS hit is
+now skipped when the file imports the basalt export it renames **and REFERENCES that binding as a
+value**: a `HeroCard` that composes `StatCard` is a wrapper, not a fork, and it was already following
+the advice the message gives. Composition, not import — three shapes stay reported, and they are the
+ones a fork actually writes: a type-only `import type { StatCard }` (or an inline `type` specifier)
+feeding `ComponentProps<typeof StatCard>`, a VALUE import used only in a type position, and a dead
+import left behind after the body was re-rolled. None of them render anything. A reference does not
+have to be a JSX tag — `component={StatCard}` and `createElement(StatCard)` compose it too. The
+provenance test reads the IMPORTED name, so `import { StatCard as Base }` counts. The name-COLLISION
+half is deliberately NOT exempted the same way — a local `StatCard` beside an
+`import { StatCard as Base }` kept the name AND a piece of the original, which is the fork shape this
+rule most wants to see.
+
+## 1.26.0 — the control tier, the page bar and the store
+
 **One export removed and two deprecated — see § Stores below; two shell PROPS removed — see
 § Sidebar. Two other behaviour changes: the grace ledgers changed shape, and nine
 long-stale entries (D4, `docs/archive/CONTROLS-SYNTHESIS.md`) are promoted.** C16
@@ -48,7 +304,8 @@ happened to the nine rows below.
 (the table below) or moved to the new, permanent `PLUGIN_RULE_ADVISORY` ledger
 (`shadow-basalt-export`). Both ledgers now hold only the wave-6 control guards listed under
 § Guards — six plugin rules and two guard kinds, each `{ since: '1.26.0', promote: '1.27.0' }` —
-which the C16 gate forces to promote or be deleted at 1.27.0. A theme-allow escape written against
+which the C16 gate forced to promote or be deleted at 1.27.0. Five rules and one kind promoted there;
+the C1 pair was re-dated to 1.28.0 against a measurement (see `## Unreleased` above). A theme-allow escape written against
 any of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
 `error`.
 
@@ -357,22 +614,23 @@ A consumer that uses `DateRangePicker` installs `@mantine/dates` and imports
 
 ### Guards — the control rules (docs/CONTROLS-SPEC.md §6)
 
-**Nothing removed. Eight new oxlint rules and two new guard kinds; two of the ten land `error`, the
-rest `warn` under a dated C16 grace entry.** Every one honours `theme-allow <id> — <why>` on the
+**Nothing removed. Eight new oxlint rules and two new guard kinds. `Ships` below is the level as of
+THIS minor** — eight land `error`, and the C1 pair (`control-outside-home` and its text lane) is the
+only grace left, re-dated to 1.28.0 on a measurement (see § Guards — the promotions).\*\* Every one honours `theme-allow <id> — <why>` on the
 node and `theme-allow-file <id> — <why>` on the file, the same grammar as the rest.
 
 | Rule / kind                          | Fires on                                                                                                                                                                                                                               | Ships         |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | `basalt/hand-rolled-filter`          | A raw Mantine `Select`/`SegmentedControl`/… handed to a TIERED home slot (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/`WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`) | error         |
 | `basalt/page-bar-budget`             | A second `PageBar` in the SAME returned tree, >4 `actions.secondary`, >3 `Section` actions, a second filled `Button`/`ActionIcon` in one slot (outside an overlay)                                                                     | error         |
-| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, or in a file that DEFINES a basalt control                                                                    | warn → 1.27.0 |
-| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | warn → 1.27.0 |
-| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | warn → 1.27.0 |
-| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | warn → 1.27.0 |
-| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | warn → 1.27.0 |
-| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | warn → 1.27.0 |
-| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | warn → 1.27.0 |
-| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window                                                                                                                                                     | warn → 1.27.0 |
+| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, in a file that DEFINES a basalt control, or in a file basenamed `*-{modal,drawer,popover,panel,form}.tsx`     | warn → 1.28.0 |
+| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | **error**     |
+| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | **error**     |
+| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | **error**     |
+| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | **error**     |
+| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | **error**     |
+| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | **error**     |
+| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window, plus the same overlay-basename exemption                                                                                                           | warn → 1.28.0 |
 
 **A `SettingsRow`'s `control` is not a tiered slot, so nothing in this table fires inside one.**
 It is law C1's third home — the form row — and a form keeps Mantine's `md` tier
@@ -741,7 +999,7 @@ instead of dumping help and letting the dump read like a choice.
 - **`tokens:css --check` blanks the provenance line (line 2) before comparing**, so a version bump
   alone no longer forces a no-op commit in a tokens-only consumer, where the gate is byte-equality.
   A stale provenance line is now a note on an otherwise-passing check. The `@generated` header is
-  still emitted byte-identical — the line stays, it just stops gating. **Superseded in `Unreleased`:
+  still emitted byte-identical — the line stays, it just stops gating. **Superseded at 1.26.0:
   blanking the WHOLE line also stopped gating the regeneration command it carries. Only the version
   token is neutralized now.**
 
@@ -912,7 +1170,7 @@ icons — it is not yet **sufficient**. If you went hybrid over the 404s, droppi
 half here costs you every icon unless your `public/` matches basalt's six filenames: at this
 release `icons` was still `false | { dir?: string }` over those six, so an app whose icon is
 `favicon.svg` could pick between a manifest naming two PNGs it never builds and a manifest with no
-`icons` member at all. The array form that fixes it is in `## Unreleased`. The option's JSDoc said
+`icons` member at all. The array form that fixes it is in `## 1.26.0`. The option's JSDoc said
 "skips the head `<link>` icons"; it now says what the option does.
 
 **Two `theme-allow` comment shapes were silently broken and now work.** Plainly: this is the fourth
@@ -920,7 +1178,7 @@ hole found in this one contract in three rounds. A thirteen-shape matrix — eve
 had been SEEN to write — is pinned in both halves, `src/guard/check-source.test.ts` and
 `configs/oxlint-plugin.test.ts`. **The claim that followed it here, that the two parsers could
 therefore no longer disagree, was false when it was written**: a list of collected anecdotes cannot
-close a contract. Three more holes were open at this release. See `## Unreleased`.
+close a contract. Three more holes were open at this release. See `## 1.26.0`.
 
 | Shape                                         | What it did                                                                                                                | Now                                     |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
@@ -1207,35 +1465,43 @@ live in `configs/oxlint.json`, and since 1.20.0 their grace is tracked by `PLUGI
 named export beside the plugin — a test asserts it against the shipped preset in both directions, so
 deleting an entry forces the level flip in the same commit.
 
-| Rule                                   | Landed           | Became `error`                                                        |
-| -------------------------------------- | ---------------- | --------------------------------------------------------------------- |
-| `mantine-shade-index` (guard kind)     | 1.7.0 as `warn`  | **1.11.0**                                                            |
-| `basalt/raw-scroll-container`          | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0**                                    |
-| `basalt/ai-sdk-major`                  | 1.10.0 as `warn` | **1.13.0**                                                            |
-| `basalt/agent-no-raw-usechat`          | 1.10.0 as `warn` | **1.13.0**                                                            |
-| `basalt/agent-resume-guard`            | 1.10.0 as `warn` | **1.13.0**                                                            |
-| `basalt/raw-size-literal`              | 1.7.0 as `warn`  | **1.20.0**                                                            |
-| `basalt/hand-rolled-plot`              | 1.21.0 as `warn` | **Unreleased** (grace had restarted at the 1.21.0 widening)           |
-| `basalt/chart-legend-literal`          | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `basalt/shadow-basalt-export`          | 1.20.0 as `warn` | ADVISORY — permanent `warn`, see below, never subject to the C16 gate |
-| `basalt/hand-rolled-shell`             | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `theme-allow-unscoped` (guard kind)    | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `surface-shadow-override` (guard kind) | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `css-raw-surface` (guard kind)         | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `inline-font-size` (guard kind)        | 1.20.0 as `warn` | **Unreleased**                                                        |
-| `hidden-inline-style` (guard kind)     | 1.20.0 as `warn` | **Unreleased**                                                        |
+| Rule                                   | Landed           | Became `error`                                                                              |
+| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------- |
+| `mantine-shade-index` (guard kind)     | 1.7.0 as `warn`  | **1.11.0**                                                                                  |
+| `basalt/raw-scroll-container`          | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0**                                                          |
+| `basalt/ai-sdk-major`                  | 1.10.0 as `warn` | **1.13.0**                                                                                  |
+| `basalt/agent-no-raw-usechat`          | 1.10.0 as `warn` | **1.13.0**                                                                                  |
+| `basalt/agent-resume-guard`            | 1.10.0 as `warn` | **1.13.0**                                                                                  |
+| `basalt/raw-size-literal`              | 1.7.0 as `warn`  | **1.20.0**                                                                                  |
+| `basalt/hand-rolled-plot`              | 1.21.0 as `warn` | **1.26.0** (grace had restarted at the 1.21.0 widening)                                     |
+| `basalt/chart-legend-literal`          | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `basalt/shadow-basalt-export`          | 1.20.0 as `warn` | ADVISORY — permanent `warn`, see below, never subject to the C16 gate                       |
+| `basalt/hand-rolled-shell`             | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `theme-allow-unscoped` (guard kind)    | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `surface-shadow-override` (guard kind) | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `css-raw-surface` (guard kind)         | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `inline-font-size` (guard kind)        | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `hidden-inline-style` (guard kind)     | 1.20.0 as `warn` | **1.26.0**                                                                                  |
+| `basalt/control-size-literal`          | 1.26.0 as `warn` | **1.27.0**                                                                                  |
+| `basalt/in-body-page-title`            | 1.26.0 as `warn` | **1.27.0**                                                                                  |
+| `in-body-page-title` (guard kind)      | 1.26.0 as `warn` | **1.27.0** — same id as the rule above, so one waiver covers both                           |
+| `basalt/responsive-twin`               | 1.26.0 as `warn` | **1.27.0**                                                                                  |
+| `basalt/search-literal-link`           | 1.26.0 as `warn` | **1.27.0**                                                                                  |
+| `basalt/use-search-from-literal`       | 1.26.0 as `warn` | **1.27.0**                                                                                  |
+| `basalt/control-outside-home`          | 1.26.0 as `warn` | still `warn`, `promote: '1.28.0'` — re-dated on 9 measured cross-file overlay warns in argo |
+| `raw-selection-control` (guard kind)   | 1.26.0 as `warn` | still `warn`, `promote: '1.28.0'` — the text lane of the row above                          |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
 the other original guard kinds have been `error` since before 1.2.0 — they never had a grace minor.
 Guard findings only gained a severity field at all in 1.4.0; before that every finding was fatal.
 
-**Both ledgers changed shape in the Unreleased minor (C16, `docs/CONTROLS-SPEC.md` §1).** An entry
+**Both ledgers changed shape at 1.26.0 (C16, `docs/CONTROLS-SPEC.md` §1).** An entry
 used to be a bare promotion-note string with no expiry a machine could check — which is exactly how
 the nine rows above sat at `warn` for five minors although the doctrine below says "one minor". Both
 `PLUGIN_RULE_GRACE` (`configs/oxlint-plugin.js`) and `GRACE_PERIOD_KINDS` (`src/guard/index.ts`) now
 hold `{ since, promote, why }` (semver strings), and a version-gated test fails the build once
 `package.json`'s version reaches an entry's `promote` while the entry is still there — see
-"Unreleased" above for the full change. `shadow-basalt-export` moved to a sibling ledger,
+"1.26.0" above for the full change. `shadow-basalt-export` moved to a sibling ledger,
 `PLUGIN_RULE_ADVISORY`, which the gate never checks: it was already documented as a possible
 permanent `warn`, and the version-gate doctrine only fits an entry that has an honest promotion
 date.

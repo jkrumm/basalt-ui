@@ -51,10 +51,40 @@ export type WidgetHeaderProps = {
   /** Pre-formatted metric value (mono, hero size). Renders on its own row with `delta`, directly
    * under the title row — never inline with the title. */
   value?: string
+  /**
+   * The value's unit, rendered immediately after it on the hero row: muted, mono, `--vx-text-sm`.
+   *
+   * It exists because `value` is a pre-formatted `string` and a KPI's unit is not part of the
+   * number: `412` and `TSS` are two facts at two weights, and jamming them into one string paints
+   * the unit at the hero's 24px — which reads as a second numeral. `subtitle` was the only place a
+   * unit could go before this, and a unit on its own line under the value is a different claim (the
+   * BASIS: `7-day rolling`), so cards using both had to pick one.
+   *
+   * Never a substitute for the number's own formatting: a thousands separator, a currency symbol or
+   * a `%` belong in `value`, where they are part of how the numeral reads.
+   */
+  unit?: string
   /** Signed delta rendered via `DeltaBadge`, on the same hero-metric row as `value`. */
   delta?: number
   /** Comparison timeframe forwarded to `DeltaBadge` (e.g. `MoM`). */
   deltaPeriod?: string
+  /**
+   * Formats `delta` into the chip's label — forwarded to `DeltaBadge`'s `format`. Defaults to
+   * `${Math.abs(delta).toFixed(1)}%`.
+   *
+   * It exists because not every delta is a percentage: a pace card's trend is `0:12 /km` and a
+   * throughput card's is `0.3 km/h`, and the default printed both as a percent — a wrong unit on a
+   * KPI, which is worse than no chip. A FUNCTION rather than a label string, so the number stays the
+   * number: `delta` still drives the tone and the glyph, and there is exactly one place the sign is
+   * decided.
+   *
+   * The value arrives SIGNED, so a formatter that wants to print the sign itself (`−0:12 /km`) can —
+   * pair it with `deltaGlyph={false}` so the ▼ does not say the same thing twice.
+   */
+  deltaFormat?: (delta: number) => string
+  /** Render `DeltaBadge`'s ▲/▼ glyph. Defaults to `true`; a zero delta never shows one. Pass
+   * `false` when `deltaFormat` prints the sign itself. */
+  deltaGlyph?: boolean
   /** Trend visual slot, rendered below the metric row. Carries `data-placement="right"` so a
    * wave-3 composer's `bleed` layout can select it. */
   sparkline?: ReactNode
@@ -127,8 +157,11 @@ export function WidgetHeader({
   subtitle,
   info,
   value,
+  unit,
   delta,
   deltaPeriod,
+  deltaFormat,
+  deltaGlyph,
   sparkline,
   count,
   actions,
@@ -154,7 +187,19 @@ export function WidgetHeader({
       {(value !== undefined || delta !== undefined) && (
         <div className={classes.metrics}>
           {value !== undefined && <span className={classes.value}>{value}</span>}
-          {delta !== undefined && <DeltaBadge value={delta} period={deltaPeriod} />}
+          {/* Gated on `value`, not on itself: a unit with nothing to qualify is a stray word, and a
+              card that lost its number must not keep printing `TSS` beside the empty space. */}
+          {value !== undefined && unit !== undefined && (
+            <span className={classes.unit}>{unit}</span>
+          )}
+          {delta !== undefined && (
+            <DeltaBadge
+              value={delta}
+              period={deltaPeriod}
+              {...(deltaFormat !== undefined && { format: deltaFormat })}
+              {...(deltaGlyph !== undefined && { withGlyph: deltaGlyph })}
+            />
+          )}
         </div>
       )}
       {subtitle !== undefined && <span className={classes.subtitle}>{subtitle}</span>}

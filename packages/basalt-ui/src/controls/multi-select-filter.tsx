@@ -56,7 +56,7 @@ export function MultiSelectFilter<T extends string>({
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
   useFilterRegistration(!isDefault, () => {
-    setValue(field.fallback)
+    field.clear()
   })
 
   // The prop wins whole, never merged — same rule as `EnumFilter`: a catalogue that dropped a row
@@ -119,7 +119,7 @@ export function MultiSelectFilter<T extends string>({
           variant="subtle"
           size="ctl"
           onClick={() => {
-            setValue(field.fallback)
+            field.clear()
           }}
         >
           Clear

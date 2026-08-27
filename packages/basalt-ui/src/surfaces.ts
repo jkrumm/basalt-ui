@@ -553,8 +553,9 @@ export const SURFACES = {
     // The text lane of law C1 — the plugin's `control-outside-home` seen through a 12-line host-tag
     // window, since a regex scan has no ancestry. Same law, same wave, same promotion.
     guardKinds: ['raw-selection-control'],
-    // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter` ships `error` — "inside a
-    // slot" is structural; the other three are grace entries in `PLUGIN_RULE_GRACE` until 1.27.0.
+    // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter`, `control-size-literal` and
+    // `responsive-twin` all ship `error`; `control-outside-home` is the one grace entry left in
+    // `PLUGIN_RULE_GRACE`, re-dated to 1.28.0 against the wave-7 measurement (see its `why`).
     // The budget rules live on `.` with `PageBar` itself.
     pluginRules: [
       'hand-rolled-filter',
@@ -571,7 +572,7 @@ export const SURFACES = {
       'C12 — one shape for refresh/sync (SyncButton); only the alias table sees a renamed copy',
     ],
     description:
-      'The control tier (docs/CONTROLS-SPEC.md §3): FilterSet (nowrap row + measured +N fold + the mobile Filters (n) sheet), RangeFilter/CompareFilter/SelectFilter/MultiSelectFilter/SearchFilter/ToggleFilter (each bound to a FieldHandle — no value/onChange/size, law C2/C5), ViewTabs, and the action/sync family (ActionGroup, OverflowMenu, SyncButton, BarAction/GlobalAction). Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.',
+      'The control tier (docs/CONTROLS-SPEC.md §3): FilterSet (nowrap row + measured +N fold + the mobile Filters (n) sheet), RangeFilter/CompareFilter/SelectFilter/MultiSelectFilter/NumberFilter/SearchFilter/ToggleFilter (each bound to a FieldHandle — no value/onChange/size, law C2/C5; NumberFilter is the field.number lane, a radio list over `options` or a stepper without), ViewTabs, and the action/sync family (ActionGroup, OverflowMenu, SyncButton, BarAction/GlobalAction). Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.',
     optionalPeers: [],
     forbiddenImports: [],
   },

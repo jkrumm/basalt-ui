@@ -32,6 +32,42 @@ export type PersistedStateOptions<T> = {
   readonly schema?: StandardSchemaV1<unknown, T>
 }
 
+/**
+ * Every subscriber for ONE storage key, shared by every `createPersistedState` instance over that
+ * key — plus the single `storage` event listener the key needs.
+ *
+ * Module-level rather than per-instance because two instances of the same key are ordinary, not a
+ * mistake: a page's `createSearchStore` and a widget's `createPersistedState` legitimately name the
+ * same key, and a consumer re-exporting a store from two modules ends up there by accident. With
+ * per-instance listener sets a write through one instance updated localStorage and notified only
+ * its own hooks, so the other instance's components kept rendering the stale value until something
+ * else re-rendered them — in the SAME tab, while the cross-tab path (the `storage` event) worked.
+ *
+ * The map is keyed by the NAMESPACED key and holds no window reference; a channel is created on
+ * first subscribe, which only happens in the browser (`subscribe` is never passed on the server).
+ */
+type KeyChannel = {
+  readonly listeners: Set<() => void>
+  handler: ((e: StorageEvent) => void) | null
+}
+
+const channels = new Map<string, KeyChannel>()
+
+/** Wake every hook on a key, whichever instance holds it. */
+function notify(storageKey: string): void {
+  const channel = channels.get(storageKey)
+  if (channel === undefined) return
+  for (const listener of channel.listeners) listener()
+}
+
+function channelFor(storageKey: string): KeyChannel {
+  const existing = channels.get(storageKey)
+  if (existing !== undefined) return existing
+  const created: KeyChannel = { listeners: new Set(), handler: null }
+  channels.set(storageKey, created)
+  return created
+}
+
 /** The envelope stored in localStorage: `{ v: number, value: unknown }`. */
 type Envelope = { v: number; value: unknown }
 
@@ -73,14 +109,17 @@ function parseStorage<T>(raw: string | null, opts: PersistedStateOptions<T>): T 
   }
 }
 
-function writeStorage<T>(opts: PersistedStateOptions<T>, next: T): void {
-  const storageKey = `basalt:${opts.key}`
+function writeEnvelope(storageKey: string, version: number, value: unknown): void {
   try {
-    const envelope: Envelope = { v: opts.version, value: next }
+    const envelope: Envelope = { v: version, value }
     window.localStorage.setItem(storageKey, JSON.stringify(envelope))
   } catch {
     // Silently fail (storage full, private browsing, etc.)
   }
+}
+
+function writeStorage<T>(opts: PersistedStateOptions<T>, next: T): void {
+  writeEnvelope(`basalt:${opts.key}`, opts.version, next)
 }
 
 /**
@@ -100,32 +139,25 @@ export function createPersistedState<T>(
 ): () => readonly [T, (next: T) => void] {
   const storageKey = `basalt:${opts.key}`
 
-  // One Set of subscriber callbacks — mirrors notifications/store.ts single-listener-to-Set pattern.
-  const listeners = new Set<() => void>()
-
-  // ONE module-scoped 'storage' event listener per key, registered lazily on first subscriber.
-  // Removed when the last subscriber unsubscribes (cleanup semantics preserved).
-  let storageHandler: ((e: StorageEvent) => void) | null = null
-
   const subscribe = (cb: () => void): (() => void) => {
-    listeners.add(cb)
+    // The subscriber set is the KEY's, not this instance's — see `KeyChannel`.
+    const channel = channelFor(storageKey)
+    channel.listeners.add(cb)
 
-    // Attach the shared window listener on the first subscriber.
-    if (storageHandler === null) {
-      storageHandler = (e: StorageEvent): void => {
-        if (e.key === storageKey) {
-          for (const listener of listeners) listener()
-        }
+    // ONE 'storage' event listener per key, registered lazily on the first subscriber and removed
+    // when the last one leaves (cleanup semantics preserved).
+    if (channel.handler === null) {
+      channel.handler = (e: StorageEvent): void => {
+        if (e.key === storageKey) notify(storageKey)
       }
-      window.addEventListener('storage', storageHandler)
+      window.addEventListener('storage', channel.handler)
     }
 
     return () => {
-      listeners.delete(cb)
-      // Detach the shared window listener when the last subscriber unsubscribes.
-      if (listeners.size === 0 && storageHandler !== null) {
-        window.removeEventListener('storage', storageHandler)
-        storageHandler = null
+      channel.listeners.delete(cb)
+      if (channel.listeners.size === 0 && channel.handler !== null) {
+        window.removeEventListener('storage', channel.handler)
+        channel.handler = null
       }
     }
   }
@@ -158,8 +190,9 @@ export function createPersistedState<T>(
 
   const setState = (next: T): void => {
     writeStorage(opts, next)
-    // Notify in-tab listeners (the 'storage' event only fires in OTHER tabs)
-    for (const cb of listeners) cb()
+    // Notify every in-tab listener on this KEY — the 'storage' event fires in OTHER tabs only, and
+    // a second instance of the same key has its own hooks to wake.
+    notify(storageKey)
   }
 
   // Detect SSR once at creation time — the environment doesn't change between renders.
@@ -208,4 +241,21 @@ export function readPersistedValue(key: string, version?: number): unknown | nul
   } catch {
     return null
   }
+}
+
+/**
+ * Write a value under the namespaced key `basalt:<key>` in the same versioned envelope
+ * `createPersistedState` writes, and wake every hook on that key — the write half of
+ * `readPersistedValue`, and plain in the same way: no React required.
+ *
+ * The one call site is a store field's `clear()`, which has to DELETE its key from the store's
+ * record from an event handler, where the hook's setter is not in reach. Not exported from the
+ * `basalt-ui/state` barrel: the two store factories are the API, this is their seam.
+ *
+ * @internal
+ */
+export function writePersistedValue(key: string, version: number, value: unknown): void {
+  const storageKey = `basalt:${key}`
+  writeEnvelope(storageKey, version, value)
+  notify(storageKey)
 }

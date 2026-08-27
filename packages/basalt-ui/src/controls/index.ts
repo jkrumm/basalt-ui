@@ -43,6 +43,7 @@ export {
   type SelectFilterStringProps,
 } from './select-filter'
 export { MultiSelectFilter, type MultiSelectFilterProps } from './multi-select-filter'
+export { NumberFilter, type NumberFilterOption, type NumberFilterProps } from './number-filter'
 export { SearchFilter, type SearchFilterProps } from './search-filter'
 export { ToggleFilter, type ToggleFilterProps } from './toggle-filter'
 export { ViewTabs, type ViewTabsOption, type ViewTabsProps } from './view-tabs'

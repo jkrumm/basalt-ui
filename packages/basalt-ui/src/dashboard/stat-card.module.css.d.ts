@@ -5,6 +5,10 @@
 declare const classes: {
   readonly body: string
   readonly header: string
+  readonly breakdown: string
+  readonly breakdownRow: string
+  readonly breakdownLabel: string
+  readonly breakdownValue: string
   readonly sparklineBleed: string
   readonly sparklineRight: string
 }

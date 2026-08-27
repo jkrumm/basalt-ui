@@ -21,6 +21,8 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { StatCard } from './stat-card'
 import type { StatCardTone } from './stat-card'
@@ -150,5 +152,234 @@ describe('sparklinePlacement', () => {
   test('right sits the sparkline beside the hero-value row', () => {
     const markup = renderWithSparkline('right')
     expect(markup).toContain('data-placement="right"')
+  })
+})
+
+/**
+ * `unit` and `breakdown` — the two props that existed as hand-rolled cards in three consumers
+ * before they existed here. Both are asserted through the same static markup as the rail above; the
+ * CSS half (which cannot resolve under `bun test`, where a `.module.css` import is `undefined`) is
+ * pinned against the shipped stylesheet TEXT at the bottom of this file, the pattern
+ * `page-bar.test.tsx` uses.
+ */
+describe('unit — the hero value is a number and a unit, not one string', () => {
+  function renderUnit(props: { unit?: string; value?: string }) {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Training load" value="412" {...props} />
+      </MantineProvider>,
+    )
+  }
+
+  test('renders after the value, and both are present', () => {
+    const markup = renderUnit({ unit: 'TSS' })
+    expect(markup).toContain('412')
+    expect(markup).toContain('TSS')
+    // Order matters — a unit BEFORE the numeral reads as a currency prefix, which it is not.
+    expect(markup.indexOf('412')).toBeLessThan(markup.indexOf('TSS'))
+  })
+
+  test('omitting it renders nothing extra', () => {
+    expect(renderUnit({})).not.toContain('TSS')
+  })
+
+  test('it is not the same channel as `subtitle` — a card may carry both', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Training load" value="412" unit="TSS" subtitle="7-day rolling" />
+      </MantineProvider>,
+    )
+    expect(markup).toContain('TSS')
+    expect(markup).toContain('7-day rolling')
+  })
+})
+
+/**
+ * `deltaFormat` — because not every delta is a percentage, and the default said it was.
+ *
+ * A pace card's trend is `0:12 /km` and a speed card's is `0.3 km/h`; both rendered as `0.3%`, which
+ * is a wrong unit on a KPI — the failure worse than showing no chip at all, and the reason the
+ * consumer that needed one kept its card hand-rolled (the `HeroCard` fork `shadow-basalt-export`
+ * reports). The prop is a FUNCTION over the signed number, not a label string: `delta` still drives
+ * the tone and the glyph, so there is one place the sign is decided.
+ */
+describe('deltaFormat — a delta that is not a percentage', () => {
+  function renderDelta(props: {
+    delta?: number
+    deltaFormat?: (delta: number) => string
+    deltaGlyph?: boolean
+    deltaPeriod?: string
+  }) {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Pace" value="5:31" unit="/km" {...props} />
+      </MantineProvider>,
+    )
+  }
+
+  test('the default is still a one-decimal percentage — no existing card moves', () => {
+    const markup = renderDelta({ delta: 0.3 })
+    expect(markup).toContain('0.3%')
+  })
+
+  test('a formatter replaces the label and the percent is gone', () => {
+    const markup = renderDelta({ delta: 0.3, deltaFormat: (v) => `${v.toFixed(1)} km/h` })
+    expect(markup).toContain('0.3 km/h')
+    expect(markup).not.toContain('0.3%')
+  })
+
+  test('the formatter receives the SIGNED value, so it can print an absolute delta itself', () => {
+    // argo's walking-pad pace card: the delta is seconds per km, faster is a negative number, and
+    // the sign belongs in the string. `deltaGlyph={false}` stops the ▼ saying it a second time.
+    const markup = renderDelta({
+      delta: -12,
+      deltaFormat: (s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`,
+      deltaGlyph: false,
+    })
+    // The chip's whole text, so nothing survives beside it — the glyph, or a stray `12.0%`.
+    expect(markup).toContain('>−0:12 /km</span>')
+    expect(markup).not.toContain('▼')
+  })
+
+  test('the glyph and the tone still come off the number, not the label', () => {
+    const markup = renderDelta({ delta: -12, deltaFormat: (s) => `${Math.abs(s)} s` })
+    // Negative reads as danger and keeps its ▼ — the formatter only owns the magnitude string.
+    expect(markup).toContain('▼')
+    expect(markup).toContain('var(--vx-status-bad)')
+  })
+
+  test('deltaPeriod still rides beside a formatted delta', () => {
+    const markup = renderDelta({
+      delta: 0.3,
+      deltaFormat: (v) => `${v.toFixed(1)} km/h`,
+      deltaPeriod: 'WoW',
+    })
+    expect(markup).toContain('0.3 km/h')
+    expect(markup).toContain('WoW')
+  })
+
+  test('a formatter with no delta renders no chip at all', () => {
+    expect(renderDelta({ deltaFormat: (v) => `${v} km/h` })).not.toContain('km/h')
+  })
+})
+
+describe('breakdown — the parts the hero number is made of', () => {
+  const ROWS = [
+    { label: 'Paid', value: '1,204' },
+    { label: 'Organic', value: '842' },
+    { label: 'Referral', value: '31', tone: 'bad' as const },
+  ]
+
+  function renderBreakdown(breakdown?: readonly { label: string; value: string }[]) {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Orders"
+          value="2,077"
+          {...(breakdown !== undefined ? { breakdown } : {})}
+        />
+      </MantineProvider>,
+    )
+  }
+
+  test('every row renders its label and its value', () => {
+    const markup = renderBreakdown(ROWS)
+    for (const row of ROWS) {
+      expect(markup).toContain(row.label)
+      expect(markup).toContain(row.value)
+    }
+  })
+
+  test('the rows are a description list — each row IS a term and its value', () => {
+    const markup = renderBreakdown(ROWS)
+    expect(markup).toContain('<dl')
+    expect((markup.match(/<dt/g) ?? []).length).toBe(3)
+    expect((markup.match(/<dd/g) ?? []).length).toBe(3)
+  })
+
+  test('a toned row carries data-tone; an untoned one carries nothing', () => {
+    const markup = renderBreakdown(ROWS)
+    expect(markup).toContain('data-tone="bad"')
+    // Omission is not `good`, exactly as it is not on the card itself.
+    expect(markup).not.toContain('data-tone="good"')
+  })
+
+  test('omitted, and an empty array, render no list at all', () => {
+    expect(renderBreakdown()).not.toContain('<dl')
+    expect(renderBreakdown([])).not.toContain('<dl')
+  })
+
+  // The reason the rows live INSIDE the header block rather than beside it: with
+  // `sparklinePlacement="right"` the card body is a flex ROW, so a third child there would sit next
+  // to the trend instead of under the number it splits.
+  test('the list sits inside the header block, before the sparkline slot', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Orders"
+          value="2,077"
+          breakdown={ROWS}
+          sparklinePlacement="right"
+          sparkline={<span>spark</span>}
+        />
+      </MantineProvider>,
+    )
+    expect(markup.indexOf('<dl')).toBeLessThan(markup.indexOf('spark'))
+  })
+})
+
+/**
+ * The CSS half, pinned against the shipped module text. A `.module.css` resolves to `undefined`
+ * under `bun test` (no bundler in the loop), so the class names never reach the markup and the only
+ * checkable thing is the stylesheet itself.
+ */
+describe('stat-card.module.css — the breakdown block', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+  /** Declarations only — the comments above them discuss hairlines and borders by name. */
+  const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  function rule(selector: string): string {
+    const start = decls.indexOf(`${selector} {`)
+    expect(start).toBeGreaterThan(-1)
+    return decls.slice(start, decls.indexOf('}', start))
+  }
+
+  test('a row is one line at the TAG tier, from the token and never a literal', () => {
+    expect(rule('.breakdownRow')).toContain('min-height: var(--vx-space-control-height-tag)')
+  })
+
+  // THE law this block had to not break: `theme/divider-law.test.ts` inventories every horizontal
+  // hairline basalt draws, and §2.1 puts one between OPTION rows and nowhere else. Three rules
+  // inside a KPI card would read as a table wearing a card's clothes — and would fail that test.
+  test('no row draws a hairline — not a border, not a rule, not a divider', () => {
+    expect(decls).not.toMatch(/\.breakdown[^{]*\{[^}]*border/)
+    expect(decls).not.toContain('--vx-surface-hairline')
+  })
+
+  test('the label is muted prose and the value is mono ink — the separation is weight, not a line', () => {
+    expect(rule('.breakdownLabel')).toContain('color: var(--vx-muted)')
+    expect(rule('.breakdownValue')).toContain('font-family: var(--basalt-font-mono)')
+    expect(rule('.breakdownValue')).toContain('color: var(--vx-ink)')
+  })
+
+  test('a toned row reads the per-scheme status solid, never a hex', () => {
+    for (const tone of ['good', 'warn', 'bad']) {
+      expect(rule(`.breakdownRow[data-tone='${tone}'] .breakdownValue`)).toContain(
+        `color: var(--vx-status-${tone})`,
+      )
+    }
+  })
+
+  test('the unit beside the hero value is mono, muted and small — in widget-header, its owner', () => {
+    const headerCss = readFileSync(
+      resolve(import.meta.dirname, '..', 'widget-header', 'widget-header.module.css'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\//g, '')
+    const start = headerCss.indexOf('.unit {')
+    expect(start).toBeGreaterThan(-1)
+    const unit = headerCss.slice(start, headerCss.indexOf('}', start))
+    expect(unit).toContain('font-family: var(--basalt-font-mono)')
+    expect(unit).toContain('font-size: var(--vx-text-sm)')
+    expect(unit).toContain('color: var(--vx-muted)')
   })
 })

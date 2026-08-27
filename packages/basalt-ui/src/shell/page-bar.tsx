@@ -137,7 +137,7 @@ export type PageBarProps = {
    * sticky wrapper (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The seam for the two
    * things only the consumer's own layout knows: bleeding the sticky bar across its container's
    * gutters (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) and drawing
-   * a hairline under it (`border-bottom: 1px solid var(--vx-border)`).
+   * a hairline under it (`border-bottom: 1px solid var(--vx-surface-hairline)`).
    *
    * Scope that CSS through this class, not through a global `[data-basalt-page-bar]` selector: the
    * data attributes are stable enough to READ (a shell-less consumer can style

@@ -10,7 +10,7 @@
  * consumer.
  */
 import { useSyncExternalStore } from 'react'
-import { createPersistedState, readPersistedValue } from './persisted'
+import { createPersistedState, readPersistedValue, writePersistedValue } from './persisted'
 
 // ── Store fields — the vocabulary both store factories share ──────────────────────────────────
 
@@ -48,6 +48,28 @@ export type ResolveLane<L> = {
   history: L extends { history: 'push' } ? 'push' : 'replace'
 }
 
+/**
+ * A field's fallback: the value, or a THUNK evaluated at read time (`field.string({ fallback: () =>
+ * todayIso() })`). A thunk is re-evaluated on every read while nothing is written, and is never
+ * itself persisted — a write stores the value the control produced, like any other.
+ *
+ * The LOCAL and MEMORY lanes only. `createSearchStore` throws at definition for a thunk on a
+ * URL-lane field: `validateSearch` would evaluate it on every navigation and pin the result into the
+ * URL, so a deep link would carry a value nobody chose.
+ */
+export type FieldFallback<T> = T | (() => T)
+
+/** Resolves a per-preset window at call time. Returns ISO dates — what `toWindow` hands an API. */
+export type RangeWindow = (now: Date) => { from: string; to: string }
+
+/**
+ * Per-preset window resolvers for a range field. A preset WITH one resolves through `toWindow()` to
+ * `{ from, to }`; a preset without keeps `{ window: preset }` — which is what lets a derived preset
+ * (`3m`, `ytd`) live in the same field as a server-understood one (`7d`) instead of forcing a
+ * hand-rolled `presetToParams` beside the store.
+ */
+export type RangeWindows<P extends string> = Partial<Record<P, RangeWindow>>
+
 /** The value of a range field: one preset, plus two ISO dates when the preset is `'custom'`. */
 export type RangeValue<P extends string> = {
   preset: P
@@ -61,14 +83,14 @@ export type RangeParams = { preset?: string; from?: string; to?: string }
 export type EnumField<T extends string = string, Ln extends ResolvedLane = ResolvedLane> = {
   readonly kind: 'enum'
   readonly values: readonly T[]
-  readonly fallback: T
+  readonly fallback: FieldFallback<T>
   readonly lane: Ln
 }
 
 export type MultiField<T extends string = string, Ln extends ResolvedLane = ResolvedLane> = {
   readonly kind: 'multi'
   readonly values: readonly T[]
-  readonly fallback: readonly T[]
+  readonly fallback: FieldFallback<readonly T[]>
   readonly lane: Ln
 }
 
@@ -77,27 +99,44 @@ export type RangeField<
   C extends boolean = boolean,
   Pm extends RangeParams = RangeParams,
   Ln extends ResolvedLane = ResolvedLane,
+  W extends string = never,
 > = {
   readonly kind: 'range'
   /** The declared presets — `'custom'` is NOT one of them, it is `custom: true`'s consequence. */
   readonly presets: readonly P[]
-  readonly fallback: RangeValue<P>
+  readonly fallback: FieldFallback<RangeValue<P>>
   /** `true` → the preset `'custom'` plus `from`/`to` ISO dates are legal values. */
   readonly custom: C
   readonly params: Pm
+  /**
+   * The declared window resolvers, keyed by preset — `W` is exactly the presets that HAVE one, so
+   * `toWindow`'s return type can drop them from its `{ window }` branch and an API param type
+   * accepts the result with no cast.
+   *
+   * `W` defaults to `never` (`window: {}`), which is what keeps every `RangeField<P>` assignable to
+   * the widened `AnyField` a control's props take: a narrower resolver map is assignable to `{}`,
+   * and a widened handle's `toWindow` then excludes nothing rather than everything.
+   */
+  readonly window: RangeWindows<W>
   readonly lane: Ln
 }
 
 /**
  * The preset union a range field's VALUES range over: the declared presets, plus `'custom'` unless
- * the field opted out. `C` widened to `boolean` (a `RangeField<P>` in a control's props) keeps
- * `'custom'`, so a widened handle can still carry a custom window.
+ * the field opted out.
+ *
+ * `C` widened to `boolean` (a bare `RangeField<P>`) keeps `'custom'` — but a PROP typed that way
+ * accepts only a custom-capable handle, because the handle's setter is contravariant in the value:
+ * `field.range` without `custom: true` hands out a `RangeField<P, false>`, whose setter refuses a
+ * `'custom'` preset. A wrapper that must take any range handle is generic over the flag
+ * (`<P extends string, C extends boolean>` + `FieldHandle<RangeField<P, C>>`); one that only ever
+ * takes the preset-only shape pins `RangeField<P, false>`.
  */
 export type RangePresets<P, C> = (P & string) | (C extends false ? never : 'custom')
 
 export type NumberField<Ln extends ResolvedLane = ResolvedLane> = {
   readonly kind: 'number'
-  readonly fallback: number
+  readonly fallback: FieldFallback<number>
   readonly min: number | undefined
   readonly max: number | undefined
   readonly int: boolean
@@ -106,13 +145,13 @@ export type NumberField<Ln extends ResolvedLane = ResolvedLane> = {
 
 export type BooleanField<Ln extends ResolvedLane = ResolvedLane> = {
   readonly kind: 'boolean'
-  readonly fallback: boolean
+  readonly fallback: FieldFallback<boolean>
   readonly lane: Ln
 }
 
 export type StringField<Ln extends ResolvedLane = ResolvedLane> = {
   readonly kind: 'string'
-  readonly fallback: string
+  readonly fallback: FieldFallback<string>
   readonly max: number | undefined
   readonly lane: Ln
 }
@@ -144,6 +183,31 @@ export type FieldValue<F extends AnyField> = F extends {
             ? string
             : never
 
+/**
+ * The second, optional argument of a `FieldHandle` setter.
+ *
+ * @example field.tab.use()[1]('overview', { patch: { detailDate: undefined } })
+ */
+export type FieldSetOptions = {
+  /**
+   * Extra search params merged into the SAME navigate as the field's own write — the URL lane only
+   * (a local/memory-lane write has no navigate to merge into, and ignores this). For keys the STORE
+   * DOES NOT OWN: clearing a sibling param the page put there (`{ detailDate: undefined }`) used to
+   * need a second `navigate` beside the setter, which either lost the field's write or produced two
+   * history entries. The field's own params always win, so a `patch` cannot corrupt the value being
+   * set.
+   *
+   * A key ANOTHER field of the same store owns is refused — it would reach the URL while the
+   * mirror kept the old value, so the next paramless visit and every `linkSearch` link disagree
+   * with the page the write happened on. `createSearchStore` throws in dev and logs in production;
+   * write that field through its own setter instead.
+   *
+   * A write from a route that does not validate the field persists only (A1) and drops the patch
+   * with it — there is no navigate to merge into. Dev warns once per field.
+   */
+  readonly patch?: Record<string, unknown>
+}
+
 /** One option of an enum / multi / range field, labelled through `store.labels()`. */
 export type FieldOption = { value: string; label: string }
 
@@ -152,17 +216,53 @@ type RangeHandleExtras<F> = F extends {
   kind: 'range'
   presets: readonly (infer P)[]
   custom: infer C
+  window: RangeWindows<infer W>
 }
   ? {
       /**
        * The API-facing projection of a range value: a preset becomes `{ window }`, a custom range
        * becomes `{ from, to }`. Replaces every hand-rolled `presetToParams`.
+       *
+       * A preset declared with a `window` resolver (`field.range({ window: { '3m': ... } })`)
+       * becomes `{ from, to }` too — the resolver runs at CALL time with the current `Date`, so a
+       * derived window (`3m`, `ytd`) is never stale and never leaves the store.
+       *
+       * Those presets are EXCLUDED from the `{ window }` branch, so the result assigns to an API
+       * param type that only knows the server-understood windows with no cast — which is the half
+       * that lets a consumer delete the switch rather than move it. A `custom: true` field keeps
+       * `'custom'` in the union: a custom preset with no dates resolves to `{ window: 'custom' }`,
+       * so that one still needs a guard before it reaches such a type.
        */
       readonly toWindow: (
         v: RangeValue<RangePresets<P, C>>,
-      ) => { window: RangePresets<P, C> } | { from: string; to: string }
+      ) => { window: Exclude<RangePresets<P, C>, W> } | { from: string; to: string }
     }
   : { readonly toWindow?: undefined }
+
+/**
+ * A number handle's declared bounds, republished from the field — `RangeHandleExtras`' shape for the
+ * numeric kind, and there for the same reason: a control cannot ask the field descriptor anything,
+ * it only ever sees the handle.
+ *
+ * The codec has always CLAMPED to these on write, so before this the only way a `NumberFilter` could
+ * learn its own limits was for the call site to pass them a second time — a second answer to a
+ * question the field already owns, and one that silently stops matching the moment the field moves.
+ * With them on the handle the input can bound its own stepper, which turns the clamp from a
+ * correction the user watches happen into a value they cannot type in the first place.
+ *
+ * `int` is the third member because it is the same class of fact: it decides the stepper's grain
+ * (`step` 1, decimals refused), and the codec already rejects a non-integer for that field.
+ */
+type NumberHandleExtras<F> = F extends { kind: 'number' }
+  ? {
+      /** The field's `min`, or `undefined` when it declared none. Clamped on write regardless. */
+      readonly min: number | undefined
+      /** The field's `max`, or `undefined` when it declared none. Clamped on write regardless. */
+      readonly max: number | undefined
+      /** `field.number({ int: true })` — a non-integer is refused by the codec, not rounded. */
+      readonly int: boolean
+    }
+  : { readonly min?: undefined; readonly max?: undefined; readonly int?: undefined }
 
 /**
  * The binding every basalt control takes instead of `value`/`onChange` (C2). One field, both lanes,
@@ -179,11 +279,96 @@ export type FieldHandle<F extends AnyField> = {
    * so a control renders on a sibling or child route with no `from`), else localStorage, else the
    * fallback. Writes navigate when the matched route validates the param, then persist.
    */
-  use(): readonly [FieldValue<F>, (next: FieldValue<F>) => void]
+  use(): readonly [FieldValue<F>, (next: FieldValue<F>, opts?: FieldSetOptions) => void]
+  /**
+   * UNSET the field — what a control's reset calls, and deliberately not `set(fallback)`. The
+   * persist lane DELETES the field's key from the mirror, the memory lane drops its value, and the
+   * URL lane navigates back to the fallback params (plus dropping the mirror key under it).
+   *
+   * Writing the fallback instead pins it: a THUNK fallback (`() => todayIso()`) resolves at the
+   * moment of the reset, so a reader who pressed `Reset all` today was handed today's date
+   * tomorrow, with the field counted as active in `Filters (n)`. Unsetting lets the fallback keep
+   * resolving, which is what `FieldFallback`'s contract says it does.
+   *
+   * Callable outside render (an event handler is the only realistic caller); on the URL lane it
+   * navigates through the last render of `use()`, so a handle that no mount has read clears the
+   * mirror only.
+   */
+  clear(): void
   isDefault(v: FieldValue<F>): boolean
-} & RangeHandleExtras<F>
+} & RangeHandleExtras<F> &
+  NumberHandleExtras<F>
 
 // ── field.* — declarative field builders ──────────────────────────────────────────────────────
+
+/**
+ * `field.range`'s options. `C` is the `custom` flag, pinned per overload — never inferred; `W` is
+ * inferred from `window`'s KEYS (constrained to the declared presets, so a typo is still an error
+ * here) and is what carries the resolved presets into `toWindow`'s return type.
+ */
+type RangeOptions<P extends string, C extends boolean, Pm extends RangeParams, W extends P> = {
+  presets: readonly P[]
+  fallback: FieldFallback<NoInfer<P>>
+  custom?: C
+  params?: Pm
+  /** Per-preset window resolvers — the presets `toWindow()` answers with `{ from, to }`. */
+  window?: RangeWindows<W>
+}
+
+/**
+ * A time window: THREE URL params (preset + `from` + `to`, each renamable through `params`), so a
+ * consumer's existing deep links and loaders keep their shape. `custom: true` additionally
+ * allows the preset `'custom'` with two ISO dates. `window` resolves a DERIVED preset (`3m`, `ytd`)
+ * to `{ from, to }` through `toWindow()` while it stays one preset in the URL.
+ *
+ * A second `field.range` in the same store — or a second range store composed into the same
+ * route's `validateSearch` — MUST rename `from`/`to` via `params`: every range defaults to the
+ * literal param names `'from'`/`'to'`, and two fields silently sharing them makes the later one's
+ * `toSearch` overwrite the earlier one's dates. `createStoreCore` throws at definition for the
+ * in-store case; the cross-store case is not detectable by either store alone.
+ *
+ * THREE overloads, one per `custom` shape, because a single `custom?: C` signature is inferred
+ * against `AnyField` when the call sits inline in `createSearchStore({ fields })` — the contextual
+ * return type wins, `C` widens to `boolean`, and every value type gains a `'custom'` preset the
+ * field never allowed. Overloads have no `C` to widen: an omitted or `false` flag picks the first,
+ * a literal `true` the second, and a value typed `boolean` the third (widened, as declared).
+ */
+function rangeField<
+  const P extends string,
+  const Pm extends RangeParams = RangeParams,
+  const L extends FieldLane = FieldLane,
+  const W extends P = never,
+>(o: RangeOptions<P, false, Pm, W>, lane?: L): RangeField<P, false, Pm, ResolveLane<L>, W>
+function rangeField<
+  const P extends string,
+  const Pm extends RangeParams = RangeParams,
+  const L extends FieldLane = FieldLane,
+  const W extends P = never,
+>(o: RangeOptions<P, true, Pm, W>, lane?: L): RangeField<P, true, Pm, ResolveLane<L>, W>
+function rangeField<
+  const P extends string,
+  const Pm extends RangeParams = RangeParams,
+  const L extends FieldLane = FieldLane,
+  const W extends P = never,
+>(o: RangeOptions<P, boolean, Pm, W>, lane?: L): RangeField<P, boolean, Pm, ResolveLane<L>, W>
+function rangeField(
+  o: RangeOptions<string, boolean, RangeParams, string>,
+  lane?: FieldLane,
+): RangeField<string, boolean, RangeParams, ResolvedLane, string> {
+  const { fallback } = o
+  return {
+    kind: 'range',
+    presets: o.presets,
+    // A thunk fallback stays a thunk — wrapped so the lazy value is read at the same moment every
+    // other lane reads one, not once here at definition.
+    fallback:
+      typeof fallback === 'function' ? () => ({ preset: fallback() }) : { preset: fallback },
+    custom: o.custom ?? false,
+    params: o.params ?? {},
+    window: o.window ?? {},
+    lane: resolveLane(lane),
+  }
+}
 
 /**
  * The field vocabulary. Every builder returns plain declarative data — no closures, no router, no
@@ -206,7 +391,7 @@ export const field = {
   /** A closed string enum — a tab, a compare mode, a single-select filter. */
   enum<const T extends string, const L extends FieldLane = FieldLane>(
     values: readonly T[],
-    fallback: NoInfer<T>,
+    fallback: FieldFallback<NoInfer<T>>,
     lane?: L,
   ): EnumField<T, ResolveLane<L>> {
     return { kind: 'enum', values, fallback, lane: resolveLane(lane) as ResolveLane<L> }
@@ -215,47 +400,17 @@ export const field = {
   /** An any-of set over the same closed enum. Decoding is deduped and canonically re-sorted. */
   multi<const T extends string, const L extends FieldLane = FieldLane>(
     values: readonly T[],
-    fallback: readonly NoInfer<T>[] = [],
+    fallback: FieldFallback<readonly NoInfer<T>[]> = [],
     lane?: L,
   ): MultiField<T, ResolveLane<L>> {
     return { kind: 'multi', values, fallback, lane: resolveLane(lane) as ResolveLane<L> }
   },
 
-  /**
-   * A time window: THREE URL params (preset + `from` + `to`, each renamable through `params`), so a
-   * consumer's existing deep links and loaders keep their shape. `custom: true` additionally
-   * allows the preset `'custom'` with two ISO dates.
-   *
-   * A second `field.range` in the same store — or a second range store composed into the same
-   * route's `validateSearch` — MUST rename `from`/`to` via `params`: every range defaults to the
-   * literal param names `'from'`/`'to'`, and two fields silently sharing them makes the later one's
-   * `toSearch` overwrite the earlier one's dates. `createStoreCore` throws at definition for the
-   * in-store case; the cross-store case is not detectable by either store alone.
-   */
-  range<
-    const P extends string,
-    const C extends boolean = false,
-    const Pm extends RangeParams = RangeParams,
-    const L extends FieldLane = FieldLane,
-  >(
-    o: { presets: readonly P[]; fallback: NoInfer<P>; custom?: C; params?: Pm },
-    lane?: L,
-  ): RangeField<P, C, Pm, ResolveLane<L>> {
-    return {
-      kind: 'range',
-      presets: o.presets,
-      fallback: { preset: o.fallback },
-      // The only cast left, and it is narrow: `C` is inferred from this very literal, so the
-      // runtime boolean IS `C` — `?? false` is what the compiler cannot see through.
-      custom: (o.custom ?? false) as C,
-      params: (o.params ?? {}) as Pm,
-      lane: resolveLane(lane) as ResolveLane<L>,
-    }
-  },
+  range: rangeField,
 
   /** A number — pagination, a threshold. Out-of-range input clamps to `min`/`max`. */
   number<const L extends FieldLane = FieldLane>(
-    o: { fallback: number; min?: number; max?: number; int?: boolean },
+    o: { fallback: FieldFallback<number>; min?: number; max?: number; int?: boolean },
     lane?: L,
   ): NumberField<ResolveLane<L>> {
     return {
@@ -270,7 +425,7 @@ export const field = {
 
   /** A toggle. Accepts `true`/`false` and the strings `'true'`/`'false'` from a hand-typed URL. */
   boolean<const L extends FieldLane = FieldLane>(
-    fallback: boolean,
+    fallback: FieldFallback<boolean>,
     lane?: L,
   ): BooleanField<ResolveLane<L>> {
     return { kind: 'boolean', fallback, lane: resolveLane(lane) as ResolveLane<L> }
@@ -278,7 +433,7 @@ export const field = {
 
   /** Free text — a search box. Defaults to `history: 'replace'` like every other field. */
   string<const L extends FieldLane = FieldLane>(
-    o?: { fallback?: string; max?: number },
+    o?: { fallback?: FieldFallback<string>; max?: number },
     lane?: L,
   ): StringField<ResolveLane<L>> {
     return {
@@ -358,7 +513,24 @@ export type FieldCodec = {
    * route does not, and a write there persists only (A1).
    */
   readonly primary: string
+  /**
+   * The fallback, ALREADY resolved — a getter, because `field.*({ fallback: () => … })` is a thunk
+   * that must run at read time and re-run while nothing is written. Every call site reads it as a
+   * plain value, which is why the laziness is invisible past this line.
+   */
   readonly fallback: unknown
+  /** Range only: the per-preset window resolvers `toWindow` answers a derived preset through. */
+  readonly windows?: RangeWindows<string>
+  /**
+   * Number only: the declared bounds and grain the codec clamps to, republished so `handle` can put
+   * them on the handle. The codec is the only thing that reads the field descriptor, so a control
+   * that needs a limit has to be handed it from here — see {@link NumberHandleExtras}.
+   */
+  readonly bounds?: {
+    readonly min: number | undefined
+    readonly max: number | undefined
+    readonly int: boolean
+  }
   /**
    * Validate a STORED (or caller-supplied) value. `null` = unusable.
    *
@@ -374,6 +546,14 @@ export type FieldCodec = {
   equals(a: unknown, b: unknown): boolean
   /** Option values in declaration order — enum, multi and range only. */
   readonly optionValues: readonly string[]
+}
+
+/**
+ * Resolve a possibly-lazy fallback. `typeof === 'function'` is an exact discriminator here: no field
+ * kind has a function as a legal VALUE, so a function can only ever be the thunk form.
+ */
+function resolveFallback(raw: unknown): unknown {
+  return typeof raw === 'function' ? (raw as () => unknown)() : raw
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:T[\d:.]+(?:Z|[+-]\d{2}:\d{2})?)?$/
@@ -467,7 +647,10 @@ export function resolveFieldCodec(
         lane: f.lane,
         params: [presetParam, fromParam, toParam],
         primary: presetParam,
-        fallback: f.fallback,
+        get fallback() {
+          return resolveFallback(f.fallback)
+        },
+        windows: f.window,
         decode,
         fromSearch: (search) =>
           decode({
@@ -507,7 +690,11 @@ export function resolveFieldCodec(
         if (f.max !== undefined && value > f.max) value = f.max
         return value
       }
-      return single(name, f, decode)
+      // The same three values the clamp above reads, handed on so the CONTROL can bound its input
+      // rather than watch the clamp correct it after the fact. Threaded THROUGH `single` rather
+      // than spread onto its result: `fallback` is a getter, and a spread would evaluate it once
+      // here and freeze a thunk fallback at definition.
+      return single(name, f, decode, { bounds: { min: f.min, max: f.max, int: f.int } })
     }
     case 'boolean': {
       return single(name, f, decodeBoolean)
@@ -525,7 +712,14 @@ export function resolveFieldCodec(
   }
 }
 
-/** Codec shell for every kind that owns exactly one URL param. */
+/**
+ * Codec shell for every kind that owns exactly one URL param.
+ *
+ * NEVER spread the returned object: `fallback` is a GETTER over a possibly-lazy fallback, and an
+ * object spread evaluates it once and copies the result as a plain value — which froze the number
+ * kind's thunk fallback at store definition for one minor. Anything a kind needs to add goes
+ * through `extra`.
+ */
 function single(
   name: string,
   f: AnyField,
@@ -535,6 +729,8 @@ function single(
     equals?: (a: unknown, b: unknown) => boolean
     /** URL-side decoder when it differs from the storage-side one (multi, legacy layout only). */
     decodeUrl?: (raw: unknown) => unknown
+    /** Number only: the declared bounds and grain, republished onto the handle. */
+    bounds?: FieldCodec['bounds']
   },
 ): FieldCodec {
   const decodeUrl = extra?.decodeUrl ?? decode
@@ -543,7 +739,10 @@ function single(
     lane: f.lane,
     params: [name],
     primary: name,
-    fallback: f.fallback,
+    get fallback() {
+      return resolveFallback(f.fallback)
+    },
+    ...(extra?.bounds !== undefined && { bounds: extra.bounds }),
     decode,
     fromSearch: (search) => decodeUrl(search[name]),
     toSearch: (value) => ({ [name]: value }),
@@ -555,6 +754,17 @@ function single(
 // ── Store core — the half `createSearchStore` and `createLocalStore` share ─────────────────────
 
 type StoreRecord = Record<string, unknown>
+
+/**
+ * A field's write, untyped — the shape both factories build and `handle` hands out. `opts` is the
+ * public `FieldSetOptions`; only the URL lane can act on it.
+ *
+ * @internal — see `FieldCodec`.
+ */
+export type FieldWrite = (next: unknown, opts?: FieldSetOptions) => void
+
+/** One field's `use()`, untyped. @internal — see `FieldCodec`. */
+export type FieldUse = () => readonly [unknown, FieldWrite]
 
 /** One named field plus its codec, in declaration order. @internal — see `FieldCodec`. */
 export type StoreEntry = { readonly name: string; readonly codec: FieldCodec }
@@ -594,19 +804,25 @@ export type StoreCore = {
    * Lives here rather than in either factory because BOTH have such a field: `createLocalStore`'s
    * `persist: false`, and `createSearchStore`'s `{ url: false, persist: false }`.
    */
-  memoryUse(entry: StoreEntry): () => readonly [unknown, (next: unknown) => void]
+  memoryUse(entry: StoreEntry): FieldUse
   /** The memory lane's value for one field, resolved — its fallback while nothing was written. */
   readMemoryValue(entry: StoreEntry): unknown
   /** Subscribes to the whole memory lane. The snapshot is a write counter, so it is always stable. */
   useMemoryVersion(): number
   /** Drops every memory value, so the next read resolves to the fallback. What `useReset` calls. */
   resetMemory(): void
+  /**
+   * Deletes ONE field's key from the localStorage record, so the next read falls through to the
+   * live fallback. Not a hook: `FieldHandle.clear()` runs in an event handler, where the persisted
+   * setter from `usePersistedRecord()` is not in reach — it writes through the same envelope and
+   * wakes the same per-key listeners (`writePersistedValue`).
+   */
+  clearField(name: string): void
+  /** The memory lane's half of the same: drops ONE field's value. */
+  clearMemory(name: string): void
   /** Every stored field, flattened into URL-param shape, `undefined` entries dropped. */
   readStoredFlat(): StoreRecord
-  handle(
-    entry: StoreEntry,
-    use: () => readonly [unknown, (next: unknown) => void],
-  ): FieldHandle<AnyField>
+  handle(entry: StoreEntry, use: FieldUse, clear: () => void): FieldHandle<AnyField>
 }
 
 function isRecord(raw: unknown): raw is StoreRecord {
@@ -650,6 +866,7 @@ function createMemoryLane(): {
   getVersion: () => number
   resolve: (entry: StoreEntry) => unknown
   write: (name: string, value: unknown) => void
+  remove: (name: string) => void
   clear: () => void
 } {
   const values = new Map<string, unknown>()
@@ -677,6 +894,10 @@ function createMemoryLane(): {
     },
     write: (name, value) => {
       values.set(name, value)
+      bump()
+    },
+    remove: (name) => {
+      if (!values.delete(name)) return
       bump()
     },
     clear: () => {
@@ -744,6 +965,14 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
     return entry.codec.optionValues.map((value) => ({ value, label: map?.[value] ?? value }))
   }
 
+  const clearField = (name: string): void => {
+    const record = readRecord()
+    if (!Object.hasOwn(record, name)) return
+    const next = { ...record }
+    delete next[name]
+    writePersistedValue(o.key, version, fromRecord(next))
+  }
+
   const writeField = (
     setRecord: (next: StoreRecord) => void,
     name: string,
@@ -754,29 +983,48 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
     setRecord({ ...readRecord(), [name]: value })
   }
 
-  const handle = (
-    entry: StoreEntry,
-    use: () => readonly [unknown, (next: unknown) => void],
-  ): FieldHandle<AnyField> => {
+  const handle = (entry: StoreEntry, use: FieldUse, clear: () => void): FieldHandle<AnyField> => {
     const { codec } = entry
     const built: Record<string, unknown> = {
       kind: codec.kind,
-      fallback: codec.fallback,
       use,
+      clear,
       isDefault: (v: unknown) => codec.equals(v, codec.fallback),
     }
     if (codec.kind === 'range') {
-      built['toWindow'] = (v: RangeValue<string>) =>
-        v.preset === 'custom' && v.from !== undefined && v.to !== undefined
-          ? { from: v.from, to: v.to }
-          : { window: v.preset }
+      built['toWindow'] = (v: RangeValue<string>) => {
+        if (v.preset === 'custom' && v.from !== undefined && v.to !== undefined) {
+          return { from: v.from, to: v.to }
+        }
+        // `Object.hasOwn`, not a bare lookup: a preset named like an Object.prototype member
+        // (`toString`) would otherwise resolve to that method and be CALLED.
+        const windows = codec.windows
+        if (windows !== undefined && Object.hasOwn(windows, v.preset)) {
+          const resolver = windows[v.preset]
+          if (resolver !== undefined) return resolver(new Date())
+        }
+        return { window: v.preset }
+      }
     }
-    // A GETTER, not a snapshot, and installed with defineProperty rather than declared in the
+    if (codec.kind === 'number') {
+      // Plain properties, not getters: unlike `options` (relabelled by `labels()` after the handles
+      // exist) and `fallback` (possibly a thunk), a field's bounds are fixed at definition.
+      const bounds = codec.bounds
+      built['min'] = bounds?.min
+      built['max'] = bounds?.max
+      built['int'] = bounds?.int ?? false
+    }
+    // GETTERS, not snapshots, and installed with defineProperty rather than declared in the
     // literal: `labels()` runs on the store after the handles exist, and an object spread would
-    // evaluate the getter once at spread time and freeze the unlabelled options.
+    // evaluate the getter once at spread time and freeze the unlabelled options. `fallback` is a
+    // getter for the same class of reason — a lazy fallback is resolved per read, not per handle.
     Object.defineProperty(built, 'options', {
       enumerable: true,
       get: (): readonly FieldOption[] => optionsFor(entry),
+    })
+    Object.defineProperty(built, 'fallback', {
+      enumerable: true,
+      get: (): unknown => codec.fallback,
     })
     return built as unknown as FieldHandle<AnyField>
   }
@@ -802,6 +1050,8 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
     useMemoryVersion: () =>
       useSyncExternalStore(memory.subscribe, memory.getVersion, memory.getVersion),
     resetMemory: () => memory.clear(),
+    clearField,
+    clearMemory: (name) => memory.remove(name),
     setLabels(map) {
       for (const [name, entry] of Object.entries(map)) {
         if (entry !== undefined) labels.set(name, entry)
@@ -848,6 +1098,10 @@ export type LocalStore<S extends Record<string, AnyField>> = {
  * That is the honest home for a value a reader should not be handed back tomorrow (a scratch
  * comparison, a temporary drill-down) without dropping to `useState` and losing the handle.
  *
+ * A fallback may be a THUNK (`field.string({ fallback: () => todayIso() })`) — resolved at read
+ * time, re-resolved while nothing is written, and never persisted on its own. Every lane here
+ * qualifies; `createSearchStore` allows it off the URL lane only, and throws otherwise.
+ *
  * @example
  * const chart = createLocalStore({
  *   key: 'momentum-chart',
@@ -875,8 +1129,12 @@ export function createLocalStore<const S extends Record<string, AnyField>>(o: {
 
   const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
   for (const entry of core.entries) {
-    const use = entry.codec.lane.persist ? persistedUse(entry) : core.memoryUse(entry)
-    field[entry.name as keyof S] = core.handle(entry, use) as unknown as FieldHandle<S[keyof S]>
+    const persisted = entry.codec.lane.persist
+    const use = persisted ? persistedUse(entry) : core.memoryUse(entry)
+    const clear = persisted ? () => core.clearField(entry.name) : () => core.clearMemory(entry.name)
+    field[entry.name as keyof S] = core.handle(entry, use, clear) as unknown as FieldHandle<
+      S[keyof S]
+    >
   }
 
   const store: LocalStore<S> = {
