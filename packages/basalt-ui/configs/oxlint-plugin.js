@@ -1588,6 +1588,65 @@ const SHADOW_ALIASES = {
   JoinedButtons: 'ControlGroup',
 }
 
+/**
+ * The basalt export NAMES a file imports, each mapped to the LOCAL bindings it arrived under —
+ * `StatCard → {StatCard}` for `import { StatCard }`, `StatCard → {BaseStatCard}` for
+ * `import { StatCard as BaseStatCard }`.
+ *
+ * The counterpart of {@link collectBasaltImports}, keyed the other way round: that one collects
+ * LOCAL names (is this `<Section>` basalt's?), this one is keyed by the CANONICAL export (does this
+ * file compose basalt's `StatCard` at all?). An alias is precisely the case that separates them —
+ * a wrapper importing `StatCard as BaseStatCard` composes `StatCard`, and a set of local names
+ * would answer `BaseStatCard`. The local half is carried alongside because an import alone is not
+ * composition: the caller has to check the binding is REFERENCED (see
+ * {@link isValueReferencePosition}).
+ *
+ * TYPE-ONLY specifiers are skipped, declaration-level and per-specifier, exactly as
+ * `agent-no-raw-usechat` skips them: `import type { StatCard }` is erased at compile time, so a fork
+ * copying the original's props through `ComponentProps<typeof StatCard>` composes nothing at all.
+ *
+ * Only the package name and its subpaths; no relative half, because `shadow-basalt-export` already
+ * returns early inside basalt's own source, where a relative import would be the dogfood lane.
+ */
+function collectBasaltImportedNames(node, into) {
+  const source = node.source?.value
+  if (typeof source !== 'string' || !BASALT_IMPORT_SOURCE.test(source)) return
+  if (node.importKind === 'type') return
+  for (const spec of node.specifiers ?? []) {
+    if (spec.importKind === 'type') continue
+    const imported = spec.imported?.name ?? spec.imported?.value
+    const local = spec.local?.name
+    if (typeof imported !== 'string' || typeof local !== 'string') continue
+    const locals = into.get(imported)
+    if (locals === undefined) into.set(imported, new Set([local]))
+    else locals.add(local)
+  }
+}
+
+/** The positions an `Identifier`/`JSXIdentifier` occupies WITHOUT referencing a value. */
+const NON_VALUE_IDENTIFIER_PARENTS = new Set([
+  // The binding's own declaration, not a use of it.
+  'ImportSpecifier',
+  'ImportDefaultSpecifier',
+  'ImportNamespaceSpecifier',
+  // A JSX attribute's NAME (`value={…}`), not its value.
+  'JSXAttribute',
+])
+
+/**
+ * Does this identifier REFERENCE a value, rather than declare or type-position it?
+ *
+ * The type half matters as much as the import half: `typeof StatCard` parses as a `TSTypeQuery`
+ * around a plain `Identifier`, so a value import used only in a type is indistinguishable from a
+ * rendered one without this test — and that shape (a fork copying the original's props) is the
+ * whole reason the composition check exists.
+ */
+function isValueReferencePosition(node) {
+  const parentType = node.parent?.type
+  if (typeof parentType !== 'string') return false
+  return !parentType.startsWith('TS') && !NON_VALUE_IDENTIFIER_PARENTS.has(parentType)
+}
+
 function shadowAliasMessage(name, canonical) {
   return (
     `Local component '${name}' is a renamed '${canonical}' — basalt ships that composite, and a ` +
@@ -1636,30 +1695,86 @@ const shadowBasaltExport = {
     // obsidian's React-free `obsidian-vault-core` took the report and had to waive it.
     if (filename.length === 0 || !isBasaltScopedFile(filename)) return {}
 
-    const report = (node, name) => {
+    // Candidates are BUFFERED and judged at `Program:exit`, the same shape the chart and control
+    // rules use: the alias exemption below needs the file's whole import list AND every reference in
+    // the file, and a declaration hoisted above its imports would otherwise be judged against an
+    // empty one.
+    /** Canonical basalt export → the local bindings it was imported under (value imports only). */
+    const basaltImportedNames = new Map()
+    /** Every local name the file REFERENCES as a value — the composition half of the exemption. */
+    const referencedLocals = new Set()
+    const candidates = []
+
+    /** Does the file compose basalt's `canonical` — imported as a value AND referenced? */
+    const composes = (canonical) => {
+      const locals = basaltImportedNames.get(canonical)
+      if (locals === undefined) return false
+      for (const local of locals) {
+        if (referencedLocals.has(local)) return true
+      }
+      return false
+    }
+
+    const noteReference = (node) => {
+      if (typeof node.name !== 'string' || !isValueReferencePosition(node)) return
+      referencedLocals.add(node.name)
+    }
+
+    const note = (node, name) => {
       if (typeof name !== 'string') return
       const alias = Object.hasOwn(SHADOW_ALIASES, name) ? SHADOW_ALIASES[name] : undefined
       if (!BASALT_EXPORTS.has(name) && alias === undefined) return
-      if (hasThemeAllow(context, node, 'shadow-basalt-export')) return
-      const message =
-        alias === undefined ? shadowBasaltExportMessage(name) : shadowAliasMessage(name, alias)
-      context.report({ node, message })
+      candidates.push({ node, name, alias })
     }
 
     return {
+      ImportDeclaration(node) {
+        collectBasaltImportedNames(node, basaltImportedNames)
+      },
+      // Both halves are needed and neither subsumes the other: a JSX tag is a `JSXIdentifier`
+      // (`<Base/>`), while every other use of the same binding is an `Identifier`
+      // (`component={Base}`, `createElement(Base)`, `memo(Base)`).
+      Identifier(node) {
+        noteReference(node)
+      },
+      JSXIdentifier(node) {
+        noteReference(node)
+      },
       FunctionDeclaration(node) {
-        report(node, node.id?.name)
+        note(node, node.id?.name)
       },
       VariableDeclarator(node) {
         if (!isComponentInit(node.init)) return
-        report(node, node.id?.name)
+        note(node, node.id?.name)
       },
       // A class only counts when it EXTENDS something — a legacy class component. basalt ships no
       // class components, so a standalone `class X {}` sharing a name with one of its exports is a
       // collision between two unrelated things, not a fork.
       ClassDeclaration(node) {
         if (node.superClass === null || node.superClass === undefined) return
-        report(node, node.id?.name)
+        note(node, node.id?.name)
+      },
+      'Program:exit'() {
+        for (const { node, name, alias } of candidates) {
+          // A file that COMPOSES the export it renames is a wrapper, not a fork, and the advice
+          // ("import StatCard instead of re-rolling it") is already followed — argo's three hero
+          // cards each imported `StatCard` and wrapped it, and each took a warn for it.
+          //
+          // COMPOSES, not "imports": an import the file never references is not composition, and the
+          // two shapes that reach here silently are the ones a fork actually writes — a type-only
+          // `import type { StatCard }` feeding `ComponentProps<typeof StatCard>` (props copied,
+          // nothing rendered) and a dead import left behind after the body was re-rolled. Both used
+          // to exempt the whole file.
+          //
+          // The collision half is deliberately NOT exempted either way: a local `StatCard` beside an
+          // `import { StatCard as Base }` is a fork that kept the name AND kept a piece of the
+          // original, which is the shape this rule most wants to see.
+          if (alias !== undefined && composes(alias)) continue
+          if (hasThemeAllow(context, node, 'shadow-basalt-export')) continue
+          const message =
+            alias === undefined ? shadowBasaltExportMessage(name) : shadowAliasMessage(name, alias)
+          context.report({ node, message })
+        }
       },
     }
   },
@@ -1803,6 +1918,7 @@ const BOUND_TAGS = new Set([
   'CompareFilter',
   'SelectFilter',
   'MultiSelectFilter',
+  'NumberFilter',
   'SearchFilter',
   'ToggleFilter',
   'ViewTabs',
@@ -1843,6 +1959,29 @@ const CONTROL_HOST_TAGS = new Set([
   'Menu.Dropdown',
   'Composer',
 ])
+
+/**
+ * A file whose NAME declares it is an overlay's or a form's own body — the cross-file half of
+ * {@link CONTROL_HOST_TAGS}, and the one exemption here that is a CONVENTION rather than a fact
+ * about the AST.
+ *
+ * It exists because law C1's cross-file case is explicitly advisory (`docs/CONTROLS-SPEC.md` §6,
+ * "Honest coverage") and `control-outside-home` was paying for it in false positives: argo's
+ * wave-7 run left 9 warns, all of them a `Select`/`SegmentedControl` inside a `*-modal.tsx` or
+ * `*-form.tsx` whose `<Modal>` is rendered by the PARENT route. Nothing in the flagged file can see
+ * the overlay, so no ancestry walk — however deep — will ever reach it, and the alternative is 9
+ * `theme-allow-file` comments that say what the filename already says.
+ *
+ * The trade is stated plainly: this exempts a whole file on a naming convention, so a `Select` that
+ * genuinely belongs in a page bar goes unreported if it is written in `filters-panel.tsx`. That is
+ * the same bargain `@mantine/form` already buys and a strictly smaller one than promoting the rule
+ * with 9 known false positives. `-panel.tsx` is the loosest member and the one to reconsider first
+ * if the set ever needs narrowing.
+ *
+ * Basename only — a `modal/` DIRECTORY is not the convention, because a directory of modals holds
+ * the page pieces around them too.
+ */
+const OVERLAY_CONVENTION_FILE = /(?:^|\/)[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
 
 /** How far an ancestry walk climbs before giving up — a JSX tree this deep is not a slot value. */
 const ANCESTRY_MAX_DEPTH = 60
@@ -1942,6 +2081,27 @@ function collectBasaltImports(node, into, ownTree) {
   }
   for (const spec of node.specifiers ?? []) {
     if (spec.local?.name !== undefined) into.add(spec.local.name)
+  }
+}
+
+/**
+ * {@link collectBasaltImports} as a local→EXPORTED map — the same provenance test, keyed so a caller
+ * can ask WHICH home it found rather than only whether it found one.
+ *
+ * `control-size-literal` needs the distinction: `ChartCard` is the one slot owner whose slot cannot
+ * mount the tier theme, and `import { ChartCard as Card }` is a normal thing to write, so a
+ * membership Set (which answers `Card`) could not express the exemption at all.
+ */
+function collectBasaltImportMap(node, into, ownTree) {
+  const source = node.source?.value
+  if (typeof source !== 'string') return
+  if (!BASALT_IMPORT_SOURCE.test(source) && !(ownTree && RELATIVE_IMPORT_SOURCE.test(source))) {
+    return
+  }
+  for (const spec of node.specifiers ?? []) {
+    const local = spec.local?.name
+    if (typeof local !== 'string') continue
+    into.set(local, spec.imported?.name ?? spec.imported?.value ?? local)
   }
 }
 
@@ -2067,14 +2227,22 @@ function collectSlotValueIdentifiers(node, into, depth = 0) {
  * complete at exit.
  */
 function createSlotContext(context) {
-  const homes = new Set()
+  /** Local binding → the basalt export it was imported under. Membership IS the home test. */
+  const homes = new Map()
   const ownTree = isBasaltOwnSource(getFilename(context))
-  /** Hoisted identifier → the owner BINDING of the slot it was handed to. */
+  /**
+   * Hoisted identifier → EVERY owner BINDING whose slot it was handed to.
+   *
+   * A Set, not one binding: `const acts = <Button size="xs"/>` handed to both `<Section actions>` and
+   * `<ChartCard actions>` is inside two slots at once, and a last-writer-wins map made the verdict
+   * depend on which attribute came later in the file — the same code went silent or reported
+   * depending on JSX order.
+   */
   const slotBoundIdentifiers = new Map()
   return {
     /** Feed every ImportDeclaration here — this is where the owner provenance comes from. */
     noteImport(node) {
-      collectBasaltImports(node, homes, ownTree)
+      collectBasaltImportMap(node, homes, ownTree)
     },
     /** Feed every JSXAttribute here — a slot attribute contributes its value's identifiers. */
     note(attr) {
@@ -2082,7 +2250,11 @@ function createSlotContext(context) {
       if (owner === undefined) return
       const identifiers = new Set()
       collectSlotValueIdentifiers(unwrapExpressionContainer(attr.value), identifiers)
-      for (const id of identifiers) slotBoundIdentifiers.set(id, owner)
+      for (const id of identifiers) {
+        const owners = slotBoundIdentifiers.get(id)
+        if (owners === undefined) slotBoundIdentifiers.set(id, new Set([owner]))
+        else owners.add(owner)
+      }
     },
     /** Snapshot `node`'s ancestry while it is walkable — the owner NAME, resolved later. */
     capture(node) {
@@ -2096,12 +2268,37 @@ function createSlotContext(context) {
     resolve(captured) {
       if (captured.directOwner !== undefined) return homes.has(captured.directOwner)
       if (captured.declaratorName === undefined) return false
-      const hoistedOwner = slotBoundIdentifiers.get(captured.declaratorName)
-      return hoistedOwner !== undefined && homes.has(hoistedOwner)
+      const hoistedOwners = slotBoundIdentifiers.get(captured.declaratorName)
+      if (hoistedOwners === undefined) return false
+      // ANY basalt owner puts the binding in a home: a node handed to one basalt slot and one
+      // consumer component still renders inside the basalt slot.
+      for (const owner of hoistedOwners) {
+        if (homes.has(owner)) return true
+      }
+      return false
     },
     /** Does `name` resolve to a basalt home component in this file? */
     isHome(name) {
       return name !== undefined && homes.has(name)
+    },
+    /**
+     * EVERY basalt EXPORT whose slot a captured node sits in — `['ChartCard']` for
+     * `<ChartCard actions={…}>` and for `<Card actions={…}>` under an alias, `[]` when the node is in
+     * no basalt slot. Resolves through the same hoisted-binding hop `resolve` does.
+     *
+     * A LIST, because one hoisted binding can be handed to several slots, and an exemption keyed on
+     * the owner is only sound when it holds for all of them — a `size="xs"` shared between
+     * `<ChartCard actions>` and `<Section actions>` really does render inside the Section's tiered
+     * slot. Non-basalt owners are dropped: they are not homes, so they carry no tier either way.
+     */
+    ownerExports(captured) {
+      const bindings =
+        captured.directOwner !== undefined
+          ? [captured.directOwner]
+          : captured.declaratorName === undefined
+            ? []
+            : [...(slotBoundIdentifiers.get(captured.declaratorName) ?? [])]
+      return bindings.filter((binding) => homes.has(binding)).map((binding) => homes.get(binding))
     },
   }
 }
@@ -2205,9 +2402,10 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * and stays warn until the playground and the five consumer repos run it with ≤3 waivers
  * (docs/CONTROLS-SPEC.md §9 wave 7).
  *
- * Three exemptions carry the false-positive load: an overlay/settings-row ancestor, a file that
- * imports `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
- * exemption — a file DEFINING a basalt control cannot be told to use one.
+ * Four exemptions carry the false-positive load: an overlay/settings-row ancestor, an
+ * {@link OVERLAY_CONVENTION_FILE} basename (the CROSS-FILE case — the `<Modal>` lives in the
+ * parent), a file that imports `@mantine/form` (a form is the third home and its inputs are not
+ * filters), and the owner exemption — a file DEFINING a basalt control cannot be told to use one.
  */
 const controlOutsideHome = {
   meta: {
@@ -2217,6 +2415,7 @@ const controlOutsideHome = {
   },
   create(context) {
     if (isTestFile(context)) return {}
+    if (OVERLAY_CONVENTION_FILE.test(getFilename(context))) return {}
     const slots = createSlotContext(context)
     const owner = createControlOwnerProbe()
     const mantineImports = new Map()
@@ -2319,6 +2518,24 @@ export const CTL_THEME_TAGS = new Set([
  * {@link CTL_THEME_TAGS} member, and skipped under an overlay ({@link hostedInsideSlot}) — see
  * `CTL_THEME_TAGS` for what firing on everything in the slot cost.
  */
+/**
+ * The home whose slot cannot mount the tier theme, so the CONTROL there has to state its own size.
+ *
+ * `ChartCard` lives inside the Mantine-free chart layer (`src/charts/primitives/`), which means it
+ * cannot render a `MantineThemeProvider` at all — it writes `data-basalt-tier="widget"` by hand and
+ * nothing else (`../CLAUDE.md`, "A home sizes its own SLOT"; `docs/CONTROLS-SPEC.md` §5). So this
+ * rule's whole message — "the HOME sets the tier, drop the prop" — is FALSE in exactly one slot: a
+ * `Switch` in `ChartCard.actions` with no `size` renders at Mantine's default, not at `ctl`.
+ *
+ * It has to be an exemption rather than a waiver because the rule fires on the `size` ATTRIBUTE and
+ * cannot tell a correct `size="ctl"` from the `size="xs"` it exists to catch. The playground carried
+ * exactly one waiver for this and it was the honest kind — the rule was wrong, not the code.
+ *
+ * `hand-rolled-filter` is deliberately NOT exempted here: a raw `Select` in `ChartCard.actions` is
+ * still a filter that should take a `field`, and the tier is not what makes that true.
+ */
+const TIERLESS_SLOT_OWNERS = new Set(['ChartCard'])
+
 const controlSizeLiteral = {
   meta: {
     type: 'suggestion',
@@ -2358,6 +2575,12 @@ const controlSizeLiteral = {
             CTL_THEME_TAGS.has(resolveMantineTag(name, mantineImports) ?? '')
           if (!tiered || hosted) continue
           if (!slots.resolve(captured)) continue
+          // EVERY home the node was handed to has to be tierless. One hoisted `const acts =
+          // <Button size="xs"/>` given to both `<ChartCard actions>` and `<Section actions>` renders
+          // in a tiered slot too, and the prop is redundant there — so the exemption does not apply.
+          const owners = slots.ownerExports(captured)
+          if (owners.length > 0 && owners.every((owner) => TIERLESS_SLOT_OWNERS.has(owner)))
+            continue
           if (hasThemeAllow(context, node, 'control-size-literal')) continue
           context.report({ node, message: CONTROL_SIZE_LITERAL_MESSAGE })
         }
@@ -2789,58 +3012,20 @@ const useSearchFromLiteral = {
 export const PLUGIN_RULE_GRACE = {
   'control-outside-home': {
     since: '1.26.0',
-    promote: '1.27.0',
+    promote: '1.28.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
       'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
-      'is carried by three exemptions (overlay/settings-row ancestor, @mantine/form, owner ' +
-      'definition) rather than by certainty. Promotion is additionally gated on running the ' +
-      'shipped preset over argo, linewatch, image-share, rb, image-gen and the playground with ≤3 ' +
-      'total waivers (§9 wave 7).',
-  },
-  'control-size-literal': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). Rejects a prop that was correct one ' +
-      'minor ago — every `size="xs"` written into a bar before the tier existed — so it takes the ' +
-      'grace minor the doctrine exists for. Every wave ships in ONE minor (1.26.0), so the whole ' +
-      'set promotes together in 1.27.0 — one runway, not one per wave.',
-  },
-  'in-body-page-title': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its text-level twin is the ' +
-      'guard kind of the SAME id, which carries the same dates in GRACE_PERIOD_KINDS — one law, ' +
-      'two lanes, one promotion. Warn because an in-body h1/h2 is a judgement about which name ' +
-      'the page already has, and the fix is a route/breadcrumb change rather than a prop edit.',
-  },
-  'responsive-twin': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C9 — linewatch shipped three ' +
-      'doubled controls). Warn for one minor because the fix is a real edit (delete one mount, ' +
-      'move the swap into the control), not a prop removal, and the pair test is a heuristic over ' +
-      'sibling structure.',
-  },
-  'search-literal-link': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10 — argo nav.tsx:132 pinned the ' +
-      'fallback on every click, which is why its reader had zero call sites). Warn for one minor ' +
-      'because the fix needs a store to exist at the call site, which is a wave-2 dependency for ' +
-      'consumers still on the old enum-only pair.',
-  },
-  'use-search-from-literal': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10). Same runway as ' +
-      'search-literal-link and for the same reason: the remedy is `createSearchStore` + a prop, ' +
-      'so a consumer needs the wave-2 store before the finding is actionable.',
+      'is carried by four exemptions (overlay/settings-row ancestor, the overlay FILENAME ' +
+      'convention below, @mantine/form, owner definition) rather than by certainty. The other five ' +
+      'wave-6 rules promoted at 1.27.0; this one did not, and the reason is measured rather than ' +
+      'cautious: the wave-7 run found 9 remaining warns in argo, every one of them a control in a ' +
+      'modal/form module whose `<Modal>` is rendered by the PARENT — the cross-file case law C1 is ' +
+      'explicitly advisory about, which no ancestry walk inside one file can ever see. ' +
+      '{@link OVERLAY_CONVENTION_FILE} now exempts the declared naming convention for exactly ' +
+      'that shape; 1.28.0 is when the remainder is re-measured. A file outside the convention ' +
+      "that is still an overlay's own body declares it with " +
+      '`theme-allow-file control-outside-home — overlay`.',
   },
 }
 

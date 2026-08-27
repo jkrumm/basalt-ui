@@ -22,7 +22,9 @@ import {
 import { field } from '../router-tanstack/field'
 import { createSearchStore } from '../router-tanstack/search-store'
 import { COMPARE_LABELS, COMPARE_VALUES, CompareFilter } from './compare-filter'
+import { FilterSet } from './filter-set'
 import { MultiSelectFilter } from './multi-select-filter'
+import { NumberFilter } from './number-filter'
 import { RangeFilter } from './range-filter'
 import type { RangeCustomPickerProps } from './range-filter'
 import { SearchFilter } from './search-filter'
@@ -149,6 +151,97 @@ describe('SelectFilter', () => {
       Page: () => <SelectFilter field={store.field.currency} label="Currency" />,
     })
     expect(screen.getByRole('button', { name: 'EUR' })).toBeDefined()
+  })
+})
+
+/**
+ * Every reset a control owns — the `FilterSet` registration and the popover's own `Clear` — calls
+ * `field.clear()`, never `setValue(field.fallback)`.
+ *
+ * On the URL lane the two look identical (`clear()` navigates back to the fallback params, so the
+ * search object reads the same either way) and they differ in the MIRROR: writing the fallback
+ * PERSISTS it, as if the user had chosen the default, which then outranks a later change to the
+ * field's own default and pins a thunk fallback outright. Clearing removes the key.
+ */
+describe('a control resets by CLEARING its field, never by writing the fallback back', () => {
+  const store = createSearchStore({
+    key: 'c-reset-clear',
+    fields: {
+      currency: field.enum(['USD', 'EUR'], 'USD'),
+      // A SECOND child, so one folds on mobile and `FilterSet` renders the sheet that owns
+      // `Reset all` at all — with a single child there is nothing to fold and no sheet.
+      region: field.enum(['all', 'eu'], 'all'),
+    },
+  })
+
+  /** Did the mirror keep a value for `currency`? */
+  function mirrored(): boolean {
+    return Object.hasOwn(store.readStored(), 'currency')
+  }
+
+  test("Reset all drops the mirror key and leaves the URL on the field's fallback", async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => (
+        <FilterSet>
+          <SelectFilter field={store.field.currency} label="Currency" />
+          <SelectFilter field={store.field.region} label="Region" />
+        </FilterSet>
+      ),
+    })
+
+    await openPill('USD')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('radio', { name: 'EUR', hidden: true }))
+    })
+    await waitFor(() => {
+      expect(search(router)['currency']).toBe('EUR')
+    })
+    // The write persisted it — which is what makes the reset's effect on the mirror observable.
+    expect(mirrored()).toBe(true)
+
+    // `hidden: true` — the currency popover is still open, and its portal leaves the rest of the
+    // document out of the accessibility tree (the same harness fact every in-dropdown query here
+    // carries). The count is registry state, so it lands a flush after the write.
+    const sheetPill = await waitFor(() =>
+      screen.getByRole('button', { name: 'Filters (1)', hidden: true }),
+    )
+    await act(async () => {
+      fireEvent.click(sheetPill)
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Reset all', hidden: true }))
+    })
+
+    await waitFor(() => {
+      expect(search(router)['currency']).toBe('USD')
+    })
+    expect(mirrored()).toBe(false)
+  })
+
+  test("the popover's own Clear action clears too", async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <SelectFilter field={store.field.currency} label="Currency" clearable />,
+    })
+
+    await openPill('USD')
+    fireEvent.click(screen.getByRole('radio', { name: 'EUR', hidden: true }))
+    await waitFor(() => {
+      expect(mirrored()).toBe(true)
+    })
+
+    await openPill('EUR')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clear', hidden: true }))
+    })
+
+    await waitFor(() => {
+      expect(search(router)['currency']).toBe('USD')
+    })
+    expect(mirrored()).toBe(false)
   })
 })
 
@@ -633,5 +726,328 @@ describe('ViewTabs', () => {
     expect(screen.getAllByRole('radio', { name: 'Train', hidden: true })).toHaveLength(1)
     // And the one that exists is the PHONE one — unreachable on this viewport.
     expect(screen.queryAllByRole('radio', { name: 'Train' })).toHaveLength(0)
+  })
+})
+
+/**
+ * `NumberFilter` — the numeric lane, and the one control whose two forms are genuinely different
+ * components. `options` renders the same radio body every enum filter renders (through
+ * `EnumFilter`'s `ChoiceHandle`), so what needs asserting there is that the URL still holds a
+ * NUMBER; without `options` it is a stepper, and what needs asserting is WHEN a keystroke becomes a
+ * navigation.
+ */
+describe('NumberFilter — the options form', () => {
+  const store = createSearchStore({
+    key: 'c-number-options',
+    fields: { nights: field.number({ fallback: 2, min: 1, max: 14, int: true }) },
+  })
+
+  const NIGHTS = [
+    { value: 1, label: '1 night' },
+    { value: 2, label: '2 nights' },
+    { value: 7, label: 'A week' },
+  ]
+
+  test('the pill reads the selected label and the URL keeps a NUMBER, not a numeral string', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.nights} label="Nights" options={NIGHTS} />,
+    })
+
+    const pill = screen.getByRole('button', { name: '2 nights' })
+    expect(pill.hasAttribute('data-active')).toBe(false)
+    // Mono, because the values ARE numbers — the same law a numeric SegmentedControl label follows.
+    expect(pill.hasAttribute('data-numeric')).toBe(true)
+
+    await openPill('2 nights')
+    fireEvent.click(screen.getByRole('radio', { name: 'A week', hidden: true }))
+
+    await waitFor(() => {
+      // The whole reason this control exists: argo widened `nights` into a string enum and got
+      // `'7'` in the URL, which makes every downstream comparison a parse.
+      expect(search(router)['nights']).toBe(7)
+    })
+    expect(typeof search(router)['nights']).toBe('number')
+    expect(screen.getByRole('button', { name: 'A week' }).hasAttribute('data-active')).toBe(true)
+  })
+
+  test('the popover names the FILTER — the pill text is the value', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?nights=7',
+      Page: () => <NumberFilter field={store.field.nights} label="Nights" options={NIGHTS} />,
+    })
+    await openPill('A week')
+    expect(screen.getByRole('radiogroup', { name: 'Nights', hidden: true })).toBeDefined()
+  })
+
+  test('a deep link is what the pill reads, with no interaction', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?nights=1',
+      Page: () => <NumberFilter field={store.field.nights} label="Nights" options={NIGHTS} />,
+    })
+    expect(screen.getByRole('button', { name: '1 night' })).toBeDefined()
+  })
+})
+
+describe('NumberFilter — the stepper form', () => {
+  const store = createSearchStore({
+    key: 'c-number-stepper',
+    fields: { minDuration: field.number({ fallback: 0, min: 0, max: 600 }) },
+  })
+
+  function box(): HTMLInputElement {
+    return screen.getByRole('textbox', { name: 'Min duration', hidden: true }) as HTMLInputElement
+  }
+
+  test('typing does not navigate; blur is what commits', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" step={30} />,
+    })
+
+    await openPill('0')
+    fireEvent.change(box(), { target: { value: '120' } })
+    // Same tick: the box shows it, the URL does not. An un-gated write would have navigated on
+    // `1`, `12` and `120` — three loader runs for one intended threshold, two of them values the
+    // user never meant.
+    expect(box().value).toBe('120')
+    expect(search(router)['minDuration']).toBe(0)
+
+    fireEvent.blur(box())
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(120)
+    })
+  })
+
+  test('Enter commits without leaving the field', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+
+    await openPill('0')
+    fireEvent.change(box(), { target: { value: '45' } })
+    fireEvent.keyDown(box(), { key: 'Enter' })
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(45)
+    })
+  })
+
+  test('the field CLAMPS and the box follows it down — never a readout over a different URL', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+
+    await openPill('0')
+    fireEvent.change(box(), { target: { value: '9999' } })
+    fireEvent.blur(box())
+
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(600)
+    })
+    // The bound is the FIELD's, applied on write — so the input has to accept the correction rather
+    // than keep displaying a value the app is not filtering by.
+    await waitFor(() => {
+      expect(box().value).toBe('600')
+    })
+  })
+
+  /**
+   * The SECOND out-of-range commit is the one that used to desync, and it desynced because nothing
+   * moved: the store already held `600`, so the write clamped to the value it was already at, the
+   * `[value]` effect never fired, and the box went on reading `8888` over a URL filtering at 600 —
+   * the exact readout `useCommittedNumber` exists to prevent. `commit` now clamps locally first, so
+   * the draft follows the bound whether or not the store value changes.
+   */
+  test('a REPEATED out-of-range Enter still leaves the box on the clamped value', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+
+    await openPill('0')
+    fireEvent.change(box(), { target: { value: '9999' } })
+    fireEvent.keyDown(box(), { key: 'Enter' })
+    await waitFor(() => {
+      expect(search(router)['minDuration']).toBe(600)
+    })
+    await waitFor(() => {
+      expect(box().value).toBe('600')
+    })
+
+    // An intermediate in-range keystroke, then a second out-of-range one: react-number-format dedups
+    // an identical string, so re-firing `9999` in happy-dom would not register as a change at all.
+    // A real browser needs no such help — the digits arrive one keystroke at a time.
+    fireEvent.change(box(), { target: { value: '500' } })
+    fireEvent.change(box(), { target: { value: '8888' } })
+    fireEvent.keyDown(box(), { key: 'Enter' })
+
+    expect(box().value).toBe('600')
+    expect(search(router)['minDuration']).toBe(600)
+  })
+
+  test('an unparseable draft restores the field rather than committing NaN', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=90',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+
+    await openPill('90')
+    fireEvent.change(box(), { target: { value: '' } })
+    fireEvent.blur(box())
+    expect(box().value).toBe('90')
+    expect(search(router)['minDuration']).toBe(90)
+  })
+
+  /**
+   * The bounds now come off the HANDLE (`NumberHandleExtras`), so the STEPPER stops at the field's
+   * limit instead of letting the codec correct the value one commit later. Asserted through the
+   * arrow keys rather than a `min`/`max` DOM attribute: Mantine's `NumberInput` is a text input
+   * (`inputmode=decimal`) and clamps in JS, so the attributes do not exist to read — the observable
+   * is that stepping cannot leave the range.
+   *
+   * The clamp test above still stands. It is the backstop for a value that never came through this
+   * box at all (a hand-typed URL, a stale deep link).
+   */
+  test('the field s min stops the stepper — no `min` prop reached the input before this', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" step={30} />,
+    })
+    await openPill('0')
+    // At the fallback 0 against `min: 0`. Without the handle's bound this would read `-30`, and a
+    // negative threshold is a value the codec would then clamp back — visibly, after the fact.
+    fireEvent.keyDown(box(), { key: 'ArrowDown' })
+    expect(box().value).toBe(String(store.field.minDuration.min))
+  })
+
+  test('the field s max stops it at the other end', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=590',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" step={30} />,
+    })
+    await openPill('590')
+    // 590 + 30 would be 620; the field declares `max: 600`.
+    fireEvent.keyDown(box(), { key: 'ArrowUp' })
+    expect(box().value).toBe(String(store.field.minDuration.max))
+  })
+
+  test('the explicit step is the one the stepper uses', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" step={30} />,
+    })
+    await openPill('0')
+    fireEvent.keyDown(box(), { key: 'ArrowUp' })
+    expect(box().value).toBe('30')
+  })
+
+  test('an int field refuses a decimal and steps by 1 with no step prop at all', async () => {
+    const ints = createSearchStore({
+      key: 'c-number-int',
+      fields: { nights: field.number({ fallback: 2, min: 1, max: 14, int: true }) },
+    })
+    const router = await mountPage({
+      validateSearch: ints.validateSearch,
+      entry: '/dashboard',
+      Page: () => <NumberFilter field={ints.field.nights} label="Nights" />,
+    })
+
+    const input = () =>
+      screen.getByRole('textbox', { name: 'Nights', hidden: true }) as HTMLInputElement
+    await openPill('2')
+
+    // `int` also picks the GRAIN: no `step` prop, and the field's own declaration produces 1.
+    fireEvent.keyDown(input(), { key: 'ArrowUp' })
+    expect(input().value).toBe('3')
+
+    // `allowDecimal={false}` — Mantine drops the separator rather than accepting a value the codec
+    // would decode to `null`, which would silently resurrect the fallback.
+    fireEvent.change(input(), { target: { value: '3.5' } })
+    expect(input().value).not.toContain('.')
+    fireEvent.blur(input())
+    await waitFor(() => {
+      expect(Number.isInteger(search(router)['nights'])).toBe(true)
+    })
+  })
+
+  test('the pill reads the value and marks itself active off the fallback', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?minDuration=90',
+      Page: () => <NumberFilter field={store.field.minDuration} label="Min duration" />,
+    })
+    const pill = screen.getByRole('button', { name: '90' })
+    expect(pill.hasAttribute('data-active')).toBe(true)
+    expect(pill.hasAttribute('data-numeric')).toBe(true)
+  })
+})
+
+/**
+ * The SHEET form of both branches, through a real `FilterSet` — the surface is chosen by context,
+ * never by a media query (C9), so this is the only way to reach it.
+ */
+describe('NumberFilter — the sheet form', () => {
+  const store = createSearchStore({
+    key: 'c-number-sheet',
+    fields: {
+      nights: field.number({ fallback: 2, min: 1, max: 14, int: true }),
+      minDuration: field.number({ fallback: 0, min: 0, max: 600 }),
+    },
+  })
+
+  async function openSheet(): Promise<void> {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => (
+        <FilterSet>
+          <NumberFilter
+            field={store.field.nights}
+            label="Nights"
+            options={[
+              { value: 1, label: '1 night' },
+              { value: 2, label: '2 nights' },
+            ]}
+          />
+          <NumberFilter field={store.field.minDuration} label="Min duration" />
+        </FilterSet>
+      ),
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Filters' }))
+    })
+  }
+
+  test('the options form is a named option list, the stepper form a named input row', async () => {
+    await openSheet()
+    // `group`, not `radiogroup`: the sheet form is a `<fieldset>` of native radios
+    // (`SheetOptionList`), pointed at its own visible `SheetField` heading.
+    expect(screen.getByRole('group', { name: 'Nights', hidden: true })).toBeDefined()
+    // The stepper is the input itself in a `SheetField` — no pill, no popover, one full-width row.
+    // Exactly ONE input in the document: `FilterSet` keeps the bar-row copy of every child mounted
+    // (hidden slots are `display: none`, never unmounted), but the bar copy is a PILL whose popover
+    // is closed, so the only rendered box is the sheet's.
+    expect(screen.getAllByRole('textbox', { name: 'Min duration', hidden: true })).toHaveLength(1)
+  })
+
+  test('a sheet edit writes the field immediately — there is no Apply', async () => {
+    await openSheet()
+    fireEvent.click(screen.getByRole('radio', { name: '1 night', hidden: true }))
+    await waitFor(() => {
+      expect(store.field.nights.isDefault(1)).toBe(false)
+    })
   })
 })

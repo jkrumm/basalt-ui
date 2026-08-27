@@ -367,6 +367,7 @@
     "FilterSet",
     "MOBILE_GLOBAL_BAR_MAX",
     "MultiSelectFilter",
+    "NumberFilter",
     "OverflowMenu",
     "RangeFilter",
     "SearchFilter",

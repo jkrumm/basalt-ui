@@ -38,7 +38,7 @@ export function SearchFilter({
   const surface = useFilterSurface()
   const draft = useDebouncedField(value, setValue)
   useFilterRegistration(!field.isDefault(value), () => {
-    setValue(field.fallback)
+    field.clear()
   })
 
   // `placeholder` is optional and, even when set, stops being the name the moment the user types —

@@ -396,6 +396,78 @@ describe('the handle, outside React', () => {
     expect(store.field.range.toWindow({ preset: 'custom' })).toEqual({ window: 'custom' })
   })
 
+  test('a preset declared with a `window` resolver projects to `{ from, to }`', () => {
+    // The derived presets three consumers hand-rolled beside the store (`3m`, `ytd`): one preset in
+    // the URL, two dates at the API boundary, no `presetToParams` in the page.
+    const seen: Date[] = []
+    const store = createSearchStore({
+      key: 'k-window-resolver',
+      fields: {
+        range: field.range({
+          presets: ['7d', '3m', 'ytd'],
+          fallback: '7d',
+          custom: true,
+          window: {
+            '3m': (now) => {
+              seen.push(now)
+              return { from: iso(addMonths(now, -3)), to: iso(now) }
+            },
+            ytd: (now) => ({ from: `${now.getUTCFullYear()}-01-01`, to: iso(now) }),
+          },
+        }),
+      },
+    })
+
+    const now = new Date()
+    expect(store.field.range.toWindow({ preset: '3m' })).toEqual({
+      from: iso(addMonths(now, -3)),
+      to: iso(now),
+    })
+    expect(store.field.range.toWindow({ preset: 'ytd' })).toEqual({
+      from: `${now.getUTCFullYear()}-01-01`,
+      to: iso(now),
+    })
+    // Resolved at CALL time, with the current date — never captured at definition.
+    expect(seen[0] instanceof Date).toBe(true)
+
+    // A preset WITHOUT a resolver is untouched, in the same field.
+    expect(store.field.range.toWindow({ preset: '7d' })).toEqual({ window: '7d' })
+    // And a custom window still wins over any resolver.
+    expect(
+      store.field.range.toWindow({ preset: 'custom', from: '2026-03-01', to: '2026-03-14' }),
+    ).toEqual({ from: '2026-03-01', to: '2026-03-14' })
+  })
+
+  test('a resolver changes nothing about the URL — the preset is still what is stored', () => {
+    const store = createSearchStore({
+      key: 'k-window-url',
+      fields: {
+        range: field.range({
+          presets: ['7d', '3m'],
+          fallback: '7d',
+          window: { '3m': () => ({ from: '2026-01-01', to: '2026-04-01' }) },
+        }),
+      },
+    })
+    expect(store.validateSearch({ range: '3m' })).toEqual({
+      range: '3m',
+      from: undefined,
+      to: undefined,
+    })
+    expect(store.field.range.toWindow({ preset: '3m' })).toEqual({
+      from: '2026-01-01',
+      to: '2026-04-01',
+    })
+  })
+
+  test('a preset named like an Object.prototype member is not a resolver', () => {
+    const store = createSearchStore({
+      key: 'k-window-proto',
+      fields: { range: field.range({ presets: ['toString', '7d'], fallback: '7d' }) },
+    })
+    expect(store.field.range.toWindow({ preset: 'toString' })).toEqual({ window: 'toString' })
+  })
+
   test('toWindow exists on a range handle and on no other kind', () => {
     const store = createSearchStore({
       key: 'k-towindow-absent',
@@ -414,5 +486,93 @@ describe('types', () => {
     })
     // The `@ts-expect-error` above IS the assertion; this keeps the store referenced.
     expect(store.field.tab.kind).toBe('enum')
+  })
+})
+
+/** UTC `YYYY-MM-DD` — the shape `toWindow` deals in, with no timezone in the answer. */
+function iso(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}
+
+function addMonths(d: Date, months: number): Date {
+  const next = new Date(d)
+  next.setUTCMonth(next.getUTCMonth() + months)
+  return next
+}
+
+describe('a lazy fallback and the lanes', () => {
+  test('a thunk fallback on the URL lane throws at DEFINITION, naming the two ways out', () => {
+    expect(() =>
+      createSearchStore({
+        key: 'k-lazy-url',
+        fields: { since: field.string({ fallback: () => '2026-01-01' }) },
+      }),
+    ).toThrow(/thunk fallback on the URL lane/)
+  })
+
+  test('off the URL lane it resolves per read, in a search store too', () => {
+    let today = '2026-01-01'
+    const store = createSearchStore({
+      key: 'k-lazy-local',
+      fields: {
+        since: field.string({ fallback: () => today }, { url: false }),
+        scratch: field.string({ fallback: () => today }, { url: false, persist: false }),
+      },
+    })
+    expect(store.field.since.fallback).toBe('2026-01-01')
+    today = '2026-02-01'
+    expect(store.field.since.fallback).toBe('2026-02-01')
+    expect(store.field.scratch.fallback).toBe('2026-02-01')
+  })
+})
+
+describe('field.range — the `custom` flag is inferred, never widened', () => {
+  test('an omitted `custom` keeps `custom` out of the value type AND out of the options', () => {
+    const store = createSearchStore({
+      key: 'k-custom-inference',
+      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d' }) },
+    })
+    type Search = ReturnType<typeof store.validateSearch>
+
+    const preset: Search['range'] = '7d'
+    // @ts-expect-error 'custom' is NOT a value of a range that never declared `custom: true` —
+    // this is the whole bug: written inline in `fields`, `C` used to widen to `boolean` against
+    // `AnyField`, and every value type gained a preset the field rejects at runtime.
+    const widened: Search['range'] = 'custom'
+
+    expect(preset).toBe('7d')
+    // `String(...)` because `widened`'s DECLARED type no longer admits the value it holds — the
+    // `@ts-expect-error` above is the assertion, this only keeps the binding used.
+    expect(String(widened)).toBe('custom')
+    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', '30d'])
+    // The runtime agrees with the type: a `custom` preset does not decode.
+    expect(store.validateSearch({ range: 'custom', from: '2026-01-01', to: '2026-02-01' })).toEqual(
+      { range: '30d', from: undefined, to: undefined },
+    )
+  })
+
+  test('`custom: true` still admits it, in the type and in the options', () => {
+    const store = createSearchStore({
+      key: 'k-custom-true',
+      fields: { range: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }) },
+    })
+    type Search = ReturnType<typeof store.validateSearch>
+    const custom: Search['range'] = 'custom'
+
+    expect(custom).toBe('custom')
+    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', '30d', 'custom'])
+  })
+
+  test('a `custom` flag held in a widened boolean still builds — it just stays widened', () => {
+    const allowCustom: boolean = true
+    const store = createSearchStore({
+      key: 'k-custom-widened',
+      fields: { range: field.range({ presets: ['7d'], fallback: '7d', custom: allowCustom }) },
+    })
+    type Search = ReturnType<typeof store.validateSearch>
+    const custom: Search['range'] = 'custom'
+
+    expect(custom).toBe('custom')
+    expect(store.field.range.options.map((option) => option.value)).toEqual(['7d', 'custom'])
   })
 })

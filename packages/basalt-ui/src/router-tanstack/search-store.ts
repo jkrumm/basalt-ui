@@ -31,7 +31,15 @@
  */
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { createStoreCore } from '../state'
-import type { AnyField, FieldHandle, SearchValues, StoreEntry, StoredValues } from '../state'
+import type {
+  AnyField,
+  FieldHandle,
+  FieldSetOptions,
+  FieldWrite,
+  SearchValues,
+  StoreEntry,
+  StoredValues,
+} from '../state'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +75,10 @@ export type SearchStore<S extends Record<string, AnyField>> = {
   useValues: () => SearchValues<S>
   /** How many fields differ from their fallback — the `n` in a `Filters (n)` pill. */
   useActiveCount: () => number
-  /** Resets every field to its fallback: one navigate, one storage write. */
+  /**
+   * Returns every field to its fallback: one navigate, one storage write. The mirror is UNSET
+   * rather than written — see `FieldHandle.clear()` for why writing the fallback pins a thunk.
+   */
   useReset: () => () => void
 }
 
@@ -130,6 +141,48 @@ function warnWriteHasNowhereToGo(input: { key: string; name: string; param: stri
 }
 
 /**
+ * Dev-only, once per param: a `patch` named a search param ANOTHER field of the same store owns.
+ * The navigate would put it in the URL while the store's own write path never touched the mirror,
+ * so the next paramless visit and every `linkSearch` link resolve the OLD value — the URL and the
+ * mirror disagree from that click on, and nothing looks broken until a reader shares a link.
+ *
+ * Thrown in dev rather than warned: the call is a mistake with a one-line fix (write the other
+ * field through its own setter), and the damage is silent. Production keeps the write — a thrown
+ * error there would take a page down over a stale param — and logs it once.
+ */
+function patchOwnsFieldMessage(input: {
+  key: string
+  name: string
+  owner: string
+  param: string
+}): string {
+  const { key, name, owner, param } = input
+  return (
+    `basalt-ui: createSearchStore('${key}'): set('${name}', …, { patch }) carries \`${param}\`, ` +
+    `which this store's field '${owner}' owns — the URL would take it while the localStorage ` +
+    'mirror kept the old value, so the next paramless visit and every `linkSearch` link disagree ' +
+    `with the page the write happened on. Write it through \`field.${owner}.use()[1]\` instead; ` +
+    'a `patch` is for keys the store does NOT own.'
+  )
+}
+
+/**
+ * Dev-only, once per field: a patched write from a route that does not validate the field. The
+ * write persists (A1), but the patch has no navigate to merge into and is dropped — the one case
+ * where half of a two-part write silently disappears.
+ */
+function warnPatchDropped(input: { key: string; name: string; param: string }): void {
+  const { key, name, param } = input
+  // oxlint-disable-next-line no-console -- a dev-time wiring warning has no other channel
+  console.warn(
+    `[basalt-ui] createSearchStore('${key}'): wrote field '${name}' with a \`patch\` from a route ` +
+      `that does not validate \`${param}\` — the field's value persisted (A1), but the patch was ` +
+      'DROPPED: there is no navigate to merge it into. Render the control on the route wired to ' +
+      '`validateSearch`, or apply that sibling param on the route that owns it. (dev only)',
+  )
+}
+
+/**
  * The public store plus the one member only the deprecated wrappers need: `markReaderWired`, so a
  * consumer whose only reader is the wrapper's own `useStore()` still counts as wired and never sees
  * the pinned-link warning it never used to see.
@@ -138,6 +191,25 @@ function warnWriteHasNowhereToGo(input: { key: string; name: string; param: stri
  */
 export type InternalSearchStore<S extends Record<string, AnyField>> = SearchStore<S> & {
   markReaderWired: () => void
+}
+
+/**
+ * A thunk fallback belongs to the LOCAL and MEMORY lanes only. On the URL lane `validateSearch`
+ * would evaluate it on every navigation and write the result into the URL, so a deep link would
+ * carry a value nobody picked and two visits a second apart would disagree. Thrown at definition
+ * rather than warned at read time: the field set is static, so there is no run in which this is
+ * anything but a mistake.
+ */
+function assertNoLazyUrlFallback(key: string, fields: Record<string, AnyField>): void {
+  for (const [name, f] of Object.entries(fields)) {
+    if (typeof f.fallback !== 'function' || !f.lane.url) continue
+    throw new Error(
+      `basalt-ui: createSearchStore('${key}'): field '${name}' has a thunk fallback on the URL ` +
+        'lane — `validateSearch` would evaluate it on every navigation and pin the result into the ' +
+        'URL. Pass a value instead, or move the field off the URL lane (`{ url: false }`, or ' +
+        '`createLocalStore`), where a lazy fallback is resolved per read.',
+    )
+  }
 }
 
 /** The memory-only lane: neither the URL nor the mirror, so the value lives in the store's own
@@ -154,6 +226,7 @@ function isMemoryLane(entry: StoreEntry): boolean {
 export function buildSearchStore<const S extends Record<string, AnyField>>(
   o: CreateSearchStoreOptions<S> & { legacyValueField?: string },
 ): InternalSearchStore<S> {
+  assertNoLazyUrlFallback(o.key, o.fields)
   const core = createStoreCore(o)
 
   // `validateSearch` reads storage on every navigation, which says nothing about whether the
@@ -167,6 +240,39 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     readerWired = true
   }
   const nowhereWarned = new Set<string>()
+  const patchDroppedWarned = new Set<string>()
+  const patchOwnerLogged = new Set<string>()
+
+  /** Every URL param this store owns, mapped to the field that owns it — what a `patch` may not name. */
+  const paramOwners = new Map<string, string>()
+  for (const entry of core.urlEntries) {
+    for (const param of entry.codec.params) paramOwners.set(param, entry.name)
+  }
+  const persistedNames = new Set(
+    core.entries.filter((entry) => entry.codec.lane.persist).map((entry) => entry.name),
+  )
+
+  /**
+   * The URL lane's `clear()` needs a `navigate`, which only exists inside a render. Each render of
+   * `urlUse` therefore leaves the navigate its mount would use here, keyed by field — so `clear()`
+   * from an event handler on that mount navigates exactly as its setter would, and a field no mount
+   * has read falls back to clearing the mirror alone.
+   */
+  const urlClear = new Map<string, () => void>()
+
+  const assertPatchNotOwned = (entry: StoreEntry, patch: Record<string, unknown>): void => {
+    for (const param of Object.keys(patch)) {
+      const owner = paramOwners.get(param)
+      // The field's OWN params are harmless: its `toSearch` is spread after the patch and wins.
+      if (owner === undefined || entry.codec.params.includes(param)) continue
+      const message = patchOwnsFieldMessage({ key: o.key, name: entry.name, owner, param })
+      if (process.env['NODE_ENV'] !== 'production') throw new Error(message)
+      if (patchOwnerLogged.has(param)) continue
+      patchOwnerLogged.add(param)
+      // oxlint-disable-next-line no-console -- production keeps the write; the log is the record
+      console.error(message)
+    }
+  }
 
   const flatten = (
     search: Record<string, unknown> | null,
@@ -215,7 +321,7 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     return core.readStoredFlat() as Partial<StoredValues<S>>
   }
 
-  const urlUse = (entry: StoreEntry) => (): readonly [unknown, (next: unknown) => void] => {
+  const urlUse = (entry: StoreEntry) => (): readonly [unknown, FieldWrite] => {
     const search = useCurrentSearch()
     const navigate = useNavigate()
     const [record, setRecord] = core.usePersistedRecord()
@@ -224,14 +330,45 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     // The matched route validates this field iff its primary param is present (see the module
     // header). A foreign route gets the persist-only lane.
     const validated = Object.hasOwn(search, entry.codec.primary)
+    urlClear.set(entry.name, () => {
+      if (!validated) return
+      navigate({
+        to: '.',
+        search: (prev: Record<string, unknown>) => ({
+          ...prev,
+          ...entry.codec.toSearch(entry.codec.fallback),
+        }),
+        replace: true,
+        resetScroll: false,
+      })
+    })
 
     return [
       value,
-      (next: unknown) => {
+      (next: unknown, opts?: FieldSetOptions) => {
+        const patch = opts?.patch
+        if (patch !== undefined && Object.keys(patch).length > 0) {
+          assertPatchNotOwned(entry, patch)
+          if (
+            !validated &&
+            !patchDroppedWarned.has(entry.name) &&
+            process.env['NODE_ENV'] !== 'production'
+          ) {
+            patchDroppedWarned.add(entry.name)
+            warnPatchDropped({ key: o.key, name: entry.name, param: entry.codec.primary })
+          }
+        }
         if (validated) {
           navigate({
             to: '.',
-            search: (prev: Record<string, unknown>) => ({ ...prev, ...entry.codec.toSearch(next) }),
+            // `patch` FIRST, the field's own params last: a patch is for keys the store does not
+            // own (clearing a sibling `detailDate` with `undefined`), so it must never be able to
+            // overwrite the value this very call is setting.
+            search: (prev: Record<string, unknown>) => ({
+              ...prev,
+              ...opts?.patch,
+              ...entry.codec.toSearch(next),
+            }),
             replace: entry.codec.lane.history === 'replace',
             // A filter lives halfway down a page as often as it lives in the bar, and the router's
             // default scroll restoration treats this same-route search write as a navigation — so
@@ -252,7 +389,9 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     ] as const
   }
 
-  const localUse = (entry: StoreEntry) => (): readonly [unknown, (next: unknown) => void] => {
+  // No `patch` here or in the memory lane: neither navigates, so there is no search object to merge
+  // into and nothing to silently half-apply.
+  const localUse = (entry: StoreEntry) => (): readonly [unknown, FieldWrite] => {
     const [record, setRecord] = core.usePersistedRecord()
     markReaderWired()
     return [
@@ -265,6 +404,19 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   // memory-only. The third used to be the one combination that dropped its write.
   const memoryEntries = core.entries.filter(isMemoryLane)
 
+  /**
+   * Unsetting one field, per lane: drop the mirror key (never write the fallback — a thunk fallback
+   * resolved into localStorage is a value nobody chose), drop the memory value, and on the URL lane
+   * navigate back to the fallback params through the last render of `use()`.
+   */
+  const clearFor = (entry: StoreEntry) => (): void => {
+    if (entry.codec.lane.persist) core.clearField(entry.name)
+    else if (!entry.codec.lane.url) core.clearMemory(entry.name)
+    if (!entry.codec.lane.url) return
+    const clearUrl = urlClear.get(entry.name)
+    if (clearUrl !== undefined) clearUrl()
+  }
+
   const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
   for (const entry of core.entries) {
     const use = entry.codec.lane.url
@@ -272,7 +424,11 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
       : entry.codec.lane.persist
         ? localUse(entry)
         : core.memoryUse(entry)
-    field[entry.name as keyof S] = core.handle(entry, use) as unknown as FieldHandle<S[keyof S]>
+    field[entry.name as keyof S] = core.handle(
+      entry,
+      use,
+      clearFor(entry),
+    ) as unknown as FieldHandle<S[keyof S]>
   }
 
   const useValues = (): SearchValues<S> => {
@@ -325,11 +481,21 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
       }
       if (memoryEntries.length > 0) core.resetMemory()
       if (!core.anyPersisted) return
-      const next = { ...core.readRecord() }
-      for (const entry of core.entries) {
-        if (entry.codec.lane.persist) next[entry.name] = entry.codec.fallback
+      // Reset means UNSET, not "write the fallback": `codec.fallback` is the RESOLVED value, so a
+      // thunk (`() => todayIso()`) would be pinned into the mirror by the very act of resetting and
+      // read back tomorrow as a choice nobody made. Deleting the key lets `resolve` fall through to
+      // the live fallback — which is what `resetMemory` above has always done for the memory lane.
+      const record = core.readRecord()
+      const next: Record<string, unknown> = {}
+      let dropped = false
+      for (const [name, value] of Object.entries(record)) {
+        if (persistedNames.has(name)) {
+          dropped = true
+          continue
+        }
+        next[name] = value
       }
-      setRecord(next)
+      if (dropped) setRecord(next)
     }
   }
 

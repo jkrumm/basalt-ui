@@ -256,3 +256,257 @@ describe('createLocalStore — labels()', () => {
     ])
   })
 })
+
+/**
+ * A lazy fallback — `fallback: () => T`. The local store is its home: `createSearchStore` allows it
+ * off the URL lane only (a thunk in `validateSearch` would pin a computed value into a deep link),
+ * and every lane here is off the URL by construction.
+ */
+describe('createLocalStore — a lazy fallback', () => {
+  test('is not called at definition, resolves at read, and is re-read while nothing is written', () => {
+    let calls = 0
+    let today = '2026-01-01'
+    const store = createLocalStore({
+      key: 'l-lazy',
+      fields: {
+        since: field.string({
+          fallback: () => {
+            calls += 1
+            return today
+          },
+        }),
+      },
+    })
+    // Definition must not run it: a store is built at module scope, where "now" is meaningless.
+    expect(calls).toBe(0)
+
+    const { result } = renderHook(() => store.field.since.use())
+    expect(result.current[0]).toBe('2026-01-01')
+    expect(calls).toBeGreaterThan(0)
+
+    // The thunk is the value while the field is unset — a later read sees what it returns NOW.
+    today = '2026-02-01'
+    expect(store.field.since.fallback).toBe('2026-02-01')
+    expect(store.field.since.isDefault('2026-02-01')).toBe(true)
+    expect(store.field.since.isDefault('2026-01-01')).toBe(false)
+
+    // Nothing was persisted by reading — a fallback is not a value until a write makes it one.
+    expect(localStorage.getItem('basalt:l-lazy')).toBeNull()
+  })
+
+  test('a write wins over the thunk, and the thunk stops being consulted', () => {
+    let calls = 0
+    const store = createLocalStore({
+      key: 'l-lazy-write',
+      fields: {
+        rows: field.number({
+          fallback: () => {
+            calls += 1
+            return 10
+          },
+          min: 1,
+        }),
+      },
+    })
+
+    const { result } = renderHook(() => store.field.rows.use())
+    expect(result.current[0]).toBe(10)
+    act(() => {
+      result.current[1](25)
+    })
+
+    const after = calls
+    expect(result.current[0]).toBe(25)
+    expect(storedRecord('l-lazy-write')).toEqual({ rows: 25 })
+    expect(calls).toBe(after)
+  })
+
+  test('the memory lane resolves it too — every kind takes the thunk form', () => {
+    let preset = '7d'
+    let n = 1
+    const store = createLocalStore({
+      key: 'l-lazy-memory',
+      fields: {
+        metric: field.enum(['load', 'volume'], () => 'volume', { persist: false }),
+        range: field.range({ presets: ['7d', '30d'], fallback: () => preset as '7d' | '30d' }),
+        tags: field.multi(['api', 'design'], () => ['design']),
+        compact: field.boolean(() => true),
+        // The two kinds this test used to omit. `number` builds its codec with an EXTRA member
+        // (`bounds`), which is exactly how it once ended up spreading the shell and freezing this
+        // fallback at definition — the whole kind list is here so that cannot recur unnoticed.
+        count: field.number({ fallback: () => n, min: 0 }),
+        label: field.string({ fallback: () => String(n) }),
+      },
+    })
+
+    const metric = renderHook(() => store.field.metric.use())
+    expect(metric.result.current[0]).toBe('volume')
+    expect(store.field.range.fallback).toEqual({ preset: '7d' })
+    preset = '30d'
+    expect(store.field.range.fallback).toEqual({ preset: '30d' })
+    expect(store.field.tags.fallback).toEqual(['design'])
+    expect(store.field.compact.fallback).toBe(true)
+    expect([store.field.count.fallback, store.field.label.fallback]).toEqual([1, '1'])
+
+    // Read at READ time, not at definition: a later read sees what the thunk returns now.
+    n = 2
+    expect([store.field.count.fallback, store.field.label.fallback]).toEqual([2, '2'])
+    const count = renderHook(() => store.field.count.use())
+    expect(count.result.current[0]).toBe(2)
+  })
+
+  test('clear() unsets the mirror, so the thunk resolves again', () => {
+    let today = '2026-08-27'
+    const store = createLocalStore({
+      key: 'l-lazy-clear',
+      fields: {
+        since: field.string({ fallback: () => today }),
+        metric: field.enum(['load', 'volume'], 'load'),
+      },
+    })
+    persist('l-lazy-clear', { since: '2026-01-01', metric: 'volume' })
+
+    const { result } = renderHook(() => store.field.since.use())
+    expect(result.current[0]).toBe('2026-01-01')
+
+    act(() => {
+      store.field.since.clear()
+    })
+
+    // The KEY is gone — writing the resolved fallback instead would hand a reader '2026-08-27'
+    // tomorrow, as a value they never chose. The sibling field is untouched.
+    expect(storedRecord('l-lazy-clear')).toEqual({ metric: 'volume' })
+    expect(result.current[0]).toBe('2026-08-27')
+    today = '2026-08-28'
+    expect(store.field.since.fallback).toBe('2026-08-28')
+    expect(store.field.since.isDefault('2026-08-28')).toBe(true)
+  })
+
+  test('clear() on the memory lane drops that field only', () => {
+    const store = createLocalStore({
+      key: 'l-clear-memory',
+      fields: {
+        scratch: field.enum(['a', 'b'], 'a', { persist: false }),
+        other: field.enum(['a', 'b'], 'a', { persist: false }),
+      },
+    })
+
+    const scratch = renderHook(() => store.field.scratch.use())
+    const other = renderHook(() => store.field.other.use())
+    act(() => {
+      scratch.result.current[1]('b')
+      other.result.current[1]('b')
+    })
+    expect([scratch.result.current[0], other.result.current[0]]).toEqual(['b', 'b'])
+
+    act(() => {
+      store.field.scratch.clear()
+    })
+    expect([scratch.result.current[0], other.result.current[0]]).toEqual(['a', 'b'])
+    expect(localStorage.getItem('basalt:l-clear-memory')).toBeNull()
+  })
+
+  /**
+   * `toWindow`'s TYPE, not just its runtime: the presets that declared a resolver are excluded from
+   * the `{ window }` branch, so the result assigns to an API param type naming only the
+   * server-understood windows. Before that, a consumer replacing its `presetToParams` switch with
+   * `toWindow` needed a cast — the workaround moved rather than going away.
+   */
+  test('toWindow drops the resolved presets from its return TYPE', () => {
+    const store = createLocalStore({
+      key: 'l-towindow',
+      fields: {
+        window: field.range({
+          presets: ['7d', '30d', '90d', '3m', 'ytd', 'all'],
+          fallback: '30d',
+          window: {
+            '3m': () => ({ from: '2026-06-01', to: '2026-08-27' }),
+            ytd: () => ({ from: '2026-01-01', to: '2026-08-27' }),
+          },
+        }),
+      },
+    })
+
+    type SummaryParams = { window: '7d' | '30d' | '90d' | 'all' } | { from: string; to: string }
+
+    // The assignment IS the assertion — no cast, which is what a consumer's `resolveWindow` was.
+    const resolve = (preset: '7d' | '30d' | '90d' | '3m' | 'ytd' | 'all'): SummaryParams =>
+      store.field.window.toWindow({ preset })
+
+    expect(resolve('30d')).toEqual({ window: '30d' })
+    expect(resolve('3m')).toEqual({ from: '2026-06-01', to: '2026-08-27' })
+    expect(resolve('ytd')).toEqual({ from: '2026-01-01', to: '2026-08-27' })
+
+    // @ts-expect-error `3m` declared a resolver, so it can never come back in the window branch.
+    const pinned: { window: '3m' } | { from: string; to: string } = store.field.window.toWindow({
+      preset: '3m',
+    })
+    expect(pinned).toEqual({ from: '2026-06-01', to: '2026-08-27' })
+  })
+})
+
+/**
+ * The number handle's republished bounds (`NumberHandleExtras`). They are on the handle for exactly
+ * one reason: a control never sees the field descriptor, so before this the only way a `NumberFilter`
+ * could bound its own input was for the call site to pass `min`/`max` a second time — a second answer
+ * to a question the field already owns.
+ */
+describe('createLocalStore — a number handle republishes its bounds', () => {
+  test('min, max and int come off the field declaration', () => {
+    const store = createLocalStore({
+      key: 'l-bounds',
+      fields: { nights: field.number({ fallback: 2, min: 1, max: 14, int: true }) },
+    })
+
+    expect({
+      min: store.field.nights.min,
+      max: store.field.nights.max,
+      int: store.field.nights.int,
+    }).toEqual({ min: 1, max: 14, int: true })
+  })
+
+  test('an undeclared bound is undefined, and int defaults to false — never 0/true by accident', () => {
+    const store = createLocalStore({
+      key: 'l-bounds-open',
+      fields: { threshold: field.number({ fallback: 0 }) },
+    })
+
+    expect({
+      min: store.field.threshold.min,
+      max: store.field.threshold.max,
+      int: store.field.threshold.int,
+    }).toEqual({ min: undefined, max: undefined, int: false })
+  })
+
+  // The negative branch of the extras type, asserted at RUNTIME as well: a non-number handle must
+  // not grow a `max` off `StringField`'s own `max`, which is the one collision this shape could have.
+  test('a non-number handle carries none of the three', () => {
+    const store = createLocalStore({
+      key: 'l-bounds-other',
+      fields: { q: field.string({ max: 40 }), metric: field.enum(['load', 'volume'], 'load') },
+    })
+
+    expect([store.field.q.max, store.field.q.min, store.field.q.int]).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ])
+    expect(store.field.metric.int).toBeUndefined()
+  })
+
+  // The bounds are what the codec was ALREADY clamping to — the handle is a readout of that law,
+  // not a second copy of it.
+  test('the value the codec clamps to is the value the handle reports', () => {
+    const store = createLocalStore({
+      key: 'l-bounds-clamp',
+      fields: { nights: field.number({ fallback: 2, min: 1, max: 14, int: true }) },
+    })
+    persist('l-bounds-clamp', { nights: 99 })
+
+    const { result } = renderHook(() => store.field.nights.use())
+    // Both sides in ONE assertion, so the pair has to agree rather than each matching 14 alone —
+    // `max` is `number | undefined` on the handle by construction, which is why it is not the
+    // `expected` argument.
+    expect([result.current[0], store.field.nights.max]).toEqual([14, 14])
+  })
+})

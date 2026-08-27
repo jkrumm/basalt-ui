@@ -80,9 +80,14 @@ export function FilterSetScope({ surface, registry, children }: FilterSetScopePr
  * it no-ops outside a registering scope (a bare filter with no `FilterSet`, the fold dropdown, the
  * sheet), which is what keeps it hook-safe in every control.
  *
+ * The reset is `field.clear()`, never `setValue(field.fallback)`: writing the fallback back is a
+ * WRITE, so it persists the default as if the user had chosen it — the URL keeps `?window=7d`, the
+ * localStorage mirror keeps its key, and a later change to the field's fallback no longer reaches
+ * either. `clear()` removes the value instead, on whichever lane the field is on.
+ *
  * @example
- * const [value, setValue] = field.use()
- * useFilterRegistration(!field.isDefault(value), () => setValue(field.fallback))
+ * const [value] = field.use()
+ * useFilterRegistration(!field.isDefault(value), () => field.clear())
  */
 export function useFilterRegistration(isActive: boolean, reset: () => void): void {
   const registry = useContext(FilterRegistryContext)

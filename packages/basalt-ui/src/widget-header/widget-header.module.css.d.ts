@@ -11,6 +11,7 @@ declare const classes: {
   readonly count: string
   readonly metrics: string
   readonly value: string
+  readonly unit: string
   readonly actions: string
   readonly subtitle: string
   readonly sparkline: string

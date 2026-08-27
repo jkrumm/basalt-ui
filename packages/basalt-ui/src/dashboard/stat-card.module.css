@@ -42,6 +42,77 @@
   min-width: 0;
 }
 
+/*
+ * The `breakdown` rows — the two or three parts a hero number is made of, under it.
+ *
+ * NO hairline, anywhere in this block, and that is a law rather than a taste: `docs/CONTROLS-SPEC.md`
+ * §2.1 puts a horizontal rule between OPTION rows and nowhere else, and `theme/divider-law.test.ts`
+ * inventories every one basalt draws. Three rules inside a KPI card would read as a table wearing a
+ * card's clothes. The rows are separated by the stack rhythm and by weight — a muted label against
+ * an ink value — which is the same separation the sheet's own field groups use.
+ */
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  margin: var(--vx-space-stack-sm) 0 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/*
+ * One row, one line, at the TAG tier (`controlHeightTag`, 20px at level 0) — the smallest control
+ * step basalt declares, and a token rather than a literal so the rows track the density knob with
+ * everything else. `justify-content: space-between` is what makes the pair read as a row without a
+ * grid: the label leads, the value trails, and neither needs a column to align against because
+ * every row in one card is the same box.
+ */
+.breakdownRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vx-space-control-gap);
+  min-height: var(--vx-space-control-height-tag);
+  min-width: 0;
+}
+
+.breakdownLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/* Mono and ink — a breakdown value is a number, and it is the half of the row worth reading. Never
+ * shrinks: the LABEL is the prose half and the one that may ellipsize. */
+.breakdownValue {
+  flex-shrink: 0;
+  margin: 0;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
+  color: var(--vx-ink);
+}
+
+/*
+ * A row past a threshold. Same vocabulary and the same per-scheme solids as the card's own tone rail
+ * (`stat-card.tsx`'s `VX.status[tone]`), so a row saying `bad` and a rail saying `bad` are one claim
+ * at two scales. Colour is not the only carrier at the CARD level (the rail ships a
+ * `VisuallyHidden` verdict); at the ROW level the label is the carrier — a row reading
+ * `Paid · 1,204` states its own subject either way, and the tint only ranks it.
+ */
+.breakdownRow[data-tone='good'] .breakdownValue {
+  color: var(--vx-status-good);
+}
+
+.breakdownRow[data-tone='warn'] .breakdownValue {
+  color: var(--vx-status-warn);
+}
+
+.breakdownRow[data-tone='bad'] .breakdownValue {
+  color: var(--vx-status-bad);
+}
+
 .sparklineBleed {
   margin-top: auto;
   margin-inline: calc(-1 * var(--mantine-spacing-sm));

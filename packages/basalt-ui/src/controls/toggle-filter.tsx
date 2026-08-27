@@ -25,7 +25,7 @@ export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNo
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   useFilterRegistration(!field.isDefault(value), () => {
-    setValue(field.fallback)
+    field.clear()
   })
 
   if (surface === 'sheet') {

@@ -101,6 +101,20 @@ import classes from './stat-card.module.css'
 export type StatCardTone = 'good' | 'warn' | 'bad'
 
 /**
+ * One row of a {@link StatCardProps.breakdown} — the two or three parts a hero number is made of.
+ *
+ * `value` is a pre-formatted `string` for the same reason the hero's is: the card cannot know the
+ * locale, the currency or the precision the number was measured at. `tone` marks ONE row as past a
+ * threshold and is the same vocabulary as the card's own `tone`, so a row saying `bad` and a rail
+ * saying `bad` are the same claim at two scales; omitting it is untinted, never `'good'`.
+ */
+export type StatCardBreakdownRow = {
+  readonly label: string
+  readonly value: string
+  readonly tone?: StatCardTone
+}
+
+/**
  * The `'right'` placement's slot width, in px — a flex BASIS, not a fixed size. 72 is the reference
  * KPI card's trend width and the slot asks for exactly that; when the hero row needs the space (a
  * long formatted value plus a delta badge in a 4-up grid) the slot is the side that yields, because
@@ -187,10 +201,48 @@ export type StatCardProps = {
   info?: string
   /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. */
   value: string
+  /** The value's unit, muted and mono at `--vx-text-sm`, immediately after it on the hero row —
+   * forwarded to `WidgetHeader`. `412` + `TSS`, not `"412 TSS"`: a unit painted at the hero's 24px
+   * reads as a second numeral. The BASIS (`7-day rolling`) is still `subtitle`; see
+   * `WidgetHeaderProps.unit`. */
+  unit?: string
+  /**
+   * The parts the hero number is made of — compact rows under it, one line each, no hairlines.
+   *
+   * It exists because three consumers wanted a KPI card that also SPLITS its number (revenue by
+   * channel, uptime by probe) and the only shapes basalt offered were a `subtitle` (one muted line,
+   * no second column) and a table. Both hand-rolled a card instead — which is the fork
+   * `shadow-basalt-export` reports as a `HeroCard`.
+   *
+   * Deliberately not a table and deliberately unruled: the divider law puts a hairline between
+   * OPTION rows and nowhere else (`docs/CONTROLS-SPEC.md` §2.1), and a KPI card that draws three
+   * of them stops reading as one card. Keep it to two or three rows — past that the card is a
+   * table, and a table is `BasaltDataTable` in a `Section`.
+   */
+  breakdown?: readonly StatCardBreakdownRow[]
   /** Signed delta rendered via `DeltaBadge`; omit to hide the trend chip entirely. */
   delta?: number
   /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
   deltaPeriod?: string
+  /**
+   * Formats `delta` into the chip's label — forwarded to `WidgetHeader` and on to `DeltaBadge`.
+   * Defaults to `${Math.abs(delta).toFixed(1)}%`.
+   *
+   * A delta is not always a percentage, and the default silently claimed it was: a pace card's trend
+   * (`0:12 /km`) and a speed card's (`0.3 km/h`) both rendered as `0.3%` — a wrong unit on a KPI is
+   * the one failure worse than no chip, and it is why the consumer that needed it kept the card
+   * hand-rolled instead (the `HeroCard` fork `shadow-basalt-export` reports).
+   *
+   * @example
+   * // An absolute delta that prints its own sign — no percent, no glyph saying it twice.
+   * <StatCard title="Pace" value="5:31" unit="/km" delta={-12}
+   *   deltaFormat={(s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`}
+   *   deltaGlyph={false} />
+   */
+  deltaFormat?: (delta: number) => string
+  /** Render the ▲/▼ glyph on the delta chip. Defaults to `true`; a zero delta never shows one. Pass
+   * `false` when `deltaFormat` prints the sign itself. */
+  deltaGlyph?: boolean
   /**
    * Optional trend visual. Either a node, or a RENDER PROP receiving the slot's measured box.
    *
@@ -223,8 +275,12 @@ export function StatCard({
   subtitle,
   info,
   value,
+  unit,
+  breakdown,
   delta,
   deltaPeriod,
+  deltaFormat,
+  deltaGlyph,
   sparkline,
   sparklinePlacement = 'bleed',
   actions,
@@ -291,8 +347,11 @@ export function StatCard({
             {...(subtitle !== undefined && { subtitle })}
             {...(info !== undefined && { info })}
             value={value}
+            {...(unit !== undefined && { unit })}
             {...(delta !== undefined && { delta })}
             {...(deltaPeriod !== undefined && { deltaPeriod })}
+            {...(deltaFormat !== undefined && { deltaFormat })}
+            {...(deltaGlyph !== undefined && { deltaGlyph })}
             // `tier="widget"`, not the default `ctl`: the header row this slot sits in is 28px
             // (`--vx-space-widget-header-height`) and a 30px `ctl` control grew it to 30, so a card
             // with a kebab sat 2px below a card without one in the same grid row. See
@@ -301,6 +360,28 @@ export function StatCard({
               actions: <CtlSlot tier="widget">{actions}</CtlSlot>,
             })}
           />
+
+          {breakdown !== undefined &&
+            breakdown.length > 0 && (
+              // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which
+              // is the one semantic that survives a reader meeting the card out of context.
+              //
+              // INSIDE `.header`, not beside it: with `sparklinePlacement="right"` the body is a flex
+              // ROW, so a third child here would sit next to the trend rather than under the number
+              // it splits. The header block is the card's text column in both placements.
+              <dl className={classes.breakdown}>
+                {breakdown.map((row) => (
+                  <div
+                    key={row.label}
+                    className={classes.breakdownRow}
+                    {...(row.tone !== undefined && { 'data-tone': row.tone })}
+                  >
+                    <dt className={classes.breakdownLabel}>{row.label}</dt>
+                    <dd className={classes.breakdownValue}>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
         </div>
 
         {sparkline !== undefined && (

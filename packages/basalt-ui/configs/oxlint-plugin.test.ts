@@ -1731,6 +1731,46 @@ describe('basalt/control-outside-home', () => {
     )
     expect(rules).not.toContain('control-outside-home')
   })
+
+  /**
+   * The CROSS-FILE case, exempted by a naming convention rather than by ancestry — argo carried 9 of
+   * these, each a control in a modal/form module whose `<Modal>` is rendered by the parent route.
+   * Nothing in the flagged file can see the host, so the ancestry walk never could have.
+   */
+  describe('the overlay filename convention', () => {
+    const SOURCE = `${MANTINE_IMPORT}export const C = () => <div><Select data={[]} /></div>\n`
+
+    it.each([
+      'src/edit-session-modal.tsx',
+      'src/filters-drawer.tsx',
+      'src/column-popover.tsx',
+      'src/detail-panel.tsx',
+      'src/booking-form.tsx',
+    ])('does NOT flag %s — its host lives in the parent', (filename) => {
+      const { code, rules } = run(SOURCE, filename)
+      expect(code).toBe(0)
+      expect(rules).not.toContain('control-outside-home')
+    })
+
+    it('still flags a plain page module beside them', () => {
+      const { rules } = run(SOURCE, 'src/bookings-page.tsx')
+      expect(rules).toContain('control-outside-home')
+    })
+
+    // Basename only: a directory of modals holds the page pieces around them too, so a whole
+    // `modal/` tree going silent is the version of this exemption that WOULD switch the rule off.
+    it('is a BASENAME convention, not a directory one', () => {
+      const { rules } = run(SOURCE, 'src/modal/session.tsx')
+      expect(rules).toContain('control-outside-home')
+    })
+
+    // `modal.tsx` with no leading segment is a page module in every consumer that has one; the
+    // convention is `<subject>-modal.tsx`, and the regex says so.
+    it('needs the leading subject — a bare modal.tsx is not the convention', () => {
+      const { rules } = run(SOURCE, 'src/modal.tsx')
+      expect(rules).toContain('control-outside-home')
+    })
+  })
 })
 
 describe('basalt/control-size-literal', () => {
@@ -1759,6 +1799,82 @@ describe('basalt/control-size-literal', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('control-size-literal')
+  })
+
+  /**
+   * `ChartCard` is the one slot owner whose slot cannot mount the tier theme — it lives inside the
+   * Mantine-free chart layer, so it writes `data-basalt-tier` by hand and the control there really
+   * does have to state its own size. The rule fires on the `size` ATTRIBUTE and cannot tell a
+   * correct `ctl` from the `xs` it exists to catch, so this is an exemption, not a waiver.
+   */
+  describe('ChartCard.actions — the one slot with no tier theme', () => {
+    it('does NOT flag a size prop there', () => {
+      const { code, rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => <ChartCard title="T" actions={<Button size="ctl">Go</Button>} />
+`,
+      )
+      expect(code).toBe(0)
+      expect(rules).not.toContain('control-size-literal')
+    })
+
+    // The owner test reads the IMPORTED name, so the alias every wrapper writes still resolves.
+    it('does NOT flag it under an aliased ChartCard import', () => {
+      const { rules } = run(
+        `import { ChartCard as Card } from 'basalt-ui'
+${MANTINE_IMPORT}` +
+          `export const C = () => <Card title="T" actions={<Button size="xs">Go</Button>} />
+`,
+      )
+      expect(rules).not.toContain('control-size-literal')
+    })
+
+    // The positive control: every OTHER home does mount the theme, so the rule still fires there.
+    it('STILL flags the same prop in a Section slot', () => {
+      const { code, rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => <Section title="T" actions={<Button size="xs">Go</Button>} />
+`,
+      )
+      expect(code).toBe(1)
+      expect(rules).toContain('control-size-literal')
+    })
+
+    // The exemption is keyed on the OWNER, and one hoisted binding can be handed to several — so it
+    // holds only when EVERY home it reached is tierless. A last-writer-wins owner map made the
+    // verdict depend on which attribute came later in the file: same code, opposite answer.
+    it('STILL flags a hoisted binding shared with a Section slot — ChartCard last', () => {
+      const { rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}const acts = <Button size="xs">Go</Button>\n` +
+          `export const C = () => (\n  <>\n    <Section title="S" actions={acts} />\n    <ChartCard title="T" actions={acts} />\n  </>\n)\n`,
+      )
+      expect(rules).toContain('control-size-literal')
+    })
+
+    it('STILL flags a hoisted binding shared with a Section slot — ChartCard first', () => {
+      const { rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}const acts = <Button size="xs">Go</Button>\n` +
+          `export const C = () => (\n  <>\n    <ChartCard title="T" actions={acts} />\n    <Section title="S" actions={acts} />\n  </>\n)\n`,
+      )
+      expect(rules).toContain('control-size-literal')
+    })
+
+    it('does NOT flag a hoisted binding handed only to ChartCard', () => {
+      const { code, rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}const acts = <Button size="ctl">Go</Button>\n` +
+          `export const C = () => <ChartCard title="T" actions={acts} />\n`,
+      )
+      expect(code).toBe(0)
+      expect(rules).not.toContain('control-size-literal')
+    })
+
+    // A consumer's OWN `ChartCard` is not basalt's, so it is not a home at all and nothing fires —
+    // the same provenance rule every other home tag follows.
+    it('hand-rolled-filter is NOT exempted there — the tier is not what makes a filter wrong', () => {
+      const { rules } = run(
+        `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => <ChartCard title="T" actions={<Select data={[]} />} />
+`,
+      )
+      expect(rules).toContain('hand-rolled-filter')
+    })
   })
 
   it('does NOT flag a size prop on the HOME itself', () => {
@@ -2228,6 +2344,133 @@ describe('basalt/shadow-basalt-export — SHADOW_ALIASES', () => {
     const { rules } = run(
       `// theme-allow shadow-basalt-export — a marketing hero, unrelated to StatCard\nexport const HeroCard = () => null\n`,
     )
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+})
+
+/**
+ * The provenance half of the alias table: a file that COMPOSES the export it renames is a wrapper,
+ * not a fork. argo's three hero cards each imported `StatCard`, wrapped it, and each took a warn
+ * telling them to import the thing they were already importing.
+ *
+ * Both directions are asserted, because the exemption is only worth having if the rule still fires
+ * WITHOUT the import — a wrapper is evidence, and silence on every `HeroCard` in the repo would be
+ * the rule switching itself off.
+ */
+describe('basalt/shadow-basalt-export — an alias that composes what it renames', () => {
+  it('fires on a HeroCard that does not import StatCard', () => {
+    const { rules, output } = run(
+      `export function HeroCard() {\n  return null\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+    expect(output).toContain('StatCard')
+  })
+
+  it('is silent on a HeroCard that composes the imported StatCard', () => {
+    const { code, rules } = run(
+      `import { StatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <StatCard title="x" value="1" />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // The provenance test reads the IMPORTED name, not the local one — `StatCard as BaseStatCard` is
+  // the canonical way a wrapper avoids shadowing its own import, and a local-name set would answer
+  // `BaseStatCard` and miss it.
+  it('is silent when the composed export is imported under an alias', () => {
+    const { rules } = run(
+      `import { StatCard as BaseStatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <BaseStatCard title="x" value="1" />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  it('is silent from a basalt SUBPATH too, not just the root barrel', () => {
+    const { rules } = run(
+      `import { RangeFilter } from 'basalt-ui/controls'\n` +
+        `export function WindowSelector() {\n  return <RangeFilter field={{}} />\n}\n`,
+      'src/window-selector.tsx',
+    )
+    expect(rules).not.toContain('shadow-basalt-export')
+  })
+
+  // Importing SOMETHING from basalt is not the exemption — importing the thing you renamed is.
+  it('still fires when the file imports a DIFFERENT basalt export', () => {
+    const { rules } = run(
+      `import { Section } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <Section title="x" />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  // The COLLISION half is deliberately not exempted: a local `StatCard` beside an
+  // `import { StatCard as Base }` kept the name AND a piece of the original, which is the fork
+  // shape this rule most wants to see.
+  it('still fires on a name COLLISION even when the export is imported under an alias', () => {
+    const { rules } = run(
+      `import { StatCard as Base } from 'basalt-ui'\n` +
+        `export function StatCard() {\n  return <Base title="x" value="1" />\n}\n`,
+      'src/stat-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  // COMPOSITION, not import. A type-only import is erased at compile time, so the shape a
+  // props-copying fork actually writes — `ComponentProps<typeof StatCard>` off an
+  // `import type` — composes nothing and used to exempt the whole file.
+  it('still fires on a type-only import of the export it renames', () => {
+    const { rules } = run(
+      `import type { StatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <div />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('still fires on an inline `type` specifier', () => {
+    const { rules } = run(
+      `import { type StatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <div />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  // `typeof StatCard` is a `TSTypeQuery` around a plain Identifier, so a VALUE import used only in
+  // a type position has to be rejected too — otherwise the props-copying fork just drops `type`.
+  it('still fires when a value import is only used in a type position', () => {
+    const { rules } = run(
+      `import { StatCard } from 'basalt-ui'\n` +
+        `type P = { card: typeof StatCard }\n` +
+        `export function HeroCard(props: P) {\n  return <div>{String(props)}</div>\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  it('still fires on a dead import left behind after the body was re-rolled', () => {
+    const { rules } = run(
+      `import { StatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <div />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(rules).toContain('shadow-basalt-export')
+  })
+
+  // A JSX tag is not the only way to compose: a wrapper that hands the component on as a prop or to
+  // `createElement` composes it just as much, and a JSX-only test would report both.
+  it('is silent when the import is passed on as a prop rather than rendered', () => {
+    const { code, rules } = run(
+      `import { StatCard } from 'basalt-ui'\n` +
+        `export function HeroCard() {\n  return <Slot component={StatCard} />\n}\n`,
+      'src/hero-card.tsx',
+    )
+    expect(code).toBe(0)
     expect(rules).not.toContain('shadow-basalt-export')
   })
 })

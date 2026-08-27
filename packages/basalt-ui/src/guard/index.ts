@@ -522,9 +522,25 @@ const CONTROL_HOST_TAG =
  */
 const CONTROL_HOST_WINDOW_LINES = 12
 
+/**
+ * A file whose BASENAME declares it is an overlay's or a form's own body — the cross-file half of
+ * {@link CONTROL_HOST_TAG}, and the same regex the plugin's `OVERLAY_CONVENTION_FILE` applies to
+ * `basalt/control-outside-home` (one law, two lanes, one exemption).
+ *
+ * Law C1's cross-file case is advisory by declaration (`docs/CONTROLS-SPEC.md` §6, "Honest
+ * coverage"), and this kind was paying for it: a `<Select>` inside `edit-session-modal.tsx` whose
+ * `<Modal>` is rendered by the parent route is outside BOTH the 12-line host window and any
+ * ancestry walk, because the host tag is not in the file at all. argo carried 9 of them.
+ *
+ * The trade is that a whole file goes unscanned on a naming convention — the same bargain
+ * {@link MANTINE_FORM_IMPORT} already buys, and a smaller one than promoting the kind with 9 known
+ * false positives. Basename only: a `modal/` DIRECTORY holds the page pieces around the modals too.
+ */
+const OVERLAY_CONVENTION_FILE = /(?:^|\/)[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
+
 /** A name whose DECLARATION means this file DEFINES a basalt control rather than consuming one. */
 const CONTROL_OWNER_DEF =
-  /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
+  /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|NumberFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
 
 /** `@mantine/form` — a form is C1's third home, and its inputs are not filters. */
 const MANTINE_FORM_IMPORT = /from\s+['"]@mantine\/form['"]/
@@ -635,24 +651,19 @@ export type GraceEntry = { since: string; promote: string; why: string }
  * }
  */
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
-  'in-body-page-title': {
-    since: '1.26.0',
-    promote: '1.27.0',
-    why:
-      'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its AST twin is the ' +
-      'oxlint rule of the SAME id, whose PLUGIN_RULE_GRACE entry carries the same dates — one law, ' +
-      'two lanes, one promotion. Warn for a minor because the fix is a route/breadcrumb change ' +
-      '(the page is named by staticData.title), not a prop edit, so a consumer needs to schedule it.',
-  },
   'raw-selection-control': {
     since: '1.26.0',
-    promote: '1.27.0',
+    promote: '1.28.0',
     why:
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
       'reading in the guard, and the reason this one lands warn rather than error even though its ' +
-      'law is settled. Promotion is gated with the plugin half on the wave-7 consumer run (≤3 ' +
-      'waivers), and `scripts/check-grace.ts` refuses the 1.27.0 release while the entry is still here.',
+      'law is settled. It moved from 1.27.0 to 1.28.0 with its AST twin, `basalt/control-outside-' +
+      'home`, whose PLUGIN_RULE_GRACE entry carries the measurement: the wave-7 run left 9 warns ' +
+      'in argo, all of them a control in a modal/form module whose `<Modal>` is rendered by the ' +
+      'PARENT — law C1 cross-file, which neither lane can see. `OVERLAY_CONVENTION_FILE` (this ' +
+      'file, and the same regex in the plugin) exempts that declared naming convention in both ' +
+      'lanes; 1.28.0 is when the remainder is re-measured. One law, two lanes, one promotion.',
   },
 }
 
@@ -1901,7 +1912,7 @@ export const GUARD_RULES = {
     enabled: (cfg: GuardConfig) => cfg.rawHtmlLayout,
     appliesTo: (relPath) => !isChartFile(relPath) && !relPath.endsWith('.css'),
     message:
-      'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Promoted to error in the Unreleased minor (C16) with severity only — the kind stayed standalone rather than folding into raw-html-layout as originally planned; the merge is still open, tracked as a follow-up, not done here.',
+      'Raw HTML element with inline layout/surface styling that the line scan cannot see — the tag is formatted across lines, or the style object is hoisted to a const. Same violation as raw-html-layout: use a Mantine layout primitive (Box/Flex/Grid/Stack/Group). Promoted to error at 1.26.0 (C16) with severity only — the kind stayed standalone rather than folding into raw-html-layout as originally planned; the merge is still open, tracked as a follow-up, not done here.',
   },
   'in-body-page-title': {
     kind: 'in-body-page-title',
@@ -2369,11 +2380,13 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   }
 
   // raw-selection-control — full-text tag scan plus the host WINDOW (see CONTROL_HOST_WINDOW_LINES).
-  // Two file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
-  // a file that DEFINES a basalt control cannot be told to use one, and a file importing
-  // `@mantine/form` is a form — C1's third home, whose inputs are not filters.
+  // Three file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
+  // a file that DEFINES a basalt control cannot be told to use one, a file importing
+  // `@mantine/form` is a form — C1's third home, whose inputs are not filters — and a file NAMED as
+  // an overlay body carries its `<Modal>` in the parent, where no scan of this file can reach it.
   if (
     ruleApplies('raw-selection-control', relPath) &&
+    !OVERLAY_CONVENTION_FILE.test(relPath) &&
     !CONTROL_OWNER_DEF.test(codeText) &&
     !MANTINE_FORM_IMPORT.test(codeText)
   ) {

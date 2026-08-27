@@ -2480,9 +2480,11 @@ describe('in-body-page-title', () => {
     expect(kinds(f)).not.toContain('in-body-page-title')
   })
 
-  it('lands warn while the grace entry stands (C16)', () => {
+  // Promoted at 1.27.0 — its GRACE_PERIOD_KINDS entry is gone, and so is the plugin rule of the
+  // same id from PLUGIN_RULE_GRACE. One law, two lanes, one promotion.
+  it('lands error now that the grace entry is gone (C16)', () => {
     const f = find(`<Title order={1}>Analytics</Title>`)
-    expect(f.find((x) => x.kind === 'in-body-page-title')?.severity).toBe('warn')
+    expect(f.find((x) => x.kind === 'in-body-page-title')?.severity).toBe('error')
   })
 })
 
@@ -2538,6 +2540,37 @@ describe('raw-selection-control', () => {
     expect(kinds(f)).not.toContain('raw-selection-control')
   })
 
+  // The CROSS-FILE exemption — the same basename convention the plugin's `control-outside-home`
+  // applies, so both lanes agree on the same file (one law, two lanes, one exemption). argo carried
+  // 9 of these: a control in a modal/form module whose `<Modal>` is rendered by the parent, which is
+  // outside the 12-line host window because the host tag is not in the file at all.
+  it.each([
+    'src/edit-session-modal.tsx',
+    'src/filters-drawer.tsx',
+    'src/column-popover.tsx',
+    'src/detail-panel.tsx',
+    'src/booking-form.tsx',
+  ])('does NOT flag %s — the overlay filename convention', (relPath) => {
+    expect(kinds(find(`<Select data={[]} />`, relPath))).not.toContain('raw-selection-control')
+  })
+
+  it('still flags a page module beside them', () => {
+    expect(kinds(find(`<Select data={[]} />`, 'src/bookings-page.tsx'))).toContain(
+      'raw-selection-control',
+    )
+  })
+
+  // Basename only, and it needs the leading subject: a `modal/` DIRECTORY holds the page pieces
+  // around the modals too, and a bare `modal.tsx` is a page module in every consumer that has one.
+  it.each(['src/modal/session.tsx', 'src/modal.tsx'])(
+    'is a subject-prefixed BASENAME convention, not %s',
+    (relPath) => {
+      expect(kinds(find(`<Select data={[]} />`, relPath))).toContain('raw-selection-control')
+    },
+  )
+
+  // Still warn at 1.27.0 — this kind and its AST twin `basalt/control-outside-home` are the C1 pair
+  // that moved to `promote: '1.28.0'` while the other wave-6 entries promoted.
   it('lands warn while the grace entry stands (C16)', () => {
     const f = find(`<Select data={[]} />`)
     expect(f.find((x) => x.kind === 'raw-selection-control')?.severity).toBe('warn')
