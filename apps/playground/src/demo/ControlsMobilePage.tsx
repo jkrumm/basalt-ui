@@ -24,6 +24,7 @@ import {
   CompareFilter,
   FilterSet,
   MultiSelectFilter,
+  NumberFilter,
   RangeFilter,
   SearchFilter,
   SelectFilter,
@@ -121,6 +122,10 @@ export function ControlsMobilePage() {
               label="All channels"
               noun="channels"
             />
+            {/* The stepper form — no `options`, so the pill's popover holds a `ctl` NumberInput
+                that applies on blur or Enter, and the sheet renders it as a full-width row. The
+                pill reads the VALUE like every other pill, mono because the value is a number. */}
+            <NumberFilter field={mobileFilters.field.minDuration} label="Min duration" step={30} />
             <SearchFilter field={mobileFilters.field.query} placeholder="Find a customer" />
             <ToggleFilter field={mobileFilters.field.verified} label="Verified only" />
           </FilterSet>
@@ -137,7 +142,7 @@ export function ControlsMobilePage() {
         <span data-numeric style={{ color: VX.ink }}>
           {active}
         </span>{' '}
-        of six filters differ from their fallback — the `n` in the `Filters (n)` pill.
+        of seven filters differ from their fallback — the `n` in the `Filters (n)` pill.
       </Text>
 
       <Section

@@ -388,7 +388,12 @@ function ChannelMixCard() {
       info="A donut over four channels; hover a slice for its share of total. The switch previews isPending — the 'query in flight' state stays distinct from 'measured and empty', so a loading chart never reads as a chart with no data."
       actions={
         <Switch
-          size="xs"
+          // `size` is load-bearing HERE and nowhere else in a home slot: `ChartCard` lives inside
+          // the Mantine-free chart layer, so its `actions` slot carries only `data-basalt-tier` and
+          // cannot mount the tier theme — a control there states its own size
+          // (`packages/basalt-ui/CLAUDE.md`, "A home sizes its own SLOT"). `control-size-literal`
+          // exempts this one owner, so no waiver is needed; it used to take one.
+          size="ctl"
           label="Pending"
           checked={pending}
           onChange={(e) => setPending(e.currentTarget.checked)}
