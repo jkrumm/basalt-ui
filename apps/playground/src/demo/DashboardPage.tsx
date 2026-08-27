@@ -290,6 +290,18 @@ export function DashboardPage() {
             // `actions` slot is a per-card affordance, and four identical kebabs across a KPI row
             // is chrome. It is a raw `ActionIcon` with no `size` — `StatCard` wraps the slot in a
             // `CtlSlot`, so the tier comes from the home (law C5).
+            // `unit` + `breakdown` on ONE card, deliberately — the row is four cards wide and a
+            // breakdown under every one of them turns a KPI row into four small tables. `unit` is a
+            // separate channel from `value` (mono, muted, `text-sm` after the numeral) so `2,077`
+            // and `orders` are not one 24px string, and the rows carry NO hairline: §2.1 puts a
+            // horizontal rule between option rows and nowhere else.
+            {...(kpi.key === 'orders' && {
+              unit: 'orders',
+              breakdown: data.breakdown.slice(0, 2).map((row) => ({
+                label: row.label,
+                value: row.orders,
+              })),
+            })}
             {...(kpi.key === 'sales' && {
               actions: (
                 <ActionIcon variant="subtle" aria-label="Card actions">

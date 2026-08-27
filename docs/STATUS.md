@@ -78,11 +78,16 @@ the README; D4 became law C16; D13/D14 are this section and the `ARGO-MIGRATION-
 The three-round `CLAUDE-block.md.tpl` handoff (D2 — "names three chart exceptions where there are
 five") is closed.
 
-**Still open, and deliberately**: wave 7. The six `warn` control guards (`control-outside-home`,
-`control-size-literal`, `in-body-page-title`, `responsive-twin`, `search-literal-link`,
-`use-search-from-literal`) carry `promote: '1.27.0'` and their promotion is gated on running the
-shipped preset over argo, linewatch, image-share, rb, image-gen and the playground with ≤3 total
-waivers. The argo (≈ −700 lines) and linewatch (≈ −300) migrations of §8 have not run.
+**Wave 7 — measured, and five of the six promoted at 1.27.0.** `control-size-literal`,
+`in-body-page-title` (both lanes — the plugin rule and the guard kind share the id),
+`responsive-twin`, `search-literal-link` and `use-search-from-literal` are `error` in the shipped
+preset; their grace entries are deleted, which IS the promotion (C16). The gating consumer run
+happened and left **9 warns in argo**, every one a control inside a modal/form module whose `<Modal>`
+is rendered by the PARENT route — law C1's cross-file case, which no single-file scan can see. So
+`basalt/control-outside-home` and the `raw-selection-control` guard kind did NOT promote: both are
+re-dated to `promote: '1.28.0'`, and both lanes gained the `*-{modal,drawer,popover,panel,form}.tsx`
+basename exemption (`OVERLAY_CONVENTION_FILE`) that those nine already satisfy. The argo (≈ −700
+lines) and linewatch (≈ −300) migrations of §8 have not run.
 
 ## Round-10 batch — 1.25.0
 
