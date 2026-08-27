@@ -75,19 +75,19 @@ difference is basalt binds to its _own_ `--vx-*` tokens instead of inventing sha
 
 What basalt sets, and why. Full surface: <https://mantine.dev/theming/theme-object>.
 
-| Field                                 | Basalt value                                       | Rationale                                                       |
-| ------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------- |
-| `primaryColor`                        | the one earned identity hue                        | the single brand voltage (`DESIGN-CORE.md`)                     |
-| `primaryShade`                        | `6` (one shade, both schemes)                      | a fill is a SURFACE — it does not invert; see the fill band below |
-| `autoContrast` + `luminanceThreshold` | `true`, ~`0.45`                                    | left on for Mantine internals, but NOT trusted — the foreground is decided in CSS (`--vx-on-*`), because Mantine's pick is scheme-blind AND brightness-based |
-| `colors`                              | every Mantine accent overridden via a `ramp10()`   | `color="teal"` etc. become on-palette with zero call-site edits |
-| `white` / `black`                     | match the palette endpoints                        | endpoints consistent with the palette                           |
-| `defaultRadius`                       | tight (`sm`/4px), cards at `md`                     | v9 default changed `sm`→`md`; basalt leans tight (Linear)       |
-| `fontFamilyMonospace`                 | mono stack                                          | numbers render mono (`DESIGN-CORE.md`)                          |
-| `focusRing`                           | `'auto'` (keyboard-only)                            | restrained, accessible focus                                    |
-| `fontWeights`                         | named weight ladder                                 | name the weight ladder once                                     |
-| `components`                          | `Component.extend({...})`                           | centralised default props + Styles API                          |
-| `other`                               | escape hatch                                        | typed bag for non-standard tokens (`theme.other.*`)             |
+| Field                                 | Basalt value                                                      | Rationale                                                                                                                                                    |
+| ------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `primaryColor`                        | the one earned identity hue                                       | the single brand voltage (`DESIGN-CORE.md`)                                                                                                                  |
+| `primaryShade`                        | `6` (one shade, both schemes)                                     | a fill is a SURFACE — it does not invert; see the fill band below                                                                                            |
+| `autoContrast` + `luminanceThreshold` | `true`, ~`0.45`                                                   | left on for Mantine internals, but NOT trusted — the foreground is decided in CSS (`--vx-on-*`), because Mantine's pick is scheme-blind AND brightness-based |
+| `colors`                              | every Mantine accent overridden via a `ramp10()`                  | `color="teal"` etc. become on-palette with zero call-site edits                                                                                              |
+| `white` / `black`                     | match the palette endpoints                                       | endpoints consistent with the palette                                                                                                                        |
+| `defaultRadius`                       | `md` (6px, controls), a separate 7px `--vx-radius-card` for cards | v9 default changed `sm`→`md`; basalt leans tight (Linear)                                                                                                    |
+| `fontFamilyMonospace`                 | mono stack                                                        | numbers render mono (`DESIGN-CORE.md`)                                                                                                                       |
+| `focusRing`                           | `'auto'` (keyboard-only)                                          | restrained, accessible focus                                                                                                                                 |
+| `fontWeights`                         | named weight ladder                                               | name the weight ladder once                                                                                                                                  |
+| `components`                          | `Component.extend({...})`                                         | centralised default props + Styles API                                                                                                                       |
+| `other`                               | escape hatch                                                      | typed bag for non-standard tokens (`theme.other.*`)                                                                                                          |
 
 **`MantineColorsTuple`** is always **10 shades, light→dark** (index 0 lightest, 9 darkest). A
 designed family with fewer stops is interpolated up to 10 by a `ramp10()` helper. `dark` is a
@@ -224,7 +224,7 @@ Three escalating levers, cheapest first. **Always prefer the cheapest that does 
    > `Card`/`Paper` are **not** themed via `defaultProps` — depth comes from `styles.root` forcing
    > `boxShadow: 'var(--vx-shadow-card)'` + `borderRadius: 'var(--vx-radius-card)'`, no
    > `withBorder` (`docs/DESIGN-SPEC.md` §8 inversions #1 and #5 supersede the `withBorder`/`radius:
-   > 'md'` shape shown above for a generic default-props example).
+'md'` shape shown above for a generic default-props example).
 2. **`vars`** — compute CSS variables from `(theme, props)`; the mantinehub technique for routing a
    component's fill/text to `*-filled`/`*-contrast` per `color` prop (see §7). Surgical, no CSS file.
 3. **`classNames` + CSS modules** — when structure/state styling is needed. Style by **data
@@ -288,14 +288,15 @@ The chrome advances in lockstep with `createBasaltTheme` and `DESIGN-CORE.md` so
 
 ### 8.2 The shell: sidebar + breadcrumb
 
-`BasaltShell` composes a full-height grouped sidebar, a slim breadcrumb top bar with page-header
-slots, a collapsible desktop icon-rail, and a mobile bottom-nav + drawer. Router coupling (typed
-navigation, active detection, badge counts) stays **consumer-side** — the shell is presentational
-and router-agnostic.
+`BasaltShell` composes a full-height grouped sidebar (desktop only), a slim breadcrumb top bar with
+page-header slots, a collapsible desktop icon-rail, and a mobile bottom tab bar (no drawer — the
+full-height mobile sidebar drawer was deleted in 1.19.0). Router coupling (typed navigation, active
+detection, badge counts) stays **consumer-side** — the shell is presentational and router-agnostic.
 
 - **App shell.** A full-height **grouped sidebar** (muted uppercase section labels; brand pinned
-  top-left) + a slim **breadcrumb top bar** (`Section / Page`, hairline-separated). `AppShell
-  layout="alt"` gives a full-height sidebar with the breadcrumb header scoped to the main area.
+  top-left) + a slim **breadcrumb top bar** — transparent, no bottom rule (the header and page body
+  share one background). `AppShell layout="alt"` gives a full-height sidebar with the breadcrumb
+  header scoped to the main area.
 - **Top-bar slots own the page header.** The bar has two zones, not one. A **page slot**: the active
   route portals its full control row (window/range selectors, tabs, filters) into the bar via a
   `PageActions` outlet, so pages drop their in-body `<Title>` H1 — the breadcrumb names the page and
@@ -316,23 +317,23 @@ and router-agnostic.
   state, not a data signal, so the active item is a quiet neutral fill (a scheme-adaptive
   `color-mix` of `--vx-neutral`, with the NavLink colour forced to text colour), **never** the
   identity hue.
-- **Collapsible sidebar (desktop icon-rail).** A persisted collapse flag (via `@mantine/hooks`
-  `useLocalStorage`) drives the navbar to a 72px rail (responsive `width: { base: 240, sm: collapsed
-  ? 72 : 240 }` so mobile stays a full drawer); rail styling — hide labels/section-headers/brand-text,
-  center icons, tooltip each item — is **CSS gated behind `min-width: sm`**, so the persisted flag
-  never collapses the mobile drawer. Toggle via the header chevron or **`Cmd/Ctrl+B`**
-  (`useHotkeys`).
-- **Sidebar header + footer.** Header = brand + a `visibleFrom="sm"` collapse chevron. Footer = a
-  **theme select** `Menu` (System / Light / Dark via `setColorScheme`, active-checked, + the app
-  version). On mobile a close (✕) sits **inline with the theme control** in the footer row
-  (`hiddenFrom="sm"`), so the drawer header stays just the brand.
-- **Mobile bottom nav** (an `AppShell.Footer` with `height {base:56,sm:0}` + `hiddenFrom="sm"`): a
-  **curated** set of primaries as icon+short-label tabs with a neutral active fill, plus a trailing
-  **Menu** tab that opens the full grouped drawer. There is no top burger on mobile; the drawer
-  dismisses via the footer ✕ or by navigating.
+- **Collapsible sidebar (desktop icon-rail).** A persisted collapse flag (via basalt's own
+  `createPersistedState`) drives the navbar to a 48px rail (responsive `width: { base: 216, sm:
+collapsed ? 48 : 216 }`); the sidebar itself doesn't render below `sm` at all — there is no mobile
+  drawer, so no CSS gate is needed to protect one. Toggle via the header chevron; there is no
+  `Cmd/Ctrl+B` hotkey.
+- **Sidebar header + footer.** Header = brand + a `visibleFrom="sm"` collapse chevron. Footer =
+  a consumer-supplied `Menu` of `settingsMenuItems` behind a "Settings" row (opt-in — it renders only
+  when entries are supplied), optionally followed by an `account` row. basalt ships no built-in
+  theme-select control; a theme switcher is a consumer-supplied settings-menu entry (or global-slot
+  widget) if the app wants one.
+- **Mobile bottom nav** (an `AppShell.Footer` with `height {base: mobileNavBarHeight, sm:0}` +
+  permanently `collapsed: { mobile: true }` navbar): a **curated** set of primaries as icon+short-label
+  tabs with a neutral active fill, plus a trailing **Menu**/**Drawer** "More" surface (inferred from
+  row count, not a full nav drawer) that holds everything else — settings, account, theme switcher.
 - **Nav count badges.** A count is a data _signal_, so "ink earns its colour" lets it carry the **one
   spot of identity colour** in the otherwise-neutral nav (the active state stays neutral): a `Badge
-  size="sm" variant="light"` in the NavLink right-section, rendered only when `> 0` and auto-hidden
+size="sm" variant="light"` in the NavLink right-section, rendered only when `> 0` and auto-hidden
   in the collapsed rail (the right-section is `display:none` there). Ship the count-badge pattern via
   `NavCountBadge`; the counts themselves are consumer-supplied (read-only queries that degrade to 0
   on error).
@@ -368,17 +369,17 @@ guardrails) — use a status hue or a series token instead.
 
 For reference, _not_ a 1:1 port:
 
-| ShadCN                               | Mantine realization                                         |
-| ------------------------------------ | ----------------------------------------------------------- |
-| `SidebarProvider` / `useSidebar`     | `AppShell` + a persisted collapse flag                      |
-| `Sidebar` / `SidebarContent`         | `AppShell.Navbar` + scroll area                             |
-| `SidebarHeader` / `SidebarFooter`    | top `Group` / bottom-pinned `Group` (flex spacer)           |
-| `SidebarGroup` + `SidebarGroupLabel` | `Stack` + a muted `Text` (uppercase caption)                |
-| `SidebarMenuButton` (+ `isActive`)   | `NavLink` (+ `active` / `data-active`)                      |
-| `SidebarMenuBadge`                   | `NavLink.rightSection` → `Badge` (`NavCountBadge`)          |
-| `collapsible="icon"`                 | `AppShell` navbar width swap + icon-only items in `Tooltip` |
-| mobile sheet                         | `AppShell.Navbar` `collapsed={{ mobile }}` (offcanvas)      |
-| `Cmd/Ctrl+B` toggle                  | `@mantine/hooks` `useHotkeys([['mod+B', toggle]])`          |
+| ShadCN                               | Mantine realization                                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `SidebarProvider` / `useSidebar`     | `AppShell` + a persisted collapse flag                                                                                    |
+| `Sidebar` / `SidebarContent`         | `AppShell.Navbar` + scroll area                                                                                           |
+| `SidebarHeader` / `SidebarFooter`    | top `Group` / bottom-pinned `Group` (flex spacer)                                                                         |
+| `SidebarGroup` + `SidebarGroupLabel` | `Stack` + a muted `Text` (uppercase caption)                                                                              |
+| `SidebarMenuButton` (+ `isActive`)   | `NavLink` (+ `active` / `data-active`)                                                                                    |
+| `SidebarMenuBadge`                   | `NavLink.rightSection` → `Badge` (`NavCountBadge`)                                                                        |
+| `collapsible="icon"`                 | `AppShell` navbar width swap + icon-only items in `Tooltip`                                                               |
+| mobile sheet                         | not ported — `MobileNav` bottom tab bar + a Menu/Drawer "More" surface, navbar permanently `collapsed={{ mobile: true }}` |
+| `Cmd/Ctrl+B` toggle                  | not shipped — collapse toggles via the header chevron only                                                                |
 
 ---
 

@@ -1,9 +1,10 @@
 /**
  * RouterDemoPage — self-contained embedded TanStack Router demo.
  *
- * Mounts its own memory-history router internally — the playground shell is router-agnostic
- * and is NOT converted to TanStack Router globally. Proves useBasaltNav + useRouterBreadcrumbs
- * against real route matches and staticData titles.
+ * Mounts its own SECOND, memory-history router internally, nested inside the playground's real
+ * one (the playground app itself now runs on TanStack Router globally, see `main.tsx`/`routes/`) —
+ * this page proves useBasaltNav + useRouterBreadcrumbs against an isolated route tree with its own
+ * matches and staticData titles, without touching the outer app's routing.
  */
 import { Badge, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import {

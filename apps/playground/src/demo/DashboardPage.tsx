@@ -7,7 +7,8 @@
  * Exercises: StatCard (label/value/delta/sparkline/menu slots), Paper (themed panel + shadow-card
  * + radius-card), the Bars kind (grouped layout, dual axis, its own derived legend), LineSparkline,
  * useChartSize (sparkline width measurement), Progress (themed ink-8% track), Menu (ghost "more
- * actions"), Tooltip (info dot), PageActions.
+ * actions"), Tooltip (info dot). The date-range control lives in the shell's `globalActions`
+ * (see `routes/__root.tsx` / `routes/dashboard.tsx`), not a per-page `PageActions` slot.
  */
 import type { CSSProperties } from 'react'
 import {

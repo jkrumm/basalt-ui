@@ -32,14 +32,35 @@ be released yet; the version column says when a capability landed, not what npm 
 | Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                               | 1.22.0                         |
 | Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                 | 1.23.0                         |
 | Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                      | 1.23.1                         |
-| Round-9 batch — `QueryState`, table body chrome, four false greens                                     | unreleased                     |
+| Round-9 batch — `QueryState`, table body chrome, four false greens                                     | 1.24.0                         |
+| Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)             | 1.25.0                         |
 
-Adopted downstream: seven consumer repos, all on 1.23.1 as of the round-9 sweep. `rollhook` runs
+Adopted downstream: seven consumer repos, on 1.23.1 as of the round-9 sweep (below). Round-10 and
+round-11 consumer sweeps ran against 1.24.0/1.25.0 (`.claude/feedback/round-10/`,
+`.claude/feedback/round-11/`) but are not yet summarized in this file — a follow-up. `rollhook` runs
 the framework-free route with no Mantine and no React (`docs/FRAMEWORK-FREE.md`);
 `basalt-ui-obsidian` is a downstream _library_, not an app.
 
 The June-era roadmap/handover docs in `docs/archive/` still phrase built work as "remaining"; that
 language is historical, see the banner on each.
+
+## Round-11 consumer sweep
+
+Ran against 1.25.0, validating round-10's `manualPagination` contract. Not summarized here yet —
+see `.claude/feedback/round-11/` per-repo reports directly.
+
+## Round-10 batch — 1.25.0
+
+One `feat:` commit (`d18e5f1`). Per-export detail in `packages/basalt-ui/MIGRATING.md` § `1.25.0`.
+
+- **`manualPagination` imposes a contract** — argo found on 1.24.0 that `manualPagination` left
+  sorting/filtering/the "of N" count armed against a single server page, and worked around it with
+  an explicit `enableSorting={false}`. Adopting `manualPagination` now requires resolving each of
+  `rowCount`/`pageCount`, sorting (`manualSorting` or `enableSorting={false}`), and filtering
+  (`manualFiltering`) explicitly — unresolved, it throws in dev and degrades (no sort/filter
+  controls, no "of N", one `console.error`) in production. A bare client-side table is unaffected.
+- Sibling fix: the empty-state branch now keys off the rendered row model instead of `data.length`,
+  so a search/page-index match of zero rows renders the empty message instead of a bare `<tbody>`.
 
 ## Round-9 consumer sweep (2026-08-22)
 
@@ -62,10 +83,10 @@ class: **a green that was reachable by standing in the wrong directory.** Full r
 two waivers. argo's one `exempt` entry is byte-identical to the built-in default and nothing says
 so. Suggested: `redundant — identical to the default`, `dead — matched no scanned file`.
 
-## Round-9 batch — unreleased
+## Round-9 batch — 1.24.0
 
 Two `feat:` commits and two `fix:`. Per-export detail in `packages/basalt-ui/MIGRATING.md`
-§ `Unreleased`.
+§ `1.24.0`.
 
 - **`QueryState`, and the branches around it** (`91f612f`; playground routes `a299813`) — the
   app-layer ask image-share and argo ranked first for four rounds. Shipping `EmptyState` and nothing

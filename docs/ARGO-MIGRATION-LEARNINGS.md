@@ -16,7 +16,8 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
 > `chartMissingAriaLabel` tag scan choked on JSX generics and arrow-fn props (regex hardened +
 > tests), and `raw-radius` had no config toggle (added `rawRadius`; the framework repo now
 > actually self-scans — its lefthook check-theme had been silently scanning zero files).
-> Still open: 2, 7, 10–12, 14, 16–17, 21–22, 26–27.
+> Still open: 2, 7, 10–12, 14, 16, 21–22, 26–27. (17 resolved by the `density` config dimension,
+> 1.2.0; 19 resolved same-night alongside 18/20 — both were left off this line originally.)
 
 ## Packaging / CLI
 
@@ -80,9 +81,9 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
 
 ## Shell
 
-17. **Fixed dimensions, no knobs**: header 96/48, navbar 216/48, footer 52, padding `sm` are
-    hardcoded; argo came from 108/56, 240/72, 56, `md`. Fine for adopting the doctrine, but a
-    density/size prop tier would ease visual review of big migrations.
+17. **Fixed dimensions, no knobs** — RESOLVED. Header/navbar/footer/padding were hardcoded at
+    filing; `createBasaltTheme({ density })` (integer −3..+3, shipped 1.2.0) now tracks every
+    density-sensitive spacing token together, closing the "no knobs" gap this item filed.
 18. **Router-integrated nav rows used to lose the internal `.link` styling.** The 1.0 shell took a
     `renderNavLink` render callback, and a consumer returning their own router `<Link>` replaced
     basalt's whole row — inactive/hover treatment and all — so router-integrated rows looked
@@ -93,8 +94,9 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
     cannot be bypassed and there is nothing to keep in sync across three render paths. On the
     breadcrumb bar the same seam is `parentAnchor`. A consumer with no router passes neither and
     still gets `href` + `onClick`. See `docs/STATUS.md` → "Migration (removed exports)".
-19. **No external collapse control** — consumer hotkeys (argo had `Cmd+B`) can't drive collapse;
-    `storageKey` is the only seam.
+19. **No external collapse control** — RESOLVED same-night. `BasaltShell`/`AppSidebar` now take a
+    controlled `collapsed` + `onCollapsedChange` pair (an explicit `collapsed` prop overrides the
+    internal `storageKey`-backed state), so a consumer's own hotkey can drive collapse.
 20. **Mobile "More" full-drawer doesn't close on navigation** — RESOLVED. The full-height mobile
     sidebar drawer no longer exists: below `sm` the navbar is permanently collapsed and the bottom
     bar IS the nav. A tab that holds one destination navigates on tap with no surface to close, and

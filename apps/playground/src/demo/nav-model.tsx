@@ -19,14 +19,14 @@
  * playground — it is the surface where the design gets looked at:
  *
  *   Home · Activity · Charts · Batteries · More
- *   └──── three `link` slots ────┘ └ menu ┘ └ sheet ┘
+ *   └──── three `link` slots ────┘ └ sheet ┘ └ sheet ┘
  *
  * - `mobile: 'tab'` on `dashboard` / `activity` / `charts` makes each a **link** slot: one tap,
  *   one navigation, no overlay to dismiss.
  * - `mobile: { tab: true }` on the **Batteries** group makes the whole section one slot. It holds
- *   six destinations, and six is exactly the ceiling for a menu that pops out of the bar without
- *   ever rendering below the fold — so it resolves to a **menu**. Add a seventh and it becomes a
- *   sheet on its own, with no config change.
+ *   eight destinations — past `menuMax` (6), the ceiling for a menu that pops out of the bar
+ *   without ever rendering below the fold — so it resolves to a **sheet**, same surface as More.
+ *   Dropping to six or fewer (with no config change) would make it a menu instead.
  * - Everything else (Components, Content, the sixteen Agent pages, System, plus the dashboard
  *   sub-pages) falls into **More**, which is far past six rows and so resolves to a **sheet**.
  */
@@ -158,8 +158,8 @@ export const NAV = defineNav({
     ),
 
     // `mobile: { tab: true }` — the one SECTION that owns a bar slot. The surface is inferred
-    // from how many rows it holds, never configured: six destinations, so it is a menu that
-    // grows upward out of the tab.
+    // from how many rows it holds, never configured: eight destinations, past `menuMax` (6), so
+    // it resolves to a sheet rather than a menu that grows upward out of the tab.
     navGroup(
       { id: 'batteries', label: 'Batteries', icon: <IconBattery />, mobile: { tab: true } },
       [
