@@ -15,33 +15,23 @@
  *
  * Page content renders through `<Outlet />`; each destination is a file route under `routes/`.
  */
-import { Text, useMantineColorScheme } from '@mantine/core'
+import { useMantineColorScheme } from '@mantine/core'
 import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
-import type { BasaltAccountActions, GlobalAction } from 'basalt-ui'
+import type { AccountMenuItem, BasaltAccountActions, GlobalAction } from 'basalt-ui'
 import { useNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { openSpotlight } from 'basalt-ui/commands'
 import { useEffect } from 'react'
 import { registerColorSchemeControl } from '../demo/commands'
-import { NAV } from '../demo/nav-model'
+import { IconPalette, IconSparkle } from '../demo/icons'
+import { NAV, SIDEBAR_BLOCKS } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
 
 // Build-time constant injected by `basaltViteConfig`'s `define`. The `__name__` form is the
 // preset's own convention, so the dangle is expected here.
 // oxlint-disable-next-line no-underscore-dangle
 declare const __APP_VERSION__: string
-
-/**
- * Pinned to the bottom of the mobile More surface. It replaces the old desktop-only sidebar
- * footer slot: below the `sm` breakpoint there is no sidebar at all, so anything that used to
- * live in its footer has to be reachable from the bar or it is not reachable at all.
- */
-const moreExtra = (
-  <Text size="xs" c="dimmed" ta="center" py={4}>
-    basalt-ui playground
-  </Text>
-)
 
 /**
  * Live per-destination badges. Static here, so it is hoisted: `useNav`'s memo deps include this
@@ -63,6 +53,16 @@ const navBadges = { dashboard: 4 }
  * The date-range filter that used to sit here is gone: a page-level filter belongs in that page's
  * `PageBar.filters` (law C1), not in a persistent header slot every route pays for.
  */
+/**
+ * The workspace switcher's rows (`brand.menu`). Static and hoisted, same as `navBadges` — a fresh
+ * array per render would be a new identity into the brand row on every commit.
+ */
+const WORKSPACE_MENU: AccountMenuItem[] = [
+  { key: 'switch', label: 'Switch workspace', onClick: () => {} },
+  { key: 'new', label: 'New workspace', onClick: () => {} },
+  { key: 'settings', label: 'Workspace settings', onClick: () => {} },
+]
+
 const GLOBAL_ACTIONS: GlobalAction[] = [
   { key: 'connectivity', node: <ConnectivityIndicator />, mobile: 'bar' },
   { key: 'notifications', node: <NotificationBell />, mobile: 'bar' },
@@ -91,13 +91,27 @@ function RootLayout() {
   // `badges` keys autocomplete from the definition's id union — a typo is a compile error, not a
   // silently missing badge. A `number` becomes `item.count`: a NavCountBadge on the desktop row
   // and an accent dot on the mobile slot icon (a count glyph is unreadable in a 56px slot).
-  const nav = useNav(NAV, { badges: navBadges, moreExtra })
+  const nav = useNav(NAV, { badges: navBadges })
 
   return (
     <BasaltShell
-      brand={{ name: 'Basalt', version: __APP_VERSION__ }}
+      // `menu` makes the brand row a `Name ▾` workspace switcher — the rows are `AccountMenuItem`s,
+      // the same shape the account menu takes, so there is no second vocabulary for one dropdown.
+      brand={{ name: 'Basalt', version: __APP_VERSION__, menu: WORKSPACE_MENU }}
       {...nav}
-      search={{ onOpen: () => openSpotlight() }}
+      // `actions` is a TUPLE of one or two — a third icon would squeeze the ⌘K trigger under the
+      // width where its placeholder still reads, so the type refuses it rather than the layout.
+      search={{
+        onOpen: () => openSpotlight(),
+        actions: [
+          { key: 'new', label: 'New page', icon: <IconSparkle />, onClick: () => openSpotlight() },
+          { key: 'theme-lab', label: 'Theme lab', icon: <IconPalette />, onClick: () => {} },
+        ],
+      }}
+      // All three block kinds, declared once (`demo/nav-model.tsx`) and projected by basalt onto the
+      // desktop sidebar, the collapsed rail and the mobile More sheet — the two `ReactNode` extras
+      // this replaced (`sidebarNavExtra`, `mobileNav.moreExtra`) could express none of that.
+      sidebarBlocks={SIDEBAR_BLOCKS}
       globalActions={GLOBAL_ACTIONS}
       account={{ state: accountState, actions: accountActions }}
     >

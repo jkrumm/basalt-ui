@@ -326,8 +326,8 @@ vars and the mono numeric-label rule in its module CSS. Inputs keep the 16px iOS
 All AST rules live in `configs/oxlint-plugin.js`, ids added to `KNOWN_RULE_IDS`, each honouring
 `theme-allow` / `theme-allow-file`. Ancestry is a **new** `node.parent` walk (the only existing walk
 is `isInStyleContext`; `hand-rolled-plot` is file-scoped) that stops at a **slot attribute** — a
-`JSXAttribute` named `actions | filters | tabs | sync | control | filtersEnd` whose owning element
-is `PageBar | Section | WidgetHeader | ChartCard | StatCard | BasaltDataTable | SettingsRow |
+`JSXAttribute` named `actions | filters | tabs | sync | filtersEnd` whose owning element
+is `PageBar | Section | WidgetHeader | ChartCard | StatCard | BasaltDataTable | SettingsSection |
 FilterSet` — never at the element itself, so a body form under a `Section` never fires. Identifier
 resolution: a `const x = <JSX/>` binding used as a slot attribute value in the same file counts as
 inside that slot (argo's hoisted `headerExtra`, `cost-over-time.tsx:54-68`).
@@ -336,6 +336,9 @@ inside that slot (argo's hoisted `headerExtra`, `cost-over-time.tsx:54-68`).
 DateInput, TagsInput, Chip.Group }` (binding imported from `@mantine/*`);
 `BOUND_TAGS = { RangeFilter, CompareFilter, SelectFilter, MultiSelectFilter, SearchFilter,
 ToggleFilter, ViewTabs }`.
+
+`SettingsRow.control` is the form-row home: Mantine `md`, raw inputs allowed, no filter/size rule
+applies; `control-outside-home` treats it as a home.
 
 | Rule id                           | Law     | AST pattern                                                                                                                                                                                                                                                                                                                                                      | Escape                                   | Severity                                                                         |
 | --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------- |
