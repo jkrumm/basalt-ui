@@ -21,27 +21,18 @@
  * <BasaltDataTable data={rows} columns={columns} />
  *
  * @example
- * // With the toolbar + pagination bar:
+ * // With the title, the toolbar + pagination bar:
  * <BasaltDataTable
+ *   title="Top pages"
  *   data={rows}
  *   columns={columns}
  *   enableGlobalFilter
  *   facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
- *   toolbarActions={<Button size="xs">Export</Button>}
+ *   actions={<Button>Export</Button>}
  *   enablePagination
  * />
  */
-import {
-  Box,
-  Group,
-  MultiSelect,
-  Pagination,
-  Select,
-  Skeleton,
-  Table,
-  Text,
-  TextInput,
-} from '@mantine/core'
+import { Box, Group, Pagination, Select, Skeleton, Table, Text, TextInput } from '@mantine/core'
 import type { MantineSpacing } from '@mantine/core'
 import type {
   Column,
@@ -65,7 +56,17 @@ import {
 } from '@tanstack/react-table'
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
+import { FilterSet } from '../controls'
+// `EnumFilter` is deliberately NOT on the `./controls` barrel (`docs/CONTROLS-SPEC.md` §3 —
+// reaching for it directly is hand-rolling a filter, `basalt/hand-rolled-filter`); a facet column
+// is the one place inside the framework itself that legitimately builds a `FieldHandle` over
+// something that is not a store field, so it reaches past the barrel on purpose.
+import { EnumFilter } from '../controls/enum-filter'
+import { MultiSelectFilter } from '../controls/multi-select-filter'
+import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
+import type { EnumField, FieldHandle, MultiField } from '../state'
+import { WidgetHeader } from '../widget-header'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
 
@@ -113,17 +114,17 @@ function resolveAlign<T>(column: Column<T, unknown>): DataTableAlign | undefined
 
 // ── Facets ────────────────────────────────────────────────────────────────────
 
-/** A single selectable option inside a {@link DataTableFacet}'s Select/MultiSelect. */
+/** A single selectable option inside a {@link DataTableFacet}'s `EnumFilter`/`MultiSelectFilter` pill. */
 export type DataTableFacetOption = {
   /** The raw filter value, compared against the column's stringified cell value. */
   value: string
-  /** Label shown in the Select/MultiSelect dropdown. */
+  /** Label shown in the pill's popover. */
   label: string
 }
 
 /**
- * Declares one faceted column filter, rendered as a Mantine Select (or MultiSelect when
- * `multiple` is set) inside the toolbar.
+ * Declares one faceted column filter, rendered as an `EnumFilter` pill (or `MultiSelectFilter`
+ * when `multiple` is set) inside a `FilterSet` in the toolbar (`docs/CONTROLS-SPEC.md` §3).
  *
  * @example
  * const facets: DataTableFacet[] = [
@@ -135,12 +136,75 @@ export type DataTableFacetOption = {
 export type DataTableFacet = {
   /** The TanStack column id — the column's manual `id`, or its `accessorKey` string. */
   columnId: string
-  /** Label shown as the Select/MultiSelect placeholder. */
+  /** The pill's label — read at rest (single-select) and as the `Filters`/count fallback (multi). */
   label: string
   /** Selectable options for this facet. */
   options: DataTableFacetOption[]
-  /** Render a MultiSelect (any-of match) instead of a single Select (exact match). @default false */
+  /** Render a `MultiSelectFilter` (any-of match) instead of an `EnumFilter` (exact match). @default false */
   multiple?: boolean
+}
+
+/**
+ * The "no filter" member of a single-select facet's `FieldHandle`. A closed enum field always has
+ * a real member as its fallback (C4) — there is no "unset" — so a facet, whose underlying
+ * `column.getFilterValue()` genuinely can be `undefined`, needs one synthetic option to stand for
+ * that state. Rendered as the enum's first radio, labelled "All"; picking it clears the column
+ * filter, same as every other value change.
+ */
+const FACET_ALL_VALUE = '__basalt_facet_all__'
+
+/**
+ * Presents a single-select facet column as a `FieldHandle<EnumField<string>>` so it can render
+ * through the shared `EnumFilter` pill instead of a hand-rolled `Select` (`basalt/hand-rolled-filter`).
+ * `use()` reads/writes `column.getFilterValue()`/`setFilterValue()` directly — no internal
+ * subscription needed, since the enclosing `BasaltDataTable` already re-renders on every
+ * `columnFilters` change and this handle is rebuilt fresh each render alongside its column.
+ */
+function facetEnumHandle<T>(
+  column: Column<T, unknown>,
+  facet: DataTableFacet,
+): FieldHandle<EnumField<string>> {
+  return {
+    kind: 'enum',
+    fallback: FACET_ALL_VALUE,
+    options: [{ value: FACET_ALL_VALUE, label: 'All' }, ...facet.options],
+    use: () => {
+      const current = (column.getFilterValue() as string | undefined) ?? FACET_ALL_VALUE
+      return [
+        current,
+        (next: string) => {
+          column.setFilterValue(next === FACET_ALL_VALUE ? undefined : next)
+        },
+      ] as const
+    },
+    isDefault: (value) => value === FACET_ALL_VALUE,
+  }
+}
+
+/**
+ * Presents a multi-select facet column as a `FieldHandle<MultiField<string>>`. Unlike the
+ * single-select case, `MultiField`'s own fallback — an empty selection — already means "no
+ * constraint", so no synthetic option is needed here.
+ */
+function facetMultiHandle<T>(
+  column: Column<T, unknown>,
+  facet: DataTableFacet,
+): FieldHandle<MultiField<string>> {
+  return {
+    kind: 'multi',
+    fallback: [],
+    options: facet.options,
+    use: () => {
+      const current = (column.getFilterValue() as readonly string[] | undefined) ?? []
+      return [
+        current,
+        (next: readonly string[]) => {
+          column.setFilterValue(next.length > 0 ? [...next] : undefined)
+        },
+      ] as const
+    },
+    isDefault: (value) => value.length === 0,
+  }
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -159,6 +223,19 @@ export type DataTableFacet = {
  * }
  */
 export type BasaltDataTableProps<T> = {
+  // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
+
+  /**
+   * Optional heading rendered above the toolbar via `WidgetHeader tier="widget"`. `count` always
+   * reads `table.getRowCount()` (C11) — never a raw `data.length` — so it tracks the row model
+   * (post-filter/-pagination) rather than the unfiltered input.
+   */
+  title?: string
+  /** Optional leading icon, forwarded to `WidgetHeader`. */
+  icon?: ReactNode
+  /** Optional muted line rendered below the title row. */
+  subtitle?: string
+
   /** Row data array. */
   data: T[]
   /**
@@ -262,9 +339,9 @@ export type BasaltDataTableProps<T> = {
   /** Called whenever the internal global filter value changes. */
   onGlobalFilterChange?: (value: string) => void
   /**
-   * Faceted column filters, rendered in the toolbar as Mantine Select/MultiSelect controls wired
-   * to TanStack's per-column `columnFilters` state. The toolbar renders whenever this array is
-   * non-empty, `enableGlobalFilter` is set, or `toolbarActions` is passed.
+   * Faceted column filters, rendered in the toolbar as `EnumFilter`/`MultiSelectFilter` pills
+   * inside a `FilterSet`, wired to TanStack's per-column `columnFilters` state. The toolbar
+   * renders whenever this array is non-empty, `enableGlobalFilter` is set, or `actions` is passed.
    * @example
    * facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
    */
@@ -283,9 +360,10 @@ export type BasaltDataTableProps<T> = {
   manualFiltering?: boolean
   /**
    * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
-   * search input or facets are configured.
+   * search input or facets are configured. Renamed from `toolbarActions` — the toolbar (search +
+   * facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
    */
-  toolbarActions?: ReactNode
+  actions?: ReactNode
 
   // ── Pagination ────────────────────────────────────────────────────────────────
 
@@ -597,6 +675,9 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
  * />
  */
 export function BasaltDataTable<T>({
+  title,
+  icon,
+  subtitle,
   data,
   columns,
   enableSorting = true,
@@ -616,7 +697,7 @@ export function BasaltDataTable<T>({
   facets,
   onColumnFiltersChange,
   manualFiltering = false,
-  toolbarActions,
+  actions,
   enablePagination = false,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   initialPagination,
@@ -773,7 +854,7 @@ export function BasaltDataTable<T>({
 
   const showSearch = enableGlobalFilter && filteringEnabled
   const showFacets = hasFacets && filteringEnabled
-  const showToolbar = showSearch || showFacets || Boolean(toolbarActions)
+  const showToolbar = showSearch || showFacets || Boolean(actions)
   const headerGroups = enablePinning ? getOrderedHeaderGroups(table) : table.getHeaderGroups()
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
@@ -912,58 +993,55 @@ export function BasaltDataTable<T>({
 
   return (
     <>
+      {title !== undefined && (
+        <Box mb="xs">
+          <WidgetHeader
+            tier="widget"
+            title={title}
+            {...(icon !== undefined && { icon })}
+            {...(subtitle !== undefined && { subtitle })}
+            count={table.getRowCount()}
+          />
+        </Box>
+      )}
       {showToolbar && (
-        <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="xs">
-          <Group gap="xs" wrap="wrap" align="flex-end">
-            {showSearch && (
-              <TextInput
-                size="xs"
-                radius="md"
-                placeholder={globalFilterPlaceholder}
-                leftSection={searchIcon}
-                value={globalFilter}
-                onChange={(event) => handleGlobalFilterChange(event.currentTarget.value)}
-                w={220}
-              />
-            )}
-            {showFacets &&
-              facets?.map((facet) => {
-                const column = table.getColumn(facet.columnId)
-                if (!column) return null
-                if (facet.multiple) {
-                  const value = (column.getFilterValue() as string[] | undefined) ?? []
-                  return (
-                    <MultiSelect
-                      key={facet.columnId}
-                      size="xs"
-                      radius="md"
-                      placeholder={facet.label}
-                      data={facet.options}
-                      value={value}
-                      onChange={(next) => column.setFilterValue(next.length > 0 ? next : undefined)}
-                      clearable
-                      w={200}
-                    />
-                  )
-                }
-                const value = (column.getFilterValue() as string | undefined) ?? null
-                return (
-                  <Select
-                    key={facet.columnId}
-                    size="xs"
-                    radius="md"
-                    placeholder={facet.label}
-                    data={facet.options}
-                    value={value}
-                    onChange={(next) => column.setFilterValue(next ?? undefined)}
-                    clearable
-                    w={180}
-                  />
-                )
-              })}
+        <CtlSlot>
+          <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="xs">
+            <Group gap="xs" wrap="wrap" align="flex-end">
+              {showSearch && (
+                <TextInput
+                  radius="md"
+                  placeholder={globalFilterPlaceholder}
+                  leftSection={searchIcon}
+                  value={globalFilter}
+                  onChange={(event) => handleGlobalFilterChange(event.currentTarget.value)}
+                />
+              )}
+              {showFacets && (
+                <FilterSet>
+                  {facets?.map((facet) => {
+                    const column = table.getColumn(facet.columnId)
+                    if (!column) return null
+                    return facet.multiple ? (
+                      <MultiSelectFilter
+                        key={facet.columnId}
+                        field={facetMultiHandle(column, facet)}
+                        label={facet.label}
+                      />
+                    ) : (
+                      <EnumFilter
+                        key={facet.columnId}
+                        field={facetEnumHandle(column, facet)}
+                        label={facet.label}
+                      />
+                    )
+                  })}
+                </FilterSet>
+              )}
+            </Group>
+            {actions}
           </Group>
-          {toolbarActions}
-        </Group>
+        </CtlSlot>
       )}
       {scrolls ? (
         <Table.ScrollContainer
@@ -995,7 +1073,6 @@ export function BasaltDataTable<T>({
               value={String(paginationState.pageSize)}
               onChange={(value) => value && table.setPageSize(Number(value))}
               allowDeselect={false}
-              w={110}
             />
             <Pagination
               size="sm"

@@ -1,6 +1,6 @@
 /**
  * NotificationBell — ActionIcon + Indicator showing the unread Inbox count, opens a
- * NotificationCenter in a Popover. Designed for the shell `globalActions` slot (ReactNode).
+ * NotificationCenter in a Popover. Designed for the shell `globalActions` slot (`GlobalAction[]`).
  *
  * The badge counts unread Inbox items (errors / warnings / actionable notifications you haven't
  * seen) — not every toast that fired. Opening the bell does NOT mark anything read; items are
@@ -11,7 +11,7 @@
  *
  * // In the shell's globalActions prop:
  * <BasaltShell
- *   globalActions={<NotificationBell />}
+ *   globalActions={[{ key: 'notifications', node: <NotificationBell />, mobile: 'bar' }]}
  *   {...rest}
  * />
  */
@@ -33,7 +33,10 @@ export type NotificationBellProps = {
  * Bell icon button with an unread-Inbox indicator. Opens a NotificationCenter popover.
  *
  * @example
- * <BasaltShell globalActions={<NotificationBell />} {...rest} />
+ * <BasaltShell
+ *   globalActions={[{ key: 'notifications', node: <NotificationBell />, mobile: 'bar' }]}
+ *   {...rest}
+ * />
  */
 export function NotificationBell({ label = 'Notifications' }: NotificationBellProps) {
   const [opened, { open, toggle, close }] = useDisclosure(false)

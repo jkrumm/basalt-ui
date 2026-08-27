@@ -3,6 +3,7 @@
  * signature — so dot access stays verbatim under the package's strict flags.
  */
 declare const classes: {
+  readonly header: string
   readonly rows: string
   readonly row: string
   readonly control: string

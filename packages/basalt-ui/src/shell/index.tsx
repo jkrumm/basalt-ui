@@ -17,14 +17,16 @@
  * active item across `sections`, not from a router hook. Collapse is persisted via basalt's own
  * `createPersistedState` (`../state`) keyed by `storageKey` — see `collapseStore`.
  */
-import { AppShell } from '@mantine/core'
-import { useMemo } from 'react'
+import { AppShell, Box } from '@mantine/core'
+import { Fragment, useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 import { AppSidebar } from './app-sidebar'
 import { MobileNav, accountRowCount } from './app-mobile-nav'
 import { projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
-import { PageActionsOutlet, PageHeaderProvider } from './page-header'
+import { PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
+import { OverflowMenu, globalActionAsBarAction, globalActionMobile } from '../controls/actions'
+import type { GlobalAction } from '../controls/actions'
 import type { BasaltAccountProps } from './account-types'
 import type { SidebarSearchConfig } from './sidebar-search'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
@@ -56,7 +58,7 @@ export {
   MOBILE_MORE_KEY,
 } from './mobile-nav-model'
 export { AppBreadcrumbs } from './app-breadcrumbs'
-export { PageHeaderProvider, PageActions, PageActionsOutlet } from './page-header'
+export { PageBar, type PageBarProps } from './page-bar'
 
 /**
  * The shared nav vocabulary lives in `src/nav/types.ts` so the headless router bridge can `import
@@ -107,8 +109,15 @@ export type BasaltShellProps = {
    * configured still produces a working bar (see `projectMobileNav`'s zero-config fallback).
    */
   mobileNav?: MobileNavConfig
-  /** Persistent, shell-owned top-bar slot (timer, refresh, notifications). */
-  globalActions?: ReactNode
+  /**
+   * Persistent, shell-owned header actions (timer, notifications, a global `SyncButton`) — DECLARED
+   * DATA, not a `ReactNode` slot, so basalt owns the mobile projection: the first two ride the bar,
+   * the rest fold into the header's single kebab (`mobile: 'bar' | 'more' | 'hidden'`, see
+   * `GlobalAction`). That kebab is the SAME one `PageBar`'s ROW 1 opens — a route whose bar has
+   * row-1 actions (or `filtersEnd`) lends it, any other route gets it from the shell. An
+   * `ActionGroup` a consumer mounts in some other home never inherits these rows.
+   */
+  globalActions?: GlobalAction[]
   /**
    * DESKTOP ONLY. Arbitrary content appended after `sections` inside the sidebar's nav scroll
    * region (a tree, a filter panel, a project list, …), for anything a set of `SidebarItem`s can't
@@ -294,12 +303,13 @@ export function BasaltShell({
   )
 
   return (
-    <PageHeaderProvider>
+    <PageBarProvider globalActions={globalActions ?? []}>
       <AppShell
         h="100dvh"
         layout="alt"
         header={{
-          height: { base: step.appShellHeaderMobileHeight, sm: step.appShellHeaderHeight },
+          // ONE height at every width (law C14): nothing reserves a second mobile row any more.
+          height: step.appShellHeaderHeight,
         }}
         navbar={{
           width: {
@@ -320,8 +330,8 @@ export function BasaltShell({
             <div className={headerClasses.lead}>
               <AppBreadcrumbs {...activeCrumb} />
             </div>
-            <PageActionsOutlet className={headerClasses.pageActions} />
-            {globalActions && <div className={headerClasses.global}>{globalActions}</div>}
+            <PageBarOutlet className={headerClasses.pageBar} />
+            <HeaderGlobalActions actions={globalActions ?? []} />
           </div>
         </AppShell.Header>
 
@@ -352,6 +362,46 @@ export function BasaltShell({
           />
         </AppShell.Footer>
       </AppShell>
-    </PageHeaderProvider>
+    </PageBarProvider>
+  )
+}
+
+/**
+ * The shell's own `globalActions`, projected for both viewports.
+ *
+ * Each action is mounted EXACTLY ONCE inline, in declaration order — a `mobile: 'bar'` action with
+ * no wrapper (visible at every width), a `'more'`/`'hidden'` one inside a `visibleFrom="sm"` box.
+ * The `'more'` nodes appear a second time only inside the kebab dropdown, which Mantine mounts
+ * lazily on open. That asymmetry is why `GlobalAction`'s JSDoc points anything stateful at
+ * `mobile: 'bar'`.
+ *
+ * The kebab renders here only while NO page bar owns one (`usePageKebabClaimed`), so a header never
+ * shows two — the claim is what makes "one kebab per header" a fact rather than a convention.
+ */
+function HeaderGlobalActions({ actions }: { actions: readonly GlobalAction[] }): ReactNode {
+  const kebabClaimed = usePageKebabClaimed()
+  if (actions.length === 0) return null
+
+  const more = actions
+    .filter((action, index) => globalActionMobile(action, index) === 'more')
+    .map(globalActionAsBarAction)
+
+  return (
+    <div className={headerClasses.global}>
+      {actions.map((action, index) =>
+        globalActionMobile(action, index) === 'bar' ? (
+          <Fragment key={action.key}>{action.node}</Fragment>
+        ) : (
+          <Box key={action.key} visibleFrom="sm">
+            {action.node}
+          </Box>
+        ),
+      )}
+      {!kebabClaimed && more.length > 0 && (
+        <Box hiddenFrom="sm">
+          <OverflowMenu actions={more} trigger="kebab" label="More actions" />
+        </Box>
+      )}
+    </div>
   )
 }

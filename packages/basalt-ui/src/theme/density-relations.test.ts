@@ -161,9 +161,9 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     }
   })
 
-  test('the mobile header actions row (appHeaderMobileActionsHeight)', () => {
+  test('the page bar row (pageBarRowHeight — the mobile header actions row it replaced is gone)', () => {
     for (const level of ALL_LEVELS) {
-      expect(deriveSpacing(level).step.appHeaderMobileActionsHeight).toBeGreaterThanOrEqual(24)
+      expect(deriveSpacing(level).step.pageBarRowHeight).toBeGreaterThanOrEqual(24)
     }
   })
 
@@ -243,14 +243,13 @@ function oldLawFlatten(level: number): Record<string, number> {
   for (const [k, v] of Object.entries(SPACE_SCALE)) scale[k] = scaleSpace(v, level, multiplier)
   const step: Record<string, number> = {}
   for (const [k, v] of Object.entries(SPACE_STEP)) {
-    if (k === 'stickyHeaderClearance' || k === 'stickyHeaderClearanceMobile') continue
+    if (k === 'stickyHeaderClearance') continue
     step[k] = scaleSpace(v, level, multiplier)
   }
   step['sidebarSearchTriggerHeight'] = Math.max(24, step['sidebarSearchTriggerHeight']!)
   step['mobileNavBarHeight'] = Math.max(48, step['mobileNavBarHeight']!)
   step['mobileNavRowHeight'] = Math.max(44, step['mobileNavRowHeight']!)
   step['stickyHeaderClearance'] = step['appShellHeaderHeight']! + anchors['stackMd']!
-  step['stickyHeaderClearanceMobile'] = step['appShellHeaderMobileHeight']! + anchors['stackMd']!
   return { ...anchors, ...scale, ...step }
 }
 
@@ -317,10 +316,10 @@ describe("Fix 7 — the knob's resolution is honest at every notch", () => {
     expect(deriveSpacing(3).anchors.inputHeight).toBe(55)
     expect(deriveSpacing(-3).anchors.rowInsetX).toBe(7)
     expect(deriveSpacing(3).anchors.rowInsetX).toBe(13)
-    // `stickyHeaderClearance`/`stickyHeaderClearanceMobile` are EXCLUDED here on purpose — since both
-    // now DERIVE from their own AppShell header instead of scaling off an independent base (see
-    // `deriveSpacing`'s doc, third bullet, Decision 3), neither reproduced the old ±5 envelope to
-    // begin with; their own law is asserted by the dedicated describe block in `tokens/density.test.ts`
+    // `stickyHeaderClearance` is EXCLUDED here on purpose — since it now DERIVES from the AppShell
+    // header instead of scaling off an independent base (see `deriveSpacing`'s doc, third bullet),
+    // it never reproduced the old ±5 envelope to
+    // begin with; its own law is asserted by the dedicated describe block in `tokens/density.test.ts`
     // (specific low/zero/high values) AND by the "Fix 8" describe block below in this same file
     // (the generic `clearance = header + anchors.stackMd` relation, looped over every level).
     expect(deriveSpacing(-3).rowLineHeight).toBe(1.25)
@@ -328,32 +327,18 @@ describe("Fix 7 — the knob's resolution is honest at every notch", () => {
   })
 })
 
-describe('Fix 8 — the sticky-header clearance clears its OWN breakpoint header, exactly (Decision 3 — desktop/mobile split)', () => {
-  test('desktop clearance = appShellHeaderHeight + stackMd, exactly, at every level', () => {
+describe('Fix 8 — the sticky-header clearance clears the AppShell header, exactly', () => {
+  test('clearance = appShellHeaderHeight + stackMd, exactly, at every level', () => {
     for (const level of ALL_LEVELS) {
       const { step, anchors } = deriveSpacing(level)
       expect(step.stickyHeaderClearance).toBe(step.appShellHeaderHeight + anchors.stackMd)
     }
   })
 
-  test('mobile clearance = appShellHeaderMobileHeight + stackMd, exactly, at every level', () => {
-    for (const level of ALL_LEVELS) {
-      const { step, anchors } = deriveSpacing(level)
-      expect(step.stickyHeaderClearanceMobile).toBe(
-        step.appShellHeaderMobileHeight + anchors.stackMd,
-      )
-    }
-  })
-
-  test('mobile clearance exceeds desktop clearance at every level — catches a swap of the two formulas', () => {
-    // Both formulas add the SAME `anchors.stackMd` breathing room, so this reduces to
-    // `mobileHeader > desktopHeader`, which holds at every level today — but a bug that swapped
-    // which header feeds which key would flip this comparison immediately.
-    for (const level of ALL_LEVELS) {
-      const { step } = deriveSpacing(level)
-      expect(step.stickyHeaderClearanceMobile).toBeGreaterThan(step.stickyHeaderClearance)
-    }
-  })
+  // The "mobile clearance = appShellHeaderMobileHeight + stackMd" and "mobile exceeds desktop" tests
+  // that used to sit here are DELETED, not renamed: since 1.27.0 the AppShell header is ONE 48px row
+  // at every viewport (law C14, `docs/CONTROLS-SPEC.md` §2.1), so `stickyHeaderClearanceMobile` and
+  // the `appShellHeaderMobileHeight` it derived from no longer exist to assert anything about.
 
   // The "both breathing-room margins (clearance minus own header) are monotonically non-decreasing"
   // check used to live here as its own test — deleted, not merely renamed: the two tests above this
@@ -381,34 +366,29 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     }
   })
 
-  test("mobile header row-1 budget never falls below Mantine's static default ActionIcon (22px)", () => {
-    // The 22px floor is `--ai-size-sm` — verified directly against the INSTALLED Mantine source
-    // (`@mantine/core/styles/ActionIcon.css`: `--ai-size-xs: 18px; --ai-size-sm: 22px; --ai-size-md:
-    // 28px; ...`), not recalled from memory. The budget at every level in `[-3, 3]` under the current
-    // law: 23 / 26 / 28 / 32 / 36 / 38 / 41 (level -3 through +3) — never below the floor, with the
-    // smallest margin (1px) at level -3, not at -2 as sometimes assumed by eye.
+  test('the header is ONE row at every viewport, and it holds a touch target below sm', () => {
+    // The invariant this replaced was a BUDGET: `appShellHeaderMobileHeight` was a documented SUM
+    // (row 1 + `SPACE_SCALE.sm` + `appHeaderMobileActionsHeight`), so row 1 was whatever the total
+    // left over, and raising an addend without raising the total silently ate the target-size margin
+    // — which is exactly what the component-roominess retune did (`SPACE_SCALE.sm` 12 -> 13 drove
+    // level -3 to 22px, flush against Mantine's 22px `--ai-size-sm` floor).
     //
-    // Row 1 is the REMAINDER of `appShellHeaderMobileHeight`'s documented sum (row 1 + `SPACE_SCALE.sm`
-    // + `appHeaderMobileActionsHeight`), so raising an addend without raising the total takes the
-    // difference straight out of this budget. That is exactly what the component-roominess retune did
-    // — `SPACE_SCALE.sm` 12 -> 13 briefly drove level -3 to 22, flush against the floor — and why the
-    // mobile header went 96 -> 97 in the same change. See that constant's JSDoc (`tokens/palette.ts`):
-    // it names this test as the thing that measures the drift, and computing the header from its
-    // addends as the fix that would make the drift impossible.
+    // 1.27.0 deletes the sum instead of re-tuning it: `PageBar` folds the page's overflow into a
+    // kebab and moves filters/tabs into the page flow, so there is no second mobile row to reserve
+    // (law C14) and the header is `appShellHeaderHeight` at EVERY width. Row 1's budget is therefore
+    // the whole header, and the thing worth asserting is what law C15 actually promises — that a
+    // `touchControlHeight` target fits inside it below `sm`.
     for (const level of ALL_LEVELS) {
-      const { step, scale } = deriveSpacing(level)
-      const budget = step.appShellHeaderMobileHeight - step.appHeaderMobileActionsHeight - scale.sm
-      expect(budget).toBeGreaterThanOrEqual(22)
+      const { step, anchors } = deriveSpacing(level)
+      expect(step.appShellHeaderHeight).toBeGreaterThanOrEqual(anchors.touchControlHeight)
+      expect(anchors.touchControlHeight).toBeGreaterThanOrEqual(anchors.controlHeightCtl)
     }
   })
 
-  test('the mobile header row-1 budget is monotonically non-decreasing across levels', () => {
-    const budgets = ALL_LEVELS.map((level) => {
-      const { step, scale } = deriveSpacing(level)
-      return step.appShellHeaderMobileHeight - step.appHeaderMobileActionsHeight - scale.sm
-    })
-    for (let i = 1; i < budgets.length; i++) {
-      expect(budgets[i]).toBeGreaterThanOrEqual(budgets[i - 1]!)
+  test('the header row is monotonically non-decreasing across levels', () => {
+    const heights = ALL_LEVELS.map((level) => deriveSpacing(level).step.appShellHeaderHeight)
+    for (let i = 1; i < heights.length; i++) {
+      expect(heights[i]).toBeGreaterThanOrEqual(heights[i - 1]!)
     }
   })
 

@@ -353,19 +353,32 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       "on the root part; Mantine's own Notification.css declares `border-radius: var(--" +
       'notification-radius)` on that same root element the styles.root boxShadow targets).',
   },
+  // ── widget-header ────────────────────────────────────────────────────────────────────────────
+  {
+    file: 'widget-header/widget-header.module.css',
+    site: '.infoBubble',
+    roundedBy:
+      'border-radius: var(--vx-radius-card) (co-declared in the same .infoBubble rule as the ' +
+      'box-shadow, so the ring follows this box’s own shape). This is the info-tooltip bubble that ' +
+      'used to live in charts/primitives/ChartCard.tsx as `bubbleStyle`; it moved down into ' +
+      'WidgetHeader when ChartCard started composing it, so every tier gets the same ' +
+      'hover/focus/click affordance. Nothing clips it: its host `.info` span is `position: ' +
+      'relative` with no overflow, and ChartCard deliberately keeps its header outside the chart ' +
+      'body’s clip box for exactly this reason.',
+  },
   // ── charts/primitives ────────────────────────────────────────────────────────────────────────
   {
     file: 'charts/primitives/ChartCard.tsx',
     site: 'default',
     roundedBy:
-      'Two shadowed boxes in this file, each co-declaring borderRadius: VX.radiusCard with its own ' +
-      'boxShadow (both fall back to the file-level default label). (1) cardStyle — the outer card box ' +
-      'co-declares borderRadius + boxShadow + backgroundColor, so the ring is bound to THIS radius and ' +
+      'One shadowed box in this file: cardStyle — the outer card box co-declares borderRadius: ' +
+      'VX.radiusCard + boxShadow + backgroundColor, so the ring is bound to THIS radius and ' +
       'matches. It carries NO overflow: the chart body clips itself on a separate inner box ' +
-      '(bodyClipStyle, identical bottom-corner radius, no shadow) so the header — and its info-tooltip ' +
-      'bubble — can escape the clip; the ring is safe on the outer box either way (an element’s own ' +
-      'overflow never clips its own shadow). (2) bubbleStyle — the info-tooltip bubble, a floating panel ' +
-      'surface whose ring likewise follows its co-declared card radius.',
+      '(bodyClipStyle, identical bottom-corner radius, no shadow) so the header — and the info ' +
+      'bubble WidgetHeader opens under it — can escape the clip; the ring is safe on the outer box ' +
+      'either way (an element’s own overflow never clips its own shadow). The second shadowed box ' +
+      'this entry used to cover, `bubbleStyle`, now lives in widget-header.module.css’s ' +
+      '.infoBubble (registered above).',
   },
   {
     file: 'charts/primitives/ChartTooltip.tsx',

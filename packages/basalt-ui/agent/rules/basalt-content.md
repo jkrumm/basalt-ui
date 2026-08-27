@@ -245,9 +245,10 @@ special-case the string `'all'` (a consumer could legitimately have a category l
 
 **The store/UI split is a LAYER boundary, not a style choice.** `basalt-ui/router-tanstack` is
 headless (`@mantine/*` banned by the Mantine-free boundary), so the store itself cannot render.
-`ArticleFilterBar` (`basalt-ui/content`) is the Mantine half: a fully controlled component wired to
-the store pair per `createSearchParamStore`'s 5-step JSDoc recipe (the filter bar is that recipe's
-step 3).
+`FilterSet` + `ViewTabs` + `MultiSelectFilter` are the Mantine half — re-exported from
+`basalt-ui/content` as well as `basalt-ui/controls`, so a content-only consumer needs one import
+path. They take `field` (a `FieldHandle` from `createSearchStore`), never `value`/`onChange`: the
+control owns the URL write and the localStorage mirror. See `basalt-controls.md`.
 
 **`toArticleActions`** is a pure in-memory PROJECTOR into the already-shipped Spotlight command
 surface (`basalt-ui/commands`) — the same tier as `toRouteActions`. It joins title, description,
@@ -258,11 +259,11 @@ search index — see <https://github.com/jkrumm/basalt-ui/blob/master/docs/CONTE
 `ArticleGrid` stays a dumb layout wrapper — deliberate, so callers keep composition (sorting,
 filtering, and pagination all happen above it, not inside it).
 
-**Mobile.** `ArticleFilterBar`'s category control renders a `SegmentedControl` above the `sm`
-breakpoint and a `Select` below it, switched via Mantine's CSS-based `visibleFrom`/`hiddenFrom`
-props — NOT `useMediaQuery`. A JS media-query hook renders differently on the server than on the
-first client paint (the server has no viewport to query), which trips a React hydration mismatch;
-the CSS-based switch has no such server/client branch.
+**Mobile.** `ViewTabs` renders a `SegmentedControl` above the `sm` breakpoint and a `Select` below
+it, switched INSIDE the control via Mantine's CSS-based `visibleFrom`/`hiddenFrom` props — NOT
+`useMediaQuery`, and never as two controls at the call site. A JS media-query hook renders
+differently on the server than on the first client paint (the server has no viewport to query),
+which trips a React hydration mismatch; the CSS-based switch has no such server/client branch.
 
 ## GuideLink / GuideDrawer — contextual help
 

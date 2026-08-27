@@ -367,28 +367,18 @@ const SPACE_SCALE_BASE = {
  * with the SAME "dev slider can't reach it" limitation as `timelineBullet` (see `deriveSpacing`'s
  * doc and the `theme-lab` "known constraint" note).
  */
-/** Level-0 addends behind `appShellHeaderMobileHeight` below, pulled out so that entry is an actual
- *  sum of its parts rather than a hand-typed literal that can silently drift from them (see that
- *  entry's own doc for the incident this replaced — 96 left stale after `SPACE_SCALE_BASE.sm` moved
- *  12 -> 13). `appHeaderMobileActionsHeight` itself is the OTHER addend and stays declared where it
- *  already was, in `SPACE_STEP_BASE` below — this only needs its OWN value pulled out, since a
- *  plain object literal can't reference a sibling property while it's still being built. */
-const APP_HEADER_MOBILE_ACTIONS_HEIGHT = 52
-const APP_HEADER_MOBILE_ROW1_BUDGET = 32
-
 const SPACE_STEP_BASE = {
   /** Timeline `defaultProps.bulletSize`. */
   timelineBullet: 22,
 
   // ── Shared across ≥2 sites (structural — must render at the same value) ──────────────────────
-  // `stickyHeaderClearance`/`stickyHeaderClearanceMobile` USED to live here as ONE independent base
-  // literal (84) — they don't any more. Both are DERIVED, post-`step`, from their OWN AppShell
-  // header (`appShellHeaderHeight` / `appShellHeaderMobileHeight` below) instead (see
-  // {@link deriveSpacing}'s doc for why): an independent literal could drift from the header it's
-  // supposed to clear, which is exactly what happened (84 < 96, under-clearing the mobile header at
-  // every level before this fix) — and a SINGLE derived value still over-cleared the desktop header
-  // by 60px, since the desktop header is less than half the mobile one's height. `SpaceValues.step`
-  // still carries both keys — see that type's own doc — they're just not part of this BASE table.
+  // `stickyHeaderClearance` USED to live here as an independent base literal (84) — it doesn't any
+  // more. It is DERIVED, post-`step`, from the AppShell header it exists to clear
+  // (`appShellHeaderHeight` below) instead (see {@link deriveSpacing}'s doc for why): an independent
+  // literal could drift from that header, which is exactly what happened. `SpaceValues.step` still
+  // carries the key — see that type's own doc — it is just not part of this BASE table. The
+  // `stickyHeaderClearanceMobile` sibling went with the two-row mobile header in 1.27.0: the header
+  // is one 48px row at every viewport now, so one clearance covers both.
   /** NavLink leftSection icon-to-label gap — shared by `theme/nav-link.module.css` (every render
    * path) and `shell/app-sidebar.module.css`'s own `.link` rule (belt-and-suspenders on the same
    * DOM), and reused verbatim for `.footerBtn`/`.accountRow`'s icon gap (their own doc comments call
@@ -598,37 +588,17 @@ const SPACE_STEP_BASE = {
   /** Settings-menu `<Menu width={…}>` (`app-sidebar.tsx`). */
   sidebarSettingsMenuWidth: 200,
 
-  // ── shell/app-header.module.css ───────────────────────────────────────────────────────────────
-  /** Mobile two-row header's page-actions row height. */
-  appHeaderMobileActionsHeight: APP_HEADER_MOBILE_ACTIONS_HEIGHT,
-
   // ── shell/index.tsx (AppShell dimensions) ──────────────────────────────────────────────
   /** AppShell desktop header bar height — sized to hold one row of `size="md"` controls, so it
    *  tracks `controlHeight`. Its level-0 coincidence with `appShellNavbarRailWidth` below is a
    *  coincidence, not a law: this is a horizontal bar's HEIGHT (governed by control height), that
    *  is a vertical rail's WIDTH (governed by icon footprint). They stay separate entries. */
+  /** AppShell header bar height — ONE value at every viewport since 1.27.0 (law C14,
+   *  `docs/CONTROLS-SPEC.md` §2.1). The pre-1.27.0 `appShellHeaderMobileHeight` (97) existed only
+   *  because the mobile header wrapped to a second, always-reserved page-actions row; `PageBar`
+   *  folds that row's overflow into a kebab and moves its filters/tabs into the page flow, so the
+   *  bar is 48px on a phone too and there is no sum to keep in step any more. */
   appShellHeaderHeight: 48,
-  /** AppShell mobile (two-row) header height. Not one concept but a sum: row 1
-   *  (`APP_HEADER_MOBILE_ROW1_BUDGET`) + `app-header.module.css`'s wrap row-gap
-   *  (`SPACE_SCALE_BASE.sm`) + `appHeaderMobileActionsHeight`. Two of those three addends already
-   *  track density, so the container must too — held fixed, row 1's budget collapses 52px -> 12px
-   *  across the level range.
-   *
-   *  This entry IS the literal sum of its three named addends (32 + 13 + 52 = 97) rather than a
-   *  hand-typed 97 — it was 96 while `SPACE_SCALE_BASE.sm` was 12, and the component-roominess
-   *  retune that raised that addend to 13 left the hand-typed total stale at 96, silently taking the
-   *  pixel out of row 1 instead — which is what ate the last of its WCAG 2.5.8 target-size margin at
-   *  density -3 (`theme/density-relations.test.ts` measures row 1 as the REMAINDER of this sum, so
-   *  the total is the only place the budget can come from). Expressing the sum here makes that class
-   *  of drift impossible for level 0; raise `APP_HEADER_MOBILE_ROW1_BUDGET` (or the other two
-   *  addends) if row 1's own budget needs to move.
-   *
-   *  NOT the same fix as `stickyHeaderClearance*` below, which is computed POST-`step` from the
-   *  ALREADY-DENSITY-SCALED addends — doing that here too would move every non-zero level's value
-   *  (rounding three scaled integers separately drifts from rounding one scaled 97), so it stays a
-   *  follow-up, not folded into this fix. */
-  appShellHeaderMobileHeight:
-    APP_HEADER_MOBILE_ROW1_BUDGET + SPACE_SCALE_BASE.sm + APP_HEADER_MOBILE_ACTIONS_HEIGHT,
   /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile, where the navbar is
    *  permanently collapsed and unused — see `MobileNav`) and the expanded `sm` value: the same
    *  `.root` at full width, genuinely one concept. */
@@ -771,17 +741,14 @@ export const SPACE_FIXED = {
 export type SpaceValues = {
   anchors: { [K in keyof typeof SPACE_ANCHORS_BASE]: number }
   scale: { [K in keyof typeof SPACE_SCALE_BASE]: number }
-  /** `SPACE_STEP_BASE`'s one-offs PLUS `stickyHeaderClearance`/`stickyHeaderClearanceMobile`, NEITHER
-   * of which is in that base table — both are computed after the rest of `step`, one from
-   * `appShellHeaderHeight` (desktop) and one from `appShellHeaderMobileHeight` (mobile), see
+  /** `SPACE_STEP_BASE`'s one-offs PLUS `stickyHeaderClearance`, which is NOT in that base table —
+   * it is computed after the rest of `step`, from `appShellHeaderHeight`, see
    * {@link deriveSpacing}'s doc. Kept on this same `step` object (not split into a third group)
-   * because every consumer reads them exactly like any other one-off — only their DERIVATION
-   * differs. Two keys, not one, because the clearance is RESPONSIVE (Decision 3): a consumer picks
-   * whichever one matches the breakpoint it's rendering at — see `docs/CONTENT-SPEC.md` §5 and
-   * `content/prose.module.css`/`content/article-layout.module.css` for the CSS-side split. */
+   * because every consumer reads it exactly like any other one-off — only its DERIVATION differs.
+   * ONE key, not the pre-1.27.0 responsive pair: the AppShell header is a single 48px row at every
+   * viewport now (law C14, `docs/CONTROLS-SPEC.md` §2.1), so there is no second header to clear. */
   step: { [K in keyof typeof SPACE_STEP_BASE]: number } & {
     stickyHeaderClearance: number
-    stickyHeaderClearanceMobile: number
   }
   /** NavLink row line-height (`theme/index.ts`'s row-geometry styles) — additive, not
    * multiplicative; see {@link deriveSpacing}'s doc for why. */
@@ -853,8 +820,8 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  * from a single integer `level` (`docs/DESIGN-SPEC.md` §4-adjacent) — the spacing analog of
  * {@link deriveRadius}. `level: 0` reproduces the shipped identity exactly (locked by
  * `theme/spacing.test.ts` and `tokens/density.test.ts`) for every value EXCEPT
- * `step.stickyHeaderClearance`/`step.stickyHeaderClearanceMobile` — see the third bullet below for
- * why those are a deliberate exception.
+ * `step.stickyHeaderClearance` — see the third bullet below for why that one is a deliberate
+ * exception.
  *
  * The law: a MULTIPLIER, `1 + 0.1 * level`, applied to every `SPACE_ANCHORS_BASE`/
  * `SPACE_SCALE_BASE`/`SPACE_STEP_BASE` constant, then rounded (see {@link scaleSpace}) — a
@@ -879,30 +846,24 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    (and, transitively, the collapsed rail's `ActionIcon` variant, which reads this same resolved
  *    value) below the accessible floor (22px at level -3) while also crowding out its fixed-size icon
  *    and `Kbd` chip.
- *  - `step.stickyHeaderClearance` (desktop) and `step.stickyHeaderClearanceMobile` (mobile) are not
- *    scaled off their own base AT ALL — `SPACE_STEP_BASE` has no such key any more (see that table's
- *    doc). Both are computed AFTER the rest of `step`, RESPONSIVELY, one per AppShell breakpoint:
- *    `stickyHeaderClearance = step.appShellHeaderHeight + anchors.stackMd` (desktop, `>= sm`) and
- *    `stickyHeaderClearanceMobile = step.appShellHeaderMobileHeight + anchors.stackMd` (mobile,
- *    `< sm` — the SAME `sm`/48em breakpoint the AppShell header itself switches on, `shell/index.tsx`).
- *    A SINGLE clearance value (this law's own prior shape) can only be tuned against ONE header, and
- *    whichever one it under-shoots stays broken: the original independent literal (84) was tuned only
- *    against the desktop header (48) and under-cleared the mobile header (96) by 12px at level 0
- *    already, before density entered the picture; deriving ONE value off the taller mobile header
- *    fixed that under-clear but then OVER-cleared the desktop header by 60px (108 vs. the 48px header
- *    needs) — dead space above every anchored heading and a TOC rail shoved down on the common
- *    (desktop) path. Splitting into two responsive values fixes both directions at once: each clears
- *    ONLY its own header, with the SAME `anchors.stackMd` breathing room (not a bare `+ 0`) so a
- *    scrolled-to heading doesn't sit flush against the header's bottom edge — density-tracking, like
- *    the header height it's added to, so the margin itself never freezes at one notch. Level 0:
- *    desktop `48 + 12 = 60` (a deliberate BREAK from the pre-split 84/108 — see `theme/spacing.test.ts`
- *    for why `stickyHeaderClearance` alone is exempt from the byte-identity gate every other spacing
- *    token is held to), mobile `96 + 12 = 108` (unchanged from the pre-split single-value law).
- *    **Consumer coupling (accepted, not hidden):** both values assume `BasaltShell`'s own AppShell
- *    header heights — a `./content` consumer NOT rendering inside `BasaltShell` (e.g. `Prose`/
- *    `ArticleLayout` standalone) gets clearance numbers tuned for a header it may not have, and must
- *    override `--vx-space-sticky-header-clearance`/`--vx-space-sticky-header-clearance-mobile`
- *    itself. Documented on the `./content` surface too (`docs/CONTENT-SPEC.md` §5), not only here.
+ *  - `step.stickyHeaderClearance` is not scaled off its own base AT ALL — `SPACE_STEP_BASE` has no
+ *    such key any more (see that table's doc). It is computed AFTER the rest of `step`, as
+ *    `step.appShellHeaderHeight + anchors.stackMd`. An independent literal can only be tuned against
+ *    ONE header height and then drifts from it: the original 84 was tuned against a 48px desktop
+ *    header and under-cleared the pre-1.27.0 96px mobile one by 12px at level 0, before density
+ *    entered the picture at all. Deriving it removes that whole failure mode — and since 1.27.0 the
+ *    AppShell header is ONE 48px row at every viewport (law C14), so the `stickyHeaderClearanceMobile`
+ *    half of the old responsive pair is deleted rather than re-derived. The `+ anchors.stackMd`
+ *    breathing room (not a bare `+ 0`) keeps a scrolled-to heading off the header's bottom edge, and
+ *    tracks density like the header height it is added to, so the margin never freezes at one notch.
+ *    Level 0: `48 + 12 = 60` (a deliberate BREAK from the pre-derivation 84 — see
+ *    `theme/spacing.test.ts` for why `stickyHeaderClearance` alone is exempt from the byte-identity
+ *    gate every other spacing token is held to).
+ *    **Consumer coupling (accepted, not hidden):** the value assumes `BasaltShell`'s own AppShell
+ *    header height — a `./content` consumer NOT rendering inside `BasaltShell` (e.g. `Prose`/
+ *    `ArticleLayout` standalone) gets a clearance number tuned for a header it may not have, and must
+ *    override `--vx-space-sticky-header-clearance` itself. Documented on the `./content` surface too
+ *    (`docs/CONTENT-SPEC.md` §5), not only here.
  *
  * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.35 + ROW_LINE_HEIGHT_STEP *
  * level`, ADDITIVE, its own gentler, INDEPENDENT coefficient (see {@link ROW_LINE_HEIGHT_STEP}'s own
@@ -1006,12 +967,10 @@ export function deriveSpacing(level: number): SpaceValues {
   mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
   const step: SpaceValues['step'] = {
     ...mappedStep,
-    // RESPONSIVE, one per AppShell breakpoint — each DERIVED from its own header, plus
-    // density-tracking breathing room — see this function's doc (third bullet, Decision 3) for the
-    // full rationale, and `theme/spacing.test.ts` for why `stickyHeaderClearance` alone is exempt
-    // from the level-0 byte-identity gate.
+    // DERIVED from the header it clears, plus density-tracking breathing room — see this function's
+    // doc (third bullet) for the full rationale, and `theme/spacing.test.ts` for why
+    // `stickyHeaderClearance` alone is exempt from the level-0 byte-identity gate.
     stickyHeaderClearance: mappedStep.appShellHeaderHeight + anchors.stackMd,
-    stickyHeaderClearanceMobile: mappedStep.appShellHeaderMobileHeight + anchors.stackMd,
   }
 
   return {
@@ -1044,9 +1003,9 @@ export const SPACE_SCALE = DEFAULT_SPACE_VALUES.scale
 
 /** Density-tracking one-offs at the shipped identity — see `SPACE_STEP_BASE`'s doc. `deriveSpacing(0)`'s
  * `step`, UNCHANGED from the shipped identity (locked by `theme/spacing.test.ts`) EXCEPT
- * `stickyHeaderClearance` (originally 84, then a single derived 108, now the desktop half of the
- * Decision-3 responsive split at 60) and its new `stickyHeaderClearanceMobile` sibling (108) — the
- * deliberate level-0 breaks in the density work; see `deriveSpacing`'s doc (third bullet) for why. */
+ * `stickyHeaderClearance` (originally 84, then a single derived 108, now 60 — derived from the one
+ * 48px AppShell header) — the deliberate level-0 break in the density work; see `deriveSpacing`'s
+ * doc (third bullet) for why. */
 export const SPACE_STEP = DEFAULT_SPACE_VALUES.step
 
 /** NavLink row line-height at the shipped identity (`1.35`) — `deriveSpacing(0)`'s `rowLineHeight`,

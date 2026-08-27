@@ -125,8 +125,8 @@ describe('rowLineHeight follows its own additive law, not the multiplier', () =>
   })
 })
 
-describe('stickyHeaderClearance/stickyHeaderClearanceMobile derive from their OWN AppShell header, not a shared base (Decision 3 — responsive split)', () => {
-  test('level -3/0/+3: desktop 43 / 60 / 77 — appShellHeaderHeight + anchors.stackMd at each level', () => {
+describe('stickyHeaderClearance derives from the AppShell header, not an independent base', () => {
+  test('level -3/0/+3: 43 / 60 / 77 — appShellHeaderHeight + anchors.stackMd at each level', () => {
     const low = deriveSpacing(-3)
     const zero = deriveSpacing(0)
     const high = deriveSpacing(3)
@@ -139,28 +139,10 @@ describe('stickyHeaderClearance/stickyHeaderClearanceMobile derive from their OW
     )
   })
 
-  test('level -3/0/+3: mobile 77 / 109 / 141 — appShellHeaderMobileHeight + anchors.stackMd at each level', () => {
-    const low = deriveSpacing(-3)
-    const zero = deriveSpacing(0)
-    const high = deriveSpacing(3)
-    expect(low.step.stickyHeaderClearanceMobile).toBe(77)
-    expect(low.step.stickyHeaderClearanceMobile).toBe(
-      low.step.appShellHeaderMobileHeight + low.anchors.stackMd,
-    )
-    expect(zero.step.stickyHeaderClearanceMobile).toBe(109)
-    expect(high.step.stickyHeaderClearanceMobile).toBe(141)
-    expect(high.step.stickyHeaderClearanceMobile).toBe(
-      high.step.appShellHeaderMobileHeight + high.anchors.stackMd,
-    )
-  })
-
-  test('every level: each clearance exceeds ONLY the header it exists to clear, exactly by anchors.stackMd', () => {
+  test('every level: the clearance exceeds the header it exists to clear, exactly by anchors.stackMd', () => {
     for (let level = -3; level <= 3; level++) {
       const { step, anchors } = deriveSpacing(level)
       expect(step.stickyHeaderClearance - step.appShellHeaderHeight).toBe(anchors.stackMd)
-      expect(step.stickyHeaderClearanceMobile - step.appShellHeaderMobileHeight).toBe(
-        anchors.stackMd,
-      )
     }
   })
 })
@@ -206,10 +188,9 @@ describe('buildDensityCss', () => {
     // REM, not px — see the input-height describe block below for why.
     expect(css).toContain('--vx-space-input-height: 3.4375rem;')
     expect(css).toContain('--vx-space-control-height: 3.4375rem;')
-    // 77 (desktop) / 141 (mobile), not the anchor/scale/step multiplier result for an 84px base —
-    // both are DERIVED (own header + anchors.stackMd), see the dedicated describe block above.
+    // 77, not the anchor/scale/step multiplier result for an 84px base — it is DERIVED (the header
+    // plus anchors.stackMd), see the dedicated describe block above.
     expect(css).toContain('--vx-space-sticky-header-clearance: 77px;')
-    expect(css).toContain('--vx-space-sticky-header-clearance-mobile: 141px;')
     // JS-number-only constants (Timeline's bulletSize, VX chart geometry, Progress's size) have no
     // CSS var to override — see `spaceDecls`'s doc in `tokens/index.ts`.
     expect(css).not.toContain('--vx-space-timeline-bullet')
@@ -236,7 +217,6 @@ describe('buildDensityCss', () => {
       'space-sidebar-account-menu-width', // Menu width prop
       'space-sidebar-settings-menu-width', // Menu width prop
       'space-app-shell-header-height', // AppShell header/navbar props
-      'space-app-shell-header-mobile-height',
       'space-app-shell-navbar-width',
       'space-app-shell-navbar-rail-width',
       'space-mobile-nav-bar-height', // AppShell footer.height prop

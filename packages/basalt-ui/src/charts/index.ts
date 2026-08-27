@@ -76,7 +76,7 @@ export {
 } from './primitives/ChartPending'
 export { Crosshair, SeriesDot } from './primitives/Crosshair'
 export { HatchPattern, hatchFill, hatchSizeFor } from './primitives/HatchPattern'
-export { ChartCard } from './primitives/ChartCard'
+export { ChartCard, type ChartCardProps } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
 export {
   ChartTooltipFloat,

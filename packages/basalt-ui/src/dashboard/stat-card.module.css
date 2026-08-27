@@ -1,0 +1,56 @@
+/*
+ * StatCard's sparkline placement (docs/CONTROLS-SPEC.md §2.2). `bleed` (default) keeps the historic
+ * full-width row beneath the hero value, bled past the card's own inset padding — same negative
+ * margins the pre-WidgetHeader version drew inline. `right` sits the sparkline beside the
+ * `WidgetHeader`'s hero-value row instead, the reference-design look, and collapses back to
+ * `bleed`'s stacked layout below `sm` — CSS only, no JS branch (`47.99375em` is Mantine's own
+ * complement of `min-width: 48em`, same value `content/prose.module.css` derives it from).
+ */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stat-card-gap);
+  height: 100%;
+}
+
+.body[data-placement='right'] {
+  flex-direction: row;
+  align-items: center;
+}
+
+.header {
+  min-width: 0;
+}
+
+.body[data-placement='right'] .header {
+  flex: 1;
+  min-width: 0;
+}
+
+.sparklineBleed {
+  margin-top: auto;
+  margin-inline: calc(-1 * var(--mantine-spacing-sm));
+  margin-bottom: calc(-1 * var(--mantine-spacing-xs));
+}
+
+.sparklineRight {
+  flex-shrink: 0;
+}
+
+@media (max-width: 47.99375em) {
+  .body[data-placement='right'] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .body[data-placement='right'] .header {
+    flex: initial;
+  }
+
+  .body[data-placement='right'] .sparklineRight {
+    margin-top: auto;
+    margin-inline: calc(-1 * var(--mantine-spacing-sm));
+    margin-bottom: calc(-1 * var(--mantine-spacing-xs));
+  }
+}

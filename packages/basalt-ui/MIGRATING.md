@@ -65,6 +65,77 @@ Consumers who never overrode `basalt.severity` for any of the eight kinds/rules 
 waived them see these findings for the first time as `error`; measure against the shipped preset
 before upgrading if that's a concern (`basalt-ui check-theme --audit-allows`, `oxlint .`).
 
+### Composers — WidgetHeader-backed renames (docs/CONTROLS-SPEC.md §2.2)
+
+`StatCard`, `ChartCard`, `Section` (new), `SettingsSection`/`DangerZone` and `BasaltDataTable` now
+each compose the wave-1 `WidgetHeader` primitive for their title row instead of hand-rolling one —
+several props renamed or were added to line up with it.
+
+| Component                        | Removed / renamed                                          | Replacement                                                                                                                                                                                                                                                                              |
+| -------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `StatCard`                       | `label`                                                    | `title`                                                                                                                                                                                                                                                                                  |
+| `StatCard`                       | `menu`                                                     | `actions` (wrapped in `CtlSlot`)                                                                                                                                                                                                                                                         |
+| `StatCard`                       | —                                                          | adds `icon`, `sparklinePlacement?: 'bleed' \| 'right'` (default `'bleed'`, collapses to it below `sm`)                                                                                                                                                                                   |
+| `ChartCard`                      | `tooltip`                                                  | `info`                                                                                                                                                                                                                                                                                   |
+| `ChartCard`                      | `extra`                                                    | `actions` (carries `data-basalt-tier="widget"`, no `CtlSlot` — `./charts` stays Mantine-free)                                                                                                                                                                                            |
+| `ChartCard`                      | `title: string` (required)                                 | `title?: string` — the header now renders only when title/info/value/actions/icon/count is set                                                                                                                                                                                           |
+| `ChartCard`                      | —                                                          | adds `icon`, `value`, `delta`, `deltaPeriod`, `count`                                                                                                                                                                                                                                    |
+| `SettingsSection` / `DangerZone` | `description`                                              | `subtitle`                                                                                                                                                                                                                                                                               |
+| `SettingsSection` / `DangerZone` | —                                                          | adds `actions` (wrapped in `CtlSlot`)                                                                                                                                                                                                                                                    |
+| `BasaltDataTable`                | `toolbarActions`                                           | `actions?: ReactNode` — the toolbar (search + facets + `actions`) is now wrapped in `CtlSlot`. Typed `ReactNode`, not `BarAction[]` — a table toolbar is not a `PageBar`/`Section`, and `ActionGroup`'s shell-extras semantics (primary/secondary, mobile folding) must not leak into it |
+| `BasaltDataTable`                | fixed `w={220/200/180/110}` on toolbar/pagination controls | removed — the controls size by content                                                                                                                                                                                                                                                   |
+| `BasaltDataTable`                | —                                                          | adds `title`, `icon`, `subtitle` — when `title` is set, renders `WidgetHeader tier="widget"` above the toolbar, `count` always `table.getRowCount()` (C11)                                                                                                                               |
+| `BasaltDataTable`                | `facets` rendered as raw `Select`/`MultiSelect`            | rendered as `EnumFilter`/`MultiSelectFilter` pills inside a `FilterSet` (`docs/CONTROLS-SPEC.md` §3) — a synthetic `"All"` option stands in for a single-select facet's cleared state, since a closed enum field has no member for "unset"                                               |
+
+New export: **`Section`** (`.`, Mantine-coupled) — `WidgetHeaderProps` minus `tier`, plus `tabs?`,
+`collapsible?`, `persistKey?`, `id?`, `children`. No `variant`, no border/background — one shaded
+container level per page belongs to the cards inside a `Section`, not to `Section` itself. Fold
+state persists at `basalt:section:<persistKey>` via `createPersistedState` when `persistKey` is
+given, else local `useState`; the header stays drawn when collapsed, only the body unmounts.
+
+### Homes — `PageBar` replaces the page-action portal
+
+**Three exports removed with no deprecation window, one prop retyped, three tokens and one CSS
+class deleted.** `PageActions` gave a page a `ReactNode` slot in the header and nothing else: no
+second row, no overflow policy, no mobile projection. Every consumer then hand-rolled the rest —
+a sticky filter row measured into a `--lw-header-h`, a horizontally scrolling action strip, a
+responsive twin under `visibleFrom`/`hiddenFrom`. `PageBar` is that whole shape, typed
+(`docs/CONTROLS-SPEC.md` §2.1).
+
+| Removed / changed                                                                                  | Replacement                                                                                                |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `PageActions`                                                                                      | `<PageBar actions={{ primary, secondary }} sync={…} tabs={…} filters={…} filtersEnd={…} />`                |
+| `PageActionsOutlet`                                                                                | none — the outlet is internal to `BasaltShell` now                                                         |
+| `PageHeaderProvider`                                                                               | none — the provider is internal to `BasaltShell` now                                                       |
+| `BasaltShellProps.globalActions: ReactNode`                                                        | `GlobalAction[]` — `{ key, node, mobile?: 'bar' \| 'more' \| 'hidden' }`; the first two default to `'bar'` |
+| tokens `appShellHeaderMobileHeight`, `appHeaderMobileActionsHeight`, `stickyHeaderClearanceMobile` | `appShellHeaderHeight` / `stickyHeaderClearance` — one value at every viewport                             |
+| vars `--vx-space-app-header-mobile-actions-height`, `--vx-space-sticky-header-clearance-mobile`    | `--vx-space-sticky-header-clearance`                                                                       |
+| CSS `.pageActions` (`shell/app-header.module.css`) and its `nowrap` override                       | none — the portal target no longer scrolls; overflow folds into `ActionGroup`'s `More`/kebab               |
+
+What changes at runtime even if you only rename:
+
+- **The app-shell header is 48px on a phone too.** It used to wrap to two rows (97px) and reserve
+  the second one on every route, empty or not (law C14). A page-level filter/tab row now renders
+  in the page FLOW, sticky under the header, so a route with no filters is 49px shorter on mobile.
+- **The header never scrolls sideways.** Actions past three fold into a `More` menu on desktop and
+  into one kebab below `sm` — computed from `BarAction[]`, which is why the slot had to become data
+  (law C7). There is exactly ONE kebab per header, and `PageBar`'s ROW 1 owns it: the shell's
+  `mobile: 'more'` global actions land there, and so do `filtersEnd`'s items (row 2 shows those on
+  desktop only — below `sm` row 2 is tabs + the first pill + `Filters (n)`, per spec §2.1). A route
+  with no `PageBar` row-1 actions gets the kebab from the shell instead. An `ActionGroup` you mount
+  yourself — in a `Section` or `ChartCard` `actions` slot — never inherits the global rows.
+- **`--basalt-page-bar-h` is published on `documentElement`** (ResizeObserver where available,
+  `height > 0` guard)
+  whenever a row 2 renders, and removed when it unmounts. A `100dvh` body becomes
+  `calc(100dvh - var(--app-shell-header-height) - var(--basalt-page-bar-h, 0px))` — delete any
+  hand-rolled measure-and-publish effect and any hardcoded header-height fallback.
+- **A shell-less app reads `title`/`icon`.** Inside a `BasaltShell` the breadcrumb names the page
+  and both are ignored; outside one they lead row 1, and the whole bar sticks at `top: 0`.
+
+`ActionGroup`, `OverflowMenu` and `SyncButton` ship on the new `basalt-ui/controls` subpath; only
+the TYPES a `PageBar`/`BasaltShell` prop mentions (`BarAction`, `ActionGroupProps`, `GlobalAction`)
+are re-exported from the root.
+
 ### Stores — `createSearchStore` replaces the enum-only pair
 
 `createSearchParamStore` and `createMultiSearchParamStore` still work: both are now `@deprecated`
@@ -119,6 +190,66 @@ Nothing removed or renamed — a DOM contract change only, ahead of `WidgetHeade
 | Component    | What changed                                                                            | Why it matters                                                                                       |
 | ------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `DeltaBadge` | Renders a plain `<span>`, no `mantine-Badge-root`/`mantine-Badge-label` classes anymore | Same props, tone and format API — but a selector or snapshot keyed on Mantine's Badge classes breaks |
+
+### Controls — `ArticleFilterBar` replaced by store-bound controls
+
+Two new subpaths, `basalt-ui/controls` and `basalt-ui/controls-dates`, and ONE removal. The removed
+component was controlled (`value`/`onChange`, its own `visibleFrom`/`hiddenFrom` twin); its
+replacements take a `FieldHandle` and own the URL write, the localStorage mirror and the responsive
+swap themselves (`docs/CONTROLS-SPEC.md` §3, laws C2/C9).
+
+| Removed                 | Replacement                                                           | Import                                                       |
+| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `ArticleFilterBar`      | `FilterSet` + `ViewTabs` (category axis) + `MultiSelectFilter` (tags) | `basalt-ui/controls`, and unchanged from `basalt-ui/content` |
+| `ArticleFilterBarProps` | `FilterSetProps` / `ViewTabsProps` / `MultiSelectFilterProps`         | same                                                         |
+
+All three replacements are re-exported from `basalt-ui/content` as well, so a content-only consumer
+changes the component names and the props, not the import path.
+
+Porting one call site:
+
+```tsx
+// before — the page owned the state, the labels and the mobile swap
+const [category, setCategory] = useState('all')
+<ArticleFilterBar categories={CATEGORIES} category={category} onCategoryChange={setCategory}
+                  tags={ARTICLE_TAGS} selectedTags={tags} onTagsChange={setTags} />
+
+// after — one store, two controls, no useState and no responsive branch
+const articles = createSearchStore({
+  key: 'articles',
+  fields: { category: field.enum(CATEGORY_VALUES, 'all'), tags: field.multi(ARTICLE_TAGS, []) },
+}).labels({ category: CATEGORY_LABELS })
+
+<ViewTabs field={articles.field.category} />
+<FilterSet>
+  <MultiSelectFilter field={articles.field.tags} label="All tags" />
+</FilterSet>
+```
+
+New on `basalt-ui/controls`: `FilterSet`, `RangeFilter`, `CompareFilter`, `SelectFilter`,
+`MultiSelectFilter`, `SearchFilter`, `ToggleFilter`, `ViewTabs`, `COMPARE_VALUES`, and the
+action/sync family. New on `basalt-ui/controls-dates`: `DateRangePicker`.
+
+**`data-numeric` is now a package-wide law, not a per-component rule.** `basalt-ui/styles.css`
+declares `[data-numeric] { font-family: var(--basalt-font-mono); font-variant-numeric: tabular-nums }`
+inside `@layer basalt`, so the attribute works on ANY element — `<Text data-numeric>`, a table cell,
+a count tag — and not only on a `SegmentedControl`, where it was previously a module-scoped rule that
+made the attribute look broken everywhere else. Nothing to change: adding the attribute is opt-in,
+and the two module rules that also set a component `font-size` still apply on top. This retires the
+per-consumer `theme-allow` + inline `fontFamily`/`fontSize` hack for numeric labels.
+
+**`@mantine/dates` is a new OPTIONAL peer, and only `basalt-ui/controls-dates` needs it.**
+`basalt-ui/controls` resolves and renders without it — proven from the packed tarball by
+`scripts/pack-test.sh`. Pass the picker into `RangeFilter` rather than importing it from a shared
+module:
+
+```tsx
+import { DateRangePicker } from 'basalt-ui/controls-dates'
+;<RangeFilter field={analytics.field.range} customPicker={DateRangePicker} />
+```
+
+A consumer that uses `DateRangePicker` installs `@mantine/dates` and imports
+`@mantine/dates/styles.layer.css` with the other Mantine layer bundles, before `basalt-ui/styles.css`.
 
 ## 1.24.0 — `QueryState`, table body chrome, four false greens
 

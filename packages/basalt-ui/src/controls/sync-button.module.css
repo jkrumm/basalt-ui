@@ -1,0 +1,40 @@
+/*
+ * `SyncButton` chrome — the rotating glyph and the desktop-only age suffix.
+ */
+
+.spin {
+  animation: basalt-sync-spin 900ms linear infinite;
+}
+
+@keyframes basalt-sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Reduced motion drops the rotation, never the icon: the `aria-busy`/`aria-disabled` pair is what
+ * actually announces "syncing", so removing the spin costs no information.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/*
+ * The age rides beside the label on desktop and disappears below `sm`, where the tooltip carries
+ * it instead — one mount, a CSS-only swap (law C9).
+ */
+.age {
+  margin-inline-start: var(--vx-space-control-gap);
+  color: var(--vx-muted);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+}
+
+@media (max-width: 47.99375em) {
+  .age {
+    display: none;
+  }
+}

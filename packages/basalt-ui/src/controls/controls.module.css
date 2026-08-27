@@ -1,0 +1,225 @@
+/*
+ * `basalt-ui/controls` — the filter/tab home surface (docs/CONTROLS-SPEC.md §3).
+ *
+ * Two form factors per control, ONE mount each, switched by CSS only (C9): the `pill` surface
+ * (bordered 30px chip + popover) and the `sheet` surface (44px full-width rows inside the mobile
+ * `Filters (n)` Drawer). `48em` / `47.99375em` are the `sm` breakpoint in the exact literal form
+ * every other basalt CSS module uses — a media query cannot resolve a custom property, so the
+ * breakpoint cannot be a token (see `content/prose.module.css`'s note).
+ */
+
+/* ── The pill row (FilterSet, desktop + the mobile inline head) ───────────────────────────────── */
+
+.pillRow {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap, 0.375rem);
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+/*
+ * Every child stays MOUNTED in the row on every viewport — folding and the mobile `inline` budget
+ * hide slots with `display: none` instead of unmounting them. That is what keeps FilterSet's active
+ * count and `Reset all` complete: the row is the single registration surface, so a filter that
+ * scrolled out of the `inline` budget still reports itself (see `filter-context.tsx`).
+ */
+/*
+ * `flex-shrink: 0` is what makes the fold WORK, not a cosmetic choice. A shrinkable slot lets flex
+ * squeeze every pill until Σ widths == the row width, so `useOverflowFit` would sum
+ * already-compressed boxes, conclude everything fits, and never show `+N` — precisely when the row
+ * is overflowing. Incompressible slots report their natural width, so the sum honestly exceeds the
+ * budget and the tail folds on the same measure tick. `min-width: 0` stays off deliberately for the
+ * same reason.
+ */
+.pillSlot {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Below `sm` only the first `inline` slots are pills; the rest live in the sheet. */
+@media (max-width: 47.99375em) {
+  .pillSlot:not([data-inline]) {
+    display: none;
+  }
+}
+
+/*
+ * Folding is a DESKTOP concern only — scoped to `min-width` so a width measured on a wide viewport
+ * can never hide a slot the mobile `inline` budget is supposed to keep.
+ */
+@media (min-width: 48em) {
+  .pillSlot[data-folded] {
+    display: none;
+  }
+}
+
+/* `+N` (desktop fold) and `Filters (n)` (mobile sheet opener) are each one pill, never both. */
+.foldPill {
+  display: none;
+}
+
+@media (min-width: 48em) {
+  .foldPill[data-shown] {
+    display: inline-flex;
+  }
+}
+
+.sheetPill {
+  display: none;
+}
+
+@media (max-width: 47.99375em) {
+  .sheetPill {
+    display: inline-flex;
+  }
+}
+
+/* ── FilterPill ───────────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * The bordered chip. `variant="default" size="ctl"` already carries the 30px height and the control
+ * radius from the theme; this module owns only the two things the variant cannot express — the
+ * accent-tinted border of an ACTIVE (non-default) filter, and the ≥36px touch target below `sm`
+ * (C15) drawn as a `::before` overlay so the visible box stays 30px.
+ */
+.pill {
+  position: relative;
+  max-width: 15rem;
+}
+
+.pill[data-active] {
+  border-color: var(--vx-accent);
+  color: var(--vx-ink);
+}
+
+@media (max-width: 47.99375em) {
+  /* Mantine's Button root clips to its box; the overlay must escape it to be hit-testable. Loading
+   * buttons keep the clip their overlay depends on (same pairing as page-bar.module.css). */
+  .pill:not([data-loading]) {
+    overflow: visible;
+  }
+
+  .pill::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(
+      (
+          var(--vx-space-control-height-ctl, 1.875rem) -
+            var(--vx-space-touch-control-height, 2.25rem)
+        ) /
+        2
+    );
+    inset-inline: 0;
+  }
+}
+
+.pillLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Numeric pill labels read mono at the smaller step. The FACE comes from the package-wide
+ * `[data-numeric]` law in `styles.css`; the `font-size` is the pill's own decision, which is why
+ * this rule exists at all. */
+.pill[data-numeric] .pillLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+}
+
+.glyph {
+  color: var(--vx-muted);
+}
+
+/* ── Popover bodies ───────────────────────────────────────────────────────────────────────────── */
+
+.dropdown {
+  min-width: 11rem;
+  max-width: 22rem;
+}
+
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* ── The sheet surface (inside the bottom Drawer) ─────────────────────────────────────────────── */
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm, 0.75rem);
+}
+
+.sheetField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sheetLabel {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/*
+ * The heading a `Radio.Group`/`Checkbox.Group` renders for itself (Mantine's `Input.Label`) — same
+ * typography as `.sheetLabel`, which is what the other sheet fields use. Both surfaces get it: in
+ * the popover it is the only place the filter's NAME appears (the pill reads the value), and in the
+ * sheet it replaces a `SheetField` heading that could never be programmatically associated —
+ * `Radio.Group` overwrites any `aria-labelledby` with its own.
+ */
+.groupLabel {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+/* 44px rows — the one sheet dimension C15 pins. */
+.sheetRow {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs, 0.625rem);
+  min-height: var(--vx-space-sheet-row-height, 2.75rem);
+  width: 100%;
+  border-bottom: 1px solid var(--vx-surface-hairline);
+}
+
+.sheetRow:last-child {
+  border-bottom: none;
+}
+
+/*
+ * A 44px row is only a 44px TOUCH TARGET if the `<label>` fills it. Mantine centres a Radio/Checkbox
+ * `body` in its root and the label line-height is ~20px, so without these the tappable strip is the
+ * middle 20px of the row and the outer 12px top and bottom do nothing (C15's number, not delivered).
+ * Passed through `classNames`, never as a global `.sheetRow label` selector — a descendant selector
+ * here would also capture a nested control's own labels.
+ */
+.sheetRowBody {
+  flex: 1;
+  align-items: center;
+  min-height: inherit;
+}
+
+.sheetRowLabel {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-height: inherit;
+}
+
+.sheetFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--mantine-spacing-xs, 0.625rem);
+}

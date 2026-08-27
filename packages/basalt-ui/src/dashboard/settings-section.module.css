@@ -3,6 +3,16 @@
  * vertical padding and a 1px `--vx-divider` rule below it, EXCEPT the last row in the section —
  * `:not(:last-child)` strips the divider there so the section doesn't end on a trailing line.
  */
+
+/* The WidgetHeader block (plus DangerZone's eyebrow, when present) sits above `.rows` with the
+ * same gap the old inline `Stack gap={2} mb="sm"` produced. */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--mantine-spacing-sm);
+}
+
 .rows > * {
   padding: var(--vx-space-settings-row-inset-y) 0;
 }

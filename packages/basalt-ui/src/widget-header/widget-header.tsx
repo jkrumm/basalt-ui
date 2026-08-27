@@ -24,6 +24,7 @@
  *   actions={<ActionIcon variant="subtle"><IconDots /></ActionIcon>}
  * />
  */
+import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { DeltaBadge } from './delta-badge'
 import classes from './widget-header.module.css'
@@ -38,8 +39,13 @@ export type WidgetHeaderProps = {
   icon?: ReactNode
   /** Optional muted line rendered below the title row. */
   subtitle?: string
-  /** Renders an info glyph carrying this text as its accessible name (`aria-label`) and native
-   * `title` tooltip — no Mantine Tooltip. */
+  /**
+   * Renders an info glyph BESIDE the heading (never inside it — this text would otherwise become
+   * part of the heading's accessible name, and an `info` paragraph read out in every headings list
+   * is what that cost). The glyph is named `More information`; the text itself reaches assistive
+   * tech through `aria-describedby` on a `role="tooltip"` bubble that opens on hover, focus and
+   * click — so a keyboard user gets it too. Mantine-free: a plain state bubble, not a Tooltip.
+   */
   info?: string
   /** Pre-formatted metric value (mono, hero size). Renders on its own row with `delta`, directly
    * under the title row — never inline with the title. */
@@ -58,14 +64,57 @@ export type WidgetHeaderProps = {
   actions?: ReactNode
 }
 
+/**
+ * The info affordance. A `title` attribute alone was never enough — it renders on hover only, so a
+ * keyboard user focusing the glyph saw nothing at all. This is the bubble `ChartCard` used to own
+ * before it composed `WidgetHeader`, moved down here so every tier gets the same behaviour:
+ * opens on hover/focus/click, closes on leave/blur/Escape/outside pointer-down, and is wired to the
+ * trigger with `aria-describedby` only while open.
+ */
 function InfoGlyph({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  const tipId = useId()
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (triggerRef.current?.contains(event.target as Node)) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [open])
+
   return (
     <span className={classes.info}>
-      <button type="button" className={classes.infoTrigger} title={text} aria-label={text}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={classes.infoTrigger}
+        // The GLYPH is named, not the text — `text` reaches AT through `aria-describedby` below, so
+        // it never lands in the heading's or the button's accessible name.
+        aria-label="More information"
+        aria-describedby={open ? tipId : undefined}
+        data-open={open}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={() => setOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setOpen(false)
+        }}
+      >
         <svg width={11} height={11} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" />
         </svg>
       </button>
+      {open && (
+        <span id={tipId} role="tooltip" className={classes.infoBubble}>
+          {text}
+        </span>
+      )}
     </span>
   )
 }
@@ -95,8 +144,9 @@ export function WidgetHeader({
             </span>
           )}
           <span className={classes.titleText}>{title}</span>
-          {info !== undefined && <InfoGlyph text={info} />}
         </Heading>
+        {/* OUTSIDE the heading on purpose — see `info`'s own doc. */}
+        {info !== undefined && <InfoGlyph text={info} />}
         {count !== undefined && <span className={classes.count}>{count}</span>}
         {actions !== undefined && <span className={classes.actions}>{actions}</span>}
       </div>

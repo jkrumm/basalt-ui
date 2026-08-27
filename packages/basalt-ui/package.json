@@ -113,6 +113,14 @@
       "types": "./dist/content/index.d.ts",
       "import": "./dist/content/index.js"
     },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js"
+    },
+    "./controls-dates": {
+      "types": "./dist/controls-dates/index.d.ts",
+      "import": "./dist/controls-dates/index.js"
+    },
     "./state": {
       "types": "./dist/state.d.ts",
       "import": "./dist/state.js"
@@ -143,6 +151,7 @@
     "@fontsource-variable/hubot-sans": "5.2.8",
     "@fontsource-variable/jetbrains-mono": "5.2.8",
     "@fontsource-variable/nunito-sans": "5.2.7",
+    "@mantine/dates": "9.3.0",
     "@shikijs/langs": "^4.3.1",
     "@shikijs/themes": "^4.3.1",
     "@tanstack/react-hotkeys": "0.10.0",
@@ -179,6 +188,7 @@
     "@fontsource-variable/jetbrains-mono": "5.2.8",
     "@fontsource-variable/nunito-sans": "5.2.7",
     "@mantine/core": "^9.3.0",
+    "@mantine/dates": "^9.3.0",
     "@mantine/form": "^9.3.0",
     "@mantine/hooks": "^9.3.0",
     "@mantine/modals": "^9.3.0",
@@ -226,6 +236,9 @@
       "optional": true
     },
     "@mantine/core": {
+      "optional": true
+    },
+    "@mantine/dates": {
       "optional": true
     },
     "@mantine/form": {

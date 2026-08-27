@@ -154,10 +154,11 @@ the correct `ColumnDef<T>` type or `ColumnDef<T, unknown>`.
 
 Global search (`enableGlobalFilter`, `globalFilterPlaceholder`, `searchIcon`,
 `initialGlobalFilter`, `onGlobalFilterChange`), faceted filters (`facets`), a toolbar slot
-(`toolbarActions`), pagination client- or server-side (`enablePagination`, `pageSizeOptions`,
-`initialPagination`, `onPaginationChange`, `manualPagination`, `rowCount`, `pageCount`) and column
-pinning (`enablePinning`, `initialColumnPinning`). **Don't hand-roll any of these** — read the props
-on the type, they are all there.
+(`actions`) and a widget header (`title`, `icon`, `subtitle`), pagination client- or server-side
+(`enablePagination`, `pageSizeOptions`, `initialPagination`, `onPaginationChange`,
+`manualPagination`, `rowCount`, `pageCount`) and column pinning (`enablePinning`,
+`initialColumnPinning`). **Don't hand-roll any of these** — read the props on the type, they are
+all there.
 
 ### `manualPagination` imposes a contract on the rest of the props
 

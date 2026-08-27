@@ -20,7 +20,7 @@
  * notifyPromise(save(), { loading: 'Saving…', success: 'Saved', error: 'Failed' })
  *
  * // Shell bell (globalActions slot):
- * <BasaltShell globalActions={<NotificationBell />} ... />
+ * <BasaltShell globalActions={[{ key: 'notifications', node: <NotificationBell />, mobile: 'bar' }]} ... />
  */
 
 // ── notify core ───────────────────────────────────────────────────────────────

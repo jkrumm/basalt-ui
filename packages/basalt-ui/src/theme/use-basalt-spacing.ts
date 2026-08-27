@@ -13,8 +13,8 @@
  *
  * Three `../shell` components consume it today, two distinct classes of use:
  *  - `BasaltShell` (`../shell/index.tsx`) — its AppShell header/navbar dimensions need the ACTIVE
- *    density level's numbers (`step.appShellHeaderHeight`/`.appShellHeaderMobileHeight`/
- *    `.appShellNavbarWidth`/`.appShellNavbarRailWidth`), not the frozen shipped-identity constants,
+ *    density level's numbers (`step.appShellHeaderHeight`/`.appShellNavbarWidth`/
+ *    `.appShellNavbarRailWidth`), not the frozen shipped-identity constants,
  *    because those boxes must grow/shrink with the density-tracked controls rendered inside them.
  *  - `AppSidebar` (`../shell/app-sidebar.tsx`) and `SidebarAccount` (`../shell/app-sidebar-
  *    account.tsx`) each read `step.sidebarSettingsMenuWidth`/`.sidebarAccountMenuWidth` for their

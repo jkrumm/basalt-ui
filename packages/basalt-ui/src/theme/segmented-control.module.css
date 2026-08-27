@@ -19,6 +19,10 @@
  * unrecognized native prop, forwarded onto the root `Box` via Mantine's own `...others` spread,
  * `SegmentedControl.mjs`), retiring the per-consumer `theme-allow` + inline `styles={{ label: {
  * fontFamily: 'var(--basalt-font-mono)', fontSize: 11.5 } }}` hack (`DashboardDateFilter.tsx`).
+ * The MONO FACE itself is now a package-wide law in `styles.css` (`[data-numeric]` in `@layer
+ * basalt`, so a plain `<Text data-numeric>` works too — the module-scoped copy is why it used to
+ * look broken outside a SegmentedControl); what stays here is the component's own `font-size`, plus
+ * the face restated so this module is still correct read on its own.
  * `[data-numeric]` is a bare attribute selector, not a CSS-module class, so it is intentionally left
  * unscoped — same ancestor-attribute pattern as `controls.module.css`'s
  * `html[data-mantine-color-scheme] .inputWrapper[data-variant='default']`. `.label` here is the
