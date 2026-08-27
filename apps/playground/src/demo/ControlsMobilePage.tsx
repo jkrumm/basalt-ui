@@ -49,6 +49,14 @@ const sectionView = createLocalStore({
   fields: {
     view: field.enum(['all', 'new', 'returning', 'churned', 'flagged'], 'all'),
   },
+}).labels({
+  view: {
+    all: 'All',
+    new: 'New',
+    returning: 'Returning',
+    churned: 'Churned',
+    flagged: 'Flagged',
+  },
 })
 
 type Row = { customer: string; channel: string; orders: number; revenue: number }
@@ -78,7 +86,7 @@ export function ControlsMobilePage() {
   const active = mobileFilters.useActiveCount()
 
   return (
-    <Stack gap="md">
+    <Stack gap={14}>
       <PageBar
         actions={{
           primary: { key: 'export', label: 'Export', onClick: () => {} },
@@ -122,14 +130,14 @@ export function ControlsMobilePage() {
         ]}
       />
 
+      {/* One line. The page's subject is the CONTROLS; three paragraphs of explanation pushed the
+          filter row, the section header and the table's own toolbar apart far enough that the
+          rhythm this page exists to demonstrate was unreadable. */}
       <Text size="sm" c="dimmed">
-        {/* `data-numeric` is the global mono rule in `basalt-ui/styles.css` — one attribute, no
-            per-site `fontFamily`, which is what retired the per-consumer `theme-allow`. */}
         <span data-numeric style={{ color: VX.ink }}>
           {active}
         </span>{' '}
-        of six filters differ from their fallback — that count IS the `n` in the `Filters (n)` pill,
-        read from <code>store.useActiveCount()</code>.
+        of six filters differ from their fallback — the `n` in the `Filters (n)` pill.
       </Text>
 
       <Section
@@ -142,10 +150,6 @@ export function ControlsMobilePage() {
         count={ROWS.length}
         tabs={<ViewTabs field={sectionView.field.view} />}
       >
-        <Text size="sm" c="dimmed" mb="xs">
-          The table below states its own count in its own header, and its head sticks under the page
-          bar rather than under the viewport top.
-        </Text>
         <BasaltDataTable
           title="All customers"
           data={ROWS}

@@ -26,9 +26,30 @@ export type Kpi = {
   delta?: number
   history: number[]
 }
-export type BreakdownRow = { key: ChannelKey; label: string; value: string; history: number[] }
+export type BreakdownRow = {
+  key: ChannelKey
+  label: string
+  /** Formatted revenue — what the `Sales by channel` card's `Metric` control calls `revenue`. */
+  value: string
+  /** Formatted order count — the same rows under the card's other metric. */
+  orders: string
+  history: number[]
+}
 export type FunnelPoint = { step: string; visitors: number }
-export type TopPage = { path: string; views: number; conversion: number; revenue: number }
+export type TopPage = {
+  path: string
+  /** The acquisition channel — the column the `Top pages` table facets on. */
+  channel: ChannelKey
+  views: number
+  conversion: number
+  revenue: number
+}
+
+/** The `Total sales over time` card's local bucketing axis (`ChartCard.actions`). */
+export type Grain = 'day' | 'week'
+
+/** The `Sales by channel` card's local metric axis (`ChartCard.actions`). */
+export type BreakdownMetric = 'revenue' | 'orders'
 
 export type Analytics = {
   points: SalesPoint[]
@@ -148,6 +169,66 @@ function series(o: {
   }))
 }
 
+/**
+ * One bar's ideal footprint, in px, including its gap. A KPI sparkline is sized from the slot it got
+ * rather than from a fixed bar count, and this is the constant that converts one into the other.
+ *
+ * A fixed count cannot be right for both slots the card has. Ten bars is the reference treatment in
+ * the 72px `'right'` slot (≈7px each — individually legible, and the accented last one reads); the
+ * same ten bars in the full-bleed mobile slot are 23px each, which is a bar chart taking a third of
+ * the card, not a trend qualifying a number. Ten bars was also wrong the other way before that: one
+ * bar per point drew 30 bars at 2.4px in a 72px slot, which is a texture.
+ */
+const SPARKLINE_BAR_FOOTPRINT = 7
+/** Bar-count floor/ceiling — below 8 a bar chart stops being a series, above 40 it is texture. */
+const SPARKLINE_BAR_MIN = 8
+const SPARKLINE_BAR_MAX = 40
+
+/**
+ * How many bars a sparkline slot of `width` px should hold. Exported because the CARD is the only
+ * thing that knows its own width — `StatCard`'s `sparkline` render prop hands the MEASURED box down,
+ * so the bar count follows the box with no viewport branch anywhere (law C9).
+ */
+export function sparklineBars(width: number): number {
+  const ideal = Math.round(width / SPARKLINE_BAR_FOOTPRINT)
+  return Math.min(Math.max(ideal, SPARKLINE_BAR_MIN), SPARKLINE_BAR_MAX)
+}
+
+/**
+ * Mean-buckets a series down to `buckets` values. The MEAN and not every Nth sample: sampling a wave
+ * at a stride close to its period aliases it into a straight line, and every series on this page is
+ * trigonometric.
+ */
+export function downsample(values: readonly number[], buckets: number): number[] {
+  if (values.length <= buckets) return [...values]
+  const size = values.length / buckets
+  return Array.from({ length: buckets }, (_, index) => {
+    const slice = values.slice(Math.floor(index * size), Math.floor((index + 1) * size))
+    return Math.round(sum(slice) / Math.max(slice.length, 1))
+  })
+}
+
+/**
+ * Re-buckets a sales series by grain — the `Total sales over time` card's `Day` / `Week` control.
+ * `week` SUMS (a week's sales is its days added up, not their average), which is also why the card's
+ * y axis rescales rather than just thinning out.
+ */
+export function bucketByGrain(points: readonly SalesPoint[], grain: Grain): SalesPoint[] {
+  if (grain === 'day') return [...points]
+  const out: SalesPoint[] = []
+  for (let index = 0; index < points.length; index += 7) {
+    const week = points.slice(index, index + 7)
+    const first = week[0]
+    if (first === undefined) break
+    out.push({
+      date: first.date,
+      sales: sum(week.map((point) => point.sales)),
+      previous: sum(week.map((point) => point.previous)),
+    })
+  }
+  return out
+}
+
 const FUNNEL_STEPS = ['Visited', 'Viewed item', 'Added to cart', 'Checkout', 'Purchased'] as const
 const FUNNEL_RETENTION = [1, 0.62, 0.34, 0.21, 0.14] as const
 
@@ -236,10 +317,12 @@ export function buildAnalytics(o: {
     const channelPoints = points.map((point, index) =>
       Math.round(((point.sales * weight.share) / share) * wave(index, weight.phase)),
     )
+    const channelTotal = sum(channelPoints)
     return {
       key,
       label: CHANNEL_LABEL[key],
-      value: money(sum(channelPoints), o.currency),
+      value: money(channelTotal, o.currency),
+      orders: integer(channelTotal / 148),
       history: channelPoints,
     }
   })
@@ -251,6 +334,7 @@ export function buildAnalytics(o: {
 
   const topPages: TopPage[] = TOP_PATHS.map((path, index) => ({
     path,
+    channel: CHANNEL_KEYS[index % CHANNEL_KEYS.length]!,
     views: Math.round((sessions / 6) * wave(index, index * 0.9)),
     conversion: Number((2.4 + index * 0.37).toFixed(2)),
     revenue: Math.round((total / 9) * wave(index, index * 0.6)),
@@ -280,6 +364,7 @@ const col = createColumnHelper<TopPage>()
 
 export const topPageColumns = [
   col.accessor('path', { header: 'Page' }),
+  col.accessor('channel', { header: 'Channel' }),
   col.accessor('views', {
     header: 'Views',
     meta: { align: 'right' },
