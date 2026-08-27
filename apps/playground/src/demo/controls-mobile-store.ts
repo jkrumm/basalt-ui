@@ -20,5 +20,13 @@ export const mobileFilters = createSearchStore({
   },
 }).labels({
   range: { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days' },
+  compare: { none: 'No comparison', previous: 'Previous period', year: 'Same period last year' },
   currency: { USD: 'US dollar', EUR: 'Euro', GBP: 'Pound sterling' },
+  channels: {
+    direct: 'Direct',
+    organic: 'Organic search',
+    referral: 'Referral',
+    social: 'Social',
+    paid: 'Paid',
+  },
 })

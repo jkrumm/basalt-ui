@@ -13,6 +13,8 @@
 #   • a hard refusal on a major — majors are banned here by design (see CLAUDE.md), and the one
 #     way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` reaching master. Nothing
 #     else in the pipeline checks;
+#   • the C16 grace gate against the COMPUTED version (`packages/basalt-ui/scripts/check-grace.ts`),
+#     which is the only place it can fire before the release instead of one minor after it;
 #   • one confirmation, on the number itself rather than on the intent;
 #   • follow-through to the registry, so a green exit means "on npm" rather than "the job finished".
 #
@@ -143,6 +145,16 @@ if [ "$bump" = "major" ]; then
    Something on $BRANCH carries \`feat!:\` or a BREAKING CHANGE footer. Rewrite it as a plain
    \`feat:\` documenting the change in the body, then release again."
 fi
+
+# ── The C16 grace gate, against the version about to be cut ──────────────────
+# The test-time gate reads package.json, i.e. the version already PUBLISHED, so it can only go red
+# after the release that shipped a due entry — and it never runs on that release: semantic-release's
+# `chore: release … [skip ci]` commit skips CI and `release.yml` runs no tests. The computed version
+# is only known here, so this is the only place the gate can fire before the release rather than one
+# minor after it (docs/CONTROLS-SPEC.md §1).
+echo
+bun "$PACKAGE_PATH/scripts/check-grace.ts" "$version" ||
+  die "a grace entry is due at v$version — promote it (or extend its \`promote\`) before releasing."
 
 [ "$MODE" != "dry" ] || exit 0
 

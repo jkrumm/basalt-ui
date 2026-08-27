@@ -147,12 +147,42 @@ export function IconPalette() {
   )
 }
 
-/** Simple dollar/currency icon for revenue-related nav items. */
+/**
+ * The currency filter's glyph — a coin, not a bare `$`.
+ *
+ * A `$` inside a circle is a CURRENCY mark; the `$` alone (which this drew, as a stroked path at
+ * 18px) reads as a dollar AMOUNT with its number missing, and it sat on the text baseline rather
+ * than centred in the pill's 16px icon box. 16px, like every other control-tier icon.
+ */
 export function IconCurrency() {
   return (
-    <Glyph size={18}>
-      <path d="M12 2v20" />
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    <Glyph size={16}>
+      <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+      <path d="M14.5 9h-3.75a1.75 1.75 0 0 0 0 3.5h2.5a1.75 1.75 0 0 1 0 3.5H9.5" />
+      <path d="M12 7v10" />
+    </Glyph>
+  )
+}
+
+/** The dashboard's `Save as report` primary. */
+export function IconReport() {
+  return (
+    <Glyph size={16}>
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <path d="M5 8v-3a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-2" />
+      <path d="M3 12h9" />
+      <path d="M9 15l3 -3l-3 -3" />
+    </Glyph>
+  )
+}
+
+/** The `Top pages` section's export action. */
+export function IconExport() {
+  return (
+    <Glyph size={16}>
+      <path d="M12 15V3" />
+      <path d="M8 7l4 -4l4 4" />
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
     </Glyph>
   )
 }
@@ -232,6 +262,28 @@ export function IconBook() {
       <path d="M3 6v13" />
       <path d="M12 6v13" />
       <path d="M21 6v13" />
+    </Glyph>
+  )
+}
+
+/**
+ * The period stepper's two arrows (`DashboardPage`'s `filtersEnd` `ControlGroup`). Deliberately
+ * declared at the Glyph default (18px) rather than 16 like `IconUser`: basalt's `IconSlot` restates
+ * every icon's box at the tier's own size, so a consumer's icon set may be as inconsistent as real
+ * icon sets are and the controls still line up.
+ */
+export function IconChevronLeft() {
+  return (
+    <Glyph>
+      <path d="M15 6l-6 6l6 6" />
+    </Glyph>
+  )
+}
+
+export function IconChevronRight() {
+  return (
+    <Glyph>
+      <path d="M9 6l6 6l-6 6" />
     </Glyph>
   )
 }

@@ -16,8 +16,31 @@ consumer exercise. Items are ordered by how much they'd help the next consumer, 
 > `chartMissingAriaLabel` tag scan choked on JSX generics and arrow-fn props (regex hardened +
 > tests), and `raw-radius` had no config toggle (added `rawRadius`; the framework repo now
 > actually self-scans — its lefthook check-theme had been silently scanning zero files).
-> Still open: 2, 7, 10–12, 14, 16, 21–22, 26–27. (17 resolved by the `density` config dimension,
-> 1.2.0; 19 resolved same-night alongside 18/20 — both were left off this line originally.)
+> Still open after that night: 2, 7, 10–12, 14, 21–22, 27. (17 resolved by the `density` config
+> dimension, 1.2.0; 19 resolved same-night alongside 18/20 — both were left off this line
+> originally. 16 and 26 were never open: they are the positive findings.)
+
+> **Controls waves (1.26.0, `docs/STATUS.md` → "Controls waves").** The concept closed the
+> shell and battery half of this list, mostly by SHIPPING a shape rather than by documenting one:
+>
+> - **21 RESOLVED for the cases that drove it** — `sidebarBlocks` (list / progress / custom) plus
+>   `brand.menu` are declared data, so the "six flat rows" case is a block and the workspace switcher
+>   is a brand menu. A nested SUBMENU under `settingsMenuItems` is still unsupported, and the footer
+>   now renders flat up to three rows by design. Recorded as a shape decision, not a gap.
+> - **2, 22, 23, 24 RESOLVED as documented stances** — the `dist`-reading CLI is a named footgun in
+>   the package `CLAUDE.md`; the "colours beyond the four intents live outside the registry" stance,
+>   the no-`title`-in-a-spec decision and the commands circular-inference fix are all in
+>   `agent/rules/basalt-batteries.md`, which every consumer receives.
+> - **25 — the docs note landed in 2026-07; the CAPABILITY did not.** `useBasaltForm` still
+>   `Omit`s `validate`, so a cross-field or async rule drops to a raw `useForm`. Now stated in the
+>   shipped `basalt-batteries.md` rather than only in this file.
+> - **7 STILL OPEN** — no `defineSeriesGroups`; `groupTokens(GROUP, MAP)` and
+>   `paletteOptions.groups['GROUP-']` still have to be derived from one constant by hand. The
+>   trailing-dash failure mode is now written down in `agent/rules/basalt-tokens.md`.
+> - **28, 29 RESOLVED** — the managed `CLAUDE.md` block was rewritten against the current design
+>   doctrine (and shrank to 40 lines), and the real runtime wiring (provider + `BasaltOverlays` + the
+>   CSS layer order + the vite pair) is the `/basalt-app` skill's step 2.
+> - Unchanged and still consumer-side: 10–12 (chart capability gaps), 14, 27 (two `unwrap`s), 30.
 
 ## Packaging / CLI
 

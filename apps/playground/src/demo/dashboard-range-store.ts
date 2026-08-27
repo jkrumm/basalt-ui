@@ -21,12 +21,16 @@ export const dashboardFilters = createSearchStore({
   key: 'dashboard-range',
   fields: {
     range: field.range({ presets: ['1d', '7d', '30d'], fallback: '30d', custom: true }),
-    compare: field.enum(['none', 'previous', 'year'], 'none'),
+    // `'previous'`, not `'none'` — a dashboard whose default is "no comparison" ships with every
+    // delta badge hidden, which is the page's whole trend layer switched off at rest. A period
+    // comparison is what a reader of a KPI wants first; `'none'` stays reachable in the pill.
+    compare: field.enum(['none', 'previous', 'year'], 'previous'),
     currency: field.enum(['USD', 'EUR'], 'USD'),
     channels: field.multi(CHANNEL_KEYS, []),
   },
 }).labels({
   range: { '1d': 'Last 24 hours', '7d': 'Last 7 days', '30d': 'Last 30 days' },
+  compare: { none: 'No comparison', previous: 'Previous period', year: 'Same period last year' },
   currency: { USD: 'US dollar', EUR: 'Euro' },
   channels: {
     direct: 'Direct',

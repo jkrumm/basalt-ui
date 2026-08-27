@@ -274,31 +274,13 @@ links to `basalt-ui.com` from that source:
 
 ## Search Param Persistence
 
-**Scope of the mandate.** `createSearchParamStore` covers ONE param whose values are a
-string enum (`{ key, param, values, fallback }`), and `createMultiSearchParamStore` the
-multi-select of the same shape. Where that fits — a range picker, a tab, a single filter —
-it is mandatory: use it, don't hand-roll persistence.
+`createSearchStore` (`basalt-ui/router-tanstack`) is the ONE store, over typed fields
+(`field.enum/multi/range/number/boolean/string`) with per-field lanes — so the enum-only scoping
+question this section used to argue is gone: a route with a wider search shape composes
+`store.validateSearch(raw)` into its own validator, and `createSearchSchemaStore` is struck.
 
-Where it doesn't fit, it doesn't apply. A route whose `validateSearch` is a real Zod object
-(image-share carries an 11-key and a 5-key schema, rb a 10-key one) cannot be expressed
-through the store at all, and three consumers hit that wall in round 4. **Hand-write
-`validateSearch` there.** A `createSearchSchemaStore({ key, schema, persist })` is planned
-and **not shipped** — it did not land in 1.20.0 either; do not write code against it.
-
-This scoping is shipped to consumers in `agent/rules/basalt-router.md`. Keeping it only here
-is how round 5 found consumers still reading the unconditional mandate.
-
-See the JSDoc on `createSearchParamStore` for the full 5-step recipe — it ships with every
-consumer via autocomplete. Key rules that won't fit in a JSDoc bullet:
-
-- Page components accept the param as a **prop**, never via `useSearch({ from:
-'/dashboard' })` — sibling routes fail that `from`.
-- Dashboard destinations carry the filter through `search: <store>.linkSearch`, passed
-  BY REFERENCE and set per destination in the `defineNav` definition — never a
-  module-scope literal (`search: { window: '30d' }` pins the fallback on every click and
-  is why argo's reader had zero call sites), never `search: true` (a store-backed route
-  always returns the param, so the router requires a value and the flag is a type
-  error), and never a global link callback. 1.21.0 also warns in dev when the URL pins
-  the fallback, something else is persisted, and no reader was ever called.
-- The localStorage fallback in `validateSearch` restores the value when navigating
-  back; the filter's `navigate({ search: (prev) => (...) })` keeps it current.
+Three laws, and they are guard-backed now, not prose here: a control takes `field` and never
+`value`/`onChange`; a nav link passes `store.linkSearch` **by reference**; a reader never writes
+`useSearch({ from: '<literal>' })`. The doctrine ships to consumers in
+`packages/basalt-ui/agent/rules/basalt-state.md` (stores, lanes, nav) and `basalt-controls.md`
+(where a control lives, and what sizes it); `docs/CONTROLS-SPEC.md` §4 is the long form.

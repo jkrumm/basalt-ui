@@ -18,22 +18,23 @@ a capability landed**, which does not rot._
 Everything below this line is built. Nothing in this document is a plan — but the last row may not
 be released yet; the version column says when a capability landed, not what npm serves.
 
-| Capability                                                                                             | Shipped                        |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------ |
-| 1.0 Mantine pivot, 1.x line live                                                                       | 1.0.0                          |
-| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`) | 1.2.0                          |
-| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                 | 1.3.0 (kebab-case names 1.5.0) |
-| `mantine-shade-index` promoted to `error`                                                              | 1.11.0                         |
-| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                  | 1.15.0                         |
-| Chart-API consumer rounds one / two / three                                                            | 1.16.0 / 1.17.0 / 1.18.0       |
-| Native mobile nav + `defineNav`                                                                        | 1.19.0                         |
-| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                  | 1.20.0                         |
-| Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                      | 1.21.0                         |
-| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                               | 1.22.0                         |
-| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                 | 1.23.0                         |
-| Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                      | 1.23.1                         |
-| Round-9 batch — `QueryState`, table body chrome, four false greens                                     | 1.24.0                         |
-| Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)             | 1.25.0                         |
+| Capability                                                                                               | Shipped                        |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1.0 Mantine pivot, 1.x line live                                                                         | 1.0.0                          |
+| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`)   | 1.2.0                          |
+| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                   | 1.3.0 (kebab-case names 1.5.0) |
+| `mantine-shade-index` promoted to `error`                                                                | 1.11.0                         |
+| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                    | 1.15.0                         |
+| Chart-API consumer rounds one / two / three                                                              | 1.16.0 / 1.17.0 / 1.18.0       |
+| Native mobile nav + `defineNav`                                                                          | 1.19.0                         |
+| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                    | 1.20.0                         |
+| Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                        | 1.21.0                         |
+| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                                 | 1.22.0                         |
+| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                   | 1.23.0                         |
+| Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                        | 1.23.1                         |
+| Round-9 batch — `QueryState`, table body chrome, four false greens                                       | 1.24.0                         |
+| Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)               | 1.25.0                         |
+| Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, ten guards, 13→6 rules | 1.26.0                         |
 
 Adopted downstream: seven consumer repos, on 1.23.1 as of the round-9 sweep (below). Round-10 and
 round-11 consumer sweeps ran against 1.24.0/1.25.0 (`.claude/feedback/round-10/`,
@@ -48,6 +49,40 @@ language is historical, see the banner on each.
 
 Ran against 1.25.0, validating round-10's `manualPagination` contract. Not summarized here yet —
 see `.claude/feedback/round-11/` per-repo reports directly.
+
+## Controls waves — 1.26.0
+
+Five `feat:` commits implementing `docs/CONTROLS-SPEC.md`, whose evidence ledger is
+`docs/archive/CONTROLS-SYNTHESIS.md` (A1..D16, cited by id, never restated). The concept in one
+sentence: **every interactive control has one home, one size tier and one persistence binding, and
+basalt owns all three.** Cross-consumer, that replaced 5 range pickers, 4 tab switchers, 7 section
+headers, 4 refresh idioms and 4 persistence lanes with one of each.
+
+| Commit    | Waves  | Delivers                                                                                                                                                                                                                                                                                                                                             |
+| --------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b663322` | 1 + 2  | the four density-tracked control anchors + the `-ctl`/`-icon` var sets (with the coverage test that greps Mantine's own `getSize` callers), `CtlSlot`, Mantine-free `WidgetHeader` + `DeltaBadge`, `createSearchStore` over typed fields, `createLocalStore`, the `{ since, promote, why }` grace ledger and the eight stale `warn` entries promoted |
+| `da6c4a9` | 3 + 4  | `PageBar` (row 1 portalled, row 2 in-flow sticky, `--basalt-page-bar-h`), `GlobalAction[]`, `Section`, the composers on `WidgetHeader`, and `./controls` + `./controls-dates` — every filter bound to a `FieldHandle`                                                                                                                                |
+| `a00c65f` | 7a     | the playground migrated onto `PageBar` + the controls, plus the reference page that gates the promotions                                                                                                                                                                                                                                             |
+| `08cca78` | 5 + 6a | `sidebarBlocks` (list / progress / custom) replacing the two `ReactNode` slots, `brand.menu`, `search.actions`, persisted folds, and the ten guards of §6 with `pluginRules` mapping every id to exactly one surface                                                                                                                                 |
+| `5639be1` | 6a     | the playground dogfooding all three block kinds; `SettingsRow.control` settled as law C1's third home (Mantine `md`, raw inputs legal, no size rule)                                                                                                                                                                                                 |
+
+**The agent layer went with it** (wave 6b, this pass): 13 rules / 4,177 lines → **6 rules / 938**,
+each opening with a generated `<!-- basalt:coverage -->` block, `check-coverage --check` gating the
+budgets and the claims. `basalt-router.md` merged into `basalt-state.md`; the eight unguarded battery
+rules merged into `basalt-batteries.md`; the three skills dropped from 741 lines to 242 and hold
+procedures only. `sync` now DELETES a rule file a newer basalt no longer ships — without that, the
+nine retired files would have stayed in every consumer's `.claude/`, read forever, with every gate
+green. Ledger dispositions: A1–A14 die with `basalt-router.md` and the root `CLAUDE.md` block;
+B/C/D prose contradictions are corrected in the six rules, the package `CLAUDE.md` (972 → 399) and
+the README; D4 became law C16; D13/D14 are this section and the `ARGO-MIGRATION-LEARNINGS.md` pass.
+The three-round `CLAUDE-block.md.tpl` handoff (D2 — "names three chart exceptions where there are
+five") is closed.
+
+**Still open, and deliberately**: wave 7. The six `warn` control guards (`control-outside-home`,
+`control-size-literal`, `in-body-page-title`, `responsive-twin`, `search-literal-link`,
+`use-search-from-literal`) carry `promote: '1.27.0'` and their promotion is gated on running the
+shipped preset over argo, linewatch, image-share, rb, image-gen and the playground with ≤3 total
+waivers. The argo (≈ −700 lines) and linewatch (≈ −300) migrations of §8 have not run.
 
 ## Round-10 batch — 1.25.0
 
