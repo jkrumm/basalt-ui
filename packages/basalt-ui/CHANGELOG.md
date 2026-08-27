@@ -1,3 +1,21 @@
+# [1.26.0](https://github.com/jkrumm/basalt-ui/compare/v1.25.0...v1.26.0) (2026-08-27)
+
+
+### Bug Fixes
+
+* align shell comments and ChartCard rem fallbacks with the derived scale ([9d09e24](https://github.com/jkrumm/basalt-ui/commit/9d09e246dad161829ebb261af8816ef2f30d2388))
+
+
+### Features
+
+* add PageBar, Section, the controls subpath and WidgetHeader composers ([ccb24bf](https://github.com/jkrumm/basalt-ui/commit/ccb24bf85a0c76de603feb54992b76a71797249f))
+* add sidebar blocks and the controls guards ([cd847fb](https://github.com/jkrumm/basalt-ui/commit/cd847fb2cf99a686ab0356fda8dcefc91f3eba09))
+* add the ctl control tier, WidgetHeader and createSearchStore ([3b52ade](https://github.com/jkrumm/basalt-ui/commit/3b52ade43ddc3a62bfd6f4266dd201616d22b89e))
+* cut the agent layer to six rules, close consumer gaps, polish the tier ([3e4c5b6](https://github.com/jkrumm/basalt-ui/commit/3e4c5b6fddd21a6acad956a702039bed92f0b4b9))
+* dogfood sidebar blocks in the playground, settle the form-row home ([1920173](https://github.com/jkrumm/basalt-ui/commit/1920173f8c79f2a0d303df4704080bf15ab36f0b))
+* migrate the playground to PageBar and controls, add the reference page ([aa24fe6](https://github.com/jkrumm/basalt-ui/commit/aa24fe6cbd5da857bd002d111be4144e28d01e78))
+* wire card, chart and section controls into the reference page ([bb8c2be](https://github.com/jkrumm/basalt-ui/commit/bb8c2beecb7eb4a580b5f2f2da9aef711774a859))
+
 # [1.25.0](https://github.com/jkrumm/basalt-ui/compare/v1.24.0...v1.25.0) (2026-08-22)
 
 
