@@ -29,7 +29,7 @@ function getInitials(name: string): string {
   return `${first}${last}`.toUpperCase()
 }
 
-/** Identity initials block — 28px, radius 7, ink-10% bg, mono 10.5px (docs/DESIGN-SPEC.md §5). */
+/** Identity initials block — 28px, radius 7, ink-10% bg, mono micro (11px) (docs/DESIGN-SPEC.md §5). */
 function InitialsBlock({ name }: { name: string }) {
   return (
     <div className={classes.avatar} aria-hidden>
@@ -39,7 +39,7 @@ function InitialsBlock({ name }: { name: string }) {
 }
 
 /** Generic "person" glyph for the unauthenticated row — matches the inline-SVG icon convention
- * used elsewhere in the shell (`IconGear`/`IconClose` in `app-sidebar.tsx`). */
+ * used elsewhere in the shell (`IconGear` in `app-sidebar.tsx`). */
 function IconUser() {
   return (
     <svg

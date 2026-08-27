@@ -8,7 +8,7 @@ import { Badge } from '@mantine/core'
 import { VX } from '../tokens'
 
 /**
- * Sidebar nav count badge (docs/DESIGN-SPEC.md §5): mono 10.5px, ink-8% bg, radius 5, height 16,
+ * Sidebar nav count badge (docs/DESIGN-SPEC.md §5): mono micro (11px), ink-8% bg, radius 5, height 16,
  * padding 0 5px, muted text; `marginLeft: auto` pins it to the row end on any render path.
  * `styles` (inline) rather than a token color prop, since none of Mantine's variant/color
  * combinations land on the ink-tint idiom. Returns `null` for a zero/empty count so the badge slot

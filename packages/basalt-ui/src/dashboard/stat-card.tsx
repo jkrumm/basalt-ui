@@ -22,13 +22,24 @@
  *
  * @example
  * import { StatCard } from 'basalt-ui'
- * import { LineSparkline } from 'basalt-ui/charts'
+ * import { LineSparkline, useChartSize } from 'basalt-ui/charts'
+ *
+ * // `LineSparkline` takes a fixed `width` prop — genuine full-bleed means measuring the card's
+ * // own width first (`useChartSize`), never a hardcoded pixel value.
+ * function KpiSparkline({ data }: { data: number[] }) {
+ *   const { ref, width } = useChartSize()
+ *   return (
+ *     <div ref={ref} style={{ width: '100%' }}>
+ *       {width > 0 && <LineSparkline data={data} width={width} height={32} />}
+ *     </div>
+ *   )
+ * }
  *
  * <StatCard
  *   label="Active Users"
  *   value="12,483"
  *   delta={4.2}
- *   sparkline={<LineSparkline data={history} width={160} height={32} />}
+ *   sparkline={<KpiSparkline data={history} />}
  * />
  *
  * @example

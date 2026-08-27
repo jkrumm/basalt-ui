@@ -1,7 +1,8 @@
 /**
  * Presentational app sidebar — a collapsible icon-rail with grouped nav sections, a brand header
- * (logo + collapse/close toggle), and a footer settings menu (consumer-supplied entries + an
- * optional version label).
+ * (logo + collapse toggle), and a footer settings menu (consumer-supplied entries + an
+ * optional version label). Desktop only — below `sm` the sidebar doesn't render at all; mobile
+ * navigation is `MobileNav`'s tab bar / More menu, not this component.
  *
  * Router-agnostic by design: active detection, typed navigation and the collapse store stay in the
  * consumer (or in `BasaltShell`), which feeds resolved `sections` + `collapsed`/`onToggleCollapse`
@@ -12,7 +13,9 @@
  * DESKTOP ONLY. There is no mobile sidebar drawer any more: below the `sm` breakpoint the navbar
  * is permanently collapsed and the bottom bar (`app-mobile-nav.tsx`) is the whole nav. The rail
  * styling is still gated behind a `min-width: sm` media query, and the collapse chevron is
- * `visibleFrom="sm"`. Grounded in argo `apps/dashboard/src/components/app-shell/app-sidebar.tsx`.
+ * `visibleFrom="sm"`. Originally extracted from argo's
+ * `apps/dashboard/src/components/app-shell/app-sidebar.tsx`; argo has since deleted that file in
+ * favor of this package.
  */
 import {
   ActionIcon,
@@ -56,8 +59,8 @@ export type AppSidebarProps = {
   settingsMenuItems?: SettingsMenuItem[]
   /**
    * Optional account row rendered below the settings menu in the sidebar footer (see
-   * `SidebarAccount` / `BasaltAccountProps`), separated by its own top hairline. Omitting it
-   * reproduces today's footer unchanged.
+   * `SidebarAccount` / `BasaltAccountProps`) — no separating hairline, the row's own top padding
+   * supplies the separation. Omitting it reproduces today's footer unchanged.
    */
   account?: BasaltAccountProps
   /**
@@ -73,11 +76,12 @@ export type AppSidebarProps = {
    * rule only fires between adjacent children, so an empty `sections` produces no orphan divider or
    * dead padding above it.
    *
-   * Hidden on the collapsed desktop rail; still present in the mobile drawer, which opens at full
-   * width. The rail is ~56px of icon buttons with no sensible representation for arbitrary
-   * consumer content, so the CSS media query that drives the rail hides this slot the same way it
-   * hides `.childList` — never a JS check on `collapsed`, since that one value is shared by the
-   * rail AND the drawer (only the media query tells them apart). `SidebarSearch` gets to adapt
+   * Hidden on the collapsed desktop rail; the sidebar itself no longer renders below `sm` (there
+   * is no mobile drawer — see `MobileNav`), so this slot has no mobile representation either. The
+   * rail is ~48px of icon buttons with no sensible representation for arbitrary consumer content,
+   * so the CSS media query that drives the rail hides this slot the same way it hides
+   * `.childList` — never a JS check on `collapsed`, since that one value only distinguishes the
+   * expanded sidebar from the collapsed rail (both desktop-only). `SidebarSearch` gets to adapt
    * itself to the rail (it takes `collapsed` and renders its own icon-only form) because the shell
    * owns that control; it cannot adapt content it knows nothing about, so this slot hides instead
    * of squashing it.
@@ -179,13 +183,13 @@ function NavLinkBody({ item, active }: { item: SidebarItem; active: boolean }) {
 /**
  * Group label — a micro-label (docs/DESIGN-SPEC.md §3: mono, uppercase, tracked, faint). Typography
  * lives entirely in `.sectionLabel` (app-sidebar.module.css), not Mantine `Text` props, since the
- * treatment is a shell-specific micro-label rather than a themed primitive. `flush` drops the
- * intrinsic inset/margin so the collapsible `sectionHeader` can own the padding instead (otherwise
- * the button's hover box double-insets and hugs the text).
+ * treatment is a shell-specific micro-label rather than a themed primitive. Flush (no intrinsic
+ * inset/margin) at every call site, so the collapsible `sectionHeader` owns the padding instead
+ * (otherwise the button's hover box would double-inset and hug the text).
  */
-function SectionLabel({ children, flush }: { children: ReactNode; flush?: boolean }) {
+function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <Text component="div" px={flush ? 0 : 'xs'} mb={flush ? 0 : 4} className={classes.sectionLabel}>
+    <Text component="div" px={0} mb={0} className={classes.sectionLabel}>
       {children}
     </Text>
   )
@@ -455,7 +459,7 @@ export function AppSidebar({
               return (
                 <div key={section.label}>
                   <div className={classes.sectionBand}>
-                    <SectionLabel flush>{section.label}</SectionLabel>
+                    <SectionLabel>{section.label}</SectionLabel>
                   </div>
                   <Stack gap={1}>{renderSectionItems(section)}</Stack>
                 </div>
@@ -475,7 +479,7 @@ export function AppSidebar({
                   }
                   aria-expanded={isOpen}
                 >
-                  <SectionLabel flush>{section.label}</SectionLabel>
+                  <SectionLabel>{section.label}</SectionLabel>
                   <IconChevron open={isOpen} />
                 </UnstyledButton>
                 <Collapse expanded={isOpen}>

@@ -350,6 +350,15 @@ const SPACE_SCALE_BASE = {
  * with the SAME "dev slider can't reach it" limitation as `timelineBullet` (see `deriveSpacing`'s
  * doc and the `theme-lab` "known constraint" note).
  */
+/** Level-0 addends behind `appShellHeaderMobileHeight` below, pulled out so that entry is an actual
+ *  sum of its parts rather than a hand-typed literal that can silently drift from them (see that
+ *  entry's own doc for the incident this replaced — 96 left stale after `SPACE_SCALE_BASE.sm` moved
+ *  12 -> 13). `appHeaderMobileActionsHeight` itself is the OTHER addend and stays declared where it
+ *  already was, in `SPACE_STEP_BASE` below — this only needs its OWN value pulled out, since a
+ *  plain object literal can't reference a sibling property while it's still being built. */
+const APP_HEADER_MOBILE_ACTIONS_HEIGHT = 52
+const APP_HEADER_MOBILE_ROW1_BUDGET = 32
+
 const SPACE_STEP_BASE = {
   /** Timeline `defaultProps.bulletSize`. */
   timelineBullet: 22,
@@ -574,7 +583,7 @@ const SPACE_STEP_BASE = {
 
   // ── shell/app-header.module.css ───────────────────────────────────────────────────────────────
   /** Mobile two-row header's page-actions row height. */
-  appHeaderMobileActionsHeight: 52,
+  appHeaderMobileActionsHeight: APP_HEADER_MOBILE_ACTIONS_HEIGHT,
 
   // ── shell/index.tsx (AppShell dimensions) ──────────────────────────────────────────────
   /** AppShell desktop header bar height — sized to hold one row of `size="md"` controls, so it
@@ -582,25 +591,30 @@ const SPACE_STEP_BASE = {
    *  coincidence, not a law: this is a horizontal bar's HEIGHT (governed by control height), that
    *  is a vertical rail's WIDTH (governed by icon footprint). They stay separate entries. */
   appShellHeaderHeight: 48,
-  /** AppShell mobile (two-row) header height. Not one concept but a sum: row 1 + `app-header.
-   *  module.css`'s wrap row-gap (`--mantine-spacing-sm`) + `appHeaderMobileActionsHeight`. Two of
-   *  those three addends already track density, so the container must too — held fixed, row 1's
-   *  budget collapses 52px -> 12px across the level range.
+  /** AppShell mobile (two-row) header height. Not one concept but a sum: row 1
+   *  (`APP_HEADER_MOBILE_ROW1_BUDGET`) + `app-header.module.css`'s wrap row-gap
+   *  (`SPACE_SCALE_BASE.sm`) + `appHeaderMobileActionsHeight`. Two of those three addends already
+   *  track density, so the container must too — held fixed, row 1's budget collapses 52px -> 12px
+   *  across the level range.
    *
-   *  KEEP THIS EQUAL TO THE SUM. At level 0: 32 (row 1) + 13 (`SPACE_SCALE.sm`) + 52
-   *  (`appHeaderMobileActionsHeight`) = 97. It was 96 while `SPACE_SCALE.sm` was 12; the
-   *  component-roominess retune raised that addend, and leaving the total at 96 silently took the
+   *  This entry IS the literal sum of its three named addends (32 + 13 + 52 = 97) rather than a
+   *  hand-typed 97 — it was 96 while `SPACE_SCALE_BASE.sm` was 12, and the component-roominess
+   *  retune that raised that addend to 13 left the hand-typed total stale at 96, silently taking the
    *  pixel out of row 1 instead — which is what ate the last of its WCAG 2.5.8 target-size margin at
    *  density -3 (`theme/density-relations.test.ts` measures row 1 as the REMAINDER of this sum, so
-   *  the total is the only place the budget can come from). Raise this whenever `SPACE_SCALE.sm` or
-   *  `appHeaderMobileActionsHeight` moves. Better still, make it unnecessary: computing this the way
-   *  `stickyHeaderClearance*` already is — post-`step`, from its own addends rather than as an
-   *  independent literal — would make the drift impossible instead of merely re-tuned. That is the
-   *  same refactor, and the same reasoning, this PR applied to the clearances; it is worth doing to
-   *  this one too, and it stays a follow-up only because it moves every non-zero level's value. */
-  appShellHeaderMobileHeight: 97,
-  /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile drawer) and the
-   *  expanded `sm` value: the same `.root` at full width, genuinely one concept. */
+   *  the total is the only place the budget can come from). Expressing the sum here makes that class
+   *  of drift impossible for level 0; raise `APP_HEADER_MOBILE_ROW1_BUDGET` (or the other two
+   *  addends) if row 1's own budget needs to move.
+   *
+   *  NOT the same fix as `stickyHeaderClearance*` below, which is computed POST-`step` from the
+   *  ALREADY-DENSITY-SCALED addends — doing that here too would move every non-zero level's value
+   *  (rounding three scaled integers separately drifts from rounding one scaled 97), so it stays a
+   *  follow-up, not folded into this fix. */
+  appShellHeaderMobileHeight:
+    APP_HEADER_MOBILE_ROW1_BUDGET + SPACE_SCALE_BASE.sm + APP_HEADER_MOBILE_ACTIONS_HEIGHT,
+  /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile, where the navbar is
+   *  permanently collapsed and unused — see `MobileNav`) and the expanded `sm` value: the same
+   *  `.root` at full width, genuinely one concept. */
   appShellNavbarWidth: 216,
   /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above
    *  despite sharing 48 at level 0 (see that entry's note). */

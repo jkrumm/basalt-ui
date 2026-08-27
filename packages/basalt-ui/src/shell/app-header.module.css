@@ -1,5 +1,5 @@
-/* App-shell top bar layout. Desktop: a single 56px row —
- * [burger? · breadcrumb] ········ [page actions] | [global actions].
+/* App-shell top bar layout. Desktop: a single 48px row —
+ * [breadcrumb] ········ [page actions] | [global actions].
  * Mobile (< sm): wraps to two rows — lead + global on row 1, the page action row
  * (horizontally scrollable) on row 2. Header height is responsive to match. */
 

@@ -151,7 +151,7 @@
 
 /*
  * Footer settings row — IDENTICAL geometry to a nav row (padding 6px 10px, radius 6, gap 10,
- * 13px): muted text + faint icon at rest, ink-6% tint + ink on hover, exactly like an inactive
+ * 15px): muted text + faint icon at rest, ink-6% tint + ink on hover, exactly like an inactive
  * nav item, so the footer never reads as a separate control family.
  */
 .footerBtn {
@@ -211,7 +211,7 @@
 }
 
 /*
- * Identity initials block (docs/DESIGN-SPEC.md §5): 28px, radius 7, ink-10% bg, mono 10.5px
+ * Identity initials block (docs/DESIGN-SPEC.md §5): 28px, radius 7, ink-10% bg, mono micro (11px)
  * weight 500, muted — replaces the generic person glyph for the authenticated state.
  */
 .avatar {
@@ -236,7 +236,7 @@
   color: var(--vx-ink);
 }
 
-/* Meta line under the name (email / "FREE · MEMBER") — mono 9.5px, uppercase, faint, tracked
+/* Meta line under the name (email / "FREE · MEMBER") — mono micro (11px), uppercase, faint, tracked
  * 0.03em. */
 .accountMeta {
   font-family: var(--basalt-font-mono);
@@ -350,9 +350,9 @@
 }
 
 /*
- * Icon-rail (collapsed) — desktop only. Gated behind min-width: sm (48em) so the mobile drawer keeps
- * full labels even when the persisted collapse flag is on. Hide the brand text, section labels and
- * nav labels; center the remaining icons.
+ * Icon-rail (collapsed) — desktop only. Gated behind min-width: sm (48em) so the sidebar doesn't
+ * exist at all below that breakpoint (see `MobileNav`) regardless of the persisted collapse flag.
+ * Hide the brand text, section labels and nav labels; center the remaining icons.
  */
 @media (min-width: 48em) {
   .root[data-collapsed] .brand {
@@ -423,11 +423,10 @@
 
   /* `navExtra` has no sensible icon-rail representation (arbitrary consumer content, not a nav
    * row) — hide it in the rail, same treatment as `.childList`. It stays mounted (never a JS
-   * conditional on `collapsed`): `collapsed` is one value shared by the desktop rail AND the
-   * mobile drawer (`AppShell.Navbar`'s `collapsed: { mobile: !mobileOpened }` only ever un-collapses
-   * the mobile side), and the rail-vs-drawer split lives ENTIRELY in this media query, never in JS —
-   * a JS gate on `collapsed` would also drop `navExtra` from the mobile drawer, which opens at full
-   * width regardless of the persisted rail state. */
+   * conditional on `collapsed`): the sidebar's `AppShell.Navbar` is permanently
+   * `collapsed: { mobile: true }` (there is no mobile drawer — see `MobileNav`), so `collapsed`
+   * here means only the desktop expanded-vs-rail state, and this media query is what applies it —
+   * never JS. */
   .root[data-collapsed] .navExtra {
     display: none;
   }
