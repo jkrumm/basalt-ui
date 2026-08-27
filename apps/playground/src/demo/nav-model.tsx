@@ -30,7 +30,9 @@
  * - Everything else (Components, Content, the sixteen Agent pages, System, plus the dashboard
  *   sub-pages) falls into **More**, which is far past six rows and so resolves to a **sheet**.
  */
+import { Text } from '@mantine/core'
 import { linkOptions } from '@tanstack/react-router'
+import type { SidebarBlock } from 'basalt-ui'
 import { defineNav, navGroup } from 'basalt-ui/router-tanstack'
 import { articleFilters } from './article-filter-stores'
 import { mobileFilters } from './controls-mobile-store'
@@ -348,3 +350,70 @@ export const NAV = defineNav({
     ]),
   ],
 })
+
+/**
+ * The sidebar's declared blocks (`docs/CONTROLS-SPEC.md` §2.3) — all three kinds, which is what
+ * gates the promotion: a list with a count and a `max`, a bottom-pinned progress row, and a
+ * `kind: 'custom'` node (the shape that replaced `sidebarNavExtra`).
+ *
+ * Hoisted to module scope for the same reason `navBadges` in `routes/__root.tsx` is: it is static
+ * here, and a fresh array per render would be a fresh identity into the shell's mobile-nav memo.
+ * A real app builds this from a query result and memoizes it there.
+ *
+ * `awaiting` is the one that exercises every projection at once: `count: 3` earns the rail dot,
+ * `max: 3` earns the "Show more" toggle, and the default `mobile: 'more'` puts it in the More sheet
+ * as ONE row (`Awaiting action · 3`) that opens a nested sheet of the six items.
+ */
+export const SIDEBAR_BLOCKS: SidebarBlock[] = [
+  {
+    kind: 'list',
+    key: 'awaiting',
+    label: 'Awaiting action',
+    icon: <IconActivity />,
+    count: 3,
+    max: 3,
+    collapsible: true,
+    items: [
+      { key: 'review', label: 'Review the charts spec', tone: 'warn', meta: '2h' },
+      { key: 'contract', label: 'Sign the contract', tone: 'bad', meta: '1d' },
+      { key: 'reply', label: 'Reply to the handover', tone: 'good' },
+      { key: 'triage', label: 'Triage the guard ledger' },
+      { key: 'audit', label: 'Audit the waivers' },
+      { key: 'release', label: 'Cut the minor' },
+    ],
+  },
+  {
+    kind: 'list',
+    key: 'recents',
+    label: 'Recents',
+    // Plain text rows — no `Anchor`, `href` or `onClick`, so basalt renders them as text rather
+    // than as links with nowhere to go. `mobile: 'hidden'`: a recents list is ambient context on a
+    // wide sidebar, not something worth a row in a phone's More sheet.
+    mobile: 'hidden',
+    items: [
+      { key: 'r1', label: 'Controls spec', meta: 'today' },
+      { key: 'r2', label: 'Charts spec', meta: 'yesterday' },
+      { key: 'r3', label: 'Design core', meta: '3d' },
+    ],
+  },
+  {
+    kind: 'custom',
+    key: 'legend',
+    // Desktop only, hidden in the rail — exactly what `sidebarNavExtra` was, now one block among
+    // three instead of a second prop with its own projection story.
+    node: (
+      <Text size="xs" c="dimmed" ta="center" py={4}>
+        basalt-ui playground
+      </Text>
+    ),
+  },
+  {
+    kind: 'progress',
+    key: 'getting-started',
+    label: 'Getting started',
+    value: 1,
+    total: 5,
+    // Bottom-placed by default, and its rail form is the ring on the settings row.
+    onClick: () => {},
+  },
+]
