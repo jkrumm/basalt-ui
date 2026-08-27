@@ -376,7 +376,9 @@ and `round-5/`, per-export detail in `MIGRATING.md` § 1.20.0 / § 1.21.0. What 
   green — `StatCard` alone re-rolled by 4 of 4 app consumers. `shadow-basalt-export` and
   `hand-rolled-shell` detect the two cheapest shapes; the **expressiveness** half is what actually
   closes the gap, one case at a time: the chart half landed in round 7 (`BandStrip`/`MirroredBars`),
-  the query-branch half in round 9 (`QueryState`), `createSearchSchemaStore` is still unbuilt.
+  the query-branch half in round 9 (`QueryState`), the store half in the Unreleased minor
+  (`createSearchStore` over typed fields — `createSearchSchemaStore` is struck, never built, and not
+  needed: a Zod-object route composes `store.validateSearch(raw)`).
 - **Round 5 found documentation making false load-bearing claims** — the failure `MIGRATING.md`
   exists to prevent. Four wrong rows, found by re-auditing every replacement against the built
   `.d.ts` rather than the commit it came from; a correction that landed only in this repo's
