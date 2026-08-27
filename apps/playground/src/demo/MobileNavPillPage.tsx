@@ -17,7 +17,7 @@
  * the frames a little shorter than the shipped 56px slot and leaves the PILL — the subject —
  * exact. Geometry claims about this component are measured in `tests/layout`, not here.
  */
-import { Paper, Stack, Text, Title } from '@mantine/core'
+import { Paper, Stack, Text } from '@mantine/core'
 import type { ReactElement } from 'react'
 import { MobileNav, projectMobileNav } from 'basalt-ui'
 import type { SidebarSection } from 'basalt-ui'
@@ -59,13 +59,11 @@ function Bar({ withIcons }: { withIcons: boolean }): ReactElement {
 export function MobileNavPillPage(): ReactElement {
   return (
     <Stack gap="xl">
-      <Stack gap="xs">
-        <Title order={2}>Mobile nav — the active pill</Title>
-        <Text c="dimmed">
-          The same bar with and without an icon dependency. Both pills must be the same shape, and
-          both must keep their proportions as the theme-lab density slider moves.
-        </Text>
-      </Stack>
+      <Text c="dimmed">
+        The same bar with and without an icon dependency. Both pills must be the same shape, and
+        both must keep their proportions as the theme-lab density slider moves. The page title is
+        the breadcrumb (law C8), so there is no in-body heading.
+      </Text>
 
       <Stack gap="xs">
         <Text fw={600}>With icons</Text>

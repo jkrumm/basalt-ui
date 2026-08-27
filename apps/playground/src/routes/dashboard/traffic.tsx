@@ -1,4 +1,5 @@
-import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { dashboardFilters } from '../../demo/dashboard-range-store'
 import { CHANNEL_MIX } from '../../demo/data'
 import { SubPage } from '../../demo/SubPage'
 
@@ -7,27 +8,25 @@ export const Route = createFileRoute('/dashboard/traffic')({
   component: TrafficPage,
 })
 
-const RANGE_LABEL: Record<string, string> = { '1d': 'Last 24h', '7d': 'Last 7d', '30d': 'Last 30d' }
-
 const totalChannelVolume = CHANNEL_MIX.reduce((sum, channel) => sum + channel.value, 0)
 const topChannel = CHANNEL_MIX.reduce((top, channel) => (channel.value > top.value ? channel : top))
 
 function TrafficPage() {
-  const { range } = useSearch({ from: '/dashboard' })
+  const [range] = dashboardFilters.field.range.use()
   return (
     <SubPage
       title="Traffic"
       description="Traffic sources and channel breakdown — direct, organic, referral, social, and paid."
-      range={RANGE_LABEL[range]}
+      range={dashboardFilters.field.range.options.find((o) => o.value === range.preset)?.label}
       stats={[
         {
           key: 'total',
-          label: 'Total sessions',
+          title: 'Total sessions',
           value: totalChannelVolume.toLocaleString('en-US'),
         },
         {
           key: 'top',
-          label: `Top channel — ${topChannel.label}`,
+          title: `Top channel — ${topChannel.label}`,
           value: `${Math.round((topChannel.value / totalChannelVolume) * 100)}%`,
         },
       ]}

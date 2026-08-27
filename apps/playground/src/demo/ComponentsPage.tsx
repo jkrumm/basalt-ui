@@ -32,12 +32,14 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { EmptyState, PageActions, SettingsSection } from 'basalt-ui'
+import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import type { ReactNode } from 'react'
 import { IconSearch } from './icons'
 
-/** A titled surface section — every component group sits inside one of these so its surface shows. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
+/** A titled surface section — every component group sits inside one of these so its surface shows.
+ * Named `ComponentGroup`, not `Section`: a local `Section` would shadow the shipped export of that
+ * exact name, which `basalt/shadow-basalt-export` flags (law C8). */
+function ComponentGroup({ title, children }: { title: string; children: ReactNode }) {
   return <SettingsSection title={title}>{children}</SettingsSection>
 }
 
@@ -51,14 +53,12 @@ const TABLE_ROWS = [
 export function ComponentsPage() {
   return (
     <Stack gap="md">
-      <PageActions>
-        <Button size="xs" variant="default">
-          Export
-        </Button>
-      </PageActions>
+      {/* `PageBar` row 1 portals into the app-shell header; the action is typed DATA, so basalt
+          owns its size, its overflow fold and its mobile projection (laws C5/C7). */}
+      <PageBar actions={{ secondary: [{ key: 'export', label: 'Export', onClick: () => {} }] }} />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <Section title="Buttons">
+        <ComponentGroup title="Buttons">
           <Group gap="sm">
             <Button variant="filled">Filled</Button>
             <Button variant="default">Default</Button>
@@ -66,9 +66,9 @@ export function ComponentsPage() {
             <Button variant="outline">Outline</Button>
             <Button variant="subtle">Subtle</Button>
           </Group>
-        </Section>
+        </ComponentGroup>
 
-        <Section title="Inputs">
+        <ComponentGroup title="Inputs">
           <Stack gap="sm">
             <TextInput label="Name" placeholder="Jane Doe" />
             <Select
@@ -82,9 +82,9 @@ export function ComponentsPage() {
             />
             <Textarea label="Notes" placeholder="A few words…" autosize minRows={2} />
           </Stack>
-        </Section>
+        </ComponentGroup>
 
-        <Section title="Tabs">
+        <ComponentGroup title="Tabs">
           <Tabs defaultValue="overview">
             <Tabs.List>
               <Tabs.Tab value="overview">Overview</Tabs.Tab>
@@ -107,9 +107,9 @@ export function ComponentsPage() {
               </Text>
             </Tabs.Panel>
           </Tabs>
-        </Section>
+        </ComponentGroup>
 
-        <Section title="Segmented control">
+        <ComponentGroup title="Segmented control">
           <SegmentedControl
             data={[
               { label: 'Day', value: 'day' },
@@ -117,10 +117,10 @@ export function ComponentsPage() {
               { label: 'Month', value: 'month' },
             ]}
           />
-        </Section>
+        </ComponentGroup>
       </SimpleGrid>
 
-      <Section title="Table">
+      <ComponentGroup title="Table">
         <Table withTableBorder striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
@@ -139,10 +139,10 @@ export function ComponentsPage() {
             ))}
           </Table.Tbody>
         </Table>
-      </Section>
+      </ComponentGroup>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <Section title="Accordion">
+        <ComponentGroup title="Accordion">
           <Accordion variant="contained" defaultValue="acquisition">
             <Accordion.Item value="acquisition">
               <Accordion.Control>Acquisition</Accordion.Control>
@@ -169,9 +169,9 @@ export function ComponentsPage() {
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
-        </Section>
+        </ComponentGroup>
 
-        <Section title="Dropdown surfaces">
+        <ComponentGroup title="Dropdown surfaces">
           <Group gap="sm">
             {/* defaultOpened is showcase-only — kept open so the overlay styling is visible on this
                 gallery page; real apps open on trigger, not on mount. */}
@@ -197,11 +197,11 @@ export function ComponentsPage() {
               </Popover.Dropdown>
             </Popover>
           </Group>
-        </Section>
+        </ComponentGroup>
       </SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-        <Section title="Badges & code">
+        <ComponentGroup title="Badges & code">
           <Stack gap="sm">
             <Group gap="sm">
               <Badge color="green">Active</Badge>
@@ -214,9 +214,9 @@ export function ComponentsPage() {
             </Text>
             <Code block>{`import { VX } from 'basalt-ui/charts'\nconst stroke = VX.line`}</Code>
           </Stack>
-        </Section>
+        </ComponentGroup>
 
-        <Section title="Toggles">
+        <ComponentGroup title="Toggles">
           <Stack gap="sm">
             <Switch label="Enable notifications" defaultChecked />
             <Checkbox label="I agree to the terms" defaultChecked />
@@ -228,10 +228,10 @@ export function ComponentsPage() {
               </Group>
             </Radio.Group>
           </Stack>
-        </Section>
+        </ComponentGroup>
       </SimpleGrid>
 
-      <Section title="Empty state">
+      <ComponentGroup title="Empty state">
         <EmptyState
           icon={<IconSearch />}
           title="No results"
@@ -243,7 +243,7 @@ export function ComponentsPage() {
           }
           variant="section"
         />
-      </Section>
+      </ComponentGroup>
 
       <Card py="xs" px="sm">
         <Text size="sm" c="dimmed">

@@ -93,6 +93,7 @@ Mobile: row 1 = breadcrumb · `primary` as an icon button · kebab `Menu` holdin
 `mobile: 'more'` action and the `globalActions` marked `more` · ≤2 `globalActions` marked `bar`.
 Row 2 = `ViewTabs` full-width (≤3 options) · the first `FilterSet` pill inline · one `Filters (n)`
 pill opening a bottom `Drawer` where every filter renders full-width (44px rows, apply immediately,
+`filtersEnd` folded into the row-1 kebab so a header has exactly one kebab — row 2 shows it from `sm` up;
 `Reset all` footer); `n` = `store.useActiveCount()`. Filter-less pages render no row 2 (C14).
 
 ### 2.2 `WidgetHeader` — tiers 2 and 3 _(new, `src/widget-header/`, Mantine-free)_
@@ -121,13 +122,13 @@ props unchanged. The head-font 88%/550 literal (eleven copies) becomes one decla
 
 Composers, each rendering `WidgetHeader` and nothing else above its body:
 
-| Component                        | Mapping                                                                                                                                                                                                                                     | Removed            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `StatCard`                       | `label`→`title`; `menu`→`actions`; adds `icon`, `sparklinePlacement?: 'bleed' \| 'right'` (reference: right); keeps `value/delta/deltaPeriod/sparkline/tone`                                                                                | `label`, `menu`    |
-| `ChartCard`                      | `tooltip`→`info?`; `extra`→`actions`; adds `icon`, `value`, `delta`, `count`; header renders only when any of title/info/value/actions is set (ends linewatch's `''` sentinel, `compact.ts:61-69`)                                          | `tooltip`, `extra` |
-| `Section` _(new)_                | `WidgetHeaderProps` minus `tier` + `tabs?: ReactNode` + `collapsible?: boolean` + `persistKey?: string` + `id?: string` (anchor, `scrollMarginTop: calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))`) + `children` | —                  |
-| `SettingsSection` / `DangerZone` | `description`→`subtitle`; adds `actions`                                                                                                                                                                                                    | `description`      |
-| `BasaltDataTable`                | adds `title`, `icon`, `subtitle`, `actions: BarAction[]`; `count` always `table.getRowCount()`; `facets` render as `FilterPill`s inside a `FilterSet`; the four `w={220/200/180/110}` literals (`data-table.tsx:923-999`) go                | `toolbarActions`   |
+| Component                        | Mapping                                                                                                                                                                                                                                                                                          | Removed            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| `StatCard`                       | `label`→`title`; `menu`→`actions`; adds `icon`, `sparklinePlacement?: 'bleed' \| 'right'` (reference: right); keeps `value/delta/deltaPeriod/sparkline/tone`                                                                                                                                     | `label`, `menu`    |
+| `ChartCard`                      | `tooltip`→`info?`; `extra`→`actions`; adds `icon`, `value`, `delta`, `count`; header renders only when any of title/info/value/actions is set (ends linewatch's `''` sentinel, `compact.ts:61-69`)                                                                                               | `tooltip`, `extra` |
+| `Section` _(new)_                | `WidgetHeaderProps` minus `tier` + `tabs?: ReactNode` + `collapsible?: boolean` + `persistKey?: string` + `id?: string` (anchor, `scrollMarginTop: calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))`) + `children`                                                      | —                  |
+| `SettingsSection` / `DangerZone` | `description`→`subtitle`; adds `actions`                                                                                                                                                                                                                                                         | `description`      |
+| `BasaltDataTable`                | adds `title`, `icon`, `subtitle`, `actions: ReactNode` (a plain slot — `ActionGroup`'s header semantics never reach a table); `count` always `table.getRowCount()`; `facets` render as `FilterPill`s inside a `FilterSet`; the four `w={220/200/180/110}` literals (`data-table.tsx:923-999`) go | `toolbarActions`   |
 
 The export is spelled **`Section`**, not `PageSection`, so the existing `shadow-basalt-export` rule
 fires today on argo's six `function Section` copies with zero new rule code. Section fold state
@@ -315,7 +316,7 @@ omitted) fails the build. Each home wraps its **slot** — never its body — in
 `defaultProps: { size: 'ctl' }` for Button/ActionIcon/Input/TextInput/Select/MultiSelect/
 SegmentedControl/NativeSelect (Menu has no `size` prop), and a `data-basalt-tier` attribute; `mergeMantineTheme` deep-merges, so the
 base `Button.extend` vars survive. A raw `Button` dropped into `PageBar.actions` is 30px with no
-prop; a `size="xs"` typed there is C5. Mantine's own `sm`/`xs` sizes are **not** re-pointed —
+prop; a `size="xs"` typed there is C5. `ChartCard` lives inside the Mantine-free `charts/` boundary and therefore cannot mount `CtlSlot`: its `actions` slot carries only `data-basalt-tier="widget"`, and the basalt controls placed there size themselves (`size="ctl"` internally) — a raw Mantine element in that one slot is not auto-tiered, which `control-size-literal` and `hand-rolled-filter` are what catch. Mantine's own `sm`/`xs` sizes are **not** re-pointed —
 every `size="sm"` in a modal or form keeps Mantine's 36px. `SegmentedControl` gets `size: 'ctl'`
 vars and the mono numeric-label rule in its module CSS. Inputs keep the 16px iOS floor
 (`styles.css` `!important`); the 36px touch height accommodates it.
@@ -423,7 +424,7 @@ ReactNode` → `GlobalAction[]`; `sidebarNavExtra` / `mobileNav.moreExtra` → `
 with `field.range`; `demo/DashboardDateFilter.tsx` deleted; `routes/dashboard.tsx` renders
 `<PageBar filters={<FilterSet><RangeFilter/></FilterSet>} actions={…}/>` with one
 `kind: 'custom'` row-1 node dogfooded; `demo/nav-model.tsx:58,230` thunks → `store.linkSearch`;
-`routes/index.tsx` redirect reads `readStored()`; the six `<Title order={1|2}>` → breadcrumb
+`routes/index.tsx` redirect uses `search: store.linkSearch()`; the six `<Title order={1|2}>` → breadcrumb
 titles; the six in-body ephemeral control rows → `Section tabs`; a phone route demo exercising the
 `Filters (n)` sheet, `stickyHeader` tables under `--basalt-page-bar-h`, and a sidebar with all
 three block kinds.

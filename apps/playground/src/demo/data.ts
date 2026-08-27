@@ -16,6 +16,15 @@ export type DayPoint = {
 
 export type DateRange = '1d' | '7d' | '30d'
 
+/**
+ * Narrows the dashboard store's range preset onto this fixture's three windows. The store declares
+ * `custom: true`, so `'custom'` is a legal preset there; this fixture has no custom-window data, so
+ * a custom range reads as the 30-day one.
+ */
+export function resolveDateRange(preset: string): DateRange {
+  return preset === '1d' || preset === '7d' ? preset : '30d'
+}
+
 const DAY_LABELS = [
   'Mar 01',
   'Mar 02',

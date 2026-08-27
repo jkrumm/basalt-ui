@@ -167,7 +167,7 @@ export function MirroredBarsDemoPage() {
       <ChartCard
         title="Data carried"
         subtitle="What the line DID carry — not what it can, which is a different chart"
-        tooltip="Each direction is scaled to its own maximum, so the ratio stays legible. A quiet night reads near zero here and says nothing about capacity."
+        info="Each direction is scaled to its own maximum, so the ratio stays legible. A quiet night reads near zero here and says nothing about capacity."
       >
         <MirroredBars<Point>
           data={points}

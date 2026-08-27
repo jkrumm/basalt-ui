@@ -1,5 +1,6 @@
-import { createFileRoute, useSearch } from '@tanstack/react-router'
-import { generateDashboardData } from '../../demo/data'
+import { createFileRoute } from '@tanstack/react-router'
+import { dashboardFilters } from '../../demo/dashboard-range-store'
+import { generateDashboardData, resolveDateRange } from '../../demo/data'
 import { SubPage } from '../../demo/SubPage'
 
 export const Route = createFileRoute('/dashboard/sessions')({
@@ -7,13 +8,11 @@ export const Route = createFileRoute('/dashboard/sessions')({
   component: SessionsPage,
 })
 
-const RANGE_LABEL: Record<string, string> = { '1d': 'Last 24h', '7d': 'Last 7d', '30d': 'Last 30d' }
-
 const fmtInt = (v: number) => Math.round(v).toLocaleString('en-US')
 
 function SessionsPage() {
-  const { range } = useSearch({ from: '/dashboard' })
-  const { series } = generateDashboardData(range)
+  const [range] = dashboardFilters.field.range.use()
+  const { series } = generateDashboardData(resolveDateRange(range.preset))
   const totalSessions = series.reduce((s, d) => s + d.sessions, 0)
   const dailyAverage = totalSessions / series.length
 
@@ -21,10 +20,10 @@ function SessionsPage() {
     <SubPage
       title="Sessions"
       description="Detailed session analytics — active users, duration, bounce rate, and entry/exit pages."
-      range={RANGE_LABEL[range]}
+      range={dashboardFilters.field.range.options.find((o) => o.value === range.preset)?.label}
       stats={[
-        { key: 'total', label: 'Total sessions', value: fmtInt(totalSessions) },
-        { key: 'avg', label: 'Daily average', value: fmtInt(dailyAverage) },
+        { key: 'total', title: 'Total sessions', value: fmtInt(totalSessions) },
+        { key: 'avg', title: 'Daily average', value: fmtInt(dailyAverage) },
       ]}
     />
   )

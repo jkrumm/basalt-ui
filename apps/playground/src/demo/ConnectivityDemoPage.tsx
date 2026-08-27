@@ -7,7 +7,7 @@ import {
 } from 'basalt-ui'
 import type { ConnectivityOverride } from 'basalt-ui'
 import { useState } from 'react'
-import { Code, Divider, Group, Paper, SegmentedControl, Stack, Text, Title } from '@mantine/core'
+import { Code, Divider, Group, Paper, SegmentedControl, Stack, Text } from '@mantine/core'
 
 type SignalState = 'live' | 'online' | 'offline'
 
@@ -88,7 +88,6 @@ export function ConnectivityDemoPage() {
 
   return (
     <Stack gap="lg" p="md" maw={600}>
-      <Title order={2}>Connectivity Simulator</Title>
       <Text size="sm" c="dimmed">
         Toggle individual signals to see how the connectivity indicator responds. The inner{' '}
         <Code>ConnectivityProvider</Code> shadows the shell&apos;s auto-mounted one.
@@ -96,7 +95,7 @@ export function ConnectivityDemoPage() {
 
       <SettingsSection
         title="Signal Overrides"
-        description={
+        subtitle={
           'Set each signal to "Live" (use real value from browser/RQ/SSE/health), "Online" ' +
           '(force connected), or "Offline" (force disconnected).'
         }
