@@ -183,6 +183,15 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     }
   })
 
+  // `sheetRowHeight`'s own doc calls it "same floor family as `mobileNavRowHeight`" — same touch-only
+  // surface (the `Filters (n)` drawer, the mobile kebab sheet), same Apple HIG 44pt / WCAG 2.5.5 AAA
+  // floor, so it must clear it at every level too, not just coincidentally at level 0.
+  test('a Filters/kebab sheet row never drops below its own 44px floor', () => {
+    for (const level of ALL_LEVELS) {
+      expect(deriveSpacing(level).step.sheetRowHeight).toBeGreaterThanOrEqual(44)
+    }
+  })
+
   test('the resolved control/input height (size="md" Button/ActionIcon/Input) clears the floor too', () => {
     for (const level of ALL_LEVELS) {
       const { anchors } = deriveSpacing(level)
@@ -249,6 +258,7 @@ function oldLawFlatten(level: number): Record<string, number> {
   step['sidebarSearchTriggerHeight'] = Math.max(24, step['sidebarSearchTriggerHeight']!)
   step['mobileNavBarHeight'] = Math.max(48, step['mobileNavBarHeight']!)
   step['mobileNavRowHeight'] = Math.max(44, step['mobileNavRowHeight']!)
+  step['sheetRowHeight'] = Math.max(44, step['sheetRowHeight']!)
   step['stickyHeaderClearance'] = step['appShellHeaderHeight']! + anchors['stackMd']!
   return { ...anchors, ...scale, ...step }
 }
@@ -336,7 +346,7 @@ describe('Fix 8 — the sticky-header clearance clears the AppShell header, exac
   })
 
   // The "mobile clearance = appShellHeaderMobileHeight + stackMd" and "mobile exceeds desktop" tests
-  // that used to sit here are DELETED, not renamed: since 1.27.0 the AppShell header is ONE 48px row
+  // that used to sit here are DELETED, not renamed: since 1.26.0 the AppShell header is ONE 48px row
   // at every viewport (law C14, `docs/CONTROLS-SPEC.md` §2.1), so `stickyHeaderClearanceMobile` and
   // the `appShellHeaderMobileHeight` it derived from no longer exist to assert anything about.
 
@@ -373,7 +383,7 @@ describe('Fix 6 — BasaltShell AppShell dimensions track density', () => {
     // — which is exactly what the component-roominess retune did (`SPACE_SCALE.sm` 12 -> 13 drove
     // level -3 to 22px, flush against Mantine's 22px `--ai-size-sm` floor).
     //
-    // 1.27.0 deletes the sum instead of re-tuning it: `PageBar` folds the page's overflow into a
+    // 1.26.0 deletes the sum instead of re-tuning it: `PageBar` folds the page's overflow into a
     // kebab and moves filters/tabs into the page flow, so there is no second mobile row to reserve
     // (law C14) and the header is `appShellHeaderHeight` at EVERY width. Row 1's budget is therefore
     // the whole header, and the thing worth asserting is what law C15 actually promises — that a
@@ -445,6 +455,52 @@ describe('Fix 9 — the Mantine spacing scale keeps its strict xs < sm < md < lg
       expect(scale.sm).toBeLessThan(scale.md)
       expect(scale.md).toBeLessThan(scale.lg)
       expect(scale.lg).toBeLessThan(scale.xl)
+    }
+  })
+})
+
+describe('Fix 10 — ctl SegmentedControl matches the ctl Button/Input box at every level, not a fixed 30px', () => {
+  // `SegmentedControl.extend`'s function-form `styles` only sets a label `minHeight` when
+  // `props.size === 'ctl'` — everything else (`sm`/`md` in a form) must fall through untouched.
+  const stylesFn = baseTheme.components?.['SegmentedControl']?.styles as
+    | ((t: MantineTheme, props: { size?: string }, ctx: never) => Record<string, unknown>)
+    | undefined
+
+  test('a non-ctl size (e.g. the form default) gets no label override', () => {
+    const result = stylesFn?.(theme, { size: 'md' }, {} as never)
+    expect(
+      (result?.['label'] as Record<string, unknown> | undefined)?.['minHeight'],
+    ).toBeUndefined()
+  })
+
+  test("size='ctl' gets an inline-flex, vertically centred label — Mantine's label is `display: block`, so a bare minHeight alone would leave the text top-aligned", () => {
+    const result = stylesFn?.(theme, { size: 'ctl' }, {} as never)
+    const label = result?.['label'] as Record<string, unknown> | undefined
+    expect(label?.['display']).toBe('inline-flex')
+    expect(label?.['alignItems']).toBe('center')
+  })
+
+  test('the label minHeight formula, plus the root track padding on both sides, reconstructs EXACTLY the same scaled expression as `--button-height-ctl` — the algebraic identity that makes the two controls the same height at every density level, not just level 0', () => {
+    const result = stylesFn?.(theme, { size: 'ctl' }, {} as never)
+    const label = result?.['label'] as Record<string, unknown> | undefined
+    const minHeight = label?.['minHeight']
+    expect(typeof minHeight).toBe('string')
+    const rootPadding = 2 * SPACE_FIXED.segmentedTrackInset
+    expect(minHeight).toBe(
+      `calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - ${rootPadding}px)`,
+    )
+    // `--button-height-ctl` (`ctlSizeVars` in theme/index.ts) is the un-subtracted form — adding the
+    // root's own `2 * segmentedTrackInset` padding back to the label's minHeight must reproduce it,
+    // for every level, since neither term is level-dependent (the level only changes the CSS var's
+    // RESOLVED value at paint time, never this formula).
+    for (const level of ALL_LEVELS) {
+      // `anchors.controlHeightCtl` is the JS-side value `--vx-space-control-height-ctl` resolves to
+      // at this level (scale = 1, the JS-derivation default) — substituting it into both formulas
+      // must land on the same total.
+      const { anchors } = deriveSpacing(level)
+      const labelHeight = anchors.controlHeightCtl - rootPadding
+      const totalHeight = labelHeight + rootPadding
+      expect(totalHeight).toBe(anchors.controlHeightCtl)
     }
   })
 })

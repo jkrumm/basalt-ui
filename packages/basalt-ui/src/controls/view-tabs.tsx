@@ -25,6 +25,7 @@
 import { SegmentedControl, Select } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { EnumField, FieldHandle } from '../state'
+import classes from './controls.module.css'
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
@@ -92,6 +93,10 @@ export function ViewTabs<T extends string>({
           aria-label={label}
           hiddenFrom="sm"
           size="ctl"
+          // BOUNDED, not greedy — see `.phoneSelect`'s comment in `controls.module.css`. This is the
+          // control owning its own responsive form (law C9), which is also why it is not a `w` prop
+          // at the call site (C5, `basalt/control-size-literal`).
+          className={classes.phoneSelect}
           value={value}
           allowDeselect={false}
           data={phone.map((option) => ({ value: option.value, label: option.label }))}

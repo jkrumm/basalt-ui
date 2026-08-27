@@ -4,29 +4,58 @@
  * (`ChartCard`/`StatCard`), not to the Section itself.
  */
 
+/*
+ * 12px from the header to the body, and the same between two body children — one rhythm, read from
+ * the stack scale (`--vx-space-stack-md`) instead of the card-inset scale
+ * (`--mantine-spacing-sm`, 13px). A Section is a page-level GROUPING, so its gaps belong to the
+ * vertical rhythm, not to the inset ladder its cards use.
+ */
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--mantine-spacing-sm, 0.8125rem);
+  gap: var(--vx-space-stack-md, 0.75rem);
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--mantine-spacing-sm, 0.8125rem);
+  gap: var(--vx-space-stack-md, 0.75rem);
 }
 
-/* The collapse chevron — a plain control, not a Mantine ActionIcon, so it sits directly in the
- * header row (its own CtlSlot fragment would size an icon-button too tall for this glyph). */
+/*
+ * `summary` — the always-visible row under the header. No border, no background (the Section owns
+ * neither); it is a plain flow row, so a consumer's `Group` of stats or one line of `Text` lands
+ * where the body would have started.
+ */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs, 0.625rem);
+}
+
+/*
+ * The collapse chevron — a plain control, not a Mantine ActionIcon, so it sits directly in the header
+ * row (its own CtlSlot fragment would nest a theme provider around one glyph). It is sized to the
+ * `ctl` tier BY HAND for exactly that reason: a 12px glyph in a 20px box was a different height from
+ * every other control in the same header, which is what made the section header read as ragged. 30px
+ * square, glyph centred, no padding — the box IS the tier.
+ */
 .chevron {
   /* `relative` is the anchor for the C15 hit-area overlay in the `< sm` block at the bottom. */
   position: relative;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
+  /* `--vx-space-control-height-ctl` is a bare rem — the theme's `ctlSizeVars` (`theme/index.ts`)
+   * reconstructs every OTHER ctl-tier box as `calc(<rem> * var(--mantine-scale))` so it tracks
+   * Mantine's `theme.scale`; read raw here, this box used to stay fixed while a scaled Button/Input
+   * beside it grew or shrank, reintroducing the exact raggedness this control was sized to fix. */
+  width: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
+  height: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
   appearance: none;
   margin: 0;
-  padding: 4px;
+  padding: 0;
   border: none;
   background: none;
   border-radius: var(--vx-radius-ctrl);

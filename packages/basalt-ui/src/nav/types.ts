@@ -40,6 +40,8 @@ export type SidebarItem = {
   /** Plain href — the no-router fallback, and the breadcrumb parent target. */
   href?: string
   active?: boolean
+  /** A parent on the path to the active row. NOT active itself — never carries `aria-current`. */
+  ancestor?: boolean
   disabled?: boolean
   onClick?: (e: MouseEvent) => void
   /** Rich desktop badge (e.g. `NavCountBadge`). Desktop only. */

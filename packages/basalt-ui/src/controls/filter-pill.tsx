@@ -16,7 +16,9 @@
 import { Button, Popover } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { IconSlot } from '../theme/icon-slot'
 import classes from './controls.module.css'
+import { UpDownGlyph } from './glyphs'
 
 export type FilterPillProps = {
   readonly label: string
@@ -73,12 +75,16 @@ export function FilterPill({
       {...(ariaLabel !== undefined && { 'aria-label': ariaLabel })}
       {...(pressed !== undefined && children === undefined && { 'aria-pressed': pressed })}
       {...(shown === true && { 'data-shown': true })}
-      {...(icon !== undefined && { leftSection: icon })}
+      {...(icon !== undefined && {
+        // `IconSlot` owns the 16px box and the optical centring; `.pillIcon` adds only the pill's
+        // muted-then-ink colour law. A consumer's glyph can no longer set this row's height.
+        leftSection: <IconSlot className={classes.pillIcon}>{icon}</IconSlot>,
+      })}
       {...(hideGlyph !== true && {
         rightSection: (
-          <span className={classes.glyph} aria-hidden>
-            ⇅
-          </span>
+          <IconSlot className={classes.glyph}>
+            <UpDownGlyph />
+          </IconSlot>
         ),
       })}
       onClick={

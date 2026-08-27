@@ -9,6 +9,7 @@
  * Published through the `basalt-ui/state` barrel (`../state.ts`) — never imported directly by a
  * consumer.
  */
+import { useSyncExternalStore } from 'react'
 import { createPersistedState, readPersistedValue } from './persisted'
 
 // ── Store fields — the vocabulary both store factories share ──────────────────────────────────
@@ -24,9 +25,14 @@ import { createPersistedState, readPersistedValue } from './persisted'
  * @default `{ url: true, persist: true, history: 'replace' }`
  */
 export type FieldLane = {
-  /** Put the field in the URL search. `false` = the local-only lane (per-chart selects, compact). */
+  /** Put the field in the URL search. `false` = the mirror-only lane (per-chart selects, compact). */
   url?: boolean
-  /** Mirror the field in localStorage. `false` = the URL-only lane (pagination, one-shot filters). */
+  /**
+   * Mirror the field in localStorage. `false` = the URL-only lane (pagination, one-shot filters);
+   * with `url: false` as well, the MEMORY-only lane — shared across every mount of the store for
+   * the session, gone on reload, never in localStorage. `createLocalStore` ignores `url`, so
+   * `persist: false` alone lands a field there.
+   */
   persist?: boolean
   /** History entry a write creates. @default 'replace' */
   history?: 'push' | 'replace'
@@ -219,6 +225,12 @@ export const field = {
    * A time window: THREE URL params (preset + `from` + `to`, each renamable through `params`), so a
    * consumer's existing deep links and loaders keep their shape. `custom: true` additionally
    * allows the preset `'custom'` with two ISO dates.
+   *
+   * A second `field.range` in the same store — or a second range store composed into the same
+   * route's `validateSearch` — MUST rename `from`/`to` via `params`: every range defaults to the
+   * literal param names `'from'`/`'to'`, and two fields silently sharing them makes the later one's
+   * `toSearch` overwrite the earlier one's dates. `createStoreCore` throws at definition for the
+   * in-store case; the cross-store case is not detectable by either store alone.
    */
   range<
     const P extends string,
@@ -370,6 +382,14 @@ function isIsoDate(raw: unknown): raw is string {
   return typeof raw === 'string' && ISO_DATE_RE.test(raw) && !Number.isNaN(Date.parse(raw))
 }
 
+/**
+ * A plain decimal — no blank/whitespace, no hex, no exponent. `Number('')`/`Number(' ')` are `0`
+ * and `Number('0x10')` is `16`, so a bare `Number(raw)` coercion silently manufactures a value the
+ * codec itself would never have written (`toSearch` never emits `''` or a hex literal) — a
+ * hand-edited or blank-linked `?count=` must fall through to the fallback, not become `0`.
+ */
+const NUMERIC_RE = /^-?\d+(\.\d+)?$/
+
 /** Module-scoped because it closes over nothing — `true`/`false`, or the two string forms. */
 function decodeBoolean(raw: unknown): unknown {
   if (typeof raw === 'boolean') return raw
@@ -474,7 +494,12 @@ export function resolveFieldCodec(
     }
     case 'number': {
       const decode = (raw: unknown): unknown => {
-        const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN
+        const parsed =
+          typeof raw === 'number'
+            ? raw
+            : typeof raw === 'string' && NUMERIC_RE.test(raw)
+              ? Number(raw)
+              : NaN
         if (!Number.isFinite(parsed)) return null
         if (f.int && !Number.isInteger(parsed)) return null
         let value = parsed
@@ -564,6 +589,18 @@ export type StoreCore = {
   /** The resolution law, once: URL ⊳ localStorage ⊳ fallback. `search: null` skips the URL lane. */
   resolve(entry: StoreEntry, search: StoreRecord | null, record: StoreRecord): unknown
   writeField(setRecord: (next: StoreRecord) => void, name: string, value: unknown): void
+  /**
+   * The IN-MEMORY lane's `use()` for one field — a field with neither the URL nor the mirror.
+   * Lives here rather than in either factory because BOTH have such a field: `createLocalStore`'s
+   * `persist: false`, and `createSearchStore`'s `{ url: false, persist: false }`.
+   */
+  memoryUse(entry: StoreEntry): () => readonly [unknown, (next: unknown) => void]
+  /** The memory lane's value for one field, resolved — its fallback while nothing was written. */
+  readMemoryValue(entry: StoreEntry): unknown
+  /** Subscribes to the whole memory lane. The snapshot is a write counter, so it is always stable. */
+  useMemoryVersion(): number
+  /** Drops every memory value, so the next read resolves to the fallback. What `useReset` calls. */
+  resetMemory(): void
   /** Every stored field, flattened into URL-param shape, `undefined` entries dropped. */
   readStoredFlat(): StoreRecord
   handle(
@@ -597,6 +634,83 @@ function resolveField(entry: StoreEntry, search: StoreRecord | null, record: Sto
   return entry.codec.fallback
 }
 
+/**
+ * The IN-MEMORY lane, one per store: the home of a field that has neither the URL nor the
+ * localStorage mirror (`createLocalStore`'s `persist: false`, `createSearchStore`'s
+ * `{ url: false, persist: false }`). Session-scoped and SHARED across every mount of that store —
+ * two charts binding one field agree, and a remount inside the session still reads the value back —
+ * while nothing is written to or read from localStorage.
+ *
+ * An external store rather than `useState`, for exactly that sharing. The SNAPSHOT is a write
+ * counter and never the value: `useSyncExternalStore` requires a referentially stable snapshot, and
+ * a counter is stable by construction for every field kind, object values included.
+ */
+function createMemoryLane(): {
+  subscribe: (cb: () => void) => () => void
+  getVersion: () => number
+  resolve: (entry: StoreEntry) => unknown
+  write: (name: string, value: unknown) => void
+  clear: () => void
+} {
+  const values = new Map<string, unknown>()
+  const listeners = new Set<() => void>()
+  let version = 0
+
+  const bump = (): void => {
+    version += 1
+    for (const cb of listeners) cb()
+  }
+
+  return {
+    subscribe: (cb) => {
+      listeners.add(cb)
+      return () => {
+        listeners.delete(cb)
+      }
+    },
+    getVersion: () => version,
+    // `undefined` is the only "never written" marker the lane needs: no field kind has `undefined`
+    // as a legal value, so it can never collide with a written one.
+    resolve: (entry) => {
+      const stored = values.get(entry.name)
+      return stored === undefined ? entry.codec.fallback : stored
+    },
+    write: (name, value) => {
+      values.set(name, value)
+      bump()
+    },
+    clear: () => {
+      if (values.size === 0) return
+      values.clear()
+      bump()
+    },
+  }
+}
+
+/**
+ * Two fields sharing a URL param name silently overwrite each other: `flatten` (search-store.ts)
+ * and `readStoredFlat` (below) both `Object.assign`/`assignDefined` per entry in declaration order,
+ * so a later field's `toSearch` clobbers an earlier one — a second `field.range` in the same store
+ * is the ordinary way to hit it, since every range defaults its `from`/`to` params to those literal
+ * names. Checked over ALL entries, not just the URL lane: a mirror-only range collides the same way
+ * through `readStoredFlat`.
+ */
+function assertNoParamCollision(key: string, entries: readonly StoreEntry[]): void {
+  const owner = new Map<string, string>()
+  for (const entry of entries) {
+    for (const param of entry.codec.params) {
+      const existing = owner.get(param)
+      if (existing !== undefined && existing !== entry.name) {
+        throw new Error(
+          `basalt-ui: createSearchStore('${key}'): fields '${existing}' and '${entry.name}' both ` +
+            `own the URL param '${param}' — rename one via field.range({ params: { ... } }).`,
+        )
+      }
+      owner.set(param, entry.name)
+    }
+  }
+}
+
 /** @internal — the seam behind `createSearchStore` and `createLocalStore`. */
 export function createStoreCore(o: StoreCoreOptions): StoreCore {
   const version = o.version ?? 1
@@ -605,6 +719,7 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
     name,
     codec: resolveFieldCodec(name, f, { legacyMultiEmpty: legacy !== undefined }),
   }))
+  assertNoParamCollision(o.key, entries)
   const urlEntries = entries.filter((entry) => entry.codec.lane.url)
   const anyPersisted = entries.some((entry) => entry.codec.lane.persist)
   const labels = new Map<string, Record<string, string>>()
@@ -613,6 +728,7 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
   // a store costs exactly one hook (`react/rules-of-hooks` forbids a per-field hook in a loop) and
   // `useReset` can write every field in one go.
   const usePersistedRaw = createPersistedState<unknown>({ key: o.key, version, initial: null })
+  const memory = createMemoryLane()
 
   const toRecord = (raw: unknown): StoreRecord => {
     if (legacy !== undefined) return raw === null || raw === undefined ? {} : { [legacy]: raw }
@@ -674,6 +790,18 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
       return [toRecord(raw), (next: StoreRecord) => setRaw(fromRecord(next))] as const
     },
     readRecord,
+    memoryUse(entry) {
+      return () => {
+        // Subscribing to the VERSION (never to the value) is what re-renders every other mount of
+        // this field when one of them writes, with no snapshot-stability trap.
+        useSyncExternalStore(memory.subscribe, memory.getVersion, memory.getVersion)
+        return [memory.resolve(entry), (next: unknown) => memory.write(entry.name, next)] as const
+      }
+    },
+    readMemoryValue: (entry) => memory.resolve(entry),
+    useMemoryVersion: () =>
+      useSyncExternalStore(memory.subscribe, memory.getVersion, memory.getVersion),
+    resetMemory: () => memory.clear(),
     setLabels(map) {
       for (const [name, entry] of Object.entries(map)) {
         if (entry !== undefined) labels.set(name, entry)
@@ -697,10 +825,16 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
 
 // ── createLocalStore — the router-free lane ────────────────────────────────────────────────────
 
-/** `Pick<SearchStore<S>, 'field' | 'readStored'>` — the same handles, storage only, no router. */
+/** `Pick<SearchStore<S>, 'field' | 'readStored' | 'labels'>` — the same handles, no router. */
 export type LocalStore<S extends Record<string, AnyField>> = {
   readonly field: { [K in keyof S]: FieldHandle<S[K]> }
   readStored: () => Partial<StoredValues<S>>
+  /**
+   * Option labels for enum / multi / range fields — the same chainable contract
+   * `createSearchStore` has, so `SelectFilter`/`ViewTabs` read their option labels off a local
+   * store too. Call it once, at definition.
+   */
+  labels: (map: Partial<{ [K in keyof S]: Record<string, string> }>) => LocalStore<S>
 }
 
 /**
@@ -709,14 +843,19 @@ export type LocalStore<S extends Record<string, AnyField>> = {
  * control cannot tell the two stores apart — which is the point, and why the local lane is not an
  * excuse to reach for `useState` (C3).
  *
- * A field's `url` lane is ignored here (there is no URL to write); `persist: false` leaves a field
- * on its fallback, which is what it means for a value to have nowhere to live.
+ * A field's `url` lane is ignored here (there is no URL to write); `persist: false` is the
+ * IN-MEMORY lane — shared across mounts for the session, gone on reload, never in localStorage.
+ * That is the honest home for a value a reader should not be handed back tomorrow (a scratch
+ * comparison, a temporary drill-down) without dropping to `useState` and losing the handle.
  *
  * @example
  * const chart = createLocalStore({
  *   key: 'momentum-chart',
- *   fields: { metric: field.enum(['load', 'volume'], 'load') },
- * })
+ *   fields: {
+ *     metric: field.enum(['load', 'volume'], 'load'),
+ *     zoomed: field.boolean(false, { persist: false }), // in-memory, this session only
+ *   },
+ * }).labels({ metric: { load: 'Load', volume: 'Volume' } })
  * // <SelectFilter field={chart.field.metric} label="Metric" />
  */
 export function createLocalStore<const S extends Record<string, AnyField>>(o: {
@@ -726,18 +865,28 @@ export function createLocalStore<const S extends Record<string, AnyField>>(o: {
 }): LocalStore<S> {
   const core = createStoreCore({ key: o.key, fields: o.fields, version: o.version })
 
-  const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
-  for (const entry of core.entries) {
-    const handle = core.handle(entry, () => {
-      const [record, setRecord] = core.usePersistedRecord()
-      const value = core.resolve(entry, null, record)
-      return [value, (next: unknown) => core.writeField(setRecord, entry.name, next)] as const
-    })
-    field[entry.name as keyof S] = handle as unknown as FieldHandle<S[keyof S]>
+  const persistedUse = (entry: StoreEntry) => (): readonly [unknown, (next: unknown) => void] => {
+    const [record, setRecord] = core.usePersistedRecord()
+    return [
+      core.resolve(entry, null, record),
+      (next: unknown) => core.writeField(setRecord, entry.name, next),
+    ] as const
   }
 
-  return {
+  const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
+  for (const entry of core.entries) {
+    const use = entry.codec.lane.persist ? persistedUse(entry) : core.memoryUse(entry)
+    field[entry.name as keyof S] = core.handle(entry, use) as unknown as FieldHandle<S[keyof S]>
+  }
+
+  const store: LocalStore<S> = {
     field,
     readStored: () => core.readStoredFlat() as Partial<StoredValues<S>>,
+    labels: (map) => {
+      core.setLabels(map as Record<string, Record<string, string> | undefined>)
+      return store
+    },
   }
+
+  return store
 }

@@ -5,7 +5,7 @@
  * Two rows, and WHERE they render is decided by context, never by a prop:
  *
  * - **Inside `BasaltShell`** row 1 (`actions`, `sync`) portals into the existing 48px app-shell
- *   header — the same slot/portal mechanism `PageActions` used through 1.26.0, which this replaces.
+ *   header — the same slot/portal mechanism `PageActions` used through 1.25.0, which this replaces.
  *   The breadcrumb stays the header's lead, so `title` is ignored. Row 2 (`tabs`, `filters`,
  *   `filtersEnd`) renders IN-FLOW at the top of the page content, sticky under the header, and
  *   publishes its measured height as `--basalt-page-bar-h` on `documentElement` so a page can
@@ -16,13 +16,21 @@
  *   (law C8). The published height then covers the whole bar, since that is what content clears.
  *
  * An empty home renders NOTHING (law C14): a page with no tabs and no filters pays for no row 2,
- * and the header never reserves a second mobile row the way the pre-1.27.0 two-row layout did.
+ * and the header never reserves a second mobile row the way the pre-1.26.0 two-row layout did.
  *
  * Originally extracted from argo's `apps/dashboard/src/components/app-shell/page-header.tsx`;
  * linewatch's `page-header.tsx` measure-and-publish effect became the framework behaviour below.
  */
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { CtlSlot } from '../theme'
 import { BarActionRow, BarExtrasProvider, globalActionAsBarAction } from '../controls/actions'
@@ -124,21 +132,47 @@ export type PageBarProps = {
   filtersEnd?: BarAction[]
   /** One `ViewTabs`. */
   tabs?: ReactNode
+  /**
+   * Added to the bar's ROOT — the shell-less `<div data-basalt-page-bar="standalone">`, or row 2's
+   * sticky wrapper (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The seam for the two
+   * things only the consumer's own layout knows: bleeding the sticky bar across its container's
+   * gutters (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) and drawing
+   * a hairline under it (`border-bottom: 1px solid var(--vx-border)`).
+   *
+   * Scope that CSS through this class, not through a global `[data-basalt-page-bar]` selector: the
+   * data attributes are stable enough to READ (a shell-less consumer can style
+   * `[data-basalt-page-bar="standalone"]` in a pinch, and this doc is the promise that the value
+   * stays), but a global rule reaches every page in the app including the ones that want neither.
+   */
+  className?: string
 }
 
 /**
+ * `useLayoutEffect` in the browser, `useEffect` on the server — the standard isomorphic pattern, so
+ * an SSR render never trips React's "useLayoutEffect does nothing on the server" warning. The
+ * branch reads a global that cannot change between renders, so the hook identity is stable.
+ */
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+
+/**
  * Publishes an element's measured height as a custom property on `documentElement`.
+ *
+ * **A LAYOUT effect, and a plain ref rather than ref-state.** Both halves buy the same thing: the
+ * property exists at the FIRST paint. A passive effect publishes it one frame later, which is a
+ * frame in which a cold load of `/page#anchor` has already scrolled — `scroll-margin-top` reads
+ * `var(--basalt-page-bar-h, 0px)`, so the anchored heading lands under the sticky bar and stays
+ * there. A `useState` node would also have cost a second commit before the measure could run.
  *
  * The `height > 0` guard is the whole point: a ResizeObserver fires once with a zero box while the
  * element is still being laid out (and again whenever it is hidden), and publishing that zero is
  * what made a consumer's sticky offset collapse mid-navigation. The property is removed on unmount
  * so a route without a bar does not inherit the last one's height.
  */
-function useMeasuredHeightVar(active: boolean): (node: HTMLDivElement | null) => void {
-  const [node, setNode] = useState<HTMLDivElement | null>(null)
-  const ref = useCallback((next: HTMLDivElement | null) => setNode(next), [])
+function useMeasuredHeightVar(active: boolean): RefObject<HTMLDivElement | null> {
+  const ref = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
+    const node = ref.current
     if (!active || node === null) return
     const publish = () => {
       const { height } = node.getBoundingClientRect()
@@ -160,9 +194,14 @@ function useMeasuredHeightVar(active: boolean): (node: HTMLDivElement | null) =>
       observer.disconnect()
       document.documentElement.style.removeProperty(PAGE_BAR_HEIGHT_VAR)
     }
-  }, [active, node])
+  }, [active])
 
   return ref
+}
+
+/** The bar root's own class plus the consumer's, in that order (`content/toc.tsx`'s idiom). */
+function rootClass(own: string, extra: string | undefined): string {
+  return [own, extra].filter(Boolean).join(' ')
 }
 
 export function PageBar({
@@ -173,6 +212,7 @@ export function PageBar({
   filters,
   filtersEnd,
   tabs,
+  className,
 }: PageBarProps): ReactNode {
   const { target, inShell } = useContext(PageBarContext)
 
@@ -198,17 +238,23 @@ export function PageBar({
         </div>
       )}
       <div className={classes.row1End}>
-        {(actions !== undefined || filtersEndActions.length > 0) && (
+        {(actions !== undefined || filtersEndActions.length > 0 || sync !== undefined) && (
           <CtlSlot>
             {/* THE row-1 group: the only `host: 'page'` instance, so the shell's `mobile: 'more'`
                 global actions reach exactly one kebab (`BarActionRowProps.host`). `filtersEnd`
-                joins that kebab below `sm` and renders in row 2 above it. */}
-            <BarActionRow {...actions} host="page" mobileOnly={filtersEndActions} />
-          </CtlSlot>
-        )}
-        {sync !== undefined && (
-          <CtlSlot>
-            <SyncButton {...sync} scope="page" />
+                joins that kebab below `sm` and renders in row 2 above it.
+
+                `sync` is handed DOWN as `syncNode` rather than rendered as a sibling here, because
+                the row's order is custom chips · secondaries · `More` · sync · primary
+                (`docs/CONTROLS-SPEC.md` §2.1) and only `BarActionRow` knows where the primary is.
+                One `CtlSlot` for the whole row now, so the sync button and the buttons around it
+                resolve the tier from the same provider. */}
+            <BarActionRow
+              {...actions}
+              host="page"
+              mobileOnly={filtersEndActions}
+              {...(sync !== undefined && { syncNode: <SyncButton {...sync} scope="page" /> })}
+            />
           </CtlSlot>
         )}
       </div>
@@ -239,7 +285,11 @@ export function PageBar({
   if (!inShell) {
     if (row1 === null && row2 === null) return null
     return (
-      <div ref={measureRef} className={classes.bar} data-basalt-page-bar="standalone">
+      <div
+        ref={measureRef}
+        className={rootClass(classes.bar, className)}
+        data-basalt-page-bar="standalone"
+      >
         {row1}
         {row2}
       </div>
@@ -252,7 +302,11 @@ export function PageBar({
     <>
       {row1 !== null && target !== null && createPortal(row1, target)}
       {row2 !== null && (
-        <div ref={measureRef} className={classes.row2Sticky} data-basalt-page-bar="shell">
+        <div
+          ref={measureRef}
+          className={rootClass(classes.row2Sticky, className)}
+          data-basalt-page-bar="shell"
+        >
           {row2}
         </div>
       )}

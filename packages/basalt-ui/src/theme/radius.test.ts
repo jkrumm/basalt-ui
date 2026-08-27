@@ -70,7 +70,17 @@ describe('every re-pointed component defaultProps/styles radius matches its ship
   test('SegmentedControl root = 7, indicator = 5', () => {
     const sc = baseTheme.components?.['SegmentedControl']
     expect(sc?.defaultProps?.['radius']).toBe(7)
-    expect(sc?.styles?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-tight)')
+    // `styles` is function-form (size='ctl' gates a label override — see `theme/index.ts`), not a
+    // flat object, so it has to be called rather than indexed directly.
+    const stylesFn = sc?.styles as
+      | ((
+          theme: unknown,
+          props: { size?: string },
+          ctx: unknown,
+        ) => Record<string, Record<string, unknown>>)
+      | undefined
+    const resolved = stylesFn?.({}, {}, {})
+    expect(resolved?.['indicator']?.['borderRadius']).toBe('var(--vx-radius-tight)')
   })
 
   test('Progress = 4', () => {

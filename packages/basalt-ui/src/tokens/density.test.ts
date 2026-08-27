@@ -214,6 +214,8 @@ describe('buildDensityCss', () => {
     const jsNumberOnly = [
       'space-timeline-bullet', // Timeline defaultProps.bulletSize
       'space-progress-bar-size', // Progress defaultProps.size
+      'space-table-header-height', // Table.extend styles.th height
+      'space-table-row-height', // Table.extend styles.td height
       'space-sidebar-account-menu-width', // Menu width prop
       'space-sidebar-settings-menu-width', // Menu width prop
       'space-app-shell-header-height', // AppShell header/navbar props

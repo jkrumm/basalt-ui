@@ -149,3 +149,56 @@ describe('≤3 actions — the dev-only budget warning (C6)', () => {
     warn.mockRestore()
   })
 })
+
+describe('defaultOpen', () => {
+  test('defaultOpen={false} opens collapsed, and the chevron still expands it', () => {
+    renderWith(
+      <Section title="Usage" collapsible defaultOpen={false}>
+        <div>body content</div>
+      </Section>,
+    )
+    expect(screen.queryByText('body content')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand section' }))
+    expect(screen.getByText('body content')).toBeDefined()
+  })
+
+  test('a persisted value outranks it — a section the reader opened stays open', () => {
+    window.localStorage.setItem('basalt:section:usage', JSON.stringify({ v: 1, value: true }))
+    renderWith(
+      <Section title="Usage" collapsible persistKey="usage" defaultOpen={false}>
+        <div>body content</div>
+      </Section>,
+    )
+    expect(screen.getByText('body content')).toBeDefined()
+  })
+})
+
+describe('summary — visible collapsed or not', () => {
+  test('a collapsed section still states its headline figures', () => {
+    renderWith(
+      <Section title="Usage" collapsible summary={<span>48,204 requests</span>}>
+        <div>body content</div>
+      </Section>,
+    )
+    expect(screen.getByText('48,204 requests')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse section' }))
+
+    expect(screen.queryByText('body content')).toBeNull()
+    expect(screen.getByText('48,204 requests')).toBeDefined()
+  })
+
+  test('it renders under the header, above where the body starts', () => {
+    renderWith(
+      <Section title="Usage" summary={<span>48,204 requests</span>}>
+        <div>body content</div>
+      </Section>,
+    )
+    const summary = screen.getByText('48,204 requests').parentElement
+    expect(
+      summary?.previousElementSibling?.contains(screen.getByRole('heading', { level: 2 })),
+    ).toBe(true)
+    expect(summary?.nextElementSibling?.contains(screen.getByText('body content'))).toBe(true)
+  })
+})

@@ -9,27 +9,19 @@ import type { GuardKind } from './guard/types'
 
 // ── Scalar types ──────────────────────────────────────────────────────────────────────────────────
 
-/** The 14 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+/** The 6 on-disk rule names (agent/rules/basalt-{name}.md — the set-equality target).
+ *
+ * One rule file per DOCTRINE, not per subpath: `state` also owns the router bridge's placement law
+ * (the two were one argument split across two files), and `batteries` owns every adapter surface
+ * whose doctrine is "use the shipped thing" — query, forms, notifications, commands, data, content,
+ * agent and the app-global layer. Thirteen files carried 4,177 lines, 55% of it with no guard
+ * behind it and the identity paragraph restated six times (`docs/CONTROLS-SPEC.md` §7).
  *
  * @example
  * const r: RuleName = 'tokens' // ok
  * // const bad: RuleName = 'overlays' // tsc error — not in the union
  */
-export type RuleName =
-  | 'tokens'
-  | 'charts'
-  | 'mantine'
-  | 'router'
-  | 'query'
-  | 'state'
-  | 'forms'
-  | 'notifications'
-  | 'commands'
-  | 'data'
-  | 'agent'
-  | 'content'
-  | 'controls'
-  | 'app'
+export type RuleName = 'tokens' | 'charts' | 'mantine' | 'state' | 'controls' | 'batteries'
 
 /**
  * Every rule the shipped oxlint JS plugin registers (`configs/oxlint-plugin.js` → `rules`), as one
@@ -163,7 +155,7 @@ export type DoctrineSpec = BaseSurface & {
   readonly rule: RuleName
   /** A LIST (skill↔surface is many-to-one — basalt-design covers tokens AND mantine AND state). */
   readonly skill: readonly SkillName[]
-  /** Required, but [] is legal for advisory surfaces (router/query: rule only, no guard). */
+  /** Required, but [] is legal for advisory surfaces (the batteries: rule only, no guard). */
   readonly guardKinds: readonly GuardKind[]
   /**
    * The oxlint plugin rules this surface's doctrine is enforced by — the AST half of the same seam
@@ -255,6 +247,15 @@ export const SURFACES = {
       'raw-form-control',
       'sub-16-input-font',
       'mantine-shade-index',
+      // The text lane of the kinds whose remedy IS a Mantine primitive or a Mantine-owned prop:
+      // C8's page title (same id as the plugin rule, so one annotation waives both lanes), the
+      // spacing props, and the layout primitives an inline `display`/raw element replaces.
+      'in-body-page-title',
+      'raw-spacing',
+      'inline-spacing',
+      'inline-display',
+      'raw-html-layout',
+      'hidden-inline-style',
     ],
     // The chrome half of the plugin: the shell, the card idiom, the page title and the scroll
     // doctrine. `hand-rolled-shell` sits here rather than on a shell-shaped surface because
@@ -284,7 +285,13 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'unframed-chart'],
+    guardKinds: [
+      'raw-hex',
+      'raw-color-fn',
+      'raw-visx-axis',
+      'unframed-chart',
+      'chart-missing-aria-label',
+    ],
     pluginRules: [
       'hand-rolled-plot',
       'chart-legend-literal',
@@ -310,7 +317,24 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'tokens',
     skill: ['basalt-design', 'basalt-charts'],
-    guardKinds: ['raw-hex', 'raw-color-fn', 'off-identity-accent', 'off-system-surface-var'],
+    guardKinds: [
+      'raw-hex',
+      'raw-color-fn',
+      'off-identity-accent',
+      'off-system-surface-var',
+      // The rest of the value lane: every kind whose remedy is a `--vx-*` token or a theme knob,
+      // in TSX and in kebab CSS alike.
+      'raw-font-family',
+      'raw-radius',
+      'raw-surface',
+      'inline-font-size',
+      'css-raw-surface',
+      'surface-shadow-override',
+      // Not a token kind — the kind that judges the ANNOTATION rather than the code. It lands here
+      // because `agent/rules/basalt-tokens.md` is where the `theme-allow` grammar is documented
+      // (said once, on purpose), so this is the header that must name its enforcement.
+      'theme-allow-unscoped',
+    ],
     // The type-scale rules live with the tokens, not with `.`: both police a value that left the
     // `--vx-*` system, which is this surface's whole subject. `token-layer-boundary` is the
     // repo-local-only rule that keeps the layer upstream of Mantine (see below).
@@ -354,7 +378,7 @@ export const SURFACES = {
   './query': {
     kind: 'doctrine',
     layer: 'headless',
-    rule: 'query',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
@@ -370,7 +394,7 @@ export const SURFACES = {
   './router-tanstack': {
     kind: 'doctrine',
     layer: 'headless',
-    rule: 'router',
+    rule: 'state',
     skill: ['basalt-app'],
     guardKinds: [],
     // Law C10 — a nav link's `search` and a reader's `from` are both this bridge's contract.
@@ -388,7 +412,7 @@ export const SURFACES = {
   './forms': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'forms',
+    rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
     pluginRules: [],
@@ -400,7 +424,7 @@ export const SURFACES = {
   './notifications': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'notifications',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
@@ -412,7 +436,7 @@ export const SURFACES = {
   './commands': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'commands',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
@@ -424,7 +448,7 @@ export const SURFACES = {
   './data': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'data',
+    rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
     pluginRules: [],
@@ -436,7 +460,7 @@ export const SURFACES = {
   './data/table': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'data',
+    rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
     pluginRules: [],
@@ -448,7 +472,7 @@ export const SURFACES = {
   './data/virtual': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'data',
+    rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
     pluginRules: [],
@@ -460,7 +484,7 @@ export const SURFACES = {
   './agent': {
     kind: 'doctrine',
     layer: 'headless',
-    rule: 'agent',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     // The three agent-chat correctness rules — they honour `basalt-agent-allow`, not `theme-allow`.
@@ -478,7 +502,7 @@ export const SURFACES = {
   './agent-chat': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'agent',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
@@ -502,7 +526,7 @@ export const SURFACES = {
   './content': {
     kind: 'doctrine',
     layer: 'mantine-coupled',
-    rule: 'content',
+    rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
     pluginRules: [],
@@ -526,9 +550,11 @@ export const SURFACES = {
     layer: 'mantine-coupled',
     rule: 'controls',
     skill: ['basalt-design'],
-    guardKinds: [],
+    // The text lane of law C1 — the plugin's `control-outside-home` seen through a 12-line host-tag
+    // window, since a regex scan has no ancestry. Same law, same wave, same promotion.
+    guardKinds: ['raw-selection-control'],
     // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter` ships `error` — "inside a
-    // slot" is structural; the other three are grace entries in `PLUGIN_RULE_GRACE` until 1.29.0.
+    // slot" is structural; the other three are grace entries in `PLUGIN_RULE_GRACE` until 1.27.0.
     // The budget rules live on `.` with `PageBar` itself.
     pluginRules: [
       'hand-rolled-filter',
@@ -630,7 +656,7 @@ export const SURFACES = {
     // synthetic global app-wide ban layer — the src/**+app/** glob
     kind: 'doctrine',
     layer: 'app-global',
-    rule: 'app',
+    rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
@@ -664,7 +690,7 @@ export const SURFACES = {
 
 /**
  * Derived, deduped set of doctrine rule names. Projection 1 of SURFACES.
- * → ['mantine', 'charts', 'tokens', 'query', 'router', 'forms', 'notifications', 'commands', 'data', 'agent', 'content', 'controls', 'state', 'app'] (order is insertion order of Set)
+ * → ['mantine', 'charts', 'tokens', 'batteries', 'state', 'controls'] (order is insertion order of Set)
  *
  * @example
  * RULE_NAMES.includes('tokens') // true

@@ -11,7 +11,7 @@
  * INTERNAL, like `FilterPill`: `FilterSet` owns when the sheet opens, so a consumer mounting it by
  * hand would own a second, unregistered filter home (C1).
  */
-import { Button, Drawer, Stack } from '@mantine/core'
+import { Button, Drawer } from '@mantine/core'
 import { useId } from 'react'
 import type { ReactNode } from 'react'
 import classes from './controls.module.css'
@@ -24,6 +24,15 @@ export type FilterSheetProps = {
   readonly children: ReactNode
 }
 
+/**
+ * `Reset all` rides the HEADER, beside the title and the close ×, not a footer.
+ *
+ * A bottom drawer's footer is the one region a phone cannot promise is on screen: the sheet grows
+ * with its content, so with six filters open the reset button sat below the fold and the only way to
+ * reach it was to scroll past every row it would have undone. The header is fixed by construction.
+ * It also removes the sheet's last horizontal rule — a footer needs separating from the rows above
+ * it, a header does not (`docs/CONTROLS-SPEC.md` §2.1: hairlines between OPTION rows only).
+ */
 export function FilterSheet({
   opened,
   onClose,
@@ -32,16 +41,173 @@ export function FilterSheet({
   children,
 }: FilterSheetProps): ReactNode {
   return (
-    <Drawer opened={opened} onClose={onClose} position="bottom" title={title} radius="sm">
-      <div className={classes.sheetBody}>
-        <Stack gap="sm">{children}</Stack>
-        <div className={classes.sheetFooter}>
-          <Button variant="default" size="ctl" onClick={onResetAll}>
+    <Drawer
+      opened={opened}
+      onClose={onClose}
+      position="bottom"
+      radius="sm"
+      classNames={{ header: classes.sheetHeader, title: classes.sheetTitle }}
+      title={
+        <>
+          <span className={classes.sheetTitleText}>{title}</span>
+          <Button variant="subtle" size="ctl" onClick={onResetAll}>
             Reset all
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
+      <div className={classes.sheetBody}>{children}</div>
     </Drawer>
+  )
+}
+
+/** The selected-row mark — 16px, drawn at the row's trailing edge (`docs/CONTROLS-SPEC.md` §2.1). */
+function CheckGlyph(): ReactNode {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 12.5l5 5l9 -11" />
+    </svg>
+  )
+}
+
+/** One row of a {@link SheetOptionList}. */
+export type SheetOption = {
+  readonly value: string
+  readonly label: string
+  readonly disabled?: boolean
+}
+
+export type SheetOptionListProps = {
+  /** `single` renders radio semantics, `multi` checkbox semantics. */
+  readonly mode: 'single' | 'multi'
+  /** The selected value(s) — a one-element array in `single` mode. */
+  readonly selected: readonly string[]
+  readonly options: readonly SheetOption[]
+  readonly onToggle: (value: string) => void
+  /** The `SheetField` heading this list is named by. */
+  readonly labelId: string
+}
+
+/**
+ * The sheet's ONE list form (`docs/CONTROLS-SPEC.md` §2.1): every option is a 44px full-width row,
+ * label left, a check at the trailing edge when selected, a 1px hairline between rows and nowhere
+ * else.
+ *
+ * **It replaced a `SegmentedControl` and a Mantine `Radio` list, for two different reasons.** The
+ * range presets rendered as a `orientation="vertical"` SegmentedControl, which in a full-width sheet
+ * is a stack of left-aligned labels inside a tinted track — it read as a broken control, not as a
+ * choice, and it carried the track's own inset so it aligned with nothing else in the sheet. The
+ * enum/multi filters rendered Mantine `Radio`/`Checkbox` rows, which put a 20px dot or box in the
+ * leading position of every row; at six filters the sheet was a column of controls rather than a
+ * column of options, and the leading marks pushed every label off the sheet's own text column.
+ *
+ * The semantics are a real native `<input>` inside the row's `<label>`, visually hidden — not
+ * `role="radio"` on a div. A hidden native input keeps the arrow-key group behaviour, the
+ * form-association and the announced state for free, and `<label>` wrapping it makes the whole 44px
+ * box the hit target (C15) without a single `onClick` on a non-interactive element.
+ */
+export function SheetOptionList({
+  mode,
+  selected,
+  options,
+  onToggle,
+  labelId,
+}: SheetOptionListProps): ReactNode {
+  // ONE name per rendered list, so a sheet holding two range filters keeps two radio groups.
+  const name = useId()
+  return (
+    // A real `<fieldset>`, not `role="group"` on a div — the native element carries the grouping
+    // semantics and gets its own box reset in the module (`.sheetList`). `aria-labelledby` points at
+    // the `SheetField` heading rather than a `<legend>`: the heading is already visible above the
+    // list, and a legend would render it a second time.
+    <fieldset className={classes.sheetList} aria-labelledby={labelId}>
+      {options.map((option) => {
+        const isSelected = selected.includes(option.value)
+        return (
+          <label
+            key={option.value}
+            className={classes.sheetOption}
+            {...(isSelected && { 'data-selected': true })}
+            {...(option.disabled === true && { 'data-disabled': true })}
+          >
+            {/* theme-allow raw-form-control — the input is NEVER PAINTED. It is visually hidden
+                (`.sheetOptionInput`) and exists only to carry the row's semantics: the checked state,
+                the radio-group arrow keys, the announced name. The surface the reader sees and taps
+                is the `<label>` around it, which the theme's tokens style directly. A Mantine
+                `Radio` here would paint the 20px indicator this row form exists to remove — see
+                `SheetOptionList`'s doc. */}
+            <input
+              className={classes.sheetOptionInput}
+              type={mode === 'single' ? 'radio' : 'checkbox'}
+              name={name}
+              value={option.value}
+              checked={isSelected}
+              disabled={option.disabled === true}
+              aria-label={option.label}
+              onChange={() => {
+                onToggle(option.value)
+              }}
+            />
+            <span className={classes.sheetOptionLabel}>{option.label}</span>
+            {isSelected && (
+              <span className={classes.sheetOptionCheck} aria-hidden>
+                <CheckGlyph />
+              </span>
+            )}
+          </label>
+        )
+      })}
+    </fieldset>
+  )
+}
+
+export type SheetDisclosureProps = {
+  readonly label: string
+  readonly expanded: boolean
+  readonly onToggle: () => void
+  readonly children: ReactNode
+}
+
+/**
+ * A 44px row that expands its own body inline — the sheet's answer to a control too large to sit in
+ * the list unconditionally (`RangeFilter`'s custom date picker, which is a whole calendar). Same row
+ * geometry as a {@link SheetOptionList} option, so the disclosure reads as the list's last entry
+ * rather than as a different kind of thing.
+ */
+export function SheetDisclosure({
+  label,
+  expanded,
+  onToggle,
+  children,
+}: SheetDisclosureProps): ReactNode {
+  return (
+    <div className={classes.sheetList}>
+      <button
+        type="button"
+        className={classes.sheetOption}
+        aria-expanded={expanded}
+        {...(expanded && { 'data-selected': true })}
+        onClick={onToggle}
+      >
+        <span className={classes.sheetOptionLabel}>{label}</span>
+        {expanded && (
+          <span className={classes.sheetOptionCheck} aria-hidden>
+            <CheckGlyph />
+          </span>
+        )}
+      </button>
+      {expanded && <div className={classes.sheetDisclosureBody}>{children}</div>}
+    </div>
   )
 }
 

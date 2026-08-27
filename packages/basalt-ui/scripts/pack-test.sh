@@ -50,14 +50,17 @@ for f in \
   dist/controls-dates/index.js dist/controls-dates/index.d.ts \
   src/index.ts \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
-  agent/rules/basalt-tokens.md agent/rules/basalt-charts.md \
+  agent/rules/basalt-tokens.md agent/rules/basalt-charts.md agent/rules/basalt-batteries.md \
   agent/templates/DESIGN.md.tpl agent/templates/CLAUDE-block.md.tpl \
   agent/skills/basalt-app/SKILL.md agent/skills/basalt-charts/SKILL.md \
   agent/skills/basalt-design/SKILL.md \
   llms.txt \
   bin/basalt-ui.mjs; do require "$f"; done
 # CSS-module type decls must NOT be transpiled into runtime JS (the tsup *.d.ts exclude).
+# The retired rule files must not ship either: `files` globs `agent/`, so a rule deleted from the
+# repo but left in a stale worktree would be published and placed into consumers by `sync`.
 for f in src/index.css src/starlight.css tailwind.config.js \
+  agent/rules/basalt-router.md agent/rules/basalt-app.md agent/rules/basalt-query.md \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
 echo "tarball contents OK"
@@ -416,8 +419,13 @@ for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilt
 const { createLocalStore, field } = await import('basalt-ui/state')
 const store = createLocalStore({
   key: 'pack-test-controls',
-  fields: { currency: field.enum(['USD', 'EUR'], 'USD') },
+  fields: {
+    currency: field.enum(['USD', 'EUR'], 'USD'),
+    channel: field.enum(['web', 'app'], 'web'),
+  },
 })
+// TWO filters against the default `inline: 1` budget, deliberately: the mobile sheet pill exists
+// only when the budget folded a child away, so a one-filter set proves the sheet nothing.
 const tree = createElement(
   MantineProvider,
   null,
@@ -425,10 +433,16 @@ const tree = createElement(
     controls.FilterSet,
     null,
     createElement(controls.SelectFilter, { field: store.field.currency, label: 'Currency' }),
+    createElement(controls.SelectFilter, { field: store.field.channel, label: 'Channel' }),
   ),
 )
 const html = renderToStaticMarkup(tree)
-if (!html.includes('Currency')) throw new Error('FilterSet did not render its child filter')
+// The pill prints the SELECTED OPTION's label, at the field's fallback too — `Currency`/`Channel`
+// name the popover and the accessible name and are never printed on the pill
+// (`src/controls/enum-filter.tsx`). So the render proof is the two VALUES, which also proves BOTH
+// children rendered rather than just the first.
+if (!html.includes('USD')) throw new Error('FilterSet did not render its first child filter')
+if (!html.includes('web')) throw new Error('FilterSet did not render its second child filter')
 if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')
 console.log('controls without @mantine/dates: resolution + render OK')
 

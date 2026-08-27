@@ -1,10 +1,18 @@
 /**
  * The ctl-tier coverage gate (`docs/CONTROLS-SPEC.md` §5) — greps every `getSize(size, '<prefix>')`
- * / `getFontSize(size)` call in the INSTALLED `@mantine/core` source for the nine components the
- * spec names (Button, ActionIcon, Input, SegmentedControl, Combobox, Select, MultiSelect,
- * TextInput, Menu) and asserts `cssVariablesResolver`'s `variables` block declares a `-ctl` var for
- * every distinct prefix found — so a missing var (the `--button-padding-x-ctl` the spec's own text
- * calls out as "every draft omitted") fails the build instead of silently rendering at 0px/undefined.
+ * / `getFontSize(size)` call in the INSTALLED `@mantine/core` source for the TWELVE components the
+ * tier covers (Button, ActionIcon, Input, SegmentedControl, Combobox, Select, MultiSelect,
+ * TextInput, Menu — the nine the spec names — plus Radio, Checkbox and Switch) and asserts
+ * `cssVariablesResolver`'s `variables` block declares a `-ctl` var for every distinct prefix found —
+ * so a missing var (the `--button-padding-x-ctl` the spec's own text calls out as "every draft
+ * omitted") fails the build instead of silently rendering at 0px/undefined.
+ *
+ * Radio/Checkbox/Switch joined the scan when they joined `CTL_THEME`: they had defaulted to
+ * Mantine's `sm`, a 20px indicator beside the tier's 13.5px option label, in every filter popover and
+ * in the mobile sheet. Adding them to `defaultProps` without declaring their vars would have been
+ * strictly worse than leaving them alone — an undeclared `--radio-size-ctl` resolves to the
+ * property's INITIAL value, which is how a Select once shipped with no chevron (see
+ * `theme/index.ts`'s `ctlSizeVars` doc). This scan is what makes the two halves inseparable.
  *
  * Reads the REAL installed package (not a hand-typed list of prefixes) so a future `@mantine/core`
  * minor that adds a new `getSize`/`getFontSize` call to one of these nine components fails this
@@ -27,7 +35,7 @@ import { dirname, join } from 'node:path'
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { baseTheme, cssVariablesResolver } from './index'
+import { CTL_THEME, baseTheme, cssVariablesResolver } from './index'
 
 const theme: MantineTheme = mergeMantineTheme(DEFAULT_THEME, baseTheme)
 
@@ -36,7 +44,9 @@ const MANTINE_CORE_ESM_COMPONENTS = join(
   'esm/components',
 )
 
-/** The nine components `docs/CONTROLS-SPEC.md` §5 names. */
+/** Every component `CTL_THEME` sets a `ctl` default on, plus `Input`/`Combobox`/`Menu` which the
+ *  others resolve through. Keep this list and `CTL_THEME.components` in step — the last test in this
+ *  file asserts exactly that, so they cannot drift apart silently. */
 const CTL_TIER_COMPONENTS = [
   'Button',
   'ActionIcon',
@@ -47,6 +57,14 @@ const CTL_TIER_COMPONENTS = [
   'MultiSelect',
   'TextInput',
   'Menu',
+  'Radio',
+  'Checkbox',
+  'Switch',
+  // In `CTL_THEME` since the tier shipped, and never scanned until the drift test below was added —
+  // which is the whole argument for that test. It renders a native `<select>` through
+  // `Input`/`InputBase`, so it contributes no prefix of its own; being scanned is what proves that
+  // rather than assuming it.
+  'NativeSelect',
 ] as const
 
 /** Every `.mjs` file (not `.mjs.map`) under a component directory, recursing into subcomponents but
@@ -95,6 +113,23 @@ describe('ctl-tier var coverage', () => {
     expect(prefixes.has('mantine-font-size')).toBe(true)
   })
 
+  test('the scan reaches Radio/Checkbox/Switch — the three the popovers and the sheet render', () => {
+    expect(prefixes.has('radio-size')).toBe(true)
+    expect(prefixes.has('radio-icon-size')).toBe(true)
+    expect(prefixes.has('checkbox-size')).toBe(true)
+    expect(prefixes.has('switch-height')).toBe(true)
+    expect(prefixes.has('switch-width')).toBe(true)
+    expect(prefixes.has('switch-thumb-size')).toBe(true)
+    expect(prefixes.has('switch-label-font-size')).toBe(true)
+    expect(prefixes.has('switch-track-label-padding')).toBe(true)
+  })
+
+  test('there is NO --checkbox-icon-size to declare — Checkbox derives its tick in CSS', () => {
+    // Worth pinning: the obvious symmetry with `radio-icon-size` does not exist in 9.3.0, and
+    // declaring a var no `getSize` call reads would be dead weight that reads like coverage.
+    expect(prefixes.has('checkbox-icon-size')).toBe(false)
+  })
+
   test('every scanned prefix has a declared -ctl var', () => {
     const declared = cssVariablesResolver(theme).variables
     const missing = [...prefixes].filter((prefix) => !(`--${prefix}-ctl` in declared))
@@ -109,6 +144,18 @@ describe('ctl-tier var coverage', () => {
   test('--mantine-line-height-ctl is declared (read by every -ctl Input/Button label via the line-height cascade)', () => {
     const declared = cssVariablesResolver(theme).variables
     expect(declared['--mantine-line-height-ctl']).toBeDefined()
+  })
+
+  test('every component CTL_THEME defaults to `ctl` is in the scanned set', () => {
+    // The two halves of the tier — `defaultProps.size = 'ctl'` and the `-ctl` vars — must move
+    // together, and this is what makes adding a component to one without the other fail. `*Group`
+    // keys resolve to their base component's prefixes (a Group reads `Input.Wrapper`'s vars, and the
+    // scan already covers `Input`), so they are stripped before the comparison.
+    const scanned = new Set<string>(CTL_TIER_COMPONENTS)
+    const themed = Object.keys(CTL_THEME.components ?? {}).map((name) =>
+      name.endsWith('Group') ? name.slice(0, -'Group'.length) : name,
+    )
+    expect(themed.filter((name) => !scanned.has(name))).toEqual([])
   })
 
   // Proves the gate actually bites — the exact regression the spec calls out

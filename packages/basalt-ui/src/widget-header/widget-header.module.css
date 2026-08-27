@@ -24,6 +24,24 @@
   gap: var(--vx-space-control-gap, 0.375rem);
 }
 
+/*
+ * Below `sm` the title row WRAPS, which is the safety net for an `actions` slot too wide to sit
+ * beside the title. `flex-wrap` is the right tool precisely because it is conditional: a 30px kebab
+ * fits and stays on the row, while a control whose hypothetical size does not fit takes its own line
+ * instead of squeezing the heading to an ellipsis. No breakpoint arithmetic, no max-width fraction,
+ * and no prop — the row measures the actual content.
+ *
+ * `row-gap` is the 8px rhythm step, so a wrapped slot reads as the line under the title rather than
+ * as a second header. `.actions` keeps its `margin-inline-start: auto`, which on a wrapped line makes
+ * it right-aligned — the same edge it holds when it is on the row.
+ */
+@media (max-width: 47.99375em) {
+  .titleRow {
+    flex-wrap: wrap;
+    row-gap: var(--vx-space-stack-sm);
+  }
+}
+
 .root[data-tier='section'] .titleRow {
   min-height: var(--vx-space-section-header-height, 2.25rem);
 }
@@ -32,9 +50,18 @@
   min-height: var(--vx-space-widget-header-height, 1.75rem);
 }
 
-/* Section → h2, widget → h3 — both read identically: the shared head-font 88%/550 title
- * treatment (the eleven-copy literal this module single-sources for the primitive; the
- * remaining call sites are wave 3's job, see docs/CONTROLS-SPEC.md §2.2). */
+/*
+ * Section → h2, widget → h3, and the two tiers now read DIFFERENTLY on purpose — they did not, and
+ * that is what flattened the page.
+ *
+ * A `section` heading names a region of the page: 15px, weight 600, INK. A `widget` heading labels a
+ * number that is itself the thing being read (a KPI card's hero value, a chart card's total), so it
+ * is the quieter of the pair — one step down and MUTED, which is what lets the 24px mono value under
+ * it carry the card. Both keep the shared head-font 88% stretch.
+ *
+ * Rendered identically (15px ink both) the hero value competed with its own label, four cards in a
+ * row read as four headings, and the section that grouped them read as one more of the same.
+ */
 .heading {
   display: inline-flex;
   align-items: center;
@@ -48,25 +75,60 @@
   color: var(--vx-ink);
 }
 
+.root[data-tier='section'] .heading {
+  font-weight: 600;
+}
+
+.root[data-tier='widget'] .heading {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
 .titleText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/*
+ * The icon slot PINS its glyph's box. A consumer's icon arrives at whatever size its own component
+ * chose (the playground's is 18px), and an 18px mark beside a 13.5px title is a bullet, not a label
+ * icon — so the tier states the size here rather than asking every call site to pass one.
+ */
+/*
+ * The heading's icon box carries COLOUR ONLY — geometry belongs to `theme/icon-slot.module.css`,
+ * which this class is composed onto (`IconSlot className={classes.icon}`). The per-tier SIZE is set
+ * as the slot's own box var below rather than as a `> svg` rule, so it survives whatever the caller's
+ * glyph declares for itself: a `width`/`height` attribute is a presentation attribute and loses to
+ * the slot's CSS, while a `> svg` rule scoped to one component only ever fixed that component.
+ */
 .icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  color: var(--vx-muted);
+  color: var(--vx-faint);
 }
 
-/* Mono count tag after the title (C11 — every table/list states its count in its header). */
+.root[data-tier='widget'] .icon {
+  --vx-space-icon-size: 0.875rem;
+}
+
+.root[data-tier='section'] .icon {
+  --vx-space-icon-size: 1rem;
+}
+
+/* Mono count tag after the title (C11 — every table/list states its count in its header). Its box is
+ * the `tag` tier (20px), so it never grows the header row it sits in. */
 .count {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
+  /* Exactly the `tag` tier (20px), not a floor: the mono `VX.text.xs` line box plus
+   * `badgeInset`-y is 23px on its own, so a `min-height` changed nothing and the tag rendered 3px
+   * taller than the tier it is named for — enough to grow a 36px section-header row. `line-height: 1`
+   * is what lets the box be the stated height instead of the text's. */
+  /* `--mantine-scale`-aware, same reconstruction every other ctl/tag-tier box uses (`theme/index.ts`'s
+   * `ctlSizeVars`) — read raw, this box stayed fixed while the Badge/Button beside it in the same
+   * header scaled with `theme.scale`. */
+  height: calc(var(--vx-space-control-height-tag, 1.25rem) * var(--mantine-scale, 1));
+  line-height: 1;
   border-radius: var(--vx-radius-ctrl);
   background: var(--vx-surface-subtle);
   padding: var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x);
@@ -76,15 +138,60 @@
   color: var(--vx-faint);
 }
 
-/* The hero-metric row — value + delta, directly under the title row, for both tiers. */
+/*
+ * The hero-metric row — value + delta, directly under the title row, for both tiers. The delta rides
+ * 4px off the value, not 8: it is a suffix ON the number (`$168,920 +47%`), and at 8px it read as a
+ * second, unrelated chip in the row. `baseline` alignment is what keeps the mono numeral and the
+ * badge's own smaller mono text sitting on one line.
+ */
+/*
+ * The hero-metric row: the value, then its `DeltaBadge`.
+ *
+ * The gap is the 8px vertical-rhythm step (`--vx-space-stack-sm`), not the 4px it shipped as. 4px is
+ * the rhythm's SMALLEST step — the distance between a label and the thing it labels — and at that
+ * distance the badge read as a superscript hanging off the numeral rather than as a second fact
+ * beside it. It is a token and not a literal so it tracks the density knob with every other spacing
+ * in the header (`deriveSpacing`, `tokens/palette.ts`); `theme/layout-rhythm-css.test.ts`'s sibling
+ * assertion in `widget-header.test.tsx` pins it against exactly the literal it used to be.
+ *
+ * `align-items: center`, not `baseline`. The badge is a BOX with its own padding and a mono 11.5px
+ * label, so aligning its text baseline to a 24px KPI numeral's baseline put the box itself low —
+ * its top edge sat below the numeral's x-height and its bottom edge hung under the numeral's
+ * baseline. A chip beside a numeral is centred on the numeral, the same law the `count` tag in the
+ * title row above already follows.
+ */
 .metrics {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-stack-sm);
   margin-top: 2px;
+  min-width: 0;
 }
 
+/*
+ * Below `sm` the metric row WRAPS, so the badge drops under the value instead of ellipsizing it.
+ * `nowrap` plus the `.value` clamp below is right on desktop — a `+18.9%` cannot ellipsize and read,
+ * a numeral can — but a KPI's numeral IS the content, and in a 2-up card grid at 390px
+ * `$1294.9k ▲18.9%` rendered as `$129… ▲18.9%`. Truncating the number to protect the delta about the
+ * number is the wrong way round. Conditional like the title row above it: a short value keeps the
+ * badge beside it, and only a value that would otherwise clip gives up the line.
+ */
+@media (max-width: 47.99375em) {
+  .metrics {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+}
+
+/* The value is the row's shrinkable half and the delta badge is not: a pre-formatted numeral can
+ * ellipsize and still read, a `+18.9%` cannot. Without the clamp the badge grew past the header box
+ * and painted over `StatCard`'s 72px sparkline slot beside it. */
 .value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--basalt-font-mono);
   font-size: var(--vx-text-kpi);
   font-weight: 600;
@@ -101,8 +208,10 @@
   margin-inline-start: auto;
 }
 
+/* Directly under the title row, 4px off it — 1px put it inside the title's own line box, so a
+ * section with both read as a two-line heading rather than a heading plus a note. */
 .subtitle {
-  margin-top: 1px;
+  margin-top: 4px;
   font-size: var(--vx-text-sm);
   font-weight: 400;
   color: var(--vx-muted);
@@ -172,6 +281,8 @@
 
 .deltaBadge {
   display: inline-flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   gap: 3px;
   border-radius: var(--vx-radius-ctrl);

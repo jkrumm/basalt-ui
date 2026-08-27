@@ -275,9 +275,34 @@ describe('projectMobileNav', () => {
     expect(rowKeys(more.groups)).toEqual(['reports', 'daily', 'weekly'])
   })
 
-  /** Rule 12 — today's `items.some(i => i.active)` leaves the tab dark while a child route is
-   *  open, which reads as "you are nowhere". A slot is active when ANY destination under it is. */
-  test('12. a slot is active when a NESTED child is the active destination', () => {
+  /**
+   * Rule 12 — a slot is active when the active destination is one it COVERS, and coverage and
+   * activeness read the SAME set. See `hasActiveDestination`'s doc for why they used to differ and
+   * what that cost (two `aria-current="page"` tabs at `/dashboard/sessions`, measured in Chrome).
+   *
+   * A SECTION tab covers its whole pruned tree, so the rollup rule 12 was written for still holds
+   * there — that is the case below.
+   */
+  test('12. a SECTION slot is active when a NESTED child is the active destination', () => {
+    const model = projectMobileNav([
+      {
+        label: 'Main',
+        mobile: { tab: true },
+        items: [item('reports', { children: [item('daily', { active: true })] })],
+      },
+      { label: 'Other', items: [item('other', { mobile: 'tab' })] },
+    ])
+
+    expect(slotAt(model, 0).active).toBe(true)
+    expect(slotAt(model, 1).active).toBe(false)
+  })
+
+  /**
+   * The exclusivity half, and the one that was missing: an ITEM tab covers only the destination its
+   * tap navigates to, so a nested child that lives in the overflow lights the OVERFLOW slot instead.
+   * Lighting both was the defect — a bar cannot tell a reader they are in two places.
+   */
+  test('12. an ITEM tab does NOT light for a child it cannot navigate to — that child’s slot does', () => {
     const model = projectMobileNav([
       {
         label: 'Main',
@@ -288,8 +313,67 @@ describe('projectMobileNav', () => {
       },
     ])
 
-    expect(slotAt(model, 0).active).toBe(true)
-    expect(slotAt(model, 1).active).toBe(false)
+    const active = model.slots.filter((slot) => slot.active)
+    expect(active.length).toBe(1)
+    expect(active[0]?.key).toBe('daily')
+    expect(slotAt(model, 0).active).toBe(false)
+  })
+
+  /**
+   * The invariant, stated once over every shape this model produces: AT MOST ONE slot is active.
+   * `useNav` already guarantees exactly one active DESTINATION (`use-nav.test.tsx`); this is the
+   * projection's half of the same law, and it is what a rendered bar actually shows.
+   */
+  test('12. at most ONE slot is active, for every destination in a mixed definition', () => {
+    const sections = (activeKey: string) => [
+      {
+        label: 'Overview',
+        items: [
+          item('dashboard', {
+            mobile: 'tab' as const,
+            active: activeKey === 'dashboard',
+            children: [
+              item('sessions', { active: activeKey === 'sessions' }),
+              item('traffic', { active: activeKey === 'traffic' }),
+            ],
+          }),
+          item('activity', { mobile: 'tab' as const, active: activeKey === 'activity' }),
+        ],
+      },
+      {
+        label: 'Batteries',
+        mobile: { tab: true as const },
+        items: [
+          item('query', { active: activeKey === 'query' }),
+          item('router', { active: activeKey === 'router' }),
+          item('forms', { active: activeKey === 'forms' }),
+        ],
+      },
+      {
+        label: 'System',
+        items: [
+          item('settings', { active: activeKey === 'settings' }),
+          item('user', { active: activeKey === 'user' }),
+        ],
+      },
+    ]
+
+    const keys = [
+      'dashboard',
+      'sessions',
+      'traffic',
+      'activity',
+      'query',
+      'router',
+      'forms',
+      'settings',
+      'user',
+    ] as const
+    for (const key of keys) {
+      const model = projectMobileNav(sections(key))
+      const active = model.slots.filter((slot) => slot.active)
+      expect({ key, count: active.length }).toEqual({ key, count: 1 })
+    }
   })
 
   /** §2.4 — a five-slot bar is ~72px wide, so the bar label is `short` when the consumer supplied

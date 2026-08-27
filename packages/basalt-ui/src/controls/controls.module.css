@@ -10,10 +10,21 @@
 
 /* ── The pill row (FilterSet, desktop + the mobile inline head) ───────────────────────────────── */
 
+/*
+ * `flex: 1 1 auto` is what makes `useOverflowFit`'s measurement HONEST, and its absence is what made
+ * the fold fire at 1440px with 600px of free space. Left at the flex default (`0 1 auto`) the row
+ * sizes to its own CONTENT, so `row.clientWidth` returned exactly Σ(slot widths + gaps) — the fold
+ * compared the pills against themselves, went over by a subpixel, and folded the tail on every
+ * viewport. Growing the row to the space its container actually offers is the only way the measure
+ * can ever mean "does this fit". `min-width: 0` keeps it shrinkable so an OVERFLOWING row still
+ * reports the available width rather than the content width. Together with `.pillSlot`'s
+ * `flex-shrink: 0` (see below) the two sides of the comparison are now measured independently.
+ */
 .pillRow {
   display: flex;
   align-items: center;
   gap: var(--vx-space-control-gap, 0.375rem);
+  flex: 1 1 auto;
   min-width: 0;
   flex-wrap: nowrap;
 }
@@ -78,18 +89,70 @@
 /* ── FilterPill ───────────────────────────────────────────────────────────────────────────────── */
 
 /*
- * The bordered chip. `variant="default" size="ctl"` already carries the 30px height and the control
- * radius from the theme; this module owns only the two things the variant cannot express — the
- * accent-tinted border of an ACTIVE (non-default) filter, and the ≥36px touch target below `sm`
- * (C15) drawn as a `::before` overlay so the visible box stays 30px.
+ * The bordered chip. `variant="default" size="ctl"` carries the 30px height, the 10px inset
+ * (`--button-padding-x-ctl`) and the control radius from the theme; this module owns what the
+ * variant cannot express.
+ *
+ * **The border is one of those.** `cssVariablesResolver` points
+ * `--mantine-color-default-border` at `transparent` on purpose (depth is a shadow, never a hairline
+ * — `docs/DESIGN-SPEC.md` §8), so a `variant="default"` Button ships no visible edge at all. A
+ * filter pill is the one control that NEEDS one: it is a chip in a row of chips, and without an
+ * outline the row reads as loose text. Declared here rather than by relaxing the resolver, which
+ * would put a hairline back on every default button in the app.
+ *
+ * The ≥36px touch target below `sm` (C15) is drawn as a `::before` overlay so the visible box stays
+ * 30px.
  */
 .pill {
   position: relative;
   max-width: 15rem;
+  border-color: color-mix(in srgb, var(--vx-ink) 12%, transparent);
+}
+
+/*
+ * The inset stays 10px on BOTH edges, section or no section. Mantine divides `--button-padding-x` by
+ * 1.5 whenever a Button carries a left/right section (`Button.css`), which is right for a labelled
+ * `md` button and wrong here: every pill has a trailing `⇅` and most have a leading glyph, so the
+ * division applied to all of them and the whole row rendered at a 6.7px inset — visibly tighter than
+ * the buttons in the header above it, for no reason a reader could see. This module is unlayered, so
+ * it outranks `@layer mantine` regardless of specificity.
+ */
+.pill[data-with-left-section],
+.pill[data-with-right-section] {
+  padding-inline: var(--button-padding-x-ctl);
 }
 
 .pill[data-active] {
   border-color: var(--vx-accent);
+  color: var(--vx-ink);
+}
+
+/*
+ * Mantine spends `--mantine-spacing-xs` (11px) between a Button's section and its label, which is
+ * the BODY tier's gap; a `ctl` chip wants the tier's own 6px so the icon reads as part of the label
+ * rather than a separate mark. Both sections, so the trailing `⇅` sits the same distance out.
+ */
+.pill :global(.mantine-Button-section[data-position='left']) {
+  margin-inline-end: var(--vx-space-control-gap, 0.375rem);
+}
+
+.pill :global(.mantine-Button-section[data-position='right']) {
+  margin-inline-start: var(--vx-space-control-gap, 0.375rem);
+}
+
+/*
+ * The leading-icon box carries COLOUR ONLY now. The 16px box, the `display: block` reset on the
+ * glyph and the optical centring all live in `theme/icon-slot.module.css`, which every `icon` prop
+ * in the framework renders through — this class is composed onto that slot, not instead of it. The
+ * `> svg { width: 1rem }` pair that used to live here was the same mechanism written once per
+ * component, which is exactly how `BarAction`'s icon slot went un-boxed and let a consumer's
+ * `width="24"` glyph set a header row's height.
+ */
+.pillIcon {
+  color: var(--vx-muted);
+}
+
+.pill[data-active] .pillIcon {
   color: var(--vx-ink);
 }
 
@@ -103,10 +166,13 @@
   .pill::before {
     content: '';
     position: absolute;
+    /* Both operands scale with `--mantine-scale` (same reconstruction the theme uses for every
+     * other ctl-tier box, `theme/index.ts`'s `ctlSizeVars`) so the overlay stays centred on — and
+     * sized off — the ACTUAL scaled pill box, not its unscaled rem value. */
     inset-block: calc(
       (
-          var(--vx-space-control-height-ctl, 1.875rem) -
-            var(--vx-space-touch-control-height, 2.25rem)
+          calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1)) -
+            calc(var(--vx-space-touch-control-height, 2.25rem) * var(--mantine-scale, 1))
         ) /
         2
     );
@@ -114,10 +180,15 @@
   }
 }
 
+/* Label at the tier's own step and weight (`docs/CONTROLS-SPEC.md` §3) — Mantine's Button label
+ * inherits the root's `--button-fz` but carries the body weight, which reads light against the
+ * bordered box. */
 .pillLabel {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--vx-text-sm);
+  font-weight: 500;
 }
 
 /* Numeric pill labels read mono at the smaller step. The FACE comes from the package-wide
@@ -128,8 +199,16 @@
   font-size: var(--vx-text-xs);
 }
 
+/*
+ * Every pill's trailing affordance is the ONE icon in the tier that is deliberately smaller than the
+ * leading glyph — 14px, muted (`docs/CONTROLS-SPEC.md` §3). It gets there by overriding the icon
+ * slot's box var, never by sizing the SVG: the slot is the only thing that decides a glyph's
+ * geometry, so a smaller mark is a smaller BOX.
+ */
 .glyph {
-  color: var(--vx-muted);
+  --vx-space-icon-size: 0.875rem;
+
+  color: var(--vx-faint);
 }
 
 /* ── Popover bodies ───────────────────────────────────────────────────────────────────────────── */
@@ -148,10 +227,42 @@
 
 /* ── The sheet surface (inside the bottom Drawer) ─────────────────────────────────────────────── */
 
+/*
+ * One rhythm, one kind of separator. Groups are 12px apart (`--vx-space-stack-md`) and NOTHING
+ * between them draws a line: the only hairline in the sheet is the one between two option rows of
+ * the SAME group (`.sheetOption`, below), which is what makes it read as a list rather than as a
+ * stack of boxed sections. The pre-1.28 sheet had a footer rule, a Drawer header rule and a
+ * `Radio.Group` per filter, so a six-filter sheet drew seven lines and none of them grouped
+ * anything.
+ */
 .sheetBody {
   display: flex;
   flex-direction: column;
-  gap: var(--mantine-spacing-sm, 0.75rem);
+  gap: var(--vx-space-stack-md, 0.75rem);
+}
+
+/* The Drawer header holds the title AND `Reset all` (see `FilterSheet`'s doc), so it is a row that
+ * spreads rather than Mantine's default title-plus-close pair. 44px, like every sheet row. */
+.sheetHeader {
+  min-height: var(--vx-space-sheet-row-height, 2.75rem);
+  padding-block: 0;
+}
+
+.sheetTitle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vx-space-control-gap, 0.375rem);
+  min-width: 0;
+}
+
+.sheetTitleText {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-xl);
+  color: var(--vx-ink);
 }
 
 .sheetField {
@@ -161,12 +272,126 @@
   min-width: 0;
 }
 
-.sheetLabel {
-  font-family: var(--basalt-font-head);
-  font-stretch: 88%;
-  font-weight: 550;
-  font-size: var(--vx-text-sm);
+/* ── SheetOptionList / SheetDisclosure ────────────────────────────────────────────────────────── */
+
+/* A `<fieldset>` in the option-list case (see `SheetOptionList`), a plain div in the disclosure
+ * case — the reset covers both, since a div ignores all of it. */
+.sheetList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-inline-size: 0;
+  min-width: 0;
+}
+
+/*
+ * The 44px option row (C15). `<label>` in a list, `<button>` in a disclosure — one class, because
+ * the two must be indistinguishable: the disclosure IS the list's last entry.
+ *
+ * `appearance`/`margin`/`border`/`background`/`text-align` reset the `<button>` form back to the
+ * `<label>`'s box; a `<label>` ignores all five, so there is no need for a second selector.
+ */
+.sheetOption {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs, 0.625rem);
+  width: 100%;
+  min-height: var(--vx-space-sheet-row-height, 2.75rem);
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: start;
   color: var(--vx-muted);
+  cursor: pointer;
+}
+
+/* Hairline BETWEEN rows only — a trailing border on the last row would be the group separator this
+ * sheet deliberately does not draw. */
+.sheetOption + .sheetOption,
+.sheetDisclosureBody + .sheetOption,
+.sheetOption + .sheetDisclosureBody {
+  border-top: 1px solid color-mix(in srgb, var(--vx-ink) 6%, transparent);
+}
+
+.sheetOption[data-selected] {
+  color: var(--vx-ink);
+}
+
+.sheetOption[data-disabled] {
+  color: var(--vx-faint);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .sheetOption:not([data-disabled]):hover {
+    color: var(--vx-ink);
+  }
+}
+
+/*
+ * The real native radio/checkbox, visually hidden — the row's semantics, not decoration (see
+ * `SheetOptionList`'s doc). Not `display: none`: a hidden input is unfocusable, which would take the
+ * arrow-key group behaviour with it. Standard visually-hidden clip, and `:focus-visible` on it is
+ * what draws the ROW's focus ring below.
+ */
+.sheetOptionInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sheetOption:has(.sheetOptionInput:focus-visible),
+.sheetOption:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: -2px;
+  border-radius: var(--vx-radius-ctrl);
+}
+
+.sheetOptionLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--vx-text-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheetOptionCheck {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--vx-accent);
+}
+
+.sheetDisclosureBody {
+  padding-bottom: var(--vx-space-stack-sm, 0.5rem);
+}
+
+/*
+ * The group heading — the package's MONO MICRO label (`docs/DESIGN-SPEC.md` §3), the same treatment
+ * `shell/app-sidebar.module.css`'s `.sectionLabel` draws for a nav section. It read as a head-font
+ * 13.5px line before, which is the same typography as the option rows it labels, so a group heading
+ * and its first option were indistinguishable — and the sheet's only remaining structure IS the
+ * heading, since it draws no rules between groups.
+ */
+.sheetLabel {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vx-faint);
 }
 
 /*
@@ -182,6 +407,12 @@
   font-weight: 550;
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
+}
+
+/* The sheet's `SheetField` heading sits 2px off its list — the mono micro step above is small
+ * enough that the default flow gap read as part of the first row. */
+.sheetField > .sheetLabel {
+  margin-bottom: 2px;
 }
 
 /* 44px rows — the one sheet dimension C15 pins. */
@@ -218,8 +449,94 @@
   min-height: inherit;
 }
 
-.sheetFooter {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: var(--mantine-spacing-xs, 0.625rem);
+/* ── ControlGroup ─────────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * Adjacent controls joined into one box (`docs/CONTROLS-SPEC.md` §3, `control-group.tsx`).
+ *
+ * `flex: none` and `nowrap`: a joined set that wrapped would break in the middle of the box it is
+ * pretending to be, which is worse than overflowing. It is the same reasoning `.pillSlot` uses —
+ * a group is one unit for the purposes of the row's fold arithmetic.
+ */
+.group {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+.group[data-gap='tight'] {
+  gap: var(--vx-space-control-gap, 0.375rem);
+}
+
+.group[data-gap='none'] {
+  gap: 0;
+}
+
+/*
+ * The hairline BETWEEN two joined children is the one divider in the control tier, and it has to be
+ * drawn here because `cssVariablesResolver` points `--mantine-color-default-border` at `transparent`
+ * on purpose (depth is a shadow, `docs/DESIGN-SPEC.md` §8). Same 12%-ink value `.pill` uses, so a
+ * joined pill row and a joined button row read as the same family.
+ *
+ * Scoped to `[data-variant='default']` so a `filled` child keeps its fill edge: a border drawn on a
+ * filled button paints a rim in a colour that is neither the fill nor the surface.
+ */
+.group[data-gap='none'] > [data-variant='default'] {
+  border-color: color-mix(in srgb, var(--vx-ink) 12%, transparent);
+}
+
+/*
+ * `-1px` collapses the two adjacent 1px borders into ONE. Without it a joined pair carries a 2px
+ * rule down the middle, which reads as a gap that someone forgot to remove rather than as a divider.
+ */
+.group[data-gap='none'] > * + * {
+  margin-inline-start: -1px;
+}
+
+/*
+ * The radius lives on the OUTER ends only — that single rule is what turns three boxes into one box.
+ * `:only-child` is excluded on both ends so a one-child group (a conditional render that dropped the
+ * other two) keeps its normal shape instead of losing half its corners.
+ */
+.group[data-gap='none'] > *:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.group[data-gap='none'] > *:first-child:not(:only-child) {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.group[data-gap='none'] > *:last-child:not(:only-child) {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+/*
+ * A hovered or focused child has to paint its FULL border, including the edge it is sharing — the
+ * negative margin means the next sibling is drawn over it otherwise, so a focus ring lost its right
+ * side and read as a rendering glitch. `position: relative` is what makes `z-index` apply.
+ */
+.group[data-gap='none'] > *:hover,
+.group[data-gap='none'] > *:focus-visible,
+.group[data-gap='none'] > *[data-active] {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * `ViewTabs`' phone form past `PHONE_TRACK_MAX` options is a `Select`, and a Mantine input resolves
+ * its own width from its container — which in a `WidgetHeader`'s `actions` slot (a `flex: 0 0 auto`
+ * inline-flex box) came out at 216px. Measured on the playground's `Controls (mobile)` page at 390px:
+ * the section header's title row was 364px wide, the Select took 252px of it with the count tag, and
+ * `Customers` rendered as `Cust…`. A tab control that truncates the heading it sits beside has the
+ * priority backwards — the heading names the section, the tabs are one of its controls.
+ *
+ * The bound is the widest single option label plus the chevron, not a fraction of the row: it must be
+ * the same box regardless of what is to its left.
+ */
+.phoneSelect {
+  max-width: 9rem;
+  flex: 0 1 auto;
 }

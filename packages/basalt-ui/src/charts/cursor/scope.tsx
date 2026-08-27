@@ -11,9 +11,12 @@ export type ChartCursorScopeProps = {
 
 /**
  * ISOLATES its subtree onto a private cursor store — the inverse of the removed `ChartHoverSync`, which
- * had to be mounted to enable sharing at all. Charts share a cursor by default now; wrap a group
- * in this only when it must NOT follow the rest of the page (e.g. two independent dashboards
- * rendered side by side over the same calendar).
+ * had to be mounted to enable sharing at all. Charts share a cursor by default now, AND the shared
+ * cursor partitions automatically by x-domain kind (`DomainKind`, derived from each chart's own
+ * data in `useChartCursor`) — a categorical chart never follows a date chart just because both
+ * happen to be on the page, with nothing to configure. `ChartCursorScope` is no longer the tool for
+ * that case. What it is still for: isolating two charts that share the same domain KIND but are
+ * semantically unrelated — two different tenants' date ranges rendered side by side on one page.
  */
 export function ChartCursorScope({ children }: ChartCursorScopeProps) {
   const store = useMemo(() => createCursorStore(), [])

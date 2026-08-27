@@ -229,7 +229,7 @@ describe('BasaltShell collapse persistence', () => {
 
 /**
  * Law C14 — an empty home renders nothing, so no route pays for a reserved row. This is the
- * assertion the spec names as the law's gate: through 1.26.0 the mobile header was a 97px SUM whose
+ * assertion the spec names as the law's gate: through 1.25.0 the mobile header was a 97px SUM whose
  * second row (`appHeaderMobileActionsHeight`, 52px) was reserved on every route whether or not the
  * page portalled anything into it. Both tokens are deleted; the header is `appShellHeaderHeight` at
  * every width, and an empty `PageBar` adds no node in either place.
@@ -272,7 +272,7 @@ describe('BasaltShell header height (law C14)', () => {
 })
 
 /**
- * `globalActions` is DECLARED DATA since 1.27.0 (`GlobalAction[]`, was `ReactNode`), which is what
+ * `globalActions` is DECLARED DATA since 1.26.0 (`GlobalAction[]`, was `ReactNode`), which is what
  * lets basalt project it onto mobile at all: the first two ride the bar, the rest fold into the
  * header's ONE kebab, and a `'hidden'` one is dropped below `sm`. A `ReactNode` slot could express
  * none of that, which is why every consumer hand-rolled a responsive twin instead.

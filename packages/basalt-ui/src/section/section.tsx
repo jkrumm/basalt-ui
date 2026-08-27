@@ -14,7 +14,11 @@
  *
  * `collapsible` state persists via `createPersistedState('basalt:section:<persistKey>')` when
  * `persistKey` is given, else it is local `useState` — the header always stays drawn, only the body
- * unmounts.
+ * unmounts. `defaultOpen` picks the state a first visit lands on; a persisted value outranks it.
+ *
+ * `summary` renders under the header and survives a collapse. That is the whole reason it is a
+ * separate slot rather than the first child: a section a reader folded away should still state its
+ * headline figures, or folding it costs them the numbers they were watching.
  *
  * `id` turns the root into a scroll anchor, offset by both the shell header height and the
  * `PageBar`'s measured height (`--basalt-page-bar-h`, wave 4) so an anchor-jumped heading isn't
@@ -56,6 +60,13 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier'> & {
   /** Persists the fold state at `basalt:section:<persistKey>`. Omit for a local, unpersisted fold
    * (`useState`). */
   persistKey?: string
+  /** The fold state a section opens on, respected only while no persisted value exists — a section
+   * a reader has closed stays closed. `false` is what a long secondary block wants. @default true */
+  defaultOpen?: boolean
+  /** Rendered directly under the header and ALWAYS visible, collapsed or not: a collapsed section
+   * still states its headline figures, which is what makes collapsing it a real option. Keep it to
+   * one row — the body is what `children` is for. */
+  summary?: ReactNode
   /** Turns the root into a scroll anchor (`id` + `scroll-margin-top` cleared for both sticky bars). */
   id?: string
   children: ReactNode
@@ -153,10 +164,12 @@ export function Section({
   tabs,
   collapsible = false,
   persistKey,
+  defaultOpen = true,
+  summary,
   id,
   children,
 }: SectionProps) {
-  const [open, setOpen] = useSectionOpen(persistKey, true)
+  const [open, setOpen] = useSectionOpen(persistKey, defaultOpen)
   const bodyId = useId()
 
   if (actions !== undefined) warnPastActionBudget(title, actions)
@@ -196,6 +209,7 @@ export function Section({
         {...(count !== undefined && { count })}
         {...(headerActions !== undefined && { actions: headerActions })}
       />
+      {summary !== undefined && <div className={classes.summary}>{summary}</div>}
       {open && (
         <div id={bodyId} className={classes.body}>
           {children}

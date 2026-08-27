@@ -72,8 +72,8 @@ local bin like everything else. See the note below.
 bunx basalt-ui init         # FIRST STEP: scaffold .claude/rules/ + .claude/skills/, managed CLAUDE.md block, DESIGN.md seed, toolchain seeds
 basalt-ui --version         # one bare line, exit 0 — which CLI is actually running (also -v / version)
 basalt-ui check-theme       # fail on off-palette colors in consumer source
-basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block)
-basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted
+basalt-ui sync              # reconcile managed files (.claude/rules/, .claude/skills/, CLAUDE.md block) + delete the ones this version retired
+basalt-ui sync --check      # CI freshness gate — exits non-zero if any managed file drifted or a retired one is still present
 basalt-ui doctor            # integration health — SKIPPED is a third outcome and exits non-zero
 bunx basalt-ui tokens:css   # emit the --vx-* stylesheet (no React, no Mantine, no bundler) — bunx ONLY if basalt is not installed
 bunx basalt-ui fonts:css    # emit the shipped --basalt-font-* stacks — same exception

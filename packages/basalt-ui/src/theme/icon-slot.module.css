@@ -1,0 +1,47 @@
+/*
+ * The framework's ONE icon box (`docs/CONTROLS-SPEC.md` §3) — see `icon-slot.tsx` for why every
+ * `icon` prop in the public API renders through it.
+ *
+ * The box is a FIXED square, not a shrink-to-fit inline box: `width`/`height` are declared on the
+ * slot itself so the row's geometry is decided by the SLOT and never by the glyph the caller
+ * happened to pass. `--vx-space-icon-size` is the host's override hook (a `WidgetHeader` tier, a
+ * collapsed rail), defaulting to the 16px the control tier draws; it is deliberately NOT a
+ * `--vx-space-*` token declared by `tokens/index.ts` — no home needs it globally, and a token would
+ * invite a call site to set it.
+ */
+.slot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--vx-space-icon-size, 1rem);
+  height: var(--vx-space-icon-size, 1rem);
+  /* The glyph is `display: block` below, so the slot has no text to lead — a residual line box is
+   * what pushed a 16px icon a fraction below the optical centre of a 30px button. */
+  line-height: 0;
+}
+
+/*
+ * `width`/`height: 100%` is what makes ANY consumer glyph land on the tier. An inline `<svg>`
+ * carries its own `width`/`height` attributes (14, 20, 24 — or none at all, which paints at the
+ * `viewBox`'s intrinsic size, or 300×150 with no `viewBox` either), and those attributes are
+ * PRESENTATION attributes: they lose to any CSS declaration. So the slot restates them from the
+ * box, and the caller's own numbers stop mattering.
+ *
+ * `display: block` removes the baseline the glyph would otherwise sit on. An inline `<svg>` aligns
+ * its own bottom edge to the parent's text baseline, which leaves the descender gap BELOW it inside
+ * the box — the icon then paints high or low of centre by a fraction of the line box, and by a
+ * DIFFERENT fraction per font stack. `object-fit: contain` keeps a non-square glyph whole rather
+ * than stretching it to the square box.
+ *
+ * `img` and `picture` are covered too: an icon slot filled from a sprite sheet or a remote asset is
+ * the same geometry problem, and a consumer's icon set is as likely to be one as the other.
+ */
+.slot > svg,
+.slot > img,
+.slot > picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

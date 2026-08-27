@@ -21,7 +21,7 @@ import {
 } from '@tanstack/react-router'
 import { field } from '../router-tanstack/field'
 import { createSearchStore } from '../router-tanstack/search-store'
-import { CompareFilter } from './compare-filter'
+import { COMPARE_LABELS, COMPARE_VALUES, CompareFilter } from './compare-filter'
 import { MultiSelectFilter } from './multi-select-filter'
 import { RangeFilter } from './range-filter'
 import type { RangeCustomPickerProps } from './range-filter'
@@ -105,17 +105,22 @@ describe('SelectFilter', () => {
     fields: { currency: field.enum(['USD', 'EUR'], 'USD') },
   })
 
-  test('reads the filter name at its default and the option once set, and writes the URL', async () => {
+  test('reads the SELECTED option at the fallback too, and writes the URL', async () => {
+    // The pill is a READOUT, so it prints the value at every value — including the field's default.
+    // It used to print the filter's NAME while `isDefault` held, which is how the playground's bar
+    // read `Compare` over a field holding `'previous'`. `data-active` is the channel that says
+    // "touched", and it is still the only one.
     const router = await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
       Page: () => <SelectFilter field={store.field.currency} label="Currency" />,
     })
 
-    const pill = screen.getByRole('button', { name: 'Currency' })
+    const pill = screen.getByRole('button', { name: 'USD' })
     expect(pill.hasAttribute('data-active')).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Currency' })).toBeNull()
 
-    await openPill('Currency')
+    await openPill('USD')
     fireEvent.click(screen.getByRole('radio', { name: 'EUR', hidden: true }))
 
     await waitFor(() => {
@@ -147,26 +152,164 @@ describe('SelectFilter', () => {
   })
 })
 
+/**
+ * The runtime-catalogue shape: `options` overrides the field's own rows, and a `StringField` handle
+ * becomes legal once it does. Both halves are asserted through a REAL `createSearchStore`, because
+ * the string lane is where a hand-rolled `value`/`onChange` would look identical and write nothing.
+ */
+describe('SelectFilter — options as a runtime catalogue', () => {
+  const store = createSearchStore({
+    key: 'c-select-options',
+    fields: { currency: field.enum(['USD', 'EUR'], 'USD'), projectId: field.string() },
+  })
+
+  const RATES = [
+    { value: 'USD', label: 'USD · 1.00' },
+    { value: 'EUR', label: 'EUR · 1.08' },
+  ]
+  const PROJECTS = [
+    { value: 'argo', label: 'Argo' },
+    { value: 'linewatch', label: 'Linewatch' },
+    { value: 'retired', label: 'Retired app', disabled: true },
+  ]
+
+  test('the rows and their labels come from the prop, and the field is still what is written', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <SelectFilter field={store.field.currency} label="Currency" options={RATES} />,
+    })
+
+    // The pill reads the catalogue's label for the CURRENT value, fallback included — `USD · 1.00`,
+    // never `Currency`.
+    await openPill('USD · 1.00')
+    // The override is whole, not a merge: the field's own bare `EUR` row is GONE, which is the
+    // property a merge would silently break.
+    expect(screen.queryByRole('radio', { name: 'EUR', hidden: true })).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: 'EUR · 1.08', hidden: true }))
+
+    await waitFor(() => {
+      expect(search(router)['currency']).toBe('EUR')
+    })
+    expect(screen.getByRole('button', { name: 'EUR · 1.08' })).toBeDefined()
+  })
+
+  test('a string field plus options round-trips an id no enum could have declared', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <SelectFilter field={store.field.projectId} label="Project" options={PROJECTS} />,
+    })
+
+    expect(screen.getByRole('button', { name: 'Project' })).toBeDefined()
+    await openPill('Project')
+    fireEvent.click(screen.getByRole('radio', { name: 'Argo', hidden: true }))
+
+    await waitFor(() => {
+      expect(search(router)['projectId']).toBe('argo')
+    })
+    expect(screen.getByRole('button', { name: 'Argo' })).toBeDefined()
+  })
+
+  test('a deep link into that id set is read with no interaction at all', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?projectId=linewatch',
+      Page: () => <SelectFilter field={store.field.projectId} label="Project" options={PROJECTS} />,
+    })
+    expect(screen.getByRole('button', { name: 'Linewatch' })).toBeDefined()
+  })
+
+  test('a disabled catalogue row is offered and refused — it still labels the value it names', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?projectId=retired',
+      Page: () => <SelectFilter field={store.field.projectId} label="Project" options={PROJECTS} />,
+    })
+    // A live catalogue cannot express "archived" by omitting the row — the URL may already point at
+    // it, and a missing row would read as the filter's default.
+    expect(screen.getByRole('button', { name: 'Retired app' })).toBeDefined()
+    await openPill('Retired app')
+    expect(
+      screen.getByRole('radio', { name: 'Retired app', hidden: true }).hasAttribute('disabled'),
+    ).toBe(true)
+  })
+})
+
 describe('CompareFilter', () => {
   const store = createSearchStore({
     key: 'c-compare',
     fields: { compare: field.enum(['none', 'previous', 'year'], 'none') },
   }).labels({ compare: { none: 'No comparison', previous: 'Previous period', year: 'Last year' } })
 
-  test('defaults its label to Compare and writes the chosen basis', async () => {
+  test('reads the selected basis at the fallback too, and writes the chosen one', async () => {
     const router = await mountPage({
       validateSearch: store.validateSearch,
       entry: '/dashboard',
       Page: () => <CompareFilter field={store.field.compare} />,
     })
 
-    await openPill('Compare')
+    // At the fallback the pill reads `No comparison`, not `Compare` — the exact regression the
+    // playground's bar showed, where the pill said `Compare` while the URL said `previous`.
+    await openPill('No comparison')
     fireEvent.click(screen.getByRole('radio', { name: 'Previous period', hidden: true }))
 
     await waitFor(() => {
       expect(search(router)['compare']).toBe('previous')
     })
     expect(screen.getByRole('button', { name: 'Previous period' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Compare' })).toBeNull()
+  })
+
+  test('a consumer label wins over basalt’s default for the same value', async () => {
+    // This store labels `year` as `Last year`. basalt's default is `Same period last year`; a
+    // deliberate label is not something the framework overrides.
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?compare=year',
+      Page: () => <CompareFilter field={store.field.compare} />,
+    })
+    expect(screen.getByRole('button', { name: 'Last year' })).toBeDefined()
+  })
+
+  test('label= still names the POPOVER, which is the only thing it names now', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <CompareFilter field={store.field.compare} />,
+    })
+    await openPill('No comparison')
+    expect(screen.getByRole('radiogroup', { name: 'Compare', hidden: true })).toBeDefined()
+  })
+})
+
+describe('CompareFilter — the three option labels are basalt’s, not each app’s', () => {
+  // An UNLABELLED field: `field.enum` labels each option with the raw value until `store.labels()`
+  // is called, so this popover used to read `none` / `previous` / `year` and every consumer wrote
+  // the same three strings itself. `COMPARE_LABELS` is the default the control now supplies.
+  const store = createSearchStore({
+    key: 'c-compare-unlabelled',
+    fields: { compare: field.enum(['none', 'previous', 'year'], 'none') },
+  })
+
+  test('an unlabelled field still renders the three spec’d strings', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <CompareFilter field={store.field.compare} />,
+    })
+
+    expect(COMPARE_LABELS).toEqual({
+      none: 'No comparison',
+      previous: 'Previous period',
+      year: 'Same period last year',
+    })
+
+    await openPill('No comparison')
+    for (const value of COMPARE_VALUES) {
+      expect(screen.getByRole('radio', { name: COMPARE_LABELS[value], hidden: true })).toBeDefined()
+    }
+    expect(screen.queryByRole('radio', { name: 'previous', hidden: true })).toBeNull()
   })
 })
 
@@ -203,6 +346,33 @@ describe('MultiSelectFilter', () => {
       Page: () => <MultiSelectFilter field={store.field.channels} label="All channels" />,
     })
     expect(screen.getByRole('button', { name: 'All channels' })).toBeDefined()
+  })
+
+  test("options relabels the boxes while the values stay the field's own", async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => (
+        <MultiSelectFilter
+          field={store.field.channels}
+          label="All channels"
+          noun="channels"
+          options={[
+            { value: 'web', label: 'web · 1.2k' },
+            { value: 'email', label: 'email · 340' },
+          ]}
+        />
+      ),
+    })
+
+    await openPill('All channels')
+    fireEvent.click(screen.getByRole('checkbox', { name: 'web · 1.2k', hidden: true }))
+
+    await waitFor(() => {
+      expect(search(router)['channels']).toEqual(['web'])
+    })
+    // Two rows shown, not the field's three — so `1 channels` is counted against what is offered.
+    expect(screen.getByRole('button', { name: '1 channels' })).toBeDefined()
   })
 })
 
@@ -267,6 +437,18 @@ describe('RangeFilter', () => {
     await waitFor(() => {
       expect(search(router)['range']).toBe('7d')
     })
+  })
+
+  test('the pill never reads `label`, at the fallback or anywhere else', async () => {
+    // Same law as `SelectFilter`/`CompareFilter`: `label` is the popover heading and the accessible
+    // name, and the pill text is the value. `30d` here IS the fallback.
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => <RangeFilter field={store.field.range} label="Window" customPicker={Picker} />,
+    })
+    expect(screen.getByRole('button', { name: '30d' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Window' })).toBeNull()
   })
 
   test('the preset track carries the filter name — a radiogroup must not be anonymous', async () => {

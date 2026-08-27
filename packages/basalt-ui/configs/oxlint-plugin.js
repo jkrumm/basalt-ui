@@ -672,9 +672,6 @@ const RAW_SCROLL_CONTAINER_MESSAGE =
 const OVERFLOW_KEYS = new Set(['overflow', 'overflowY'])
 const SCROLLING_VALUES = new Set(['auto', 'scroll'])
 
-/** The two home elements a horizontal scroll region is banned UNDER, slot or body alike (law C7). */
-const SCROLL_HOME_TAGS = new Set(['Section', 'ChartCard'])
-
 const RAW_SCROLL_CONTAINER_HOME_MESSAGE =
   'Horizontal scroll region inside a home — a page bar, a section header and a chart card never ' +
   'scroll sideways and never wrap: overflow folds into a `More` menu (actions) or a `Filters (n)` ' +
@@ -682,16 +679,26 @@ const RAW_SCROLL_CONTAINER_HOME_MESSAGE =
   'row of controls is the shape that law replaces. (basalt/raw-scroll-container)'
 
 /**
- * Is this node inside a home — a slot attribute, or anywhere under a `Section` / `ChartCard`?
+ * The basalt home SLOT this node is written in — the owner binding of the enclosing `actions` /
+ * `filters` / `tabs` / `sync` / `filtersEnd` attribute, or undefined.
  *
- * The widened half of the rule (C7) is scoped by ANCESTRY only, with no hoisted-binding lookup: a
- * style object hoisted to a `const` has no JSX ancestor at all, so a hoisted
- * `{ overflowX: 'auto' }` used inside a Section is a known false negative here — the same gap
- * `chart-legend-literal` documents for a hoisted `items` array, and for the same reason (following
- * it means local flow analysis for a bypass nobody reaches by accident).
+ * The C7 widening is scoped to slot VALUES, not to "anywhere under a `Section`/`ChartCard`". It
+ * used to accept any such ancestor, body children included, which made every horizontally
+ * scrolling `<Table>`, `<pre>` or `CodeBlock` on a page an `error` carrying the C7 message about
+ * "a sideways-scrolling row of controls" — a claim that was false for exactly the pattern this
+ * rule's own comment above calls legitimate. A section BODY is page content, not a control row, so
+ * it is out of scope again, and the walk stops at the slot ATTRIBUTE (the boundary `SLOT_ATTRS`
+ * draws for every control rule).
+ *
+ * Scoped by ANCESTRY only, with no hoisted-binding lookup: a style object hoisted to a `const` has
+ * no JSX ancestor at all, so a hoisted `{ overflowX: 'auto' }` handed to a slot is a known false
+ * negative here — the same gap `chart-legend-literal` documents for a hoisted `items` array, and
+ * for the same reason (following it means local flow analysis for a bypass nobody reaches by
+ * accident).
  */
-function isInHomeContext(node) {
-  return enclosingSlotAttribute(node) !== undefined || hasAncestorTag(node, SCROLL_HOME_TAGS)
+function enclosingHomeOwner(node) {
+  const attr = enclosingSlotAttribute(node)
+  return attr === undefined ? undefined : slotOwnerBinding(attr)
 }
 
 /**
@@ -708,9 +715,10 @@ function isInHomeContext(node) {
  * the incumbent branch stays `error` — the only way to buy a runway would have been a second rule
  * id, which is the bundled-vs-split trade the three boundary rules were split apart over, in the
  * opposite direction. What the widening does instead is stay narrow: `overflowX` and
- * `ScrollArea scrollbars="x"` are policed ONLY inside a home (see {@link isInHomeContext}), which
- * is where C7 actually applies, so the set of newly-rejected code is small enough to fix rather
- * than schedule. A consumer who disagrees turns the whole rule down in their own config.
+ * `ScrollArea scrollbars="x"` are policed ONLY inside a basalt home SLOT (see
+ * {@link enclosingHomeOwner}), which is where C7 actually applies, so the set of newly-rejected
+ * code is small enough to fix rather than schedule. A consumer who disagrees turns the whole rule
+ * down in their own config.
  */
 const rawScrollContainer = {
   meta: {
@@ -721,7 +729,18 @@ const rawScrollContainer = {
     schema: [],
   },
   create(context) {
+    const homes = new Set()
+    const mantineImports = new Map()
+    const ownTree = isBasaltOwnSource(getFilename(context))
+    // Both halves report at `Program:exit`: whether the enclosing `Section` is BASALT's is an
+    // import-list question, and the ancestry that finds the slot is only walkable during the visit.
+    const candidates = []
+
     return {
+      ImportDeclaration(node) {
+        collectBasaltImports(node, homes, ownTree)
+        collectMantineImports(node, mantineImports)
+      },
       Property(node) {
         const key = node.key
         const keyName =
@@ -730,26 +749,37 @@ const rawScrollContainer = {
         const universal = OVERFLOW_KEYS.has(keyName)
         if (!universal && keyName !== 'overflowX') return
         if (!isStringLiteral(node.value) || !SCROLLING_VALUES.has(node.value.value)) return
-        // The C7 widening: `overflowX` is only a violation INSIDE a home (see isInHomeContext).
-        if (!universal && !isInHomeContext(node)) return
-        if (hasThemeAllow(context, node, 'raw-scroll-container')) return
-        context.report({
-          node,
-          message: universal ? RAW_SCROLL_CONTAINER_MESSAGE : RAW_SCROLL_CONTAINER_HOME_MESSAGE,
-        })
+        candidates.push({ node, universal, home: universal ? undefined : enclosingHomeOwner(node) })
       },
       // `<ScrollArea scrollbars="x">` — the same horizontal scroll region written as a component.
       // Only inside a home, exactly like the `overflowX` half above; a ScrollArea is otherwise the
-      // shape this whole rule steers people TOWARD.
+      // shape this whole rule steers people TOWARD. Mantine-provenanced like every other tag test:
+      // a consumer's own `ScrollArea` wrapper is not the component this doctrine is about.
       JSXAttribute(node) {
         if (node.name?.name !== 'scrollbars') return
         const value = unwrapExpressionContainer(node.value)
         if (!isStringLiteral(value) || value.value !== 'x') return
         const owner = node.parent
-        if (owner?.type !== 'JSXOpeningElement' || jsxTagName(owner.name) !== 'ScrollArea') return
-        if (!isInHomeContext(node)) return
-        if (hasThemeAllow(context, node, 'raw-scroll-container')) return
-        context.report({ node, message: RAW_SCROLL_CONTAINER_HOME_MESSAGE })
+        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
+        candidates.push({
+          node,
+          universal: false,
+          home: enclosingHomeOwner(node),
+          name: owner.name,
+        })
+      },
+      'Program:exit'() {
+        for (const { node, universal, home, name } of candidates) {
+          // The C7 widening: only inside a BASALT home slot (see enclosingHomeOwner).
+          if (!universal && (home === undefined || !homes.has(home))) continue
+          if (name !== undefined && resolveMantineTag(name, mantineImports) !== 'ScrollArea')
+            continue
+          if (hasThemeAllow(context, node, 'raw-scroll-container')) continue
+          context.report({
+            node,
+            message: universal ? RAW_SCROLL_CONTAINER_MESSAGE : RAW_SCROLL_CONTAINER_HOME_MESSAGE,
+          })
+        }
       },
     }
   },
@@ -1553,6 +1583,9 @@ const SHADOW_ALIASES = {
   FilterBar: 'PageBar',
   HeroCard: 'StatCard',
   HeroStats: 'StatCard',
+  ButtonGroup: 'ControlGroup',
+  ButtonRow: 'ControlGroup',
+  JoinedButtons: 'ControlGroup',
 }
 
 function shadowAliasMessage(name, canonical) {
@@ -1726,9 +1759,12 @@ const handRolledShell = {
 const SLOT_ATTRS = new Set(['actions', 'filters', 'tabs', 'sync', 'filtersEnd'])
 
 /**
- * The elements whose slot props ARE tiered homes. Both halves of the test matter: `actions` on a
- * consumer's own `<Toolbar actions={…}>` is not a basalt home, and a `Section`'s CHILDREN are not
- * a slot — so the walk stops at the slot ATTRIBUTE, never at the element.
+ * The elements whose slot props ARE tiered homes. All THREE halves of the test matter: `actions` on
+ * a consumer's own `<Toolbar actions={…}>` is not a basalt home, a `Section`'s CHILDREN are not a
+ * slot (so the walk stops at the slot ATTRIBUTE, never at the element), and the tag must resolve to
+ * a component imported FROM basalt ({@link collectBasaltImports}) — `Section` is one of the most
+ * common local component names there is, and matching it by bare name made a consumer's own
+ * section an `error`-level tiered home.
  *
  * `SettingsSection` is here for its `actions` header slot (`CtlSlot`-wrapped); `SettingsRow` is
  * NOT — its `control` is the form-row home and keeps Mantine's `md` tier. See {@link SLOT_ATTRS}.
@@ -1787,6 +1823,27 @@ const CONTROL_OWNER_NAMES = new Set([
   'CtlSlot',
 ])
 
+/**
+ * Where a raw selection control legitimately lives outside a TIERED home: a settings row, an
+ * overlay, a composer. Every one of these is a place the tier does not apply, so the advice ("move
+ * it into a home slot") would be wrong rather than merely unwelcome.
+ *
+ * `SettingsRow` is the form row — law C1's third home, not an exception to C1 — so
+ * `control-outside-home` treating it as a home is the whole of the enforcement a settings page
+ * gets, and the two tier rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
+ *
+ * Declared with the shared slot walk rather than beside `control-outside-home` because three rules
+ * read it: that rule's ancestry exemption, and {@link hostedInsideSlot} for the two tier rules.
+ */
+const CONTROL_HOST_TAGS = new Set([
+  'SettingsRow',
+  'Modal',
+  'Drawer',
+  'Popover.Dropdown',
+  'Menu.Dropdown',
+  'Composer',
+])
+
 /** How far an ancestry walk climbs before giving up — a JSX tree this deep is not a slot value. */
 const ANCESTRY_MAX_DEPTH = 60
 
@@ -1807,23 +1864,104 @@ function jsxRootName(nameNode) {
   return jsxRootName(nameNode.object)
 }
 
-/** Local names imported from any `@mantine/*` entry — the provenance test the tag rules apply. */
+/** The value a namespace import (`import * as M from '@mantine/core'`) records for its local name. */
+const MANTINE_NAMESPACE = Symbol('mantine-namespace')
+
+/**
+ * Local name → the `@mantine/*` name it was imported UNDER — the provenance test the tag rules
+ * apply, and a MAP rather than a set because the two are not the same string. `Select as
+ * MantineSelect` is the canonical way a consumer wraps a Mantine component, and keying membership
+ * on the local name meant `<MantineSelect value onChange/>` in a slot — the exact C1/C3 violation
+ * `hand-rolled-filter` exists for — was invisible. A namespace import records
+ * {@link MANTINE_NAMESPACE} so `<M.SegmentedControl>` resolves through the member path instead.
+ */
 function collectMantineImports(node, into) {
   const source = node.source?.value
   if (typeof source !== 'string' || !source.startsWith('@mantine/')) return
+  for (const spec of node.specifiers ?? []) {
+    const local = spec.local?.name
+    if (typeof local !== 'string') continue
+    if (spec.type === 'ImportNamespaceSpecifier') into.set(local, MANTINE_NAMESPACE)
+    else into.set(local, spec.imported?.name ?? spec.imported?.value ?? local)
+  }
+}
+
+/**
+ * The `@mantine/*` name a JSX tag resolves to, or undefined when the tag is not a Mantine binding.
+ *
+ * `<Select>` → `Select`; `import { Select as MantineSelect }` + `<MantineSelect>` → `Select`;
+ * `import { Chip as C }` + `<C.Group>` → `Chip.Group`; `import * as M` + `<M.SegmentedControl>` →
+ * `SegmentedControl`. Resolution already implies provenance, so a caller tests the RESULT against
+ * `RAW_FILTER_TAGS` and needs no separate import-membership check.
+ */
+function resolveMantineTag(nameNode, mantineImports) {
+  const tag = jsxTagName(nameNode)
+  const root = jsxRootName(nameNode)
+  if (tag === undefined || root === undefined) return undefined
+  const imported = mantineImports.get(root)
+  if (imported === undefined) return undefined
+  const member = tag.slice(root.length)
+  if (imported !== MANTINE_NAMESPACE) return `${imported}${member}`
+  return member === '' ? undefined : member.slice(1)
+}
+
+/** The package's own `src/` — where a RELATIVE import of `WidgetHeader` is still basalt's own. */
+const BASALT_OWN_SRC = `${resolvePath(PACKAGE_ROOT, 'src')}/`
+
+/** `basalt-ui` and every published subpath — the sources a home component is imported FROM. */
+const BASALT_IMPORT_SOURCE = /^basalt-ui(?:\/|$)/
+
+/** A relative specifier — `./section`, `../widget-header`. */
+const RELATIVE_IMPORT_SOURCE = /^\.\.?\//
+
+/** Is the linted file part of basalt's OWN source tree — the dogfood side of the owner test? */
+function isBasaltOwnSource(filename) {
+  return filename.startsWith(BASALT_OWN_SRC)
+}
+
+/**
+ * Local names that resolve to a basalt HOME component — the owner-tag counterpart of
+ * {@link collectMantineImports}, and for the same reason: `Section` is one of the most common local
+ * component names there is (a marketing page, a docs layout), and reading a consumer's own
+ * `<Section actions={…}>` as a tiered home made two `error`-level rules fire on code basalt has no
+ * claim over.
+ *
+ * A relative import counts only inside basalt's own `src/` (`ownTree`), where `section.tsx` and
+ * `data-table.tsx` render `<WidgetHeader actions={…}>`/`<FilterSet>` through `../widget-header`
+ * rather than through the package name — without that half the dogfood surface goes silent, which
+ * is the blind spot that let the 1.4.0 regression reach consumers.
+ *
+ * Known accepted false negative: a consumer re-exporting basalt's `Section` through their own
+ * barrel (`from '@/ui'`) — the same gap the Mantine provenance test already accepts.
+ */
+function collectBasaltImports(node, into, ownTree) {
+  const source = node.source?.value
+  if (typeof source !== 'string') return
+  if (!BASALT_IMPORT_SOURCE.test(source) && !(ownTree && RELATIVE_IMPORT_SOURCE.test(source))) {
+    return
+  }
   for (const spec of node.specifiers ?? []) {
     if (spec.local?.name !== undefined) into.add(spec.local.name)
   }
 }
 
-/** Is this JSXAttribute a home's slot prop — the right NAME on the right OWNER? */
-function isSlotAttribute(attr) {
-  if (attr === null || attr === undefined || attr.type !== 'JSXAttribute') return false
+/**
+ * The BINDING a home's slot prop hangs off — `PageBar` for `<PageBar filters={…}>` — or undefined
+ * when `attr` is not a slot-shaped prop on a home-shaped tag.
+ *
+ * Provenance (is that `Section` basalt's?) is deliberately NOT tested here: the answer needs the
+ * file's import list, which is only complete at `Program:exit`, while the ancestry a caller walks to
+ * reach this attribute is only walkable during the visit. So the walk captures the NAME and the
+ * caller resolves it against {@link collectBasaltImports}'s set afterwards.
+ */
+function slotOwnerBinding(attr) {
+  if (attr === null || attr === undefined || attr.type !== 'JSXAttribute') return undefined
   const name = attr.name?.name
-  if (typeof name !== 'string' || !SLOT_ATTRS.has(name)) return false
+  if (typeof name !== 'string' || !SLOT_ATTRS.has(name)) return undefined
   const owner = attr.parent
-  if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return false
-  return SLOT_OWNER_TAGS.has(jsxTagName(owner.name) ?? '')
+  if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return undefined
+  if (!SLOT_OWNER_TAGS.has(jsxTagName(owner.name) ?? '')) return undefined
+  return jsxRootName(owner.name)
 }
 
 /** The home slot attribute that ENCLOSES `node`, or undefined. Stops at the attribute, never the element. */
@@ -1831,10 +1969,39 @@ function enclosingSlotAttribute(node) {
   let current = node.parent
   for (let depth = 0; current !== null && current !== undefined; depth++) {
     if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return undefined
-    if (isSlotAttribute(current)) return current
+    if (slotOwnerBinding(current) !== undefined) return current
     current = current.parent
   }
   return undefined
+}
+
+/**
+ * Does an OVERLAY (or a settings row) sit between `node` and the home slot it is written in?
+ *
+ * Colocating a trigger with its overlay in a slot — a `New` button beside the `<Modal>` it opens, a
+ * `Custom range` button beside its `<Popover.Dropdown>` — is the ordinary way to write both, and
+ * the overlay's own contents are NOT in the bar: they portal out of it, they are not tiered by the
+ * slot's `MantineThemeProvider`, and `control-outside-home` already declares every one of these a
+ * non-home ({@link CONTROL_HOST_TAGS}). Before this test the same overlay was exempt outside a slot
+ * and an `error` inside one.
+ *
+ * The walk stops at the slot attribute so an overlay ABOVE the home (a whole `PageBar` rendered
+ * inside a `Modal`) does not exempt the bar's own controls.
+ */
+function hostedInsideSlot(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return false
+    if (
+      current.type === 'JSXElement' &&
+      CONTROL_HOST_TAGS.has(jsxTagName(current.openingElement?.name) ?? '')
+    ) {
+      return true
+    }
+    if (current.type === 'JSXAttribute' && SLOT_ATTRS.has(current.name?.name ?? '')) return false
+    current = current.parent
+  }
+  return false
 }
 
 /** The name of the nearest enclosing `const x = …` binding — the hoisted-slot-value lookup. */
@@ -1894,28 +2061,47 @@ function collectSlotValueIdentifiers(node, into, depth = 0) {
  * So the ancestry facts are CAPTURED during the visit — while `node.parent` is walkable — and
  * resolved at `Program:exit`, when the slot-bound identifier set is complete. `capture()` returns a
  * descriptor, `resolve()` turns it into a verdict; nothing re-walks the tree after traversal ends.
+ *
+ * The descriptor holds the owner BINDING NAME rather than a boolean for the same reason: whether
+ * that `Section` is basalt's is answered by the import list (`noteImport`), which is also only
+ * complete at exit.
  */
-function createSlotContext() {
-  const slotBoundIdentifiers = new Set()
+function createSlotContext(context) {
+  const homes = new Set()
+  const ownTree = isBasaltOwnSource(getFilename(context))
+  /** Hoisted identifier → the owner BINDING of the slot it was handed to. */
+  const slotBoundIdentifiers = new Map()
   return {
+    /** Feed every ImportDeclaration here — this is where the owner provenance comes from. */
+    noteImport(node) {
+      collectBasaltImports(node, homes, ownTree)
+    },
     /** Feed every JSXAttribute here — a slot attribute contributes its value's identifiers. */
     note(attr) {
-      if (!isSlotAttribute(attr)) return
-      collectSlotValueIdentifiers(unwrapExpressionContainer(attr.value), slotBoundIdentifiers)
+      const owner = slotOwnerBinding(attr)
+      if (owner === undefined) return
+      const identifiers = new Set()
+      collectSlotValueIdentifiers(unwrapExpressionContainer(attr.value), identifiers)
+      for (const id of identifiers) slotBoundIdentifiers.set(id, owner)
     },
-    /** Snapshot `node`'s ancestry while it is walkable. */
+    /** Snapshot `node`'s ancestry while it is walkable — the owner NAME, resolved later. */
     capture(node) {
+      const attr = enclosingSlotAttribute(node)
       return {
-        direct: enclosingSlotAttribute(node) !== undefined,
+        directOwner: attr === undefined ? undefined : slotOwnerBinding(attr),
         declaratorName: enclosingDeclaratorName(node),
       }
     },
-    /** Is a captured node inside a home slot — directly, or via a hoisted binding? */
+    /** Is a captured node inside a BASALT home slot — directly, or via a hoisted binding? */
     resolve(captured) {
-      if (captured.direct) return true
-      return (
-        captured.declaratorName !== undefined && slotBoundIdentifiers.has(captured.declaratorName)
-      )
+      if (captured.directOwner !== undefined) return homes.has(captured.directOwner)
+      if (captured.declaratorName === undefined) return false
+      const hoistedOwner = slotBoundIdentifiers.get(captured.declaratorName)
+      return hoistedOwner !== undefined && homes.has(hoistedOwner)
+    },
+    /** Does `name` resolve to a basalt home component in this file? */
+    isHome(name) {
+      return name !== undefined && homes.has(name)
     },
   }
 }
@@ -1968,26 +2154,34 @@ const handRolledFilter = {
   },
   create(context) {
     if (isTestFile(context)) return {}
-    const slots = createSlotContext()
-    const mantineImports = new Set()
+    const slots = createSlotContext(context)
+    const mantineImports = new Map()
     const candidates = []
 
     return {
       ImportDeclaration(node) {
         collectMantineImports(node, mantineImports)
+        slots.noteImport(node)
       },
       JSXAttribute(node) {
         slots.note(node)
       },
       JSXOpeningElement(node) {
-        const tag = jsxTagName(node.name)
-        if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) return
-        candidates.push({ node, root: jsxRootName(node.name), captured: slots.capture(node) })
+        // Cheap pre-filter: the tag as WRITTEN, or any Mantine binding (an alias resolves at exit).
+        const root = jsxRootName(node.name)
+        if (!RAW_FILTER_TAGS.has(jsxTagName(node.name) ?? '') && !mantineImports.has(root)) return
+        candidates.push({
+          node,
+          name: node.name,
+          captured: slots.capture(node),
+          hosted: hostedInsideSlot(node),
+        })
       },
       'Program:exit'() {
-        for (const { node, root, captured } of candidates) {
-          if (root === undefined || !mantineImports.has(root)) continue
-          if (!slots.resolve(captured)) continue
+        for (const { node, name, captured, hosted } of candidates) {
+          const tag = resolveMantineTag(name, mantineImports)
+          if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) continue
+          if (hosted || !slots.resolve(captured)) continue
           if (hasThemeAllow(context, node, 'hand-rolled-filter')) continue
           context.report({ node, message: HAND_ROLLED_FILTER_MESSAGE })
         }
@@ -1997,24 +2191,6 @@ const handRolledFilter = {
 }
 
 // ── Rule 17 — control-outside-home ──────────────────────────────────────────────────────────────
-
-/**
- * Where a raw selection control legitimately lives outside a TIERED home: a settings row, an
- * overlay, a composer. Every one of these is a place the tier does not apply, so the advice ("move
- * it into a home slot") would be wrong rather than merely unwelcome.
- *
- * `SettingsRow` is the form row — law C1's third home, not an exception to C1 — so this rule
- * treating it as a home is the whole of the enforcement a settings page gets, and the two tier
- * rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
- */
-const CONTROL_HOST_TAGS = new Set([
-  'SettingsRow',
-  'Modal',
-  'Drawer',
-  'Popover.Dropdown',
-  'Menu.Dropdown',
-  'Composer',
-])
 
 const CONTROL_OUTSIDE_HOME_MESSAGE =
   'Raw Mantine selection control with no home — a filter, tab or action belongs in exactly one of ' +
@@ -2041,9 +2217,9 @@ const controlOutsideHome = {
   },
   create(context) {
     if (isTestFile(context)) return {}
-    const slots = createSlotContext()
+    const slots = createSlotContext(context)
     const owner = createControlOwnerProbe()
-    const mantineImports = new Set()
+    const mantineImports = new Map()
     const candidates = []
     let importsMantineForm = false
 
@@ -2051,25 +2227,28 @@ const controlOutsideHome = {
       ...owner.visitors,
       ImportDeclaration(node) {
         collectMantineImports(node, mantineImports)
+        slots.noteImport(node)
         if ((node.source?.value ?? '') === '@mantine/form') importsMantineForm = true
       },
       JSXAttribute(node) {
         slots.note(node)
       },
       JSXOpeningElement(node) {
-        const tag = jsxTagName(node.name)
-        if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) return
+        // Cheap pre-filter: the tag as WRITTEN, or any Mantine binding (an alias resolves at exit).
+        const root = jsxRootName(node.name)
+        if (!RAW_FILTER_TAGS.has(jsxTagName(node.name) ?? '') && !mantineImports.has(root)) return
         candidates.push({
           node,
-          root: jsxRootName(node.name),
+          name: node.name,
           captured: slots.capture(node),
           hosted: hasAncestorTag(node, CONTROL_HOST_TAGS),
         })
       },
       'Program:exit'() {
         if (importsMantineForm || owner.state.definesControl) return
-        for (const { node, root, captured, hosted } of candidates) {
-          if (root === undefined || !mantineImports.has(root)) continue
+        for (const { node, name, captured, hosted } of candidates) {
+          const tag = resolveMantineTag(name, mantineImports)
+          if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) continue
           if (hosted || slots.resolve(captured)) continue
           if (hasThemeAllow(context, node, 'control-outside-home')) continue
           context.report({ node, message: CONTROL_OUTSIDE_HOME_MESSAGE })
@@ -2092,11 +2271,53 @@ const CONTROL_SIZE_LITERAL_MESSAGE =
   '(basalt/control-size-literal)'
 
 /**
- * Every element inside a tiered home slot, not just the raw filters: a `Button size="xs"` dropped
- * into `PageBar.actions` is the same defect as a `Select size="xs"` there — one control in the bar
- * that is not 30px. The slot's hoisted `MantineThemeProvider` already resolves the tier with no
- * prop. A `SettingsRow`'s `control` is NOT a tiered slot (see {@link SLOT_ATTRS}): a form row keeps
- * Mantine's `md`, so the `size` written there is load-bearing rather than redundant.
+ * The elements the slot's own `MantineThemeProvider` actually re-tiers, beyond the raw filters: a
+ * `Button size="xs"` dropped into `PageBar.actions` is the same defect as a `Select size="xs"` there
+ * — one control in the bar that is not 30px.
+ *
+ * This file is plain JS shipped to consumers and `src/theme/ctl-theme.tsx` is Mantine-coupled
+ * TypeScript it may not import, so the list is written out here — and PINNED to
+ * `CTL_THEME.components` by `oxlint-plugin.test.ts`, which can import both. Drift fails that test
+ * rather than silently re-tiering a component the rule still polices (or the reverse).
+ *
+ * The scope IS the rule: an `<IconDownload size={14}/>`, a count `<Badge size="sm">`, a
+ * `<Loader size={14}/>` or a `<Modal size="lg">` colocated in a slot is NOT sized by the slot theme,
+ * so "drop the prop" produced a 24px icon and a message whose promise ("the HOME sets the tier") was
+ * false for every one of them.
+ *
+ * `Switch` USED to be on that not-sized list and is now on this one, together with `Radio`,
+ * `Checkbox` and the three `*Group`s: the tier gained their `-ctl` vars in the same minor this rule
+ * ships in (`theme/ctl-theme.tsx`, `theme/index.ts`'s `ctlSizeVars`), because a 20px indicator beside
+ * the tier's 13.5px option label was what every filter popover and the mobile sheet rendered. The
+ * grace runway in {@link PLUGIN_RULE_GRACE} is unchanged — the rule has never shipped at any level,
+ * so widening it before its first release restarts nothing.
+ */
+export const CTL_THEME_TAGS = new Set([
+  'Button',
+  'ActionIcon',
+  'Input',
+  'TextInput',
+  'Select',
+  'MultiSelect',
+  'SegmentedControl',
+  'NativeSelect',
+  'Radio',
+  'RadioGroup',
+  'Checkbox',
+  'CheckboxGroup',
+  'Switch',
+  'SwitchGroup',
+])
+
+/**
+ * A size/width/breakpoint prop on a control the slot theme tiers. The slot's hoisted
+ * `MantineThemeProvider` already resolves the tier with no prop. A `SettingsRow`'s `control` is NOT
+ * a tiered slot (see {@link SLOT_ATTRS}): a form row keeps Mantine's `md`, so the `size` written
+ * there is load-bearing rather than redundant.
+ *
+ * Scoped to `RAW_FILTER_TAGS` ∪ `BOUND_TAGS` (basalt's own controls, by name) ∪ a Mantine-imported
+ * {@link CTL_THEME_TAGS} member, and skipped under an overlay ({@link hostedInsideSlot}) — see
+ * `CTL_THEME_TAGS` for what firing on everything in the slot cost.
  */
 const controlSizeLiteral = {
   meta: {
@@ -2106,18 +2327,36 @@ const controlSizeLiteral = {
   },
   create(context) {
     if (isTestFile(context)) return {}
-    const slots = createSlotContext()
+    const slots = createSlotContext(context)
+    const mantineImports = new Map()
     const candidates = []
 
     return {
+      ImportDeclaration(node) {
+        collectMantineImports(node, mantineImports)
+        slots.noteImport(node)
+      },
       JSXAttribute(node) {
         slots.note(node)
         const name = node.name?.name
         if (typeof name !== 'string' || !CONTROL_SIZE_ATTRS.has(name)) return
-        candidates.push({ node, captured: slots.capture(node) })
+        const owner = node.parent
+        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
+        candidates.push({
+          node,
+          name: owner.name,
+          captured: slots.capture(node),
+          hosted: hostedInsideSlot(node),
+        })
       },
       'Program:exit'() {
-        for (const { node, captured } of candidates) {
+        for (const { node, name, captured, hosted } of candidates) {
+          const written = jsxTagName(name) ?? ''
+          const tiered =
+            RAW_FILTER_TAGS.has(written) ||
+            BOUND_TAGS.has(written) ||
+            CTL_THEME_TAGS.has(resolveMantineTag(name, mantineImports) ?? '')
+          if (!tiered || hosted) continue
           if (!slots.resolve(captured)) continue
           if (hasThemeAllow(context, node, 'control-size-literal')) continue
           context.report({ node, message: CONTROL_SIZE_LITERAL_MESSAGE })
@@ -2136,8 +2375,10 @@ const SECTION_ACTION_BUDGET = 3
 
 const PAGE_BAR_BUDGET_MESSAGES = {
   duplicate:
-    'Second PageBar in one file — a page has exactly one page bar, and row 1 portals into the app ' +
-    'shell header, so two of them race for the same node (law C6). (basalt/page-bar-budget)',
+    'Second PageBar in the same returned tree — a page has exactly one page bar, and row 1 portals ' +
+    'into the app shell header, so two bars mounted TOGETHER race for the same node (law C6). An ' +
+    'early-return loading state and two page components in one file each get their own tree and ' +
+    'never report. (basalt/page-bar-budget)',
   secondary:
     `More than ${PAGE_BAR_SECONDARY_BUDGET} secondary PageBar actions — the bar holds ≤5 entries ` +
     'including the one `primary`, and everything past that folds into the `More` menu basalt ' +
@@ -2147,8 +2388,35 @@ const PAGE_BAR_BUDGET_MESSAGES = {
     `More than ${SECTION_ACTION_BUDGET} Section actions — a section header holds ≤3 (law C6). ` +
     '(basalt/page-bar-budget)',
   filled:
-    'Second variant="filled" inside one slot — a home has exactly one primary action, and two ' +
-    'filled buttons side by side name neither (law C6). (basalt/page-bar-budget)',
+    'Second filled Button/ActionIcon inside one slot — a home has exactly one primary action, and ' +
+    'two filled buttons side by side name neither (law C6). A filled Badge/ThemeIcon (a count) and ' +
+    "an overlay's own submit button are not actions in the bar and never report. " +
+    '(basalt/page-bar-budget)',
+}
+
+/** The two tags a `variant="filled"` makes a PRIMARY ACTION — a Badge is a count, not an action. */
+const PRIMARY_ACTION_TAGS = new Set(['Button', 'ActionIcon'])
+
+/**
+ * The JSX TREE `node` is returned in — the nearest `ReturnStatement`, concise arrow body, or
+ * `const` binding, whichever the walk reaches first.
+ *
+ * This is what "two PageBars race for the same node" actually requires: they must MOUNT together.
+ * Counting per FILE made an `if (!data) return <PageBar title="Jobs"/>` loading state, and two page
+ * components exported from one file, an `error` on code that never renders two bars — with a
+ * `theme-allow` on correct code as the only escape.
+ */
+function enclosingReturnedTree(node) {
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') return undefined
+    if (current.type === 'ReturnStatement' || current.type === 'VariableDeclarator') return current
+    if (current.type === 'ArrowFunctionExpression' && current.body?.type !== 'BlockStatement') {
+      return current
+    }
+    current = current.parent
+  }
+  return undefined
 }
 
 /** The `actions` attribute of a JSXOpeningElement, unwrapped, or undefined. */
@@ -2172,23 +2440,30 @@ const pageBarBudget = {
   },
   create(context) {
     if (isTestFile(context)) return {}
+    const slots = createSlotContext(context)
+    const mantineImports = new Map()
     const pageBars = []
     const findings = []
-    /** Slot attribute node → the `variant="filled"` attributes written inside it. */
+    /** Slot attribute node → its owner binding + the `variant="filled"` attributes inside it. */
     const filledPerSlot = new Map()
 
     return {
+      ImportDeclaration(node) {
+        collectMantineImports(node, mantineImports)
+        slots.noteImport(node)
+      },
       JSXOpeningElement(node) {
         const tag = jsxTagName(node.name)
+        const owner = jsxRootName(node.name)
         if (tag === 'PageBar') {
-          pageBars.push(node)
+          pageBars.push({ node, owner, tree: enclosingReturnedTree(node) })
           const actions = actionsAttributeValue(node)
           if (actions?.value?.type === 'ObjectExpression') {
             for (const prop of actions.value.properties) {
               if (prop.type !== 'Property' || propertyKeyName(prop) !== 'secondary') continue
               if (prop.value?.type !== 'ArrayExpression') continue
               if (prop.value.elements.length <= PAGE_BAR_SECONDARY_BUDGET) continue
-              findings.push({ node: prop, message: PAGE_BAR_BUDGET_MESSAGES.secondary })
+              findings.push({ node: prop, owner, message: PAGE_BAR_BUDGET_MESSAGES.secondary })
             }
           }
           return
@@ -2197,28 +2472,46 @@ const pageBarBudget = {
         const actions = actionsAttributeValue(node)
         if (actions?.value?.type !== 'ArrayExpression') return
         if (actions.value.elements.length <= SECTION_ACTION_BUDGET) return
-        findings.push({ node: actions.attr, message: PAGE_BAR_BUDGET_MESSAGES.section })
+        findings.push({ node: actions.attr, owner, message: PAGE_BAR_BUDGET_MESSAGES.section })
       },
       JSXAttribute(node) {
+        slots.note(node)
         if (node.name?.name !== 'variant') return
         const value = unwrapExpressionContainer(node.value)
         if (!isStringLiteral(value) || value.value !== 'filled') return
+        // An overlay's own submit button is not an action in the bar — see hostedInsideSlot.
+        if (hostedInsideSlot(node)) return
+        const element = node.parent
+        if (element === null || element === undefined || element.type !== 'JSXOpeningElement')
+          return
         const slot = enclosingSlotAttribute(node)
         if (slot === undefined) return
-        const written = filledPerSlot.get(slot) ?? []
-        written.push(node)
-        filledPerSlot.set(slot, written)
+        const entry = filledPerSlot.get(slot) ?? { owner: slotOwnerBinding(slot), written: [] }
+        entry.written.push({ node, name: element.name })
+        filledPerSlot.set(slot, entry)
       },
       'Program:exit'() {
-        for (const node of pageBars.slice(1)) {
-          findings.push({ node, message: PAGE_BAR_BUDGET_MESSAGES.duplicate })
+        /** Returned tree → the PageBars mounted in it. Two in one tree mount together; see C6. */
+        const barsPerTree = new Map()
+        for (const bar of pageBars) {
+          if (!slots.isHome(bar.owner)) continue
+          barsPerTree.set(bar.tree, [...(barsPerTree.get(bar.tree) ?? []), bar])
         }
-        for (const written of filledPerSlot.values()) {
-          for (const node of written.slice(1)) {
-            findings.push({ node, message: PAGE_BAR_BUDGET_MESSAGES.filled })
+        for (const bars of barsPerTree.values()) {
+          for (const { node, owner } of bars.slice(1)) {
+            findings.push({ node, owner, message: PAGE_BAR_BUDGET_MESSAGES.duplicate })
           }
         }
-        for (const { node, message } of findings) {
+        for (const { owner, written } of filledPerSlot.values()) {
+          const actions = written.filter(({ name }) =>
+            PRIMARY_ACTION_TAGS.has(resolveMantineTag(name, mantineImports) ?? ''),
+          )
+          for (const { node } of actions.slice(1)) {
+            findings.push({ node, owner, message: PAGE_BAR_BUDGET_MESSAGES.filled })
+          }
+        }
+        for (const { node, owner, message } of findings) {
+          if (!slots.isHome(owner)) continue
           if (hasThemeAllow(context, node, 'page-bar-budget')) continue
           context.report({ node, message })
         }
@@ -2485,36 +2778,38 @@ const useSearchFromLiteral = {
  * Each entry is `{ since, promote, why }` (semver strings, C16 — `docs/CONTROLS-SPEC.md` §1): a
  * version-gated test fails the build once `package.json`'s version reaches `promote` while the
  * entry is still here — the four entries that used to live here (D4) sat at `warn` for up to five
- * minors because a bare promotion-note string carried no expiry a test could check.
+ * minors because a bare promotion-note string carried no expiry a test could check. The test gate
+ * fires on the version already published; `scripts/check-grace.ts` is the other end of it, run by
+ * `scripts/release.sh` against the version the dry run COMPUTED, so a release that would ship a
+ * due entry still at `warn` is refused before it is cut (the release commit is `[skip ci]` and
+ * runs no tests, so the test alone would only notice on the next unrelated push).
  *
  * @type {Record<string, GraceEntry>}
  */
 export const PLUGIN_RULE_GRACE = {
   'control-outside-home': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
       'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
       'is carried by three exemptions (overlay/settings-row ancestor, @mantine/form, owner ' +
       'definition) rather than by certainty. Promotion is additionally gated on running the ' +
       'shipped preset over argo, linewatch, image-share, rb, image-gen and the playground with ≤3 ' +
-      'total waivers (§9 wave 7); the spec dated it 1.28.0, which is the minor it SHIPS in, so the ' +
-      'gate would have fired on the release commit.',
+      'total waivers (§9 wave 7).',
   },
   'control-size-literal': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). Rejects a prop that was correct one ' +
       'minor ago — every `size="xs"` written into a bar before the tier existed — so it takes the ' +
-      'grace minor the doctrine exists for. The spec dated it 1.27.0 when waves 3/4 were expected ' +
-      'to carry it; it lands in 1.28.0, so the promote moves with it (a promote at the shipping ' +
-      'version fails the C16 gate on the release commit itself).',
+      'grace minor the doctrine exists for. Every wave ships in ONE minor (1.26.0), so the whole ' +
+      'set promotes together in 1.27.0 — one runway, not one per wave.',
   },
   'in-body-page-title': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its text-level twin is the ' +
       'guard kind of the SAME id, which carries the same dates in GRACE_PERIOD_KINDS — one law, ' +
@@ -2522,8 +2817,8 @@ export const PLUGIN_RULE_GRACE = {
       'the page already has, and the fix is a route/breadcrumb change rather than a prop edit.',
   },
   'responsive-twin': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C9 — linewatch shipped three ' +
       'doubled controls). Warn for one minor because the fix is a real edit (delete one mount, ' +
@@ -2531,8 +2826,8 @@ export const PLUGIN_RULE_GRACE = {
       'sibling structure.',
   },
   'search-literal-link': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10 — argo nav.tsx:132 pinned the ' +
       'fallback on every click, which is why its reader had zero call sites). Warn for one minor ' +
@@ -2540,8 +2835,8 @@ export const PLUGIN_RULE_GRACE = {
       'consumers still on the old enum-only pair.',
   },
   'use-search-from-literal': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C10). Same runway as ' +
       'search-literal-link and for the same reason: the remedy is `createSearchStore` + a prop, ' +

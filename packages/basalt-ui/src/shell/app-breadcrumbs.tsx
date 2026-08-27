@@ -14,6 +14,7 @@ import { Anchor, Group, Text } from '@mantine/core'
 import type { CSSProperties } from 'react'
 import type { NavAnchor } from '../nav/types'
 import { VX } from '../tokens'
+import classes from './app-header.module.css'
 
 /** Parent/section crumbs — faint. */
 const crumbStyle: CSSProperties = { fontSize: VX.text.md, color: 'var(--vx-faint)' }
@@ -52,37 +53,49 @@ export function AppBreadcrumbs({
   if (!page) return null
   return (
     <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-      {section && (
-        <>
-          <Text style={crumbStyle} truncate>
-            {section}
-          </Text>
-          <Text style={separatorStyle}>/</Text>
-        </>
-      )}
-      {parent && parentAnchor && (
-        <>
-          <Anchor style={crumbStyle} underline="never" component={parentAnchor} truncate>
-            {parent}
-          </Anchor>
-          <Text style={separatorStyle}>/</Text>
-        </>
-      )}
-      {parent && !parentAnchor && parentHref && (
-        <>
-          <Anchor style={crumbStyle} underline="never" href={parentHref} truncate>
-            {parent}
-          </Anchor>
-          <Text style={separatorStyle}>/</Text>
-        </>
-      )}
-      {parent && !parentAnchor && !parentHref && (
-        <>
-          <Text style={crumbStyle} truncate>
-            {parent}
-          </Text>
-          <Text style={separatorStyle}>/</Text>
-        </>
+      {/*
+        The ANCESTOR crumbs, in one box so CSS can drop them below `sm` — law C9's swap, owned by the
+        component, no JS media query and no first-paint flash. On a phone the header row is the
+        scarcest space in the app and the breadcrumb is its one elastic side, so `Overview / Dashboard`
+        truncated to `O… / D…` — three crumbs' worth of separators and ellipses saying nothing. The
+        PAGE is the crumb that names where you are; the ancestors are navigation context, and the
+        sidebar (a tap away on the bottom bar) is where a phone reader looks for that.
+      */}
+      {(section !== undefined || parent !== undefined) && (
+        <Group gap={6} wrap="nowrap" className={classes.crumbAncestors} style={{ minWidth: 0 }}>
+          {section && (
+            <>
+              <Text style={crumbStyle} truncate>
+                {section}
+              </Text>
+              <Text style={separatorStyle}>/</Text>
+            </>
+          )}
+          {parent && parentAnchor && (
+            <>
+              <Anchor style={crumbStyle} underline="never" component={parentAnchor} truncate>
+                {parent}
+              </Anchor>
+              <Text style={separatorStyle}>/</Text>
+            </>
+          )}
+          {parent && !parentAnchor && parentHref && (
+            <>
+              <Anchor style={crumbStyle} underline="never" href={parentHref} truncate>
+                {parent}
+              </Anchor>
+              <Text style={separatorStyle}>/</Text>
+            </>
+          )}
+          {parent && !parentAnchor && !parentHref && (
+            <>
+              <Text style={crumbStyle} truncate>
+                {parent}
+              </Text>
+              <Text style={separatorStyle}>/</Text>
+            </>
+          )}
+        </Group>
       )}
       <Text style={currentStyle} truncate>
         {page}

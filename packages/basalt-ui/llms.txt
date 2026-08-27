@@ -60,77 +60,77 @@ Layer: headless
 Import: import { ... } from 'basalt-ui/query'
 Description: createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools
 Layer: headless
-Rule: basalt-query
+Rule: basalt-batteries
 OptionalPeers: @tanstack/react-query-devtools@^5.101.0
 
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
 Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)
 Layer: headless
-Rule: basalt-router
+Rule: basalt-state
 OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
 Description: Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)
 Layer: mantine-coupled
-Rule: basalt-forms
+Rule: basalt-batteries
 OptionalPeers: @mantine/form@^9.3.0
 
 ## basalt-ui/notifications
 Import: import { ... } from 'basalt-ui/notifications'
 Description: Mantine notifications: notify helpers, typed registry, persisted history, NotificationBell, NotificationCenter
 Layer: mantine-coupled
-Rule: basalt-notifications
+Rule: basalt-batteries
 OptionalPeers: @mantine/notifications@^9.3.0
 
 ## basalt-ui/commands
 Import: import { ... } from 'basalt-ui/commands'
 Description: typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays
 Layer: mantine-coupled
-Rule: basalt-commands
+Rule: basalt-batteries
 OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0, @tanstack/react-hotkeys@0.10.0
 
 ## basalt-ui/data
 Import: import { ... } from 'basalt-ui/data'
 Description: Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in
 Layer: mantine-coupled
-Rule: basalt-data
+Rule: basalt-batteries
 OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/data/table
 Import: import { ... } from 'basalt-ui/data/table'
 Description: BasaltDataTable: a sortable data table over TanStack Table, rendered with Mantine (Mantine-rendered)
 Layer: mantine-coupled
-Rule: basalt-data
+Rule: basalt-batteries
 OptionalPeers: @tanstack/react-table@>=8 <9
 
 ## basalt-ui/data/virtual
 Import: import { ... } from 'basalt-ui/data/virtual'
 Description: BasaltVirtualList: a windowed virtual list over TanStack Virtual, rendered with Mantine (Mantine-rendered)
 Layer: mantine-coupled
-Rule: basalt-data
+Rule: basalt-batteries
 OptionalPeers: @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/agent
 Import: import { ... } from 'basalt-ui/agent'
 Description: Headless streaming-chat layer: useAgentStream, aiSdkTransport (recommended default) + edenTransport, isResumable/ResumableAgentTransport (stream-resumption seam), PartList, coalesceParts, the ForeignPart/definePartRenderers/narrowAgentPart open part-registry seam, plus the multi-thread createThreadsStore + useAgentThreadRuns + outcome-resolver seam (Mantine-free)
 Layer: headless
-Rule: basalt-agent
+Rule: basalt-batteries
 OptionalPeers: ai@^7.0.15, use-stick-to-bottom@^1.1.6
 
 ## basalt-ui/agent-chat
 Import: import { ... } from 'basalt-ui/agent-chat'
 Description: Mantine-styled thread-chat components over basalt-ui/agent: ThreadWorkspace, ThreadFeed (variant/renderRow), ThreadFeedRow (inline-expanding Slack row, lazily mounted + kept mounted), ThreadOutcomeCard, ThreadDetailPanel, Composer, ThreadTranscript (open part-renderer registry via its renderers/fallbackRenderer props, per-message MessageAffordances, groupConsecutive, and an optional virtualize/height windowing mode whose VirtualizeOptions carry overscan/estimateSize/initialScroll — a virtualized transcript opens scrolled to the newest message unless initialScroll is "start"), threadPartRenderers, ToolChip (Mantine-coupled). motion is required, not optional — ThreadFeed/ThreadDetailPanel import motion/react eagerly, so this subpath fails to resolve without it installed even though peerDependenciesMeta marks it optional (npm has no per-subpath optionality). remend is genuinely optional here — ThreadTranscript reaches it only through the lazy dynamic import() inside content/markdown.tsx, and @tanstack/react-virtual the same way through the lazy import() behind ThreadTranscript virtualize (absent peer degrades to an unwindowed, height-bound pane).
 Layer: mantine-coupled
-Rule: basalt-agent
+Rule: basalt-batteries
 OptionalPeers: ai@^7.0.15, motion@12.42.0, remend@1.3.0, use-stick-to-bottom@^1.1.6, react-markdown@^10.1.0, remark-gfm@^4.0.1, shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/content
 Import: import { ... } from 'basalt-ui/content'
 Description: Prose (article/chat typography), CodeBlock (shiki, optional peer), Callout, TableOfContents, ReadingProgress, Markdown (react-markdown + remark-gfm, optional peers; `streaming` is a rendering mode ONLY — `contentTrust` is the independent security input, and any surface rendering agent/model output must pin `contentTrust="untrusted"`, the sole input to the image-origin allowlist; a `fenceRenderers` registry — settledOnly/FenceRenderer/FenceRenderers/FenceRenderContext; `sanitizeSchema`, an additions-only SanitizeSchemaExtension merged over BASALT_SANITIZE_SCHEMA via mergeSanitizeSchema; the remend streaming-repair pass is now a lazy optional peer), MermaidDiagram (beautiful-mermaid, optional peer), mdxComponents/createMdxComponents, ArticleLayout (docs-page frame), ArticleCard/ArticleGrid (overview cards), Article model (sortArticles/filterArticles/formatArticleDate), FilterSet/ViewTabs/MultiSelectFilter re-exported from ./controls (they replaced the controlled ArticleFilterBar), toArticleActions (Spotlight projector, @mantine/spotlight type-only), GuideLink/GuideDrawer (contextual-help drawer) — the content/prose surface
 Layer: mantine-coupled
-Rule: basalt-content
+Rule: basalt-batteries
 OptionalPeers: shiki@^4.3.0, @shikijs/langs@^4.3.1, @shikijs/themes@^4.3.1, beautiful-mermaid@^1.1.0, react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, @mantine/spotlight@^9.3.0
 
 ## basalt-ui/controls

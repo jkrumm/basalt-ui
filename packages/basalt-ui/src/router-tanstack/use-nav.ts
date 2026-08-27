@@ -13,6 +13,7 @@ import { createElement, useMemo } from 'react'
 import type { ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
 import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
+import { flattenNav } from './nav'
 import type { AnyNavGroup, AnyNavItem, NavConfig, NavItemId, NavTabId } from './nav'
 
 export type UseNavOptions<G extends ReadonlyArray<AnyNavGroup>> = {
@@ -55,17 +56,55 @@ export function useNav<
     const badgeOf = (id: string): number | ReactNode =>
       (badges as Record<string, number | ReactNode> | undefined)?.[id]
 
-    const isActive = (item: AnyNavItem): boolean =>
+    // Per-item match, exactly as before: the override wins when supplied, otherwise a router
+    // prefix match (`'/'` stays exact). What changed is that this boolean no longer BECOMES
+    // `active` on its own — it only says "on the path", and the pass below picks ONE winner
+    // across the whole definition so a parent and its child can no longer both read `active`.
+    const matchOf = (item: AnyNavItem): boolean =>
       isActiveOverride?.(item) ??
       Boolean(
         matchRoute({
           to: item.link.to,
           ...(item.link.params !== undefined && { params: item.link.params }),
-          // Prefix match by default so a parent stays lit on its children; `'/'` would then match
-          // everything, so it is always exact.
           fuzzy: item.exact !== true && item.link.to !== '/',
         }),
       )
+
+    // One pass over the WHOLE flattened definition (`flattenNav` — depth-first, parent then
+    // children, the same order every other reader of a nav config walks it) rather than a
+    // per-item independent check, which is what let a parent prefix-match stay lit alongside an
+    // exact-matching child. The most SPECIFIC match (most non-empty `/`-segments in `link.to`)
+    // wins; a tie (the playground's `reports`/`components` shape, both pointing at `/components`)
+    // keeps the FIRST item in definition order, since only a strictly later, strictly longer match
+    // ever replaces the current winner below.
+    const allItems = flattenNav(config)
+    const specificity = (to: string): number => to.split('/').filter(Boolean).length
+    const matchedById = new Map<string, boolean>()
+    let winnerId: string | undefined
+    let winnerTo: string | undefined
+    for (const item of allItems) {
+      const matched = matchOf(item)
+      matchedById.set(item.id, matched)
+      if (
+        matched &&
+        (winnerTo === undefined || specificity(item.link.to) > specificity(winnerTo))
+      ) {
+        winnerId = item.id
+        winnerTo = item.link.to
+      }
+    }
+
+    // `active` is true for the winner only. `ancestor` is true for a matched item that sits
+    // strictly on the winner's PATH (`winnerTo` starts with `item.link.to + '/'`) — a same-length
+    // tie loser matches nothing here (its own `to` cannot be a strict prefix of an equally long
+    // `winnerTo`), so it reads as neither active nor an ancestor, which is the point: two
+    // destinations sharing one route are siblings, not a hierarchy.
+    const resolveState = (item: AnyNavItem): { active: boolean; ancestor: boolean } => {
+      if (item.id === winnerId) return { active: true, ancestor: false }
+      const matched = matchedById.get(item.id) ?? false
+      const ancestor = winnerTo !== undefined && matched && winnerTo.startsWith(`${item.link.to}/`)
+      return { active: false, ancestor }
+    }
 
     const toSidebarItem = (item: AnyNavItem): SidebarItem => {
       // One anchor per destination. Basalt renders every pixel of chrome around it (desktop row,
@@ -73,22 +112,45 @@ export function useNav<
       // back/forward all keep working. `Link as ElementType` is the single cast in the whole
       // chain: the widened `AnyNavLink['search']` is `unknown`, which `LinkComponentProps` rejects.
       // The consumer gets zero casts, which is the point.
+      //
+      // `activeOptions: { exact: true }` is what makes `resolveState` above the ONLY authority on
+      // active, and it is not a preference — a `Link` computes its own `isActive` (default
+      // `activeOptions.exact: false`, i.e. prefix) and spreads `{ 'data-status': 'active',
+      // 'aria-current': 'page' }` LAST, after `activeProps` and after every caller prop
+      // (`@tanstack/react-router/dist/esm/link.js` — `...isActive && STATIC_ACTIVE_PROPS` is the
+      // final entry of the returned object). So `aria-current` cannot be overridden from outside;
+      // the only lever is `isActive` itself. Left at its default, the router re-derived the exact
+      // fuzzy match this resolver exists to replace, and at `/dashboard/sessions` BOTH the parent
+      // and the child anchor carried `aria-current="page"` even with basalt's own model marking one
+      // of them an ancestor — verified in Chrome, and the reason the first attempt at this fix
+      // measured as no fix at all.
+      //
+      // Exact here does NOT narrow basalt's own law. `resolveState` still matches fuzzily and still
+      // lights an item whose exact route is never visited; that item is simply named by the
+      // `aria-current` `app-sidebar.tsx` stamps itself, which survives because the router's spread
+      // is conditional on ITS `isActive` being true.
       const Anchor: NavAnchor = (props) =>
-        createElement(Link as ElementType, { ...item.link, ...props })
+        createElement(Link as ElementType, {
+          ...item.link,
+          activeOptions: { exact: true },
+          ...props,
+        })
 
       const badge = badgeOf(item.id)
       const children = item.children?.map(toSidebarItem)
+      const { active, ancestor } = resolveState(item)
 
       return {
         key: item.id,
         label: item.label,
         icon: item.icon,
         Anchor,
-        // Per-destination active only. Rolling a child's active state up into its parent is the
-        // MOBILE SLOT's rule (§2.3.12) and belongs to `projectMobileNav`, which reads `children`
-        // anyway — doing it here too would also light a desktop parent row whose own route does
-        // not match.
-        active: isActive(item),
+        // Exactly one destination in the WHOLE definition reads `active` (`resolveState` above).
+        // Rolling that up into a mobile SLOT (any descendant active → the slot reads active) is
+        // still `projectMobileNav`'s job, which reads `children` for that. `ancestor` is the
+        // desktop-only middle state: a matched item that sits on the winner's path but isn't it.
+        active,
+        ...(ancestor && { ancestor }),
         ...(item.short !== undefined && { short: item.short }),
         ...(item.mobile !== undefined && { mobile: item.mobile }),
         ...(item.disabled !== undefined && { disabled: item.disabled }),

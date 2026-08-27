@@ -8,7 +8,7 @@
  */
 import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import type { ReactNode } from 'react'
-import { act, render, waitFor } from '@testing-library/react'
+import { act, cleanup, render, waitFor } from '@testing-library/react'
 import {
   Outlet,
   RouterProvider,
@@ -457,5 +457,205 @@ describe('store hooks', () => {
       compact: false,
     })
     navigate.mockRestore()
+  })
+
+  test('useReset from a FOREIGN route persists only — it never navigates (A1)', async () => {
+    const store = createSearchStore({
+      key: 'r-reset-foreign',
+      fields: {
+        range: field.enum(['1d', '7d'], '7d'),
+        compare: field.enum(['none', 'prev'], 'none'),
+      },
+    })
+    let reset: (() => void) | null = null
+    const probe = sink()
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/other',
+      Other: () => {
+        reset = store.useReset()
+        const [value, set] = store.field.range.use()
+        probe.current = { value, set: set as (next: unknown) => void }
+        return null
+      },
+    })
+
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      reset?.()
+    })
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(router.state.location.pathname).toBe('/other')
+    expect(currentSearch(router)['range']).toBeUndefined()
+    expect(currentSearch(router)['compare']).toBeUndefined()
+
+    // …and a subsequent field write on that same foreign route still persists only — the reset
+    // did not leak the params into the URL and flip the route into looking like an owner.
+    await act(async () => {
+      probe.current?.set('1d')
+    })
+    expect(navigate).not.toHaveBeenCalled()
+    expect(currentSearch(router)['range']).toBeUndefined()
+    navigate.mockRestore()
+  })
+})
+
+/**
+ * Every navigate a store issues carries `resetScroll: false`. A filter is as often halfway down a
+ * page as it is in the bar, and the router treats a same-route search write as a navigation — so
+ * the default would scroll the reader back to the top on every change. Asserted on the OPTION and
+ * not on a scroll position: happy-dom evaluates no layout, so the scroll itself is invisible here.
+ */
+describe('store writes never scroll the page', () => {
+  test('a field write passes resetScroll: false', async () => {
+    const store = createSearchStore({
+      key: 'r-scroll-field',
+      fields: { range: field.enum(['1d', '7d'], '7d') },
+    })
+    const probe = sink()
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: fieldProbe(store.field.range, probe),
+    })
+
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      probe.current?.set('1d')
+    })
+
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate.mock.calls[0]?.[0]).toMatchObject({ resetScroll: false })
+    navigate.mockRestore()
+  })
+
+  test('useReset passes resetScroll: false', async () => {
+    const store = createSearchStore({
+      key: 'r-scroll-reset',
+      fields: { range: field.enum(['1d', '7d'], '7d') },
+    })
+    let reset: (() => void) | null = null
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?range=1d',
+      Dashboard: () => {
+        reset = store.useReset()
+        return null
+      },
+    })
+
+    const navigate = spyOn(router, 'navigate')
+    await act(async () => {
+      reset?.()
+    })
+
+    expect(navigate).toHaveBeenCalledTimes(1)
+    expect(navigate.mock.calls[0]?.[0]).toMatchObject({ resetScroll: false })
+    navigate.mockRestore()
+  })
+})
+
+/**
+ * `{ url: false, persist: false }` — the third lane. It used to be the one combination that dropped
+ * its write (no URL to put it in, no mirror to keep it in); it is now the same session-shared
+ * in-memory lane `createLocalStore` gives such a field, through the same store-core helper.
+ */
+const memoryStore = () =>
+  createSearchStore({
+    key: 'r-memory',
+    fields: {
+      range: field.enum(['1d', '7d'], '7d'),
+      scratch: field.enum(['a', 'b', 'c'], 'a', { url: false, persist: false }),
+    },
+  })
+
+describe('the memory-only lane — url: false, persist: false', () => {
+  test('a write survives a remount, and touches neither the URL nor localStorage', async () => {
+    const store = memoryStore()
+    const probe = sink()
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+
+    const router = await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: fieldProbe(store.field.scratch, probe),
+    })
+
+    await act(async () => {
+      probe.current?.set('c')
+    })
+    expect(probe.current?.value).toBe('c')
+
+    // No URL param (the field declares none, so `validateSearch` never emits one) and no mirror.
+    expect(currentSearch(router)['scratch']).toBeUndefined()
+    expect(storedRecord('r-memory')).toBeNull()
+    // …and no dev warning: the write went somewhere.
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+
+    // A remount inside the same session reads it back — the lane is the store's, not the mount's.
+    cleanup()
+    const second = sink()
+    await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: fieldProbe(store.field.scratch, second),
+    })
+    expect(second.current?.value).toBe('c')
+  })
+
+  test('useActiveCount counts it, and useReset returns it to its fallback', async () => {
+    const store = memoryStore()
+    const probe = sink()
+    let count = -1
+    let reset: (() => void) | null = null
+
+    await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Dashboard: () => {
+        count = store.useActiveCount()
+        reset = store.useReset()
+        return fieldProbe(store.field.scratch, probe)()
+      },
+    })
+
+    expect(count).toBe(0)
+
+    await act(async () => {
+      probe.current?.set('b')
+    })
+    expect(count).toBe(1)
+
+    await act(async () => {
+      reset?.()
+    })
+    expect(probe.current?.value).toBe('a')
+    expect(count).toBe(0)
+    // `useReset` wrote the MIRROR for the persisted field beside it; the memory field is not in it.
+    expect(storedRecord('r-memory')).toEqual({ range: '7d' })
+  })
+
+  test('two mounts of the same field see one value', async () => {
+    const store = memoryStore()
+    const a = sink()
+    const b = sink()
+
+    await mountApp({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard/detail',
+      Dashboard: fieldProbe(store.field.scratch, a),
+      Detail: fieldProbe(store.field.scratch, b),
+    })
+
+    await act(async () => {
+      a.current?.set('b')
+    })
+
+    expect(b.current?.value).toBe('b')
   })
 })

@@ -17,6 +17,8 @@ import { createContext, useContext, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { NavAnchor } from '../nav/types'
 import type { AnyNavLink } from '../router-tanstack/nav'
+import { IconSlot } from '../theme/icon-slot'
+import { ControlGroup } from './control-group'
 import classes from './actions.module.css'
 
 /**
@@ -36,6 +38,16 @@ export type BarActionItem = {
   disabled?: boolean
   loading?: boolean
   danger?: boolean
+  /**
+   * Joins this action to its adjacent `group: true` siblings into ONE `ControlGroup` — shared
+   * borders, radius on the outer ends only, no gap. Declare it on every member of the run: a set of
+   * three where the middle one omits it is two runs of one, which is the same row it was before.
+   *
+   * It is an opt-in because "these act on the same thing" is a fact only the caller has. A `‹ Today ›`
+   * stepper is the shape; three independent actions that happen to sit beside each other are not, and
+   * joining those would claim a relationship the reader would then have to un-learn.
+   */
+  group?: true
   /** Mobile placement. @default 'bar' for `primary`, `'more'` for everything else */
   mobile?: 'bar' | 'more' | 'hidden'
 }
@@ -163,10 +175,16 @@ function ChevronGlyph() {
   )
 }
 
-/** The first grapheme of a label — the icon-less fallback for the mobile primary icon button. */
-function initial(label: string): string {
-  return [...label][0]?.toUpperCase() ?? '?'
-}
+/** The compact labelled mobile bar entry's horizontal inset — see {@link MobileBarEntry}. */
+const MOBILE_PRIMARY_PADDING_X = 10
+
+/**
+ * The gap between two adjacent controls in a bar row — `SPACE_STEP.controlGap`'s level-0 value, the
+ * same 6px `--vx-space-control-gap` gives the pill row. A NUMBER and not `gap="xs"`: Mantine's `xs`
+ * is 11px, the BODY tier's gap, which made the header's own row looser than the filter row directly
+ * under it. `Group`'s `gap` takes a raw px number, so there is no spacing key that resolves to 6.
+ */
+const BAR_GAP = 6
 
 /**
  * One action as a button. No `size` prop anywhere: the enclosing `CtlSlot` (mounted by the home,
@@ -175,15 +193,22 @@ function initial(label: string): string {
 function BarButton({
   action,
   variant,
+  px,
 }: {
   action: BarActionItem
   variant: 'filled' | 'default'
+  /** Overrides the tier's horizontal inset — only the compact mobile primary passes it. */
+  px?: number
 }): ReactNode {
   const shared = {
     variant,
+    ...(px !== undefined && { px }),
     disabled: action.disabled === true,
     loading: action.loading === true,
-    ...(action.icon !== undefined && { leftSection: action.icon }),
+    // EVERY icon in this file goes through `IconSlot` — the box is the framework's, never the
+    // caller's glyph (see `theme/icon-slot.tsx`). Mantine's `leftSection` is a bare flex box with no
+    // size of its own, so a consumer's `width="24"` SVG used to set this row's height.
+    ...(action.icon !== undefined && { leftSection: <IconSlot>{action.icon}</IconSlot> }),
     ...(action.danger === true && { color: 'red' }),
     ...(action.onClick !== undefined && { onClick: action.onClick }),
   }
@@ -210,7 +235,8 @@ function BarIconButton({
   variant,
 }: {
   action: BarActionItem
-  variant: 'filled' | 'subtle'
+  /** `default` is the bordered desktop form — a joined `ControlGroup` member (see {@link BarEntry}). */
+  variant: 'filled' | 'subtle' | 'default'
 }): ReactNode {
   const shared = {
     variant,
@@ -220,7 +246,7 @@ function BarIconButton({
     ...(action.danger === true && { color: 'red' }),
     ...(action.onClick !== undefined && { onClick: action.onClick }),
   }
-  const body = action.icon ?? initial(action.label)
+  const body = <IconSlot>{action.icon}</IconSlot>
   if (action.Anchor !== undefined) {
     return (
       <ActionIcon component={action.Anchor} {...shared}>
@@ -243,7 +269,7 @@ function MenuRow({ action }: { action: BarActionItem }): ReactNode {
     className:
       action.danger === true ? `${classes.menuItem} ${classes.menuItemDanger}` : classes.menuItem,
     disabled: action.disabled === true,
-    ...(action.icon !== undefined && { leftSection: action.icon }),
+    ...(action.icon !== undefined && { leftSection: <IconSlot>{action.icon}</IconSlot> }),
     ...(action.onClick !== undefined && { onClick: action.onClick }),
   }
   if (action.Anchor !== undefined && action.disabled !== true) {
@@ -323,11 +349,23 @@ export function OverflowMenu({
     >
       <Menu.Target>
         {trigger === 'kebab' ? (
-          <ActionIcon variant="subtle" aria-label={label}>
-            <DotsGlyph />
+          // `size="ctl"` explicitly, not inherited: the kebab is rendered by `HeaderGlobalActions`
+          // too, which is shell chrome rather than a home's slot, so there is no `CtlSlot` above it
+          // there. 28px beside 30px buttons is the mismatch the header read as.
+          <ActionIcon variant="subtle" size="ctl" aria-label={label}>
+            <IconSlot className={classes.kebabIcon}>
+              <DotsGlyph />
+            </IconSlot>
           </ActionIcon>
         ) : (
-          <Button variant="default" rightSection={<ChevronGlyph />}>
+          <Button
+            variant="default"
+            rightSection={
+              <IconSlot className={classes.chevronIcon}>
+                <ChevronGlyph />
+              </IconSlot>
+            }
+          >
             {label}
           </Button>
         )}
@@ -362,6 +400,58 @@ type BarActionRowProps = ActionGroupProps & {
    * becomes an inline icon button and a `'hidden'` one stays desktop-only.
    */
   mobileOnly?: readonly BarAction[]
+  /**
+   * The home's `SyncButton`, mounted ONCE between the secondaries and the primary — see the ordering
+   * note in the body. Only `PageBar` row 1 passes it; a home with no sync passes nothing and the
+   * desktop row stays a single group.
+   */
+  syncNode?: ReactNode
+}
+
+/**
+ * Splits a bar row into runs, where a run of length > 1 is rendered as one `ControlGroup`.
+ *
+ * Two triggers, and they are the same rule read on two viewports (`docs/CONTROLS-SPEC.md` §3):
+ *
+ * - **`group: true`** — declared adjacency. The caller states that these act on one thing, so they
+ *   are joined on both viewports.
+ * - **Adjacent ICON-ONLY entries on the mobile bar** (`viewport: 'mobile'`). Below `sm` a
+ *   `BarActionItem` carrying an icon renders as an `ActionIcon` and nothing else (`MobileBarEntry`),
+ *   so two of them in a row are two 30px squares with a 6px gap — three boxes' worth of border for
+ *   two actions, in the one place width is scarce. This half is DERIVED from what is actually
+ *   rendered, not declared, which is why it cannot be a prop: the caller does not know which of its
+ *   actions the phone form draws icon-only.
+ *
+ * `excludeKey` is the primary's, and it always breaks the run: a `filled` primary joined to a
+ * `default`/`subtle` sibling puts a fill edge against a border edge, which paints a rim in neither
+ * colour. A `kind: 'menu'`/`kind: 'custom'` entry breaks it for its own reason — the first is a
+ * dropdown trigger with its own overlay, the second is a node basalt does not draw, and neither can
+ * be promised the shared-border geometry.
+ *
+ * **A joined member that ships an icon renders ICON-ONLY, on desktop too**, with its `label` demoted
+ * to the accessible name. That is not a saving, it is what a joined set MEANS: `‹ Today ›` is one
+ * control whose middle segment names it, and the arrows' content is their direction. Rendered
+ * labelled, the same three actions measured 304px against 118px — nearly a quarter of the bar for a
+ * word already implied by the arrow. A joined member with no icon (`Absolute | Rate`) keeps its
+ * label, so a labelled joined set is unaffected; the rule reads what the caller actually supplied
+ * rather than adding a prop to ask.
+ */
+function joinRuns(
+  actions: readonly BarAction[],
+  opts: { viewport: 'desktop' | 'mobile'; excludeKey?: string | undefined },
+): BarAction[][] {
+  const joinable = (action: BarAction): boolean =>
+    action.kind === undefined &&
+    action.key !== opts.excludeKey &&
+    (action.group === true || (opts.viewport === 'mobile' && action.icon !== undefined))
+
+  const runs: BarAction[][] = []
+  for (const action of actions) {
+    const tail = runs.at(-1)
+    if (joinable(action) && tail !== undefined && tail.every(joinable)) tail.push(action)
+    else runs.push([action])
+  }
+  return runs
 }
 
 export function BarActionRow({
@@ -370,6 +460,7 @@ export function BarActionRow({
   host,
   viewport = 'both',
   mobileOnly = [],
+  syncNode,
 }: BarActionRowProps): ReactNode {
   const context = useContext(BarExtrasContext)
   // Read unconditionally (hook order), scoped afterwards — see this type's doc.
@@ -407,30 +498,71 @@ export function BarActionRow({
     return claimKebab()
   }, [claimsKebab, claimKebab])
 
+  // The PRIMARY is the row's LAST desktop entry, not its first (`docs/CONTROLS-SPEC.md` §2.1):
+  // custom chips · secondaries · `More` · sync · primary. Reading order runs weakest-to-strongest and
+  // ends at the header's right edge, where the commit action belongs; leading with it put the one
+  // filled button furthest from the edge and left `More` and `Sync` reading as the row's conclusion.
+  //
+  // `syncNode` is what splits the desktop row in two, and it splits it rather than joining it
+  // because a `SyncButton` must be mounted EXACTLY ONCE (law C9 — it holds a live relative age and
+  // its own interval). Rendering it inside both the `visibleFrom` and the `hiddenFrom` group would
+  // double that. So it sits BETWEEN them, unwrapped, and the primary follows it in a second
+  // desktop-only group. With no `syncNode` there is nothing to sit between and the desktop row stays
+  // one group — which is also what keeps a plain `ActionGroup` a single element to query.
+  const desktopPrimary =
+    primary !== undefined ? <BarEntry action={primary} emphasis="primary" /> : null
   const hasDesktop = primary !== undefined || list.length > 0
   const hasMobile = mobileBar.length > 0 || claimsKebab
-  if (!hasDesktop && !hasMobile) return null
+  if (!hasDesktop && !hasMobile && syncNode === undefined) return null
+
+  const desktopLead = inline.length > 0 || desktopOverflow.length > 0 || syncNode === undefined
 
   return (
     <>
-      {hasDesktop && (
-        <Group gap="xs" wrap="nowrap" visibleFrom="sm">
-          {primary !== undefined && <BarEntry action={primary} emphasis="primary" />}
-          {inline.map((action) => (
-            <BarEntry key={action.key} action={action} emphasis="secondary" />
-          ))}
+      {hasDesktop && desktopLead && (
+        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm">
+          {joinRuns(inline, { viewport: 'desktop' }).map((run) =>
+            run.length === 1 ? (
+              <BarEntry key={run[0]!.key} action={run[0]!} emphasis="secondary" />
+            ) : (
+              <ControlGroup key={`join-${run[0]!.key}`}>
+                {run.map((action) => (
+                  <BarEntry key={action.key} action={action} emphasis="secondary" iconOnly />
+                ))}
+              </ControlGroup>
+            ),
+          )}
           <OverflowMenu actions={desktopOverflow} />
+          {syncNode === undefined && desktopPrimary}
+        </Group>
+      )}
+      {syncNode}
+      {syncNode !== undefined && desktopPrimary !== null && (
+        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm">
+          {desktopPrimary}
         </Group>
       )}
       {hasMobile && (
-        <Group gap="xs" wrap="nowrap" hiddenFrom="sm">
-          {mobileBar.map((action) => (
-            <BarEntry
-              key={action.key}
-              action={action}
-              emphasis={action.key === primary?.key ? 'mobile-primary' : 'mobile-secondary'}
-            />
-          ))}
+        <Group gap={BAR_GAP} wrap="nowrap" hiddenFrom="sm">
+          {joinRuns(mobileBar, { viewport: 'mobile', excludeKey: primary?.key }).map((run) =>
+            run.length === 1 ? (
+              <BarEntry
+                key={run[0]!.key}
+                action={run[0]!}
+                emphasis={run[0]!.key === primary?.key ? 'mobile-primary' : 'mobile-secondary'}
+              />
+            ) : (
+              <ControlGroup key={`join-${run[0]!.key}`}>
+                {run.map((action) => (
+                  <BarEntry
+                    key={action.key}
+                    action={action}
+                    emphasis={action.key === primary?.key ? 'mobile-primary' : 'mobile-secondary'}
+                  />
+                ))}
+              </ControlGroup>
+            ),
+          )}
           {claimsKebab && (
             <OverflowMenu actions={mobileMore} trigger="kebab" label="More actions" />
           )}
@@ -445,8 +577,9 @@ export function BarActionRow({
  *
  * Desktop: `primary` as a `filled` button · up to `DESKTOP_SECONDARY_MAX` secondaries as `default`
  * buttons · everything past that, plus every `kind: 'menu'`, in one `More` menu.
- * Mobile: `primary` as an icon button (its first letter when it ships no icon) · one kebab holding
- * every `mobile: 'more'` action · `mobile: 'hidden'` drops the action entirely.
+ * Mobile: `primary` as an icon button when it ships an icon and a compact labelled button when it
+ * does not · one kebab holding every `mobile: 'more'` action · `mobile: 'hidden'` drops the action
+ * entirely.
  *
  * The shell's `mobile: 'more'` global actions are folded in by `PageBar`'s ROW-1 group only, not by
  * this component — see `BarActionRowProps.host` for why every other home has to stay out of them.
@@ -459,17 +592,64 @@ export function ActionGroup(props: ActionGroupProps): ReactNode {
   return <BarActionRow {...props} host="slot" />
 }
 
-/** One bar entry, resolved by kind: a custom node renders itself, a menu group folds to `More`. */
+/**
+ * One bar entry, resolved by kind: a custom node renders itself, a menu group folds to `More`.
+ *
+ * A `kind: 'custom'` node goes in a `ctl`-height slot rather than straight into the row. It is the
+ * one entry basalt does not draw, so it is also the one entry that can arrive at any height — a
+ * `Badge` is 20px, a bare `<span>` is its line box — and a 20px chip beside three 30px buttons is
+ * exactly the "buttons and badges have different sizes" the header read as. The slot pins the tier's
+ * height and centres whatever it holds; it does not restyle the node.
+ */
 function BarEntry({
   action,
   emphasis,
+  iconOnly,
 }: {
   action: BarAction
   emphasis: 'primary' | 'secondary' | 'mobile-primary' | 'mobile-secondary'
+  /** Set by a JOINED run — see {@link joinRuns}. The label survives as the accessible name. */
+  iconOnly?: boolean
 }): ReactNode {
-  if (action.kind === 'custom') return <>{action.node}</>
+  if (action.kind === 'custom') return <span className={classes.customSlot}>{action.node}</span>
   if (action.kind === 'menu') return <OverflowMenu actions={[action]} label={action.label} />
-  if (emphasis === 'mobile-primary') return <BarIconButton action={action} variant="filled" />
-  if (emphasis === 'mobile-secondary') return <BarIconButton action={action} variant="subtle" />
+  if (emphasis === 'mobile-primary') return <MobileBarEntry action={action} variant="filled" />
+  if (emphasis === 'mobile-secondary') return <MobileBarEntry action={action} variant="subtle" />
+  if (iconOnly === true && action.icon !== undefined) {
+    return <BarIconButton action={action} variant="default" />
+  }
   return <BarButton action={action} variant={emphasis === 'primary' ? 'filled' : 'default'} />
+}
+
+/**
+ * One action on the mobile bar. With an icon it is an `ActionIcon`; WITHOUT one it is a compact
+ * `Button` carrying the label. Both emphases go through it, so the rule is the same for the primary
+ * and for a `mobile: 'bar'` secondary.
+ *
+ * The first-grapheme fallback this replaced (`initial(label)`) drew `S` for `Save as report` and `E`
+ * for `Export`, which is an avatar — a glyph a reader has to already know the meaning of. A label is
+ * longer and says what the button does, and the breadcrumb beside it now truncates
+ * (`shell/app-header.module.css`), so the width is available. Dropping the fallback WITHOUT this
+ * branch would have been worse than either: `BarIconButton` renders `action.icon`, so an icon-less
+ * action would have become an empty 30px box.
+ *
+ * `px` is the phone form's own inset — the `ctl` default is sized for a labelled desktop button.
+ */
+function MobileBarEntry({
+  action,
+  variant,
+}: {
+  action: BarActionItem
+  variant: 'filled' | 'subtle'
+}): ReactNode {
+  if (action.icon !== undefined) return <BarIconButton action={action} variant={variant} />
+  return (
+    <BarButton
+      action={action}
+      // `subtle` is an ActionIcon variant, not a Button one — the labelled form of a non-primary bar
+      // action is a `default` button, which is what a secondary reads as on desktop too.
+      variant={variant === 'filled' ? 'filled' : 'default'}
+      px={MOBILE_PRIMARY_PADDING_X}
+    />
+  )
 }

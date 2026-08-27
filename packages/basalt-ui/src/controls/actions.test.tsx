@@ -70,18 +70,30 @@ describe('ActionGroup — desktop', () => {
 })
 
 describe('ActionGroup — mobile', () => {
-  test('the primary becomes an icon button and the rest one kebab', () => {
+  test('the primary rides the bar and the rest fold into one kebab', () => {
     renderGroup({ primary: { key: 'new', label: 'New run' }, secondary: secondary(4) })
     const row = mobile()
     expect(row).not.toBeNull()
-    expect(row?.querySelector('[aria-label="New run"]')).not.toBeNull()
+    expect(row?.textContent).toContain('New run')
     const kebabs = row?.querySelectorAll('[aria-label="More actions"]')
     expect(kebabs?.length).toBe(1)
   })
 
-  test('an icon-less primary falls back to the first letter of its label', () => {
+  test('a primary WITH an icon becomes an icon button, named by its label', () => {
+    renderGroup({ primary: { key: 'new', label: 'New run', icon: <span>+</span> } })
+    const button = mobile()?.querySelector('[aria-label="New run"]')
+    expect(button).not.toBeNull()
+    // The label is the accessible name only — it is never painted beside the glyph.
+    expect(button?.textContent).toBe('+')
+  })
+
+  test('an icon-LESS primary keeps its label instead of drawing a first-letter avatar', () => {
+    // `N` for `New run` is an avatar: a glyph whose meaning has to be known in advance. The label is
+    // wider and says what the button does, and the breadcrumb beside it truncates to make room.
     renderGroup({ primary: { key: 'new', label: 'New run' } })
-    expect(mobile()?.querySelector('[aria-label="New run"]')?.textContent).toBe('N')
+    const row = mobile()
+    expect(row?.textContent).toContain('New run')
+    expect(row?.textContent).not.toBe('N')
   })
 
   test("mobile: 'hidden' drops the action from the bar AND from the kebab", () => {
@@ -92,10 +104,18 @@ describe('ActionGroup — mobile', () => {
     expect(desktop()?.textContent).toContain('Nowhere')
   })
 
-  test("mobile: 'bar' promotes a secondary to an inline icon button", () => {
+  test("mobile: 'bar' promotes a secondary out of the kebab and onto the bar", () => {
     renderGroup({ secondary: [{ key: 'live', label: 'Live', mobile: 'bar' }] })
-    expect(mobile()?.querySelector('[aria-label="Live"]')).not.toBeNull()
+    // Icon-less, so it takes the labelled form — an ActionIcon with no icon would be an empty box.
+    expect(mobile()?.textContent).toContain('Live')
     expect(mobile()?.querySelector('[aria-label="More actions"]')).toBeNull()
+  })
+
+  test("an icon-bearing mobile: 'bar' secondary is the icon form, named by its label", () => {
+    renderGroup({
+      secondary: [{ key: 'live', label: 'Live', mobile: 'bar', icon: <span>●</span> }],
+    })
+    expect(mobile()?.querySelector('[aria-label="Live"]')).not.toBeNull()
   })
 })
 
@@ -223,10 +243,10 @@ describe('shell kebab extras are scoped to the page bar', () => {
     )
   })
 
-  test("a mobileOnly action marked 'bar' becomes an inline mobile icon button", () => {
+  test("a mobileOnly action marked 'bar' renders inline on the mobile bar", () => {
     renderWithExtras(
       <BarActionRow host="page" mobileOnly={[{ key: 'm', label: 'Metrics', mobile: 'bar' }]} />,
     )
-    expect(mobile()?.querySelector('[aria-label="Metrics"]')).not.toBeNull()
+    expect(mobile()?.textContent).toContain('Metrics')
   })
 })

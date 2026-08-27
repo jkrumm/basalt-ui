@@ -448,6 +448,130 @@ describe('tooltip.onFollow — a follower whose domain never resolves the broadc
   })
 })
 
+describe('cursor partitions by x-domain kind — a band chart never follows a time chart', () => {
+  const categoryRows: Row[] = [
+    { date: 'Visited', a: 100, b: 100 },
+    { date: 'Added to cart', a: 40, b: 40 },
+    { date: 'Purchased', a: 10, b: 10 },
+  ]
+
+  const numericRows: Row[] = [
+    { date: '0', a: 5, b: 5 },
+    { date: '1', a: 6, b: 6 },
+    { date: '2', a: 7, b: 7 },
+  ]
+
+  test('a category-keyed chart renders no crosshair while a date-keyed sibling owns the cursor', async () => {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="kind-time-source"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={categoryRows}
+          chartId="kind-band-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    // The SOURCE (time) still renders its own tooltip — the follower (band) never resolves the
+    // broadcast at all, because its kind differs, so it stays silent rather than mounting an empty
+    // tooltip shell.
+    expect(await screen.findByText('a')).toBeTruthy()
+    expect(screen.queryByText('b')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
+  })
+
+  test('a second date-keyed chart DOES render the crosshair at the same key — time charts on a page still share', async () => {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="kind-time-source-2"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="kind-time-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    // Both charts are `'time'`-kinded, so the partition never fires and the pair keeps sharing.
+    expect(await screen.findByText('a')).toBeTruthy()
+    expect(await screen.findByText('b')).toBeTruthy()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(2)
+  })
+
+  // This is the case the OLD `parseKey`-only heuristic got wrong: a numeric domain and a date
+  // domain both parse to a number, so `resolveCursorPoint` used to attempt (and by chance often
+  // succeed at) resolving one against the other. Without `classifyDomain` gating the read, this
+  // test fails — the follower would resolve the source's broadcast key and render 'b'.
+  test('a numeric-keyed chart does not follow a date-keyed sibling either', async () => {
+    render(
+      <ChartCursorScope>
+        <CartesianChart<Row>
+          data={rows}
+          chartId="kind-time-source-3"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          ariaLabel="Source"
+          legend={false}
+        >
+          {() => null}
+        </CartesianChart>
+        <CartesianChart<Row>
+          data={numericRows}
+          chartId="kind-linear-follower"
+          getX={(d) => d.date}
+          series={[seriesFor('b')]}
+          ariaLabel="Follower"
+          legend={false}
+          tooltip={{ follow: false, onFollow: true }}
+        >
+          {() => null}
+        </CartesianChart>
+      </ChartCursorScope>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Source' }), { key: 'ArrowRight' })
+
+    expect(await screen.findByText('a')).toBeTruthy()
+    expect(screen.queryByText('b')).toBeNull()
+    expect(screen.queryAllByRole('tooltip')).toHaveLength(1)
+  })
+})
+
 /**
  * `xTickValues` — the seam a tick COUNT cannot express.
  *

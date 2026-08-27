@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { buildDomainIndex, parseKey, resolveCursorPoint } from './resolve'
+import { buildDomainIndex, classifyDomain, parseKey, resolveCursorPoint } from './resolve'
 
 type Point = { date: string }
 
@@ -119,5 +119,33 @@ describe("resolveCursorPoint — 'leading' resolution (bucket-keyed domains)", (
     // Built as 'nearest', resolved as 'leading' — the per-call argument wins.
     const i = index(daily(['01', '08', '15']))
     expect(resolveCursorPoint(i, '2026-08-05', 'leading')?.date).toBe('2026-08-01')
+  })
+})
+
+describe('classifyDomain', () => {
+  test('an ISO date domain classifies as time', () => {
+    expect(classifyDomain(['2026-08-01', '2026-08-02', '2026-08-03'])).toBe('time')
+  })
+
+  test("a bare-year domain classifies as linear, matching parseKey's numeric-first precedence", () => {
+    // "2026" passes the numeric test before it ever reaches the date fallback — same ordering
+    // `parseKey` applies to a single key, applied here across the whole domain.
+    expect(classifyDomain(['2024', '2025', '2026'])).toBe('linear')
+  })
+
+  test('a numeric bucket domain classifies as linear', () => {
+    expect(classifyDomain(['0', '1', '2', '3'])).toBe('linear')
+  })
+
+  test('a category domain classifies as band', () => {
+    expect(classifyDomain(['Visited', 'Added to cart', 'Purchased'])).toBe('band')
+  })
+
+  test('a mixed domain falls back to band', () => {
+    expect(classifyDomain(['2026-08-01', 'Direct'])).toBe('band')
+  })
+
+  test('an empty domain classifies as band', () => {
+    expect(classifyDomain([])).toBe('band')
   })
 })

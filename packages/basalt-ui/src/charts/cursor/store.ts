@@ -12,22 +12,27 @@
  * on each pointer frame.
  */
 
+import type { DomainKind } from './resolve'
+
 /** Broadcast cursor position: an opaque domain key plus the chart that owns it. */
 export type CursorState = {
   /** The hovered x-domain key (a date/category string), or null when nothing is hovered. */
   key: string | null
   /** `chartId` of the chart the pointer is actually over — the one that owns the tooltip. */
   source: string | null
+  /** The broadcaster's own x-domain kind. `null` only in the empty state — the store itself does
+   * not police this, it just carries it; the partition is enforced by the reading hook. */
+  kind: DomainKind | null
 }
 
 export type CursorStore = {
   get: () => CursorState
-  set: (key: string | null, source: string | null) => void
+  set: (key: string | null, source: string | null, kind?: DomainKind | null) => void
   subscribe: (onChange: () => void) => () => void
 }
 
 /** Stable identity for "nothing hovered" — also the SSR snapshot, so it must never be recreated. */
-export const EMPTY_CURSOR: CursorState = { key: null, source: null }
+export const EMPTY_CURSOR: CursorState = { key: null, source: null, kind: null }
 
 export function createCursorStore(): CursorStore {
   let state: CursorState = EMPTY_CURSOR
@@ -35,9 +40,9 @@ export function createCursorStore(): CursorStore {
 
   return {
     get: () => state,
-    set: (key, source) => {
-      if (state.key === key && state.source === source) return
-      state = key === null && source === null ? EMPTY_CURSOR : { key, source }
+    set: (key, source, kind = null) => {
+      if (state.key === key && state.source === source && state.kind === kind) return
+      state = key === null && source === null ? EMPTY_CURSOR : { key, source, kind }
       for (const listener of listeners) listener()
     },
     subscribe: (onChange) => {

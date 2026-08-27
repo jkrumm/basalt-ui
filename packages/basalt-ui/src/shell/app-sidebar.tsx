@@ -74,10 +74,29 @@ export type AppSidebarProps = {
    * **Three entries or fewer render FLAT**, as one link row each (Settings · Integrations · Invite
    * teammates), and four or more collapse into the single gear "Settings" menu. A menu that opens
    * to show two rows costs a click for nothing; a footer of eight rows costs the nav its height.
-   * The threshold is basalt's, not a prop — `docs/CONTROLS-SPEC.md` §2.3. `brand.version` renders
-   * as a faint label under the flat rows, and inside the dropdown in the menu form.
+   * That threshold is basalt's — `docs/CONTROLS-SPEC.md` §2.3 — and `settingsMenu` is the override
+   * for the cases the count cannot see. `brand.version` renders as a faint label under the flat
+   * rows, and inside the dropdown in the menu form.
    */
   settingsMenuItems?: SettingsMenuItem[]
+  /**
+   * Which footer form `settingsMenuItems` takes. `'auto'` (the default) is the count rule above;
+   * `'flat'` and `'menu'` force one regardless of how many entries there are.
+   *
+   * The override exists because the COUNT is not the whole question. Three rows that are each a
+   * theme radio group, a devtools switch and a density slider are three CONTROLS, not three
+   * destinations — flat they fill the footer with widgets and push the account row off the fold,
+   * and the count rule cannot tell them from three links. Equally, four short destinations may be
+   * worth their height on a tall sidebar. `'auto'` stays the default so nothing moves for a
+   * consumer that never had an opinion.
+   *
+   * DESKTOP FOOTER ONLY. Below `sm` there is no sidebar at all and the same entries are flat rows
+   * in the bottom bar's More surface either way — a dropdown inside that sheet would be a menu
+   * inside a menu.
+   *
+   * @default 'auto'
+   */
+  settingsMenu?: 'auto' | 'flat' | 'menu'
   /**
    * Optional account row rendered below the settings menu in the sidebar footer (see
    * `SidebarAccount` / `BasaltAccountProps`) — no separating hairline, the row's own top padding
@@ -220,6 +239,15 @@ function NavLinkBody({ item, active }: { item: SidebarItem; active: boolean }) {
     leftSection: item.icon,
     rightSection: item.badge ?? (item.count ? <NavCountBadge count={item.count} /> : undefined),
     active,
+    // Basalt is the one that stamps `aria-current`, not the theme and not a router `<Link>`'s own
+    // default (which a consumer's `SidebarItem.Anchor` may compute independently) — mirrors
+    // `app-mobile-nav.tsx`'s identical pattern so both surfaces agree on what "active" means.
+    'aria-current': active ? ('page' as const) : undefined,
+    // `item.ancestor` (a parent on the winner's path — `useNav`'s exclusivity pass) is NEVER
+    // active and never carries `aria-current`; it only earns a `data-ancestor` hook for CSS. A
+    // leaf item never has `ancestor` set, so this is a no-op there — shared here rather than
+    // duplicated per render path.
+    ...(item.ancestor === true && { 'data-ancestor': true }),
     ...(item.onClick !== undefined && { onClick: item.onClick }),
   }
   if (Anchor) {
@@ -447,6 +475,7 @@ export function AppSidebar({
   collapsed,
   onToggleCollapse,
   settingsMenuItems,
+  settingsMenu = 'auto',
   account,
   search,
   blocks,
@@ -477,9 +506,13 @@ export function AppSidebar({
       <SidebarProgressRing value={railRing.value} total={railRing.total} />
     ) : null
 
-  // Three or fewer render as flat link rows; four or more keep the gear menu — see the prop's doc.
+  // Three or fewer render as flat link rows; four or more keep the gear menu — unless the consumer
+  // forced one form, which is the only thing `settingsMenu` does. See both props' docs.
+  const flatSettings =
+    settingsMenu === 'flat' ||
+    (settingsMenu === 'auto' && settingsItems.length <= FLAT_SETTINGS_MAX)
   const settingsRow =
-    settingsItems.length === 0 ? null : settingsItems.length <= FLAT_SETTINGS_MAX ? (
+    settingsItems.length === 0 ? null : flatSettings ? (
       <div className={classes.footerLinks}>
         {settingsItems.map((entry, index) => (
           <UnstyledButton

@@ -30,6 +30,7 @@ import {
   sidebarBlockRail,
   sidebarBlockVisibleCount,
 } from './sidebar-block-model'
+import { IconSlot } from '../theme/icon-slot'
 import classes from './app-sidebar.module.css'
 
 /**
@@ -80,7 +81,7 @@ function foldStore(
  * keys mid-life never moves the hook count.
  *
  * Every fold in the sidebar goes through this — block folds at `basalt:sidebar-block:<key>` and
- * nav-section folds at `basalt:sidebar-section:<label-slug>`. Through 1.27.0 the section folds were
+ * nav-section folds at `basalt:sidebar-section:<label-slug>`. Through 1.25.0 the section folds were
  * one `useState` keyed by label, so every reload re-opened a section the user had closed.
  */
 export function usePersistedFold(
@@ -140,8 +141,13 @@ export function SidebarProgressRing({ value, total }: { value: number; total: nu
  * the sidebar land on dead stops.
  */
 function BlockRow({ item }: { item: SidebarBlockItem }) {
-  const lead =
+  // Through `IconSlot` like every other `icon` prop in the framework: a block row's leading mark is
+  // a consumer-supplied glyph, and the row's 20px rhythm cannot be at the mercy of what size that
+  // glyph declares for itself (`theme/icon-slot.tsx`). The tone dot is basalt's own and already
+  // square, but it goes through the same box so the two cases align to the same column.
+  const rawLead =
     item.icon ?? (item.tone !== undefined ? <SidebarBlockToneDot tone={item.tone} /> : undefined)
+  const lead = rawLead === undefined ? undefined : <IconSlot>{rawLead}</IconSlot>
   const meta =
     item.meta !== undefined ? (
       <Text component="span" className={classes.blockRowMeta}>

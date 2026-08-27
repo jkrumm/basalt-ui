@@ -7,5 +7,6 @@ declare const classes: {
   readonly lead: string
   readonly pageBar: string
   readonly global: string
+  readonly crumbAncestors: string
 }
 export default classes

@@ -168,3 +168,91 @@ describe('createLocalStore', () => {
     ])
   })
 })
+
+/**
+ * `persist: false` in a local store has no URL to fall back on, so it is the IN-MEMORY lane rather
+ * than a field frozen on its fallback: shared across mounts for the session, gone on reload.
+ */
+describe('createLocalStore — the in-memory lane', () => {
+  test('a persist: false field survives a remount and never touches localStorage', () => {
+    const store = createLocalStore({
+      key: 'l-memory',
+      fields: { zoomed: field.boolean(false, { persist: false }) },
+    })
+
+    const first = renderHook(() => store.field.zoomed.use())
+    expect(first.result.current[0]).toBe(false)
+    act(() => {
+      first.result.current[1](true)
+    })
+    expect(first.result.current[0]).toBe(true)
+    first.unmount()
+
+    const second = renderHook(() => store.field.zoomed.use())
+    expect(second.result.current[0]).toBe(true)
+    expect(localStorage.getItem('basalt:l-memory')).toBeNull()
+    expect(localStorage.length).toBe(0)
+  })
+
+  test('two live mounts of the same field see one value', () => {
+    const store = createLocalStore({
+      key: 'l-memory-shared',
+      fields: { metric: field.enum(['load', 'volume'], 'load', { persist: false }) },
+    })
+
+    const a = renderHook(() => store.field.metric.use())
+    const b = renderHook(() => store.field.metric.use())
+
+    act(() => {
+      a.result.current[1]('volume')
+    })
+
+    expect(b.result.current[0]).toBe('volume')
+  })
+
+  test('a mirrored field beside it still persists — the lane is per field', () => {
+    const store = createLocalStore({
+      key: 'l-memory-mixed',
+      fields: {
+        view: field.enum(['chart', 'table'], 'chart'),
+        zoomed: field.boolean(false, { persist: false }),
+      },
+    })
+
+    const view = renderHook(() => store.field.view.use())
+    const zoomed = renderHook(() => store.field.zoomed.use())
+    act(() => {
+      view.result.current[1]('table')
+      zoomed.result.current[1](true)
+    })
+
+    expect(storedRecord('l-memory-mixed')).toEqual({ view: 'table' })
+    expect(zoomed.result.current[0]).toBe(true)
+  })
+})
+
+describe('createLocalStore — labels()', () => {
+  test('labels reach field.<name>.options, and the call is chainable', () => {
+    const store = createLocalStore({
+      key: 'l-labels',
+      fields: { metric: field.enum(['load', 'volume'], 'load') },
+    }).labels({ metric: { load: 'Training load', volume: 'Total volume' } })
+
+    expect(store.field.metric.options).toEqual([
+      { value: 'load', label: 'Training load' },
+      { value: 'volume', label: 'Total volume' },
+    ])
+  })
+
+  test('an unlabelled value falls back to the value itself', () => {
+    const store = createLocalStore({
+      key: 'l-labels-partial',
+      fields: { metric: field.enum(['load', 'volume'], 'load') },
+    }).labels({ metric: { load: 'Training load' } })
+
+    expect(store.field.metric.options.map((option) => option.label)).toEqual([
+      'Training load',
+      'volume',
+    ])
+  })
+})

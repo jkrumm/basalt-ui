@@ -40,27 +40,60 @@
 
 /* Inactive rows: muted text + faint icon. Active rows keep the theme's ink text (via `--nl-color`)
  * untouched — this selector only ever matches when neither `data-active` nor `aria-current="page"`
- * is present. */
-.link:not([data-active]):not([aria-current='page']) {
+ * is present. `[data-ancestor]` is excluded too: it gets its own ink/accent treatment below and
+ * must not fall through to muted/faint here. */
+.link:not([data-active]):not([aria-current='page']):not([data-ancestor]) {
   color: var(--vx-muted) !important;
 }
 
-.link:not([data-active]):not([aria-current='page'])
+.link:not([data-active]):not([aria-current='page']):not([data-ancestor])
   :global(.mantine-NavLink-section[data-position='left']) {
   color: var(--vx-faint);
 }
 
 /* Hover — ink-6% tint + ink text, for inactive rows only (an active row already carries the
- * theme's stronger ink-9% tint and keeps its own hover via `--nl-hover`). */
+ * theme's stronger ink-9% tint and keeps its own hover via `--nl-hover`; an ancestor row gets its
+ * own hover rule below so its accent icon survives the pointer). */
 @media (hover: hover) {
-  .link:not([data-active]):not([aria-current='page']):hover {
+  .link:not([data-active]):not([aria-current='page']):not([data-ancestor]):hover {
     background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
     color: var(--vx-ink) !important;
   }
 
-  .link:not([data-active]):not([aria-current='page']):hover
+  .link:not([data-active]):not([aria-current='page']):not([data-ancestor]):hover
     :global(.mantine-NavLink-section[data-position='left']) {
     color: var(--vx-ink);
+  }
+}
+
+/*
+ * Ancestor row (`SidebarItem.ancestor` — a parent on the path to the active row, never active
+ * itself, never `aria-current`): must read visibly WEAKER than active and visibly STRONGER than a
+ * hovered inactive row, since all three now share the same 6%/9% ink-tint family. Active carries a
+ * persistent `--nl-bg` ink-9% fill + weight 600 (theme `nav-link.module.css`); a hovered inactive
+ * row carries a transient ink-6% fill. An ancestor therefore gets NO fill at rest (unlike active)
+ * and NO weight change (still 400, unlike active's 600) — only the ink label + accent icon that an
+ * active row also carries, so it reads as "on the path" without claiming to BE the destination.
+ */
+.link[data-ancestor] {
+  color: var(--vx-ink) !important;
+}
+
+.link[data-ancestor] :global(.mantine-NavLink-section[data-position='left']) {
+  color: var(--vx-accent);
+}
+
+/* Hover still adds the shared ink-6% tint (same as any inactive row), but must not let the plain
+ * inactive hover rule above flatten the icon back to ink — that rule is excluded via
+ * `:not([data-ancestor])`, and this one re-asserts the accent icon on top of the shared tint. */
+@media (hover: hover) {
+  .link[data-ancestor]:hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+    color: var(--vx-ink) !important;
+  }
+
+  .link[data-ancestor]:hover :global(.mantine-NavLink-section[data-position='left']) {
+    color: var(--vx-accent);
   }
 }
 
@@ -678,18 +711,7 @@
     display: block;
   }
 
-  .root[data-collapsed] /* Fixed 18px icon column for a flat footer row — an icon-less row keeps the label aligned with
- * its neighbours instead of sliding left. */
-.footerIconSlot {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    color: var(--vx-faint);
-  }
-
-  .footerVersion {
+  .root[data-collapsed] .footerVersion {
     display: none;
   }
 }

@@ -299,8 +299,10 @@ describe('a folded filter is still operable from inside the +N dropdown', () => 
       fireEvent.click(screen.getByRole('button', { name: '3 more filters' }))
     })
 
-    // The folded children render their sheet form — a named radio group, no second pill.
-    const group = screen.getByRole('radiogroup', { name: 'Region', hidden: true })
+    // The folded children render their sheet form — a named option list, no second pill. `group`,
+    // not `radiogroup`: the sheet form is a `<fieldset>` of native radios (`SheetOptionList`), which
+    // is the grouping role a fieldset carries. `Radio.Group` is the POPOVER form's shape.
+    const group = screen.getByRole('group', { name: 'Region', hidden: true })
     expect(group).toBeDefined()
 
     await act(async () => {
@@ -311,22 +313,22 @@ describe('a folded filter is still operable from inside the +N dropdown', () => 
       expect((router.state.location.search as Record<string, unknown>)['region']).toBe('eu')
     })
     // Still open: the write did not tear its own container down.
-    expect(screen.getByRole('radiogroup', { name: 'Region', hidden: true })).toBeDefined()
+    expect(screen.getByRole('group', { name: 'Region', hidden: true })).toBeDefined()
     observers = []
   })
 })
 
 describe('the sheet names every control it holds', () => {
-  test('the radio groups and the Switch row carry the filter name, not the pill text', async () => {
+  test('the option lists and the Switch row carry the filter name, not the pill text', async () => {
     await mountSet('/dashboard?currency=EUR')
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Filters (1)' }))
     })
 
     // `Currency`, not `EUR` — the pill reads the VALUE once set, which names the selection rather
-    // than the filter. Each group points at its own visible SheetField heading.
+    // than the filter. Each `<fieldset>` points at its own visible SheetField heading.
     for (const name of ['Currency', 'Region', 'Tier']) {
-      expect(screen.getByRole('radiogroup', { name, hidden: true })).toBeDefined()
+      expect(screen.getByRole('group', { name, hidden: true })).toBeDefined()
     }
     expect(screen.getByRole('switch', { name: 'Errors only', hidden: true })).toBeDefined()
   })
@@ -349,8 +351,17 @@ describe('sheet rows are tappable across their full height (C15)', () => {
     return css.slice(start, css.indexOf('}', start))
   }
 
-  test('.sheetRow pins the height to the sheet-row token, not a literal', () => {
+  test('both row primitives pin the height to the sheet-row token, not a literal', () => {
     expect(block('.sheetRow')).toContain('var(--vx-space-sheet-row-height')
+    expect(block('.sheetOption')).toContain('var(--vx-space-sheet-row-height')
+  })
+
+  test('the option row IS the hit target — the height sits on the label, never on a wrapper', () => {
+    // `.sheetOption` is the `<label>` (and, in a disclosure, the `<button>`) itself, so the 44px is
+    // on the interactive element by construction rather than by a classNames hand-off.
+    const rule = block('.sheetOption')
+    expect(rule).toContain('width: 100%')
+    expect(rule).toContain('cursor: pointer')
   })
 
   test('.sheetRowBody and .sheetRowLabel stretch the interactive element to that height', () => {
@@ -361,10 +372,17 @@ describe('sheet rows are tappable across their full height (C15)', () => {
     }
   })
 
-  test('every control that renders a sheet row passes sheetRowClassNames', () => {
-    for (const file of ['enum-filter.tsx', 'multi-select-filter.tsx', 'toggle-filter.tsx']) {
+  test('every control that renders a sheet row goes through a 44px row primitive', () => {
+    // Two primitives, one law. `ToggleFilter` renders a Mantine `Switch` AS the row, so it needs
+    // `sheetRowClassNames` to stretch the control's own `<label>` across the 44px. The enum/multi/
+    // range filters render `SheetOptionList`, which owns the `<label>`-per-row box itself — the
+    // classNames escape exists for controls basalt does not draw the row for.
+    expect(readFileSync(join(import.meta.dir, 'toggle-filter.tsx'), 'utf8')).toContain(
+      'sheetRowClassNames',
+    )
+    for (const file of ['enum-filter.tsx', 'multi-select-filter.tsx', 'range-filter.tsx']) {
       const source = readFileSync(join(import.meta.dir, file), 'utf8')
-      expect(source).toContain('sheetRowClassNames')
+      expect(source).toContain('SheetOptionList')
     }
   })
 
@@ -400,5 +418,55 @@ describe('an empty home renders nothing (C14)', () => {
     })
 
     expect(document.querySelector('[data-filter-row]')).toBeNull()
+  })
+})
+
+/**
+ * The `Filters (n)` pill is the mobile SHEET TRIGGER, and the sheet only ever holds what the
+ * `inline` budget folded away. With nothing folded it opens a drawer showing a copy of the pills
+ * already on screen — while costing the mobile row the width of a pill to say so.
+ */
+describe('the mobile sheet trigger appears only when a child is folded', () => {
+  async function mountOne(inline?: number): Promise<void> {
+    const rootRoute = createRootRoute({ component: () => <Outlet /> })
+    const pageRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: '/dashboard',
+      validateSearch: store.validateSearch,
+      component: (): ReactNode => (
+        <FilterSet {...(inline !== undefined && { inline })}>
+          <SelectFilter field={store.field.currency} label="Currency" />
+        </FilterSet>
+      ),
+    })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([pageRoute]),
+      history: createMemoryHistory({ initialEntries: ['/dashboard'] }),
+    })
+    render(
+      <MantineProvider>
+        <RouterProvider router={router} />
+      </MantineProvider>,
+    )
+    await waitFor(() => {
+      expect(router.state.status).toBe('idle')
+    })
+  }
+
+  test('one child at the default budget → no Filters pill at all', async () => {
+    await mountOne()
+    expect(screen.queryByRole('button', { name: 'Filters' })).toBeNull()
+    // …and the filter itself is still there, inline.
+    expect(slots()).toHaveLength(1)
+  })
+
+  test('inline={0} folds that same child → the pill is back', async () => {
+    await mountOne(0)
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined()
+  })
+
+  test('four children at the default budget keep the pill', async () => {
+    await mountSet('/dashboard')
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined()
   })
 })

@@ -148,10 +148,22 @@ export type DataTableFacet = {
  * The "no filter" member of a single-select facet's `FieldHandle`. A closed enum field always has
  * a real member as its fallback (C4) — there is no "unset" — so a facet, whose underlying
  * `column.getFilterValue()` genuinely can be `undefined`, needs one synthetic option to stand for
- * that state. Rendered as the enum's first radio, labelled "All"; picking it clears the column
- * filter, same as every other value change.
+ * that state. Rendered as the enum's first radio; picking it clears the column filter, same as every
+ * other value change.
+ *
+ * Its label is `Any <facet>`, and it used to be a bare `All`. The pill now reads the SELECTED
+ * option's label at every value including the fallback (`controls/enum-filter.tsx` — a bar reading
+ * `Compare` over a field holding `'previous'` is the bug that law fixes), and a toolbar with three
+ * facets would then have read `All` three times. `Any project` is the one label that works in both
+ * places at once: it is a legible popover row for "no constraint", and a legible pill readout of the
+ * state the filter is actually in. Derived from `facet.label`, so no facet has to declare it.
  */
 const FACET_ALL_VALUE = '__basalt_facet_all__'
+
+/** The synthetic row's label — see {@link FACET_ALL_VALUE}. */
+function facetAllLabel(facet: DataTableFacet): string {
+  return `Any ${facet.label.toLowerCase()}`
+}
 
 /**
  * Presents a single-select facet column as a `FieldHandle<EnumField<string>>` so it can render
@@ -167,7 +179,7 @@ function facetEnumHandle<T>(
   return {
     kind: 'enum',
     fallback: FACET_ALL_VALUE,
-    options: [{ value: FACET_ALL_VALUE, label: 'All' }, ...facet.options],
+    options: [{ value: FACET_ALL_VALUE, label: facetAllLabel(facet) }, ...facet.options],
     use: () => {
       const current = (column.getFilterValue() as string | undefined) ?? FACET_ALL_VALUE
       return [
@@ -467,9 +479,20 @@ export type BasaltDataTableProps<T> = {
   /** Row separators. Forwarded to Mantine `Table`. @default true (Mantine's own default) */
   withRowBorders?: boolean
   /**
-   * Outer table border. Turn it OFF for a table that already sits inside a `Card`/`ChartCard`,
-   * where the card owns the frame and a second one reads as a nested box.
-   * @default true
+   * Outer table border — a full box around the table.
+   *
+   * **`false` by default since this minor** (it was `true`). Three separate faults, all visible on
+   * the playground's `Controls (mobile)` page at 390px: its TOP edge sat directly under the table's
+   * own `WidgetHeader`, separating a header from its own content; its BOTTOM edge landed on the last
+   * row's own hairline, two rules at zero distance; and its left/right edges carried no information
+   * at all on a table that fills the page (`docs/DESIGN-SPEC.md` §8 — a border is a layout divider,
+   * and there is nothing here to divide). The head-row rule and the between-row rules stay, so the
+   * table still reads as a table.
+   *
+   * Pass `true` for a table that genuinely needs a frame — a small table floating in whitespace
+   * beside other content, where the box IS the grouping.
+   *
+   * @default false
    */
   withTableBorder?: boolean
 }
@@ -505,6 +528,23 @@ const RANGE_LABEL_STYLE: CSSProperties = {
 }
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+
+/**
+ * The header row's two halves. The lead SHRINKS and the toolbar does not — a title can ellipsize, a
+ * 220px search field with a facet pill beside it cannot, and when both were shrinkable flex split
+ * the overflow between them and clipped the search's placeholder mid-word.
+ */
+const TABLE_HEADER_LEAD_STYLE: CSSProperties = { flex: '1 1 auto', minWidth: 0 }
+const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 0 auto' }
+/**
+ * The toolbar search's width. Mantine's Input grows to its container, which in a `justify:
+ * space-between` row means "whatever is left" — so the field was 600px on a wide table and 180px on a
+ * narrow one, for the same one-word query. A stated width also makes the toolbar's own minimum width
+ * knowable, which is what lets it wrap under the title below `sm` with no media query.
+ */
+const SEARCH_WIDTH = 220
+/** The rows-per-page Select's width — see `SEARCH_WIDTH` for why a toolbar field states one. */
+const PAGE_SIZE_WIDTH = 116
 
 // ── Column pinning helpers ────────────────────────────────────────────────────
 
@@ -714,7 +754,7 @@ export function BasaltDataTable<T>({
   verticalSpacing,
   horizontalSpacing,
   withRowBorders,
-  withTableBorder = true,
+  withTableBorder = false,
 }: BasaltDataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
   const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter ?? '')
@@ -987,61 +1027,82 @@ export function BasaltDataTable<T>({
   const scrolls = maxHeight !== undefined || minWidth !== undefined
 
   const paginationState = table.getState().pagination
+  // The CURRENT page size is always an option, even when it is not in `pageSizeOptions`. Mantine's
+  // Select renders EMPTY when its `value` matches no row, so a table opened at
+  // `initialPagination.pageSize: 5` against the default `[10, 25, 50, 100]` showed a blank
+  // rows-per-page box — a control stating nothing, next to a range label stating `1–5`.
+  const pageSizeRows = [...new Set([...pageSizeOptions, paginationState.pageSize])]
+    .sort((a, b) => a - b)
+    .map((size) => ({ value: String(size), label: `${size} / page` }))
   const total = table.getRowCount()
   const rangeStart = total === 0 ? 0 : paginationState.pageIndex * paginationState.pageSize + 1
   const rangeEnd = Math.min((paginationState.pageIndex + 1) * paginationState.pageSize, total)
 
   return (
     <>
-      {title !== undefined && (
-        <Box mb="xs">
-          <WidgetHeader
-            tier="widget"
-            title={title}
-            {...(icon !== undefined && { icon })}
-            {...(subtitle !== undefined && { subtitle })}
-            count={table.getRowCount()}
-          />
-        </Box>
-      )}
-      {showToolbar && (
-        <CtlSlot>
-          <Group justify="space-between" align="flex-end" wrap="wrap" gap="xs" mb="xs">
-            <Group gap="xs" wrap="wrap" align="flex-end">
-              {showSearch && (
-                <TextInput
-                  radius="md"
-                  placeholder={globalFilterPlaceholder}
-                  leftSection={searchIcon}
-                  value={globalFilter}
-                  onChange={(event) => handleGlobalFilterChange(event.currentTarget.value)}
-                />
-              )}
-              {showFacets && (
-                <FilterSet>
-                  {facets?.map((facet) => {
-                    const column = table.getColumn(facet.columnId)
-                    if (!column) return null
-                    return facet.multiple ? (
-                      <MultiSelectFilter
-                        key={facet.columnId}
-                        field={facetMultiHandle(column, facet)}
-                        label={facet.label}
-                      />
-                    ) : (
-                      <EnumFilter
-                        key={facet.columnId}
-                        field={facetEnumHandle(column, facet)}
-                        label={facet.label}
-                      />
-                    )
-                  })}
-                </FilterSet>
-              )}
-            </Group>
-            {actions}
-          </Group>
-        </CtlSlot>
+      {/*
+       * ONE header row: the `WidgetHeader` (title · count) on the left, the toolbar right-aligned in
+       * the SAME row. It was two stacked rows with `mb="xs"` on each, so a titled table with search
+       * spent title → 11px → search → 11px → thead before a single datum appeared, and the toolbar
+       * read as page furniture rather than as this table's controls.
+       *
+       * `wrap="wrap"` is the below-`sm` behaviour and needs no media query: the toolbar's minimum
+       * width (a 220px search plus its pills) exceeds what is left beside a title on a phone, so flex
+       * wraps it under the title on its own. `align="center"` puts the 30px toolbar controls on the
+       * title's optical line rather than on its baseline.
+       */}
+      {(title !== undefined || showToolbar) && (
+        <Group justify="space-between" align="center" wrap="wrap" gap="xs" mb="xs">
+          {title !== undefined ? (
+            <Box style={TABLE_HEADER_LEAD_STYLE}>
+              <WidgetHeader
+                tier="widget"
+                title={title}
+                {...(icon !== undefined && { icon })}
+                {...(subtitle !== undefined && { subtitle })}
+                count={table.getRowCount()}
+              />
+            </Box>
+          ) : null}
+          {showToolbar && (
+            <CtlSlot>
+              <Group gap="xs" wrap="wrap" align="center" style={TABLE_TOOLBAR_STYLE}>
+                {showSearch && (
+                  <TextInput
+                    radius="md"
+                    w={SEARCH_WIDTH}
+                    placeholder={globalFilterPlaceholder}
+                    leftSection={searchIcon}
+                    value={globalFilter}
+                    onChange={(event) => handleGlobalFilterChange(event.currentTarget.value)}
+                  />
+                )}
+                {showFacets && (
+                  <FilterSet>
+                    {facets?.map((facet) => {
+                      const column = table.getColumn(facet.columnId)
+                      if (!column) return null
+                      return facet.multiple ? (
+                        <MultiSelectFilter
+                          key={facet.columnId}
+                          field={facetMultiHandle(column, facet)}
+                          label={facet.label}
+                        />
+                      ) : (
+                        <EnumFilter
+                          key={facet.columnId}
+                          field={facetEnumHandle(column, facet)}
+                          label={facet.label}
+                        />
+                      )
+                    })}
+                  </FilterSet>
+                )}
+                {actions}
+              </Group>
+            </CtlSlot>
+          )}
+        </Group>
       )}
       {scrolls ? (
         <Table.ScrollContainer
@@ -1064,12 +1125,10 @@ export function BasaltDataTable<T>({
           </Text>
           <Group gap="xs" align="center">
             <Select
-              size="xs"
+              size="ctl"
               radius="md"
-              data={pageSizeOptions.map((size) => ({
-                value: String(size),
-                label: `${size} / page`,
-              }))}
+              w={PAGE_SIZE_WIDTH}
+              data={pageSizeRows}
               value={String(paginationState.pageSize)}
               onChange={(value) => value && table.setPageSize(Number(value))}
               allowDeselect={false}

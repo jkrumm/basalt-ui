@@ -89,10 +89,36 @@ function isSectionHidden(section: SidebarSection): boolean {
   return section.mobile === false
 }
 
-/** §2.3 rule 12 — a slot is active when ANY of its destinations is, nested children included. */
+/**
+ * §2.3 rule 12 — a slot is active when the active destination is one the slot COVERS.
+ *
+ * "Covers" is the load-bearing word, and it is what makes exclusivity structural: a slot's `covered`
+ * set is exactly the destinations it can navigate to, and activeness now reads that same set. Two
+ * slots therefore cannot both be lit for one location, because no destination is in two `covered`
+ * sets — the overflow is built by removing everything the bar already covers.
+ *
+ * It used to roll up unconditionally over `children`, and `itemCandidate.covered` was
+ * `new Set([item.key])` — the item's own key ONLY. The two disagreed, and the disagreement was the
+ * bug: at `/dashboard/sessions` the `Dashboard` link slot lit through the rollup while `Sessions`
+ * itself, uncovered, sat in the overflow and lit the `More` slot as well. Measured in Chrome: two
+ * `aria-current="page"` tabs in a five-slot bar.
+ *
+ * The rollup itself survives where coverage backs it — a SECTION slot covers its whole pruned tree
+ * (`collectKeys` recurses), so a nested destination inside a section tab still lights that tab, which
+ * is the "you are nowhere" case rule 12 was written for. What changed is an ITEM tab with children:
+ * it covers only itself, its children stay reachable in the overflow, and the slot that can actually
+ * reach the open route is the one that lights. That is strictly better than the alternative — folding
+ * the children into the parent's coverage would light the parent and make the child unreachable from
+ * the bar at all.
+ */
 function hasActiveDestination(item: SidebarItem): boolean {
   if (item.active) return true
   return item.children?.some(hasActiveDestination) ?? false
+}
+
+/** The half of rule 12 an ITEM slot reads: only the destination the tap actually navigates to. */
+function isActiveDestination(item: SidebarItem): boolean {
+  return item.active === true
 }
 
 /** Rows a group tree will render. Nesting costs a row per node — children are indented rows. */
@@ -161,13 +187,15 @@ function itemCandidate(item: SidebarItem): Candidate {
   return {
     key: item.key,
     covered: new Set([item.key]),
+    // `isActiveDestination`, not the rollup: this slot COVERS one key, so it reads one key
+    // (`hasActiveDestination`'s doc has the whole accounting).
     toSlot: () => ({
       kind: 'link',
       key: item.key,
       label: item.label,
       short: item.short ?? item.label,
       icon: item.icon,
-      active: hasActiveDestination(item),
+      active: isActiveDestination(item),
       item,
     }),
   }

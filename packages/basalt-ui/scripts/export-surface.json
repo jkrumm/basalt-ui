@@ -362,6 +362,7 @@
     "ActionGroup",
     "COMPARE_VALUES",
     "CompareFilter",
+    "ControlGroup",
     "DESKTOP_SECONDARY_MAX",
     "FilterSet",
     "MOBILE_GLOBAL_BAR_MAX",

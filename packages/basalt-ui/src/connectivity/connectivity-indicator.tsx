@@ -201,13 +201,14 @@ export function ConnectivityIndicator() {
         <ActionIcon
           variant="transparent"
           color={ICON_COLOR[status]}
-          // A numeric size, not the named `"md"` — the theme's `ActionIcon.extend` `vars` (see
-          // `theme/index.ts`) now re-points a `size="md"` ActionIcon at the density-tracking control-
-          // height anchor (for a `size="md"` ActionIcon meant to match a `size="md"` Input/Button), so
-          // this plain toolbar icon must opt OUT with an explicit number to keep Mantine's own static
-          // `--ai-size-md` (28px at the 16px root) — unaffected by that override (`props.size` is a
-          // number here, never the literal string `'md'`) and by the density knob.
-          size={28}
+          // `ctl`, the control tier (`docs/CONTROLS-SPEC.md` §5) — this indicator's home is a header
+          // toolbar, and that is the tier a toolbar control is. It used to pin a literal `28` to opt
+          // OUT of the `size="md"` height (42px, sized for a form field), which was the right escape
+          // before the `ctl` tier existed; the cost was that the shell's globals rendered 2px short
+          // of every other control in the same 48px row. `--ai-size-ctl` is declared on `:root` by
+          // `cssVariablesResolver`, so this resolves with or without an enclosing `CtlSlot`, and it
+          // tracks the density knob like the rest of the tier.
+          size="ctl"
           onClick={toggle}
           onMouseEnter={scheduleOpen}
           onMouseLeave={scheduleClose}

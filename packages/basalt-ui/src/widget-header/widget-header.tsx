@@ -26,6 +26,7 @@
  */
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { IconSlot } from '../theme/icon-slot'
 import { DeltaBadge } from './delta-badge'
 import classes from './widget-header.module.css'
 
@@ -138,11 +139,11 @@ export function WidgetHeader({
     <div className={classes.root} data-tier={tier}>
       <div className={classes.titleRow}>
         <Heading className={classes.heading}>
-          {icon !== undefined && (
-            <span className={classes.icon} aria-hidden="true">
-              {icon}
-            </span>
-          )}
+          {/* `IconSlot` owns the box; the TIER owns its size, through the
+              `--vx-space-icon-size` this module sets per `data-tier`. So a `tier="widget"`
+              heading draws 14px and a `tier="section"` heading 16px with no prop and no
+              per-component `> svg` rule — see `theme/icon-slot.tsx`. */}
+          {icon !== undefined && <IconSlot className={classes.icon}>{icon}</IconSlot>}
           <span className={classes.titleText}>{title}</span>
         </Heading>
         {/* OUTSIDE the heading on purpose — see `info`'s own doc. */}

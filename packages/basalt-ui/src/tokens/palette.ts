@@ -377,7 +377,7 @@ const SPACE_STEP_BASE = {
   // (`appShellHeaderHeight` below) instead (see {@link deriveSpacing}'s doc for why): an independent
   // literal could drift from that header, which is exactly what happened. `SpaceValues.step` still
   // carries the key — see that type's own doc — it is just not part of this BASE table. The
-  // `stickyHeaderClearanceMobile` sibling went with the two-row mobile header in 1.27.0: the header
+  // `stickyHeaderClearanceMobile` sibling went with the two-row mobile header in 1.26.0: the header
   // is one 48px row at every viewport now, so one clearance covers both.
   /** NavLink leftSection icon-to-label gap — shared by `theme/nav-link.module.css` (every render
    * path) and `shell/app-sidebar.module.css`'s own `.link` rule (belt-and-suspenders on the same
@@ -593,16 +593,23 @@ const SPACE_STEP_BASE = {
    *  tracks `controlHeight`. Its level-0 coincidence with `appShellNavbarRailWidth` below is a
    *  coincidence, not a law: this is a horizontal bar's HEIGHT (governed by control height), that
    *  is a vertical rail's WIDTH (governed by icon footprint). They stay separate entries. */
-  /** AppShell header bar height — ONE value at every viewport since 1.27.0 (law C14,
-   *  `docs/CONTROLS-SPEC.md` §2.1). The pre-1.27.0 `appShellHeaderMobileHeight` (97) existed only
+  /** AppShell header bar height — ONE value at every viewport since 1.26.0 (law C14,
+   *  `docs/CONTROLS-SPEC.md` §2.1). The pre-1.26.0 `appShellHeaderMobileHeight` (97) existed only
    *  because the mobile header wrapped to a second, always-reserved page-actions row; `PageBar`
    *  folds that row's overflow into a kebab and moves its filters/tabs into the page flow, so the
    *  bar is 48px on a phone too and there is no sum to keep in step any more. */
   appShellHeaderHeight: 48,
   /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile, where the navbar is
    *  permanently collapsed and unused — see `MobileNav`) and the expanded `sm` value: the same
-   *  `.root` at full width, genuinely one concept. */
-  appShellNavbarWidth: 216,
+   *  `.root` at full width, genuinely one concept.
+   *
+   *  256, up from 216. At 216 the column was 196px of usable text after `.root`'s 10px inset a side,
+   *  and the sidebar carries more than nav rows: a block row is `label · meta`, an account row is
+   *  `avatar · name · plan`, and a `Recents` entry is a sentence. Every one of them was ellipsizing
+   *  in the second word. 256 is also the width the shell's own dropdowns already assume
+   *  (`sidebarAccountMenuWidth` 220 + the row inset), so the menu no longer overhangs the column it
+   *  belongs to. */
+  appShellNavbarWidth: 256,
   /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above
    *  despite sharing 48 at level 0 (see that entry's note). */
   appShellNavbarRailWidth: 48,
@@ -703,6 +710,16 @@ const SPACE_STEP_BASE = {
   /** Mobile bottom-sheet row height (the `Filters (n)` drawer, a block's More-sheet row) — Apple
    *  HIG 44pt / WCAG 2.5.5 AAA, same floor family as `mobileNavRowHeight`. */
   sheetRowHeight: 44,
+  /** `BasaltDataTable`'s header row. Its own entry rather than a reuse of `sectionHeaderHeight`
+   *  (which is 36 too at level 0): one is a heading's box, this is a table's `th`, and a density
+   *  pass that wants denser table rows must not be forced to shrink every section header with them.
+   *  Mantine sizes both `th` and `td` from ONE `verticalSpacing` prop, so a 36/40 pair is
+   *  unreachable through it — both are applied in `theme/index.ts`'s `Table.extend` as JS numbers,
+   *  which is why (like `progressBarSize`) neither is emitted as a `--vx-*` var. */
+  tableHeaderHeight: 36,
+  /** `BasaltDataTable`'s body row — one step taller than the header, so the mono uppercase `th`
+   *  reads as a label band over roomier data rows rather than as the first row of the data. */
+  tableRowHeight: 40,
 } as const
 
 /**
@@ -745,7 +762,7 @@ export type SpaceValues = {
    * it is computed after the rest of `step`, from `appShellHeaderHeight`, see
    * {@link deriveSpacing}'s doc. Kept on this same `step` object (not split into a third group)
    * because every consumer reads it exactly like any other one-off — only its DERIVATION differs.
-   * ONE key, not the pre-1.27.0 responsive pair: the AppShell header is a single 48px row at every
+   * ONE key, not the pre-1.26.0 responsive pair: the AppShell header is a single 48px row at every
    * viewport now (law C14, `docs/CONTROLS-SPEC.md` §2.1), so there is no second header to clear. */
   step: { [K in keyof typeof SPACE_STEP_BASE]: number } & {
     stickyHeaderClearance: number
@@ -850,8 +867,8 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    such key any more (see that table's doc). It is computed AFTER the rest of `step`, as
  *    `step.appShellHeaderHeight + anchors.stackMd`. An independent literal can only be tuned against
  *    ONE header height and then drifts from it: the original 84 was tuned against a 48px desktop
- *    header and under-cleared the pre-1.27.0 96px mobile one by 12px at level 0, before density
- *    entered the picture at all. Deriving it removes that whole failure mode — and since 1.27.0 the
+ *    header and under-cleared the pre-1.26.0 96px mobile one by 12px at level 0, before density
+ *    entered the picture at all. Deriving it removes that whole failure mode — and since 1.26.0 the
  *    AppShell header is ONE 48px row at every viewport (law C14), so the `stickyHeaderClearanceMobile`
  *    half of the old responsive pair is deleted rather than re-derived. The `+ anchors.stackMd`
  *    breathing room (not a bare `+ 0`) keeps a scrolled-to heading off the header's bottom edge, and
@@ -965,6 +982,9 @@ export function deriveSpacing(level: number): SpaceValues {
   // sidebar search trigger's 24px floor directly above.
   mappedStep.mobileNavBarHeight = Math.max(48, mappedStep.mobileNavBarHeight)
   mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
+  // Same floor family, same reason — `sheetRowHeight`'s own doc names it "same floor family as
+  // `mobileNavRowHeight`", but nothing enforced that below level 0 until now.
+  mappedStep.sheetRowHeight = Math.max(44, mappedStep.sheetRowHeight)
   const step: SpaceValues['step'] = {
     ...mappedStep,
     // DERIVED from the header it clears, plus density-tracking breathing room — see this function's
