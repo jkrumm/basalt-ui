@@ -148,14 +148,15 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 99 of the 108 spacing variables, taking the set from 236 to 137', () => {
-    // 204 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
-    // (default `legacyAliases: true`) = 236; the alias set is spacing-free, so it rides along
-    // unchanged in both `all` and `core`. 204 = 202 at 1.20.0 plus the `nano`/`display` type rungs.
-    expect(all.size).toBe(236)
-    expect(core.size).toBe(137)
-    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(108)
-    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(9)
+  it('drops 105 of the 118 spacing variables, taking the set from 246 to 141', () => {
+    // 214 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
+    // (default `legacyAliases: true`) = 246; the alias set is spacing-free, so it rides along
+    // unchanged in both `all` and `core`. 214 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
+    // spacing vars of 1.26.0 (docs/CONTROLS-SPEC.md §5; the four anchors among them are core).
+    expect(all.size).toBe(246)
+    expect(core.size).toBe(141)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(118)
+    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(13)
   })
 
   it('keeps exactly the SPACE anchors — the partition tracks the constants, not a list', () => {
@@ -171,7 +172,7 @@ describe('buildPaletteCss core-only spacing', () => {
   it('touches spacing only — color, radius, type and status are identical', () => {
     const dropped = [...all].filter((n) => !core.has(n))
     expect(dropped.every((n) => n.startsWith('space-'))).toBe(true)
-    expect(dropped).toHaveLength(99)
+    expect(dropped).toHaveLength(105)
   })
 })
 
@@ -249,7 +250,7 @@ describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
   it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
     const withAliases = varNames(buildPaletteCss())
     const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
-    expect(withoutAliases.size).toBe(204)
+    expect(withoutAliases.size).toBe(214)
     expect(withAliases.size).toBe(withoutAliases.size + 32)
     for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })

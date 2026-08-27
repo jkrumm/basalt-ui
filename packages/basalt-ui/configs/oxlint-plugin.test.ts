@@ -12,7 +12,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
-import basaltPlugin, { KNOWN_RULE_IDS, PLUGIN_RULE_GRACE } from './oxlint-plugin.js'
+import basaltPlugin, {
+  KNOWN_RULE_IDS,
+  PLUGIN_RULE_ADVISORY,
+  PLUGIN_RULE_GRACE,
+} from './oxlint-plugin.js'
 import { GUARD_RULES } from '../src/guard/index.ts'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
@@ -1152,31 +1156,128 @@ export const C = () => <NavLink label="Settings" />\n`,
 
 // ── grace ledger ↔ shipped preset ────────────────────────────────────────────
 
+type GraceEntry = { since: string; promote: string; why: string }
+
+/**
+ * Tiny local semver compare — no dependency. Assumes plain `x.y.z`, no pre-release identifiers.
+ * Compares each component numerically, not lexically, so `'1.9.0' < '1.10.0'` and
+ * `'1.3.0' < '1.26.0'` — a string compare would get both backwards.
+ */
+function compareSemver(a: string, b: string): number {
+  const partsA = a.split('.').map(Number)
+  const partsB = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    const diff = (partsA[i] ?? 0) - (partsB[i] ?? 0)
+    if (diff !== 0) return diff > 0 ? 1 : -1
+  }
+  return 0
+}
+
+/**
+ * The C16 gate itself (docs/CONTROLS-SPEC.md §1), extracted so it can be exercised against a
+ * synthetic ledger as well as the real `PLUGIN_RULE_GRACE` — an `it.each` over the real ledger ran
+ * zero assertions while it was empty, which proved nothing about the gate actually firing. Throws
+ * naming the first offending entry when either invariant breaks: `since` must precede `promote`
+ * for every entry, and no entry's `promote` may be `<=` the given version.
+ */
+function assertGraceLedger(ledger: Record<string, GraceEntry>, version: string): void {
+  for (const [id, entry] of Object.entries(ledger)) {
+    if (compareSemver(entry.since, entry.promote) >= 0) {
+      throw new Error(
+        `${id}: \`since\` (${entry.since}) must be before \`promote\` (${entry.promote}).`,
+      )
+    }
+    if (compareSemver(version, entry.promote) >= 0) {
+      throw new Error(
+        `basalt/${id}: shipped preset is at ${version}, which has reached its promote version ` +
+          `${entry.promote} — promote to error or extend \`promote\` with a reason.`,
+      )
+    }
+  }
+}
+
+describe('compareSemver', () => {
+  it('orders multi-digit components numerically, not lexically', () => {
+    expect(compareSemver('1.9.0', '1.10.0')).toBeLessThan(0)
+    expect(compareSemver('1.10.0', '1.9.0')).toBeGreaterThan(0)
+    expect(compareSemver('1.3.0', '1.26.0')).toBeLessThan(0)
+    expect(compareSemver('1.26.0', '1.3.0')).toBeGreaterThan(0)
+  })
+
+  it('treats equal versions as equal', () => {
+    expect(compareSemver('1.25.0', '1.25.0')).toBe(0)
+  })
+})
+
+describe('assertGraceLedger', () => {
+  it('does not throw on a well-formed entry not yet due', () => {
+    const ledger = { 'fake-rule': { since: '1.0.0', promote: '2.0.0', why: 'synthetic' } }
+    expect(() => assertGraceLedger(ledger, '1.25.0')).not.toThrow()
+  })
+
+  it('throws once the given version reaches promote', () => {
+    const ledger = { 'fake-rule': { since: '1.0.0', promote: '1.25.0', why: 'synthetic' } }
+    expect(() => assertGraceLedger(ledger, '1.25.0')).toThrow(/fake-rule/)
+  })
+
+  it('throws once the given version is past promote', () => {
+    const ledger = { 'fake-rule': { since: '1.0.0', promote: '1.9.0', why: 'synthetic' } }
+    expect(() => assertGraceLedger(ledger, '1.10.0')).toThrow(/fake-rule/)
+  })
+
+  it('throws when since does not precede promote', () => {
+    const ledger = { 'fake-rule': { since: '1.5.0', promote: '1.5.0', why: 'synthetic' } }
+    expect(() => assertGraceLedger(ledger, '1.0.0')).toThrow(/since/)
+  })
+})
+
 describe('PLUGIN_RULE_GRACE', () => {
   const shipped = JSON.parse(readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8')) as {
     rules: Record<string, unknown>
   }
-  const graceIds = Object.keys(PLUGIN_RULE_GRACE)
+  const pkgVersion = (
+    JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
+      version: string
+    }
+  ).version
+  const graceEntries = Object.entries(PLUGIN_RULE_GRACE) as [string, GraceEntry][]
+  const advisoryEntries = Object.entries(PLUGIN_RULE_ADVISORY) as [
+    string,
+    { since: string; why: string },
+  ][]
+  const graceIds = graceEntries.map(([id]) => id)
+  const advisoryIds = advisoryEntries.map(([id]) => id)
   const shippedBasaltIds = Object.keys(shipped.rules).filter((id) => id.startsWith('basalt/'))
 
   // The mechanism whose ABSENCE let three rules sit at `warn` for up to twelve minors with nothing
   // tracking them. Deleting a ledger entry IS the promotion, and this test makes flipping the
   // shipped level part of the same commit.
-  it('every ledger entry is warn in the shipped preset', () => {
-    for (const id of graceIds) expect(shipped.rules[`basalt/${id}`]).toBe('warn')
+  it('every grace and advisory entry is warn in the shipped preset', () => {
+    for (const id of [...graceIds, ...advisoryIds])
+      expect(shipped.rules[`basalt/${id}`]).toBe('warn')
   })
 
-  it('every shipped rule NOT in the ledger is error', () => {
+  it('every shipped rule NOT in either ledger is error', () => {
     for (const id of shippedBasaltIds) {
-      if (graceIds.includes(id.slice('basalt/'.length))) continue
+      const bareId = id.slice('basalt/'.length)
+      if (graceIds.includes(bareId) || advisoryIds.includes(bareId)) continue
       expect([id, shipped.rules[id]]).toEqual([id, 'error'])
     }
   })
 
-  it('every ledger entry carries a written promotion note', () => {
-    for (const id of graceIds) {
-      expect((PLUGIN_RULE_GRACE as Record<string, string>)[id]?.length ?? 0).toBeGreaterThan(40)
+  it('every entry carries a written why', () => {
+    for (const [id, entry] of [...graceEntries, ...advisoryEntries]) {
+      if (entry.why.length <= 40)
+        throw new Error(`${id}: \`why\` must be longer than 40 characters.`)
+      expect(entry.why.length).toBeGreaterThan(40)
     }
+  })
+
+  // The C16 version gate, run against the REAL ledger and REAL package version — covers `since` <
+  // `promote` and "no entry has reached its promote version" in one call. ADVISORY entries are
+  // exempt by design (see `assertGraceLedger`'s synthetic coverage above for the gate itself).
+  it('passes the C16 gate against the real ledger and package version', () => {
+    expect(() => assertGraceLedger(Object.fromEntries(graceEntries), pkgVersion)).not.toThrow()
   })
 })
 

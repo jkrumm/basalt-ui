@@ -30,6 +30,96 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ---
 
+## Unreleased
+
+**One export removed and two deprecated — see § Stores below. Two other behaviour changes: the grace ledgers changed shape, and nine
+long-stale entries (D4, `docs/archive/CONTROLS-SYNTHESIS.md`) are promoted.** C16
+(`docs/CONTROLS-SPEC.md` §1) is the new law behind both: a grace entry now carries `{ since,
+promote, why }` (semver strings) instead of a bare promotion-note string, and a version-gated test
+fails the build once `package.json`'s version reaches an entry's `promote` while the entry is still
+in the ledger. That is what stops a rule sitting at `warn` for five minors with nothing tracking the
+promise, which is exactly what happened to the nine rows below.
+
+**`PLUGIN_RULE_GRACE`** (`configs/oxlint-plugin.js`) **and `GRACE_PERIOD_KINDS`**
+(`src/guard/index.ts`) are both now empty — every entry that was in grace either promoted to `error`
+or moved to a new, permanent `PLUGIN_RULE_ADVISORY` ledger. A theme-allow escape written against any
+of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
+`error`.
+
+| Rule / kind (promoted)                 | What now errors                                                                                                                                                  | Escape hatch                                                                                                                                |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `basalt/hand-rolled-plot`              | An unwaived chart-assembly node (`AxisLeftNumeric`, `AxisRightNumeric`, `AxisBottomDate`, `HoverOverlay`, `Crosshair`) outside a file composing `CartesianChart` | `theme-allow hand-rolled-plot — <why>` per node, or `theme-allow-file hand-rolled-plot — <why>` for a declared exception                    |
+| `basalt/chart-legend-literal`          | A hand-written array literal passed to `ChartLegend`'s `items`                                                                                                   | Derive the legend from `series` (`deriveLegend`, or let `ChartFrame`/`CartesianChart` do it), or `theme-allow chart-legend-literal — <why>` |
+| `basalt/hand-rolled-shell`             | A hand-rolled app-shell assembly node instead of `BasaltShell`                                                                                                   | `theme-allow hand-rolled-shell — <why>`, or `theme-allow-file` for the whole file                                                           |
+| `theme-allow-unscoped` (guard kind)    | A bare `// theme-allow` with no rule id                                                                                                                          | Name the kind(s): `theme-allow <kind> — <why>`                                                                                              |
+| `surface-shadow-override` (guard kind) | A hand-composed `boxShadow` reaching a `--vx-*` token                                                                                                            | Use the shipped shadow tokens, or waive with a reason                                                                                       |
+| `css-raw-surface` (guard kind)         | A raw surface color in kebab CSS (`.module.css`)                                                                                                                 | Same remedy as the JS/TSX form — a `--vx-*` var, or waive                                                                                   |
+| `inline-font-size` (guard kind)        | A hardcoded numeric font size in an inline `style` object                                                                                                        | `VX.text.*` / `--vx-text-*`, or waive                                                                                                       |
+| `hidden-inline-style` (guard kind)     | A style object defined once and spread into `style={...}` (evades the guard's inline-object scan)                                                                | Inline the object at the call site, or waive                                                                                                |
+
+**`basalt/shadow-basalt-export` is unaffected** — it moves ledgers (`PLUGIN_RULE_GRACE` →
+`PLUGIN_RULE_ADVISORY`), not severity. It stays `warn` in the shipped preset, permanently, and is
+never subject to the C16 gate: see "Lint and guard rules that tightened" below for why.
+
+Consumers who never overrode `basalt.severity` for any of the eight kinds/rules above and never
+waived them see these findings for the first time as `error`; measure against the shipped preset
+before upgrading if that's a concern (`basalt-ui check-theme --audit-allows`, `oxlint .`).
+
+### Stores — `createSearchStore` replaces the enum-only pair
+
+`createSearchParamStore` and `createMultiSearchParamStore` still work: both are now `@deprecated`
+thin wrappers over `createSearchStore`, returning the same four members
+(`validateSearch`, `useStore`, `readStored`, `linkSearch`) with the same signatures and reading the
+same single-value localStorage envelope. **They are removed in 1.29.0.**
+
+| Removed / deprecated                                       | Replacement                                                                                                      |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `createSearchParamStore({ key, param, values, fallback })` | `createSearchStore({ key, fields: { <param>: field.enum(values, fallback) } })` — `@deprecated`, removed 1.29.0  |
+| `createMultiSearchParamStore({ key, param, values })`      | `createSearchStore({ key, fields: { <param>: field.multi(values, fallback) } })` — `@deprecated`, removed 1.29.0 |
+| `<store>.useStore()`                                       | `<store>.field.<name>.use()` — reads the URL FIRST, then the mirror; writes both lanes                           |
+| `useOnlineStatus` (`.` and `./state`)                      | `useConnectivity()` (`.`, auto-mounted by `BasaltProvider`) — **removed, not deprecated** (A12)                  |
+| `createSearchSchemaStore`                                  | never shipped; `createSearchStore` is what those "planned" paragraphs were waiting for                           |
+
+New on `./router-tanstack`: `createSearchStore`, `field` (`enum` / `multi` / `range` / `number` /
+`boolean` / `string`), and the `FieldHandle` / `AnyField` / `FieldValue` / `RangeValue` / lane types.
+New on `./state` (router-free, same field vocabulary): `createLocalStore`, `field`, those same types.
+`FieldHandle` is what every 1.27.0 control takes instead of `value`/`onChange`
+(`docs/CONTROLS-SPEC.md` §3–§4).
+
+Three things to know when you migrate a real store:
+
+- **A deep link now wins over the mirror.** `?range=7d` reads back `7d` even when localStorage says
+  `30d`. The old `useStore` read localStorage, so a shared link opened on the wrong window — the bug
+  three consumers shipped (A8). If you were compensating for that by hand, delete the compensation.
+- **The storage layout changed for the NEW factory only.** `createSearchStore` keeps one entry per
+  STORE (`basalt:<key>` = `{ fieldName: value }`); the old factories kept one bare value per param.
+  A store migrated from a wrapper to `createSearchStore` therefore ignores whatever the browser
+  already had for that key and starts on its fallback once. The wrappers themselves keep the old
+  layout byte-for-byte, so an un-migrated consumer sees no reset — including a stored EMPTY multi
+  selection, which still reads back as empty: "an empty array means absent" is a URL rule in the
+  deprecated store, never a storage rule, so a deliberately cleared filter stays cleared.
+- **A write from outside the owning route persists only** — it no longer needs a hand-rolled
+  `navigate` beside it, and it no longer silently writes a param the route does not validate.
+  `validateSearch` picks the persisted value up on the next visit (A1). The one combination with
+  nowhere to go — a `persist: false` field written from a route that does not validate it — warns
+  once per field in dev rather than dropping the write silently.
+
+Lanes are declared once per field: `{ url: false }` is the local-only lane (per-chart selects, a
+compact toggle — or use `createLocalStore`), `{ persist: false }` the URL-only lane (pagination, a
+deliberately unpersisted threshold), `{ history: 'push' }` opts one field into a history entry.
+A `field.range` keeps THREE URL params (preset + `from` + `to`, renamable via `params`), so existing
+deep links and loaders keep their shape, and `field.<name>.toWindow(v)` replaces a hand-rolled
+`presetToParams`.
+
+### `DeltaBadge` — plain-element DOM, same props
+
+Nothing removed or renamed — a DOM contract change only, ahead of `WidgetHeader`
+(`docs/CONTROLS-SPEC.md` §2.2) composing it Mantine-free.
+
+| Component    | What changed                                                                            | Why it matters                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `DeltaBadge` | Renders a plain `<span>`, no `mantine-Badge-root`/`mantine-Badge-label` classes anymore | Same props, tone and format API — but a selector or snapshot keyed on Mantine's Badge classes breaks |
+
 ## 1.24.0 — `QueryState`, table body chrome, four false greens
 
 **Nothing removed or renamed. Twelve new runtime exports on `.`/`./query`, plus table props.** Every
@@ -715,22 +805,38 @@ live in `configs/oxlint.json`, and since 1.20.0 their grace is tracked by `PLUGI
 named export beside the plugin — a test asserts it against the shipped preset in both directions, so
 deleting an entry forces the level flip in the same commit.
 
-| Rule                               | Landed           | Became `error`                                                           |
-| ---------------------------------- | ---------------- | ------------------------------------------------------------------------ |
-| `mantine-shade-index` (guard kind) | 1.7.0 as `warn`  | **1.11.0**                                                               |
-| `basalt/raw-scroll-container`      | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0**                                       |
-| `basalt/ai-sdk-major`              | 1.10.0 as `warn` | **1.13.0**                                                               |
-| `basalt/agent-no-raw-usechat`      | 1.10.0 as `warn` | **1.13.0**                                                               |
-| `basalt/agent-resume-guard`        | 1.10.0 as `warn` | **1.13.0**                                                               |
-| `basalt/raw-size-literal`          | 1.7.0 as `warn`  | **1.20.0**                                                               |
-| `basalt/hand-rolled-plot`          | 1.15.0 as `warn` | still `warn` — widened again at 1.21.0; grace restarts with the widening |
-| `basalt/chart-legend-literal`      | 1.15.0 as `warn` | still `warn` — widened at 1.20.0                                         |
-| `basalt/shadow-basalt-export`      | 1.20.0 as `warn` | may stay `warn` permanently — widened at 1.21.0, narrowed at 1.22.0      |
-| `basalt/hand-rolled-shell`         | 1.20.0 as `warn` | —                                                                        |
+| Rule                                   | Landed           | Became `error`                                                        |
+| -------------------------------------- | ---------------- | --------------------------------------------------------------------- |
+| `mantine-shade-index` (guard kind)     | 1.7.0 as `warn`  | **1.11.0**                                                            |
+| `basalt/raw-scroll-container`          | ≤1.2.0 as `off`  | `warn` 1.10.0 → **`error` 1.13.0**                                    |
+| `basalt/ai-sdk-major`                  | 1.10.0 as `warn` | **1.13.0**                                                            |
+| `basalt/agent-no-raw-usechat`          | 1.10.0 as `warn` | **1.13.0**                                                            |
+| `basalt/agent-resume-guard`            | 1.10.0 as `warn` | **1.13.0**                                                            |
+| `basalt/raw-size-literal`              | 1.7.0 as `warn`  | **1.20.0**                                                            |
+| `basalt/hand-rolled-plot`              | 1.21.0 as `warn` | **Unreleased** (grace had restarted at the 1.21.0 widening)           |
+| `basalt/chart-legend-literal`          | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `basalt/shadow-basalt-export`          | 1.20.0 as `warn` | ADVISORY — permanent `warn`, see below, never subject to the C16 gate |
+| `basalt/hand-rolled-shell`             | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `theme-allow-unscoped` (guard kind)    | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `surface-shadow-override` (guard kind) | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `css-raw-surface` (guard kind)         | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `inline-font-size` (guard kind)        | 1.20.0 as `warn` | **Unreleased**                                                        |
+| `hidden-inline-style` (guard kind)     | 1.20.0 as `warn` | **Unreleased**                                                        |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
 the other original guard kinds have been `error` since before 1.2.0 — they never had a grace minor.
 Guard findings only gained a severity field at all in 1.4.0; before that every finding was fatal.
+
+**Both ledgers changed shape in the Unreleased minor (C16, `docs/CONTROLS-SPEC.md` §1).** An entry
+used to be a bare promotion-note string with no expiry a machine could check — which is exactly how
+the nine rows above sat at `warn` for five minors although the doctrine below says "one minor". Both
+`PLUGIN_RULE_GRACE` (`configs/oxlint-plugin.js`) and `GRACE_PERIOD_KINDS` (`src/guard/index.ts`) now
+hold `{ since, promote, why }` (semver strings), and a version-gated test fails the build once
+`package.json`'s version reaches an entry's `promote` while the entry is still there — see
+"Unreleased" above for the full change. `shadow-basalt-export` moved to a sibling ledger,
+`PLUGIN_RULE_ADVISORY`, which the gate never checks: it was already documented as a possible
+permanent `warn`, and the version-gate doctrine only fits an entry that has an honest promotion
+date.
 
 **Rule-id rename at 1.1.0:** `basalt/import-boundary` split into `basalt/visx-boundary`,
 `basalt/visx-tooltip` and `basalt/token-layer-boundary` (the last is repo-local and deliberately not

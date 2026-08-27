@@ -99,6 +99,10 @@ export type { BasaltFontsConfig } from '../tokens'
 // snapshot) — see its own doc comment for why it lives here rather than in `tokens/`.
 export { useBasaltSpacing } from './use-basalt-spacing'
 
+// The `size="ctl"` slot theme (`docs/CONTROLS-SPEC.md` §5) — see `./ctl-theme`'s own doc for the
+// merge/precedence contract.
+export { CTL_THEME, CtlSlot, type CtlSlotProps } from './ctl-theme'
+
 // Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` /
 // `theme.other.basaltDensity` reads (Mantine's `MantineThemeOther` ships an index signature, so
 // this merge is additive — no widening of the existing `[key: string]: any`). Set by
@@ -1106,6 +1110,52 @@ function familyBridge(data: PaletteData): Record<string, string> {
 }
 
 /**
+ * The `size="ctl"` / `size="icon"` Mantine size-tier var sets (`docs/CONTROLS-SPEC.md` §5, C5) —
+ * scheme-independent, so they live in `cssVariablesResolver`'s `variables` block (`:root`, not
+ * `light`/`dark`), declared exactly once regardless of color scheme. Mechanism, verified against
+ * the installed `@mantine/core` 9.3.0 source (`core/utils/get-size/get-size.mjs`): a component's own
+ * `varsResolver` calls `getSize(props.size, '<prefix>')`, which for a non-numeric `size` returns the
+ * STRING `var(--<prefix>-<size>)` verbatim — so `size="ctl"` on `Button` resolves
+ * `--button-height: var(--button-height-ctl)` with ZERO code in this framework's own `Button.extend`
+ * `vars` callback; only the var these names point AT has to exist. `getFontSize(size)` is
+ * `getSize(size, 'mantine-font-size')`, so every `-fz`/`-font-size` component var (Button's
+ * `--button-fz`, Input's `--input-fz`, SegmentedControl's `--sc-font-size`, Combobox's
+ * `--combobox-option-fz`) resolves through the ONE `--mantine-font-size-ctl` declared below — no
+ * per-component `-ctl` font-size var exists to declare (verified against
+ * `SegmentedControl.mjs`/`Combobox.mjs`; a per-component name would be dead weight no `getSize`
+ * call ever reads).
+ *
+ * Heights read the density-tracking `--vx-space-control-height-ctl`/`-widget` anchors
+ * (`tokens/index.ts`'s `spaceDecls`, `docs/CONTROLS-SPEC.md` §5) through the SAME rem-plus-
+ * `--mantine-scale` reconstruction `--vx-space-input-height`/`--vx-space-control-height` already
+ * use for `size="md"` (see `Input.extend`'s doc above) — so the ctl/icon tier tracks the density
+ * knob exactly like every other control height. Paddings, the combobox chevron, and the
+ * SegmentedControl/Combobox option padding have no density-tracking token of their own
+ * (`docs/CONTROLS-SPEC.md` §5 specifies only the height ladder) — `controlHeightCtl` (30px)
+ * coincides with Mantine's own `xs` height at level 0, so those geometrically-proportional values
+ * reuse Mantine's shipped `xs` var rather than inventing an unverifiable number; `size="icon"`
+ * (24px) has no vertical-padding/chevron consumer (it is ActionIcon-only), so only `--ai-size-icon`
+ * is declared for it.
+ */
+function ctlSizeVars(): Record<string, string> {
+  return {
+    '--button-height-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+    '--button-padding-x-ctl': 'var(--button-padding-x-xs)',
+    '--input-height-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+    '--input-padding-y-ctl': 'var(--input-padding-y-xs)',
+    '--ai-size-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+    '--ai-size-icon': 'calc(var(--vx-space-control-height-widget) * var(--mantine-scale))',
+    '--sc-padding-ctl': 'var(--sc-padding-xs)',
+    '--combobox-option-padding-ctl': 'var(--combobox-option-padding-xs)',
+    '--combobox-chevron-size-ctl': 'var(--combobox-chevron-size-xs)',
+    // `= VX.text.sm` per `docs/CONTROLS-SPEC.md` §5 — same `calc(<rem> * var(--mantine-scale))`
+    // shape Mantine's own `--mantine-font-size-*` vars use.
+    '--mantine-font-size-ctl': `calc(${pxRem(VX.text.sm)} * var(--mantine-scale))`,
+    '--mantine-line-height-ctl': 'var(--mantine-line-height-sm)',
+  }
+}
+
+/**
  * Build the `cssVariablesResolver` bound to a given palette `data` — the derive-config-dependent
  * half of the fallback hexes below (see `buildTheme` above for the same split on `theme.colors`).
  * `cssVariablesResolver` (the static, shipped export) is `buildCssVariablesResolver(DEFAULT_PALETTE_DATA)`
@@ -1123,7 +1173,9 @@ function familyBridge(data: PaletteData): Record<string, string> {
 function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
   const { INK, NEUTRAL, SURFACE } = data
   return (theme) => ({
-    variables: {},
+    variables: {
+      ...ctlSizeVars(),
+    },
     light: {
       ...onColorVars(theme, 'light', data),
       ...familyBridge(data),

@@ -1916,15 +1916,16 @@ describe('severity', () => {
     expect(f.find((v) => v.kind === 'raw-spacing')?.severity).toBe('error')
   })
 
-  // The grace ledger. Five kinds landed warn-only in the round-4 guard minor; deleting an entry
-  // from GRACE_PERIOD_KINDS is the promotion, and it shows up here as an explicit diff.
+  // The grace ledger. These five kinds landed warn-only in the round-4 guard minor and sat there
+  // for five minors with nothing tracking the promise (D4) — GRACE_PERIOD_KINDS is now empty and
+  // the C16 version gate in grace.test.ts is what stops a future entry sitting unpromoted again.
   it.each([
     'theme-allow-unscoped',
     'surface-shadow-override',
     'css-raw-surface',
     'inline-font-size',
     'hidden-inline-style',
-  ])('%s is still in its grace minor (warn)', (kind) => {
+  ])('%s is promoted past its grace minor (error)', (kind) => {
     const cases: Record<string, [string, string]> = {
       'theme-allow-unscoped': ['const x = 1 // theme-allow', PATH],
       'surface-shadow-override': ['const s = { boxShadow: `0 0 0 2px ${VX.accent}` }', PATH],
@@ -1937,7 +1938,7 @@ describe('severity', () => {
     }
     const [src, path] = cases[kind] as [string, string]
     const hit = find(src, path).find((v) => v.kind === kind)
-    expect(hit?.severity).toBe('warn')
+    expect(hit?.severity).toBe('error')
   })
 
   it('ships every OTHER kind past its grace period', () => {
@@ -2139,9 +2140,9 @@ describe('theme-allow scoping', () => {
     expect(f).toHaveLength(0)
   })
 
-  it('ships theme-allow-unscoped as a warning, not a build failure', () => {
+  it('ships theme-allow-unscoped as an error (promoted, C16)', () => {
     const f = find(`const x = 1 // theme-allow`)
-    expect(f.every((v) => v.severity === 'warn')).toBe(true)
+    expect(f.every((v) => v.severity === 'error')).toBe(true)
   })
 
   // The annotation itself lives in a comment; a `theme-allow` in real code must not waive anything.
@@ -2370,9 +2371,9 @@ describe('surface-shadow-override', () => {
     expect(kinds(f)).not.toContain('surface-shadow-override')
   })
 
-  it('ships as a warning for its grace minor', () => {
+  it('is an error now that its grace minor has ended (promoted, C16)', () => {
     const f = find('const s = { boxShadow: `0 0 0 2px ${VX.accent}` }')
-    expect(f.find((v) => v.kind === 'surface-shadow-override')?.severity).toBe('warn')
+    expect(f.find((v) => v.kind === 'surface-shadow-override')?.severity).toBe('error')
   })
 })
 
@@ -2475,12 +2476,12 @@ export const C = () => <div style={labelStyle} />`,
     expect(kinds(f)).not.toContain('hidden-inline-style')
   })
 
-  it('ships as a warning for its grace minor', () => {
+  it('is an error now that its grace minor has ended (promoted, C16)', () => {
     const f = find(
       `const wrapperStyle = { position: 'relative', width: '100%' }
 export const C = () => <div style={wrapperStyle} />`,
     )
-    expect(f.find((v) => v.kind === 'hidden-inline-style')?.severity).toBe('warn')
+    expect(f.find((v) => v.kind === 'hidden-inline-style')?.severity).toBe('error')
   })
 })
 

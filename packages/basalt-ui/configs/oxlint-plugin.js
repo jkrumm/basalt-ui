@@ -1603,32 +1603,52 @@ const handRolledShell = {
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Plugin rules still inside their grace minor — `warn` in the shipped consumer preset, `error`
- * repo-locally, with the promotion note as the value. This is the plugin's counterpart to
- * `src/guard`'s `GRACE_PERIOD_KINDS`, and it exists because its ABSENCE is what let three rules sit
- * at `warn` for up to twelve minors with nothing tracking them: `configs/oxlint.json` is generated
- * and its top-level keys are fixed by oxlint's own parser, so the ledger cannot live there.
- *
- * `oxlint-plugin.test.ts` asserts the two agree in both directions — a rule listed here must be
- * `warn` in the shipped preset, and one absent from here must be `error`. Deleting an entry IS the
- * promotion, and the test makes the config change mandatory in the same commit.
+ * @typedef {{ since: string; promote: string; why: string }} GraceEntry
+ * @typedef {{ since: string; why: string }} AdvisoryEntry
  */
-export const PLUGIN_RULE_GRACE = {
-  'hand-rolled-plot':
-    'widened AGAIN in the round-5 guard minor (file scope must now be spelled `theme-allow-file`, ' +
-    'so the named-with-a-reason shape every consumer wrote at 1.20.0 is a NODE waiver and the ' +
-    'remaining assembly nodes report) — grace restarts with the widening, per the "a rule the ' +
-    'current minor widens does not promote in that minor" doctrine. Promote one minor after ' +
-    'consumers have moved their file declarations to `theme-allow-file`.',
-  'chart-legend-literal':
-    'widened in the round-4 guard minor (a `.map()` over a non-series array now counts) — promote ' +
-    'to error one minor later, for the same reason as hand-rolled-plot above.',
-  'shadow-basalt-export':
-    'new in the round-4 guard minor, widened in round-5 (reads every published barrel, not just ' +
-    'the root one, so a chart-layer fork is visible) — promote to error one minor later, if ever. ' +
-    'A name collision is strong evidence and not proof, and renaming defeats it outright, so this ' +
-    'may be a permanent warn.',
-  'hand-rolled-shell': 'new in the round-4 guard minor — promote to error one minor later.',
+
+/**
+ * Plugin rules still inside their grace minor — `warn` in the shipped consumer preset, `error`
+ * repo-locally. This is the plugin's counterpart to `src/guard`'s `GRACE_PERIOD_KINDS`, and it
+ * exists because its ABSENCE is what let three rules sit at `warn` for up to twelve minors with
+ * nothing tracking them: `configs/oxlint.json` is generated and its top-level keys are fixed by
+ * oxlint's own parser, so the ledger cannot live there.
+ *
+ * `oxlint-plugin.test.ts` asserts the two agree in both directions — a rule listed here or in
+ * {@link PLUGIN_RULE_ADVISORY} must be `warn` in the shipped preset, and one absent from both must
+ * be `error`. Deleting a `PLUGIN_RULE_GRACE` entry IS the promotion, and the test makes the config
+ * change mandatory in the same commit.
+ *
+ * Each entry is `{ since, promote, why }` (semver strings, C16 — `docs/CONTROLS-SPEC.md` §1): a
+ * version-gated test fails the build once `package.json`'s version reaches `promote` while the
+ * entry is still here — the four entries that used to live here (D4) sat at `warn` for up to five
+ * minors because a bare promotion-note string carried no expiry a test could check.
+ *
+ * @type {Record<string, GraceEntry>}
+ */
+export const PLUGIN_RULE_GRACE = {}
+
+/**
+ * Plugin rules that stay `warn` in the shipped preset PERMANENTLY — outside the C16 version gate,
+ * and not expected to ever promote. `oxlint-plugin.test.ts` still requires `warn` in the shipped
+ * preset and a `why` long enough to justify it, but skips these when checking `promote`.
+ *
+ * `shadow-basalt-export` is the one entry: a name collision is strong evidence a component was
+ * forked rather than imported, but not proof, and renaming the fork defeats the check outright — so
+ * there is no version at which flipping it to `error` is safe to promise in advance.
+ *
+ * @type {Record<string, AdvisoryEntry>}
+ */
+export const PLUGIN_RULE_ADVISORY = {
+  'shadow-basalt-export': {
+    since: '1.20.0',
+    why:
+      'new in the round-4 guard minor (1.20.0), widened in round-5 (1.21.0 — reads every ' +
+      'published barrel, not just the root one, so a chart-layer fork is visible), narrowed at ' +
+      '1.22.0 (`isBasaltScopedFile` plus a component-shaped declaration). A name collision is ' +
+      'strong evidence and not proof, and renaming defeats it outright, so this stays a permanent ' +
+      'warn rather than a grace entry with no honest promote date.',
+  },
 }
 
 // ── Plugin export ───────────────────────────────────────────────────────────────────────────────

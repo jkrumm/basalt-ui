@@ -1,0 +1,165 @@
+/*
+ * WidgetHeader — the one heading primitive behind every section/card/table title
+ * (docs/CONTROLS-SPEC.md §2.2). Plain elements only — no `@mantine/*` anywhere in this folder —
+ * so `ChartCard` (inside the `charts/` boundary) can compose it without tripping
+ * `basalt/token-layer-boundary` / `check-dist-layering.mjs`.
+ *
+ * `--vx-space-section-header-height` / `--vx-space-widget-header-height` / `--vx-space-control-gap`
+ * are density-tracking anchors landing alongside this wave (docs/CONTROLS-SPEC.md §5) — referenced
+ * by name with rem fallbacks at their level-0 px value (36/28/6), same idiom as ChartCard's
+ * `--mantine-spacing-*` fallbacks.
+ *
+ * Layout: the title row holds title/icon/info/count/actions only. `value` + `delta` render on
+ * their own hero-metric row directly beneath it — for BOTH tiers, never inline with the title.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap, 0.375rem);
+}
+
+.root[data-tier='section'] .titleRow {
+  min-height: var(--vx-space-section-header-height, 2.25rem);
+}
+
+.root[data-tier='widget'] .titleRow {
+  min-height: var(--vx-space-widget-header-height, 1.75rem);
+}
+
+/* Section → h2, widget → h3 — both read identically: the shared head-font 88%/550 title
+ * treatment (the eleven-copy literal this module single-sources for the primitive; the
+ * remaining call sites are wave 3's job, see docs/CONTROLS-SPEC.md §2.2). */
+.heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+  font-weight: 550;
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+}
+
+.titleText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--vx-muted);
+}
+
+/* Mono count tag after the title (C11 — every table/list states its count in its header). */
+.count {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: var(--vx-radius-ctrl);
+  background: var(--vx-surface-subtle);
+  padding: var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+  font-weight: 500;
+  color: var(--vx-faint);
+}
+
+/* The hero-metric row — value + delta, directly under the title row, for both tiers. */
+.metrics {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.value {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-kpi);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--vx-ink);
+}
+
+/* The C1/C5 home for header actions — always pinned right, regardless of what else is present. */
+.actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--vx-space-control-gap, 0.375rem);
+  margin-inline-start: auto;
+}
+
+.subtitle {
+  margin-top: 1px;
+  font-size: var(--vx-text-sm);
+  font-weight: 400;
+  color: var(--vx-muted);
+}
+
+/* `data-placement` is read by wave-3 composers wanting a `bleed` layout (docs/CONTROLS-SPEC.md
+ * §2.2's `sparklinePlacement` composer mapping) — this primitive only ever sets `right`. */
+.sparkline {
+  margin-top: 4px;
+}
+
+/* ── info glyph ─────────────────────────────────────────────────────────────────────────────── */
+
+.info {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.infoTrigger {
+  display: inline-flex;
+  align-items: center;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vx-faint);
+  cursor: help;
+}
+
+.infoTrigger:hover,
+.infoTrigger:focus-visible {
+  color: var(--vx-muted);
+}
+
+/* ── DeltaBadge ─────────────────────────────────────────────────────────────────────────────── */
+
+.deltaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: var(--vx-radius-ctrl);
+  padding: var(--vx-space-badge-inset-y) var(--vx-space-badge-inset-x);
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.deltaGlyph {
+  font-size: 0.8em;
+}
+
+.deltaPeriod {
+  margin-inline-start: 4px;
+  font-weight: 500;
+  opacity: 0.6;
+}

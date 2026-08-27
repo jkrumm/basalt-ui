@@ -29,21 +29,13 @@ Pick the right home for each kind of state — don't dump everything into one st
   Reach for a third-party store only when complex cross-component state genuinely warrants it (see
   escape hatch below).
 
-## useOnlineStatus — SSR-safe online/offline hook
+## Connectivity — `useConnectivity`, not a boolean hook
 
-`useOnlineStatus()` returns `true` when the browser reports an active network connection,
-`false` when offline. Backed by `useSyncExternalStore` + `window.online`/`offline` events.
-SSR-safe — server snapshot is `true` (optimistic). Exported from both `basalt-ui` (root) and
-`basalt-ui/state`.
-
-```ts
-import { useOnlineStatus } from 'basalt-ui/state'
-
-const isOnline = useOnlineStatus()
-if (!isOnline) return <OfflineBanner />
-```
-
-No props, no options. Use it in any component; no provider needed.
+Network status comes from `useConnectivity()` (`basalt-ui`, auto-mounted by `BasaltProvider`),
+which aggregates the browser signal with React Query, SSE and health pings into
+`{ status, details }`. The boolean-only hook this section used to document is gone — it
+read one of those four signals and had no provider, so an app wired to `BasaltProvider` got two
+disagreeing answers (see `MIGRATING.md`).
 
 ## createPersistedState — the default primitive
 

@@ -302,6 +302,23 @@ const SPACE_ANCHORS_BASE = {
    * Input tracks it at every density level instead of only coinciding at level 0 (the defect this
    * anchor fixes — Mantine's own `--button-height-md`/`--ai-size` are static, density-blind). */
   controlHeight: CONTROL_HEIGHT_BASE,
+  /** The `size="icon"` count-tag height (`docs/CONTROLS-SPEC.md` §5) — inline chip / table-cell
+   * count badge. Floored at 18px in {@link deriveSpacing} (same "negative level can't collapse a
+   * real control below a legible/tappable minimum" reasoning as `sidebarSearchTriggerHeight`'s WCAG
+   * floor, one notch tighter since a count tag is a badge, not a primary interactive target). */
+  controlHeightTag: 20,
+  /** The `size="icon"` ActionIcon height (`docs/CONTROLS-SPEC.md` §5) — `WidgetHeader
+   * tier="widget"` actions. Floored at 22px in {@link deriveSpacing}. */
+  controlHeightWidget: 24,
+  /** The `size="ctl"` Mantine tier's resolved height (`docs/CONTROLS-SPEC.md` §5, C5) —
+   * `PageBar`/`Section`/table toolbar/sidebar-block controls. Floored at 28px in
+   * {@link deriveSpacing}. */
+  controlHeightCtl: 30,
+  /** The touch hit-area size (`::before`) every home control expands to below `sm` (C15,
+   * `docs/CONTROLS-SPEC.md` §5) — independent of the visible `controlHeightCtl` box, same shape as
+   * `mobileNavBarHeight`/`mobileNavRowHeight`'s Apple HIG 44pt / WCAG 2.5.5 floors elsewhere in this
+   * table. Floored at 30px in {@link deriveSpacing} (C15's "floor 30 at density −3"). */
+  touchControlHeight: 36,
 } as const
 
 /**
@@ -699,6 +716,23 @@ const SPACE_STEP_BASE = {
   virtualRowInsetY: 8,
   /** `data/virtual-list.tsx`'s skeleton row horizontal inset. */
   virtualRowInsetX: 12,
+
+  // ── Controls — homes/tiers (`docs/CONTROLS-SPEC.md` §5) ──────────────────────────────────────
+  /** `PageBar` row height (row 1 or row 2, each measured independently — the bar's own overall
+   *  height is the sum published as `--basalt-page-bar-h`, computed by `PageBar` itself, not a
+   *  static token). */
+  pageBarRowHeight: 40,
+  /** `WidgetHeader tier="section"` row height. */
+  sectionHeaderHeight: 36,
+  /** `WidgetHeader tier="widget"` row height. */
+  widgetHeaderHeight: 28,
+  /** Sidebar block list-item row height. */
+  sidebarBlockRowHeight: 32,
+  /** Gap between adjacent controls inside a home (filter pills, action buttons). */
+  controlGap: 6,
+  /** Mobile bottom-sheet row height (the `Filters (n)` drawer, a block's More-sheet row) — Apple
+   *  HIG 44pt / WCAG 2.5.5 AAA, same floor family as `mobileNavRowHeight`. */
+  sheetRowHeight: 44,
 } as const
 
 /**
@@ -953,6 +987,13 @@ export function deriveSpacing(level: number): SpaceValues {
   anchors.stackMd = stackUnit * 3
   anchors.stackLg = stackUnit * 4
   anchors.stackXl = stackUnit * 6
+  // Control-tier floors (`docs/CONTROLS-SPEC.md` §5, C15) — same "negative level can't collapse a
+  // real control below its accessible/legible minimum" guardrail as `sidebarSearchTriggerHeight`'s
+  // WCAG 2.5.8 floor and the mobile-nav Apple HIG floors below.
+  anchors.controlHeightTag = Math.max(18, anchors.controlHeightTag)
+  anchors.controlHeightWidget = Math.max(22, anchors.controlHeightWidget)
+  anchors.controlHeightCtl = Math.max(28, anchors.controlHeightCtl)
+  anchors.touchControlHeight = Math.max(30, anchors.touchControlHeight)
 
   const mappedStep = mapSpaceGroup(SPACE_STEP_BASE, level, multiplier)
   // WCAG 2.5.8 minimum interactive-target size — see this function's doc for why the trigger's

@@ -161,6 +161,9 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   BreadcrumbLinkRenderer: 'NavAnchor',
   MobileNavItem: 'SidebarItem',
   MobileNavSection: 'MobileNavSlot',
+  // ── 1.26.0 ── The enum-only stores survive as deprecated wrappers (removed in 1.29.0), so they
+  // are deliberately NOT denylisted; `useOnlineStatus` is gone outright (A12).
+  useOnlineStatus: 'useConnectivity',
 }
 
 /**

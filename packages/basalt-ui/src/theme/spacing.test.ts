@@ -34,7 +34,7 @@
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
 import { describe, expect, test } from 'bun:test'
-import { buildPaletteCss } from '../tokens'
+import { buildPaletteCss, pxRem } from '../tokens'
 import { SPACE, SPACE_FIXED, SPACE_SCALE, SPACE_STEP } from '../tokens/palette'
 import { baseTheme } from './index'
 
@@ -57,6 +57,13 @@ describe('SPACE anchors match the shipped identity', () => {
   test('inputHeight and controlHeight are both 42 (the shared control-height anchor)', () => {
     expect(SPACE.inputHeight).toBe(42)
     expect(SPACE.controlHeight).toBe(42)
+  })
+
+  test('the controls tier anchors are 20/24/30/36 (docs/CONTROLS-SPEC.md §5)', () => {
+    expect(SPACE.controlHeightTag).toBe(20)
+    expect(SPACE.controlHeightWidget).toBe(24)
+    expect(SPACE.controlHeightCtl).toBe(30)
+    expect(SPACE.touchControlHeight).toBe(36)
   })
 })
 
@@ -240,6 +247,19 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
     expect(css).toContain('--vx-space-control-height: 2.625rem;')
     expect(css).not.toContain('--vx-space-control-height: 42px;')
   })
+
+  test('emits the controls-tier heights in REM, and the control gap in px (docs/CONTROLS-SPEC.md §5)', () => {
+    expect(css).toContain('--vx-space-control-height-tag: 1.25rem;')
+    expect(css).toContain('--vx-space-control-height-widget: 1.5rem;')
+    expect(css).toContain('--vx-space-control-height-ctl: 1.875rem;')
+    expect(css).toContain('--vx-space-touch-control-height: 2.25rem;')
+    expect(css).toContain('--vx-space-page-bar-row-height: 2.5rem;')
+    expect(css).toContain('--vx-space-section-header-height: 2.25rem;')
+    expect(css).toContain('--vx-space-widget-header-height: 1.75rem;')
+    expect(css).toContain('--vx-space-sidebar-block-row-height: 2rem;')
+    expect(css).toContain('--vx-space-control-gap: 6px;')
+    expect(css).toContain('--vx-space-sheet-row-height: 2.75rem;')
+  })
 })
 
 /**
@@ -253,7 +273,15 @@ describe('--vx-space-* is emitted from the SAME constants', () => {
  * in `tokens/index.ts`).
  */
 const SPACE_STEP_SWEEP: ReadonlyArray<
-  readonly [key: keyof typeof SPACE_STEP, value: number, cssVar: string | null]
+  readonly [
+    key: keyof typeof SPACE_STEP,
+    value: number,
+    cssVar: string | null,
+    /** Defaults to `'px'`. The controls-tier row/sheet heights emit REM (`pxRem`), same
+     *  reconstruction as `space-input-height`/`space-control-height` — see `spaceDecls`'s doc in
+     *  `tokens/index.ts`. */
+    unit?: 'px' | 'rem',
+  ]
 > = [
   // DERIVED, not an independent literal — see `deriveSpacing`'s doc (`tokens/palette.ts`, third
   // bullet, Decision 3) for why 60/108 (not 84) are the level-0 values: the ONE responsive PAIR
@@ -384,6 +412,15 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['chartDotR', 5, null],
   ['progressBarSize', 6, null],
   ['timelineBullet', 22, null],
+  // Controls tier row/gap heights (`docs/CONTROLS-SPEC.md` §5) — emitted in REM for the heights
+  // (`pageBarRowHeight`/`sectionHeaderHeight`/`widgetHeaderHeight`/`sidebarBlockRowHeight`/
+  // `sheetRowHeight`, same `pxRem` reconstruction as `space-input-height`), px for the gap.
+  ['pageBarRowHeight', 40, 'space-page-bar-row-height', 'rem'],
+  ['sectionHeaderHeight', 36, 'space-section-header-height', 'rem'],
+  ['widgetHeaderHeight', 28, 'space-widget-header-height', 'rem'],
+  ['sidebarBlockRowHeight', 32, 'space-sidebar-block-row-height', 'rem'],
+  ['controlGap', 6, 'space-control-gap'],
+  ['sheetRowHeight', 44, 'space-sheet-row-height', 'rem'],
 ]
 
 describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identity', () => {
@@ -395,9 +432,10 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
 
   test('every constant with a cssVar is emitted as its own --vx-space-* declaration, unchanged', () => {
     const css = buildPaletteCss()
-    for (const [, value, cssVar] of SPACE_STEP_SWEEP) {
+    for (const [, value, cssVar, unit = 'px'] of SPACE_STEP_SWEEP) {
       if (cssVar === null) continue
-      expect(css).toContain(`--vx-${cssVar}: ${value}px;`)
+      const expected = unit === 'rem' ? pxRem(value) : `${value}px`
+      expect(css).toContain(`--vx-${cssVar}: ${expected};`)
     }
   })
 
