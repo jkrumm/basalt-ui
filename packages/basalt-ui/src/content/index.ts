@@ -7,7 +7,9 @@
  * remark-gfm + rehype-sanitize + remend, all optional peers) with its fence-renderer registry,
  * `MermaidDiagram` (beautiful-mermaid, optional peer), the MDX
  * component map, the docs-page frame (`ArticleLayout`), overview cards (`ArticleCard`/
- * `ArticleGrid`), and the contextual-help drawer (`GuideLink`/`GuideDrawer`). See
+ * `ArticleGrid`), the contextual-help drawer (`GuideLink`/`GuideDrawer`), and a re-export of the
+ * three `basalt-ui/controls` filters an article list needs (`FilterSet`/`ViewTabs`/
+ * `MultiSelectFilter`, which replaced the controlled `ArticleFilterBar`). See
  * `agent/rules/basalt-content.md` for the full doctrine + the content-collections recipe.
  */
 export { Prose } from './prose'
@@ -69,8 +71,19 @@ export type { Article, ArticleFilterQuery, ArticleOrder } from './article-model'
 export { toArticleActions } from './article-actions'
 export type { ToArticleActionsOptions } from './article-actions'
 
-export { ArticleFilterBar } from './article-filter-bar'
-export type { ArticleFilterBarProps } from './article-filter-bar'
+// The article filter UI is no longer content's own: `ArticleFilterBar` (controlled,
+// `value`/`onChange`, its own responsive twin) was replaced by the store-bound controls of
+// `basalt-ui/controls` (`docs/CONTROLS-SPEC.md` §3, C2/C9). Re-exported here — not merely
+// documented as moved — so a content-only consumer that never imports `./controls` still gets the
+// three it needs from the surface it was already using. Both spellings are the same module: one
+// component, two import paths.
+export { FilterSet, MultiSelectFilter, ViewTabs } from '../controls'
+export type {
+  FilterSetProps,
+  MultiSelectFilterProps,
+  ViewTabsOption,
+  ViewTabsProps,
+} from '../controls'
 
 export { GuideDrawer, GuideLink } from './guide'
 export type { GuideDrawerProps, GuideLinkProps } from './guide'

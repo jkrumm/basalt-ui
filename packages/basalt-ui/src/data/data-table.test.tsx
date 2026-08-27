@@ -14,7 +14,7 @@
  *     and a silent fallback to left-aligned would look correct in review.
  */
 import { MantineProvider, Text } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './table'
@@ -155,6 +155,37 @@ describe('regression — the bare table is unchanged', () => {
     renderTable()
     expect(screen.getByText('argo')).toBeTruthy()
     expect(screen.getByText('linewatch')).toBeTruthy()
+  })
+})
+
+describe('title renders a WidgetHeader with the row-model count (C11)', () => {
+  test('omitting title renders no heading', () => {
+    renderTable()
+    expect(screen.queryByRole('heading')).toBeNull()
+  })
+
+  test('title renders an h3 carrying the row count from getRowCount()', () => {
+    renderTable({ title: 'Top pages' })
+    expect(screen.getByRole('heading', { level: 3, name: 'Top pages' })).toBeDefined()
+    expect(screen.getByText('2')).toBeDefined() // ROWS has 2 entries
+  })
+})
+
+describe('the toolbar has no fixed-width literals and resolves controls to the ctl tier', () => {
+  test('search input carries no inline width', () => {
+    const { container } = renderTable({ enableGlobalFilter: true })
+    const input = container.querySelector('input[placeholder="Search…"]')
+    expect(input?.getAttribute('style') ?? '').not.toContain('width')
+  })
+
+  test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
+    const { container } = renderTable({
+      enableGlobalFilter: true,
+      actions: <button type="button">Export</button>,
+    })
+    const slot = container.querySelector('[data-basalt-tier="ctl"]')
+    expect(slot).not.toBeNull()
+    expect(slot?.querySelector('button')?.textContent).toBe('Export')
   })
 })
 
@@ -331,19 +362,66 @@ describe('the empty state tracks the rendered rows, not the raw array', () => {
   })
 })
 
+// Facets now render as FilterSet pills (EnumFilter/MultiSelectFilter, docs/CONTROLS-SPEC.md §3)
+// instead of a raw Mantine Select. Mirrors `controls/controls.router.test.tsx`'s `openPill`
+// harness fact: Mantine's Popover mounts its dropdown one flushed effect cycle after the click
+// (needs `act`), and the dropdown's own contents read as `{ hidden: true }` to Testing Library
+// while it still carries transition styles.
+async function openPill(name: string | RegExp): Promise<void> {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name }))
+  })
+}
+
 describe('onColumnFiltersChange — the seam server-side faceting needs', () => {
-  test('a facet selection reports the new columnFilters', async () => {
+  test('a single-select facet reports the new columnFilters via its pill popover', async () => {
     const seen: ColumnFiltersState[] = []
-    const { container } = renderTable({
+    renderTable({
       facets: [
         { columnId: 'project', label: 'Project', options: [{ value: 'argo', label: 'argo' }] },
       ],
       onColumnFiltersChange: (filters) => seen.push(filters),
     })
-    const select = container.querySelector('input[placeholder="Project"]')
-    if (!select) throw new Error('expected the facet Select')
-    fireEvent.click(select)
-    fireEvent.click(await screen.findByRole('option', { name: 'argo' }))
+    await openPill('Project')
+    fireEvent.click(screen.getByRole('radio', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
+  })
+
+  test('picking the synthetic "All" row clears the column filter again', async () => {
+    const seen: ColumnFiltersState[] = []
+    renderTable({
+      facets: [
+        { columnId: 'project', label: 'Project', options: [{ value: 'argo', label: 'argo' }] },
+      ],
+      onColumnFiltersChange: (filters) => seen.push(filters),
+    })
+    await openPill('Project')
+    fireEvent.click(screen.getByRole('radio', { name: 'argo', hidden: true }))
+    await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
+
+    await openPill('argo')
+    fireEvent.click(screen.getByRole('radio', { name: 'All', hidden: true }))
+    await waitFor(() => expect(seen[seen.length - 1]).toEqual([]))
+  })
+
+  test('a multi-select facet reports every checked value', async () => {
+    const seen: ColumnFiltersState[] = []
+    renderTable({
+      facets: [
+        {
+          columnId: 'project',
+          label: 'Project',
+          multiple: true,
+          options: [
+            { value: 'argo', label: 'argo' },
+            { value: 'linewatch', label: 'linewatch' },
+          ],
+        },
+      ],
+      onColumnFiltersChange: (filters) => seen.push(filters),
+    })
+    await openPill('Project')
+    fireEvent.click(screen.getByRole('checkbox', { name: 'argo', hidden: true }))
+    await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: ['argo'] }]]))
   })
 })

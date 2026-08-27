@@ -1,0 +1,148 @@
+/*
+ * `PageBar` layout (docs/CONTROLS-SPEC.md §2.1).
+ *
+ * Law C7 in CSS form: `flex-wrap: nowrap` on every row and NO `overflow-x` anywhere. A home that
+ * scrolls sideways hides its own controls; the fold is computed instead — `More` for actions
+ * (`ActionGroup`), a `Filters (n)` sheet for filters (`FilterSet`'s job, wave 4). The filter
+ * container below only supplies `min-width: 0` so that fold has a box to measure against.
+ */
+
+/* The shell-less bar: both rows, sticky at the top of the document. */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  background-color: var(--vx-surface-bg);
+}
+
+/*
+ * Row 2 inside a shell: in the page flow, sticky under the 48px header. `--app-shell-header-height`
+ * is Mantine's own AppShell variable, so the offset tracks the header at any density with no React
+ * state and no measurement. `z-index: 1` keeps it above page content and below the header itself
+ * (AppShell sits at 100).
+ */
+.row2Sticky {
+  position: sticky;
+  top: var(--app-shell-header-height, 0px);
+  z-index: 1;
+  background-color: var(--vx-surface-bg);
+}
+
+.row1 {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  min-width: 0;
+  min-height: var(--vx-space-page-bar-row-height);
+}
+
+.lead {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--vx-muted);
+}
+
+/*
+ * The shell-less page title (law C8: the breadcrumb names the page inside a shell, this does it
+ * outside one). Head-font treatment, same 88%/550 as every `WidgetHeader` title.
+ */
+.title {
+  margin: 0;
+  font-family: var(--basalt-font-head);
+  font-size: var(--vx-text-xl);
+  font-weight: 550;
+  font-stretch: 88%;
+  color: var(--vx-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Actions and sync are right-aligned; the lead (or the breadcrumb, in a shell) holds the left. */
+.row1End {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vx-space-control-gap);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row2 {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  min-width: 0;
+  min-height: var(--vx-space-page-bar-row-height);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.filtersEnd {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+/*
+ * Law C15 — every touch target inside a home is at least `touchControlHeight` (36px at level 0)
+ * below `sm`, while the VISIBLE box stays the 30px `ctl` tier. `::after` and not `::before`:
+ * Mantine's Button owns `::before` for its loading overlay (`@mantine/core/styles/Button.css`),
+ * so a hit area drawn there would fight it. `pointer-events` stays default so the overlay is the
+ * one receiving the tap.
+ *
+ * `overflow: visible` is LOAD-BEARING, not tidying. Mantine's Button and ActionIcon roots both set
+ * `overflow: hidden` (`Button.css`, `ActionIcon.css`), which clips an overlay that by definition
+ * extends past the 30px box — so without this the 36px target simply does not exist and a tap 3px
+ * above the control misses. What `overflow: hidden` buys those roots is clipping the loading
+ * overlay's blur, and that overlay is only painted under `[data-loading]`, which is excluded below.
+ */
+@media (max-width: 47.99375em) {
+  .row1 :is(button, a),
+  .row2 :is(button, a) {
+    position: relative;
+  }
+
+  .row1 :is(button, a):not([data-loading]),
+  .row2 :is(button, a):not([data-loading]) {
+    overflow: visible;
+  }
+
+  .row1 :is(button, a)::after,
+  .row2 :is(button, a)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 100%;
+    min-width: var(--vx-space-touch-control-height);
+    min-height: var(--vx-space-touch-control-height);
+  }
+}

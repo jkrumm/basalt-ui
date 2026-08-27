@@ -1,12 +1,12 @@
 /**
- * `WidgetHeader` — the tier/heading contract, the count tag, the actions slot, and the info
- * glyph's accessible name (docs/CONTROLS-SPEC.md §2.2). Mantine-free, so components mount with no
+ * `WidgetHeader` — the tier/heading contract, the count tag, the actions slot, and the info glyph's
+ * accessibility contract (docs/CONTROLS-SPEC.md §2.2). Mantine-free, so components mount with no
  * `MantineProvider` at all (unlike `stat-card.test.tsx`'s `renderToStaticMarkup` harness).
  *
  * CSS-module class hashes are unavailable under `bun test` (see `app-mobile-nav.test.tsx`'s doc) —
  * nothing here selects on `classes.*`; every query goes through role/accessible-name/text content.
  */
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { WidgetHeader } from './widget-header'
 
@@ -55,9 +55,61 @@ describe('the actions slot renders only when passed', () => {
   })
 })
 
-test('the info glyph exposes its text as an accessible name', () => {
-  render(<WidgetHeader tier="widget" title="Uptime" info="Measured over the trailing 30 days." />)
-  expect(screen.getByRole('button', { name: 'Measured over the trailing 30 days.' })).toBeDefined()
+describe('the info glyph', () => {
+  const INFO = 'Measured over the trailing 30 days.'
+
+  test("is named `More information` — the text is NOT the button's accessible name", () => {
+    render(<WidgetHeader tier="widget" title="Uptime" info={INFO} />)
+    expect(screen.getByRole('button', { name: 'More information' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: INFO })).toBeNull()
+  })
+
+  test("leaves the heading's accessible name as the title ALONE", () => {
+    // The glyph used to live inside the heading, so an `info` paragraph was read out with the title
+    // in every headings list. This is the assertion that keeps it outside.
+    render(<WidgetHeader tier="widget" title="Uptime" info={INFO} />)
+    const heading = screen.getByRole('heading', { level: 3 })
+    expect(heading.textContent).toBe('Uptime')
+    expect(heading.querySelector('button')).toBeNull()
+    expect(screen.getByRole('heading', { level: 3, name: 'Uptime' })).toBeDefined()
+  })
+
+  test('the bubble is closed until asked, and describes the trigger while open', () => {
+    render(<WidgetHeader tier="section" title="Uptime" info={INFO} />)
+    const trigger = screen.getByRole('button', { name: 'More information' })
+    expect(trigger.getAttribute('aria-describedby')).toBeNull()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.focus(trigger)
+    const bubble = screen.getByRole('tooltip')
+    expect(bubble.textContent).toBe(INFO)
+    expect(trigger.getAttribute('aria-describedby')).toBe(bubble.id)
+  })
+
+  test('KEYBOARD reaches it — focus opens, Escape and blur close', () => {
+    // A `title` attribute alone rendered on hover only, which is the whole reason this bubble exists.
+    render(<WidgetHeader tier="widget" title="Uptime" info={INFO} />)
+    const trigger = screen.getByRole('button', { name: 'More information' })
+
+    fireEvent.focus(trigger)
+    expect(screen.getByRole('tooltip')).toBeDefined()
+
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    fireEvent.focus(trigger)
+    fireEvent.blur(trigger)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  test('a pointer-down outside closes it', () => {
+    render(<WidgetHeader tier="widget" title="Uptime" info={INFO} />)
+    fireEvent.click(screen.getByRole('button', { name: 'More information' }))
+    expect(screen.getByRole('tooltip')).toBeDefined()
+
+    fireEvent.pointerDown(document.body)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
 })
 
 test('omitting info renders no glyph', () => {

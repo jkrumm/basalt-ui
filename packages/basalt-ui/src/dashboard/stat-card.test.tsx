@@ -30,7 +30,7 @@ function render(tone?: StatCardTone) {
     <MantineProvider>
       {/* exactOptionalPropertyTypes forbids an explicit tone={undefined} — spread only when set */}
       <StatCard
-        label="Downtime · last 24h"
+        title="Downtime · last 24h"
         value="0 min"
         {...(tone !== undefined ? { tone } : {})}
       />
@@ -84,5 +84,42 @@ describe('omitting tone is not "good" — it is untinted, and says nothing', () 
 
   test('the value still renders — the card is normal, just unmarked', () => {
     expect(markup).toContain('0 min')
+  })
+})
+
+describe('the header composes WidgetHeader at the widget tier', () => {
+  test('renders an h3 carrying the title', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Active Users" value="12,483" />
+      </MantineProvider>,
+    )
+    expect(markup).toContain('<h3')
+    expect(markup).toContain('Active Users')
+  })
+})
+
+describe('sparklinePlacement', () => {
+  function renderWithSparkline(placement?: 'bleed' | 'right') {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard
+          title="Active Users"
+          value="12,483"
+          sparkline={<span data-testid="spark">spark</span>}
+          {...(placement !== undefined ? { sparklinePlacement: placement } : {})}
+        />
+      </MantineProvider>,
+    )
+  }
+
+  test('defaults to bleed — the full-width row bled to the card edges', () => {
+    const markup = renderWithSparkline()
+    expect(markup).toContain('data-placement="bleed"')
+  })
+
+  test('right sits the sparkline beside the hero-value row', () => {
+    const markup = renderWithSparkline('right')
+    expect(markup).toContain('data-placement="right"')
   })
 })

@@ -8,7 +8,10 @@
  * @example
  * import { ConnectivityIndicator } from 'basalt-ui'
  *
- * <BasaltShell globalActions={<ConnectivityIndicator />} {...rest} />
+ * <BasaltShell
+ *   globalActions={[{ key: 'connectivity', node: <ConnectivityIndicator />, mobile: 'bar' }]}
+ *   {...rest}
+ * />
  */
 import { ActionIcon, Badge, Divider, Group, Popover, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
@@ -172,7 +175,10 @@ const ICON_COLOR: Record<ConnectivityStatus, string> = {
  * ConnectivityIndicator — clickable wifi icon that opens a per-signal detail popover.
  *
  * @example
- * <BasaltShell globalActions={<ConnectivityIndicator />} {...rest} />
+ * <BasaltShell
+ *   globalActions={[{ key: 'connectivity', node: <ConnectivityIndicator />, mobile: 'bar' }]}
+ *   {...rest}
+ * />
  */
 export function ConnectivityIndicator() {
   const [opened, { open, toggle, close }] = useDisclosure(false)

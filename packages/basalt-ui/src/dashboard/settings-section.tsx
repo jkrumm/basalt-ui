@@ -1,15 +1,18 @@
 /**
  * SettingsSection / SettingsRow / DangerZone — the settings-page building blocks
- * (docs/DESIGN-SPEC.md §5). A `SettingsSection` is a titled card grouping a stack of
- * `SettingsRow`s, each separated by a 1px `--vx-divider` rule (no border on the last row —
- * handled by the shared `.rows` container in `settings-section.module.css`). `DangerZone` is a
- * `SettingsSection` variant for irreversible actions: a mono "DANGER ZONE" eyebrow in
+ * (docs/DESIGN-SPEC.md §5, docs/CONTROLS-SPEC.md §2.2). A `SettingsSection` is a titled card
+ * grouping a stack of `SettingsRow`s, each separated by a 1px `--vx-divider` rule (no border on the
+ * last row — handled by the shared `.rows` container in `settings-section.module.css`). `DangerZone`
+ * is a `SettingsSection` variant for irreversible actions: a mono "DANGER ZONE" eyebrow in
  * status-danger, and a danger-tinted ring layered atop the card's shadow-card depth.
+ *
+ * Both compose `WidgetHeader tier="section"` for the title/subtitle/actions row — `actions` is
+ * wrapped in `CtlSlot` (C1/C5).
  *
  * @example
  * import { SettingsSection, SettingsRow, DangerZone } from 'basalt-ui'
  *
- * <SettingsSection title="Profile" description="Your public identity.">
+ * <SettingsSection title="Profile" subtitle="Your public identity.">
  *   <SettingsRow label="Display name" control={<TextInput value={name} onChange={...} />} />
  *   <SettingsRow
  *     label="Email"
@@ -18,7 +21,7 @@
  *   />
  * </SettingsSection>
  *
- * <DangerZone title="Delete workspace" description="This action cannot be undone.">
+ * <DangerZone title="Delete workspace" subtitle="This action cannot be undone.">
  *   <SettingsRow
  *     label="Delete this workspace"
  *     control={<Button color="red" variant="outline">Delete</Button>}
@@ -27,16 +30,10 @@
  */
 import { Card, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { WidgetHeader } from '../widget-header'
+import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import classes from './settings-section.module.css'
-
-const titleStyle = {
-  fontFamily: 'var(--basalt-font-head)',
-  fontStretch: '88%' as const,
-  fontSize: VX.text.md,
-  fontWeight: 550,
-  color: VX.ink,
-}
 
 const eyebrowStyle = {
   fontFamily: 'var(--basalt-font-mono)',
@@ -48,23 +45,27 @@ const eyebrowStyle = {
 }
 
 export type SettingsSectionProps = {
-  /** Head-font section title (15px, weight 550, ink). */
+  /** Head-font section title, rendered via `WidgetHeader tier="section"`. */
   title: string
   /** Optional 13px muted description below the title. */
-  description?: string
+  subtitle?: string
+  /** Header-right slot — wrapped in `CtlSlot` (C1/C5). */
+  actions?: ReactNode
   /** Section body — typically a stack of `SettingsRow`s. */
   children: ReactNode
 }
 
-export function SettingsSection({ title, description, children }: SettingsSectionProps) {
+export function SettingsSection({ title, subtitle, actions, children }: SettingsSectionProps) {
   return (
     <Card style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)' }}>
-      <Stack gap={2} mb="sm">
-        <span style={titleStyle}>{title}</span>
-        {description && (
-          <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
-        )}
-      </Stack>
+      <div className={classes.header}>
+        <WidgetHeader
+          tier="section"
+          title={title}
+          {...(subtitle !== undefined && { subtitle })}
+          {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
+        />
+      </div>
       <div className={classes.rows}>{children}</div>
     </Card>
   )
@@ -97,7 +98,7 @@ export function SettingsRow({ label, description, control, children }: SettingsR
 
 export type DangerZoneProps = SettingsSectionProps
 
-export function DangerZone({ title, description, children }: DangerZoneProps) {
+export function DangerZone({ title, subtitle, actions, children }: DangerZoneProps) {
   return (
     <Card
       style={{
@@ -105,13 +106,15 @@ export function DangerZone({ title, description, children }: DangerZoneProps) {
         boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
       }}
     >
-      <Stack gap={2} mb="sm">
+      <div className={classes.header}>
         <span style={eyebrowStyle}>Danger Zone</span>
-        <span style={titleStyle}>{title}</span>
-        {description && (
-          <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
-        )}
-      </Stack>
+        <WidgetHeader
+          tier="section"
+          title={title}
+          {...(subtitle !== undefined && { subtitle })}
+          {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
+        />
+      </div>
       <div className={classes.rows}>{children}</div>
     </Card>
   )

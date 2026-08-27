@@ -1,0 +1,32 @@
+/*
+ * `OverflowMenu` row chrome. Rows are `ctl`-tier (30px) on desktop and 44px below `sm`
+ * (`--vx-space-sheet-row-height`, law C15) — the mobile kebab IS the sheet, so there is no second
+ * component for the touch case.
+ */
+
+.menuItem {
+  min-height: var(--vx-space-control-height-ctl);
+}
+
+/*
+ * Danger rows read the status token, not a Mantine shade — `--vx-bad-solid` resolves per color
+ * scheme, a pinned `red.6` does not (see the `mantine-shade-index` guard).
+ */
+.menuItemDanger {
+  color: var(--vx-bad-solid);
+}
+
+/* A `kind: 'custom'` row hosts the consumer's own node, so it only supplies the row box. */
+.customRow {
+  display: flex;
+  align-items: center;
+  min-height: var(--vx-space-control-height-ctl);
+  padding: 0 var(--vx-space-row-inset-x);
+}
+
+@media (max-width: 47.99375em) {
+  .menuItem,
+  .customRow {
+    min-height: var(--vx-space-sheet-row-height);
+  }
+}

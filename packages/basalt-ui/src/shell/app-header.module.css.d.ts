@@ -5,7 +5,7 @@
 declare const classes: {
   readonly bar: string
   readonly lead: string
-  readonly pageActions: string
+  readonly pageBar: string
   readonly global: string
 }
 export default classes

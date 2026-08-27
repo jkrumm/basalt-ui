@@ -1,0 +1,75 @@
+/*
+ * Section — the tier-2 heading composer (docs/CONTROLS-SPEC.md §2.2). No border/background of its
+ * own — one shaded container level per page belongs to the cards inside a Section
+ * (`ChartCard`/`StatCard`), not to the Section itself.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm, 0.8125rem);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm, 0.8125rem);
+}
+
+/* The collapse chevron — a plain control, not a Mantine ActionIcon, so it sits directly in the
+ * header row (its own CtlSlot fragment would size an icon-button too tall for this glyph). */
+.chevron {
+  /* `relative` is the anchor for the C15 hit-area overlay in the `< sm` block at the bottom. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  margin: 0;
+  padding: 4px;
+  border: none;
+  background: none;
+  border-radius: var(--vx-radius-ctrl);
+  color: var(--vx-muted);
+  cursor: pointer;
+}
+
+.chevron:hover,
+.chevron:focus-visible {
+  color: var(--vx-ink);
+  background: var(--vx-surface-subtle);
+}
+
+.chevron svg {
+  transition: transform 150ms ease;
+}
+
+.chevron[data-open='false'] svg {
+  transform: rotate(-90deg);
+}
+
+/*
+ * Law C15 — the chevron is a 12px glyph in a 20px box, which is a fine mouse target and an
+ * unusable thumb one. Below `sm` an `::after` overlay lifts the HIT area to
+ * `--vx-space-touch-control-height` (36px at level 0) while the visible glyph stays put — the same
+ * overlay `shell/page-bar.module.css` draws for the bar's own controls. `overflow: visible` is part
+ * of the fix, not tidying: an overlay that extends past the box is clipped by any `overflow:
+ * hidden` on the host (which is what made the identical overlay a no-op on Mantine's Button roots).
+ */
+@media (max-width: 47.99375em) {
+  .chevron {
+    overflow: visible;
+  }
+
+  .chevron::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 100%;
+    min-width: var(--vx-space-touch-control-height, 2.25rem);
+    min-height: var(--vx-space-touch-control-height, 2.25rem);
+  }
+}

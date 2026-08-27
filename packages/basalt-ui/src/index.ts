@@ -16,6 +16,12 @@ export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
 export { CTL_THEME, CtlSlot } from './theme'
 export type { CtlSlotProps } from './theme'
+/**
+ * The action vocabulary every home's `actions` slot takes (`docs/CONTROLS-SPEC.md` §2.1). The
+ * COMPONENTS that project it (`ActionGroup`, `OverflowMenu`, `SyncButton`, and the filter family)
+ * live on `basalt-ui/controls` — only the types a `PageBar`/`BasaltShell` prop mentions are here.
+ */
+export type { BarAction, ActionGroupProps, GlobalAction } from './controls/actions'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {
@@ -33,9 +39,8 @@ export {
   MOBILE_MENU_MAX_DEFAULT,
   MOBILE_MORE_KEY,
   AppBreadcrumbs,
-  PageHeaderProvider,
-  PageActions,
-  PageActionsOutlet,
+  PageBar,
+  type PageBarProps,
   type SidebarSection,
   type SidebarItem,
   type NavAnchor,
@@ -105,6 +110,9 @@ export {
 
 // ── WidgetHeader (unified section/widget/card heading primitive, docs/CONTROLS-SPEC.md §2.2) ─────
 export { WidgetHeader, type WidgetHeaderProps } from './widget-header'
+
+// ── Section (tier-2 heading composer over WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ───────────────
+export { Section, type SectionProps } from './section'
 
 // ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
 export {

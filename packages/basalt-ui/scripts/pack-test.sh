@@ -46,6 +46,8 @@ for f in \
   dist/theme-lab/index.js dist/cli/index.js dist/styles.css dist/tokens.css \
   dist/shell/index.js \
   dist/shell/app-sidebar.module.css dist/shell/app-mobile-nav.module.css dist/shell/app-header.module.css \
+  dist/controls/index.js dist/controls/index.d.ts dist/controls/controls.module.css \
+  dist/controls-dates/index.js dist/controls-dates/index.d.ts \
   src/index.ts \
   configs/oxlint.json configs/tsconfig.base.json configs/tsconfig.react-app.json \
   agent/rules/basalt-tokens.md agent/rules/basalt-charts.md \
@@ -89,12 +91,14 @@ SCRATCH=$(mktemp -d)
 SCRATCH2=""
 SCRATCH3=""
 SCRATCH4=""
-trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4"; rm -f "$LISTFILE"' EXIT
+SCRATCH5=""
+trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5"; rm -f "$LISTFILE"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
 scratch_install "$ABS_TGZ" \
   react react-dom \
   @mantine/core @mantine/hooks \
+  @mantine/dates \
   @mantine/form @mantine/notifications @mantine/spotlight @mantine/modals \
   "@tanstack/react-query@^5.101.0" "@tanstack/react-query-devtools@^5.101.0" \
   "@tanstack/react-router@^1.170.0" \
@@ -136,6 +140,8 @@ const subpaths = [
   'basalt-ui/agent-chat',
   'basalt-ui/connectivity',
   'basalt-ui/content',
+  'basalt-ui/controls',
+  'basalt-ui/controls-dates',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -170,7 +176,7 @@ if (typeof routerTanstackMod.createMultiSearchParamStore !== 'function') {
 }
 console.log('smoke: basalt-ui/router-tanstack OK')
 
-console.log('scratch resolution OK (20 subpaths)')
+console.log(`scratch resolution OK (${subpaths.length} subpaths)`)
 JS
 node test.mjs
 
@@ -372,7 +378,81 @@ const html = renderToStaticMarkup(wrapped)
 if (!html.includes('<svg')) throw new Error('chart kind did not render an <svg>')
 console.log('charts/tokens-only resolution + render OK')
 JS
-node free.mjs
+# `--import css-noop-register` (same as the agent-chat step below): `ChartCard` composes the
+# Mantine-free `WidgetHeader`, which imports its own CSS module. Under `bundle: false` that import
+# survives verbatim into dist for the consumer's bundler to resolve — bare Node cannot load a `.css`
+# specifier, so without the register this step fails on an ERR_UNKNOWN_FILE_EXTENSION that says
+# nothing about the layering it exists to prove.
+node --import "$PKGDIR/scripts/css-noop-register.mjs" free.mjs
+
+echo "==> controls without @mantine/dates (the optional peer only ./controls-dates needs)"
+# `@mantine/dates` is an optional peer, and only ONE subpath needs it. The claim `docs/CONTROLS-SPEC.md`
+# §3 makes — and that linewatch, which has no date picker, depends on — is that `basalt-ui/controls`
+# resolves and RENDERS with the peer genuinely absent, which no source-level test can prove: a lazy
+# `import('@mantine/dates')` anywhere under `src/controls/**` passes a static scan and fails here.
+# The mirror of the charts/tokens-only step above, and asserted in BOTH directions: `./controls`
+# resolves, `./controls-dates` does not, so the split is load-bearing rather than decorative.
+SCRATCH5=$(mktemp -d)
+cd "$SCRATCH5"
+echo '{ "name": "scratch-no-dates", "private": true, "type": "module" }' >package.json
+scratch_install "$ABS_TGZ" react react-dom @mantine/core @mantine/hooks
+if [ -d node_modules/@mantine/dates ]; then
+  echo "FAILED: @mantine/dates ended up in a scratch install that never requested it — test setup is broken, not a package defect"
+  exit 1
+fi
+cat >controls.mjs <<'JS'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { MantineProvider } from '@mantine/core'
+
+const controls = await import('basalt-ui/controls')
+for (const name of ['FilterSet', 'RangeFilter', 'SelectFilter', 'MultiSelectFilter', 'SearchFilter', 'ToggleFilter', 'ViewTabs', 'CompareFilter']) {
+  if (typeof controls[name] !== 'function') throw new Error(`controls.${name} missing`)
+}
+
+// Render proof, not just a resolve: a real filter bound to a real field. `createLocalStore` is the
+// router-free lane, so this needs no @tanstack/react-router either — and createPersistedState is
+// SSR-safe, so the handle resolves to its fallback under renderToStaticMarkup.
+const { createLocalStore, field } = await import('basalt-ui/state')
+const store = createLocalStore({
+  key: 'pack-test-controls',
+  fields: { currency: field.enum(['USD', 'EUR'], 'USD') },
+})
+const tree = createElement(
+  MantineProvider,
+  null,
+  createElement(
+    controls.FilterSet,
+    null,
+    createElement(controls.SelectFilter, { field: store.field.currency, label: 'Currency' }),
+  ),
+)
+const html = renderToStaticMarkup(tree)
+if (!html.includes('Currency')) throw new Error('FilterSet did not render its child filter')
+if (!html.includes('Filters')) throw new Error('FilterSet did not render its mobile sheet pill')
+console.log('controls without @mantine/dates: resolution + render OK')
+
+// The other direction: the split is only worth having if the peer is genuinely required THERE.
+let datesResolved = false
+try {
+  await import('basalt-ui/controls-dates')
+  datesResolved = true
+} catch (err) {
+  if (!String(err).includes('@mantine/dates')) {
+    console.error(err)
+    throw new Error('basalt-ui/controls-dates failed for a reason OTHER than the absent @mantine/dates peer')
+  }
+}
+if (datesResolved) {
+  throw new Error(
+    'basalt-ui/controls-dates resolved with @mantine/dates NOT installed — either the peer moved out ' +
+      'of that subpath (then it belongs on ./controls and this step is wrong) or the import went lazy ' +
+      '(then the subpath silently no-ops for a consumer missing the peer).',
+  )
+}
+console.log('controls-dates correctly requires @mantine/dates')
+JS
+node --import "$PKGDIR/scripts/css-noop-register.mjs" controls.mjs
 
 echo "==> agent-chat + root-entry minimal-peer resolution (motion required, remend genuinely optional)"
 # `./agent-chat`'s optionalPeers list (surfaces.ts) cannot express that `motion` is a HARD static

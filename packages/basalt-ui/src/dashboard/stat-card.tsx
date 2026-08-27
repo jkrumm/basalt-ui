@@ -1,9 +1,14 @@
 /**
- * StatCard — the KPI atom (docs/DESIGN-SPEC.md §5): a panel + shadow-card + card-radius card
- * (spacing xs/sm inset, ~118px min-height). Header row = mono uppercase micro-label + optional
- * `menu` slot (e.g. a ghost "..." trigger, consumer-owned); value row = mono ~24px value +
- * optional `DeltaBadge` (via `delta`, with an optional `deltaPeriod` timeframe); bottom = optional
- * full-bleed `sparkline` slot.
+ * StatCard — the KPI atom (docs/DESIGN-SPEC.md §5, docs/CONTROLS-SPEC.md §2.2): a panel +
+ * shadow-card + card-radius card (spacing xs/sm inset, ~118px min-height). The header composes
+ * `WidgetHeader tier="widget"` — title/icon/value/delta/deltaPeriod all render through it, on the
+ * shared hero-metric row under the title. `actions` (e.g. a ghost "..." menu trigger) is wrapped in
+ * `CtlSlot` — `StatCard` is Mantine-coupled (`src/dashboard/`), unlike `ChartCard`.
+ *
+ * `sparklinePlacement` decides where the trend visual sits: `'bleed'` (default) keeps the historic
+ * full-width row beneath the hero value, bled past the card's own inset padding; `'right'` sits it
+ * beside the hero row, the reference-design look. Below `sm`, `'right'` collapses back to the
+ * `'bleed'` layout — CSS only, no JS branch (`stat-card.module.css`).
  *
  * `src/dashboard` stays @visx-free — `sparkline` is a plain `ReactNode` slot, never a chart import
  * here. Pass a `LineSparkline`/`BarSparkline` from `basalt-ui/charts` at the call site.
@@ -36,19 +41,29 @@
  * }
  *
  * <StatCard
- *   label="Active Users"
+ *   title="Active Users"
  *   value="12,483"
  *   delta={4.2}
  *   sparkline={<KpiSparkline data={history} />}
  * />
  *
  * @example
+ * // The reference-design look — sparkline beside the hero value row instead of bled below it.
+ * <StatCard
+ *   title="Active Users"
+ *   value="12,483"
+ *   delta={4.2}
+ *   sparklinePlacement="right"
+ *   sparkline={<BarSparkline data={history} width={72} height={28} ariaLabel="Active users trend" />}
+ * />
+ *
+ * @example
  * // Past a threshold — an accent rail down the leading edge, value untouched.
- * <StatCard label="Downtime" value="29 min" tone="bad" />
+ * <StatCard title="Downtime" value="29 min" tone="bad" />
  *
  * @example
  * // The earned zero — a measured value worth asserting, not a card that merely has no reading.
- * <StatCard label="Downtime · last 24h" value="0 min" tone="good" />
+ * <StatCard title="Downtime · last 24h" value="0 min" tone="good" />
  *
  * @example
  * // The honest gate. A zero can be synthesized as well as measured — a downtime figure derived
@@ -57,15 +72,17 @@
  * // about a reading, so the gate belongs on whether a reading exists, not on whether the number
  * // happens to be defined — those are separate facts. Gate on measured coverage instead:
  * <StatCard
- *   label="Downtime · last 24h"
+ *   title="Downtime · last 24h"
  *   value={`${downtimeMinutes} min`}
  *   tone={hasCoverage ? (downtimeMinutes === 0 ? 'good' : 'bad') : undefined}
  * />
  */
-import { Box, Card, Group, VisuallyHidden } from '@mantine/core'
+import { Box, Card, VisuallyHidden } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { DeltaBadge } from './delta-badge'
+import { WidgetHeader } from '../widget-header'
+import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
+import classes from './stat-card.module.css'
 
 /** A threshold verdict on the card's value. `undefined` is never tinted — see the module docblock. */
 export type StatCardTone = 'good' | 'warn' | 'bad'
@@ -81,19 +98,23 @@ const TONE_LABEL: Record<StatCardTone, string> = {
 }
 
 export type StatCardProps = {
-  /** Mono uppercase micro-label (docs/DESIGN-SPEC.md §3: 12.5px, tracking 0.06em, faint). */
-  label: string
-  /** Pre-formatted KPI value string (mono ~24px, weight 600, ink). */
+  /** Head-font title, rendered via `WidgetHeader tier="widget"`. */
+  title: string
+  /** Optional leading icon, forwarded to `WidgetHeader`. */
+  icon?: ReactNode
+  /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. */
   value: string
   /** Signed delta rendered via `DeltaBadge`; omit to hide the trend chip entirely. */
   delta?: number
   /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
   deltaPeriod?: string
-  /** Optional trend visual — a slot; pass a `LineSparkline`/`BarSparkline` from `basalt-ui/charts`.
-   * Rendered full-bleed to the card's left/right/bottom edges, clipped to the corner radius. */
+  /** Optional trend visual — a slot; pass a `LineSparkline`/`BarSparkline` from `basalt-ui/charts`. */
   sparkline?: ReactNode
-  /** Optional header-right slot (e.g. a ghost "..." menu trigger) — consumer-owned. */
-  menu?: ReactNode
+  /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
+   * `'right'` sits it beside the hero value row. Collapses to `'bleed'` below `sm`. */
+  sparklinePlacement?: 'bleed' | 'right'
+  /** Header-right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot` (C1/C5). */
+  actions?: ReactNode
   /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
    * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
    * is absent, and stays untinted so a card with nothing measured can never render green. Pass
@@ -102,12 +123,14 @@ export type StatCardProps = {
 }
 
 export function StatCard({
-  label,
+  title,
+  icon,
   value,
   delta,
   deltaPeriod,
   sparkline,
-  menu,
+  sparklinePlacement = 'bleed',
+  actions,
   tone,
 }: StatCardProps) {
   return (
@@ -121,9 +144,6 @@ export function StatCard({
         // explicit for intent.
         padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         minHeight: 118,
-        display: 'flex', // theme-allow inline-display — Card root as a flex column; Mantine Card takes no layout props
-        flexDirection: 'column',
-        gap: 'var(--vx-space-stat-card-gap)',
         overflow: 'hidden',
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.
@@ -154,48 +174,29 @@ export function StatCard({
         </>
       )}
 
-      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="xs">
-        <span
-          style={{
-            fontFamily: 'var(--basalt-font-mono)',
-            fontSize: VX.text.xs,
-            fontWeight: 500,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: VX.faint,
-          }}
-        >
-          {label}
-        </span>
-        {menu}
-      </Group>
-
-      <Group align="center" gap={8} wrap="nowrap">
-        <span
-          style={{
-            fontFamily: 'var(--basalt-font-mono)',
-            fontSize: VX.text.kpi,
-            fontWeight: 600,
-            letterSpacing: '-0.02em',
-            color: VX.ink,
-          }}
-        >
-          {value}
-        </span>
-        {delta !== undefined && <DeltaBadge value={delta} period={deltaPeriod} />}
-      </Group>
-
-      {sparkline && (
-        <div
-          style={{
-            marginTop: 'auto',
-            marginInline: 'calc(-1 * var(--mantine-spacing-sm))',
-            marginBottom: 'calc(-1 * var(--mantine-spacing-xs))',
-          }}
-        >
-          {sparkline}
+      <div className={classes.body} data-placement={sparklinePlacement}>
+        <div className={classes.header}>
+          <WidgetHeader
+            tier="widget"
+            title={title}
+            {...(icon !== undefined && { icon })}
+            value={value}
+            {...(delta !== undefined && { delta })}
+            {...(deltaPeriod !== undefined && { deltaPeriod })}
+            {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
+          />
         </div>
-      )}
+
+        {sparkline !== undefined && (
+          <div
+            className={
+              sparklinePlacement === 'right' ? classes.sparklineRight : classes.sparklineBleed
+            }
+          >
+            {sparkline}
+          </div>
+        )}
+      </div>
     </Card>
   )
 }

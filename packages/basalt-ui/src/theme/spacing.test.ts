@@ -20,16 +20,14 @@
  *   `rowInsetY`, the 4px stack rhythm, and the sidebar SIZES (`sidebarAvatarSize`,
  *   `sidebarSearchTriggerHeight`, the two Menu widths) were held back on purpose — see that commit.
  * - `SPACE_STEP.stickyHeaderClearance` moved from 84 (the original literal) through an
- * intermediate single derived value of 108, to its FINAL shape — a responsive PAIR (Decision 3):
- * `stickyHeaderClearance` (desktop, `>= sm`) now 60, plus a new `stickyHeaderClearanceMobile`
- * (mobile, `< sm`) at 108. Both are DERIVED from their own AppShell header (`appShellHeaderHeight`/
- * `appShellHeaderMobileHeight`) instead of one independent literal, which fixed two bugs at once:
- * the original 84 under-cleared the mobile header (96px at the time, 97 since the retune above) at
- * level 0 (before density entered the
- * picture at all), and a single derived value tuned against the mobile header over-cleared the 48px
- * desktop header by 60px on the common (desktop) path. See `deriveSpacing`'s doc in
- * `tokens/palette.ts` for the full rationale. Every value NOT named above is still byte-identical to
- * the pre-tokenization number it replaced.
+ * intermediate single derived value of 108, then a responsive PAIR (Decision 3), to its FINAL shape:
+ * ONE value, 60, DERIVED as `appShellHeaderHeight + anchors.stackMd`. Deriving it fixed the original
+ * 84's drift from the header it was supposed to clear; the `stickyHeaderClearanceMobile` half of the
+ * pair was deleted in 1.27.0 along with the two-row mobile header it existed for — the AppShell
+ * header is one 48px row at every viewport now (law C14, `docs/CONTROLS-SPEC.md` §2.1), so
+ * `appShellHeaderMobileHeight` and `appHeaderMobileActionsHeight` went with it. See `deriveSpacing`'s
+ * doc in `tokens/palette.ts` for the full rationale. Every value NOT named above is still
+ * byte-identical to the pre-tokenization number it replaced.
  */
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
@@ -284,13 +282,11 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ]
 > = [
   // DERIVED, not an independent literal — see `deriveSpacing`'s doc (`tokens/palette.ts`, third
-  // bullet, Decision 3) for why 60/108 (not 84) are the level-0 values: the ONE responsive PAIR
-  // deliberately exempt from the "every SPACE_STEP number is locked at level 0" invariant
-  // this file otherwise enforces (locked here, not skipped, precisely so a future regression back to
-  // 84, or back to a single shared value, shows up as a failing assertion rather than a silent
-  // revert).
+  // bullet) for why 60 (not 84) is the level-0 value: the ONE key deliberately exempt from the
+  // "every SPACE_STEP number is locked at level 0" invariant this file otherwise enforces (locked
+  // here, not skipped, precisely so a future regression back to 84 shows up as a failing assertion
+  // rather than a silent revert).
   ['stickyHeaderClearance', 60, 'space-sticky-header-clearance'],
-  ['stickyHeaderClearanceMobile', 109, 'space-sticky-header-clearance-mobile'],
   ['navIconGap', 10, 'space-nav-icon-gap'],
   ['sidebarRegionGap', 10, 'space-sidebar-region-gap'],
   ['proseQuoteInsetY', 2, 'space-prose-quote-inset-y'],
@@ -371,12 +367,10 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // Mantine's `<Menu width={…}>` also takes a number, not a `var()` string).
   ['sidebarAccountMenuWidth', 220, null],
   ['sidebarSettingsMenuWidth', 200, null],
-  ['appHeaderMobileActionsHeight', 52, 'space-app-header-mobile-actions-height'],
-  // JS-number-only (`shell/index.tsx` reads all four via `useBasaltSpacing()` — Mantine's AppShell
+  // JS-number-only (`shell/index.tsx` reads all three via `useBasaltSpacing()` — Mantine's AppShell
   // `header`/`navbar` props take numbers, not `var()` strings) — see `spaceDecls`'s doc in
   // `tokens/index.ts` for why a `--vx-space-app-shell-*` declaration would have zero consumers.
   ['appShellHeaderHeight', 48, null],
-  ['appShellHeaderMobileHeight', 97, null],
   ['appShellNavbarWidth', 216, null],
   ['appShellNavbarRailWidth', 48, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
@@ -448,7 +442,6 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
       'sidebarAccountMenuWidth',
       'sidebarSettingsMenuWidth',
       'appShellHeaderHeight',
-      'appShellHeaderMobileHeight',
       'appShellNavbarWidth',
       'appShellNavbarRailWidth',
       'mobileNavBarHeight',
@@ -466,7 +459,6 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
     expect(css).not.toContain('--vx-space-sidebar-account-menu-width')
     expect(css).not.toContain('--vx-space-sidebar-settings-menu-width')
     expect(css).not.toContain('--vx-space-app-shell-header-height')
-    expect(css).not.toContain('--vx-space-app-shell-header-mobile-height')
     expect(css).not.toContain('--vx-space-app-shell-navbar-width')
     expect(css).not.toContain('--vx-space-app-shell-navbar-rail-width')
     expect(css).not.toContain('--vx-space-mobile-nav-bar-height')

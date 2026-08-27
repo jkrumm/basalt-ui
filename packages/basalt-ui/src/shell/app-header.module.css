@@ -1,7 +1,10 @@
-/* App-shell top bar layout. Desktop: a single 48px row —
- * [breadcrumb] ········ [page actions] | [global actions].
- * Mobile (< sm): wraps to two rows — lead + global on row 1, the page action row
- * (horizontally scrollable) on row 2. Header height is responsive to match. */
+/* App-shell top bar layout. ONE 48px row on every viewport —
+ * [breadcrumb] ········ [page bar row 1] | [global actions].
+ *
+ * The pre-1.27.0 mobile layout wrapped to a second, always-reserved row for the page actions and
+ * scrolled it sideways. Both are gone (law C7 and law C14): the header height is now the
+ * `appShellHeaderHeight` token at every width, an empty page bar reserves nothing, and overflow
+ * folds into `ActionGroup`'s kebab instead of scrolling out of view. */
 
 /*
  * Transparent header (docs/DESIGN-SPEC.md §5): NO bottom rule at all. The header and the page body
@@ -24,50 +27,21 @@
   min-width: 0;
 }
 
-.pageActions {
+/* The `PageBar` row-1 portal target. Never a scroll container — see the header note above. */
+.pageBar {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--mantine-spacing-xs);
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-/* Keep the whole control row on one horizontally-scrollable line. Mantine Group
- * defaults to flex-wrap:wrap, which otherwise stacks the nested control groups and
- * clips them against the slim bar's fixed height. */
-.pageActions :global(.mantine-Group-root) {
-  flex-wrap: nowrap;
 }
 
 .global {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--mantine-spacing-xs);
   flex-shrink: 0;
-}
-
-@media (max-width: 47.99375em) {
-  .bar {
-    flex-wrap: wrap;
-    align-content: center;
-  }
-
-  .lead {
-    order: 1;
-    flex: 1 1 auto;
-  }
-
-  .global {
-    order: 2;
-  }
-
-  .pageActions {
-    order: 3;
-    flex-basis: 100%;
-    height: var(--vx-space-app-header-mobile-actions-height);
-    justify-content: flex-start;
-  }
 }

@@ -7,7 +7,8 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
-import { BasaltShell } from './index'
+import { ActionGroup } from '../controls/actions'
+import { BasaltShell, PageBar } from './index'
 import type { BasaltAccountProps, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -138,5 +139,205 @@ describe('BasaltShell collapse persistence', () => {
     renderShell(key)
 
     expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: false }))
+  })
+})
+
+/**
+ * Law C14 — an empty home renders nothing, so no route pays for a reserved row. This is the
+ * assertion the spec names as the law's gate: through 1.26.0 the mobile header was a 97px SUM whose
+ * second row (`appHeaderMobileActionsHeight`, 52px) was reserved on every route whether or not the
+ * page portalled anything into it. Both tokens are deleted; the header is `appShellHeaderHeight` at
+ * every width, and an empty `PageBar` adds no node in either place.
+ */
+describe('BasaltShell header height (law C14)', () => {
+  test('the AppShell header is ONE row — a single unconditional height declaration, no media override', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    // Mantine emits the AppShell dimensions as a `<style>` block: one `:root` rule plus one
+    // `@media` rule per RESPONSIVE prop. A `{ base, sm }` header height therefore shows up twice;
+    // a single number shows up once, which is the invariant.
+    const css = [...document.querySelectorAll('style')]
+      .map((tag) => tag.textContent ?? '')
+      .find((text) => text.includes('--app-shell-header-height'))
+    expect(css).toBeDefined()
+    const heights = [...(css ?? '').matchAll(/--app-shell-header-height:\s*([^;]+)/g)].map(
+      (m) => m[1],
+    )
+    expect(heights).toHaveLength(1)
+    // 48px, expressed the way Mantine's own `rem()` does.
+    expect(heights[0]).toContain('3rem')
+    // The navbar and footer ARE responsive, so their overrides prove the query blocks still exist —
+    // the header simply is not among them any more.
+    expect(css).toContain('--app-shell-footer-height:0rem')
+  })
+
+  test('an empty PageBar contributes no node — not in the header, not in the page flow', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(document.querySelector('[data-basalt-page-bar]')).toBeNull()
+  })
+})
+
+/**
+ * `globalActions` is DECLARED DATA since 1.27.0 (`GlobalAction[]`, was `ReactNode`), which is what
+ * lets basalt project it onto mobile at all: the first two ride the bar, the rest fold into the
+ * header's ONE kebab, and a `'hidden'` one is dropped below `sm`. A `ReactNode` slot could express
+ * none of that, which is why every consumer hand-rolled a responsive twin instead.
+ */
+describe('BasaltShell globalActions mobile policy', () => {
+  const ACTIONS = [
+    { key: 'timer', node: <span data-testid="g-timer" /> },
+    { key: 'bell', node: <span data-testid="g-bell" /> },
+    { key: 'theme', node: <span data-testid="g-theme" /> },
+    { key: 'devtools', node: <span data-testid="g-devtools" />, mobile: 'hidden' as const },
+  ]
+
+  const renderWithGlobals = () =>
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS} />
+      </MantineProvider>,
+    )
+
+  test('the first two are mounted ONCE, unwrapped — visible at every width', () => {
+    renderWithGlobals()
+    for (const id of ['g-timer', 'g-bell']) {
+      const node = screen.getByTestId(id)
+      expect(node.closest('.mantine-visible-from-sm')).toBeNull()
+      expect(node.closest('.mantine-hidden-from-sm')).toBeNull()
+    }
+  })
+
+  test("the third defaults to 'more': desktop-only inline, plus the header's one kebab", () => {
+    renderWithGlobals()
+    expect(screen.getByTestId('g-theme').closest('.mantine-visible-from-sm')).not.toBeNull()
+    const kebabs = document.querySelectorAll('[aria-label="More actions"]')
+    expect(kebabs).toHaveLength(1)
+    expect(kebabs[0]?.closest('.mantine-hidden-from-sm')).not.toBeNull()
+  })
+
+  test("'hidden' drops it below sm and never reaches the kebab", () => {
+    renderWithGlobals()
+    expect(screen.getByTestId('g-devtools').closest('.mantine-visible-from-sm')).not.toBeNull()
+  })
+
+  test('a page ActionGroup takes over the kebab, so the header never shows two', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <PageBar actions={{ secondary: [{ key: 'export', label: 'Export' }] }} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(document.querySelectorAll('[aria-label="More actions"]')).toHaveLength(1)
+  })
+
+  test('filtersEnd folds into the SAME kebab — never a second one in row 2', () => {
+    // The bug this pins: every `ActionGroup` used to read the shell's `mobile: 'more'` globals and
+    // claim a kebab, so `PageBar.filtersEnd` (projected through its own group in row 2) grew a
+    // SECOND kebab that re-mounted the global node. Now only row 1 is `host: 'page'`.
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <PageBar
+            actions={{ secondary: [{ key: 'export', label: 'Export CSV' }] }}
+            filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
+          />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    const kebabs = document.querySelectorAll('[aria-label="More actions"]')
+    expect(kebabs).toHaveLength(1)
+    // And it is the HEADER's, not row 2's.
+    expect(kebabs[0]?.closest('[data-basalt-page-bar="shell"]')).toBeNull()
+    expect(document.querySelector('.mantine-AppShell-header')?.contains(kebabs[0] as Node)).toBe(
+      true,
+    )
+  })
+
+  test('the global node reaches ONE dropdown, not two', async () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <PageBar
+            actions={{ secondary: [{ key: 'export', label: 'Export CSV' }] }}
+            filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]}
+          />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    // One inline copy (the desktop-only `visibleFrom` box) before any dropdown opens.
+    expect(screen.getAllByTestId('g-theme')).toHaveLength(1)
+    fireEvent.click(screen.getByLabelText('More actions'))
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+    // Exactly one more copy — the open dropdown's — so the node is never live in two menus at once.
+    expect(screen.getAllByTestId('g-theme')).toHaveLength(2)
+    expect(document.querySelectorAll('[role="menu"]')).toHaveLength(1)
+  })
+
+  test("filtersEnd alone still yields exactly one kebab, and it is the header's", () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <PageBar filtersEnd={[{ key: 'metrics', label: 'Manage metrics' }]} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    const kebabs = document.querySelectorAll('[aria-label="More actions"]')
+    expect(kebabs).toHaveLength(1)
+    expect(document.querySelector('.mantine-AppShell-header')?.contains(kebabs[0] as Node)).toBe(
+      true,
+    )
+  })
+
+  test('a PageBar with no row-1 actions and no filtersEnd hands the kebab BACK to the shell', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <PageBar tabs={<span data-testid="tabs" />} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    const kebabs = document.querySelectorAll('[aria-label="More actions"]')
+    expect(kebabs).toHaveLength(1)
+    expect(kebabs[0]?.closest('.mantine-hidden-from-sm')).not.toBeNull()
+  })
+
+  test('an ActionGroup mounted in some OTHER home inherits no global rows and no claim', () => {
+    // A consumer's tier-2 kebab (a `Section`/`ChartCard` actions slot) must not swallow the shell's
+    // globals — nor steal the claim, which would leave the shell's own kebab unrendered.
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} globalActions={ACTIONS}>
+          <ActionGroup secondary={[{ key: 'a', label: 'Section action' }]} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    // Two kebabs is CORRECT here: the shell's (globals) and the section's (its own rows). What must
+    // not happen is the global node appearing in the section's.
+    const shellKebab = document
+      .querySelector('.mantine-AppShell-header')
+      ?.querySelector('[aria-label="More actions"]')
+    expect(shellKebab).not.toBeNull()
+    expect(screen.getAllByTestId('g-theme')).toHaveLength(1)
+  })
+
+  test('no globalActions at all renders no kebab', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    expect(document.querySelector('[aria-label="More actions"]')).toBeNull()
   })
 })

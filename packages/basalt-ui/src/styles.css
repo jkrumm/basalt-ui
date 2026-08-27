@@ -68,6 +68,19 @@
     font-size: max(16px, var(--input-fz, 1rem)) !important;
   }
 
+  /* `data-numeric` — one typographic law, every element. A number read as a MEASUREMENT (a preset
+     like `7d`/`30d`, a KPI value, a table cell, a count tag) is mono with tabular figures, so
+     digits line up column-wise and a changing value does not reflow its neighbours. Declared here,
+     unscoped, because the attribute is the contract: `theme/segmented-control.module.css` and
+     `controls/controls.module.css` were each carrying their own copy, which is why a plain
+     `<Text data-numeric>` in a consumer silently rendered in the sans face. Those two module rules
+     STAY — they additionally set `font-size` for their own component, which is a component
+     decision, not a law. */
+  [data-numeric] {
+    font-family: var(--basalt-font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Focus ring = the accent as INK, not as a fill. Mantine hardcodes the ring to
      `var(--mantine-primary-color-filled)` — the SURFACE token, which is deliberately deep in both
      schemes so a white label sits on it (see ACCENT in tokens/palette.ts). A ring is read against

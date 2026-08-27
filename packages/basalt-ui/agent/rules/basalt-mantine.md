@@ -299,7 +299,8 @@ are available individually from `basalt-ui`:
 - `AppSidebar` — desktop sidebar (sections, collapse, brand, settings/account extras)
 - `MobileNav` — the bottom tab bar (takes a `MobileNavModel` from `projectMobileNav`)
 - `AppBreadcrumbs` — breadcrumb bar (reads from `useRouterBreadcrumbs` or a manual trail)
-- `PageHeaderProvider` + `PageActions` + `PageActionsOutlet` — portal-based page action slots
+- `PageBar` — the page-header action bar (row 1 header actions, row 2 in-flow sticky tabs/filters);
+  its portal provider/outlet are internal to `BasaltShell` now
 - `NavCountBadge` — count badge for sidebar nav items
 
 ```tsx
@@ -307,23 +308,22 @@ import {
   AppSidebar,
   MobileNav,
   AppBreadcrumbs,
-  PageHeaderProvider,
-  PageActionsOutlet,
+  PageBar,
   NavCountBadge,
   projectMobileNav,
 } from 'basalt-ui'
 
 function CustomShell({ children }: { children: React.ReactNode }) {
   return (
-    <PageHeaderProvider>
+    <>
       <AppSidebar sections={sections} brand={brand} />
       <MobileNav model={projectMobileNav(sections)} />
       <main>
         <AppBreadcrumbs />
-        <PageActionsOutlet />
+        <PageBar actions={{ primary, secondary }} />
         {children}
       </main>
-    </PageHeaderProvider>
+    </>
   )
 }
 ```

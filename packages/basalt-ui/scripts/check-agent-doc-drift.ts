@@ -164,6 +164,15 @@ export const REMOVED_APIS: Readonly<Record<string, string>> = {
   // ── 1.26.0 ── The enum-only stores survive as deprecated wrappers (removed in 1.29.0), so they
   // are deliberately NOT denylisted; `useOnlineStatus` is gone outright (A12).
   useOnlineStatus: 'useConnectivity',
+  // ── 1.27.0 controls tier ── The controlled article filter bar became the store-bound controls of
+  // `./controls`; `FilterSet` is the container, `ViewTabs`/`MultiSelectFilter` the two axes it held.
+  ArticleFilterBar: 'FilterSet',
+  // ── waves 3+4 (CONTROLS-SPEC) ── the page-action portal became `PageBar`; its provider/outlet
+  // are internal to `BasaltShell` now. `BasaltDataTable.toolbarActions` was renamed `actions`.
+  PageActions: 'PageBar',
+  PageActionsOutlet: 'PageBar',
+  PageHeaderProvider: 'PageBar',
+  toolbarActions: 'actions',
 }
 
 /**

@@ -454,7 +454,7 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * resolved `SpaceValues` as a JS NUMBER instead, in one of three ways:
  * `{timelineBullet,progressBarSize}` are Mantine `defaultProps` (`theme/index.ts`'s Timeline/
  * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,mobileNavMenuWidth,
- * appShellHeaderHeight,appShellHeaderMobileHeight,appShellNavbarWidth,appShellNavbarRailWidth,
+ * appShellHeaderHeight,appShellNavbarWidth,appShellNavbarRailWidth,
  * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
  * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,chartMarginRightAxis,
  * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
@@ -506,11 +506,9 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-stack-xl', `${space.anchors.stackXl}px`),
     // The CSS-module spacing sweep's one-offs (docs/STATUS.md) — same single-source reasoning,
     // grouped to match `SPACE_STEP_BASE`'s own grouping in tokens/palette.ts.
-    // Responsive pair (Decision 3) — `stickyHeaderClearance` is the desktop (`>= sm`) value,
-    // `stickyHeaderClearanceMobile` the mobile (`< sm`) override; a consumer CSS module picks
-    // whichever matches its own breakpoint (see `content/prose.module.css`).
+    // ONE value at every viewport since 1.27.0 — the AppShell header is a single 48px row (law
+    // C14), so the `-mobile` override of the old Decision-3 responsive pair is gone.
     decl('space-sticky-header-clearance', `${space.step.stickyHeaderClearance}px`),
-    decl('space-sticky-header-clearance-mobile', `${space.step.stickyHeaderClearanceMobile}px`),
     decl('space-nav-icon-gap', `${space.step.navIconGap}px`),
     decl('space-sidebar-region-gap', `${space.step.sidebarRegionGap}px`),
     decl('space-prose-quote-inset-y', `${space.step.proseQuoteInsetY}px`),
@@ -587,7 +585,6 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-sidebar-child-list-indent', `${space.step.sidebarChildListIndent}px`),
     decl('space-sidebar-child-row-inset-y', `${space.step.sidebarChildRowInsetY}px`),
     decl('space-sidebar-child-row-indent', `${space.step.sidebarChildRowIndent}px`),
-    decl('space-app-header-mobile-actions-height', `${space.step.appHeaderMobileActionsHeight}px`),
     decl('space-mobile-nav-tab-gap', `${space.step.mobileNavTabGap}px`),
     decl('space-mobile-nav-icon-size', `${space.step.mobileNavIconSize}px`),
     decl('space-mobile-nav-tab-inset-y', `${space.step.mobileNavTabInsetY}px`),
@@ -619,8 +616,8 @@ function spaceDecls(space: SpaceValues): string[] {
     // `chartLegendGap`/`chartMarginTop`/`chartMarginRight`/`chartMarginBottom`/`chartMarginLeft`/
     // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
     // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/
-    // `appShellHeaderMobileHeight`/`appShellNavbarWidth`/`appShellNavbarRailWidth` join that list —
-    // `shell/index.tsx` reads all four as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
+    // `appShellNavbarWidth`/`appShellNavbarRailWidth` join that list —
+    // `shell/index.tsx` reads all three as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
     // `header`/`navbar` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*` decl
     // here would have had zero consumers, framework-wide, the same dead-weight shape this function's
     // doc already calls out for the chart/Progress/Timeline group. `sidebarAccountMenuWidth`/

@@ -226,8 +226,14 @@ A Mantine `ActionIcon` + `Indicator` showing unread count. Opens a `Notification
 ```tsx
 import { NotificationBell } from 'basalt-ui/notifications'
 import { BasaltShell } from 'basalt-ui'
-;<BasaltShell globalActions={<NotificationBell />} {...rest} />
+;<BasaltShell
+  globalActions={[{ key: 'notifications', node: <NotificationBell />, mobile: 'bar' }]}
+  {...rest}
+/>
 ```
+
+`globalActions` takes `GlobalAction[]` (`{ key, node, mobile?: 'bar' | 'more' | 'hidden' }`) — the
+first two entries default to `'bar'`, the rest to `'more'`.
 
 The bell renders a bell SVG icon (no `@tabler/icons` dependency — icons are ReactNode per house
 rules). The unread indicator is capped at `9+` for counts above 9.
