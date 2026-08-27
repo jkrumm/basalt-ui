@@ -21,6 +21,7 @@
     "@fontsource-variable/hubot-sans": "5.2.8",
     "@fontsource-variable/jetbrains-mono": "5.2.8",
     "@fontsource-variable/nunito-sans": "5.2.7",
+    "@mantine/dates": "9.3.0",
     "@mantine/form": "9.3.2",
     "@mantine/modals": "^9.3.0",
     "@mantine/notifications": "^9.3.0",

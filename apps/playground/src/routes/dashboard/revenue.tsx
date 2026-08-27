@@ -1,5 +1,6 @@
-import { createFileRoute, useSearch } from '@tanstack/react-router'
-import { generateDashboardData } from '../../demo/data'
+import { createFileRoute } from '@tanstack/react-router'
+import { dashboardFilters } from '../../demo/dashboard-range-store'
+import { generateDashboardData, resolveDateRange } from '../../demo/data'
 import { SubPage } from '../../demo/SubPage'
 
 export const Route = createFileRoute('/dashboard/revenue')({
@@ -7,13 +8,13 @@ export const Route = createFileRoute('/dashboard/revenue')({
   component: RevenuePage,
 })
 
-const RANGE_LABEL: Record<string, string> = { '1d': 'Last 24h', '7d': 'Last 7d', '30d': 'Last 30d' }
-
 const fmtMoney = (v: number) => `$${v.toFixed(1)}k`
 
 function RevenuePage() {
-  const { range } = useSearch({ from: '/dashboard' })
-  const { series } = generateDashboardData(range)
+  // The store field, never `useSearch({ from: '/dashboard' })` — that literal breaks the moment
+  // the same component renders under a sibling route (law C10).
+  const [range] = dashboardFilters.field.range.use()
+  const { series } = generateDashboardData(resolveDateRange(range.preset))
   const totalRevenue = series.reduce((s, d) => s + d.revenue, 0)
   const dailyAverage = totalRevenue / series.length
 
@@ -21,10 +22,10 @@ function RevenuePage() {
     <SubPage
       title="Revenue"
       description="Revenue metrics — MRR, ARPU, LTV, transactions, and subscription growth over time."
-      range={RANGE_LABEL[range]}
+      range={dashboardFilters.field.range.options.find((o) => o.value === range.preset)?.label}
       stats={[
-        { key: 'total', label: 'Total revenue', value: fmtMoney(totalRevenue) },
-        { key: 'avg', label: 'Daily average', value: fmtMoney(dailyAverage) },
+        { key: 'total', title: 'Total revenue', value: fmtMoney(totalRevenue) },
+        { key: 'avg', title: 'Daily average', value: fmtMoney(dailyAverage) },
       ]}
     />
   )

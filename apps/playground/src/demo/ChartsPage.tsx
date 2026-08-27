@@ -385,8 +385,8 @@ function ChannelMixCard() {
     <ChartCard
       title="Channel mix"
       subtitle="Share of acquisition by channel"
-      tooltip="A donut over four channels; hover a slice for its share of total. The switch previews isPending — the 'query in flight' state stays distinct from 'measured and empty', so a loading chart never reads as a chart with no data."
-      extra={
+      info="A donut over four channels; hover a slice for its share of total. The switch previews isPending — the 'query in flight' state stays distinct from 'measured and empty', so a loading chart never reads as a chart with no data."
+      actions={
         <Switch
           size="xs"
           label="Pending"
@@ -429,7 +429,7 @@ export function ChartsPage() {
         <ChartCard
           title="Health score"
           subtitle="A composite 0–100 with zone bands, an x-range band, and a target threshold"
-          tooltip="Zones frame at-risk / watch / healthy; the shaded taper-week band marks Mar 08–14; a second, edge-aligned band pins the Mar 12 peak to one full step (align: 'edge' — the same from === to band would render nothing under the default 'center' alignment); the dashed reference marks the 80 goal. The tooltip appends an extraRow comparing today's score to that goal, gated on the same hidden set the legend toggles. tooltip.onFollow: true also makes THIS chart render its tooltip when a sibling below owns the cursor, not only when it's the hovered one."
+          info="Zones frame at-risk / watch / healthy; the shaded taper-week band marks Mar 08–14; a second, edge-aligned band pins the Mar 12 peak to one full step (align: 'edge' — the same from === to band would render nothing under the default 'center' alignment); the dashed reference marks the 80 goal. The tooltip appends an extraRow comparing today's score to that goal, gated on the same hidden set the legend toggles. tooltip.onFollow: true also makes THIS chart render its tooltip when a sibling below owns the cursor, not only when it's the hovered one."
         >
           <ZonedLine<DayPoint>
             data={SERIES_DATA}
@@ -467,7 +467,7 @@ export function ChartsPage() {
           <ChartCard
             title="Volume mix"
             subtitle="Stacked daily totals across three series"
-            tooltip="A stacked-area band per series — opaque fills so lower bands never leak through."
+            info="A stacked-area band per series — opaque fills so lower bands never leak through."
           >
             <StackedArea<DayPoint>
               data={SERIES_DATA}
@@ -488,7 +488,7 @@ export function ChartsPage() {
           <ChartCard
             title="Training load"
             subtitle="Acute vs chronic, with the signed gap below"
-            tooltip="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded; a warning dot flags overreach days (divergence ≥ 10) via getMarker, drawn flat via ring: false + fillOpacity instead of the default punched-out ring. Bottom: the signed acute − chronic divergence — its tooltip row cites building/recovering via formatBar (formatBottom keeps owning the ticks). Both panes share one cursor with every other chart on this page. bottomMaxAbsFloor is set to 8, below this data's real max-abs of 13, so it's a floor that doesn't currently amplify anything — not a clamp. onFollow renders this chart's tooltip when a SIBLING owns the cursor too, anchored to the shared crosshair, not only when this chart is the one hovered."
+            info="Top: 7-day acute load over the 28-day chronic baseline, the gap shaded; a warning dot flags overreach days (divergence ≥ 10) via getMarker, drawn flat via ring: false + fillOpacity instead of the default punched-out ring. Bottom: the signed acute − chronic divergence — its tooltip row cites building/recovering via formatBar (formatBottom keeps owning the ticks). Both panes share one cursor with every other chart on this page. bottomMaxAbsFloor is set to 8, below this data's real max-abs of 13, so it's a floor that doesn't currently amplify anything — not a clamp. onFollow renders this chart's tooltip when a SIBLING owns the cursor too, anchored to the shared crosshair, not only when this chart is the one hovered."
           >
             <DualPanel<LoadPoint>
               data={LOAD_TREND}
@@ -543,7 +543,7 @@ export function ChartsPage() {
           <ChartCard
             title="Sessions vs revenue"
             subtitle="Two series, same date axis, independent scales — left axis counts, right axis $k"
-            tooltip="Dual-axis composition: sessions and revenue share the calendar but not a y-scale. Composed straight from CartesianChart (series + y2) since no kind exposes independent left/right line axes. tooltip.onFollow: true also renders this chart's tooltip as a cursor FOLLOWER, anchored to the shared crosshair, when Health score or Training load is hovered instead."
+            info="Dual-axis composition: sessions and revenue share the calendar but not a y-scale. Composed straight from CartesianChart (series + y2) since no kind exposes independent left/right line axes. tooltip.onFollow: true also renders this chart's tooltip as a cursor FOLLOWER, anchored to the shared crosshair, when Health score or Training load is hovered instead."
           >
             <SessionsRevenueChart data={SERIES_DATA} chartId="charts-sessions-revenue" />
           </ChartCard>
@@ -551,7 +551,7 @@ export function ChartsPage() {
           <ChartCard
             title="Weekly digest"
             subtitle="2 weekly buckets over the same Mar 01–14 calendar"
-            tooltip="No ChartCursorScope, no provider — hover either chart above or this one and the crosshair moves on all of them. This chart folds 14 days into 2 points keyed by each week's leading day (Mar 01, Mar 08) and passes cursorResolution: leading, so a daily hover anywhere inside a week — even the back half, e.g. Mar 05 — lands on the week that actually CONTAINS it, not just the nearest one by raw distance. The dashed 2-week-average line is a BarsLine: dimmed via strokeOpacity (stroke + legend swatch only) and excluded from the tooltip via tooltip: false, since it's a static reference, not a measurement. The y axis also opts into AxisConfig.nice, rounding its tick bounds outward."
+            info="No ChartCursorScope, no provider — hover either chart above or this one and the crosshair moves on all of them. This chart folds 14 days into 2 points keyed by each week's leading day (Mar 01, Mar 08) and passes cursorResolution: leading, so a daily hover anywhere inside a week — even the back half, e.g. Mar 05 — lands on the week that actually CONTAINS it, not just the nearest one by raw distance. The dashed 2-week-average line is a BarsLine: dimmed via strokeOpacity (stroke + legend swatch only) and excluded from the tooltip via tooltip: false, since it's a static reference, not a measurement. The y axis also opts into AxisConfig.nice, rounding its tick bounds outward."
           >
             <WeeklyDigestChart chartId="charts-weekly-digest" />
           </ChartCard>
@@ -562,7 +562,7 @@ export function ChartsPage() {
       <ChartCard
         title="Estimated 1RM trend"
         subtitle="Three lifts — solid e1RM, dashed 4-session average, ★ marks a new PR"
-        tooltip="MultiLine: N series on one axis. Hover the legend to dim the rest, click an entry to hide it; stars mark personal records; the dashed moving-average companion folds under its lift's legend entry as a compact sub-row. formatX reformats the raw 'S1'..'S12' session keys into '#1'..'#12' on the x-axis."
+        info="MultiLine: N series on one axis. Hover the legend to dim the rest, click an entry to hide it; stars mark personal records; the dashed moving-average companion folds under its lift's legend entry as a compact sub-row. formatX reformats the raw 'S1'..'S12' session keys into '#1'..'#12' on the x-axis."
       >
         <MultiLine<LiftPoint>
           data={LIFT_TREND}
@@ -600,7 +600,7 @@ export function ChartsPage() {
         <ChartCard
           title="Activity by hour"
           subtitle="Sessions across the day-of-week × hour grid — self-measuring, like every kind"
-          tooltip="Heatmap measures its own container (fixed height here, like every other kind) — no wrapper needed. Each cell's opacity scales with its value."
+          info="Heatmap measures its own container (fixed height here, like every other kind) — no wrapper needed. Each cell's opacity scales with its value."
         >
           <Heatmap<HeatCell>
             data={ACTIVITY_HEATMAP}
@@ -623,7 +623,7 @@ export function ChartsPage() {
       <ChartCard
         title="Weekly channel volume"
         subtitle="4 stacked channels + a 3-week average + 3 threshold refs — 8 legend entries"
-        tooltip="Regression guard for the weekly-volume overlap class: role-grouped legend (series / overlay / reference) with flexWrap and a maxRows rollup, all derived from one series array. Click any entry — a channel, the average, or a threshold — to hide it; the stack, the line, and the axis domain all update together. Each channel's tooltip row also cites its share of that week's total via formatValue's second (datum) argument; the average line's stroke and legend swatch are dimmed with strokeOpacity, while its tooltip row and crosshair dot stay full-strength. The tooltip header itself is renamed from the raw 'W3' key to 'Week 3' via tooltip.formatHeader."
+        info="Regression guard for the weekly-volume overlap class: role-grouped legend (series / overlay / reference) with flexWrap and a maxRows rollup, all derived from one series array. Click any entry — a channel, the average, or a threshold — to hide it; the stack, the line, and the axis domain all update together. Each channel's tooltip row also cites its share of that week's total via formatValue's second (datum) argument; the average line's stroke and legend swatch are dimmed with strokeOpacity, while its tooltip row and crosshair dot stay full-strength. The tooltip header itself is renamed from the raw 'W3' key to 'Week 3' via tooltip.formatHeader."
       >
         <ChannelVolumeChart data={CHANNEL_VOLUME} chartId="charts-channel-volume" />
       </ChartCard>

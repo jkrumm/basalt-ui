@@ -1,4 +1,7 @@
 import '@mantine/core/styles.layer.css'
+// `@mantine/dates` is basalt's one OPTIONAL peer: only `basalt-ui/controls-dates` needs it, and its
+// layer bundle has to land with the other Mantine ones, before `basalt-ui/styles.css`.
+import '@mantine/dates/styles.layer.css'
 import '@mantine/notifications/styles.layer.css'
 import '@mantine/spotlight/styles.layer.css'
 import 'basalt-ui/styles.css'

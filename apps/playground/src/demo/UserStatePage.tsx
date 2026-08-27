@@ -1,4 +1,4 @@
-import { Code, Divider, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Code, Divider, SegmentedControl, Stack, Text, TextInput } from '@mantine/core'
 import { SettingsRow, SettingsSection } from 'basalt-ui'
 import { scenarioToAccountState, useUserScenario } from './user-scenario-store'
 import type { UserScenario } from './user-scenario-store'
@@ -33,7 +33,6 @@ export function UserStatePage() {
 
   return (
     <Stack gap="lg" p="md" maw={600}>
-      <Title order={2}>User Simulator</Title>
       <Text size="sm" c="dimmed">
         Toggle auth/plan/role state to see the sidebar footer&apos;s <Code>SidebarAccount</Code>{' '}
         react live — including the Account/Billing drawers behind its menu.

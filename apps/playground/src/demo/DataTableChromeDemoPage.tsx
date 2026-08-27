@@ -10,7 +10,8 @@
  * The "bad alignment" switch pushes `meta: { align: 'end' }` — a value the union rejects at
  * compile time and the component throws on at runtime, rather than quietly left-aligning money.
  */
-import { Alert, Card, Code, Group, Paper, Stack, Switch, Text, Title } from '@mantine/core'
+import { ActionIcon, Alert, Card, Code, Group, Menu, Stack, Switch } from '@mantine/core'
+import { Section } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data'
 import type { DataTableAlign } from 'basalt-ui/data'
 import { Component, useMemo, useState } from 'react'
@@ -81,69 +82,74 @@ export function DataTableChromeDemoPage() {
 
   return (
     <Stack gap="lg">
-      <Stack gap={4}>
-        <Title order={2}>Data table — capped body, sticky header, column alignment</Title>
-        <Text c="dimmed" size="sm">
-          40 rows in a card that must not grow past 320px.
-        </Text>
-      </Stack>
-
-      <Paper py="xs" px="sm" withBorder>
-        <Group gap="lg">
-          <Switch
-            size="xs"
-            label="maxHeight 320"
-            checked={capped}
-            onChange={(event) => setCapped(event.currentTarget.checked)}
-          />
-          <Switch
-            size="xs"
-            label="stickyHeader"
-            checked={sticky}
-            onChange={(event) => setSticky(event.currentTarget.checked)}
-          />
-          <Switch
-            size="xs"
-            label="numeric columns right-aligned"
-            checked={aligned}
-            onChange={(event) => setAligned(event.currentTarget.checked)}
-          />
-          <Switch
-            size="xs"
-            color="orange"
-            label="bad alignment value ('end')"
-            checked={bad}
-            onChange={(event) => setBad(event.currentTarget.checked)}
-          />
-        </Group>
-      </Paper>
-
-      {/* theme-allow card-inset — flush table card: the header row and the scroll body manage
-          their own px/py so the capped body can scroll edge to edge under a sticky header.
-          withTableBorder={false} because the Card already owns the frame. */}
-      <Card padding={0}>
-        <Group justify="space-between" px="md" py="sm">
-          <Text fw={600} size="sm">
-            Session history
-          </Text>
-          <Text size="xs" c="dimmed">
-            {SESSIONS.length} sessions
-          </Text>
-        </Group>
-        <ThrowBoundary key={String(bad)}>
-          <BasaltDataTable
-            data={SESSIONS}
-            columns={columns}
-            striped
-            highlightOnHover
-            verticalSpacing="xs"
-            withTableBorder={false}
-            minWidth={640}
-            stickyHeader={sticky}
-            {...(capped && { maxHeight: 320 })}
-          />
-        </ThrowBoundary>
-      </Card>
+      {/* The flags are the section's `actions` slot, not an ephemeral row in the body (law C1), and
+          none of them carries a `size` because the home sets the tier (law C5).
+          THREE of them, not four: a `Section` holds ≤3 actions (law C6), and four labelled switches
+          in a `wrap: nowrap` row measure past a 375px viewport — which law C7 forbids a home from
+          scrolling or wrapping out of. The fourth, rarest one folds into a kebab, which is exactly
+          the fold basalt would compute for a typed `BarAction[]`. */}
+      <Section
+        title="Data table — capped body, sticky header, column alignment"
+        subtitle="40 rows in a card that must not grow past 320px."
+        actions={
+          <Group gap="lg" wrap="nowrap">
+            <Switch
+              label="maxHeight 320"
+              checked={capped}
+              onChange={(event) => setCapped(event.currentTarget.checked)}
+            />
+            <Switch
+              label="stickyHeader"
+              checked={sticky}
+              onChange={(event) => setSticky(event.currentTarget.checked)}
+            />
+            <Switch
+              label="Right-aligned"
+              checked={aligned}
+              onChange={(event) => setAligned(event.currentTarget.checked)}
+            />
+            <Menu position="bottom-end" withinPortal shadow="md">
+              <Menu.Target>
+                <ActionIcon variant="subtle" color="gray" aria-label="More table options">
+                  ⋯
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  color="orange"
+                  onClick={() => setBad(!bad)}
+                  aria-pressed={bad}
+                  closeMenuOnClick={false}
+                >
+                  {bad ? '✓ ' : ''}Bad align value (&apos;end&apos;)
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        }
+      >
+        {/* theme-allow card-inset — flush table card: the header row and the scroll body manage
+            their own px/py so the capped body can scroll edge to edge under a sticky header.
+            withTableBorder={false} because the Card already owns the frame. The title and the
+            count are the TABLE's own (law C11) — `count` is always `table.getRowCount()`, so it
+            cannot drift from the rows actually rendered the way a hand-written label could. */}
+        <Card padding={0}>
+          <ThrowBoundary key={String(bad)}>
+            <BasaltDataTable
+              title="Session history"
+              data={SESSIONS}
+              columns={columns}
+              striped
+              highlightOnHover
+              verticalSpacing="xs"
+              withTableBorder={false}
+              minWidth={640}
+              stickyHeader={sticky}
+              {...(capped && { maxHeight: 320 })}
+            />
+          </ThrowBoundary>
+        </Card>
+      </Section>
     </Stack>
   )
 }

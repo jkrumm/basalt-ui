@@ -125,7 +125,7 @@ function AccountSection() {
   return (
     <>
       <div id="account">
-        <SettingsSection title="Account" description="Your profile, security, and access.">
+        <SettingsSection title="Account" subtitle="Your profile, security, and access.">
           {accountState.status === 'loading' && (
             <Text size="sm" c="dimmed">
               Loading account…
@@ -201,7 +201,7 @@ function AccountSection() {
       {accountState.status === 'authenticated' && (
         <DangerZone
           title="Delete account"
-          description="Permanently remove your account and all associated data."
+          subtitle="Permanently remove your account and all associated data."
         >
           <SettingsRow
             label="Delete this account"
@@ -253,7 +253,7 @@ function BillingSection() {
 
   return (
     <div id="billing">
-      <SettingsSection title="Billing" description="Plan, payment method, and invoices.">
+      <SettingsSection title="Billing" subtitle="Plan, payment method, and invoices.">
         {scenario.planStatus === 'past_due' && (
           <Alert color="yellow" title="Payment failed">
             We couldn&apos;t process your last payment. Update your payment method to keep your plan
@@ -346,7 +346,7 @@ function AppearanceSection() {
     <div id="appearance">
       <SettingsSection
         title="Appearance"
-        description="Color scheme, palette derivation, and low-level token inspection."
+        subtitle="Color scheme, palette derivation, and low-level token inspection."
       >
         <SettingsRow
           label="Color scheme"
@@ -456,7 +456,7 @@ function NotificationsSection() {
   return (
     <SettingsSection
       title="Notifications"
-      description="Choose which notification intents raise a toast and land in your inbox."
+      subtitle="Choose which notification intents raise a toast and land in your inbox."
     >
       {NOTIFICATION_CATEGORIES.map((category) => (
         <SettingsRow
@@ -481,7 +481,7 @@ function ShortcutsSection() {
   return (
     <SettingsSection
       title="Shortcuts"
-      description="Keyboard shortcuts registered through basalt-ui/commands."
+      subtitle="Keyboard shortcuts registered through basalt-ui/commands."
     >
       <ShortcutsHelp title="Registered shortcuts" />
     </SettingsSection>
@@ -496,7 +496,7 @@ function ConnectivitySection() {
   return (
     <SettingsSection
       title="Connectivity"
-      description="Aggregates browser online/offline, React Query cache, SSE, and health-check pings."
+      subtitle="Aggregates browser online/offline, React Query cache, SSE, and health-check pings."
     >
       <SettingsRow
         label="Connection"
@@ -519,7 +519,7 @@ function DeveloperSection() {
   return (
     <SettingsSection
       title="Developer"
-      description="createPersistedState — a factory hook backed by versioned localStorage."
+      subtitle="createPersistedState — a factory hook backed by versioned localStorage."
     >
       <Text size="sm" c="dimmed" mb="sm">
         Navigate away and back — the counter survives. Cross-tab: open another window and click to

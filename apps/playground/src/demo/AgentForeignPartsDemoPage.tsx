@@ -211,7 +211,7 @@ const foreignRenderers = definePartRenderers({
       <Text style={MICRO_LABEL_STYLE}>Chart (consumer-rendered)</Text>
       <ChartCard
         title={part.spec.title}
-        tooltip="Warehouse stock levels for this SKU — rendered by the consumer's own data-chart renderer, not basalt."
+        info="Warehouse stock levels for this SKU — rendered by the consumer's own data-chart renderer, not basalt."
       >
         {/* Single-series categorical bars: stock level per warehouse is one metric plotted across
          * categories, not two competing series — stays neutral per the "a lone single-series metric

@@ -32,8 +32,9 @@
  */
 import { linkOptions } from '@tanstack/react-router'
 import { defineNav, navGroup } from 'basalt-ui/router-tanstack'
-import { articleCategory, articleTags } from './article-filter-stores'
-import { dashboardRange } from './dashboard-range-store'
+import { articleFilters } from './article-filter-stores'
+import { mobileFilters } from './controls-mobile-store'
+import { dashboardFilters } from './dashboard-range-store'
 import {
   IconActivity,
   IconBattery,
@@ -51,12 +52,6 @@ import {
   IconWifi,
 } from './icons'
 
-/**
- * The dashboard's default search, read at click time. `readStored` is the store's non-React door,
- * so this is a plain function rather than a hook — a nav definition is module-scope data.
- */
-const dashboardSearch = () => ({ range: dashboardRange.readStored() ?? ('30d' as const) })
-
 export const NAV = defineNav({
   groups: [
     navGroup({ id: 'overview', label: 'Overview', icon: <IconDashboard /> }, [
@@ -66,36 +61,33 @@ export const NAV = defineNav({
         short: 'Home',
         mobile: 'tab',
         icon: <IconDashboard />,
-        // Step 5 of the createSearchParamStore recipe — carry the filter across sub-page
-        // switches, set PER DESTINATION so only the /dashboard sub-tree inherits it and every
-        // other link below stays clean.
+        // Law C10 — the store's OWN reader, passed BY REFERENCE and set per destination so only
+        // the /dashboard sub-tree inherits the filter and every other link below stays clean.
         //
-        // A bare `search: true` ("keep the current search") is NOT available here: TanStack only
-        // offers that flag where the target's search is optional, and `/dashboard`'s
-        // `validateSearch` always returns a `range`, so the router requires the key. The typed
-        // equivalent is this thunk — `linkOptions` accepts a function form and the `<Link>`
-        // re-evaluates it at CLICK time, so it reads whatever the filter last persisted rather
-        // than whatever was in the URL when this module was first evaluated. It is also strictly
-        // better than "keep the current search": arriving from a non-dashboard route restores the
-        // last selection instead of landing on the factory default.
-        link: linkOptions({ to: '/dashboard', search: dashboardSearch }),
+        // A `search:` object literal here would pin the fallback on every click; a hand-rolled
+        // thunk restating '30d' would drift from the store the moment a preset is added. A bare
+        // `search: true` is not available either: `/dashboard`'s `validateSearch` always returns
+        // every field, so the router requires the keys. `linkSearch` is the typed answer to all
+        // three — `linkOptions` accepts a function form and `<Link>` re-evaluates it at CLICK
+        // time, so it reads whatever the filters last persisted.
+        link: linkOptions({ to: '/dashboard', search: dashboardFilters.linkSearch }),
         // Child rows render text-only against the sidebar's left rail — omitting `icon` is what
         // opts out of a left section, and the mobile More sheet indents them the same way.
         children: [
           {
             id: 'dashboard-sessions',
             label: 'Sessions',
-            link: linkOptions({ to: '/dashboard/sessions', search: dashboardSearch }),
+            link: linkOptions({ to: '/dashboard/sessions', search: dashboardFilters.linkSearch }),
           },
           {
             id: 'dashboard-traffic',
             label: 'Traffic',
-            link: linkOptions({ to: '/dashboard/traffic', search: dashboardSearch }),
+            link: linkOptions({ to: '/dashboard/traffic', search: dashboardFilters.linkSearch }),
           },
           {
             id: 'dashboard-revenue',
             label: 'Revenue',
-            link: linkOptions({ to: '/dashboard/revenue', search: dashboardSearch }),
+            link: linkOptions({ to: '/dashboard/revenue', search: dashboardFilters.linkSearch }),
           },
         ],
       },
@@ -141,6 +133,15 @@ export const NAV = defineNav({
           label: 'Mobile nav pill',
           icon: <IconDots />,
           link: linkOptions({ to: '/mobile-nav-pill' }),
+        },
+        {
+          id: 'controls-mobile',
+          label: 'Controls (mobile)',
+          short: 'Controls',
+          icon: <IconSettings />,
+          // Its own store validates six fields, so the destination carries all of them — same
+          // by-reference reader as every other store-backed link (law C10).
+          link: linkOptions({ to: '/controls-mobile', search: mobileFilters.linkSearch }),
         },
         {
           id: 'reports',
@@ -224,14 +225,8 @@ export const NAV = defineNav({
         label: 'Content overview',
         short: 'Overview',
         icon: <IconSearch />,
-        // Same click-time-thunk shape as the dashboard, over the two stores this route composes.
-        link: linkOptions({
-          to: '/content-overview',
-          search: () => ({
-            category: articleCategory.readStored() ?? 'all',
-            tags: articleTags.readStored() ?? [],
-          }),
-        }),
+        // Same by-reference reader as the dashboard — one store, both of this route's params.
+        link: linkOptions({ to: '/content-overview', search: articleFilters.linkSearch }),
       },
       {
         id: 'content-sanitize',

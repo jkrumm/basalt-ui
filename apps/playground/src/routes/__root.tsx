@@ -18,12 +18,11 @@
 import { Text, useMantineColorScheme } from '@mantine/core'
 import { Outlet, createRootRoute, useNavigate } from '@tanstack/react-router'
 import { BasaltShell, ConnectivityIndicator, ThemeToggle } from 'basalt-ui'
-import type { BasaltAccountActions } from 'basalt-ui'
+import type { BasaltAccountActions, GlobalAction } from 'basalt-ui'
 import { useNav } from 'basalt-ui/router-tanstack'
 import { NotificationBell } from 'basalt-ui/notifications'
 import { openSpotlight } from 'basalt-ui/commands'
 import { useEffect } from 'react'
-import { DashboardDateFilter } from '../demo/DashboardDateFilter'
 import { registerColorSchemeControl } from '../demo/commands'
 import { NAV } from '../demo/nav-model'
 import { scenarioToAccountState, useUserScenario } from '../demo/user-scenario-store'
@@ -49,6 +48,26 @@ const moreExtra = (
  * object, and a fresh literal per render would defeat it. A real app memoizes its query result.
  */
 const navBadges = { dashboard: 4 }
+
+/**
+ * `globalActions` is DECLARED DATA (`GlobalAction[]`, was a `ReactNode` row), so basalt owns the
+ * mobile projection rather than the caller: the first two default to `'bar'`, the rest to the
+ * header's single kebab, and a page's `PageBar` shares that same kebab.
+ *
+ * The policy per entry is deliberate, not cosmetic. Connectivity and the notification bell hold
+ * LIVE state and stay `'bar'` — a `'more'` node is mounted a second time inside the kebab's
+ * dropdown, which for a live indicator means two subscriptions and two readings. `ThemeToggle` is
+ * self-contained and idempotent, so it folds into `'more'`; the color scheme is also reachable
+ * from the account menu's settings rows, so nothing is lost on a phone.
+ *
+ * The date-range filter that used to sit here is gone: a page-level filter belongs in that page's
+ * `PageBar.filters` (law C1), not in a persistent header slot every route pays for.
+ */
+const GLOBAL_ACTIONS: GlobalAction[] = [
+  { key: 'connectivity', node: <ConnectivityIndicator />, mobile: 'bar' },
+  { key: 'notifications', node: <NotificationBell />, mobile: 'bar' },
+  { key: 'theme', node: <ThemeToggle />, mobile: 'more' },
+]
 
 function RootLayout() {
   const navigate = useNavigate()
@@ -79,14 +98,7 @@ function RootLayout() {
       brand={{ name: 'Basalt', version: __APP_VERSION__ }}
       {...nav}
       search={{ onOpen: () => openSpotlight() }}
-      globalActions={
-        <>
-          <DashboardDateFilter />
-          <ConnectivityIndicator />
-          <NotificationBell />
-          <ThemeToggle />
-        </>
-      }
+      globalActions={GLOBAL_ACTIONS}
       account={{ state: accountState, actions: accountActions }}
     >
       <Outlet />

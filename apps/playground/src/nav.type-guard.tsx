@@ -17,6 +17,17 @@
 import { Link, linkOptions, redirect } from '@tanstack/react-router'
 import { defineNav, navGroup, navTarget } from 'basalt-ui/router-tanstack'
 
+// `/dashboard`'s store validates FOUR fields (`demo/dashboard-range-store.ts`), and
+// `validateSearch` returns every one of them resolved — so TanStack type-requires all four on any
+// link into it. Hoisted `as const` so the literals do not widen (see the row-8 trap below) and the
+// four keys are stated once rather than eight times.
+const DASH_SEARCH = {
+  range: '7d',
+  compare: 'none',
+  currency: 'USD',
+  channels: [],
+} as const
+
 // ── the definition under test ────────────────────────────────────────────────────────────────────
 
 export const NAV = defineNav({
@@ -28,12 +39,12 @@ export const NAV = defineNav({
         label: 'Dashboard',
         short: 'Dash',
         mobile: 'tab',
-        link: linkOptions({ to: '/dashboard', search: { range: '7d' } }),
+        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
         children: [
           {
             id: 'sessions',
             label: 'Sessions',
-            link: linkOptions({ to: '/dashboard/sessions', search: { range: '7d' } }),
+            link: linkOptions({ to: '/dashboard/sessions', search: DASH_SEARCH }),
             // A GRANDCHILD — two levels below the group. Both halves of the contract are checked
             // against it: it is `Exact`-checked like any other item (row 4b), and it is present in
             // the id union `navTarget` takes (row 11).
@@ -109,7 +120,7 @@ export const unknownChildKey = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/dashboard', search: { range: '7d' } }),
+        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
         children: [
           // @ts-expect-error 'colour' is not a NavItemMeta key — the recursion types it `never` too
           { id: 'y', label: 'Y', colour: 'red', link: linkOptions({ to: '/charts' }) },
@@ -128,7 +139,7 @@ export const badChildPath = defineNav({
       {
         id: 'x',
         label: 'X',
-        link: linkOptions({ to: '/dashboard', search: { range: '7d' } }),
+        link: linkOptions({ to: '/dashboard', search: DASH_SEARCH }),
         children: [
           // @ts-expect-error '/nope' is not a registered route path, at any depth
           { id: 'y', label: 'Y', link: linkOptions({ to: '/nope' }) },
@@ -162,11 +173,11 @@ export const unknownGroupKey = defineNav({
 
 // ── 7. a route whose search params are required ──────────────────────────────────────────────────
 // `/dashboard` runs `validateSearch`, so TanStack marks `search` required on the link options.
-// NOTE the limit of this row, spelled out because it is easy to over-read: the requirement is on
-// the search OBJECT, not on its keys. `/dashboard`'s validator takes `Record<string, unknown>`,
-// which is the shape every hand-written `validateSearch` in this repo (and in argo) has, and under
-// it no individual key is type-required — `search: {}` compiles. A nav target that forgets a
-// default `range` is therefore still a runtime concern, not a compile-time one.
+// The limit this row used to carry is GONE, and the change is worth stating: a hand-written
+// `validateSearch(search: Record<string, unknown>)` type-required the search OBJECT but none of its
+// KEYS, so `search: {}` compiled and a nav target forgetting `range` was a runtime concern only.
+// `createSearchStore.validateSearch` returns every field RESOLVED, so each one is now type-required
+// too — `search: { range: '7d' }` alone is a compile error naming the three fields it dropped.
 
 export const missingSearch = defineNav({
   groups: [
@@ -203,7 +214,10 @@ export const searchThunkLiteralUnion = defineNav({
       {
         id: 'dash',
         label: 'Dashboard',
-        link: linkOptions({ to: '/dashboard', search: () => ({ range: '7d' }) }),
+        link: linkOptions({
+          to: '/dashboard',
+          search: () => ({ range: '7d', compare: 'none', currency: 'USD', channels: [] }),
+        }),
       },
     ]),
   ],
@@ -212,8 +226,9 @@ export const searchThunkLiteralUnion = defineNav({
 // The trap that survives, and the reason the row above is worth pinning rather than assuming: the
 // same thunk hoisted into a STANDALONE `linkOptions` call has no such contextual type, its return
 // widens to `{ range: string }`, and it is rejected. Inline it in the nav item, or write `as const`.
-// @ts-expect-error a standalone thunk's `range` widens to `string` and misses the DateRange union
-export const hoistedThunk = linkOptions({ to: '/dashboard', search: () => ({ range: '7d' }) })
+const widenedSearch = () => ({ range: '7d', compare: 'none', currency: 'USD', channels: [] })
+// @ts-expect-error a standalone thunk's `range` widens to `string` and misses the preset union
+export const hoistedThunk = linkOptions({ to: '/dashboard', search: widenedSearch })
 
 // ── 9. a bar tab naming an id that does not exist ────────────────────────────────────────────────
 // `tabs` validates against the item-id union UNIONED with the group-id union, which is why
@@ -242,7 +257,7 @@ export const noTabs = defineNav({
 // The annotation is the assertion: it would fail if `NavIndex` collapsed to the whole union, which
 // is exactly what the `Extract<…, { id: K }>['link']` form (deliberately not used) does.
 
-export const dashTarget: { readonly to: '/dashboard'; readonly search: { readonly range: '7d' } } =
+export const dashTarget: { readonly to: '/dashboard'; readonly search: typeof DASH_SEARCH } =
   navTarget(NAV, 'dash')
 
 // A nested child is addressable by id too — `AllItemsOf` walks `children` to ARBITRARY depth, so
@@ -251,7 +266,7 @@ export const dashTarget: { readonly to: '/dashboard'; readonly search: { readonl
 // below is the grandchild case, and it is the pin on that agreement.
 export const sessionsTarget: {
   readonly to: '/dashboard/sessions'
-  readonly search: { readonly range: '7d' }
+  readonly search: typeof DASH_SEARCH
 } = navTarget(NAV, 'sessions')
 
 export const sessionDetailTarget: { readonly to: '/charts' } = navTarget(NAV, 'session-detail')

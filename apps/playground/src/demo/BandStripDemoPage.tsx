@@ -199,7 +199,7 @@ export function BandStripDemoPage() {
       <ChartCard
         title="Availability"
         subtitle="Loss per 5-minute bucket, with unmeasured buckets hatched"
-        tooltip="A clean bucket is neutral ink, loss is a ramp inside one state, and a bucket nothing measured is hatched — three facts colour alone could not keep apart."
+        info="A clean bucket is neutral ink, loss is a ramp inside one state, and a bucket nothing measured is hatched — three facts colour alone could not keep apart."
       >
         <BandStrip<Slot>
           data={slots}
@@ -227,7 +227,7 @@ export function BandStripDemoPage() {
       <ChartCard
         title="Negotiated link speed"
         subtitle="A renegotiation is MARKED, never averaged into a rate the NIC never ran at"
-        tooltip="Speed intensity is relative to the fastest rate the window saw. A bucket holding two speeds gets an inset marker instead of their mean."
+        info="Speed intensity is relative to the fastest rate the window saw. A bucket holding two speeds gets an inset marker instead of their mean."
       >
         <BandStrip<LinkSlot>
           data={link}
