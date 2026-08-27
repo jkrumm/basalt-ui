@@ -252,6 +252,14 @@
   background-color: color-mix(in srgb, var(--vx-ink) 10%, transparent);
 }
 
+/* Trailing meta on a block-item row (a timestamp, an owner) — the mobile twin of the sidebar's
+ * `.blockRowMeta`, so the same `SidebarBlockItem.meta` reads the same on both surfaces. */
+.rowMeta {
+  flex: none;
+  font-size: var(--vx-text-micro);
+  color: var(--vx-faint);
+}
+
 /*
  * Active = neutral surface fill + plain text color. Never the identity blue (DESIGN.md). --nl-color
  * forces NavLink's active text/icon color (otherwise the accent) to the plain text color. The

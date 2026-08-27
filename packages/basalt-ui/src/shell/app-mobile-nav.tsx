@@ -25,11 +25,17 @@ import type {
   MobileNavGroup,
   MobileNavModel,
   MobileNavSlot,
+  SidebarBlock,
+  SidebarBlockItem,
   SidebarItem,
+  SidebarListBlock,
+  SidebarProgressBlock,
 } from '../nav/types'
 import type { BasaltAccountProps } from './account-types'
 import type { SettingsMenuItem } from './index'
 import { NavCountBadge } from './nav-count-badge'
+import { SidebarBlockToneDot } from './sidebar-blocks'
+import { sidebarBlockMobile } from './sidebar-block-model'
 import { useBasaltSpacing } from '../theme'
 import classes from './app-mobile-nav.module.css'
 
@@ -54,6 +60,13 @@ export type MobileNavProps = {
    *  deletable: everything it used to hold is reachable from More. */
   account?: BasaltAccountProps | undefined
   settingsMenuItems?: SettingsMenuItem[] | undefined
+  /**
+   * The sidebar's blocks, projected. A block with `mobile: 'more'` becomes ONE row in the More
+   * surface (`Awaiting action · 3`) that opens a nested 44px-row sheet of its items — the sidebar
+   * itself does not exist below `sm`, so this is the only way its blocks are reachable at all.
+   * Counted for the menu-vs-sheet threshold by `blockRowCount`, never re-counted here.
+   */
+  blocks?: SidebarBlock[] | undefined
 }
 
 /** Inline "More" glyph — keeps the shell icon-dependency-free. */
@@ -237,10 +250,13 @@ export function MobileNav({
   config,
   account,
   settingsMenuItems,
+  blocks,
 }: MobileNavProps): ReactElement {
-  // `openKey` is the ONLY state here, and it is keyed by slot rather than holding a slot object:
-  // `sections` identity churning on every consumer render must not close an open menu.
+  // `openKey` is the ONLY slot state here, and it is keyed by slot rather than holding a slot
+  // object: `sections` identity churning on every consumer render must not close an open menu.
   const [openKey, setOpenKey] = useState<string | null>(null)
+  // The nested block sheet, keyed the same way and for the same reason.
+  const [openBlockKey, setOpenBlockKey] = useState<string | null>(null)
   // `DEFAULT_THEME.respectReducedMotion` is false in Mantine 9.3 and `createBasaltTheme` does not
   // set it, so the preference has to be read explicitly at the call site.
   const reduceMotion = useReducedMotion()
@@ -256,6 +272,86 @@ export function MobileNav({
   }
 
   const extraRows = [...accountRows(account), ...settingsRows(settingsMenuItems)]
+
+  /**
+   * The blocks that reach More, in sidebar order and with the same emptiness rule `blockRowCount`
+   * applies — the count that picked `menu` vs `sheet` and the rows that render must agree.
+   */
+  const moreBlocks = (blocks ?? []).filter(
+    (block): block is SidebarListBlock | SidebarProgressBlock =>
+      block.kind !== 'custom' &&
+      sidebarBlockMobile(block) === 'more' &&
+      (block.kind !== 'list' || block.items.length > 0),
+  )
+  const listBlocks = moreBlocks.filter((block): block is SidebarListBlock => block.kind === 'list')
+
+  /** A list block raises its nested sheet; a progress block just fires its own handler. */
+  const activateBlock = (block: (typeof moreBlocks)[number]) => {
+    close()
+    if (block.kind === 'list') {
+      setOpenBlockKey(block.key)
+      return
+    }
+    block.onClick?.()
+  }
+
+  const menuBlockRow = (block: (typeof moreBlocks)[number]) => (
+    <Menu.Item key={block.key} className={classes.menuItem} onClick={() => activateBlock(block)}>
+      {blockRowLabel(block)}
+    </Menu.Item>
+  )
+
+  const sheetBlockRow = (block: (typeof moreBlocks)[number]) => (
+    <NavLink
+      key={block.key}
+      classNames={{ root: classes.row }}
+      label={blockRowLabel(block)}
+      onClick={() => activateBlock(block)}
+    />
+  )
+
+  /** One block ITEM, inside the nested sheet. A row with nowhere to go stays plain text. */
+  const blockItemRow = (item: SidebarBlockItem): ReactElement => {
+    const lead =
+      item.icon ?? (item.tone !== undefined ? <SidebarBlockToneDot tone={item.tone} /> : undefined)
+    const meta =
+      item.meta !== undefined ? (
+        <Text component="span" className={classes.rowMeta}>
+          {item.meta}
+        </Text>
+      ) : undefined
+    const interactive =
+      item.Anchor !== undefined || item.href !== undefined || item.onClick !== undefined
+    if (!interactive) {
+      return (
+        <div key={item.key} className={classes.row}>
+          {lead}
+          <Text component="span">{item.label}</Text>
+          {meta}
+        </div>
+      )
+    }
+    const shared = {
+      classNames: { root: classes.row },
+      label: item.label,
+      ...(lead !== undefined && { leftSection: lead }),
+      ...(meta !== undefined && { rightSection: meta }),
+      onClick: () => {
+        item.onClick?.()
+        setOpenBlockKey(null)
+      },
+    }
+    const Anchor = item.Anchor
+    if (Anchor) return <NavLink key={item.key} component={Anchor} {...shared} />
+    return (
+      <NavLink
+        key={item.key}
+        component="a"
+        {...(item.href !== undefined && { href: item.href })}
+        {...shared}
+      />
+    )
+  }
 
   /** True when any destination in the slot carries an unread count — the icon dot (§2.4). */
   const hasCount = (slot: MobileNavSlot): boolean =>
@@ -411,12 +507,14 @@ export function MobileNav({
             : []),
           ...rows(group.items, 0, menuRow),
         ])}
-        {/* A separator separates. With nothing above it — a More slot raised purely by the account
-            and settings rows — it would render as the dropdown's first child, a rule under the
-            top edge. Both sides have to exist. */}
-        {slot.isMore && extraRows.length > 0 && slotHasRows(slot) ? <Menu.Divider /> : null}
+        {/* A separator separates. With nothing above it — a More slot raised purely by the block,
+            account and settings rows — it would render as the dropdown's first child, a rule under
+            the top edge. Both sides have to exist. */}
+        {slot.isMore && moreBlocks.length + extraRows.length > 0 && slotHasRows(slot) ? (
+          <Menu.Divider />
+        ) : null}
+        {slot.isMore ? moreBlocks.map(menuBlockRow) : null}
         {slot.isMore ? extraRows.map(menuActionRow) : null}
-        {slot.isMore ? config?.moreExtra : null}
       </Menu.Dropdown>
     </Menu>
   )
@@ -459,14 +557,47 @@ export function MobileNav({
                 {rows(group.items, 0, sheetRow)}
               </Stack>
             ))}
+            {slot.isMore && moreBlocks.length > 0 ? (
+              <Stack gap={2}>{moreBlocks.map(sheetBlockRow)}</Stack>
+            ) : null}
             {slot.isMore && extraRows.length > 0 ? (
               <Stack gap={2}>{extraRows.map(sheetActionRow)}</Stack>
             ) : null}
-            {slot.isMore ? config?.moreExtra : null}
           </Stack>
         </ScrollArea.Autosize>
       </Drawer>
     </Fragment>
+  )
+
+  /**
+   * The nested block sheet — one Drawer instance PER block rather than one shared instance fed the
+   * open block. A shared one would empty its own body the moment `onClose` cleared the key, so the
+   * exit transition would play against a blank sheet; a closed Mantine Drawer renders nothing, so N
+   * instances cost N nothings.
+   */
+  const blockSheet = (block: SidebarListBlock) => (
+    <Drawer
+      key={`block-${block.key}`}
+      opened={openBlockKey === block.key}
+      onClose={() => setOpenBlockKey(null)}
+      position="bottom"
+      padding="md"
+      title={block.label}
+      classNames={{
+        content: classes.sheet,
+        title: classes.sheetTitle,
+        header: classes.sheetHeader,
+      }}
+      transitionProps={{
+        transition: 'slide-up',
+        duration: reduceMotion ? 0 : 220,
+        timingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+      }}
+    >
+      <ScrollArea.Autosize mah="62dvh" type="scroll">
+        <Stack gap={2}>{block.items.map(blockItemRow)}</Stack>
+      </ScrollArea.Autosize>
+    </Drawer>
   )
 
   return (
@@ -476,8 +607,16 @@ export function MobileNav({
         if (slot.kind === 'menu') return menuSlot(slot)
         return sheetSlot(slot)
       })}
+      {listBlocks.map(blockSheet)}
     </nav>
   )
+}
+
+/** `Awaiting action · 3` — the row's whole job is to say how much is behind it. */
+function blockRowLabel(block: SidebarListBlock | SidebarProgressBlock): string {
+  return block.kind === 'list'
+    ? `${block.label} · ${block.count ?? block.items.length}`
+    : `${block.label} · ${block.value} of ${block.total}`
 }
 
 /** Whether a surface slot paints any destination row at all (as opposed to only derived rows). */

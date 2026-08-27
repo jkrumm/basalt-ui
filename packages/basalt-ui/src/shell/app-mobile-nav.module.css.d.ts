@@ -19,5 +19,6 @@ declare const classes: {
   readonly sheetHeader: string
   readonly row: string
   readonly rowNested: string
+  readonly rowMeta: string
 }
 export default classes

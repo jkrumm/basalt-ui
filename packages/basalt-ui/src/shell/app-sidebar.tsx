@@ -32,29 +32,50 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { BrandConfig, SettingsMenuItem } from './index'
-import type { SidebarItem, SidebarSection } from '../nav/types'
+import type { SidebarBlock, SidebarItem, SidebarSection } from '../nav/types'
 import { NavCountBadge } from './nav-count-badge'
 import { SidebarAccount } from './app-sidebar-account'
-import type { BasaltAccountProps } from './account-types'
+import type { AccountMenuItem, BasaltAccountProps } from './account-types'
 import { SidebarSearch } from './sidebar-search'
-import type { SidebarSearchConfig } from './sidebar-search'
+import type { SidebarSearchActions, SidebarSearchConfig } from './sidebar-search'
+import {
+  IconChevron,
+  SidebarBlockView,
+  SidebarProgressRing,
+  usePersistedFold,
+} from './sidebar-blocks'
+import {
+  sidebarBlockPlacement,
+  sidebarBlockRail,
+  sidebarSectionFoldKey,
+} from './sidebar-block-model'
 import { VX } from '../tokens'
 import { useBasaltSpacing } from '../theme'
 import classes from './app-sidebar.module.css'
 
 export type AppSidebarProps = {
-  brand: BrandConfig
+  /**
+   * Brand identity. Supplying `menu` turns the brand row into a `Name ▾` workspace switcher —
+   * the entries are the existing `AccountMenuItem` shape, so a consumer already mapping account
+   * actions needs no second vocabulary.
+   */
+  brand: BrandConfig & { menu?: AccountMenuItem[] }
   sections: SidebarSection[]
   collapsed: boolean
   onToggleCollapse: () => void
   /**
    * Footer settings-menu entries (theme switcher, devtools, …) — supplied by the consumer.
-   * The pinned footer "Settings" row renders ONLY when this is a non-empty list — apps that put
-   * Settings in a nav section (the common case) omit this and get no duplicate footer row. The
-   * `brand.version` label renders inside this menu, so it also only shows when the row does.
+   * The pinned footer row renders ONLY when this is a non-empty list — apps that put Settings in a
+   * nav section (the common case) omit this and get no duplicate footer row.
+   *
+   * **Three entries or fewer render FLAT**, as one link row each (Settings · Integrations · Invite
+   * teammates), and four or more collapse into the single gear "Settings" menu. A menu that opens
+   * to show two rows costs a click for nothing; a footer of eight rows costs the nav its height.
+   * The threshold is basalt's, not a prop — `docs/CONTROLS-SPEC.md` §2.3. `brand.version` renders
+   * as a faint label under the flat rows, and inside the dropdown in the menu form.
    */
   settingsMenuItems?: SettingsMenuItem[]
   /**
@@ -65,28 +86,22 @@ export type AppSidebarProps = {
   account?: BasaltAccountProps
   /**
    * Optional search field rendered directly below the brand and ABOVE the nav scroll region — a
-   * fixed, non-scrolling row. Pair with basalt-ui/commands' openSpotlight.
+   * fixed, non-scrolling row. Pair with basalt-ui/commands' openSpotlight. `actions` adds up to two
+   * icon-only buttons to the right of that row.
    */
-  search?: SidebarSearchConfig
+  search?: SidebarSearchConfig & { actions?: SidebarSearchActions }
   /**
-   * Arbitrary content appended after `sections` inside the nav `ScrollArea` — a tree, a filter
-   * panel, a project list, anything a set of `SidebarItem`s can't express. Renders as the last
-   * child of the scrolling nav column, so a long list scrolls with the rest of the nav instead of
-   * fighting it for height. Pass `sections={[]}` to use this slot exclusively; the section-spacing
-   * rule only fires between adjacent children, so an empty `sections` produces no orphan divider or
-   * dead padding above it.
+   * Declared blocks (`docs/CONTROLS-SPEC.md` §2.3, law C13) — an "Awaiting action" list, a
+   * "Recents" list, a "Getting started" progress row, or a `kind: 'custom'` node for a tree or
+   * filter panel no set of rows can express (`kind: 'custom'` is what replaced `navExtra`).
    *
-   * Hidden on the collapsed desktop rail; the sidebar itself no longer renders below `sm` (there
-   * is no mobile drawer — see `MobileNav`), so this slot has no mobile representation either. The
-   * rail is ~48px of icon buttons with no sensible representation for arbitrary consumer content,
-   * so the CSS media query that drives the rail hides this slot the same way it hides
-   * `.childList` — never a JS check on `collapsed`, since that one value only distinguishes the
-   * expanded sidebar from the collapsed rail (both desktop-only). `SidebarSearch` gets to adapt
-   * itself to the rail (it takes `collapsed` and renders its own icon-only form) because the shell
-   * owns that control; it cannot adapt content it knows nothing about, so this slot hides instead
-   * of squashing it.
+   * `placement: 'nav'` appends after `sections` INSIDE the nav scroll region, so a long list
+   * scrolls with the nav instead of fighting it for height; `'bottom'` pins above the settings
+   * footer. Because these are data and not a `ReactNode` slot, basalt owns both projections a slot
+   * could never express: the collapsed rail (a count dot on the icon, a ring on the settings row)
+   * and the mobile More sheet — see `sidebarBlockRail` / `sidebarBlockMobile`.
    */
-  navExtra?: ReactNode
+  blocks?: SidebarBlock[]
 }
 
 /** Inline collapse/expand chevrons — keeps the shell icon-dependency-free. */
@@ -106,24 +121,6 @@ function IconCollapse({ collapsed }: { collapsed: boolean }) {
       <path d="M4 4h16v16H4z" />
       <path d="M9 4v16" />
       {collapsed ? <path d="M14 9l3 3l-3 3" /> : <path d="M16 9l-3 3l3 3" />}
-    </svg>
-  )
-}
-
-function IconChevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      width={12}
-      height={12}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      {open ? <path d="M6 9l6 6l6 -6" /> : <path d="M9 6l6 6l-6 6" />}
     </svg>
   )
 }
@@ -149,6 +146,57 @@ function IconGear() {
 
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
+
+/** `settingsMenuItems` at or under this count render as flat rows — see the prop's JSDoc. */
+const FLAT_SETTINGS_MAX = 3
+
+/**
+ * The brand name, and — when `brand.menu` is supplied — the workspace switcher it becomes.
+ *
+ * The entries are `AccountMenuItem`s: the shell already had exactly this row shape (label, icon,
+ * onClick, danger) for the account menu, and a second vocabulary for the same dropdown would be
+ * two things to keep in step for no gain. The chevron is inline text, not an icon dependency.
+ */
+function BrandName({
+  brand,
+  menuWidth,
+}: {
+  brand: BrandConfig & { menu?: AccountMenuItem[] }
+  menuWidth: number
+}) {
+  const label = (
+    <Text className={classes.brandName} fz={VX.text.xl} fw={550}>
+      {brand.name}
+    </Text>
+  )
+  const menu = brand.menu
+  if (menu === undefined || menu.length === 0) return label
+
+  return (
+    <Menu position="bottom-start" withArrow width={menuWidth} zIndex={500}>
+      <Menu.Target>
+        <UnstyledButton className={classes.brandButton} aria-label={`${brand.name} workspace`}>
+          {label}
+          {/* `open` is the DOWN glyph — a switcher's affordance points at its dropdown, and this is
+              the same chevron every fold in the sidebar uses rather than a second one. */}
+          <IconChevron open />
+        </UnstyledButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {menu.map((entry) => (
+          <Menu.Item
+            key={entry.key}
+            leftSection={entry.icon}
+            {...(entry.danger === true && { color: 'red' })}
+            onClick={entry.onClick}
+          >
+            {entry.label}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
 
 /** True when the item or any descendant is active — drives inline child expansion. */
 function hasActiveDescendant(item: SidebarItem): boolean {
@@ -192,6 +240,51 @@ function SectionLabel({ children }: { children: ReactNode }) {
     <Text component="div" px={0} mb={0} className={classes.sectionLabel}>
       {children}
     </Text>
+  )
+}
+
+/**
+ * One nav section, owning its own PERSISTED fold.
+ *
+ * A component per section rather than one state object in `AppSidebar`, because the fold moved from
+ * a `useState` keyed by label to `createPersistedState` at `basalt:sidebar-section:<label-slug>` —
+ * one hook per section, which can only have a stable hook count inside a component of its own.
+ * `defaultCollapsed` is the SEED for that key, so it stops overriding what the user last chose.
+ */
+function NavSection({ section, collapsed }: { section: SidebarSection; collapsed: boolean }) {
+  const [folded, setFolded] = usePersistedFold(
+    sidebarSectionFoldKey(section.label),
+    Boolean(section.defaultCollapsed),
+  )
+  const items = section.items.map((item) => (
+    <NavItemRow key={item.key} item={item} collapsed={collapsed} />
+  ))
+
+  if (!section.collapsible) {
+    return (
+      <div>
+        <div className={classes.sectionBand}>
+          <SectionLabel>{section.label}</SectionLabel>
+        </div>
+        <Stack gap={1}>{items}</Stack>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <UnstyledButton
+        className={`${classes.sectionBand} ${classes.sectionHeader}`}
+        onClick={() => setFolded(!folded)}
+        aria-expanded={!folded}
+      >
+        <SectionLabel>{section.label}</SectionLabel>
+        <IconChevron open={!folded} />
+      </UnstyledButton>
+      <Collapse expanded={!folded}>
+        <Stack gap={1}>{items}</Stack>
+      </Collapse>
+    </div>
   )
 }
 
@@ -356,56 +449,92 @@ export function AppSidebar({
   settingsMenuItems,
   account,
   search,
-  navExtra,
+  blocks,
 }: AppSidebarProps) {
   // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarSettingsMenuWidth`) — read the ACTIVE
   // resolved level, not the frozen level-0 constant (see that constant's own doc in
   // `tokens/palette.ts`).
   const { step } = useBasaltSpacing()
 
-  // Desktop collapsible-section state, keyed by section label. Seeded once from each section's
-  // `defaultCollapsed`; non-collapsible sections are simply never read here.
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(sections.map((s) => [s.label, Boolean(s.defaultCollapsed)])),
+  const navBlocks = (blocks ?? []).filter((block) => sidebarBlockPlacement(block) === 'nav')
+  const bottomBlocks = (blocks ?? []).filter((block) => sidebarBlockPlacement(block) === 'bottom')
+  // The rail's stand-in for a progress block: the first one asking for a ring gets one, on the
+  // settings row. JS-gated on `collapsed` rather than CSS (unlike every other rail rule) because
+  // the mark moves to a DIFFERENT node — nothing in the block's own subtree can express it. With no
+  // settings row there is nowhere to put it, and the block simply has no rail form.
+  const railRing = bottomBlocks.find(
+    (block) => block.kind === 'progress' && sidebarBlockRail(block) === 'ring',
   )
 
-  const renderSectionItems = (section: SidebarSection) =>
-    section.items.map((item) => <NavItemRow key={item.key} item={item} collapsed={collapsed} />)
+  // The pinned footer row is OPT-IN: it renders only when the consumer supplies settings-menu
+  // entries. Most apps put Settings in a nav section instead — rendering the row unconditionally
+  // produced a duplicate "Settings" the consumer couldn't remove. On mobile the same entries are
+  // reachable as flat rows in the bottom bar's More surface.
+  const settingsItems = settingsMenuItems ?? []
+  const versionLabel = brand.version !== undefined ? `${brand.name} v${brand.version}` : undefined
+  const ringMark =
+    collapsed && railRing !== undefined && railRing.kind === 'progress' ? (
+      <SidebarProgressRing value={railRing.value} total={railRing.total} />
+    ) : null
 
-  // The pinned footer "Settings" row is OPT-IN: it renders only when the consumer supplies
-  // settings-menu entries. Most apps put Settings in a nav section instead — rendering the row
-  // unconditionally produced a duplicate "Settings" the consumer couldn't remove. On mobile the
-  // same entries are reachable as flat rows in the bottom bar's More surface.
-  const hasSettingsMenu = (settingsMenuItems?.length ?? 0) > 0
-  const settingsRow = hasSettingsMenu ? (
-    <Group {...(account ? {} : { className: classes.footer })} gap="xs" wrap="nowrap">
-      <Menu position="right-start" withArrow width={step.sidebarSettingsMenuWidth} zIndex={500}>
-        <Menu.Target>
-          <UnstyledButton className={classes.footerBtn} aria-label="Settings">
-            <IconGear />
+  // Three or fewer render as flat link rows; four or more keep the gear menu — see the prop's doc.
+  const settingsRow =
+    settingsItems.length === 0 ? null : settingsItems.length <= FLAT_SETTINGS_MAX ? (
+      <div className={classes.footerLinks}>
+        {settingsItems.map((entry, index) => (
+          <UnstyledButton
+            key={entry.key}
+            className={classes.footerBtn}
+            onClick={entry.onClick}
+            aria-label={entry.label}
+          >
+            {/* A FIXED slot, so rows align on one icon column whether or not each ships an icon —
+                and the gear fallback is functional, not decorative: in the collapsed rail the label
+                is hidden and the glyph IS the row, so an icon-less row would be an empty hover
+                target. `SettingsMenuItem.icon` stays optional; supply one per row in the flat form
+                and the gear never appears. */}
+            <span className={classes.footerIconSlot}>{entry.icon ?? <IconGear />}</span>
             <Text className={classes.footerText} fz={VX.text.md}>
-              Settings
-            </Text>
-          </UnstyledButton>
-        </Menu.Target>
-        <Menu.Dropdown>
-          {settingsMenuItems?.map((entry) => (
-            <Menu.Item key={entry.key} leftSection={entry.icon} onClick={entry.onClick}>
               {entry.label}
-            </Menu.Item>
-          ))}
-          {brand.version && (
-            <>
-              <Menu.Divider />
-              <Menu.Label>
-                {brand.name} v{brand.version}
-              </Menu.Label>
-            </>
-          )}
-        </Menu.Dropdown>
-      </Menu>
-    </Group>
-  ) : null
+            </Text>
+            {/* The rail ring rides the FIRST row only — one progress block is one mark. */}
+            {index === 0 ? ringMark : null}
+          </UnstyledButton>
+        ))}
+        {versionLabel !== undefined && (
+          <Text component="div" className={classes.footerVersion}>
+            {versionLabel}
+          </Text>
+        )}
+      </div>
+    ) : (
+      <Group gap="xs" wrap="nowrap">
+        <Menu position="right-start" withArrow width={step.sidebarSettingsMenuWidth} zIndex={500}>
+          <Menu.Target>
+            <UnstyledButton className={classes.footerBtn} aria-label="Settings">
+              <IconGear />
+              <Text className={classes.footerText} fz={VX.text.md}>
+                Settings
+              </Text>
+              {ringMark}
+            </UnstyledButton>
+          </Menu.Target>
+          <Menu.Dropdown>
+            {settingsItems.map((entry) => (
+              <Menu.Item key={entry.key} leftSection={entry.icon} onClick={entry.onClick}>
+                {entry.label}
+              </Menu.Item>
+            ))}
+            {versionLabel !== undefined && (
+              <>
+                <Menu.Divider />
+                <Menu.Label>{versionLabel}</Menu.Label>
+              </>
+            )}
+          </Menu.Dropdown>
+        </Menu>
+      </Group>
+    )
 
   return (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
@@ -420,9 +549,7 @@ export function AppSidebar({
               style={{ display: 'block' }}
             />
           )}
-          <Text className={classes.brandName} fz={VX.text.xl} fw={550}>
-            {brand.name}
-          </Text>
+          <BrandName brand={brand} menuWidth={step.sidebarAccountMenuWidth} />
         </Group>
         <ActionIcon
           variant="subtle"
@@ -454,57 +581,29 @@ export function AppSidebar({
         classNames={{ viewport: classes.navViewport }}
       >
         <Stack gap={0} className={classes.nav}>
-          {sections.map((section) => {
-            if (!section.collapsible) {
-              return (
-                <div key={section.label}>
-                  <div className={classes.sectionBand}>
-                    <SectionLabel>{section.label}</SectionLabel>
-                  </div>
-                  <Stack gap={1}>{renderSectionItems(section)}</Stack>
-                </div>
-              )
-            }
-
-            const isOpen = !collapsedSections[section.label]
-            return (
-              <div key={section.label}>
-                <UnstyledButton
-                  className={`${classes.sectionBand} ${classes.sectionHeader}`}
-                  onClick={() =>
-                    setCollapsedSections((prev) => ({
-                      ...prev,
-                      [section.label]: !prev[section.label],
-                    }))
-                  }
-                  aria-expanded={isOpen}
-                >
-                  <SectionLabel>{section.label}</SectionLabel>
-                  <IconChevron open={isOpen} />
-                </UnstyledButton>
-                <Collapse expanded={isOpen}>
-                  <Stack gap={1}>{renderSectionItems(section)}</Stack>
-                </Collapse>
-              </div>
-            )
-          })}
-          {navExtra !== undefined && navExtra !== null && (
-            <div className={classes.navExtra}>{navExtra}</div>
-          )}
+          {sections.map((section) => (
+            <NavSection key={section.label} section={section} collapsed={collapsed} />
+          ))}
+          {navBlocks.map((block) => (
+            <SidebarBlockView key={block.key} block={block} />
+          ))}
         </Stack>
       </ScrollArea>
 
-      {account ? (
+      {(bottomBlocks.length > 0 || settingsRow !== null || account !== undefined) && (
         <Stack gap={0} className={classes.footer}>
+          {bottomBlocks.map((block) => (
+            <SidebarBlockView key={block.key} block={block} />
+          ))}
           {settingsRow}
-          <SidebarAccount
-            state={account.state}
-            {...(account.actions !== undefined && { actions: account.actions })}
-            {...(account.showEmail !== undefined && { showEmail: account.showEmail })}
-          />
+          {account !== undefined && (
+            <SidebarAccount
+              state={account.state}
+              {...(account.actions !== undefined && { actions: account.actions })}
+              {...(account.showEmail !== undefined && { showEmail: account.showEmail })}
+            />
+          )}
         </Stack>
-      ) : (
-        settingsRow
       )}
     </Stack>
   )

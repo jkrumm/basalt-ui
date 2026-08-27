@@ -5,6 +5,18 @@
  * button as a matched pair, so the two must never drift onto different depth tokens.
  */
 
+/*
+ * The row that appears ONLY when `search.actions` is supplied — one or two icon-only buttons beside
+ * the trigger. Without actions the trigger stays the row's sole node (no wrapper), so the DOM of
+ * every consumer that doesn't use them is untouched.
+ */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-sidebar-search-gap);
+  min-width: 0;
+}
+
 .trigger {
   display: flex;
   align-items: center;
@@ -71,6 +83,20 @@
 }
 
 .railBtn:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+  color: var(--vx-ink) !important;
+}
+
+/* Trailing search-row action — the same ghost treatment as `.ghostIcon` / `.railBtn`, at the `icon`
+ * tier (24px) the component asks for explicitly. Never re-points `--ai-size`: unlike `.railBtn`,
+ * this button is NOT a second state of the trigger and must not track its height. */
+.actionBtn {
+  flex: none;
+  color: var(--vx-faint) !important;
+  border-radius: var(--vx-radius-ctrl) !important;
+}
+
+.actionBtn:hover {
   background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
   color: var(--vx-ink) !important;
 }

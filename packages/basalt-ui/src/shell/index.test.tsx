@@ -9,21 +9,35 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { ActionGroup } from '../controls/actions'
 import { BasaltShell, PageBar } from './index'
-import type { BasaltAccountProps, SidebarSection } from './index'
+import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: SidebarSection[] = [
   { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null }] },
 ]
 
-describe('BasaltShell sidebarNavExtra', () => {
-  test("reaches AppSidebar's nav scroll region through the BasaltShell -> AppSidebar hand-off", () => {
+const AWAITING: SidebarBlock = {
+  kind: 'list',
+  key: 'awaiting',
+  label: 'Awaiting action',
+  count: 3,
+  items: [
+    { key: 'a', label: 'Review PR' },
+    { key: 'b', label: 'Sign contract' },
+    { key: 'c', label: 'Reply to Jo' },
+  ],
+}
+
+describe('BasaltShell sidebarBlocks', () => {
+  test("a 'custom' block reaches the sidebar's nav scroll region through the hand-off", () => {
     const { container } = render(
       <MantineProvider>
         <BasaltShell
           brand={BRAND}
           sections={ONE_SECTION}
-          sidebarNavExtra={<div data-testid="nav-extra">Extra</div>}
+          sidebarBlocks={[
+            { kind: 'custom', key: 'tree', node: <div data-testid="nav-extra">Extra</div> },
+          ]}
         />
       </MantineProvider>,
     )
@@ -31,6 +45,77 @@ describe('BasaltShell sidebarNavExtra', () => {
     const stack = container.querySelector('.mantine-ScrollArea-content > .mantine-Stack-root')
     expect(stack).not.toBeNull()
     expect(stack?.contains(extra)).toBe(true)
+  })
+
+  /**
+   * Both halves of the SAME prop, which is the point of C13: one declaration renders the desktop
+   * block and produces the mobile row. `sidebarNavExtra` + `mobileNav.moreExtra` needed two.
+   */
+  test('the same block projects to ONE More row that opens a nested sheet of its items', async () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} sidebarBlocks={[AWAITING]} />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+    // One row, stating its own count — not three rows, one per item. `Home` took the bar slot, so
+    // the block row is the whole More surface here.
+    const row = screen.getByText('Awaiting action · 3')
+    expect(document.querySelectorAll('.mantine-Menu-item')).toHaveLength(1)
+
+    fireEvent.click(row)
+    await waitFor(() => expect(document.querySelector('.mantine-Drawer-content')).not.toBeNull())
+    // Scoped to the sheet: the desktop block renders the same three labels, and a bare `getByText`
+    // would match both copies rather than proving the sheet holds them.
+    const body = document.querySelector('.mantine-Drawer-body')?.textContent ?? ''
+    expect(body).toContain('Review PR')
+    expect(body).toContain('Reply to Jo')
+  })
+
+  test("mobile:'hidden' keeps the block off the More surface entirely", () => {
+    render(
+      <MantineProvider>
+        <BasaltShell
+          brand={BRAND}
+          sections={[
+            { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null, mobile: 'tab' }] },
+          ]}
+          sidebarBlocks={[{ ...AWAITING, mobile: 'hidden' }]}
+        />
+      </MantineProvider>,
+    )
+    // Nothing else feeds More, so a hidden block must not conjure the slot at all.
+    expect(screen.queryByLabelText('More')).toBeNull()
+  })
+})
+
+/**
+ * Law C13's enforcement column is "tsc — `sidebarNavExtra` / `mobileNav.moreExtra` removed". These
+ * two `@ts-expect-error`s ARE that gate: they fail the build the day either prop comes back, which
+ * is the only way a type-level removal can be asserted from a test file.
+ */
+describe('BasaltShell — the removed ReactNode slots', () => {
+  test('sidebarNavExtra and mobileNav.moreExtra no longer type-check', () => {
+    const removedNavExtra = (
+      <BasaltShell
+        brand={BRAND}
+        sections={ONE_SECTION}
+        // @ts-expect-error sidebarNavExtra was replaced by `sidebarBlocks` kind 'custom' (C13)
+        sidebarNavExtra={<div />}
+      />
+    )
+    const removedMoreExtra = (
+      <BasaltShell
+        brand={BRAND}
+        sections={ONE_SECTION}
+        // @ts-expect-error mobileNav.moreExtra was replaced by `sidebarBlocks` kind 'list' (C13)
+        mobileNav={{ moreExtra: <div /> }}
+      />
+    )
+    expect(removedNavExtra).toBeTruthy()
+    expect(removedMoreExtra).toBeTruthy()
   })
 })
 

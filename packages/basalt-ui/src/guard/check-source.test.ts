@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 25 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 27 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -2436,6 +2436,114 @@ describe('inline-font-size', () => {
   })
 })
 
+// ── 26. in-body-page-title (the text lane of law C8) ─────────────────────────
+
+describe('in-body-page-title', () => {
+  it('flags <Title order={1}> in the body', () => {
+    expect(kinds(find(`<Title order={1}>Analytics</Title>`))).toContain('in-body-page-title')
+  })
+
+  it('flags order={2} too', () => {
+    expect(kinds(find(`<Title order={2}>Analytics</Title>`))).toContain('in-body-page-title')
+  })
+
+  // The formatted default — the reason this kind is a bounded TAG scan and not a line regex.
+  it('flags a Title formatted across lines', () => {
+    const f = find(`<Title\n  order={1}\n  mb="sm"\n>\n  Analytics\n</Title>`)
+    expect(kinds(f)).toContain('in-body-page-title')
+  })
+
+  it('does NOT flag order={3} — a section heading', () => {
+    expect(kinds(find(`<Title order={3}>Sessions</Title>`))).not.toContain('in-body-page-title')
+  })
+
+  it('does NOT flag a Title with no order', () => {
+    expect(kinds(find(`<Title>Sessions</Title>`))).not.toContain('in-body-page-title')
+  })
+
+  it('does NOT flag anything under a content/ path segment', () => {
+    const f = find(`<Title order={1}>Doc</Title>`, 'src/content/Guide.tsx')
+    expect(kinds(f)).not.toContain('in-body-page-title')
+  })
+
+  // File-scoped and coarser than the plugin's node-level ancestry, on purpose: a document heading
+  // told to become a breadcrumb is the WRONG advice, so the text lane errs silent.
+  it('does NOT flag a file that renders Prose', () => {
+    const f = find(`<Prose>\n  <Title order={1}>Doc</Title>\n</Prose>`)
+    expect(kinds(f)).not.toContain('in-body-page-title')
+  })
+
+  it('honours a theme-allow', () => {
+    const f = find(
+      `// theme-allow in-body-page-title — a shell-less print view\n<Title order={1}>P</Title>`,
+    )
+    expect(kinds(f)).not.toContain('in-body-page-title')
+  })
+
+  it('lands warn while the grace entry stands (C16)', () => {
+    const f = find(`<Title order={1}>Analytics</Title>`)
+    expect(f.find((x) => x.kind === 'in-body-page-title')?.severity).toBe('warn')
+  })
+})
+
+// ── 27. raw-selection-control (the text lane of law C1) ──────────────────────
+
+describe('raw-selection-control', () => {
+  it.each(['SegmentedControl', 'Select', 'MultiSelect', 'NativeSelect', 'TagsInput', 'Chip.Group'])(
+    'flags a raw <%s>',
+    (tag) => {
+      expect(kinds(find(`<${tag} data={[]} />`))).toContain('raw-selection-control')
+    },
+  )
+
+  it('reports the tag it found, not the whole line', () => {
+    const f = find(`<Select data={[]} />`)
+    expect(f.find((x) => x.kind === 'raw-selection-control')?.token).toBe('<Select')
+  })
+
+  it.each(['SettingsRow', 'Modal', 'Drawer', 'Menu.Dropdown'])(
+    'does NOT flag one inside a %s window',
+    (host) => {
+      const f = find(`<${host}>\n  <Select data={[]} />\n</${host}>`)
+      expect(kinds(f)).not.toContain('raw-selection-control')
+    },
+  )
+
+  // The window is 12 lines; past it the approximation would start swallowing the NEXT row's control.
+  it('DOES flag one 20 lines below the host tag — the window is bounded', () => {
+    const f = find(`<Modal>\n${'  <Text>x</Text>\n'.repeat(20)}  <Select data={[]} />\n</Modal>`)
+    expect(kinds(f)).toContain('raw-selection-control')
+  })
+
+  it('does NOT flag anything in a file importing @mantine/form', () => {
+    const f = find(`import { useForm } from '@mantine/form'\n<Select data={[]} />`)
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('does NOT flag the file that DEFINES a basalt control', () => {
+    const f = find(`export function ViewTabs() {\n  return <SegmentedControl data={[]} />\n}`)
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('does NOT flag a bound basalt control', () => {
+    expect(kinds(find(`<SelectFilter field={f} label="Channel" />`))).not.toContain(
+      'raw-selection-control',
+    )
+  })
+
+  it('honours a theme-allow', () => {
+    const f = find(
+      `{/* theme-allow raw-selection-control — a one-off admin picker */}\n<Select data={[]} />`,
+    )
+    expect(kinds(f)).not.toContain('raw-selection-control')
+  })
+
+  it('lands warn while the grace entry stands (C16)', () => {
+    const f = find(`<Select data={[]} />`)
+    expect(f.find((x) => x.kind === 'raw-selection-control')?.severity).toBe('warn')
+  })
+})
+
 // ── 26. hidden-inline-style ──────────────────────────────────────────────────
 
 describe('hidden-inline-style', () => {
@@ -2639,7 +2747,7 @@ describe('markup files (index.html / *.webmanifest)', () => {
  * Round 9: `.astro` and `.vue` became scannable and fell through to the `ts` dialect, so `<!-- … -->`
  * was never stripped — a `theme-allow` written in an HTML comment waived nothing there, and a color
  * inside a commented-out block still reported. They resolve as `sfc` now: BOTH comment dialects,
- * and the full 25-kind set (not `MARKUP_KINDS` — an `.astro` template is JSX-shaped and a `.vue`
+ * and the full 27-kind set (not `MARKUP_KINDS` — an `.astro` template is JSX-shaped and a `.vue`
  * `<script setup>` is real TS).
  */
 describe('single-file components (.astro / .vue)', () => {
@@ -2771,11 +2879,15 @@ describe("profile: 'tokens-only'", () => {
     'css-raw-surface': false,
     'inline-font-size': false,
     'hidden-inline-style': true,
+    // The two wave-6 control kinds: `<Title>` is a Mantine component, and the remedy for either is
+    // a Mantine-rendered home (PageBar / WidgetHeader) or a basalt control over @mantine/core.
+    'in-body-page-title': true,
+    'raw-selection-control': true,
   }
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(25)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(27)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {

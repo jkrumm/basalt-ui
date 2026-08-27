@@ -468,7 +468,10 @@ sorting/filter/pagination stop being consumer-owned.
   header to the page viewport instead of the table's box. The prop's JSDoc calls this "the same node
   the docs sanction as the raw escape", and **that was not true when it was written**: nothing under
   `agent/rules/` or `docs/` had ever named `Table.ScrollContainer`, and
-  `basalt/raw-scroll-container` steers raw `overflow: auto`, not a Mantine component.
+  `basalt/raw-scroll-container` steered raw `overflow: auto`, not a Mantine component. Since the
+  wave-6 C7 widening it does read one Mantine prop — `<ScrollArea scrollbars="x">` — but only
+  INSIDE a home (a slot, or under `Section`/`ChartCard`), so it still says nothing about
+  `Table.ScrollContainer` or about a table's own scroll node.
   `agent/rules/basalt-data.md` now prescribes the identical node for a bespoke table, which is what
   makes the two lanes provably the same DOM.
 - `align` is a `ColumnMeta` module augmentation (`align?: DataTableAlign`, `numeral?: boolean`), so
@@ -573,7 +576,7 @@ fails loudly rather than downloading a stranger, and `BASALT_BIN` is the sanctio
   **A known non-fix, deliberate:** an all-hex URL fragment or SVG reference (`href="#cafe"`,
   `fill="url(#abcdef)"`) still reports. It is text-indistinguishable from a colour, so the fix would
   cost real findings; `theme-allow` is the escape. JSDoc-only — no test pins it.
-  **`profile: 'tokens-only'`** disables the 17 kinds whose remedy is a Mantine component, prop or the
+  **`profile: 'tokens-only'`** disables the 19 kinds whose remedy is a Mantine component, prop or the
   React theme factory. `check-theme` requires it DECLARED (the key, or `--tokens-only`) and never
   infers it: inferring from a missing `@mantine/core` would silence those kinds on any repo keeping
   Mantine in a different workspace package. `doctor` DOES infer it, because its profile only changes
@@ -859,6 +862,30 @@ shipped preset inherits it automatically, path resolved relative to the preset f
   `items`. The legend must be DERIVED from the same `series` the chart draws (`deriveLegend`, or
   just let `ChartFrame`/`CartesianChart` do it); a parallel hand-authored list is a second source
   of truth that goes stale silently, still naming a series the plot no longer draws.
+- **The eight control rules (`docs/CONTROLS-SPEC.md` §6, wave 6)** — `basalt/hand-rolled-filter`
+  and `basalt/page-bar-budget` ship `error`; `basalt/control-outside-home`,
+  `basalt/control-size-literal`, `basalt/in-body-page-title`, `basalt/responsive-twin`,
+  `basalt/search-literal-link` and `basalt/use-search-from-literal` ship `warn` with a
+  `{ since: '1.28.0', promote: '1.29.0' }` grace entry each. Three things about them are worth
+  holding: (1) they share ONE ancestry walk — `createSlotContext` in the plugin — which stops at a
+  slot ATTRIBUTE (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/
+  `WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`) and never
+  at the element, so a control in a home's CHILDREN — the body form — never fires; a hoisted `const pills = <Select/>` handed to `filters={pills}` DOES, which is why the
+  ancestry facts are captured during the visit and resolved at `Program:exit`. (2) The raw-filter
+  rules gate on the tag's `@mantine/*` IMPORT, not on its name — a consumer's own `Select` is not
+  Mantine's. (3) `basalt/in-body-page-title` is ALSO a guard kind under the same id (one law, two
+  lanes, so one `theme-allow in-body-page-title` waives both) — it is the one id in both registries,
+  which `configs/oxlint-plugin.test.ts` pins.
+  **`SettingsRow.control` is NOT a tiered slot, and that is the settled reading** — it is law C1's
+  THIRD home, the form row, and a form keeps Mantine's own `md` tier (`controlHeight` 42, spec §5,
+  unchanged). So `control` and `SettingsRow` are absent from the slot set above: a raw `Select`
+  bound to a setting is the right answer there, and the `size` prop on it is load-bearing rather
+  than redundant. `control-outside-home` is the only one of the ten that looks at a settings row at
+  all, and it treats it as a home (nothing fires inside one). The code agrees:
+  `src/dashboard/settings-section.tsx` wraps `actions` in `CtlSlot` and never `control`. The
+  earlier draft had it both ways — a slot owner for the two tier rules AND a declared non-home for
+  the third — which made every consumer settings page an error plus a column of size warnings
+  telling people to delete the prop holding the row at the form tier.
 - `basalt/visx-boundary` — flags a `@visx/*` import outside a `charts/` path segment. Shipped in
   the consumer preset AND repo-local.
 - `basalt/visx-tooltip` — flags `@visx/tooltip` everywhere, including inside charts (use
@@ -884,7 +911,7 @@ oxlint's `no-restricted-imports` is last-writer-wins per glob — a consumer's o
 overlapping glob would silently replace the boundary instead of merging with it, whereas a plugin
 rule can only be turned off explicitly, by name.
 
-The six design-guard rules support the same `theme-allow` escape as `src/guard`, and the same
+The design-guard rules support the same `theme-allow` escape as `src/guard`, and the same
 two-scope grammar: an annotation at the START of a comment on the flagged node's own line or the
 line above scopes to THAT node, and `theme-allow-file <id>… — <why>` anywhere in the file scopes to
 the file. **The two parsers must agree on what an annotation IS, and may differ only on which rules

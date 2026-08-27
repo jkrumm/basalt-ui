@@ -22,14 +22,20 @@ import { Fragment, useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 import { AppSidebar } from './app-sidebar'
 import { MobileNav, accountRowCount } from './app-mobile-nav'
-import { projectMobileNav } from './mobile-nav-model'
+import { blockRowCount, projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
 import { PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
 import { OverflowMenu, globalActionAsBarAction, globalActionMobile } from '../controls/actions'
 import type { GlobalAction } from '../controls/actions'
-import type { BasaltAccountProps } from './account-types'
-import type { SidebarSearchConfig } from './sidebar-search'
-import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
+import type { AccountMenuItem, BasaltAccountProps } from './account-types'
+import type { SidebarSearchActions, SidebarSearchConfig } from './sidebar-search'
+import type {
+  MobileNavConfig,
+  NavAnchor,
+  SidebarBlock,
+  SidebarItem,
+  SidebarSection,
+} from '../nav/types'
 import { useBasaltSpacing } from '../theme'
 import { createPersistedState } from '../state'
 import headerClasses from './app-header.module.css'
@@ -37,7 +43,11 @@ import mobileNavClasses from './app-mobile-nav.module.css'
 
 export { AppSidebar, type AppSidebarProps } from './app-sidebar'
 export { NavCountBadge } from './nav-count-badge'
-export { SidebarSearch, type SidebarSearchConfig } from './sidebar-search'
+export {
+  SidebarSearch,
+  type SidebarSearchConfig,
+  type SidebarSearchActions,
+} from './sidebar-search'
 export { SidebarAccount } from './app-sidebar-account'
 export type {
   AccountBadgeTone,
@@ -72,6 +82,12 @@ export type {
   NavSectionMobile,
   SidebarItem,
   SidebarSection,
+  SidebarBlock,
+  SidebarBlockItem,
+  SidebarBlockTone,
+  SidebarListBlock,
+  SidebarProgressBlock,
+  SidebarCustomBlock,
   MobileNavConfig,
   MobileNavGroup,
   MobileNavModel,
@@ -100,8 +116,11 @@ export type SettingsMenuItem = {
 }
 
 export type BasaltShellProps = {
-  /** Brand identity for the sidebar header. */
-  brand: BrandConfig
+  /**
+   * Brand identity for the sidebar header. Supplying `menu` turns the brand row into a `Name ▾`
+   * workspace switcher — the rows are `AccountMenuItem`s, the shape the account menu already uses.
+   */
+  brand: BrandConfig & { menu?: AccountMenuItem[] }
   /** Grouped nav sections — the ONE definition, rendered as the sidebar and projected to the bar. */
   sections: SidebarSection[]
   /**
@@ -119,14 +138,22 @@ export type BasaltShellProps = {
    */
   globalActions?: GlobalAction[]
   /**
-   * DESKTOP ONLY. Arbitrary content appended after `sections` inside the sidebar's nav scroll
-   * region (a tree, a filter panel, a project list, …), for anything a set of `SidebarItem`s can't
-   * express. Hidden on the collapsed desktop rail; the sidebar itself no longer exists below the
-   * `sm` breakpoint, so this slot has no mobile representation — put mobile-reachable extras in
-   * `mobileNav.moreExtra` instead.
+   * Sidebar blocks — DECLARED DATA (law C13, `docs/CONTROLS-SPEC.md` §2.3), which replaced both
+   * `sidebarNavExtra` and `mobileNav.moreExtra`. `placement: 'nav'` (the default for `list` and
+   * `custom`) appends after the nav sections inside the scroll region; `'bottom'` pins above the
+   * settings footer.
+   *
+   * Because they are data, basalt owns the projections the two `ReactNode` slots could not express:
+   * a `list` with a `count` becomes a dot on its icon in the collapsed rail, a `progress` block
+   * becomes a ring on the settings row, and a block with `mobile: 'more'` becomes one More-sheet
+   * row opening a nested sheet of its items. A `kind: 'custom'` block is desktop-only, exactly as
+   * `sidebarNavExtra` was.
    */
-  sidebarNavExtra?: ReactNode
-  /** Entries appended to the sidebar settings menu. */
+  sidebarBlocks?: SidebarBlock[]
+  /**
+   * Entries appended to the sidebar settings footer — flat link rows at three or fewer, one gear
+   * menu at four or more (`AppSidebarProps.settingsMenuItems` documents the threshold).
+   */
   settingsMenuItems?: SettingsMenuItem[]
   /**
    * Optional account row rendered below the settings menu in the sidebar footer (see
@@ -135,9 +162,10 @@ export type BasaltShellProps = {
   account?: BasaltAccountProps
   /**
    * Optional search field below the brand in the sidebar (fixed, above the nav scroll). Supply
-   * `onOpen`, e.g. `() => openSpotlight()` from basalt-ui/commands.
+   * `onOpen`, e.g. `() => openSpotlight()` from basalt-ui/commands. `actions` adds one or two
+   * icon-only buttons to the right of that row (a tuple by type — see `SidebarSearchActions`).
    */
-  search?: SidebarSearchConfig
+  search?: SidebarSearchConfig & { actions?: SidebarSearchActions }
   /**
    * localStorage key for the persisted sidebar-collapsed flag. Ignored when `collapsed` is set.
    *
@@ -263,7 +291,7 @@ export function BasaltShell({
   sections,
   mobileNav,
   globalActions,
-  sidebarNavExtra,
+  sidebarBlocks,
   settingsMenuItems,
   storageKey = 'basalt-sidebar-collapsed',
   collapsed: collapsedProp,
@@ -289,14 +317,16 @@ export function BasaltShell({
   }
 
   const activeCrumb = findActiveCrumb(sections)
-  // The account row and every settings entry render as flat rows in the More surface (there is no
-  // mobile sidebar to reach them through any more), so they count toward BOTH `needsMore` and the
-  // menu-vs-sheet threshold. `accountRowCount` is the SAME function that renders those rows, not a
-  // second estimate of them: an account is worth 0 rows while `loading` and up to seven once
-  // authenticated, and §2.2's whole guarantee (`menuMax` rows fit the headroom above the bar, and
-  // the menu runs `flip: false` so it cannot escape upward) is arithmetic over this number.
+  // The account row, every settings entry and every mobile-reachable sidebar block render as flat
+  // rows in the More surface (there is no mobile sidebar to reach them through any more), so they
+  // count toward BOTH `needsMore` and the menu-vs-sheet threshold. `accountRowCount` and
+  // `blockRowCount` are the SAME functions the renderer agrees with, not second estimates of them:
+  // an account is worth 0 rows while `loading` and up to seven once authenticated, a block is worth
+  // exactly one row however many items it holds, and §2.2's whole guarantee (`menuMax` rows fit the
+  // headroom above the bar, and the menu runs `flip: false` so it cannot escape upward) is
+  // arithmetic over this number.
   const extraMoreRows =
-    accountRowCount(account) + (settingsMenuItems?.length ?? 0) + (mobileNav?.moreExtra ? 1 : 0)
+    accountRowCount(account) + (settingsMenuItems?.length ?? 0) + blockRowCount(sidebarBlocks)
   const model = useMemo(
     () => projectMobileNav(sections, { config: mobileNav, extraMoreRows }),
     [sections, mobileNav, extraMoreRows],
@@ -341,7 +371,7 @@ export function BasaltShell({
             sections={sections}
             collapsed={collapsed}
             onToggleCollapse={toggleCollapse}
-            navExtra={sidebarNavExtra}
+            {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
             {...(account !== undefined && { account })}
             {...(search !== undefined && { search })}
@@ -359,6 +389,7 @@ export function BasaltShell({
             config={mobileNav}
             {...(account !== undefined && { account })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
+            {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
           />
         </AppShell.Footer>
       </AppShell>

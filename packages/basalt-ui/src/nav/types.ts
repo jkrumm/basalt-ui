@@ -70,6 +70,88 @@ export type SidebarSection = {
   mobile?: false | NavSectionMobile
 }
 
+/**
+ * Status tone on a sidebar-block item — the same three-member vocabulary as `StatCardTone`, whose
+ * members are `VX.status` keys by construction. Declared here rather than imported from
+ * `../dashboard/stat-card`: this module is the one `./router-tanstack` reads, and even a
+ * type-only edge into the Mantine layer would make `nav/types.d.ts` unresolvable without
+ * `@mantine/core` installed.
+ */
+export type SidebarBlockTone = 'good' | 'warn' | 'bad'
+
+/** One row inside a `kind: 'list'` block. Same router seam as `SidebarItem` — `Anchor`, then href. */
+export type SidebarBlockItem = {
+  key: string
+  label: string
+  /** Trailing muted text (a timestamp, a count, an owner). */
+  meta?: string
+  icon?: ReactNode
+  /** Renders a status dot in place of a missing `icon`; reads `--vx-status-*`, never a hex. */
+  tone?: SidebarBlockTone
+  Anchor?: NavAnchor
+  href?: string
+  onClick?: () => void
+}
+
+/**
+ * A list of non-destination rows under a micro-label — "Awaiting action", "Recents", a project
+ * list. `count` is the header badge (and what earns a rail dot); `max` shows the first N with a
+ * "Show more" toggle past it.
+ */
+export type SidebarListBlock = {
+  kind: 'list'
+  key: string
+  label: string
+  icon?: ReactNode
+  count?: number
+  /** Rows shown before the "Show more" toggle. Omit to show every row. */
+  max?: number
+  items: SidebarBlockItem[]
+  /** @default 'nav' */
+  placement?: 'nav' | 'bottom'
+  collapsible?: boolean
+  /** Collapsed-rail projection. @default 'dot' when `count` is set, `'hidden'` otherwise */
+  rail?: 'dot' | 'hidden'
+  /** @default 'more' */
+  mobile?: 'more' | 'hidden'
+}
+
+/** A "Getting started 1 of 5" progress row. Pinned above the settings footer; never in the nav. */
+export type SidebarProgressBlock = {
+  kind: 'progress'
+  key: string
+  label: string
+  value: number
+  total: number
+  onClick?: () => void
+  /** @default 'bottom' — the only placement a progress row has. */
+  placement?: 'bottom'
+  /** Collapsed-rail projection: a ring on the settings row. @default 'ring' */
+  rail?: 'ring' | 'hidden'
+  /** @default 'hidden' */
+  mobile?: 'more' | 'hidden'
+}
+
+/**
+ * DESKTOP ONLY — arbitrary consumer content (a tree, a filter panel) that no set of rows can
+ * express. Replaced `BasaltShellProps.sidebarNavExtra`; hidden on the collapsed rail and absent
+ * from mobile for the same reason that prop was.
+ */
+export type SidebarCustomBlock = {
+  kind: 'custom'
+  key: string
+  node: ReactNode
+  /** @default 'nav' */
+  placement?: 'nav' | 'bottom'
+}
+
+/**
+ * A sidebar block — DECLARED DATA, never a `ReactNode` slot (law C13, `docs/CONTROLS-SPEC.md`
+ * §2.3), which is what lets basalt own the collapsed-rail badge and the mobile More-sheet
+ * projection instead of each consumer hand-rolling both.
+ */
+export type SidebarBlock = SidebarListBlock | SidebarProgressBlock | SidebarCustomBlock
+
 export type MobileNavSurface = 'link' | 'menu' | 'sheet'
 
 /** One row inside a `menu`/`sheet` slot, grouped under its source section. */
@@ -108,8 +190,6 @@ export type MobileNavConfig = {
   menuMax?: number
   /** @default 'More' */
   moreLabel?: string
-  /** Extra content pinned to the bottom of the More surface. */
-  moreExtra?: ReactNode
   /** Scroll container for active-slot re-tap. @default document.scrollingElement */
   getScrollElement?: () => HTMLElement | null
 }

@@ -1,12 +1,12 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 25 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 27 violation kinds the theme guard can emit.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 25 theme-guard violation kinds. */
+/** The 27 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -33,6 +33,8 @@ export type GuardKind =
   | 'css-raw-surface'
   | 'inline-font-size'
   | 'hidden-inline-style'
+  | 'in-body-page-title'
+  | 'raw-selection-control'
 
 /**
  * How hard a finding lands. `error` fails the build; `warn` reports and passes.
