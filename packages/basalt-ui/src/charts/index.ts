@@ -98,7 +98,7 @@ export {
   type BandTooltipConfig,
   type BandTooltipRowContext,
 } from './hooks/useBandPlot'
-export type { CursorResolution } from './cursor/resolve'
+export type { CursorResolution, DomainKind } from './cursor/resolve'
 export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
 // ── Utils ────────────────────────────────────────────────────────────────

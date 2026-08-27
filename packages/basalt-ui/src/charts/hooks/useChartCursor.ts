@@ -2,7 +2,7 @@ import { localPoint } from '@visx/event'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import type { CursorResolution } from '../cursor/resolve'
-import { buildDomainIndex, resolveCursorPoint } from '../cursor/resolve'
+import { buildDomainIndex, classifyDomain, resolveCursorPoint } from '../cursor/resolve'
 import { useCursorState, useCursorStore } from '../cursor/scope'
 
 /** Viewport-space pointer anchor the tooltip positions against. */
@@ -70,6 +70,9 @@ export function useChartCursor<T>({
     () => buildDomainIndex(data, getKeyRef.current, resolution),
     [data, resolution],
   )
+  // Mirrors `index`'s memo shape (deps built off `data`, reading the accessor through a ref) —
+  // `resolution` is left out because `kind` never reads it, and `exhaustive-deps` enforces that.
+  const kind = useMemo(() => classifyDomain(data.map((d) => getKeyRef.current(d))), [data])
 
   const frameRef = useRef<number | null>(null)
   const pendingRef = useRef<CursorAnchor | null>(null)
@@ -80,7 +83,7 @@ export function useChartCursor<T>({
       // drops the chart, a tab switches) fires no leave/blur, so the store would keep pointing at
       // a dead chartId — and any sibling whose domain resolves that stale key would paint a ghost
       // crosshair with no way to clear it. Same ownership guard as `clear()`.
-      if (store.get().source === chartId) store.set(null, null)
+      if (store.get().source === chartId) store.set(null, null, null)
     },
     [store, chartId],
   )
@@ -117,9 +120,9 @@ export function useChartCursor<T>({
       }
 
       scheduleAnchor({ x: event.clientX, y: event.clientY })
-      store.set(getKeyRef.current(closest), chartId)
+      store.set(getKeyRef.current(closest), chartId, kind)
     },
-    [data, marginLeft, chartId, store, scheduleAnchor],
+    [data, marginLeft, chartId, store, scheduleAnchor, kind],
   )
 
   const clear = useCallback(() => {
@@ -131,7 +134,7 @@ export function useChartCursor<T>({
     setAnchor(null)
     // Only clear the SHARED cursor if this chart still owns it: moving fast from chart A to B lets
     // A's leave fire after B's move, and an unconditional clear would wipe B's cursor.
-    if (store.get().source === chartId) store.set(null, null)
+    if (store.get().source === chartId) store.set(null, null, null)
   }, [store, chartId])
 
   const onKeyDown = useCallback(
@@ -155,12 +158,17 @@ export function useChartCursor<T>({
       const rect = event.currentTarget.getBoundingClientRect()
       const x = xScaleRef.current(getKeyRef.current(next)) ?? 0
       scheduleAnchor({ x: rect.left + x, y: rect.top })
-      store.set(getKeyRef.current(next), chartId)
+      store.set(getKeyRef.current(next), chartId, kind)
     },
-    [data, store, chartId, clear, scheduleAnchor],
+    [data, store, chartId, clear, scheduleAnchor, kind],
   )
 
-  const point = cursor.key === null ? null : resolveCursorPoint(index, cursor.key)
+  // A broadcast from a domain of a DIFFERENT kind is filtered out here, before resolution is even
+  // attempted — a category chart never resolves a date chart's key just because both happen to
+  // parse. `isSource` is unaffected: it compares `chartId`, not `kind`, and a chart's own broadcast
+  // always carries its own kind by construction.
+  const point =
+    cursor.key === null || cursor.kind !== kind ? null : resolveCursorPoint(index, cursor.key)
 
   return {
     point,

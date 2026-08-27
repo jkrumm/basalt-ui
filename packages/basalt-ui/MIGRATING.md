@@ -38,13 +38,18 @@ long-stale entries (D4, `docs/archive/CONTROLS-SYNTHESIS.md`) are promoted.** C1
 (`docs/CONTROLS-SPEC.md` §1) is the new law behind both: a grace entry now carries `{ since,
 promote, why }` (semver strings) instead of a bare promotion-note string, and a version-gated test
 fails the build once `package.json`'s version reaches an entry's `promote` while the entry is still
-in the ledger. That is what stops a rule sitting at `warn` for five minors with nothing tracking the
-promise, which is exactly what happened to the nine rows below.
+in the ledger — and `make release` refuses to cut a release whose COMPUTED version has reached one,
+which is the half that fires before the release rather than one minor after it. That is what stops a
+rule sitting at `warn` for five minors with nothing tracking the promise, which is exactly what
+happened to the nine rows below.
 
 **`PLUGIN_RULE_GRACE`** (`configs/oxlint-plugin.js`) **and `GRACE_PERIOD_KINDS`**
-(`src/guard/index.ts`) are both now empty — every entry that was in grace either promoted to `error`
-or moved to a new, permanent `PLUGIN_RULE_ADVISORY` ledger. A theme-allow escape written against any
-of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
+(`src/guard/index.ts`) no longer carry any PRE-EXISTING entry — every one either promoted to `error`
+(the table below) or moved to the new, permanent `PLUGIN_RULE_ADVISORY` ledger
+(`shadow-basalt-export`). Both ledgers now hold only the wave-6 control guards listed under
+§ Guards — six plugin rules and two guard kinds, each `{ since: '1.26.0', promote: '1.27.0' }` —
+which the C16 gate forces to promote or be deleted at 1.27.0. A theme-allow escape written against
+any of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
 `error`.
 
 | Rule / kind (promoted)                 | What now errors                                                                                                                                                  | Escape hatch                                                                                                                                |
@@ -76,7 +81,7 @@ several props renamed or were added to line up with it.
 | -------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `StatCard`                       | `label`                                                    | `title`                                                                                                                                                                                                                                                                                  |
 | `StatCard`                       | `menu`                                                     | `actions` (wrapped in `CtlSlot`)                                                                                                                                                                                                                                                         |
-| `StatCard`                       | —                                                          | adds `icon`, `sparklinePlacement?: 'bleed' \| 'right'` (default `'bleed'`, collapses to it below `sm`)                                                                                                                                                                                   |
+| `StatCard`                       | —                                                          | adds `icon`, `info`, `subtitle` (forwarded to the composed `WidgetHeader` — the info glyph beside the title, the muted unit line under the hero row), `sparklinePlacement?: 'bleed' \| 'right'` (default `'bleed'`, collapses to it below `sm`)                                          |
 | `ChartCard`                      | `tooltip`                                                  | `info`                                                                                                                                                                                                                                                                                   |
 | `ChartCard`                      | `extra`                                                    | `actions` (carries `data-basalt-tier="widget"`, no `CtlSlot` — `./charts` stays Mantine-free)                                                                                                                                                                                            |
 | `ChartCard`                      | `title: string` (required)                                 | `title?: string` — the header now renders only when title/info/value/actions/icon/count is set                                                                                                                                                                                           |
@@ -89,10 +94,14 @@ several props renamed or were added to line up with it.
 | `BasaltDataTable`                | `facets` rendered as raw `Select`/`MultiSelect`            | rendered as `EnumFilter`/`MultiSelectFilter` pills inside a `FilterSet` (`docs/CONTROLS-SPEC.md` §3) — a synthetic `"All"` option stands in for a single-select facet's cleared state, since a closed enum field has no member for "unset"                                               |
 
 New export: **`Section`** (`.`, Mantine-coupled) — `WidgetHeaderProps` minus `tier`, plus `tabs?`,
-`collapsible?`, `persistKey?`, `id?`, `children`. No `variant`, no border/background — one shaded
-container level per page belongs to the cards inside a `Section`, not to `Section` itself. Fold
-state persists at `basalt:section:<persistKey>` via `createPersistedState` when `persistKey` is
-given, else local `useState`; the header stays drawn when collapsed, only the body unmounts.
+`collapsible?`, `persistKey?`, `defaultOpen?`, `summary?`, `id?`, `children`. No `variant`, no
+border/background — one shaded container level per page belongs to the cards inside a `Section`, not
+to `Section` itself. Fold state persists at `basalt:section:<persistKey>` via `createPersistedState`
+when `persistKey` is given, else local `useState`; the header stays drawn when collapsed, only the
+body unmounts. `defaultOpen` (default `true`) picks the state a FIRST visit lands on and is outranked
+by a persisted value, so a section the reader closed stays closed. `summary` renders under the header
+and survives a collapse — a folded section still states its headline figures, which is what makes
+folding it a real option rather than a way to lose the numbers.
 
 ### Homes — `PageBar` replaces the page-action portal
 
@@ -127,11 +136,18 @@ What changes at runtime even if you only rename:
   yourself — in a `Section` or `ChartCard` `actions` slot — never inherits the global rows.
 - **`--basalt-page-bar-h` is published on `documentElement`** (ResizeObserver where available,
   `height > 0` guard)
-  whenever a row 2 renders, and removed when it unmounts. A `100dvh` body becomes
+  whenever a row 2 renders, and removed when it unmounts. It is written in the LAYOUT phase, so it
+  exists at the first paint — a cold load of `/page#anchor` lands below the bar rather than under
+  it. A `100dvh` body becomes
   `calc(100dvh - var(--app-shell-header-height) - var(--basalt-page-bar-h, 0px))` — delete any
   hand-rolled measure-and-publish effect and any hardcoded header-height fallback.
 - **A shell-less app reads `title`/`icon`.** Inside a `BasaltShell` the breadcrumb names the page
   and both are ignored; outside one they lead row 1, and the whole bar sticks at `top: 0`.
+- **`className` lands on the bar ROOT in both forms** — the shell-less
+  `[data-basalt-page-bar="standalone"]`, or row 2's sticky wrapper `[data-basalt-page-bar="shell"]`.
+  It is the seam for the two things only the consumer's own layout knows: bleeding the sticky bar
+  across a container's gutters, and a hairline under it. Scope that CSS through the class; a global
+  `[data-basalt-page-bar]` rule reaches every page in the app, including the ones wanting neither.
 
 `ActionGroup`, `OverflowMenu` and `SyncButton` ship on the new `basalt-ui/controls` subpath; only
 the TYPES a `PageBar`/`BasaltShell` prop mentions (`BarAction`, `ActionGroupProps`, `GlobalAction`)
@@ -155,7 +171,7 @@ same single-value localStorage envelope. **They are removed in 1.29.0.**
 New on `./router-tanstack`: `createSearchStore`, `field` (`enum` / `multi` / `range` / `number` /
 `boolean` / `string`), and the `FieldHandle` / `AnyField` / `FieldValue` / `RangeValue` / lane types.
 New on `./state` (router-free, same field vocabulary): `createLocalStore`, `field`, those same types.
-`FieldHandle` is what every 1.27.0 control takes instead of `value`/`onChange`
+`FieldHandle` is what every 1.26.0 control takes instead of `value`/`onChange`
 (`docs/CONTROLS-SPEC.md` §3–§4).
 
 Three things to know when you migrate a real store:
@@ -176,9 +192,24 @@ Three things to know when you migrate a real store:
   nowhere to go — a `persist: false` field written from a route that does not validate it — warns
   once per field in dev rather than dropping the write silently.
 
+**Every navigate a store issues carries `resetScroll: false`** — a field write and `useReset`
+alike. A filter lives halfway down a page as often as it lives in the bar, and the router treats a
+same-route search write as a navigation, so the default scrolled the reader back to the top on every
+change. Delete any `resetScroll: false` you were passing beside a hand-rolled `navigate`.
+
 Lanes are declared once per field: `{ url: false }` is the local-only lane (per-chart selects, a
 compact toggle — or use `createLocalStore`), `{ persist: false }` the URL-only lane (pagination, a
 deliberately unpersisted threshold), `{ history: 'push' }` opts one field into a history entry.
+**`{ url: false, persist: false }` is the IN-MEMORY lane** rather than the one combination that
+dropped its write: shared across every mount of that store for the session, gone on reload, never
+written to or read from localStorage. It behaves identically in both factories — `createSearchStore`
+counts such a field in `useActiveCount()` and clears it in `useReset()`, and it never appears in
+`useValues()`/`validateSearch`, which are the URL lane by definition. In a `createLocalStore` the
+`url` flag is ignored, so `{ persist: false }` alone lands there. The dev warning about a write with
+nowhere to go now fires only for its remaining real case: a `{ persist: false }` field that IS on the
+URL lane, written from a route that does not validate the param. `createLocalStore` also carries **`labels()`**,
+chainable and identical to `createSearchStore`'s, so `SelectFilter`/`ViewTabs` read option labels off
+a local store too.
 A `field.range` keeps THREE URL params (preset + `from` + `to`, renamable via `params`), so existing
 deep links and loaders keep their shape, and `field.<name>.toWindow(v)` replaces a hand-rolled
 `presetToParams`.
@@ -212,14 +243,24 @@ What changes at runtime even if you declare no blocks at all:
   `readPersistedValue` from `basalt-ui/state`. A "Show more" toggle is deliberately NOT persisted.
 - **`settingsMenuItems` renders FLAT at three entries or fewer** — one link row each, instead of a
   gear "Settings" menu you had to open to see two rows. Four or more keeps the menu. `brand.version`
-  rides the flat rows as a faint label and the dropdown as a `Menu.Label`, as before.
+  rides the flat rows as a faint label and the dropdown as a `Menu.Label`, as before. New
+  `BasaltShellProps.settingsMenu?: 'auto' | 'flat' | 'menu'` (`AppSidebarProps` too, default
+  `'auto'` = that count rule) forces the form: pass `'menu'` when the three rows are CONTROLS rather
+  than destinations — a theme radio group and a devtools switch read as a widget pile flat, and the
+  count cannot tell them from three links.
 - **The footer is one wrapper deeper.** `settingsMenuItems` without `account` used to render its
   `Group` as the footer element itself; both now sit inside one footer `Stack` alongside any
   `placement: 'bottom'` block. No visual change — relevant only to a stylesheet reaching in by
   structure.
+- **`useNav` now marks exactly one destination `active`** — the deepest matching route wins, instead
+  of every prefix-matching row (a parent AND its child) reading active at once. A parent on the
+  winner's path gets the new `SidebarItem.ancestor` instead: never active, never `aria-current`, only
+  a `data-ancestor` hook for CSS. A consumer that styled off two simultaneously-active rows will now
+  see one.
 
 New types on `.`: `SidebarBlock`, `SidebarListBlock`, `SidebarProgressBlock`, `SidebarCustomBlock`,
-`SidebarBlockItem`, `SidebarBlockTone`, `SidebarSearchActions`.
+`SidebarBlockItem`, `SidebarBlockTone`, `SidebarSearchActions`. `SidebarItem` gained `ancestor?:
+boolean`.
 
 ### `DeltaBadge` — plain-element DOM, same props
 
@@ -269,6 +310,30 @@ New on `basalt-ui/controls`: `FilterSet`, `RangeFilter`, `CompareFilter`, `Selec
 `MultiSelectFilter`, `SearchFilter`, `ToggleFilter`, `ViewTabs`, `COMPARE_VALUES`, and the
 action/sync family. New on `basalt-ui/controls-dates`: `DateRangePicker`.
 
+**`SyncButton`'s `scope` now decides the SHAPE, not only where you mount it.** `scope: 'global'`
+renders icon-only at every viewport (an `ActionIcon` with the spinning glyph, age and error in the
+tooltip, `label` as the accessible name) — the shell header shares 48px with the breadcrumb and
+`PageBar` row 1, and a labelled button there is what pushes a page's own actions into the kebab.
+`scope: 'page'` is unchanged on desktop (labelled, age inline) and drops to icon-only below `sm`,
+which is what `docs/CONTROLS-SPEC.md` §3 always specified. One mount either way, CSS-only swap (law
+C9). Consequence to know: the accessible name is now `aria-label` in BOTH forms, so a test asserting
+the name as `Sync 2m ago` (the age used to land in it) now reads `Sync`. Nothing to change at a call
+site.
+
+**`SelectFilter` and `MultiSelectFilter` take `options?: readonly FilterOption[]`** — a runtime
+catalogue (`{ value, label, disabled? }`) that OVERRIDES `field.options` whole rather than merging,
+so a value the catalogue has dropped loses its row. It is what a label carrying live data needs
+(`EUR · 1.08`), and on `SelectFilter` it also opens a second field shape: a `FieldHandle<StringField>`
+is legal WITH `options` — an id set no enum can close over, a project picker fed from a query — and
+a type error without it. `FilterOption` is new on `basalt-ui/controls`. Additive; nothing to change.
+
+**`FilterSet` renders the mobile `Filters (n)` pill only when a child is actually folded.** With
+every child inside the `inline` budget (one filter at the default `inline: 1`) the sheet would hold a
+copy of what is already on screen, so neither the trigger nor the drawer mounts. Nothing to change —
+but a mobile test asserting the pill exists on a one-filter page now has to fold something
+(`inline={0}`) or drop the assertion. `RangeFilter.label` (default `'Range'`) names the sheet heading
+and the preset track's aria name; the pill itself still reads the VALUE.
+
 **`data-numeric` is now a package-wide law, not a per-component rule.** `basalt-ui/styles.css`
 declares `[data-numeric] { font-family: var(--basalt-font-mono); font-variant-numeric: tabular-nums }`
 inside `@layer basalt`, so the attribute works on ANY element — `<Text data-numeric>`, a table cell,
@@ -299,15 +364,15 @@ node and `theme-allow-file <id> — <why>` on the file, the same grammar as the 
 | Rule / kind                          | Fires on                                                                                                                                                                                                                               | Ships         |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | `basalt/hand-rolled-filter`          | A raw Mantine `Select`/`SegmentedControl`/… handed to a TIERED home slot (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/`WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`) | error         |
-| `basalt/page-bar-budget`             | A second `PageBar` in one file, >4 `actions.secondary`, >3 `Section` actions, a second `variant="filled"` in one slot                                                                                                                  | error         |
-| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, or in a file that DEFINES a basalt control                                                                    | warn → 1.29.0 |
-| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | warn → 1.29.0 |
-| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | warn → 1.29.0 |
-| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | warn → 1.29.0 |
-| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | warn → 1.29.0 |
-| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | warn → 1.29.0 |
-| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | warn → 1.29.0 |
-| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window                                                                                                                                                     | warn → 1.29.0 |
+| `basalt/page-bar-budget`             | A second `PageBar` in the SAME returned tree, >4 `actions.secondary`, >3 `Section` actions, a second filled `Button`/`ActionIcon` in one slot (outside an overlay)                                                                     | error         |
+| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, or in a file that DEFINES a basalt control                                                                    | warn → 1.27.0 |
+| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | warn → 1.27.0 |
+| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | warn → 1.27.0 |
+| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | warn → 1.27.0 |
+| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | warn → 1.27.0 |
+| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | warn → 1.27.0 |
+| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | warn → 1.27.0 |
+| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window                                                                                                                                                     | warn → 1.27.0 |
 
 **A `SettingsRow`'s `control` is not a tiered slot, so nothing in this table fires inside one.**
 It is law C1's third home — the form row — and a form keeps Mantine's `md` tier
@@ -316,10 +381,24 @@ there, and its `size` prop is what holds the row at the form tier, so neither `h
 nor `control-size-literal` reaches into it; `control-outside-home` treats a settings row as a home
 and stays silent as well. Consumer settings pages need no change.
 
+**Three scoping facts, because each one is a rule NOT firing on code you already have.** The home
+tag must resolve to a component imported from `basalt-ui` (or a basalt subpath) — your own
+`Section`, `PageBar` or `StatCard` is not a tiered home, and nothing in this table reads it as one;
+the one accepted gap is basalt's `Section` re-exported through your own barrel, which the rules
+cannot see. An OVERLAY colocated in a slot (`Modal`, `Drawer`, `Popover.Dropdown`, `Menu.Dropdown`,
+`SettingsRow`) is exempt — a `New` button beside the `<Modal>` it opens is how both are written, and
+the overlay's own controls are not in the bar. And `control-size-literal` only reaches what the
+slot's theme actually re-tiers: the raw filters, the basalt controls, and Mantine's
+`Button`/`ActionIcon`/`Input`/`TextInput`/`Select`/`MultiSelect`/`SegmentedControl`/`NativeSelect` —
+an icon's `size`, a count `Badge`, a `Loader`, an `Avatar` or a `Modal size="lg"` never report.
+
 **Two existing rules widened, neither with a new id.** `basalt/raw-scroll-container` now also fires
-on `overflowX: 'auto' \| 'scroll'` and on `<ScrollArea scrollbars="x">` **inside a home** (a slot, or
-anywhere under `Section`/`ChartCard`) — law C7, overflow folds into a `More` menu or a `Filters (n)`
-sheet rather than scrolling sideways. Outside a home, `overflowX` is still not policed at all.
+on `overflowX: 'auto' \| 'scroll'` and on `<ScrollArea scrollbars="x">` **inside a home SLOT**
+(`actions`/`filters`/`tabs`/`sync`/`filtersEnd`) — law C7, overflow folds into a `More` menu or a
+`Filters (n)` sheet rather than scrolling sideways. A home's BODY is out of scope: a wide table, a
+pinned-column grid or a horizontally scrolling code block in a `Section`/`ChartCard` is page
+content, not a sideways-scrolling row of controls, and outside a slot `overflowX` is still not
+policed at all.
 oxlint severities are per rule ID, not per branch, so this widening inherits the rule's existing
 `error` level with no grace runway of its own — the honest limitation, and the reason it is scoped to
 homes rather than shipped repo-wide. `basalt/shadow-basalt-export` gains a rename table
@@ -333,9 +412,115 @@ homes rather than shipped repo-wide. `basalt/shadow-basalt-export` gains a renam
 
 **`SURFACES` gains `pluginRules`** (`src/surfaces.ts`, internal — not a published subpath): every
 doctrine surface names the oxlint rules that enforce it, every registered rule maps to exactly one
-surface, and `basalt-ui check-coverage` asserts both. `check-coverage` also takes `--write` /
-`--check` for the generated `<!-- basalt:coverage -->` header of each `agent/rules/*.md` file; a
-rule file with no block yet is reported, not failed.
+surface, every guard KIND maps to at least one, and `basalt-ui check-coverage` asserts all three —
+so a generated coverage header can neither over- nor under-report its lane. `check-coverage` also
+takes `--write` / `--check` for the generated `<!-- basalt:coverage -->` header of each
+`agent/rules/*.md` file; a rule file with no block yet is reported, not failed.
+
+### Controls — the pill reads the VALUE, and four defaults moved
+
+**A filter pill's TEXT is now always the selected option's label, at the field's default value too.**
+It used to fall back to the filter's NAME while `field.isDefault(value)` held, which is how a bar
+could read `Compare` over a field holding `'previous'` while the popover showed `Previous period`
+selected. `label` is the popover/sheet heading and the accessible name; it is never printed on the
+pill. Affects `SelectFilter`, `CompareFilter` and every control built on the shared enum body;
+`RangeFilter` already read its value, and `MultiSelectFilter` keeps its own law (the group label
+while the selection is empty or complete, `N <noun>` otherwise).
+
+**Nothing to change at a call site.** What changes is the string a test or a screenshot sees: a
+`SelectFilter field={currency} label="Currency"` at fallback `USD` now reads `USD`, not `Currency`.
+If a bar reads badly at rest, the fix is the OPTION label (`store.labels()`), not the filter's name.
+
+| Component / prop                                  | Was                                         | Now                                                                                                                                                                      |
+| ------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CompareFilter` option labels                     | the raw values until `store.labels()`       | `No comparison` / `Previous period` / `Same period last year`, exported as `COMPARE_LABELS`. A label a consumer set (`label !== value`) still wins.                      |
+| `BasaltDataTable` → `withTableBorder`             | `true`                                      | `false`. Pass `true` for a table that needs a frame. The head rule and the between-row rules are untouched; the LAST row's rule is now dropped (it was an outer border). |
+| `BasaltDataTable` single-select facet's "all" row | `All`                                       | `Any <facet.label lowercased>` — the pill now reads it, and three facets all reading `All` said nothing.                                                                 |
+| `ViewTabs` phone `Select` (past 3 options)        | greedy (216px measured, truncating a title) | capped at 9rem                                                                                                                                                           |
+
+**New: `ControlGroup`** (`basalt-ui/controls`) — joins adjacent controls that act on ONE thing
+(`‹ Today ›`, `− 1 +`) into a single box: no gap, one shared hairline per pair, radius on the outer
+ends only. `gap?: 'none' | 'tight'`. `BarActionItem` gains `group?: true`, and a run of adjacent
+`group: true` actions in an `ActionGroup` renders as one `ControlGroup`; a joined member that ships an
+`icon` renders ICON-ONLY with its label demoted to the accessible name. `ActionGroup` also joins
+adjacent ICON-ONLY entries on the mobile bar with no flag. `basalt/shadow-basalt-export` now names
+`ButtonGroup` / `ButtonRow` / `JoinedButtons` as renamed forks of it.
+
+### The `ctl` tier now covers Radio, Checkbox and Switch
+
+All three defaulted to Mantine's `sm` — a 20px indicator beside the tier's 13.5px option label — in
+every filter popover and in the mobile sheet. They are now in `CTL_THEME` (with their `.Group`s) and
+`cssVariablesResolver` declares their `-ctl` vars: 16px indicator, 18×30 switch.
+
+**One consequence worth knowing.** Mantine resolves a Radio's size as `props.size ? props.size :
+ctx.size`, and a theme `defaultProps.size` is indistinguishable from an explicit prop to that check
+— so inside a `<CtlSlot>` (any home's slot) a `<Radio.Group size="lg">` no longer sizes its children;
+they stay `ctl`. A group that genuinely needs another size belongs in a BODY, which no slot wraps.
+
+`basalt/control-size-literal` widened to cover the six new tags, so a `size` on a Radio/Checkbox/
+Switch inside a home slot now reports. It is still `warn` on its 1.26.0 → 1.27.0 runway (it has never
+shipped at any level, so widening it restarts nothing).
+
+### Icons — one box, no call-site geometry
+
+Every `icon` prop in the framework (`BarAction`, the filter pills and their trailing affordance,
+`WidgetHeader`/`StatCard`, `SyncButton`, sidebar-block rows, the overflow fold's own glyphs) now
+renders through ONE internal slot: a fixed `--vx-space-icon-size` (16px default) square that restates
+the glyph's `width`/`height` at 100% and takes it off the text baseline. **No API change** — but a
+consumer's `<svg width="24">` that used to set a control's row height now renders at 16px, and an
+`<svg>` with no `width`/`viewBox` at all no longer paints at 300×150. Per-tier sizes come from the
+box var (`WidgetHeader` sets 14px at `tier="widget"`), never from a prop.
+
+### Mobile nav — at most ONE slot is active
+
+A slot's activeness now reads exactly the destinations it COVERS. It used to roll up over `children`
+unconditionally while an item slot covered only its own key, so at `/dashboard/sessions` the
+`Dashboard` tab lit through the rollup and the `More` tab lit for `Sessions` sitting in its overflow
+— two `aria-current="page"` tabs at once. A SECTION tab still lights for a nested destination (it
+covers its whole tree); an ITEM tab with children no longer does, and the overflow slot that can
+actually reach the open route lights instead.
+
+`useNav`'s anchors now pass `activeOptions: { exact: true }` to TanStack's `Link`. A `Link` spreads
+`{ 'data-status': 'active', 'aria-current': 'page' }` last — after `activeProps` and after every
+caller prop — so its own fuzzy match could not be overridden from outside and re-created the very
+double-highlight `useNav`'s resolver exists to prevent. basalt's own law is unchanged: an item whose
+exact route is never visited still lights on a descendant route.
+
+### Layout — two collisions and a gap
+
+- **The app header**: exactly one side of row 1 is elastic, and it is the breadcrumb (the side whose
+  content can ellipsize). The control side is `flex: 0 0 auto` with no `min-width: 0` below it. Both
+  sides were shrinkable, and at 390px the sync button overflowed 30px INTO the page title, because a
+  `justify-content: flex-end` flex container overflows towards its start.
+- **`WidgetHeader`'s hero row**: the value → `DeltaBadge` gap is the 8px rhythm step
+  (`--vx-space-stack-sm`), not 4px, and the badge is centred on the value rather than baseline-aligned
+  to it.
+- **`WidgetHeader`'s title row** wraps below `sm`, so an `actions` slot too wide to sit beside the
+  title takes its own line instead of squeezing the heading to an ellipsis. A 30px kebab still fits
+  and still sits on the row. **Its metric row wraps too**: in a 2-up card grid at 390px
+  `$1294.9k ▲18.9%` rendered as `$129… ▲18.9%`, and truncating the number to protect the delta about
+  that number is the wrong way round. A short value still keeps its badge on the line.
+- **`StatCard`'s `actions` slot is the 24px tier now, not 30px.** `CtlSlot` gained `tier?: 'ctl' |
+'widget'` (default `'ctl'`, so no existing call site changes), and `StatCard` mounts its header slot
+  at `'widget'` — the `size="icon"` step `--vx-space-control-height-widget` has always named as
+  "`WidgetHeader tier="widget"` actions". A raw `ActionIcon` there rendered at the 30px `ctl` tier
+  inside a 28px header row and grew it to 30, so a KPI card WITH a kebab sat 2px below the card
+  beside it and every number in it with it. A consumer passing `<ActionIcon size="ctl">` explicitly
+  still gets 30px — and its card is 2px taller than its neighbours again, which is now visible rather
+  than accidental. The slot's `data-basalt-tier` marker reads `widget` there, the same value
+  `ChartCard` already writes by hand.
+- **The breadcrumb's ANCESTOR crumbs are hidden below `sm`** — only the page crumb renders. At 390px
+  the elastic side truncated `Overview / Dashboard` to `O… / D…`: two ellipses and a separator in
+  place of the one word that says where the reader is. CSS-only (law C9), so no flash and no hook.
+  `AppBreadcrumbs` gained one wrapper element around those crumbs; its props are unchanged.
+
+### Cursor — the shared cursor now partitions by x-domain kind, automatically
+
+Nothing removed. `CursorState` gained one field.
+
+| Component     | What changed                     | Why it matters                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CursorState` | gains `kind: DomainKind \| null` | No consumer action needed. The shared cursor now classifies each chart's x-domain (`'time' \| 'linear' \| 'band'`, derived from its own keys) and a broadcast whose kind differs from a chart's own is invisible to it — a categorical chart can no longer be mistaken for a time chart. `ChartCursorScope` is no longer required to keep a categorical chart from following a time chart; it still isolates two charts that share the same domain kind but are semantically unrelated. |
 
 ## 1.24.0 — `QueryState`, table body chrome, four false greens
 

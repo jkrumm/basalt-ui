@@ -99,6 +99,35 @@ describe('the header composes WidgetHeader at the widget tier', () => {
   })
 })
 
+describe('info and subtitle reach the composed WidgetHeader', () => {
+  function renderHeader(props: { info?: string; subtitle?: string }) {
+    return renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Training load" value="412" {...props} />
+      </MantineProvider>,
+    )
+  }
+
+  test('the subtitle renders as its own line under the hero row', () => {
+    expect(renderHeader({ subtitle: 'TSS · 7-day rolling' })).toContain('TSS · 7-day rolling')
+  })
+
+  test('the info text ships with the glyph, and never inside the heading', () => {
+    const markup = renderHeader({ info: 'Sum of per-session TSS over 7 days.' })
+    // `WidgetHeader` renders the bubble only while open, so the closed markup carries the named
+    // trigger — what matters here is that the card FORWARDED the prop and that the text stayed OUT
+    // of the `<h3>`, which is what an `info` rendered inside the heading would silently do.
+    expect(markup).toContain('aria-label="More information"')
+    const heading = /<h3[^>]*>(.*?)<\/h3>/.exec(markup)?.[1] ?? ''
+    expect(heading).toContain('Training load')
+    expect(heading).not.toContain('Sum of')
+  })
+
+  test('neither prop renders anything when omitted — no glyph, no empty line', () => {
+    expect(renderHeader({})).not.toContain('More information')
+  })
+})
+
 describe('sparklinePlacement', () => {
   function renderWithSparkline(placement?: 'bleed' | 'right') {
     return renderToStaticMarkup(

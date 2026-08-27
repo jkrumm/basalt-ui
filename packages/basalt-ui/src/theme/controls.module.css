@@ -283,3 +283,17 @@ html[data-mantine-color-scheme] .tabsRoot {
 html .tableRoot {
   --table-border-color: var(--vx-surface-hairline);
 }
+
+/*
+ * The LAST row's separator is dropped — exactly the rule (and exactly the reasoning) the Accordion
+ * above already carries: a separator BETWEEN items is information, and the same line drawn after the
+ * final item is an outer border pretending to be one. It mattered more once `BasaltDataTable`'s
+ * `withTableBorder` went to `false` by default, because the two used to sit on top of each other and
+ * the doubling hid which of them was drawing the line.
+ *
+ * Scoped to `tbody`: a `tfoot` (a totals row) is separated FROM the body by the rule above it, which
+ * is a between rule and stays.
+ */
+html .tableRoot tbody tr:last-of-type {
+  border-bottom: none;
+}

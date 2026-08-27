@@ -74,15 +74,19 @@ describe('stickyHeader and table chrome', () => {
     expect(renderTable().container.querySelector('thead')?.getAttribute('data-sticky')).toBeNull()
   })
 
-  test('withTableBorder defaults on and can be turned off for a table inside a card', () => {
+  test('withTableBorder defaults OFF and can be turned on for a table that needs a frame', () => {
+    // It defaulted ON, and the box was three faults at once — its top edge separated the table's own
+    // `WidgetHeader` from its content, its bottom edge landed on the last row's hairline (two rules
+    // at zero distance), and its side edges divided nothing. See the prop's JSDoc; the head rule and
+    // the between-row rules are untouched, so the table still reads as a table.
     expect(
       renderTable().container.querySelector('table')?.getAttribute('data-with-table-border'),
-    ).toBe('true')
+    ).toBeNull()
     expect(
-      renderTable({ withTableBorder: false })
+      renderTable({ withTableBorder: true })
         .container.querySelector('table')
         ?.getAttribute('data-with-table-border'),
-    ).toBeNull()
+    ).toBe('true')
   })
 })
 
@@ -382,12 +386,12 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
       ],
       onColumnFiltersChange: (filters) => seen.push(filters),
     })
-    await openPill('Project')
+    await openPill('Any project')
     fireEvent.click(screen.getByRole('radio', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
   })
 
-  test('picking the synthetic "All" row clears the column filter again', async () => {
+  test('picking the synthetic "Any <facet>" row clears the column filter again', async () => {
     const seen: ColumnFiltersState[] = []
     renderTable({
       facets: [
@@ -395,12 +399,12 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
       ],
       onColumnFiltersChange: (filters) => seen.push(filters),
     })
-    await openPill('Project')
+    await openPill('Any project')
     fireEvent.click(screen.getByRole('radio', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: 'argo' }]]))
 
     await openPill('argo')
-    fireEvent.click(screen.getByRole('radio', { name: 'All', hidden: true }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Any project', hidden: true }))
     await waitFor(() => expect(seen[seen.length - 1]).toEqual([]))
   })
 
@@ -420,6 +424,9 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
       ],
       onColumnFiltersChange: (filters) => seen.push(filters),
     })
+    // A MULTI facet keeps the group label while its selection carries no information — that is
+    // `MultiSelectFilter`'s own law, and the reason only the single-select facet needed a readable
+    // synthetic row (`facetAllLabel`).
     await openPill('Project')
     fireEvent.click(screen.getByRole('checkbox', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: ['argo'] }]]))

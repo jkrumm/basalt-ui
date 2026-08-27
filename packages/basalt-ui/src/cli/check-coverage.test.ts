@@ -1,6 +1,7 @@
 /**
- * `basalt-ui check-coverage` — the 9 SURFACES assertions, and the generated
- * `<!-- basalt:coverage -->` header each rule file carries (docs/CONTROLS-SPEC.md §7).
+ * `basalt-ui check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer line
+ * budgets), and the generated `<!-- basalt:coverage -->` header each rule file carries
+ * (docs/CONTROLS-SPEC.md §7).
  *
  * The block exists because a rule file's own claim about what enforces it was prose, and prose
  * drifted: a doc could name a guard kind and stay silent about the oxlint rule doing the real work,
@@ -8,14 +9,15 @@
  * projection of the registry, and `--check` makes a stale claim a build failure.
  *
  * The pure half (`coverageFor` / `coverageBlock` / `applyCoverageBlock`) is tested directly; the fs
- * half runs against a TEMP package root, never the real `agent/rules/**` — those files are the next
- * wave's to rewrite, and a test that wrote into them would make `--write` untestable afterwards.
+ * half runs against a TEMP package root, never the real `agent/rules/**` — a test that wrote into
+ * the shipped rules would make `--write` untestable afterwards.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
+import { GUARD_RULES } from '../guard/index'
 import { RULE_NAMES, SURFACES } from '../surfaces'
 import {
   COVERAGE_BLOCK_CLOSE,
@@ -48,7 +50,7 @@ function writeRuleFile(rule: string, body: string): string {
   return path
 }
 
-// ── the 9 assertions ─────────────────────────────────────────────────────────
+// ── the 11 assertions ────────────────────────────────────────────────────────
 
 describe('checkCoverage', () => {
   it('passes against the live registry', () => {
@@ -57,6 +59,22 @@ describe('checkCoverage', () => {
 
   it('rejects --write and --check together rather than picking one', () => {
     expect(checkCoverage(['--write', '--check'])).toBe(1)
+  })
+
+  it('holds every shipped agent-layer file inside its budget, and the rules inside the total', () => {
+    // Assertion 10, read off the real layer rather than a fixture: the budgets ARE the doctrine, so
+    // the interesting failure is a shipped rule growing past one, not a synthetic file doing it.
+    const pkgRoot = resolve(import.meta.dir, '../..')
+    const lines = (rel: string) =>
+      readFileSync(resolve(pkgRoot, rel), 'utf8').split('\n').length - 1
+    const total = RULE_NAMES.reduce((sum, rule) => sum + lines(`agent/rules/basalt-${rule}.md`), 0)
+    expect(total).toBeLessThanOrEqual(1050)
+    expect(RULE_NAMES.length).toBe(6)
+    for (const skill of ['basalt-app', 'basalt-design', 'basalt-charts']) {
+      expect(lines(`agent/skills/${skill}/SKILL.md`)).toBeLessThanOrEqual(100)
+    }
+    expect(lines('agent/templates/CLAUDE-block.md.tpl')).toBeLessThanOrEqual(40)
+    expect(lines('agent/templates/DESIGN.md.tpl')).toBeLessThanOrEqual(45)
   })
 })
 
@@ -91,8 +109,21 @@ describe('coverageFor', () => {
     expect(guardKinds.filter((k) => k === 'raw-hex')).toHaveLength(1)
   })
 
-  it('returns empty lists for a rule nothing enforces', () => {
-    expect(coverageFor('forms')).toEqual({ guardKinds: [], pluginRules: [], advisoryLaws: [] })
+  it('unions the plugin rules of every surface sharing one rule name', () => {
+    // `batteries` is eight surfaces (query, forms, notifications, commands, data ×3, agent ×2,
+    // content, #app); only the agent pair carries plugin rules, and the header must name them.
+    const { guardKinds, pluginRules } = coverageFor('batteries')
+    expect(guardKinds).toEqual([])
+    expect(pluginRules).toEqual(['agent-no-raw-usechat', 'agent-resume-guard', 'ai-sdk-major'])
+  })
+
+  it('leaves no rule with nothing on either lane', () => {
+    // The 13→6 merge folded the eight `guardKinds: []` rules into one file, so every remaining rule
+    // is backed by something — a header saying otherwise would be a rule with no reason to ship.
+    for (const rule of RULE_NAMES) {
+      const { guardKinds, pluginRules } = coverageFor(rule)
+      expect([rule, guardKinds.length + pluginRules.length > 0]).toEqual([rule, true])
+    }
   })
 })
 
@@ -116,13 +147,18 @@ describe('coverageBlock', () => {
   it('names both lanes, prefixing the oxlint ids', () => {
     const block = coverageBlock('controls')
     expect(block).toContain('oxlint rules — basalt/control-outside-home')
-    expect(block).toContain('guard kinds — none')
+    expect(block).toContain('guard kinds — raw-selection-control')
+  })
+
+  // The empty lane still prints — `none` is a claim someone can check, an omitted section is not.
+  it('prints `none` for a lane with nothing on it', () => {
+    expect(coverageBlock('batteries')).toContain('guard kinds — none')
   })
 
   // A block that simply omitted the section would read as "nothing to declare" whether or not
   // anyone had looked. `—` is a claim someone can check.
   it('prints `not guarded: —` when a rule declares no advisory law', () => {
-    expect(coverageBlock('forms')).toContain('<!-- not guarded: — -->')
+    expect(coverageBlock('tokens')).toContain('<!-- not guarded: — -->')
   })
 
   it('prints one line per advisory law, so a diff points at the claim', () => {
@@ -236,5 +272,26 @@ describe('SURFACES.pluginRules', () => {
       if (spec.kind !== 'doctrine') continue
       expect([key, Array.isArray(spec.pluginRules)]).toEqual([key, true])
     }
+  })
+})
+
+describe('SURFACES.guardKinds — assertion 11', () => {
+  // The twin of assertion 9 for the text lane. Two wave-6 kinds shipped on no surface at all, so
+  // `basalt-controls.md` printed "guard kinds — none" while the guard was scanning for
+  // `raw-selection-control` — a generated header claiming less coverage than exists is D8 in the
+  // other direction, and it cannot be hand-corrected.
+  it('places every GUARD_RULES kind on at least one doctrine surface', () => {
+    const surfaced = new Set<string>()
+    for (const spec of Object.values(SURFACES)) {
+      if (spec.kind !== 'doctrine') continue
+      for (const kind of spec.guardKinds) surfaced.add(kind)
+    }
+    const orphans = Object.keys(GUARD_RULES).filter((kind) => !surfaced.has(kind))
+    expect(orphans).toEqual([])
+  })
+
+  it('names the two wave-6 control kinds on the surfaces whose headers must claim them', () => {
+    expect(coverageFor('controls').guardKinds).toContain('raw-selection-control')
+    expect(coverageFor('mantine').guardKinds).toContain('in-body-page-title')
   })
 })

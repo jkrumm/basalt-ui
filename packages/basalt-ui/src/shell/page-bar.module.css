@@ -7,11 +7,14 @@
  * container below only supplies `min-width: 0` so that fold has a box to measure against.
  */
 
-/* The shell-less bar: both rows, sticky at the top of the document. */
+/* The shell-less bar: both rows, sticky at the top of the document. One layer under the AppShell
+ * header (`--app-shell-header-z-index`, default 100) so it never wins a stacking fight with ordinary
+ * in-flow content — Mantine's Input section, Indicator, sticky table headers, and Slider thumbs all
+ * sit at `z-index: 1` or higher, which used to paint over a bare `z-index: 1` bar while scrolling. */
 .bar {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: calc(var(--app-shell-header-z-index, 100) - 1);
   display: flex;
   flex-direction: column;
   gap: var(--vx-space-stack-xs);
@@ -21,13 +24,13 @@
 /*
  * Row 2 inside a shell: in the page flow, sticky under the 48px header. `--app-shell-header-height`
  * is Mantine's own AppShell variable, so the offset tracks the header at any density with no React
- * state and no measurement. `z-index: 1` keeps it above page content and below the header itself
- * (AppShell sits at 100).
+ * state and no measurement. `z-index` sits one layer below the header itself (see `.bar` above) —
+ * high enough to stay above ordinary page content, never above the AppShell header.
  */
 .row2Sticky {
   position: sticky;
   top: var(--app-shell-header-height, 0px);
-  z-index: 1;
+  z-index: calc(var(--app-shell-header-z-index, 100) - 1);
   background-color: var(--vx-surface-bg);
 }
 
@@ -71,6 +74,23 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * Icons inside a row-1 button are 16px and sit 6px from their label. Mantine spends
+ * `--mantine-spacing-xs` (11px) on a Button's section gap regardless of the size tier, which is the
+ * BODY tier's number — at 30px it detached the glyph from the word it belongs to. Scoped to the row
+ * rather than themed on `Button` globally: a `size="md"` button in a form still wants Mantine's gap.
+ */
+.row1 :global(.mantine-Button-section[data-position='left']),
+.row2 :global(.mantine-Button-section[data-position='left']) {
+  margin-inline-end: var(--vx-space-control-gap);
+}
+
+.row1 :global(.mantine-Button-section) > svg,
+.row1 :global(.mantine-ActionIcon-root) > svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Actions and sync are right-aligned; the lead (or the breadcrumb, in a shell) holds the left. */
 .row1End {
   display: flex;
@@ -82,13 +102,23 @@
   min-width: 0;
 }
 
+/*
+ * Row 2's rhythm is 8px · pills · 8px, NOT a 40px reserved row.
+ *
+ * `min-height: var(--vx-space-page-bar-row-height)` (40px) left a 30px pill floating inside a 40px
+ * box with the 5px above and below it belonging to nothing — and because the row sat in a `Stack`
+ * that already spaced it, the visible gap between the header and the pills read as ~19px while the
+ * gap from the pills to the first card read as ~19px too. Symmetric padding on the row itself is the
+ * same total height (46px vs 40px) with both halves owned by one declaration, so the sticky bar's
+ * published height covers exactly the band it paints.
+ */
 .row2 {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: var(--vx-space-control-gap);
   min-width: 0;
-  min-height: var(--vx-space-page-bar-row-height);
+  padding-block: var(--vx-space-stack-sm);
 }
 
 .filters {

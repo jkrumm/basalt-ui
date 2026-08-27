@@ -9,8 +9,8 @@ declare const classes: {
   readonly lead: string
   readonly icon: string
   readonly title: string
-  readonly row1End: string
   readonly row2: string
+  readonly row1End: string
   readonly filters: string
   readonly filtersEnd: string
 }

@@ -14,6 +14,10 @@
  * - **A deep link wins over the mirror.** `?range=7d` reads back `7d` even when localStorage says
  *   `30d`. The enum-only pair could not do this: its reader hook was the localStorage state, so a
  *   shared link opened on the wrong window (A8).
+ * - **A field with neither lane is in memory, not nowhere.** `{ url: false, persist: false }` is
+ *   the memory-only lane: session-scoped, shared across every mount of the store, gone on reload —
+ *   the same lane `createLocalStore` gives such a field, through the same store-core helper. It is
+ *   the honest home for a value a reader should not be handed back tomorrow.
  * - **A write from outside the owning route persists only.** `use()`'s setter navigates only when
  *   the matched route validates the param — detected by the param key being PRESENT in the current
  *   search, which a route running this store's `validateSearch` always is (it returns every
@@ -136,6 +140,12 @@ export type InternalSearchStore<S extends Record<string, AnyField>> = SearchStor
   markReaderWired: () => void
 }
 
+/** The memory-only lane: neither the URL nor the mirror, so the value lives in the store's own
+ * session-scoped external store (`StoreCore.memoryUse`) — the lane `createLocalStore` also uses. */
+function isMemoryLane(entry: StoreEntry): boolean {
+  return !entry.codec.lane.url && !entry.codec.lane.persist
+}
+
 /**
  * The store, plus the one knob the deprecated wrappers need: `legacyValueField` keeps the
  * enum-only stores' single-value storage layout so an already-persisted selection still resolves.
@@ -223,6 +233,11 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
             to: '.',
             search: (prev: Record<string, unknown>) => ({ ...prev, ...entry.codec.toSearch(next) }),
             replace: entry.codec.lane.history === 'replace',
+            // A filter lives halfway down a page as often as it lives in the bar, and the router's
+            // default scroll restoration treats this same-route search write as a navigation — so
+            // without this a select two screens down jumps the reader back to the top on every
+            // change. Never a prop: there is no filter write that WANTS the page to scroll.
+            resetScroll: false,
           })
         }
         if (entry.codec.lane.persist) {
@@ -246,9 +261,17 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
     ] as const
   }
 
+  // Three lanes, decided once per field at definition: URL (+ optional mirror), mirror-only, and
+  // memory-only. The third used to be the one combination that dropped its write.
+  const memoryEntries = core.entries.filter(isMemoryLane)
+
   const field = {} as { [K in keyof S]: FieldHandle<S[K]> }
   for (const entry of core.entries) {
-    const use = entry.codec.lane.url ? urlUse(entry) : localUse(entry)
+    const use = entry.codec.lane.url
+      ? urlUse(entry)
+      : entry.codec.lane.persist
+        ? localUse(entry)
+        : core.memoryUse(entry)
     field[entry.name as keyof S] = core.handle(entry, use) as unknown as FieldHandle<S[keyof S]>
   }
 
@@ -262,30 +285,45 @@ export function buildSearchStore<const S extends Record<string, AnyField>>(
   const useActiveCount = (): number => {
     const search = useCurrentSearch()
     const [record] = core.usePersistedRecord()
+    // A memory field is as much a filter as any other, so the `Filters (n)` pill has to count it —
+    // which means subscribing to the lane, or the count would go stale the moment one is written.
+    core.useMemoryVersion()
     let count = 0
     for (const entry of core.entries) {
-      const value = core.resolve(entry, entry.codec.lane.url ? search : null, record)
+      const value = isMemoryLane(entry)
+        ? core.readMemoryValue(entry)
+        : core.resolve(entry, entry.codec.lane.url ? search : null, record)
       if (!entry.codec.equals(value, entry.codec.fallback)) count += 1
     }
     return count
   }
 
   const useReset = (): (() => void) => {
+    const search = useCurrentSearch()
     const navigate = useNavigate()
     const [, setRecord] = core.usePersistedRecord()
 
     return () => {
-      if (core.urlEntries.length > 0) {
+      // Same "does this route own the field" gate as `urlUse` — only reset the params a foreign
+      // route's `validateSearch` actually validates, or the reset navigates there and pollutes it.
+      const validatedEntries = core.urlEntries.filter((entry) =>
+        Object.hasOwn(search, entry.codec.primary),
+      )
+      if (validatedEntries.length > 0) {
         const patch: Record<string, unknown> = {}
-        for (const entry of core.urlEntries) {
+        for (const entry of validatedEntries) {
           Object.assign(patch, entry.codec.toSearch(entry.codec.fallback))
         }
         navigate({
           to: '.',
           search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }),
           replace: true,
+          // Same reason as a single field's write above — a `Reset all` pressed from the mobile
+          // sheet must not also scroll the page it was pressed on.
+          resetScroll: false,
         })
       }
+      if (memoryEntries.length > 0) core.resetMemory()
       if (!core.anyPersisted) return
       const next = { ...core.readRecord() }
       for (const entry of core.entries) {

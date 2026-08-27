@@ -5,7 +5,7 @@
  */
 
 .menuItem {
-  min-height: var(--vx-space-control-height-ctl);
+  min-height: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
 }
 
 /*
@@ -20,7 +20,7 @@
 .customRow {
   display: flex;
   align-items: center;
-  min-height: var(--vx-space-control-height-ctl);
+  min-height: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
   padding: 0 var(--vx-space-row-inset-x);
 }
 
@@ -29,4 +29,34 @@
   .customRow {
     min-height: var(--vx-space-sheet-row-height);
   }
+}
+
+/*
+ * A `kind: 'custom'` node's slot — see `BarEntry`'s doc. The whole point is the HEIGHT: basalt does
+ * not draw the node, so the only thing it can guarantee is the box it sits in. `inline-flex` +
+ * `align-items: center` centres a 20px Badge inside the 30px tier instead of letting it sit on the
+ * row's baseline, and `flex: none` keeps it out of the row's own shrink arithmetic.
+ */
+.customSlot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
+}
+
+/*
+ * The fold's own two glyphs, sized by overriding the icon slot's box var — never by the `width`
+ * attribute on the SVG, which is a presentation attribute the slot's CSS outranks anyway. The kebab
+ * reads at 18px because it is the ENTIRE content of an icon button (there is no label beside it to
+ * balance against), while `More`'s trailing chevron is the same 14px every pill's trailing
+ * affordance takes (`controls.module.css`'s `.glyph`).
+ */
+.kebabIcon {
+  --vx-space-icon-size: 1.125rem;
+}
+
+.chevronIcon {
+  --vx-space-icon-size: 0.875rem;
+
+  color: var(--vx-faint);
 }

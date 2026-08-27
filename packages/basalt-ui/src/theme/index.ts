@@ -749,7 +749,12 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       SegmentedControl: SegmentedControl.extend({
         defaultProps: { radius: radius.card },
         classNames: { label: segmentedControlClasses.label },
-        styles: {
+        // `label` gets a `ctl`-only min-height (function-form `styles`, same `props.size === …` gate
+        // as Button/ActionIcon/Input's `vars` overrides above) so a `size="ctl"` SegmentedControl
+        // matches the ctl Button/Input box exactly instead of following its own fixed padding — see
+        // `CTL_SEGMENT_PADDING_Y`'s doc below for why the label's own padding alone can't track
+        // density. `sm`/`md` SegmentedControls (forms) are untouched, keeping Mantine's own sizing.
+        styles: (_theme, props) => ({
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
             padding: `${SPACE_FIXED.segmentedTrackInset}px`,
@@ -759,7 +764,19 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             boxShadow: 'var(--vx-shadow-ctrl)',
             borderRadius: 'var(--vx-radius-tight)',
           },
-        },
+          // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
+          // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as
+          // a type error distinct from the key being absent.
+          ...(props.size === 'ctl'
+            ? {
+                label: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: `calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - ${2 * SPACE_FIXED.segmentedTrackInset}px)`,
+                },
+              }
+            : {}),
+        }),
       }),
       // Track = ink-8%; leader/section fill colors are a per-usage `color` prop (left to consumers).
       Progress: Progress.extend({
@@ -939,10 +956,16 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // body cells is a per-table call-site concern, left to consumers. `--table-border-color`
       // drives row separators AND the opt-in `withTableBorder` outer border — both drop to the
       // hairline (Mantine's default reads gray-3/dark-4 = the STRONG line, too heavy in a card).
+      // Row heights are declared here rather than through `verticalSpacing`, because Mantine derives
+      // BOTH `th` and `td` padding from that one prop — a 36/40 pair (label band over roomier data
+      // rows) is not expressible by it at all. `height` on a table cell behaves as a MINIMUM, so a
+      // wrapping cell still grows; `verticalSpacing` keeps working on top of it for a consumer that
+      // wants a denser or looser table than the tier.
       Table: Table.extend({
         classNames: { table: controlsClasses.tableRoot },
         styles: {
           th: {
+            height: spacing.step.tableHeaderHeight,
             fontFamily: 'var(--basalt-font-mono)',
             fontSize: VX.text.micro,
             fontWeight: 500,
@@ -950,6 +973,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             textTransform: 'uppercase',
             color: 'var(--vx-faint)',
           },
+          td: { height: spacing.step.tableRowHeight },
         },
       }),
       // The v9 thumb indicator is a center dot painted in the TRACK color — over the remapped
@@ -1110,6 +1134,57 @@ function familyBridge(data: PaletteData): Record<string, string> {
 }
 
 /**
+ * The `ctl` tier's horizontal inset — one number for a Button, a `FilterPill`, a SegmentedControl
+ * segment and a `kind: 'custom'` Badge, so a home's row reads as one control family
+ * (`docs/CONTROLS-SPEC.md` §3: "the pill: 30px, padding 0 10px"). Not in `SPACE_STEP`: it is a
+ * Mantine size-var value, consumed only by {@link ctlSizeVars}, and it happens to equal
+ * `SPACE.rowInsetX` without being the same concept (that one is a nav/menu ROW's inset).
+ */
+const CTL_PADDING_X = 10
+/** The `ctl` tier's Input vertical inset — 30px box, ~20px line, so 4px a side leaves the border. */
+const CTL_INPUT_PADDING_Y = 4
+/**
+ * A `ctl` SegmentedControl segment's vertical inset, in px. Fractional on purpose, and derived
+ * rather than picked: the label's line box is `VX.text.sm` × `--mantine-line-height-sm` ≈ 21px and
+ * the track adds `SPACE_FIXED.segmentedTrackInset` on each side (2px), so landing the CONTROL on the
+ * 30px `ctl` tier needs (30 − 4 − 21) / 2. Mantine's own `--input-padding-y-xs` is 4.5px for the
+ * same reason — a control tier is a total height, and the halves that make it up need not be whole.
+ */
+const CTL_SEGMENT_PADDING_Y = 2.5
+/** A `ctl` Combobox chevron. Mantine's own `xs` value; restated because it cannot be referenced. */
+const CTL_CHEVRON_SIZE = 14
+/**
+ * The `ctl` tier's Radio/Checkbox indicator box, in px — 16, the SAME square
+ * `theme/icon-slot.module.css` gives every icon in the tier, and for the same reason: a 13.5px
+ * option label needs a mark it reads as part of the row rather than as a control beside it. Mantine's
+ * default is `sm` (20px) and its `md` is 24px, both of which made the popover a column of controls
+ * (`controls/filter-sheet.tsx`'s `SheetOptionList` doc records the sheet's version of the same
+ * finding — there the fix was to remove the indicator entirely).
+ */
+const CTL_TOGGLE_SIZE = 16
+/**
+ * A `ctl` Radio's inner dot. Mantine's own ratio is `size * 0.4` — the literal fallback its
+ * `varsResolver` applies to a NUMERIC size (`Radio/RadioIndicator/RadioIndicator.mjs`), and what its
+ * shipped pairs already encode (10px dot in a 24px `md` box). Derived rather than picked so the dot
+ * stays proportional if the box moves.
+ */
+const CTL_RADIO_DOT_SIZE = CTL_TOGGLE_SIZE * 0.4
+/**
+ * The `ctl` Switch: an 18×30 track with a 12px thumb. Mantine ships no tier between `xs` (16×32,
+ * 12px thumb) and `sm` (20×38, 14px), and neither fits — `xs` is SHORTER than the tier's indicator
+ * box while being twice as wide as it, which reads as a slider rather than a toggle. 18 is one step
+ * over the 16px indicator (a switch must read as the taller control, it carries a moving part), and
+ * 30 is the narrowest track that still shows travel: 30 − 12 thumb − 2×3 padding leaves 12px of it.
+ */
+const CTL_SWITCH_HEIGHT = 18
+const CTL_SWITCH_WIDTH = 30
+const CTL_SWITCH_THUMB_SIZE = 12
+/** The `on`/`off` labels INSIDE a `ctl` switch track, and their inset. Mantine's `xs` pair, which is
+ *  the last tier whose label still fits an 18px track. */
+const CTL_SWITCH_TRACK_LABEL_SIZE = 5
+const CTL_SWITCH_TRACK_LABEL_PADDING = 2
+
+/**
  * The `size="ctl"` / `size="icon"` Mantine size-tier var sets (`docs/CONTROLS-SPEC.md` §5, C5) —
  * scheme-independent, so they live in `cssVariablesResolver`'s `variables` block (`:root`, not
  * `light`/`dark`), declared exactly once regardless of color scheme. Mechanism, verified against
@@ -1131,27 +1206,62 @@ function familyBridge(data: PaletteData): Record<string, string> {
  * use for `size="md"` (see `Input.extend`'s doc above) — so the ctl/icon tier tracks the density
  * knob exactly like every other control height. Paddings, the combobox chevron, and the
  * SegmentedControl/Combobox option padding have no density-tracking token of their own
- * (`docs/CONTROLS-SPEC.md` §5 specifies only the height ladder) — `controlHeightCtl` (30px)
- * coincides with Mantine's own `xs` height at level 0, so those geometrically-proportional values
- * reuse Mantine's shipped `xs` var rather than inventing an unverifiable number; `size="icon"`
- * (24px) has no vertical-padding/chevron consumer (it is ActionIcon-only), so only `--ai-size-icon`
- * is declared for it.
+ * (`docs/CONTROLS-SPEC.md` §5 specifies only the height ladder), so they are declared as literal
+ * values here.
+ *
+ * **They may NOT be declared as `var(--<prefix>-xs)`, and that mistake shipped.** Mantine declares
+ * its `-xs`/`-sm`/… size vars on the COMPONENT ROOT class (`.m_77c9d27d { --button-padding-x-xs:
+ * 14px }` in `Button.css`, `.m_cf365364 { --sc-padding-xs: 2px 6px }` in `SegmentedControl.css`,
+ * and likewise for Input/Combobox/Badge) — never on `:root`. A `-ctl` var declared HERE lives on
+ * `:root`, where `var(--sc-padding-xs)` resolves to nothing, so the whole custom property became
+ * guaranteed-invalid and every property reading it fell back to its INITIAL value: a pill with
+ * `padding: 0`, a SegmentedControl whose segments touched
+ * (`allnewreturningchurnedflagged`), a chevron-less Select. Literal values are the only form that
+ * can resolve at `:root`. Verified live with `getComputedStyle(document.documentElement)
+ * .getPropertyValue('--sc-padding-ctl')` returning `''`.
+ *
+ * `size="icon"` (24px) has no vertical-padding/chevron consumer (it is ActionIcon-only), so only
+ * `--ai-size-icon` is declared for it. The Badge tier exists so a `kind: 'custom'` chip in a home
+ * (`docs/CONTROLS-SPEC.md` §2.1) is the same 30px as the buttons beside it — Mantine's tallest
+ * shipped Badge is 32px `xl`, and none of its tiers is 30.
  */
 function ctlSizeVars(): Record<string, string> {
+  const ctlHeight = 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))'
   return {
-    '--button-height-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
-    '--button-padding-x-ctl': 'var(--button-padding-x-xs)',
-    '--input-height-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
-    '--input-padding-y-ctl': 'var(--input-padding-y-xs)',
-    '--ai-size-ctl': 'calc(var(--vx-space-control-height-ctl) * var(--mantine-scale))',
+    '--button-height-ctl': ctlHeight,
+    '--button-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
+    '--input-height-ctl': ctlHeight,
+    '--input-padding-y-ctl': `calc(${pxRem(CTL_INPUT_PADDING_Y)} * var(--mantine-scale))`,
+    '--ai-size-ctl': ctlHeight,
     '--ai-size-icon': 'calc(var(--vx-space-control-height-widget) * var(--mantine-scale))',
-    '--sc-padding-ctl': 'var(--sc-padding-xs)',
-    '--combobox-option-padding-ctl': 'var(--combobox-option-padding-xs)',
-    '--combobox-chevron-size-ctl': 'var(--combobox-chevron-size-xs)',
+    // A shorthand pair (`<y> <x>`), the shape SegmentedControl's own `--sc-padding-*` vars take.
+    // `y` stays a bare literal (the label's own box height is now enforced by the `size === 'ctl'`
+    // `minHeight` override in `SegmentedControl.extend` above, not by this padding), `x` scales like
+    // every other ctl-tier horizontal inset (`--button-padding-x-ctl`, `--badge-padding-x-ctl`).
+    '--sc-padding-ctl': `${pxRem(CTL_SEGMENT_PADDING_Y)} calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
+    '--combobox-option-padding-ctl': `${pxRem(CTL_SEGMENT_PADDING_Y)} ${pxRem(CTL_PADDING_X)}`,
+    '--combobox-chevron-size-ctl': pxRem(CTL_CHEVRON_SIZE),
+    '--badge-height-ctl': ctlHeight,
+    '--badge-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
+    '--badge-fz-ctl': `calc(${pxRem(VX.text.xs)} * var(--mantine-scale))`,
     // `= VX.text.sm` per `docs/CONTROLS-SPEC.md` §5 — same `calc(<rem> * var(--mantine-scale))`
     // shape Mantine's own `--mantine-font-size-*` vars use.
     '--mantine-font-size-ctl': `calc(${pxRem(VX.text.sm)} * var(--mantine-scale))`,
     '--mantine-line-height-ctl': 'var(--mantine-line-height-sm)',
+    // Radio / Checkbox / Switch — the three components whose DEFAULT (`sm`, a 20px indicator) sat
+    // beside a 13.5px option label in every popover and sheet basalt draws. Every prefix here was
+    // read out of the installed `@mantine/core` source, and `ctl-tier-coverage.test.ts` now scans
+    // those three components too, so a future minor that adds a `getSize` call fails the build
+    // instead of resolving the new var to its initial value. Note there is NO
+    // `--checkbox-icon-size`: Checkbox reads only `checkbox-size` and derives its tick in CSS.
+    '--radio-size-ctl': `calc(${pxRem(CTL_TOGGLE_SIZE)} * var(--mantine-scale))`,
+    '--radio-icon-size-ctl': `calc(${pxRem(CTL_RADIO_DOT_SIZE)} * var(--mantine-scale))`,
+    '--checkbox-size-ctl': `calc(${pxRem(CTL_TOGGLE_SIZE)} * var(--mantine-scale))`,
+    '--switch-height-ctl': `calc(${pxRem(CTL_SWITCH_HEIGHT)} * var(--mantine-scale))`,
+    '--switch-width-ctl': `calc(${pxRem(CTL_SWITCH_WIDTH)} * var(--mantine-scale))`,
+    '--switch-thumb-size-ctl': `calc(${pxRem(CTL_SWITCH_THUMB_SIZE)} * var(--mantine-scale))`,
+    '--switch-label-font-size-ctl': pxRem(CTL_SWITCH_TRACK_LABEL_SIZE),
+    '--switch-track-label-padding-ctl': pxRem(CTL_SWITCH_TRACK_LABEL_PADDING),
   }
 }
 

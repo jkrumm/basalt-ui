@@ -36,7 +36,7 @@ import type {
   SidebarItem,
   SidebarSection,
 } from '../nav/types'
-import { useBasaltSpacing } from '../theme'
+import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedState } from '../state'
 import headerClasses from './app-header.module.css'
 import mobileNavClasses from './app-mobile-nav.module.css'
@@ -155,6 +155,16 @@ export type BasaltShellProps = {
    * menu at four or more (`AppSidebarProps.settingsMenuItems` documents the threshold).
    */
   settingsMenuItems?: SettingsMenuItem[]
+  /**
+   * Forces the footer form instead of taking the count rule above: `'flat'` always renders link
+   * rows, `'menu'` always renders the gear dropdown. `'auto'` (the default) is today's ≤3 → flat
+   * behaviour. Reach for it when the rows are CONTROLS rather than destinations — three of those
+   * (a theme radio group, a devtools switch) read as a widget pile in the footer even though the
+   * count says flat. Full rationale on `AppSidebarProps.settingsMenu`.
+   *
+   * @default 'auto'
+   */
+  settingsMenu?: 'auto' | 'flat' | 'menu'
   /**
    * Optional account row rendered below the settings menu in the sidebar footer (see
    * `SidebarAccount` / `BasaltAccountProps`). Omitting it reproduces today's footer unchanged.
@@ -293,6 +303,7 @@ export function BasaltShell({
   globalActions,
   sidebarBlocks,
   settingsMenuItems,
+  settingsMenu,
   storageKey = 'basalt-sidebar-collapsed',
   collapsed: collapsedProp,
   onCollapsedChange,
@@ -373,6 +384,7 @@ export function BasaltShell({
             onToggleCollapse={toggleCollapse}
             {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
             {...(settingsMenuItems !== undefined && { settingsMenuItems })}
+            {...(settingsMenu !== undefined && { settingsMenu })}
             {...(account !== undefined && { account })}
             {...(search !== undefined && { search })}
           />
@@ -418,21 +430,27 @@ function HeaderGlobalActions({ actions }: { actions: readonly GlobalAction[] }):
     .map(globalActionAsBarAction)
 
   return (
-    <div className={headerClasses.global}>
-      {actions.map((action, index) =>
-        globalActionMobile(action, index) === 'bar' ? (
-          <Fragment key={action.key}>{action.node}</Fragment>
-        ) : (
-          <Box key={action.key} visibleFrom="sm">
-            {action.node}
+    // `CtlSlot` here for the same reason a home wraps its own slot (law C5): `globalActions` are
+    // consumer NODES, so basalt cannot pass them a size — it can only provide the tier they resolve
+    // against. Without it a `<NotificationBell/>`'s internal `ActionIcon` fell back to Mantine's
+    // `md` (28px) beside a 30px page group.
+    <CtlSlot>
+      <div className={headerClasses.global}>
+        {actions.map((action, index) =>
+          globalActionMobile(action, index) === 'bar' ? (
+            <Fragment key={action.key}>{action.node}</Fragment>
+          ) : (
+            <Box key={action.key} visibleFrom="sm">
+              {action.node}
+            </Box>
+          ),
+        )}
+        {!kebabClaimed && more.length > 0 && (
+          <Box hiddenFrom="sm">
+            <OverflowMenu actions={more} trigger="kebab" label="More actions" />
           </Box>
-        ),
-      )}
-      {!kebabClaimed && more.length > 0 && (
-        <Box hiddenFrom="sm">
-          <OverflowMenu actions={more} trigger="kebab" label="More actions" />
-        </Box>
-      )}
-    </div>
+        )}
+      </div>
+    </CtlSlot>
   )
 }

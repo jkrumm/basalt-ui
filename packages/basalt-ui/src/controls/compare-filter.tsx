@@ -10,6 +10,7 @@
 import type { ReactNode } from 'react'
 import type { EnumField, FieldHandle } from '../state'
 import { EnumFilter } from './enum-filter'
+import { SwapGlyph } from './glyphs'
 
 /** The three comparison bases — declare the field as `field.enum(COMPARE_VALUES, 'none')`. */
 export type CompareValue = 'none' | 'previous' | 'year'
@@ -17,13 +18,47 @@ export type CompareValue = 'none' | 'previous' | 'year'
 /** The declared value order, so a consumer's `field.enum` and this control cannot disagree. */
 export const COMPARE_VALUES: readonly CompareValue[] = ['none', 'previous', 'year']
 
+/**
+ * The three option labels basalt names — the other half of "the same on every page instead of three
+ * per app", which this control promised and did not deliver.
+ *
+ * `field.enum` labels an option with the raw VALUE until a consumer calls `store.labels()`, so a
+ * `CompareFilter` over an unlabelled field printed `none` / `previous` / `year` in its popover and,
+ * now that the pill reads the value (see `EnumFilter`'s doc), in the bar too. Every app then wrote
+ * the same three strings into its own `labels()` call, which is three chances to disagree about what
+ * `year` means.
+ *
+ * These are DEFAULTS, not overrides: a field whose label differs from its value has been labelled
+ * deliberately, and that label wins. Detecting it as `label !== value` is exactly the signal
+ * `optionsFor` leaves behind (`state/fields.ts` — `label: map?.[value] ?? value`), so nothing new
+ * has to be threaded through the store to ask the question.
+ */
+export const COMPARE_LABELS: Readonly<Record<CompareValue, string>> = {
+  none: 'No comparison',
+  previous: 'Previous period',
+  year: 'Same period last year',
+}
+
 export type CompareFilterProps = {
   readonly field: FieldHandle<EnumField<CompareValue>>
   /** @default 'Compare' */
   readonly label?: string
+  /** Leading pill icon. Defaults to an arrows-swap glyph — like `RangeFilter`'s calendar, the mark
+   *  is part of what makes the pill legible as a period comparison. */
   readonly icon?: ReactNode
 }
 
 export function CompareFilter({ field, label = 'Compare', icon }: CompareFilterProps): ReactNode {
-  return <EnumFilter field={field} label={label} {...(icon !== undefined && { icon })} />
+  // Read through the handle's own options so a consumer's `labels()` and its option ORDER both
+  // survive; only an UNLABELLED row (label === value) takes basalt's default string.
+  const options = field.options.map((option) =>
+    option.label === option.value && isCompareValue(option.value)
+      ? { value: option.value, label: COMPARE_LABELS[option.value] }
+      : option,
+  )
+  return <EnumFilter field={field} label={label} icon={icon ?? <SwapGlyph />} options={options} />
+}
+
+function isCompareValue(value: string): value is CompareValue {
+  return (COMPARE_VALUES as readonly string[]).includes(value)
 }

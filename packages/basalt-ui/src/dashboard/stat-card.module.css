@@ -14,17 +14,31 @@
   height: 100%;
 }
 
+/*
+ * `flex-end`, not `center`: the sparkline belongs to the HERO ROW, and the hero row is the header
+ * block's last line. Centred against the whole body it floated between the title and the value,
+ * which reads as a third, unrelated element; bottom-aligned to the header block it sits beside the
+ * number it describes, the reference layout. `gap` is the card's own control gap so the trend never
+ * touches a long value.
+ */
 .body[data-placement='right'] {
   flex-direction: row;
-  align-items: center;
+  align-items: flex-end;
+  gap: var(--vx-space-control-gap);
 }
 
 .header {
   min-width: 0;
 }
 
+/*
+ * `flex-shrink: 0` on the header, `1` on the sparkline slot below: the hero value and its delta keep
+ * their width and the TREND gives ground. The other way round, a 4-up KPI grid on a 1440 viewport
+ * ellipsized `$1,294,900` to `$1294.…` in order to keep 72px of bars intact, which is the wrong
+ * thing to protect. The value still carries `overflow: hidden` as the last resort, and `Card` clips.
+ */
 .body[data-placement='right'] .header {
-  flex: 1;
+  flex: 1 0 auto;
   min-width: 0;
 }
 
@@ -34,8 +48,16 @@
   margin-bottom: calc(-1 * var(--mantine-spacing-xs));
 }
 
+/* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
+ * rule and the `< sm` reset below can both reach them) and shrinks below the width before the hero
+ * row does — see the `.header` note above. `min-width: 0` is what lets it. */
 .sparklineRight {
-  flex-shrink: 0;
+  display: flex;
+  flex: 0 1 var(--basalt-stat-sparkline-w, 4.5rem);
+  min-width: 0;
+  height: var(--basalt-stat-sparkline-h, 1.625rem);
+  align-items: flex-end;
+  overflow: hidden;
 }
 
 @media (max-width: 47.99375em) {
@@ -48,7 +70,11 @@
     flex: initial;
   }
 
+  /* The row became a COLUMN, so `flex-basis` is now the main-axis HEIGHT — the 72px width would
+   * become a 72px-tall box around 26px of bars. `flex: none` + the height keeps the bled trend the
+   * same 26px it is beside a hero row. */
   .body[data-placement='right'] .sparklineRight {
+    flex: none;
     margin-top: auto;
     margin-inline: calc(-1 * var(--mantine-spacing-sm));
     margin-bottom: calc(-1 * var(--mantine-spacing-xs));

@@ -636,8 +636,8 @@ export type GraceEntry = { since: string; promote: string; why: string }
  */
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'in-body-page-title': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C8). Its AST twin is the ' +
       'oxlint rule of the SAME id, whose PLUGIN_RULE_GRACE entry carries the same dates — one law, ' +
@@ -645,13 +645,14 @@ export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
       '(the page is named by staticData.title), not a prop edit, so a consumer needs to schedule it.',
   },
   'raw-selection-control': {
-    since: '1.28.0',
-    promote: '1.29.0',
+    since: '1.26.0',
+    promote: '1.27.0',
     why:
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
       'reading in the guard, and the reason this one lands warn rather than error even though its ' +
-      'law is settled. Promotion is gated with the plugin half on the wave-7 consumer run (≤3 waivers).',
+      'law is settled. Promotion is gated with the plugin half on the wave-7 consumer run (≤3 ' +
+      'waivers), and `scripts/check-grace.ts` refuses the 1.27.0 release while the entry is still here.',
   },
 }
 

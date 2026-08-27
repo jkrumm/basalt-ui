@@ -11,7 +11,7 @@ describe('cursor store', () => {
 
     store.set('2026-08-18', 'chart-a')
     expect(calls).toBe(1)
-    expect(store.get()).toEqual({ key: '2026-08-18', source: 'chart-a' })
+    expect(store.get()).toEqual({ key: '2026-08-18', source: 'chart-a', kind: null })
 
     unsubscribe()
     store.set('2026-08-19', 'chart-a')
@@ -42,5 +42,23 @@ describe('cursor store', () => {
     const scoped = createCursorStore()
     scoped.set('2026-08-18', 'chart-a')
     expect(globalCursorStore.get().key).toBeNull()
+  })
+
+  test('a set carrying a different kind notifies — the partition is state, not a filter on the store', () => {
+    // The store is dumb: it broadcasts whatever kind it's handed and never compares it against
+    // anything. Policing "does this kind match mine" is `useChartCursor`'s job, on read.
+    const store = createCursorStore()
+    let calls = 0
+    store.subscribe(() => {
+      calls++
+    })
+
+    store.set('2026-08-18', 'chart-a', 'time')
+    expect(calls).toBe(1)
+    expect(store.get()).toEqual({ key: '2026-08-18', source: 'chart-a', kind: 'time' })
+
+    store.set('2026-08-18', 'chart-a', 'band')
+    expect(calls).toBe(2)
+    expect(store.get()).toEqual({ key: '2026-08-18', source: 'chart-a', kind: 'band' })
   })
 })

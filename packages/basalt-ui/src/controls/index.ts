@@ -21,6 +21,7 @@ export {
   type OverflowMenuProps,
 } from './actions'
 export { SyncButton, formatAge, AGE_REFRESH_MS, type SyncButtonProps } from './sync-button'
+export { ControlGroup, type ControlGroupProps } from './control-group'
 
 // ── Filters + tabs (wave 4) ───────────────────────────────────────────────────────────────────
 // `FilterPill`, `FilterSheet` and the `EnumFilter` body are deliberately NOT here: reaching for
@@ -34,7 +35,13 @@ export {
   type CompareFilterProps,
   type CompareValue,
 } from './compare-filter'
-export { SelectFilter, type SelectFilterProps } from './select-filter'
+export {
+  SelectFilter,
+  type FilterOption,
+  type SelectFilterEnumProps,
+  type SelectFilterProps,
+  type SelectFilterStringProps,
+} from './select-filter'
 export { MultiSelectFilter, type MultiSelectFilterProps } from './multi-select-filter'
 export { SearchFilter, type SearchFilterProps } from './search-filter'
 export { ToggleFilter, type ToggleFilterProps } from './toggle-filter'

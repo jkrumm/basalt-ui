@@ -30,6 +30,13 @@ const local = createLocalStore({
   },
 })
 
+/** A runtime catalogue — the shape both `options` props take (`FilterOption[]`). */
+const PROJECTS = [
+  { value: 'argo', label: 'Argo' },
+  { value: 'linewatch', label: 'Linewatch', disabled: true },
+]
+const CHANNELS = [{ value: 'web', label: 'web · 1.2k' }]
+
 /** Never rendered — the file's product is the type errors below, not a DOM assertion. */
 function Rejected(): ReactNode {
   return (
@@ -56,6 +63,13 @@ function Rejected(): ReactNode {
       <CompareFilter field={local.field.currency} />
       {/* @ts-expect-error `label` is required on SelectFilter — the pill needs a name at rest. */}
       <SelectFilter field={local.field.currency} />
+      {/* A string field declares no values, so `options` is the only possible row source — without
+          it the popover would render empty. Two overloads rather than one union prop type precisely
+          so the message names `options`; see `SelectFilter`'s own doc. */}
+      {/* @ts-expect-error a string field needs `options` — nothing else can supply the rows. */}
+      <SelectFilter field={local.field.q} label="Project" />
+      {/* @ts-expect-error `options` does not widen a MULTI field into a single-select either. */}
+      <SelectFilter field={local.field.channels} label="Channels" options={PROJECTS} />
     </>
   )
 }
@@ -65,6 +79,15 @@ function Accepted(): ReactNode {
   return (
     <>
       <SelectFilter field={local.field.currency} label="Currency" clearable />
+      {/* A runtime catalogue over a closed enum — `options` is optional there. */}
+      <SelectFilter
+        field={local.field.currency}
+        label="Currency"
+        options={[{ value: 'USD', label: 'USD · 1.00' }]}
+      />
+      {/* A string field WITH options — the id set an enum cannot close over. */}
+      <SelectFilter field={local.field.q} label="Project" options={PROJECTS} />
+      <MultiSelectFilter field={local.field.channels} label="All channels" options={CHANNELS} />
       <CompareFilter field={local.field.compare} />
       <MultiSelectFilter field={local.field.channels} label="All channels" noun="channels" />
       <RangeFilter field={local.field.range} />

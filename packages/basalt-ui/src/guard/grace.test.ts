@@ -6,11 +6,16 @@
  * `docs/archive/CONTROLS-SYNTHESIS.md`). Five kinds landed together in the round-4 guard minor and sat
  * at `warn` for five minors before this test existed.
  *
- * `assertGraceLedger` is tested directly against synthetic entries below, since the real
- * `GRACE_PERIOD_KINDS` is empty today (every entry that lived here promoted or moved to
- * `PLUGIN_RULE_ADVISORY`'s guard-side sibling) — an `it.each` over an empty ledger runs zero
- * assertions, which proved nothing about the gate actually firing. The real-ledger check below
- * still runs, so a future entry is covered the moment it lands.
+ * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
+ * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
+ * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
+ * nothing about the gate actually firing. The ledger now carries the two wave-6 control kinds
+ * (`in-body-page-title`, `raw-selection-control`, both `promote: '1.27.0'`), and the real-ledger
+ * check below runs against them.
+ *
+ * This gate measures the version already PUBLISHED, so it can only go red after the release that
+ * shipped a due entry. `scripts/check-grace.ts` is the other end — `scripts/release.sh` runs it
+ * against the version the dry run computed, before the release is cut.
  *
  * Excluded from tsc (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  */
@@ -102,5 +107,43 @@ describe('GRACE_PERIOD_KINDS — version gate (C16)', () => {
     expect(() =>
       assertGraceLedger(GRACE_PERIOD_KINDS as Record<string, GraceEntry>, CURRENT_VERSION),
     ).not.toThrow()
+  })
+})
+
+// ── the release-time half: scripts/check-grace.ts ────────────────────────────
+// Exercised as a PROCESS, because that is how `scripts/release.sh` consumes it — the exit code is
+// the whole interface, and a script that printed the right words with status 0 would gate nothing.
+
+const CHECK_GRACE = resolve(import.meta.dirname, '..', '..', 'scripts', 'check-grace.ts')
+
+function runCheckGrace(...args: string[]): { code: number; stderr: string; stdout: string } {
+  const result = Bun.spawnSync(['bun', CHECK_GRACE, ...args])
+  return {
+    code: result.exitCode,
+    stderr: result.stderr.toString(),
+    stdout: result.stdout.toString(),
+  }
+}
+
+describe('scripts/check-grace.ts', () => {
+  it('passes for a version below every promote', () => {
+    const { code, stdout } = runCheckGrace('1.0.0')
+    expect([code, stdout.includes('clear of all')]).toEqual([0, true])
+  })
+
+  it('refuses a version that has reached a promote, naming the entries', () => {
+    const { code, stderr } = runCheckGrace('9.9.9')
+    expect(code).toBe(1)
+    expect(stderr).toContain('raw-selection-control')
+    expect(stderr).toContain('basalt/control-outside-home')
+  })
+
+  it('refuses the version the wave-6 entries are due in (1.27.0)', () => {
+    expect(runCheckGrace('1.27.0').code).toBe(1)
+  })
+
+  it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
+    expect(runCheckGrace().code).toBe(2)
+    expect(runCheckGrace('not-a-version').code).toBe(2)
   })
 })

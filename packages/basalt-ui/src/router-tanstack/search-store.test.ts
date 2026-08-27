@@ -118,6 +118,47 @@ describe('field kinds — encode / decode / invalid → fallback', () => {
     ).toEqual({ window: 'custom', start: '2026-03-01', end: '2026-03-31' })
   })
 
+  test('range: two range fields sharing default `from`/`to` throws at definition, not at read time', () => {
+    // Every `field.range` defaults `from`/`to` to those literal param names, so a second range
+    // field in the same store would otherwise clobber the first one's dates on every
+    // `validateSearch` — silently, since `flatten` just `Object.assign`s each entry's `toSearch`
+    // over the last. Caught once, at store definition, instead of shipping a lost custom window.
+    expect(() =>
+      createSearchStore({
+        key: 'k-range-collision',
+        fields: {
+          a: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
+          b: field.range({ presets: ['7d', '30d'], fallback: '7d', custom: true }),
+        },
+      }),
+    ).toThrow(/fields 'a' and 'b' both own the URL param 'from'/)
+  })
+
+  test("range: renaming one field's `params` clears the collision", () => {
+    const store = createSearchStore({
+      key: 'k-range-no-collision',
+      fields: {
+        a: field.range({ presets: ['7d', '30d'], fallback: '30d', custom: true }),
+        b: field.range({
+          presets: ['7d', '30d'],
+          fallback: '7d',
+          custom: true,
+          params: { preset: 'bWindow', from: 'bFrom', to: 'bTo' },
+        }),
+      },
+    })
+    expect(
+      store.validateSearch({ a: 'custom', from: '2026-01-01', to: '2026-02-01', bWindow: '7d' }),
+    ).toEqual({
+      a: 'custom',
+      from: '2026-01-01',
+      to: '2026-02-01',
+      bWindow: '7d',
+      bFrom: undefined,
+      bTo: undefined,
+    })
+  })
+
   test('number: coerces a numeric string, clamps to min/max, rejects a non-integer when int', () => {
     const store = createSearchStore({
       key: 'k-number',
@@ -129,6 +170,21 @@ describe('field kinds — encode / decode / invalid → fallback', () => {
     expect(store.validateSearch({ min: -5 })).toEqual({ min: 0 })
     expect(store.validateSearch({ min: 4.2 })).toEqual({ min: 10 })
     expect(store.validateSearch({ min: 'lots' })).toEqual({ min: 10 })
+  })
+
+  test("number: rejects '', whitespace, and hex rather than coercing them to a number", () => {
+    // `Number('')`/`Number(' ')` are `0` and `Number('0x10')` is `16` — none of those strings is
+    // one the codec's own `toSearch` would ever write, so a blank/hand-edited `?min=` link must
+    // fall through to the fallback instead of silently becoming `0` (or `16`).
+    const store = createSearchStore({
+      key: 'k-number-blank',
+      fields: { min: field.number({ fallback: 10 }) },
+    })
+    expect(store.validateSearch({ min: '' })).toEqual({ min: 10 })
+    expect(store.validateSearch({ min: ' ' })).toEqual({ min: 10 })
+    expect(store.validateSearch({ min: '0x10' })).toEqual({ min: 10 })
+    expect(store.validateSearch({ min: '1e3' })).toEqual({ min: 10 })
+    expect(store.validateSearch({ min: '42' })).toEqual({ min: 42 })
   })
 
   test('boolean: takes a real boolean and the two string forms a hand-typed URL carries', () => {

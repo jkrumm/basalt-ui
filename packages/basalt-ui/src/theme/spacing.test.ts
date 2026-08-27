@@ -23,7 +23,7 @@
  * intermediate single derived value of 108, then a responsive PAIR (Decision 3), to its FINAL shape:
  * ONE value, 60, DERIVED as `appShellHeaderHeight + anchors.stackMd`. Deriving it fixed the original
  * 84's drift from the header it was supposed to clear; the `stickyHeaderClearanceMobile` half of the
- * pair was deleted in 1.27.0 along with the two-row mobile header it existed for — the AppShell
+ * pair was deleted in 1.26.0 along with the two-row mobile header it existed for — the AppShell
  * header is one 48px row at every viewport now (law C14, `docs/CONTROLS-SPEC.md` §2.1), so
  * `appShellHeaderMobileHeight` and `appHeaderMobileActionsHeight` went with it. See `deriveSpacing`'s
  * doc in `tokens/palette.ts` for the full rationale. Every value NOT named above is still
@@ -123,7 +123,17 @@ describe('every re-pointed component styles/defaultProps spacing value matches i
   })
 
   test('SegmentedControl root padding = 2 (a density-exempt SPACE_FIXED literal, not a var)', () => {
-    expect(baseTheme.components?.['SegmentedControl']?.styles?.['root']?.['padding']).toBe('2px')
+    // `styles` is function-form (size='ctl' gates a label override — see `theme/index.ts`), not a
+    // flat object, so it has to be called rather than indexed directly.
+    const stylesFn = baseTheme.components?.['SegmentedControl']?.styles as
+      | ((
+          theme: unknown,
+          props: { size?: string },
+          ctx: unknown,
+        ) => Record<string, Record<string, unknown>>)
+      | undefined
+    const resolved = stylesFn?.({}, {}, {})
+    expect(resolved?.['root']?.['padding']).toBe('2px')
   })
 
   test('Timeline defaultProps stays bulletSize: 22, lineWidth: 1', () => {
@@ -371,7 +381,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   // `header`/`navbar` props take numbers, not `var()` strings) — see `spaceDecls`'s doc in
   // `tokens/index.ts` for why a `--vx-space-app-shell-*` declaration would have zero consumers.
   ['appShellHeaderHeight', 48, null],
-  ['appShellNavbarWidth', 216, null],
+  ['appShellNavbarWidth', 256, null],
   ['appShellNavbarRailWidth', 48, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
   // JS-number-only, and for the same two reasons the six above are: `shell/index.tsx` hands
@@ -415,6 +425,10 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['sidebarBlockRowHeight', 32, 'space-sidebar-block-row-height', 'rem'],
   ['controlGap', 6, 'space-control-gap'],
   ['sheetRowHeight', 44, 'space-sheet-row-height', 'rem'],
+  // Applied as JS numbers in `Table.extend`'s `styles.th`/`styles.td` `height`, so — like
+  // `progressBarSize` — neither has a `--vx-space-*` declaration to assert.
+  ['tableHeaderHeight', 36, null],
+  ['tableRowHeight', 40, null],
 ]
 
 describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identity', () => {
@@ -455,6 +469,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
       'chartDotR',
       'progressBarSize',
       'timelineBullet',
+      'tableHeaderHeight',
+      'tableRowHeight',
     ])
     expect(css).not.toContain('--vx-space-sidebar-account-menu-width')
     expect(css).not.toContain('--vx-space-sidebar-settings-menu-width')
@@ -466,6 +482,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
     expect(css).not.toContain('--vx-space-chart-legend-gap')
     expect(css).not.toContain('--vx-space-progress-bar-size')
     expect(css).not.toContain('--vx-space-timeline-bullet')
+    expect(css).not.toContain('--vx-space-table-header-height')
+    expect(css).not.toContain('--vx-space-table-row-height')
   })
 
   test('the sweep table covers every SPACE_STEP key', () => {

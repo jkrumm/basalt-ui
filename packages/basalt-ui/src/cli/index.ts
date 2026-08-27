@@ -5,10 +5,12 @@
  * BasaltConfig, builds a GuardConfig, walks the source roots, calls `checkSource` per file,
  * collects Finding[], groups/reports findings, and returns an exit code.
  *
- * `checkCoverage` asserts 8 invariants: guardKinds ⊆ GUARD_RULES, rule files on disk,
- * skill union ⊆ plugin.json, subpath-export-coverage, exports→SURFACES reverse, globs
- * required for non-empty forbiddenImports, headless Mantine-ban completeness, and
- * optionalPeers peerDependencies/peerDependenciesMeta presence.
+ * `checkCoverage` asserts 11 invariants: guardKinds ⊆ GUARD_RULES, rule files on disk, skill files
+ * on disk, subpath-export-coverage, exports→SURFACES reverse, globs required for non-empty
+ * forbiddenImports, headless Mantine-ban completeness, optionalPeers
+ * peerDependencies/peerDependenciesMeta presence, every plugin rule on exactly one surface, every
+ * guard kind on at least one, and the agent-layer line budgets. See `checkCoverage`'s own JSDoc for
+ * what each one buys.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
  * Claude Code rules + skills, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain
@@ -26,6 +28,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmdirSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -1844,6 +1847,113 @@ function migrateLegacyOxfmt(cwd: string, pkgRoot: string, manifest: Manifest): v
   if (shipped !== null && onDisk === shipped) unlinkSync(legacyAbs)
 }
 
+/**
+ * The two managed NAMESPACES whose membership is derived, not fixed: `RULE_NAMES` and `SKILL_NAMES`
+ * decide which files `managedFiles()` places under them, so a rule or skill that is RETIRED
+ * upstream leaves a file behind in every consumer that ever synced it — and Claude keeps loading it.
+ *
+ * Scoped to these two patterns on purpose, and never applied to the manifest wholesale: several
+ * managed/seed entries are legitimately absent from `managedFiles()` for a run (`lefthook.yml` and
+ * `check.yml` when the package is not the repo root, `src/query-client.ts` when it was relocated,
+ * the scaffolds without their peers). Deleting a dest just because this run did not place it would
+ * remove a consumer's CI workflow on a monorepo.
+ */
+const RETIREABLE_DEST_PATTERNS: readonly RegExp[] = [
+  /^\.claude\/rules\/basalt-[a-z0-9-]+\.md$/,
+  /^\.claude\/skills\/basalt-[a-z0-9-]+\/SKILL\.md$/,
+]
+
+/** A tracked dest inside a derived namespace that this basalt version no longer ships. */
+export function retiredManagedDests(
+  manifest: Manifest,
+  files: readonly ManagedFile[],
+): readonly string[] {
+  const shipped = new Set(files.map((f) => f.dest))
+  return Object.keys(manifest.files)
+    .filter((dest) => !shipped.has(dest))
+    .filter((dest) => RETIREABLE_DEST_PATTERNS.some((re) => re.test(dest)))
+    .toSorted()
+}
+
+/** Outcome of one prune pass — `removed` was deleted, `drifted` was locally edited and left alone. */
+type PruneResult = { removed: string[]; drifted: string[] }
+
+/**
+ * Report a prune pass. Always names the files: a doctrine file DISAPPEARING from a consumer's
+ * `.claude/` is exactly the class of change the sync diff exists to be reviewed, and `9 removed`
+ * with no names is what made the kept-files line a false green before 1.23.0.
+ */
+function reportPrune(pruned: PruneResult): void {
+  if (pruned.removed.length > 0) {
+    console.log(
+      `\nRetired by this basalt-ui version (deleted — they no longer ship):\n` +
+        pruned.removed.map((dest) => `  · ${dest}`).join('\n'),
+    )
+  }
+  if (pruned.drifted.length === 0) return
+  console.log(
+    `\nRetired but locally edited, so left in place — your agent still loads them. Delete them, ` +
+      'or run `basalt-ui sync --force`:\n' +
+      pruned.drifted.map((dest) => `  · ${dest}`).join('\n'),
+  )
+}
+
+/**
+ * Delete the managed rule/skill files this basalt version retired, and drop their manifest entries.
+ *
+ * The 13→6 rule merge (`docs/CONTROLS-SPEC.md` §7) is the case this exists for: nine
+ * `.claude/rules/basalt-*.md` files stopped shipping in one minor, and without this a consumer's
+ * agent would go on reading `basalt-router.md`'s superseded placement doctrine forever, with
+ * `sync --check` reporting green because nothing in the ledger asks about a dest the run no longer
+ * places.
+ *
+ * Same three-way discipline as every other managed unit, so a consumer edit is never discarded
+ * silently: an untouched file (matching its recorded hash, raw or normalized) is deleted and its
+ * entry dropped; a locally-edited one is LEFT in place, reported, and keeps its entry so
+ * `sync --check` stays red and `--force` can still finish the job. `dryRun` is `--check`.
+ */
+function pruneRetiredManagedFiles(
+  cwd: string,
+  manifest: Manifest,
+  files: readonly ManagedFile[],
+  opts: { dryRun?: boolean; force?: boolean } = {},
+): PruneResult {
+  const result: PruneResult = { removed: [], drifted: [] }
+  for (const dest of retiredManagedDests(manifest, files)) {
+    const abs = resolve(cwd, dest)
+    const current = readIfExists(abs)
+    const recorded = manifest.files[dest]
+    const untouched =
+      current === null ||
+      sha256(current) === recorded ||
+      sha256(normalizeForLedger(current)) === recorded
+    if (!untouched && opts.force !== true) {
+      result.drifted.push(dest)
+      continue
+    }
+    result.removed.push(dest)
+    if (opts.dryRun === true) continue
+    delete manifest.files[dest]
+    if (current !== null) unlinkSync(abs)
+    removeEmptyParentDir(abs)
+  }
+  return result
+}
+
+/**
+ * Remove a now-empty `.claude/skills/basalt-x/` directory after its `SKILL.md` was pruned. Silent by
+ * design — a leftover empty directory is cosmetic, and a consumer file sitting beside the skill is a
+ * reason to keep it, not an error to report.
+ */
+function removeEmptyParentDir(fileAbs: string): void {
+  const dir = dirname(fileAbs)
+  try {
+    if (readdirSync(dir).length === 0) rmdirSync(dir)
+  } catch {
+    /* not empty, not readable, or already gone — nothing to clean up */
+  }
+}
+
 /** The frozen `> Managed by basalt-ui (1.9.0).` opener every pre-fix DESIGN.md seed carries. */
 const DESIGN_VERSION_LINE = /^(> Managed by basalt-ui) \(\d+\.\d+\.\d+\)\./m
 
@@ -2512,6 +2622,11 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
     writtenFiles.push(file.dest)
   }
 
+  // A re-`init` over an existing install reconciles the derived namespaces too — otherwise the only
+  // route out of a retired rule file is `sync`, and `init` is what a consumer reaches for after an
+  // upgrade that changed the doctrine set.
+  const pruned = pruneRetiredManagedFiles(cwd, manifest, files)
+
   const mergeLint: MergeLintResult | null =
     scaffoldFlags.mergeLint === true ? mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH) : null
 
@@ -2522,6 +2637,7 @@ export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags =
   console.log(
     `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
   )
+  reportPrune(pruned)
   if (missingSources.length > 0) {
     console.log(
       `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
@@ -2831,6 +2947,16 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
     else created++
   }
 
+  // Retired rules/skills: the derived namespaces (RULE_NAMES / SKILL_NAMES) are the only managed
+  // sets whose MEMBERSHIP moves between versions, so this is where an upstream deletion reaches a
+  // consumer. Counted into `staleForCheck` so `sync --check` is red until it is applied — a rule
+  // file basalt stopped shipping is drift, and the agent goes on reading it otherwise.
+  const pruned = pruneRetiredManagedFiles(cwd, manifest, files, {
+    dryRun: opts.check === true,
+    force: opts.force === true,
+  })
+  staleForCheck += pruned.removed.length + pruned.drifted.length
+
   // Placement notices — informational, never affect the exit code (a skipped tooling seed or a
   // relocated scaffold is a legitimate consumer choice, not a sync failure).
   if (!placement.isPackageRepoRoot) {
@@ -2887,6 +3013,13 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       console.error('basalt-ui sync --check: locally-drifted managed files:')
       for (const l of driftLines) console.error(l)
     }
+    const retired = [...pruned.removed, ...pruned.drifted]
+    if (retired.length > 0) {
+      console.error(
+        `basalt-ui sync --check: ${retired.length} retired rule/skill file(s) still present: ` +
+          `${retired.join(', ')} — run \`basalt-ui sync\`.`,
+      )
+    }
     if (staleForCheck > 0) {
       console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
       return 1
@@ -2901,8 +3034,9 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
 
   console.log(
     `basalt-ui sync: ${updated} updated, ${created} created, ${recreated} recreated, ` +
-      `${skippedDrift} skipped (drift).`,
+      `${skippedDrift} skipped (drift), ${pruned.removed.length} retired.`,
   )
+  reportPrune(pruned)
   if (driftLines.length > 0) {
     console.log('Locally-edited files were skipped (run with --force to overwrite):')
     for (const l of driftLines) console.log(l)
@@ -3037,15 +3171,39 @@ export function reconcileCoverageBlocks(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — 9-assertion coverage gate
+// check-coverage — 10-assertion coverage gate
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Assert the 9 SURFACES invariants against the live SURFACES + GUARD_RULES + plugin.json, and
+ * Per-file line budgets for the shipped agent layer (`docs/CONTROLS-SPEC.md` §7's target table).
+ *
+ * A budget, not a guideline: seven `src/**`-scoped rules loaded ~2,000 lines on any source edit
+ * before the merge, and 55% of that text was doctrine nothing enforced. The numbers are the bar the
+ * spec argued, so they live beside the gate that reads them rather than in prose.
+ */
+const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
+  'agent/rules/basalt-tokens.md': 160,
+  'agent/rules/basalt-mantine.md': 180,
+  'agent/rules/basalt-charts.md': 140,
+  'agent/rules/basalt-state.md': 160,
+  'agent/rules/basalt-controls.md': 160,
+  'agent/rules/basalt-batteries.md': 220,
+  'agent/skills/basalt-app/SKILL.md': 100,
+  'agent/skills/basalt-design/SKILL.md': 100,
+  'agent/skills/basalt-charts/SKILL.md': 100,
+  'agent/templates/CLAUDE-block.md.tpl': 40,
+  'agent/templates/DESIGN.md.tpl': 45,
+}
+
+/** The whole-layer bar — a per-file budget alone can be satisfied by adding a seventh rule file. */
+const AGENT_RULE_TOTAL_BUDGET = 1050
+
+/**
+ * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
  * (with `--write` / `--check`) reconcile the generated `<!-- basalt:coverage -->` header of every
  * rule file against SURFACES. Returns 0 when all pass; 1 when any fail (console.error each failure).
  *
- * Nine assertions:
+ * Eleven assertions:
  *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
  *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
  *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
@@ -3064,6 +3222,15 @@ export function reconcileCoverageBlocks(
  *     coverage. Like assertion 7 this reads SURFACES only: whether the plugin really registers
  *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`, which a
  *     shipped CLI running from a consumer's node_modules cannot do.
+ * 10. Every shipped agent-layer file is inside its line budget, and the six rules are inside the
+ *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_RULE_TOTAL_BUDGET`).
+ * 11. Every `GUARD_RULES` kind appears on at least one doctrine surface — assertion 9's twin for
+ *     the text lane. Without it a kind could ship, be documented as a law in the spec, and be
+ *     omitted from every generated coverage header, which is how two wave-6 kinds left
+ *     `agent/rules/basalt-controls.md` printing "guard kinds — none" (D8). Unlike 9 this is
+ *     one-directional: a kind may legitimately appear on SEVERAL surfaces (`raw-hex` is on
+ *     `./charts` and `./tokens`), because a text scan is not partitioned by subpath the way a
+ *     plugin rule id is.
  *
  * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
  * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
@@ -3238,6 +3405,43 @@ export function checkCoverage(flags: readonly string[] = []): number {
     )
   }
 
+  // ── Assertion 10: the agent layer stays inside its line budgets ─────────────
+  // The budgets ARE the doctrine (docs/CONTROLS-SPEC.md §7): thirteen rules reached 4,177 lines by
+  // growing a few lines at a time, each addition locally reasonable, and the only thing that
+  // notices is a number nobody is checking. A rule over budget is over budget in the commit that
+  // did it, not four minors later.
+  for (const [rel, budget] of Object.entries(AGENT_LINE_BUDGETS)) {
+    const abs = resolve(pkgRoot, rel)
+    if (!existsSync(abs)) continue // assertions 2/3 already report a missing rule or skill
+    const lines = readFileSync(abs, 'utf8').split('\n').length - 1
+    if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
+  }
+  const ruleTotal = RULE_NAMES.reduce((sum, rule) => {
+    const abs = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
+    return existsSync(abs) ? sum + readFileSync(abs, 'utf8').split('\n').length - 1 : sum
+  }, 0)
+  if (ruleTotal > AGENT_RULE_TOTAL_BUDGET) {
+    failures.push(
+      `agent/rules/*.md: ${ruleTotal} lines total exceeds the ${AGENT_RULE_TOTAL_BUDGET}-line budget`,
+    )
+  }
+
+  // ── Assertion 11: every guard kind maps to at least one surface ──────────────
+  // The guard-kind twin of assertion 9. Assertion 1 already checks the other direction (no surface
+  // names a kind that does not exist); this one catches the kind nobody claims, whose coverage
+  // header therefore under-reports the lane that actually enforces it.
+  const surfacedGuardKinds = new Set<string>()
+  for (const spec of doctrineSpecs) {
+    for (const kind of spec.guardKinds) surfacedGuardKinds.add(kind)
+  }
+  for (const kind of Object.keys(GUARD_RULES)) {
+    if (surfacedGuardKinds.has(kind)) continue
+    failures.push(
+      `Guard kind '${kind}' maps to no surface — add it to one surface's guardKinds so the ` +
+        `generated coverage headers name it`,
+    )
+  }
+
   // ── Coverage headers (--write / --check) ─────────────────────────────────────
   const write = flags.includes('--write')
   const check = flags.includes('--check')
@@ -3255,7 +3459,7 @@ export function checkCoverage(flags: readonly string[] = []): number {
   }
 
   if (failures.length === 0) {
-    console.log('✓ check-coverage: all 9 assertions pass.')
+    console.log('✓ check-coverage: all 11 assertions pass.')
     return 0
   }
 

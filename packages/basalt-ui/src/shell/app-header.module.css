@@ -1,7 +1,7 @@
 /* App-shell top bar layout. ONE 48px row on every viewport —
  * [breadcrumb] ········ [page bar row 1] | [global actions].
  *
- * The pre-1.27.0 mobile layout wrapped to a second, always-reserved row for the page actions and
+ * The pre-1.26.0 mobile layout wrapped to a second, always-reserved row for the page actions and
  * scrolled it sideways. Both are gone (law C7 and law C14): the header height is now the
  * `appShellHeaderHeight` token at every width, an empty page bar reserves nothing, and overflow
  * folds into `ActionGroup`'s kebab instead of scrolling out of view. */
@@ -19,29 +19,95 @@
   height: 100%;
 }
 
+/*
+ * **Exactly ONE side of the header row is elastic, and it is the side whose content can ellipsize.**
+ * That is the whole rule, and both collisions this header has produced were the same violation of
+ * it from opposite directions.
+ *
+ * First the breadcrumb was `flex-shrink: 0`, so it won the whole width and the primary action
+ * rendered UNDERNEATH it. Then BOTH sides were made shrinkable (`.lead` at `0 1 auto`, `.pageBar` at
+ * `1 1 auto` with `min-width: 0` pushed onto its children) — and at 390px the controls, which cannot
+ * clip, shrank below their content and spilled: a flex container with `justify-content: flex-end`
+ * overflows towards its START, so the sync button painted 30px INTO the page title. Measured in
+ * Chrome: the title spanned 119.7–197.1 and the sync button 158.3–188.3.
+ *
+ * So the lead is now the elastic side (`flex: 1 1 auto`, `min-width: 0`, each crumb truncating via
+ * its own `truncate` prop) and the control side is rigid. A row of buttons that genuinely does not
+ * fit is not a shrinking problem — it is the OVERFLOW FOLD's problem, and basalt already owns that
+ * (law C7: below `sm` row 1 is the primary plus ONE kebab).
+ */
 .lead {
   display: flex;
   align-items: center;
   gap: var(--mantine-spacing-sm);
-  flex-shrink: 0;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-/* The `PageBar` row-1 portal target. Never a scroll container — see the header note above. */
-.pageBar {
-  flex: 1 1 auto;
+/* No `overflow: hidden` here or on `.lead` above: Mantine's focus ring is `outline: 2px solid;
+ * outline-offset: 2px` — OUTSIDE the anchor box — and a wrapper clipping this tightly to the
+ * breadcrumb anchors clipped the ring on every edge, leaving the primary in-shell nav link with no
+ * visible focus indicator. Truncation is already owned by each crumb's own `truncate` prop
+ * (`app-breadcrumbs.tsx`, Mantine's `[data-truncate]` rule sets its own `overflow: hidden;
+ * text-overflow: ellipsis; white-space: nowrap` on the element that actually holds the text) — this
+ * wrapper only needs to let its children shrink. */
+.lead * {
   min-width: 0;
+}
+
+/*
+ * The `PageBar` row-1 portal target — the RIGID side of the row (see `.lead` above for the rule and
+ * for the two collisions that established it). Never a scroll container — see the header note above.
+ *
+ * `flex: 0 0 auto` and no `min-width: 0` anywhere below it, deliberately: a button cannot ellipsize,
+ * so letting this side shrink does not make it narrower, it makes it OVERFLOW — leftwards, into the
+ * breadcrumb, because of the `justify-content: flex-end` two lines down. The previous version pushed
+ * `min-width: 0` onto every child for exactly the reason that comment gave (a `wrap="nowrap"` group's
+ * automatic minimum size is its min-content width and flex will not go below it) — the reasoning was
+ * right and the conclusion was backwards: that floor is the row's protection, not its bug.
+ */
+.pageBar {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--mantine-spacing-xs);
+  gap: var(--vx-space-control-gap);
 }
 
+/*
+ * The shell globals sit at the SAME 30px tier as everything else in the row, and they get there the
+ * same way a home's slot does — `HeaderGlobalActions` wraps this region in a `CtlSlot`, so a
+ * consumer's bare `<ActionIcon>` in `globalActions` defaults to `size="ctl"` with no prop at the call
+ * site (law C5). They rendered at Mantine's `md` 28px before, which is 2px under the page group
+ * beside them: close enough to look like a mistake rather than a tier.
+ *
+ * The gap to the page group is `.bar`'s own `sm`, so the globals read as a separate cluster; between
+ * themselves they use the control gap, like every other adjacent-control pair.
+ */
 .global {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: var(--mantine-spacing-xs);
+  gap: var(--vx-space-control-gap);
   flex-shrink: 0;
+}
+
+.global :global(.mantine-ActionIcon-root) > svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/*
+ * The breadcrumb's ANCESTOR crumbs — hidden below `sm`. See `app-breadcrumbs.tsx` for why: at 390px
+ * the row's elastic side truncated `Overview / Dashboard` to `O… / D…`, which is two ellipses and a
+ * separator in place of the one word that says where the reader is.
+ *
+ * `47.99375em` is the `sm` breakpoint in the exact literal form every other basalt CSS module uses —
+ * a media query cannot resolve a custom property.
+ */
+@media (max-width: 47.99375em) {
+  .crumbAncestors {
+    display: none;
+  }
 }

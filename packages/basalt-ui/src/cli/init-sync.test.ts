@@ -4,8 +4,10 @@
  *  - the legacy `oxfmt.json` → `.oxfmtrc.json` manifest/file migration
  *  - the `basalt doctor` CLI-vs-installed version-mismatch warning
  *  - the `basalt init` first-run hint to run `check-theme` and tune per-rule config
+ *  - pruning managed rule/skill files a newer basalt-ui no longer ships
  */
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -242,5 +244,100 @@ describe('seeds derive from basalt.roots', () => {
     )
     init(dir)
     expect(readFileSync(resolve(dir, 'DESIGN.md'), 'utf8')).toContain('custom/p.ts')
+  })
+})
+
+/**
+ * Retired managed files — the 13→6 rule merge (`docs/CONTROLS-SPEC.md` §7) is the case this exists
+ * for: nine `.claude/rules/basalt-*.md` stopped shipping in one minor, and a consumer that never
+ * loses them goes on reading superseded doctrine with every gate green.
+ */
+describe('sync — retired rules and skills', () => {
+  const RETIRED_RULE = '.claude/rules/basalt-router.md'
+  const RETIRED_SKILL = '.claude/skills/basalt-legacy/SKILL.md'
+
+  /** Seed a real install, then plant a managed file this basalt version no longer ships. */
+  function plantRetired(dest: string, body: string, tracked = true): void {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    writeFixture(dest, body)
+    const manifestAbs = resolve(dir, MANIFEST_PATH)
+    const manifest = JSON.parse(readFileSync(manifestAbs, 'utf8')) as {
+      files: Record<string, string>
+    }
+    // The raw-hash ledger path — what a pre-normalization CLI recorded, and enough to prove
+    // "untouched since basalt wrote it" without reaching into the module's private normalizer.
+    if (tracked) manifest.files[dest] = createHash('sha256').update(body, 'utf8').digest('hex')
+    writeFixture(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`)
+  }
+
+  function manifestFiles(): Record<string, string> {
+    return (
+      JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')) as {
+        files: Record<string, string>
+      }
+    ).files
+  }
+
+  it('deletes an untouched retired rule file and drops its manifest entry', () => {
+    plantRetired(RETIRED_RULE, '# superseded by basalt-state.md\n')
+    const { code, log } = capture(() => sync({}, dir))
+    expect(code).toBe(0)
+    expect(existsSync(resolve(dir, RETIRED_RULE))).toBe(false)
+    expect(manifestFiles()[RETIRED_RULE]).toBeUndefined()
+    expect(log).toContain(RETIRED_RULE)
+    // The six live rules are untouched by the prune.
+    expect(existsSync(resolve(dir, '.claude/rules/basalt-state.md'))).toBe(true)
+  })
+
+  it('deletes a retired skill and removes the now-empty skill directory', () => {
+    plantRetired(RETIRED_SKILL, '---\nname: basalt-legacy\n---\n')
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, RETIRED_SKILL))).toBe(false)
+    expect(existsSync(resolve(dir, '.claude/skills/basalt-legacy'))).toBe(false)
+    expect(existsSync(resolve(dir, '.claude/skills/basalt-app/SKILL.md'))).toBe(true)
+  })
+
+  it('leaves a locally-edited retired rule in place, keeps its entry, and says so', () => {
+    plantRetired(RETIRED_RULE, '# shipped body\n')
+    writeFixture(RETIRED_RULE, '# shipped body\n\nplus a local paragraph nobody else wrote\n')
+    const { code, log } = capture(() => sync({}, dir))
+    expect(code).toBe(0)
+    expect(existsSync(resolve(dir, RETIRED_RULE))).toBe(true)
+    expect(manifestFiles()[RETIRED_RULE]).toBeDefined()
+    expect(log).toContain('locally edited')
+  })
+
+  it('--force deletes a locally-edited retired rule', () => {
+    plantRetired(RETIRED_RULE, '# shipped body\n')
+    writeFixture(RETIRED_RULE, '# shipped body\n\nlocal edit\n')
+    capture(() => sync({ force: true }, dir))
+    expect(existsSync(resolve(dir, RETIRED_RULE))).toBe(false)
+    expect(manifestFiles()[RETIRED_RULE]).toBeUndefined()
+  })
+
+  it('--check reports a retired rule, exits 1, and writes nothing', () => {
+    plantRetired(RETIRED_RULE, '# superseded\n')
+    const { code, log } = capture(() => sync({ check: true }, dir))
+    expect(code).toBe(1)
+    expect(log).toContain('retired rule/skill file(s) still present')
+    expect(existsSync(resolve(dir, RETIRED_RULE))).toBe(true)
+    expect(manifestFiles()[RETIRED_RULE]).toBeDefined()
+  })
+
+  it('never prunes a tracked dest outside the rules/skills namespaces', () => {
+    // `src/routes/__root.tsx` is legitimately absent from `managedFiles()` whenever the router or
+    // query peer is missing — pruning on "this run did not place it" would delete a real scaffold.
+    plantRetired('src/routes/__root.tsx', 'export const Route = null\n')
+    capture(() => sync({}, dir))
+    expect(existsSync(resolve(dir, 'src/routes/__root.tsx'))).toBe(true)
+    expect(manifestFiles()['src/routes/__root.tsx']).toBeDefined()
+  })
+
+  it('init prunes a retired rule too', () => {
+    plantRetired(RETIRED_RULE, '# superseded\n')
+    const { log } = capture(() => init(dir))
+    expect(existsSync(resolve(dir, RETIRED_RULE))).toBe(false)
+    expect(log).toContain('no longer ship')
   })
 })

@@ -125,3 +125,59 @@ describe('SyncButton', () => {
     expect(document.querySelector('[data-basalt-sync-scope="global"]')).not.toBeNull()
   })
 })
+
+/**
+ * The shape per scope. `scope` used to be documentation only; it now picks the form, because the
+ * shell header has no room for a labelled button beside the breadcrumb, `PageBar` row 1 and every
+ * other global action — and a page bar does (spec §3, law C12).
+ */
+describe('the shape follows the scope', () => {
+  test('global renders an ActionIcon with no label text at any width', () => {
+    renderSync({ scope: 'global', label: 'Sync all' })
+    const button = screen.getByRole('button')
+    // Mantine's own class names are static strings (unlike a CSS-module hash), so which PRIMITIVE
+    // rendered is assertable — and it is the whole difference between the two forms.
+    expect(button.classList.contains('mantine-ActionIcon-root')).toBe(true)
+    // Icon-only on EVERY viewport, so there is no text to hide with a media query in the first
+    // place: the label reaches the user as the accessible name only.
+    expect(button.textContent).toBe('')
+    expect(screen.getByRole('button', { name: 'Sync all' })).toBeDefined()
+  })
+
+  test('a global button carries no rendered age either — the tooltip is its only home', () => {
+    renderSync({ scope: 'global', lastCompletedAt: Date.now() - 4 * 60_000 })
+    expect(screen.getByRole('button').textContent).toBe('')
+  })
+
+  test('page renders the labelled Button, and is named even once the label is hidden below sm', () => {
+    renderSync({ scope: 'page' })
+    const button = screen.getByRole('button')
+    expect(button.classList.contains('mantine-Button-root')).toBe(true)
+    expect(button.textContent).toBe('Sync')
+    // jsdom evaluates no media query, so the `display: none` below `sm` is not observable here —
+    // what IS observable is the half that makes it safe: `display: none` text leaves the
+    // accessibility tree, so the name has to come from `aria-label`, not from the children.
+    expect(button.getAttribute('aria-label')).toBe('Sync')
+  })
+
+  test('both scopes fold an error into the accessible name, not only into the tone', () => {
+    renderSync({ scope: 'global', error: 'Upstream 503' })
+    expect(screen.getByRole('button', { name: 'Sync — Upstream 503' })).toBeDefined()
+  })
+
+  test('a global button refuses a second click while syncing, exactly as the page form does', () => {
+    let presses = 0
+    renderSync({
+      scope: 'global',
+      syncing: true,
+      onSync: () => {
+        presses += 1
+      },
+    })
+    const button = screen.getByRole('button')
+    expect(button.getAttribute('aria-disabled')).toBe('true')
+    expect(button.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(button)
+    expect(presses).toBe(0)
+  })
+})

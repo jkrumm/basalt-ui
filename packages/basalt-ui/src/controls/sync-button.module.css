@@ -33,8 +33,31 @@
   font-size: var(--vx-text-xs);
 }
 
+/*
+ * `scope: 'page'` below `sm`: the label and the age go, the glyph stays, and the button collapses
+ * to the square icon form (spec §3, "icon-only, age in tooltip"). Hidden, not unmounted — a second
+ * mount under `hiddenFrom` is exactly the responsive twin law C9 forbids, which is also why the
+ * accessible name lives on `aria-label` rather than in this text.
+ *
+ * Three declarations, because Mantine's Button spends its width in three places: `--button-padding-x`
+ * (the inline padding, which `[data-with-left-section]` divides by 1.5), the left section's own
+ * `margin-inline-end` (a fixed `--mantine-spacing-xs`, not a variable, so it takes a rule), and the
+ * width itself, pinned to the `ctl` height so the box is square. This module is unlayered, so it
+ * outranks `@layer mantine` regardless of specificity.
+ */
 @media (max-width: 47.99375em) {
+  .label,
   .age {
     display: none;
+  }
+
+  .pageButton {
+    --button-padding-x: 0;
+
+    width: calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1));
+  }
+
+  .pageButton :global(.mantine-Button-section[data-position='left']) {
+    margin-inline-end: 0;
   }
 }

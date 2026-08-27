@@ -194,7 +194,7 @@ describe('sidebar blocks — Show more', () => {
 /**
  * The fold keys are a CONTRACT, not an implementation detail: a consumer mirroring the state reads
  * them with `readPersistedValue` from `basalt-ui/state`, and renaming one silently resets every
- * user's sidebar. Section folds were a `useState` keyed by label through 1.27.0 — every reload
+ * user's sidebar. Section folds were a `useState` keyed by label through 1.25.0 — every reload
  * re-opened a section the user had closed.
  */
 describe('sidebar blocks — persisted folds', () => {
@@ -402,6 +402,37 @@ describe('settingsMenuItems — flat at three or fewer', () => {
     renderSidebar({})
     expect(screen.queryByLabelText('Settings')).toBeNull()
   })
+
+  /**
+   * The count is not the whole question — three rows that are each a control (a theme radio group,
+   * a devtools switch) read as a widget pile flat, and the count rule cannot see the difference.
+   * `settingsMenu` is that override and nothing more: it moves the form, never the entries.
+   */
+  describe('settingsMenu forces the form', () => {
+    test("'menu' collapses two entries into the gear dropdown", async () => {
+      renderSidebar({ settingsMenuItems: three.slice(0, 2), settingsMenu: 'menu' })
+      expect(screen.queryByText('Integrations')).toBeNull()
+      fireEvent.click(screen.getByLabelText('Settings'))
+      await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+      expect(screen.getByText('Integrations')).toBeTruthy()
+    })
+
+    test("'flat' keeps four entries as four link rows", () => {
+      renderSidebar({
+        settingsMenuItems: [...three, { key: 'devtools', label: 'Devtools', onClick: () => {} }],
+        settingsMenu: 'flat',
+      })
+      // No dropdown to open — every entry is its own row, and the gear trigger is not one of them.
+      expect(document.querySelector('[role="menu"]')).toBeNull()
+      expect(screen.getByText('Devtools')).toBeTruthy()
+      expect(screen.getByText('Integrations')).toBeTruthy()
+    })
+
+    test("'auto' is the default — the count rule, unchanged", () => {
+      renderSidebar({ settingsMenuItems: three, settingsMenu: 'auto' })
+      expect(screen.getByText('Integrations')).toBeTruthy()
+    })
+  })
 })
 
 describe('search.actions', () => {
@@ -433,5 +464,46 @@ describe('search.actions', () => {
       search: { onOpen: () => {}, actions: [{ key: 'new', label: 'New note' }] },
     })
     expect(screen.getByLabelText('New note').textContent).toBe('N')
+  })
+})
+
+describe('nav item active/ancestor state (useNav exclusivity — router-tanstack/use-nav.test.tsx)', () => {
+  test('only the active row carries aria-current="page"', () => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [
+            { key: 'home', label: 'Home', icon: null, active: true },
+            { key: 'charts', label: 'Charts', icon: null, active: false },
+          ],
+        },
+      ],
+    })
+    expect(screen.getByText('Home').closest('a')?.getAttribute('aria-current')).toBe('page')
+    expect(screen.getByText('Charts').closest('a')?.hasAttribute('aria-current')).toBe(false)
+  })
+
+  test('an ancestor row carries data-ancestor and no aria-current', () => {
+    renderSidebar({
+      sections: [
+        {
+          label: 'Main',
+          items: [
+            {
+              key: 'dashboard',
+              label: 'Dashboard',
+              icon: null,
+              active: false,
+              ancestor: true,
+              children: [{ key: 'sessions', label: 'Sessions', icon: null, active: true }],
+            },
+          ],
+        },
+      ],
+    })
+    const dashboardAnchor = screen.getByText('Dashboard').closest('a')
+    expect(dashboardAnchor?.hasAttribute('data-ancestor')).toBe(true)
+    expect(dashboardAnchor?.hasAttribute('aria-current')).toBe(false)
   })
 })

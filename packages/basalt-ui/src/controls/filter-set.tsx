@@ -9,9 +9,11 @@
  * reasoning as the charts' `autoMargin`), not on a guessed pill width.
  *
  * **Mobile (`< sm`).** The first `inline` children stay pills; every child — inline ones included —
- * also renders its full-width sheet form inside the `Filters (n)` Drawer. `n` is DERIVED: each
- * filter registers `{ isActive, reset }` with this component (`filter-context.tsx`), so `FilterSet`
- * never needs to be told which fields its children hold, and `Reset all` reaches all of them.
+ * also renders its full-width sheet form inside the `Filters (n)` Drawer — which exists only when
+ * the budget folded at least one child away (one filter at `inline: 1` gets no pill at all). `n` is
+ * DERIVED: each filter registers `{ isActive, reset }` with this component (`filter-context.tsx`),
+ * so `FilterSet` never needs to be told which fields its children hold, and `Reset all` reaches all
+ * of them.
  *
  * **Two mounts of the same children, one census.** The row keeps every child mounted on every
  * viewport (hidden slots are `display: none`, never unmounted), so it is the single registration
@@ -35,6 +37,7 @@ import classes from './controls.module.css'
 import { FilterSetScope, useFilterCensus } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { FilterSheet } from './filter-sheet'
+import { FunnelGlyph } from './glyphs'
 
 /** Width reserved for the `+N` pill once folding is known to be necessary. */
 const FOLD_PILL_WIDTH = 52
@@ -70,6 +73,11 @@ export function FilterSet({ children, inline = 1 }: FilterSetProps): ReactNode {
   if (items.length === 0) return null
 
   const folded = items.slice(fit)
+  // Below `sm` the sheet is the ONLY way to reach a child past the `inline` budget — so with every
+  // child already inline (one filter at the default budget) it opens a drawer holding a copy of
+  // what is on screen, under a pill that costs the row its width for nothing. The trigger exists
+  // when something is actually folded away, and not before (law C14's reading of the mobile row).
+  const anyFoldedOnMobile = items.length > inline
 
   return (
     <>
@@ -110,20 +118,25 @@ export function FilterSet({ children, inline = 1 }: FilterSetProps): ReactNode {
           </div>
         </FilterPill>
 
-        <FilterPill
-          label={activeCount > 0 ? `Filters (${activeCount})` : 'Filters'}
-          active={activeCount > 0}
-          className={classes.sheetPill}
-          hideGlyph
-          onClick={openSheet}
-        />
+        {anyFoldedOnMobile && (
+          <FilterPill
+            label={activeCount > 0 ? `Filters (${activeCount})` : 'Filters'}
+            active={activeCount > 0}
+            icon={<FunnelGlyph />}
+            className={classes.sheetPill}
+            hideGlyph
+            onClick={openSheet}
+          />
+        )}
       </div>
 
-      <FilterSheet opened={sheetOpened} onClose={closeSheet} onResetAll={resetAll}>
-        <FilterSetScope surface="sheet" registry={null}>
-          {items}
-        </FilterSetScope>
-      </FilterSheet>
+      {anyFoldedOnMobile && (
+        <FilterSheet opened={sheetOpened} onClose={closeSheet} onResetAll={resetAll}>
+          <FilterSetScope surface="sheet" registry={null}>
+            {items}
+          </FilterSetScope>
+        </FilterSheet>
+      )}
     </>
   )
 }

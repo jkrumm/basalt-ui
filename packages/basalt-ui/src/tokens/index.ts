@@ -506,7 +506,7 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-stack-xl', `${space.anchors.stackXl}px`),
     // The CSS-module spacing sweep's one-offs (docs/STATUS.md) — same single-source reasoning,
     // grouped to match `SPACE_STEP_BASE`'s own grouping in tokens/palette.ts.
-    // ONE value at every viewport since 1.27.0 — the AppShell header is a single 48px row (law
+    // ONE value at every viewport since 1.26.0 — the AppShell header is a single 48px row (law
     // C14), so the `-mobile` override of the old Decision-3 responsive pair is gone.
     decl('space-sticky-header-clearance', `${space.step.stickyHeaderClearance}px`),
     decl('space-nav-icon-gap', `${space.step.navIconGap}px`),

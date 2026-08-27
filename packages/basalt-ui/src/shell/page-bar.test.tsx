@@ -16,6 +16,8 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { BasaltShell, PageBar } from './index'
 import type { SidebarSection } from './index'
 
@@ -46,6 +48,13 @@ function installFakeResizeObserver(): void {
     disconnect(): void {}
   }
   window.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver
+}
+
+/** Every element measures `height` — the layout happy-dom never evaluates, for the whole tree. */
+function stubEveryRect(height: number): void {
+  Element.prototype.getBoundingClientRect = function rect() {
+    return { height, width: 0, top: 0, left: 0, right: 0, bottom: height, x: 0, y: 0 } as DOMRect
+  }
 }
 
 function stubHeight(node: HTMLElement, height: number): void {
@@ -244,5 +253,64 @@ describe('page-bar.module.css', () => {
     // Without this the overlay is clipped back to the 30px box and law C15's 36px target does not
     // exist at all, which no token assertion can catch.
     expect(decls).toMatch(/:not\(\[data-loading\]\)[\s\S]{0,80}overflow: visible/)
+  })
+})
+
+/**
+ * The height has to exist at the FIRST paint, not one frame later: `Section`'s scroll anchor reads
+ * `var(--basalt-page-bar-h, 0px)`, so a cold load of `/page#anchor` that scrolls before the property
+ * lands leaves the anchored heading under the sticky bar.
+ *
+ * The probe is what makes the timing observable. Passive effects run child-first, so a probe INSIDE
+ * the bar reads the property before the bar's own passive effect would have written it — it can only
+ * see `44px` if the publish happened in the layout phase.
+ */
+describe('the height var is published before first paint', () => {
+  const nativeRect = Element.prototype.getBoundingClientRect
+
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = nativeRect
+  })
+
+  test('a passive effect inside the bar already sees --basalt-page-bar-h', () => {
+    const seen: { current: string | null } = { current: null }
+    function Probe(): ReactNode {
+      useEffect(() => {
+        seen.current = document.documentElement.style.getPropertyValue(HEIGHT_VAR)
+      }, [])
+      return <span data-testid="row2" />
+    }
+
+    stubEveryRect(44)
+    render(
+      <MantineProvider>
+        <PageBar title="linewatch" tabs={<Probe />} />
+      </MantineProvider>,
+    )
+
+    expect(seen.current).toBe('44px')
+  })
+})
+
+describe('className reaches the bar root in both forms', () => {
+  test('shell-less: it joins the standalone root, keeping the module class', () => {
+    render(
+      <MantineProvider>
+        <PageBar title="linewatch" tabs={<span data-testid="row2" />} className="lw-bleed" />
+      </MantineProvider>,
+    )
+    const bar = document.querySelector<HTMLElement>('[data-basalt-page-bar="standalone"]')
+    expect(bar?.classList.contains('lw-bleed')).toBe(true)
+  })
+
+  test('in a shell: it joins row 2s sticky wrapper, not the portalled row 1', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="row2" />} className="argo-bleed" />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(shellRow()?.classList.contains('argo-bleed')).toBe(true)
   })
 })

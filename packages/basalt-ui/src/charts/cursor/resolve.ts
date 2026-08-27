@@ -8,18 +8,50 @@
  * PARSED domain instead makes that automatic (`docs/CHARTS-SPEC.md` §3).
  */
 
+/** Numeric-string test — shared by `parseKey` and `classifyDomain` so a key can never be numeric
+ * to one and not the other. */
+function isNumericString(key: string): boolean {
+  return /^[-+]?\d*\.?\d+$/.test(key) && Number.isFinite(Number(key))
+}
+
+/** `Date.parse`-able test — shared by `parseKey` and `classifyDomain`, same reason. */
+function isDateParseableString(key: string): boolean {
+  return !Number.isNaN(Date.parse(key))
+}
+
 /**
  * A key as a comparable number: numeric-looking strings as numbers, everything else as a date.
  * Neither (a plain category like "Direct") → null, which degrades to exact-match only — correct,
  * since "nearest category" is meaningless.
  */
 export function parseKey(key: string): number | null {
-  if (/^[-+]?\d*\.?\d+$/.test(key)) {
-    const n = Number(key)
-    return Number.isFinite(n) ? n : null
-  }
-  const t = Date.parse(key)
-  return Number.isNaN(t) ? null : t
+  if (isNumericString(key)) return Number(key)
+  return isDateParseableString(key) ? Date.parse(key) : null
+}
+
+/** The x-domain families the shared cursor partitions on, derived from a chart's own keys — never
+ * a prop, never `ChartCursorScope`. A chart's kind is stamped on every broadcast it makes, and a
+ * receiving chart ignores any broadcast whose kind differs from its own — so a category chart can
+ * never be mistaken for a time chart just because both domains happen to parse. */
+export type DomainKind = 'time' | 'linear' | 'band'
+
+/**
+ * Classify a domain by the SAME parse precedence `parseKey` applies to each key, so a domain can
+ * never be classified one way and resolved another:
+ *
+ * - empty domain → `'band'` (nothing to share).
+ * - every key numeric (same test `parseKey` tries first) → `'linear'`.
+ * - otherwise every key `Date.parse`-able (same test `parseKey` falls back to) → `'time'`.
+ * - otherwise → `'band'` (categories, or a mixed domain).
+ *
+ * Ordering matters and mirrors `parseKey` exactly: a domain of bare years like `"2026"` is numeric
+ * FIRST, so it classifies `'linear'`, not `'time'`, even though every value is also a valid date.
+ */
+export function classifyDomain(keys: readonly string[]): DomainKind {
+  if (keys.length === 0) return 'band'
+  if (keys.every(isNumericString)) return 'linear'
+  if (keys.every(isDateParseableString)) return 'time'
+  return 'band'
 }
 
 /**

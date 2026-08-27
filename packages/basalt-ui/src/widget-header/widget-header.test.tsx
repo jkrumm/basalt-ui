@@ -8,7 +8,42 @@
  */
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { WidgetHeader } from './widget-header'
+
+const CSS = readFileSync(join(import.meta.dir, 'widget-header.module.css'), 'utf8')
+
+/** The declaration block of one class in this module — CSS-module hashes are unavailable under
+ *  `bun test`, so the rules themselves are read from the file (same idiom as
+ *  `theme/layout-rhythm-css.test.ts` and `controls/filter-set.test.tsx`). */
+function block(selector: string): string {
+  const start = CSS.indexOf(`${selector} {`)
+  expect(start).toBeGreaterThan(-1)
+  return CSS.slice(start, CSS.indexOf('}', start))
+}
+
+describe('the hero-metric row — value → delta spacing and alignment', () => {
+  test('the value→badge gap is the 8px rhythm step, and a TOKEN so density tracks it', () => {
+    // It shipped as `gap: 4px`. 4px is the rhythm's smallest step — label-to-thing distance — and at
+    // that distance the DeltaBadge read as a superscript hanging off the numeral. A literal would
+    // also have frozen the gap while every other spacing in the header moved with the density knob.
+    const metrics = block('.metrics')
+    expect(metrics).toContain('gap: var(--vx-space-stack-sm)')
+    expect(metrics).not.toContain('gap: 4px')
+    expect(metrics).not.toMatch(/gap:\s*\d/)
+  })
+
+  test('the badge is CENTRED on the value, not baseline-aligned to it', () => {
+    // A DeltaBadge is a padded box with an 11.5px mono label; aligning its TEXT baseline to a 24px
+    // KPI numeral's baseline put the box itself low — top edge under the numeral's x-height, bottom
+    // edge hanging below its baseline. The `count` tag in the title row already centres for the
+    // same reason.
+    const metrics = block('.metrics')
+    expect(metrics).toContain('align-items: center')
+    expect(metrics).not.toContain('align-items: baseline')
+  })
+})
 
 describe('tier picks the heading level', () => {
   test('section renders an h2', () => {
