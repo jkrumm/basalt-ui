@@ -158,11 +158,12 @@ export function CbbiPanel({ latest, bins }: { latest: CbbiRow; bins: HistogramBi
         </Stack>
       </Section>
 
-      <Section title="Display" subtitle="The same three fields the page bar owns, at panel width.">
+      <Section title="Display" subtitle="The same four fields the page bar owns, at panel width.">
         <Stack gap="xs" align="flex-start">
           <ToggleFilter field={cbbiFilters.field.zones} label="Zone bands" />
           <SelectFilter field={cbbiFilters.field.scale} label="Price scale" />
           <SelectFilter field={cbbiFilters.field.granularity} label="Bucket" />
+          <SelectFilter field={cbbiFilters.field.layout} label="Layout" />
         </Stack>
       </Section>
 
