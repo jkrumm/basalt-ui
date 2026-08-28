@@ -23,6 +23,18 @@
  *   hint="The 111DMA / 350DMA×2 crossover."
  *   format={(v) => `${v.toFixed(2)}×`}
  * />
+ *
+ * @example
+ * // A COMPOSITION row: the readout states the metric's own reading beside the weight, and the
+ * // switch that governs the row rides the label line — neither is the field's value, so both are
+ * // overrides rather than a `format`.
+ * <SliderControl
+ *   field={weights.field.piCycle}
+ *   label="Pi Cycle Top"
+ *   readout="0.35 · ×1.00"
+ *   end={<Switch checked={on} onChange={toggle} aria-label="Include Pi Cycle Top" />}
+ *   disabled={!on}
+ * />
  */
 import { Slider } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
@@ -43,6 +55,22 @@ export type SliderControlProps = {
    * @default String(v)
    */
   readonly format?: (v: number) => string
+  /**
+   * Replaces the formatted value in the row's readout slot.
+   *
+   * `format` prints the FIELD; this prints whatever the row is actually about. The composition row
+   * that motivated it states a metric's reading beside its weight — `0.35 · ×1.00` — which is one
+   * mono string over two numbers, only one of which this control owns. Prefer `format` whenever the
+   * readout is the field's own value. A FUNCTION form receives the live drag value, so a composed
+   * readout tracks the thumb per frame instead of updating on drag end.
+   */
+  readonly readout?: ReactNode | ((value: number) => ReactNode)
+  /**
+   * A control riding the LABEL line, forwarded to {@link PanelRow.end} — a `Switch` and, by design,
+   * almost nothing else. The composition row's use case is enabling the metric the slider weights:
+   * the toggle governs the row, so it cannot live inside the track it disables.
+   */
+  readonly end?: ReactNode
   readonly disabled?: boolean
 }
 
@@ -51,6 +79,8 @@ export function SliderControl({
   label,
   hint,
   format,
+  readout,
+  end,
   disabled,
 }: SliderControlProps): ReactNode {
   const [value, setValue] = field.use()
@@ -59,8 +89,13 @@ export function SliderControl({
   return (
     <PanelRow
       label={label}
-      readout={(format ?? String)(draft.value)}
+      readout={
+        typeof readout === 'function'
+          ? readout(draft.value)
+          : (readout ?? (format ?? String)(draft.value))
+      }
       {...(hint !== undefined && { hint })}
+      {...(end !== undefined && { end })}
       {...(disabled === true && { disabled: true })}
     >
       <Slider
