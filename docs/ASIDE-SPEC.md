@@ -1,4 +1,4 @@
-# Aside Spec — the right-hand panel region _(DRAFT, 2026-08-28 — nothing here is built)_
+# Aside Spec — the right-hand panel region _(wave 1 delivered 2026-08-28; §3's wave 2+ is still a sketch)_
 
 A persistent right-hand column in `BasaltShell` for the three things a page bar cannot hold: a
 faceted filter panel (Foundry), a grouped inspector of sliders/switches/selects (Lightroom,
@@ -15,9 +15,11 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   `docs/archive/MATURATION-ROADMAP.md:167`). Its rationale was "do not freeze the API of an
   _unforced_ surface" — the surface is now forced by an owner request and a page that needed it
   (G5, G11, G13). The invariant is honoured, not broken.
-- **Desktop and mobile are one declaration.** Below `sm` the aside IS the existing bottom
-  `FilterSheet`: one `Panel (n)` pill in `PageBar` row 2 opens it, sheet rows are 44px (C15). The
-  aside is the ≥ `sm` projection of that sheet, never a second tree (C9).
+- **Desktop and mobile are one declaration.** ONE `PageAside`, one node: from `sm` up it portals
+  into `AppShell.Aside`, below `sm` it renders in flow where the page wrote it — never a second
+  tree (C9). Wave 1 stops there; the `Panel (n)` pill in `PageBar` row 2 opening those children as
+  44px `FilterSheet` rows (C15) is wave 2, and it replaces the in-flow stacking rather than adding
+  a second mount.
 - **Evidence first, then spec, then guards** — the same sequence as the controls effort. Nothing
   in §3 ships until §2 has a second data point (argo or linewatch) beside CBBI.
 
@@ -80,16 +82,17 @@ aside?: { width?: number /* default 300 */; min?: number /* main column floor, G
 - `field.number` gains `step`; `SliderControl` is the bound control (C2), `ctl` tier.
 - Spacing: one `--vx-space-stack` rhythm token replaces the pinned `gap={14}` on every page (G11);
   `Section` inside an aside drops its card inset (flush, hairline-separated — Lightroom, not cards).
-- Mobile: `PageAside` renders nothing below `sm`; `PageBar` row 2 gets a `Panel (n)` pill whose
-  sheet is the aside's children projected as 44px rows — the same `FilterSheet`.
+- Mobile: wave 1 ships the honest half — below `sm` `PageAside` renders its children IN FLOW, where
+  the page wrote them (one node, no twin, C9), so nothing is unreachable on a phone. The `Panel (n)`
+  pill in `PageBar` row 2, projecting those children as 44px `FilterSheet` rows, is wave 2.
 - Not in scope: a resizable split, a left-side aside, more than one aside per page.
 
 ## 4. Waves
 
-| Wave | Delivers                                                                                                                    | Gate                                                                  |
-| ---- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 0    | this page, this document                                                                                                    | `bun run pre` green — done                                            |
-| 1    | `aside` region + `PageAside` portal + persisted fold + mobile sheet projection                                              | `/cbbi` drops `PANEL_WIDTH`, `flexShrink`, the `align` line (G12/G13) |
-| 2    | `AsideRow`, `SliderControl`, `field.number.step`, `Section.switch`, flush aside chrome, rhythm token                        | `/cbbi`'s panel has zero raw Mantine controls (G4/G5/G7/G11)          |
-| 3    | `FacetList`, `Histogram` panel kind                                                                                         | a second consumer page (argo) on the aside                            |
-| 4    | guards (`control-outside-home` section-body branch, `aside-budget`), agent rule `basalt-controls.md` §aside, `MIGRATING.md` | promote per C16                                                       |
+| Wave | Delivers                                                                                                                      | Gate                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 0    | this page, this document                                                                                                      | `bun run pre` green — done                                            |
+| 1    | `aside` region + `PageAside` portal + persisted fold + in-flow mobile stacking — **delivered**                                | `/cbbi` drops `PANEL_WIDTH`, `flexShrink`, the `align` line (G12/G13) |
+| 2    | `AsideRow`, `SliderControl`, `field.number.step`, `Section.switch`, flush aside chrome, rhythm token, mobile sheet projection | `/cbbi`'s panel has zero raw Mantine controls (G4/G5/G7/G11)          |
+| 3    | `FacetList`, `Histogram` panel kind                                                                                           | a second consumer page (argo) on the aside                            |
+| 4    | guards (`control-outside-home` section-body branch, `aside-budget`), agent rule `basalt-controls.md` §aside, `MIGRATING.md`   | promote per C16                                                       |
