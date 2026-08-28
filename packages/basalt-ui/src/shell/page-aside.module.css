@@ -1,0 +1,124 @@
+/*
+ * `PageAside` chrome (`docs/ASIDE-SPEC.md` §0, wave 1).
+ *
+ * Two forms, one class set, told apart by `data-basalt-page-aside`: `"shell"` is the portalled
+ * panel that fills `AppShell.Aside` and owns the region's paint, `"standalone"` is the in-flow node
+ * a phone (or a shell-less app) renders where the page wrote it — plain flow content, no surface of
+ * its own, exactly like the block that used to live in the page's second column.
+ */
+
+/* The `AppShell.Aside` inner node the panel portals into — a bare box, so an UNCLAIMED region
+ * paints nothing at all (law C14). Every pixel of chrome belongs to `.panel` below. */
+.outlet {
+  display: flex;
+  height: 100%;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--vx-space-stack-md, 0.75rem);
+}
+
+/*
+ * The portalled form. The page background (the same surface the sidebar and the sticky page bar
+ * sit on — neither declares one, both inherit the body) plus ONE line on the leading edge: unlike
+ * the sidebar, the aside abuts scrolling page content rather than the window, so the edge has
+ * something to separate. `--vx-divider` is the sidebar's own line token (its child-list guide), not
+ * `--vx-surface-hairline`, which is the card ring.
+ */
+.panel[data-basalt-page-aside='shell'] {
+  flex: 1;
+  height: 100%;
+  gap: 0;
+  background-color: var(--vx-surface-bg);
+  border-left: 1px solid var(--vx-divider);
+}
+
+/*
+ * Header row — one `sectionHeaderHeight` band holding the micro-label and the fold toggle. Same
+ * treatment as the sidebar's own section labels (`app-sidebar.module.css` `.sectionLabel`,
+ * docs/DESIGN-SPEC.md §3), and the same horizontal inset every sidebar region aligns to.
+ */
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vx-space-control-gap);
+  min-height: var(--vx-space-section-header-height, 2.25rem);
+}
+
+.panel[data-basalt-page-aside='shell'] .header {
+  padding-inline: var(--vx-space-row-inset-x);
+}
+
+.title {
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-micro);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vx-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The body scrolls, the header does not — `min-height: 0` is what lets a flex child shrink below
+ * its content and actually become a scroll box. In flow (standalone) it is plain content: no
+ * scroll region, no inset, so it sits in the page's own rhythm. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-md, 0.75rem);
+  min-width: 0;
+}
+
+.panel[data-basalt-page-aside='shell'] .body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-inline: var(--vx-space-row-inset-x);
+  padding-bottom: var(--vx-space-stack-md, 0.75rem);
+}
+
+/* The folded rail: one button, top-aligned, centred in the rail's own width. */
+.rail {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: var(--vx-space-stack-xs, 0.25rem);
+}
+
+/*
+ * The fold toggle — a plain control sized to the `ctl` tier by hand, verbatim from `Section`'s
+ * chevron (`section/section.module.css`), including the `calc(<rem> * var(--mantine-scale))`
+ * reconstruction that keeps it tracking a scaled Button beside it. No `< sm` hit-area overlay
+ * (unlike that chevron): the toggle exists only in the portalled form, which is `sm` and up.
+ */
+.fold {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
+  height: calc(var(--vx-space-control-height-ctl) * var(--mantine-scale, 1));
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: var(--vx-radius-ctrl);
+  color: var(--vx-faint);
+  cursor: pointer;
+}
+
+.fold:hover,
+.fold:focus-visible {
+  color: var(--vx-ink);
+  background: var(--vx-surface-subtle);
+}

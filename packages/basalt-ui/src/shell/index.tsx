@@ -25,6 +25,7 @@ import { MobileNav, accountRowCount } from './app-mobile-nav'
 import { blockRowCount, projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
 import { PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
+import { AsideOutlet, AsideProvider, useAsideRegion } from './page-aside'
 import { OverflowMenu, globalActionAsBarAction, globalActionMobile } from '../controls/actions'
 import type { GlobalAction } from '../controls/actions'
 import type { AccountMenuItem, BasaltAccountProps } from './account-types'
@@ -40,6 +41,7 @@ import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedState } from '../state'
 import headerClasses from './app-header.module.css'
 import mobileNavClasses from './app-mobile-nav.module.css'
+import asideClasses from './page-aside.module.css'
 
 export { AppSidebar, type AppSidebarProps } from './app-sidebar'
 export { NavCountBadge } from './nav-count-badge'
@@ -69,6 +71,7 @@ export {
 } from './mobile-nav-model'
 export { AppBreadcrumbs } from './app-breadcrumbs'
 export { PageBar, type PageBarProps } from './page-bar'
+export { PageAside, type PageAsideProps } from './page-aside'
 
 /**
  * The shared nav vocabulary lives in `src/nav/types.ts` so the headless router bridge can `import
@@ -296,7 +299,23 @@ function collapseStore(key: string): () => readonly [boolean, (next: boolean) =>
   return store
 }
 
-export function BasaltShell({
+/**
+ * The shell's two page-level regions are providers, and both wrap the frame rather than living
+ * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
+ * owns the aside portal, the region CLAIM and the claiming page's fold state — which `ShellFrame`
+ * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
+ */
+export function BasaltShell(props: BasaltShellProps) {
+  return (
+    <PageBarProvider globalActions={props.globalActions ?? []}>
+      <AsideProvider>
+        <ShellFrame {...props} />
+      </AsideProvider>
+    </PageBarProvider>
+  )
+}
+
+function ShellFrame({
   brand,
   sections,
   mobileNav,
@@ -316,6 +335,7 @@ export function BasaltShell({
   // (controls, the search trigger/avatar, nav labels) already track density, so a fixed literal
   // container squeezes progressively worse as density rises.
   const { step } = useBasaltSpacing()
+  const aside = useAsideRegion()
   const [storedCollapsed, setStoredCollapsed] = collapseStore(storageKey)()
   // Controlled/uncontrolled seam (item 19): an explicit `collapsed` prop overrides the internal
   // localStorage-persisted state entirely — the consumer becomes the source of truth.
@@ -344,68 +364,88 @@ export function BasaltShell({
   )
 
   return (
-    <PageBarProvider globalActions={globalActions ?? []}>
-      <AppShell
-        h="100dvh"
-        layout="alt"
-        header={{
-          // ONE height at every width (law C14): nothing reserves a second mobile row any more.
-          height: step.appShellHeaderHeight,
-        }}
-        navbar={{
-          width: {
-            base: step.appShellNavbarWidth,
-            sm: collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth,
-          },
-          breakpoint: 'sm',
-          // No mobile sidebar drawer, ever — the bottom bar is the entire mobile nav.
-          collapsed: { mobile: true },
-        }}
-        // A plain number, NOT a `calc(... + env(safe-area-inset-bottom))` string: Mantine's own
-        // `.footer` rule already adds the inset to both the height and the padding (§2.7).
-        footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
-        padding="sm"
-      >
-        <AppShell.Header px="md" withBorder={false}>
-          <div className={headerClasses.bar}>
-            <div className={headerClasses.lead}>
-              <AppBreadcrumbs {...activeCrumb} />
-            </div>
-            <PageBarOutlet className={headerClasses.pageBar} />
-            <HeaderGlobalActions actions={globalActions ?? []} />
+    <AppShell
+      h="100dvh"
+      layout="alt"
+      header={{
+        // ONE height at every width (law C14): nothing reserves a second mobile row any more.
+        height: step.appShellHeaderHeight,
+      }}
+      navbar={{
+        width: {
+          base: step.appShellNavbarWidth,
+          sm: collapsed ? step.appShellNavbarRailWidth : step.appShellNavbarWidth,
+        },
+        breakpoint: 'sm',
+        // No mobile sidebar drawer, ever — the bottom bar is the entire mobile nav.
+        collapsed: { mobile: true },
+      }}
+      // The aside region (`docs/ASIDE-SPEC.md` §0). It is DECLARED here on every route and costs
+      // nothing until a page mounts a `PageAside` to claim it: unclaimed it is zero-wide and
+      // `collapsed.desktop`, so `--app-shell-aside-offset` stays 0 and the main column is
+      // full-width (law C14 — an empty home renders nothing). There is no `BasaltShellProps`
+      // prop for it on purpose; the ROUTE decides, the same way it decides its page bar.
+      aside={{
+        width: aside.claimed
+          ? aside.folded
+            ? step.appShellAsideRailWidth
+            : step.appShellAsideWidth
+          : 0,
+        breakpoint: 'sm',
+        // Below `sm` there is no region at all — `PageAside` renders its content in the page
+        // flow instead, one node, no responsive twin (law C9).
+        collapsed: { desktop: !aside.claimed, mobile: true },
+      }}
+      // A plain number, NOT a `calc(... + env(safe-area-inset-bottom))` string: Mantine's own
+      // `.footer` rule already adds the inset to both the height and the padding (§2.7).
+      footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
+      padding="sm"
+    >
+      <AppShell.Header px="md" withBorder={false}>
+        <div className={headerClasses.bar}>
+          <div className={headerClasses.lead}>
+            <AppBreadcrumbs {...activeCrumb} />
           </div>
-        </AppShell.Header>
+          <PageBarOutlet className={headerClasses.pageBar} />
+          <HeaderGlobalActions actions={globalActions ?? []} />
+        </div>
+      </AppShell.Header>
 
-        <AppShell.Navbar p={0} withBorder={false}>
-          <AppSidebar
-            brand={brand}
-            sections={sections}
-            collapsed={collapsed}
-            onToggleCollapse={toggleCollapse}
-            {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
-            {...(settingsMenuItems !== undefined && { settingsMenuItems })}
-            {...(settingsMenu !== undefined && { settingsMenu })}
-            {...(account !== undefined && { account })}
-            {...(search !== undefined && { search })}
-          />
-        </AppShell.Navbar>
+      <AppShell.Navbar p={0} withBorder={false}>
+        <AppSidebar
+          brand={brand}
+          sections={sections}
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapse}
+          {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
+          {...(settingsMenuItems !== undefined && { settingsMenuItems })}
+          {...(settingsMenu !== undefined && { settingsMenu })}
+          {...(account !== undefined && { account })}
+          {...(search !== undefined && { search })}
+        />
+      </AppShell.Navbar>
 
-        {/* `mainSafeArea` closes the one real safe-area gap: Mantine sets
-         * `--app-shell-footer-offset` to the RAW footer height, so Main's own padding-bottom is
-         * short by exactly `env(safe-area-inset-bottom)` (§2.7). */}
-        <AppShell.Main className={mobileNavClasses.mainSafeArea}>{children}</AppShell.Main>
+      {/* `mainSafeArea` closes the one real safe-area gap: Mantine sets
+       * `--app-shell-footer-offset` to the RAW footer height, so Main's own padding-bottom is
+       * short by exactly `env(safe-area-inset-bottom)` (§2.7). */}
+      <AppShell.Main className={mobileNavClasses.mainSafeArea}>{children}</AppShell.Main>
 
-        <AppShell.Footer hiddenFrom="sm" p={0} withBorder={false}>
-          <MobileNav
-            model={model}
-            config={mobileNav}
-            {...(account !== undefined && { account })}
-            {...(settingsMenuItems !== undefined && { settingsMenuItems })}
-            {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
-          />
-        </AppShell.Footer>
-      </AppShell>
-    </PageBarProvider>
+      {/* The outlet is a bare box — every pixel of the panel's chrome belongs to `PageAside`,
+       * so an unclaimed region paints nothing at all. */}
+      <AppShell.Aside p={0} withBorder={false}>
+        <AsideOutlet className={asideClasses.outlet} />
+      </AppShell.Aside>
+
+      <AppShell.Footer hiddenFrom="sm" p={0} withBorder={false}>
+        <MobileNav
+          model={model}
+          config={mobileNav}
+          {...(account !== undefined && { account })}
+          {...(settingsMenuItems !== undefined && { settingsMenuItems })}
+          {...(sidebarBlocks !== undefined && { blocks: sidebarBlocks })}
+        />
+      </AppShell.Footer>
+    </AppShell>
   )
 }
 

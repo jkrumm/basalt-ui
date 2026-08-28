@@ -42,6 +42,8 @@ export {
   AppBreadcrumbs,
   PageBar,
   type PageBarProps,
+  PageAside,
+  type PageAsideProps,
   type SidebarSection,
   type SidebarItem,
   type SidebarBlock,

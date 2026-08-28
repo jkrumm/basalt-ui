@@ -259,6 +259,23 @@ describe('BasaltShell header height (law C14)', () => {
     expect(css).toContain('--app-shell-footer-height:0rem')
   })
 
+  test('a route with no PageAside pays for no aside column — zero width, collapsed', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    const css = [...document.querySelectorAll('style')]
+      .map((tag) => tag.textContent ?? '')
+      .find((text) => text.includes('--app-shell-aside-width'))
+    expect(css).toBeDefined()
+    // Zero-wide at every viewport, and `collapsed.desktop` pins the main column's offset to 0 from
+    // `sm` up — the region only exists while a page claims it (`docs/ASIDE-SPEC.md` §0). The
+    // width-when-CLAIMED half is `page-aside.test.tsx`'s.
+    expect(css).toContain('--app-shell-aside-width:0rem')
+    expect(css).toContain('--app-shell-aside-offset:0px !important')
+  })
+
   test('an empty PageBar contributes no node — not in the header, not in the page flow', () => {
     render(
       <MantineProvider>

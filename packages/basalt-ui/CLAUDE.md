@@ -16,30 +16,30 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath                                    | Mantine? | Owns                                                                                                                                                    |
-| ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`                                        | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar`), `Section`, `WidgetHeader`, dashboard composites, `QueryState` |
-| `./charts`                                 | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                            |
-| `./tokens`                                 | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                |
-| `./controls`                               | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`                                |
-| `./controls-dates`                         | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam                                                             |
-| `./state`                                  | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                    |
-| `./router-tanstack`                        | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                  |
-| `./query`                                  | **free** | `createBasaltQueryClient`, `unwrap`, lazy devtools, `toErrorMessage`/`errorStatus`                                                                      |
-| `./forms`                                  | coupled  | `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft`                                                                                            |
-| `./notifications`                          | coupled  | `notify` + the typed registry, persisted history, bell + center                                                                                         |
-| `./commands`                               | coupled  | the typed command bus, overlay controller, Spotlight projection, `BasaltOverlays`                                                                       |
-| `./data`, `./data/table`, `./data/virtual` | coupled  | `BasaltDataTable`, `BasaltVirtualList` (prefer the narrow subpaths)                                                                                     |
-| `./agent`                                  | **free** | the headless streaming layer: transports, `useAgentStream`, `useAgentThreadRuns`, threads store                                                         |
-| `./agent-chat`                             | coupled  | the Mantine thread-chat chrome over `./agent` (also re-exported from `.`)                                                                               |
-| `./content`                                | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                         |
-| `./connectivity`                           | coupled  | `ConnectivityProvider`, `useConnectivity`, `ConnectivityIndicator` — auto-mounted by the provider                                                       |
-| `./theme-lab`                              | coupled  | `ThemeLabControls` (structural-token inspector) — identity tuning is `DeriveControls`                                                                   |
-| `./guard`                                  | **free** | `checkSource`, `GUARD_RULES`, `Finding`, the allow-annotation reader                                                                                    |
-| `./vite`                                   | —        | `basaltViteConfig` (config only, never `plugins`) + `basaltAppPlugin` (head/PWA/manifest)                                                               |
-| `./styles.css`                             | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                     |
-| `./tokens.css`                             | **free** | the prebuilt `--vx-*` stylesheet for a consumer with no bundler, React or Mantine                                                                       |
-| `./configs/*`, `./llms.txt`                | —        | raw toolchain presets (real paths — `extends` needs them); the machine-readable surface map                                                             |
+| Subpath                                    | Mantine? | Owns                                                                                                                                                                  |
+| ------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.`                                        | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState` |
+| `./charts`                                 | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                                          |
+| `./tokens`                                 | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                              |
+| `./controls`                               | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`                                              |
+| `./controls-dates`                         | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam                                                                           |
+| `./state`                                  | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                                  |
+| `./router-tanstack`                        | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                                |
+| `./query`                                  | **free** | `createBasaltQueryClient`, `unwrap`, lazy devtools, `toErrorMessage`/`errorStatus`                                                                                    |
+| `./forms`                                  | coupled  | `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft`                                                                                                          |
+| `./notifications`                          | coupled  | `notify` + the typed registry, persisted history, bell + center                                                                                                       |
+| `./commands`                               | coupled  | the typed command bus, overlay controller, Spotlight projection, `BasaltOverlays`                                                                                     |
+| `./data`, `./data/table`, `./data/virtual` | coupled  | `BasaltDataTable`, `BasaltVirtualList` (prefer the narrow subpaths)                                                                                                   |
+| `./agent`                                  | **free** | the headless streaming layer: transports, `useAgentStream`, `useAgentThreadRuns`, threads store                                                                       |
+| `./agent-chat`                             | coupled  | the Mantine thread-chat chrome over `./agent` (also re-exported from `.`)                                                                                             |
+| `./content`                                | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                       |
+| `./connectivity`                           | coupled  | `ConnectivityProvider`, `useConnectivity`, `ConnectivityIndicator` — auto-mounted by the provider                                                                     |
+| `./theme-lab`                              | coupled  | `ThemeLabControls` (structural-token inspector) — identity tuning is `DeriveControls`                                                                                 |
+| `./guard`                                  | **free** | `checkSource`, `GUARD_RULES`, `Finding`, the allow-annotation reader                                                                                                  |
+| `./vite`                                   | —        | `basaltViteConfig` (config only, never `plugins`) + `basaltAppPlugin` (head/PWA/manifest)                                                                             |
+| `./styles.css`                             | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                   |
+| `./tokens.css`                             | **free** | the prebuilt `--vx-*` stylesheet for a consumer with no bundler, React or Mantine                                                                                     |
+| `./configs/*`, `./llms.txt`                | —        | raw toolchain presets (real paths — `extends` needs them); the machine-readable surface map                                                                           |
 
 `src/surfaces.ts` is the SSOT behind that table, `llms.txt`, `AGENTS.md`, the oxlint boundary globs
 and the doctrine triad; `check-coverage` and `tests/{surfaces-coverage,agents-sync,llms-sync}.test.ts`
@@ -192,6 +192,12 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
 - **The router seam is ONE component**, `SidebarItem.Anchor` (a `NavAnchor`): basalt renders every
   pixel of chrome — desktop row, mobile slot, sheet row — and only hosts that component. No render
   callbacks anywhere; the breadcrumb's equivalent is `parentAnchor`.
+- **The aside is a REGION a route claims, not a shell prop.** `BasaltShell` always renders an
+  `AppShell.Aside`, zero-wide and `collapsed.desktop` until a page mounts `PageAside`, which claims
+  it and publishes its fold back so the shell can size it (`docs/ASIDE-SPEC.md` §0, wave 1). Below
+  `sm` and in a shell-less app the same ONE node renders in flow where the page wrote it — no
+  portal, no fold chrome, no responsive twin (C9). Same claim/outlet/portal mechanism as `PageBar`
+  row 1, one region over.
 - **`PageBar` row 1 portals into the header; row 2 is in-flow and sticky**, publishing its measured
   height as `--basalt-page-bar-h` on `documentElement` behind a `height > 0` guard — a
   ResizeObserver fires once with a zero box while the element is still laid out, and publishing that
