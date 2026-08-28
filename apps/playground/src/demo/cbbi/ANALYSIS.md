@@ -77,8 +77,8 @@ is 0.902. **(e) days-since->0.8 fails** — PiCycle's 524d is the 78th percentil
 1. **Discrimination — Youden J vs peer consensus, 4y window. Flag `J < 0.50`** → **PiCycle (0.06)**,
    **Trolololo (0.30)**. Next-lowest is RHODL 0.67: a **0.37 margin**, no false positives, and no
    false negatives among the owner's 5.
-2. **Data health — `tailNulls ≥ 2` or `nullShare(90d) > 1%`** → **Woobull** only. A "stale" badge,
-   kept separate from "broken".
+2. **Data health — `tailNulls ≥ 2` or `nullShare(90d) ≥ 3%`** → **Woobull** only (on its 2-day tail;
+   its share is 2.2%). A "stale" badge, kept separate from "broken".
 
 **Where the data contradicts the folklore:**
 
@@ -146,10 +146,16 @@ heavily — episodes are the effective sample size.
    the trailing **1,461d**; `J_k = TPR_k − FA_k`. Need ≥ 60 consensus-top days, else "insufficient data".
 3. **Broken badge: `J_k < 0.50`.** Flags PiCycle (0.06) and Trolololo (0.30); nearest non-flagged is
    0.67 — the threshold sits in a 0.37-wide gap, so it is stable.
-4. **Stale badge (separate): `tailNulls_k ≥ 2` OR `nullShare_k(90d) > 0.01`.** Today flags Woobull
-   only. Never merge this with the broken badge — Woobull has the best `J` of all nine.
+4. **Stale badge (separate): `tailNulls_k ≥ 2` OR `nullShare_k(90d) ≥ 0.03`.** Today flags Woobull
+   only, and on the TAIL — its 90-day share is 2 of 90 = 0.022. Three of ninety, not one: at a 0.01
+   floor a single missing reading is 0.011 and every one-day publication lag reads `stale`, which
+   also made the 2-day tail tolerance unreachable. Never merge this with the broken badge —
+   Woobull has the best `J` of all nine.
 5. **Noisy badge (advisory): `share(v_k ≥ .90, last 1461d) > 3 × share(v_k ≥ .90, all history)`** —
-   flags Puell (23.3% vs 8.6% lifetime). Render "reads high often this cycle", not "broken".
+   render "reads high often this cycle", not "broken". **Fires on nothing today**: on the trailing
+   1461d window Puell is 22.1% vs 8.7% lifetime = 2.54× (the 23.3% above is a halving-EPOCH share),
+   and 2YMA 2.69×, MVRV 2.15×, RHODL 2.03× sit right behind it — a lower multiple would flag the
+   bull-market window, not Puell. Keep 3×; the Puell advisory line is unsupported at runtime.
 6. Composite `= Σ w_k·v_k / Σ w_k` over finite `v_k` only (renormalise on nulls — reproduces published
    `Confidence` at `w ≡ 1` to 1e-4). Weights on the 0..2 / 0.25 grid.
 7. Do **not** promise a better composite from re-weighting — separation across all five vectors is

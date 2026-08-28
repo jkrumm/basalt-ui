@@ -18,21 +18,30 @@
  * is no `useState`, no `navigate` and no `onChange` plumbing on the page (C3).
  */
 import { createSearchStore, field } from 'basalt-ui/router-tanstack'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { CBBI_METRIC_KEYS, CBBI_METRICS } from './cbbi-data'
 import type { CbbiMetricKey } from './cbbi-data'
+import { CBBI_PRESETS } from './cbbi-diagnostics'
+import type { CbbiPresetKey } from './cbbi-diagnostics'
 
 /**
- * The weight field's bounds and grain. `field.number` republishes `min`/`max` on the handle so a
- * control can bound itself — it carries no STEP, so the 0.25 grain has to be restated at the
- * `Slider`; it lives here rather than in the panel so the two cannot drift.
+ * The weight field's bounds and grain — all three on the FIELD now (G7 closed in wave 2), so
+ * `SliderControl` bounds and steps itself off the handle and no control restates the 0.25 grain.
  */
 export const CBBI_WEIGHT_MIN = 0
 export const CBBI_WEIGHT_MAX = 2
 export const CBBI_WEIGHT_STEP = 0.25
 
 const weight = () =>
-  field.number({ fallback: 1, min: CBBI_WEIGHT_MIN, max: CBBI_WEIGHT_MAX }, { url: false })
+  field.number(
+    {
+      fallback: 1,
+      min: CBBI_WEIGHT_MIN,
+      max: CBBI_WEIGHT_MAX,
+      step: CBBI_WEIGHT_STEP,
+    },
+    { url: false },
+  )
 
 export const cbbiFilters = createSearchStore({
   key: 'cbbi',
@@ -129,4 +138,79 @@ export function useCbbiWeights(): Record<CbbiMetricKey, number> {
  */
 export function resetCbbiWeights(): void {
   for (const handle of Object.values(cbbiWeightField)) handle.clear()
+}
+
+/**
+ * Apply one of `CBBI_PRESETS` — nine weights and the selection, in one press.
+ *
+ * A HOOK rather than a plain function, unlike {@link resetCbbiWeights}: `FieldHandle` publishes
+ * `clear()` outside render but its SETTER only through `use()`, so a preset that writes values has
+ * to be assembled from the nine `use()` pairs the way {@link useCbbiWeights} reads them. Nine
+ * explicit calls again — never a loop.
+ *
+ * A weight of `1` is written with `clear()`, not `set(1)`: `1` is the field's fallback, and a reset
+ * UNSETS (see {@link resetCbbiWeights}). A weight of `0` means the metric leaves `metrics`
+ * entirely, so the composite renormalises over the rest rather than averaging in a zero.
+ */
+export function useApplyCbbiPreset(): (key: CbbiPresetKey) => void {
+  const [, setPiCycle] = cbbiWeightField.PiCycle.use()
+  const [, setRupl] = cbbiWeightField.RUPL.use()
+  const [, setRhodl] = cbbiWeightField.RHODL.use()
+  const [, setPuell] = cbbiWeightField.Puell.use()
+  const [, setTwoYma] = cbbiWeightField['2YMA'].use()
+  const [, setTrolololo] = cbbiWeightField.Trolololo.use()
+  const [, setMvrv] = cbbiWeightField.MVRV.use()
+  const [, setReserveRisk] = cbbiWeightField.ReserveRisk.use()
+  const [, setWoobull] = cbbiWeightField.Woobull.use()
+  const [, setMetrics] = cbbiFilters.field.metrics.use()
+
+  return useCallback(
+    (key: CbbiPresetKey) => {
+      const preset = CBBI_PRESETS.find((candidate) => candidate.key === key)
+      if (!preset) return
+      const setters: Record<CbbiMetricKey, (next: number) => void> = {
+        PiCycle: setPiCycle,
+        RUPL: setRupl,
+        RHODL: setRhodl,
+        Puell: setPuell,
+        '2YMA': setTwoYma,
+        Trolololo: setTrolololo,
+        MVRV: setMvrv,
+        ReserveRisk: setReserveRisk,
+        Woobull: setWoobull,
+      }
+      for (const metric of CBBI_METRIC_KEYS) {
+        const weight = preset.weights[metric]
+        if (weight === 1) cbbiWeightField[metric].clear()
+        else setters[metric](weight)
+      }
+      setMetrics(CBBI_METRIC_KEYS.filter((metric) => preset.weights[metric] > 0))
+    },
+    [
+      setPiCycle,
+      setRupl,
+      setRhodl,
+      setPuell,
+      setTwoYma,
+      setTrolololo,
+      setMvrv,
+      setReserveRisk,
+      setWoobull,
+      setMetrics,
+    ],
+  )
+}
+
+/**
+ * Drop one metric from the selection. The WEIGHT is untouched on purpose — switching a metric back
+ * on restores the weight the reader had given it, rather than silently resetting it to 1.
+ */
+export function useDisableCbbiMetric(): (key: CbbiMetricKey) => void {
+  const [enabled, setMetrics] = cbbiFilters.field.metrics.use()
+  return useCallback(
+    (key: CbbiMetricKey) => {
+      setMetrics(enabled.filter((metric) => metric !== key))
+    },
+    [enabled, setMetrics],
+  )
 }

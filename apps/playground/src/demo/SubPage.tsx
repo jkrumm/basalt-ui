@@ -49,7 +49,7 @@ export function SubPage({ title, description, range, stats }: SubPageProps) {
         subtitle={range === undefined ? description : `${description} · ${range}`}
         count={stats.length}
       >
-        <SimpleGrid cols={2} spacing={14}>
+        <SimpleGrid cols={2} spacing="sm">
           {stats.map((stat) => (
             <StatCard
               key={stat.key}

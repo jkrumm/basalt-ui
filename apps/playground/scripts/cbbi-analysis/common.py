@@ -1,7 +1,14 @@
-import json, datetime as dt
+import json, os, datetime as dt
 import numpy as np
 
 METRICS = ["PiCycle","RUPL","RHODL","Puell","2YMA","Trolololo","MVRV","ReserveRisk","Woobull"]
+
+# Every intermediate this suite writes lands here; the input JSON is fetched to /tmp/cbbi.json.
+OUT = "/tmp/cbbi-analysis"
+os.makedirs(OUT, exist_ok=True)
+
+def cache(name):
+    return os.path.join(OUT, name)
 
 def load(path="/tmp/cbbi.json"):
     raw = json.load(open(path))

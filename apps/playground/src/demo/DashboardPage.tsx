@@ -203,7 +203,7 @@ export function DashboardPage() {
   }, [])
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
       <PageBar
         actions={{
           // An ICON on the primary is what picks its mobile form (`docs/CONTROLS-SPEC.md` §2.1): with
@@ -269,7 +269,7 @@ export function DashboardPage() {
         ]}
       />
 
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={14}>
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
         {data.kpis.map((kpi) => (
           <StatCard
             key={kpi.key}
@@ -408,7 +408,7 @@ export function DashboardPage() {
           </ActionIcon>
         }
       >
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing={14}>
+        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
           {SMALL_CHARTS.map((chart) => (
             <ChartCard key={chart.key} title={chart.title} info={chart.info}>
               <MultiLine

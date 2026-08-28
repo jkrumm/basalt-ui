@@ -80,6 +80,9 @@ pnpm-lock.yaml
 # Local scratch notes
 sc-note.md
 
+# Byte-code from the offline CBBI analysis scripts (`apps/playground/scripts/cbbi-analysis`)
+__pycache__/
+
 # Local Claude Code config. Scoped to the USER-OWNED paths only, never the whole `.claude/` tree:
 # `basalt-ui init`/`sync` place MANAGED files at `.claude/rules/basalt-*.md` and
 # `.claude/skills/basalt-*/`, and a blanket ignore would silently hide that output if this repo ever

@@ -1,40 +1,43 @@
 /**
- * The CBBI page's right-hand panel — the evidence surface this whole page exists to produce.
+ * The CBBI page's right-hand panel — the evidence surface this whole page exists to produce, now
+ * built from the wave-2 aside primitives rather than around the holes they closed.
  *
- * It is deliberately built from nothing but shipped primitives (`Section`, `Bars`, the
- * `FieldHandle`-bound controls, raw Mantine `Switch`/`Slider`), so what it does badly is a
- * FINDING about the framework rather than about this file. Three things are load-bearing to read
- * off it:
+ * G4 and G5 are shut: the composition rows are `SliderControl`s inside `PanelRow`s, the `Display`
+ * fields are the same bound controls resolving their own `panel` form, and the reset lives in the
+ * section header slot. What the panel proves NOW is two things the gap ledger could not:
  *
- * 1. **Composition rows go label-ABOVE-control, not side by side.** At ~260px of usable width a
- *    row cannot hold a label, a switch, a 0..2 slider and a mono readout on one line — the slider
- *    collapses to a ~90px track where a 0.25 step is under 12px of travel. So each metric is two
- *    lines. A future aside needs a row primitive that states this, or every consumer re-derives it.
- * 2. **`Display` holds page-level controls OUTSIDE a home slot.** `docs/CONTROLS-SPEC.md` C1 has
- *    three homes and none of them is "a panel body". These are basalt controls
- *    (`ToggleFilter`/`SelectFilter`), not raw Mantine ones, so `basalt/control-outside-home` never
- *    fires — the guard cannot see the law being bent, which is itself the finding. A `Section`
- *    header slot was the compliant alternative and it does not fit: three pills wrap inside the
- *    aside's header row, and a home never wraps (C7).
- * 3. **A cartesian chart at panel width is a different chart.** `Distribution` renders the SAME
- *    `Bars` the main column does, at the aside's ~260px of content width, to make the difference
- *    visible rather than arguable.
+ * 1. **The row primitive holds at real width.** Nine composition rows carry a label, a hint, a
+ *    verdict badge, a two-number mono readout, a `Switch` on the label line and a 0..2 track on its
+ *    own — at ~260px, from one declaration each, with the tier supplied by the row rather than by
+ *    nine `size` props. `readout`/`end` on `SliderControl` are the only package change it needed.
+ * 2. **A panel can be an INSPECTOR of data, not just of settings.** `Diagnostics`, `Presets` and
+ *    `Today` are computed from the live series at runtime (`cbbi-diagnostics.ts`,
+ *    `cbbi-outlook.ts`) — no cycle dates, no stored verdicts, and "no precedent" wherever the
+ *    episode gate is not met. That is the shape a consumer's filter panel actually wants: rows whose
+ *    right-hand side is a measurement, and whose action is derived from it.
+ *
+ * 3. **A cartesian chart at panel width is still a different chart.** `Distribution` keeps rendering
+ *    the SAME `Bars` the main column does, at the aside's content width, because G6 is wave 3 and
+ *    the difference should stay visible rather than argued.
  */
-import { ActionIcon, Anchor, Group, Slider, Stack, Switch, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Group, Stack, Switch, Text } from '@mantine/core'
 import { Section } from 'basalt-ui'
 import { Bars, VX } from 'basalt-ui/charts'
-import { SelectFilter, ToggleFilter } from 'basalt-ui/controls'
+import { PanelRow, SelectFilter, SliderControl, ToggleFilter } from 'basalt-ui/controls'
+import { useMemo } from 'react'
 import { CBBI_METRICS, ratio } from './cbbi-data'
 import type { CbbiMetricKey, CbbiRow, HistogramBin } from './cbbi-data'
+import { activePreset, CBBI_PRESETS, diagnoseAll, DIAGNOSTIC_WINDOW } from './cbbi-diagnostics'
+import type { MetricHealth, MetricVerdict } from './cbbi-diagnostics'
+import { todaySuggestions } from './cbbi-outlook'
+import type { Suggestion } from './cbbi-outlook'
 import {
-  CBBI_WEIGHT_MAX,
-  CBBI_WEIGHT_MIN,
-  CBBI_WEIGHT_STEP,
   cbbiFilters,
   cbbiWeightField,
   resetCbbiWeights,
+  useApplyCbbiPreset,
+  useDisableCbbiMetric,
 } from './cbbi-store'
-import type { CbbiWeightHandle } from './cbbi-store'
 import { IconReset } from '../icons'
 
 const CBBI_SOURCE = 'https://colintalkscrypto.com/cbbi/'
@@ -59,69 +62,151 @@ export function CbbiDistributionBars({ bins, height }: { bins: HistogramBin[]; h
 }
 
 /**
- * One metric's composition row. Its own component so the nine `use()` calls are nine COMPONENTS
- * with one hook each, rather than one component with a loop of hooks — and so a weight drag
- * re-renders one row instead of the panel.
+ * The verdict palette — THEME colors, never a hex, and `yellow` deliberately shared by `stale` and
+ * `noisy`: both are "read this metric with a caveat", and a third hue would claim a distinction the
+ * badge text already makes.
  */
-function MetricRow({
+const VERDICT_COLOR: Record<MetricVerdict, string> = {
+  ok: 'teal',
+  broken: 'red',
+  stale: 'yellow',
+  noisy: 'yellow',
+  insufficient: 'gray',
+}
+
+/** `Badge` is not a tiered control (it carries no `-ctl` vars), so it states its own size. */
+function VerdictBadge({ verdict }: { verdict: MetricVerdict }) {
+  return (
+    <Badge size="xs" variant="light" color={VERDICT_COLOR[verdict]}>
+      {verdict}
+    </Badge>
+  )
+}
+
+/**
+ * The composition readout — today's reading, then the live weight.
+ *
+ * Module scope and a STRING return, both deliberate: the render prop is a FORMATTER, so it can
+ * never be read as a component defined during render (`react/no-unstable-nested-components`). The
+ * verdict badge that used to sit in here is an `end` sibling of the switch now, which is where a
+ * second element belonged anyway.
+ */
+function compositionReadout(value: number | null, weight: number): string {
+  return `${value === null ? '—' : ratio(value)} · ×${weight.toFixed(2)}`
+}
+
+/**
+ * One metric's composition row.
+ *
+ * Its own component for the reason the hand-built row was: nine `use()` calls become nine
+ * COMPONENTS with one hook each (inside `SliderControl`), so dragging one weight re-renders one row.
+ *
+ * The readout is an OVERRIDE rather than a `format`, because it states two numbers and the control
+ * owns only one of them — today's reading, then the weight. It is the FUNCTION form, so the weight
+ * half tracks the thumb per frame from the control's own drag draft.
+ */
+function CompositionRow({
+  metricKey,
   label,
   hint,
   value,
+  health,
   enabled,
   onToggle,
-  handle,
 }: {
+  metricKey: CbbiMetricKey
   label: string
   hint: string
   value: number | null
+  health: MetricHealth
   enabled: boolean
   onToggle: (next: boolean) => void
-  handle: CbbiWeightHandle
 }) {
-  const [weight, setWeight] = handle.use()
+  const flagged = health.verdict !== 'ok' && health.verdict !== 'insufficient'
 
   return (
-    <Stack gap={2}>
-      <Group justify="space-between" wrap="nowrap" gap="xs">
+    <SliderControl
+      field={cbbiWeightField[metricKey]}
+      label={label}
+      hint={hint}
+      disabled={!enabled}
+      readout={(dragged) => compositionReadout(value, dragged)}
+      end={
         <Group gap={6} wrap="nowrap">
+          {flagged && <VerdictBadge verdict={health.verdict} />}
+          {/* G14 (`docs/ASIDE-SPEC.md` §2): membership of ONE key in a `field.multi` has no bound
+              control, so this row writes the field by hand. Wave 3 owes it a `MembershipToggle`. */}
           <Switch
             checked={enabled}
             onChange={(event) => onToggle(event.currentTarget.checked)}
             aria-label={`Include ${label}`}
           />
-          <Tooltip label={hint} multiline w={240} withArrow position="left">
-            <Text size="xs" fw={550} lineClamp={1}>
-              {label}
-            </Text>
-          </Tooltip>
         </Group>
-        <Text size="xs" ff="monospace" {...(value === null && { c: 'dimmed' as const })}>
-          {value === null ? '—' : ratio(value)}
-        </Text>
-      </Group>
-      <Group gap="xs" wrap="nowrap">
-        <Slider
-          flex={1}
-          value={weight}
-          onChange={setWeight}
-          min={handle.min ?? CBBI_WEIGHT_MIN}
-          max={handle.max ?? CBBI_WEIGHT_MAX}
-          step={CBBI_WEIGHT_STEP}
-          label={null}
-          disabled={!enabled}
-          aria-label={`${label} weight`}
-        />
-        <Text size="xs" ff="monospace" c="dimmed" w={34} ta="right">
-          {`×${weight.toFixed(2)}`}
-        </Text>
-      </Group>
-    </Stack>
+      }
+    />
   )
 }
 
-export function CbbiPanel({ latest, bins }: { latest: CbbiRow; bins: HistogramBin[] }) {
+/**
+ * One suggestion.
+ *
+ * `PanelRow.label` is one clipped line by design (`panel-row.module.css`), so the SENTENCE goes in
+ * the row's control line as `children` and the label keeps a two-or-three-word lead. That is the row
+ * primitive being used as drawn, not worked around.
+ */
+function SuggestionRow({
+  suggestion,
+  onDisable,
+}: {
+  suggestion: Suggestion
+  onDisable: (key: CbbiMetricKey) => void
+}) {
+  const metric = suggestion.metric
+
+  return (
+    <PanelRow
+      label={suggestion.lead}
+      readout={suggestion.support}
+      {...(suggestion.action === 'disable' &&
+        metric !== undefined && {
+          end: (
+            <Button
+              variant="subtle"
+              onClick={() => {
+                onDisable(metric)
+              }}
+            >
+              Disable
+            </Button>
+          ),
+        })}
+    >
+      <Text size="xs" {...(suggestion.tone === 'neutral' && { c: 'dimmed' })}>
+        {suggestion.text}
+      </Text>
+    </PanelRow>
+  )
+}
+
+export function CbbiPanel({
+  rows,
+  latest,
+  bins,
+  weights,
+}: {
+  /** The FULL daily series — the diagnostics and the outlook read every row, never a bucket. */
+  rows: CbbiRow[]
+  latest: CbbiRow
+  bins: HistogramBin[]
+  weights: Record<CbbiMetricKey, number>
+}) {
   const [enabled, setEnabled] = cbbiFilters.field.metrics.use()
-  const enabledSet = new Set<CbbiMetricKey>(enabled)
+  const enabledSet = useMemo(() => new Set<CbbiMetricKey>(enabled), [enabled])
+  const health = useMemo(() => diagnoseAll(rows), [rows])
+  const suggestions = useMemo(() => todaySuggestions(rows, health), [rows, health])
+  const preset = activePreset(weights, enabledSet)
+  const applyPreset = useApplyCbbiPreset()
+  const disableMetric = useDisableCbbiMetric()
 
   const toggle = (key: CbbiMetricKey, next: boolean): void => {
     const kept = CBBI_METRICS.map((m) => m.key).filter((candidate) =>
@@ -131,7 +216,35 @@ export function CbbiPanel({ latest, bins }: { latest: CbbiRow; bins: HistogramBi
   }
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
+      <Section
+        title="Presets"
+        subtitle="Five compositions from the offline study. They pick which metrics you trust — not
+          a better forecast."
+        count={CBBI_PRESETS.length}
+        collapsible
+        persistKey="cbbi-presets"
+      >
+        {CBBI_PRESETS.map((candidate) => (
+          <PanelRow
+            key={candidate.key}
+            label={candidate.label}
+            hint={candidate.hint}
+            {...(preset === candidate.key && { readout: 'active' })}
+            end={
+              <Button
+                variant="subtle"
+                onClick={() => {
+                  applyPreset(candidate.key)
+                }}
+              >
+                Apply
+              </Button>
+            }
+          />
+        ))}
+      </Section>
+
       <Section
         title="Composition"
         subtitle="Which metrics the reweighted index averages, and how heavily."
@@ -144,28 +257,64 @@ export function CbbiPanel({ latest, bins }: { latest: CbbiRow; bins: HistogramBi
           </ActionIcon>
         }
       >
-        <Stack gap="xs">
-          {CBBI_METRICS.map((metric) => (
-            <MetricRow
-              key={metric.key}
-              label={metric.label}
-              hint={metric.hint}
-              value={latest.metrics[metric.key]}
-              enabled={enabledSet.has(metric.key)}
-              onToggle={(next) => toggle(metric.key, next)}
-              handle={cbbiWeightField[metric.key]}
-            />
-          ))}
-        </Stack>
+        {CBBI_METRICS.map((metric) => (
+          <CompositionRow
+            key={metric.key}
+            metricKey={metric.key}
+            label={metric.label}
+            hint={metric.hint}
+            value={latest.metrics[metric.key]}
+            health={health[metric.key]}
+            enabled={enabledSet.has(metric.key)}
+            onToggle={(next) => toggle(metric.key, next)}
+          />
+        ))}
+      </Section>
+
+      <Section
+        title="Diagnostics"
+        subtitle={`Youden J against the peer consensus over the last ${DIAGNOSTIC_WINDOW} days —
+          trust, not accuracy: every weighting separates tops from bottoms within 0.02
+          (ANALYSIS.md §4).`}
+        count={CBBI_METRICS.length}
+        collapsible
+        persistKey="cbbi-diagnostics"
+      >
+        {CBBI_METRICS.map((metric) => (
+          <PanelRow
+            key={metric.key}
+            label={metric.label}
+            hint={health[metric.key].reason}
+            readout={`J ${health[metric.key].j.toFixed(2)}`}
+            end={<VerdictBadge verdict={health[metric.key].verdict} />}
+          />
+        ))}
+      </Section>
+
+      <Section
+        title="Today"
+        subtitle="Conditional base rates from the live series. A line only appears with at least 8
+          prior episodes behind it."
+        count={suggestions.length}
+        collapsible
+        persistKey="cbbi-today"
+      >
+        {suggestions.length === 0 ? (
+          <Text size="xs" c="dimmed">
+            Nothing supported by the data today.
+          </Text>
+        ) : (
+          suggestions.map((suggestion) => (
+            <SuggestionRow key={suggestion.key} suggestion={suggestion} onDisable={disableMetric} />
+          ))
+        )}
       </Section>
 
       <Section title="Display" subtitle="The same four fields the page bar owns, at panel width.">
-        <Stack gap="xs" align="flex-start">
-          <ToggleFilter field={cbbiFilters.field.zones} label="Zone bands" />
-          <SelectFilter field={cbbiFilters.field.scale} label="Price scale" />
-          <SelectFilter field={cbbiFilters.field.granularity} label="Bucket" />
-          <SelectFilter field={cbbiFilters.field.layout} label="Layout" />
-        </Stack>
+        <ToggleFilter field={cbbiFilters.field.zones} label="Zone bands" />
+        <SelectFilter field={cbbiFilters.field.scale} label="Price scale" />
+        <SelectFilter field={cbbiFilters.field.granularity} label="Bucket" />
+        <SelectFilter field={cbbiFilters.field.layout} label="Layout" />
       </Section>
 
       <Section

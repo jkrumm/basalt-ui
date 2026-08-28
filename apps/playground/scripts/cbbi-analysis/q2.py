@@ -26,4 +26,4 @@ LAST=scorecard(L2T,L2B,"LAST TWO CYCLES (>=2018-12-15)")
 print("\n##### divergence: sep(all) -> sep(last2)")
 for m in METRICS:
     print(f"{m:12s} all={ALL[m]['sep']:+.3f}  last2={LAST[m]['sep']:+.3f}  delta={LAST[m]['sep']-ALL[m]['sep']:+.3f}   sep30 all={ALL[m]['sep30']:+.3f} last2={LAST[m]['sep30']:+.3f}")
-import pickle; pickle.dump((ALL,LAST,[int(i) for i in L2T],[int(i) for i in L2B]),open('/tmp/cbbi-analysis/q2.pkl','wb'))
+import pickle; pickle.dump((ALL,LAST,[int(i) for i in L2T],[int(i) for i in L2B]),open(cache('q2.pkl'),'wb'))

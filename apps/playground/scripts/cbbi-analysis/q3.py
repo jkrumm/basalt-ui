@@ -41,4 +41,4 @@ for m in METRICS:
     f=M[m]
     rng=np.array([np.nanmax(f[max(0,i-364):i+1])-np.nanmin(f[max(0,i-364):i+1]) if np.isfinite(f[max(0,i-364):i+1]).sum()>100 else np.nan for i in range(364,n)])
     print(f"{m:12s} rng365_now={rng[-1]:.2f} median={np.nanmedian(rng):.2f} ratio={rng[-1]/np.nanmedian(rng):.2f}")
-import pickle; pickle.dump(res,open('/tmp/cbbi-analysis/q3.pkl','wb'))
+import pickle; pickle.dump(res,open(cache('q3.pkl'),'wb'))
