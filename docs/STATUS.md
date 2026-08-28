@@ -631,9 +631,12 @@ Intentional cut-line calls, not gaps:
 
 - **tsdown migration** — NO-GO for 1.0 (swapping the tsc declaration emitter on a type-spine
   package; owner may override).
-- **Phase-5 kill-list** — bottom-sheet, runtime hooks, canvas-line-kind, appshell-aside-slot,
+- **Phase-5 kill-list** — bottom-sheet, runtime hooks, canvas-line-kind, ~~appshell-aside-slot~~,
   `create-basalt-app`, dtcg-interchange, `@mantine/dropzone`, full `<Chat>`/voice. Advisory-only.
-  (The PWA vite helper on this list shipped as `basaltAppPlugin` — see the package README.)
+  (The PWA vite helper on this list shipped as `basaltAppPlugin` — see the package README.
+  `appshell-aside-slot` is struck too: the surface stopped being unforced once an owner request and
+  the CBBI evidence page demanded it, and it shipped as the `PageAside`-claimed aside region — see
+  `docs/ASIDE-SPEC.md` §0.)
 - **`no-explicit-any` → error escalation**, **`./state` static-lint globs** (would over-reach into
   consumer state files), **controlled `DataTable` sorting** prop.
 - **`@example` JSDoc markdown-compile harness** (the playground demos already are canonical

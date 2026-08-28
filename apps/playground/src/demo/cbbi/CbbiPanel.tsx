@@ -14,10 +14,11 @@
  *    three homes and none of them is "a panel body". These are basalt controls
  *    (`ToggleFilter`/`SelectFilter`), not raw Mantine ones, so `basalt/control-outside-home` never
  *    fires — the guard cannot see the law being bent, which is itself the finding. A `Section`
- *    header slot was the compliant alternative and it does not fit: three pills in a 300px header
- *    row wrap, and a home never wraps (C7).
+ *    header slot was the compliant alternative and it does not fit: three pills wrap inside the
+ *    aside's header row, and a home never wraps (C7).
  * 3. **A cartesian chart at panel width is a different chart.** `Distribution` renders the SAME
- *    `Bars` the main column does, at ~260px, to make the difference visible rather than arguable.
+ *    `Bars` the main column does, at the aside's ~260px of content width, to make the difference
+ *    visible rather than arguable.
  */
 import { ActionIcon, Anchor, Group, Slider, Stack, Switch, Text, Tooltip } from '@mantine/core'
 import { Section } from 'basalt-ui'

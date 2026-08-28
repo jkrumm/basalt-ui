@@ -1,21 +1,23 @@
 /**
- * CBBI — the playground's one REAL-data page, and the evidence page for a future right-hand
+ * CBBI — the playground's one REAL-data page, and the evidence page that produced the right-hand
  * "aside / inspector" shell region (Foundry filter panels, Lightroom inspectors).
  *
- * What it is for: `BasaltShell` today owns a sidebar, a header, a `PageBar` and a body. Every
- * consumer that wants a persistent inspector column builds it out of a `Grid` and its own
- * judgement, and this page is that build, done once, in the open, on data that does not cooperate
- * — 5,541 daily points, nine metrics with leading nulls, and a price series spanning four orders
- * of magnitude. The panel's own module doc (`CbbiPanel.tsx`) carries the findings it produced.
+ * What it was for: `BasaltShell` owned a sidebar, a header, a `PageBar` and a body, so every
+ * consumer wanting a persistent inspector column built it out of a `Flex` and its own judgement.
+ * This page was that build, done once, in the open, on data that does not cooperate — 5,541 daily
+ * points, nine metrics with leading nulls, and a price series spanning four orders of magnitude.
+ * The panel is now the shipped region (`PageAside`); the panel's own module doc (`CbbiPanel.tsx`)
+ * carries the findings still open against it.
  *
  * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · four filters · sync),
  * one store for every interactive field (`cbbi-store.ts`, laws C2–C4), `StatCard`/`ChartCard`/
- * `Section` for the tiers, and `QueryState` for the four data branches. The two columns are ONE
- * node each — below `sm` the `Flex` turns into a column and the panel lands under the main body,
- * with no second mount and no `visibleFrom` twin (C9).
+ * `Section` for the tiers, and `QueryState` for the four data branches. The panel is the SHELL
+ * ASIDE now (`PageAside`, `docs/ASIDE-SPEC.md` §0): the page owns no width, no `flexShrink` and no
+ * responsive `align` — it writes the panel after the main column and the region takes it from there
+ * (G12/G13 closed). Below `sm` that same one node stacks under the body, no twin (C9).
  */
-import { Box, Flex, SimpleGrid, Stack, Text } from '@mantine/core'
-import { PageBar, QueryState, Section, StatCard } from 'basalt-ui'
+import { SimpleGrid, Stack, Text } from '@mantine/core'
+import { PageAside, PageBar, QueryState, Section, StatCard } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
@@ -54,9 +56,6 @@ import {
 import type { CbbiPoint } from './cbbi-view'
 
 const CBBI_SOURCE = 'https://colintalkscrypto.com/cbbi/'
-
-/** The panel's fixed column, and the one number the two-column layout is built on. */
-const PANEL_WIDTH = 300
 
 /** 20 bins is the brief's; `Bars` renders 20 categories legibly at main width and not at 260px. */
 const HISTOGRAM_BINS = 20
@@ -190,7 +189,7 @@ function CbbiPageBody() {
         errorTitle="Could not load the CBBI series"
         errorFallback="colintalkscrypto.com did not answer."
       >
-        {(rows) => <CbbiColumns rows={rows} filters={filters} weights={weights} />}
+        {(rows) => <CbbiBody rows={rows} filters={filters} weights={weights} />}
       </QueryState>
     </Stack>
   )
@@ -199,11 +198,11 @@ function CbbiPageBody() {
 type CbbiFilters = ReturnType<typeof cbbiFilters.useValues>
 
 /**
- * The two-column body. ONE `Flex`, ONE node per column: `direction` flips to `column` below `sm`
- * and the panel — already after the main column in the DOM — stacks under it. No `visibleFrom`
- * twin, no second mount, no media query at the call site (C9).
+ * The page body: the main column's own `Stack`, then the panel as the shell's aside. The layout is
+ * the REGION's now — no width, no `flexShrink`, no responsive `align` here (G13), and below `sm`
+ * `PageAside` renders that same one node in flow, right where it is written (C9).
  */
-function CbbiColumns({
+function CbbiBody({
   rows,
   filters,
   weights,
@@ -238,42 +237,33 @@ function CbbiColumns({
   if (!summary) return null
 
   return (
-    <Flex
-      direction={{ base: 'column', sm: 'row' }}
-      gap={14}
-      // `stretch` below `sm` is load-bearing, not cosmetic: in COLUMN direction the cross axis is
-      // horizontal, so a `flex-start` alignment would shrink both stacked columns to their content
-      // width. The row direction wants `flex-start` so the panel does not stretch to the main
-      // column's height.
-      align={{ base: 'stretch', sm: 'flex-start' }}
-    >
-      <Box flex={1} miw={0} w="100%">
-        {filters.view === 'overview' && (
-          <CbbiOverview
-            points={points}
-            bins={bins}
-            summary={summary}
-            zonesOn={filters.zones}
-            scale={filters.scale}
-            layout={filters.layout}
-            reweighted={!isDefaultComposition(weights, enabled)}
-          />
-        )}
-        {filters.view === 'metrics' && (
-          <CbbiMetricGrid
-            rows={bucketed}
-            latest={summary.latest}
-            weights={weights}
-            enabled={enabled}
-            zonesOn={filters.zones}
-          />
-        )}
-        {filters.view === 'history' && <CbbiHistory rows={rows} />}
-      </Box>
-      <Box w={{ base: '100%', sm: PANEL_WIDTH }} style={{ flexShrink: 0 }}>
+    <Stack gap={14}>
+      {filters.view === 'overview' && (
+        <CbbiOverview
+          points={points}
+          bins={bins}
+          summary={summary}
+          zonesOn={filters.zones}
+          scale={filters.scale}
+          layout={filters.layout}
+          reweighted={!isDefaultComposition(weights, enabled)}
+        />
+      )}
+      {filters.view === 'metrics' && (
+        <CbbiMetricGrid
+          rows={bucketed}
+          latest={summary.latest}
+          weights={weights}
+          enabled={enabled}
+          zonesOn={filters.zones}
+        />
+      )}
+      {filters.view === 'history' && <CbbiHistory rows={rows} />}
+
+      <PageAside title="Panel" persistKey="cbbi">
         <CbbiPanel latest={summary.latest} bins={bins} />
-      </Box>
-    </Flex>
+      </PageAside>
+    </Stack>
   )
 }
 
