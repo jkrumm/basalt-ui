@@ -85,9 +85,10 @@ preset; their grace entries are deleted, which IS the promotion (C16). The gatin
 happened and left **9 warns in argo**, every one a control inside a modal/form module whose `<Modal>`
 is rendered by the PARENT route — law C1's cross-file case, which no single-file scan can see. So
 `basalt/control-outside-home` and the `raw-selection-control` guard kind did NOT promote: both are
-re-dated to `promote: '1.28.0'`, and both lanes gained the `*-{modal,drawer,popover,panel,form}.tsx`
-basename exemption (`OVERLAY_CONVENTION_FILE`) that those nine already satisfy. The argo (≈ −700
-lines) and linewatch (≈ −300) migrations of §8 have not run.
+re-dated to `promote: '1.30.0'`, and both lanes gained the overlay-basename exemption
+(`isOverlayConventionFile`, in both the kebab `*-{modal,drawer,popover,panel,form}.tsx` and the
+PascalCase `<Subject>{Modal,Drawer,Popover,Panel,Form}.tsx` dialect) that those nine already
+satisfy. The argo (≈ −700 lines) and linewatch (≈ −300) migrations of §8 have not run.
 
 ## Round-10 batch — 1.25.0
 
