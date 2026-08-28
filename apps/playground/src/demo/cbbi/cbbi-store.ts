@@ -1,5 +1,5 @@
 /**
- * The CBBI page's whole interactive state — ONE `createSearchStore` over sixteen typed fields
+ * The CBBI page's whole interactive state — ONE `createSearchStore` over seventeen typed fields
  * (`docs/CONTROLS-SPEC.md` §4). `validateSearch` goes on `routes/cbbi.tsx`, so the page and every
  * link into it resolve every URL field the same way: URL ⊳ localStorage (`basalt:cbbi`) ⊳ fallback
  * (C4).
@@ -7,8 +7,8 @@
  * Two lanes, deliberately split:
  *
  * - **URL + mirror** for everything a reader would share — the window, the axis, the bucket, the
- *   view, the metric selection and the zone overlay. A link to this page is a link to a reading of
- *   it.
+ *   view, the layout, the metric selection and the zone overlay. A link to this page is a link to
+ *   a reading of it.
  * - **Mirror only** (`{ url: false }`) for the nine weights. Nine numeric params would triple the
  *   length of every URL for a knob nobody deep-links, and the reweighted index is a private
  *   experiment, not a claim worth sharing. They still resolve, persist and reset through the same
@@ -48,6 +48,7 @@ export const cbbiFilters = createSearchStore({
     // thing a reader can ask for and not a thing to hand them.
     granularity: field.enum(['day', 'week', 'month'], 'week'),
     view: field.enum(['overview', 'metrics', 'history'], 'overview'),
+    layout: field.enum(['split', 'combined'], 'split'),
     metrics: field.multi(CBBI_METRIC_KEYS, CBBI_METRIC_KEYS),
     zones: field.boolean(true),
     w_PiCycle: weight(),
@@ -65,6 +66,7 @@ export const cbbiFilters = createSearchStore({
   scale: { log: 'Logarithmic', linear: 'Linear' },
   granularity: { day: 'Daily', week: 'Weekly', month: 'Monthly' },
   view: { overview: 'Overview', metrics: 'Metrics', history: 'History' },
+  layout: { split: 'Separate charts', combined: 'One chart' },
   metrics: Object.fromEntries(CBBI_METRICS.map((m) => [m.key, m.label])),
 })
 

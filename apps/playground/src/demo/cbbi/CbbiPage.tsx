@@ -8,7 +8,7 @@
  * — 5,541 daily points, nine metrics with leading nulls, and a price series spanning four orders
  * of magnitude. The panel's own module doc (`CbbiPanel.tsx`) carries the findings it produced.
  *
- * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · three filters · sync),
+ * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · four filters · sync),
  * one store for every interactive field (`cbbi-store.ts`, laws C2–C4), `StatCard`/`ChartCard`/
  * `Section` for the tiers, and `QueryState` for the four data branches. The two columns are ONE
  * node each — below `sm` the `Flex` turns into a column and the panel lands under the main body,
@@ -18,7 +18,7 @@ import { Box, Flex, SimpleGrid, Stack, Text } from '@mantine/core'
 import { PageBar, QueryState, Section, StatCard } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
-import type { AxisConfig, ChartSeries } from 'basalt-ui/charts'
+import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, SelectFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable } from 'basalt-ui/data'
 import { createBasaltQueryClient, QueryClientProvider } from 'basalt-ui/query'
@@ -67,6 +67,8 @@ const TABLE_MONTHS = 24
 const HEAT_HEIGHT = 300
 const MAIN_CHART_HEIGHT = 260
 const METRIC_CHART_HEIGHT = 150
+/** The combined price+confidence chart's height — one tall plot in place of two 260px ones. */
+const COMBINED_CHART_HEIGHT = 520
 
 /**
  * `StatCard.tone` is a three-value vocabulary (`good | warn | bad`) and the index is read the other
@@ -88,10 +90,18 @@ const ZONE_LABEL: Record<CbbiZone, string> = {
  * The 0.1 / 0.9 overlays. `-Infinity`/`Infinity` clamp to the resolved domain (`ZoneRects`), so the
  * bands reach the axis ends without restating `[0, 1]` here.
  */
-const CONFIDENCE_ZONES = [
+const CONFIDENCE_ZONES: ZoneSpec[] = [
   { from: 0.9, to: Infinity, fill: alpha(VX.badSolid, 0.14) },
   { from: -Infinity, to: 0.1, fill: alpha(VX.goodSolid, 0.14) },
 ]
+
+/** `CONFIDENCE_ZONES`, anchored to the right axis — the combined chart's confidence lines read
+ * against `y2`, so their zone bands have to follow. */
+function withAxisSide(zones: readonly ZoneSpec[], axisSide: 'left' | 'right'): ZoneSpec[] {
+  return zones.map((z) => ({ ...z, axisSide }))
+}
+
+const CONFIDENCE_ZONES_RIGHT = withAxisSide(CONFIDENCE_ZONES, 'right')
 
 const CONFIDENCE_AXIS: AxisConfig<CbbiPoint> = { domain: [0, 1], format: pct }
 
@@ -170,6 +180,7 @@ function CbbiPageBody() {
               label="Price scale"
               icon={<IconCurrency />}
             />
+            <SelectFilter field={cbbiFilters.field.layout} label="Layout" icon={<IconChart />} />
           </FilterSet>
         }
       />
@@ -244,6 +255,7 @@ function CbbiColumns({
             summary={summary}
             zonesOn={filters.zones}
             scale={filters.scale}
+            layout={filters.layout}
             reweighted={!isDefaultComposition(weights, enabled)}
           />
         )}
@@ -275,6 +287,7 @@ function CbbiOverview({
   summary,
   zonesOn,
   scale,
+  layout,
   reweighted,
 }: {
   points: CbbiPoint[]
@@ -282,6 +295,9 @@ function CbbiOverview({
   summary: Summary
   zonesOn: boolean
   scale: 'log' | 'linear'
+  /** `'split'` renders price and confidence as two stacked cards; `'combined'` folds them into
+   * one dual-axis chart — see `cbbi-store.ts`'s `layout` field. */
+  layout: 'split' | 'combined'
   /** True once the panel has moved a weight or dropped a metric — see `isDefaultComposition`. */
   reweighted: boolean
 }) {
@@ -327,6 +343,33 @@ function CbbiOverview({
             color: VX.warnSolid,
             mark: 'line' as const,
             dash: 'dashed' as const,
+            getValue: (d: CbbiPoint) => d.custom,
+          },
+        ]
+      : []),
+  ]
+
+  // The combined chart's confidence lines read against `y2` (`axis: 'right'`) and, unlike the
+  // split card above, sit alongside the price line on the SAME plot — `VX.ink` keeps the official
+  // reading visually distinct from `VX.accent` price rather than the two overlapping in hue.
+  const combinedConfidenceSeries: ChartSeries<CbbiPoint>[] = [
+    {
+      key: 'official',
+      label: 'Official CBBI',
+      color: VX.ink,
+      mark: 'line',
+      axis: 'right',
+      getValue: (d) => d.official,
+    },
+    ...(reweighted
+      ? [
+          {
+            key: 'custom',
+            label: 'Reweighted',
+            color: VX.warnSolid,
+            mark: 'line' as const,
+            dash: 'dashed' as const,
+            axis: 'right' as const,
             getValue: (d: CbbiPoint) => d.custom,
           },
         ]
@@ -382,50 +425,77 @@ function CbbiOverview({
       </SimpleGrid>
 
       {/*
-       * Price and confidence are TWO cards, not one `DualPanel`. `DualPanel`'s bottom pane is a
-       * signed histogram with its own symmetric domain — it cannot draw a 0..1 line, take zone
-       * bands on that pane, or express a log top pane — so the shape it generalizes is not this
-       * one. Two `ChartCard`s over the same `getX` keys share the page cursor anyway, which is the
-       * property the dual pane was wanted for.
+       * Price and confidence are TWO cards, not one `DualPanel`, in the `split` layout.
+       * `DualPanel`'s bottom pane is a signed histogram with its own symmetric domain — it cannot
+       * draw a 0..1 line, take zone bands on that pane, or express a log top pane — so the shape it
+       * generalizes is not this one. Two `ChartCard`s over the same `getX` keys share the page
+       * cursor anyway, which is the property the dual pane was wanted for. `combined` folds both
+       * into one dual-axis `MultiLine` instead — the layout filter picks between the two readings.
        */}
-      <ChartCard
-        title="BTC price"
-        icon={<IconCurrency />}
-        info="Closing price per bucket. The scale filter switches the axis between log and linear."
-        value={money(summary.price)}
-        {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
-        deltaPeriod="30d"
-      >
-        <MultiLine
-          data={points}
-          height={MAIN_CHART_HEIGHT}
-          chartId="cbbi-price"
-          ariaLabel="Bitcoin price"
-          getX={(d) => d.key}
-          formatX={fmtMonthTick}
-          y={priceAxis}
-          series={priceSeries}
-        />
-      </ChartCard>
+      {layout === 'split' ? (
+        <>
+          <ChartCard
+            title="BTC price"
+            icon={<IconCurrency />}
+            info="Closing price per bucket. The scale filter switches the axis between log and linear."
+            value={money(summary.price)}
+            {...(summary.priceDelta !== undefined && { delta: summary.priceDelta })}
+            deltaPeriod="30d"
+          >
+            <MultiLine
+              data={points}
+              height={MAIN_CHART_HEIGHT}
+              chartId="cbbi-price"
+              ariaLabel="Bitcoin price"
+              getX={(d) => d.key}
+              formatX={fmtMonthTick}
+              y={priceAxis}
+              series={priceSeries}
+            />
+          </ChartCard>
 
-      <ChartCard
-        title="Confidence index"
-        icon={<IconActivity />}
-        info="0 is a cycle bottom, 1 a cycle top. The bands mark the 0.1 and 0.9 thresholds."
-        value={ratio(summary.official)}
-      >
-        <MultiLine
-          data={points}
-          height={MAIN_CHART_HEIGHT}
-          chartId="cbbi-confidence"
-          ariaLabel="CBBI confidence index"
-          getX={(d) => d.key}
-          formatX={fmtMonthTick}
-          y={CONFIDENCE_AXIS}
-          {...(zonesOn && { zones: CONFIDENCE_ZONES })}
-          series={confidenceSeries}
-        />
-      </ChartCard>
+          <ChartCard
+            title="Confidence index"
+            icon={<IconActivity />}
+            info="0 is a cycle bottom, 1 a cycle top. The bands mark the 0.1 and 0.9 thresholds."
+            value={ratio(summary.official)}
+          >
+            <MultiLine
+              data={points}
+              height={MAIN_CHART_HEIGHT}
+              chartId="cbbi-confidence"
+              ariaLabel="CBBI confidence index"
+              getX={(d) => d.key}
+              formatX={fmtMonthTick}
+              y={CONFIDENCE_AXIS}
+              {...(zonesOn && { zones: CONFIDENCE_ZONES })}
+              series={confidenceSeries}
+            />
+          </ChartCard>
+        </>
+      ) : (
+        <ChartCard
+          title="Price & confidence"
+          icon={<IconActivity />}
+          info="Left axis is BTC price (the scale filter switches log/linear); right axis is the
+            0..1 confidence index. Same bucket, same day, one plot."
+          value={money(summary.price)}
+          subtitle={`${ratio(summary.official)} confidence`}
+        >
+          <MultiLine
+            data={points}
+            height={COMBINED_CHART_HEIGHT}
+            chartId="cbbi-combined"
+            ariaLabel="Bitcoin price and CBBI confidence index"
+            getX={(d) => d.key}
+            formatX={fmtMonthTick}
+            y={priceAxis}
+            y2={CONFIDENCE_AXIS}
+            {...(zonesOn && { zones: CONFIDENCE_ZONES_RIGHT })}
+            series={[...priceSeries, ...combinedConfidenceSeries]}
+          />
+        </ChartCard>
+      )}
 
       <ChartCard
         title="Distribution"
