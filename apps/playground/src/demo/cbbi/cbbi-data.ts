@@ -78,6 +78,15 @@ export const CBBI_METRIC_LABEL: Record<CbbiMetricKey, string> = Object.fromEntri
 export type CbbiRow = {
   /** Unix MILLIseconds — the upstream keys are seconds, converted once in `parseCbbi`. */
   t: number
+  /**
+   * `t` as a UTC `YYYY-MM-DD`, stamped ONCE at parse.
+   *
+   * It is the chart's x key and the tooltip header, so `isoDay(row.t)` per row per render meant a
+   * `Date` allocation and an ISO format for every one of 5,541 points, times every chart on the
+   * page, on every commit. Derived rather than stored would be the cleaner type and the wrong
+   * trade at this size.
+   */
+  day: string
   price: number
   /** The OFFICIAL index, 0..1, as published. `computeConfidence` is the reweighted analog. */
   confidence: number
@@ -145,7 +154,8 @@ export function parseCbbi(raw: unknown): CbbiRow[] {
     const metrics = {} as Record<CbbiMetricKey, number | null>
     for (const [metricKey, series] of metricSeries) metrics[metricKey] = series[key] ?? null
 
-    rows.push({ t: seconds * 1000, price: priceValue, confidence: confidenceValue, metrics })
+    const t = seconds * 1000
+    rows.push({ t, day: isoDay(t), price: priceValue, confidence: confidenceValue, metrics })
   }
 
   if (rows.length === 0) throw new Error('CBBI: payload carried no usable rows')
@@ -253,7 +263,7 @@ export function bucketRows(rows: readonly CbbiRow[], grain: CbbiGrain): CbbiRow[
       }
       metrics[key] = count === 0 ? null : sum / count
     }
-    out.push({ t: last.t, price: last.price, confidence: last.confidence, metrics })
+    out.push({ t: last.t, day: last.day, price: last.price, confidence: last.confidence, metrics })
   }
   out.sort((a, b) => a.t - b.t)
   return out

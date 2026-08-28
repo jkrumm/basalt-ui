@@ -10,7 +10,6 @@ import {
   CBBI_PEAK,
   computeConfidence,
   deltaPct,
-  isoDay,
   isoMonth,
   money,
   ratio,
@@ -47,7 +46,7 @@ export function buildPoints(
   scale: CbbiScale,
 ): CbbiPoint[] {
   return rows.map((row) => ({
-    key: isoDay(row.t),
+    key: row.day,
     price: row.price,
     plotPrice: scale === 'log' ? Math.log10(Math.max(row.price, 1e-6)) : row.price,
     official: row.confidence,

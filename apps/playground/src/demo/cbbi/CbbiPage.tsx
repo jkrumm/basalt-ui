@@ -33,7 +33,6 @@ import {
   CBBI_METRICS,
   fmtMonthTick,
   histogram,
-  isoDay,
   money,
   pct,
   ratio,
@@ -105,6 +104,50 @@ const CONFIDENCE_ZONES_RIGHT = withAxisSide(CONFIDENCE_ZONES, 'right')
 const CONFIDENCE_AXIS: AxisConfig<CbbiPoint> = { domain: [0, 1], format: pct }
 
 /**
+ * The x accessors, at module scope.
+ *
+ * `CartesianChart` keys its measured margins and its scales on `[data, getX]`, and every chart kind
+ * here is `memo`ized — so a `(d) => d.key` written inline is a new identity on every commit and
+ * re-measures and re-scales up to nine charts over as many as 5,541 points, on nothing more than a
+ * `isFetching` flip. `row.day` is the same string, stamped once at parse (`cbbi-data.ts`).
+ */
+const pointDay = (d: CbbiPoint): string => d.key
+const rowDay = (d: CbbiRow): string => d.day
+
+/** The price line — static: it closes over nothing the page can change. */
+const PRICE_SERIES: ChartSeries<CbbiPoint>[] = [
+  {
+    key: 'price',
+    label: 'BTC price',
+    color: VX.accent,
+    mark: 'line',
+    getValue: (d) => d.plotPrice,
+    formatValue: (_v, d) => money(d.price),
+  },
+]
+
+const METRIC_AXIS: AxisConfig<CbbiRow> = { domain: [0, 1], format: pct }
+
+/**
+ * One series declaration per metric, built ONCE — it depends only on the metric's key and label,
+ * both static, so a literal per card per render would defeat `memo(ZonedLine)` for no gain.
+ */
+const METRIC_SERIES = Object.fromEntries(
+  CBBI_METRICS.map((metric) => [
+    metric.key,
+    [
+      {
+        key: metric.key,
+        label: metric.label,
+        color: VX.accent,
+        mark: 'line' as const,
+        getValue: (d: CbbiRow) => d.metrics[metric.key],
+      },
+    ] satisfies ChartSeries<CbbiRow>[],
+  ]),
+) as Record<CbbiMetricKey, ChartSeries<CbbiRow>[]>
+
+/**
  * The price card's trend, as a render prop over the slot's MEASURED box — hoisted for the reason
  * `DashboardPage.kpiSparkline` is: a closure defined during render is a fresh component identity
  * every commit, and the render prop is what lets the sparkline follow the slot's width instead of
@@ -144,7 +187,7 @@ function CbbiPageBody() {
   const query = useCbbi()
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
       <PageBar
         tabs={<ViewTabs field={cbbiFilters.field.view} label="View" options={VIEW_OPTIONS} />}
         actions={{
@@ -237,7 +280,7 @@ function CbbiBody({
   if (!summary) return null
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
       {filters.view === 'overview' && (
         <CbbiOverview
           points={points}
@@ -261,7 +304,7 @@ function CbbiBody({
       {filters.view === 'history' && <CbbiHistory rows={rows} />}
 
       <PageAside title="Panel" persistKey="cbbi">
-        <CbbiPanel latest={summary.latest} bins={bins} />
+        <CbbiPanel rows={rows} latest={summary.latest} bins={bins} weights={weights} />
       </PageAside>
     </Stack>
   )
@@ -292,83 +335,85 @@ function CbbiOverview({
   reweighted: boolean
 }) {
   // `plotPrice` is `log10(price)` on the log scale (the chart layer has no log axis — see
-  // `buildPoints`), so the axis formatter has to invert it before printing a dollar figure.
-  const priceAxis: AxisConfig<CbbiPoint> = {
-    domain: 'auto',
-    // `autoMinCeil: Infinity` pads down from the data minimum instead of forcing a zero baseline —
-    // a zero baseline on a price that starts at $16 and ends at $80,000 is one flat line.
-    autoMinCeil: Infinity,
-    format: scale === 'log' ? (v) => money(10 ** v) : money,
-  }
-
-  const priceSeries: ChartSeries<CbbiPoint>[] = [
-    {
-      key: 'price',
-      label: 'BTC price',
-      color: VX.accent,
-      mark: 'line',
-      getValue: (d) => d.plotPrice,
-      formatValue: (_v, d) => money(d.price),
-    },
-  ]
+  // `buildPoints`), so the axis formatter has to invert it before printing a dollar figure. Every
+  // chart input below is memoized on what it actually varies with: the kinds are `memo`ized and
+  // `CartesianChart` re-measures on a new `getX`/`data`, so a fresh literal per commit would
+  // re-lay-out three charts over up to 5,541 points each time the sync indicator blinks.
+  const priceAxis = useMemo<AxisConfig<CbbiPoint>>(
+    () => ({
+      domain: 'auto',
+      // `autoMinCeil: Infinity` pads down from the data minimum instead of forcing a zero baseline
+      // — a zero baseline on a price that starts at $16 and ends at $80,000 is one flat line.
+      autoMinCeil: Infinity,
+      format: scale === 'log' ? (v) => money(10 ** v) : money,
+    }),
+    [scale],
+  )
 
   // The reweighted line is drawn only once the reader has moved something: at the published
   // composition it IS the official reading, and two lines claiming to be one is a worse chart.
   const zoneTone = ZONE_TONE[summary.zone]
   const custom = summary.custom
 
-  const confidenceSeries: ChartSeries<CbbiPoint>[] = [
-    {
-      key: 'official',
-      label: 'Official CBBI',
-      color: VX.accent,
-      mark: 'line',
-      getValue: (d) => d.official,
-    },
-    ...(reweighted
-      ? [
-          {
-            key: 'custom',
-            label: 'Reweighted',
-            color: VX.warnSolid,
-            mark: 'line' as const,
-            dash: 'dashed' as const,
-            getValue: (d: CbbiPoint) => d.custom,
-          },
-        ]
-      : []),
-  ]
+  const confidenceSeries = useMemo<ChartSeries<CbbiPoint>[]>(
+    () => [
+      {
+        key: 'official',
+        label: 'Official CBBI',
+        color: VX.accent,
+        mark: 'line',
+        getValue: (d) => d.official,
+      },
+      ...(reweighted
+        ? [
+            {
+              key: 'custom',
+              label: 'Reweighted',
+              color: VX.warnSolid,
+              mark: 'line' as const,
+              dash: 'dashed' as const,
+              getValue: (d: CbbiPoint) => d.custom,
+            },
+          ]
+        : []),
+    ],
+    [reweighted],
+  )
 
   // The combined chart's confidence lines read against `y2` (`axis: 'right'`) and, unlike the
   // split card above, sit alongside the price line on the SAME plot — `VX.ink` keeps the official
   // reading visually distinct from `VX.accent` price rather than the two overlapping in hue.
-  const combinedConfidenceSeries: ChartSeries<CbbiPoint>[] = [
-    {
-      key: 'official',
-      label: 'Official CBBI',
-      color: VX.ink,
-      mark: 'line',
-      axis: 'right',
-      getValue: (d) => d.official,
-    },
-    ...(reweighted
-      ? [
-          {
-            key: 'custom',
-            label: 'Reweighted',
-            color: VX.warnSolid,
-            mark: 'line' as const,
-            dash: 'dashed' as const,
-            axis: 'right' as const,
-            getValue: (d: CbbiPoint) => d.custom,
-          },
-        ]
-      : []),
-  ]
+  const combinedSeries = useMemo<ChartSeries<CbbiPoint>[]>(
+    () => [
+      ...PRICE_SERIES,
+      {
+        key: 'official',
+        label: 'Official CBBI',
+        color: VX.ink,
+        mark: 'line',
+        axis: 'right',
+        getValue: (d) => d.official,
+      },
+      ...(reweighted
+        ? [
+            {
+              key: 'custom',
+              label: 'Reweighted',
+              color: VX.warnSolid,
+              mark: 'line' as const,
+              dash: 'dashed' as const,
+              axis: 'right' as const,
+              getValue: (d: CbbiPoint) => d.custom,
+            },
+          ]
+        : []),
+    ],
+    [reweighted],
+  )
 
   return (
-    <Stack gap={14}>
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={14}>
+    <Stack gap="sm">
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
         <StatCard
           icon={<IconActivity />}
           title="Confidence"
@@ -437,10 +482,10 @@ function CbbiOverview({
               height={MAIN_CHART_HEIGHT}
               chartId="cbbi-price"
               ariaLabel="Bitcoin price"
-              getX={(d) => d.key}
+              getX={pointDay}
               formatX={fmtMonthTick}
               y={priceAxis}
-              series={priceSeries}
+              series={PRICE_SERIES}
             />
           </ChartCard>
 
@@ -455,7 +500,7 @@ function CbbiOverview({
               height={MAIN_CHART_HEIGHT}
               chartId="cbbi-confidence"
               ariaLabel="CBBI confidence index"
-              getX={(d) => d.key}
+              getX={pointDay}
               formatX={fmtMonthTick}
               y={CONFIDENCE_AXIS}
               {...(zonesOn && { zones: CONFIDENCE_ZONES })}
@@ -477,12 +522,12 @@ function CbbiOverview({
             height={COMBINED_CHART_HEIGHT}
             chartId="cbbi-combined"
             ariaLabel="Bitcoin price and CBBI confidence index"
-            getX={(d) => d.key}
+            getX={pointDay}
             formatX={fmtMonthTick}
             y={priceAxis}
             y2={CONFIDENCE_AXIS}
             {...(zonesOn && { zones: CONFIDENCE_ZONES_RIGHT })}
-            series={[...priceSeries, ...combinedConfidenceSeries]}
+            series={combinedSeries}
           />
         </ChartCard>
       )}
@@ -533,7 +578,7 @@ function CbbiMetricGrid({
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing={14}>
+    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
       {shown.map((metric) => {
         const value = latest.metrics[metric.key]
         return (
@@ -549,20 +594,12 @@ function CbbiMetricGrid({
               height={METRIC_CHART_HEIGHT}
               chartId={`cbbi-metric-${metric.key}`}
               ariaLabel={metric.label}
-              getX={(d) => isoDay(d.t)}
+              getX={rowDay}
               formatX={fmtMonthTick}
-              y={{ domain: [0, 1], format: pct }}
+              y={METRIC_AXIS}
               {...(zonesOn && { zones: CONFIDENCE_ZONES })}
               legend={false}
-              series={[
-                {
-                  key: metric.key,
-                  label: metric.label,
-                  color: VX.accent,
-                  mark: 'line',
-                  getValue: (d) => d.metrics[metric.key],
-                },
-              ]}
+              series={METRIC_SERIES[metric.key]}
             />
           </ChartCard>
         )
@@ -579,7 +616,7 @@ function CbbiHistory({ rows }: { rows: CbbiRow[] }) {
   const table = useMemo(() => monthlyTable(bucketRows(rows, 'month'), TABLE_MONTHS), [rows])
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
       <ChartCard
         title="Mean confidence by month"
         icon={<IconChart />}

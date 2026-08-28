@@ -31,6 +31,7 @@
     "basalt/raw-scroll-container": "error",
     "basalt/hand-rolled-filter": "error",
     "basalt/control-outside-home": "warn",
+    "basalt/bound-control-outside-home": "warn",
     "basalt/control-size-literal": "warn",
     "basalt/page-bar-budget": "error",
     "basalt/in-body-page-title": "warn",

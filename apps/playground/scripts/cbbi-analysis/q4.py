@@ -1,6 +1,6 @@
 from core import *
 import numpy as np, pickle, datetime as dt
-ALL,LAST,L2T,L2B=pickle.load(open('/tmp/cbbi-analysis/q2.pkl','rb'))
+ALL,LAST,L2T,L2B=pickle.load(open(cache('q2.pkl'),'rb'))
 A=np.vstack([M[m] for m in METRICS])
 def grid(x): return float(np.clip(round(x*4)/4,0,2))
 def scale(s):
@@ -50,4 +50,4 @@ for k,w in W.items():
     print(f"{k:24s} {mt:5.2f} {pt:6.2f} {mb:5.2f} {tb:6.2f} {mt-mb:+6.2f} | {hit9}/6 med={med9:5.1f} [{s9}] | {hit1}/4 med={med1:5.1f} [{s1}] | {c[-1]:6.3f}")
 print("\n# sanity: official-equal composite vs published Confidence, max abs diff =",
       f"{np.nanmax(np.abs(comp(W['i official equal (9)'])-M['Confidence'])):.4f}")
-pickle.dump({k:{m:w[m] for m in METRICS} for k,w in W.items()},open('/tmp/cbbi-analysis/w.pkl','wb'))
+pickle.dump({k:{m:w[m] for m in METRICS} for k,w in W.items()},open(cache('w.pkl'),'wb'))

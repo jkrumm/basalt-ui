@@ -87,7 +87,7 @@ export function ControlsMobilePage() {
   const active = mobileFilters.useActiveCount()
 
   return (
-    <Stack gap={14}>
+    <Stack gap="sm">
       <PageBar
         actions={{
           primary: { key: 'export', label: 'Export', onClick: () => {} },
