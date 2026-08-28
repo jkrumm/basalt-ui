@@ -338,12 +338,27 @@ hard-fail their build.
 
 The plugin itself (`configs/oxlint-plugin.js`, alpha `jsPlugins`) ships inside `configs/` and is
 wired by the shipped preset, so a consumer inherits it by extending. **Read the rule list and the
-promotion state there, never from prose here.** Three things about it that are not obvious:
+promotion state there, never from prose here.** Five things about it that are not obvious:
 
 - **The control guards share ONE ancestry walk** (`createSlotContext`) that stops at a slot
-  ATTRIBUTE, never at the element — so a control in a home's CHILDREN (the body form) never fires,
-  while a hoisted `const pills = <Select/>` handed to `filters={pills}` does. That is why the
-  ancestry facts are captured during the visit and resolved at `Program:exit`.
+  ATTRIBUTE, never at the element — so a control in a TIERED home's CHILDREN (the body form) never
+  fires, while a hoisted `const pills = <Select/>` handed to `filters={pills}` does. The SUBTREE
+  homes are the mirror image and take the same hoisted hop: a `const rows = <SelectFilter/>`
+  rendered as `<PageAside>{rows}</PageAside>` is inside that aside. That is why the ancestry facts
+  are captured during the visit and resolved at `Program:exit`.
+- **The owner exemption needs a second half**: a file DEFINING `PanelRow`/`EnumFilter`/
+  `SliderControl` is exempt only when it imports nothing from `basalt-ui*`. basalt's own control
+  sources import each other relatively; a consumer of basalt always names the package, so one local
+  `function PanelRow` can no longer switch three rules off for a whole consumer file.
+- **A BOUND control's homelessness is a different rule from a raw one's**, and deliberately a
+  different ID: `control-outside-home` matches `@mantine/*` tags, `bound-control-outside-home`
+  matches `basalt-ui`-imported ones. Both read the same three SUBTREE homes — `FilterSet`,
+  `PageAside`, `PanelRow`, where the children ARE the home, provenance-gated because `PanelRow` is
+  an ordinary name for a consumer's own helper — and the bound one is the only control rule with no
+  text-lane twin in `src/guard`, because a bound control's name carries no provenance a 12-line
+  regex window could read. Splitting rather than widening is C16 mechanics: a
+  level is per-id, so widening would have shipped the new form at the old rule's level with no
+  grace, and widened it mid-grace besides.
 - **The raw-filter rules gate on the tag's `@mantine/*` IMPORT, not its name** — a consumer's own
   `Select` is not Mantine's, and an ALIAS (`Select as MantineSelect`) or a namespace (`M.Select`)
   resolves through the local→imported map, because the wrapper case is exactly the one the
@@ -383,7 +398,7 @@ Majors are banned, so the version number can never warn a consumer their charts 
 Code cannot load rules or skills from `node_modules`, which is the only reason anything is copied.
 
 - **Six rules, three skills, two templates**, with budgets enforced by `check-coverage`: rules
-  ≤1,050 lines total (tokens 160 / mantine 180 / charts 140 / state 160 / controls 160 /
+  ≤1,050 lines total (tokens 160 / mantine 180 / charts 140 / state 160 / controls 185 /
   batteries 220), skills ≤100 each, `CLAUDE-block.md.tpl` 40, `DESIGN.md.tpl` 45. Thirteen files
   carried 4,177 lines, 55% of it unguarded, with the identity paragraph restated six times.
 - **Every rule file opens with a GENERATED `<!-- basalt:coverage -->` block** —

@@ -48,6 +48,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'raw-scroll-container',
   'hand-rolled-filter',
   'control-outside-home',
+  'bound-control-outside-home',
   'control-size-literal',
   'page-bar-budget',
   'in-body-page-title',
@@ -269,7 +270,7 @@ export const SURFACES = {
       'shadow-basalt-export',
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
     optionalPeers: [
       'react-markdown',
       'remark-gfm',
@@ -554,12 +555,15 @@ export const SURFACES = {
     // window, since a regex scan has no ancestry. Same law, same wave, same promotion.
     guardKinds: ['raw-selection-control'],
     // The control tier itself (laws C1/C3/C5/C9). `hand-rolled-filter`, `control-size-literal` and
-    // `responsive-twin` all ship `error`; `control-outside-home` is the one grace entry left in
-    // `PLUGIN_RULE_GRACE`, re-dated to 1.28.0 against the wave-7 measurement (see its `why`).
-    // The budget rules live on `.` with `PageBar` itself.
+    // `responsive-twin` all ship `error`; the two C1 placement rules are the grace entries in
+    // `PLUGIN_RULE_GRACE`, both promoting at 1.30.0 — `control-outside-home` re-dated against the
+    // wave-7 measurement, `bound-control-outside-home` new since 1.28.0 (ASIDE-SPEC G5: the basalt
+    // half of C1, where a bound control in a section body rendered as a stray pill). The budget
+    // rules live on `.` with `PageBar` itself.
     pluginRules: [
       'hand-rolled-filter',
       'control-outside-home',
+      'bound-control-outside-home',
       'control-size-literal',
       'responsive-twin',
     ],

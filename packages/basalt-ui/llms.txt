@@ -23,7 +23,7 @@ Version: 1.27.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)
 Layer: mantine-coupled
 Rule: basalt-mantine
 OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0
