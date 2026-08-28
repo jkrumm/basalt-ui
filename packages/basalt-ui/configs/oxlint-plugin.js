@@ -1933,6 +1933,13 @@ const CONTROL_OWNER_NAMES = new Set([
   ...BOUND_TAGS,
   'FilterSet',
   'FilterPill',
+  // The INTERNAL control modules, listed for the same reason the public names are: `EnumFilter` is
+  // the shared body behind SelectFilter/CompareFilter/NumberFilter, and `PanelRow`/`SliderControl`
+  // are the aside's row primitives (`docs/ASIDE-SPEC.md` §3). A module that IS a bound control
+  // cannot be told to use one. This is a RELAXATION, so it needs no grace entry (C16).
+  'EnumFilter',
+  'PanelRow',
+  'SliderControl',
   'SyncButton',
   'ActionGroup',
   'OverflowMenu',

@@ -21,26 +21,35 @@
  * Originally extracted from argo's `apps/dashboard/src/components/app-shell/page-header.tsx`;
  * linewatch's `page-header.tsx` measure-and-publish effect became the framework behaviour below.
  */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { CtlSlot } from '../theme'
 import { BarActionRow, BarExtrasProvider, globalActionAsBarAction } from '../controls/actions'
+import { FilterPill } from '../controls/filter-pill'
+import { FilterSheet } from '../controls/filter-sheet'
 import { SyncButton } from '../controls/sync-button'
 import type { ActionGroupProps, BarAction, GlobalAction } from '../controls/actions'
 import type { SyncButtonProps } from '../controls/sync-button'
+import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
 import classes from './page-bar.module.css'
 
 /** The custom property row 2's measured height is published on. */
 export const PAGE_BAR_HEIGHT_VAR = '--basalt-page-bar-h'
+
+/**
+ * What a `PageAside` publishes when it projects itself into row 2 below `sm`
+ * (`docs/ASIDE-SPEC.md` §0 "Desktop and mobile are one declaration"). Metadata only — the aside's
+ * CHILDREN never travel through this context: they are portalled into the sheet's own node
+ * ({@link PageBarSlots.panelTarget}), because a `ReactNode` in state would be a fresh object on
+ * every parent render and the claim effect would loop.
+ */
+export type AsidePanelClaim = {
+  /** The aside's `title` — the pill's accessible name and the sheet's heading. */
+  readonly title: string
+  /** The aside's own glyph, supplied by the claimant so this module owns no aside iconography. */
+  readonly icon: ReactNode
+}
 
 type PageBarSlots = {
   /** The header node row 1 portals into. `null` outside a shell, and until the outlet mounts. */
@@ -53,6 +62,17 @@ type PageBarSlots = {
   /** How many page kebabs are mounted. `> 0` means the shell must not render one of its own. */
   kebabClaims: number
   claimKebab: () => () => void
+  /** True while a mounted `PageBar` is rendering a row 2 — the row that can host the aside's pill.
+   * Without one the aside keeps its in-flow mobile form; there is nowhere to put the trigger. */
+  panelHost: boolean
+  claimPanelHost: () => () => void
+  /** The projecting aside, or `null`. At most one — the aside region holds one page at a time. */
+  panel: AsidePanelClaim | null
+  claimPanel: (panel: AsidePanelClaim) => () => void
+  /** The node inside the open panel sheet the aside's children portal into. `null` while closed —
+   * the Drawer unmounts its body, which is what keeps ONE node mounted at a time (law C9). */
+  panelTarget: HTMLElement | null
+  setPanelTarget: (el: HTMLElement | null) => void
 }
 
 const NO_SLOTS: PageBarSlots = {
@@ -62,6 +82,12 @@ const NO_SLOTS: PageBarSlots = {
   mobileMoreActions: [],
   kebabClaims: 0,
   claimKebab: () => () => {},
+  panelHost: false,
+  claimPanelHost: () => () => {},
+  panel: null,
+  claimPanel: () => () => {},
+  panelTarget: null,
+  setPanelTarget: () => {},
 }
 
 const PageBarContext = createContext<PageBarSlots>(NO_SLOTS)
@@ -79,10 +105,28 @@ export function PageBarProvider({
 }): ReactNode {
   const [target, setTarget] = useState<HTMLElement | null>(null)
   const [kebabClaims, setKebabClaims] = useState(0)
+  const [panelHostClaims, setPanelHostClaims] = useState(0)
+  const [panel, setPanel] = useState<AsidePanelClaim | null>(null)
+  const [panelTarget, setPanelTarget] = useState<HTMLElement | null>(null)
 
   const claimKebab = useCallback(() => {
     setKebabClaims((n) => n + 1)
     return () => setKebabClaims((n) => n - 1)
+  }, [])
+
+  const claimPanelHost = useCallback(() => {
+    setPanelHostClaims((n) => n + 1)
+    return () => setPanelHostClaims((n) => n - 1)
+  }, [])
+
+  // Identity-checked on release, not an unconditional `null`: two asides never coexist, but a route
+  // change can mount the next one's claim before the previous one's cleanup runs, and clearing
+  // blindly there would drop the live claim.
+  const claimPanel = useCallback((next: AsidePanelClaim) => {
+    setPanel(next)
+    return () => {
+      setPanel((current) => (current === next ? null : current))
+    }
   }, [])
 
   const mobileMoreActions = globalActions
@@ -96,6 +140,12 @@ export function PageBarProvider({
     mobileMoreActions,
     kebabClaims,
     claimKebab,
+    panelHost: panelHostClaims > 0,
+    claimPanelHost,
+    panel,
+    claimPanel,
+    panelTarget,
+    setPanelTarget,
   }
 
   return (
@@ -114,6 +164,20 @@ export function PageBarOutlet({ className }: { className?: string }) {
 /** Internal — `true` while a page's `ActionGroup` owns the header's one mobile kebab. */
 export function usePageKebabClaimed(): boolean {
   return useContext(PageBarContext).kebabClaims > 0
+}
+
+/**
+ * Internal — the seam `PageAside` projects itself through below `sm` (`docs/ASIDE-SPEC.md` §0).
+ * `host` says whether there is a row 2 to hang the pill off at all; `claim` publishes the aside's
+ * title and glyph; `target` is the node inside the opened sheet its children portal into.
+ */
+export function useAsidePanelSlot(): {
+  host: boolean
+  claim: (panel: AsidePanelClaim) => () => void
+  target: HTMLElement | null
+} {
+  const { panelHost, claimPanel, panelTarget } = useContext(PageBarContext)
+  return { host: panelHost, claim: claimPanel, target: panelTarget }
 }
 
 export type PageBarProps = {
@@ -146,13 +210,6 @@ export type PageBarProps = {
    */
   className?: string
 }
-
-/**
- * `useLayoutEffect` in the browser, `useEffect` on the server — the standard isomorphic pattern, so
- * an SSR render never trips React's "useLayoutEffect does nothing on the server" warning. The
- * branch reads a global that cannot change between renders, so the hook identity is stable.
- */
-const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 /**
  * Publishes an element's measured height as a custom property on `documentElement`.
@@ -214,7 +271,21 @@ export function PageBar({
   tabs,
   className,
 }: PageBarProps): ReactNode {
-  const { target, inShell } = useContext(PageBarContext)
+  const { target, inShell, panel, claimPanelHost, setPanelTarget } = useContext(PageBarContext)
+  // An overlay's open flag, like `FilterPill`'s and `FilterSet`'s — not page state (C3).
+  const [panelOpened, setPanelOpened] = useState(false)
+
+  // The flag belongs to the CLAIM, not to the bar. `FilterSheet`'s `onClose` was the only thing
+  // clearing it, so a route change that released the aside's claim while the sheet was open left
+  // `true` behind — and the NEXT page's `PageAside` mounted its sheet already open, with no user
+  // action anywhere. Keyed on the claim's IDENTITY rather than on `panel === null` because the
+  // release and the next claim can land in one commit, where `panel` is never observed null.
+  const seenPanel = useRef(panel)
+  useEffect(() => {
+    if (seenPanel.current === panel) return
+    seenPanel.current = panel
+    setPanelOpened(false)
+  }, [panel])
 
   const filtersEndActions = filtersEnd ?? []
   const hasRow2 = tabs !== undefined || filters !== undefined || filtersEndActions.length > 0
@@ -224,6 +295,14 @@ export function PageBar({
   const hasRow1 =
     actions !== undefined || sync !== undefined || hasLead || filtersEndActions.length > 0
   const measureRef = useMeasuredHeightVar(hasRow2 || (!inShell && hasRow1))
+
+  // Row 2 is what an aside's mobile pill needs; publishing the claim from here is what lets
+  // `PageAside` decide between projecting and staying in flow without either component knowing
+  // about the other's props.
+  useIsomorphicLayoutEffect(() => {
+    if (!inShell || !hasRow2) return
+    return claimPanelHost()
+  }, [inShell, hasRow2, claimPanelHost])
 
   const row1 = hasRow1 ? (
     <div className={classes.row1}>
@@ -269,6 +348,20 @@ export function PageBar({
           <CtlSlot>{filters}</CtlSlot>
         </div>
       )}
+      {panel !== null && (
+        <FilterPill
+          // One word, no count: unlike `Filters (n)` an aside has no census to count (its children
+          // are not a `FilterSet`), and a number nobody can derive is worse than none.
+          label="Panel"
+          ariaLabel={panel.title}
+          icon={panel.icon}
+          className={classes.panelPill}
+          hideGlyph
+          onClick={() => {
+            setPanelOpened(true)
+          }}
+        />
+      )}
       {filtersEndActions.length > 0 && (
         <div className={classes.filtersEnd}>
           <CtlSlot>
@@ -280,6 +373,23 @@ export function PageBar({
       )}
     </div>
   ) : null
+
+  // The aside's mobile sheet. `onResetAll` is deliberately absent — the children mount under a
+  // `null` registry, so there is nothing registered to reset. The body is an OUTLET, not the
+  // children: `PageAside` portals into it, which is what keeps the aside's node singular (C9) and
+  // keeps a `ReactNode` out of context state (see `AsidePanelClaim`).
+  const panelSheet =
+    panel === null ? null : (
+      <FilterSheet
+        opened={panelOpened}
+        title={panel.title}
+        onClose={() => {
+          setPanelOpened(false)
+        }}
+      >
+        <div ref={setPanelTarget} />
+      </FilterSheet>
+    )
 
   // Shell-less: one sticky bar at the top of the document holding both rows, `title` leading.
   if (!inShell) {
@@ -310,6 +420,7 @@ export function PageBar({
           {row2}
         </div>
       )}
+      {panelSheet}
     </>
   )
 }

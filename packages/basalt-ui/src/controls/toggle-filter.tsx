@@ -4,6 +4,10 @@
  * In the sheet it becomes a `Switch` row, where a 44px row with an explicit on/off affordance reads
  * better than a chip whose state is a border colour.
  *
+ * In the aside `panel` it is the ONE row whose control rides the label line (`docs/ASIDE-SPEC.md`
+ * §3): a switch is atomic and needs no width, so the label-above law that every other panel row
+ * follows would only cost it a second line.
+ *
  * @example
  * // errorsOnly: field.boolean(false)
  * <ToggleFilter field={filters.field.errorsOnly} label="Errors only" />
@@ -14,6 +18,7 @@ import type { BooleanField, FieldHandle } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { sheetRowClassNames } from './filter-sheet'
+import { PanelRow } from './panel-row'
 
 export type ToggleFilterProps = {
   readonly field: FieldHandle<BooleanField>
@@ -27,6 +32,23 @@ export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNo
   useFilterRegistration(!field.isDefault(value), () => {
     field.clear()
   })
+
+  if (surface === 'panel') {
+    return (
+      <PanelRow
+        label={label}
+        end={
+          <Switch
+            aria-label={label}
+            checked={value}
+            onChange={(event) => {
+              setValue(event.currentTarget.checked)
+            }}
+          />
+        }
+      />
+    )
+  }
 
   if (surface === 'sheet') {
     // The `Switch` IS the row — no wrapping div. `sheetRowClassNames` stretches its own `<label>`

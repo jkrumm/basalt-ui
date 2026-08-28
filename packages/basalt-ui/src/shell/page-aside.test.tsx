@@ -12,10 +12,13 @@
  * uses.
  */
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
-import { BasaltShell, PageAside } from './index'
+import { FilterSet, ToggleFilter } from '../controls'
+import { useFilterSurface } from '../controls/filter-context'
+import { createLocalStore, field } from '../state'
+import { BasaltShell, PageAside, PageBar } from './index'
 import type { SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -197,5 +200,142 @@ describe('PageAside in flow', () => {
     )
     // Nothing claimed the region, so it keeps its zero width.
     expect(asideCss()).toContain('--app-shell-aside-width:0rem')
+  })
+})
+
+/** Reports the surface it was mounted under, so a test can assert what a CHILD of the aside sees. */
+function SurfaceProbe(): ReactNode {
+  return <span data-testid="surface">{useFilterSurface()}</span>
+}
+
+/**
+ * Wave 2 (`docs/ASIDE-SPEC.md` §4): the aside body is the `panel` filter surface, and below `sm` it
+ * PROJECTS into the page bar's row 2 instead of stacking in flow — one node either way (law C9).
+ */
+describe('PageAside — the panel surface and the mobile projection', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
+  })
+
+  const store = createLocalStore({
+    key: 'aside-panel',
+    fields: { reweighted: field.boolean(false) },
+  })
+
+  test('a child of the aside body sees the `panel` surface, not `pill`', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <div data-testid="main">Main column</div>
+          <PageAside title="Panel">
+            <SurfaceProbe />
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('surface').textContent).toBe('panel')
+  })
+
+  test('below sm with a PageBar row 2: the aside projects into the bar and renders no in-flow node', async () => {
+    installMobileMatchMedia()
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar
+            filters={
+              <FilterSet>
+                <ToggleFilter field={store.field.reweighted} label="Reweighted" />
+              </FilterSet>
+            }
+          />
+          <PageAside title="Weights">
+            <div data-testid="aside-child">Composition</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    // No panel node anywhere — neither the portalled form nor the in-flow one (C9: ONE node).
+    expect(document.querySelectorAll('[data-basalt-page-aside]')).toHaveLength(0)
+    expect(screen.queryByTestId('aside-child')).toBeNull()
+    // …and the trigger is in row 2, named by the aside's title.
+    const trigger = screen.getByRole('button', { name: 'Weights' })
+    expect(trigger.textContent).toContain('Panel')
+
+    fireEvent.click(trigger)
+
+    // The sheet holds the children — the Drawer mounts its body through a transition, so the assert
+    // waits rather than reading the frame the click landed on.
+    await waitFor(() => {
+      expect(screen.getByTestId('aside-child')).toBeDefined()
+    })
+    expect(screen.getByText('Weights')).toBeDefined()
+  })
+
+  /**
+   * The sheet's open flag lives on `PageBar`, and `FilterSheet`'s `onClose` used to be the only
+   * thing clearing it — so a route change that released the aside's claim mid-sheet left `true`
+   * behind, and the NEXT page's `PageAside` mounted its sheet already open with nobody having
+   * touched it. The claim's identity is what the flag is keyed on now.
+   */
+  test('a released claim closes the sheet, so the next aside does not inherit it open', async () => {
+    installMobileMatchMedia()
+    const Page = ({ aside }: { aside: 'weights' | 'origins' | null }) => (
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar
+            filters={
+              <FilterSet>
+                <ToggleFilter field={store.field.reweighted} label="Reweighted" />
+              </FilterSet>
+            }
+          />
+          {aside !== null && (
+            <PageAside title={aside === 'weights' ? 'Weights' : 'Origins'}>
+              <div data-testid={`child-${aside}`}>body</div>
+            </PageAside>
+          )}
+        </BasaltShell>
+      </MantineProvider>
+    )
+
+    const { rerender } = render(<Page aside="weights" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Weights' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('child-weights')).toBeDefined()
+    })
+
+    // The route leaves, then the next one claims. The sheet must come back CLOSED.
+    rerender(<Page aside={null} />)
+    rerender(<Page aside="origins" />)
+
+    expect(screen.getByRole('button', { name: 'Origins' })).toBeDefined()
+    await waitFor(() => {
+      expect(screen.queryByTestId('child-origins')).toBeNull()
+    })
+  })
+
+  test('below sm with no PageBar row 2: wave 1 in-flow rendering, no trigger', () => {
+    installMobileMatchMedia()
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <div data-testid="main">Main column</div>
+          <PageAside title="Weights">
+            <div data-testid="aside-child">Composition</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    expect(document.querySelector('[data-basalt-page-aside="standalone"]')).not.toBeNull()
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Weights' })).toBeNull()
   })
 })

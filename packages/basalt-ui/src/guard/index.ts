@@ -540,7 +540,7 @@ const OVERLAY_CONVENTION_FILE = /(?:^|\/)[^/]*-(?:modal|drawer|popover|panel|for
 
 /** A name whose DECLARATION means this file DEFINES a basalt control rather than consuming one. */
 const CONTROL_OWNER_DEF =
-  /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|NumberFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
+  /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|NumberFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|EnumFilter|PanelRow|SliderControl|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
 
 /** `@mantine/form` — a form is C1's third home, and its inputs are not filters. */
 const MANTINE_FORM_IMPORT = /from\s+['"]@mantine\/form['"]/

@@ -65,6 +65,12 @@ const CTL_TIER_COMPONENTS = [
   // `Input`/`InputBase`, so it contributes no prefix of its own; being scanned is what proves that
   // rather than assuming it.
   'NativeSelect',
+  // Scanned WITHOUT being in `CTL_THEME` — the one entry of that shape, and see `ctl-theme.tsx`'s
+  // note for why: `SliderControl` renders `size="ctl"` itself, so `--slider-size-ctl` has to exist
+  // for the same reason every other tier var does, while adding `Slider` to the slot map would
+  // widen a shipped `error` rule. The last test in this file allows the direction (themed ⊆
+  // scanned), which is what makes this legal rather than drift.
+  'Slider',
 ] as const
 
 /** Every `.mjs` file (not `.mjs.map`) under a component directory, recursing into subcomponents but

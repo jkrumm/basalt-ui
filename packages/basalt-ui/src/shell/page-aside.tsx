@@ -14,28 +14,30 @@
  *
  * - **Inside `BasaltShell`, from `sm` up** the panel portals into `AppShell.Aside`, folding to a
  *   `appShellAsideRailWidth` rail with one expand button.
- * - **Below `sm`, and in a shell-less app**, it renders IN-FLOW exactly where it is written — one
- *   node, no `visibleFrom` twin, no second mount (law C9) — with no fold chrome, because there is
- *   no region to fold into. A page therefore writes it after its main column and gets the stacked
- *   mobile order for free.
+ * - **Below `sm`, with a `PageBar` that renders a row 2**, the panel PROJECTS into that row: it
+ *   registers its title and glyph with the page-bar slot, renders no node of its own, and row 2
+ *   draws one `Panel` pill opening a `FilterSheet` its children portal into. One node at a time —
+ *   never the in-flow block AND the sheet.
+ * - **Below `sm` with no such row, and in a shell-less app**, it renders IN-FLOW exactly where it
+ *   is written — one node, no `visibleFrom` twin, no second mount (law C9) — with no fold chrome,
+ *   because there is no region to fold into. A page therefore writes it after its main column and
+ *   gets the stacked mobile order for free.
  *
- * Wave 2 (`docs/ASIDE-SPEC.md` §4) owns the inspector row primitive, the flush in-aside `Section`
- * chrome and the rhythm token; wave 1 renders whatever the page puts in it, as-is.
+ * **The body is the `panel` filter surface.** Children mount under `FilterSetScope surface="panel"`
+ * with a `null` registry, so every basalt control in an aside renders its inspector/facet ROW form
+ * rather than a pill (`docs/ASIDE-SPEC.md` §3), and none of them counts toward a `Filters (n)` that
+ * does not exist here. In the mobile projection the same children mount under `surface="sheet"` —
+ * the sheet's own row form, not a panel row squeezed into a drawer.
  */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useMediaQuery } from '@mantine/hooks'
 import { useMantineTheme } from '@mantine/core'
-import { createPersistedState } from '../state'
+import { usePersistedOrLocal } from '../state/persisted-or-local'
+import { FilterSetScope } from '../controls/filter-context'
+import { useAsidePanelSlot } from './page-bar'
+import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
 import classes from './page-aside.module.css'
 
 type AsideRegion = {
@@ -119,38 +121,6 @@ export type PageAsideProps = {
   className?: string
 }
 
-/** `useLayoutEffect` in the browser, `useEffect` on the server — see `page-bar.tsx`'s copy for the
- * full note. The branch reads a global that cannot change between renders. */
-const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
-
-const UNPERSISTED_KEY = '__local__'
-
-/** Fold state — `createPersistedState` when `persistKey` is given, else local `useState`. Both
- * hooks are always called (stable order); only the unpersisted branch's setter is ever invoked
- * when `persistKey` is absent, so no unpersisted aside writes to storage. The same shape
- * `section.tsx`'s `useSectionOpen` uses, which is not exported. */
-function useAsideFolded(
-  persistKey: string | undefined,
-  defaultFolded: boolean,
-): readonly [boolean, (next: boolean) => void] {
-  const [localFolded, setLocalFolded] = useState(defaultFolded)
-  // `createPersistedState` is a per-key module FACTORY, so it is memoized rather than called
-  // during render — the same reason `shell/index.tsx` memoizes its collapse store.
-  const usePersistedFolded = useMemo(
-    () =>
-      createPersistedState<boolean>({
-        key: `aside:${persistKey ?? UNPERSISTED_KEY}`,
-        version: 1,
-        initial: defaultFolded,
-      }),
-    [persistKey, defaultFolded],
-  )
-  const [persistedFolded, setPersistedFolded] = usePersistedFolded()
-
-  if (persistKey !== undefined) return [persistedFolded, setPersistedFolded] as const
-  return [localFolded, setLocalFolded] as const
-}
-
 /** The fold glyph — `app-sidebar.tsx`'s `IconCollapse`, mirrored onto the right-hand edge, so the
  * two shell folds read as one family. Inline, because basalt ships no icon dependency. */
 function IconAsideFold({ folded }: { folded: boolean }) {
@@ -169,6 +139,33 @@ function IconAsideFold({ folded }: { folded: boolean }) {
       <path d="M4 4h16v16H4z" />
       <path d="M15 4v16" />
       {folded ? <path d="M10 9l-3 3l3 3" /> : <path d="M8 9l3 3l-3 3" />}
+    </svg>
+  )
+}
+
+/**
+ * The aside's own glyph for the mobile `Panel` pill — {@link IconAsideFold}'s box and divider with
+ * no chevron, because a pill that OPENS a panel is not folding one. Deliberately not a funnel: a
+ * funnel is `Filters (n)`, and an aside is not a filter set.
+ *
+ * It travels to `PageBar` as part of the claim rather than being imported there, which is what
+ * keeps `page-bar.tsx` free of any import back into this module.
+ */
+function IconAsidePanel() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 4h16v16H4z" />
+      <path d="M15 4v16" />
     </svg>
   )
 }
@@ -198,6 +195,10 @@ export function PageAside({
   className,
 }: PageAsideProps): ReactNode {
   const { target, inShell, claim, publishFolded } = useContext(AsideContext)
+  // Destructured, not held as one object: the hook returns a fresh literal every render, and the
+  // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
+  // `useCallback` on the provider, so it is the stable half.
+  const { host: panelHost, claim: claimPanel, target: panelTarget } = useAsidePanelSlot()
   const theme = useMantineTheme()
   // `sm` is the only breakpoint (`docs/CONTROLS-SPEC.md` §2), read off the theme so a consumer that
   // retunes it moves the aside with it. `getInitialValueInEffect: false` plus the desktop default
@@ -206,9 +207,19 @@ export function PageAside({
   const desktop = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`, true, {
     getInitialValueInEffect: false,
   })
-  const [folded, setFolded] = useAsideFolded(persistKey, defaultFolded)
+  const [folded, setFolded] = usePersistedOrLocal({
+    scope: 'aside',
+    persistKey,
+    initial: defaultFolded,
+  })
 
   const portalled = inShell && desktop
+  // Below `sm` the panel goes into the page bar's row 2 IF there is one. Without a row 2 there is
+  // nowhere to put a trigger, so the honest in-flow form (wave 1) stays.
+  const projected = !portalled && panelHost
+  // Memoized on `title` alone: the claim goes into the provider's state, so an object rebuilt every
+  // render would re-run the effect, re-set the state and re-render this component forever.
+  const panelClaim = useMemo(() => ({ title, icon: <IconAsidePanel /> }), [title])
 
   useIsomorphicLayoutEffect(() => {
     if (!portalled) return
@@ -219,6 +230,11 @@ export function PageAside({
     if (!portalled) return
     publishFolded(folded)
   }, [portalled, folded, publishFolded])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!projected) return
+    return claimPanel(panelClaim)
+  }, [projected, panelClaim, claimPanel])
 
   const panel = (
     <section
@@ -236,13 +252,34 @@ export function PageAside({
             <span className={classes.title}>{title}</span>
             {portalled && <FoldButton folded={false} onToggle={() => setFolded(true)} />}
           </div>
-          <div className={classes.body}>{children}</div>
+          <div className={classes.body}>
+            {/* The aside body IS a home (law C1) and a filter surface: `panel` is what turns every
+                bound control inside into an inspector row. `registry: null` because there is no
+                census here — no `Filters (n)`, no `Reset all`. */}
+            <FilterSetScope surface="panel" registry={null}>
+              {children}
+            </FilterSetScope>
+          </div>
         </>
       )}
     </section>
   )
 
-  // In flow: below `sm`, and in every shell-less app. One node, written where the page put it.
+  // Projected: the node lives in the page bar's sheet, so this position renders NOTHING. The
+  // children go through the outlet the bar publishes, under the SHEET surface — a 300px inspector
+  // row in a full-width drawer would be a panel drawn in the wrong place.
+  if (projected) {
+    if (panelTarget === null) return null
+    return createPortal(
+      <FilterSetScope surface="sheet" registry={null}>
+        {children}
+      </FilterSetScope>,
+      panelTarget,
+    )
+  }
+
+  // In flow: below `sm` with no page bar to project into, and in every shell-less app. One node,
+  // written where the page put it.
   if (!portalled) return panel
   // `target` is null for the first commit only — the outlet's ref sets it.
   if (target === null) return null

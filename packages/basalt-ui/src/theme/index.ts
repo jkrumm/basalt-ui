@@ -1183,6 +1183,14 @@ const CTL_SWITCH_THUMB_SIZE = 12
  *  the last tier whose label still fits an 18px track. */
 const CTL_SWITCH_TRACK_LABEL_SIZE = 5
 const CTL_SWITCH_TRACK_LABEL_PADDING = 2
+/**
+ * The `ctl` Slider's TRACK height, in px. The thumb is not a second number: Mantine derives it as
+ * `calc(var(--slider-size) * 2)` (`Slider.mjs`'s `varsResolver`), so 6 lands a 12px thumb — the same
+ * moving part the `ctl` Switch carries, which is what makes a row of inspector rows read as one
+ * family. Mantine's own `md` (8 → a 16px thumb) is the tier's whole icon box, and its `xs`
+ * (4 → 8px) is smaller than the tier's radio dot.
+ */
+const CTL_SLIDER_TRACK_SIZE = 6
 
 /**
  * The `size="ctl"` / `size="icon"` Mantine size-tier var sets (`docs/CONTROLS-SPEC.md` §5, C5) —
@@ -1262,6 +1270,10 @@ function ctlSizeVars(): Record<string, string> {
     '--switch-thumb-size-ctl': `calc(${pxRem(CTL_SWITCH_THUMB_SIZE)} * var(--mantine-scale))`,
     '--switch-label-font-size-ctl': pxRem(CTL_SWITCH_TRACK_LABEL_SIZE),
     '--switch-track-label-padding-ctl': pxRem(CTL_SWITCH_TRACK_LABEL_PADDING),
+    // Slider — the inspector row's control (`SliderControl`, `docs/ASIDE-SPEC.md` §1). One prefix
+    // only: `slider-size` is the track, and every other dimension (the thumb, the root's inline
+    // padding, the vertical hit box) is derived from it in `Slider.css`.
+    '--slider-size-ctl': `calc(${pxRem(CTL_SLIDER_TRACK_SIZE)} * var(--mantine-scale))`,
   }
 }
 

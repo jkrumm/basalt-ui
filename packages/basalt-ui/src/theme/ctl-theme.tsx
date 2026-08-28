@@ -79,6 +79,16 @@ export const CTL_THEME: MantineThemeOverride = {
 }
 
 /**
+ * **`Slider` is deliberately NOT here, and `--slider-size-ctl` still is** (`theme/index.ts`). The
+ * tier's var set is what the size means, and `controls/slider-control.tsx` states `size="ctl"`
+ * itself the way every control on `./controls` does. Putting it in this map instead would widen
+ * `basalt/control-size-literal` — the rule is scoped to `CTL_THEME_TAGS`, ships at `error`, and a
+ * widened `error` rule lands its new form with no grace period at all (C16, `docs/CONTROLS-SPEC.md`
+ * §6). A `Slider` a consumer sizes by hand in a slot therefore keeps working; the one basalt draws
+ * is on the tier because it says so.
+ */
+
+/**
  * The `tier="widget"` slot theme — ActionIcon-ONLY, at the 24px `size="icon"` step
  * (`--ai-size-icon` → `--vx-space-control-height-widget`, `docs/CONTROLS-SPEC.md` §5).
  *

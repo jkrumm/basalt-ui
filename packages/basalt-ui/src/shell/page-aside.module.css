@@ -84,6 +84,23 @@
   padding-bottom: var(--vx-space-stack-md, 0.75rem);
 }
 
+/*
+ * FLUSH chrome (`docs/ASIDE-SPEC.md` §3, wave 2). An aside's groups separate with a hairline, not
+ * with cards — Lightroom, not a dashboard: at ~300px a stack of bordered, inset panels spends most
+ * of the column on its own edges, and the reader's job here is comparing rows across groups rather
+ * than reading one card at a time.
+ *
+ * It is drawn HERE and not in `Section`, on the `.body`'s own children, for two reasons. The
+ * component does not know where it is mounted (there is no aside context and no prop that would
+ * tell it), and a body child is not necessarily a `Section` at all — a bare `PanelRow`, a chart, a
+ * paragraph all take the same rhythm. `> * + *`, so the first child never draws a rule under the
+ * header that already bounds it.
+ */
+.body > * + * {
+  border-top: 1px solid var(--vx-divider);
+  padding-top: var(--vx-space-stack-md, 0.75rem);
+}
+
 /* The folded rail: one button, top-aligned, centred in the rail's own width. */
 .rail {
   display: flex;
@@ -99,6 +116,11 @@
  * reconstruction that keeps it tracking a scaled Button beside it. No `< sm` hit-area overlay
  * (unlike that chevron): the toggle exists only in the portalled form, which is `sm` and up.
  */
+/* Deliberately NOT shared with `section/section.module.css`'s `.chevron`, which it echoes: the two
+ * live in different CSS modules and this repo keeps one module per component, so sharing would need
+ * a third module + `composes` across that boundary. They also differ where it counts — `.fold` is
+ * `--vx-faint` and draws no rotation or C15 touch overlay, because the aside's fold is a desktop-
+ * only control. */
 .fold {
   position: relative;
   display: inline-flex;

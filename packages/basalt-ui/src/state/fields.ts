@@ -140,6 +140,12 @@ export type NumberField<Ln extends ResolvedLane = ResolvedLane> = {
   readonly min: number | undefined
   readonly max: number | undefined
   readonly int: boolean
+  /**
+   * The declared grain, ALREADY resolved — `field.number` fills in `1` for an `int: true` field
+   * that declared none, so the "an integer field steps by one" rule lives at that one call site and
+   * every reader (the handle, `NumberFilter`, `SliderControl`) reads a single answer.
+   */
+  readonly step: number | undefined
   readonly lane: Ln
 }
 
@@ -250,8 +256,10 @@ type RangeHandleExtras<F> = F extends {
  * With them on the handle the input can bound its own stepper, which turns the clamp from a
  * correction the user watches happen into a value they cannot type in the first place.
  *
- * `int` is the third member because it is the same class of fact: it decides the stepper's grain
- * (`step` 1, decimals refused), and the codec already rejects a non-integer for that field.
+ * `int` is the third member because it is the same class of fact: it decides whether the stepper
+ * refuses decimals, and the codec already rejects a non-integer for that field. `step` is the
+ * fourth for the same reason, and it is where the "an `int` field steps by one" rule is RESOLVED —
+ * once, in `field.number`, rather than re-derived by every control that draws a stepper or a track.
  */
 type NumberHandleExtras<F> = F extends { kind: 'number' }
   ? {
@@ -261,8 +269,15 @@ type NumberHandleExtras<F> = F extends { kind: 'number' }
       readonly max: number | undefined
       /** `field.number({ int: true })` — a non-integer is refused by the codec, not rounded. */
       readonly int: boolean
+      /** The field's `step`, `1` for an `int` field that declared none, else `undefined`. */
+      readonly step: number | undefined
     }
-  : { readonly min?: undefined; readonly max?: undefined; readonly int?: undefined }
+  : {
+      readonly min?: undefined
+      readonly max?: undefined
+      readonly int?: undefined
+      readonly step?: undefined
+    }
 
 /**
  * The binding every basalt control takes instead of `value`/`onChange` (C2). One field, both lanes,
@@ -408,9 +423,22 @@ export const field = {
 
   range: rangeField,
 
-  /** A number — pagination, a threshold. Out-of-range input clamps to `min`/`max`. */
+  /**
+   * A number — pagination, a threshold, a weight. Out-of-range input clamps to `min`/`max`.
+   *
+   * `step` is the grain a stepper or a slider bound to this field moves by, and it is resolved
+   * HERE rather than at either control: an `int: true` field that declares no `step` steps by 1,
+   * which is the only sane grain for a field whose codec refuses a decimal — stating it once means
+   * `NumberFilter` and `SliderControl` cannot answer it differently.
+   */
   number<const L extends FieldLane = FieldLane>(
-    o: { fallback: FieldFallback<number>; min?: number; max?: number; int?: boolean },
+    o: {
+      fallback: FieldFallback<number>
+      min?: number
+      max?: number
+      int?: boolean
+      step?: number
+    },
     lane?: L,
   ): NumberField<ResolveLane<L>> {
     return {
@@ -419,6 +447,7 @@ export const field = {
       min: o.min,
       max: o.max,
       int: o.int === true,
+      step: o.step ?? (o.int === true ? 1 : undefined),
       lane: resolveLane(lane) as ResolveLane<L>,
     }
   },
@@ -530,6 +559,7 @@ export type FieldCodec = {
     readonly min: number | undefined
     readonly max: number | undefined
     readonly int: boolean
+    readonly step: number | undefined
   }
   /**
    * Validate a STORED (or caller-supplied) value. `null` = unusable.
@@ -690,11 +720,13 @@ export function resolveFieldCodec(
         if (f.max !== undefined && value > f.max) value = f.max
         return value
       }
-      // The same three values the clamp above reads, handed on so the CONTROL can bound its input
-      // rather than watch the clamp correct it after the fact. Threaded THROUGH `single` rather
-      // than spread onto its result: `fallback` is a getter, and a spread would evaluate it once
-      // here and freeze a thunk fallback at definition.
-      return single(name, f, decode, { bounds: { min: f.min, max: f.max, int: f.int } })
+      // The same values the clamp above reads (plus the already-resolved `step`), handed on so the
+      // CONTROL can bound its input rather than watch the clamp correct it after the fact. Threaded
+      // THROUGH `single` rather than spread onto its result: `fallback` is a getter, and a spread
+      // would evaluate it once here and freeze a thunk fallback at definition.
+      return single(name, f, decode, {
+        bounds: { min: f.min, max: f.max, int: f.int, step: f.step },
+      })
     }
     case 'boolean': {
       return single(name, f, decodeBoolean)
@@ -1013,6 +1045,7 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
       built['min'] = bounds?.min
       built['max'] = bounds?.max
       built['int'] = bounds?.int ?? false
+      built['step'] = bounds?.step
     }
     // GETTERS, not snapshots, and installed with defineProperty rather than declared in the
     // literal: `labels()` runs on the store after the handles exist, and an object spread would

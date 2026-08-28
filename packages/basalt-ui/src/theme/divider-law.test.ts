@@ -117,6 +117,18 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     why: 'A 44px sheet row. Paired with `.sheetRow:last-child { border-bottom: none }` below, which the last-rule assertion checks.',
   },
   {
+    file: 'controls/panel-row.module.css',
+    selector: '.row + .row',
+    kind: 'between-rows',
+    why: "An aside's inspector rows (`docs/ASIDE-SPEC.md` §3). Adjacent-sibling, so the FIRST row draws no top line — the group's own header already bounds it — and the family has no trailing rule by construction.",
+  },
+  {
+    file: 'shell/page-aside.module.css',
+    selector: '.body > * + *',
+    kind: 'between-rows',
+    why: "The aside body's GROUPS — flush chrome, hairline-separated, rather than a stack of cards (Lightroom, not a dashboard). Same adjacent-sibling shape as the rows inside them, so the first group draws nothing under the panel header above it.",
+  },
+  {
     file: 'dashboard/settings-section.module.css',
     selector: '.rows > *:not(:last-child)',
     kind: 'between-rows',

@@ -31,5 +31,13 @@ declare const classes: {
   readonly sheetRowBody: string
   readonly sheetRowLabel: string
   readonly phoneSelect: string
+  readonly facetList: string
+  readonly facetOption: string
+  readonly facetBar: string
+  readonly facetLabel: string
+  readonly facetCount: string
+  readonly facetCheck: string
+  readonly facetInput: string
+  readonly facetMore: string
 }
 export default classes

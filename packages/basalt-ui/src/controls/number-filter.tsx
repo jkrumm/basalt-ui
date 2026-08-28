@@ -21,14 +21,18 @@
  * `SearchFilter` debounces for the same reason; a number has an explicit commit point (leaving the
  * field, pressing Enter) and a phrase does not, so this one commits rather than waits.
  *
- * **`min`/`max`/`int` come off the HANDLE, never the call site.** `field.number({ min, max, int })`
- * declares them, the codec clamps to them on write, and the handle republishes all three — so the
- * `NumberInput` bounds its own stepper and `int` refuses decimals outright. They are not props here
- * on purpose: they belong to the field, which is the thing that validates the URL, and a second copy
- * at the call site is a second answer to the same question that stops matching the moment the field
- * moves. The clamp is still the backstop for a value that arrives from outside the input (a
- * hand-typed URL, a stale deep link), and the draft follows the field down when it fires (see
- * {@link useCommittedNumber}).
+ * **`min`/`max`/`int`/`step` come off the HANDLE, never the call site.**
+ * `field.number({ min, max, int, step })` declares them, the codec clamps to them on write, and the
+ * handle republishes all four — so the `NumberInput` bounds its own stepper and `int` refuses
+ * decimals outright. Three of them are not props here on purpose: they belong to the field, which is
+ * the thing that validates the URL, and a second copy at the call site is a second answer to the
+ * same question that stops matching the moment the field moves. The clamp is still the backstop for
+ * a value that arrives from outside the input (a hand-typed URL, a stale deep link), and the draft
+ * follows the field down when it fires (see {@link useCommittedNumber}).
+ *
+ * `step` survives as a prop only because a call site may legitimately want a COARSER grain than the
+ * field's (a 0..600 seconds threshold stepping by 30), and it now DEFAULTS to `field.step` — the
+ * resolved one, so `int: true` still implies 1 with the rule stated once, in `field.number`.
  *
  * @example
  * // A preset set — a pill plus a radio list, exactly like SelectFilter.
@@ -58,6 +62,7 @@ import type { ChoiceHandle } from './enum-filter'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { SheetField, useControlName } from './filter-sheet'
+import { PanelRow } from './panel-row'
 
 /** One row of a numeric preset set. Narrower than `FilterOption` — a preset is never `disabled`:
  *  the set is declared at the call site, so a row that should not be offered is left out. */
@@ -75,10 +80,11 @@ export type NumberFilterProps = {
   /** Present → the radio-list form. Absent → the stepper form. */
   readonly options?: readonly NumberFilterOption[]
   /**
-   * The stepper's increment. Ignored in the `options` form, which has no stepper.
+   * The stepper's increment, overriding the field's own. Ignored in the `options` form, which has
+   * no stepper.
    *
-   * @default 1 — and for an `int: true` field that is also the only sane grain, so it is what the
-   * field's own declaration produces without this prop.
+   * @default `field.step` — the field's declared grain, which is `1` for an `int: true` field that
+   * declared none. Absent on both, the input keeps Mantine's own default of 1.
    */
   readonly step?: number
 }
@@ -97,12 +103,15 @@ export function NumberFilter({ field, label, icon, options, step }: NumberFilter
       />
     )
   }
+  // The prop wins over the field's declared grain; `field.step` is the default, so an `int` field
+  // steps by 1 with nothing written here (see `NumberFilterProps.step`).
+  const grain = step ?? field.step
   return (
     <NumberStepper
       field={field}
       label={label}
       {...(icon !== undefined && { icon })}
-      {...(step !== undefined && { step })}
+      {...(grain !== undefined && { step: grain })}
     />
   )
 }
@@ -183,7 +192,8 @@ function NumberStepper({
   useFilterRegistration(!isDefault, () => {
     field.clear()
   })
-  const { labelId, nameProps } = useControlName(label, inSheet)
+  const inPanel = surface === 'panel'
+  const { labelId, nameProps } = useControlName(label, inSheet || inPanel)
   const draft = useCommittedNumber(value, setValue, { min: field.min, max: field.max })
 
   const input = (
@@ -198,7 +208,8 @@ function NumberStepper({
       // `int: true` is refused by the codec, not rounded, so the input must refuse it too — a `.5`
       // typed into an integer field would otherwise decode to `null` and resurrect the fallback.
       {...(field.int && { allowDecimal: false })}
-      {...(step !== undefined ? { step } : field.int && { step: 1 })}
+      // Already resolved by `NumberFilter` — the prop, else the field's own grain.
+      {...(step !== undefined && { step })}
       value={draft.value}
       onChange={draft.set}
       onBlur={draft.commit}
@@ -211,6 +222,14 @@ function NumberStepper({
       }}
     />
   )
+
+  if (inPanel) {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        {input}
+      </PanelRow>
+    )
+  }
 
   if (inSheet) {
     return (

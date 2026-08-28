@@ -33,6 +33,7 @@ import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { PanelChoice, PanelRow } from './panel-row'
 import type { FilterOption } from './select-filter'
 
 /**
@@ -91,7 +92,10 @@ export function EnumFilter<T extends string>({
   const options: readonly FilterOption[] = optionsProp ?? field.options
   const selected = options.find((option) => option.value === value)
   const inSheet = surface === 'sheet'
-  const { labelId } = useControlName(label, inSheet)
+  const inPanel = surface === 'panel'
+  // Both non-pill surfaces render a VISIBLE heading for the control to point at; only the pill has
+  // none, because its text is the value.
+  const { labelId, nameProps } = useControlName(label, inSheet || inPanel)
 
   // The SHEET form is a `SheetOptionList` (44px rows, trailing check, hairline between rows), not
   // the popover's `Radio.Group` — see `SheetOptionList`'s doc for why the leading radio dot had to
@@ -111,6 +115,27 @@ export function EnumFilter<T extends string>({
           }}
         />
       </SheetField>
+    )
+  }
+
+  // The PANEL form (`docs/ASIDE-SPEC.md` §3): label above, control below, and the control is a
+  // full-width track while the set is small enough to read at ~300px, a `Select` past that. Not the
+  // sheet's `SheetOptionList`: an aside is a column of many rows, and a radio list per row would
+  // make one choice as tall as five.
+  if (inPanel) {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        <PanelChoice
+          nameProps={nameProps}
+          value={value}
+          options={options}
+          {...(numeric === true && { numeric: true })}
+          onChange={(next) => {
+            // Rendered from `options` — the cast restores what the codec already guarantees.
+            setValue(next as T)
+          }}
+        />
+      </PanelRow>
     )
   }
 
