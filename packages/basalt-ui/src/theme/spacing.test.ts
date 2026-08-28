@@ -383,6 +383,10 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['appShellHeaderHeight', 48, null],
   ['appShellNavbarWidth', 256, null],
   ['appShellNavbarRailWidth', 48, null],
+  // Same JS-number-only shape, one region over: `shell/index.tsx` hands both to AppShell's `aside`
+  // config (`docs/ASIDE-SPEC.md` §0).
+  ['appShellAsideWidth', 300, null],
+  ['appShellAsideRailWidth', 36, null],
   ['mobileNavTabGap', 3, 'space-mobile-nav-tab-gap'],
   // JS-number-only, and for the same two reasons the six above are: `shell/index.tsx` hands
   // `mobileNavBarHeight` to AppShell's `footer.height` (a number, not a `var()` string), and
@@ -458,6 +462,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
       'appShellHeaderHeight',
       'appShellNavbarWidth',
       'appShellNavbarRailWidth',
+      'appShellAsideWidth',
+      'appShellAsideRailWidth',
       'mobileNavBarHeight',
       'mobileNavMenuWidth',
       'chartLegendGap',
@@ -477,6 +483,8 @@ describe('SPACE_STEP CSS-module spacing-sweep one-offs match the shipped identit
     expect(css).not.toContain('--vx-space-app-shell-header-height')
     expect(css).not.toContain('--vx-space-app-shell-navbar-width')
     expect(css).not.toContain('--vx-space-app-shell-navbar-rail-width')
+    expect(css).not.toContain('--vx-space-app-shell-aside-width')
+    expect(css).not.toContain('--vx-space-app-shell-aside-rail-width')
     expect(css).not.toContain('--vx-space-mobile-nav-bar-height')
     expect(css).not.toContain('--vx-space-mobile-nav-menu-width')
     expect(css).not.toContain('--vx-space-chart-legend-gap')

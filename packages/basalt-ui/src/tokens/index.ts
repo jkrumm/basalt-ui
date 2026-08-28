@@ -454,7 +454,8 @@ function frameworkPrimitives(side: Side, data: PaletteData, legacyAliases: boole
  * resolved `SpaceValues` as a JS NUMBER instead, in one of three ways:
  * `{timelineBullet,progressBarSize}` are Mantine `defaultProps` (`theme/index.ts`'s Timeline/
  * Progress); `{sidebarAccountMenuWidth,sidebarSettingsMenuWidth,mobileNavMenuWidth,
- * appShellHeaderHeight,appShellNavbarWidth,appShellNavbarRailWidth,
+ * appShellHeaderHeight,appShellNavbarWidth,appShellNavbarRailWidth,appShellAsideWidth,
+ * appShellAsideRailWidth,
  * mobileNavBarHeight}` are numeric Mantine component props (Menu `width`, AppShell `header`/
  * `navbar`/`footer`); and `{chartLegendGap,chartMarginTop,chartMarginRight,chartMarginRightAxis,
  * chartMarginBottom,chartMarginLeft,chartDotR}` are visx SVG props via
@@ -616,10 +617,11 @@ function spaceDecls(space: SpaceValues): string[] {
     // `chartLegendGap`/`chartMarginTop`/`chartMarginRight`/`chartMarginBottom`/`chartMarginLeft`/
     // `chartDotR`/`progressBarSize`/`timelineBullet` are DELIBERATELY absent — see this function's
     // doc for why (JS-number-only consumers, zero `var()` reads). `appShellHeaderHeight`/
-    // `appShellNavbarWidth`/`appShellNavbarRailWidth` join that list —
-    // `shell/index.tsx` reads all three as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
-    // `header`/`navbar` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*` decl
-    // here would have had zero consumers, framework-wide, the same dead-weight shape this function's
+    // `appShellNavbarWidth`/`appShellNavbarRailWidth`/`appShellAsideWidth`/`appShellAsideRailWidth`
+    // join that list —
+    // `shell/index.tsx` reads all five as JS numbers via `useBasaltSpacing()` (Mantine's `AppShell`
+    // `header`/`navbar`/`aside` props take numbers, not `var()` strings), so a `--vx-space-app-shell-*`
+    // decl here would have had zero consumers, framework-wide, the same dead-weight shape this function's
     // doc already calls out for the chart/Progress/Timeline group. `sidebarAccountMenuWidth`/
     // `sidebarSettingsMenuWidth` join it too — `app-sidebar-account.tsx`/`app-sidebar.tsx` read both
     // as JS numbers via `useBasaltSpacing()` (Mantine's `<Menu width={…}>` also takes a number).

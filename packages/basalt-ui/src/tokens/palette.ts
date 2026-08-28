@@ -613,6 +613,19 @@ const SPACE_STEP_BASE = {
   /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above
    *  despite sharing 48 at level 0 (see that entry's note). */
   appShellNavbarRailWidth: 48,
+  /** AppShell ASIDE width, unfolded — the right-hand panel region a route claims by rendering
+   *  `PageAside` (`docs/ASIDE-SPEC.md` §0). ONE entry for every viewport, same reasoning as
+   *  `appShellNavbarWidth`: below `sm` the aside is permanently collapsed and `PageAside` renders
+   *  its content in the page flow instead, so there is no second value to keep in step.
+   *
+   *  300, wider than the navbar rail column it mirrors, because the panel holds CONTENT (label-
+   *  above inspector rows, a facet list, a panel-width chart) rather than one row of nav labels —
+   *  it is the width the CBBI evidence page arrived at by hand (`docs/ASIDE-SPEC.md` §2, G13). */
+  appShellAsideWidth: 300,
+  /** AppShell aside width, FOLDED — the rail holding the single expand button. Narrower than
+   *  `appShellNavbarRailWidth` (48) on purpose: the navbar rail hosts a full icon nav row and its
+   *  hover targets, this one hosts exactly one `ctl`-tier icon button and nothing else. */
+  appShellAsideRailWidth: 36,
 
   // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
   /** Tab's icon-to-label gap. */
