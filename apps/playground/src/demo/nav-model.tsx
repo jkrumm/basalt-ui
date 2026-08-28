@@ -35,6 +35,7 @@ import { linkOptions } from '@tanstack/react-router'
 import type { SidebarBlock } from 'basalt-ui'
 import { defineNav, navGroup } from 'basalt-ui/router-tanstack'
 import { articleFilters } from './article-filter-stores'
+import { cbbiFilters } from './cbbi/cbbi-store'
 import { mobileFilters } from './controls-mobile-store'
 import { dashboardFilters } from './dashboard-range-store'
 import {
@@ -99,6 +100,19 @@ export const NAV = defineNav({
         mobile: 'tab',
         icon: <IconActivity />,
         link: linkOptions({ to: '/activity' }),
+      },
+    ]),
+
+    // The one group that is not a framework surface: a whole page built ON basalt rather than a
+    // demonstration OF one piece of it. `cbbi` is the evidence page for a future right-hand aside,
+    // so it links with its own store's reader (C10) like every other store-backed destination.
+    navGroup({ id: 'examples', label: 'Examples', icon: <IconChart /> }, [
+      {
+        id: 'cbbi',
+        label: 'CBBI (live data)',
+        short: 'CBBI',
+        icon: <IconChart />,
+        link: linkOptions({ to: '/cbbi', search: cbbiFilters.linkSearch }),
       },
     ]),
 
