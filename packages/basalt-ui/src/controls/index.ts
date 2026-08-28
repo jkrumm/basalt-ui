@@ -47,3 +47,10 @@ export { NumberFilter, type NumberFilterOption, type NumberFilterProps } from '.
 export { SearchFilter, type SearchFilterProps } from './search-filter'
 export { ToggleFilter, type ToggleFilterProps } from './toggle-filter'
 export { ViewTabs, type ViewTabsOption, type ViewTabsProps } from './view-tabs'
+
+// ── The `panel` surface (docs/ASIDE-SPEC.md wave 2) ───────────────────────────────────────────
+// The two row-level primitives an aside body needs. `PanelRow` is the home (it wraps its slots in
+// `CtlSlot`), and `SliderControl` is the one bound control that has no pill form at all — see their
+// docs. The filters above render their own panel forms; there is nothing extra to import for them.
+export { PanelRow, type PanelRowProps } from './panel-row'
+export { SliderControl, type SliderControlProps } from './slider-control'

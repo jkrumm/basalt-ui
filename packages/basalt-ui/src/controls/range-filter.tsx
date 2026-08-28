@@ -10,6 +10,11 @@
  * `theme/segmented-control.module.css` owns; that attribute is what retired the per-consumer
  * `theme-allow` + inline `fontFamily` hack (C7).
  *
+ * In the PANEL (a `PageAside` body) they render as one `Select` — label above, the presets plus a
+ * `Custom range…` ROW inside the same list, which reveals the SAME injected picker underneath. A
+ * track cannot hold five date presets at ~300px, and a second control beside the choice would cost
+ * the column a row it does not have.
+ *
  * In the SHEET they render as a `SheetOptionList`, and the custom picker sits behind a
  * `Custom range…` disclosure row. A vertical `SegmentedControl` stretched across a bottom drawer
  * read as a broken control rather than a choice (see `SheetOptionList`'s doc), and an unconditional
@@ -26,8 +31,8 @@
  * // range: field.range({ presets: ['7d', '30d', '90d', 'ytd'], fallback: '30d', custom: true })
  * <RangeFilter field={analytics.field.range} customPicker={DateRangePicker} />
  */
-import { SegmentedControl, Stack } from '@mantine/core'
-import { useState } from 'react'
+import { SegmentedControl, Select, Stack } from '@mantine/core'
+import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import type { FieldHandle, RangeField, RangeValue } from '../state'
 import classes from './controls.module.css'
@@ -35,9 +40,13 @@ import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { CalendarGlyph } from './glyphs'
 import { SheetDisclosure, SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { PanelRow } from './panel-row'
 
 /** Past four presets the track goes vertical. */
 const VERTICAL_FROM = 5
+/** The panel `Select`'s last row — the same wording the sheet's disclosure uses, and the same
+ *  `'custom'` preset value the field already declares, so no synthetic option value exists. */
+const CUSTOM_ROW_LABEL = 'Custom range…'
 /** `7d`, `30d`, `24h`, `90` — a label the mono numeric treatment is for. */
 const NUMERIC_LABEL = /^\d/
 
@@ -132,16 +141,67 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
   const allowsCustom = options.length !== presets.length
   const numeric = presets.length > 0 && presets.every((option) => NUMERIC_LABEL.test(option.label))
   const inSheet = surface === 'sheet'
+  const inPanel = surface === 'panel'
   const Picker = customPicker
   warnCustomWithoutPicker(label, allowsCustom && Picker === undefined)
   // The track is a `radiogroup`; without this it announces unnamed, and the pill it hangs off reads
   // the VALUE (`30d`), not the filter.
-  const { labelId, nameProps } = useControlName(label, inSheet)
+  const { labelId, nameProps } = useControlName(label, inSheet || inPanel)
   // Expanded when the field ALREADY holds a custom window — a reader who deep-linked one must see
   // it without hunting for the row that holds it. Local, because it is an overlay's open flag and
   // not a filter value (the same line `FilterPill`'s `opened` state draws).
   const [customOpen, setCustomOpen] = useState(value.preset === 'custom')
+  // …and RE-SYNCED whenever the preset moves under it. Seeded once, the flag survived a write this
+  // control did not make: a `Reset all` or a `field.clear()` from a `FilterSet` put the field back
+  // on `30d` while the panel's Select still read `Custom range…` with the picker open beneath it.
+  // Tracked against the LAST SEEN preset (`search-filter.tsx`'s `useDebouncedField` idiom) rather
+  // than against `value.preset` alone, because the just-clicked `Custom range…` transient is
+  // exactly the state where the flag is true and the preset has not moved yet.
+  const seenPreset = useRef(value.preset)
+  useEffect(() => {
+    if (seenPreset.current === value.preset) return
+    seenPreset.current = value.preset
+    setCustomOpen(value.preset === 'custom')
+  }, [value.preset])
   const showPicker = allowsCustom && Picker !== undefined
+
+  if (inPanel) {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        <Select
+          {...nameProps}
+          allowDeselect={false}
+          // `customOpen` is what the row reads while the picker is open but no window has been
+          // picked yet — selecting `Custom range…` reveals the calendar, it does not write a
+          // half-built `{ preset: 'custom' }` the codec would have to guess at.
+          value={customOpen ? 'custom' : value.preset}
+          data={[
+            ...presets.map((option) => ({ value: option.value, label: option.label })),
+            ...(showPicker ? [{ value: 'custom', label: CUSTOM_ROW_LABEL }] : []),
+          ]}
+          onChange={(next) => {
+            if (next === null) return
+            if (next === 'custom') {
+              setCustomOpen(true)
+              return
+            }
+            setCustomOpen(false)
+            // Rendered from `field.options`, so `next` is always a declared preset — the cast
+            // restores what the codec already guarantees.
+            setValue({ preset: next } as RangeValue<P | 'custom'>)
+          }}
+        />
+        {showPicker && customOpen && (
+          <Picker
+            value={{ from: value.from, to: value.to }}
+            onChange={({ from, to }) => {
+              setValue({ preset: 'custom', from, to } as RangeValue<P | 'custom'>)
+            }}
+          />
+        )}
+      </PanelRow>
+    )
+  }
 
   if (inSheet) {
     return (

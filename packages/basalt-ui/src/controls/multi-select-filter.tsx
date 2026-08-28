@@ -16,15 +16,26 @@
  *   label="All channels"
  *   options={CHANNELS.map((c) => ({ value: c, label: `${c} · ${counts[c]}` }))}
  * />
+ *
+ * @example
+ * // The aside's facet column (`docs/ASIDE-SPEC.md` §1): counts and their bars are DATA, so they
+ * // arrive as a map rather than baked into the labels the way the runtime catalogue does it.
+ * <MultiSelectFilter field={shipments.field.origin} label="Origin" counts={countsByOrigin} />
  */
 import { Button, Checkbox, Stack } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { FieldHandle, MultiField } from '../state'
 import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
-import { SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { CheckGlyph, SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { PanelRow } from './panel-row'
+
+/** How many facet rows a panel shows before the rest fold behind `Show N more`. Six is the point at
+ *  which a facet column stops being a list you scan and starts being one you scroll. */
+const PANEL_FACET_MAX = 6
 
 export type MultiSelectFilterProps<T extends string> = {
   readonly field: FieldHandle<MultiField<T>>
@@ -43,6 +54,21 @@ export type MultiSelectFilterProps<T extends string> = {
    * string-field shape to make it required.
    */
   readonly options?: readonly FilterOption[]
+  /**
+   * Per-option counts, rendered on the `panel` surface as a mono number plus a bar proportional to
+   * the LARGEST count in the map — the Foundry facet column (`docs/ASIDE-SPEC.md` §1). A missing
+   * key is a row with no count and no bar, not a zero.
+   *
+   * Ignored on the pill and sheet surfaces, where there is no room for a second data channel: put
+   * the number in the label there (`options`).
+   */
+  readonly counts?: Record<string, number>
+  /**
+   * How many facet rows the `panel` surface shows before the rest fold behind a `Show N more` row.
+   *
+   * @default 6
+   */
+  readonly max?: number
 }
 
 export function MultiSelectFilter<T extends string>({
@@ -50,6 +76,8 @@ export function MultiSelectFilter<T extends string>({
   label,
   icon,
   noun,
+  counts,
+  max,
   options: optionsProp,
 }: MultiSelectFilterProps<T>): ReactNode {
   const [value, setValue] = field.use()
@@ -63,8 +91,17 @@ export function MultiSelectFilter<T extends string>({
   // must be able to drop it, and `All channels` is counted against the rows actually shown.
   const options: readonly FilterOption[] = optionsProp ?? field.options
   const inSheet = surface === 'sheet'
+  const inPanel = surface === 'panel'
   const carriesInformation = value.length > 0 && value.length < options.length
-  const { labelId } = useControlName(label, inSheet)
+  const { labelId } = useControlName(label, inSheet || inPanel)
+
+  // One toggle, shared by both list forms — the rows are rendered from `options`, whose values
+  // belong to the field either way (the prop relabels a closed set, it cannot open it), so the cast
+  // restores what the codec already guarantees.
+  const toggle = (next: string): void => {
+    const has = value.includes(next as T)
+    setValue(has ? value.filter((v) => v !== next) : [...value, next as T])
+  }
 
   // The SHEET form is a `SheetOptionList` in `multi` mode — 44px rows, a trailing check on each
   // selected one, hairlines between rows only. Same reasoning as `EnumFilter`: the popover keeps
@@ -77,15 +114,27 @@ export function MultiSelectFilter<T extends string>({
           labelId={labelId}
           selected={value}
           options={options}
-          onToggle={(next) => {
-            // The rows are rendered from `options`, whose values belong to the field either way (the
-            // prop relabels a closed set, it cannot open it) — the cast restores what the codec
-            // already guarantees.
-            const has = value.includes(next as T)
-            setValue(has ? value.filter((v) => v !== next) : [...value, next as T])
-          }}
+          onToggle={toggle}
         />
       </SheetField>
+    )
+  }
+
+  // The PANEL form — the facet column. Not the sheet's list at a smaller height: it carries the
+  // count and its bar, and it is the `ctl` tier rather than the 44px touch tier (see `.facetOption`
+  // in `controls.module.css`).
+  if (inPanel) {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        <FacetList
+          labelId={labelId}
+          options={options}
+          selected={value}
+          max={max ?? PANEL_FACET_MAX}
+          onToggle={toggle}
+          {...(counts !== undefined && { counts })}
+        />
+      </PanelRow>
     )
   }
 
@@ -136,5 +185,100 @@ export function MultiSelectFilter<T extends string>({
     >
       <div className={classes.optionList}>{body}</div>
     </FilterPill>
+  )
+}
+
+type FacetListProps = {
+  readonly labelId: string
+  readonly options: readonly FilterOption[]
+  readonly selected: readonly string[]
+  readonly counts?: Record<string, number>
+  /** Rows shown before the rest fold behind `Show N more`. */
+  readonly max: number
+  readonly onToggle: (value: string) => void
+}
+
+/**
+ * The facet column's rows. INTERNAL to this control: a list of counted checkboxes not bound to a
+ * `field.multi` is a hand-rolled filter (`basalt/hand-rolled-filter`), so there is no separate
+ * `FacetList` export to reach for — the counts are a prop on the control that already owns the set.
+ *
+ * The bar is scaled against the LARGEST count present, not against a total: a facet column is read
+ * as a comparison between its own rows, and dividing by a total nobody supplied would render every
+ * bar as a sliver on a set with many options.
+ */
+function FacetList({
+  labelId,
+  options,
+  selected,
+  counts,
+  max,
+  onToggle,
+}: FacetListProps): ReactNode {
+  const [expanded, setExpanded] = useState(false)
+  const shown = expanded ? options : options.slice(0, max)
+  const hidden = options.length - shown.length
+  // `0` as the seed, so an empty map (or one whose keys miss every option) yields a peak of 0 rather
+  // than `-Infinity`, and every bar resolves to a width of 0 instead of `NaN%`.
+  const peak = options.reduce((top, option) => Math.max(top, counts?.[option.value] ?? 0), 0)
+
+  return (
+    // A real `<fieldset>` named by the row's own label, for the same reason `SheetOptionList` uses
+    // one — the native element carries the grouping semantics, and the heading is already visible.
+    <fieldset className={classes.facetList} aria-labelledby={labelId}>
+      {shown.map((option) => {
+        const isSelected = selected.includes(option.value)
+        const count = counts?.[option.value]
+        return (
+          <label
+            key={option.value}
+            className={classes.facetOption}
+            {...(isSelected && { 'data-selected': true })}
+            {...(option.disabled === true && { 'data-disabled': true })}
+          >
+            {/* theme-allow raw-form-control — the input is NEVER PAINTED. Visually hidden
+                (`.facetInput`), it exists only to carry the row's semantics; the surface the reader
+                sees and clicks is the `<label>` around it. Same construction, same reasoning as
+                `SheetOptionList` — see its doc. */}
+            <input
+              className={classes.facetInput}
+              type="checkbox"
+              value={option.value}
+              checked={isSelected}
+              disabled={option.disabled === true}
+              aria-label={option.label}
+              onChange={() => {
+                onToggle(option.value)
+              }}
+            />
+            {count !== undefined && peak > 0 && (
+              <span
+                className={classes.facetBar}
+                aria-hidden
+                style={{ '--facet-fill': `${(count / peak) * 100}%` } as CSSProperties}
+              />
+            )}
+            <span className={classes.facetLabel}>{option.label}</span>
+            {count !== undefined && <span className={classes.facetCount}>{count}</span>}
+            {isSelected && (
+              <span className={classes.facetCheck} aria-hidden>
+                <CheckGlyph />
+              </span>
+            )}
+          </label>
+        )
+      })}
+      {hidden > 0 && (
+        <button
+          type="button"
+          className={classes.facetMore}
+          onClick={() => {
+            setExpanded(true)
+          }}
+        >
+          {`Show ${hidden} more`}
+        </button>
+      )}
+    </fieldset>
   )
 }

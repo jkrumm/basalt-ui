@@ -12,6 +12,10 @@
  * `only` is how a tab that exists on ONE viewport is declared instead of hand-rolling a second
  * control: `'sm-up'` keeps it off the phone form, `'sm-down'` keeps it off the desktop form.
  *
+ * Inside a `PageAside` it renders as a panel ROW — label above, a full-width track or a `Select`
+ * (`docs/ASIDE-SPEC.md` §3). A view switch in a panel is legal; the page bar's tab slot stays its
+ * default home, and `only` has no meaning there (the panel is one width).
+ *
  * @example
  * <ViewTabs
  *   field={strength.field.tab}
@@ -26,6 +30,9 @@ import { SegmentedControl, Select } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
+import { useFilterSurface } from './filter-context'
+import { useControlName } from './filter-sheet'
+import { PanelChoice, PanelRow } from './panel-row'
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
@@ -57,6 +64,9 @@ export function ViewTabs<T extends string>({
   label = 'View',
 }: ViewTabsProps<T>): ReactNode {
   const [value, setValue] = field.use()
+  const surface = useFilterSurface()
+  const inPanel = surface === 'panel'
+  const { labelId, nameProps } = useControlName(label, inPanel)
   const all: readonly ViewTabsOption<T>[] =
     options ?? field.options.map((option) => ({ value: option.value as T, label: option.label }))
 
@@ -66,6 +76,16 @@ export function ViewTabs<T extends string>({
   // the cast restores what the codec already guarantees.
   const commit = (next: string): void => {
     setValue(next as T)
+  }
+
+  // The panel form. `only` is dropped on purpose: it exists to declare a tab that belongs to ONE
+  // viewport, and a panel is not a viewport — every declared option is offered.
+  if (inPanel) {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        <PanelChoice nameProps={nameProps} value={value} options={all} onChange={commit} />
+      </PanelRow>
+    )
   }
 
   return (

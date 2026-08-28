@@ -43,10 +43,10 @@
  *   <UsageChart />
  * </Section>
  */
-import { Children, useId, useMemo, useState } from 'react'
+import { Children, useId } from 'react'
 import type { ReactNode } from 'react'
 import { CtlSlot } from '../theme'
-import { createPersistedState } from '../state'
+import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { WidgetHeader } from '../widget-header'
 import type { WidgetHeaderProps } from '../widget-header'
 import classes from './section.module.css'
@@ -89,31 +89,6 @@ function warnPastActionBudget(title: string, actions: ReactNode): void {
     `Section "${title}": ${count} actions exceeds the ≤3 budget (docs/CONTROLS-SPEC.md C6) — ` +
       'move the rest behind a menu.',
   )
-}
-
-const UNPERSISTED_KEY = '__local__'
-
-/** Collapse state — `createPersistedState` when `persistKey` is given, else local `useState`.
- * Both hooks are always called (stable order across renders); only the unpersisted branch's setter
- * is ever invoked when `persistKey` is absent, so no unpersisted Section writes to storage. */
-function useSectionOpen(
-  persistKey: string | undefined,
-  defaultOpen: boolean,
-): readonly [boolean, (next: boolean) => void] {
-  const [localOpen, setLocalOpen] = useState(defaultOpen)
-  const usePersistedOpen = useMemo(
-    () =>
-      createPersistedState<boolean>({
-        key: `section:${persistKey ?? UNPERSISTED_KEY}`,
-        version: 1,
-        initial: defaultOpen,
-      }),
-    [persistKey, defaultOpen],
-  )
-  const [persistedOpen, setPersistedOpen] = usePersistedOpen()
-
-  if (persistKey !== undefined) return [persistedOpen, setPersistedOpen] as const
-  return [localOpen, setLocalOpen] as const
 }
 
 function ChevronToggle({
@@ -169,7 +144,11 @@ export function Section({
   id,
   children,
 }: SectionProps) {
-  const [open, setOpen] = useSectionOpen(persistKey, defaultOpen)
+  const [open, setOpen] = usePersistedOrLocal({
+    scope: 'section',
+    persistKey,
+    initial: defaultOpen,
+  })
   const bodyId = useId()
 
   if (actions !== undefined) warnPastActionBudget(title, actions)

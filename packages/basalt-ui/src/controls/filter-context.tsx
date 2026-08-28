@@ -5,8 +5,10 @@
  *
  * **Surface** — `useFilterSurface()` is how a control decides its FORM, not a media query: `'pill'`
  * inside the bar row (and inside the desktop `+N` fold), `'sheet'` inside the mobile `Filters (n)`
- * Drawer. A control renders exactly one form per mount; the desktop/mobile swap WITHIN the pill
- * form is CSS (`visibleFrom`/`hiddenFrom`), never JS (C9).
+ * Drawer, `'panel'` inside a `PageAside` body, where a chip in a 300px column reads as a stray
+ * button and the archetype is an inspector ROW (`docs/ASIDE-SPEC.md` §1). A control renders exactly
+ * one form per mount; the desktop/mobile swap WITHIN the pill form is CSS
+ * (`visibleFrom`/`hiddenFrom`), never JS (C9).
  *
  * **Registry** — `useFilterRegistration()` is what makes `Filters (n)` and `Reset all` derived
  * rather than hand-passed: each filter reports `{ isActive, reset }` for itself, so `FilterSet`
@@ -28,8 +30,11 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 
-/** Which form a control renders. Provided by `FilterSet`; `'pill'` when there is no `FilterSet`. */
-export type FilterSurface = 'pill' | 'sheet'
+/**
+ * Which form a control renders. Provided by `FilterSet` (`'pill'` / `'sheet'`) and by `PageAside`
+ * (`'panel'`); `'pill'` when there is neither.
+ */
+export type FilterSurface = 'pill' | 'sheet' | 'panel'
 
 const FilterSurfaceContext = createContext<FilterSurface>('pill')
 
@@ -61,7 +66,8 @@ const FilterRegistryContext = createContext<FilterRegistry | null>(null)
 
 export type FilterSetScopeProps = {
   readonly surface: FilterSurface
-  /** `null` on a second copy of the same children (the fold dropdown, the sheet). */
+  /** `null` on a second copy of the same children (the fold dropdown, the sheet) and on a surface
+   * that owns no census at all (the aside panel — it has no `Filters (n)` and no `Reset all`). */
   readonly registry: FilterRegistry | null
   readonly children: ReactNode
 }

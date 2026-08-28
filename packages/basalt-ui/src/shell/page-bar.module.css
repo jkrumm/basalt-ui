@@ -176,3 +176,14 @@
     min-height: var(--vx-space-touch-control-height);
   }
 }
+
+/*
+ * The aside's mobile trigger (`docs/ASIDE-SPEC.md` §0). Trailing, incompressible, and it exists
+ * only below `sm` — but the gate is JS, not a media query: `PageAside` claims the slot only when it
+ * is NOT portalled into the region, so on a desktop viewport there is no pill to hide. A second,
+ * CSS-side gate here would be a second answer to the same question.
+ */
+.panelPill {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}

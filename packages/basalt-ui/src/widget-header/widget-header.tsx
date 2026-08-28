@@ -101,8 +101,13 @@ export type WidgetHeaderProps = {
  * before it composed `WidgetHeader`, moved down here so every tier gets the same behaviour:
  * opens on hover/focus/click, closes on leave/blur/Escape/outside pointer-down, and is wired to the
  * trigger with `aria-describedby` only while open.
+ *
+ * Exported from the MODULE but deliberately not from `src/widget-header/index.ts`: it is not a
+ * public primitive, it is the one info affordance basalt draws, and `controls/panel-row.tsx`
+ * composes it so an inspector row's `hint` is the same glyph, bubble and keyboard behaviour a
+ * `WidgetHeader`'s `info` is — not a second one that drifts.
  */
-function InfoGlyph({ text }: { text: string }) {
+export function InfoGlyph({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
   const tipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)

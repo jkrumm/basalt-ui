@@ -19,7 +19,12 @@ import classes from './controls.module.css'
 export type FilterSheetProps = {
   readonly opened: boolean
   readonly onClose: () => void
-  readonly onResetAll: () => void
+  /**
+   * Clears every registered filter. OMITTED on a sheet with no census behind it — the aside's
+   * mobile projection (`docs/ASIDE-SPEC.md` §0) mounts its children under a `null` registry, so
+   * there is nothing to reset and a button that resets nothing is worse than no button.
+   */
+  readonly onResetAll?: () => void
   readonly title?: string
   readonly children: ReactNode
 }
@@ -50,9 +55,11 @@ export function FilterSheet({
       title={
         <>
           <span className={classes.sheetTitleText}>{title}</span>
-          <Button variant="subtle" size="ctl" onClick={onResetAll}>
-            Reset all
-          </Button>
+          {onResetAll !== undefined && (
+            <Button variant="subtle" size="ctl" onClick={onResetAll}>
+              Reset all
+            </Button>
+          )}
         </>
       }
     >
@@ -61,8 +68,12 @@ export function FilterSheet({
   )
 }
 
-/** The selected-row mark — 16px, drawn at the row's trailing edge (`docs/CONTROLS-SPEC.md` §2.1). */
-function CheckGlyph(): ReactNode {
+/**
+ * The selected-row mark — 16px, drawn at the row's trailing edge (`docs/CONTROLS-SPEC.md` §2.1).
+ * Exported from the MODULE, not from `./index.ts`: the panel surface's facet list draws the same
+ * mark at the same edge, and two hand-drawn checks would drift.
+ */
+export function CheckGlyph(): ReactNode {
   return (
     <svg
       width={16}

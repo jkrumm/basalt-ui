@@ -465,6 +465,44 @@ describe('createLocalStore — a number handle republishes its bounds', () => {
     }).toEqual({ min: 1, max: 14, int: true })
   })
 
+  // `step` is the one extra that is RESOLVED rather than copied: an `int` field that declared none
+  // steps by 1, and that rule lives in `field.number` so the stepper and the slider cannot disagree.
+  test('a declared step comes off the field declaration', () => {
+    const store = createLocalStore({
+      key: 'l-step',
+      fields: { minDuration: field.number({ fallback: 0, min: 0, max: 600, step: 30 }) },
+    })
+
+    expect(store.field.minDuration.step).toBe(30)
+  })
+
+  test('an int field with no step implies 1 — resolved once, in field.number', () => {
+    const store = createLocalStore({
+      key: 'l-step-int',
+      fields: { nights: field.number({ fallback: 2, min: 1, max: 14, int: true }) },
+    })
+
+    expect(store.field.nights.step).toBe(1)
+  })
+
+  test('an explicit step outranks the int default — a field may step by 5', () => {
+    const store = createLocalStore({
+      key: 'l-step-int-explicit',
+      fields: { weight: field.number({ fallback: 20, int: true, step: 5 }) },
+    })
+
+    expect(store.field.weight.step).toBe(5)
+  })
+
+  test('a non-int field with no step is undefined — never 1 by accident', () => {
+    const store = createLocalStore({
+      key: 'l-step-open',
+      fields: { ratio: field.number({ fallback: 0.5, min: 0, max: 1 }) },
+    })
+
+    expect(store.field.ratio.step).toBeUndefined()
+  })
+
   test('an undeclared bound is undefined, and int defaults to false — never 0/true by accident', () => {
     const store = createLocalStore({
       key: 'l-bounds-open',
@@ -486,12 +524,14 @@ describe('createLocalStore — a number handle republishes its bounds', () => {
       fields: { q: field.string({ max: 40 }), metric: field.enum(['load', 'volume'], 'load') },
     })
 
-    expect([store.field.q.max, store.field.q.min, store.field.q.int]).toEqual([
+    expect([store.field.q.max, store.field.q.min, store.field.q.int, store.field.q.step]).toEqual([
+      undefined,
       undefined,
       undefined,
       undefined,
     ])
     expect(store.field.metric.int).toBeUndefined()
+    expect(store.field.metric.step).toBeUndefined()
   })
 
   // The bounds are what the codec was ALREADY clamping to — the handle is a readout of that law,

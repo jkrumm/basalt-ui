@@ -13,5 +13,6 @@ declare const classes: {
   readonly row1End: string
   readonly filters: string
   readonly filtersEnd: string
+  readonly panelPill: string
 }
 export default classes

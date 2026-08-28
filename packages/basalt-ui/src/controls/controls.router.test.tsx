@@ -22,6 +22,7 @@ import {
 import { field } from '../router-tanstack/field'
 import { createSearchStore } from '../router-tanstack/search-store'
 import { COMPARE_LABELS, COMPARE_VALUES, CompareFilter } from './compare-filter'
+import { FilterSetScope } from './filter-context'
 import { FilterSet } from './filter-set'
 import { MultiSelectFilter } from './multi-select-filter'
 import { NumberFilter } from './number-filter'
@@ -590,6 +591,43 @@ describe('RangeFilter', () => {
     await openPill('30d')
     expect(screen.queryByRole('button', { name: 'pick march', hidden: true })).toBeNull()
     expect(screen.queryByRole('radio', { name: 'custom', hidden: true })).toBeNull()
+  })
+
+  /**
+   * The `custom` disclosure is LOCAL state seeded from the field, so it has to re-sync when the
+   * field moves under it. A `Reset all` or a `field.clear()` from anywhere else left the panel's
+   * Select reading `Custom range…` with the calendar still open beneath it, over a field back on
+   * `30d` — two controls disagreeing about one value, and only one of them right.
+   */
+  test('an external clear closes the custom picker on the panel surface', async () => {
+    const router = await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard?range=custom&from=2026-03-01&to=2026-03-14',
+      Page: () => (
+        <>
+          <FilterSetScope surface="panel" registry={null}>
+            <RangeFilter field={store.field.range} label="Window" customPicker={Picker} />
+          </FilterSetScope>
+          <button
+            type="button"
+            onClick={() => {
+              store.field.range.clear()
+            }}
+          >
+            reset elsewhere
+          </button>
+        </>
+      ),
+    })
+
+    expect(screen.getByRole('button', { name: 'pick march' })).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: 'reset elsewhere' }))
+
+    await waitFor(() => {
+      expect(search(router)['range']).toBe('30d')
+    })
+    expect(screen.queryByRole('button', { name: 'pick march' })).toBeNull()
   })
 })
 

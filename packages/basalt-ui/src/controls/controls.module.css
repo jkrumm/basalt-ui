@@ -540,3 +540,147 @@
   max-width: 9rem;
   flex: 0 1 auto;
 }
+
+/* ── The facet list (MultiSelectFilter, `panel` surface) ──────────────────────────────────────── */
+
+/*
+ * Foundry's facet column (`docs/ASIDE-SPEC.md` §1): one 30px row per option, label left, an optional
+ * mono count and a proportional bar behind it, a check at the trailing edge when selected.
+ *
+ * It is NOT the sheet's `SheetOptionList` at a smaller height. Two things differ and both are the
+ * point: the row carries DATA (the count and its bar), and the row is the `ctl` tier rather than the
+ * 44px touch tier, because an aside is a pointer surface holding ten of these in a column that a
+ * phone sheet would need 440px to show.
+ *
+ * The semantics are the same hidden native `<input>` inside a `<label>` the sheet list uses — see
+ * `SheetOptionList`'s doc for why that, and not `role="checkbox"` on a div.
+ */
+.facetList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-inline-size: 0;
+  min-width: 0;
+}
+
+.facetOption {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-control-gap, 0.375rem);
+  width: 100%;
+  min-width: 0;
+  height: calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1));
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: start;
+  color: var(--vx-muted);
+  cursor: pointer;
+}
+
+.facetOption[data-selected] {
+  color: var(--vx-ink);
+}
+
+.facetOption[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.facetOption:has(.facetInput:focus-visible),
+.facetOption:focus-visible {
+  outline: 2px solid var(--vx-accent);
+  outline-offset: -2px;
+  border-radius: var(--vx-radius-ctrl);
+}
+
+/*
+ * The proportional bar. It is BEHIND the row's text, not a column beside it — a bar in its own
+ * column costs the label a third of a 300px row, and the quantity being compared is the row itself.
+ * The width arrives as `--facet-fill` (an inline custom property, the one dynamic number here), so
+ * this rule owns every other dimension and the tint.
+ *
+ * Accent at low alpha, never a fill: `--vx-accent-fill` is a control's surface, and a row of eight
+ * of them would read as eight selected options.
+ */
+.facetBar {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--facet-fill, 0%);
+  border-radius: var(--vx-radius-ctrl);
+  background: color-mix(in srgb, var(--vx-accent) 12%, transparent);
+  pointer-events: none;
+}
+
+/* Every painted child sits above the bar. `position: relative` is all that takes — they are in the
+ * same stacking context and come later in the DOM. */
+.facetLabel,
+.facetCount,
+.facetCheck {
+  position: relative;
+}
+
+.facetLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--vx-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facetCount {
+  flex: none;
+  font-family: var(--basalt-font-mono);
+  font-size: var(--vx-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--vx-faint);
+}
+
+.facetCheck {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--vx-accent);
+}
+
+.facetInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* `Show N more` — the list's last row, same height and inset as an option so the column keeps its
+ * rhythm, but muted and mono-free because it is a disclosure and not a value. */
+.facetMore {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: calc(var(--vx-space-control-height-ctl, 1.875rem) * var(--mantine-scale, 1));
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: start;
+  font-size: var(--vx-text-xs);
+  color: var(--vx-faint);
+  cursor: pointer;
+}
+
+.facetMore:hover,
+.facetMore:focus-visible {
+  color: var(--vx-ink);
+}

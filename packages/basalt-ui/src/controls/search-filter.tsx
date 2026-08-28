@@ -18,6 +18,7 @@ import type { ReactNode } from 'react'
 import type { FieldHandle, StringField } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { SheetField, useControlName } from './filter-sheet'
+import { PanelRow } from './panel-row'
 
 /** One navigation per typed phrase, not per keystroke. */
 const DEBOUNCE_MS = 200
@@ -42,8 +43,9 @@ export function SearchFilter({
   })
 
   // `placeholder` is optional and, even when set, stops being the name the moment the user types —
-  // so the name comes from `label`, or from the sheet heading when there is one.
-  const { labelId, nameProps } = useControlName(label, surface === 'sheet')
+  // so the name comes from `label`, or from the visible heading when the surface draws one.
+  const named = surface === 'sheet' || surface === 'panel'
+  const { labelId, nameProps } = useControlName(label, named)
 
   const input = (
     <TextInput
@@ -58,6 +60,13 @@ export function SearchFilter({
     />
   )
 
+  if (surface === 'panel') {
+    return (
+      <PanelRow label={label} labelId={labelId}>
+        {input}
+      </PanelRow>
+    )
+  }
   if (surface === 'sheet') {
     return (
       <SheetField label={label} labelId={labelId}>
