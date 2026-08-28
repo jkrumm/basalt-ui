@@ -45,6 +45,7 @@ beforeEach(() => {
         'basalt/raw-scroll-container': 'error',
         'basalt/hand-rolled-filter': 'error',
         'basalt/control-outside-home': 'error',
+        'basalt/bound-control-outside-home': 'error',
         'basalt/control-size-literal': 'error',
         'basalt/page-bar-budget': 'error',
         'basalt/in-body-page-title': 'error',
@@ -1708,6 +1709,58 @@ describe('basalt/control-outside-home', () => {
     expect(rules).not.toContain('control-outside-home')
   })
 
+  /**
+   * The exemption's SECOND half. `CONTROL_OWNER_NAMES` carries generic names (`PanelRow`,
+   * `EnumFilter`, `SliderControl`), so a bare-name match let one local helper switch this rule —
+   * and `bound-control-outside-home` and `responsive-twin` with it — off for a whole consumer file.
+   * A file that imports `basalt-ui*` is CONSUMING basalt; basalt's own control sources import each
+   * other relatively and never name the package.
+   */
+  it('DOES flag a file that declares its own PanelRow but imports basalt-ui', () => {
+    const { rules } = run(
+      `import { Section } from 'basalt-ui'\n${MANTINE_IMPORT}` +
+        `function PanelRow({ children }) {\n  return <div>{children}</div>\n}\n` +
+        `export const C = () => (\n  <Section title="x">\n    <Select value={v} onChange={set} data={[]} />\n  </Section>\n)\n`,
+    )
+    expect(rules).toContain('control-outside-home')
+  })
+
+  /**
+   * The basalt SUBTREE homes, which this rule did not know: `bound-control-outside-home` has read
+   * `FilterSet` / `PageAside` / `PanelRow` as homes since it shipped, so a `<Select>` inside a
+   * `<PageAside><PanelRow>` reported while the bound control beside it did not — two rules
+   * answering one question two ways.
+   */
+  it('does NOT flag one inside a PageAside > PanelRow subtree', () => {
+    const { code, rules } = run(
+      `import { PageAside } from 'basalt-ui'\nimport { PanelRow } from 'basalt-ui/controls'\n${MANTINE_IMPORT}` +
+        `export const C = () => (\n  <PageAside title="Filters">\n    <PanelRow label="Scale">\n      <Select data={[]} />\n    </PanelRow>\n  </PageAside>\n)\n`,
+      'src/scale-page.tsx',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  it('does NOT flag one inside a FilterSet subtree', () => {
+    const { rules } = run(
+      `import { FilterSet } from 'basalt-ui/controls'\n${MANTINE_IMPORT}` +
+        `export const C = () => (\n  <FilterSet>\n    <Select data={[]} />\n  </FilterSet>\n)\n`,
+      'src/scale-page.tsx',
+    )
+    expect(rules).not.toContain('control-outside-home')
+  })
+
+  // Provenance, the test `SLOT_OWNER_TAGS` already applies: a consumer's own `PanelRow` is a layout
+  // helper, not a basalt home, so it exempts nothing.
+  it("still flags one inside a consumer's OWN PanelRow", () => {
+    const { rules } = run(
+      `import { PanelRow } from './panel-row'\n${MANTINE_IMPORT}` +
+        `export const C = () => (\n  <PanelRow label="Scale">\n    <Select data={[]} />\n  </PanelRow>\n)\n`,
+      'src/scale-page.tsx',
+    )
+    expect(rules).toContain('control-outside-home')
+  })
+
   it('flags an ALIASED Mantine import with no home', () => {
     const { code, rules } = run(
       `import { Select as MantineSelect } from '@mantine/core'\n` +
@@ -1770,6 +1823,242 @@ describe('basalt/control-outside-home', () => {
       const { rules } = run(SOURCE, 'src/modal.tsx')
       expect(rules).toContain('control-outside-home')
     })
+
+    // The SECOND dialect: a repo mandating `PascalCase.tsx` for component files (basalt's own root
+    // CLAUDE.md included) can never write `foo-panel.tsx`, so the kebab form alone exempted nothing
+    // there — which is how the CBBI panel collected four warns for a `<PageAside>` in its parent.
+    it.each(['src/EditSessionModal.tsx', 'src/FiltersDrawer.tsx', 'src/CbbiPanel.tsx'])(
+      'does NOT flag %s — the PascalCase dialect of the same convention',
+      (filename) => {
+        const { code, rules } = run(SOURCE, filename)
+        expect(code).toBe(0)
+        expect(rules).not.toContain('control-outside-home')
+      },
+    )
+
+    /**
+     * The trade, stated as a test rather than only as prose: a `FooPanel.tsx` that renders NO page
+     * bar is exempt WHOLE-FILE, so a control that genuinely belongs in a bar goes unreported there.
+     * Measured before keeping it — across argo, linewatch, image-share, rb and image-gen the
+     * PascalCase dialect matches 9 files, all in image-gen, and NONE of them renders a `<PageBar>`
+     * or sits under a `routes/` directory. Nine overlay bodies, zero pages, so the dialect stays
+     * whole-file rather than growing a "does it render a page bar" predicate (CONTROLS-SPEC §6).
+     */
+    it('exempts a FooPanel.tsx that renders no page bar — the measured trade', () => {
+      const { code, rules } = run(SOURCE, 'src/components/refine/CropPanel.tsx')
+      expect(code).toBe(0)
+      expect(rules).not.toContain('control-outside-home')
+    })
+
+    it('needs the leading subject in the PascalCase dialect too', () => {
+      const { rules } = run(SOURCE, 'src/Panel.tsx')
+      expect(rules).toContain('control-outside-home')
+    })
+
+    it('is CASE-sensitive — foopanel.tsx is neither dialect', () => {
+      const { rules } = run(SOURCE, 'src/foopanel.tsx')
+      expect(rules).toContain('control-outside-home')
+    })
+  })
+})
+
+/**
+ * Ledger G5 (`docs/ASIDE-SPEC.md` §2) — the basalt half of law C1. Mirrors the
+ * `control-outside-home` block above case for case, because the two rules answer the same question
+ * about a different tag set: that one matches raw Mantine, this one matches a bound basalt control.
+ */
+describe('basalt/bound-control-outside-home', () => {
+  const CONTROLS_IMPORT = `import { FilterSet, PanelRow, SelectFilter, SliderControl } from 'basalt-ui/controls'\n`
+  const ASIDE_IMPORT = `import { PageAside, PageBar, Section } from 'basalt-ui'\n`
+
+  it("flags a bound control in a Section's BODY — the stray pill G5 named", () => {
+    const { code, rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = () => (\n  <Section title="Composition">\n    <SelectFilter field={f} />\n  </Section>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  it('flags one in a bare page Stack', () => {
+    const { rules } = run(
+      `import { Stack } from '@mantine/core'\n${CONTROLS_IMPORT}` +
+        `export const C = () => (\n  <Stack>\n    <SelectFilter field={f} />\n  </Stack>\n)\n`,
+    )
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  it('does NOT flag one in a PageBar filters slot', () => {
+    const { code, rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = () => <PageBar filters={<SelectFilter field={f} />} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('does NOT flag one inside a FilterSet subtree', () => {
+    const { code, rules } = run(
+      `${CONTROLS_IMPORT}export const C = () => (\n  <FilterSet>\n    <SelectFilter field={f} />\n  </FilterSet>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  // The aside is a shell REGION whose body IS a home — it scopes its children to the `panel`
+  // surface, where the same control renders as a row rather than a pill (docs/ASIDE-SPEC.md §3).
+  it('does NOT flag one inside a PageAside subtree, Section and all', () => {
+    const { code, rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = () => (\n  <PageAside title="Filters">\n    <Section title="Origin">\n      <SelectFilter field={f} />\n    </Section>\n  </PageAside>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it("does NOT flag one as a PanelRow's `end` — the attribute hangs off PanelRow itself", () => {
+    const { code, rules } = run(
+      `${CONTROLS_IMPORT}export const C = () => <PanelRow label="Weight" end={<SelectFilter field={f} />} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it("does NOT flag one in a PanelRow's children — the row IS the home", () => {
+    const { rules } = run(
+      `${CONTROLS_IMPORT}export const C = () => (\n  <PanelRow label="Origin">\n    <SelectFilter field={f} />\n  </PanelRow>\n)\n`,
+    )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('does NOT flag one inside an overlay host (Modal)', () => {
+    const { rules } = run(
+      `import { Modal } from '@mantine/core'\n${CONTROLS_IMPORT}` +
+        `export const C = () => (\n  <Modal opened>\n    <SelectFilter field={f} />\n  </Modal>\n)\n`,
+    )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it.each(['src/cbbi-panel.tsx', 'src/CbbiPanel.tsx'])(
+    'does NOT flag %s — a panel body whose host lives in the parent, in either dialect',
+    (filename) => {
+      const { code, rules } = run(
+        `${CONTROLS_IMPORT}export const C = () => <div><SelectFilter field={f} /></div>\n`,
+        filename,
+      )
+      expect(code).toBe(0)
+      expect(rules).not.toContain('bound-control-outside-home')
+    },
+  )
+
+  // Both dialects need the leading SUBJECT, and neither is case-insensitive — `foopanel.tsx` is a
+  // page module spelled without a separator, not a declaration.
+  it.each(['src/foopanel.tsx', 'src/Panel.tsx'])('still flags %s', (filename) => {
+    const { rules } = run(
+      `${CONTROLS_IMPORT}export const C = () => <div><SelectFilter field={f} /></div>\n`,
+      filename,
+    )
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  it('honors a scoped theme-allow', () => {
+    const { rules } = run(
+      `${CONTROLS_IMPORT}export const C = () => (\n  <div>\n    {/* theme-allow bound-control-outside-home — a one-off embedded picker */}\n    <SelectFilter field={f} />\n  </div>\n)\n`,
+    )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('honors a theme-allow-file declaration', () => {
+    const { rules } = run(
+      `// theme-allow-file bound-control-outside-home — a legacy page, migrating next sprint\n` +
+        `${CONTROLS_IMPORT}export const C = () => <div><SelectFilter field={f} /></div>\n`,
+    )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  // Provenance, the same test the raw-filter rules apply the other way round: a consumer's own
+  // `SelectFilter` is not basalt's, and basalt has no claim over where it is written.
+  it('does NOT flag a locally-defined SelectFilter', () => {
+    const { code, rules } = run(
+      `import { SelectFilter } from './my-filters'\n` +
+        `export const C = () => <div><SelectFilter field={f} /></div>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('flags an ALIASED basalt import with no home', () => {
+    const { rules } = run(
+      `import { SelectFilter as Picker } from 'basalt-ui/controls'\n` +
+        `export const C = () => <div><Picker field={f} /></div>\n`,
+    )
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  /**
+   * The owner exemption needs the file to import NOTHING from `basalt-ui*` — see
+   * `control-outside-home`'s copy for why. For THIS rule that makes the exemption reachable only
+   * inside basalt's own `src/`, which is exactly where it is meant to apply: provenance already
+   * requires a basalt import (or a relative one inside that tree), so a consumer file can never be
+   * both the owner and a place this rule could fire.
+   */
+  it('DOES flag a consumer file that declares its own PanelRow', () => {
+    const { rules } = run(
+      `${CONTROLS_IMPORT}function PanelRow({ children }) {\n  return <div>{children}</div>\n}\n` +
+        `export const C = () => <div><SelectFilter field={f} /></div>\n`,
+    )
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  // Provenance on the HOME too, the same test `control-outside-home` applies: a consumer's own
+  // `PanelRow` is a layout helper, not the aside's row primitive.
+  it("still flags one inside a consumer's OWN PanelRow", () => {
+    const { rules } = run(
+      `import { SelectFilter } from 'basalt-ui/controls'\nimport { PanelRow } from './panel-row'\n` +
+        `export const C = () => (\n  <PanelRow label="Scale">\n    <SelectFilter field={f} />\n  </PanelRow>\n)\n`,
+    )
+    expect(rules).toContain('bound-control-outside-home')
+  })
+
+  /**
+   * `SliderControl` is NOT policed: it renders its own `PanelRow` and has no pill form at all
+   * (`docs/ASIDE-SPEC.md` §3), so "this renders as a stray pill" is false for it and a `Section`
+   * body is a legitimate place to write one. The plugin has no per-tag home set, so the honest fix
+   * is dropping it from the policed set rather than giving it a private exemption.
+   */
+  it('does NOT flag a SliderControl in a Section body — it has no pill form', () => {
+    const { code, rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = () => (\n  <Section title="Weights">\n    <SliderControl field={f} label="Pi" />\n  </Section>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('resolves a hoisted binding handed to a slot, like its siblings do', () => {
+    const { rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}const pills = <SelectFilter field={f} />\n` +
+        `export const C = () => <PageBar filters={pills} />\n`,
+    )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  /**
+   * …and one handed to a subtree home as its CHILDREN, which the ancestry walk cannot see: at the
+   * `const` there is no `PageAside` above the node at all. The same `Program:exit` deferral the
+   * slot lane uses, over the home's `{expr}` children instead of its attributes.
+   */
+  it('resolves a hoisted binding rendered as a PageAside CHILD', () => {
+    const { code, rules } = run(
+      `${ASIDE_IMPORT}${CONTROLS_IMPORT}const rows = <SelectFilter field={f} />\n` +
+        `export const C = () => <PageAside title="Filters">{rows}</PageAside>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  it('still flags the same hoisted binding under a bare Stack', () => {
+    const { rules } = run(
+      `import { Stack } from '@mantine/core'\n${CONTROLS_IMPORT}const rows = <SelectFilter field={f} />\n` +
+        `export const C = () => <Stack>{rows}</Stack>\n`,
+    )
+    expect(rules).toContain('bound-control-outside-home')
   })
 })
 
@@ -2159,6 +2448,17 @@ describe('basalt/responsive-twin', () => {
     expect(rules).not.toContain('responsive-twin')
   })
 
+  // The owner exemption's second half, the same predicate its two siblings apply: a consumer file
+  // that names a helper `PanelRow` and imports basalt is consuming basalt, not defining a control.
+  it('DOES flag a file that declares its own PanelRow but imports basalt-ui', () => {
+    const { rules } = run(
+      `import { Section } from 'basalt-ui'\n` +
+        `function PanelRow({ children }) {\n  return <div>{children}</div>\n}\n` +
+        `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    <SegmentedControl hiddenFrom="sm" data={[]} />\n  </div>\n)\n`,
+    )
+    expect(rules).toContain('responsive-twin')
+  })
+
   it('honors a scoped theme-allow', () => {
     const { rules } = run(
       `export const C = () => (\n  <div>\n    <SegmentedControl visibleFrom="sm" data={[]} />\n    {/* theme-allow responsive-twin — two genuinely different data sets */}\n    <SegmentedControl hiddenFrom="sm" data={[]} />\n  </div>\n)\n`,
@@ -2507,6 +2807,7 @@ describe('PLUGIN_RULE_ID_LIST ↔ the plugin', () => {
 
   it('gives ./controls the control-tier rules', () => {
     expect([...SURFACES['./controls'].pluginRules].toSorted()).toEqual([
+      'bound-control-outside-home',
       'control-outside-home',
       'control-size-literal',
       'hand-rolled-filter',

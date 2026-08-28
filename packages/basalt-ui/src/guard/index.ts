@@ -506,9 +506,19 @@ const RAW_SELECTION_CONTROL_TAG =
  */
 const PROSE_CONTEXT_TAG = /<(?:Prose|ArticleLayout|Modal|Drawer)(?![\w])/
 
-/** An opening tag for one of the declared non-homes — a settings row, an overlay, a composer. */
+/**
+ * An opening tag for one of the declared non-homes — a settings row, an overlay, a composer — or
+ * for one of the basalt SUBTREE homes, where the children ARE the home (`FilterSet` / `PageAside` /
+ * `PanelRow`, `docs/ASIDE-SPEC.md` §3). The text lane cannot ask which of the two a tag is, and it
+ * does not need to: both mean "a raw control here is not homeless".
+ *
+ * The three subtree homes are the plugin's `BASALT_HOST_TAGS`, mirrored here so one law does not
+ * read differently in the two lanes. The plugin gates them on the tag's basalt IMPORT; a 12-line
+ * regex window has no import graph, so this lane matches by name and accepts the missed warn on a
+ * consumer's own `PanelRow` — the same direction every approximation in this scan already leans.
+ */
 const CONTROL_HOST_TAG =
-  /<(?:SettingsRow|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer)(?![\w])/
+  /<(?:SettingsRow|Modal|Drawer|Popover\.Dropdown|Menu\.Dropdown|Composer|FilterSet|PageAside|PanelRow)(?![\w])/
 
 /**
  * How far ABOVE a control the host-tag window reaches, in lines.
@@ -524,23 +534,50 @@ const CONTROL_HOST_WINDOW_LINES = 12
 
 /**
  * A file whose BASENAME declares it is an overlay's or a form's own body — the cross-file half of
- * {@link CONTROL_HOST_TAG}, and the same regex the plugin's `OVERLAY_CONVENTION_FILE` applies to
- * `basalt/control-outside-home` (one law, two lanes, one exemption).
+ * {@link CONTROL_HOST_TAG}, and the same two dialects the plugin's `isOverlayConventionFile`
+ * applies to `basalt/control-outside-home` and `basalt/bound-control-outside-home` (one law, two
+ * lanes, one exemption).
  *
  * Law C1's cross-file case is advisory by declaration (`docs/CONTROLS-SPEC.md` §6, "Honest
  * coverage"), and this kind was paying for it: a `<Select>` inside `edit-session-modal.tsx` whose
  * `<Modal>` is rendered by the parent route is outside BOTH the 12-line host window and any
  * ancestry walk, because the host tag is not in the file at all. argo carried 9 of them.
  *
+ * KEBAB and PascalCase both count, because a repo picks one file-naming law and the convention has
+ * to survive either: `edit-session-modal.tsx`, and `CbbiPanel.tsx` in a repo mandating
+ * `PascalCase.tsx` for component files (basalt's own root `CLAUDE.md` included). Each needs the
+ * leading SUBJECT — a bare `modal.tsx` / `Panel.tsx` is a page module, not the convention.
+ *
  * The trade is that a whole file goes unscanned on a naming convention — the same bargain
  * {@link MANTINE_FORM_IMPORT} already buys, and a smaller one than promoting the kind with 9 known
  * false positives. Basename only: a `modal/` DIRECTORY holds the page pieces around the modals too.
  */
-const OVERLAY_CONVENTION_FILE = /(?:^|\/)[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
+const OVERLAY_CONVENTION_KEBAB = /^[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
+const OVERLAY_CONVENTION_PASCAL = /^[A-Z]\w*(?:Modal|Drawer|Popover|Panel|Form)\.[jt]sx$/
 
-/** A name whose DECLARATION means this file DEFINES a basalt control rather than consuming one. */
+/** Does `relPath`'s BASENAME declare the overlay convention, in either dialect? */
+function isOverlayConventionFile(relPath: string): boolean {
+  const basename = relPath.slice(relPath.lastIndexOf('/') + 1)
+  return OVERLAY_CONVENTION_KEBAB.test(basename) || OVERLAY_CONVENTION_PASCAL.test(basename)
+}
+
+/**
+ * A name whose DECLARATION means this file DEFINES a basalt control rather than consuming one.
+ *
+ * Paired with {@link BASALT_ANY_IMPORT}, and the pair is the exemption — see the plugin's
+ * `CONTROL_OWNER_NAMES` for the whole reasoning: `PanelRow`, `EnumFilter` and `SliderControl` are
+ * names a consumer writes for their own helpers, so a bare-name match let one local
+ * `function PanelRow(…)` switch this kind off for the whole file.
+ */
 const CONTROL_OWNER_DEF =
   /\b(?:function|const|class)\s+(?:RangeFilter|CompareFilter|SelectFilter|MultiSelectFilter|NumberFilter|SearchFilter|ToggleFilter|ViewTabs|FilterSet|FilterPill|EnumFilter|PanelRow|SliderControl|SyncButton|ActionGroup|OverflowMenu|CtlSlot)(?![\w])/
+
+/**
+ * ANY import from `basalt-ui` or one of its subpaths — named, default, namespace or side-effect.
+ * A file that CONSUMES basalt is not the module that DEFINES its controls, whatever it names its
+ * own helpers; basalt's own control sources import each other relatively and never by package name.
+ */
+const BASALT_ANY_IMPORT = /\b(?:from|import)\s+['"]basalt-ui(?:\/[^'"]*)?['"]/
 
 /** `@mantine/form` — a form is C1's third home, and its inputs are not filters. */
 const MANTINE_FORM_IMPORT = /from\s+['"]@mantine\/form['"]/
@@ -653,17 +690,19 @@ export type GraceEntry = { since: string; promote: string; why: string }
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'raw-selection-control': {
     since: '1.26.0',
-    promote: '1.28.0',
+    promote: '1.30.0',
     why:
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
       'reading in the guard, and the reason this one lands warn rather than error even though its ' +
-      'law is settled. It moved from 1.27.0 to 1.28.0 with its AST twin, `basalt/control-outside-' +
+      'law is settled. It moved from 1.27.0 to 1.30.0 with its AST twin, `basalt/control-outside-' +
       'home`, whose PLUGIN_RULE_GRACE entry carries the measurement: the wave-7 run left 9 warns ' +
       'in argo, all of them a control in a modal/form module whose `<Modal>` is rendered by the ' +
-      'PARENT — law C1 cross-file, which neither lane can see. `OVERLAY_CONVENTION_FILE` (this ' +
+      'PARENT — law C1 cross-file, which neither lane can see. `isOverlayConventionFile` (this ' +
       'file, and the same regex in the plugin) exempts that declared naming convention in both ' +
-      'lanes; 1.28.0 is when the remainder is re-measured. One law, two lanes, one promotion.',
+      'lanes. Re-dated 2026-08-28 — the argo wave-7 migration has not run; the PascalCase overlay ' +
+      'convention (this change) is expected to clear most of the 9. 1.30.0 is when the remainder ' +
+      'is re-measured. One law, two lanes, one promotion.',
   },
 }
 
@@ -834,6 +873,9 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'raw-scroll-container',
   'hand-rolled-filter',
   'control-outside-home',
+  // No text-lane twin, by design: a bound control's NAME says nothing without the import graph
+  // and the ancestry, which a 12-line regex window has neither of. See the rule's own JSDoc.
+  'bound-control-outside-home',
   'control-size-literal',
   'page-bar-budget',
   'responsive-twin',
@@ -2381,13 +2423,14 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
 
   // raw-selection-control — full-text tag scan plus the host WINDOW (see CONTROL_HOST_WINDOW_LINES).
   // Three file-level exemptions mirror the plugin rule's, so the two lanes agree on the same file:
-  // a file that DEFINES a basalt control cannot be told to use one, a file importing
-  // `@mantine/form` is a form — C1's third home, whose inputs are not filters — and a file NAMED as
-  // an overlay body carries its `<Modal>` in the parent, where no scan of this file can reach it.
+  // a file that DEFINES a basalt control (and imports none — see CONTROL_OWNER_DEF) cannot be told
+  // to use one, a file importing `@mantine/form` is a form — C1's third home, whose inputs are not
+  // filters — and a file NAMED as an overlay body carries its `<Modal>` in the parent, where no
+  // scan of this file can reach it.
   if (
     ruleApplies('raw-selection-control', relPath) &&
-    !OVERLAY_CONVENTION_FILE.test(relPath) &&
-    !CONTROL_OWNER_DEF.test(codeText) &&
+    !isOverlayConventionFile(relPath) &&
+    !(CONTROL_OWNER_DEF.test(codeText) && !BASALT_ANY_IMPORT.test(codeText)) &&
     !MANTINE_FORM_IMPORT.test(codeText)
   ) {
     for (const m of codeText.matchAll(RAW_SELECTION_CONTROL_TAG)) {

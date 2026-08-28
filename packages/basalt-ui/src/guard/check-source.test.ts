@@ -2527,6 +2527,29 @@ describe('raw-selection-control', () => {
     expect(kinds(f)).not.toContain('raw-selection-control')
   })
 
+  // The owner exemption's SECOND half, the plugin's predicate mirrored: `PanelRow` is an ordinary
+  // name for a consumer's own layout helper, and matching it bare let one local declaration switch
+  // this kind off for the whole file. A file that IMPORTS basalt is consuming it, not defining it.
+  it('DOES flag a consumer file that declares its own PanelRow and imports basalt-ui', () => {
+    const f = find(
+      `import { Section } from 'basalt-ui'\n` +
+        `function PanelRow({ children }) {\n  return <div>{children}</div>\n}\n` +
+        `<Section title="x">\n  <Select value={v} onChange={set} data={[]} />\n</Section>`,
+    )
+    expect(kinds(f)).toContain('raw-selection-control')
+  })
+
+  // The basalt SUBTREE homes, mirrored from the plugin's `BASALT_HOST_TAGS` so one law does not
+  // read differently in the two lanes: the children of a FilterSet / PageAside / PanelRow ARE the
+  // home. Before this the AST lane treated all three as homes and this one knew none of them.
+  it.each(['FilterSet', 'PageAside', 'PanelRow'])(
+    'does NOT flag one inside a %s window — the children ARE the home',
+    (host) => {
+      const f = find(`<${host} label="Scale">\n  <Select data={[]} />\n</${host}>`)
+      expect(kinds(f)).not.toContain('raw-selection-control')
+    },
+  )
+
   it('does NOT flag a bound basalt control', () => {
     expect(kinds(find(`<SelectFilter field={f} label="Channel" />`))).not.toContain(
       'raw-selection-control',
@@ -2560,9 +2583,19 @@ describe('raw-selection-control', () => {
     )
   })
 
-  // Basename only, and it needs the leading subject: a `modal/` DIRECTORY holds the page pieces
-  // around the modals too, and a bare `modal.tsx` is a page module in every consumer that has one.
-  it.each(['src/modal/session.tsx', 'src/modal.tsx'])(
+  // The SECOND dialect, added with the plugin's: a repo mandating `PascalCase.tsx` for component
+  // files can never write `foo-panel.tsx`, so the kebab form alone exempted nothing there.
+  it.each(['src/EditSessionModal.tsx', 'src/FiltersDrawer.tsx', 'src/CbbiPanel.tsx'])(
+    'does NOT flag %s — the PascalCase dialect of the same convention',
+    (relPath) => {
+      expect(kinds(find(`<Select data={[]} />`, relPath))).not.toContain('raw-selection-control')
+    },
+  )
+
+  // Basename only, and it needs the leading subject IN BOTH DIALECTS: a `modal/` DIRECTORY holds
+  // the page pieces around the modals too, a bare `modal.tsx`/`Panel.tsx` is a page module in every
+  // consumer that has one, and neither dialect is case-insensitive.
+  it.each(['src/modal/session.tsx', 'src/modal.tsx', 'src/Panel.tsx', 'src/foopanel.tsx'])(
     'is a subject-prefixed BASENAME convention, not %s',
     (relPath) => {
       expect(kinds(find(`<Select data={[]} />`, relPath))).toContain('raw-selection-control')
@@ -2570,7 +2603,7 @@ describe('raw-selection-control', () => {
   )
 
   // Still warn at 1.27.0 — this kind and its AST twin `basalt/control-outside-home` are the C1 pair
-  // that moved to `promote: '1.28.0'` while the other wave-6 entries promoted.
+  // re-dated to `promote: '1.30.0'` while the other wave-6 entries promoted.
   it('lands warn while the grace entry stands (C16)', () => {
     const f = find(`<Select data={[]} />`)
     expect(f.find((x) => x.kind === 'raw-selection-control')?.severity).toBe('warn')

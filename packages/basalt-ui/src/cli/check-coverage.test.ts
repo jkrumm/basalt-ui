@@ -91,6 +91,7 @@ describe('coverageFor', () => {
 
   it('names the control rules under the controls rule', () => {
     expect(coverageFor('controls').pluginRules).toEqual([
+      'bound-control-outside-home',
       'control-outside-home',
       'control-size-literal',
       'hand-rolled-filter',
@@ -146,7 +147,7 @@ describe('coverageBlock', () => {
 
   it('names both lanes, prefixing the oxlint ids', () => {
     const block = coverageBlock('controls')
-    expect(block).toContain('oxlint rules — basalt/control-outside-home')
+    expect(block).toContain('oxlint rules — basalt/bound-control-outside-home')
     expect(block).toContain('guard kinds — raw-selection-control')
   })
 

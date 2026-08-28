@@ -32,12 +32,33 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ## Unreleased
 
-**Nothing removed. Two exports added (`NumberFilter`, and three members on the number handle),
-one member added to every `FieldHandle` (`clear()`), four `StatCard` props added, and enforcement
-tightened: five oxlint rules plus one guard kind became `error`.** The store half of this minor also
+**Nothing removed. Additive throughout, and enforcement tightened: five oxlint rules plus one guard
+kind became `error`, and one new rule id shipped at `warn`.** The store half of this minor also
 fixed four inference and notification defects consumers hit while porting, plus two ways a fallback
 got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
 grammar unchanged; only the severity of an unwaived finding moves.
+
+What is new, one line each — nothing here renames or removes anything:
+
+- **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
+  surface in its body and a mobile projection into `PageBar` row 2 (`docs/ASIDE-SPEC.md`).
+- **`PanelRow`** (`basalt-ui/controls`) — the aside's inspector/facet row: label above, control
+  below, `end` for a control that rides the label line. Every bound control renders one on the
+  `panel` surface.
+- **`SliderControl`** (`basalt-ui/controls`) — a `field.number`-bound track for a weight or a
+  threshold. It always renders a `PanelRow`, so unlike the pill filters a `Section` body is a
+  legitimate home for it and `basalt/bound-control-outside-home` does not police it.
+- **`MultiSelectFilter.counts` / `.max`** — per-option counts (a mono number plus a proportional
+  bar) and the panel facet cut-off before the `Show more` fold. Both optional; omitted is today's
+  rendering.
+- **`field.number({ step })`** — the declared grain, republished on the handle. `field.number`
+  resolves `1` for an `int: true` field that declared none, so `NumberFilter` and `SliderControl`
+  cannot answer it differently.
+- **`basalt/bound-control-outside-home`** — a NEW rule id at `warn` (grace to 1.30.0): a bound
+  basalt control written into a `Section` body or a page stack renders as a stray pill.
+  `control-outside-home` matches raw Mantine tags only, so this half of law C1 was unguarded. Homes
+  are the slot props plus the `FilterSet` / `PageAside` / `PanelRow` subtrees; the escape is
+  `theme-allow bound-control-outside-home — <why>`.
 
 ### Stores — the `custom` flag, patched writes, lazy fallbacks, derived windows
 
@@ -262,7 +283,7 @@ renders in a tiered slot, and keying the exemption on a single owner made the ve
 attribute came later in the file.
 
 **`basalt/control-outside-home` and `raw-selection-control` did NOT promote. They are re-dated to
-1.28.0, and the reason is a measurement rather than caution:** the wave-7 consumer run left 9 warns
+1.30.0, and the reason is a measurement rather than caution:** the wave-7 consumer run left 9 warns
 in argo, and every one is a control inside a modal/form module whose `<Modal>` is rendered by the
 PARENT route — law C1's cross-file case, which is advisory by declaration because no scan of one
 file can see it. Both lanes now exempt a file whose BASENAME matches
@@ -305,7 +326,7 @@ happened to the nine rows below.
 (`shadow-basalt-export`). Both ledgers now hold only the wave-6 control guards listed under
 § Guards — six plugin rules and two guard kinds, each `{ since: '1.26.0', promote: '1.27.0' }` —
 which the C16 gate forced to promote or be deleted at 1.27.0. Five rules and one kind promoted there;
-the C1 pair was re-dated to 1.28.0 against a measurement (see `## Unreleased` above). A theme-allow escape written against
+the C1 pair was re-dated to 1.30.0 against a measurement (see `## Unreleased` above). A theme-allow escape written against
 any of these still works unchanged; only the SEVERITY of an unwaived finding moves from `warn` to
 `error`.
 
@@ -616,21 +637,21 @@ A consumer that uses `DateRangePicker` installs `@mantine/dates` and imports
 
 **Nothing removed. Eight new oxlint rules and two new guard kinds. `Ships` below is the level as of
 THIS minor** — eight land `error`, and the C1 pair (`control-outside-home` and its text lane) is the
-only grace left, re-dated to 1.28.0 on a measurement (see § Guards — the promotions).\*\* Every one honours `theme-allow <id> — <why>` on the
+only grace left, re-dated to 1.30.0 on a measurement (see § Guards — the promotions).\*\* Every one honours `theme-allow <id> — <why>` on the
 node and `theme-allow-file <id> — <why>` on the file, the same grammar as the rest.
 
-| Rule / kind                          | Fires on                                                                                                                                                                                                                               | Ships         |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `basalt/hand-rolled-filter`          | A raw Mantine `Select`/`SegmentedControl`/… handed to a TIERED home slot (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/`WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`) | error         |
-| `basalt/page-bar-budget`             | A second `PageBar` in the SAME returned tree, >4 `actions.secondary`, >3 `Section` actions, a second filled `Button`/`ActionIcon` in one slot (outside an overlay)                                                                     | error         |
-| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, in a file that DEFINES a basalt control, or in a file basenamed `*-{modal,drawer,popover,panel,form}.tsx`     | warn → 1.28.0 |
-| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                              | **error**     |
-| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                     | **error**     |
-| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                         | **error**     |
-| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                      | **error**     |
-| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                       | **error**     |
-| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                           | **error**     |
-| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window, plus the same overlay-basename exemption                                                                                                           | warn → 1.28.0 |
+| Rule / kind                          | Fires on                                                                                                                                                                                                                                                                                                           | Ships         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| `basalt/hand-rolled-filter`          | A raw Mantine `Select`/`SegmentedControl`/… handed to a TIERED home slot (`actions`/`filters`/`tabs`/`sync`/`filtersEnd` on `PageBar`/`Section`/`WidgetHeader`/`ChartCard`/`StatCard`/`BasaltDataTable`/`SettingsSection`/`FilterSet`)                                                                             | error         |
+| `basalt/page-bar-budget`             | A second `PageBar` in the SAME returned tree, >4 `actions.secondary`, >3 `Section` actions, a second filled `Button`/`ActionIcon` in one slot (outside an overlay)                                                                                                                                                 | error         |
+| `basalt/control-outside-home`        | The same raw control with no home at all — exempt under a settings row / overlay / composer, in an `@mantine/form` file, in a file that DEFINES a basalt control (and imports no `basalt-ui`), or in a file basenamed `*-{modal,drawer,popover,panel,form}.tsx` / `<Subject>{Modal,Drawer,Popover,Panel,Form}.tsx` | warn → 1.30.0 |
+| `basalt/control-size-literal`        | `size`/`w`/`fullWidth`/`visibleFrom`/`hiddenFrom` on anything inside a home slot (the slot sets the tier)                                                                                                                                                                                                          | **error**     |
+| `basalt/in-body-page-title`          | `<Title order={1\|2}>` outside prose/overlay context and outside a `content/` path                                                                                                                                                                                                                                 | **error**     |
+| `basalt/responsive-twin`             | The same control mounted twice, one `visibleFrom="X"` and one `hiddenFrom="X"`                                                                                                                                                                                                                                     | **error**     |
+| `basalt/search-literal-link`         | A `search:` object literal in a `linkOptions()` inside `defineNav()`/`navGroup()`                                                                                                                                                                                                                                  | **error**     |
+| `basalt/use-search-from-literal`     | `useSearch({ from: '<route>' })`                                                                                                                                                                                                                                                                                   | **error**     |
+| `in-body-page-title` (guard kind)    | The text lane of the same law — SAME id, so one annotation waives both lanes                                                                                                                                                                                                                                       | **error**     |
+| `raw-selection-control` (guard kind) | The text lane of `control-outside-home`, approximated by a 12-line host-tag window, plus the same overlay-basename exemption                                                                                                                                                                                       | warn → 1.30.0 |
 
 **A `SettingsRow`'s `control` is not a tiered slot, so nothing in this table fires inside one.**
 It is law C1's third home — the form row — and a form keeps Mantine's `md` tier
@@ -1488,8 +1509,8 @@ deleting an entry forces the level flip in the same commit.
 | `basalt/responsive-twin`               | 1.26.0 as `warn` | **1.27.0**                                                                                  |
 | `basalt/search-literal-link`           | 1.26.0 as `warn` | **1.27.0**                                                                                  |
 | `basalt/use-search-from-literal`       | 1.26.0 as `warn` | **1.27.0**                                                                                  |
-| `basalt/control-outside-home`          | 1.26.0 as `warn` | still `warn`, `promote: '1.28.0'` — re-dated on 9 measured cross-file overlay warns in argo |
-| `raw-selection-control` (guard kind)   | 1.26.0 as `warn` | still `warn`, `promote: '1.28.0'` — the text lane of the row above                          |
+| `basalt/control-outside-home`          | 1.26.0 as `warn` | still `warn`, `promote: '1.30.0'` — re-dated on 9 measured cross-file overlay warns in argo |
+| `raw-selection-control` (guard kind)   | 1.26.0 as `warn` | still `warn`, `promote: '1.30.0'` — the text lane of the row above                          |
 
 `card-with-border`, `inline-display`, `raw-html-layout`, `raw-form-control`, `raw-font-family` and
 the other original guard kinds have been `error` since before 1.2.0 — they never had a grace minor.

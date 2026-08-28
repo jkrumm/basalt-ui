@@ -1,6 +1,6 @@
 ---
 source: basalt-ui
-description: Where an interactive control may live and how it binds — the three homes, the ctl size tier, the store-bound filters and tabs of basalt-ui/controls, the mobile policy, and sidebar blocks. Enforced by basalt/hand-rolled-filter, control-outside-home, control-size-literal, responsive-twin and page-bar-budget.
+description: Where an interactive control may live and how it binds — the three homes, the ctl size tier, the store-bound filters and tabs of basalt-ui/controls, the mobile policy, and sidebar blocks. Enforced by basalt/hand-rolled-filter, control-outside-home, bound-control-outside-home, control-size-literal, responsive-twin and page-bar-budget.
 paths:
   - 'src/**'
   - 'apps/**/src/**'
@@ -8,7 +8,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — raw-selection-control · oxlint rules — basalt/control-outside-home, basalt/control-size-literal, basalt/hand-rolled-filter, basalt/responsive-twin -->
+<!-- backed by: guard kinds — raw-selection-control · oxlint rules — basalt/bound-control-outside-home, basalt/control-outside-home, basalt/control-size-literal, basalt/hand-rolled-filter, basalt/responsive-twin -->
 <!-- not guarded: C1 as a cross-file law (a control placed in one file, its home declared in another) -->
 <!-- not guarded: hand-rolled section headings (argo writes `<Text fw={600} size="sm">` + children, which no AST heuristic matches without false positives) -->
 <!-- not guarded: C11 — a table/list stating its count when it is not a BasaltDataTable -->
@@ -133,6 +133,28 @@ reset handler to extend.
 Every swap is CSS inside the control (one mount), never a JS media query — a media-query hook renders
 differently on the server than on the first client paint. Two mounts under
 `visibleFrom`/`hiddenFrom` is `basalt/responsive-twin`.
+
+## The aside
+
+`PageAside` is a shell REGION, not a fourth home — C1 still names three. Its body IS a home: it
+scopes its children to the `panel` surface, so the same `SelectFilter` that is a pill in the page
+bar is a ROW in the aside. Never two components and never a prop to pick between them — the surface
+is read from where the control is mounted.
+
+| In the aside     | Write                                                                 |
+| ---------------- | --------------------------------------------------------------------- |
+| an inspector row | `PanelRow` — label above, optional `hint`, mono `readout`, `end` slot |
+| a bound slider   | `SliderControl` — min/max/step come off the handle, never props       |
+| a facet list     | `MultiSelectFilter` + `counts` (and `max`, past which the tail folds) |
+| a group of rows  | `Section` — flush inside the aside, which draws the rhythm itself     |
+
+- ONE `PageAside` per page, written AFTER the main content: it portals into the region from `sm` up,
+  so its place in the tree is reading order, not layout.
+- Below `sm` it projects into `PageBar` row 2 as one `Panel` pill opening a sheet; with no row 2 —
+  and in a shell-less app — it renders in flow where the page wrote it. One node either way (C9).
+- A bound control written outside all of this (a `Section` body, a bare page stack) is
+  `basalt/bound-control-outside-home` — it renders as a stray pill. A slot prop, a `FilterSet`, a
+  `PageAside` or a `PanelRow` is a home; nothing else is.
 
 ## Sidebar blocks
 

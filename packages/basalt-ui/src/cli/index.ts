@@ -3186,7 +3186,7 @@ const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
   'agent/rules/basalt-mantine.md': 180,
   'agent/rules/basalt-charts.md': 140,
   'agent/rules/basalt-state.md': 160,
-  'agent/rules/basalt-controls.md': 160,
+  'agent/rules/basalt-controls.md': 185,
   'agent/rules/basalt-batteries.md': 220,
   'agent/skills/basalt-app/SKILL.md': 100,
   'agent/skills/basalt-design/SKILL.md': 100,

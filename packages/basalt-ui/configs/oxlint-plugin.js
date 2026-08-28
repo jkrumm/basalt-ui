@@ -104,6 +104,7 @@ export const KNOWN_RULE_IDS = new Set([
   'raw-scroll-container',
   'hand-rolled-filter',
   'control-outside-home',
+  'bound-control-outside-home',
   'control-size-literal',
   'page-bar-budget',
   'responsive-twin',
@@ -1928,6 +1929,14 @@ const BOUND_TAGS = new Set([
  * The names whose DECLARATION means this file defines a basalt control rather than consuming one —
  * the owner exemption, the same shape as `hand-rolled-plot`'s `notesOwnerDefinition`: a rule that
  * says "use a bound control" cannot fire inside the module that IS the bound control.
+ *
+ * **The declaration alone is not enough, and the second half is what makes the set safe to widen.**
+ * `PanelRow`, `EnumFilter` and `SliderControl` are ordinary names a consumer writes for their own
+ * helpers, and a bare-name match let one local `function PanelRow(…)` switch `control-outside-home`,
+ * `bound-control-outside-home` and `responsive-twin` off for that WHOLE file. So the exemption also
+ * requires the file to import NOTHING from `basalt-ui*`: basalt's own control sources import each
+ * other RELATIVELY, while a consumer of basalt always names the package. A file that consumes
+ * basalt is not the module that defines its controls, whatever it calls its helpers.
  */
 const CONTROL_OWNER_NAMES = new Set([
   ...BOUND_TAGS,
@@ -1968,6 +1977,24 @@ const CONTROL_HOST_TAGS = new Set([
 ])
 
 /**
+ * The basalt elements whose CHILDREN are a home — the SUBTREE homes, where the body IS the surface
+ * (`docs/ASIDE-SPEC.md` §3). `FilterSet` mounts the pill surface, `PageAside` the panel surface,
+ * `PanelRow` the row itself (its `end` prop resolves here too: the attribute hangs off `PanelRow`'s
+ * own opening element, so the ancestry walk reaches the element).
+ *
+ * Read by BOTH C1 rules, because the two must not disagree about what a home IS — before this set
+ * existed `bound-control-outside-home` treated all three as homes and `control-outside-home` knew
+ * none of them, so a raw `<Select>` inside a `<PageAside><PanelRow>` reported while the bound
+ * control beside it did not.
+ *
+ * Unlike {@link CONTROL_HOST_TAGS} these are PROVENANCE-gated, the same test
+ * {@link SLOT_OWNER_TAGS} applies and for the same reason: `PanelRow` is an ordinary name for a
+ * consumer's own layout helper, and reading one as a basalt home would exempt a genuinely homeless
+ * control. The overlay hosts stay name-matched because `Modal`/`Drawer` are Mantine's, not basalt's.
+ */
+const BASALT_HOST_TAGS = new Set(['FilterSet', 'PageAside', 'PanelRow'])
+
+/**
  * A file whose NAME declares it is an overlay's or a form's own body — the cross-file half of
  * {@link CONTROL_HOST_TAGS}, and the one exemption here that is a CONVENTION rather than a fact
  * about the AST.
@@ -1985,10 +2012,32 @@ const CONTROL_HOST_TAGS = new Set([
  * with 9 known false positives. `-panel.tsx` is the loosest member and the one to reconsider first
  * if the set ever needs narrowing.
  *
+ * TWO dialects, because a repo picks one file-naming law and the convention has to survive either:
+ * `edit-session-modal.tsx` (kebab) and `CbbiPanel.tsx` (PascalCase — what a repo mandating
+ * `PascalCase.tsx` for component files writes, basalt's own root `CLAUDE.md` included). The kebab
+ * form alone could never match a component file in such a repo, which is exactly how the CBBI panel
+ * — a `PageAside` child whose `<PageAside>` is in the PARENT page — collected four warns that no
+ * ancestry walk in that file could ever have avoided.
+ *
+ * Both dialects require the leading SUBJECT: `Panel.tsx` and `modal.tsx` are page modules in every
+ * consumer that has one, and a bare-noun exemption would switch the rules off wholesale.
+ *
  * Basename only — a `modal/` DIRECTORY is not the convention, because a directory of modals holds
  * the page pieces around them too.
  */
-const OVERLAY_CONVENTION_FILE = /(?:^|\/)[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
+const OVERLAY_CONVENTION_KEBAB = /^[^/]*-(?:modal|drawer|popover|panel|form)\.[jt]sx$/
+const OVERLAY_CONVENTION_PASCAL = /^[A-Z]\w*(?:Modal|Drawer|Popover|Panel|Form)\.[jt]sx$/
+
+/**
+ * The single predicate both `control-outside-home` and `bound-control-outside-home` ask — see
+ * {@link OVERLAY_CONVENTION_KEBAB} for the whole trade. One function, so the two rules can never
+ * disagree about what the convention IS; `src/guard/index.ts` carries the text-lane copy of the
+ * same two dialects (`raw-selection-control`), pinned by both test files.
+ */
+function isOverlayConventionFile(filename) {
+  const basename = filename.slice(filename.lastIndexOf('/') + 1)
+  return OVERLAY_CONVENTION_KEBAB.test(basename) || OVERLAY_CONVENTION_PASCAL.test(basename)
+}
 
 /** How far an ancestry walk climbs before giving up — a JSX tree this deep is not a slot value. */
 const ANCESTRY_MAX_DEPTH = 60
@@ -2197,6 +2246,26 @@ function hasAncestorTag(node, tags) {
   return false
 }
 
+/**
+ * The BINDINGS of every JSX ancestor of `node` whose tag is in `tags` — {@link hasAncestorTag} for a
+ * PROVENANCE-gated set. It returns names rather than a boolean for the same reason
+ * {@link slotOwnerBinding} does: whether that `PanelRow` is basalt's is answered by the import list,
+ * which is only complete at `Program:exit`, while the ancestry is only walkable during the visit.
+ */
+function ancestorTagBindings(node, tags) {
+  const found = []
+  let current = node.parent
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') break
+    if (current.type === 'JSXElement' && tags.has(jsxTagName(current.openingElement?.name) ?? '')) {
+      const root = jsxRootName(current.openingElement?.name)
+      if (root !== undefined) found.push(root)
+    }
+    current = current.parent
+  }
+  return found
+}
+
 /** Identifiers a slot attribute's value resolves through — `filters={pills}`, `actions={[a, b]}`. */
 function collectSlotValueIdentifiers(node, into, depth = 0) {
   if (node === null || node === undefined || depth > 8) return
@@ -2246,6 +2315,14 @@ function createSlotContext(context) {
    * depending on JSX order.
    */
   const slotBoundIdentifiers = new Map()
+  /**
+   * Hoisted identifier → every SUBTREE-home BINDING whose children it was rendered as.
+   *
+   * The same hop `slotBoundIdentifiers` makes, one home shape over: `const rows = <SelectFilter/>`
+   * handed to `<PageAside>{rows}</PageAside>` is inside that aside, and the ancestry walk cannot
+   * see it because at the `const` there is no `PageAside` above the node at all.
+   */
+  const subtreeHostedIdentifiers = new Map()
   return {
     /** Feed every ImportDeclaration here — this is where the owner provenance comes from. */
     noteImport(node) {
@@ -2263,12 +2340,32 @@ function createSlotContext(context) {
         else owners.add(owner)
       }
     },
+    /**
+     * Feed every JSXExpressionContainer here — a `{expr}` CHILD of a subtree home
+     * ({@link BASALT_HOST_TAGS}) hosts the identifiers that expression resolves through.
+     */
+    noteChild(node) {
+      const parent = node.parent
+      if (parent === null || parent === undefined || parent.type !== 'JSXElement') return
+      const name = parent.openingElement?.name
+      if (!BASALT_HOST_TAGS.has(jsxTagName(name) ?? '')) return
+      const owner = jsxRootName(name)
+      if (owner === undefined) return
+      const identifiers = new Set()
+      collectSlotValueIdentifiers(node.expression, identifiers)
+      for (const id of identifiers) {
+        const owners = subtreeHostedIdentifiers.get(id)
+        if (owners === undefined) subtreeHostedIdentifiers.set(id, new Set([owner]))
+        else owners.add(owner)
+      }
+    },
     /** Snapshot `node`'s ancestry while it is walkable — the owner NAME, resolved later. */
     capture(node) {
       const attr = enclosingSlotAttribute(node)
       return {
         directOwner: attr === undefined ? undefined : slotOwnerBinding(attr),
         declaratorName: enclosingDeclaratorName(node),
+        subtreeHosts: ancestorTagBindings(node, BASALT_HOST_TAGS),
       }
     },
     /** Is a captured node inside a BASALT home slot — directly, or via a hoisted binding? */
@@ -2287,6 +2384,21 @@ function createSlotContext(context) {
     /** Does `name` resolve to a basalt home component in this file? */
     isHome(name) {
       return name !== undefined && homes.has(name)
+    },
+    /**
+     * Is a captured node inside a basalt SUBTREE home — directly by ancestry, or via a hoisted
+     * binding rendered as one's `{expr}` child? Both halves resolve the binding through `homes`,
+     * so a consumer's own `PanelRow` is not one.
+     */
+    inSubtreeHome(captured) {
+      for (const binding of captured.subtreeHosts) {
+        if (homes.has(binding)) return true
+      }
+      if (captured.declaratorName === undefined) return false
+      for (const owner of subtreeHostedIdentifiers.get(captured.declaratorName) ?? []) {
+        if (homes.has(owner)) return true
+      }
+      return false
     },
     /**
      * EVERY basalt EXPORT whose slot a captured node sits in — `['ChartCard']` for
@@ -2310,14 +2422,24 @@ function createSlotContext(context) {
   }
 }
 
-/** Collects an owner-definition flag for the control layer — see {@link CONTROL_OWNER_NAMES}. */
+/** Collects the owner-definition verdict for the control layer — see {@link CONTROL_OWNER_NAMES}. */
 function createControlOwnerProbe() {
-  const state = { definesControl: false }
+  const state = { definesControl: false, importsBasalt: false }
   const note = (name) => {
     if (typeof name === 'string' && CONTROL_OWNER_NAMES.has(name)) state.definesControl = true
   }
   return {
-    state,
+    /** Feed every ImportDeclaration here — a `basalt-ui*` import disqualifies the exemption. */
+    noteImport(node) {
+      const source = node.source?.value
+      if (typeof source === 'string' && BASALT_IMPORT_SOURCE.test(source)) {
+        state.importsBasalt = true
+      }
+    },
+    /** Does this file DEFINE a basalt control rather than consume one? Both halves are required. */
+    isOwner() {
+      return state.definesControl && !state.importsBasalt
+    },
     visitors: {
       FunctionDeclaration(node) {
         note(node.id?.name)
@@ -2410,7 +2532,7 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * (docs/CONTROLS-SPEC.md §9 wave 7).
  *
  * Four exemptions carry the false-positive load: an overlay/settings-row ancestor, an
- * {@link OVERLAY_CONVENTION_FILE} basename (the CROSS-FILE case — the `<Modal>` lives in the
+ * {@link isOverlayConventionFile} basename (the CROSS-FILE case — the `<Modal>` lives in the
  * parent), a file that imports `@mantine/form` (a form is the third home and its inputs are not
  * filters), and the owner exemption — a file DEFINING a basalt control cannot be told to use one.
  */
@@ -2422,7 +2544,7 @@ const controlOutsideHome = {
   },
   create(context) {
     if (isTestFile(context)) return {}
-    if (OVERLAY_CONVENTION_FILE.test(getFilename(context))) return {}
+    if (isOverlayConventionFile(getFilename(context))) return {}
     const slots = createSlotContext(context)
     const owner = createControlOwnerProbe()
     const mantineImports = new Map()
@@ -2434,10 +2556,14 @@ const controlOutsideHome = {
       ImportDeclaration(node) {
         collectMantineImports(node, mantineImports)
         slots.noteImport(node)
+        owner.noteImport(node)
         if ((node.source?.value ?? '') === '@mantine/form') importsMantineForm = true
       },
       JSXAttribute(node) {
         slots.note(node)
+      },
+      JSXExpressionContainer(node) {
+        slots.noteChild(node)
       },
       JSXOpeningElement(node) {
         // Cheap pre-filter: the tag as WRITTEN, or any Mantine binding (an alias resolves at exit).
@@ -2451,11 +2577,11 @@ const controlOutsideHome = {
         })
       },
       'Program:exit'() {
-        if (importsMantineForm || owner.state.definesControl) return
+        if (importsMantineForm || owner.isOwner()) return
         for (const { node, name, captured, hosted } of candidates) {
           const tag = resolveMantineTag(name, mantineImports)
           if (tag === undefined || !RAW_FILTER_TAGS.has(tag)) continue
-          if (hosted || slots.resolve(captured)) continue
+          if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
           if (hasThemeAllow(context, node, 'control-outside-home')) continue
           context.report({ node, message: CONTROL_OUTSIDE_HOME_MESSAGE })
         }
@@ -2885,10 +3011,13 @@ const responsiveTwin = {
 
     return {
       ...owner.visitors,
+      ImportDeclaration(node) {
+        owner.noteImport(node)
+      },
       JSXElement: inspectChildren,
       JSXFragment: inspectChildren,
       'Program:exit'() {
-        if (owner.state.definesControl) return
+        if (owner.isOwner()) return
         for (const node of twins) {
           if (hasThemeAllow(context, node, 'responsive-twin')) continue
           context.report({ node, message: RESPONSIVE_TWIN_MESSAGE })
@@ -2986,6 +3115,101 @@ const useSearchFromLiteral = {
   },
 }
 
+// ── Rule 24 — bound-control-outside-home ────────────────────────────────────────────────────────
+
+/**
+ * A bound basalt control with no home — the pill-shaped controls, and `SliderControl` is
+ * deliberately NOT among them: it has no pill form at all. It always renders a `PanelRow`
+ * (`docs/ASIDE-SPEC.md` §3), so a `<Section>` body or a plain page stack is a legitimate place to
+ * write one and "this renders as a stray pill" would be false there. {@link BOUND_TAGS} is the
+ * whole set; every member is a `FieldHandle`-bound `basalt-ui/controls` export, so unlike
+ * {@link RAW_FILTER_TAGS} there is no question of what it is FOR — only of where it was written.
+ */
+const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
+  'Bound basalt control with no home — a SelectFilter / ToggleFilter / RangeFilter / ' +
+  'MultiSelectFilter / NumberFilter / SearchFilter / ViewTabs renders as a stray pill when it is ' +
+  'written into a Section body or a page stack. It belongs in a home slot (`filters` / `tabs` / ' +
+  '`filtersEnd` / `actions` / `sync` / `control`), inside a <FilterSet>, or inside a <PageAside> ' +
+  '— where the panel surface renders it as a row instead (law C1, docs/ASIDE-SPEC.md §3). ' +
+  'SliderControl is not policed: it renders its own PanelRow and has no pill form. An overlay ' +
+  '(Modal/Drawer/Popover/Menu) and a settings row are the declared non-homes and never report. ' +
+  '(basalt/bound-control-outside-home)'
+
+/**
+ * A BOUND basalt control that is in no home at all — ledger G5 (`docs/ASIDE-SPEC.md` §2), the half
+ * of law C1 that had no guard: `control-outside-home` matches raw Mantine tags only, so a
+ * `<SelectFilter field={…}/>` dropped into a `Section` body passed silently and shipped as a stray
+ * pill.
+ *
+ * A NEW id rather than a widening of `control-outside-home`, per C16: a level is per-id, so
+ * widening that rule would have landed this form at whatever level it holds, with no grace of its
+ * own — and widening it in a minor would restart its grace besides.
+ *
+ * Provenance is the tag's basalt IMPORT ({@link collectBasaltImportMap}), never its bare name: a
+ * consumer's own `SelectFilter` is not this one. The exemptions are the sibling rule's minus the
+ * `@mantine/form` one — a form input is a raw input, and a `FieldHandle`-bound filter in a form
+ * module is homeless there exactly as it is anywhere else.
+ *
+ * **There is deliberately NO text-lane twin in `src/guard`.** `raw-selection-control` can key on a
+ * bare Mantine tag name because that name is Mantine's whatever the file does with it; a bound
+ * control's name says nothing without the import graph and the ancestry, and a regex over a
+ * 12-line window has neither. A text heuristic here would report a consumer's own `SelectFilter` in
+ * its own `filters` slot — signal the plugin already has, noise the guard would add.
+ */
+const boundControlOutsideHome = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a bound basalt control that is in no basalt home.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    if (isOverlayConventionFile(getFilename(context))) return {}
+    const slots = createSlotContext(context)
+    const owner = createControlOwnerProbe()
+    const controls = new Map()
+    const ownTree = isBasaltOwnSource(getFilename(context))
+    const candidates = []
+
+    return {
+      ...owner.visitors,
+      ImportDeclaration(node) {
+        collectBasaltImportMap(node, controls, ownTree)
+        slots.noteImport(node)
+        owner.noteImport(node)
+      },
+      JSXAttribute(node) {
+        slots.note(node)
+      },
+      JSXExpressionContainer(node) {
+        slots.noteChild(node)
+      },
+      JSXOpeningElement(node) {
+        // Cheap pre-filter on the tag as WRITTEN; an alias resolves through `controls` at exit.
+        const root = jsxRootName(node.name)
+        if (root === undefined) return
+        if (!BOUND_TAGS.has(jsxTagName(node.name) ?? '') && !controls.has(root)) return
+        candidates.push({
+          node,
+          root,
+          captured: slots.capture(node),
+          hosted: hasAncestorTag(node, CONTROL_HOST_TAGS),
+        })
+      },
+      'Program:exit'() {
+        if (owner.isOwner()) return
+        for (const { node, root, captured, hosted } of candidates) {
+          const exported = controls.get(root)
+          if (exported === undefined || !BOUND_TAGS.has(exported)) continue
+          if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
+          if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
+          context.report({ node, message: BOUND_CONTROL_OUTSIDE_HOME_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -3019,7 +3243,7 @@ const useSearchFromLiteral = {
 export const PLUGIN_RULE_GRACE = {
   'control-outside-home': {
     since: '1.26.0',
-    promote: '1.28.0',
+    promote: '1.30.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
       'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
@@ -3029,10 +3253,26 @@ export const PLUGIN_RULE_GRACE = {
       'cautious: the wave-7 run found 9 remaining warns in argo, every one of them a control in a ' +
       'modal/form module whose `<Modal>` is rendered by the PARENT — the cross-file case law C1 is ' +
       'explicitly advisory about, which no ancestry walk inside one file can ever see. ' +
-      '{@link OVERLAY_CONVENTION_FILE} now exempts the declared naming convention for exactly ' +
-      'that shape; 1.28.0 is when the remainder is re-measured. A file outside the convention ' +
-      "that is still an overlay's own body declares it with " +
+      '{@link isOverlayConventionFile} exempts that declared naming convention, in BOTH the kebab ' +
+      '(`edit-session-modal.tsx`) and the PascalCase (`CbbiPanel.tsx`) dialect. Re-dated ' +
+      '2026-08-28 — the argo wave-7 migration has not run; the PascalCase overlay convention (this ' +
+      'change) is expected to clear most of the 9. 1.30.0 is when the remainder is re-measured. A ' +
+      "file outside the convention that is still an overlay's own body declares it with " +
       '`theme-allow-file control-outside-home — overlay`.',
+  },
+  'bound-control-outside-home': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      'ASIDE-SPEC G5 — a bound control in a section body rendered as a stray pill and nothing saw ' +
+      'it. `control-outside-home` matches raw Mantine tags only, so the whole basalt half of law ' +
+      'C1 was unguarded: `<SelectFilter field={…}/>` written into a `Section` body or a bare page ' +
+      'stack passed every lane. A NEW id rather than a widening (C16 — a level is per-id), landing ' +
+      'warn because it inherits the sibling rule\'s heuristic: "this control has no home" is a ' +
+      'claim about layout intent, and the ancestry it reads now spans four subtree homes ' +
+      '(FilterSet / PageAside / PanelRow / the overlay hosts) that only shipped in 1.27.0. 1.30.0 ' +
+      'is when the incumbent count across argo, linewatch, image-share, rb, image-gen and the ' +
+      'playground is re-measured.',
   },
 }
 
@@ -3075,6 +3315,7 @@ export default {
     'raw-scroll-container': rawScrollContainer,
     'hand-rolled-filter': handRolledFilter,
     'control-outside-home': controlOutsideHome,
+    'bound-control-outside-home': boundControlOutsideHome,
     'control-size-literal': controlSizeLiteral,
     'page-bar-budget': pageBarBudget,
     'in-body-page-title': inBodyPageTitle,

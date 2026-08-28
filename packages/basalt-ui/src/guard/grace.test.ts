@@ -9,8 +9,8 @@
  * `assertGraceLedger` is tested directly against synthetic entries below rather than only through
  * the real ledger: every pre-existing entry promoted or moved to `PLUGIN_RULE_ADVISORY`'s guard-side
  * sibling, and an `it.each` over the empty ledger that left behind ran zero assertions, which proved
- * nothing about the gate actually firing. The ledger carries ONE wave-6 control kind at 1.27.0 —
- * `raw-selection-control`, re-dated to `promote: '1.28.0'` with its AST twin
+ * nothing about the gate actually firing. The ledger carries ONE wave-6 control kind —
+ * `raw-selection-control`, re-dated to `promote: '1.30.0'` with its AST twin
  * `basalt/control-outside-home` (`in-body-page-title` promoted on schedule and its entry is gone) —
  * and the real-ledger check below runs against it.
  *
@@ -140,15 +140,19 @@ describe('scripts/check-grace.ts', () => {
   })
 
   // 1.27.0 promoted five of the six wave-6 plugin rules and one of the two guard kinds; what is
-  // LEFT is the C1 pair (`raw-selection-control` + `basalt/control-outside-home`), re-dated to
-  // 1.28.0 against a measurement rather than a hunch — see either entry's `why`. So the release
-  // this file used to refuse now passes, and the refusal moved with the pair.
-  it('passes 1.27.0 — the five entries due there promoted', () => {
-    expect(runCheckGrace('1.27.0').code).toBe(0)
-  })
+  // LEFT is the C1 pair (`raw-selection-control` + `basalt/control-outside-home`), re-dated again
+  // to 1.30.0 against a measurement rather than a hunch — the argo wave-7 migration has not run,
+  // and the PascalCase overlay convention that landed with `bound-control-outside-home` is expected
+  // to clear most of its 9 incumbents. See either entry's `why`.
+  it.each(['1.27.0', '1.28.0', '1.29.0'])(
+    'passes %s — the C1 pair is not due until 1.30.0',
+    (v) => {
+      expect(runCheckGrace(v).code).toBe(0)
+    },
+  )
 
-  it('refuses the version the remaining C1 pair is due in (1.28.0)', () => {
-    expect(runCheckGrace('1.28.0').code).toBe(1)
+  it('refuses the version the remaining C1 pair is due in (1.30.0)', () => {
+    expect(runCheckGrace('1.30.0').code).toBe(1)
   })
 
   it('exits 2 on a missing or malformed version rather than passing vacuously', () => {
