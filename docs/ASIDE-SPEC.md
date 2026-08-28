@@ -1,4 +1,4 @@
-# Aside Spec — the right-hand panel region _(wave 1 delivered 2026-08-28; §3's wave 2+ is still a sketch)_
+# Aside Spec — the right-hand panel region _(waves 1–2 delivered 2026-08-28, package half; §3's wave 3+ is still a sketch)_
 
 A persistent right-hand column in `BasaltShell` for the three things a page bar cannot hold: a
 faceted filter panel (Foundry), a grouped inspector of sliders/switches/selects (Lightroom,
@@ -62,13 +62,14 @@ aside?: { width?: number /* default 300 */; min?: number /* main column floor, G
 
 // Route level — portalled into AppShell.Aside, symmetric to PageBar row 1. One per page.
 <PageAside title="Filters" persistKey="cbbi">           // fold at basalt:aside:<key>
-  <Section title="Composition" collapsible switch={field.boolean}>  // header switch (inspector archetype)
-    <AsideRow label="Pi Cycle Top" hint="…" readout={ratio(v)}>      // label-above, 2-line, mono readout (G4)
-      <SliderControl field={w.PiCycle} />                             // ctl tier, step from the field (G7)
-    </AsideRow>
+  <Section title="Composition">
+    <PanelRow label="Pi Cycle Top" hint="…" readout={ratio(v)}>       // label-above, 2-line, mono readout (G4)
+      <SliderControl field={w.PiCycle} label="Pi Cycle Top" />        // ctl tier, step from the field (G7)
+    </PanelRow>
   </Section>
   <Section title="Origin">
-    <FacetList field={store.field.origin} counts={countsByOrigin} />  // checkbox · count · bar (Foundry)
+    <MultiSelectFilter field={store.field.origin} label="Origin"      // checkbox · count · bar (Foundry)
+                       counts={countsByOrigin} />
   </Section>
   <Section title="Distribution">
     <Histogram data={bins} />                                         // panel-width kind: no axes, sparse ticks (G6)
@@ -76,23 +77,40 @@ aside?: { width?: number /* default 300 */; min?: number /* main column floor, G
 </PageAside>
 ```
 
-- `PageAside`'s body is a home: `AsideRow.children` and `Section.filters` are slot props, so
-  `hand-rolled-filter` and `control-size-literal` reach it (closes G5). `control-outside-home`
-  gains a `Section`-body branch.
-- `field.number` gains `step`; `SliderControl` is the bound control (C2), `ctl` tier.
-- Spacing: one `--vx-space-stack` rhythm token replaces the pinned `gap={14}` on every page (G11);
-  `Section` inside an aside drops its card inset (flush, hairline-separated — Lightroom, not cards).
-- Mobile: wave 1 ships the honest half — below `sm` `PageAside` renders its children IN FLOW, where
-  the page wrote them (one node, no twin, C9), so nothing is unreachable on a phone. The `Panel (n)`
-  pill in `PageBar` row 2, projecting those children as 44px `FilterSheet` rows, is wave 2.
+- The row primitive is **`PanelRow`**, not `AsideRow`: it is the `panel` SURFACE's row and it is
+  legal in a section body anywhere, so naming it after the region it was drawn for would have been
+  the narrower of the two truths.
+- There is no separate **`FacetList`** export. The counted, barred checkbox list is
+  `MultiSelectFilter`'s panel form, reached with `counts` (+ `max`, default 6, past which the rest
+  fold behind `Show N more`) — a list of counted checkboxes not bound to a `field.multi` is a
+  hand-rolled filter, so the counts are a prop on the control that already owns the set.
+- `PageAside`'s body IS a home: it mounts its children under `FilterSetScope surface="panel"`
+  (registry `null` — no census, no `Filters (n)`, no `Reset all`), and `PanelRow` wraps its own
+  slots in `CtlSlot`, so nothing inside carries a `size` (C5, closes G5 for the row case).
+  `control-outside-home`'s `Section`-body branch is still wave 4.
+- `field.number` gained `step` — resolved ONCE, in `field.number` (`int: true` with no `step`
+  implies `1`), and republished on the handle beside `min`/`max`/`int`. `SliderControl` is the bound
+  control (C2), `ctl` tier, and the one control that is a row on every surface.
+- **`Section.switch` was NOT built.** The header switch is expressible today as
+  `<Section actions={<ToggleFilter … />}>` through the existing slot, and a second, differently
+  shaped control prop on `Section` would be a fourth home in all but name (C1).
+- Spacing: `Section` inside an aside is flush — the aside `.body`'s own `> * + *` rule draws the
+  hairline and the rhythm, because `Section` cannot know where it is mounted and a body child is
+  not necessarily a `Section` at all.
+- Mobile: below `sm`, **with a `PageBar` that renders a row 2**, the aside projects into that row —
+  one `Panel` pill (a funnel-less sidebar-right glyph) opening a `FilterSheet` titled with the
+  aside's `title`, whose children mount under `surface="sheet"`. Metadata travels through the
+  page-bar context; the CHILDREN portal into the sheet, so there is exactly one node at a time (C9)
+  and no `ReactNode` in context state. With no row 2 to hang the pill off — and in a shell-less app
+  — wave 1's in-flow rendering stays.
 - Not in scope: a resizable split, a left-side aside, more than one aside per page.
 
 ## 4. Waves
 
-| Wave | Delivers                                                                                                                      | Gate                                                                  |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 0    | this page, this document                                                                                                      | `bun run pre` green — done                                            |
-| 1    | `aside` region + `PageAside` portal + persisted fold + in-flow mobile stacking — **delivered**                                | `/cbbi` drops `PANEL_WIDTH`, `flexShrink`, the `align` line (G12/G13) |
-| 2    | `AsideRow`, `SliderControl`, `field.number.step`, `Section.switch`, flush aside chrome, rhythm token, mobile sheet projection | `/cbbi`'s panel has zero raw Mantine controls (G4/G5/G7/G11)          |
-| 3    | `FacetList`, `Histogram` panel kind                                                                                           | a second consumer page (argo) on the aside                            |
-| 4    | guards (`control-outside-home` section-body branch, `aside-budget`), agent rule `basalt-controls.md` §aside, `MIGRATING.md`   | promote per C16                                                       |
+| Wave | Delivers                                                                                                                                                                                                                      | Gate                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 0    | this page, this document                                                                                                                                                                                                      | `bun run pre` green — done                                            |
+| 1    | `aside` region + `PageAside` portal + persisted fold + in-flow mobile stacking — **delivered**                                                                                                                                | `/cbbi` drops `PANEL_WIDTH`, `flexShrink`, the `align` line (G12/G13) |
+| 2    | `panel` surface + `PanelRow` + `SliderControl` + `field.number.step` + `MultiSelectFilter` counts/max + flush aside chrome + mobile sheet projection — **delivered (package half; the `/cbbi` migration is a separate task)** | `/cbbi`'s panel has zero raw Mantine controls (G4/G5/G7/G11)          |
+| 3    | `Histogram` panel kind                                                                                                                                                                                                        | a second consumer page (argo) on the aside                            |
+| 4    | guards (`control-outside-home` section-body branch, `aside-budget`), agent rule `basalt-controls.md` §aside, `MIGRATING.md`                                                                                                   | promote per C16                                                       |
