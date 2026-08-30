@@ -7,7 +7,11 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { ActionGroup } from '../controls/actions'
+import { baseTheme } from '../theme'
+import { PageAside } from './page-aside'
 import { BasaltShell, PageBar } from './index'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
@@ -441,5 +445,59 @@ describe('BasaltShell globalActions mobile policy', () => {
       </MantineProvider>,
     )
     expect(document.querySelector('[aria-label="More actions"]')).toBeNull()
+  })
+})
+
+describe('BasaltShell region seams', () => {
+  test('header, navbar and footer carry data-with-border, coloured through the theme', () => {
+    const { container } = render(
+      <MantineProvider theme={baseTheme}>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    for (const cls of ['header', 'navbar', 'footer']) {
+      const region = container.querySelector(`.mantine-AppShell-${cls}`)
+      expect(region).not.toBeNull()
+      expect(region?.getAttribute('data-with-border')).not.toBeNull()
+    }
+    const root = container.querySelector('.mantine-AppShell-root')
+    expect(root?.getAttribute('style')).toContain('--app-shell-border-color: var(--vx-divider)')
+  })
+
+  // A collapsed aside keeps its border-box, so its seam must follow the CLAIM — otherwise every
+  // aside-less page paints a 1px ghost at the viewport's right edge.
+  test('the aside seam exists only while a PageAside claims the region', () => {
+    const unclaimed = render(
+      <MantineProvider theme={baseTheme}>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    expect(
+      unclaimed.container
+        .querySelector('.mantine-AppShell-aside')
+        ?.getAttribute('data-with-border'),
+    ).toBeNull()
+    unclaimed.unmount()
+
+    const claimed = render(
+      <MantineProvider theme={baseTheme}>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageAside title="Panel">
+            <div />
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(
+      claimed.container.querySelector('.mantine-AppShell-aside')?.getAttribute('data-with-border'),
+    ).not.toBeNull()
+  })
+
+  // The guard against the suppression creeping back — the only `withBorder` in the shell is the
+  // aside's claim-bound one.
+  test('index.tsx never suppresses a region border except the unclaimed aside', () => {
+    const source = readFileSync(join(import.meta.dir, 'index.tsx'), 'utf8')
+    expect(source.match(/withBorder/g)).toHaveLength(1)
+    expect(source).toContain('withBorder={aside.claimed}')
   })
 })

@@ -60,6 +60,48 @@ What is new, one line each — nothing here renames or removes anything:
   are the slot props plus the `FilterSet` / `PageAside` / `PanelRow` subtrees; the escape is
   `theme-allow bound-control-outside-home — <why>`.
 
+### Shell — region seams, and what moved with them
+
+**Every `AppShell` region now ends in a real, themed 1px `--vx-divider` line on its Main-facing
+edge, with no opt-out** (`docs/DESIGN-SPEC.md` §5 "Region seams", §8 inversion #12): sidebar|main
+(full height, under `layout="alt"` it owns the top-left corner), header|main (main column only),
+main|aside (full height, absent when the aside is unclaimed), main|mobile-nav (below `sm`). Mantine
+draws all four itself through `[data-with-border]`; the colour is one theme var,
+`AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`.
+The aside's shell-form header also carries its own `border-bottom: 1px solid var(--vx-divider)`, so
+the top belt's seam closes across the panel instead of dead-ending at the aside column.
+**Delete any hand-drawn twin**: a `border-left` on your own aside-shaped panel, a `border-bottom`
+under `PageBar` via `className`, a `withBorder` or a `--app-shell-border-color` override on your own
+`AppShell` sections — the theme only pins the COLOUR; `withBorder` still adds or removes the edge
+per section (Mantine gates the border CSS on `[data-with-border]`), so a leftover `withBorder={false}`
+still suppresses the seam and must be deleted to get it, and a leftover `withBorder={true}` is
+redundant (Mantine's own default).
+
+- **`--vx-divider` moved.** Light is now `rgba(<derived ink>, 0.09)` (was
+  `color-mix(in srgb, #e5e5e5 65%, transparent)`) — visibly darker on light, tracks a non-default
+  `neutral`/`lightLevel` where the old hex did not, and never flips polarity at `lightLevel <= -3`
+  the way the fixed hex did. Dark moved too: `color-mix(in srgb, #ffffff 6%, transparent)` →
+  `rgba(255, 255, 255, 0.08)`.
+- **The header's horizontal inset moved from `md` to `sm`**, so the breadcrumb's left edge and the
+  global actions' right edge land on the card column's edges. The sidebar brand row and the aside's
+  header now sit at the SAME `appShellHeaderHeight` band, so their centrelines meet the header's
+  across the seams. `SPACE_STEP.sidebarBrandInsetTop` / `--vx-space-sidebar-brand-inset-top` are
+  deleted with no replacement — the row IS the band now, not an inset inside it.
+  `PageAside`'s title renders the head-font `--vx-text-md`/550/ink title treatment, not the old mono
+  micro-label.
+- **[S2] `PageBar` row 2 below `sm`** is two declared lines — the tabs, then the pill row — instead
+  of one overflowing `nowrap` line. `--basalt-page-bar-h` grows to match, and the `className` JSDoc
+  no longer suggests drawing a hairline under the bar.
+- **[S3] `DeltaBadge.polarity` and `deltaPolarity`** on `WidgetHeader`/`StatCard`/`ChartCard` —
+  `'up-good'` (default, today's tone), `'up-bad'`, `'neutral'`. And `WidgetHeader tier="group"` — a
+  `Section` mounted inside `PageAside` now resolves it automatically and renders a mono micro-label
+  `h3` with a zero-gap row body; outside an aside nothing changes.
+- **[S4] `AxisConfig.scale: 'log'`** on `CartesianChart` — 1-2-5 mantissa ticks, `autoMinCeil`
+  ignored on a log axis. Honoured by every kind whose domain isn't anchored at zero (`MultiLine`,
+  `ZonedLine`, un-stacked `Bars`); `StackedArea` and stacked `Bars` install a domain function with a
+  hard `0` floor and their marks anchor at the baseline, so a log scale on either yields `NaN`
+  geometry — don't opt in there. Additive; omitted stays linear.
+
 ### Stores — the `custom` flag, patched writes, lazy fallbacks, derived windows
 
 **Additive, except one type that got narrower on purpose.** `field.range({ presets, fallback })`

@@ -160,8 +160,9 @@ const INLINE_FONT_SIZE =
 // Two deliberate non-matches:
 //   • `<Card.Section withBorder>` — a section DIVIDER, not card depth. Excluded by the `(?![\w.])`
 //     lookahead, which also rejects `<CardHeader>`-style names.
-//   • `withBorder={false}` — an explicit opt-out (what the shell's AppShell parts do). Excluded by
-//     the lookahead on WITH_BORDER_PROP.
+//   • `withBorder={false}` — a consumer opt-out; the shell no longer uses it (region edges are
+//     painted by the theme's `AppShell.extend`, not by a prop). Excluded by the lookahead on
+//     WITH_BORDER_PROP.
 const CARD_SURFACE_TAG = /<(?:Card|Paper)(?![\w.])(?:=>|[^>])*?>/g
 const WITH_BORDER_PROP = /\bwithBorder\b(?!\s*=\s*\{\s*false\s*\})/
 

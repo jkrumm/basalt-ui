@@ -19,6 +19,12 @@
  *    outer border pretending to be a separator, and it is the line that lands on top of whatever
  *    frame the container already has.
  *
+ * One deliberate exception to law 1: `PageAside`'s shell-form header (docs/DESIGN-SPEC.md §5, §8
+ * inversion #12). It is not the forbidden echo of the heading's own type scale — it closes the top
+ * belt's seam across the panel so the boundary doesn't dead-end at the aside column, the same
+ * `--vx-divider` line the header|main AppShell seam draws one column over. It is ledgered below as
+ * `region-boundary`, not `between-rows`.
+ *
  * The guard is an INVENTORY, not a pattern match: every horizontal hairline in every CSS module has
  * to be listed below with a `kind` and a reason, so a seventh one added next month fails here and
  * gets classified rather than shipping unexamined. That is the same idiom `theme/border-coverage.test.ts`
@@ -26,10 +32,12 @@
  *
  * Not in scope, deliberately: the `border` SHORTHAND (a box around a control or a card — that is an
  * edge, not a rule, and `border-coverage.test.ts` owns it), vertical hairlines (a column rule
- * divides two regions by construction), and Mantine's own `inset 0 -1px 0` redraw of a STICKY table
+ * divides two regions by construction), Mantine's own `inset 0 -1px 0` redraw of a STICKY table
  * head's `border-bottom`, which is a row line drawn as a shadow because `border-collapse: collapse`
  * drops borders on sticky cells — it appears and disappears with `withRowBorders`, so it is the same
- * line every other row gets and not a header rule.
+ * line every other row gets and not a header rule — and the four `AppShell` region seams
+ * (docs/DESIGN-SPEC.md §5): they live in Mantine's own CSS, painted through `[data-with-border]` and
+ * the theme's `AppShell.extend({ vars })`, never in a `shell/*.module.css` module this file scans.
  */
 import { describe, expect, test } from 'bun:test'
 import { Glob } from 'bun'
@@ -98,12 +106,6 @@ type Kind = 'between-rows' | 'region-boundary' | 'prose-typography'
 
 const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string }[] = [
   {
-    file: 'shell/app-mobile-nav.module.css',
-    selector: '.bar',
-    kind: 'region-boundary',
-    why: 'The mobile bar is a fixed region floating over a scrolling page — the rule is the only thing that says the page ends there, and it is the boundary between two regions, not a header and its content.',
-  },
-  {
     file: 'controls/controls.module.css',
     selector:
       '.sheetOption + .sheetOption, .sheetDisclosureBody + .sheetOption, .sheetOption + .sheetDisclosureBody',
@@ -127,6 +129,12 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     selector: '.body > * + *',
     kind: 'between-rows',
     why: "The aside body's GROUPS — flush chrome, hairline-separated, rather than a stack of cards (Lightroom, not a dashboard). Same adjacent-sibling shape as the rows inside them, so the first group draws nothing under the panel header above it.",
+  },
+  {
+    file: 'shell/page-aside.module.css',
+    selector: ".panel[data-basalt-page-aside='shell'] .header",
+    kind: 'region-boundary',
+    why: "The shell-form aside header's bottom rule closes the top belt's seam across the panel (docs/DESIGN-SPEC.md §5, §8 #12) instead of dead-ending at the aside column — a continuation of the header|main AppShell seam, not a heading echoing its own type scale.",
   },
   {
     file: 'dashboard/settings-section.module.css',
@@ -227,7 +235,13 @@ describe('a header never draws a rule under itself in the chrome lane', () => {
     expect(offenders).toEqual([])
   })
 
-  test('the chrome lane holds ONLY between-rows and region-boundary lines', () => {
+  test('the chrome lane holds between-rows lines and the one aside-header region boundary', () => {
+    // The mobile bar's old `region-boundary` top rule is gone — that seam is now Mantine's own
+    // `AppShell.Footer` edge (docs/DESIGN-SPEC.md §5), outside this scan. The one that replaced it
+    // is the shell-form aside header's bottom rule: it closes the top belt's seam across the panel
+    // (§8 #12) rather than a heading drawing a line under itself, so it is ledgered
+    // `region-boundary`, not `between-rows`. The other `region-boundary` entries live in
+    // `content/**`, outside CHROME_LANES.
     const kinds = LEDGER.filter((e) => isChrome(e.file)).map((e) => e.kind)
     expect([...new Set(kinds)].sort()).toEqual(['between-rows', 'region-boundary'])
   })

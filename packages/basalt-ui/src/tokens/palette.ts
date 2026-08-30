@@ -547,8 +547,6 @@ const SPACE_STEP_BASE = {
   mermaidContainerInset: 16,
 
   // ── shell/app-sidebar.module.css (beyond the shared/reused anchors above) ────────────────────
-  /** Brand row's top inset. */
-  sidebarBrandInsetTop: 2,
   /** Brand row's horizontal inset. */
   sidebarBrandInsetX: 7,
   /** Gap between nav sections. */
@@ -1244,12 +1242,13 @@ function buildPaletteDataUncached(config: DeriveConfig) {
     },
     // Input field surface (docs/DESIGN-SPEC.md §5 field idiom) — reads slightly inset ON a panel.
     field: DERIVED.surface.field,
-    // Hand-authored: the generator has no `divider` stop — layout separators (header bottom rule,
-    // sidebar child indent) stay a fixed-opacity color-mix, distinct from the card ring.
-    divider: {
-      light: 'color-mix(in srgb, #e5e5e5 65%, transparent)',
-      dark: 'color-mix(in srgb, #ffffff 6%, transparent)',
-    },
+    // The SEAM token (docs/DESIGN-SPEC.md §5 "Region seams") — every `AppShell` region edge and
+    // every between-rows rule reads it. A relative alpha over the DERIVED ink, the same law as
+    // `NEUTRAL.grid` above (ink over light, white over dark), so it survives every derive knob and
+    // neutral seed: the old `#e5e5e5` hex flipped polarity at `lightLevel <= -3` and was a grey
+    // line on a slate page. Not the card ring (`hairline`), not the control/overlay line
+    // (`border`). `divider-contrast.test.ts` pins the floor.
+    divider: { light: inkRgba(inkLight, 0.09), dark: 'rgba(255, 255, 255, 0.08)' },
   } as const
 
   return { ACCENT, FILL, SURFACE, INK, NEUTRAL, SEMANTIC, STATUS }

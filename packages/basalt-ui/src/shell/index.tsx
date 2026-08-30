@@ -299,6 +299,10 @@ function collapseStore(key: string): () => readonly [boolean, (next: boolean) =>
   return store
 }
 
+// The shared inset for the shell padding and the header's inline padding, so the breadcrumb's
+// left edge and the global actions' right edge land on the card column's edges.
+const SHELL_INSET = 'sm' as const
+
 /**
  * The shell's two page-level regions are providers, and both wrap the frame rather than living
  * inside it: `PageBarProvider` owns the header portal and the single-kebab claim, `AsideProvider`
@@ -399,9 +403,12 @@ function ShellFrame({
       // A plain number, NOT a `calc(... + env(safe-area-inset-bottom))` string: Mantine's own
       // `.footer` rule already adds the inset to both the height and the padding (§2.7).
       footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
-      padding="sm"
+      padding={SHELL_INSET}
     >
-      <AppShell.Header px="md" withBorder={false}>
+      {/* Region seams (docs/DESIGN-SPEC.md §5, §8 #12): Mantine's `[data-with-border]` painted in
+       * `--vx-divider` by the theme's `AppShell.extend({ vars })`. No shell module draws a region
+       * edge; never opt a section back out of its border here. */}
+      <AppShell.Header px={SHELL_INSET}>
         <div className={headerClasses.bar}>
           <div className={headerClasses.lead}>
             <AppBreadcrumbs {...activeCrumb} />
@@ -411,7 +418,7 @@ function ShellFrame({
         </div>
       </AppShell.Header>
 
-      <AppShell.Navbar p={0} withBorder={false}>
+      <AppShell.Navbar p={0}>
         <AppSidebar
           brand={brand}
           sections={sections}
@@ -430,13 +437,15 @@ function ShellFrame({
        * short by exactly `env(safe-area-inset-bottom)` (§2.7). */}
       <AppShell.Main className={mobileNavClasses.mainSafeArea}>{children}</AppShell.Main>
 
-      {/* The outlet is a bare box — every pixel of the panel's chrome belongs to `PageAside`,
-       * so an unclaimed region paints nothing at all. */}
-      <AppShell.Aside p={0} withBorder={false}>
+      {/* The outlet is bare; the region's leading seam is the AppShell's own. An unclaimed region
+       * is zero-wide but NOT display-none — Mantine's collapsed aside keeps its border-box, so a
+       * seam would still paint as a 1px ghost at the viewport's right edge (measured on
+       * `/dashboard`). The border follows the claim, not the section (C14). */}
+      <AppShell.Aside p={0} withBorder={aside.claimed}>
         <AsideOutlet className={asideClasses.outlet} />
       </AppShell.Aside>
 
-      <AppShell.Footer hiddenFrom="sm" p={0} withBorder={false}>
+      <AppShell.Footer hiddenFrom="sm" p={0}>
         <MobileNav
           model={model}
           config={mobileNav}

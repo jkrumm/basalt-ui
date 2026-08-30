@@ -360,7 +360,6 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['settingsRowInsetY', 10, 'space-settings-row-inset-y'],
   ['settingsRowGap', 16, 'space-settings-row-gap'],
   ['mermaidContainerInset', 16, 'space-mermaid-container-inset'],
-  ['sidebarBrandInsetTop', 2, 'space-sidebar-brand-inset-top'],
   ['sidebarBrandInsetX', 7, 'space-sidebar-brand-inset-x'],
   ['sidebarSectionGap', 12, 'space-sidebar-section-gap'],
   ['sidebarAccountInsetTop', 9, 'space-sidebar-account-inset-top'],

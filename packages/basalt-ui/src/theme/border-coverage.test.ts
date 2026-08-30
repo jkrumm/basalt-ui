@@ -100,7 +100,7 @@ export const BORDER_ALLOWLIST: readonly BorderAllowlistEntry[] = [
     component: 'AppShell',
     kind: 'layout-divider',
     reason:
-      'Border is opt-in via [data-with-border] on individual navbar/header/footer/aside sections — a structural boundary between page regions, not a default-variant control.',
+      "The shell keeps every section's [data-with-border] ON — a structural boundary between page regions, not a default-variant control; colour is pinned to --vx-divider through AppShell.extend({ vars }).",
   },
   {
     component: 'Divider',
