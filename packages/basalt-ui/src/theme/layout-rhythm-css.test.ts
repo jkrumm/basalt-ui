@@ -70,3 +70,75 @@ describe('page-bar.module.css — sticky rows sit under the AppShell header, abo
     expect(row2).not.toMatch(/z-index:\s*1\s*;/)
   })
 })
+
+/**
+ * Walks brace depth from a `@media (...)` match to its matching close, rather than slicing to EOF —
+ * a naive `decls.slice(mediaStart)` treats every byte after the media query's OPENING brace as
+ * "mobile" forever, including desktop-scope rules declared below the block (this file's own
+ * `.panelPill` sits after the media query), and a rule-body regex anchored to the first declaration
+ * (`\{\s*\n\s*flex-direction:`) fails on behaviour-neutral reordering. Both are avoided here: the
+ * block is bounded by its real closing brace, and rule bodies are matched as `[^}]*` so declaration
+ * order is free.
+ */
+function extractMediaBlock(css: string, mediaStart: number): { body: string; end: number } {
+  const braceStart = css.indexOf('{', mediaStart)
+  let depth = 0
+  for (let i = braceStart; i < css.length; i++) {
+    if (css[i] === '{') depth++
+    else if (css[i] === '}') {
+      depth--
+      if (depth === 0) return { body: css.slice(braceStart + 1, i), end: i + 1 }
+    }
+  }
+  throw new Error('unterminated @media block')
+}
+
+describe('page-bar.module.css — row 2 folds into two declared lines below sm, never a wrap', () => {
+  /** Declarations only — the block comments above them discuss `overflow-x` and C7 by name. */
+  const decls = PAGE_BAR_CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+  const mediaStart = decls.indexOf('@media (max-width: 47.99375em)')
+  const { body: mobileBlock, end: mediaEnd } = extractMediaBlock(decls, mediaStart)
+  const desktopCss = decls.slice(0, mediaStart) + decls.slice(mediaEnd)
+
+  it('the mobile media block declares `.row2 { flex-direction: column }`', () => {
+    expect(mediaStart).toBeGreaterThanOrEqual(0)
+    const rule = mobileBlock.match(/\.row2\s*\{([^}]*)\}/)
+    expect(rule).not.toBeNull()
+    expect(rule?.[1]).toMatch(/flex-direction:\s*column/)
+  })
+
+  it('never scrolls sideways and never wraps — law C7 in CSS form', () => {
+    expect(decls).not.toContain('flex-wrap: wrap')
+    expect(decls).not.toContain('overflow-x')
+  })
+
+  it('`.pills` declares `flex-wrap: nowrap`', () => {
+    const rule = decls.slice(
+      decls.indexOf('.pills {'),
+      decls.indexOf('\n}', decls.indexOf('.pills {')),
+    )
+    expect(rule).toContain('flex-wrap: nowrap')
+  })
+
+  it('desktop stays one line — no `.row2 { … flex-direction: column }` anywhere outside the mobile media block', () => {
+    const rule = desktopCss.match(/\.row2\s*\{([^}]*)\}/)
+    expect(rule).not.toBeNull()
+    expect(rule?.[1]).not.toMatch(/flex-direction:\s*column/)
+  })
+
+  it('the mobile tabs selectors reach past the `CtlSlot` wrapper — `display: contents` means `.tabs > *` matches only the inert wrapper, never `ViewTabs`', () => {
+    expect(mobileBlock).not.toMatch(/\.tabs\s*>\s*\*\s*\{/)
+    expect(mobileBlock).toMatch(/\.tabs\s*>\s*\[data-basalt-tier\]\s*>\s*\*\s*\{/)
+    expect(mobileBlock).toMatch(
+      /\.tabs\s*>\s*\[data-basalt-tier\]\s*>\s*:global\(\.mantine-Select-root\)\s*\{/,
+    )
+  })
+
+  it('an empty `.pills` line reserves nothing below `sm` (law C14) — `filtersEnd` alone renders only in the row-1 kebab there', () => {
+    const rule = mobileBlock.match(/\.pills:not\(:has\(([^)]*)\)\)\s*\{([^}]*)\}/)
+    expect(rule).not.toBeNull()
+    expect(rule?.[1]).toContain('> .filters')
+    expect(rule?.[1]).toContain('> .panelPill')
+    expect(rule?.[2]).toMatch(/display:\s*none/)
+  })
+})

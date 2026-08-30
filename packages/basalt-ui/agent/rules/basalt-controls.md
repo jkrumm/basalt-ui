@@ -122,13 +122,13 @@ immediately, and answers one `Reset all`. **`n` and `Reset all` are DERIVED** fr
 differs from its fallback — so adding a filter is one JSX line, with no count to maintain and no
 reset handler to extend.
 
-| Below `sm`       | What basalt does                                                                          |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| `PageBar` row 1  | breadcrumb · the `primary` action as an icon · ONE kebab holding every `more` action      |
-| `PageBar` row 2  | `ViewTabs` full-width (a `Select` past three options) · one inline pill · `Filters (n)`   |
-| a section header | title · count · one inline action, the rest in a kebab; tabs past three become a `Select` |
-| a widget header  | value + delta wrap under the title; the sparkline drops to bleed; one `⋯` action          |
-| a sheet row      | full-width, `sheetRowHeight`, applies immediately                                         |
+| Below `sm`       | What basalt does                                                                                                                   |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `PageBar` row 1  | breadcrumb · the `primary` action as an icon · ONE kebab holding every `more` action                                               |
+| `PageBar` row 2  | line 1: `ViewTabs` full-width (a `Select` past three options) · line 2: one inline pill · `Filters (n)` · the aside's `Panel` pill |
+| a section header | title · count · one inline action, the rest in a kebab; tabs past three become a `Select`                                          |
+| a widget header  | value + delta wrap under the title; the sparkline drops to bleed; one `⋯` action                                                   |
+| a sheet row      | full-width, `sheetRowHeight`, applies immediately                                                                                  |
 
 Every swap is CSS inside the control (one mount), never a JS media query — a media-query hook renders
 differently on the server than on the first client paint. Two mounts under

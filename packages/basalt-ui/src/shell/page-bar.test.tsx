@@ -314,3 +314,83 @@ describe('className reaches the bar root in both forms', () => {
     expect(shellRow()?.classList.contains('argo-bleed')).toBe(true)
   })
 })
+
+/**
+ * Row 2's phone form is a declared TWO-LINE column below `sm` — tabs, then pills — never a wrap
+ * (`agent/rules/basalt-controls.md`, law C7/C14). These three cases pin the DOM shape a wrap-based
+ * layout cannot express: a line renders only when its content does, and the tabs line always
+ * precedes the pills line.
+ */
+describe('row 2 folds into two declared lines, not a wrap', () => {
+  const row2Line = (name: 'tabs' | 'pills') =>
+    shellRow()?.querySelector<HTMLElement>(`[data-basalt-page-bar-line="${name}"]`) ?? null
+
+  test('tabs + filters: the tabs line precedes the pills line, both direct children of row 2', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="tabs" />} filters={<span data-testid="filters" />} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    const row = shellRow()
+    const tabsLine = row2Line('tabs')
+    const pillsLine = row2Line('pills')
+    expect(tabsLine).not.toBeNull()
+    expect(pillsLine).not.toBeNull()
+    expect(row?.contains(tabsLine)).toBe(true)
+    expect(row?.contains(pillsLine)).toBe(true)
+    // Both lines are direct children of the same row-2 box.
+    expect(tabsLine?.parentElement).toBe(pillsLine?.parentElement)
+    // DOM order: tabs before pills.
+    expect(tabsLine?.compareDocumentPosition(pillsLine as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  })
+
+  test('tabs only: no pills line renders (law C14 — an empty line reserves nothing)', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="tabs" />} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(row2Line('tabs')).not.toBeNull()
+    expect(row2Line('pills')).toBeNull()
+  })
+
+  test('filters only: no tabs line renders', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar filters={<span data-testid="filters" />} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(row2Line('pills')).not.toBeNull()
+    expect(row2Line('tabs')).toBeNull()
+  })
+
+  /**
+   * Pins the DOM shape `page-bar.module.css`'s mobile `.tabs > [data-basalt-tier] > *` selector
+   * depends on. `CtlSlot` renders a `display: contents` `<Box data-basalt-tier>` as `.tabs`' only
+   * direct child — a bare `.tabs > *` rule matches THAT box and nothing past it, which is exactly the
+   * dead-selector bug this test would have caught (a CSS-text test alone cannot: it can assert the
+   * selector's TEXT, never that the text reaches a real element).
+   */
+  test('the tabs line wraps its content in exactly one `data-basalt-tier` slot — what the mobile CSS selects through', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="tabs" />} />
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    const tabsLine = row2Line('tabs')
+    const slot = tabsLine?.firstElementChild
+    expect(slot).not.toBeNull()
+    expect(slot?.hasAttribute('data-basalt-tier')).toBe(true)
+    expect(slot?.contains(screen.getByTestId('tabs'))).toBe(true)
+  })
+})

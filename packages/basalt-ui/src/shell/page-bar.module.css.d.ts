@@ -11,6 +11,8 @@ declare const classes: {
   readonly title: string
   readonly row2: string
   readonly row1End: string
+  readonly tabs: string
+  readonly pills: string
   readonly filters: string
   readonly filtersEnd: string
   readonly panelPill: string
