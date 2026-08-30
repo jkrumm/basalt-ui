@@ -263,6 +263,30 @@ describe('deltaFormat — a delta that is not a percentage', () => {
   })
 })
 
+describe('deltaPolarity — an up-is-bad metric never paints the good tone on a rise', () => {
+  test('deltaPolarity="up-bad" never carries the good status token', () => {
+    // No `tone` — StatCard paints `VX.status[tone]` on its rail regardless of the delta chip, so a
+    // `tone="bad"` render would pass this assertion even if the chip's own polarity were dropped.
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Confidence" value="35.9%" delta={12} deltaPolarity="up-bad" />
+      </MantineProvider>,
+    )
+    expect(markup).not.toContain('var(--vx-status-good)')
+    expect(markup).toContain('var(--vx-status-bad)')
+  })
+
+  test('omitting deltaPolarity keeps every existing badge byte-identical (default up-good)', () => {
+    const markup = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Active Users" value="12,483" delta={4.2} />
+      </MantineProvider>,
+    )
+    expect(markup).toContain('var(--vx-status-good)')
+    expect(markup).not.toContain('var(--vx-status-bad)')
+  })
+})
+
 describe('breakdown — the parts the hero number is made of', () => {
   const ROWS = [
     { label: 'Paid', value: '1,204' },

@@ -1,6 +1,9 @@
 /**
  * Section — the tier-2 heading composer (docs/CONTROLS-SPEC.md §2.2, law C8): a page-level content
- * grouping under `WidgetHeader tier="section"`. Named exactly `Section` — not `PageSection` — so
+ * grouping under `WidgetHeader tier="section"` — or `tier="group"` when the section renders on the
+ * `PageAside` panel surface, resolved from `useFilterSurface()` and never a call-site prop (law C1:
+ * no fourth home, no new prop — the aside decides, not the caller). Named exactly `Section` — not
+ * `PageSection` — so
  * the existing `shadow-basalt-export` guard fires on a consumer's own hand-rolled `Section` /
  * `PageSection` / `SectionTitle` / `SectionHeading` copy with zero new rule code.
  *
@@ -46,6 +49,7 @@
 import { Children, useId } from 'react'
 import type { ReactNode } from 'react'
 import { CtlSlot } from '../theme'
+import { useFilterSurface } from '../controls/filter-context'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { WidgetHeader } from '../widget-header'
 import type { WidgetHeaderProps } from '../widget-header'
@@ -150,6 +154,11 @@ export function Section({
     initial: defaultOpen,
   })
   const bodyId = useId()
+  // The aside decides, not the call site (law C1): a Section on the PageAside panel surface, or on
+  // its mobile sheet projection, renders the quiet `group` tier automatically — a Section never
+  // lives inside a pill FilterSet fold, so `'pill'` (the context default outside any provider) is
+  // the only surface that stays `section`.
+  const tier = useFilterSurface() === 'pill' ? 'section' : 'group'
 
   if (actions !== undefined) warnPastActionBudget(title, actions)
 
@@ -167,6 +176,7 @@ export function Section({
   return (
     <div
       className={classes.root}
+      data-tier={tier}
       {...(id !== undefined && { id })}
       {...(id !== undefined && {
         style: {
@@ -176,7 +186,7 @@ export function Section({
       })}
     >
       <WidgetHeader
-        tier="section"
+        tier={tier}
         title={title}
         {...(icon !== undefined && { icon })}
         {...(subtitle !== undefined && { subtitle })}

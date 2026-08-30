@@ -55,6 +55,27 @@ describe('tier picks the heading level', () => {
     render(<WidgetHeader tier="widget" title="Active Users" />)
     expect(screen.getByRole('heading', { level: 3, name: 'Active Users' })).toBeDefined()
   })
+
+  test('group renders an h3 carrying data-tier="group"', () => {
+    const { container } = render(<WidgetHeader tier="group" title="Presets" />)
+    expect(screen.getByRole('heading', { level: 3, name: 'Presets' })).toBeDefined()
+    expect(container.querySelector('[data-tier="group"]')).not.toBeNull()
+  })
+
+  test('the three tiers each set a distinct data-tier value', () => {
+    for (const tier of ['section', 'widget', 'group'] as const) {
+      const { container, unmount } = render(<WidgetHeader tier={tier} title="X" />)
+      expect(container.querySelector(`[data-tier="${tier}"]`)).not.toBeNull()
+      unmount()
+    }
+  })
+
+  test('the group tier reads as a mono micro-label, quieter than the widget tier (CSS-text)', () => {
+    const group = block(".root[data-tier='group'] .heading")
+    expect(group).toContain('--vx-text-micro')
+    expect(group).toContain('--basalt-font-mono')
+    expect(group).toContain('text-transform: uppercase')
+  })
 })
 
 test('count renders a mono tag after the title', () => {

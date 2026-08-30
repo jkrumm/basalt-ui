@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { FilterSet, ToggleFilter } from '../controls'
 import { useFilterSurface } from '../controls/filter-context'
+import { Section } from '../section'
 import { createLocalStore, field } from '../state'
 import { BasaltShell, PageAside, PageBar } from './index'
 import type { SidebarSection } from './index'
@@ -142,6 +143,22 @@ describe('PageAside inside a BasaltShell', () => {
 
     expect(screen.getByLabelText('Expand panel')).toBeDefined()
     expect(localStorage.getItem('basalt:aside:__local__')).toBeNull()
+  })
+
+  test('a Section child resolves the group tier — the aside decides, not the call site', () => {
+    renderInShell(
+      <PageAside title="Composition">
+        <Section title="Presets">
+          <div>body</div>
+        </Section>
+      </PageAside>,
+    )
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Presets' })).toBeDefined()
+    // The Section ROOT, not WidgetHeader's — both carry `data-tier`, so `closest` from the heading
+    // would resolve on WidgetHeader's own root first. Walk up from the body instead.
+    const root = screen.getByText('body').parentElement?.parentElement
+    expect(root?.getAttribute('data-tier')).toBe('group')
   })
 })
 
@@ -276,6 +293,36 @@ describe('PageAside — the panel surface and the mobile projection', () => {
       expect(screen.getByTestId('aside-child')).toBeDefined()
     })
     expect(screen.getByText('Weights')).toBeDefined()
+  })
+
+  test('a Section child also resolves the group tier inside the mobile sheet projection', async () => {
+    installMobileMatchMedia()
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar
+            filters={
+              <FilterSet>
+                <ToggleFilter field={store.field.reweighted} label="Reweighted" />
+              </FilterSet>
+            }
+          />
+          <PageAside title="Weights">
+            <Section title="Presets">
+              <div>body</div>
+            </Section>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Weights' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 3, name: 'Presets' })).toBeDefined()
+    })
+    const root = screen.getByText('body').parentElement?.parentElement
+    expect(root?.getAttribute('data-tier')).toBe('group')
   })
 
   /**

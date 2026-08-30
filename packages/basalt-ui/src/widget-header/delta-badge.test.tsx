@@ -48,6 +48,46 @@ test('a custom format overrides the default percentage label', () => {
   expect(screen.queryByText('182.0%')).toBeNull()
 })
 
+describe('polarity', () => {
+  test('positive + up-bad renders the bad tone', () => {
+    render(<DeltaBadge value={12.4} polarity="up-bad" />)
+    expect(screen.getByText('▲')).toBeDefined()
+    expect(screen.getByText('12.4%').style.color).toBe('var(--vx-status-bad)')
+  })
+
+  test('negative + up-bad renders the good tone', () => {
+    render(<DeltaBadge value={-3.1} polarity="up-bad" />)
+    expect(screen.getByText('▼')).toBeDefined()
+    expect(screen.getByText('3.1%').style.color).toBe('var(--vx-status-good)')
+  })
+
+  test('any sign + neutral renders the faint tone', () => {
+    render(<DeltaBadge value={12.4} polarity="neutral" />)
+    expect(screen.getByText('12.4%').style.color).toBe('var(--vx-faint)')
+
+    render(<DeltaBadge value={-3.1} polarity="neutral" />)
+    expect(screen.getByText('3.1%').style.color).toBe('var(--vx-faint)')
+  })
+
+  test('zero renders the faint tone under every polarity', () => {
+    for (const polarity of ['up-good', 'up-bad', 'neutral'] as const) {
+      const { unmount } = render(<DeltaBadge value={0} polarity={polarity} />)
+      expect(screen.getByText('0.0%').style.color).toBe('var(--vx-faint)')
+      unmount()
+    }
+  })
+
+  test('the glyph still shows ▲ for a positive value under up-bad', () => {
+    render(<DeltaBadge value={12.4} polarity="up-bad" />)
+    expect(screen.getByText('▲')).toBeDefined()
+  })
+
+  test('default polarity keeps the up-good tone (byte-identical to before)', () => {
+    render(<DeltaBadge value={12.4} />)
+    expect(screen.getByText('12.4%').style.color).toBe('var(--vx-status-good)')
+  })
+})
+
 test('period renders after the value, in the same badge', () => {
   render(<DeltaBadge value={4.2} period="MoM" />)
   expect(screen.getByText('4.2%')).toBeDefined()

@@ -6,8 +6,11 @@
  *
  * `tier: 'section'` renders an `<h2>` at the taller section-header height; `tier: 'widget'`
  * renders an `<h3>` at the tighter, display-only icon-tier height — both share the same head-font
- * 88%/550 title treatment. The title row holds title/icon/info/count/actions only; `value` +
- * `delta` render on their own hero-metric row directly beneath it, for both tiers — never inline
+ * 88%/550 title treatment. `tier: 'group'` also renders an `<h3>`, but at the quietest rank on the
+ * page: a mono, uppercase, faint micro-label — an inspector/aside group heading, one step below a
+ * `widget` tier and resolved automatically by `Section` when it renders on the `PageAside` panel
+ * surface (never a call-site prop). The title row holds title/icon/info/count/actions only; `value`
+ * + `delta` render on their own hero-metric row directly beneath it, for every tier — never inline
  * with the title. `StatCard`, `ChartCard`, `Section`, `SettingsSection`/`DangerZone` and
  * `BasaltDataTable` each compose this and render nothing else above their body (wave 3,
  * docs/CONTROLS-SPEC.md §2.2's composer table).
@@ -28,12 +31,18 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { IconSlot } from '../theme/icon-slot'
 import { DeltaBadge } from './delta-badge'
+import type { DeltaPolarity } from './delta-badge'
 import classes from './widget-header.module.css'
+
+export type WidgetHeaderTier = 'section' | 'widget' | 'group'
 
 export type WidgetHeaderProps = {
   /** `section` renders an `<h2>` at the section-header height; `widget` renders an `<h3>` at the
-   * tighter icon-tier height, display-only. */
-  tier: 'section' | 'widget'
+   * tighter icon-tier height, display-only; `group` also renders an `<h3>` but as the quietest
+   * heading rank on the page — mono micro uppercase faint, one step below `widget` — for an
+   * inspector/aside group label. `Section` resolves `group` automatically from the enclosing filter
+   * surface; it is never a call-site prop. */
+  tier: WidgetHeaderTier
   /** Head-font title (88% stretch, weight 550). */
   title: string
   /** Optional leading icon, rendered before the title. Decorative — hidden from assistive tech. */
@@ -68,6 +77,9 @@ export type WidgetHeaderProps = {
   delta?: number
   /** Comparison timeframe forwarded to `DeltaBadge` (e.g. `MoM`). */
   deltaPeriod?: string
+  /** Which sign reads as the good verdict — forwarded to `DeltaBadge`'s `polarity`. Defaults to
+   * `'up-good'` (today's behaviour). See {@link DeltaPolarity}. */
+  deltaPolarity?: DeltaPolarity
   /**
    * Formats `delta` into the chip's label — forwarded to `DeltaBadge`'s `format`. Defaults to
    * `${Math.abs(delta).toFixed(1)}%`.
@@ -165,6 +177,7 @@ export function WidgetHeader({
   unit,
   delta,
   deltaPeriod,
+  deltaPolarity,
   deltaFormat,
   deltaGlyph,
   sparkline,
@@ -201,6 +214,7 @@ export function WidgetHeader({
             <DeltaBadge
               value={delta}
               period={deltaPeriod}
+              {...(deltaPolarity !== undefined && { polarity: deltaPolarity })}
               {...(deltaFormat !== undefined && { format: deltaFormat })}
               {...(deltaGlyph !== undefined && { withGlyph: deltaGlyph })}
             />
