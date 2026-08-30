@@ -9,7 +9,7 @@
  * The panel is now the shipped region (`PageAside`); the panel's own module doc (`CbbiPanel.tsx`)
  * carries the findings still open against it.
  *
- * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · four filters · sync),
+ * Structurally it mirrors `demo/DashboardPage.tsx`: one `PageBar` (tabs · a range filter · sync),
  * one store for every interactive field (`cbbi-store.ts`, laws C2–C4), `StatCard`/`ChartCard`/
  * `Section` for the tiers, and `QueryState` for the four data branches. The panel is the SHELL
  * ASIDE now (`PageAside`, `docs/ASIDE-SPEC.md` §0): the page owns no width, no `flexShrink` and no
@@ -21,12 +21,12 @@ import { PageAside, PageBar, QueryState, Section, StatCard } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
-import { FilterSet, RangeFilter, SelectFilter, ViewTabs } from 'basalt-ui/controls'
+import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable } from 'basalt-ui/data'
 import { createBasaltQueryClient, QueryClientProvider } from 'basalt-ui/query'
 import { alpha } from 'basalt-ui/tokens'
 import { useMemo, useState } from 'react'
-import { IconActivity, IconBook, IconChart, IconCurrency, IconSettings } from '../icons'
+import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'
 import { CbbiDistributionBars, CbbiPanel } from './CbbiPanel'
 import {
   bucketRows,
@@ -52,9 +52,7 @@ import {
   monthlyHeat,
   monthlyTable,
 } from './cbbi-view'
-import type { CbbiPoint } from './cbbi-view'
-
-const CBBI_SOURCE = 'https://colintalkscrypto.com/cbbi/'
+import type { CbbiPoint, CbbiScale } from './cbbi-view'
 
 /** 20 bins is the brief's; `Bars` renders 20 categories legibly at main width and not at 260px. */
 const HISTOGRAM_BINS = 20
@@ -114,15 +112,16 @@ const CONFIDENCE_AXIS: AxisConfig<CbbiPoint> = { domain: [0, 1], format: pct }
 const pointDay = (d: CbbiPoint): string => d.key
 const rowDay = (d: CbbiRow): string => d.day
 
-/** The price line — static: it closes over nothing the page can change. */
+/** The price line — static: it closes over nothing the page can change. `formatValue` is unneeded
+ * now that `getValue` returns the raw price directly and the axis already formats it with `money`
+ * (the fallback tooltip format, per `CartesianChart`'s own `tooltipSeries`). */
 const PRICE_SERIES: ChartSeries<CbbiPoint>[] = [
   {
     key: 'price',
     label: 'BTC price',
     color: VX.accent,
     mark: 'line',
-    getValue: (d) => d.plotPrice,
-    formatValue: (_v, d) => money(d.price),
+    getValue: (d) => d.price,
   },
 ]
 
@@ -190,20 +189,6 @@ function CbbiPageBody() {
     <Stack gap="sm">
       <PageBar
         tabs={<ViewTabs field={cbbiFilters.field.view} label="View" options={VIEW_OPTIONS} />}
-        actions={{
-          // No `primary`. `BarAction` models an `onClick`, a router `link` and an `Anchor` — it has
-          // no `href`, so an EXTERNAL destination cannot be declared, only imperatively opened. A
-          // page whose whole subject is somebody else's data wants that link stated, not simulated,
-          // so the real one lives in the panel's About section and this is the pragmatic twin.
-          secondary: [
-            {
-              key: 'source',
-              label: 'Open source',
-              icon: <IconBook />,
-              onClick: () => window.open(CBBI_SOURCE, '_blank', 'noreferrer'),
-            },
-          ],
-        }}
         sync={{
           syncing: query.isFetching,
           lastCompletedAt: query.dataUpdatedAt === 0 ? null : query.dataUpdatedAt,
@@ -212,17 +197,6 @@ function CbbiPageBody() {
         filters={
           <FilterSet>
             <RangeFilter field={cbbiFilters.field.range} label="Window" />
-            <SelectFilter
-              field={cbbiFilters.field.granularity}
-              label="Bucket"
-              icon={<IconSettings />}
-            />
-            <SelectFilter
-              field={cbbiFilters.field.scale}
-              label="Price scale"
-              icon={<IconCurrency />}
-            />
-            <SelectFilter field={cbbiFilters.field.layout} label="Layout" icon={<IconChart />} />
           </FilterSet>
         }
       />
@@ -270,8 +244,8 @@ function CbbiBody({
     [rows, filters.range, filters.granularity],
   )
   const points = useMemo(
-    () => buildPoints(bucketed, weights, enabled, filters.scale),
-    [bucketed, weights, enabled, filters.scale],
+    () => buildPoints(bucketed, weights, enabled),
+    [bucketed, weights, enabled],
   )
 
   // `buildSummary` returns null only for an empty series, which `QueryState`'s own empty branch
@@ -303,7 +277,7 @@ function CbbiBody({
       )}
       {filters.view === 'history' && <CbbiHistory rows={rows} />}
 
-      <PageAside title="Panel" persistKey="cbbi">
+      <PageAside title="Inspector" persistKey="cbbi">
         <CbbiPanel rows={rows} latest={summary.latest} bins={bins} weights={weights} />
       </PageAside>
     </Stack>
@@ -327,25 +301,25 @@ function CbbiOverview({
   bins: HistogramBin[]
   summary: Summary
   zonesOn: boolean
-  scale: 'log' | 'linear'
+  scale: CbbiScale
   /** `'split'` renders price and confidence as two stacked cards; `'combined'` folds them into
    * one dual-axis chart — see `cbbi-store.ts`'s `layout` field. */
   layout: 'split' | 'combined'
   /** True once the panel has moved a weight or dropped a metric — see `isDefaultComposition`. */
   reweighted: boolean
 }) {
-  // `plotPrice` is `log10(price)` on the log scale (the chart layer has no log axis — see
-  // `buildPoints`), so the axis formatter has to invert it before printing a dollar figure. Every
-  // chart input below is memoized on what it actually varies with: the kinds are `memo`ized and
-  // `CartesianChart` re-measures on a new `getX`/`data`, so a fresh literal per commit would
+  // Every chart input below is memoized on what it actually varies with: the kinds are `memo`ized
+  // and `CartesianChart` re-measures on a new `getX`/`data`, so a fresh literal per commit would
   // re-lay-out three charts over up to 5,541 points each time the sync indicator blinks.
   const priceAxis = useMemo<AxisConfig<CbbiPoint>>(
     () => ({
       domain: 'auto',
-      // `autoMinCeil: Infinity` pads down from the data minimum instead of forcing a zero baseline
-      // — a zero baseline on a price that starts at $16 and ends at $80,000 is one flat line.
+      // Ignored when `scale === 'log'` — a log axis has no zero baseline (`AxisConfig.scale`
+      // JSDoc). On `linear` it still pads down from the data minimum instead of forcing zero, so a
+      // price that starts at $16 and ends at $80,000 doesn't draw one flat line.
       autoMinCeil: Infinity,
-      format: scale === 'log' ? (v) => money(10 ** v) : money,
+      scale,
+      format: money,
     }),
     [scale],
   )
@@ -353,6 +327,7 @@ function CbbiOverview({
   // The reweighted line is drawn only once the reader has moved something: at the published
   // composition it IS the official reading, and two lines claiming to be one is a worse chart.
   const zoneTone = ZONE_TONE[summary.zone]
+  const hotNames = hotMetricNames(summary.hotKeys)
   const custom = summary.custom
 
   const confidenceSeries = useMemo<ChartSeries<CbbiPoint>[]>(
@@ -420,23 +395,34 @@ function CbbiOverview({
           info="The published index — the arithmetic mean of today's available metrics."
           value={pct(summary.official)}
           subtitle={ZONE_LABEL[summary.zone]}
-          {...(summary.officialDelta !== undefined && { delta: summary.officialDelta })}
+          {...(summary.officialDelta !== undefined && {
+            delta: summary.officialDelta,
+            // A percentage-POINT move, not a relative change — the default `%` format would read
+            // a 0.32 → 0.44 move as `▲35.9%` instead of the `▲12.0 pp` it actually is.
+            deltaFormat: (d: number) => `${Math.abs(d).toFixed(1)} pp`,
+          })}
           deltaPeriod="30d"
+          // The index climbs toward a cycle top — a rising reading is the dangerous one, the same
+          // verdict the tone rail already states.
+          deltaPolarity="up-bad"
           {...(zoneTone !== undefined && { tone: zoneTone })}
         />
         <StatCard
-          icon={<IconSettings />}
+          icon={<IconComponents />}
           title="Reweighted"
           info="The same metrics under the panel's weights and selection."
           value={custom === null ? '—' : pct(custom)}
           subtitle="Weighted mean over the enabled metrics"
           {...(summary.customGap !== null && {
             delta: summary.customGap,
-            deltaPeriod: 'vs official',
+            deltaPeriod: 'vs off.',
             // A percentage-POINT gap, not a percentage change — the default `%` suffix would
             // claim the wrong unit on the one card whose number is a difference of two ratios.
             deltaFormat: (d: number) => `${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} pp`,
             deltaGlyph: false,
+            // A gap is not a verdict either way — neither colour claims the reweighting is good
+            // or bad.
+            deltaPolarity: 'neutral',
           })}
         />
         <StatCard
@@ -454,8 +440,7 @@ function CbbiOverview({
           info="How many of the nine sub-metrics are in their own top zone today."
           value={String(summary.hotKeys.length)}
           unit="of 9"
-          subtitle={hotMetricNames(summary.hotKeys)}
-          {...(summary.hotKeys.length > 0 && { tone: 'bad' as const })}
+          {...(hotNames !== undefined && { subtitle: hotNames, tone: 'bad' as const })}
         />
       </SimpleGrid>
 
@@ -493,7 +478,7 @@ function CbbiOverview({
             title="Confidence index"
             icon={<IconActivity />}
             info="0 is a cycle bottom, 1 a cycle top. The bands mark the 0.1 and 0.9 thresholds."
-            value={ratio(summary.official)}
+            value={pct(summary.official)}
           >
             <MultiLine
               data={points}
@@ -515,7 +500,7 @@ function CbbiOverview({
           info="Left axis is BTC price (the scale filter switches log/linear); right axis is the
             0..1 confidence index. Same bucket, same day, one plot."
           value={money(summary.price)}
-          subtitle={`${ratio(summary.official)} confidence`}
+          subtitle={`${pct(summary.official)} confidence`}
         >
           <MultiLine
             data={points}
@@ -536,7 +521,7 @@ function CbbiOverview({
         title="Distribution"
         icon={<IconChart />}
         info={`Every day of the series since 2011, in ${HISTOGRAM_BINS} equal bins.`}
-        value={ratio(summary.official)}
+        value={pct(summary.official)}
         subtitle="The hero value is today's reading — find it along the axis."
         count={bins.length}
       >
@@ -571,7 +556,7 @@ function CbbiMetricGrid({
     return (
       <Section title="Metrics">
         <Text size="sm" c="dimmed">
-          Every metric is switched off in the Composition panel — switch one back on to plot it.
+          Every metric is switched off in the Weights group — switch one back on to plot it.
         </Text>
       </Section>
     )
@@ -634,8 +619,8 @@ function CbbiHistory({ rows }: { rows: CbbiRow[] }) {
           rows={years}
           cols={[...CBBI_HEAT_COLS]}
           color={VX.accent}
-          formatValue={ratio}
-          legend={{ min: '0.0', max: '1.0' }}
+          formatValue={pct}
+          legend={{ min: '0%', max: '100%' }}
         />
       </ChartCard>
 

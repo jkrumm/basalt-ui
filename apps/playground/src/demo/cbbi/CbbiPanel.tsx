@@ -7,9 +7,10 @@
  * section header slot. What the panel proves NOW is two things the gap ledger could not:
  *
  * 1. **The row primitive holds at real width.** Nine composition rows carry a label, a hint, a
- *    verdict badge, a two-number mono readout, a `Switch` on the label line and a 0..2 track on its
- *    own — at ~260px, from one declaration each, with the tier supplied by the row rather than by
- *    nine `size` props. `readout`/`end` on `SliderControl` are the only package change it needed.
+ *    mono weight readout (a verdict badge in its place when the metric is flagged), a `Switch` on
+ *    the label line and a 0..2 track on its own — at ~260px, from one declaration each, with the
+ *    tier supplied by the row rather than by nine `size` props. `readout`/`end` on `SliderControl`
+ *    are the only package change it needed.
  * 2. **A panel can be an INSPECTOR of data, not just of settings.** `Diagnostics`, `Presets` and
  *    `Today` are computed from the live series at runtime (`cbbi-diagnostics.ts`,
  *    `cbbi-outlook.ts`) — no cycle dates, no stored verdicts, and "no precedent" wherever the
@@ -20,7 +21,7 @@
  *    the SAME `Bars` the main column does, at the aside's content width, because G6 is wave 3 and
  *    the difference should stay visible rather than argued.
  */
-import { ActionIcon, Anchor, Badge, Button, Group, Stack, Switch, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Button, Stack, Switch, Text } from '@mantine/core'
 import { Section } from 'basalt-ui'
 import { Bars, VX } from 'basalt-ui/charts'
 import { PanelRow, SelectFilter, SliderControl, ToggleFilter } from 'basalt-ui/controls'
@@ -84,15 +85,21 @@ function VerdictBadge({ verdict }: { verdict: MetricVerdict }) {
 }
 
 /**
- * The composition readout — today's reading, then the live weight.
+ * The composition readout — the live weight ALONE.
  *
  * Module scope and a STRING return, both deliberate: the render prop is a FORMATTER, so it can
- * never be read as a component defined during render (`react/no-unstable-nested-components`). The
- * verdict badge that used to sit in here is an `end` sibling of the switch now, which is where a
- * second element belonged anyway.
+ * never be read as a component defined during render (`react/no-unstable-nested-components`).
+ * Today's reading used to sit here too, but a label already truncating at ~260px
+ * ("Pi Cycle T…") has no room to also hold a second number — the reading moved to the
+ * `Diagnostics` row, which states it beside the metric's own trust score instead.
  */
-function compositionReadout(value: number | null, weight: number): string {
-  return `${value === null ? '—' : ratio(value)} · ×${weight.toFixed(2)}`
+function compositionReadout(weight: number): string {
+  return `×${weight.toFixed(2)}`
+}
+
+/** The diagnostics readout — today's reading, then the trust score it earned. */
+function diagnosticsReadout(value: number | null, j: number): string {
+  return `${value === null ? '—' : ratio(value)} · J ${j.toFixed(2)}`
 }
 
 /**
@@ -101,15 +108,15 @@ function compositionReadout(value: number | null, weight: number): string {
  * Its own component for the reason the hand-built row was: nine `use()` calls become nine
  * COMPONENTS with one hook each (inside `SliderControl`), so dragging one weight re-renders one row.
  *
- * The readout is an OVERRIDE rather than a `format`, because it states two numbers and the control
- * owns only one of them — today's reading, then the weight. It is the FUNCTION form, so the weight
- * half tracks the thumb per frame from the control's own drag draft.
+ * The readout is an OVERRIDE rather than a `format` so a FLAGGED row can swap it for the verdict
+ * badge entirely — a caveat and a weight number both fit at panel width, `SliderControl`'s readout
+ * slot doesn't, and the verdict is the more actionable of the two. An unflagged row still gets the
+ * FUNCTION form, so the weight tracks the thumb per frame from the control's own drag draft.
  */
 function CompositionRow({
   metricKey,
   label,
   hint,
-  value,
   health,
   enabled,
   onToggle,
@@ -117,7 +124,6 @@ function CompositionRow({
   metricKey: CbbiMetricKey
   label: string
   hint: string
-  value: number | null
   health: MetricHealth
   enabled: boolean
   onToggle: (next: boolean) => void
@@ -130,18 +136,15 @@ function CompositionRow({
       label={label}
       hint={hint}
       disabled={!enabled}
-      readout={(dragged) => compositionReadout(value, dragged)}
+      readout={flagged ? <VerdictBadge verdict={health.verdict} /> : compositionReadout}
       end={
-        <Group gap={6} wrap="nowrap">
-          {flagged && <VerdictBadge verdict={health.verdict} />}
-          {/* G14 (`docs/ASIDE-SPEC.md` §2): membership of ONE key in a `field.multi` has no bound
-              control, so this row writes the field by hand. Wave 3 owes it a `MembershipToggle`. */}
-          <Switch
-            checked={enabled}
-            onChange={(event) => onToggle(event.currentTarget.checked)}
-            aria-label={`Include ${label}`}
-          />
-        </Group>
+        // G14 (`docs/ASIDE-SPEC.md` §2): membership of ONE key in a `field.multi` has no bound
+        // control, so this row writes the field by hand. Wave 3 owes it a `MembershipToggle`.
+        <Switch
+          checked={enabled}
+          onChange={(event) => onToggle(event.currentTarget.checked)}
+          aria-label={`Include ${label}`}
+        />
       }
     />
   )
@@ -216,11 +219,18 @@ export function CbbiPanel({
   }
 
   return (
-    <Stack gap="sm">
+    <>
+      <Section title="Display" info="How the series is drawn. The bar owns what is read.">
+        <ToggleFilter field={cbbiFilters.field.zones} label="Zone bands" />
+        <SelectFilter field={cbbiFilters.field.scale} label="Price scale" />
+        <SelectFilter field={cbbiFilters.field.granularity} label="Bucket" />
+        <SelectFilter field={cbbiFilters.field.layout} label="Layout" />
+      </Section>
+
       <Section
         title="Presets"
-        subtitle="Five compositions from the offline study. They pick which metrics you trust — not
-          a better forecast."
+        info="Five compositions from the offline study. They pick which metrics you trust — not a
+          better forecast."
         count={CBBI_PRESETS.length}
         collapsible
         persistKey="cbbi-presets"
@@ -246,8 +256,8 @@ export function CbbiPanel({
       </Section>
 
       <Section
-        title="Composition"
-        subtitle="Which metrics the reweighted index averages, and how heavily."
+        title="Weights"
+        info="Which metrics the reweighted index averages, and how heavily."
         count={enabled.length}
         collapsible
         persistKey="cbbi-composition"
@@ -263,7 +273,6 @@ export function CbbiPanel({
             metricKey={metric.key}
             label={metric.label}
             hint={metric.hint}
-            value={latest.metrics[metric.key]}
             health={health[metric.key]}
             enabled={enabledSet.has(metric.key)}
             onToggle={(next) => toggle(metric.key, next)}
@@ -285,7 +294,7 @@ export function CbbiPanel({
             key={metric.key}
             label={metric.label}
             hint={health[metric.key].reason}
-            readout={`J ${health[metric.key].j.toFixed(2)}`}
+            readout={diagnosticsReadout(latest.metrics[metric.key], health[metric.key].j)}
             end={<VerdictBadge verdict={health[metric.key].verdict} />}
           />
         ))}
@@ -308,13 +317,6 @@ export function CbbiPanel({
             <SuggestionRow key={suggestion.key} suggestion={suggestion} onDisable={disableMetric} />
           ))
         )}
-      </Section>
-
-      <Section title="Display" subtitle="The same four fields the page bar owns, at panel width.">
-        <ToggleFilter field={cbbiFilters.field.zones} label="Zone bands" />
-        <SelectFilter field={cbbiFilters.field.scale} label="Price scale" />
-        <SelectFilter field={cbbiFilters.field.granularity} label="Bucket" />
-        <SelectFilter field={cbbiFilters.field.layout} label="Layout" />
       </Section>
 
       <Section
@@ -344,6 +346,6 @@ export function CbbiPanel({
           </Anchor>
         </Stack>
       </Section>
-    </Stack>
+    </>
   )
 }

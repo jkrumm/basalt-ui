@@ -18,37 +18,27 @@ import {
 import type { CbbiMetricKey, CbbiRow, CbbiZone } from './cbbi-data'
 import { createColumnHelper } from 'basalt-ui/data'
 
-/** One plotted point. `plotPrice` is what the y-axis actually reads (see `buildPoints`). */
+/** One plotted point. */
 export type CbbiPoint = {
   /** `YYYY-MM-DD` — the shared cursor key, and what the tooltip header parses back into a date. */
   key: string
   price: number
-  plotPrice: number
   official: number
   custom: number | null
 }
 
 export type CbbiScale = 'log' | 'linear'
 
-/**
- * The plotted series.
- *
- * **The chart layer has no log scale** (`AxisConfig` is linear-only, `CartesianChart` builds a
- * `scaleLinear`), so `scale: 'log'` is expressed in the DATA: `plotPrice` is `log10(price)` and the
- * axis formatter maps each tick back through `10 ** v` before printing it. The ticks are therefore
- * chosen in log space and land on unround dollar figures — honest, readable, and the visible cost
- * of the missing scale option.
- */
+/** The plotted series — the price stays the raw dollar figure; the scale filter now drives
+ * `CartesianChart`'s own log axis (`AxisConfig.scale`) instead of a pre-logged data column. */
 export function buildPoints(
   rows: readonly CbbiRow[],
   weights: Record<CbbiMetricKey, number>,
   enabled: ReadonlySet<CbbiMetricKey>,
-  scale: CbbiScale,
 ): CbbiPoint[] {
   return rows.map((row) => ({
     key: row.day,
     price: row.price,
-    plotPrice: scale === 'log' ? Math.log10(Math.max(row.price, 1e-6)) : row.price,
     official: row.confidence,
     custom: computeConfidence(row, weights, enabled),
   }))
@@ -62,6 +52,8 @@ export type CbbiSummary = {
   custom: number | null
   /** Percentage-POINT gap between the reweighted index and the official one. */
   customGap: number | null
+  /** Percentage-POINT change over `LOOKBACK_DAYS`, not a relative percent change — a bounded 0..1
+   * index moving 0.32 → 0.44 is a 12pp move, not the 35.9% a relative read would print. */
   officialDelta: number | undefined
   price: number
   priceDelta: number | undefined
@@ -91,7 +83,7 @@ export function buildSummary(
     official: latest.confidence,
     custom,
     customGap: custom === null ? null : (custom - latest.confidence) * 100,
-    officialDelta: before ? deltaPct(latest.confidence, before.confidence) : undefined,
+    officialDelta: before ? (latest.confidence - before.confidence) * 100 : undefined,
     price: latest.price,
     priceDelta: before ? deltaPct(latest.price, before.price) : undefined,
     priceHistory: rows.slice(-SPARK_DAYS).map((row) => row.price),
@@ -115,8 +107,10 @@ export function isDefaultComposition(
   return CBBI_METRIC_KEYS.every((key) => enabled.has(key) && weights[key] === 1)
 }
 
-export function hotMetricNames(keys: readonly CbbiMetricKey[]): string {
-  if (keys.length === 0) return 'No metric is in the top zone'
+/** `undefined` when nothing is hot — a StatCard subtitle that would otherwise just restate the
+ * value beside it ("0 of 9") states nothing a reader hasn't already read. */
+export function hotMetricNames(keys: readonly CbbiMetricKey[]): string | undefined {
+  if (keys.length === 0) return undefined
   return keys.map((key) => CBBI_METRIC_LABEL[key]).join(' · ')
 }
 
