@@ -33,6 +33,7 @@ import type { ActionGroupProps, BarAction, GlobalAction } from '../controls/acti
 import type { SyncButtonProps } from '../controls/sync-button'
 import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
 import classes from './page-bar.module.css'
+import asideClasses from './page-aside.module.css'
 
 /** The custom property row 2's measured height is published on. */
 export const PAGE_BAR_HEIGHT_VAR = '--basalt-page-bar-h'
@@ -198,10 +199,10 @@ export type PageBarProps = {
   tabs?: ReactNode
   /**
    * Added to the bar's ROOT — the shell-less `<div data-basalt-page-bar="standalone">`, or row 2's
-   * sticky wrapper (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The seam for the two
-   * things only the consumer's own layout knows: bleeding the sticky bar across its container's
-   * gutters (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) and drawing
-   * a hairline under it (`border-bottom: 1px solid var(--vx-surface-hairline)`).
+   * sticky wrapper (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The one thing only the
+   * consumer's own layout knows is bleeding the sticky bar across its container's gutters
+   * (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) for the shell-less
+   * form.
    *
    * Scope that CSS through this class, not through a global `[data-basalt-page-bar]` selector: the
    * data attributes are stable enough to READ (a shell-less consumer can style
@@ -340,35 +341,51 @@ export function PageBar({
     </div>
   ) : null
 
+  // Desktop-shaped, not viewport-aware: `filtersEndActions` alone still renders the `.pills` line
+  // here even though below `sm` those items live in the row-1 kebab and paint nothing in it
+  // (`BarActionRow viewport="desktop"`). `page-bar.module.css`'s mobile `.pills:not(:has(…))` rule
+  // is what actually hides an empty line there — see that rule's comment for why this stays JS-free.
+  const hasPills = filters !== undefined || panel !== null || filtersEndActions.length > 0
+
   const row2 = hasRow2 ? (
     <div className={classes.row2}>
-      {tabs !== undefined && <CtlSlot>{tabs}</CtlSlot>}
-      {filters !== undefined && (
-        <div className={classes.filters}>
-          <CtlSlot>{filters}</CtlSlot>
+      {tabs !== undefined && (
+        <div className={classes.tabs} data-basalt-page-bar-line="tabs">
+          <CtlSlot>{tabs}</CtlSlot>
         </div>
       )}
-      {panel !== null && (
-        <FilterPill
-          // One word, no count: unlike `Filters (n)` an aside has no census to count (its children
-          // are not a `FilterSet`), and a number nobody can derive is worse than none.
-          label="Panel"
-          ariaLabel={panel.title}
-          icon={panel.icon}
-          className={classes.panelPill}
-          hideGlyph
-          onClick={() => {
-            setPanelOpened(true)
-          }}
-        />
-      )}
-      {filtersEndActions.length > 0 && (
-        <div className={classes.filtersEnd}>
-          <CtlSlot>
-            {/* Desktop only — below `sm` these live in the row-1 kebab above, never in a second one
-                (spec §2.1: mobile row 2 is tabs + the first pill + `Filters (n)`, nothing else). */}
-            <BarActionRow secondary={filtersEndActions} host="slot" viewport="desktop" />
-          </CtlSlot>
+      {hasPills && (
+        <div className={classes.pills} data-basalt-page-bar-line="pills">
+          {filters !== undefined && (
+            <div className={classes.filters}>
+              <CtlSlot>{filters}</CtlSlot>
+            </div>
+          )}
+          {panel !== null && (
+            <FilterPill
+              // One word, no count: unlike `Filters (n)` an aside has no census to count (its
+              // children are not a `FilterSet`), and a number nobody can derive is worse than none.
+              label="Panel"
+              ariaLabel={panel.title}
+              icon={panel.icon}
+              className={classes.panelPill}
+              hideGlyph
+              onClick={() => {
+                setPanelOpened(true)
+              }}
+            />
+          )}
+          {filtersEndActions.length > 0 && (
+            <div className={classes.filtersEnd}>
+              <CtlSlot>
+                {/* Desktop only — below `sm` these live in the row-1 kebab above, never in a second
+                    one (`docs/CONTROLS-SPEC.md` §2.1: mobile row 2 is two lines: tabs, then the
+                    first pill + `Filters (n)` + the aside's `Panel` pill — `docs/CONTROLS-SPEC.md`
+                    §2.1 still describes the pre-aside one-line form). */}
+                <BarActionRow secondary={filtersEndActions} host="slot" viewport="desktop" />
+              </CtlSlot>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -377,7 +394,10 @@ export function PageBar({
   // The aside's mobile sheet. `onResetAll` is deliberately absent — the children mount under a
   // `null` registry, so there is nothing registered to reset. The body is an OUTLET, not the
   // children: `PageAside` portals into it, which is what keeps the aside's node singular (C9) and
-  // keeps a `ReactNode` out of context state (see `AsidePanelClaim`).
+  // keeps a `ReactNode` out of context state (see `AsidePanelClaim`). The outlet carries the
+  // desktop panel's own `.body` class — same flex rhythm, and the same `> * + *` flush-hairline
+  // rule between groups (`page-aside.module.css`) — so the aside's groups separate identically in
+  // both projections instead of only in the portalled panel.
   const panelSheet =
     panel === null ? null : (
       <FilterSheet
@@ -387,7 +407,7 @@ export function PageBar({
           setPanelOpened(false)
         }}
       >
-        <div ref={setPanelTarget} />
+        <div ref={setPanelTarget} className={asideClasses.body} />
       </FilterSheet>
     )
 

@@ -390,8 +390,9 @@ type BarActionRowProps = ActionGroupProps & {
   host: 'page' | 'slot'
   /**
    * `desktop` renders the desktop variant only — `PageBar` row 2, whose items live in the row-1
-   * kebab below `sm` (spec §2.1: mobile row 2 is tabs + the first pill + `Filters (n)`, nothing
-   * else). @default 'both'
+   * kebab below `sm` (`docs/CONTROLS-SPEC.md` §2.1: mobile row 2 is two lines — tabs, then the
+   * first pill + `Filters (n)` + the aside's `Panel` pill; `docs/CONTROLS-SPEC.md` §2.1 still
+   * describes the pre-aside one-line form). @default 'both'
    */
   viewport?: 'both' | 'desktop'
   /**

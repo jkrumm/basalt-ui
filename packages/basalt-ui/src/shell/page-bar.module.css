@@ -5,6 +5,10 @@
  * scrolls sideways hides its own controls; the fold is computed instead — `More` for actions
  * (`ActionGroup`), a `Filters (n)` sheet for filters (`FilterSet`'s job, wave 4). The filter
  * container below only supplies `min-width: 0` so that fold has a box to measure against.
+ *
+ * Below `sm`, row 2 is a COLUMN of two declared lines — tabs, then pills (the tabs' phone form is
+ * full-width by contract). That is not a wrap: the line count is decided by what is mounted, never
+ * by width (law C14 for a phone form).
  */
 
 /* The shell-less bar: both rows, sticky at the top of the document. One layer under the AppShell
@@ -110,7 +114,8 @@
  * that already spaced it, the visible gap between the header and the pills read as ~19px while the
  * gap from the pills to the first card read as ~19px too. Symmetric padding on the row itself is the
  * same total height (46px vs 40px) with both halves owned by one declaration, so the sticky bar's
- * published height covers exactly the band it paints.
+ * published height covers exactly the band it paints — including below `sm`, where `.row2` becomes a
+ * COLUMN of `.tabs` then `.pills` and `padding-block` still owns both edges of the taller band.
  */
 .row2 {
   display: flex;
@@ -119,6 +124,28 @@
   gap: var(--vx-space-control-gap);
   min-width: 0;
   padding-block: var(--vx-space-stack-sm);
+}
+
+/* The tabs' own line — a direct flex child so a `fullWidth` `ViewTabs` gets the whole row instead
+ * of sharing it with the pills (the row-2 defect: `CtlSlot` is `display: contents`, so an unwrapped
+ * `ViewTabs` used to shrink alongside `.filters` and clip). `flex: none` above `sm`, where the row
+ * is one line and the tabs sit at their intrinsic width beside the pills. */
+.tabs {
+  display: flex;
+  flex: none;
+  min-width: 0;
+}
+
+/* The rest of row 2 — filters, the aside's `Panel` pill, `filtersEnd` — as one line so `.filters`'s
+ * `flex: 1 1 auto` and the trailing auto-margins keep working unchanged; they now measure against
+ * this box instead of `.row2` directly. */
+.pills {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .filters {
@@ -174,6 +201,49 @@
     height: 100%;
     min-width: var(--vx-space-touch-control-height);
     min-height: var(--vx-space-touch-control-height);
+  }
+
+  /*
+   * Row 2's phone form: two declared lines, tabs then pills — not a wrap (law C7). `.pills` folds
+   * every overflow into `Filters (n)` at any width, EXCEPT when it holds nothing visible: below `sm`
+   * `filtersEnd` renders only in the row-1 kebab (`BarActionRow viewport="desktop"` mounts a
+   * `visibleFrom="sm"` group and nothing else), so `tabs` + `filtersEnd` with no `filters`/`panel`
+   * would otherwise mount an empty `.pills` box and its column `gap` still reserves the line's height
+   * — the exact reserved-row case law C14 forbids. `:has()` is already load-bearing elsewhere in this
+   * package (`controls.module.css`'s `.sheetOption`/`.facetOption` focus rules).
+   */
+  .row2 {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--vx-space-stack-xs);
+  }
+
+  .pills:not(:has(> .filters, > .panelPill)) {
+    display: none;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  /*
+   * `CtlSlot` (`theme/ctl-theme.tsx`) wraps `tabs` in a `<Box data-basalt-tier style="display:
+   * contents">` — a box-less element, so a bare `.tabs > *` matches ONLY that inert wrapper and never
+   * reaches `ViewTabs`' actual `SegmentedControl`/`Select` root. `display: contents` still promotes
+   * its children to be `.tabs`' real flex items for LAYOUT while leaving them `.tabs`' grandchildren
+   * for the DOM the `>` combinator walks — so the selector has to name the slot's own attribute to
+   * reach past it.
+   */
+  .tabs > [data-basalt-tier] > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* The phone `Select` past three tab options keeps its own bounded `.phoneSelect` max-width
+   * (`controls.module.css`) and stays left-aligned rather than stretching to fill the line. More
+   * specific than the catch-all above by one class either way, so source order does not matter. */
+  .tabs > [data-basalt-tier] > :global(.mantine-Select-root) {
+    flex: none;
   }
 }
 
