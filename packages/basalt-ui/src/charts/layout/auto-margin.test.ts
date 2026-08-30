@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { VX } from '../../tokens'
-import { autoMargin } from './auto-margin'
+import { autoMargin, probeAxisLabels } from './auto-margin'
+import { logTickValues, niceLogDomain } from './log-ticks'
 
 describe('autoMargin', () => {
   test('never goes below the VX.margin floor', () => {
@@ -38,5 +39,39 @@ describe('autoMargin', () => {
     const m = autoMargin({ left: ['1,250,000'], override: { left: 4, top: 0 } })
     expect(m.left).toBe(4)
     expect(m.top).toBe(0)
+  })
+})
+
+describe('probeAxisLabels — scale: log', () => {
+  const format = (v: number) => `$${v}`
+
+  test('measures through logTickValues — the exact helper the axis paints from', () => {
+    const domain: [number, number] = [16, 80000]
+    const { labels } = probeAxisLabels({ domain, ticks: 5, scale: 'log', format })
+    expect(labels).toEqual(logTickValues(domain, 5).map(format))
+  })
+
+  test('nice rounds the domain outward before measuring, mirroring the real niced scale', () => {
+    const domain: [number, number] = [16, 80000]
+    const { labels } = probeAxisLabels({ domain, ticks: 5, scale: 'log', nice: true, format })
+    expect(labels).toEqual(logTickValues(niceLogDomain(domain), 5).map(format))
+  })
+
+  test('with no explicit format, defaults to the same grouped style the linear axis uses', () => {
+    const domain: [number, number] = [10000, 100000]
+    const { labels, format: resolved } = probeAxisLabels({ domain, ticks: 5, scale: 'log' })
+    expect(labels).toEqual(['10,000', '20,000', '50,000', '100,000'])
+    expect(resolved(100000)).toBe('100,000')
+  })
+
+  test('the grouped default matches the linear axis default for the same round magnitude', () => {
+    const linear = probeAxisLabels({ domain: [0, 100000], ticks: 5 })
+    const log = probeAxisLabels({ domain: [10000, 100000], ticks: 5, scale: 'log' })
+    expect(log.format(100000)).toBe(linear.format(100000))
+  })
+
+  test('the grouped default keeps sub-unit digits instead of truncating to "0"', () => {
+    const { format: resolved } = probeAxisLabels({ domain: [1e-8, 1e-6], ticks: 5, scale: 'log' })
+    expect(resolved(1e-7)).not.toBe('0')
   })
 })

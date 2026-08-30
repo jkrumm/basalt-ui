@@ -1,6 +1,6 @@
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { scaleLinear, scalePoint } from '@visx/scale'
+import { scaleLinear, scaleLog, scalePoint } from '@visx/scale'
 import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { VX } from '../../tokens'
@@ -8,7 +8,8 @@ import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
-import { deriveTooltipRows } from '../series'
+import { logTickValues, niceLogDomain } from '../layout/log-ticks'
+import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
@@ -23,7 +24,11 @@ import type { XZoneSpec } from './XZoneRects'
 import { ZoneRects } from './ZoneRects'
 import type { ZoneSpec } from './ZoneRects'
 
-type LinearScale = ReturnType<typeof scaleLinear<number>>
+/** Either axis kind a `y`/`y2` can resolve to. Widened from a bare `scaleLinear` return type so a
+ * log axis's `scaleLog` scale keeps assigning into `PlotContext.yScale`/`y2Scale` and into every
+ * mark renderer (`ZoneRects`, `refLines`, `Crosshair`/`SeriesDot`) that only ever calls `scale(v)`
+ * or reads `scale.domain()` — both interfaces share that shape via d3's `ScaleContinuousNumeric`. */
+type ContinuousScale = ReturnType<typeof scaleLinear<number>> | ReturnType<typeof scaleLog<number>>
 type PointScale = ReturnType<typeof scalePoint<string>>
 
 const DEFAULT_TICKS = 5
@@ -49,7 +54,8 @@ export type AxisConfig<T> = {
    */
   autoMaxFloor?: number
   /** When 'auto': the lower bound is at most this. Default 0 (forced zero baseline). `Infinity`
-   * pads down from the raw data minimum instead. */
+   * pads down from the raw data minimum instead. Ignored when `scale: 'log'` — a log axis has no
+   * zero baseline, so its floor is always the smallest positive visible value. */
   autoMinCeil?: number
   /** When 'auto': padding multiplier applied away from the data. Default 1.1. */
   autoPad?: number
@@ -67,6 +73,15 @@ export type AxisConfig<T> = {
    * already-migrated chart. Opt in per axis.
    */
   nice?: boolean
+  /**
+   * `'linear'` (default) or `'log'`. On `'log'` the domain floor is the smallest positive VISIBLE
+   * value — `autoMinCeil` is ignored (documented there, not thrown on): a log axis has no zero
+   * baseline. `autoPad` still pads multiplicatively and `nice` still snaps to round bounds (decade
+   * powers instead of d3's linear-nice steps). Ticks are the 1-2-5 set from `logTickValues`
+   * (`$10,000 · $20,000 · $50,000 · $100,000`, never d3's own log ticks), and `format` is applied
+   * to those values — d3's `scale.tickFormat` is never used on a log axis.
+   */
+  scale?: 'linear' | 'log'
 }
 
 /** Handed to `prependRows`/`extraRows` alongside the hovered datum — the same `visible`/`hidden`
@@ -127,9 +142,9 @@ export type PlotContext<T> = {
   visible: ChartSeries<T>[]
   hidden: ReadonlySet<string>
   xScale: PointScale
-  yScale: LinearScale
+  yScale: ContinuousScale
   /** Present only when a `y2` axis is configured. */
-  y2Scale: LinearScale | null
+  y2Scale: ContinuousScale | null
   xMax: number
   yMax: number
   margin: ChartMargin
@@ -231,24 +246,40 @@ export function resolveAxisDomain<T>(
   if (Array.isArray(domain)) return domain
   if (typeof domain === 'function') return domain(data, series)
 
+  const isLog = cfg?.scale === 'log'
   let min = Infinity
   let max = -Infinity
   for (const d of data) {
     for (const s of series) {
       const v = s.getValue(d)
       if (v === null) continue
+      // A log axis has no zero and no negative half — a non-positive value can't sit on it, so it
+      // drops out of the domain instead of pulling the floor to (or past) zero.
+      if (isLog && v <= 0) continue
       if (v < min) min = v
       if (v > max) max = v
     }
   }
   for (const v of extraBounds) {
     if (!Number.isFinite(v)) continue
+    if (isLog && v <= 0) continue
     if (v < min) min = v
     if (v > max) max = v
   }
-  if (min === Infinity) return [0, cfg?.autoMaxFloor ?? 1]
 
   const pad = cfg?.autoPad ?? DEFAULT_AUTO_PAD
+
+  if (isLog) {
+    // No zero baseline on a log axis: the floor is the smallest positive visible value, padded
+    // down with no `autoMinCeil` clamp (documented as ignored on `AxisConfig.autoMinCeil`).
+    if (min === Infinity) return [1, 10]
+    if (min === max) return [min / pad, max * pad]
+    const upper = padAutoUpper(Math.max(max, cfg?.autoMaxFloor ?? -Infinity), pad)
+    return [min / pad, upper]
+  }
+
+  if (min === Infinity) return [0, cfg?.autoMaxFloor ?? 1]
+
   const ceil = cfg?.autoMinCeil ?? 0
   // Symmetric with the lower bound: clamp the RAW value against the floor/ceiling first, then pad
   // once, away from zero. Padding before the clamp (the old law) lands a floored axis top exactly
@@ -260,6 +291,39 @@ export function resolveAxisDomain<T>(
   // dot on the axis. Give it the same usable baseline the empty-data branch above gets.
   if (lower === upper) return [Math.min(lower, 0), upper === 0 ? 1 : upper * pad]
   return [lower, upper]
+}
+
+/**
+ * One y-axis' real scale, built from its resolved domain — shared by the left and right axis so
+ * the log branch (`scaleLog` + `nice` + the 1-2-5 tick override) is written and commented exactly
+ * once instead of as two independently-maintained twins.
+ */
+function buildYScale<T>(
+  cfg: AxisConfig<T> | undefined,
+  domain: [number, number],
+  yMax: number,
+  ticks: number,
+): ContinuousScale {
+  if (cfg?.scale === 'log') {
+    const scale = scaleLog<number>({
+      domain,
+      range: [yMax, 0],
+      ...(cfg.nice === true && { nice: true }),
+    })
+    // Paint the 1-2-5 tick law instead of d3's own log ticks: `AxisLeftNumeric`/`GridRows` resolve
+    // ticks through visx's `getTicks(scale, numTicks)` -> `scale.ticks(numTicks)`, so overriding
+    // the method on this instance is the one seam that reaches both without a raw `<AxisLeft>`
+    // escape hatch. Nothing else calls `.ticks()` on the real scale (only `probeAxisLabels`' own
+    // throwaway probe does, and that stays untouched).
+    const tickDomain = cfg.nice === true ? niceLogDomain(domain) : domain
+    scale.ticks = () => logTickValues(tickDomain, ticks)
+    return scale
+  }
+  return scaleLinear<number>({
+    domain,
+    range: [yMax, 0],
+    ...(cfg?.nice === true && { nice: true }),
+  })
 }
 
 /**
@@ -311,7 +375,11 @@ export function CartesianChart<T>({
       {...(fill !== undefined && { fill })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
-      legend={resolveLegend(legend, { highlighted, onHighlight: setHighlighted })}
+      legend={resolveLegend(
+        legend,
+        { highlighted, onHighlight: setHighlighted },
+        deriveLegend(series).length,
+      )}
     >
       {(plot) => (
         <CartesianPlot
@@ -418,9 +486,10 @@ function CartesianPlot<T>({
         domain: leftDomain,
         ticks: leftTicks,
         nice: y?.nice ?? false,
+        ...(y?.scale !== undefined && { scale: y.scale }),
         ...(y?.format !== undefined && { format: y.format }),
       }),
-    [leftDomain, leftTicks, y?.format, y?.nice],
+    [leftDomain, leftTicks, y?.format, y?.nice, y?.scale],
   )
 
   const { labels: rightLabels, format: rightFormat } = useMemo(
@@ -431,9 +500,10 @@ function CartesianPlot<T>({
             domain: rightDomain,
             ticks: rightTicks,
             nice: y2?.nice ?? false,
+            ...(y2?.scale !== undefined && { scale: y2.scale }),
             ...(y2?.format !== undefined && { format: y2.format }),
           }),
-    [rightDomain, rightTicks, y2?.format, y2?.nice],
+    [rightDomain, rightTicks, y2?.format, y2?.nice, y2?.scale],
   )
 
   const xLabels = useMemo(() => keys.map(formatX), [keys, formatX])
@@ -458,24 +528,12 @@ function CartesianPlot<T>({
     [keys, xMax],
   )
   const yScale = useMemo(
-    () =>
-      scaleLinear<number>({
-        domain: leftDomain,
-        range: [yMax, 0],
-        ...(y?.nice === true && { nice: true }),
-      }),
-    [leftDomain, yMax, y?.nice],
+    () => buildYScale(y, leftDomain, yMax, leftTicks),
+    [y, leftDomain, yMax, leftTicks],
   )
   const y2Scale = useMemo(
-    () =>
-      rightDomain === null
-        ? null
-        : scaleLinear<number>({
-            domain: rightDomain,
-            range: [yMax, 0],
-            ...(y2?.nice === true && { nice: true }),
-          }),
-    [rightDomain, yMax, y2?.nice],
+    () => (rightDomain === null ? null : buildYScale(y2, rightDomain, yMax, rightTicks)),
+    [y2, rightDomain, yMax, rightTicks],
   )
 
   // Resolution order: explicit VALUES win, then an explicit COUNT, then as many as fit.
@@ -593,12 +651,17 @@ function CartesianPlot<T>({
                   cursorValue === undefined ? s.getValue(point) : cursorValue(point, s, visible)
                 if (value === null) return null
                 const scale = s.axis === 'right' && y2Scale !== null ? y2Scale : yScale
+                const cy = scale(value)
+                // A non-positive value on a log axis (or any other input a scale can't place)
+                // maps to NaN — the same guard the mark layer applies (`MultiLine`'s `LinePath
+                // defined`), so a stray crosshair dot never paints at `cy="NaN"`.
+                if (!Number.isFinite(cy)) return null
                 const marker = s.getMarker?.(point)
                 return (
                   <SeriesDot
                     key={s.key}
                     cx={cursorX}
-                    cy={scale(value)}
+                    cy={cy}
                     color={marker?.color ?? s.color}
                     {...(marker?.r !== undefined && { r: marker.r })}
                   />

@@ -13,6 +13,7 @@ import { scaleLinear } from '@visx/scale'
 import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import { maxTextWidth } from '../utils/measure-text'
+import { logTickValues, niceLogDomain } from './log-ticks'
 
 /**
  * Distance from the plot edge to the near edge of a tick LABEL: visx's default `tickLength` (8)
@@ -23,6 +24,14 @@ const AXIS_TICK_GAP = 12
 
 /** Line box of a single-line tick label at `fontPx`. */
 const lineHeight = (fontPx: number): number => Math.ceil(fontPx * 1.35)
+
+/**
+ * The grouped-thousands default for a log axis with no explicit `format` — parity with the linear
+ * branch's own `probe.tickFormat(ticks)`, which already groups (`"100,000"`). Unbounded fraction
+ * digits (rather than `toLocaleString`'s default of 3) so a sub-unit log tick (`1e-7`) still prints
+ * its digits instead of truncating to `"0"`.
+ */
+const LOG_TICK_FORMAT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 20 })
 
 export type AutoMarginInput = {
   /** Left-axis tick labels, already formatted. */
@@ -99,7 +108,16 @@ export function probeAxisLabels(opts: {
   format?: (v: number) => string
   /** Must match the real scale's `nice` — niceing changes which ticks exist. */
   nice?: boolean
+  /** `'log'` measures through {@link logTickValues} instead of a linear probe scale — the same
+   * helper the axis paints from (CHARTS-SPEC §1: measured labels == painted labels). Default
+   * `'linear'`. */
+  scale?: 'linear' | 'log'
 }): { labels: string[]; format: (v: number) => string } {
+  if (opts.scale === 'log') {
+    const domain = opts.nice === true ? niceLogDomain(opts.domain) : opts.domain
+    const format = opts.format ?? ((v: number) => LOG_TICK_FORMAT.format(v))
+    return { labels: logTickValues(domain, opts.ticks).map(format), format }
+  }
   const probe = scaleLinear<number>({
     domain: opts.domain,
     range: [1, 0],
