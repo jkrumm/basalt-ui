@@ -23,6 +23,17 @@
 }
 
 /*
+ * `group` tier (an aside/inspector Section): zero gap between children. `PanelRow`s already own
+ * their own vertical rhythm — `--vx-space-row-inset-y` (6px) plus the `.row + .row` hairline — so
+ * stacking the 12px `stack-md` gap ON TOP made a one-line row's pitch 55px with the hairline sitting
+ * 33/22 off-centre in it. At gap 0 the pitch is 43px and the rule is centred (Trellis ≈29, Quiver
+ * ≈33, the sidebar's own rows 33) — no negative margins, the gap simply isn't there to fight.
+ */
+.root[data-tier='group'] .body {
+  gap: 0;
+}
+
+/*
  * `summary` — the always-visible row under the header. No border, no background (the Section owns
  * neither); it is a plain flow row, so a consumer's `Group` of stats or one line of `Text` lands
  * where the body would have started.

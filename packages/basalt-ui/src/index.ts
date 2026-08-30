@@ -122,7 +122,12 @@ export {
 } from './state'
 
 // ── WidgetHeader (unified section/widget/card heading primitive, docs/CONTROLS-SPEC.md §2.2) ─────
-export { WidgetHeader, type WidgetHeaderProps } from './widget-header'
+export {
+  WidgetHeader,
+  type WidgetHeaderProps,
+  type WidgetHeaderTier,
+  type DeltaPolarity,
+} from './widget-header'
 
 // ── Section (tier-2 heading composer over WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ───────────────
 export { Section, type SectionProps } from './section'

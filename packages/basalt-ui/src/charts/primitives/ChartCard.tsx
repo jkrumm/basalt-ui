@@ -15,6 +15,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { VX } from '../../tokens'
 import { WidgetHeader } from '../../widget-header'
+import type { DeltaPolarity } from '../../widget-header'
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
 // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the same value), never a
@@ -67,6 +68,9 @@ export type ChartCardProps = {
   delta?: number
   /** Comparison timeframe forwarded to `DeltaBadge` (e.g. `MoM`). */
   deltaPeriod?: string
+  /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
+   * `polarity`. Defaults to `'up-good'` (today's behaviour). */
+  deltaPolarity?: DeltaPolarity
   /** Mono count tag after the title. */
   count?: number
   /** Right-aligned slot — carries `data-basalt-tier="widget"` (no `CtlSlot`; see module doc). */
@@ -82,6 +86,7 @@ export function ChartCard({
   value,
   delta,
   deltaPeriod,
+  deltaPolarity,
   count,
   actions,
   children,
@@ -107,6 +112,7 @@ export function ChartCard({
             {...(value !== undefined && { value })}
             {...(delta !== undefined && { delta })}
             {...(deltaPeriod !== undefined && { deltaPeriod })}
+            {...(deltaPolarity !== undefined && { deltaPolarity })}
             {...(count !== undefined && { count })}
             {...(actions !== undefined && {
               actions: <span data-basalt-tier="widget">{actions}</span>,

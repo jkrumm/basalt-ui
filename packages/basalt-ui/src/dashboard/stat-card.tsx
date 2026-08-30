@@ -93,6 +93,7 @@ import { Box, Card, VisuallyHidden } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { WidgetHeader } from '../widget-header'
+import type { DeltaPolarity } from '../widget-header'
 import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
 import classes from './stat-card.module.css'
@@ -224,6 +225,9 @@ export type StatCardProps = {
   delta?: number
   /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
   deltaPeriod?: string
+  /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
+   * `polarity` via `WidgetHeader`. Defaults to `'up-good'` (today's behaviour). */
+  deltaPolarity?: DeltaPolarity
   /**
    * Formats `delta` into the chip's label — forwarded to `WidgetHeader` and on to `DeltaBadge`.
    * Defaults to `${Math.abs(delta).toFixed(1)}%`.
@@ -279,6 +283,7 @@ export function StatCard({
   breakdown,
   delta,
   deltaPeriod,
+  deltaPolarity,
   deltaFormat,
   deltaGlyph,
   sparkline,
@@ -350,6 +355,7 @@ export function StatCard({
             {...(unit !== undefined && { unit })}
             {...(delta !== undefined && { delta })}
             {...(deltaPeriod !== undefined && { deltaPeriod })}
+            {...(deltaPolarity !== undefined && { deltaPolarity })}
             {...(deltaFormat !== undefined && { deltaFormat })}
             {...(deltaGlyph !== undefined && { deltaGlyph })}
             // `tier="widget"`, not the default `ctl`: the header row this slot sits in is 28px

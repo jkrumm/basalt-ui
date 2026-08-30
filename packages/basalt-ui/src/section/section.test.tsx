@@ -6,7 +6,10 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ReactElement } from 'react'
+import { FilterSetScope } from '../controls/filter-context'
 import { Section } from './section'
 
 function renderWith(node: ReactElement) {
@@ -18,13 +21,50 @@ beforeEach(() => {
 })
 
 describe('Section composes WidgetHeader at the section tier', () => {
-  test('renders an h2 carrying the title', () => {
+  test('renders an h2 carrying the title, and data-tier="section", outside any filter surface', () => {
     renderWith(
       <Section title="Revenue">
         <div>body</div>
       </Section>,
     )
     expect(screen.getByRole('heading', { level: 2, name: 'Revenue' })).toBeDefined()
+    // The Section ROOT, not WidgetHeader's — both carry `data-tier`, so walk up from the body.
+    const root = screen.getByText('body').parentElement?.parentElement
+    expect(root?.getAttribute('data-tier')).toBe('section')
+  })
+
+  test('resolves to the group tier — an h3 with data-tier="group" — on the aside panel surface', () => {
+    renderWith(
+      <FilterSetScope surface="panel" registry={null}>
+        <Section title="Composition">
+          <div>body</div>
+        </Section>
+      </FilterSetScope>,
+    )
+    expect(screen.getByRole('heading', { level: 3, name: 'Composition' })).toBeDefined()
+    const root = screen.getByText('body').parentElement?.parentElement
+    expect(root?.getAttribute('data-tier')).toBe('group')
+  })
+
+  test("also resolves to group on the aside's mobile sheet projection, not just the desktop panel", () => {
+    renderWith(
+      <FilterSetScope surface="sheet" registry={null}>
+        <Section title="Composition">
+          <div>body</div>
+        </Section>
+      </FilterSetScope>,
+    )
+    expect(screen.getByRole('heading', { level: 3, name: 'Composition' })).toBeDefined()
+    const root = screen.getByText('body').parentElement?.parentElement
+    expect(root?.getAttribute('data-tier')).toBe('group')
+  })
+
+  test('section.module.css quiets the group tier body gap to 0 (SR4 panel-row pitch)', () => {
+    const css = readFileSync(join(import.meta.dir, 'section.module.css'), 'utf8')
+    const start = css.indexOf("[data-tier='group'] .body {")
+    expect(start).toBeGreaterThan(-1)
+    const rule = css.slice(start, css.indexOf('}', start))
+    expect(rule).toContain('gap: 0')
   })
 })
 
