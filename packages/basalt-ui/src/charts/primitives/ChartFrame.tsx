@@ -102,12 +102,22 @@ export type ChartFrameLegendHover = {
  * is the one merge every kind performs: consumer `placement`/`groups`/`maxRows` (or the defaults)
  * plus the kind's `highlighted`/`onHighlight`, which a consumer may not set directly.
  * `config === false` disables the legend regardless of `hover` (the sparkline escape).
+ *
+ * A single-entry legend is pure noise — it only ever restates the chart's own title ("— BTC
+ * price" under a chart already titled "BTC price"), costs a legend row of vertical space, and its
+ * one toggle can blank the whole plot. So when `seriesCount` is passed, is `<= 1`, AND the caller
+ * passed no explicit config (`undefined` — NOT `{}`, which is a deliberate opt-in), the legend is
+ * suppressed automatically. `config === undefined` is the load-bearing check: a kind that composes
+ * `ChartFrame` directly without threading `seriesCount` through (e.g. `DualPanel`) simply omits
+ * the third argument and keeps today's behaviour.
  */
 export function resolveLegend(
   config: ChartLegendConfig | false | undefined,
   hover?: ChartFrameLegendHover,
+  seriesCount?: number,
 ): ChartFrameLegend | false {
   if (config === false) return false
+  if (config === undefined && seriesCount !== undefined && seriesCount <= 1) return false
   return {
     placement: config?.placement ?? 'bottom',
     ...(config?.groups !== undefined && { groups: config.groups }),
