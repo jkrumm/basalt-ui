@@ -294,9 +294,15 @@ full-height mobile sidebar drawer was deleted in 1.19.0). Router coupling (typed
 detection, badge counts) stays **consumer-side** — the shell is presentational and router-agnostic.
 
 - **App shell.** A full-height **grouped sidebar** (muted uppercase section labels; brand pinned
-  top-left) + a slim **breadcrumb top bar** — transparent, no bottom rule (the header and page body
-  share one background). `AppShell layout="alt"` gives a full-height sidebar with the breadcrumb
-  header scoped to the main area.
+  top-left) + a slim **breadcrumb top bar** — transparent, with the region seam on its bottom edge.
+  `withBorder` still gates each region's edge, exactly as Mantine ships it (`<AppShell
+withBorder={true}>` by default, each `AppShell.<Region>` falling back to that context value); the
+  theme changes only the COLOUR every gated edge paints, once, via
+  `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`
+  — no shell module or consumer sets `--app-shell-border-color` or `withBorder` directly, except the
+  aside, whose `withBorder={aside.claimed}` gates its own edge on the claim rather than the shared
+  default (`docs/DESIGN-SPEC.md` §5 "Region seams"). `AppShell layout="alt"` runs the sidebar's seam
+  full height and scopes the header's to the main column.
 - **Top-bar slots own the page header.** The bar has two zones, not one. A **page slot**: the active
   route portals its full control row (window/range selectors, tabs, filters) into the bar via a
   `PageActions` outlet, so pages drop their in-body `<Title>` H1 — the breadcrumb names the page and

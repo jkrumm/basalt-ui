@@ -180,6 +180,18 @@ the right axis — the widened margin follows from measurement, not from a `righ
 `AxisConfig.nice?: boolean` (default `false`) opts into d3's `scale.nice()` rounding — off by
 default because flipping it would move the domain of every already-migrated chart.
 
+**Log axis.** `y.scale: 'log'` (and `y2`) builds a `scaleLog`; the domain floor is the smallest
+positive visible value (`autoMinCeil` is ignored, a log axis has no zero), `nice` snaps to decade
+bounds, and ticks are the 1-2-5 mantissa set from `charts/layout/log-ticks.ts` — the SAME helper
+`probeAxisLabels` measures from, so §1's measured-equals-painted law holds on a log axis too.
+`format` receives real values; a consumer never expresses a log scale in the data any more (the
+CBBI page did, and paid for it with `$31,623` gridlines).
+
+`scale` is honoured by every kind whose axis domain the CALLER controls — `CartesianChart`'s own
+axes, `MultiLine`, `ZonedLine`, and `Bars` in `barLayout: 'grouped'`. `Bars` in the default
+`barLayout: 'stacked'` computes its own summed domain from `0` (§2's stacked-domain memo) and
+ignores `scale` on that axis — a stacked total has a real zero baseline, and a log axis has none.
+
 **Behavior change (2026-08-19) — the one item here that can move an existing chart's rendering:**
 `autoMaxFloor` now clamps the raw upper bound BEFORE padding, mirroring `autoMinCeil`, which has
 always clamped its bound first and padded second — two different laws used to live in one function.
@@ -312,6 +324,13 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
   `PlotContext.visible` / `.hidden`, so hiding a series removes it from the plot, the tooltip, and
   the auto y-domain together.
 - Hover-dim stays; `legend={false}` remains the sparkline escape.
+- **Automatic single-series suppression**: a kind that threads its series count into
+  `resolveLegend(config, hover, seriesCount)` (`ChartFrame.tsx`) drops the legend with no consumer
+  opt-out when `seriesCount <= 1` AND `legend` was left `undefined` — an explicit `legend={{}}` (or
+  any other config) still opts back in, and `config === false` still wins outright. A single-entry
+  legend only restates the chart's own title and costs a row for a toggle that can blank the whole
+  plot. A kind wired through `CartesianChart` gets this for free; one composing `ChartFrame`
+  directly without threading `seriesCount` (`DualPanel`) keeps its prior always-shown behaviour.
 
 ## 6. One responsive path
 
