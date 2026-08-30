@@ -4,7 +4,8 @@
  *
  * The mock sidebar has ZERO horizontal rules — separation comes from SPACING only. The one allowed
  * line is the child-list left guide (`--vx-divider`). Never reintroduce brand/section/footer
- * borders.
+ * borders. The column's trailing (right) edge is the `AppShell.Navbar` region seam
+ * (docs/DESIGN-SPEC.md §5) and is not this module's to draw.
  *
  * The active tint and icon-accent color live in the Mantine theme
  * (`NavLink.extend` + `theme/nav-link.module.css`) so they apply to EVERY render path, including a
@@ -113,13 +114,15 @@
 }
 
 /*
- * Brand row — NO border (the mock's brand row has none; the header divider exists only over the
- * content column). Spacing alone (12px bottom padding) separates it from the nav.
+ * Brand row — NO border. The row IS one `appShellHeaderHeight` band (docs/DESIGN-SPEC.md §5's
+ * three top bands), so the brand's centreline meets the breadcrumb's and the aside title's across
+ * the seams.
  */
 .brand {
   justify-content: space-between;
-  padding: var(--vx-space-sidebar-brand-inset-top) var(--vx-space-sidebar-brand-inset-x)
-    var(--vx-space-sidebar-region-gap);
+  padding: 0 var(--vx-space-sidebar-brand-inset-x);
+  min-height: var(--app-shell-header-height);
+  align-items: center;
   flex-shrink: 0;
 }
 
@@ -128,14 +131,15 @@
 }
 
 /*
- * Search slot — fixed row between the brand and the nav scroll region. Horizontal padding aligns
- * the field with the brand lead / nav column; the bottom gap opens the nav region the same way the
- * brand row's own bottom padding does.
+ * Search slot — fixed row between the brand and the nav scroll region, optional (absent, the nav
+ * sits directly under the brand band). Horizontal padding aligns the field with the brand lead /
+ * nav column; `padding-block` below supplies its own air, on top of whatever the brand band's
+ * centred `min-height` already opens above it.
  */
 /* No horizontal padding — the field spans the same width as the nav rows below it (both sit at the
  * `.root` 10px inset), so the search box edge-aligns with the nav column. */
 .searchSlot {
-  padding: 0 0 var(--vx-space-sidebar-region-gap);
+  padding-block: var(--vx-space-sidebar-region-gap);
   flex-shrink: 0;
 }
 
@@ -186,7 +190,8 @@
 }
 
 /* Sections separate by SPACING only — 15px between sections, nothing above the first (the brand
- * row's own bottom padding already opens the region). */
+ * band's centred `min-height` already opens the region's air, and the optional search slot's own
+ * `padding-block` opens more when it renders). */
 .nav > div + div {
   margin-top: var(--vx-space-sidebar-section-gap);
 }
@@ -621,7 +626,7 @@
   }
 
   .root[data-collapsed] .searchSlot {
-    padding: 0 0 var(--vx-space-sidebar-region-gap);
+    padding-block: var(--vx-space-sidebar-region-gap);
     display: flex;
     justify-content: center;
   }

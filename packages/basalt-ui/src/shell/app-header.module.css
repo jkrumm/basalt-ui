@@ -7,9 +7,10 @@
  * folds into `ActionGroup`'s kebab instead of scrolling out of view. */
 
 /*
- * Transparent header (docs/DESIGN-SPEC.md §5): NO bottom rule at all. The header and the page body
- * share the same page background, so a separator only draws a line across an already-continuous
- * surface. The AppShell's own built-in border is disabled too (`withBorder={false}` in index.tsx).
+ * Transparent header (docs/DESIGN-SPEC.md §5): background stays the page body's own. Its bottom
+ * edge is the `AppShell.Header` region seam, drawn by Mantine off `--app-shell-border-color` →
+ * `--vx-divider`, spanning the main column only under `layout="alt"` — never a border in this
+ * module.
  */
 .bar {
   display: flex;

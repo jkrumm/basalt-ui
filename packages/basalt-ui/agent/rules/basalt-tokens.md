@@ -65,7 +65,7 @@ theme; read the numbers, when you genuinely need them, off `tokens/palette.ts`.
 ## Surfaces — one collapsed token set
 
 `VX.surface` is exactly: `bg` · `panel` · `panelHover` · `elevated` · `subtle` · `overlay` ·
-`field` · `border` · `hairline`. Plus `VX.divider` for layout separators, which is NOT a surface.
+`field` · `border` · `hairline`. Plus `VX.divider` — NOT a surface, the ONE seam/line token (every `AppShell` region edge + between-rows rule, ink-/white-alpha, holds under the derive knobs); `hairline` is the card ring, `border` the control/overlay line — neither is ever a seam.
 
 The theme **collapses Mantine's raw ramp steps onto those tokens** (`cssVariablesResolver` + theme
 `styles`), so every Mantine component — AppShell, Table, Input, Divider, Tabs, Popover, Accordion,

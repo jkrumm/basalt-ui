@@ -22,24 +22,22 @@
 }
 
 /*
- * The portalled form. The page background (the same surface the sidebar and the sticky page bar
- * sit on — neither declares one, both inherit the body) plus ONE line on the leading edge: unlike
- * the sidebar, the aside abuts scrolling page content rather than the window, so the edge has
- * something to separate. `--vx-divider` is the sidebar's own line token (its child-list guide), not
- * `--vx-surface-hairline`, which is the card ring.
+ * The portalled form. Paints only the page background (the same surface the sidebar and the sticky
+ * page bar sit on — neither declares one, both inherit the body). The leading edge is the
+ * `AppShell.Aside` region seam (docs/DESIGN-SPEC.md §5) — same token, same pixel, now produced by
+ * the same rule as the other three region edges, so two 1px lines can never sit side by side.
  */
 .panel[data-basalt-page-aside='shell'] {
   flex: 1;
   height: 100%;
   gap: 0;
   background-color: var(--vx-surface-bg);
-  border-left: 1px solid var(--vx-divider);
 }
 
 /*
- * Header row — one `sectionHeaderHeight` band holding the micro-label and the fold toggle. Same
- * treatment as the sidebar's own section labels (`app-sidebar.module.css` `.sectionLabel`,
- * docs/DESIGN-SPEC.md §3), and the same horizontal inset every sidebar region aligns to.
+ * Header row — the title (`.title` below, shared by both forms), plus the fold toggle in the
+ * portalled form only, at `sectionHeaderHeight` (standalone) / the header band (shell, below).
+ * Same horizontal inset every sidebar region aligns to.
  */
 .header {
   display: flex;
@@ -50,17 +48,26 @@
   min-height: var(--vx-space-section-header-height, 2.25rem);
 }
 
+/* The portalled form's band matches the header band exactly (docs/DESIGN-SPEC.md §5's three top
+ * bands), so the aside title's centreline meets the breadcrumb's and the brand's across the seams.
+ * The bottom rule closes the top belt across the panel instead of dead-ending at the aside column
+ * (§8 inversion #12) — it is also what makes the `.body > * + *` comment below ("the header already
+ * bounds it") true in paint. */
 .panel[data-basalt-page-aside='shell'] .header {
   padding-inline: var(--vx-space-row-inset-x);
+  min-height: var(--app-shell-header-height, var(--vx-space-section-header-height, 2.25rem));
+  border-bottom: 1px solid var(--vx-divider);
 }
 
+/* A real title (docs/DESIGN-SPEC.md §5): mirrors `widget-header.module.css` `.heading` and the
+ * breadcrumb's current-page treatment — the three 48px bands each carry one 550-weight head-font
+ * name. */
 .title {
-  font-family: var(--basalt-font-mono);
-  font-size: var(--vx-text-micro);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--vx-faint);
+  font-family: var(--basalt-font-head);
+  font-size: var(--vx-text-md);
+  font-weight: 550;
+  font-stretch: 88%;
+  color: var(--vx-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -81,7 +88,7 @@
   min-height: 0;
   overflow-y: auto;
   padding-inline: var(--vx-space-row-inset-x);
-  padding-bottom: var(--vx-space-stack-md, 0.75rem);
+  padding-block: var(--vx-space-stack-md, 0.75rem);
 }
 
 /*

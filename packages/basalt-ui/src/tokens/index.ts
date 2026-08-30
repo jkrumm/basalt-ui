@@ -573,7 +573,6 @@ function spaceDecls(space: SpaceValues): string[] {
     decl('space-settings-row-inset-y', `${space.step.settingsRowInsetY}px`),
     decl('space-settings-row-gap', `${space.step.settingsRowGap}px`),
     decl('space-mermaid-container-inset', `${space.step.mermaidContainerInset}px`),
-    decl('space-sidebar-brand-inset-top', `${space.step.sidebarBrandInsetTop}px`),
     decl('space-sidebar-brand-inset-x', `${space.step.sidebarBrandInsetX}px`),
     decl('space-sidebar-section-gap', `${space.step.sidebarSectionGap}px`),
     decl('space-sidebar-account-inset-top', `${space.step.sidebarAccountInsetTop}px`),

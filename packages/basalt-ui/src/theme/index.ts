@@ -19,6 +19,7 @@ import {
   Accordion,
   ActionIcon,
   Alert,
+  AppShell,
   Badge,
   Breadcrumbs,
   Button,
@@ -546,6 +547,24 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             fontStretch: '88%',
           },
         },
+      }),
+      // Region seams (docs/DESIGN-SPEC.md §5, §8 #12): the ONE lever for every AppShell edge —
+      // Mantine declares `--app-shell-border-color` on the shell element per scheme, which beats
+      // an inherited `:root` value, so a theme-level `vars` override (merged into the root's
+      // inline style) wins. Sections keep their default `withBorder: true`; the color is this.
+      // `styles` would also land on the same root style attribute, just through Mantine's own
+      // `[key: string]: any` index rather than a typed field.
+      // Cast: `AppShellCssVariables` declares only `--app-shell-transition-duration` /
+      // `-timing-function`, yet Mantine's OWN AppShell.css sets `--app-shell-border-color` on the
+      // same root.
+      AppShell: AppShell.extend({
+        vars: () =>
+          ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) as unknown as {
+            root: Record<
+              '--app-shell-transition-duration' | '--app-shell-transition-timing-function',
+              string | undefined
+            >
+          },
       }),
       // "Ink earns its color" — a nav selection is UI state, not the identity accent on the LABEL.
       // The active item is a SELECTED ROW, not a raised control: the same ink-tint idiom as the
@@ -1315,7 +1334,8 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       '--mantine-color-default-border': 'transparent',
       '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.light})`, // secondary / muted text
       '--mantine-color-text': `var(--vx-ink, ${INK.ink.light})`, // primary body/heading text
-      '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.light})`,
+      // `--app-shell-border-color` is set by `components.AppShell.extend({ vars })` above — this
+      // entry was dead (an element-level declaration always beats an inherited `:root` value).
       // THE strict-surface lever. Mantine components do NOT chain border/surface colors through
       // `--mantine-color-default-*`; each hardcodes a RAW ramp step (`--mantine-color-gray-{2,3,4}`
       // on light) directly — which is why AppShell/Table/Input/Divider/Tabs/Popover/Accordion borders
@@ -1342,7 +1362,7 @@ function buildCssVariablesResolver(data: PaletteData): CSSVariablesResolver {
       '--mantine-color-default-border': 'transparent',
       '--mantine-color-dimmed': `var(--vx-neutral, ${NEUTRAL.neutral.dark})`,
       '--mantine-color-text': `var(--vx-ink, ${INK.ink.dark})`,
-      '--app-shell-border-color': `var(--vx-surface-border, ${SURFACE.border.dark})`,
+      // See the light block above — `--app-shell-border-color` is set by `AppShell.extend` now.
       // Dark components read `--mantine-color-dark-4` (border) raw. `buildDarkTuple` already sets
       // dark-4, but to a slightly lighter step than the hairline token, so layout borders read
       // marginally heavier than card borders. Pin dark-4 to the SAME "line" token for parity.

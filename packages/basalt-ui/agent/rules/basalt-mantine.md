@@ -83,8 +83,11 @@ bugs and are not: the active indicator is a **neutral** ink tint behind the ICON
 identity blue, never a full-tab fill — the desktop sidebar's accent-icon rule does not apply here),
 and the bar carries **no** `env(safe-area-inset-bottom)` padding, because Mantine's own
 `AppShell.Footer` rule already grows the box by the inset. Search lives in the SIDEBAR, not the
-header; the header carries no bottom rule. "Zero horizontal rules" is not true of the mobile bar,
-which has a top border by design.
+header. Region edges come from `BasaltShell` itself — Mantine's `[data-with-border]`, coloured by
+`--app-shell-border-color` → `--vx-divider` through the theme — never draw a border on a shell
+region, a page-bar row or an aside panel, never pass `withBorder` to an `AppShell` section, and
+never set `--app-shell-border-color` yourself. `--vx-divider` is the only layout-line token; the
+sidebar's own internals still carry zero horizontal rules.
 
 ## Surfaces, depth and shape
 

@@ -306,6 +306,17 @@ describe('doctrine inversion #1 reaches every default-variant CONTROL, not just 
     })
   }
 
+  for (const scheme of SCHEMES) {
+    test(`--app-shell-border-color is not set by the resolver (${scheme})`, () => {
+      // This entry was dead: an element-level declaration in Mantine's own AppShell.css always
+      // beats an inherited `:root` value, so the resolver could never win it. The live lever is
+      // `components.AppShell.extend({ vars })` (src/theme/index.ts), which merges into the root's
+      // inline style and is the one placement that does win.
+      const vars = cssVariablesResolver(theme)[scheme]
+      expect(vars['--app-shell-border-color']).toBeUndefined()
+    })
+  }
+
   test('a default-variant control resolves through the transparent border, not a hairline', () => {
     // The variant resolver itself doesn't special-case `default` (see the `basaltVariantColorResolver`
     // early return above) — it hands off to `defaultVariantColorsResolver`, which is what actually
