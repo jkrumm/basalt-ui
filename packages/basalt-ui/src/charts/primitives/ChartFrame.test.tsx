@@ -16,7 +16,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { ChartFrame } from './ChartFrame'
+import { ChartFrame, resolveLegend } from './ChartFrame'
 import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
 
@@ -138,5 +138,34 @@ describe('legend toggling', () => {
       <ChartFrame series={twoSeries}>{({ hidden }) => <svg>size:{hidden.size}</svg>}</ChartFrame>,
     )
     expect(markup).toContain('size:0')
+  })
+})
+
+describe('resolveLegend — a single-entry legend is noise, suppressed automatically', () => {
+  test('one series, no explicit config: suppressed', () => {
+    expect(resolveLegend(undefined, undefined, 1)).toBe(false)
+  })
+
+  test('one series, an explicit `{}` config: the opt-in wins, legend still resolves', () => {
+    expect(resolveLegend({}, undefined, 1)).not.toBe(false)
+  })
+
+  test('one series, an explicit placement: the opt-in wins', () => {
+    const resolved = resolveLegend({ placement: 'right' }, undefined, 1)
+    expect(resolved).not.toBe(false)
+    expect(resolved && resolved.placement).toBe('right')
+  })
+
+  test('two series, no explicit config: resolves normally, not suppressed', () => {
+    expect(resolveLegend(undefined, undefined, 2)).not.toBe(false)
+  })
+
+  test('legend: false always wins, regardless of series count', () => {
+    expect(resolveLegend(false, undefined, 1)).toBe(false)
+    expect(resolveLegend(false, undefined, 2)).toBe(false)
+  })
+
+  test('no seriesCount passed (a kind composing ChartFrame directly): unaffected, resolves normally', () => {
+    expect(resolveLegend(undefined)).not.toBe(false)
   })
 })
