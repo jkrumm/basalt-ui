@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
+import { probeAxisLabels } from '../layout/auto-margin'
 import type { ChartSeries } from '../series'
 import { CartesianChart, resolveAxisDomain } from './CartesianChart'
 
@@ -146,6 +147,46 @@ describe('resolveAxisDomain — degenerate input', () => {
   })
 })
 
+describe("resolveAxisDomain — scale: 'log'", () => {
+  const wideRange: Row[] = [
+    { date: '2026-08-01', a: 16, b: 0 },
+    { date: '2026-08-02', a: 80000, b: 0 },
+  ]
+
+  test('the floor is the smallest positive visible value, padded down — never <= 0', () => {
+    const [min, max] = resolveAxisDomain({ scale: 'log', autoMinCeil: 0 }, wideRange, [
+      seriesFor('a'),
+    ])
+    expect(min).toBeGreaterThan(0)
+    expect(max).toBeGreaterThan(min)
+  })
+
+  test('autoMinCeil is ignored on a log axis', () => {
+    const withCeil = resolveAxisDomain({ scale: 'log', autoMinCeil: 0 }, wideRange, [
+      seriesFor('a'),
+    ])
+    const withoutCeil = resolveAxisDomain({ scale: 'log' }, wideRange, [seriesFor('a')])
+    expect(withCeil).toEqual(withoutCeil)
+  })
+
+  test('a zero (or negative) value drops out of the domain instead of pulling the floor to it', () => {
+    const withZero: ChartSeries<Row>[] = [seriesFor('a'), seriesFor('b')]
+    const [min] = resolveAxisDomain({ scale: 'log' }, wideRange, withZero)
+    expect(min).toBeGreaterThan(0)
+  })
+
+  test('empty data falls back to a positive unit-decade domain', () => {
+    expect(resolveAxisDomain({ scale: 'log' }, [], [seriesFor('a')])).toEqual([1, 10])
+  })
+
+  test('a flat positive series pads symmetrically around its value', () => {
+    const flat: ChartSeries<Row>[] = [{ ...seriesFor('a'), getValue: () => 100 }]
+    const [min, max] = resolveAxisDomain({ scale: 'log', autoPad: 1.1 }, rows, flat)
+    expect(min).toBeCloseTo(100 / 1.1, 10)
+    expect(max).toBeCloseTo(100 * 1.1, 10)
+  })
+})
+
 describe('AxisConfig.nice — threaded to BOTH the probe and the real scale', () => {
   // A fixed, deliberately non-round domain: d3's `.ticks()` never produces a tick past the raw
   // domain max (95.7) without `nice`, but WITH `nice` the scale first rounds its domain outward
@@ -170,6 +211,148 @@ describe('AxisConfig.nice — threaded to BOTH the probe and the real scale', ()
 
   test('nice: true rounds the scale outward — a tick beyond the raw domain max appears', () => {
     expect(renderChart(true)).toContain('>100<')
+  })
+})
+
+describe("CartesianChart — y.scale: 'log' paints 1-2-5 mantissa ticks", () => {
+  const priceRows: Row[] = [
+    { date: '2026-08-01', a: 16, b: 0 },
+    { date: '2026-08-02', a: 80000, b: 0 },
+  ]
+
+  // Matches the class token, not a prefix (visx emits `class="visx-group visx-axis
+  // visx-axis-left"`, so a `class="visx-axis-left...` prefix regex never matches at all — the
+  // regression that let both tests below silently scan the whole markup, x-axis labels included).
+  // Non-greedy up to the lookahead for the NEXT top-level axis group (`visx-axis-right` or
+  // `visx-axis-bottom`, always present) — not `</g></g>`, which doesn't appear here since the
+  // axis's domain line follows its ticks rather than closing the group immediately.
+  const leftAxisText = (markup: string): string =>
+    (
+      /<g class="visx-group visx-axis visx-axis-left"[\s\S]*?(?=<g class="visx-group visx-axis )/.exec(
+        markup,
+      )?.[0] ?? markup
+    ).replace(/<[^>]+>/g, ' ')
+
+  test('every painted left-axis tick has a mantissa in {1, 2, 5}', () => {
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={priceRows}
+        chartId="log-axis"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        y={{ scale: 'log', format: (v) => `$${v}` }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    const text = leftAxisText(markup)
+    const values = [...text.matchAll(/\$(\d+)/g)].map((m) => Number(m[1]))
+    expect(values.length).toBeGreaterThan(0)
+    for (const v of values) {
+      const mantissa = v / 10 ** Math.floor(Math.log10(v))
+      expect([1, 2, 5]).toContain(Math.round(mantissa * 100) / 100)
+    }
+  })
+
+  test('never paints a non-positive tick, even with a series crossing zero', () => {
+    const crossing: Row[] = [
+      { date: '2026-08-01', a: -5, b: 0 },
+      { date: '2026-08-02', a: 20, b: 0 },
+      { date: '2026-08-03', a: 5000, b: 0 },
+    ]
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={crossing}
+        chartId="log-axis-crossing"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        y={{ scale: 'log', format: (v) => String(v) }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    const text = leftAxisText(markup)
+    const values = [...text.matchAll(/(-?\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]))
+    expect(values.length).toBeGreaterThan(0)
+    for (const v of values) expect(v).toBeGreaterThan(0)
+  })
+
+  // The boundary the two tests above never touch: MEASURED (`probeAxisLabels`, what `autoMargin`
+  // sizes the gutter from) and PAINTED (the real scale's `.ticks` override) have to read off the
+  // exact same list. A mutant that drops the `nice` branch from the painted side alone (so the
+  // axis paints from the raw domain while the margin is still measured from the niced one) leaves
+  // every other test in this describe block green — this is the one that catches it.
+  test('painted left-axis labels equal what probeAxisLabels measures, with nice: true threaded through', () => {
+    const domain: [number, number] = [16, 80000]
+    const format = (v: number) => `$${v}`
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={priceRows}
+        chartId="log-axis-boundary"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        y={{ scale: 'log', nice: true, domain, ticks: 5, format }}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    const painted = leftAxisText(markup).trim().split(/\s+/)
+    const measured = probeAxisLabels({
+      domain,
+      ticks: 5,
+      scale: 'log',
+      nice: true,
+      format,
+    }).labels
+    expect(painted).toEqual(measured)
+  })
+})
+
+describe('CartesianChart — a single visible series with no explicit legend config renders no legend', () => {
+  test('one series, legend prop omitted: no legend button in the markup', () => {
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={rows}
+        chartId="single-series-no-legend"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    expect(markup).not.toContain('<button')
+  })
+
+  test('one series, an explicit legend config: the opt-in wins, legend still renders', () => {
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={rows}
+        chartId="single-series-explicit-legend"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={{}}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    expect(markup).toContain('<button')
+  })
+
+  test('two series, legend prop omitted: legend still renders — the rule is single-series only', () => {
+    const markup = renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={rows}
+        chartId="two-series-default-legend"
+        getX={(d) => d.date}
+        series={both}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+    expect(markup).toContain('<button')
   })
 })
 
@@ -587,11 +770,14 @@ describe('CartesianChart — xTickValues', () => {
     b: i,
   }))
 
+  // Same class-token fix as `leftAxisText` above (`visx-axis-bottom` is the third class token, not
+  // a prefix) — bounded by the `<rect>` HoverOverlay always renders immediately after the bottom
+  // axis, since no further axis group follows it.
   const axisText = (markup: string): string =>
-    (/<g class="visx-axis-bottom[\s\S]*?<\/g><\/g>/.exec(markup)?.[0] ?? markup).replace(
-      /<[^>]+>/g,
-      ' ',
-    )
+    (
+      /<g class="visx-group visx-axis visx-axis-bottom"[\s\S]*?(?=<rect)/.exec(markup)?.[0] ??
+      markup
+    ).replace(/<[^>]+>/g, ' ')
 
   const renderWith = (props: Partial<Parameters<typeof CartesianChart<Row>>[0]>): string =>
     renderToStaticMarkup(

@@ -39,6 +39,55 @@ describe('MultiLine — series.strokeOpacity dims the plotted stroke', () => {
   })
 })
 
+describe('MultiLine — a log y-axis never emits a NaN path or marker for a non-positive value', () => {
+  const crossing: Row[] = [
+    { date: '2026-08-01', v: -5 },
+    { date: '2026-08-02', v: 20 },
+    { date: '2026-08-03', v: 5000 },
+  ]
+
+  test('the line path carries no NaN command — the point drops out as a gap, not a broken polyline', () => {
+    const series: ChartSeries<Row>[] = [
+      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+    ]
+    const html = renderToStaticMarkup(
+      <MultiLine<Row>
+        data={crossing}
+        chartId="ml-log-nan-line"
+        getX={(d) => d.date}
+        series={series}
+        y={{ scale: 'log' }}
+      />,
+    )
+    expect(html).not.toContain('NaN')
+  })
+
+  test('a marker at the non-positive point is skipped rather than painted at cy="NaN"', () => {
+    const series: ChartSeries<Row>[] = [
+      {
+        key: 'v',
+        label: 'V',
+        color: '#111',
+        mark: 'line',
+        getValue: (d) => d.v,
+        getMarker: () => ({}),
+      },
+    ]
+    const html = renderToStaticMarkup(
+      <MultiLine<Row>
+        data={crossing}
+        chartId="ml-log-nan-marker"
+        getX={(d) => d.date}
+        series={series}
+        y={{ scale: 'log' }}
+      />,
+    )
+    expect(html).not.toContain('NaN')
+    // The two positive points (20, 5000) still get their marker circles.
+    expect((html.match(/<circle/g) ?? []).length).toBe(2)
+  })
+})
+
 describe('MultiLine — formatX', () => {
   test('a custom formatX renders on the bottom axis instead of the default DD.MM', () => {
     const series: ChartSeries<Row>[] = [

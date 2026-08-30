@@ -213,6 +213,9 @@ function MultiLineMarks<T>({
           if (m === null) continue
           const cx = xScale(getX(p.__d)) ?? 0
           const cy = scale(p.__y)
+          // A non-positive value on a log axis (or any input a scale can't place) maps to NaN —
+          // skip the marker rather than paint one at `cy="NaN"`.
+          if (!Number.isFinite(cy)) continue
           const color = m.color ?? s.color
           const r = m.r ?? (markerShape === 'star' ? STAR_R : VX.dotR)
           const ring = m.ring ?? true
@@ -256,6 +259,10 @@ function MultiLineMarks<T>({
             data={valid}
             x={(p) => xScale(getX(p.__d)) ?? 0}
             y={(p) => scale(p.__y)}
+            // A non-positive value on a log axis maps to NaN via `scale(p.__y)` — `defined` skips
+            // it as a gap (splitting the line there) instead of emitting a NaN path command, which
+            // per SVG error handling blanks the ENTIRE polyline from that point on.
+            defined={(p) => Number.isFinite(scale(p.__y))}
             stroke={s.color}
             strokeWidth={s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
             strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
