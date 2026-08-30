@@ -18,23 +18,24 @@ a capability landed**, which does not rot._
 Everything below this line is built. Nothing in this document is a plan — but the last row may not
 be released yet; the version column says when a capability landed, not what npm serves.
 
-| Capability                                                                                               | Shipped                        |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 1.0 Mantine pivot, 1.x line live                                                                         | 1.0.0                          |
-| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`)   | 1.2.0                          |
-| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                   | 1.3.0 (kebab-case names 1.5.0) |
-| `mantine-shade-index` promoted to `error`                                                                | 1.11.0                         |
-| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                    | 1.15.0                         |
-| Chart-API consumer rounds one / two / three                                                              | 1.16.0 / 1.17.0 / 1.18.0       |
-| Native mobile nav + `defineNav`                                                                          | 1.19.0                         |
-| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                    | 1.20.0                         |
-| Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                        | 1.21.0                         |
-| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                                 | 1.22.0                         |
-| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                   | 1.23.0                         |
-| Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                        | 1.23.1                         |
-| Round-9 batch — `QueryState`, table body chrome, four false greens                                       | 1.24.0                         |
-| Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)               | 1.25.0                         |
-| Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, ten guards, 13→6 rules | 1.26.0                         |
+| Capability                                                                                                                                                                                                          | Shipped                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1.0 Mantine pivot, 1.x line live                                                                                                                                                                                    | 1.0.0                          |
+| Theme config closed — all four `createBasaltTheme` dimensions (`derive`, `fonts`, `radius`, `density`)                                                                                                              | 1.2.0                          |
+| Framework-free tokens — `basalt-ui tokens:css`, `basalt-ui/tokens.css`, `only: 'core'`                                                                                                                              | 1.3.0 (kebab-case names 1.5.0) |
+| `mantine-shade-index` promoted to `error`                                                                                                                                                                           | 1.11.0                         |
+| Chart-layer rebuild — `CartesianChart` as the one mandatory primitive                                                                                                                                               | 1.15.0                         |
+| Chart-API consumer rounds one / two / three                                                                                                                                                                         | 1.16.0 / 1.17.0 / 1.18.0       |
+| Native mobile nav + `defineNav`                                                                                                                                                                                     | 1.19.0                         |
+| Round-4 batch — usable escape hatch, guard holes closed, toolchain false-greens fixed                                                                                                                               | 1.20.0                         |
+| Round-5 batch — `theme-allow` grammar, `linkSearch`, waiver audit                                                                                                                                                   | 1.21.0                         |
+| Round-6 batch — `sync` refuses, the audit's oxlint half, `lefthook dump`                                                                                                                                            | 1.22.0                         |
+| Round-7 batch — two banded chart kinds, an x-tick seam, CLI resolution                                                                                                                                              | 1.23.0                         |
+| Round-8 batch — the band-state throw, the tag-provenance gate, a CLI that answers                                                                                                                                   | 1.23.1                         |
+| Round-9 batch — `QueryState`, table body chrome, four false greens                                                                                                                                                  | 1.24.0                         |
+| Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)                                                                                                                          | 1.25.0                         |
+| Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, ten guards, 13→6 rules                                                                                                            | 1.26.0                         |
+| Region seams + the `/cbbi` chrome round — four `--vx-divider` seams via `AppShell.extend({ vars })`, three 48px bands, two-line phone row 2, delta polarity, `AxisConfig.scale: 'log'`, `WidgetHeader tier="group"` | Unreleased (2026-08-30)        |
 
 Adopted downstream: seven consumer repos, on 1.23.1 as of the round-9 sweep (below). Round-10 and
 round-11 consumer sweeps ran against 1.24.0/1.25.0 (`.claude/feedback/round-10/`,

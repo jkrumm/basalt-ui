@@ -21,7 +21,7 @@ it — `advisory` means the generated coverage header lists it under `not guarde
 | C4  | Every field declares its lanes once at definition — `{ url, persist }` — and resolves URL ⊳ localStorage ⊳ fallback, uniformly for every field kind.                                                                                                                                                                                 | `createSearchStore` types + `search-store.test.ts`                                                                                                 |
 | C5  | A home sets the size tier (`ctl` = 30px); an element inside a home slot carries no `size`, `w`, `fullWidth`, `visibleFrom` or `hiddenFrom`.                                                                                                                                                                                          | `basalt/control-size-literal`                                                                                                                      |
 | C6  | A page has one `PageBar`; its `actions` hold ≤5 entries and exactly one `primary`; a `Section` holds ≤3 actions.                                                                                                                                                                                                                     | `basalt/page-bar-budget` + `ActionGroupProps.primary` singular                                                                                     |
-| C7  | A home never scrolls horizontally and never wraps; overflow folds into a `More` menu (actions) or a `Filters (n)` sheet (filters), computed by basalt from typed data.                                                                                                                                                               | `raw-scroll-container` (widened) + typed `BarAction[]`                                                                                             |
+| C7  | A home never scrolls horizontally and never wraps; overflow folds into a `More` menu (actions) or a `Filters (n)` sheet (filters), computed by basalt from typed data (a declared second LINE below `sm` is a control's phone form — C9 — not a wrap; row 2 of `PageBar` is the one home that has one).                              | `raw-scroll-container` (widened) + typed `BarAction[]`                                                                                             |
 | C8  | Every section, card or table title is a `WidgetHeader`; the page title is the breadcrumb (`staticData.title`) or `PageBar.title` in shell-less apps; an in-body `<Title order={1\|2}>` is an error.                                                                                                                                  | `basalt/in-body-page-title` (order-1/2 branch); hand-rolled section headings are `advisory` + `shadow-basalt-export` on the name `Section`         |
 | C9  | A responsive swap belongs to the control; rendering the same control twice under `visibleFrom`/`hiddenFrom` is an error.                                                                                                                                                                                                             | `basalt/responsive-twin` (deep search for the same control tag in both halves)                                                                     |
 | C10 | A nav link carrying a store field passes `store.linkSearch` by reference; a `search:` object literal inside `defineNav`/`navGroup` is an error; `useSearch({ from: '<literal>' })` is an error.                                                                                                                                      | `basalt/search-literal-link`, `basalt/use-search-from-literal`                                                                                     |
@@ -69,7 +69,7 @@ export type PageBarProps = {
   filters?: ReactNode // <FilterSet> descendants only (C1)
   filtersEnd?: BarAction[] // "Manage metrics"
   tabs?: ReactNode // one <ViewTabs>
-  className?: string // on the bar ROOT (both forms) — bleed across a container gutter, add a hairline
+  className?: string // on the bar ROOT (both forms) — bleed across a container gutter
 }
 export function PageBar(props: PageBarProps): ReactNode
 ```
@@ -85,8 +85,9 @@ the always-reserved 52px row (`palette.ts:586`, gap #5) are deleted, and no head
 state. **Without a shell** the bar renders both rows in-flow, sticky at `top: 0`, with `title` +
 `icon` leading row 1. The height lands in the LAYOUT phase (`useLayoutEffect`, plain ref), so a cold
 `#anchor` load clears the bar rather than scrolling under it. Each root carries
-`data-basalt-page-bar` (`"standalone"` / `"shell"`) and `className`; scope container-gutter bleed and
-the hairline through the class, not through a global attribute selector.
+`data-basalt-page-bar` (`"standalone"` / `"shell"`) and `className`; scope container-gutter bleed
+through the class, not through a global attribute selector — a seam under the bar is not the
+consumer's to draw (`docs/DESIGN-SPEC.md` §5 "Region seams").
 
 Desktop: row 1 = lead · custom chips · ≤3 secondaries as `default` buttons + `More` (`kind: 'menu'`
 and any secondary past three) · `sync` · `primary` filled, RIGHTMOST of the page group · then the shell
@@ -96,19 +97,21 @@ menu pill.
 
 Mobile: row 1 = breadcrumb · `primary` as an icon button · kebab `Menu` holding every
 `mobile: 'more'` action and the `globalActions` marked `more` · ≤2 `globalActions` marked `bar`.
-Row 2 = `ViewTabs` full-width (≤3 options) · the first `FilterSet` pill inline · one `Filters (n)`
-pill (funnel glyph, count only when n > 0) opening a bottom `Drawer` where every filter renders as a
-LIST — 44px rows, label left, check glyph right, hairline between rows only, a mono micro group label
-per filter, `Reset all` in the sheet header, the custom range picker collapsed behind a
-"Custom range…" row; never a `SegmentedControl` in the sheet (apply immediately,
-`filtersEnd` folded into the row-1 kebab so a header has exactly one kebab — row 2 shows it from `sm` up;
-`Reset all` footer); `n` = `store.useActiveCount()`. Filter-less pages render no row 2 (C14).
+Row 2 is two declared lines: line 1 = `ViewTabs` full-width (a `Select` past three options); line 2
+= the first `FilterSet` pill inline · one `Filters (n)` pill (funnel glyph, count only when n > 0)
+opening a bottom `Drawer` where every filter renders as a LIST — 44px rows, label left, check glyph
+right, hairline between rows only, a mono micro group label per filter, `Reset all` in the sheet
+header, the custom range picker collapsed behind a "Custom range…" row; never a `SegmentedControl`
+in the sheet (apply immediately, `filtersEnd` folded into the row-1 kebab so a header has exactly
+one kebab — row 2 shows it from `sm` up; `Reset all` footer) · the aside's `Panel` pill when a
+`PageAside` claims it (`docs/ASIDE-SPEC.md` §3); `n` = `store.useActiveCount()`. A line exists only
+when its content is mounted (C14) — filter-less, tab-less pages render no row 2 at all.
 
 ### 2.2 `WidgetHeader` — tiers 2 and 3 _(new, `src/widget-header/`, Mantine-free)_
 
 ```ts
 export type WidgetHeaderProps = {
-  tier: 'section' | 'widget' // section: 30px ctl, h2 · widget: 24px icon tier, h3, display-only
+  tier: 'section' | 'widget' | 'group' // section: 30px ctl, h2 · widget: 24px icon tier, h3, display-only · group: aside/inspector label, h3, mono micro uppercase faint, quietest rank
   title: string
   icon?: ReactNode
   subtitle?: string
@@ -147,6 +150,17 @@ page, the card is `ChartCard`/`StatCard`.
 Mobile: `tier: 'section'` keeps title · count · one inline action, the rest in a kebab; `tabs`
 past 3 options become a `Select`. `tier: 'widget'` keeps value + delta wrapping under the title,
 sparkline `right` drops to `bleed`, one `⋯` at 30px with a 36px hit area.
+
+| Tier      | Component                     | Heading | Style                                                      | Row height            | Icon |
+| --------- | ----------------------------- | ------- | ---------------------------------------------------------- | --------------------- | ---- |
+| `section` | `WidgetHeader tier="section"` | `h2`    | head-font 88%/550, ink                                     | `sectionHeaderHeight` | 16px |
+| `widget`  | `WidgetHeader tier="widget"`  | `h3`    | head-font, display-only, icon-tier                         | `widgetHeaderHeight`  | 14px |
+| `group`   | `WidgetHeader tier="group"`   | `h3`    | mono micro uppercase faint — the quietest rank on the page | `widgetHeaderHeight`  | 14px |
+
+`Section` resolves `group` under any NON-PILL filter surface — `panel` (inside a `PageAside`) or
+`sheet` (the aside's mobile projection), read via `useFilterSurface() !== 'pill'` — and `section`
+everywhere else, no call-site prop. An aside never hosts a `section`-tier heading; a group-tier body
+has zero gap because its `PanelRow`s own their own inset and hairline.
 
 ### 2.3 Sidebar blocks _(shell)_
 

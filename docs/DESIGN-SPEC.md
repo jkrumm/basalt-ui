@@ -34,7 +34,7 @@ carry the character.
 | panel-hover                                                                           | `#fafafa`                                            | `color-mix(in srgb, #3f3f46 50%, #27272a)` (#333338) |
 | line (strong border)                                                                  | `color-mix(in srgb, #e4e4e7 50%, #d4d4d8)` (#dcdce0) | `#3f3f46`                                            |
 | hairline (card ring)                                                                  | `#e5e5e5`                                            | `color-mix(in srgb, #52525c 50%, #3f3f46)` (#494951) |
-| divider (layout separators)                                                           | `color-mix(in srgb, #e5e5e5 65%, transparent)`       | `color-mix(in srgb, #ffffff 6%, transparent)`        |
+| divider (the seam / between-rows line)                                                | `rgba(<derived ink>, 0.09)`                          | `rgba(255, 255, 255, 0.08)`                          |
 | ink (primary text)                                                                    | `#262626`                                            | `#e5e5e5`                                            |
 | ink-2 (emphasis body)                                                                 | `#404040`                                            | `color-mix(in srgb, #e5e5e5 50%, #d4d4d4)` (#dddddd) |
 | muted (secondary text)                                                                | `#525252`                                            | `#d4d4d4`                                            |
@@ -47,6 +47,11 @@ carry the character.
 | status-success                                                                        | `#2f7a4f`                                            | `#56c07a`                                            |
 | status-warning                                                                        | `#b5750f`                                            | `#e0a83a`                                            |
 | status-danger (derived, same tonality)                                                | `#b53f3f`                                            | `#e0685f`                                            |
+
+**Divider is a relative alpha over the derived ink (light) / white (dark), not a fixed hex** — the
+same law `NEUTRAL.grid` uses, so it survives every derive knob and neutral seed instead of flipping
+polarity on a dark page (`tokens/palette.ts`'s `SURFACE.divider`, `divider-contrast.test.ts` pins the
+floor).
 
 **The accent has two roles, and they are different colors.** As **ink** it is read against the page,
 so it inverts across schemes (light on dark, deep on light). As a **surface** it carries a label, so
@@ -281,19 +286,47 @@ dead code against the `!important` floor.
   a flat Button becomes the only flat control in the row — most visibly next to a `size="md"`
   TextInput, pinned to the identical height by `--vx-space-control-height`.
 
-- **Sidebar**: transparent (page bg, no panel, no border), ~216px. Section headers are
-  micro-labels. Active item = ink-9% tint (NO panel fill, NO shadow — a selected row, not a raised
-  control) + **accent-colored icon** + weight 600 ink text, hovering to ink-13%;
-  inactive = muted text, faint icon; hover = ink-6% tint. Child items indent with a 1px
-  `divider` left border; active child = accent text, weight 600. Count badges: mono micro (11px),
-  ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (15px semibold) +
-  mono micro (11px) uppercase faint meta line.
-- **Header**: transparent, no bottom rule — it shares the page background with the body, so a
-  separator would only draw a line across a continuous surface. Breadcrumb 13.5px: parents faint, separator
+- **Sidebar**: transparent (page bg, no panel); no internal rules; its trailing edge is the shell's
+  region seam (below). The brand row is an `appShellHeaderHeight` band, centred with the header,
+  ~216px wide. Section headers are micro-labels. Active item = ink-9% tint (NO panel fill, NO
+  shadow — a selected row, not a raised control) + **accent-colored icon** + weight 600 ink text,
+  hovering to ink-13%; inactive = muted text, faint icon; hover = ink-6% tint. Child items indent
+  with a 1px `divider` left border; active child = accent text, weight 600. Count badges: mono
+  micro (11px), ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (15px
+  semibold) + mono micro (11px) uppercase faint meta line.
+- **Header**: transparent; its bottom edge is the region seam, spanning the main column only
+  (`layout="alt"`) — the body scrolls under it, so the surfaces are not continuous. Inset `sm`, the
+  same as `AppShell padding`, so the breadcrumb's left edge and the global actions' right edge sit
+  on the card column's edges. Breadcrumb 13.5px: parents faint, separator
   line-colored, current page in head font ~14.5px/550. The search trigger moved to the sidebar
   (`SidebarSearch`, below the brand) — it is not header chrome. The header's own right side is the
   page-actions slot and the global-actions slot; any control dropped there (icon button, segmented
   range) shares the header's depth tokens (`shadow-raised` for the control, never `shadow-card`).
+- **Region seams** (2026-08-30): every `AppShell` region ends in a 1px `--vx-divider` line on its
+  Main-facing edge — sidebar\|main (full height under `layout="alt"`, so it owns the top-left corner
+  and the header line starts at it), header\|main (main column only), main\|aside (full height,
+  absent when unclaimed), main\|mobile-nav (< sm). Mantine draws all four through its own
+  `[data-with-border]` rules; the colour is ONE theme var,
+  `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`.
+  No shell module declares a region edge, no section ever takes `withBorder`, **except the aside
+  itself** — `AppShell.Aside` takes `withBorder={aside.claimed}` (`shell/index.tsx`), because a
+  collapsed aside is zero-wide and must not draw the seam it has no content to bound; the claim
+  gates the border the same way it gates the width. A consumer never sets either. Chrome INSIDE a
+  region stays line-free: sidebar brand/sections/footer, card and section headers — the one
+  exception is the aside's own header, which carries `border-bottom: 1px solid --vx-divider`
+  (`shell/page-aside.module.css`) so the 48px top belt closes across the aside the same way the
+  header and sidebar-brand bands do, even though the aside's `AppShell.Aside` box itself stays
+  line-free above that header. Between-rows rules (aside groups, panel rows, settings rows)
+  keep `--vx-divider` and drop their last line. `--vx-divider` is the only layout-line token — a
+  relative ink-alpha on light and white-alpha on dark, so the seam holds ≥1.15:1 over page and panel
+  under every derive knob and neutral seed (test-pinned). `--vx-surface-hairline` is the card ring
+  only; `--vx-surface-border` is the control/overlay line and the chart axis, never a seam. The
+  three top bands — sidebar brand row, header, aside header — are one `appShellHeaderHeight` band,
+  each carrying one 550-weight head-font name (brand, current crumb, aside title), so their
+  centrelines meet across the seams; header and cards share the `sm` inset. Sticky page-bar row 2
+  carries no line at rest; whether it gets one is decided from screenshots, not doctrine — if it
+  lands it is inset to the content column, `--vx-divider`, and ledgered in `divider-law.test.ts` as
+  `region-boundary`, never a JS stuck-state.
 - **Segmented control**: track = ink-6% tint, radius 7, 2px padding, 2px gap; active segment =
   panel bg + `shadow-ctrl`, radius 5, ink text weight 600; inactive = muted, transparent. Numeric
   segment labels (1D/7D/30D) are mono `VX.text.xs` (12.5px) via a bare `data-numeric` attribute on
@@ -303,7 +336,11 @@ dead code against the `!important` floor.
   AND on hover. Button's `subtle` behaves identically — neither takes depth in either state.
 - **Delta/status badge**: mono 12.5px weight 600, status-color text on status-13% tint, radius 6,
   2px 7px padding, optional ▲/▼ glyph at 9px, optional comparison-period suffix (`MoM`/`WoW`/`YTD`)
-  in a dimmer shade of the same tone directly after the value.
+  in a dimmer shade of the same tone directly after the value. Tone is polarity-resolved, not
+  sign-resolved: `'up-good'` (default) / `'up-bad'` / `'neutral'`, the prop spelled `polarity` on
+  `DeltaBadge` itself and `deltaPolarity` on the three composers that forward it —
+  `WidgetHeader`, `StatCard`, `ChartCard`; the ▲/▼ glyph is direction and never changes with
+  polarity; zero is always faint.
 - **Stat card**: card-radius panel, spacing xs/sm inset, mono xs uppercase label + mono ~24px hero
   numeral + delta badge; optional sparkline runs full-bleed to the card's L/R/bottom edges (card
   clips to the corner radius; the shadow ring is unaffected).
@@ -391,7 +428,9 @@ the discipline is unchanged even though the hue is louder.
 ## 8. Doctrine inversions (this spec supersedes)
 
 Older comments/docs in the codebase state doctrine this redesign **replaces** — update them where
-encountered; never "correct" code back toward them:
+encountered; never "correct" code back toward them. `app-header.module.css`, `app-sidebar.module.css`
+and `docs/MANTINE-THEMING.md` no longer assert the pre-#12 borderless-header claim inversion #12
+struck.
 
 1. ~~"Depth = surface change + 1px hairline, NEVER a drop shadow"~~ → depth = a whisper shadow with
    a 1px ring baked in: `shadow-card` for panels, `shadow-raised` for controls. Borders-as-borders
@@ -418,3 +457,9 @@ encountered; never "correct" code back toward them:
     contrast. The label is a token (`--vx-on-*`), resolved in CSS, per scheme.
 11. ~~Each Mantine family's fill is just its shade 6~~ → every fill is placed in the shared
     **fill band** (§2), so a white label always works. Hue varies; luminance does not.
+12. ~~"Header: transparent, no bottom border; Sidebar: no border — a line would cross a continuous
+    surface"~~ → the surfaces are not continuous: one is fixed, the other scrolls under it. A LINE
+    marks a SEAM between two surfaces that move independently; a RING marks an OBJECT that can be
+    picked up whole (`shadow-card`); a CONTROL edge is transparent by law. A surface gets exactly
+    one of the three, never two, and a chrome line is always directional (`border-<side>`) — a
+    closed rectangle is a card.
