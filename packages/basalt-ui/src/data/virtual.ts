@@ -19,4 +19,4 @@
 
 // ── BasaltVirtualList ─────────────────────────────────────────────────────────
 export { BasaltVirtualList } from './virtual-list'
-export type { BasaltVirtualListProps } from './virtual-list'
+export type { BasaltVirtualListHandle, BasaltVirtualListProps } from './virtual-list'

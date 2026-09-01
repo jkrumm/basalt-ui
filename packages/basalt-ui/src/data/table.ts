@@ -24,6 +24,8 @@ export { BasaltDataTable } from './data-table'
 export type {
   BasaltDataTableProps,
   DataTableAlign,
+  DataTableColumnId,
+  DataTableColumnPinning,
   DataTableFacet,
   DataTableFacetOption,
 } from './data-table'
