@@ -28,6 +28,8 @@ export type StackedAreaProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
+  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -44,8 +46,25 @@ export type StackedAreaProps<T> = {
 }
 
 /**
+ * A stack is only as dense as its sparsest band. A band's value is only meaningful as part of a
+ * cumulative total, so a row where ANY visible band reports `null` has no total — every band gaps
+ * across it. Reading the missing band as `0` instead would be a positive claim the quantity was
+ * measured at zero, which is exactly the absence-as-data lie `ChartSeries.getValue`'s null
+ * contract exists to prevent.
+ */
+function rowIsDense<T>(d: T, bands: readonly ChartSeries<T>[]): boolean {
+  return bands.every((s) => s.getValue(d) !== null)
+}
+
+/**
  * Multi-series stacked-area chart with an optional derived legend (default on) and legend-hover
  * dimming. Each band's fillOpacity is dimmed when a different key is highlighted via the legend.
+ *
+ * **A stack is only as dense as its sparsest series.** A row where any VISIBLE band is null is
+ * dropped from the stack entirely — the bands break across that x, the crosshair reports no
+ * cumulative value there, and the axis domain ignores it. Toggling the sparse band off in the
+ * legend closes the gap, because density is measured against the visible set. A chart that needs
+ * a null band to read as zero must say so in its own `getValue`.
  *
  * Composes `CartesianChart` (`docs/CHARTS-SPEC.md` §2) — margin, scale, grid, axes, cursor, and
  * tooltip are the primitive's job. This file draws only the `AreaStack` bands.
@@ -66,6 +85,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
     xTicks,
     xTickValues,
     formatX,
+    xLabelRotate,
     cursorResolution,
     height,
     legend,
@@ -87,6 +107,8 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       domain: (rows: readonly T[], visible: readonly ChartSeries<T>[]) => {
         let maxTotal = 0
         for (const d of rows) {
+          // A sparse row is not drawn, so it cannot set the axis top either.
+          if (!rowIsDense(d, visible)) continue
           let total = 0
           for (const s of visible) total += s.getValue(d) ?? 0
           if (total > maxTotal) maxTotal = total
@@ -100,6 +122,10 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
   // tracking — not at the band's own raw value, which sits somewhere inside the fill.
   const stackedCursorValue = useCallback(
     (d: T, s: ChartSeries<T>, visible: readonly ChartSeries<T>[]): number | null => {
+      // No total on a sparse row — the bands gap there, so a dot would sit on nothing. The
+      // per-band tooltip rows keep skipping their own nulls (`deriveTooltipRows`), so a row the
+      // stack cannot draw never contributes a value anywhere.
+      if (!rowIsDense(d, visible)) return null
       let total = 0
       // `visible` arrives top-to-bottom (the `series.toReversed()` handed to the primitive);
       // stacking accumulates bottom-up.
@@ -128,6 +154,7 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       {...(xTicks !== undefined && { xTicks })}
       {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
+      {...(xLabelRotate !== undefined && { xLabelRotate })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(height !== undefined && { height })}
       {...(legend !== undefined && { legend })}
@@ -166,7 +193,11 @@ function StackedAreaMarks<T>({ getX, ctx }: { getX: (d: T) => string; ctx: PlotC
       x={(d) => xScale(getX(d.data)) ?? 0}
       y0={(d) => yScale(d[0]) ?? 0}
       y1={(d) => yScale(d[1]) ?? 0}
+      // d3's stack layout needs a number per cell, so a null still enters the layout as 0 — but
+      // `defined` keeps that cell out of every band's PATH, so the zero is never drawn. Without it
+      // a missing band reads as a measured zero and the bands above it slide down onto it.
       value={(d, key) => seriesByKey.get(key)?.getValue(d) ?? 0}
+      defined={(d) => rowIsDense(d.data, visible)}
       curve={curveMonotoneX}
     >
       {({ stacks, path }) =>

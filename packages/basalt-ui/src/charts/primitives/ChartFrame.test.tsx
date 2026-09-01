@@ -16,7 +16,9 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { ChartFrame, resolveLegend } from './ChartFrame'
+import { VX } from '../../tokens'
+import { ChartFrame, legendEntryCap, resolveLegend, resolvePlotRect } from './ChartFrame'
+import type { LegendEntry } from './ChartLegend'
 import { HoverOverlay } from './HoverOverlay'
 import type { SeriesStyle } from '../series'
 
@@ -167,5 +169,90 @@ describe('resolveLegend — a single-entry legend is noise, suppressed automatic
 
   test('no seriesCount passed (a kind composing ChartFrame directly): unaffected, resolves normally', () => {
     expect(resolveLegend(undefined)).not.toBe(false)
+  })
+})
+
+describe('resolvePlotRect — the plot never collapses under its own legend', () => {
+  const base = { minWidth: 200, sideLegendWidth: 0, topBottomLegendHeight: 0 }
+
+  test('a legend measured at 200px inside a fixed 240px frame still leaves a usable plot', () => {
+    // Eight entries wrapping to five rows at phone width: the plot used to go to 40px and then,
+    // as the legend grew further, to <= 0 — at which point the body stopped rendering entirely.
+    const plot = resolvePlotRect({
+      ...base,
+      containerW: 390,
+      resolvedHeight: 240,
+      topBottomLegendHeight: 200,
+    })
+    expect(plot.height).toBeGreaterThanOrEqual(VX.minPlotHeight)
+  })
+
+  test('a legend that fits is still subtracted in full — the floor is a floor, not a default', () => {
+    const plot = resolvePlotRect({
+      ...base,
+      containerW: 390,
+      resolvedHeight: 240,
+      topBottomLegendHeight: 40,
+    })
+    expect(plot.height).toBe(200)
+  })
+
+  test('an unmeasured box (fill, before the first observation) still renders nothing', () => {
+    const plot = resolvePlotRect({ ...base, containerW: 0, resolvedHeight: 0 })
+    expect(plot.height).toBe(0)
+  })
+
+  test('a container narrower than minWidth is tracked exactly — no SVG wider than its own box', () => {
+    const plot = resolvePlotRect({ ...base, containerW: 150, resolvedHeight: 240 })
+    expect(plot.width).toBe(150)
+  })
+
+  test('minWidth still guards the unmeasured first frame', () => {
+    const plot = resolvePlotRect({ ...base, containerW: 0, resolvedHeight: 240 })
+    expect(plot.width).toBe(200)
+  })
+
+  test('a side legend is subtracted from the measured width', () => {
+    const plot = resolvePlotRect({
+      ...base,
+      containerW: 400,
+      resolvedHeight: 240,
+      sideLegendWidth: 120,
+    })
+    expect(plot.width).toBe(280)
+  })
+})
+
+describe('legendEntryCap — only a fill frame rolls its legend up, and only when it must', () => {
+  const entry = (key: string, label: string): LegendEntry => ({ key, label, color: '#000' })
+  const five = ['a', 'b', 'c', 'd', 'e'].map((k) => entry(k, k.toUpperCase()))
+  const many = Array.from({ length: 24 }, (_, i) => entry(`s${i}`, `Series number ${i}`))
+
+  test('a legend that fits the leftover height is not capped at all', () => {
+    expect(
+      legendEntryCap({ items: five, containerW: 900, available: 240 - VX.minPlotHeight }),
+    ).toBe(undefined)
+  })
+
+  test('a legend that would eat the plot is capped to what the leftover rows hold', () => {
+    const cap = legendEntryCap({ items: many, containerW: 390, available: 240 - VX.minPlotHeight })
+    expect(cap).toBeDefined()
+    expect(cap).toBeLessThan(many.length)
+    expect(cap).toBeGreaterThanOrEqual(1)
+  })
+
+  test('an explicit caller maxRows stays the upper bound', () => {
+    const cap = legendEntryCap({
+      items: many,
+      containerW: 390,
+      available: 240 - VX.minPlotHeight,
+      callerMaxRows: 2,
+    })
+    expect(cap).toBeLessThanOrEqual(2)
+  })
+
+  test('an unmeasured width falls back to the caller cap rather than guessing', () => {
+    expect(legendEntryCap({ items: many, containerW: 0, available: 120 })).toBe(undefined)
+    expect(legendEntryCap({ items: many, containerW: 0, available: 120, callerMaxRows: 3 })).toBe(3)
   })
 })

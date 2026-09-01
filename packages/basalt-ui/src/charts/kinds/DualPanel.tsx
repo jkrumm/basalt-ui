@@ -25,7 +25,7 @@ import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesStyle } from '../series'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'
-import { smartTicks } from '../utils/ticks'
+import { smartTicks, xLabelPxFor } from '../utils/ticks'
 
 export type DualPanelProps<T> = {
   data: T[]
@@ -319,7 +319,15 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
-  const tickValues = useMemo(() => smartTicks(data.map(getX), xMax), [data, xMax, getX])
+  // The horizontal room one x tick label needs, from the SAME formatted set `xLabelsAll` measured
+  // for the bottom gutter — same measured-spacing law `CartesianChart` applies
+  // (`docs/CHARTS-SPEC.md` §1).
+  const xLabelPx = useMemo(() => xLabelPxFor(xLabelsAll), [xLabelsAll])
+
+  const tickValues = useMemo(
+    () => smartTicks(data.map(getX), xMax, xLabelPx),
+    [data, xMax, getX, xLabelPx],
+  )
 
   const barWidth = data.length > 0 ? Math.max((xMax / data.length) * 0.6, 2) : 2
 

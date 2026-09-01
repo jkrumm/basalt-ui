@@ -7,7 +7,7 @@ import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primiti
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import { definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 
@@ -42,6 +42,8 @@ export type MultiLineProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
+  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -76,16 +78,17 @@ function starPath(cx: number, cy: number, r: number): string {
   return `M${pts.join('L')}Z`
 }
 
-type LinePt<T> = { __d: T; __y: number }
+type LinePt<T> = { __d: T; __y: number | null }
 
-/** Per-series valid points (null-value gaps dropped). Reused by the lines and the markers. */
+/**
+ * Every row, in x order, with `__y: null` where the series reports no value. The null row STAYS in
+ * the array: `ChartSeries.getValue` documents null as a line GAP, and dropping the row instead
+ * makes `LinePath` join straight across a coverage hole — drawing a measurement that was never
+ * taken. `defined` on the consuming shape is what turns it back into a gap. Reused by the lines
+ * and the markers.
+ */
 function seriesPoints<T>(series: ChartSeries<T>, data: readonly T[]): LinePt<T>[] {
-  const pts: LinePt<T>[] = []
-  for (const d of data) {
-    const v = series.getValue(d)
-    if (v !== null && v !== undefined && !Number.isNaN(v)) pts.push({ __d: d, __y: v })
-  }
-  return pts
+  return data.map((d) => ({ __d: d, __y: toPlotPoint(series.getValue(d)) }))
 }
 
 /**
@@ -99,7 +102,8 @@ function seriesPoints<T>(series: ChartSeries<T>, data: readonly T[]): LinePt<T>[
  * plotted lines, the legend, and the tooltip rows.
  *
  * X-axis is built from the full `data` array so the calendar is preserved even when a series
- * has nulls; each series line skips null points (creating visual gaps).
+ * has nulls; each series line BREAKS at a null point, leaving a real gap rather than interpolating
+ * across it.
  */
 function MultiLineInner<T>(props: MultiLineProps<T>) {
   const {
@@ -115,6 +119,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     xTicks,
     xTickValues,
     formatX,
+    xLabelRotate,
     cursorResolution,
     tooltip,
     markerShape = 'circle',
@@ -145,6 +150,7 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
       {...(xTicks !== undefined && { xTicks })}
       {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
+      {...(xLabelRotate !== undefined && { xLabelRotate })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(tooltip !== undefined && { tooltip })}
       {...(height !== undefined && { height })}
@@ -209,6 +215,9 @@ function MultiLineMarks<T>({
         const op = dimOpacity(s)
         const markers: ReactNode[] = []
         for (const p of pointsBySeries.get(s.key) ?? []) {
+          // A null point is an absence: no dot, no marker — the same claim the line's `defined`
+          // makes by breaking there.
+          if (p.__y === null) continue
           const m = getMarker(p.__d)
           if (m === null) continue
           const cx = xScale(getX(p.__d)) ?? 0
@@ -250,19 +259,26 @@ function MultiLineMarks<T>({
   return (
     <>
       {visible.map((s) => {
-        const valid = pointsBySeries.get(s.key) ?? []
-        if (valid.length === 0) return null
+        const pts = pointsBySeries.get(s.key) ?? []
+        // A series that measured nothing (the legend-only `getValue: () => null` idiom) draws no
+        // path at all, rather than an empty one.
+        if (!pts.some((p) => p.__y !== null)) return null
         const scale = scaleFor(s)
         return (
           <LinePath<LinePt<T>>
             key={`line-${s.key}`}
-            data={valid}
+            data={pts}
             x={(p) => xScale(getX(p.__d)) ?? 0}
-            y={(p) => scale(p.__y)}
-            // A non-positive value on a log axis maps to NaN via `scale(p.__y)` — `defined` skips
-            // it as a gap (splitting the line there) instead of emitting a NaN path command, which
-            // per SVG error handling blanks the ENTIRE polyline from that point on.
-            defined={(p) => Number.isFinite(scale(p.__y))}
+            // Never reached with a null `__y`: d3's line generator calls the position accessors
+            // only for points `defined` accepted. The `NaN` floor is a type-level one, and it can
+            // never paint at zero the way a `?? 0` would.
+            y={(p) => scale(p.__y ?? NaN)}
+            // Two absences, one guard. A null value is a documented GAP (`ChartSeries.getValue`),
+            // and a non-positive value on a log axis maps to NaN via `scale(p.__y)` — `defined`
+            // breaks the line at both instead of interpolating across the hole (a coverage hole
+            // reading as a measured straight line) or emitting a NaN path command, which per SVG
+            // error handling blanks the ENTIRE polyline from that point on.
+            defined={definedOn(scale)}
             stroke={s.color}
             strokeWidth={s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
             strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}

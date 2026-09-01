@@ -8,7 +8,7 @@ import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primiti
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import { definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 
@@ -58,6 +58,8 @@ export type ZonedLineProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
+  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -83,19 +85,17 @@ export type ZonedLineProps<T> = {
   isPending?: boolean
 }
 
-type Valid<T> = T & { __y: number }
+type Pt<T> = T & { __y: number | null }
 
-/** The primary (and only) series' valid points — null values are dropped, creating line gaps. */
-function validPoints<T>(series: ChartSeries<T> | undefined, data: readonly T[]): Valid<T>[] {
+/**
+ * Every row, in x order, with `__y: null` where the series reports no value. The null row STAYS in
+ * the array — see `MultiLine`'s `seriesPoints`: dropping it makes `LinePath`/`AreaClosed`/
+ * `Threshold` join straight across a coverage hole, drawing a measurement that was never taken.
+ * The shared `defined` guard below is what turns it back into a gap.
+ */
+function linePoints<T>(series: ChartSeries<T> | undefined, data: readonly T[]): Pt<T>[] {
   if (!series) return []
-  const out: Valid<T>[] = []
-  for (const d of data) {
-    const y = series.getValue(d)
-    if (y !== null && y !== undefined && !Number.isNaN(y)) {
-      out.push(Object.assign({}, d, { __y: y }) as Valid<T>)
-    }
-  }
-  return out
+  return data.map((d) => Object.assign({}, d, { __y: toPlotPoint(series.getValue(d)) }) as Pt<T>)
 }
 
 /**
@@ -107,9 +107,9 @@ function validPoints<T>(series: ChartSeries<T> | undefined, data: readonly T[]):
  * and the derived tooltip — this kind draws ONLY the marks (thresholds, area fill, and the line).
  * Single-series, so the legend is optional in practice but present by default.
  *
- * X-axis is built from the full `data` array so the calendar is preserved even
- * when the series has nulls; the line itself skips null points (creating
- * visual gaps).
+ * X-axis is built from the full `data` array so the calendar is preserved even when the series has
+ * nulls; the line, the area fill and the threshold fills all BREAK at a null point, leaving a real
+ * gap rather than interpolating across it.
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
   const {
@@ -125,6 +125,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     xTicks,
     xTickValues,
     formatX,
+    xLabelRotate,
     cursorResolution,
     tooltip,
     areaFill,
@@ -158,6 +159,7 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
       {...(xTicks !== undefined && { xTicks })}
       {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
+      {...(xLabelRotate !== undefined && { xLabelRotate })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(tooltip !== undefined && { tooltip })}
       {...(height !== undefined && { height })}
@@ -197,7 +199,18 @@ function ZonedLineMarks<T>({
   const primary = visible[0]
   // Memoized: the shared cursor re-renders every chart on every pointer frame, and this both
   // walks the full series and clones an object per point.
-  const valid = useMemo(() => validPoints(primary, data), [primary, data])
+  const pts = useMemo(() => linePoints(primary, data), [primary, data])
+
+  // ONE guard for all three shapes below, covering two absences. A null value is a documented GAP
+  // (`ChartSeries.getValue`), and a non-positive value on a log axis maps to NaN via `yScale` —
+  // without `defined` the first is drawn as an interpolated straight line across a coverage hole
+  // and the second emits a NaN path command, which per SVG error handling blanks the ENTIRE path
+  // from that point on.
+  const defined = definedOn(yScale)
+  // Never reached with a null `__y`: d3's line/area generators call the position accessors only
+  // for points `defined` accepted. The `NaN` floor is a type-level one, and it can never paint at
+  // zero the way a `?? 0` would.
+  const yOf = (d: Pt<T>) => yScale(d.__y ?? NaN)
 
   // Area is opt-in: pass a color token to get a cohesive single-hue fill under the line.
   // (A neutral fill under the neutral line just reads as grey haze, so there is no default-on.)
@@ -208,13 +221,14 @@ function ZonedLineMarks<T>({
   return (
     <>
       {thresholds.map((t, i) => (
-        <Threshold<Valid<T>>
+        <Threshold<Pt<T>>
           key={`thr-${i}`}
           id={`${chartId}-thr-${i}`}
-          data={valid}
+          data={pts}
+          defined={defined}
           x={(d) => xScale(getX(d)) ?? 0}
           y0={() => yScale(t.value)}
-          y1={(d) => yScale(d.__y)}
+          y1={yOf}
           clipAboveTo={0}
           clipBelowTo={yMax}
           curve={curveMonotoneX}
@@ -228,10 +242,11 @@ function ZonedLineMarks<T>({
           <defs>
             <AreaGradient id={areaId} color={areaColor} />
           </defs>
-          <AreaClosed<Valid<T>>
-            data={valid}
+          <AreaClosed<Pt<T>>
+            data={pts}
+            defined={defined}
             x={(d) => xScale(getX(d)) ?? 0}
-            y={(d) => yScale(d.__y)}
+            y={yOf}
             yScale={yScale}
             curve={curveMonotoneX}
             fill={areaFillUrl(areaId)}
@@ -240,10 +255,11 @@ function ZonedLineMarks<T>({
       )}
 
       {primary && (
-        <LinePath<Valid<T>>
-          data={valid}
+        <LinePath<Pt<T>>
+          data={pts}
+          defined={defined}
           x={(d) => xScale(getX(d)) ?? 0}
-          y={(d) => yScale(d.__y)}
+          y={yOf}
           stroke={primary.color}
           strokeWidth={primary.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
           strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}

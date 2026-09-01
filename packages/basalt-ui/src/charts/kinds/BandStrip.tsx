@@ -19,6 +19,7 @@ import { HatchPattern, hatchFill, hatchSizeFor } from '../primitives/HatchPatter
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import type { ChartLegendConfig, SeriesStyle } from '../series'
 import { fmtAxisDate } from '../utils/format'
+import { isDev } from '../../utils/is-dev'
 
 /**
  * A state a strip can draw. Extends `SeriesStyle` rather than `ChartSeries` because a band has no
@@ -141,13 +142,6 @@ const UNKNOWN_MARK = {
   strokeWidth: 1,
   strokeDasharray: '3 2',
 } as const
-
-/** The house dev gate (`src/provider`, `src/agent-chat` use the same expression): `basaltViteConfig`
- * defines `process.env.NODE_ENV`, so a production bundle constant-folds this to `false` and drops
- * the throw. Read per call, never hoisted to a module const, so a test can flip it. */
-function isDev(): boolean {
-  return process.env['NODE_ENV'] !== 'production'
-}
 
 /**
  * A `state` (or `marker.state`) naming no `series` entry.

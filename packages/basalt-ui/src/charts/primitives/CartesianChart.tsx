@@ -13,7 +13,7 @@ import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
-import { smartTicks, smartTicksEvery } from '../utils/ticks'
+import { smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
 import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
@@ -186,6 +186,15 @@ export type CartesianChartProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
+  /**
+   * Tilt the x tick labels by 45° or 90° (counter-clockwise, anchored at their right edge). The
+   * bottom gutter deepens by the rotated label's projected height, measured like every other side
+   * (`docs/CHARTS-SPEC.md` §1), so nothing clips.
+   *
+   * This is the phone answer to a label too wide to repeat horizontally: rotating keeps every tick
+   * the axis would otherwise have to thin away. Default: no rotation.
+   */
+  xLabelRotate?: 45 | 90
   /** Value-range bands on the left scale, drawn behind the marks. */
   zones?: ZoneSpec[]
   /** X-range bands (time windows), drawn behind the marks. */
@@ -349,6 +358,7 @@ export function CartesianChart<T>({
   xTicks,
   xTickValues,
   formatX = fmtAxisDate,
+  xLabelRotate,
   zones,
   xZones,
   refLines,
@@ -392,6 +402,7 @@ export function CartesianChart<T>({
           {...(xTicks !== undefined && { xTicks })}
           {...(xTickValues !== undefined && { xTickValues })}
           formatX={formatX}
+          {...(xLabelRotate !== undefined && { xLabelRotate })}
           {...(zones !== undefined && { zones })}
           {...(xZones !== undefined && { xZones })}
           {...(refLines !== undefined && { refLines })}
@@ -431,6 +442,7 @@ function CartesianPlot<T>({
   xTicks,
   xTickValues,
   formatX = fmtAxisDate,
+  xLabelRotate,
   zones,
   xZones,
   refLines,
@@ -508,15 +520,25 @@ function CartesianPlot<T>({
 
   const xLabels = useMemo(() => keys.map(formatX), [keys, formatX])
 
+  /** The horizontal room one x tick label needs: the widest string that could be painted, plus
+   * breathing space to its neighbour. Feeds `smartTicks`, which otherwise thinned the axis by a
+   * constant that knew nothing about the label. Rotated labels stack diagonally instead of
+   * side by side, so their width no longer governs the spacing. */
+  const xLabelPx = useMemo(
+    () => (xLabelRotate === undefined ? xLabelPxFor(xLabels) : undefined),
+    [xLabels, xLabelRotate],
+  )
+
   const margin = useMemo(
     () =>
       autoMargin({
         left: leftLabels,
         right: rightLabels,
         bottom: xLabels,
+        ...(xLabelRotate !== undefined && { rotate: xLabelRotate }),
         ...(marginOverride !== undefined && { override: marginOverride }),
       }),
-    [leftLabels, rightLabels, xLabels, marginOverride],
+    [leftLabels, rightLabels, xLabels, xLabelRotate, marginOverride],
   )
 
   // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────
@@ -542,9 +564,9 @@ function CartesianPlot<T>({
       xTickValues !== undefined
         ? [...xTickValues(keys, xMax)]
         : xTicks === undefined
-          ? smartTicks(keys, xMax)
+          ? smartTicks(keys, xMax, xLabelPx)
           : smartTicksEvery(keys, xTicks),
-    [keys, xMax, xTicks, xTickValues],
+    [keys, xMax, xTicks, xTickValues, xLabelPx],
   )
 
   const cursor = useChartCursor<T>({
@@ -624,11 +646,11 @@ function CartesianPlot<T>({
 
           {children(ctx)}
 
-          {refLines?.map((line) => {
+          {refLines?.map((line, i) => {
             const scale = line.axis === 'right' && y2Scale !== null ? y2Scale : yScale
             return (
               <line
-                key={`${line.axis ?? 'left'}-${line.value}`}
+                key={`${line.axis ?? 'left'}-${line.value}-${i}`}
                 x1={0}
                 x2={xMax}
                 y1={scale(line.value)}
@@ -688,6 +710,7 @@ function CartesianPlot<T>({
             scale={xScale}
             tickValues={tickValues}
             tickFormat={(v) => formatX(String(v))}
+            {...(xLabelRotate !== undefined && { rotate: xLabelRotate })}
           />
 
           <HoverOverlay

@@ -112,3 +112,91 @@ describe('StackedArea — cursorResolution threads through to sibling resolution
     expect(foldedSlider.getAttribute('aria-valuetext')).toBe('08.08')
   })
 })
+
+describe('StackedArea — a null band gaps the whole stack instead of claiming zero', () => {
+  type Sparse = { date: string; a: number | null; b: number }
+  const sparse: Sparse[] = [
+    { date: '2026-08-01', a: 10, b: 4 },
+    { date: '2026-08-02', a: 12, b: 6 },
+    { date: '2026-08-03', a: null, b: 5 },
+    { date: '2026-08-04', a: 14, b: 6 },
+    { date: '2026-08-05', a: 16, b: 8 },
+  ]
+  const sparseSeries: ChartSeries<Sparse>[] = [
+    { key: 'a', label: 'A', color: '#111', mark: 'area', getValue: (d) => d.a },
+    { key: 'b', label: 'B', color: '#222', mark: 'area', getValue: (d) => d.b },
+  ]
+
+  /** The band paths — the `AreaStack` children, one per key. */
+  function bandPaths(html: string): string[] {
+    return [...html.matchAll(/<path[^>]*\sd="(M[^"]*)"[^>]*stroke="transparent"/g)].map(
+      (m) => m[1] ?? '',
+    )
+  }
+
+  test('both bands break at the sparse x — no band spans it claiming a measured 0', () => {
+    const html = renderToStaticMarkup(
+      <StackedArea<Sparse>
+        data={sparse}
+        chartId="sa-null-gap"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    const bands = bandPaths(html)
+    expect(bands.length).toBe(2)
+    // Two subpaths each = a hole at 2026-08-03. One would mean the band was drawn across it, and
+    // for the null band that line would sit on the baseline — a positive claim of zero.
+    for (const d of bands) expect((d.match(/M/g) ?? []).length).toBe(2)
+  })
+
+  test('a dense stack still draws ONE continuous band per series', () => {
+    const dense: Sparse[] = sparse.map((d) => ({ ...d, a: d.a ?? 13 }))
+    const html = renderToStaticMarkup(
+      <StackedArea<Sparse>
+        data={dense}
+        chartId="sa-dense"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    const bands = bandPaths(html)
+    expect(bands.length).toBe(2)
+    for (const d of bands) expect((d.match(/M/g) ?? []).length).toBe(1)
+  })
+
+  test('hiding the sparse band via the legend closes the gap — density tracks the VISIBLE set', () => {
+    const { container } = render(
+      <StackedArea<Sparse>
+        data={sparse}
+        chartId="sa-null-toggle"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    expect(bandPaths(container.innerHTML).every((d) => (d.match(/M/g) ?? []).length === 2)).toBe(
+      true,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'A' }))
+
+    const remaining = bandPaths(container.innerHTML)
+    expect(remaining.length).toBe(1)
+    expect((remaining[0]?.match(/M/g) ?? []).length).toBe(1)
+  })
+})
+
+describe('StackedArea — xLabelRotate', () => {
+  test('is forwarded to CartesianChart and rotates the bottom axis tick labels', () => {
+    const html = renderToStaticMarkup(
+      <StackedArea<Row>
+        data={rows}
+        chartId="sa-rotate"
+        getX={(d) => d.date}
+        series={series}
+        xLabelRotate={45}
+      />,
+    )
+    expect(html).toContain('transform="rotate(-45')
+  })
+})

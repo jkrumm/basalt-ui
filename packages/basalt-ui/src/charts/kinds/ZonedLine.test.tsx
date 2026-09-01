@@ -39,6 +39,24 @@ describe('ZonedLine — series.strokeOpacity dims the plotted stroke', () => {
   })
 })
 
+describe('ZonedLine — xLabelRotate', () => {
+  test('is forwarded to CartesianChart and rotates the bottom axis tick labels', () => {
+    const series: ChartSeries<Row>[] = [
+      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+    ]
+    const html = renderToStaticMarkup(
+      <ZonedLine<Row>
+        data={rows}
+        chartId="zl-rotate"
+        getX={(d) => d.date}
+        series={series}
+        xLabelRotate={45}
+      />,
+    )
+    expect(html).toContain('transform="rotate(-45')
+  })
+})
+
 describe('ZonedLine — formatX', () => {
   test('a custom formatX renders on the bottom axis instead of the default DD.MM', () => {
     const series: ChartSeries<Row>[] = [
@@ -143,5 +161,87 @@ describe('ZonedLine — cursorResolution threads through to sibling resolution',
     driveDailyToAug05()
     const foldedSlider = screen.getByRole('slider', { name: 'Folded' })
     expect(foldedSlider.getAttribute('aria-valuetext')).toBe('08.08')
+  })
+})
+
+describe('ZonedLine — nulls gap and a log axis never emits NaN', () => {
+  type Sparse = { date: string; v: number | null }
+  const sparse: Sparse[] = [
+    { date: '2026-08-01', v: 10 },
+    { date: '2026-08-02', v: 12 },
+    { date: '2026-08-03', v: null },
+    { date: '2026-08-04', v: 14 },
+    { date: '2026-08-05', v: 16 },
+  ]
+  const sparseSeries: ChartSeries<Sparse>[] = [
+    { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+  ]
+
+  // `visx-linepath` is the mark; the grid rules are `visx-line` and never a path.
+  function linePath(html: string): string {
+    return /class="visx-linepath"[^>]*\sd="([^"]*)"/.exec(html)?.[1] ?? ''
+  }
+
+  test('the line breaks into two subpaths at the null instead of joining across the hole', () => {
+    const html = renderToStaticMarkup(
+      <ZonedLine<Sparse>
+        data={sparse}
+        chartId="zl-null-gap"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    expect((linePath(html).match(/M/g) ?? []).length).toBe(2)
+  })
+
+  test('a dense series still draws ONE continuous subpath', () => {
+    const dense: Sparse[] = sparse.map((d) => ({ ...d, v: d.v ?? 13 }))
+    const html = renderToStaticMarkup(
+      <ZonedLine<Sparse>
+        data={dense}
+        chartId="zl-dense"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    expect((linePath(html).match(/M/g) ?? []).length).toBe(1)
+  })
+
+  test('the area fill and the threshold fill break at the null too, not just the line', () => {
+    const html = renderToStaticMarkup(
+      <ZonedLine<Sparse>
+        data={sparse}
+        chartId="zl-null-fills"
+        getX={(d) => d.date}
+        series={sparseSeries}
+        areaFill="#111"
+        thresholds={[{ value: 13, side: 'above', fill: '#222' }]}
+      />,
+    )
+    // Every mark path (line, AreaClosed, and the Threshold's two Areas) carries a second moveto.
+    const marks = [...html.matchAll(/<path[^>]*\sd="(M[^"]*)"/g)].map((m) => m[1] ?? '')
+    expect(marks.length).toBeGreaterThan(1)
+    for (const d of marks) expect((d.match(/M/g) ?? []).length).toBe(2)
+  })
+
+  test('a log axis with a zero value renders a path with no NaN — one NaN blanks the whole polyline', () => {
+    const crossing: Sparse[] = [
+      { date: '2026-08-01', v: 20 },
+      { date: '2026-08-02', v: 0 },
+      { date: '2026-08-03', v: 5000 },
+    ]
+    const html = renderToStaticMarkup(
+      <ZonedLine<Sparse>
+        data={crossing}
+        chartId="zl-log-zero"
+        getX={(d) => d.date}
+        series={sparseSeries}
+        y={{ scale: 'log' }}
+        areaFill="#111"
+        thresholds={[{ value: 100, side: 'above', fill: '#222' }]}
+      />,
+    )
+    expect(html).not.toContain('NaN')
+    expect(linePath(html)).not.toBe('')
   })
 })

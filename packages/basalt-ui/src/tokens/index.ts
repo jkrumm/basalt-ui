@@ -279,6 +279,13 @@ export const VX = {
     left: SPACE_STEP.chartMarginLeft,
   },
   minPxPerTick: 55,
+  /**
+   * Floor on a chart's plot rect height, in px (`ChartFrame`). A legend wrapping to five rows at
+   * phone width used to eat a fixed `height={240}` toward zero and the plot simply stopped
+   * rendering — the plot never shrinks past this, the frame grows instead (or, under `fill`, the
+   * legend rolls up).
+   */
+  minPlotHeight: 120,
 } as const
 
 /** Resolved chart plot-area margins — the return shape of {@link chartMargin}. */
