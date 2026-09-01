@@ -101,7 +101,12 @@ import { App } from './App'
 import { paletteGroups } from './theme/series'
 
 // The theme lab owns only the editing UI — the host re-applies any persisted overrides at boot, so
-// a tuning session survives a refresh.
+// a tuning session survives a refresh. `applyOverrides`/`loadOverrides` (and `readVar`) live in
+// `theme-lab/boot.ts`, a Mantine-free, SSR-safe module re-exported through this same
+// `basalt-ui/theme-lab` subpath — no `document` guard needed at the call site, and it never throws
+// under SSR. A production bundler that tree-shakes unused named exports drops `ThemeLabControls`'s
+// Mantine imports when a prod entry (like this one) only ever names these three functions; an
+// unbundled dev build still evaluates the whole subpath module.
 applyOverrides(loadOverrides())
 
 const theme = createBasaltTheme({

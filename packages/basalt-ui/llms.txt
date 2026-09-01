@@ -48,7 +48,7 @@ Layer: mantine-coupled
 ## basalt-ui/vite
 Import: import { ... } from 'basalt-ui/vite'
 Description: basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette
-Layer: mantine-coupled
+Layer: build-tooling
 OptionalPeers: vite-plugin-pwa@^1.3.0
 
 ## basalt-ui/guard
@@ -72,7 +72,7 @@ OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
-Description: Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)
+Description: Mantine form adapter: useBasaltForm, inputProps, FormErrorSummary, useFormDraft (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @mantine/form@^9.3.0
