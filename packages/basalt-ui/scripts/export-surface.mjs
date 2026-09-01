@@ -32,7 +32,8 @@ const subpaths = Object.keys(exportsMap).filter(
     !k.startsWith('./configs') &&
     k !== './styles.css' &&
     k !== './tokens.css' &&
-    k !== './llms.txt',
+    k !== './llms.txt' &&
+    k !== './package.json',
 )
 
 const actual = {}

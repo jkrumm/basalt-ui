@@ -3304,9 +3304,14 @@ export function checkCoverage(flags: readonly string[] = []): number {
   }
 
   // ── Assertion 5: every real package.json exports key has a SURFACES entry ────
-  // Excludes ./styles.css and ./configs/* (non-JS assets / raw file paths).
+  // Excludes ./styles.css, ./package.json and ./configs/* (non-JS assets / raw file paths).
   for (const exportKey of pkgExports) {
-    if (exportKey === '.' || exportKey === './styles.css' || exportKey.startsWith('./configs/'))
+    if (
+      exportKey === '.' ||
+      exportKey === './styles.css' ||
+      exportKey === './package.json' ||
+      exportKey.startsWith('./configs/')
+    )
       continue
     if (!Object.hasOwn(SURFACES, exportKey)) {
       failures.push(`package.json exports key '${exportKey}' has no matching SURFACES entry`)

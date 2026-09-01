@@ -31,6 +31,8 @@
   "files": [
     "dist/",
     "src/",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
     "configs/",
     "agent/",
     "bin/",
@@ -47,99 +49,121 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./charts": {
       "types": "./dist/charts/index.d.ts",
-      "import": "./dist/charts/index.js"
+      "import": "./dist/charts/index.js",
+      "default": "./dist/charts/index.js"
     },
     "./tokens": {
       "types": "./dist/tokens/index.d.ts",
-      "import": "./dist/tokens/index.js"
+      "import": "./dist/tokens/index.js",
+      "default": "./dist/tokens/index.js"
     },
     "./theme-lab": {
       "types": "./dist/theme-lab/index.d.ts",
-      "import": "./dist/theme-lab/index.js"
+      "import": "./dist/theme-lab/index.js",
+      "default": "./dist/theme-lab/index.js"
     },
     "./vite": {
       "types": "./dist/vite.d.ts",
-      "import": "./dist/vite.js"
+      "import": "./dist/vite.js",
+      "default": "./dist/vite.js"
     },
     "./guard": {
       "types": "./dist/guard/index.d.ts",
-      "import": "./dist/guard/index.js"
+      "import": "./dist/guard/index.js",
+      "default": "./dist/guard/index.js"
     },
     "./forms": {
       "types": "./dist/forms/index.d.ts",
-      "import": "./dist/forms/index.js"
+      "import": "./dist/forms/index.js",
+      "default": "./dist/forms/index.js"
     },
     "./commands": {
       "types": "./dist/commands/index.d.ts",
-      "import": "./dist/commands/index.js"
+      "import": "./dist/commands/index.js",
+      "default": "./dist/commands/index.js"
     },
     "./notifications": {
       "types": "./dist/notifications/index.d.ts",
-      "import": "./dist/notifications/index.js"
+      "import": "./dist/notifications/index.js",
+      "default": "./dist/notifications/index.js"
     },
     "./query": {
       "types": "./dist/query/index.d.ts",
-      "import": "./dist/query/index.js"
+      "import": "./dist/query/index.js",
+      "default": "./dist/query/index.js"
     },
     "./router-tanstack": {
       "types": "./dist/router-tanstack/index.d.ts",
-      "import": "./dist/router-tanstack/index.js"
+      "import": "./dist/router-tanstack/index.js",
+      "default": "./dist/router-tanstack/index.js"
     },
     "./data": {
       "types": "./dist/data/index.d.ts",
-      "import": "./dist/data/index.js"
+      "import": "./dist/data/index.js",
+      "default": "./dist/data/index.js"
     },
     "./data/table": {
       "types": "./dist/data/table.d.ts",
-      "import": "./dist/data/table.js"
+      "import": "./dist/data/table.js",
+      "default": "./dist/data/table.js"
     },
     "./data/virtual": {
       "types": "./dist/data/virtual.d.ts",
-      "import": "./dist/data/virtual.js"
+      "import": "./dist/data/virtual.js",
+      "default": "./dist/data/virtual.js"
     },
     "./agent": {
       "types": "./dist/agent/index.d.ts",
-      "import": "./dist/agent/index.js"
+      "import": "./dist/agent/index.js",
+      "default": "./dist/agent/index.js"
     },
     "./agent-chat": {
       "types": "./dist/agent-chat/index.d.ts",
-      "import": "./dist/agent-chat/index.js"
+      "import": "./dist/agent-chat/index.js",
+      "default": "./dist/agent-chat/index.js"
     },
     "./content": {
       "types": "./dist/content/index.d.ts",
-      "import": "./dist/content/index.js"
+      "import": "./dist/content/index.js",
+      "default": "./dist/content/index.js"
     },
     "./controls": {
       "types": "./dist/controls/index.d.ts",
-      "import": "./dist/controls/index.js"
+      "import": "./dist/controls/index.js",
+      "default": "./dist/controls/index.js"
     },
     "./controls-dates": {
       "types": "./dist/controls-dates/index.d.ts",
-      "import": "./dist/controls-dates/index.js"
+      "import": "./dist/controls-dates/index.js",
+      "default": "./dist/controls-dates/index.js"
     },
     "./state": {
       "types": "./dist/state.d.ts",
-      "import": "./dist/state.js"
+      "import": "./dist/state.js",
+      "default": "./dist/state.js"
     },
     "./connectivity": {
       "types": "./dist/connectivity/index.d.ts",
-      "import": "./dist/connectivity/index.js"
+      "import": "./dist/connectivity/index.js",
+      "default": "./dist/connectivity/index.js"
     },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
     "./configs/*": "./configs/*",
-    "./llms.txt": "./llms.txt"
+    "./llms.txt": "./llms.txt",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
     "typecheck": "tsc --noEmit && tsc -p tests/layout/tsconfig.json",
     "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",

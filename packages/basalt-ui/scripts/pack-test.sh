@@ -21,7 +21,7 @@ echo "==> publint"
 bunx publint --strict "$TGZ"
 
 echo "==> attw (are-the-types-wrong)"
-bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./llms.txt
+bunx attw "$TGZ" --profile esm-only --ignore-rules cjs-resolves-to-esm named-exports --exclude-entrypoints ./styles.css ./tokens.css ./llms.txt ./package.json
 
 echo "==> assert tarball contents"
 # Assert against a FILE, never `echo "$LIST" | grep -q`. Under this script's `set -o pipefail`,
@@ -63,6 +63,14 @@ for f in src/index.css src/starlight.css tailwind.config.js \
   agent/rules/basalt-router.md agent/rules/basalt-app.md agent/rules/basalt-query.md \
   dist/shell/app-sidebar.module.css.d.js dist/shell/app-mobile-nav.module.css.d.js \
   dist/shell/app-header.module.css.d.js; do forbid "$f"; done
+# forbid() above is an exact-string match, so the test-artifact patterns need their own regex
+# check: src/**/*.test.ts(x) (files:["src/"] ships every source, including tests) and
+# dist/**/*.test.d.ts(.map) (tsc --emitDeclarationOnly has no test exclude of its own).
+if grep -qE '^package/(src|dist)/.*\.test\.(ts|tsx|d\.ts)(\.map)?$' "$LISTFILE"; then
+  echo "FORBIDDEN in tarball: test artifacts present"
+  grep -E '^package/(src|dist)/.*\.test\.' "$LISTFILE" | head -20
+  exit 1
+fi
 echo "tarball contents OK"
 
 echo "==> tarball parity (every CLI-read source ships in the artifact)"
@@ -145,6 +153,7 @@ const subpaths = [
   'basalt-ui/content',
   'basalt-ui/controls',
   'basalt-ui/controls-dates',
+  'basalt-ui/package.json',
 ]
 for (const s of subpaths) {
   const url = import.meta.resolve(s)
@@ -162,6 +171,10 @@ if (typeof guard.checkSource !== 'function') throw new Error('guard.checkSource 
 
 // the raw oxlint preset must resolve via ./configs/* and be valid JSON
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
+
+// the exports map's own './package.json' entry must resolve to a parseable manifest naming the package
+const pkgJson = JSON.parse(readFileSync(require.resolve('basalt-ui/package.json'), 'utf8'))
+if (pkgJson.name !== 'basalt-ui') throw new Error(`basalt-ui/package.json name is '${pkgJson.name}', not 'basalt-ui'`)
 
 // headless adapter smoke imports (peers installed — these load without a DOM/provider)
 const queryMod = await import('basalt-ui/query')
