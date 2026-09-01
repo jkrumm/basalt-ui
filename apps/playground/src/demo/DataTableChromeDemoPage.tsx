@@ -12,8 +12,8 @@
  */
 import { ActionIcon, Alert, Card, Code, Group, Menu, Stack, Switch } from '@mantine/core'
 import { Section } from 'basalt-ui'
-import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data'
-import type { DataTableAlign } from 'basalt-ui/data'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
+import type { DataTableAlign } from 'basalt-ui/data/table'
 import { Component, useMemo, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 

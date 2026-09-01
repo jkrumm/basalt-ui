@@ -38,6 +38,7 @@ import { articleFilters } from './article-filter-stores'
 import { cbbiFilters } from './cbbi/cbbi-store'
 import { mobileFilters } from './controls-mobile-store'
 import { dashboardFilters } from './dashboard-range-store'
+import { dataStressFilters } from './data-stress-store'
 import {
   IconActivity,
   IconBattery,
@@ -344,6 +345,44 @@ export const NAV = defineNav({
         label: 'Agent anchor to end (streaming)',
         icon: <IconActivity />,
         link: linkOptions({ to: '/agent-anchor-to-end' }),
+      },
+    ]),
+
+    // Coverage-hardening routes from the maturation audits (audit-b-components.md /
+    // audit-c-charts.md) — deliberately unbounded combinations rather than a second happy path.
+    navGroup({ id: 'stress', label: 'Stress', icon: <IconActivity /> }, [
+      {
+        id: 'primitives',
+        label: 'Primitives',
+        icon: <IconComponents />,
+        link: linkOptions({ to: '/primitives' }),
+      },
+      {
+        id: 'charts-stress',
+        label: 'Charts stress',
+        short: 'Charts×',
+        icon: <IconChart />,
+        link: linkOptions({ to: '/charts-stress' }),
+      },
+      {
+        id: 'charts-primitives',
+        label: 'Charts primitives',
+        short: 'ChartPrim',
+        icon: <IconChart />,
+        link: linkOptions({ to: '/charts-primitives' }),
+      },
+      {
+        id: 'data-stress',
+        label: 'Data stress',
+        short: 'Data×',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/data-stress', search: dataStressFilters.linkSearch }),
+      },
+      {
+        id: 'states',
+        label: 'States',
+        icon: <IconActivity />,
+        link: linkOptions({ to: '/states' }),
       },
     ]),
 
