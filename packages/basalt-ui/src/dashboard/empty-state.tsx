@@ -36,6 +36,17 @@ export type EmptyStateProps = {
   variant?: 'page' | 'section'
 }
 
+// The finest density-tracking rhythm step (`--vx-space-stack-xs`, 4px at level 0) scaled by an
+// exact integer, so the padding renders at today's px value at level 0 and rides the same
+// `1 + 0.1 * level` multiplier every other `--vx-space-*` token does at every other density level
+// (`docs/STATUS.md`'s density pass) — `LoadingState`'s `'page'` variant shares `PAGE_PADDING_Y`,
+// same concept: a page-level async/empty region's vertical padding.
+const STACK_XS = 'var(--vx-space-stack-xs, 0.25rem)'
+const PAGE_PADDING_Y = `calc(${STACK_XS} * 16)` // 64px at level 0
+const PAGE_PADDING_X = `calc(${STACK_XS} * 6)` // 24px at level 0
+const SECTION_PADDING_Y = `calc(${STACK_XS} * 8)` // 32px at level 0
+const SECTION_PADDING_X = `calc(${STACK_XS} * 5)` // 20px at level 0
+
 export function EmptyState({
   icon,
   title,
@@ -48,11 +59,18 @@ export function EmptyState({
       align="center"
       gap="xs"
       style={{
-        padding: variant === 'page' ? '64px 24px' : '32px 20px',
+        padding:
+          variant === 'page'
+            ? `${PAGE_PADDING_Y} ${PAGE_PADDING_X}`
+            : `${SECTION_PADDING_Y} ${SECTION_PADDING_X}`,
         textAlign: 'center',
       }}
     >
-      {icon && <Center style={{ width: 32, height: 32, color: VX.faint }}>{icon}</Center>}
+      {icon && (
+        // 32px is a fixed glyph-box size, not a density-tracking inset — no `--vx-icon-*` token
+        // exists for a generic (non-`WidgetHeader`-tiered) icon slot, so it stays a structural rem.
+        <Center style={{ width: '2rem', height: '2rem', color: VX.faint }}>{icon}</Center>
+      )}
       <span
         style={{
           fontFamily: 'var(--basalt-font-head)',
@@ -65,7 +83,10 @@ export function EmptyState({
         {title}
       </span>
       {description !== undefined && (
-        <span style={{ fontSize: VX.text.md, color: VX.muted, maxWidth: 360 }}>{description}</span>
+        // 360px (22.5rem) is a reading-width cap, not a density inset — kept structural.
+        <span style={{ fontSize: VX.text.md, color: VX.muted, maxWidth: '22.5rem' }}>
+          {description}
+        </span>
       )}
       {action}
     </Stack>

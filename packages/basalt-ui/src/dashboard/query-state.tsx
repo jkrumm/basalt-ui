@@ -67,7 +67,14 @@ export function LoadingState({
 }: LoadingStateProps): ReactNode {
   const loader = <Loader size="sm" aria-label={label} />
   if (variant === 'section') return loader
-  return <Center py={64}>{loader}</Center>
+  // Same page-level vertical inset `EmptyState`'s `'page'` variant uses (`empty-state.tsx`'s
+  // `PAGE_PADDING_Y`) — the finest density-tracking rhythm step scaled by an exact integer, so this
+  // renders at today's 64px at level 0 and tracks every other density level with it.
+  return (
+    <Center style={{ paddingBlock: 'calc(var(--vx-space-stack-xs, 0.25rem) * 16)' }}>
+      {loader}
+    </Center>
+  )
 }
 
 // ── ErrorState ────────────────────────────────────────────────────────────────────────────────────

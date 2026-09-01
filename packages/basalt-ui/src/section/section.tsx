@@ -130,16 +130,6 @@ function ChevronToggle({
 }
 
 export function Section({
-  title,
-  icon,
-  subtitle,
-  info,
-  value,
-  delta,
-  deltaPeriod,
-  sparkline,
-  count,
-  actions,
   tabs,
   collapsible = false,
   persistKey,
@@ -147,6 +137,7 @@ export function Section({
   summary,
   id,
   children,
+  ...headerProps
 }: SectionProps) {
   const [open, setOpen] = usePersistedOrLocal({
     scope: 'section',
@@ -160,6 +151,7 @@ export function Section({
   // the only surface that stays `section`.
   const tier = useFilterSurface() === 'pill' ? 'section' : 'group'
 
+  const { title, actions } = headerProps
   if (actions !== undefined) warnPastActionBudget(title, actions)
 
   const headerActions =
@@ -187,15 +179,7 @@ export function Section({
     >
       <WidgetHeader
         tier={tier}
-        title={title}
-        {...(icon !== undefined && { icon })}
-        {...(subtitle !== undefined && { subtitle })}
-        {...(info !== undefined && { info })}
-        {...(value !== undefined && { value })}
-        {...(delta !== undefined && { delta })}
-        {...(deltaPeriod !== undefined && { deltaPeriod })}
-        {...(sparkline !== undefined && { sparkline })}
-        {...(count !== undefined && { count })}
+        {...headerProps}
         {...(headerActions !== undefined && { actions: headerActions })}
       />
       {summary !== undefined && <div className={classes.summary}>{summary}</div>}

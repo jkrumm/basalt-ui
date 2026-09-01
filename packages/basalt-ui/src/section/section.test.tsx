@@ -242,3 +242,103 @@ describe('summary — visible collapsed or not', () => {
     expect(summary?.nextElementSibling?.contains(screen.getByText('body content'))).toBe(true)
   })
 })
+
+// A rest-spread bug in `section.tsx` silently dropped `unit`/`deltaPolarity`/`deltaFormat`/
+// `deltaGlyph` even though `SectionProps` type-checked them — nothing rendered, nothing errored.
+// Every `WidgetHeaderProps` key `SectionProps` admits must reach the composed `WidgetHeader`.
+describe('forwards every WidgetHeader prop (unit, deltaPolarity, deltaFormat, deltaGlyph)', () => {
+  test('unit renders beside value', () => {
+    renderWith(
+      <Section title="Load" value="412" unit="TSS">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('TSS')).toBeDefined()
+  })
+
+  test('deltaPolarity="up-bad" renders a positive delta with the bad tone', () => {
+    renderWith(
+      <Section title="Load" delta={12.4} deltaPolarity="up-bad">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('12.4%').style.color).toBe('var(--vx-status-bad)')
+  })
+
+  test('deltaFormat overrides the default percentage label', () => {
+    renderWith(
+      <Section title="Pace" delta={-12} deltaFormat={(v) => `${Math.abs(v)}ms`}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('12ms')).toBeDefined()
+    expect(screen.queryByText('12.0%')).toBeNull()
+  })
+
+  test('deltaGlyph={false} suppresses the glyph', () => {
+    renderWith(
+      <Section title="Load" delta={12.4} deltaGlyph={false}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('12.4%')).toBeDefined()
+    expect(screen.queryByText('▲')).toBeNull()
+  })
+
+  test('icon renders in the heading via the icon slot', () => {
+    renderWith(
+      <Section title="Load" icon={<svg data-testid="load-icon" />}>
+        <div>body</div>
+      </Section>,
+    )
+    const icon = screen.getByTestId('load-icon')
+    expect(icon.closest('[data-basalt-icon]')).not.toBeNull()
+    expect(screen.getByRole('heading', { level: 2, name: 'Load' }).contains(icon)).toBe(true)
+  })
+
+  test('subtitle renders below the title row', () => {
+    renderWith(
+      <Section title="Load" subtitle="7-day rolling">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('7-day rolling')).toBeDefined()
+  })
+
+  test('info renders the "More information" glyph beside the heading', () => {
+    renderWith(
+      <Section title="Load" info="Training stress score.">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('button', { name: 'More information' })).toBeDefined()
+  })
+
+  test('deltaPeriod renders alongside the delta chip', () => {
+    renderWith(
+      <Section title="Load" delta={4.2} deltaPeriod="MoM">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('4.2%')).toBeDefined()
+    expect(screen.getByText('MoM')).toBeDefined()
+  })
+
+  test('sparkline renders below the metric row', () => {
+    renderWith(
+      <Section title="Load" sparkline={<span data-testid="load-spark">trend</span>}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByTestId('load-spark')).toBeDefined()
+  })
+
+  test('count renders a mono tag after the title', () => {
+    renderWith(
+      <Section title="Orders" count={42}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('42')).toBeDefined()
+  })
+})
