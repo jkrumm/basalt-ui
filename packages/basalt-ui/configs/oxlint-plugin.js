@@ -444,6 +444,15 @@ function isInStyleContext(context, node) {
   return false
 }
 
+/**
+ * No `/src/tokens/` exemption, and none is needed: both rules below only ever visit `JSXAttribute`/
+ * `Property` nodes, and `src/tokens/**` is pure data — `.ts`, never `.tsx`, zero React — so the
+ * visitor structurally cannot fire there. A path-based exemption used to sit here gated on
+ * `isBasaltScopedFile`, which tests "does the nearest package.json depend on basalt-ui", not
+ * "is this file basalt's own" — a consumer package that merely depends on basalt-ui could put raw
+ * literals under its own `src/tokens/` and silence both rules. Deleting the exemption is simpler
+ * than re-gating it on package identity: the simplest gate is no gate.
+ */
 const noRawFontSize = {
   meta: {
     type: 'suggestion',
@@ -453,7 +462,7 @@ const noRawFontSize = {
     schema: [],
   },
   create(context) {
-    if (getFilename(context).includes('/src/tokens/') || isTestFile(context)) return {}
+    if (isTestFile(context)) return {}
 
     return {
       JSXAttribute(node) {
@@ -497,10 +506,12 @@ const SIZE_ATTRS = new Set(['size', 'fz', 'fontSize'])
  * which is not always a font size — on `Text` it is, on `ThemeIcon`/`ActionIcon` it is a box
  * dimension — so one shared id would mean a consumer silencing the icon case also silences every
  * off-scale font size, the bundled-rule mistake the three boundary rules were split apart to avoid.
- * And a separate id can carry its own severity: this rule ships `warn` in the consumer preset for
- * one minor (the grace-minor doctrine in the package CLAUDE.md — it rejects code that previously
- * passed, and majors are banned here, so a consumer has no semver channel warning them). Widening
- * `no-raw-font-size` in place would have promoted it to `error` on upgrade with no such runway.
+ * And a separate id can carry its own severity: this rule ships `error` in the consumer preset —
+ * it is a NEW form the sibling rule never caught (a numeric-only check let every string form walk
+ * straight past it), not a narrowing of code that previously passed, so the grace-minor doctrine in
+ * the package CLAUDE.md does not apply to it. Widening `no-raw-font-size` in place would have meant
+ * the widened check inherited whatever level the sibling id already carried, with no way to give
+ * this specific form its own severity.
  *
  * Numeric `size={32}` is deliberately NOT flagged. It is the documented Mantine idiom for icon
  * dimensions and flagging it would fire on nearly every icon in an app for no design-system gain —
@@ -516,7 +527,7 @@ const rawSizeLiteral = {
     schema: [],
   },
   create(context) {
-    if (getFilename(context).includes('/src/tokens/')) return {}
+    if (isTestFile(context)) return {}
 
     return {
       JSXAttribute(node) {
