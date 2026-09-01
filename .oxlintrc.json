@@ -181,7 +181,7 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/state.ts"],
+      "files": ["packages/basalt-ui/src/state.ts", "packages/basalt-ui/src/state/**"],
       "rules": {
         "no-restricted-imports": [
           "error",
