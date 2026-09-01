@@ -2,9 +2,16 @@
  * overlays-mount — composable overlay mount for basalt-ui apps.
  *
  * `BasaltOverlays` bundles ModalsProvider, Spotlight, and Notifications into a single mount point.
- * Put it inside BasaltProvider, before the router. It replaces the standalone `<BasaltNotifications />`
- * from `basalt-ui/notifications` — do NOT mount both `<BasaltOverlays notifications />` and
- * `<BasaltNotifications />` in the same tree (double-mount of `<Notifications />`).
+ * Put it inside BasaltProvider, before the router. It replaces the standalone
+ * `<BasaltNotifications />` from `basalt-ui/notifications` — do NOT mount both
+ * `<BasaltOverlays notifications />` and `<BasaltNotifications />` in the same tree (double-mount
+ * of `<Notifications />`).
+ *
+ * Every layer — ModalsProvider included — mounts as a SIBLING of `children`, never as a wrapper:
+ * see the comment in the component body (R1). `@mantine/modals`' imperative API (`modals.open*`,
+ * and so basalt's own `overlays.open`) is a window CustomEvent bus that ModalsProvider subscribes
+ * to, so nothing needs to be inside it; the one thing a sibling cannot serve is Mantine's
+ * `useModals()` context hook.
  *
  * Each overlay system is opt-in via props (all default to true). Use flags to disable layers the
  * app does not need — e.g. a charts-only app that has no commands can set `spotlight={false}`.
@@ -57,6 +64,7 @@ import { runCommand } from './define-commands'
 import type { CommandId } from './define-commands'
 import { toSpotlightActions } from './projectors'
 import { useCommandHotkeys } from './useCommandHotkeys'
+import { useNotificationsMountGuard } from '../notifications/mount-guard'
 
 // ── Lazy @mantine/spotlight resolution (module-wide singleton) ────────────────
 
@@ -149,8 +157,9 @@ export type BasaltOverlaysProps = {
   children: ReactNode
 }
 
-// ── Lazy ModalsProvider (falls back to a passthrough fragment) ────────────────
+// ── Lazy ModalsProvider (falls back to rendering nothing) ─────────────────────
 
+/** Missing-peer fallback. Mounted childless (see BasaltOverlays), so it renders nothing. */
 function PassthroughFragment({ children }: ModalsProviderProps) {
   return <>{children}</>
 }
@@ -228,6 +237,28 @@ const LazyNotifications = lazy<ComponentType<NotificationsProps>>(() =>
     .catch(() => ({ default: NotificationsFallback })),
 )
 
+// ── NotificationsLayer (runs the shared duplicate-mount guard, F15) ───────────
+
+/** Wraps `LazyNotifications` so `useNotificationsMountGuard` only fires while this layer is
+ * actually enabled — a sibling of `BasaltNotifications` importing the SAME shared counter. */
+function NotificationsLayer({
+  notificationsProps,
+}: {
+  notificationsProps: Omit<NotificationsProps, 'children'> | undefined
+}) {
+  useNotificationsMountGuard()
+  return (
+    <Suspense fallback={null}>
+      <LazyNotifications
+        position="bottom-right"
+        autoClose={4000}
+        limit={5}
+        {...notificationsProps}
+      />
+    </Suspense>
+  )
+}
+
 // ── HotkeysMount (inner component — ensures hook is inside component tree) ────
 
 /** Mounts useCommandHotkeys inside the overlay tree. Graceful no-op when peer is absent. */
@@ -239,9 +270,9 @@ function HotkeysMount() {
 // ── BasaltOverlays ────────────────────────────────────────────────────────────
 
 /**
- * Composable overlay mount — wraps children in ModalsProvider and renders Spotlight +
- * Notifications siblings. All three layers are enabled by default; pass `false` to disable.
- * A disabled layer's optional peer is never imported.
+ * Composable overlay mount — renders ModalsProvider, Spotlight and Notifications as siblings of
+ * `children`. All three layers are enabled by default; pass `false` to disable. A disabled layer's
+ * optional peer is never imported.
  *
  * Mount exactly ONE BasaltOverlays per app. Do NOT combine with a standalone
  * `<BasaltNotifications />` from `basalt-ui/notifications` — that would double-mount
@@ -264,7 +295,14 @@ export function BasaltOverlays({
   projectCommands = true,
   children,
 }: BasaltOverlaysProps) {
-  const content = (
+  // `children` sits OUTSIDE every Suspense boundary, and that is load-bearing (R1): React.lazy
+  // suspends on its first render even when the module is already warm, so a boundary wrapping the
+  // app defers the app's FIRST COMMIT past a microtask tick. TanStack Router's async loadMatches
+  // then resolves into that window and setStates onto the not-yet-mounted Transitioner fiber —
+  // "Can't perform a React state update on a component that hasn't mounted yet". The old shape
+  // also rendered `children` twice (once as the fallback, once resolved), running every effect in
+  // the app in both trees. Never put `children` under a lazy boundary here.
+  return (
     <>
       {enableSpotlight && (
         <Suspense fallback={null}>
@@ -274,28 +312,14 @@ export function BasaltOverlays({
           />
         </Suspense>
       )}
-      {enableNotifications && (
+      {enableNotifications && <NotificationsLayer notificationsProps={notificationsProps} />}
+      {enableHotkeys && <HotkeysMount />}
+      {enableModals && (
         <Suspense fallback={null}>
-          <LazyNotifications
-            position="bottom-right"
-            autoClose={4000}
-            limit={5}
-            {...notificationsProps}
-          />
+          <LazyModalsProvider />
         </Suspense>
       )}
-      {enableHotkeys && <HotkeysMount />}
       {children}
     </>
   )
-
-  if (enableModals) {
-    return (
-      <Suspense fallback={<>{content}</>}>
-        <LazyModalsProvider>{content}</LazyModalsProvider>
-      </Suspense>
-    )
-  }
-
-  return <>{content}</>
 }

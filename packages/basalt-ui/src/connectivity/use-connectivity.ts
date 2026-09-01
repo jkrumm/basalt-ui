@@ -1,8 +1,9 @@
 /**
  * useConnectivity — reads the aggregated connectivity status from ConnectivityContext.
  *
- * Throws if used outside a ConnectivityProvider. For the provider-less simple boolean,
- * use the deprecated `useOnlineStatus` from `basalt-ui/state`.
+ * Throws if used outside a ConnectivityProvider. `BasaltProvider` auto-mounts
+ * `ConnectivityProvider`, so this hook works with zero setup in the common case; the removed
+ * `useOnlineStatus` (formerly `basalt-ui/state`) is replaced by this hook (see MIGRATING.md).
  *
  * @example
  * const { status, details } = useConnectivity()

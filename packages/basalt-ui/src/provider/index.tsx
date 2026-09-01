@@ -21,12 +21,14 @@ import { Component, useEffect, useMemo } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
 import { ConnectivityProvider } from '../connectivity'
+import type { ConnectivityProviderProps } from '../connectivity'
 import { cssVariablesResolver } from '../theme'
 import { useLabTheme } from './lab-theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
+import { isDev } from '../utils/is-dev'
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -91,18 +93,35 @@ export type BasaltProviderProps = {
    * prop; its nonce mechanism is `getStyleNonce: () => string`, which flows through `...rest`.
    */
   nonce?: string
-  /** Optional SSE endpoint for connectivity monitoring. When set, an EventSource is opened. */
+  /**
+   * Options threaded through to the auto-mounted `ConnectivityProvider` (everything except
+   * `children`) — `sseUrl`, `healthUrl`, `healthIntervalMs`, and `override` (previously
+   * unreachable through `BasaltProvider`: the only way to reach it was a second, shadowing
+   * `ConnectivityProvider`). Takes precedence over the deprecated flattened props below when both
+   * are set.
+   */
+  connectivity?: Omit<ConnectivityProviderProps, 'children'>
+  /**
+   * @deprecated Use `connectivity={{ sseUrl }}` instead. Still honoured when `connectivity` is
+   * unset or omits `sseUrl`; removed in 1.28.0.
+   */
   sseUrl?: string
-  /** Optional health-check endpoint for connectivity monitoring. When set, periodic GET pings run. */
+  /**
+   * @deprecated Use `connectivity={{ healthUrl }}` instead. Still honoured when `connectivity` is
+   * unset or omits `healthUrl`; removed in 1.28.0.
+   */
   healthUrl?: string
-  /** Interval in ms for health pings. Default: 30_000 (30s). */
+  /**
+   * @deprecated Use `connectivity={{ healthIntervalMs }}` instead. Still honoured when
+   * `connectivity` is unset or omits `healthIntervalMs`; removed in 1.28.0.
+   */
   healthIntervalMs?: number
-} & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme'>
+} & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>
 
 // ── Default error handler ─────────────────────────────────────────────────────────────────────────
 
 function defaultOnError(error: unknown, ctx: BasaltErrorContext): void {
-  if (process.env['NODE_ENV'] !== 'production') {
+  if (isDev()) {
     // eslint-disable-next-line no-console -- intentional dev-only diagnostic when no onError is supplied
     console.error('[BasaltProvider] unhandled error', ctx.kind, error)
   }
@@ -255,6 +274,68 @@ function BasaltBridge({
   )
 }
 
+// ── Duplicate-mount guard (F14) ───────────────────────────────────────────────────────────────────
+
+/**
+ * Module-level (deliberately NOT a per-instance ref, unlike `fence-block.tsx`'s warn-once gate) —
+ * the whole point is detecting a SECOND, unrelated `BasaltProvider` mounted anywhere else in the
+ * tree, which a per-instance gate could never see. Nested/duplicate providers double-mount
+ * `MantineProvider`, the palette `<style>` and `ConnectivityProvider`'s signal listeners — real
+ * misuse, not a false positive from React 18 StrictMode's double-invoke (that mounts/unmounts the
+ * SAME instance in sequence, so the count returns to 0 before a second instance could ever exist).
+ */
+let mountedProviderCount = 0
+
+function useDuplicateProviderGuard(): void {
+  useEffect(() => {
+    mountedProviderCount++
+    if (mountedProviderCount > 1 && isDev()) {
+      console.warn(
+        '[basalt] BasaltProvider: more than one instance is mounted at once — nested/duplicate ' +
+          'BasaltProviders double-mount MantineProvider, the palette <style> and ' +
+          'ConnectivityProvider. Mount exactly one, at the app root.',
+      )
+    }
+    return () => {
+      mountedProviderCount--
+    }
+  }, [])
+}
+
+/**
+ * Resolves the `connectivity` object against the three deprecated flattened props: `connectivity`
+ * wins WHOLESALE when provided, not per-key — a partial `connectivity={{ sseUrl }}` no longer picks
+ * up a stray `healthUrl` left on the old prop, which was surprising for a mid-migration consumer who
+ * expected the new prop to fully replace the old ones once set. Warns once, dev builds only, when
+ * both are actually supplied. Exported as a pure function (same rationale as `composeInjectedCss`
+ * above) so `provider/index.test.ts` can assert the precedence without rendering a tree.
+ */
+export function resolveConnectivityProps(props: {
+  connectivity: Omit<ConnectivityProviderProps, 'children'> | undefined
+  sseUrl: string | undefined
+  healthUrl: string | undefined
+  healthIntervalMs: number | undefined
+}): Omit<ConnectivityProviderProps, 'children'> {
+  if (props.connectivity !== undefined) {
+    const hasDeprecated =
+      props.sseUrl !== undefined ||
+      props.healthUrl !== undefined ||
+      props.healthIntervalMs !== undefined
+    if (hasDeprecated && isDev()) {
+      console.warn(
+        '[basalt] BasaltProvider: `connectivity` and one of `sseUrl`/`healthUrl`/`healthIntervalMs` ' +
+          'were both supplied — `connectivity` wins wholesale and the deprecated props are ignored.',
+      )
+    }
+    return props.connectivity
+  }
+  return {
+    ...(props.sseUrl !== undefined ? { sseUrl: props.sseUrl } : {}),
+    ...(props.healthUrl !== undefined ? { healthUrl: props.healthUrl } : {}),
+    ...(props.healthIntervalMs !== undefined ? { healthIntervalMs: props.healthIntervalMs } : {}),
+  }
+}
+
 // ── Public provider ───────────────────────────────────────────────────────────────────────────────
 
 export function BasaltProvider({
@@ -265,11 +346,13 @@ export function BasaltProvider({
   defaultColorScheme = 'dark',
   onError,
   nonce,
+  connectivity,
   sseUrl,
   healthUrl,
   healthIntervalMs,
   ...rest
 }: BasaltProviderProps) {
+  useDuplicateProviderGuard()
   const errorHandler = onError ?? defaultOnError
 
   // `createBasaltTheme(theme)` — plus, when the theme lab's "Apply" switch is on, the delta of its
@@ -278,12 +361,23 @@ export function BasaltProvider({
   // Basalt base and nothing else. See `./lab-theme.ts`.
   const resolvedTheme = useLabTheme(theme)
 
+  const resolvedConnectivity = resolveConnectivityProps({
+    connectivity,
+    sseUrl,
+    healthUrl,
+    healthIntervalMs,
+  })
+
   return (
+    // `...rest` spreads FIRST so a consumer's `MantineProviderProps` can never shadow the three
+    // values that follow it — `cssVariablesResolver` in particular is the resolver the package
+    // exists to install (F24); `theme`/`defaultColorScheme` are excluded from `rest`'s type too,
+    // this is belt-and-braces against a widened rest at the call site.
     <MantineProvider
+      {...rest}
       theme={resolvedTheme}
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme={defaultColorScheme}
-      {...rest}
     >
       <BasaltErrorBoundary onError={errorHandler}>
         <BasaltBridge
@@ -292,13 +386,7 @@ export function BasaltProvider({
           nonce={nonce}
           onError={errorHandler}
         >
-          <ConnectivityProvider
-            {...(sseUrl !== undefined ? { sseUrl } : {})}
-            {...(healthUrl !== undefined ? { healthUrl } : {})}
-            {...(healthIntervalMs !== undefined ? { healthIntervalMs } : {})}
-          >
-            {children}
-          </ConnectivityProvider>
+          <ConnectivityProvider {...resolvedConnectivity}>{children}</ConnectivityProvider>
         </BasaltBridge>
       </BasaltErrorBoundary>
     </MantineProvider>

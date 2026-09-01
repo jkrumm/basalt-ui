@@ -29,6 +29,7 @@
  * )
  */
 import { Notifications } from '@mantine/notifications'
+import { useNotificationsMountGuard } from './mount-guard'
 
 export type BasaltNotificationsProps = {
   /** Toast position. Default: 'bottom-right'. */
@@ -60,5 +61,6 @@ export function BasaltNotifications({
   autoClose = 4000,
   limit = 5,
 }: BasaltNotificationsProps) {
+  useNotificationsMountGuard()
   return <Notifications position={position} autoClose={autoClose} limit={limit} />
 }

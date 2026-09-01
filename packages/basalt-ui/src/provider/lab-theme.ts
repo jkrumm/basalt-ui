@@ -44,6 +44,7 @@ import { useMemo } from 'react'
 import { useDeriveControlsState, toDeriveOverride } from '../theme-lab/derive-state'
 import type { DeriveOverride } from '../theme-lab/derive-state'
 import { baseTheme, createBasaltTheme } from '../theme'
+import { isDev } from '../utils/is-dev'
 
 type Plain = Record<string, unknown>
 
@@ -135,7 +136,7 @@ export function applyLabOverride(
  * through a dev server (`bun run dev`), so that is the right side of the trade — but if you ever
  * preview the playground via `vite build && vite preview`, the sliders will be inert there.
  */
-const LAB_ENABLED = process.env['NODE_ENV'] !== 'production'
+const LAB_ENABLED = isDev()
 
 /**
  * Dev build: subscribed to the lab store.

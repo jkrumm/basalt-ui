@@ -17,9 +17,11 @@
  * Converting this to mount through the DOM harness would only be worth it if a future assertion here
  * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
-import { describe, expect, test } from 'bun:test'
+import { render } from '@testing-library/react'
+import { describe, expect, spyOn, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { BasaltProvider, composeInjectedCss } from './index'
+import { BasaltProvider, composeInjectedCss, resolveConnectivityProps } from './index'
+import { useConnectivity } from '../connectivity'
 import { createBasaltTheme } from '../theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import { deriveRadius, deriveSpacing } from '../tokens/palette'
@@ -97,5 +99,198 @@ describe('BasaltBridge reads theme.other.basaltDensity and injects it end to end
     // density override block getting appended on top of it.
     expect(html).not.toContain(buildDensityCss(deriveSpacing(-2)))
     expect(html.split('--vx-space-row-inset-x').length - 1).toBe(1)
+  })
+})
+
+describe('resolveConnectivityProps — the new `connectivity` object vs the deprecated flattened props (A11)', () => {
+  test('deprecated props pass through unchanged when `connectivity` is unset', () => {
+    expect(
+      resolveConnectivityProps({
+        connectivity: undefined,
+        sseUrl: 'https://example.com/sse',
+        healthUrl: 'https://example.com/health',
+        healthIntervalMs: 5_000,
+      }),
+    ).toEqual({
+      sseUrl: 'https://example.com/sse',
+      healthUrl: 'https://example.com/health',
+      healthIntervalMs: 5_000,
+    })
+  })
+
+  test('`connectivity` wins over a deprecated prop declaring the SAME key', () => {
+    expect(
+      resolveConnectivityProps({
+        connectivity: { sseUrl: 'https://new.example.com/sse' },
+        sseUrl: 'https://old.example.com/sse',
+        healthUrl: undefined,
+        healthIntervalMs: undefined,
+      }),
+    ).toEqual({ sseUrl: 'https://new.example.com/sse' })
+  })
+
+  test('`connectivity` wins WHOLESALE — a deprecated prop on a DIFFERENT key is ignored, not merged', () => {
+    expect(
+      resolveConnectivityProps({
+        connectivity: { healthUrl: 'https://new.example.com/health' },
+        sseUrl: 'https://old.example.com/sse',
+        healthUrl: undefined,
+        healthIntervalMs: undefined,
+      }),
+    ).toEqual({ healthUrl: 'https://new.example.com/health' })
+  })
+
+  test('`connectivity` wins wholesale even when it leaves a field unset — that field is NOT backfilled from the deprecated prop', () => {
+    expect(
+      resolveConnectivityProps({
+        connectivity: { healthUrl: 'https://new.example.com/health' },
+        sseUrl: undefined,
+        healthUrl: undefined,
+        healthIntervalMs: 5_000,
+      }),
+    ).toEqual({ healthUrl: 'https://new.example.com/health' })
+  })
+
+  test('warns once, dev builds only, when `connectivity` and a deprecated prop are both supplied', () => {
+    const warnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      resolveConnectivityProps({
+        connectivity: { healthUrl: 'https://new.example.com/health' },
+        sseUrl: 'https://old.example.com/sse',
+        healthUrl: undefined,
+        healthIntervalMs: undefined,
+      })
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      expect(warnSpy.mock.calls[0]?.[0]).toContain('BasaltProvider')
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  test('does NOT warn when only `connectivity` is supplied', () => {
+    const warnSpy = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      resolveConnectivityProps({
+        connectivity: { healthUrl: 'https://new.example.com/health' },
+        sseUrl: undefined,
+        healthUrl: undefined,
+        healthIntervalMs: undefined,
+      })
+      expect(warnSpy).not.toHaveBeenCalled()
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  test('`override` — previously unreachable through BasaltProvider (A11) — flows through `connectivity`', () => {
+    expect(
+      resolveConnectivityProps({
+        connectivity: { override: { browserOnline: false } },
+        sseUrl: undefined,
+        healthUrl: undefined,
+        healthIntervalMs: undefined,
+      }),
+    ).toEqual({ override: { browserOnline: false } })
+  })
+})
+
+function ConnectivityStatusProbe() {
+  const { status } = useConnectivity()
+  return <span data-testid="status">{status}</span>
+}
+
+describe('BasaltProvider connectivity prop reaches ConnectivityProvider end to end (A11)', () => {
+  test('`connectivity.override` resolves the aggregated status read back through useConnectivity()', () => {
+    const { getByTestId } = render(
+      <BasaltProvider connectivity={{ override: { browserOnline: false } }}>
+        <ConnectivityStatusProbe />
+      </BasaltProvider>,
+    )
+    // Before this fix the only way to reach `override` was mounting a SECOND, shadowing
+    // `ConnectivityProvider` — this proves the prop threaded through `BasaltProvider` itself works.
+    expect(getByTestId('status').textContent).toBe('offline')
+  })
+})
+
+describe('BasaltProvider duplicate-mount guard (F14)', () => {
+  test('mounting a single BasaltProvider does not warn', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const { unmount } = render(
+      <BasaltProvider>
+        <div>content</div>
+      </BasaltProvider>,
+    )
+    expect(warn).not.toHaveBeenCalled()
+    unmount()
+    warn.mockRestore()
+  })
+
+  test('mounting a second BasaltProvider while the first is still mounted warns', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const first = render(
+      <BasaltProvider>
+        <div>a</div>
+      </BasaltProvider>,
+    )
+    const second = render(
+      <BasaltProvider>
+        <div>b</div>
+      </BasaltProvider>,
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(String(warn.mock.calls[0]?.[0])).toContain('more than one instance')
+    first.unmount()
+    second.unmount()
+    warn.mockRestore()
+  })
+
+  test('in a production build, mounting a second BasaltProvider does NOT warn — isDev() folds to false', () => {
+    const originalEnv = process.env['NODE_ENV']
+    process.env['NODE_ENV'] = 'production'
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const first = render(
+        <BasaltProvider>
+          <div>a</div>
+        </BasaltProvider>,
+      )
+      const second = render(
+        <BasaltProvider>
+          <div>b</div>
+        </BasaltProvider>,
+      )
+      expect(warn).not.toHaveBeenCalled()
+      first.unmount()
+      second.unmount()
+    } finally {
+      warn.mockRestore()
+      if (originalEnv === undefined) delete process.env['NODE_ENV']
+      else process.env['NODE_ENV'] = originalEnv
+    }
+  })
+})
+
+describe('BasaltProvider cssVariablesResolver precedence — the rest spread can never reach it (F24, runtime)', () => {
+  // `theme` and `defaultColorScheme` are legitimate, explicitly-typed `BasaltProviderProps` fields
+  // — a consumer is meant to override them (`theme` is merged via `useLabTheme`; `defaultColorScheme`
+  // defaults to 'dark' but is a real prop), so neither is something `...rest` could smuggle in the
+  // first place. `cssVariablesResolver` is the one field `Omit`ted from the accepted type ENTIRELY —
+  // there is no prop path to it at all, typed or not — pinned at compile time by
+  // `index.type-guard.test.ts`. This is the runtime half: even a caller that bypasses the type check
+  // with a cast to smuggle `cssVariablesResolver` through the rest object can never make it reach
+  // `MantineProvider`, because `{...rest}` is spread BEFORE basalt's own `cssVariablesResolver` prop
+  // in JSX, and the later, explicit prop always wins the object merge.
+  test('a cssVariablesResolver smuggled through rest past the type check is never invoked', () => {
+    let maliciousResolverCalled = false
+    const maliciousResolver = () => {
+      maliciousResolverCalled = true
+      return { variables: {}, light: {}, dark: {} }
+    }
+    const propsWithResolver = {
+      children: <div>content</div>,
+      cssVariablesResolver: maliciousResolver,
+    } as unknown as Parameters<typeof BasaltProvider>[0]
+    render(<BasaltProvider {...propsWithResolver} />)
+    expect(maliciousResolverCalled).toBe(false)
   })
 })
