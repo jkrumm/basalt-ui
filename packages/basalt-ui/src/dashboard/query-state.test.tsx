@@ -16,7 +16,8 @@ import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
-import { QueryState } from './query-state'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { LoadingState, QueryState } from './query-state'
 import type { QueryStateLike } from './query-state'
 
 type Row = { id: number }
@@ -122,6 +123,31 @@ describe('empty vs loading', () => {
       </MantineProvider>,
     )
     expect(screen.queryByText('rows')).toBeNull()
+  })
+})
+
+// `renderToStaticMarkup` for the same reason `empty-state.test.tsx` gives: happy-dom rejects a
+// `paddingBlock` inline style whose value nests `var()` inside `calc()` at style set-time, so a
+// real render drops the property from the DOM entirely and asserts nothing.
+describe('LoadingState "page" padding is a var()-based calc expression', () => {
+  test('never a frozen px literal', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <LoadingState />
+      </MantineProvider>,
+    )
+    expect(html).toContain('var(--vx-space-stack-xs')
+    expect(html).toContain('calc(')
+    expect(html).not.toMatch(/padding-block:\s*64px/)
+  })
+
+  test('"section" renders the bare loader with no padding wrapper', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <LoadingState variant="section" />
+      </MantineProvider>,
+    )
+    expect(html).not.toContain('padding-block')
   })
 })
 
