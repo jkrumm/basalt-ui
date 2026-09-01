@@ -22,7 +22,7 @@ import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
 import { maxTextWidth } from '../utils/measure-text'
-import { smartTicks } from '../utils/ticks'
+import { smartTicks, xLabelPxFor } from '../utils/ticks'
 import { useChartCursor } from './useChartCursor'
 import type { ChartCursor, CursorAnchor } from './useChartCursor'
 
@@ -250,11 +250,18 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     ...(cursorResolution !== undefined && { resolution: cursorResolution }),
   })
 
+  // The horizontal room one x tick label needs, from the labels `smartTicks` could actually pick —
+  // same measured-spacing law `CartesianChart` applies (`docs/CHARTS-SPEC.md` §1). `keys` (not
+  // `xLabelsAll`) because ticks are chosen from the post-fold key list.
+  const xLabelPx = useMemo(() => xLabelPxFor(keys.map(formatX)), [keys, formatX])
+
   const tickValues = useMemo(
     () => [
-      ...(xTickValues === undefined ? smartTicks(keys, plotWidth) : xTickValues(keys, plotWidth)),
+      ...(xTickValues === undefined
+        ? smartTicks(keys, plotWidth, xLabelPx)
+        : xTickValues(keys, plotWidth)),
     ],
-    [keys, plotWidth, xTickValues],
+    [keys, plotWidth, xTickValues, xLabelPx],
   )
 
   const svgRef = useRef<SVGSVGElement>(null)

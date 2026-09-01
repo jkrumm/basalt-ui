@@ -1,10 +1,16 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
+import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
+import { legendEntryCap, resolvePlotRect } from './chart-frame-layout'
 import { ChartLegend } from './ChartLegend'
 import { ChartPending } from './ChartPending'
+
+/** Re-exported for `ChartFrame.test.tsx` and any other consumer that previously reached these
+ * through `ChartFrame` — the layout math itself lives in `./chart-frame-layout` (pure, DOM-free). */
+export { legendEntryCap, resolvePlotRect } from './chart-frame-layout'
 
 const DEFAULT_HEIGHT = 240
 const DEFAULT_MIN_WIDTH = 200
@@ -134,7 +140,9 @@ export function resolveLegend(
  * rect via a second, independent `useChartSize` on the legend's own wrapper div. The legend
  * `<div>` wraps (`ChartLegend`'s `flexWrap`), so its measured band grows as entries wrap and the
  * plot shrinks accordingly — the plot can never overlap the legend because the legend's measured
- * band is always subtracted first.
+ * band is always subtracted first. It also can never shrink to nothing: {@link resolvePlotRect}
+ * floors it at `VX.minPlotHeight` and the frame grows, or under `fill` the legend rolls up
+ * ({@link legendEntryCap}).
  *
  * Layout-only: it does not know lines from bars (that stays in the kind), so it is not a
  * Recharts god-component. Render the child only when the resolved plot rect is non-empty.
@@ -177,13 +185,31 @@ export function ChartFrame({
   const sideLegendWidth = legendVisible && vertical ? legendW : 0
   const topBottomLegendHeight = legendVisible && !vertical ? legendH : 0
 
-  const plot = {
-    width: Math.max(containerW - sideLegendWidth, minWidth),
-    height: resolvedHeight - topBottomLegendHeight,
-  }
+  const plot = resolvePlotRect({
+    containerW,
+    resolvedHeight,
+    minWidth,
+    sideLegendWidth,
+    topBottomLegendHeight,
+  })
 
   const legendItems = legend === false ? [] : deriveLegend(series)
   const togglable = legend !== false && (legend.toggle ?? legendItems.length > 1)
+
+  // A fixed-height frame grows around its legend; a `fill` one cannot, so its legend rolls up
+  // instead of eating the plot (see `legendEntryCap`). Top/bottom only — a side legend costs
+  // width, not height.
+  const maxRows =
+    legend === false
+      ? undefined
+      : fill && !vertical
+        ? legendEntryCap({
+            items: legendItems,
+            containerW,
+            available: resolvedHeight - VX.minPlotHeight,
+            ...(legend.maxRows !== undefined && { callerMaxRows: legend.maxRows }),
+          })
+        : legend.maxRows
 
   const legendNode =
     legend === false || isPending ? null : (
@@ -195,7 +221,7 @@ export function ChartFrame({
           {...(togglable && { onToggle: toggleKey })}
           {...(chartId !== undefined && { chartId })}
           {...(legend.groups !== undefined && { groups: legend.groups })}
-          {...(legend.maxRows !== undefined && { maxRows: legend.maxRows })}
+          {...(maxRows !== undefined && { maxRows })}
           {...(legend.highlighted !== undefined && { highlighted: legend.highlighted })}
           {...(legend.onHighlight !== undefined && { onHighlight: legend.onHighlight })}
         />

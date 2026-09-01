@@ -831,3 +831,115 @@ describe('CartesianChart — xTickValues', () => {
     expect(text).not.toContain('2026-08-')
   })
 })
+
+describe('CartesianChart — x tick spacing measures the label it paints', () => {
+  const many: Row[] = Array.from({ length: 24 }, (_, i) => ({
+    date: `2026-08-${String(i + 1).padStart(2, '0')}`,
+    a: i,
+    b: i,
+  }))
+
+  const bottomAxis = (markup: string): string =>
+    /<g class="visx-group visx-axis visx-axis-bottom"[\s\S]*?(?=<rect)/.exec(markup)?.[0] ?? ''
+
+  const tickCount = (markup: string): number =>
+    (bottomAxis(markup).match(/visx-axis-tick/g) ?? []).length
+
+  // The harness never measures (the `ResizeObserver` shim is a no-op), so the frame falls back to
+  // its `minWidth` — the side gutters are zeroed to leave that whole 200px as plot, which is what
+  // makes two different label widths resolve to two different tick counts here.
+  const renderWith = (props: Partial<Parameters<typeof CartesianChart<Row>>[0]>): string =>
+    renderToStaticMarkup(
+      <CartesianChart<Row>
+        data={many}
+        chartId="xspace"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        margin={{ left: 0, right: 0 }}
+        {...props}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+
+  test('a wide formatX thins the axis; the narrow default does not', () => {
+    // The bug: the tick count came from the constant `VX.minPxPerTick` alone, so `Mar 08 14:00`
+    // was spaced exactly like `08.03` and overlapped at every width.
+    const wide = tickCount(renderWith({ formatX: (key) => `${key} 14:00 CEST` }))
+    const narrow = tickCount(renderWith({}))
+    expect(wide).toBeLessThan(narrow)
+    expect(wide).toBeGreaterThanOrEqual(2)
+  })
+
+  test('an explicit xTicks count still wins — the measurement never overrides the caller', () => {
+    const ticks = tickCount(renderWith({ formatX: (key) => `${key} 14:00 CEST`, xTicks: 8 }))
+    expect(ticks).toBeGreaterThan(2)
+  })
+
+  test('rotating the labels frees the spacing again — they stack diagonally, not side by side', () => {
+    const flat = tickCount(renderWith({ formatX: (key) => `${key} 14:00 CEST` }))
+    const rotated = tickCount(
+      renderWith({ formatX: (key) => `${key} 14:00 CEST`, xLabelRotate: 45 }),
+    )
+    expect(rotated).toBeGreaterThan(flat)
+  })
+
+  test('xLabelRotate paints the tick labels rotated, anchored at their right edge', () => {
+    const markup = bottomAxis(renderWith({ xLabelRotate: 45 }))
+    expect(markup).toContain('transform="rotate(-45')
+    expect(markup).toContain('text-anchor="end"')
+  })
+
+  test('without it, nothing rotates', () => {
+    const markup = bottomAxis(renderWith({}))
+    expect(markup).not.toContain('transform="rotate(')
+    expect(markup).toContain('text-anchor="middle"')
+  })
+
+  test('a rotated axis deepens the bottom gutter instead of clipping', () => {
+    // `autoMargin({ rotate })` grows `bottom` by the rotated label's projected height, so the plot
+    // (and with it the axis' own `top`) sits higher.
+    const topOf = (markup: string): number =>
+      Number(/visx-axis-bottom" transform="translate\(0, ([\d.]+)\)/.exec(markup)?.[1] ?? '0')
+    const flat = topOf(renderWith({ formatX: (key) => `${key} 14:00 CEST` }))
+    const rotated = topOf(renderWith({ formatX: (key) => `${key} 14:00 CEST`, xLabelRotate: 45 }))
+    expect(rotated).toBeLessThan(flat)
+  })
+})
+
+describe('CartesianChart — two refLines at the same value on the same axis', () => {
+  test('both render, and neither collides with the other on a duplicate React key', () => {
+    // A solid marker plus a dashed one at the same threshold is an ordinary annotation idiom; the
+    // key was `${axis}-${value}`, so the pair shared one key.
+    const errors: string[] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => {
+      errors.push(args.map(String).join(' '))
+    }
+    let html = ''
+    try {
+      const { container } = render(
+        <CartesianChart<Row>
+          data={rows}
+          chartId="reflines"
+          getX={(d) => d.date}
+          series={[seriesFor('a')]}
+          legend={false}
+          refLines={[
+            { value: 20, color: '#aa0000' },
+            { value: 20, color: '#00bb00', dashed: true },
+          ]}
+        >
+          {() => null}
+        </CartesianChart>,
+      )
+      html = container.innerHTML
+    } finally {
+      console.error = original
+    }
+    expect(html).toContain('#aa0000')
+    expect(html).toContain('#00bb00')
+    expect(errors.filter((e) => e.toLowerCase().includes('key'))).toEqual([])
+  })
+})

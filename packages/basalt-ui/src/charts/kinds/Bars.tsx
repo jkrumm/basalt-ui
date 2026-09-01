@@ -10,6 +10,7 @@ import type { ZoneSpec } from '../primitives/ZoneRects'
 import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower } from '../utils/domain'
+import { isDev } from '../../utils/is-dev'
 
 /**
  * `T = unknown` is load-bearing, not a shortcut: it keeps a consumer's existing
@@ -115,6 +116,8 @@ export type BarsProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
+  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -167,6 +170,7 @@ function BarsInner<T>(props: BarsProps<T>) {
     xTicks,
     xTickValues,
     formatX,
+    xLabelRotate,
     cursorResolution,
     tooltip,
     margin,
@@ -174,6 +178,16 @@ function BarsInner<T>(props: BarsProps<T>) {
     ariaLabel,
     isPending,
   } = props
+
+  // Stacking sums bar heights via `posOffset`/`negOffset` in yScale units directly — a log axis
+  // has no additive zero, so a stacked total is meaningless on it (`docs/CHARTS-SPEC.md`'s null-gap
+  // + log contract). `grouped` bars only ever read one bar's own scaled value, so they're unaffected.
+  if (isDev() && barLayout === 'stacked' && y?.scale === 'log') {
+    throw new Error(
+      'Bars: stacked bars cannot use a log axis (y.scale: "log") — the stack sums bar heights, ' +
+        "and a log axis has no additive zero to sum from. Use barLayout: 'grouped' instead.",
+    )
+  }
 
   const barSeries = useMemo<ChartSeries<T>[]>(
     () =>
@@ -287,6 +301,7 @@ function BarsInner<T>(props: BarsProps<T>) {
       {...(xTicks !== undefined && { xTicks })}
       {...(xTickValues !== undefined && { xTickValues })}
       {...(formatX !== undefined && { formatX })}
+      {...(xLabelRotate !== undefined && { xLabelRotate })}
       {...(cursorResolution !== undefined && { cursorResolution })}
       {...(zones !== undefined && { zones })}
       {...(mappedRefLines !== undefined && { refLines: mappedRefLines })}
@@ -368,14 +383,27 @@ function BarsMarks<T>({
     const scaleForSide = (side: 'left' | 'right' | undefined) =>
       side === 'right' && y2Scale ? y2Scale : yScale
     const dim = (key: string) => (highlighted === null || highlighted === key ? 1 : 0.15)
+    // The y a bar grows FROM. `scale(0)` is `-Infinity` on a log axis — which has no zero — so
+    // every grouped bar's height came out NaN and the bars silently vanished; the fallback is the
+    // axis' own domain floor, which the log-domain law keeps positive. On a linear axis the same
+    // expression still resolves to `scale(0)` for any domain reaching zero, and pins the bar to
+    // the visible floor rather than to a zero drawn off the bottom of the plot when it does not.
+    const baselineFor = (scale: typeof yScale) => {
+      const floor = scale.domain()[0] ?? 0
+      const at = scale(Math.max(floor, 0))
+      return Number.isFinite(at) ? at : scale(floor)
+    }
 
     const groupWidth = Math.max((xMax / Math.max(rows.length, 1)) * barWidthRatio, 2)
-    const totalWeight =
-      barLayout === 'grouped' ? positiveBars.reduce((s, b) => s + (b.weight ?? 1), 0) || 1 : 1
-    const groupedBarWidths =
-      barLayout === 'grouped'
-        ? positiveBars.map((b) => Math.max(groupWidth * ((b.weight ?? 1) / totalWeight), 1))
-        : []
+    // Tiled across the bars that are actually DRAWN. Derived from the full `positiveBars` instead,
+    // a legend toggle left a hole in the slot where the hidden bar used to sit and never re-tiled
+    // the survivors across the same width.
+    const groupedBars =
+      barLayout === 'grouped' ? positiveBars.filter((b) => !hidden.has(b.key)) : []
+    const totalWeight = groupedBars.reduce((s, b) => s + (b.weight ?? 1), 0) || 1
+    const groupedBarWidths = groupedBars.map((b) =>
+      Math.max(groupWidth * ((b.weight ?? 1) / totalWeight), 1),
+    )
     const groupedBarOffsets: number[] = []
     let cursor = 0
     for (const w of groupedBarWidths) {
@@ -428,19 +456,20 @@ function BarsMarks<T>({
           negOffset = top
         }
       } else {
-        positiveBars.forEach((b, i) => {
-          if (hidden.has(b.key)) return
+        groupedBars.forEach((b, i) => {
           const v = getValue(d, b.key)
           if (v === null || Number.isNaN(v) || v <= 0) return
           const scale = scaleForSide(b.axisSide)
           const yTop = scale(v)
-          const yBottom = scale(0)
+          const yBottom = baselineFor(scale)
           rects.push({
             key: `${getX(d)}-${b.key}`,
             x: groupLeft + (groupedBarOffsets[i] ?? 0),
             y: yTop,
             width: groupedBarWidths[i] ?? 0,
-            height: yBottom - yTop,
+            // A value below a caller-pinned domain floor sits under the baseline; SVG rejects a
+            // negative height outright, so it clamps to nothing drawn.
+            height: Math.max(yBottom - yTop, 0),
             fill: b.color,
             fillOpacity: (barOpacity?.(d, b.key) ?? 0.85) * dim(b.key),
           })

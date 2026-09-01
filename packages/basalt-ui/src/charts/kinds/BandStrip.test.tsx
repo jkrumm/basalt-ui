@@ -280,3 +280,32 @@ describe('BandStrip — the tooltip row is DERIVED from the hovered band’s sta
     expect(screen.getByRole('slider').getAttribute('aria-label')).toBe('Availability per bucket')
   })
 })
+
+/**
+ * `useBandPlot`'s x tick spacing used to come from `VX.minPxPerTick` alone, regardless of what
+ * `formatX` actually painted — the same bug `CartesianChart` had (`docs/CHARTS-SPEC.md` §1). A
+ * `margin={{ left: 0, right: 0 }}` override (this kind's own escape hatch) hands the full 200px
+ * DOM-harness width to the plot, which is enough room for a wide label to measurably thin the
+ * axis relative to the narrow default.
+ */
+describe('BandStrip — x tick spacing measures the label it paints', () => {
+  const many: Slot[] = Array.from({ length: 24 }, (_, i) =>
+    slot(`2026-08-${String(i + 1).padStart(2, '0')}`, 0),
+  )
+
+  const renderWith = (formatX?: (key: string) => string) =>
+    renderStrip({
+      data: many,
+      margin: { left: 0, right: 0 },
+      ...(formatX !== undefined && { formatX }),
+    })
+
+  test('a wide formatX thins the bottom axis; the narrow default does not', () => {
+    const wideCount = renderWith((key) => `${key} 14:00 CEST`).container.querySelectorAll(
+      '.visx-axis-tick',
+    ).length
+    const narrowCount = renderWith().container.querySelectorAll('.visx-axis-tick').length
+    expect(wideCount).toBeLessThan(narrowCount)
+    expect(wideCount).toBeGreaterThanOrEqual(2)
+  })
+})

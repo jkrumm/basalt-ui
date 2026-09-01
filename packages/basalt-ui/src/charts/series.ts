@@ -95,7 +95,12 @@ export type SeriesStyle = {
 
 /** Full descriptor = visual identity + data accessors. Generic over the point type. */
 export type ChartSeries<T> = SeriesStyle & {
-  /** null = line gap + skipped tooltip row. */
+  /**
+   * null = an ABSENCE, never a zero: a real gap in the line/area (`defined`, not a straight
+   * interpolation across the hole) plus a skipped tooltip row and no crosshair dot. In a STACKED
+   * kind the absence is contagious — a band with no value leaves no cumulative total, so the whole
+   * stack gaps at that x (`StackedArea`'s JSDoc has the accounting).
+   */
   getValue: (d: T) => number | null
   /** Per-series override of the shared tooltip/value formatter. Receives the hovered datum
    * alongside the value so a row can read fields beyond the plotted number (e.g. `97.5 kg (92.5 ×
@@ -194,4 +199,25 @@ export function deriveTooltipRows<T>(
     })
   }
   return rows
+}
+
+/**
+ * Coerces a `ChartSeries.getValue` result into what a plotted point stores as its y: `null`,
+ * `undefined` and `NaN` all collapse to `null`, which downstream `definedOn` reads as a
+ * documented gap rather than a value to plot. Shared by `MultiLine`'s `seriesPoints` and
+ * `ZonedLine`'s `linePoints` — both used to reimplement this coercion independently.
+ */
+export function toPlotPoint(v: number | null | undefined): number | null {
+  return v === null || v === undefined || Number.isNaN(v) ? null : v
+}
+
+/**
+ * A `defined` predicate for `LinePath`/`AreaClosed`/`Threshold`, bound to one y-scale. A null
+ * `__y` is a documented gap (`ChartSeries.getValue`), and a non-positive value on a log scale maps
+ * to `NaN` via the scale itself — without excluding both, d3's generators either draw an
+ * interpolated straight line across the hole or blank the entire path from that point on (SVG's
+ * `NaN` path-command handling). Shared by `MultiLine` and `ZonedLine`.
+ */
+export function definedOn(scale: (y: number) => number): (d: { __y: number | null }) => boolean {
+  return (d) => d.__y !== null && Number.isFinite(scale(d.__y))
 }

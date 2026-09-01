@@ -68,12 +68,22 @@ export function AxisRightNumeric({
   )
 }
 
+/**
+ * Nudge a rotated tick label back onto its tick. Both are the d3 idiom for the angle: a 45° label
+ * hangs from the tick's lower-left, a 90° one is centred on the tick's vertical line.
+ */
+const ROTATED_OFFSET: Record<45 | 90, { dx: number; dy: number }> = {
+  45: { dx: -6, dy: 2 },
+  90: { dx: -4, dy: 4 },
+}
+
 /** Themed bottom date axis — baked-in smartTicks + DD.MM formatting. */
 export function AxisBottomDate({
   scale,
   top,
   tickValues,
   tickFormat = fmtAxisDate,
+  rotate,
 }: {
   scale: AxisScale
   top: number
@@ -83,7 +93,14 @@ export function AxisBottomDate({
    * tick to the same label.
    */
   tickFormat?: TickFormatter<string>
+  /**
+   * Tilt each tick label counter-clockwise by 45° or 90°, anchored at its right edge — the answer
+   * to labels too wide to sit side by side. The caller owns the deepened bottom gutter it needs
+   * (`autoMargin({ rotate })`, `docs/CHARTS-SPEC.md` §1); this only paints them.
+   */
+  rotate?: 45 | 90
 }) {
+  const rotated = rotate === undefined ? undefined : ROTATED_OFFSET[rotate]
   return (
     <AxisBottom
       top={top}
@@ -94,7 +111,9 @@ export function AxisBottomDate({
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
         fontSize: VX.axisFont,
-        textAnchor: 'middle',
+        textAnchor: rotated === undefined ? 'middle' : 'end',
+        ...(rotate !== undefined && { angle: -rotate }),
+        ...(rotated !== undefined && { dx: rotated.dx, dy: rotated.dy }),
       }}
       stroke={VX.surface.border}
       tickStroke={VX.surface.border}

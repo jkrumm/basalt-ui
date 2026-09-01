@@ -265,3 +265,101 @@ describe('MultiLine — cursorResolution threads through to sibling resolution',
     expect(foldedSlider.getAttribute('aria-valuetext')).toBe('08.08')
   })
 })
+
+describe('MultiLine — a null value is a GAP, not an interpolated straight line', () => {
+  type Sparse = { date: string; v: number | null }
+  const sparse: Sparse[] = [
+    { date: '2026-08-01', v: 10 },
+    { date: '2026-08-02', v: 12 },
+    { date: '2026-08-03', v: null },
+    { date: '2026-08-04', v: 14 },
+    { date: '2026-08-05', v: 16 },
+  ]
+  const sparseSeries: ChartSeries<Sparse>[] = [
+    { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+  ]
+
+  function linePath(html: string): string {
+    return /class="visx-linepath"[^>]*\sd="([^"]*)"/.exec(html)?.[1] ?? ''
+  }
+
+  test('the path breaks into two subpaths at the null — the row is kept, `defined` splits it', () => {
+    const html = renderToStaticMarkup(
+      <MultiLine<Sparse>
+        data={sparse}
+        chartId="ml-null-gap"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    const d = linePath(html)
+    // Two moveto commands = two segments = a real hole. One would mean the line was drawn straight
+    // across the missing day.
+    expect((d.match(/M/g) ?? []).length).toBe(2)
+    expect(d).not.toContain('NaN')
+  })
+
+  test('a dense series still draws ONE continuous subpath (the gap is data-driven, not always-on)', () => {
+    const dense: Sparse[] = sparse.map((d) => ({ ...d, v: d.v ?? 13 }))
+    const html = renderToStaticMarkup(
+      <MultiLine<Sparse>
+        data={dense}
+        chartId="ml-dense"
+        getX={(d) => d.date}
+        series={sparseSeries}
+      />,
+    )
+    expect((linePath(html).match(/M/g) ?? []).length).toBe(1)
+  })
+
+  test('a marker on the null point is not painted, and the null contributes no crosshair dot', () => {
+    const withMarkers: ChartSeries<Sparse>[] = [
+      { ...(sparseSeries[0] as ChartSeries<Sparse>), getMarker: () => ({}) },
+    ]
+    const html = renderToStaticMarkup(
+      <MultiLine<Sparse>
+        data={sparse}
+        chartId="ml-null-marker"
+        getX={(d) => d.date}
+        series={withMarkers}
+      />,
+    )
+    expect(html).not.toContain('NaN')
+    // Four measured points, four markers — the null day gets none.
+    expect((html.match(/<circle/g) ?? []).length).toBe(4)
+  })
+
+  test('a series that measured nothing at all draws no path', () => {
+    const allNull: ChartSeries<Sparse>[] = [
+      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: () => null },
+    ]
+    const html = renderToStaticMarkup(
+      <MultiLine<Sparse>
+        data={sparse}
+        chartId="ml-all-null"
+        getX={(d) => d.date}
+        series={allNull}
+      />,
+    )
+    // `visx-linepath` is the mark; the grid rules are `visx-line` and never a path.
+    expect(linePath(html)).toBe('')
+  })
+})
+
+describe('MultiLine — xLabelRotate', () => {
+  test('is forwarded to CartesianChart and rotates the bottom axis tick labels', () => {
+    const series: ChartSeries<Row>[] = [
+      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+    ]
+    const html = renderToStaticMarkup(
+      <MultiLine<Row>
+        data={rows}
+        chartId="ml-rotate"
+        getX={(d) => d.date}
+        series={series}
+        xLabelRotate={45}
+      />,
+    )
+    expect(html).toContain('transform="rotate(-45')
+  })
+})
