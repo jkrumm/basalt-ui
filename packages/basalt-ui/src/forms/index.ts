@@ -1,6 +1,6 @@
 /**
  * ./forms — Mantine form adapter battery.
- * Provides useBasaltForm, field, FormErrorSummary, and useFormDraft on top of @mantine/form.
+ * Provides useBasaltForm, inputProps, FormErrorSummary, and useFormDraft on top of @mantine/form.
  * Optional peer: @mantine/form ^9.3.0.
  *
  * Install with: bun add @mantine/form
@@ -10,8 +10,9 @@
 export { useBasaltForm } from './create-form'
 export type { UseBasaltFormOptions } from './create-form'
 
-// ── field ─────────────────────────────────────────────────────────────────────
-export { field } from './field'
+// ── inputProps ────────────────────────────────────────────────────────────────
+// `field` ships alongside as a @deprecated alias — see field.ts.
+export { inputProps, field } from './field'
 
 // ── FormErrorSummary ──────────────────────────────────────────────────────────
 export { FormErrorSummary } from './FormErrorSummary'
