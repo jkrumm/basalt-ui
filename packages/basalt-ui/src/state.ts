@@ -46,13 +46,4 @@ export {
   type FieldHandle,
   type SearchValues,
   type StoredValues,
-  // @internal — the seam `createSearchStore` is built on, not a consumer API.
-  type FieldCodec,
-  type StoreEntry,
-  type StoreCoreOptions,
-  type StoreCore,
-  type FieldUse,
-  type FieldWrite,
-  resolveFieldCodec,
-  createStoreCore,
 } from './state/fields'

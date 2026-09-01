@@ -18,10 +18,16 @@ export { CTL_THEME, CtlSlot } from './theme'
 export type { CtlSlotProps } from './theme'
 /**
  * The action vocabulary every home's `actions` slot takes (`docs/CONTROLS-SPEC.md` §2.1). The
- * COMPONENTS that project it (`ActionGroup`, `OverflowMenu`, `SyncButton`, and the filter family)
- * live on `basalt-ui/controls` — only the types a `PageBar`/`BasaltShell` prop mentions are here.
+ * OTHER components that project it (`OverflowMenu`, `SyncButton`, and the filter family) live on
+ * `basalt-ui/controls`; `ActionGroup` is re-exported here alongside its own types so a typed
+ * `PageBar`/`BasaltShell` `actions` wrapper needs only this one subpath.
  */
-export type { BarAction, ActionGroupProps, GlobalAction } from './controls/actions'
+export {
+  ActionGroup,
+  type BarAction,
+  type ActionGroupProps,
+  type GlobalAction,
+} from './controls/actions'
 export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
 export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {
@@ -89,9 +95,11 @@ export {
 } from './register'
 
 // ── Persisted state + the headless store kernel (state.ts) ───────────────────────────────────────
-// The `field.*` VALUE is deliberately not re-exported here — `basalt-ui/forms` already owns the
-// name `field` on its own barrel. Import it from `basalt-ui/router-tanstack` (beside
-// `createSearchStore`) or from `basalt-ui/state` (beside `createLocalStore`).
+// The `field.*` VALUE is deliberately not re-exported here. `basalt-ui/forms` used to own the
+// name `field` too and collide with this one; that forms helper is now `inputProps` (`field`
+// stays there only as a @deprecated alias — see MIGRATING.md). Import `field.*` from
+// `basalt-ui/router-tanstack` (beside `createSearchStore`) or from `basalt-ui/state` (beside
+// `createLocalStore`).
 export {
   createPersistedState,
   type PersistedStateOptions,
@@ -116,6 +124,7 @@ export {
   type RangeWindow,
   type RangeWindows,
   type ResolvedLane,
+  type ResolveLane,
   type SearchValues,
   type StoredValues,
   type StringField,
@@ -126,6 +135,8 @@ export {
   WidgetHeader,
   type WidgetHeaderProps,
   type WidgetHeaderTier,
+  DeltaBadge,
+  type DeltaBadgeProps,
   type DeltaPolarity,
 } from './widget-header'
 
@@ -134,8 +145,6 @@ export { Section, type SectionProps } from './section'
 
 // ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
 export {
-  DeltaBadge,
-  type DeltaBadgeProps,
   StatCard,
   type StatCardBreakdownRow,
   type StatCardProps,

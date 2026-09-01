@@ -79,7 +79,7 @@ export type SkillName = 'basalt-app' | 'basalt-design' | 'basalt-charts'
  * @example
  * const l: Layer = 'headless'
  */
-export type Layer = 'mantine-coupled' | 'headless' | 'app-global' | 'non-js-asset'
+export type Layer = 'mantine-coupled' | 'headless' | 'app-global' | 'non-js-asset' | 'build-tooling'
 
 /**
  * A single import ban. `{ctx}` in the message is filled per target so shipped/repo wording
@@ -269,6 +269,12 @@ export const SURFACES = {
       'page-bar-budget',
       'shadow-basalt-export',
     ],
+    // agent/rules/basalt-mantine.md — stated, not guarded.
+    advisoryLaws: [
+      'BasaltProvider mounts above the router (Mantine context must exist before RouterProvider)',
+      'BasaltOverlays XOR a standalone BasaltNotifications — never both in one tree (double-mounts <Notifications>)',
+      "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
+    ],
     description:
       'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
     optionalPeers: [
@@ -359,7 +365,7 @@ export const SURFACES = {
   },
   './vite': {
     kind: 'tooling',
-    layer: 'mantine-coupled',
+    layer: 'build-tooling',
     description:
       'basaltViteConfig(opts) — Vite preset for basalt-ui consumer apps; basaltAppPlugin(opts) — PWA head, manifest, and icon metadata derived from the token palette',
     optionalPeers: ['vite-plugin-pwa'],
@@ -383,6 +389,11 @@ export const SURFACES = {
     skill: ['basalt-app'],
     guardKinds: [],
     pluginRules: [],
+    // agent/rules/basalt-batteries.md — stated, not guarded.
+    advisoryLaws: [
+      'import query hooks from basalt-ui/query, never dual-import @tanstack/react-query',
+      'queryFn wraps the call in unwrap()',
+    ],
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
     optionalPeers: ['@tanstack/react-query-devtools'],
     globs: {
@@ -418,7 +429,7 @@ export const SURFACES = {
     guardKinds: [],
     pluginRules: [],
     description:
-      'Mantine form adapter: useBasaltForm, field, FormErrorSummary, useFormDraft (Standard Schema)',
+      'Mantine form adapter: useBasaltForm, inputProps, FormErrorSummary, useFormDraft (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)',
     optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },
@@ -604,10 +615,10 @@ export const SURFACES = {
     optionalPeers: [],
     // Consumers import basalt-ui/state from node_modules (lint-ignored), so there is nothing to
     // enforce consumer-side, and a shipped **/state* glob would wrongly hit consumers' own
-    // Mantine-using state files. Enforce only basalt's own src/state.ts.
+    // Mantine-using state files. Enforce basalt's own barrel AND its implementation files.
     globs: {
       shipped: [],
-      repo: ['packages/basalt-ui/src/state.ts'],
+      repo: ['packages/basalt-ui/src/state.ts', 'packages/basalt-ui/src/state/**'],
     },
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],

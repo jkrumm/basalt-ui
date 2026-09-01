@@ -30,16 +30,9 @@
  * Headless — no Mantine, no JSX. Same tier as `useBasaltNav` and `useRouterBreadcrumbs`.
  */
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { createStoreCore } from '../state'
-import type {
-  AnyField,
-  FieldHandle,
-  FieldSetOptions,
-  FieldWrite,
-  SearchValues,
-  StoreEntry,
-  StoredValues,
-} from '../state'
+import { createStoreCore } from '../state/fields'
+import type { FieldWrite, StoreEntry } from '../state/fields'
+import type { AnyField, FieldHandle, FieldSetOptions, SearchValues, StoredValues } from '../state'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
