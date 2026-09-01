@@ -147,7 +147,9 @@ function OverlaysSection() {
       </Text>
       <Text size="sm">
         Opens a modal via <code>@mantine/modals</code>. <code>BasaltOverlays</code> mounts{' '}
-        <code>ModalsProvider</code> automatically.
+        <code>ModalsProvider</code> automatically — as a sibling of the app, not a wrapper, so{' '}
+        <code>useModals()</code>/<code>openContextModal</code> still need a <code>false</code>{' '}
+        <code>modals</code> prop plus your own <code>ModalsProvider</code>.
       </Text>
       <Group gap="xs" wrap="wrap">
         <Button

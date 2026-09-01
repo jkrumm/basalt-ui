@@ -1,6 +1,6 @@
 /**
  * FormsDemoPage — exercises basalt-ui/forms:
- * useBasaltForm + field + FormErrorSummary + useFormDraft with a Valibot schema.
+ * useBasaltForm + inputProps + FormErrorSummary + useFormDraft with a Valibot schema.
  *
  * Demo: a project entry form (name, email, budget) with draft persistence.
  * Draft is autosaved on every value change (via onValuesChange wired to saveDraft ref),
@@ -17,7 +17,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useBasaltForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
+import { useBasaltForm, inputProps, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
 import { useRef, useState } from 'react'
 import * as v from 'valibot'
 
@@ -86,20 +86,20 @@ function ProjectForm() {
           <FormErrorSummary form={form} title="Fix these errors before submitting" />
 
           <TextInput
-            {...field(form, 'name')}
+            {...inputProps(form, 'name')}
             label="Project name"
             placeholder="My project"
             required
           />
           <TextInput
-            {...field(form, 'email')}
+            {...inputProps(form, 'email')}
             label="Contact email"
             placeholder="you@example.com"
             type="email"
             required
           />
           <NumberInput
-            {...field(form, 'budget')}
+            {...inputProps(form, 'budget')}
             label="Budget (USD)"
             placeholder="0"
             min={0}
@@ -156,7 +156,7 @@ export function FormsDemoPage() {
       <div>
         <Title order={3}>./forms adapter</Title>
         <Text size="sm" c="dimmed" mt={4}>
-          useBasaltForm + field + FormErrorSummary + useFormDraft (Valibot schema, draft
+          useBasaltForm + inputProps + FormErrorSummary + useFormDraft (Valibot schema, draft
           restore/autosave/clear)
         </Text>
       </div>
