@@ -29,14 +29,14 @@ export type UseBasaltFormOptions<Values extends Record<string, unknown>> = Omit<
  *
  * @example
  * import * as v from 'valibot'
- * import { useBasaltForm, field } from 'basalt-ui/forms'
+ * import { useBasaltForm, inputProps } from 'basalt-ui/forms'
  *
  * const Schema = v.object({ name: v.pipe(v.string(), v.minLength(2)), email: v.string() })
  * type Values = v.InferOutput<typeof Schema>
  *
  * function MyForm() {
  *   const form = useBasaltForm({ initialValues: { name: '', email: '' }, schema: Schema })
- *   return <TextInput {...field(form, 'name')} label="Name" />
+ *   return <TextInput {...inputProps(form, 'name')} label="Name" />
  * }
  */
 export function useBasaltForm<Values extends Record<string, unknown>>(

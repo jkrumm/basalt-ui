@@ -30,7 +30,7 @@ export type FormErrorSummaryProps<Values extends Record<string, unknown>> = {
  *   return (
  *     <form onSubmit={form.onSubmit(console.log)}>
  *       <FormErrorSummary form={form} title="Fix these before submitting" />
- *       <TextInput {...field(form, 'email')} label="Email" />
+ *       <TextInput {...inputProps(form, 'email')} label="Email" />
  *     </form>
  *   )
  * }

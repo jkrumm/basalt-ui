@@ -12,7 +12,7 @@
  * @example (manual blur-based autosave)
  * const form = useBasaltForm({ initialValues, schema })
  * const { clearDraft, saveDraft } = useFormDraft(form, { key: 'my-form', version: 1 })
- * <TextInput {...field(form, 'name')} onBlur={saveDraft} />
+ * <TextInput {...inputProps(form, 'name')} onBlur={saveDraft} />
  *
  * @example (automatic via onValuesChange in useBasaltForm — use saveDraft ref pattern)
  * const saveDraftRef = useRef<(() => void) | null>(null)
@@ -71,7 +71,7 @@ export type UseFormDraftReturn = {
  *
  * @example
  * import * as v from 'valibot'
- * import { useBasaltForm, field, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
+ * import { useBasaltForm, inputProps, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
  *
  * const Schema = v.object({ name: v.pipe(v.string(), v.minLength(2)), amount: v.number() })
  * type Values = v.InferOutput<typeof Schema>
@@ -85,7 +85,7 @@ export type UseFormDraftReturn = {
  *   return (
  *     <form onSubmit={form.onSubmit((values) => { submit(values); clearDraft() })}>
  *       <FormErrorSummary form={form} />
- *       <TextInput {...field(form, 'name')} onBlur={saveDraft} />
+ *       <TextInput {...inputProps(form, 'name')} onBlur={saveDraft} />
  *       {hasDraft && <Button onClick={clearDraft}>Clear draft</Button>}
  *     </form>
  *   )
