@@ -29,6 +29,7 @@ export type {
   RangeWindows,
   RangeValue,
   ResolvedLane,
+  ResolveLane,
   SearchValues,
   StoredValues,
   StringField,
