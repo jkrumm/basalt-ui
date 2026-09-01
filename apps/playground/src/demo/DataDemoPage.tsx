@@ -26,8 +26,9 @@ import {
   Title,
 } from '@mantine/core'
 import { EmptyState } from 'basalt-ui'
-import { BasaltDataTable, BasaltVirtualList, createColumnHelper } from 'basalt-ui/data'
-import type { DataTableFacet, SortingState } from 'basalt-ui/data'
+import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
+import type { DataTableFacet, SortingState } from 'basalt-ui/data/table'
+import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import { VX } from 'basalt-ui/tokens'
 import { useMemo, useState } from 'react'
 import { IconSearch } from './icons'
