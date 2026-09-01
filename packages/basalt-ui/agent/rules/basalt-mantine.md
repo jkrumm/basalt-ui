@@ -9,7 +9,9 @@ paths:
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — card-with-border, hidden-inline-style, in-body-page-title, inline-display, inline-spacing, mantine-shade-index, raw-form-control, raw-html-layout, raw-motion-value, raw-spacing, sub-16-input-font · oxlint rules — basalt/card-inset, basalt/hand-rolled-shell, basalt/in-body-page-title, basalt/page-bar-budget, basalt/raw-scroll-container, basalt/shadow-basalt-export -->
-<!-- not guarded: — -->
+<!-- not guarded: BasaltProvider mounts above the router (Mantine context must exist before RouterProvider) -->
+<!-- not guarded: BasaltOverlays XOR a standalone BasaltNotifications — never both in one tree (double-mounts <Notifications>) -->
+<!-- not guarded: no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs -->
 <!-- /basalt:coverage -->
 
 # Basalt Mantine — provider, shell, surfaces
@@ -26,7 +28,11 @@ before any route renders), with `theme={createBasaltTheme(overrides)}`. Then the
 
 **Overlays mount exactly once, through `BasaltOverlays`** (`basalt-ui/commands`), inside
 `BasaltProvider`: it composes `ModalsProvider`, Spotlight (against basalt's own store), the command
-hotkeys and `<Notifications>` in one place, each disableable with `false`. A standalone
+hotkeys and `<Notifications>` in one place, each disableable with `false`. `ModalsProvider` mounts as
+a **sibling** of `children`, not a wrapper — the imperative `modals.*`/`overlays.*` API works
+untouched (it runs over a window `CustomEvent` bus `ModalsProvider` subscribes to), but `useModals()`
+and `openContextModal` need real React context, which a sibling cannot provide: pass `modals={false}`
+and mount your own `ModalsProvider` instead when you need either. A standalone
 `<BasaltNotifications />` (`basalt-ui/notifications`) is the alternative for an app with no commands
 layer — **never both in one tree**, which double-mounts `<Notifications>`. Import the **layered**
 style bundles for every `@mantine/*` battery, then `basalt-ui/styles.css` last; an unlayered Mantine

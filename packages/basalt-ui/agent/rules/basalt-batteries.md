@@ -11,7 +11,8 @@ paths:
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major -->
-<!-- not guarded: — -->
+<!-- not guarded: import query hooks from basalt-ui/query, never dual-import @tanstack/react-query -->
+<!-- not guarded: queryFn wraps the call in unwrap() -->
 <!-- /basalt:coverage -->
 
 # Basalt Batteries — the adapter surfaces
@@ -63,8 +64,9 @@ Check these three first whenever Eden types regress.
   satisfy it structurally.
 - **`validate` is deliberately omitted** from its options — a cross-field or async rule that the
   schema cannot express drops to a raw `useForm`.
-- **`field(form, path)` is the one spread** every uncontrolled Mantine field needs (it bundles
-  `getInputProps` + `key`); writing the two by hand is how one gets forgotten.
+- **`inputProps(form, path)` is the one spread** every uncontrolled Mantine field needs (it bundles
+  `getInputProps` + `key`); writing the two by hand is how one gets forgotten. `field` is a
+  `@deprecated` alias — it collides with the `field` store builder in `basalt-ui/state`.
 - **`FormErrorSummary` goes at the TOP of the form** so assistive tech lands on it after a failed
   submit. It renders `null` on a clean form, so include it unconditionally.
 - **`useFormDraft` persists through `createPersistedState`** — wire `saveDraft` into

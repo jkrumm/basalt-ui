@@ -59,6 +59,70 @@ What is new, one line each — nothing here renames or removes anything:
   `control-outside-home` matches raw Mantine tags only, so this half of law C1 was unguarded. Homes
   are the slot props plus the `FilterSet` / `PageAside` / `PanelRow` subtrees; the escape is
   `theme-allow bound-control-outside-home — <why>`.
+- **`theme-lab/boot.ts`** — `applyOverrides`/`loadOverrides`/`readVar` moved into their own
+  Mantine-free, SSR-safe module (no-op / empty result with no `document`, instead of throwing).
+  `basalt-ui/theme-lab` still resolves all three, unchanged, alongside `ThemeLabControls` and
+  `DeriveControls` — nothing renamed or removed, and no new subpath was added.
+- **`basalt/raw-size-literal` / `basalt/no-raw-font-size`** — no longer exempt a consumer's own
+  `src/tokens/` directory. The exemption was basalt-internal (the derive engine's own hardcoded
+  scale values) and leaked to any package with a same-named directory. Consumers with raw sizes
+  there move them to `--vx-*` tokens, or add a `theme-allow` waiver.
+- **`BasaltProvider connectivity` prop** — `Omit<ConnectivityProviderProps, 'children'>`, threaded
+  straight through to the auto-mounted `ConnectivityProvider`. Reaches `override` for the first
+  time (the only prior route was mounting a second, shadowing `ConnectivityProvider`) — see
+  § BasaltProvider below.
+- **Dev-only duplicate-mount warnings** — `BasaltProvider` now warns when a second instance mounts
+  while the first is still mounted; `<BasaltOverlays notifications />` and `<BasaltNotifications />`
+  now warn when BOTH are mounted at once (previously prose-only in both cases). Both are
+  `console.warn`, dev builds only, no behavior change.
+
+### BasaltProvider — a `connectivity` object replaces three flattened props
+
+`sseUrl` / `healthUrl` / `healthIntervalMs` on `BasaltProvider` are now `@deprecated` aliases for
+the corresponding fields on the new `connectivity` prop — **removed in 1.28.0**. `connectivity`
+wins WHOLESALE once supplied, not per-key: passing `connectivity` at all makes basalt ignore the
+three deprecated props entirely, even ones `connectivity` itself leaves unset. Supplying both logs a
+dev-only warning. Move every deprecated field to `connectivity` in one pass, not one field at a time.
+
+| Removed / deprecated                      | Replacement                                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `<BasaltProvider sseUrl={…} />`           | `<BasaltProvider connectivity={{ sseUrl: … }} />` — `@deprecated`, removed 1.28.0                                                   |
+| `<BasaltProvider healthUrl={…} />`        | `<BasaltProvider connectivity={{ healthUrl: … }} />` — `@deprecated`, removed 1.28.0                                                |
+| `<BasaltProvider healthIntervalMs={…} />` | `<BasaltProvider connectivity={{ healthIntervalMs: … }} />` — `@deprecated`, removed 1.28.0                                         |
+| (unreachable before this minor)           | `<BasaltProvider connectivity={{ override: {…} }} />` — simulate a signal for testing/demo, no second `ConnectivityProvider` needed |
+
+**`cssVariablesResolver` can no longer reach `BasaltProvider` through the passthrough
+`MantineProviderProps` rest** — it was silently spreadable and would override basalt's own resolver
+(the one thing the provider exists to install). `Omit`ted from the accepted prop type; pass any
+palette customization through `createBasaltTheme(overrides, { derive, fonts, radius, density })`
+instead.
+
+### `basalt-ui/connectivity` — `queryOnline` narrowed to `boolean`
+
+`ConnectivitySnapshot['details'].queryOnline` and `ConnectivityOverride.queryOnline` drop the
+`| null` arm. The JSDoc used to claim null meant "QueryClient not mounted", but `onlineManager` is a
+module-level singleton read with no such check — the only null this field ever carried was the
+pre-hydration SSR snapshot, which now reports an optimistic `true` (matching `browserOnline`'s own
+SSR default) instead. Code branching on `queryOnline === null` was already dead; delete it.
+
+### `basalt-ui/state` — eight internal symbols dropped from the barrel
+
+| Removed / renamed                                                                                                | Replacement | Note                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createStoreCore`, `resolveFieldCodec` (`basalt-ui/state`)                                                       | none        | Both were `@internal` — the seam `createSearchStore` is built on, not a consumer API — and were never meant to be a public contract. No replacement needed.           |
+| `FieldCodec`, `StoreEntry`, `StoreCoreOptions`, `StoreCore`, `FieldUse`, `FieldWrite` (types, `basalt-ui/state`) | none        | Also `@internal` — the supporting types behind `createStoreCore`/`resolveFieldCodec`, dropped alongside the two functions for the same reason. No replacement needed. |
+
+### `basalt-ui/forms` — `field` renamed to `inputProps`
+
+Two unrelated exports shared the name `field`: the forms adapter's `getInputProps`+`key` bundler and
+the `field.enum/multi/range/number/boolean/string` store-field builder in `basalt-ui/state` and
+`basalt-ui/router-tanstack`. A page combining a form and a filter store had to alias one on import.
+
+| Removed / renamed           | Replacement  | Note                                                                                                                                                                                                                                                         |
+| --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `field` (`basalt-ui/forms`) | `inputProps` | Same signature — `inputProps(form, path)`. `field` still resolves from `basalt-ui/forms` as a `@deprecated` alias, so nothing breaks; the alias goes away the next time the forms surface changes, and that removal ships as a plain `feat:`, never a major. |
+
+The `field.*` store builder (`basalt-ui/state`, `basalt-ui/router-tanstack`) is untouched.
 
 ### Shell — region seams, and what moved with them
 
@@ -348,6 +412,63 @@ provenance test reads the IMPORTED name, so `import { StatCard as Base }` counts
 half is deliberately NOT exempted the same way — a local `StatCard` beside an
 `import { StatCard as Base }` kept the name AND a piece of the original, which is the fork shape this
 rule most wants to see.
+
+### `basalt-ui/data` — a typed facet id, and a required `getItemKey`
+
+**`BasaltDataTable`: a mistyped `facets[].columnId` used to render no pill, silently — `if
+(!column) return null`.** It now throws in dev, naming the id and every known column id
+(`facet columnId "…" matches no column`); production still degrades to no pill for that one facet.
+`DataTableFacet` also gained a type parameter — `DataTableFacet<T = unknown>` — so `columnId` is
+typed off the row shape wherever TanStack's `accessor`/manual `id` inference allows it
+(`Extract<keyof T, string> | (string & {})`); the default keeps a bare `DataTableFacet[]`
+compiling unchanged. `BasaltDataTableProps.facets` is now `DataTableFacet<T>[]`, and
+`initialColumnPinning` moved from TanStack's own `ColumnPinningState` to a new, `T`-derived
+`DataTableColumnPinning<T>` (structurally assignable to `ColumnPinningState`, so no cast is
+needed at either end). Both are additive for existing call sites — an id that was already a real
+column keeps compiling and rendering exactly as before.
+
+**`BasaltVirtualList.getItemKey` is now required.** The index fallback hid stale rows across a
+mutation: an insert/delete shifts every index below it, so the OLD item kept rendering at each
+shifted index until an unrelated re-render happened to catch it up — in the one component whose
+job is a long mutable list. Pass a real per-item key (`(item) => item.id`); there is no
+replacement for the index fallback.
+
+**`BasaltVirtualList` gained a ref.** `ref?: Ref<BasaltVirtualListHandle>` exposes
+`scrollToIndex`/`scrollToOffset`/`scrollToEnd` (delegating to the internal
+`@tanstack/react-virtual` instance) plus `getVirtualizer()` as the full escape hatch — mirrors
+`./data/table`'s `useReactTable` re-export as the table's own. Additive; omitting `ref` changes
+nothing.
+
+### `basalt-ui/commands` — `BasaltOverlays` no longer WRAPS your app in `ModalsProvider`
+
+**Same props, same imperative API, one structural change: every layer — `ModalsProvider`
+included — now renders as a SIBLING of `children` instead of an ancestor.** The old shape put the
+whole app under a `React.lazy` Suspense boundary (`<Suspense fallback={<>{app}</>}>
+<LazyModalsProvider>{app}</LazyModalsProvider></Suspense>`), and `React.lazy` suspends on its first
+render even when the module is already warm. Two consequences, both real: the app's FIRST COMMIT was
+deferred past a microtask — long enough for TanStack Router's async `loadMatches` to `setState` onto
+a not-yet-mounted fiber ("Can't perform a React state update on a component that hasn't mounted
+yet", once per full page load) — and the app tree mounted TWICE, once inside the fallback and once
+resolved, so every effect in the app ran twice on boot.
+
+Nothing to change for the overlay APIs. `modals.open` / `modals.openConfirmModal` (and so basalt's
+own `overlays.open` / `overlays.close`) go through `@mantine/modals`' window CustomEvent bus, which
+`ModalsProvider` subscribes to — being inside it was never a requirement, and the provider renders
+its own managed `Modal` regardless of where it sits.
+
+**The one thing a sibling cannot serve is React CONTEXT**: `useModals()` from `@mantine/modals`
+called inside your app now throws its "was called outside of context" error. If you use it (or
+`openContextModal`, which needs the provider's `modals` map that `BasaltOverlays` never passed
+anyway), mount your own provider and turn basalt's off — two providers would both answer the event
+bus and open every modal twice:
+
+```tsx
+<BasaltOverlays modals={false}>
+  <ModalsProvider modals={CONTEXT_MODALS}>
+    <App />
+  </ModalsProvider>
+</BasaltOverlays>
+```
 
 ## 1.26.0 — the control tier, the page bar and the store
 
