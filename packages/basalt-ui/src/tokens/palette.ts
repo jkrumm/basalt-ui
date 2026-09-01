@@ -991,7 +991,14 @@ export function deriveSpacing(level: number): SpaceValues {
   // Touch targets: the 1 + 0.1*level multiplier would take 56 -> 39 and 44 -> 31 at level -3,
   // silently breaking the minimum interactive-target size. Same guardrail, same reason, as the
   // sidebar search trigger's 24px floor directly above.
-  mappedStep.mobileNavBarHeight = Math.max(48, mappedStep.mobileNavBarHeight)
+  //
+  // The floor is 49, not 48: this value feeds `AppShell.Footer`'s `height` prop directly
+  // (shell/index.tsx), and Mantine draws the region-seam `border-top` ON THAT BOX
+  // (`[data-with-border]`, docs/DESIGN-SPEC.md §5) under global `box-sizing: border-box`. The
+  // border eats 1px of the box the floor sizes, so `.bar` (height: 100% of the footer's content
+  // box) would render at 47px if the floor stopped at 48. +1 buys back exactly the pixel the seam
+  // claims, so the tappable bar itself still measures >= 48.
+  mappedStep.mobileNavBarHeight = Math.max(49, mappedStep.mobileNavBarHeight)
   mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
   // Same floor family, same reason — `sheetRowHeight`'s own doc names it "same floor family as
   // `mobileNavRowHeight`", but nothing enforced that below level 0 until now.

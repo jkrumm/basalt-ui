@@ -336,14 +336,20 @@ layout('mobile nav — real layout', () => {
 
   /**
    * INVARIANT 6 — touch targets hold their floors at every density level. `deriveSpacing` clamps
-   * `mobileNavBarHeight` with `Math.max(48, …)` and `mobileNavRowHeight` with `Math.max(44, …)`
+   * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(44, …)`
    * (tokens/palette.ts). This is the end-to-end proof that the floor survives
    * derive → CSS var → Mantine inline styles → cascade, including the `!important` the module CSS
    * needs to beat the theme's dense-desktop inline padding.
    *
-   * Measured (bar / min slot / min sheet row): d=−3 → 48 / 47 / 44; d=0 → 56 / 55 / 46.25;
-   * d=+3 → 73 / 72 / 57. A slot is 1px shorter than the bar because `.bar` carries a 1px
-   * `border-top` and stretches its children — hence 44, not 48, as the slot floor.
+   * The region seam (docs/DESIGN-SPEC.md §5) is drawn by Mantine's `[data-with-border]` rule
+   * directly on the `AppShell.Footer` box that `mobileNavBarHeight` sizes, not by `.bar` itself —
+   * under the global `box-sizing: border-box` the 1px `border-top` is carved out of THAT box, so
+   * `.bar` (height: 100% of the footer's content box) renders 1px short of the raw floor. The
+   * `Math.max(49, …)` buys the pixel the seam claims back; a slot no longer loses a further pixel
+   * of its own, since the border moved off `.bar`.
+   *
+   * Measured (bar / min slot / min sheet row): d=−3 → 48 / 48 / 44; d=0 → 55 / 55 / 46.25;
+   * d=+3 → 72 / 72 / 57. Bar and slot now match exactly at every density.
    *
    * One page, three remounts: remounting is ~5x cheaper than a new browser context.
    */
@@ -356,6 +362,19 @@ layout('mobile nav — real layout', () => {
         await p.box(`bar @density ${density}`, BAR),
         48,
         'the bar keeps its 48px floor at every density level',
+      )
+      // The BAR (`nav[aria-label="Primary"]`) sits INSIDE the `AppShell.Footer` box that
+      // `mobileNavBarHeight` actually sizes — Mantine draws the region-seam `border-top` on the
+      // footer, not on `.bar`, so `.bar` (height: 100% of the footer's content box) renders 1px
+      // short of the raw floor under `box-sizing: border-box`. A bare `>= 48` on the bar alone
+      // cannot tell the fixed `Math.max(49, …)` floor apart from the old `Math.max(48, …)` bug —
+      // both leave `.bar` at 48 (from 47+1 pre-fix, exactly 48 post-fix). The FOOTER box itself is
+      // the sharp assertion: it was 48 under the bug and must be 49 now.
+      expectHeightAtLeast(
+        await p.box(`footer @density ${density}`, '.mantine-AppShell-footer'),
+        49,
+        'the AppShell.Footer box mobileNavBarHeight sizes keeps its OWN 49px floor — the pixel ' +
+          'the border-top seam claims back from .bar',
       )
       const slots = await p.boxes(BAR_SLOTS)
       for (const [i, box] of slots.entries()) {

@@ -177,6 +177,15 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     }
   })
 
+  // The floor is 49, not 48 (`tokens/palette.ts`): the footer's own `border-top` (region seam) eats
+  // 1px of the box `mobileNavBarHeight` sizes, so a bare `>= 48` above passes at BOTH the old
+  // `Math.max(48, …)` floor and the fix — it never discriminates the regression it fixed. Pin the
+  // exact value at the tightest density level instead: `Math.max(49, …)` clamps every level below
+  // −3's raw multiplier to 49 exactly.
+  test('the floor itself is 49 at density −3 — the +1 the footer border-top claims back', () => {
+    expect(deriveSpacing(-3).step.mobileNavBarHeight).toBe(49)
+  })
+
   test('a mobile nav menu/sheet row never drops below its own 44px floor', () => {
     for (const level of ALL_LEVELS) {
       expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(44)
