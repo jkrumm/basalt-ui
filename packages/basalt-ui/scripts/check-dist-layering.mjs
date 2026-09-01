@@ -63,11 +63,18 @@ for (const { rel, banVisx } of subpaths) {
     continue
   }
   const { files, bare } = walkGraph(entry)
+  let subpathFailed = false
   for (const spec of bare) {
-    if (spec.startsWith('@mantine/')) fail(`${rel} graph reaches Mantine import: ${spec}`)
-    if (banVisx && spec.startsWith('@visx/')) fail(`${rel} graph reaches visx import: ${spec}`)
+    if (spec.startsWith('@mantine/')) {
+      fail(`${rel} graph reaches Mantine import: ${spec}`)
+      subpathFailed = true
+    }
+    if (banVisx && spec.startsWith('@visx/')) {
+      fail(`${rel} graph reaches visx import: ${spec}`)
+      subpathFailed = true
+    }
   }
-  if (!failed) console.log(`Mantine-free OK: ${rel} (${files.size} files in graph)`)
+  if (!subpathFailed) console.log(`Mantine-free OK: ${rel} (${files.size} files in graph)`)
 }
 
 // Root-barrel re-export guard.
@@ -75,17 +82,22 @@ const barrel = resolve(DIST, 'index.js')
 if (!existsSync(barrel)) {
   fail('missing dist/index.js')
 } else {
+  let barrelFailed = false
   for (const spec of specifiers(barrel)) {
     if (
       /(^|\/)(charts|tokens)(\/index)?\.js$/.test(spec) ||
       spec === './charts' ||
       spec === './tokens'
-    )
+    ) {
       fail(`root barrel re-exports a free-layer entry: ${spec}`)
-    if (spec.startsWith('@mantine/') || spec.startsWith('@visx/'))
+      barrelFailed = true
+    }
+    if (spec.startsWith('@mantine/') || spec.startsWith('@visx/')) {
       fail(`root barrel directly imports ${spec}`)
+      barrelFailed = true
+    }
   }
-  if (!failed) console.log('root-barrel re-export guard OK')
+  if (!barrelFailed) console.log('root-barrel re-export guard OK')
 }
 
 if (failed) {
