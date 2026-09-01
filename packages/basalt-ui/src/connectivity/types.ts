@@ -13,7 +13,10 @@ export type ConnectivitySnapshot = {
   /** Per-signal breakdown for debugging / detailed indicators */
   details: {
     browserOnline: boolean // navigator.onLine
-    queryOnline: boolean | null // React Query onlineManager — null when QueryClient not mounted
+    // React Query onlineManager — a module-level singleton, so it is always readable regardless of
+    // whether a QueryClient is mounted; never null on the client (the pre-hydration SSR snapshot
+    // reports an optimistic `true`, matching `browserOnline`, rather than an "unknown" null).
+    queryOnline: boolean
     sseOpen: boolean | null // EventSource readyState === OPEN — null when no sseUrl configured
     healthPassing: boolean | null // /health ping succeeded — null when no healthUrl configured
   }
@@ -21,7 +24,7 @@ export type ConnectivitySnapshot = {
 
 export type ConnectivityOverride = {
   browserOnline?: boolean
-  queryOnline?: boolean | null
+  queryOnline?: boolean
   sseOpen?: boolean | null
   healthPassing?: boolean | null
 }

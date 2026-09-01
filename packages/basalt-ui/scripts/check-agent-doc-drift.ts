@@ -18,9 +18,12 @@
  * Check B — a denylist, for the plain-backtick cases Check A can't see (`` `ChartCard` /
  * `ChartTooltip` `` uses plain backticks, and plain backticks are far too common to check
  * wholesale). Removed APIs are hand-listed with their replacement and banned outright from
- * `agent/**`. Guarded both ways: every denylist name is also asserted ABSENT from the real export
- * surface, so an entry that gets re-introduced as a live export fails loudly instead of silently
- * banning something real.
+ * `agent/**` AND from JSDoc/line-comment blocks in `src/**\/*.{ts,tsx}` (a stale JSDoc pointer
+ * ships straight into `dist/*.d.ts` and is exactly as consumer-visible as a stale `.md` — the
+ * comment-masking approach mirrors `tests/jsdoc-specifiers.test.ts`'s block/line-comment
+ * extractor, but keeps line numbers so failures point at a real line). Guarded both ways: every
+ * denylist name is also asserted ABSENT from the real export surface, so an entry that gets
+ * re-introduced as a live export fails loudly instead of silently banning something real.
  *
  * Repo-local only: `scripts/` is absent from package.json's `files`, so this reads
  * non-shipped state (`scripts/export-surface.json`) and must not be reachable from a consumer's
@@ -214,6 +217,115 @@ export function checkB(mdFiles: readonly string[]): CheckBFailure[] {
   return failures
 }
 
+// ── Check B, src comments: same denylist against JSDoc/line comments in shipped source ──────
+
+/** Every `.ts`/`.tsx` file under `src/**` — comment JSDoc ships straight into `dist/*.d.ts`. */
+export function findSrcTsFiles(): string[] {
+  const srcRoot = join(pkgRoot, 'src')
+  const entries = readdirSync(srcRoot, { recursive: true }) as string[]
+  return entries.filter((rel) => /\.tsx?$/.test(rel)).map((rel) => join(srcRoot, rel))
+}
+
+const BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g
+// A negative lookbehind on `:` excludes `http://`/`https://`/`ws://` — a `//` inside one of those,
+// run against the UNMASKED source (this function has no string-literal parser), used to start a
+// fake "line comment" that swallowed the rest of the real code on that line as if it were comment
+// prose, which could both hide a real drifted reference and manufacture a false one out of code
+// text. `tests/jsdoc-specifiers.test.ts` runs a plain `\/\/.*$` with no such guard — that file
+// only ever concatenates matched comment TEXT for a denylist scan, so a `://` false-positive there
+// costs it a spurious substring inside otherwise-discarded code, not a wrong line number; this
+// function's masked output is fed back through by character position, where getting it wrong
+// actually corrupts `checkBSrc`'s line-accurate report.
+const LINE_COMMENT_RE = /(?<!:)\/\/.*/g
+
+/**
+ * Blanks every character outside a comment while preserving newlines (so line numbers survive),
+ * leaving a same-shaped string where the only surviving content is JSDoc/line-comment text.
+ * `checkBSrc` reads real line numbers off this masked output, so a `//` mistaken for the start of a
+ * comment (an `http://` URL in a string) must not swallow the rest of a code line as fake comment
+ * text.
+ */
+function maskToComments(source: string): string {
+  const masked = source.replace(/[^\n]/g, ' ').split('')
+  const keep = (start: number, length: number): void => {
+    for (let i = start; i < start + length; i++) {
+      if (source[i] !== '\n') masked[i] = source[i]
+    }
+  }
+  for (const match of source.matchAll(BLOCK_COMMENT_RE)) keep(match.index, match[0].length)
+  for (const match of source.matchAll(LINE_COMMENT_RE)) keep(match.index, match[0].length)
+  return masked.join('')
+}
+
+/**
+ * `(relative-path, removedName)` pairs where a `REMOVED_APIS` name appears in a `src` comment as
+ * historical color — "the removed X", "replaced by", "renamed from", "supersedes X's job" — that
+ * NAMES the old symbol to explain the current one, not a stale pointer telling a consumer to use
+ * it. Same allowlist-don't-silently-exclude doctrine as `CHECK_A_ALLOWLIST`, scoped to (file,
+ * name) rather than name alone so a genuinely stale "use `X`" pointer landing on a NEW line
+ * elsewhere in the package still fails.
+ */
+export const CHECK_B_SRC_ALLOWLIST: ReadonlySet<string> = new Set([
+  'src/connectivity/use-connectivity.ts::useOnlineStatus',
+  'src/surfaces.ts::ArticleFilterBar',
+  'src/shell/page-bar.tsx::PageActions',
+  'src/content/index.ts::ArticleFilterBar',
+  'src/data/data-table.tsx::toolbarActions',
+  'src/charts/cursor/scope.tsx::ChartHoverSync',
+  'src/charts/cursor/store.ts::ChartHoverSync',
+  'src/charts/primitives/ChartTooltip.tsx::useChartTooltip',
+  'src/charts/primitives/ChartFrame.tsx::ResponsiveChart',
+  'src/charts/hooks/useChartCursor.ts::useChartTooltip',
+  'src/charts/hooks/useChartCursor.ts::useHoverSync',
+])
+
+export function checkBSrc(tsFiles: readonly string[]): CheckBFailure[] {
+  const failures: CheckBFailure[] = []
+  const entries = Object.entries(REMOVED_APIS)
+  for (const file of tsFiles) {
+    const relFile = relative(pkgRoot, file)
+    const lines = maskToComments(readFileSync(file, 'utf8')).split('\n')
+    lines.forEach((lineText, idx) => {
+      for (const [name, replacement] of entries) {
+        if (CHECK_B_SRC_ALLOWLIST.has(`${relFile}::${name}`)) continue
+        if (new RegExp(`\\b${name}\\b`).test(lineText)) {
+          failures.push({ file: relFile, line: idx + 1, name, replacement })
+        }
+      }
+    })
+  }
+  return failures
+}
+
+/**
+ * Guards `maskToComments`/`LINE_COMMENT_RE` itself, against a fixture rather than any file
+ * currently on disk — so it catches a regression on the regex, not on today's source happening to
+ * lack a `://` URL. Two failure modes in one fixture: a `//` inside `https://` must not be read as
+ * a line-comment start (it would blank the URL's OWN "//" but then keep everything after it on the
+ * line, including real non-comment text, as if it were comment prose — false-positive material for
+ * `checkBSrc`), and a genuine trailing `//` comment later on the SAME line must still be recognized
+ * once the URL stops swallowing it.
+ */
+export function checkMasksUrlSlashesCorrectly(): string[] {
+  const failures: string[] = []
+  const fixture = "const DOC_URL = 'https://example.com/removed-info' // real note here\n"
+  const masked = maskToComments(fixture)
+  if (masked.includes('example.com/removed-info')) {
+    failures.push(
+      "maskToComments: the '//' inside a 'https://' URL is being read as a line-comment start, " +
+        'so the URL text (and whatever real code follows it on the line) is kept as if it were ' +
+        'comment prose',
+    )
+  }
+  if (!masked.includes('real note here')) {
+    failures.push(
+      "maskToComments: a genuine trailing '//' comment after a URL literal on the same line is no " +
+        'longer being kept',
+    )
+  }
+  return failures
+}
+
 /** Guards the denylist itself: a name on it that becomes a live export again must fail loudly. */
 export function checkDenylistIsGenuinelyRemoved(validNames: ReadonlySet<string>): string[] {
   const failures: string[] = []
@@ -277,11 +389,15 @@ export function checkC(mdFiles: readonly string[], actual: number): CheckCFailur
 function main(): void {
   const validNames = collectValidNames()
   const mdFiles = findAgentMdFiles()
+  const srcTsFiles = findSrcTsFiles()
 
   const aFailures = checkA(mdFiles, validNames)
-  const bFailures = checkB(mdFiles)
+  const bFailures = [...checkB(mdFiles), ...checkBSrc(srcTsFiles)]
   const cFailures = checkC(findRepoMdFiles(), TOKENS_ONLY_DISABLED_KINDS.size)
-  const selfFailures = checkDenylistIsGenuinelyRemoved(validNames)
+  const selfFailures = [
+    ...checkDenylistIsGenuinelyRemoved(validNames),
+    ...checkMasksUrlSlashesCorrectly(),
+  ]
 
   const messages: string[] = [
     ...aFailures.map(
@@ -308,8 +424,8 @@ function main(): void {
   }
 
   console.log(
-    `✓ agent-doc-drift: 0 failures (${mdFiles.length} docs scanned, ${validNames.size} valid ` +
-      `names, ${Object.keys(REMOVED_APIS).length} denylisted)`,
+    `✓ agent-doc-drift: 0 failures (${mdFiles.length} docs + ${srcTsFiles.length} src files ` +
+      `scanned, ${validNames.size} valid names, ${Object.keys(REMOVED_APIS).length} denylisted)`,
   )
 }
 

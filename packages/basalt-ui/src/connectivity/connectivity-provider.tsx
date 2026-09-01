@@ -16,7 +16,10 @@ const SSR_SNAPSHOT: ConnectivitySnapshot = {
   status: 'online',
   details: {
     browserOnline: true,
-    queryOnline: null,
+    // Optimistic `true`, matching `browserOnline` — `onlineManager` is a module singleton so it is
+    // always readable, this is the same pre-hydration default as every other signal, never the
+    // "not mounted" case (see `ConnectivitySnapshot['details']['queryOnline']`'s JSDoc).
+    queryOnline: true,
     sseOpen: null,
     healthPassing: null,
   },

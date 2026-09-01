@@ -29,6 +29,7 @@
  * // parts === [{ id: 'p1', type: 'text', text: 'Hello' }]
  */
 import type { ReasoningPart, TextPart } from './parts'
+import { isDev } from '../utils/is-dev'
 
 type TextLike = TextPart | ReasoningPart
 
@@ -78,7 +79,7 @@ function clampOffset(offset: number, length: number): number {
   // A non-finite offset would make every slice() return '' and blank the part outright — it is
   // out of range like any other, and appending is the safe reading of "position unknown".
   const clamped = Number.isFinite(offset) ? Math.min(Math.max(offset, 0), length) : length
-  if (clamped !== offset && process.env['NODE_ENV'] !== 'production') {
+  if (clamped !== offset && isDev()) {
     console.warn(
       `[basalt] mergePart: text offset ${offset} out of range [0, ${length}] — clamped to ${clamped}`,
     )
