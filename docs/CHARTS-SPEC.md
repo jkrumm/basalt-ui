@@ -148,6 +148,25 @@ neither the floor nor the cap applies to it.
 `VX.margin` becomes a **floor**, never a ceiling. An explicit `margin` prop still wins last, so the
 escape hatch survives; `chartMargin()` stays for charts outside `CartesianChart`.
 
+**X tick spacing measures the label it paints, not a constant.** `smartTicks(dates, xMax, labelPx?)`
+takes the width one formatted x label actually needs (`maxTextWidth` on the formatted set, plus an
+8px neighbour gap) and uses it as the per-tick floor whenever it exceeds `VX.minPxPerTick` — before
+this, tick spacing came from `VX.minPxPerTick` alone regardless of what `formatX` painted, so a
+formatter returning `Mar 08 14:00` overlapped at every width. `CartesianChart` measures this itself
+(`xLabelPx`, from the same `xLabels` it already builds for the bottom margin); `useBandPlot` and
+`DualPanel` compute the equivalent from their own formatted label set and thread it into their own
+`smartTicks` call the same way. Omitting `labelPx` (or passing `undefined`) falls back to the old
+constant-only behavior — this is what `xLabelRotate` does, since a rotated label no longer competes
+for HORIZONTAL room with its neighbour.
+
+**`xLabelRotate?: 45 | 90`** tilts the x tick labels counter-clockwise, anchored at their right
+edge, and deepens the bottom gutter by the rotated label's projected height instead of its width
+(`autoMargin`'s `rotate` input) — the same measured-not-assumed law, applied to the rotation case.
+Reach for it on a phone-width chart whose `formatX` is unavoidably wide (a timestamp with a time
+component, a long category name): rotating trades horizontal crowding for vertical gutter depth,
+which is normally the cheaper axis to spend on a narrow viewport. `Bars`, `MultiLine`, `StackedArea`
+and `ZonedLine` all forward it to `CartesianChart` the same way they already forward `formatX`.
+
 ## 2. `CartesianChart`
 
 One primitive, config-driven, render-prop only for the marks.
@@ -189,8 +208,25 @@ CBBI page did, and paid for it with `$31,623` gridlines).
 
 `scale` is honoured by every kind whose axis domain the CALLER controls — `CartesianChart`'s own
 axes, `MultiLine`, `ZonedLine`, and `Bars` in `barLayout: 'grouped'`. `Bars` in the default
-`barLayout: 'stacked'` computes its own summed domain from `0` (§2's stacked-domain memo) and
-ignores `scale` on that axis — a stacked total has a real zero baseline, and a log axis has none.
+`barLayout: 'stacked'` computes its own summed domain from `0` (§2's stacked-domain memo) — a
+stacked total has a real zero baseline, and a log axis has none, so `barLayout: 'stacked'` with
+`y.scale: 'log'` throws in dev (`isDev()`, the house gate — see `BandStrip`'s own throw for the
+same pattern) rather than silently rendering a broken stack; use `barLayout: 'grouped'` for a log
+axis instead.
+
+**Null is an absence, not a zero — and it is contagious across a stack.** `ChartSeries.getValue`
+documents `null` as a measurement GAP, never a zero: every line-shaped kind (`MultiLine`,
+`ZonedLine`, the line overlays in `Bars`) BREAKS at a null point instead of interpolating across
+it, via a `defined` guard on the underlying `@visx/shape` primitive (`LinePath`/`AreaClosed`/
+`Threshold`) rather than dropping the row — dropping it would let the shape draw straight through
+the hole, which is a measurement that was never taken. `StackedArea` extends the same rule to the
+whole stack: a row where ANY visible band is `null` has no cumulative total, so every band gaps
+there together (`rowIsDense`) — legend-toggling the sparse band off closes the gap, because density
+is measured against the visible set only. A `defined` guard combines both absences in one
+expression on a log axis, since a non-positive value has no logarithm either:
+`d.__y !== null && Number.isFinite(scale(d.__y))` — `scale(0)`/`scale(negative)` on a `scaleLog`
+resolves to `NaN`, which reads exactly like the null case and gets the same treatment: a gap, never
+a value silently clamped to the axis floor.
 
 **Behavior change (2026-08-19) — the one item here that can move an existing chart's rendering:**
 `autoMaxFloor` now clamps the raw upper bound BEFORE padding, mirroring `autoMinCeil`, which has
@@ -220,6 +256,9 @@ final key unconditionally, so a count that does not land exactly on the last ind
 labels on top of each other at the right edge — at every count, not at an unlucky one. Measured on
 the consumer that reported it: linewatch's `lib/axis.ts` goes 200 → 160 lines. It shrinks, it does
 not die; the surviving 160 are domain formatters basalt has no business owning.
+
+`xLabelRotate?: 45 | 90` is the phone answer to a `formatX` too wide to keep spacing ticks
+horizontally — see §1 for the mechanics and the measured-gutter law it follows.
 
 `PlotContext` handed to `children`: `{ data, visible, hidden, xScale, yScale, y2Scale, xMax, yMax,
 margin, cursorPoint, highlighted }`. Draw `visible` — never the `series` prop — so a legend toggle
@@ -338,6 +377,24 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
 other kind. `fill` / `aspectRatio` / fixed `height` are the three sizing modes, resolved in that
 order.
 
+**Width tracks the container once measured, floored at 1px only.** `minWidth` (default 200) is a
+first-frame guard for the unmeasured case (SSR, or before the observer's first callback) — once
+`containerW` is real, the plot's width follows it exactly rather than staying floored at
+`minWidth` forever, which used to draw an SVG wider than its own narrower grid cell
+(`resolvePlotRect`, `ChartFrame.tsx`).
+
+**The plot never collapses under a wrapping legend, floored at `VX.minPlotHeight`.** A legend band
+that wraps to more rows than expected (eight entries at phone width) used to eat a fixed
+`height={240}` toward zero, and the plot stopped rendering. Two different fixes for the two sizing
+modes that can hit this: a fixed-height frame is a flex column with `height: auto`, so it simply
+grows by whatever the legend needed — `VX.minPlotHeight` is the floor the plot itself never goes
+below, and the frame's own box absorbs the difference. A `fill` frame is pinned to its cell and
+cannot grow, so instead its legend rolls up: `legendEntryCap` measures how many entries actually
+fit in the rows left over once `VX.minPlotHeight` is reserved (a real greedy-wrap measurement
+against the legend's own labels, not an assumed one-entry-per-row count) and feeds that as
+`ChartLegend`'s `maxRows` cap, unless the caller already passed an explicit `legend.maxRows` — an
+explicit cap always wins as the upper bound.
+
 ## 7. Band plots — `BandStrip` and `MirroredBars`
 
 Two shapes `CartesianChart` structurally cannot host. It renders `AxisLeftNumeric` unconditionally
@@ -398,7 +455,6 @@ Reported from that port, not deferred silently:
 - **`getBand` / `getAbsentFraction` never see the fold's bookkeeping.** The accessor gets the
   merged datum; how many members were folded into it, and how many of those measured anything, are
   the consumer's own fields to carry.
-- **`ChartTooltipFloat` still has no viewport gate** — the tooltip can leave the visible area.
 - **`BandStrip` derives exactly one tooltip row.** Anything beyond it stays hand-authored in
   `tooltip.extraRows`.
 
