@@ -36,6 +36,7 @@ beforeEach(() => {
       jsPlugins: [PLUGIN_PATH],
       rules: {
         'basalt/no-raw-font-size': 'error',
+        'basalt/raw-size-literal': 'error',
         'basalt/card-inset': 'error',
         'basalt/chart-in-raw-surface': 'error',
         'basalt/hand-rolled-plot': 'error',
@@ -111,6 +112,76 @@ describe('basalt/no-raw-font-size', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('no-raw-font-size')
+  })
+
+  // F25: symmetric with raw-size-literal's own test-file skip below — the doctrine is about
+  // shipped UI, not fixtures.
+  it('does NOT flag a numeric fz inside a *.test.tsx file', () => {
+    const { code, rules } = run(`export const C = () => <Text fz={10}>a</Text>\n`, 'lib.test.tsx')
+    expect(code).toBe(0)
+    expect(rules).not.toContain('no-raw-font-size')
+  })
+})
+
+// ── raw-size-literal ─────────────────────────────────────────────────────────
+
+describe('basalt/raw-size-literal', () => {
+  it('flags a CSS-length string on size', () => {
+    const { code, rules } = run(`export const C = () => <ThemeIcon size="2rem" />\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('raw-size-literal')
+  })
+
+  it('flags a CSS-length string on fz', () => {
+    const { code, rules } = run(`export const C = () => <Text fz="0.8rem">a</Text>\n`)
+    expect(code).toBe(1)
+    expect(rules).toContain('raw-size-literal')
+  })
+
+  it('does NOT flag a scale token on size', () => {
+    const { code, rules } = run(`export const C = () => <ThemeIcon size="md" />\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-size-literal')
+  })
+
+  it('does NOT flag a numeric size (the documented icon-dimension idiom)', () => {
+    const { code, rules } = run(`export const C = () => <ThemeIcon size={32} />\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-size-literal')
+  })
+
+  it('does NOT flag with a same-line theme-allow comment', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz="0.8rem" /* theme-allow: legacy */>a</Text>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-size-literal')
+  })
+
+  // F25: was the asymmetric half — no-raw-font-size already skipped test files, this rule did not.
+  it('does NOT flag a CSS-length string inside a *.test.tsx file', () => {
+    const { code, rules } = run(
+      `export const C = () => <Text fz="0.8rem">a</Text>\n`,
+      'lib.test.tsx',
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('raw-size-literal')
+  })
+
+  // A3: the /src/tokens/ exemption used to be a bare path-substring check, then a check gated on
+  // `isBasaltScopedFile` — but that predicate tests "does the nearest package.json depend on
+  // basalt-ui", not "is this file basalt's own", so a CONSUMER package that merely depends on
+  // basalt-ui could still put raw literals under its own `src/tokens/` and silence the rule. The
+  // exemption is deleted outright rather than re-gated on package identity: both rules only ever
+  // visit JSX, and basalt's real `src/tokens/**` is pure `.ts` data with none, so no gate was ever
+  // load-bearing there. A `src/tokens/` path — basalt's own or a consumer's — now always fires.
+  it('DOES flag a CSS-length string inside a src/tokens/ file (no path exemption)', () => {
+    const { code, rules } = run(
+      `export const C = () => <ThemeIcon size="2rem" />\n`,
+      'src/tokens/palette.tsx',
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('raw-size-literal')
   })
 })
 
@@ -1296,6 +1367,30 @@ describe('PLUGIN_RULE_GRACE', () => {
   // exempt by design (see `assertGraceLedger`'s synthetic coverage above for the gate itself).
   it('passes the C16 gate against the real ledger and package version', () => {
     expect(() => assertGraceLedger(Object.fromEntries(graceEntries), pkgVersion)).not.toThrow()
+  })
+
+  // F27: a grace entry is written for a rule that lands in the NEXT release, so its `since` can sit
+  // one minor ahead of `package.json`'s current version (`bound-control-outside-home` at 1.28.0
+  // while the published version still reads 1.27.0, exactly like `control-outside-home` before it).
+  // What this catches is a `since` that is malformed or planted further out than that — a value
+  // static analysis has no way to verify is "the version this actually ships in", so the bound this
+  // test enforces is the one thing that IS checkable: well-formed semver, no more than one minor
+  // past what is currently published.
+  it("every grace entry's since is valid semver, at most one minor past the published version", () => {
+    const SEMVER = /^\d+\.\d+\.\d+$/
+    const [major, minor] = pkgVersion.split('.').map(Number)
+    const nextMinorCeiling = `${major}.${minor + 1}.0`
+    for (const [id, entry] of graceEntries) {
+      if (!SEMVER.test(entry.since)) {
+        throw new Error(`${id}: \`since\` (${entry.since}) is not valid semver.`)
+      }
+      if (compareSemver(entry.since, nextMinorCeiling) > 0) {
+        throw new Error(
+          `${id}: \`since\` (${entry.since}) is more than one minor past the published version ` +
+            `${pkgVersion}.`,
+        )
+      }
+    }
   })
 })
 
