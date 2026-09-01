@@ -35,7 +35,32 @@
  */
 
 // ── BasaltDataTable (+ @tanstack/react-table re-exports) ──────────────────────
-export * from './table'
+export {
+  BasaltDataTable,
+  type BasaltDataTableProps,
+  type DataTableAlign,
+  type DataTableColumnId,
+  type DataTableColumnPinning,
+  type DataTableFacet,
+  type DataTableFacetOption,
+  createColumnHelper,
+  useReactTable,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  type ColumnDef,
+  type SortingState,
+  type ColumnHelper,
+  type PaginationState,
+  type ColumnPinningState,
+  type ColumnFiltersState,
+} from './table'
 
 // ── BasaltVirtualList ─────────────────────────────────────────────────────────
-export * from './virtual'
+export {
+  BasaltVirtualList,
+  type BasaltVirtualListHandle,
+  type BasaltVirtualListProps,
+} from './virtual'

@@ -366,6 +366,36 @@ describe('the empty state tracks the rendered rows, not the raw array', () => {
   })
 })
 
+describe('a mistyped facet columnId', () => {
+  test('throws in dev naming the id, rather than silently rendering no pill', () => {
+    expect(() =>
+      renderTable({
+        facets: [{ columnId: 'projekt' as 'project', label: 'Project', options: [] }],
+      }),
+    ).toThrow(/facet columnId "projekt" matches no column/)
+  })
+
+  test('in production `resolveFacetColumn` returns undefined and the pill is omitted, not thrown', () => {
+    inProd(() => {
+      const { container } = renderTable({
+        facets: [
+          { columnId: 'projekt' as 'project', label: 'Project', options: [] },
+          {
+            columnId: 'project',
+            label: 'Project (real)',
+            options: [{ value: 'argo', label: 'argo' }],
+          },
+        ],
+      })
+      // The mistyped facet renders no pill at all…
+      expect(screen.queryByRole('button', { name: /^Any project$/ })).toBeNull()
+      // …while a facet naming a real column still renders normally alongside it.
+      expect(screen.getByRole('button', { name: 'Any project (real)' })).toBeTruthy()
+      expect(container.querySelectorAll('table')).toHaveLength(1)
+    })
+  })
+})
+
 // Facets now render as FilterSet pills (EnumFilter/MultiSelectFilter, docs/CONTROLS-SPEC.md §3)
 // instead of a raw Mantine Select. Mirrors `controls/controls.router.test.tsx`'s `openPill`
 // harness fact: Mantine's Popover mounts its dropdown one flushed effect cycle after the click
@@ -430,5 +460,19 @@ describe('onColumnFiltersChange — the seam server-side faceting needs', () => 
     await openPill('Project')
     fireEvent.click(screen.getByRole('checkbox', { name: 'argo', hidden: true }))
     await waitFor(() => expect(seen).toEqual([[{ id: 'project', value: ['argo'] }]]))
+  })
+})
+
+describe('initialColumnPinning', () => {
+  test('a column named in `left` renders sticky; an unnamed column does not', () => {
+    const { container } = renderTable({
+      enablePinning: true,
+      initialColumnPinning: { left: ['project'] },
+    })
+    const headers = [...container.querySelectorAll('th')]
+    const project = headers.find((th) => th.textContent === 'Project')
+    const cost = headers.find((th) => th.textContent === 'Cost')
+    expect(project?.style.position).toBe('sticky')
+    expect(cost?.style.position).not.toBe('sticky')
   })
 })

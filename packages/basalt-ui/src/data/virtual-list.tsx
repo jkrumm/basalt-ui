@@ -17,8 +17,9 @@
  */
 import { Box, Skeleton } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
-import type { ReactNode } from 'react'
+import type { ScrollToOptions, Virtualizer } from '@tanstack/react-virtual'
+import { useImperativeHandle, useRef } from 'react'
+import type { ReactNode, Ref } from 'react'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -56,10 +57,13 @@ export type BasaltVirtualListProps<T> = {
    */
   renderItem: (item: T, index: number) => ReactNode
   /**
-   * Stable key for each item. Falls back to the numeric list index when omitted.
-   * Providing a stable key prevents react reconciliation churn on scroll.
+   * Stable key for each item, handed straight to the virtualizer's own `getItemKey` — required,
+   * not merely recommended: the previous index fallback hid stale rows across a mutation (an
+   * insert/delete shifting every index below it keeps rendering the OLD item at each shifted
+   * index until React's own reconciliation happens to catch up), silently, in the one component
+   * whose job is a long mutable list.
    */
-  getItemKey?: (item: T, index: number) => string | number
+  getItemKey: (item: T, index: number) => string | number
   /**
    * When true, renders skeleton placeholder rows at the given height instead of the virtual item
    * list. The scroll container is still rendered at the specified `height`. Use while async data
@@ -71,6 +75,36 @@ export type BasaltVirtualListProps<T> = {
    * @default 5
    */
   skeletonRows?: number
+  /** Imperative scroll handle — see {@link BasaltVirtualListHandle}. */
+  ref?: Ref<BasaltVirtualListHandle>
+}
+
+/**
+ * Imperative escape hatch for {@link BasaltVirtualList} — the virtualizer's own `scrollToIndex` /
+ * `scrollToOffset` / `scrollToEnd` were otherwise unreachable, since the component owns the
+ * `useVirtualizer()` instance internally. `getVirtualizer()` is the full escape hatch for anything
+ * not covered by the three convenience methods (mirrors `./data/table`'s `useReactTable` export as
+ * the table's own escape hatch).
+ *
+ * @example
+ * const listRef = useRef<BasaltVirtualListHandle>(null)
+ * <BasaltVirtualList ref={listRef} items={items} height={400} renderItem={renderRow} getItemKey={(i) => i.id} />
+ * listRef.current?.scrollToIndex(42, { align: 'center' })
+ */
+export type BasaltVirtualListHandle = {
+  /** Scrolls so the item at `index` is in view. */
+  scrollToIndex: (index: number, opts?: ScrollToOptions) => void
+  /** Scrolls the container to a raw pixel `offset`. */
+  scrollToOffset: (offset: number, opts?: ScrollToOptions) => void
+  /** Scrolls to the end of the list. */
+  scrollToEnd: (opts?: Pick<ScrollToOptions, 'behavior'>) => void
+  /**
+   * The underlying `@tanstack/react-virtual` instance — the full escape hatch. Returns the RAW
+   * `@tanstack/react-virtual` `Virtualizer`, so a future major of that library reaching this shape
+   * ships here as a plain `feat:` under the no-majors doctrine (`../../CLAUDE.md` "Commit type
+   * discipline"), not a silent break.
+   */
+  getVirtualizer: () => Virtualizer<HTMLDivElement, Element>
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -105,6 +139,7 @@ export function BasaltVirtualList<T>({
   getItemKey,
   isLoading = false,
   skeletonRows = 5,
+  ref,
 }: BasaltVirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -116,13 +151,22 @@ export function BasaltVirtualList<T>({
     // Silences a React 19 deprecation warning: TanStack Virtual calls flushSync on scroll;
     // setting this to false opts out of that path entirely.
     useFlushSync: false,
-    ...(getItemKey !== undefined && {
-      getItemKey: (index: number) => {
-        const item = items[index]
-        return item !== undefined ? getItemKey(item, index) : index
-      },
-    }),
+    getItemKey: (index: number) => {
+      const item = items[index]
+      return item !== undefined ? getItemKey(item, index) : index
+    },
   })
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToIndex: (index, opts) => rowVirtualizer.scrollToIndex(index, opts),
+      scrollToOffset: (offset, opts) => rowVirtualizer.scrollToOffset(offset, opts),
+      scrollToEnd: (opts) => rowVirtualizer.scrollToEnd(opts),
+      getVirtualizer: () => rowVirtualizer,
+    }),
+    [rowVirtualizer],
+  )
 
   if (isLoading) {
     return (

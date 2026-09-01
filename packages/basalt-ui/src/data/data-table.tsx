@@ -67,6 +67,7 @@ import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state'
 import { WidgetHeader } from '../widget-header'
+import { isDev } from '../utils/is-dev'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
 
@@ -123,25 +124,46 @@ export type DataTableFacetOption = {
 }
 
 /**
+ * A TanStack column id typed off the row shape `T` where `accessor`/manual `id` inference allows
+ * it — `Extract<keyof T, string>` for a real field name, widened by `(string & {})` so a
+ * synthetic/derived column id (no matching key on `T`) still type-checks. Defaults to `unknown` so
+ * a bare `DataTableFacet[]` / `DataTableColumnPinning` (no type argument) keeps working exactly as
+ * before. Shared by {@link DataTableFacet}'s `columnId` and {@link DataTableColumnPinning}'s
+ * `left`/`right`.
+ */
+export type DataTableColumnId<T = unknown> = Extract<keyof T, string> | (string & {})
+
+/**
  * Declares one faceted column filter, rendered as an `EnumFilter` pill (or `MultiSelectFilter`
  * when `multiple` is set) inside a `FilterSet` in the toolbar (`docs/CONTROLS-SPEC.md` §3).
  *
  * @example
- * const facets: DataTableFacet[] = [
+ * const facets: DataTableFacet<Employee>[] = [
  *   { columnId: 'department', label: 'Department', options: [{ value: 'Engineering', label: 'Engineering' }] },
  *   { columnId: 'role', label: 'Role', multiple: true, options: roleOptions },
  * ]
  * <BasaltDataTable data={rows} columns={columns} facets={facets} />
  */
-export type DataTableFacet = {
+export type DataTableFacet<T = unknown> = {
   /** The TanStack column id — the column's manual `id`, or its `accessorKey` string. */
-  columnId: string
+  columnId: DataTableColumnId<T>
   /** The pill's label — read at rest (single-select) and as the `Filters`/count fallback (multi). */
   label: string
   /** Selectable options for this facet. */
   options: DataTableFacetOption[]
   /** Render a `MultiSelectFilter` (any-of match) instead of an `EnumFilter` (exact match). @default false */
   multiple?: boolean
+}
+
+/**
+ * Column ids pinned to each edge — the same `T`-derived id union as {@link DataTableFacet}'s
+ * `columnId`, applied to TanStack's own `ColumnPinningState` shape (`{ left, right }`, each a bare
+ * `string[]` unrelated to any row type). Structurally assignable to `ColumnPinningState`, so no
+ * cast is needed where this flows into `useState<ColumnPinningState>`.
+ */
+export type DataTableColumnPinning<T = unknown> = {
+  left?: DataTableColumnId<T>[]
+  right?: DataTableColumnId<T>[]
 }
 
 /**
@@ -161,7 +183,7 @@ export type DataTableFacet = {
 const FACET_ALL_VALUE = '__basalt_facet_all__'
 
 /** The synthetic row's label — see {@link FACET_ALL_VALUE}. */
-function facetAllLabel(facet: DataTableFacet): string {
+function facetAllLabel<T>(facet: DataTableFacet<T>): string {
   return `Any ${facet.label.toLowerCase()}`
 }
 
@@ -174,7 +196,7 @@ function facetAllLabel(facet: DataTableFacet): string {
  */
 function facetEnumHandle<T>(
   column: Column<T, unknown>,
-  facet: DataTableFacet,
+  facet: DataTableFacet<T>,
 ): FieldHandle<EnumField<string>> {
   return {
     kind: 'enum',
@@ -204,7 +226,7 @@ function facetEnumHandle<T>(
  */
 function facetMultiHandle<T>(
   column: Column<T, unknown>,
-  facet: DataTableFacet,
+  facet: DataTableFacet<T>,
 ): FieldHandle<MultiField<string>> {
   return {
     kind: 'multi',
@@ -225,6 +247,33 @@ function facetMultiHandle<T>(
     },
     isDefault: (value) => value.length === 0,
   }
+}
+
+/**
+ * Resolves a facet's `columnId` against the table. A mistyped id used to fall through to
+ * `if (!column) return null` — the facet pill silently vanished from the toolbar, the same class
+ * of defect the sibling `meta.align` lane and `manualPagination` both treat as a dev-time throw.
+ * Mirrors `resolveAlign`'s dev-throw shape: throw naming the id in dev
+ * (`basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle constant-folds this
+ * away), degrade to "no pill for this facet" in production.
+ */
+function resolveFacetColumn<T>(
+  table: TanstackTable<T>,
+  facet: DataTableFacet<T>,
+): Column<T, unknown> | undefined {
+  const column = table.getColumn(facet.columnId)
+  if (column) return column
+  if (isDev()) {
+    const knownIds = table
+      .getAllColumns()
+      .map((known) => known.id)
+      .join(', ')
+    throw new Error(
+      `BasaltDataTable: facet columnId "${facet.columnId}" matches no column — known column ids: ` +
+        `${knownIds}.`,
+    )
+  }
+  return undefined
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -365,7 +414,7 @@ export type BasaltDataTableProps<T> = {
    * @example
    * facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
    */
-  facets?: DataTableFacet[]
+  facets?: DataTableFacet<T>[]
   /** Called whenever the faceted column filters change — the seam for server-side faceting. */
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
   /**
@@ -455,7 +504,7 @@ export type BasaltDataTableProps<T> = {
    */
   enablePinning?: boolean
   /** Initial column-pinning state — which column ids stick to the left/right edge. */
-  initialColumnPinning?: ColumnPinningState
+  initialColumnPinning?: DataTableColumnPinning<T>
 
   // ── Body chrome ─────────────────────────────────────────────────────────────
 
@@ -605,13 +654,6 @@ function getPinnedCellStyle<T>(
 }
 
 // ── The manual-pagination contract ────────────────────────────────────────────
-
-/** The house dev gate (`src/provider`, `src/charts/kinds/BandStrip` use the same expression):
- * `basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle constant-folds this to
- * `false` and drops the throw. Read per call, never hoisted, so a test can flip it. */
-function isDev(): boolean {
-  return process.env['NODE_ENV'] !== 'production'
-}
 
 /** One client-side control that `manualPagination` turns into a claim the table cannot support. */
 type ManualPaginationBreach = 'inert' | 'total' | 'sorting' | 'filtering'
@@ -1088,7 +1130,7 @@ export function BasaltDataTable<T>({
                 {showFacets && (
                   <FilterSet>
                     {facets?.map((facet) => {
-                      const column = table.getColumn(facet.columnId)
+                      const column = resolveFacetColumn(table, facet)
                       if (!column) return null
                       return facet.multiple ? (
                         <MultiSelectFilter
