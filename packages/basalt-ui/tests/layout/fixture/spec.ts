@@ -54,6 +54,33 @@ export type AsideSpec = {
   title: string
 }
 
+/**
+ * One chart from `basalt-ui/charts`, mounted in the shell body. Exists for the invariants happy-dom
+ * cannot see at all: measured margins, the phone-tier tick font, a real pointer-driven tooltip
+ * anchor, and the plot-floor/legend-rollup arithmetic in `chart-frame-layout.ts` — all of them
+ * ResizeObserver- and getBoundingClientRect-driven (`docs/CHARTS-SPEC.md` §1, §6, §8).
+ */
+export type ChartsSpec = {
+  /** A real kind from `basalt-ui/charts` — never a hand-rolled stand-in. */
+  kind: 'multiLine' | 'bars' | 'heatmap' | 'donut'
+  /** Number of series (legend entries) `multiLine`/`bars`/`donut` draw. Default 3. */
+  legendEntries?: number
+  /** Fixed height in px, forwarded to the kind. Default 240 (the kind's own default). */
+  height?: number
+  /** Fill the parent's measured height instead of a fixed one — `heatmap` only exposes this. */
+  fill?: boolean
+  /** height = round(containerWidth / aspectRatio) — `heatmap` only exposes this. */
+  aspectRatio?: number
+  /** Wraps the chart in a fixed-height container of this many px, so `fill` has a real box to
+   * fill. Omitted ⇒ the chart sits in the shell body's normal flow. */
+  containerHeight?: number
+  /** `'short'` (the kind's own default `fmtAxisDate`) or `'wide'` — an unavoidably wide label
+   * (`'Mar 08 14:00'`-shaped) that forces the §1 tick-spacing/rotation laws to actually fire. */
+  formatX?: 'short' | 'wide'
+  /** Forwarded verbatim — `0` opts out of the phone tier's auto-rotation, `45`/`90` forces it. */
+  xLabelRotate?: 0 | 45 | 90
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -74,6 +101,8 @@ export type FixtureSpec = {
   table?: TableSpec
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
+  /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */
+  charts?: ChartsSpec
 }
 
 declare global {

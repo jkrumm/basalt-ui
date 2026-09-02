@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
+import { Bars, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
+import type { BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
 import { BasaltDataTable } from '../../../src/data'
 import type { ColumnDef } from '../../../src/data'
 import { BasaltShell, PageAside, PageBar } from '../../../src/index'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/nav/types'
-import type { AsideSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
+import type { AsideSpec, ChartsSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -163,6 +165,158 @@ function AsideFixture({ spec }: { spec: AsideSpec }): ReactElement {
   )
 }
 
+// ── Charts ────────────────────────────────────────────────────────────────────────────────────
+
+type ChartPoint = { date: string; values: number[] }
+
+/** Distinct swatches — a plain hex set, not `VX.series` (which is consumer data per
+ * `docs/CHARTS-SPEC.md` §"Series color is consumer data" — the framework ships no series map). */
+const CHART_COLORS = [
+  '#3b82f6',
+  '#f97316',
+  '#22c55e',
+  '#a855f7',
+  '#ec4899',
+  '#14b8a6',
+  '#eab308',
+  '#ef4444',
+]
+
+/** UTC so the fixture is deterministic regardless of the host machine's timezone. */
+function isoDate(dayIndex: number): string {
+  return new Date(Date.UTC(2024, 0, 1 + dayIndex)).toISOString().slice(0, 10)
+}
+
+/** `Mar 08 14:00`-shaped — deliberately wide, to force the §1 tick-spacing/rotation laws to fire. */
+function fmtWide(key: string): string {
+  const d = new Date(key)
+  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${month} ${day} 14:00`
+}
+
+const CHART_DAYS = 30
+
+function buildChartData(seriesCount: number): ChartPoint[] {
+  return Array.from({ length: CHART_DAYS }, (_, i) => ({
+    date: isoDate(i),
+    values: Array.from(
+      { length: seriesCount },
+      (_, s) => 20 + Math.round(12 * Math.sin((i + s * 2) / 4)) + s * 3,
+    ),
+  }))
+}
+
+function buildLineSeries(seriesCount: number): ChartSeries<ChartPoint>[] {
+  return Array.from({ length: seriesCount }, (_, i) => ({
+    key: `s${i}`,
+    label: `Series ${i + 1}`,
+    color: CHART_COLORS[i % CHART_COLORS.length] as string,
+    mark: 'line' as const,
+    getValue: (d: ChartPoint) => d.values[i] ?? null,
+  }))
+}
+
+function buildPositiveBars(seriesCount: number): BarsBar<ChartPoint>[] {
+  return Array.from({ length: seriesCount }, (_, i) => ({
+    key: `s${i}`,
+    label: `Series ${i + 1}`,
+    color: CHART_COLORS[i % CHART_COLORS.length] as string,
+  }))
+}
+
+const barGetValue = (d: ChartPoint, key: string): number | null => {
+  const value = d.values[Number(key.slice(1))]
+  return value ?? null
+}
+
+type HeatCell = { row: string; col: string; value: number }
+const HEAT_ROWS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+const HEAT_COLS = ['00', '06', '12', '18']
+const HEAT_DATA: HeatCell[] = HEAT_ROWS.flatMap((row, ri) =>
+  HEAT_COLS.map((col, ci) => ({ row, col, value: (ri + 1) * (ci + 1) })),
+)
+
+function buildDonutData(seriesCount: number): DonutDatum<string>[] {
+  return Array.from({ length: seriesCount }, (_, i) => ({ key: `s${i}`, value: 10 + i * 3 }))
+}
+
+/** One real `basalt-ui/charts` kind, picked by `spec.kind` — never a hand-rolled stand-in. Wrapped
+ * in a `data-testid` box so a layout test has one stable selector for "the chart's own container"
+ * regardless of which kind is mounted, and — only when `containerHeight` is set — a fixed-height
+ * box so `fill` has something real to fill (`docs/CHARTS-SPEC.md` §6). */
+function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
+  const seriesCount = spec.legendEntries ?? 3
+  const formatX = spec.formatX === 'wide' ? fmtWide : fmtAxisDate
+  const sizing = {
+    ...(spec.height !== undefined && { height: spec.height }),
+    ...(spec.fill !== undefined && { fill: spec.fill }),
+    ...(spec.aspectRatio !== undefined && { aspectRatio: spec.aspectRatio }),
+  }
+
+  const chart = (() => {
+    switch (spec.kind) {
+      case 'bars':
+        return (
+          <Bars
+            data={buildChartData(seriesCount)}
+            chartId="fixture-chart"
+            getX={(d) => d.date}
+            getValue={barGetValue}
+            positiveBars={buildPositiveBars(seriesCount)}
+            formatX={formatX}
+            {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
+            {...(spec.height !== undefined && { height: spec.height })}
+          />
+        )
+      case 'heatmap':
+        return (
+          <Heatmap
+            data={HEAT_DATA}
+            chartId="fixture-chart"
+            getRow={(d) => d.row}
+            getCol={(d) => d.col}
+            getValue={(d) => d.value}
+            {...sizing}
+          />
+        )
+      case 'donut':
+        return (
+          <Donut
+            data={buildDonutData(seriesCount)}
+            colorForKey={(k) => CHART_COLORS[Number(k.slice(1)) % CHART_COLORS.length] as string}
+            formatValue={(v) => `${v}`}
+            {...(spec.height !== undefined && { height: spec.height })}
+          />
+        )
+      case 'multiLine':
+      default:
+        return (
+          <MultiLine
+            data={buildChartData(seriesCount)}
+            chartId="fixture-chart"
+            getX={(d) => d.date}
+            series={buildLineSeries(seriesCount)}
+            formatX={formatX}
+            {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
+            {...(spec.height !== undefined && { height: spec.height })}
+          />
+        )
+    }
+  })()
+
+  return (
+    <div
+      data-testid="chart-frame"
+      // theme-allow -- a measured fixed-height BOX is the fixture's payload for the `fill` sizing
+      // mode (docs/CHARTS-SPEC.md §6), not a themed size
+      style={spec.containerHeight !== undefined ? { height: spec.containerHeight } : undefined}
+    >
+      {chart}
+    </div>
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
@@ -178,6 +332,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
     >
       {spec.aside && <AsideBar />}
       {spec.table && <TableFixture spec={spec.table} />}
+      {spec.charts && <ChartsFixture spec={spec.charts} />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />
       <div data-testid="content-end">end of content</div>
