@@ -20,6 +20,23 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   tree (C9). Wave 1 stops there; the `Panel (n)` pill in `PageBar` row 2 opening those children as
   44px `FilterSheet` rows (C15) is wave 2, and it replaces the in-flow stacking rather than adding
   a second mount.
+- **`PageAside` is law C9's ONE declared exception, and the viewport read stays in JS.** Every
+  other responsive twin in the package is CSS (`visibleFrom`/`hiddenFrom` in `controls/actions.tsx`,
+  `controls/view-tabs.tsx`), because there the two halves are two renderings of one stateless
+  control. Here they are not: the desktop form lives inside `AppShell.Aside` and the phone form
+  inside a `FilterSheet` whose Drawer unmounts its body when closed — two portal targets, never one
+  node CSS could reposition between them — and the two mount their children under DIFFERENT filter
+  surfaces (`panel` vs `sheet`), a React context value no CSS media query can express. A CSS-only
+  twin would therefore have to render the children TWICE, and an aside's children are stateful:
+  every bound control in there would subscribe to its field twice. **Single-mounting a stateful
+  panel beats a CSS twin**, so the query is read through `useSyncExternalStore` — the one hook
+  whose server snapshot React honours during both `renderToString` and hydration, so SSR, the
+  hydration pass and the first client paint agree on which single node exists. Two consequences are
+  pinned by `packages/basalt-ui/tests/layout/page-aside.layout.test.ts` in real Chrome: exactly one
+  LIVE child subtree at 1440 and at 390, and exactly one MOUNT of it at each. The second half is
+  why the in-flow branch inside a shell waits one commit — `PageBar` publishes its row-2 claim from
+  a layout effect, so the pre-claim pass used to render the wave-1 in-flow form, mount the aside's
+  children and drop them again before paint (measured: 2 mounts for one sheet).
 - **Evidence first, then spec, then guards** — the same sequence as the controls effort. Nothing
   in §3 ships until §2 has a second data point (argo or linewatch) beside CBBI.
 - The aside's leading edge is the REGION's seam (`AppShell.Aside`, `--vx-divider`), never the

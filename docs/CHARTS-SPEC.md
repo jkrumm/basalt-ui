@@ -170,11 +170,51 @@ and `ZonedLine` all forward it to `CartesianChart` the same way they already for
 
 **A rotated label also reaches into the LEFT gutter, and that half was missing.** The label is
 anchored at its right edge and tilts counter-clockwise, so it runs down-AND-LEFT from its tick —
-and the first tick sits at the plot's left edge. `autoMargin` therefore clears
-`widest x label × cos(angle)` on the left as well: 0.71× the label at 45°, and exactly zero at 90°,
-where the string runs straight down and costs no horizontal room. Before this, `/charts-stress`
-block (f2) rendered `Mar 01 14:00` as `ar 01 14:00` — the bottom gutter grew for rotation and the
-left one did not. An explicit `margin` override still wins last.
+and the first tick sits at the plot's left edge. `autoMargin` therefore clears its leftward reach on
+that side too: 0.71× the label at 45°, and exactly zero at 90°, where the string runs straight down
+and costs no horizontal room. Before this, `/charts-stress` block (f2) rendered `Mar 01 14:00` as
+`ar 01 14:00` — the bottom gutter grew for rotation and the left one did not. An explicit `margin`
+override still wins last.
+
+**Measured equals painted means measuring the label the axis PAINTS — offset and glyphs included.**
+`width × cos θ` was not that. The axis nudges every rotated label by a `dx`/`dy` (`−6/+2` at 45°,
+`−4/+4` at 90°) and hangs it from a baseline `tickLength + max(10, fontPx)` below the axis line,
+and the glyphs reach back over that anchor by their ascent and below it by their descent. The
+measure counted none of it, so the first label crossed the SVG's left edge by 3.2px at 390 and
+5.7px at 320, and every rotated label's box bottom landed EXACTLY on the SVG's own height — a
+descender row sitting on the clip. `rotatedLabelExtents` (`layout/auto-margin.ts`) resolves both
+sides from that anchor instead:
+
+| Side     | Rotated law                                                               |
+| -------- | ------------------------------------------------------------------------- |
+| `left`   | `cos θ · (widest x label + ascent) − dx + 2`                              |
+| `bottom` | `tickLength + max(10, fontPx) + dy + sin θ · width + cos θ · descent + 2` |
+
+The `dx`/`dy` pair is exported as `ROTATED_LABEL_OFFSET` and **imported by `primitives/Axes.tsx`**,
+never re-declared there — a second copy is precisely how the paint and the measure came apart. The
+1.35em line box is split 1.05em ascent / 0.30em descent, so nothing moves for an unrotated axis, and
+the trailing 2px is clearance: a box touching the clip line reads as clipped.
+
+**Rotation is a trade, so it is checked before it is taken.** `autoXLabelRotate` used to fire
+whenever fewer than three labels fit horizontally, without asking whether the rotated layout fit
+either — and rotating BUYS bottom-gutter depth by SPENDING plot width on that deeper left gutter.
+At block (f1) the deal went negative: three clean horizontal labels at 390, and at 320 a rotation
+that reached off the left edge and bought nothing for it. `CartesianChart` now resolves BOTH
+margins (`autoMargin()` and `autoMargin({ rotate: 45 })`) before deciding and hands the rotated
+plot width to `autoXLabelRotate`, which takes the rotation only when the rotated axis paints MORE
+labels than the flat one at its projected pitch (`labelPx · cos 45°`), and at least two of them.
+Otherwise the axis stays flat and `smartTicks` thins further — two readable horizontal labels beat
+two tilted ones in a narrower plot. An explicit `xLabelRotate` skips the check outright.
+
+**A kind that paints its own labels is not exempt from any of this.** `Heatmap` renders its row and
+column categories as plain `<text>` rather than through the `Axis*` primitives, and was therefore
+the one kind still printing every label: 12 columns at 390px, ten adjacent overlaps, `19:00` past
+the SVG's right edge. It now runs the same law through `thinLabels(labels, bandPx, labelPx)` — one
+label every `ceil(labelPx / bandPx)` bands, first and last always kept, and the grid label before a
+colliding final one dropped rather than printed underneath, exactly as `smartTicks` does with its
+appended tick. Columns thin by the widest measured label, rows by the line box whenever the row
+band is shorter than it, and the right gutter reserves half the widest column label for the same
+reason the `right` row of the table above does.
 
 **The appended final x tick no longer prints on top of its neighbour.** `smartTicks` appends the
 last key unconditionally (below), which lands it a PARTIAL step from the last tick on the grid — so
@@ -538,7 +578,16 @@ Two consequences worth stating, because both are places the tier could otherwise
   fit three ticks side by side (`autoXLabelRotate`). Two ticks is a labelled left edge, a labelled
   right edge and nothing to read between them. Desktop never auto-rotates: rotating spends
   bottom-gutter depth, which is the cheap axis on a phone and the expensive one on a screen that had
-  horizontal room all along. **`xLabelRotate: 0` is the opt-out.**
+  horizontal room all along. **`xLabelRotate: 0` is the opt-out.** And wanting to rotate is not the
+  same as rotating fitting: the rotated margin is resolved too, and the rotation is refused unless
+  it paints more labels than the flat axis would (§1 — block (f1) at 320 auto-rotated itself into a
+  clip it did not have at 390).
+- **The phone legend's `+N more` is a DISCLOSURE, not a caption.** A cap of two left six of eight
+  plotted colours unnamed behind a `<span>`, which is a categorical encoding the chart draws and
+  then refuses to decode — on the one viewport where there is no hover to fall back on. The chip is
+  a `<button aria-expanded>`; expanded, every entry renders, the legend band grows, and
+  `ChartFrame`'s observer re-flows the frame around it. The plot keeps `VX.minPlotHeight` either
+  way — under `fill`, where the box cannot grow, that is what `legendEntryCap` is for.
 
 ## 9. Number formats, and the three "nothing to draw" states
 
