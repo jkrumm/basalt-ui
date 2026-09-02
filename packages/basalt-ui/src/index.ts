@@ -223,6 +223,7 @@ export type {
   ConnectivityProviderProps,
   ConnectivityOverride,
 } from './provider/connectivity-types'
+export type { ConnectivityIndicatorProps } from './provider/connectivity-indicator'
 
 // ── Query (createBasaltQueryClient, unwrap, lazy devtools — dropped ./query subpath) ──────────────
 export { createBasaltQueryClient, unwrap } from './query-client'

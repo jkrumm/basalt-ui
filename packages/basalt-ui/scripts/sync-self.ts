@@ -17,7 +17,7 @@
  *
  * Usage: bun packages/basalt-ui/scripts/sync-self.ts
  */
-import { copyFileSync, mkdirSync, readdirSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 
 const PKG_ROOT = join(import.meta.dir, '..')
@@ -45,11 +45,48 @@ function syncSkills(): number {
   return skillDirs.length
 }
 
+/**
+ * Deletes `.claude/rules/basalt-*.md` files and `.claude/skills/basalt-*` directories whose
+ * source no longer exists under `agent/`. A plain copy (see the module doc) never removes a stale
+ * file on its own — a rule or skill dropped from `agent/rules`/`agent/skills` stayed installed
+ * here forever, which is how a retired doctrine kept being read as live long after it stopped
+ * shipping.
+ */
+function pruneOrphans(): number {
+  let pruned = 0
+
+  if (existsSync(RULES_DEST)) {
+    const installed = readdirSync(RULES_DEST).filter(
+      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
+    )
+    for (const name of installed) {
+      if (existsSync(join(RULES_SRC, name))) continue
+      rmSync(join(RULES_DEST, name))
+      pruned++
+    }
+  }
+
+  if (existsSync(SKILLS_DEST)) {
+    const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
+      (e) => e.isDirectory() && e.name.startsWith('basalt-'),
+    )
+    for (const dir of installed) {
+      if (existsSync(join(SKILLS_SRC, dir.name))) continue
+      rmSync(join(SKILLS_DEST, dir.name), { recursive: true })
+      pruned++
+    }
+  }
+
+  return pruned
+}
+
 function main(): void {
   const ruleCount = syncRules()
   const skillCount = syncSkills()
+  const prunedCount = pruneOrphans()
   console.log(
-    `✓ sync-self: ${ruleCount} rule(s) → .claude/rules, ${skillCount} skill(s) → .claude/skills`,
+    `✓ sync-self: ${ruleCount} rule(s) → .claude/rules, ${skillCount} skill(s) → .claude/skills` +
+      (prunedCount > 0 ? `, ${prunedCount} orphan(s) pruned` : ''),
   )
 }
 

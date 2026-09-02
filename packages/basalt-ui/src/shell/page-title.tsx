@@ -19,6 +19,7 @@
  * <PageTitle title="Something went wrong" subtitle="The page hit an unexpected error." />
  */
 import { cx } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import type { ReactNode } from 'react'
 import classes from './page-title.module.css'
@@ -36,14 +37,9 @@ export type PageTitleProps = BasaltProps &
     icon?: ReactNode
   }
 
-export function PageTitle({
-  title,
-  subtitle,
-  icon,
-  className,
-  classNames,
-  style,
-}: PageTitleProps): ReactNode {
+export function PageTitle(props: PageTitleProps): ReactNode {
+  assertRequiredProps('PageTitle', props, ['title'])
+  const { title, subtitle, icon, className, classNames, style } = props
   return (
     <div
       className={cx(classes.root, classNames?.root, className)}

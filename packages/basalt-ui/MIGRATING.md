@@ -180,8 +180,8 @@ What is new, one line each — nothing here renames or removes anything:
   `tier` is the package's word for "how loud is this" (`WidgetHeader`, `CtlSlot`), and `'section'`
   meant two different things across the two spellings. `variant` is `@deprecated` and still
   honoured; resolution is `tier ?? variant ?? 'page'`, so nothing moves until you change the prop.
-  `QueryStateTier` is the new type name; `QueryStateVariant` stays exported as an alias. No removal
-  is scheduled — this is a preferred spelling, not a sunset.
+  `QueryStateTier` is the new type name; `QueryStateVariant` stayed exported as an alias through
+  1.28.x and is **removed in 1.29.0** together with the `variant` prop (see § Consolidation).
 - **`WidgetHeader` and `QueryState` gained slot classes** — `classNames={{ root, title, metric,
 icon }}` on the first, `classNames={{ root }}` on the second (the branch that is live). Additive.
   `Section` now OMITS `classNames` from the `WidgetHeaderProps` it re-publishes, so its slot union
@@ -221,8 +221,8 @@ icon }}` on the first, `classNames={{ root }}` on the second (the branch that is
   not activate.
 - **`BasaltDataTable` row selection** — `enableRowSelection` prepends a checkbox column (header =
   select-all on the page) and arms TanStack's row-selection feature; `rowSelection` /
-  `onRowSelectionChange` are the controlled pair over TanStack's own `RowSelectionState` (now
-  re-exported from `basalt-ui/data` and `basalt-ui/data/table`), and `getRowId` makes a selection
+  `onRowSelectionChange` are the controlled pair over TanStack's own `RowSelectionState` (re-exported
+  from `basalt-ui/data/table` in 1.28.x; from 1.29.0 import it from `@tanstack/react-table`), and `getRowId` makes a selection
   survive a re-sort or a refetch (the default id is the row INDEX). `bulkActions` renders a bar
   above the table while ≥1 row is selected — the count, then the actions, through the SAME
   `BarAction[]` vocabulary `PageBar` uses, so the ≤3-inline fold and the mobile kebab are basalt's
@@ -885,8 +885,17 @@ Three rendering changes ride along, all visible without any code change:
 
 <!-- C1 symbol list -->
 
-- `./query` — dropped. `createBasaltQueryClient`, `unwrap` now on `.` (root barrel). Import from
-  `basalt-ui` instead of `basalt-ui/query`.
+- `./query` — dropped. `createBasaltQueryClient`, `unwrap`, `BasaltQueryDevtools`,
+  `toErrorMessage`, `errorStatus` now on `.` (root barrel) — import from `basalt-ui` instead of
+  `basalt-ui/query`. The nine raw TanStack re-exports it carried (`QueryClientProvider`,
+  `QueryErrorResetBoundary`, `useQueryErrorResetBoundary`, `useQuery`, `useSuspenseQuery`,
+  `useMutation`, `useQueryClient`, `useInfiniteQuery`, `queryOptions`) are gone from basalt entirely —
+  import them from `@tanstack/react-query`, which the root entry already requires.
+- `./data/table` — **narrowed, not dropped**: `BasaltDataTable`, its types and `createColumnHelper`
+  stay; the TanStack pass-throughs (`useReactTable`, `flexRender`, `getCoreRowModel`,
+  `getSortedRowModel`, `getFilteredRowModel`, `getPaginationRowModel`, `ColumnDef`, `SortingState`,
+  `ColumnHelper`, `PaginationState`, `ColumnPinningState`, `RowSelectionState`, `ColumnFiltersState`)
+  are imported from `@tanstack/react-table` directly.
 - `./connectivity` — dropped. `ConnectivityProvider` (auto-mounted by `BasaltProvider`, no
   consumer-side import needed), `useConnectivity`, `ConnectivityIndicator` now on `.`.
 - `./data` (bare) — dropped. It never carried its own exports beyond re-exporting `./data/table`
@@ -899,6 +908,29 @@ deprecation row — see that minor's own `MIGRATING.md` section for the original
 annotation and rationale):
 
 - `state.ts`'s legacy connectivity export — use `./provider`'s `useConnectivity` instead.
+- `BasaltProvider`'s flat `sseUrl` / `healthUrl` / `healthIntervalMs` props — use
+  `connectivity={{ sseUrl, healthUrl, healthIntervalMs }}`.
+- `QueryStateVariant` and the `variant` prop on `QueryState`/`LoadingState`/`ErrorState`/`EmptyState`
+  — use `QueryStateTier` and `tier` (identical values).
+- `createSearchParamStore` / `createMultiSearchParamStore` (`basalt-ui/router-tanstack`) and the
+  legacy branches they kept alive in the field vocabulary — use `createSearchStore` with
+  `field.enum` / `field.multi`.
+- `field` on `basalt-ui/forms` — use `inputProps(form, path)` + `fieldKey(form, path)`.
+- `BasaltNotifications` / `BasaltNotificationsProps` (`basalt-ui/notifications`) — mount
+  `<BasaltOverlays notifications />` from `basalt-ui/commands` instead. **Doctrine exception,
+  recorded**: this one never carried a `deprecated-export` row; it was superseded in 1.2x and its own
+  JSDoc warned against mounting it next to `BasaltOverlays`, so it leaves in the same minor as the
+  other shims. The `duplicate-notifications-mount` lint rule that only existed to catch the
+  double-mount is retired with it.
+- `ConnectivityIndicatorProps` stays on the root barrel (it is `BasaltProps`).
+
+**CLI** (`basalt-ui`): `info` and `check-coverage` are gone — `check-coverage` is a repo-internal
+script (`bun scripts/check-coverage.ts`), not a consumer command; `info` graded a consumer's
+`vite.config.ts` by parsing it and nobody read the output. `doctor` checks THIS package only: the
+workspace-wide `ai` major-parity walk (with `!`-exclusions and `aiMajorSkewReason`) and the
+`basaltAppPlugin({ icons })` file check are dropped. One resolver remains for every command —
+`BASALT_CWD`, then cwd, plus a declared `basalt.roots`; nothing is inferred from siblings or parents.
+
 - `ZonedLine`/`Bars`' `ZoneSpec` aliases — use the canonical `AxisConfig`-scoped zone type each
   kind now exports directly.
 - `inputProps`'s `key` return field (already shape-changed in an earlier Unreleased entry above) —

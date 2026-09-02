@@ -59,7 +59,7 @@ bunx basalt-ui init
 That's the whole install — there is no plugin, no marketplace, and no second version to track.
 `init` writes into the consumer repo:
 
-- `.claude/rules/basalt-*.md` — thirteen Claude Code rules (`basalt-tokens`, `basalt-charts`, `basalt-mantine`, `basalt-router`, `basalt-query`, `basalt-state`, `basalt-forms`, `basalt-notifications`, `basalt-commands`, `basalt-data`, `basalt-agent`, `basalt-content`, `basalt-app`)
+- `.claude/rules/basalt-*.md` — six Claude Code rules (`basalt-tokens`, `basalt-mantine`, `basalt-charts`, `basalt-state`, `basalt-controls`, `basalt-batteries`), each with a generated coverage header naming what enforces it
 - `.claude/skills/basalt-{app,design,charts}/SKILL.md` — the three skills (`/basalt-app`, `/basalt-design`, `/basalt-charts`), same managed path as the rules
 - A managed `<!-- basalt:begin/end -->` block in `CLAUDE.md` — stack facts, the DESIGN.md pointer, and the frontend-design restraint override
 - A thin `DESIGN.md` seed — your app's deltas (series dictionary, identity, deviations)
@@ -172,8 +172,8 @@ const theme = createBasaltTheme(
 keep the shipped default). Never hand-edit a palette hex to retune the identity.
 
 `BasaltOverlays` (from `basalt-ui/commands`) is the composable overlay mount: it bundles
-`ModalsProvider`, `Spotlight`, and `Notifications` into a single mount point and replaces a
-standalone `<BasaltNotifications />`. `paletteOptions={{ groups: paletteGroups }}` emits your
+`ModalsProvider`, `Spotlight`, and `Notifications` into a single mount point — it is the one
+notifications mount. `paletteOptions={{ groups: paletteGroups }}` emits your
 app-specific series colors (see
 [Consumer-series extensibility](#consumer-series-extensibility) below) alongside the framework
 palette. Skip both — `BasaltOverlays` and `paletteGroups` — if you don't use those batteries yet.
@@ -610,9 +610,10 @@ bun add @mantine/notifications
 ```
 
 ```tsx
-import { BasaltNotifications, notifySuccess, notifyError } from 'basalt-ui/notifications'
+import { notifySuccess, notifyError } from 'basalt-ui/notifications'
+import { BasaltOverlays } from 'basalt-ui/commands'
 
-// in main.tsx: <BasaltProvider><BasaltNotifications /><App /></BasaltProvider>
+// in main.tsx: <BasaltProvider><BasaltOverlays notifications><App /></BasaltOverlays></BasaltProvider>
 notifySuccess('Saved')
 notifyError('Upload failed', { title: 'Error' })
 ```

@@ -472,12 +472,12 @@ export function shippedAssetPath(install: BasaltInstall, fromDir: string, asset:
 /**
  * Which directory a project-scoped command (`check-theme`, `doctor`) should actually read.
  *
- * The shipped lefthook preset and every `bunx basalt-ui …` in the seeded CI run at the REPO ROOT,
- * while in a monorepo the `basalt` config and the manifest live in a package below it — verified to
- * produce `0 files scanned` and a `manifest missing` failure, i.e. a gate that never gates. Rather
- * than make every consumer hand-write a `--cwd`, a command with no basalt project at its own cwd
- * relocates to the single workspace package that has one, and says so. Two or more candidates is
- * genuinely ambiguous and reported as such; `BASALT_CWD` is the explicit override.
+ * One resolver, nothing inferred: `BASALT_CWD` when set, else the invocation cwd. A monorepo
+ * package whose install lives elsewhere sets `BASALT_CWD` explicitly (or the invoking script's
+ * `root:`/`cwd` does) rather than relying on workspace-glob discovery or an ancestor/descendant
+ * walk — both were deleted (see `resolveProjectDir`'s own doc below) as multi-repo speculation for
+ * a single-owner fleet where every consumer already runs its own commands from its own directory.
+ * The scan scope within that directory is `basalt.roots` in `package.json` (default `src`).
  */
 type ProjectResolution = {
   /** The directory to read. Equals the invocation cwd unless BASALT_CWD relocated it. */

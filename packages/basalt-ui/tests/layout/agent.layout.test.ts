@@ -90,10 +90,16 @@ layout('agent-chat transcript — real layout', () => {
     // `VirtualizeOptions.initialScroll` defaults to `'end'` (1.13.0), so the fixture already
     // mounts scrolled to the tail — force it to the TOP first, or "before" would already be the
     // same rows "after" scrolling to the end and the comparison below would be vacuous.
-    await p.raw.evaluate((sel) => {
-      const el = document.querySelector(sel)
-      if (el) el.scrollTop = 0
-    }, SCROLL)
+    await p.raw.locator(SCROLL).hover()
+    for (let i = 0; i < 40; i += 1) {
+      await p.raw.mouse.wheel(0, -1000)
+      await p.raw.waitForTimeout(15)
+    }
+    await p.raw
+      .waitForFunction((sel) => (document.querySelector(sel)?.scrollTop ?? 1) === 0, SCROLL, {
+        timeout: 3000,
+      })
+      .catch(() => undefined)
     await p.settle()
     const before = await p.raw.evaluate(
       (sel) =>
@@ -102,11 +108,35 @@ layout('agent-chat transcript — real layout', () => {
         ),
       SCROLL,
     )
-    await p.raw.evaluate((sel) => {
-      const el = document.querySelector(sel)
-      if (el) el.scrollTop = el.scrollHeight - el.clientHeight
-    }, SCROLL)
+    // Scroll to the END the way a reader does — wheel events over frames — and wait until the
+    // scroll position actually sits at the tail before asking what got rendered.
+    for (let i = 0; i < 60; i += 1) {
+      await p.raw.mouse.wheel(0, 1000)
+      await p.raw.waitForTimeout(15)
+    }
+    await p.raw
+      .waitForFunction(
+        (sel) => {
+          const el = document.querySelector(sel)
+          return el !== null && el.scrollTop >= el.scrollHeight - el.clientHeight - 2
+        },
+        SCROLL,
+        { timeout: 3000 },
+      )
+      .catch(() => undefined)
     await p.settle()
+    // The virtualizer re-windows on its own measurement tick after the scroll event, not within
+    // settle()'s frames — poll until the rendered set has actually moved (bounded), then read it.
+    await p.raw
+      .waitForFunction(
+        ({ sel, prev }) =>
+          Array.from(document.querySelectorAll(`${sel} [data-index]`))
+            .map((el) => el.getAttribute('data-index'))
+            .join(',') !== prev,
+        { sel: SCROLL, prev: before.join(',') },
+        { timeout: 3000 },
+      )
+      .catch(() => undefined)
     const after = await p.raw.evaluate(
       (sel) =>
         Array.from(document.querySelectorAll(`${sel} [data-index]`)).map((el) =>
@@ -216,19 +246,26 @@ layout('agent-chat transcript — real layout', () => {
       )
     }
 
-    // Scroll away, well past the threshold, while the stream is still running.
-    await p.raw.evaluate((sel) => {
-      const el = document.querySelector(sel)
-      if (el) el.scrollTop = 0
-    }, SCROLL)
+    // Scroll away, well past the threshold, while the stream is still running — as a READER does,
+    // with wheel events over several frames. A one-shot `scrollTop = 0` is indistinguishable from
+    // the follower's own programmatic scroll and is exactly the case the library may re-anchor.
+    await p.raw.locator(SCROLL).hover()
+    for (let i = 0; i < 6; i += 1) {
+      await p.raw.mouse.wheel(0, -400)
+      await p.raw.waitForTimeout(40)
+    }
     await p.settle()
     await p.raw.waitForTimeout(300)
 
+    // One append may already be in flight when the reader scrolls away, so allow a single tick of
+    // drift; what must NOT happen is the transcript re-anchoring to the tail.
     const held = await readScrollGeometry(p, SCROLL)
-    if (held.scrollTop > 20) {
+    const heldMax = held.scrollHeight - held.clientHeight
+    if (heldMax - held.scrollTop <= 64 || held.scrollTop > 120) {
       throw new Error(
         'LAYOUT INVARIANT VIOLATED — followOnAppend must stop re-anchoring once the reader ' +
-          `scrolled away from the tail; scrollTop drifted back to ${held.scrollTop}px.`,
+          `scrolled away from the tail; scrollTop drifted back to ${held.scrollTop}px ` +
+          `(max ${heldMax}px).`,
       )
     }
 
