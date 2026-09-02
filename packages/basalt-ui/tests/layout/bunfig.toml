@@ -4,4 +4,7 @@
 # serves its own fixture. Reached via `bun --config=<this> test …`; `bun test -c` does NOT work
 # (`-c` parses as a test-name filter).
 [test]
+# NOT honoured by bun — a per-test ceiling only comes from `bun test --timeout <ms>`, which the
+# root `test:layout` script passes. Kept as documentation of the intended budget; without the
+# flag the first test after a cold Chrome boot (19 s on ubuntu-latest) dies at Bun's 5000 ms default.
 timeout = 60000
