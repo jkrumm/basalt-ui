@@ -139,3 +139,23 @@ describe('BasaltVirtualList — row identity survives a mutation to `items`', ()
     expect(screen.getByRole('button', { name: 'Row -1: 0' })).toBeTruthy()
   })
 })
+
+describe('className and classNames (common/props.ts)', () => {
+  test('className and classNames.root both reach the scroll container', () => {
+    const { container } = render(
+      <MantineProvider>
+        <BasaltVirtualList
+          items={ITEMS}
+          height={300}
+          renderItem={(item) => <div>{item.label}</div>}
+          getItemKey={(item) => item.id}
+          className="my-list"
+          classNames={{ root: 'my-root' }}
+        />
+      </MantineProvider>,
+    )
+    const root = container.querySelector('.my-list')
+    expect(root).not.toBeNull()
+    expect(root?.classList.contains('my-root')).toBe(true)
+  })
+})

@@ -38,6 +38,7 @@
 export {
   BasaltDataTable,
   type BasaltDataTableProps,
+  type BasaltDataTableSlot,
   type DataTableAlign,
   type DataTableColumnId,
   type DataTableColumnPinning,
@@ -63,4 +64,5 @@ export {
   BasaltVirtualList,
   type BasaltVirtualListHandle,
   type BasaltVirtualListProps,
+  type BasaltVirtualListSlot,
 } from './virtual'

@@ -56,6 +56,10 @@ import {
 } from '@tanstack/react-table'
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { BASALT_PREFIX } from '../common/errors'
+import { assertRequiredProps, useValidateProps } from '../common/validate'
 import { FilterSet } from '../controls'
 // `EnumFilter` is deliberately NOT on the `./controls` barrel (`docs/CONTROLS-SPEC.md` §3 —
 // reaching for it directly is hand-rolling a filter, `basalt/hand-rolled-filter`); a facet column
@@ -279,6 +283,13 @@ function resolveFacetColumn<T>(
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 /**
+ * The four boxes `BasaltDataTable` paints: `root` is the outer fragment's replacement wrapper,
+ * `toolbar` is the search/facets/actions row, `table` is the Mantine `Table` itself, `footer` is
+ * the pagination bar.
+ */
+export type BasaltDataTableSlot = 'root' | 'toolbar' | 'table' | 'footer'
+
+/**
  * Props for {@link BasaltDataTable}.
  *
  * @example
@@ -291,268 +302,276 @@ function resolveFacetColumn<T>(
  *   emptyState: <Text c="dimmed">No results found.</Text>,
  * }
  */
-export type BasaltDataTableProps<T> = {
-  // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
+export type BasaltDataTableProps<T> = BasaltProps &
+  SlotStylesProps<BasaltDataTableSlot> & {
+    // ── Header (WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────
 
-  /**
-   * Optional heading rendered above the toolbar via `WidgetHeader tier="widget"`. `count` always
-   * reads `table.getRowCount()` (C11) — never a raw `data.length` — so it tracks the row model
-   * (post-filter/-pagination) rather than the unfiltered input.
-   */
-  title?: string
-  /** Optional leading icon, forwarded to `WidgetHeader`. */
-  icon?: ReactNode
-  /** Optional muted line rendered below the title row. */
-  subtitle?: string
+    /**
+     * Optional heading rendered above the toolbar via `WidgetHeader tier="widget"`. `count` always
+     * reads `table.getRowCount()` (C11) — never a raw `data.length` — so it tracks the row model
+     * (post-filter/-pagination) rather than the unfiltered input.
+     */
+    title?: string
+    /** Optional leading icon, forwarded to `WidgetHeader`. */
+    icon?: ReactNode
+    /** Optional muted line rendered below the title row. */
+    subtitle?: string
 
-  /** Row data array. */
-  data: T[]
-  /**
-   * Column definitions. Use `createColumnHelper<T>()` from `@tanstack/react-table`
-   * for a typed accessor builder — `col.accessor('field', …)` columns sort by value.
-   */
-  // The cell-value type varies per column, so the array is heterogeneous in TValue. `any` here
-  // is the TanStack-idiomatic escape (accessor columns infer their own TValue); row typing stays
-  // exact via the `T` data generic.
-  // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
-  columns: ColumnDef<T, any>[]
-  /**
-   * Enable column sorting via clickable headers. Client-side — the rows in `data` are what get
-   * reordered.
-   *
-   * Under `manualPagination` that is one page, so leaving this on without also passing
-   * `manualSorting` is a contract violation and throws in dev — see `manualPagination`.
-   * @default true
-   */
-  enableSorting?: boolean
-  /**
-   * Hand sorting to the server: the table stops reordering `data` locally and renders it in the
-   * order given, while the headers keep toggling `SortingState` and reporting it through
-   * `onSortingChange` — which is where you re-request the sorted page.
-   *
-   * This is the required companion to `manualPagination` whenever sort headers are live; without
-   * it a server-paginated table sorts one page and the "of N" bar presents that as a sort of all N.
-   * @default false
-   * @example
-   * <BasaltDataTable
-   *   data={page.rows}
-   *   columns={columns}
-   *   enablePagination
-   *   manualPagination
-   *   manualSorting
-   *   rowCount={page.total}
-   *   onSortingChange={(s) => refetch({ sort: s[0] })}
-   * />
-   */
-  manualSorting?: boolean
-  /** Stripe alternate rows. Forwarded to Mantine `Table` — `'odd'`/`'even'` pick the phase. */
-  striped?: boolean | 'odd' | 'even'
-  /** Highlight hovered rows. Forwarded to Mantine `Table`. */
-  highlightOnHover?: boolean
-  /**
-   * Rendered when no rows are VISIBLE — `data` is empty, or a filter/page matches none of it.
-   * Falls back to a simple message when omitted. (Before 1.25.0 this tracked `data.length` alone,
-   * so a search matching nothing rendered a blank `<tbody>` with no message at all.)
-   */
-  emptyState?: ReactNode
-  /**
-   * When true, renders skeleton placeholder rows instead of the empty-state branch.
-   * The header remains visible. Use while async data is loading.
-   */
-  isLoading?: boolean
-  /**
-   * Number of skeleton rows to render when `isLoading` is true.
-   * @default 5
-   */
-  skeletonRows?: number
-  /**
-   * Initial sorting state. Drives `useState` initial value — useful for restoring
-   * sort order from URL search params (e.g. `initialSorting={Route.useSearch().sorting}`).
-   * @example
-   * // URL-sync pattern with TanStack Router
-   * const { sorting } = Route.useSearch()
-   * <BasaltDataTable initialSorting={sorting} onSortingChange={(s) => navigate({ search: { sorting: s } })} … />
-   */
-  initialSorting?: SortingState
-  /**
-   * Called whenever the internal sorting state changes. Receives the new `SortingState`.
-   * The table continues to manage sorting internally (uncontrolled) when this is omitted.
-   */
-  onSortingChange?: (sorting: SortingState) => void
+    /** Row data array. */
+    data: T[]
+    /**
+     * Column definitions. Use `createColumnHelper<T>()` from `@tanstack/react-table`
+     * for a typed accessor builder — `col.accessor('field', …)` columns sort by value.
+     */
+    // The cell-value type varies per column, so the array is heterogeneous in TValue. `any` here
+    // is the TanStack-idiomatic escape (accessor columns infer their own TValue); row typing stays
+    // exact via the `T` data generic.
+    // oxlint-disable-next-line typescript/no-explicit-any -- TanStack-idiomatic heterogeneous column array
+    columns: ColumnDef<T, any>[]
+    /**
+     * Enable column sorting via clickable headers. Client-side — the rows in `data` are what get
+     * reordered.
+     *
+     * Under `manualPagination` that is one page, so leaving this on without also passing
+     * `manualSorting` is a contract violation and throws in dev — see `manualPagination`.
+     * @default true
+     */
+    enableSorting?: boolean
+    /**
+     * Hand sorting to the server: the table stops reordering `data` locally and renders it in the
+     * order given, while the headers keep toggling `SortingState` and reporting it through
+     * `onSortingChange` — which is where you re-request the sorted page.
+     *
+     * This is the required companion to `manualPagination` whenever sort headers are live; without
+     * it a server-paginated table sorts one page and the "of N" bar presents that as a sort of all N.
+     * @default false
+     * @example
+     * <BasaltDataTable
+     *   data={page.rows}
+     *   columns={columns}
+     *   enablePagination
+     *   manualPagination
+     *   manualSorting
+     *   rowCount={page.total}
+     *   onSortingChange={(s) => refetch({ sort: s[0] })}
+     * />
+     */
+    manualSorting?: boolean
+    /** Stripe alternate rows. Forwarded to Mantine `Table` — `'odd'`/`'even'` pick the phase. */
+    striped?: boolean | 'odd' | 'even'
+    /** Highlight hovered rows. Forwarded to Mantine `Table`. */
+    highlightOnHover?: boolean
+    /**
+     * Rendered when no rows are VISIBLE — `data` is empty, or a filter/page matches none of it.
+     * Falls back to a simple message when omitted. (Before 1.25.0 this tracked `data.length` alone,
+     * so a search matching nothing rendered a blank `<tbody>` with no message at all.)
+     */
+    emptyState?: ReactNode
+    /**
+     * When true, renders skeleton placeholder rows instead of the empty-state branch.
+     * The header remains visible. Use while async data is loading.
+     */
+    isLoading?: boolean
+    /**
+     * Number of skeleton rows to render when `isLoading` is true.
+     * @default 5
+     */
+    skeletonRows?: number
+    /**
+     * Initial sorting state. Drives `useState` initial value — useful for restoring
+     * sort order from URL search params (e.g. `initialSorting={Route.useSearch().sorting}`).
+     * @example
+     * // URL-sync pattern with TanStack Router
+     * const { sorting } = Route.useSearch()
+     * <BasaltDataTable initialSorting={sorting} onSortingChange={(s) => navigate({ search: { sorting: s } })} … />
+     */
+    initialSorting?: SortingState
+    /**
+     * Called whenever the internal sorting state changes. Receives the new `SortingState`.
+     * The table continues to manage sorting internally (uncontrolled) when this is omitted.
+     */
+    onSortingChange?: (sorting: SortingState) => void
 
-  // ── Toolbar (search + facets + actions) ──────────────────────────────────────
+    // ── Toolbar (search + facets + actions) ──────────────────────────────────────
 
-  /**
-   * Shows a global search `TextInput` above the table, wired to TanStack's `globalFilter` state
-   * (substring match against every column's stringified cell value).
-   * @default false
-   * @example
-   * <BasaltDataTable data={rows} columns={columns} enableGlobalFilter searchIcon={<IconSearch size={14} />} />
-   */
-  enableGlobalFilter?: boolean
-  /**
-   * Placeholder for the global search input.
-   * @default 'Search…'
-   */
-  globalFilterPlaceholder?: string
-  /**
-   * Leading icon rendered inside the global search input (Mantine `leftSection`). basalt-ui ships
-   * no icon set — pass any `ReactNode` (e.g. `<IconSearch size={14} />`).
-   */
-  searchIcon?: ReactNode
-  /**
-   * Initial global filter value. Drives `useState` initial value — mirrors `initialSorting` for
-   * restoring the search term from a URL search param.
-   */
-  initialGlobalFilter?: string
-  /** Called whenever the internal global filter value changes. */
-  onGlobalFilterChange?: (value: string) => void
-  /**
-   * Faceted column filters, rendered in the toolbar as `EnumFilter`/`MultiSelectFilter` pills
-   * inside a `FilterSet`, wired to TanStack's per-column `columnFilters` state. The toolbar
-   * renders whenever this array is non-empty, `enableGlobalFilter` is set, or `actions` is passed.
-   * @example
-   * facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
-   */
-  facets?: DataTableFacet<T>[]
-  /** Called whenever the faceted column filters change — the seam for server-side faceting. */
-  onColumnFiltersChange?: (filters: ColumnFiltersState) => void
-  /**
-   * Hand filtering to the server: the table stops narrowing `data` locally and renders every row
-   * given, while the search input and facets keep reporting through `onGlobalFilterChange` /
-   * `onColumnFiltersChange` — which is where you re-request the filtered page.
-   *
-   * Required alongside `manualPagination` whenever `enableGlobalFilter` or `facets` is set;
-   * without it the controls narrow one page while "of N" keeps counting the whole set.
-   * @default false
-   */
-  manualFiltering?: boolean
-  /**
-   * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
-   * search input or facets are configured. Renamed from `toolbarActions` — the toolbar (search +
-   * facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
-   */
-  actions?: ReactNode
+    /**
+     * Shows a global search `TextInput` above the table, wired to TanStack's `globalFilter` state
+     * (substring match against every column's stringified cell value).
+     * @default false
+     * @example
+     * <BasaltDataTable data={rows} columns={columns} enableGlobalFilter searchIcon={<IconSearch size={14} />} />
+     */
+    enableGlobalFilter?: boolean
+    /**
+     * Placeholder for the global search input.
+     * @default 'Search…'
+     */
+    globalFilterPlaceholder?: string
+    /**
+     * Leading icon rendered inside the global search input (Mantine `leftSection`). basalt-ui ships
+     * no icon set — pass any `ReactNode` (e.g. `<IconSearch size={14} />`).
+     */
+    searchIcon?: ReactNode
+    /**
+     * Initial global filter value. Drives `useState` initial value — mirrors `initialSorting` for
+     * restoring the search term from a URL search param.
+     */
+    initialGlobalFilter?: string
+    /** Called whenever the internal global filter value changes. */
+    onGlobalFilterChange?: (value: string) => void
+    /**
+     * Faceted column filters, rendered in the toolbar as `EnumFilter`/`MultiSelectFilter` pills
+     * inside a `FilterSet`, wired to TanStack's per-column `columnFilters` state. The toolbar
+     * renders whenever this array is non-empty, `enableGlobalFilter` is set, or `actions` is passed.
+     * @example
+     * facets={[{ columnId: 'department', label: 'Department', options: departmentOptions }]}
+     */
+    facets?: DataTableFacet<T>[]
+    /** Called whenever the faceted column filters change — the seam for server-side faceting. */
+    onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+    /**
+     * Hand filtering to the server: the table stops narrowing `data` locally and renders every row
+     * given, while the search input and facets keep reporting through `onGlobalFilterChange` /
+     * `onColumnFiltersChange` — which is where you re-request the filtered page.
+     *
+     * Required alongside `manualPagination` whenever `enableGlobalFilter` or `facets` is set;
+     * without it the controls narrow one page while "of N" keeps counting the whole set.
+     * @default false
+     */
+    manualFiltering?: boolean
+    /**
+     * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
+     * search input or facets are configured. Renamed from `toolbarActions` — the toolbar (search +
+     * facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
+     */
+    actions?: ReactNode
 
-  // ── Pagination ────────────────────────────────────────────────────────────────
+    // ── Pagination ────────────────────────────────────────────────────────────────
 
-  /**
-   * Enables the bottom pagination bar ("Showing X–Y of N", rows-per-page `Select`, Mantine
-   * `Pagination`) wired to TanStack's `pagination` state. Client-side by default — see
-   * `manualPagination` for server-driven pagination.
-   * @default false
-   */
-  enablePagination?: boolean
-  /**
-   * Rows-per-page choices offered in the pagination bar's Select.
-   * @default [10, 25, 50, 100]
-   */
-  pageSizeOptions?: number[]
-  /**
-   * Initial pagination state. Drives `useState` initial value — mirrors `initialSorting` for
-   * restoring the page/size from a URL search param.
-   */
-  initialPagination?: PaginationState
-  /** Called whenever the internal pagination state changes. */
-  onPaginationChange?: (pagination: PaginationState) => void
-  /**
-   * Disables local pagination slicing — pass the already-paginated page of `data` plus `rowCount`
-   * (and optionally `pageCount`) for server-driven pagination. `onPaginationChange` is where you
-   * fetch the next page.
-   *
-   * **It imposes a contract, enforced at render.** `data` is now one page, but the pagination bar
-   * says "Showing 1–25 of 412" — so every OTHER client-side control becomes a claim about 412 rows
-   * that it can only make about 25. Each has to be resolved explicitly, because only the call site
-   * knows whether the server does the work:
-   *
-   * - `rowCount` (or `pageCount`) must be given, or "of N" counts the page and the pager collapses
-   *   to a single page nobody can leave;
-   * - sorting must be handed over with `manualSorting`, or switched off with `enableSorting={false}`;
-   * - `enableGlobalFilter` / `facets`, if used, must be handed over with `manualFiltering`;
-   * - `enablePagination` must be on, or `manualPagination` is inert and the page renders as if it
-   *   were the whole table.
-   *
-   * Unresolved, each throws in dev and degrades to the honest render in production (no sort
-   * headers, no filter controls, no "of N") — never to the plausible wrong answer.
-   * @default false
-   * @example
-   * <BasaltDataTable
-   *   data={page.rows}
-   *   columns={columns}
-   *   enablePagination
-   *   manualPagination
-   *   rowCount={page.total}
-   *   initialPagination={{ pageIndex: page.index, pageSize: page.size }}
-   *   onPaginationChange={(p) => fetchPage(p)}
-   * />
-   */
-  manualPagination?: boolean
-  /** Total row count across all pages. Required for `manualPagination` to render "of N" and compute page count. */
-  rowCount?: number
-  /** Total page count, when known. Only consulted under `manualPagination`; omit to derive it from `rowCount`/`pageSize`. */
-  pageCount?: number
+    /**
+     * Enables the bottom pagination bar ("Showing X–Y of N", rows-per-page `Select`, Mantine
+     * `Pagination`) wired to TanStack's `pagination` state. Client-side by default — see
+     * `manualPagination` for server-driven pagination.
+     * @default false
+     */
+    enablePagination?: boolean
+    /**
+     * Rows-per-page choices offered in the pagination bar's Select.
+     * @default [10, 25, 50, 100]
+     */
+    pageSizeOptions?: number[]
+    /**
+     * Initial pagination state. Drives `useState` initial value — mirrors `initialSorting` for
+     * restoring the page/size from a URL search param.
+     */
+    initialPagination?: PaginationState
+    /** Called whenever the internal pagination state changes. */
+    onPaginationChange?: (pagination: PaginationState) => void
+    /**
+     * Disables local pagination slicing — pass the already-paginated page of `data` plus `rowCount`
+     * (and optionally `pageCount`) for server-driven pagination. `onPaginationChange` is where you
+     * fetch the next page.
+     *
+     * **It imposes a contract, enforced at render.** `data` is now one page, but the pagination bar
+     * says "Showing 1–25 of 412" — so every OTHER client-side control becomes a claim about 412 rows
+     * that it can only make about 25. Each has to be resolved explicitly, because only the call site
+     * knows whether the server does the work:
+     *
+     * - `rowCount` (or `pageCount`) must be given, or "of N" counts the page and the pager collapses
+     *   to a single page nobody can leave;
+     * - sorting must be handed over with `manualSorting`, or switched off with `enableSorting={false}`;
+     * - `enableGlobalFilter` / `facets`, if used, must be handed over with `manualFiltering`;
+     * - `enablePagination` must be on, or `manualPagination` is inert and the page renders as if it
+     *   were the whole table.
+     *
+     * Unresolved, each throws in dev and degrades to the honest render in production (no sort
+     * headers, no filter controls, no "of N") — never to the plausible wrong answer.
+     * @default false
+     * @example
+     * <BasaltDataTable
+     *   data={page.rows}
+     *   columns={columns}
+     *   enablePagination
+     *   manualPagination
+     *   rowCount={page.total}
+     *   initialPagination={{ pageIndex: page.index, pageSize: page.size }}
+     *   onPaginationChange={(p) => fetchPage(p)}
+     * />
+     */
+    manualPagination?: boolean
+    /** Total row count across all pages. Required for `manualPagination` to render "of N" and compute page count. */
+    rowCount?: number
+    /** Total page count, when known. Only consulted under `manualPagination`; omit to derive it from `rowCount`/`pageSize`. */
+    pageCount?: number
 
-  // ── Column pinning ────────────────────────────────────────────────────────────
+    // ── Column pinning ────────────────────────────────────────────────────────────
 
-  /**
-   * Enables sticky left/right column pinning — pinned columns stick to the edge with a panel
-   * background and a hairline shadow separator while the table scrolls horizontally. Pin columns
-   * via `initialColumnPinning` (`{ left: string[], right: string[] }`).
-   * @default false
-   * @example
-   * <BasaltDataTable data={rows} columns={columns} enablePinning initialColumnPinning={{ left: ['name'] }} />
-   */
-  enablePinning?: boolean
-  /** Initial column-pinning state — which column ids stick to the left/right edge. */
-  initialColumnPinning?: DataTableColumnPinning<T>
+    /**
+     * Enables sticky left/right column pinning — pinned columns stick to the edge with a panel
+     * background and a hairline shadow separator while the table scrolls horizontally. Pin columns
+     * via `initialColumnPinning` (`{ left: string[], right: string[] }`).
+     * @default false
+     * @example
+     * <BasaltDataTable data={rows} columns={columns} enablePinning initialColumnPinning={{ left: ['name'] }} />
+     */
+    enablePinning?: boolean
+    /** Initial column-pinning state — which column ids stick to the left/right edge. */
+    initialColumnPinning?: DataTableColumnPinning<T>
 
-  // ── Body chrome ─────────────────────────────────────────────────────────────
+    // ── Body chrome ─────────────────────────────────────────────────────────────
 
-  /**
-   * Caps the scrolling body (px number or CSS length) so a long table cannot blow a card out
-   * vertically — the header stays put and the rows scroll under it. Renders Mantine's
-   * `Table.ScrollContainer type="native"`, which is the same node the docs sanction as the raw
-   * escape for a bespoke table: the blessed lane and the escape hatch produce identical DOM, so
-   * adopting one does not contradict the other.
-   *
-   * `type="native"` is required rather than preferred: `ScrollArea`'s custom viewport is the
-   * positioning context a sticky `<thead>` resolves against, so the default `'scrollarea'` type
-   * pins the header to the page viewport instead of the table's box.
-   */
-  maxHeight?: number | string
-  /**
-   * `min-width` below which the body scrolls horizontally. Setting either this or `maxHeight`
-   * turns on the scroll container; `maxHeight` alone implies `minWidth: 0`.
-   */
-  minWidth?: number | string
-  /** Sticky header row. Pair with `maxHeight` to stick within the table rather than the page. */
-  stickyHeader?: boolean
-  /** Offset for a sticky header sitting under a fixed app header (px number or CSS length). */
-  stickyHeaderOffset?: number | string
-  /** Vertical cell padding. Forwarded to Mantine `Table`. */
-  verticalSpacing?: MantineSpacing
-  /** Horizontal cell padding. Forwarded to Mantine `Table`. */
-  horizontalSpacing?: MantineSpacing
-  /** Row separators. Forwarded to Mantine `Table`. @default true (Mantine's own default) */
-  withRowBorders?: boolean
-  /**
-   * Outer table border — a full box around the table.
-   *
-   * **`false` by default since this minor** (it was `true`). Three separate faults, all visible on
-   * the playground's `Controls (mobile)` page at 390px: its TOP edge sat directly under the table's
-   * own `WidgetHeader`, separating a header from its own content; its BOTTOM edge landed on the last
-   * row's own hairline, two rules at zero distance; and its left/right edges carried no information
-   * at all on a table that fills the page (`docs/DESIGN-SPEC.md` §8 — a border is a layout divider,
-   * and there is nothing here to divide). The head-row rule and the between-row rules stay, so the
-   * table still reads as a table.
-   *
-   * Pass `true` for a table that genuinely needs a frame — a small table floating in whitespace
-   * beside other content, where the box IS the grouping.
-   *
-   * @default false
-   */
-  withTableBorder?: boolean
-}
+    /**
+     * Caps the scrolling body (px number or CSS length) so a long table cannot blow a card out
+     * vertically — the header stays put and the rows scroll under it. Renders Mantine's
+     * `Table.ScrollContainer type="native"`, which is the same node the docs sanction as the raw
+     * escape for a bespoke table: the blessed lane and the escape hatch produce identical DOM, so
+     * adopting one does not contradict the other.
+     *
+     * `type="native"` is required rather than preferred: `ScrollArea`'s custom viewport is the
+     * positioning context a sticky `<thead>` resolves against, so the default `'scrollarea'` type
+     * pins the header to the page viewport instead of the table's box.
+     */
+    maxHeight?: number | string
+    /**
+     * `min-width` below which the body scrolls horizontally. Setting either this or `maxHeight`
+     * turns on the scroll container; `maxHeight` alone implies `minWidth: 0`.
+     */
+    minWidth?: number | string
+    /** Sticky header row. Pair with `maxHeight` to stick within the table rather than the page. */
+    stickyHeader?: boolean
+    /**
+     * Offset for a sticky header sitting under a fixed app header (px number or CSS length).
+     *
+     * WINDOW-scroll only, and IGNORED whenever `maxHeight`/`minWidth` turn on the scroll container:
+     * that box is then the header's own scrollport, so an offset would park the `<thead>` that many
+     * pixels down inside the body — painting it over the rows instead of above them. Inside the
+     * container the header sticks to the scroller's own top edge.
+     */
+    stickyHeaderOffset?: number | string
+    /** Vertical cell padding. Forwarded to Mantine `Table`. */
+    verticalSpacing?: MantineSpacing
+    /** Horizontal cell padding. Forwarded to Mantine `Table`. */
+    horizontalSpacing?: MantineSpacing
+    /** Row separators. Forwarded to Mantine `Table`. @default true (Mantine's own default) */
+    withRowBorders?: boolean
+    /**
+     * Outer table border — a full box around the table.
+     *
+     * **`false` by default since this minor** (it was `true`). Three separate faults, all visible on
+     * the playground's `Controls (mobile)` page at 390px: its TOP edge sat directly under the table's
+     * own `WidgetHeader`, separating a header from its own content; its BOTTOM edge landed on the last
+     * row's own hairline, two rules at zero distance; and its left/right edges carried no information
+     * at all on a table that fills the page (`docs/DESIGN-SPEC.md` §8 — a border is a layout divider,
+     * and there is nothing here to divide). The head-row rule and the between-row rules stay, so the
+     * table still reads as a table.
+     *
+     * Pass `true` for a table that genuinely needs a frame — a small table floating in whitespace
+     * beside other content, where the box IS the grouping.
+     *
+     * @default false
+     */
+    withTableBorder?: boolean
+  }
 
 // ── Sort indicator ────────────────────────────────────────────────────────────
 
@@ -764,48 +783,56 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
  *   emptyState={<Text c="dimmed">No users found.</Text>}
  * />
  */
-export function BasaltDataTable<T>({
-  title,
-  icon,
-  subtitle,
-  data,
-  columns,
-  enableSorting = true,
-  manualSorting = false,
-  striped,
-  highlightOnHover,
-  emptyState,
-  isLoading = false,
-  skeletonRows = 5,
-  initialSorting,
-  onSortingChange,
-  enableGlobalFilter = false,
-  globalFilterPlaceholder = 'Search…',
-  searchIcon,
-  initialGlobalFilter,
-  onGlobalFilterChange,
-  facets,
-  onColumnFiltersChange,
-  manualFiltering = false,
-  actions,
-  enablePagination = false,
-  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-  initialPagination,
-  onPaginationChange,
-  manualPagination = false,
-  rowCount,
-  pageCount,
-  enablePinning = false,
-  initialColumnPinning,
-  maxHeight,
-  minWidth,
-  stickyHeader,
-  stickyHeaderOffset,
-  verticalSpacing,
-  horizontalSpacing,
-  withRowBorders,
-  withTableBorder = false,
-}: BasaltDataTableProps<T>) {
+export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
+  // F-ERR-1: without this, a table missing `data`/`columns` fails deep inside `useReactTable` as a
+  // raw `TypeError` caught by `BasaltErrorBoundary` — a blank subtree with no message naming either
+  // prop.
+  assertRequiredProps('BasaltDataTable', props, ['data', 'columns'])
+  const {
+    title,
+    icon,
+    subtitle,
+    data,
+    columns,
+    enableSorting = true,
+    manualSorting = false,
+    striped,
+    highlightOnHover,
+    emptyState,
+    isLoading = false,
+    skeletonRows = 5,
+    initialSorting,
+    onSortingChange,
+    enableGlobalFilter = false,
+    globalFilterPlaceholder = 'Search…',
+    searchIcon,
+    initialGlobalFilter,
+    onGlobalFilterChange,
+    facets,
+    onColumnFiltersChange,
+    manualFiltering = false,
+    actions,
+    enablePagination = false,
+    pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+    initialPagination,
+    onPaginationChange,
+    manualPagination = false,
+    rowCount,
+    pageCount,
+    enablePinning = false,
+    initialColumnPinning,
+    maxHeight,
+    minWidth,
+    stickyHeader,
+    stickyHeaderOffset,
+    verticalSpacing,
+    horizontalSpacing,
+    withRowBorders,
+    withTableBorder = false,
+    className,
+    style,
+    classNames,
+  } = props
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
   const [globalFilter, setGlobalFilter] = useState(initialGlobalFilter ?? '')
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -813,6 +840,22 @@ export function BasaltDataTable<T>({
     initialPagination ?? { pageIndex: 0, pageSize: pageSizeOptions[0] ?? 10 },
   )
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialColumnPinning ?? {})
+
+  // `stickyHeaderOffset` is DROPPED whenever the table owns a scroll container — see
+  // `resolvedStickyHeaderOffset` below for why it is always wrong there. Dropping it silently is
+  // the part worth a message: the header still sticks, so the table looks right until it overlaps
+  // the page chrome the offset was measured against, and nothing anywhere says the prop was ignored.
+  useValidateProps(
+    'BasaltDataTable',
+    () =>
+      stickyHeaderOffset === undefined || (maxHeight === undefined && minWidth === undefined)
+        ? null
+        : `${BASALT_PREFIX} BasaltDataTable: prop "stickyHeaderOffset" is ignored beside ` +
+          '"maxHeight"/"minWidth" — those render a scroll container, and the sticky `<thead>` then ' +
+          "anchors to that box's own top edge rather than to the window. Drop the offset, or drop " +
+          'the cap and let the page scroll.',
+    [stickyHeaderOffset, maxHeight, minWidth],
+  )
 
   const handleSortingChange = useCallback(
     (updater: Updater<SortingState>) => {
@@ -950,12 +993,29 @@ export function BasaltDataTable<T>({
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
 
+  // A capped body or a horizontal floor both need the same native scroll node; pinning keeps its
+  // simpler overflow-x Box when neither is set.
+  const scrolls = maxHeight !== undefined || minWidth !== undefined
+  // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
+  // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is
+  // always wrong: that box is the sticky header's own scrollport, so the offset parks the `<thead>`
+  // that many pixels DOWN INSIDE the body rather than above it. MEASURED on `/data-stress`
+  // (`stickyHeader` + `minWidth`, no `maxHeight`): `calc(48px + 46px)` put the header at y=339 with
+  // row 1 at y=284 and row 2 at y=327 — the header painted over row 2 at initial scroll, at 1440x900
+  // and 390x844 alike. `overflow-x: auto` computes `overflow-y` to `auto` too, so the container is a
+  // scrollport even with no `maxHeight` and the header never scrolls back into place. The scroller's
+  // own top edge is the only correct anchor here, so the offset is dropped rather than honoured.
+  const resolvedStickyHeaderOffset = scrolls ? undefined : stickyHeaderOffset
+
   const tableNode = (
     <Table
+      className={cx(classNames?.table)}
       {...(striped !== undefined && { striped })}
       {...(highlightOnHover !== undefined && { highlightOnHover })}
       {...(stickyHeader !== undefined && { stickyHeader })}
-      {...(stickyHeaderOffset !== undefined && { stickyHeaderOffset })}
+      {...(resolvedStickyHeaderOffset !== undefined && {
+        stickyHeaderOffset: resolvedStickyHeaderOffset,
+      })}
       {...(verticalSpacing !== undefined && { verticalSpacing })}
       {...(horizontalSpacing !== undefined && { horizontalSpacing })}
       {...(withRowBorders !== undefined && { withRowBorders })}
@@ -1072,10 +1132,6 @@ export function BasaltDataTable<T>({
     </Table>
   )
 
-  // A capped body or a horizontal floor both need the same native scroll node; pinning keeps its
-  // simpler overflow-x Box when neither is set.
-  const scrolls = maxHeight !== undefined || minWidth !== undefined
-
   const paginationState = table.getState().pagination
   // The CURRENT page size is always an option, even when it is not in `pageSizeOptions`. Mantine's
   // Select renders EMPTY when its `value` matches no row, so a table opened at
@@ -1089,7 +1145,7 @@ export function BasaltDataTable<T>({
   const rangeEnd = Math.min((paginationState.pageIndex + 1) * paginationState.pageSize, total)
 
   return (
-    <>
+    <div className={cx(classNames?.root, className)} {...(style !== undefined && { style })}>
       {/*
        * ONE header row: the `WidgetHeader` (title · count) on the left, the toolbar right-aligned in
        * the SAME row. It was two stacked rows with `mb="xs"` on each, so a titled table with search
@@ -1116,7 +1172,13 @@ export function BasaltDataTable<T>({
           ) : null}
           {showToolbar && (
             <CtlSlot>
-              <Group gap="xs" wrap="wrap" align="center" style={TABLE_TOOLBAR_STYLE}>
+              <Group
+                className={cx(classNames?.toolbar)}
+                gap="xs"
+                wrap="wrap"
+                align="center"
+                style={TABLE_TOOLBAR_STYLE}
+              >
                 {showSearch && (
                   <TextInput
                     radius="md"
@@ -1168,7 +1230,14 @@ export function BasaltDataTable<T>({
         tableNode
       )}
       {enablePagination && (
-        <Group justify="space-between" mt="xs" wrap="wrap" gap="xs" align="center">
+        <Group
+          className={cx(classNames?.footer)}
+          justify="space-between"
+          mt="xs"
+          wrap="wrap"
+          gap="xs"
+          align="center"
+        >
           <Text style={RANGE_LABEL_STYLE}>
             Showing {rangeStart}–{rangeEnd}
             {totalIsAuthoritative ? ` of ${total}` : ''}
@@ -1193,6 +1262,6 @@ export function BasaltDataTable<T>({
           </Group>
         </Group>
       )}
-    </>
+    </div>
   )
 }
