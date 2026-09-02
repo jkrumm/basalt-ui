@@ -52,9 +52,27 @@ function renderTable(props: Partial<BasaltDataTableProps<Row>> = {}) {
 }
 
 describe('maxHeight — the capped body', () => {
-  test('no maxHeight renders no scroll container at all', () => {
+  test('no maxHeight still renders a scroll container — uncapped, with a zero floor', () => {
+    // Containment is the DEFAULT now, not an opt-in: a bare `<table>` sizes to its own min-content
+    // and a five-column table is ~450px wide, which widened the whole page at 390px. `minWidth: 0`
+    // means "no floor, just contain me"; the cap stays absent.
     const { container } = renderTable()
+    const scroller = container.querySelector('.mantine-TableScrollContainer-scrollContainer')
+    if (!scroller) throw new Error('expected a Table.ScrollContainer')
+    expect(scroller.getAttribute('style') ?? '').not.toContain('--table-max-height')
+  })
+
+  test('a page-scrolled sticky header takes the MEASURED wrapper, not a scroll container', () => {
+    // An `overflow-x: auto` box computes `overflow-y` to `auto` and becomes the header's scrollport;
+    // with no cap that box has no scroll range, so a static container would make `stickyHeader`
+    // inert rather than contained. The wrapper decides by measurement instead, and its unmeasured
+    // default is bare. See `useMeasuredContainment` in `data-table.tsx`.
+    const { container } = renderTable({ stickyHeader: true })
     expect(container.querySelector('.mantine-TableScrollContainer-scrollContainer')).toBeNull()
+    const wrapper = container.querySelector('[data-contained]')
+    if (!wrapper) throw new Error('expected the measured containment wrapper')
+    expect(wrapper.getAttribute('data-contained')).toBe('false')
+    expect(wrapper.querySelector('table')).not.toBeNull()
   })
 
   test('maxHeight renders a native scroll container carrying the cap', () => {
@@ -211,6 +229,35 @@ describe('the toolbar has no fixed-width literals and resolves controls to the c
     const { container } = renderTable({ enableGlobalFilter: true })
     const input = container.querySelector('input[placeholder="Search…"]')
     expect(input?.getAttribute('style') ?? '').not.toContain('width')
+  })
+
+  /**
+   * THE CAUSE, pinned in the cheap lane. happy-dom evaluates no layout, so the OUTCOME belongs to
+   * `tests/layout/no-horizontal-overflow.layout.test.ts` — what belongs here is the two declarations
+   * that produced it. The toolbar `Group` is the header row's flex item (`CtlSlot` between them is
+   * `display: contents`) and carried `flex: 0 0 auto` with flex's default `min-width: auto`, so a
+   * 220px search beside a 230px pill row was an unshrinkable 461px box in a 302px column and
+   * `AppShell.Main` measured `scrollWidth` 505 against `clientWidth` 390 at 390x844.
+   */
+  test('the toolbar is a SHRINKABLE flex item, and the search states a basis not a width', () => {
+    const { container } = renderTable({ enableGlobalFilter: true })
+    const toolbar = container.querySelector('[data-basalt-tier="ctl"] > .mantine-Group-root')
+    const toolbarStyle = toolbar?.getAttribute('style') ?? ''
+    // Asserted as LONGHANDS: the DOM expands the `flex` shorthand, so matching the shorthand
+    // string would pass or fail on the serializer rather than on the declaration.
+    // `flex-shrink: 0` here is the whole defect — it is what let the item outgrow its column.
+    expect(toolbarStyle).toContain('flex-shrink: 1')
+    expect(toolbarStyle).toContain('flex-grow: 0')
+    expect(toolbarStyle).toContain('min-width: 0')
+
+    const search = container.querySelector('.mantine-TextInput-root')
+    const searchStyle = search?.getAttribute('style') ?? ''
+    expect(searchStyle).toContain('flex-basis: 220px')
+    expect(searchStyle).toContain('flex-shrink: 1')
+    expect(searchStyle).toContain('flex-grow: 0')
+    expect(searchStyle).toContain('max-width: 100%')
+    // A literal `width` would reinstate the floor the basis exists to remove.
+    expect(searchStyle).not.toContain('width: 220px')
   })
 
   test('the toolbar renders inside a data-basalt-tier="ctl" slot', () => {
@@ -595,11 +642,14 @@ describe('prop validation', () => {
     error.mockRestore()
   })
 
-  test('stickyHeaderOffset on a page-scrolled table says nothing', () => {
+  test('stickyHeaderOffset on a page-scrolled table says nothing ABOUT THE OFFSET', () => {
     resetValidatedProps()
     const error = spyOn(console, 'error').mockImplementation(() => {})
     renderTable({ stickyHeader: true, stickyHeaderOffset: 94 })
-    expect(error).not.toHaveBeenCalled()
+    // One message, and it is the containment one: `stickyHeader` with neither cap nor floor is the
+    // shape that cannot be wrapped. The offset itself is honoured and says nothing.
+    expect(error).toHaveBeenCalledTimes(1)
+    expect(String(error.mock.calls[0]?.[0])).toContain('"stickyHeader" with neither "maxHeight"')
     error.mockRestore()
   })
 })

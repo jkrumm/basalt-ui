@@ -65,8 +65,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import type {
+  CSSProperties,
+  KeyboardEvent as ReactKeyboardEvent,
+  ReactNode,
+  RefObject,
+} from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
@@ -697,18 +702,43 @@ export type BasaltDataTableProps<T> = BasaltProps &
     maxHeight?: number | string
     /**
      * `min-width` below which the body scrolls horizontally. Setting either this or `maxHeight`
-     * turns on the scroll container; `maxHeight` alone implies `minWidth: 0`.
+     * turns on the CAPPED scroll container; `maxHeight` alone implies `minWidth: 0`.
+     *
+     * It is a FLOOR, not the containment switch — since the shell made `AppShell.Main` the
+     * scrollport, every table renders inside a `Table.ScrollContainer type="native"` whether or not
+     * this is set (`minWidth: 0` when it is not), so a table wider than its column scrolls inside
+     * its own card instead of widening the page. Reach for this only to hold a MINIMUM table width
+     * — e.g. so eight columns keep their readable widths and scroll rather than compress.
+     *
+     * The one table whose wrapper is MEASURED rather than declared is `stickyHeader` with neither
+     * this nor `maxHeight`; see that prop and `useMeasuredContainment` in the implementation for
+     * why, and pair it with `maxHeight` if the table must both scroll and stick.
      */
     minWidth?: number | string
-    /** Sticky header row. Pair with `maxHeight` to stick within the table rather than the page. */
+    /**
+     * Sticky header row. Pair with `maxHeight` to stick within the table rather than the page.
+     *
+     * On its own — no `maxHeight`, no `minWidth` — the header sticks against the page's scrollport
+     * (`AppShell.Main`) only while the table FITS its container, and basalt measures that: the
+     * wrapper declares no overflow while it fits and flips to `overflow-x: auto` once the table is
+     * wider, publishing `data-contained`. The columns stay reachable either way and the page never
+     * scrolls sideways, but a sticky header cannot stick inside an uncapped overflow box — it has
+     * no scroll range — so it is inert at that width. A dev warning states the trade; pair this
+     * with `maxHeight` for a table that must both scroll and stick at every width.
+     */
     stickyHeader?: boolean
     /**
-     * Offset for a sticky header sitting under a fixed app header (px number or CSS length).
+     * Offset for a sticky header sitting under whatever chrome scrolls above it (px number or CSS
+     * length).
      *
-     * WINDOW-scroll only, and IGNORED whenever `maxHeight`/`minWidth` turn on the scroll container:
+     * PAGE-scroll only, and IGNORED whenever `maxHeight`/`minWidth` turn on the scroll container:
      * that box is then the header's own scrollport, so an offset would park the `<thead>` that many
      * pixels down inside the body — painting it over the rows instead of above them. Inside the
      * container the header sticks to the scroller's own top edge.
+     *
+     * Inside `BasaltShell` the page's scrollport is `AppShell.Main`, and the app header sits
+     * OUTSIDE it — so the only chrome left to clear is `PageBar` row 2's band:
+     * `var(--basalt-page-bar-h, 0px)`, not the header height plus it.
      */
     stickyHeaderOffset?: number | string
     /** Vertical cell padding. Forwarded to Mantine `Table`. */
@@ -769,19 +799,38 @@ const RANGE_LABEL_STYLE: CSSProperties = {
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
 /**
- * The header row's two halves. The lead SHRINKS and the toolbar does not — a title can ellipsize, a
- * 220px search field with a facet pill beside it cannot, and when both were shrinkable flex split
- * the overflow between them and clipped the search's placeholder mid-word.
+ * The header row's two halves. The lead GROWS and the toolbar does not — a title can ellipsize into
+ * whatever is left, and a search field that grew with it was 600px on a wide table.
+ *
+ * Both SHRINK, and that half is not a preference. `CtlSlot` between the header row and the toolbar
+ * is `display: contents`, so the toolbar `Group` IS the row's flex item — and with the
+ * `flex: 0 0 auto` it used to carry (plus flex's default `min-width: auto`) it could not give up a
+ * pixel. MEASURED at 390x844 on `/data`: a 220px search beside a 230px facet pill row, gap 11, is a
+ * 461px item in a 302px column, and `AppShell.Main` read `scrollWidth` 505 against `clientWidth`
+ * 390 — the whole app draggable sideways over a table header. `0 1 auto` + `min-width: 0` lets the
+ * item shrink to the column, and `wrap="wrap"` then does the rest: the search takes one line and
+ * the pills the next. Nothing here is width-gated, so it holds in a narrow grid cell at any
+ * viewport, the same way the chart tier resolves.
  */
 const TABLE_HEADER_LEAD_STYLE: CSSProperties = { flex: '1 1 auto', minWidth: 0 }
-const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 0 auto' }
+const TABLE_TOOLBAR_STYLE: CSSProperties = { flex: '0 1 auto', minWidth: 0 }
 /**
  * The toolbar search's width. Mantine's Input grows to its container, which in a `justify:
  * space-between` row means "whatever is left" — so the field was 600px on a wide table and 180px on a
  * narrow one, for the same one-word query. A stated width also makes the toolbar's own minimum width
  * knowable, which is what lets it wrap under the title below `sm` with no media query.
+ *
+ * It is a BASIS, not a `width`: `flex: 0 1 <SEARCH_WIDTH>px` holds the field at 220px wherever 220
+ * is available and lets it shrink where it is not, floored at `12ch` (a legible query plus the
+ * search glyph) and capped at `100%` so it can never be the box that outgrows its column. A literal
+ * `w={220}` in a 302px column was half of the overflow above.
  */
 const SEARCH_WIDTH = 220
+const TABLE_SEARCH_STYLE: CSSProperties = {
+  flex: `0 1 ${SEARCH_WIDTH}px`,
+  minWidth: '12ch',
+  maxWidth: '100%',
+}
 /** The rows-per-page Select's width — see `SEARCH_WIDTH` for why a toolbar field states one. */
 const PAGE_SIZE_WIDTH = 116
 
@@ -919,6 +968,99 @@ function enforceManualPaginationContract(breaches: ManualPaginationBreach[]): vo
   console.error(message)
 }
 
+/**
+ * MEASURED CONTAINMENT — the wrapper for the ONE table shape whose overflow mode cannot be decided
+ * statically: `stickyHeader` with neither `maxHeight` nor `minWidth`.
+ *
+ * Every other table renders inside `Table.ScrollContainer type="native"`, because a bare `<table>`
+ * sizes to its own min-content and a five-column one measured 448px inside a 390px viewport,
+ * dragging the whole page sideways (`tests/layout/no-horizontal-overflow.layout.test.ts`). This
+ * shape cannot take that container unconditionally: an `overflow-x: auto` box computes `overflow-y`
+ * to `auto` as well, which makes it the sticky header's own scrollport — and with no height cap
+ * that box has no scroll range at all, so the `<thead>` scrolls clean away (MEASURED in Chrome:
+ * top 10.5 → −389.5 across a 400px scroll). Containing it unconditionally deletes the feature;
+ * leaving it bare unconditionally widens the page.
+ *
+ * So the wrapper's overflow is decided by MEASUREMENT, the same fit-check `useTrackFits`
+ * (`controls/panel-row.tsx`) runs for a segmented track. While the table FITS its wrapper the
+ * wrapper is `overflow: visible` — bare, and the page-sticky header sticks against `AppShell.Main`
+ * exactly as it did before. Once the table is WIDER the wrapper flips to `overflow-x: auto`, the
+ * columns stay reachable by horizontal scroll, and the header is necessarily inert at that width.
+ * That is the honest trade: a header that stops sticking is recoverable, a page that scrolls
+ * sideways takes every fixed and sticky element on it with it.
+ *
+ * Three properties that are easy to lose:
+ *
+ * - **The observer stays alive in BOTH states** — no one-way latch, unlike `useTrackFits`. The
+ *   wrapper must revert to bare when the space comes back (the window widened, the sidebar
+ *   collapsed, the aside closed), and a contained table's `offsetWidth` is still its min-content
+ *   width, so the same comparison keeps answering correctly from inside the contained state.
+ * - **Equality counts as FITS**, which is what stops the two states oscillating: a contained
+ *   wrapper that grows past the table reads `offsetWidth === clientWidth` (the `width: 100%` table
+ *   resolves against the container) and flips back exactly once.
+ * - **A zero `clientWidth` is `unknown`, not overflow** — the ancestor chain has not been laid out
+ *   yet (the aside animates its width in from 0, `docs/ASIDE-SPEC.md` §0). Committing to contained
+ *   on that reading would wrap a table that was never too wide.
+ *
+ * `useLayoutEffect` runs before paint, so a table that is already measurable resolves without a
+ * flash of the wrong mode. SSR reaches neither the effect nor a `window`, and the default state is
+ * bare — the same node the server and the first client paint both render.
+ */
+function useMeasuredContainment(active: boolean): {
+  wrapperRef: RefObject<HTMLDivElement | null>
+  contained: boolean
+} {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [contained, setContained] = useState(false)
+
+  useLayoutEffect(() => {
+    if (!active) return
+    const wrapper = wrapperRef.current
+    if (wrapper === null) return
+
+    // Three answers, not two — see the docblock. `unknown` moves neither the state nor the
+    // observer; it is simply not an answer yet.
+    const checkFit = (): 'fits' | 'contained' | 'unknown' => {
+      const table = wrapper.querySelector('table')
+      if (table === null) return 'unknown'
+      if (wrapper.clientWidth === 0 || table.offsetWidth === 0) return 'unknown'
+      return table.offsetWidth <= wrapper.clientWidth ? 'fits' : 'contained'
+    }
+
+    const apply = (): void => {
+      const result = checkFit()
+      if (result === 'unknown') return
+      const next = result === 'contained'
+      setContained((current) => (current === next ? current : next))
+    }
+
+    if (typeof ResizeObserver === 'undefined') {
+      // No recovery path without an observer, so the one same-tick read is this environment's
+      // only chance. `unknown` stays bare, which is the pre-measurement default anyway.
+      apply()
+      return
+    }
+
+    const observer = new ResizeObserver(apply)
+    observer.observe(wrapper)
+    const table = wrapper.querySelector('table')
+    // The TABLE too, not only the wrapper: a column set that re-measures (a facet filter changing
+    // the widest cell, a font settling) moves the table's min-content width while the wrapper's
+    // box never changes at all.
+    if (table !== null) observer.observe(table)
+
+    // Same check once, synchronously, so an already-settled table resolves before paint rather
+    // than waiting for the observer's first async tick.
+    apply()
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [active])
+
+  return { wrapperRef, contained: active && contained }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 /**
@@ -1037,8 +1179,23 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
         : `${BASALT_PREFIX} BasaltDataTable: props "query" and "isLoading" are both set — "query" ` +
           'wins and "isLoading" is ignored. `query` already resolves the pending branch, plus the ' +
           'error and empty ones the boolean cannot express. Drop "isLoading".',
+      stickyHeader !== true || maxHeight !== undefined || minWidth !== undefined
+        ? null
+        : `${BASALT_PREFIX} BasaltDataTable: prop "stickyHeader" with neither "maxHeight" nor ` +
+          '"minWidth" sticks only while the table FITS its container. basalt measures it: a table ' +
+          'wider than the space it has flips its wrapper to `overflow-x: auto` so the columns ' +
+          'stay reachable and the page never scrolls sideways, and a sticky header cannot stick ' +
+          'inside that box — it has no scroll range. Pair it with "maxHeight" for a table that ' +
+          'must both scroll and stick.',
     ],
-    [stickyHeaderOffset, maxHeight, minWidth, query === undefined, props.isLoading === undefined],
+    [
+      stickyHeaderOffset,
+      maxHeight,
+      minWidth,
+      stickyHeader,
+      query === undefined,
+      props.isLoading === undefined,
+    ],
   )
 
   const handleSortingChange = useCallback(
@@ -1241,8 +1398,9 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
   const rows = table.getRowModel().rows
 
-  // A capped body or a horizontal floor both need the same native scroll node; pinning keeps its
-  // simpler overflow-x Box when neither is set.
+  // A capped body or a horizontal floor both need the same native scroll node. Everything else —
+  // pinning included — either takes that same container (the uncapped, non-sticky default) or the
+  // measured wrapper below; there is no third overflow box.
   const scrolls = maxHeight !== undefined || minWidth !== undefined
   // `stickyHeaderOffset` is a WINDOW-scroll concept — the height of whatever fixed chrome the page
   // scrolls under (the AppShell header plus `PageBar` row 2). Inside the scroll container it is
@@ -1253,6 +1411,16 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   // and 390x844 alike. `overflow-x: auto` computes `overflow-y` to `auto` too, so the container is a
   // scrollport even with no `maxHeight` and the header never scrolls back into place. The scroller's
   // own top edge is the only correct anchor here, so the offset is dropped rather than honoured.
+  //
+  // THE ONE SHAPE WHOSE OVERFLOW IS MEASURED, NOT DECLARED. Every other table renders inside a
+  // `Table.ScrollContainer` (see the render branch below), because a bare `<table>` sizes to its
+  // own min-content and a 5-column table is ~450px wide — it widened the whole page at 390px, which
+  // is the defect `tests/layout/no-horizontal-overflow.layout.test.ts` guards. A page-scrolled
+  // sticky header cannot take that container unconditionally, so it takes the wrapper
+  // `useMeasuredContainment` drives instead: bare while the table fits, `overflow-x: auto` once it
+  // does not. Its docblock carries the full accounting.
+  const pageStickyHeader = !scrolls && stickyHeader === true
+  const containment = useMeasuredContainment(pageStickyHeader)
   const resolvedStickyHeaderOffset = scrolls ? undefined : stickyHeaderOffset
 
   const tableNode = (
@@ -1466,7 +1634,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                 {showSearch && (
                   <TextInput
                     radius="md"
-                    w={SEARCH_WIDTH}
+                    style={TABLE_SEARCH_STYLE}
                     placeholder={globalFilterPlaceholder}
                     leftSection={searchIcon}
                     value={globalFilter}
@@ -1503,7 +1671,18 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       {bulkBarActions !== undefined && (
         <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
-      {scrolls ? (
+      {pageStickyHeader ? (
+        // Pinning takes this wrapper too — a pinned column's offsets are `position: sticky` on the
+        // cells and need no overflow box of their own, so the `overflow-x: auto` Box that used to
+        // sit here was the exact inert-sticky defect this shape exists to avoid.
+        <div
+          ref={containment.wrapperRef}
+          className={classes.containment}
+          data-contained={containment.contained ? 'true' : 'false'}
+        >
+          {tableNode}
+        </div>
+      ) : (
         <Table.ScrollContainer
           type="native"
           minWidth={minWidth ?? 0}
@@ -1511,10 +1690,6 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
         >
           {tableNode}
         </Table.ScrollContainer>
-      ) : enablePinning ? (
-        <Box style={{ overflowX: 'auto' }}>{tableNode}</Box>
-      ) : (
-        tableNode
       )}
       {enablePagination && (
         <Group

@@ -15,13 +15,15 @@
  */
 import { afterAll, describe, test } from 'bun:test'
 import type { FixtureSpec } from './fixture/spec'
-import type { Named, Viewport } from './harness'
+import type { LayoutPage, Named, Viewport } from './harness'
 import {
+  MAIN,
   PHONE,
   CLOSE_BUDGET_MS,
   closeLayoutSuite,
   expectFullyInside,
   expectGapAtMost,
+  expectNoHorizontalOverflow,
   expectScrolls,
   initLayoutSuite,
   openFixture,
@@ -43,8 +45,35 @@ const SCROLLER = '.mantine-TableScrollContainer-scrollContainer'
 const THEAD = 'table thead'
 const ROW_1 = 'table tbody tr:nth-child(1)'
 
-/** The measured `calc(var(--app-shell-header-height) + var(--basalt-page-bar-h))` of `/data-stress`. */
-const PAGE_OFFSET = 94
+/**
+ * The measured-containment wrapper — `useMeasuredContainment` in `data/data-table.tsx`. Its own
+ * class name is hashed by the CSS-module build, so the ATTRIBUTE is the selector: it is the state
+ * the hook publishes and the one a test has any business reading.
+ */
+const WRAPPER = '[data-contained]'
+
+/**
+ * The toolbar `Group` and the search field inside it. `CtlSlot` is `display: contents`, so the
+ * Group directly under the tier marker IS the header row's flex item — which is exactly the box
+ * whose refusal to shrink widened the page, so it is the box the selector names.
+ */
+const TOOLBAR = '[data-basalt-tier="ctl"] > .mantine-Group-root'
+const SEARCH = '.mantine-TextInput-root'
+/** `SEARCH_WIDTH` in `data/data-table.tsx` — the flex BASIS the field must still resolve to. */
+const SEARCH_BASIS = 220
+
+/**
+ * A synthetic offset. It exists to prove the PROP reaches the `<thead>` in one shape and is dropped
+ * in the other — not to model a real consumer value, because there no longer is one inside a shell.
+ *
+ * It used to be 94, `calc(var(--app-shell-header-height) + var(--basalt-page-bar-h))`, back when the
+ * document scrolled under both. Both terms are gone: `AppShell.Main` is the scrollport
+ * (`shell/app-main.module.css`) and BOTH the app header and `PageBar` row 2's band are shell regions
+ * rendered outside it, so a sticky table header inside the scrollport wants `top: 0` and a consumer
+ * passes nothing at all. A number kept here that LOOKED like a real offset would keep teaching the
+ * wrong value to whoever reads this file next, so it is deliberately one that resembles neither.
+ */
+const PAGE_OFFSET = 37
 
 /** The `/data-stress` shape: a capped, horizontally-floored body under a page-level offset. */
 const tableSpec = (extra: Partial<FixtureSpec['table']> = {}): FixtureSpec => ({
@@ -70,6 +99,25 @@ function band(name: string, top: number, bottom: number, target: Named): Named {
   return {
     name,
     box: { x: left, y: top, width: right - left, height: bottom - top, top, left, right, bottom },
+  }
+}
+
+/**
+ * The wrapper's published state, read as the attribute rather than inferred from a computed
+ * `overflow-x`: `useMeasuredContainment` writes the attribute and the stylesheet reads it, so the
+ * attribute is the decision and the overflow is its consequence. A failure prints both.
+ */
+async function expectContained(p: LayoutPage, expected: boolean, why: string): Promise<void> {
+  const actual = await p.raw.evaluate(
+    (sel) => document.querySelector(sel)?.getAttribute('data-contained') ?? null,
+    WRAPPER,
+  )
+  if (actual !== String(expected)) {
+    const overflow = await p.computed(WRAPPER, 'overflow-x')
+    throw new Error(
+      `LAYOUT INVARIANT VIOLATED — ${why}.\n  expected: data-contained = ${String(expected)}\n` +
+        `  actual:   data-contained = ${actual} (computed overflow-x: ${overflow})`,
+    )
   }
 }
 
@@ -152,21 +200,169 @@ layout('BasaltDataTable sticky header — real layout', () => {
   })
 
   /**
-   * INVARIANT 3 — the WINDOW-scroll case still honours the offset. The fix drops the prop only
-   * where the table owns a scrollport; a table with neither `maxHeight` nor `minWidth` scrolls with
-   * the page and genuinely has fixed chrome to clear.
+   * INVARIANT 3 — the PAGE-scroll case honours the offset, and its wrapper is BARE while the table
+   * fits.
+   *
+   * Two claims in one test, because they are one decision. Every other table renders inside a
+   * `Table.ScrollContainer` — that is what stops a wide table widening the page
+   * (`no-horizontal-overflow.layout.test.ts`) — but a `stickyHeader` table with neither `maxHeight`
+   * nor `minWidth` cannot take that container unconditionally: an `overflow-x: auto` box computes
+   * `overflow-y` to `auto`, becomes the header's scrollport, and having no height cap has no scroll
+   * range for the header to stick against. It takes the MEASURED wrapper instead, which is bare at
+   * a width the table fits — so no scroller exists and the offset still reaches the `<thead>`.
    */
-  test('without a scroll container the page offset still reaches the header', async () => {
+  test('a page-scrolled sticky header keeps its offset, and its wrapper stays bare', async () => {
     const p = await openFixture(
       { ...tableSpec(), table: { rows: 40, stickyHeaderOffset: PAGE_OFFSET } },
       PHONE,
     )
+    if ((await p.count(SCROLLER)) !== 0) {
+      throw new Error(
+        'LAYOUT INVARIANT VIOLATED — a page-scrolled sticky header must not be wrapped in a ' +
+          'scroll container: an uncapped `overflow-x` box has no scroll range, so the header ' +
+          'stops sticking entirely.',
+      )
+    }
+    await expectContained(p, false, 'a two-column table fits a 390px phone with room to spare')
     const top = await p.computed(THEAD, 'top')
     if (top !== `${PAGE_OFFSET}px`) {
       throw new Error(
-        `LAYOUT INVARIANT VIOLATED — a page-scrolled sticky header must still clear the app ` +
-          `header.\n  expected: thead top = ${PAGE_OFFSET}px\n  actual:   thead top = ${top}`,
+        `LAYOUT INVARIANT VIOLATED — a page-scrolled sticky header must still clear the chrome ` +
+          `inside its scrollport.\n  expected: thead top = ${PAGE_OFFSET}px\n  actual:   thead ` +
+          `top = ${top}`,
       )
     }
+  })
+
+  /**
+   * INVARIANT 4 — a FITTING table's header really does stick, and the wrapper is what lets it.
+   *
+   * The whole justification for measuring instead of always containing: while the table fits, its
+   * wrapper declares no overflow at all, so the `<thead>`'s scrollport is `AppShell.Main` and it
+   * pins to Main's own content top through a real scroll. Asserting the bare state without
+   * asserting the STICK it buys would leave the trade unproven in the direction that matters.
+   */
+  test('a fitting table stays bare and its header pins to Main through a 400px scroll', async () => {
+    // `stats` is not decoration: the table has to start BELOW Main's content top, or the `<thead>`
+    // is already sitting on the sticky constraint at rest and the scroll below proves nothing.
+    const p = await openFixture(
+      { ...tableSpec(), table: { rows: 40 }, stats: 2, bodyHeight: 400 },
+      DESKTOP,
+    )
+    await expectContained(p, false, 'a two-column table fits a 1440px viewport many times over')
+
+    const before = await p.box('thead', THEAD)
+    await p.raw.evaluate((sel) => {
+      const element = document.querySelector(sel)
+      if (element === null) throw new Error(`LAYOUT: no scrollport matched \`${sel}\``)
+      element.scrollTo({ top: 400, behavior: 'instant' })
+    }, MAIN)
+    await p.settle()
+
+    const main = await p.box('main', MAIN)
+    const after = await p.box('thead', THEAD)
+    if (!(after.box.top < before.box.top)) {
+      throw new Error(
+        'LAYOUT: the scroll was a no-op — the header never moved, so the stick below asserts ' +
+          `nothing.\n  thead top before = ${before.box.top}, after = ${after.box.top}`,
+      )
+    }
+
+    // Main's CONTENT top, not its border box: the sticky constraint resolves against the scrollport
+    // minus its own padding, and Main carries `--app-shell-padding`.
+    const contentTop = main.box.top + Number.parseFloat(await p.computed(MAIN, 'padding-top'))
+    const scrollport = band("Main's content box", contentTop, main.box.bottom, after)
+    expectGapAtMost(
+      scrollport,
+      after,
+      'top',
+      0.5,
+      "a bare wrapper leaves `AppShell.Main` as the sticky header's scrollport — the `<thead>` " +
+        "must pin to Main's content top, not ride away with the rows",
+      DESKTOP,
+    )
+    expectFullyInside(
+      after,
+      scrollport,
+      'a pinned header never leaves the scrollport it is pinned to',
+      DESKTOP,
+    )
+  })
+
+  /**
+   * INVARIANT 5 — the same shape, too wide, contains ITSELF rather than the page.
+   *
+   * This is the half the old exemption did not have. An eight-column sticky table at 390px is wider
+   * than Main; measured, its wrapper flips to `overflow-x: auto`, so the columns stay reachable by
+   * horizontal scroll inside the card while the document and Main both stay honest. The sticky
+   * header is inert at this width by construction — that is the trade, and it is why the flip is
+   * measured rather than declared.
+   */
+  test('the same shape, too wide for a phone, contains itself instead of the page', async () => {
+    // EIGHT columns, not the six the overflow guard's crowded page uses: six measured 372 against
+    // a 364px wrapper, and an 8px margin is one font-metric change away from flipping the very
+    // state this test names. The shape is identical; the reading is decisive.
+    const p = await openFixture({ ...tableSpec(), table: { rows: 20, columns: 8 } }, PHONE)
+    await expectContained(p, true, 'eight unbreakable columns cannot fit a 390px phone')
+    expectNoHorizontalOverflow(
+      await p.horizontalOverflow(),
+      'a sticky, uncapped table must contain itself once it outgrows its column — the page may ' +
+        'never be draggable sideways, whatever the header does',
+      PHONE,
+    )
+
+    const scroll = await p.raw.evaluate((sel) => {
+      const element = document.querySelector(sel)
+      if (!element) throw new Error(`LAYOUT: no element matched \`${sel}\``)
+      return { scrollWidth: element.scrollWidth, clientWidth: element.clientWidth }
+    }, WRAPPER)
+    if (!(scroll.scrollWidth > scroll.clientWidth)) {
+      throw new Error(
+        'LAYOUT INVARIANT VIOLATED — a contained wrapper must actually scroll horizontally, or ' +
+          'the columns past its right edge are unreachable rather than merely off-screen.\n' +
+          `  wrapper scrollWidth = ${scroll.scrollWidth}, clientWidth = ${scroll.clientWidth}`,
+      )
+    }
+  })
+  /**
+   * INVARIANT 6 — the toolbar SHRINKS, and shrinking did not cost the search its stated width.
+   *
+   * The fix for the toolbar overflow (`no-horizontal-overflow.layout.test.ts` guards the property)
+   * was to make the toolbar a shrinkable flex item and turn the search's `w={220}` into a flex
+   * BASIS. Both halves need pinning from this side: `flex: 0 1 220px` must still resolve to 220
+   * wherever 220 is available — a `1 1` would have made the field grow with the table again, which
+   * is the 600px search `SEARCH_WIDTH` was introduced to stop — and the whole toolbar must sit
+   * inside Main on a phone rather than merely being narrower than it used to be.
+   */
+  const toolbarSpec: FixtureSpec = {
+    sections: [
+      { label: 'Main', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
+    ],
+    table: { rows: 8, columns: 6, stickyHeader: false, search: true, facets: 2 },
+  }
+
+  test('the search keeps its stated width where the width exists (desktop)', async () => {
+    const p = await openFixture(toolbarSpec, DESKTOP)
+    const search = await p.box('search', SEARCH)
+    if (Math.abs(search.box.width - SEARCH_BASIS) > 0.5) {
+      throw new Error(
+        'LAYOUT INVARIANT VIOLATED — the toolbar search states a width so it does not grow with ' +
+          `the table; the flex basis must resolve to it wherever it fits.\n  expected: ` +
+          `${SEARCH_BASIS}px\n  actual:   ${search.box.width}px`,
+      )
+    }
+  })
+
+  test('the toolbar sits fully inside Main on a phone', async () => {
+    const p = await openFixture(toolbarSpec, PHONE)
+    const main = await p.box('main', MAIN)
+    const toolbar = await p.box('toolbar', TOOLBAR)
+    expectFullyInside(
+      toolbar,
+      main,
+      "the toolbar is the header row's flex item — a 220px search beside a facet pill row must " +
+        'wrap and shrink inside the column, never state 461px in a 302px one',
+      PHONE,
+    )
   })
 })

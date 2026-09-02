@@ -43,3 +43,22 @@
   font-variant-numeric: tabular-nums;
   color: var(--vx-muted);
 }
+
+/*
+ * The measured containment wrapper — `stickyHeader` with neither `maxHeight` nor `minWidth`, the
+ * one shape whose overflow mode cannot be decided statically. `useMeasuredContainment`
+ * (`data-table.tsx`) writes `data-contained`; the two states are declared here rather than as an
+ * inline style so the flip is a single attribute write and a reader can see both at once.
+ *
+ * `[data-contained='false']` is deliberately NOT `overflow: visible` — it is the absence of any
+ * overflow declaration, because `overflow-x: visible` beside a computed `overflow-y` is exactly
+ * the pairing the browser rewrites to `auto`. `min-width: 0` is the flex/grid floor every
+ * containing chain in this library needs and none of them get by default.
+ */
+.containment {
+  min-width: 0;
+}
+
+.containment[data-contained='true'] {
+  overflow-x: auto;
+}
