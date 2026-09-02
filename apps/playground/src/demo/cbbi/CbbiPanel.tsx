@@ -46,12 +46,20 @@ const CBBI_SOURCE = 'https://colintalkscrypto.com/cbbi/'
 /** The distribution bars, at both widths — one declaration so the panel copy cannot drift. */
 const BIN_BARS = [{ key: 'count', label: 'Days', color: VX.accent }]
 
-export function CbbiDistributionBars({ bins, height }: { bins: HistogramBin[]; height: number }) {
+export function CbbiDistributionBars({
+  bins,
+  height,
+  chartId,
+}: {
+  bins: HistogramBin[]
+  height: number
+  chartId: string
+}) {
   return (
     <Bars
       data={bins}
       height={height}
-      chartId="cbbi-distribution"
+      chartId={chartId}
       ariaLabel="Distribution of the official confidence index"
       getX={(d) => d.key}
       getValue={(d) => d.count}
@@ -324,7 +332,7 @@ export function CbbiPanel({
         subtitle="Every day since 2011, by index reading."
         count={bins.length}
       >
-        <CbbiDistributionBars bins={bins} height={140} />
+        <CbbiDistributionBars bins={bins} height={140} chartId="cbbi-distribution-aside" />
       </Section>
 
       <Section title="About">
