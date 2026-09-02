@@ -14,7 +14,7 @@ import '../../../src/styles.css'
 import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import { BasaltProvider, createBasaltTheme } from '../../../src/index'
-import { ShellFixture } from './fixtures'
+import { ShellFixture, resetAsideMounts } from './fixtures'
 import type { FixtureSpec } from './spec'
 
 const container = document.getElementById('root')
@@ -30,6 +30,7 @@ window.basaltMountFixture = async (spec: FixtureSpec) => {
   // <style>, so a retained provider would leave the previous density level's vars behind.
   root?.unmount()
   window.basaltNavigations = []
+  resetAsideMounts()
   root = createRoot(container)
   root.render(
     <BasaltProvider

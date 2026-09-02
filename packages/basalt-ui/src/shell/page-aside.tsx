@@ -28,11 +28,31 @@
  * rather than a pill (`docs/ASIDE-SPEC.md` §3), and none of them counts toward a `Filters (n)` that
  * does not exist here. In the mobile projection the same children mount under `surface="sheet"` —
  * the sheet's own row form, not a panel row squeezed into a drawer.
+ *
+ * **This component is law C9's ONE declared exception, and the exception is the point of the law.**
+ * Every other responsive twin in the package is CSS (`visibleFrom`/`hiddenFrom` in `actions.tsx`,
+ * `view-tabs.tsx`), because there the two forms are two RENDERINGS of one stateless control and
+ * mounting both costs a hidden box. Here they are not. The desktop form lives inside
+ * `AppShell.Aside` and the phone form inside a `FilterSheet` whose Drawer UNMOUNTS its body when
+ * closed — two portal targets, never one node CSS could reposition between them — and the two
+ * mount their children under DIFFERENT filter surfaces (`panel` vs `sheet`), which is a React
+ * context value no media query in CSS can express. A CSS-only twin would therefore have to render
+ * the children TWICE, and an aside's children are stateful: every bound control in there would
+ * subscribe to its field twice, which is the same defect the shell already refuses for live
+ * indicators in the More sheet. Single-mounting a stateful panel beats a CSS twin, so the viewport
+ * read stays in JS — through `useSyncExternalStore`, so SSR, hydration and the first paint agree.
+ * Recorded in `docs/CONTROLS-SPEC.md` §1 (C9) and `docs/ASIDE-SPEC.md` §0.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useMediaQuery } from '@mantine/hooks'
 import { useMantineTheme } from '@mantine/core'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -111,6 +131,50 @@ export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded'> {
 export function AsideOutlet({ className }: { className?: string }) {
   const { setTarget } = useContext(AsideContext)
   return <div ref={setTarget} className={className} />
+}
+
+/** `window.matchMedia`, or `null` where there is no window and on a shim that does not ship it. */
+function mediaQueryList(query: string): MediaQueryList | null {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
+  return window.matchMedia(query)
+}
+
+/**
+ * Internal — a media query read through `useSyncExternalStore`, the ONE hook whose server snapshot
+ * React honours during BOTH `renderToString` and the hydration pass.
+ *
+ * That is the whole reason it is not `@mantine/hooks`' `useMediaQuery`, which reads `matchMedia`
+ * inside a `useState` INITIALIZER: on the server it returns `initialValue`, on the client's very
+ * first render it returns the real match, and when that render is a HYDRATION the two disagree
+ * silently — a server-rendered desktop panel hydrating on a phone against a client tree that has
+ * already moved the children into the page bar's sheet. `getServerSnapshot` makes React render the
+ * server's answer during hydration and re-render with the real one immediately after, which is the
+ * documented, warning-free version of the same correction.
+ *
+ * `fallback` is what the server (and a shim with no `matchMedia`) sees. It stays the DESKTOP
+ * answer, because the portalled branch is the one a shell-less or pre-hydration page can always
+ * fall back to rendering.
+ */
+function useMediaQueryMatches(query: string, fallback: boolean): boolean {
+  // ONE `MediaQueryList` per query, held across renders. `matchMedia()` allocates a fresh live
+  // object on every call and `getSnapshot` runs on every render AND after every store
+  // notification — so calling it in there churned an object per read, and the list `subscribe`
+  // listened on was never the one `getSnapshot` measured. Reading `.matches` off the SAME instance
+  // it subscribed to is what makes the snapshot and the notification describe one thing.
+  const list = useMemo(() => mediaQueryList(query), [query])
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (list === null) return () => {}
+      list.addEventListener('change', onStoreChange)
+      return () => {
+        list.removeEventListener('change', onStoreChange)
+      }
+    },
+    [list],
+  )
+  const getSnapshot = useCallback(() => list?.matches ?? fallback, [list, fallback])
+  const getServerSnapshot = useCallback(() => fallback, [fallback])
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
 /** The three boxes `PageAside` paints, in every projection (`common/props.ts`). */
@@ -208,12 +272,11 @@ export function PageAside(props: PageAsideProps): ReactNode {
   const { host: panelHost, claim: claimPanel, target: panelTarget } = useAsidePanelSlot()
   const theme = useMantineTheme()
   // `sm` is the only breakpoint (`docs/CONTROLS-SPEC.md` §2), read off the theme so a consumer that
-  // retunes it moves the aside with it. `getInitialValueInEffect: false` plus the desktop default
-  // keeps SSR and the first paint stable — the effect corrects a phone one commit later, and the
-  // in-flow branch is the one that renders content, so nothing is ever unreachable in between.
-  const desktop = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`, true, {
-    getInitialValueInEffect: false,
-  })
+  // retunes it moves the aside with it. THE declared C9 exception (see this file's header): the
+  // read is JS because the two projections are two portal targets under two filter surfaces, and a
+  // CSS twin would double-mount stateful children. `useSyncExternalStore` is what keeps SSR, the
+  // hydration pass and the first client paint agreeing on which single node exists.
+  const desktop = useMediaQueryMatches(`(min-width: ${theme.breakpoints.sm})`, true)
   const [folded, setFolded] = usePersistedOrLocal({
     scope: 'aside',
     persistKey,
@@ -224,9 +287,26 @@ export function PageAside(props: PageAsideProps): ReactNode {
   // Below `sm` the panel goes into the page bar's row 2 IF there is one. Without a row 2 there is
   // nowhere to put a trigger, so the honest in-flow form (wave 1) stays.
   const projected = !portalled && panelHost
+  // WHETHER there is a row 2 is published by a LAYOUT EFFECT inside `PageBar`, and React runs
+  // layout effects after the whole commit — so on a phone's FIRST render pass `panelHost` is
+  // always false, whatever the page contains. Rendering the in-flow form on that pass therefore
+  // mounted the children, ran their effects, and unmounted them one commit later on every page
+  // that does project: MEASURED at 2 mounts of one probe subtree for one sheet (real Chrome,
+  // 390x844). Invisible — a layout-effect state flip is flushed before paint — but every bound
+  // control in the aside subscribed to its field, tore the subscription down and rebuilt it, and
+  // any child holding state lost it. Deferring ONE commit is what makes "exactly one mount at
+  // each width" true, which is the promise law C9's exception for this component is granted on.
+  //
+  // Scoped to the shell branch on purpose: a shell-less app has no row 2 to wait for, so it keeps
+  // rendering in flow on its first pass with nothing deferred.
+  const [settled, setSettled] = useState(false)
   // Memoized on `title` alone: the claim goes into the provider's state, so an object rebuilt every
   // render would re-run the effect, re-set the state and re-render this component forever.
   const panelClaim = useMemo(() => ({ title, icon: <IconAsidePanel /> }), [title])
+
+  useIsomorphicLayoutEffect(() => {
+    setSettled(true)
+  }, [])
 
   useIsomorphicLayoutEffect(() => {
     if (!portalled) return
@@ -287,8 +367,10 @@ export function PageAside(props: PageAsideProps): ReactNode {
   }
 
   // In flow: below `sm` with no page bar to project into, and in every shell-less app. One node,
-  // written where the page put it.
-  if (!portalled) return panel
+  // written where the page put it — and inside a shell, not until the row-2 claim has had its one
+  // commit to arrive (see `settled` above), so a page that DOES project never mounts these
+  // children just to throw them away.
+  if (!portalled) return inShell && !settled ? null : panel
   // `target` is null for the first commit only — the outlet's ref sets it.
   if (target === null) return null
   return createPortal(panel, target)
