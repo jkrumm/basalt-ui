@@ -12,18 +12,16 @@
  * 404 fails the same way three times.
  */
 import { useQuery } from 'basalt-ui/query'
-// `basalt-ui/query` re-exports the HOOKS but none of their RESULT TYPES, so the annotation on the
-// exported hook below has to reach past the seam the same module tells callers not to dual-import.
-// A type-only import costs no second runtime copy; it is still the one place this page names
-// `@tanstack/react-query` directly.
-import type { UseQueryResult } from '@tanstack/react-query'
 import { fetchCbbi } from './cbbi-data'
 import type { CbbiRow } from './cbbi-data'
 
 const HOUR = 60 * 60 * 1000
 
-export function useCbbi(): UseQueryResult<CbbiRow[], Error> {
-  return useQuery({
+// `basalt-ui/query` re-exports the HOOKS but none of their RESULT TYPES, so the return type is
+// left to inference rather than reaching past the seam for `UseQueryResult` — the one import this
+// page is not allowed to dual-source (basalt/query-dual-import).
+export function useCbbi() {
+  return useQuery<CbbiRow[], Error>({
     queryKey: ['cbbi'],
     queryFn: fetchCbbi,
     staleTime: HOUR,
