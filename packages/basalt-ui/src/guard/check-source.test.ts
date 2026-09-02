@@ -1,7 +1,7 @@
 /**
  * Unit tests for checkSource — the pure (text, relPath, cfg) → Finding[] core.
  *
- * Covers all 27 guard kinds. Co-located with the guard, excluded from tsc
+ * Covers all 26 guard kinds. Co-located with the guard, excluded from tsc
  * (tsconfig exclude: src/**\/*.test.ts), run via `bun test`.
  *
  * The walker/reporter half is covered by the integration test in
@@ -711,64 +711,6 @@ describe('raw-motion-value', () => {
   })
 })
 
-// ── 14. unframed-chart ───────────────────────────────────────────────────────
-
-describe('unframed-chart', () => {
-  it('flags a hand-rolled <ChartLegend items={[...]}> on one line', () => {
-    const f = find(`<ChartLegend items={[{ key: 'a', label: 'A', color: '#fff' }]} />`)
-    expect(kinds(f)).toContain('unframed-chart')
-  })
-
-  it('flags a hand-rolled legend array literal formatted across multiple lines', () => {
-    const text = [
-      '<ChartLegend',
-      "  items={[{ key: 'a', label: 'A', color: VX.line }]}",
-      '  placement="bottom"',
-      '/>',
-    ].join('\n')
-    const f = find(text)
-    expect(kinds(f)).toContain('unframed-chart')
-  })
-
-  it('reports the line carrying the items={[ token, not the tag-open line', () => {
-    const text = ['<ChartLegend', "  items={[{ key: 'a', label: 'A' }]}", '/>'].join('\n')
-    const f = find(text)
-    const hit = f.find((x) => x.kind === 'unframed-chart')
-    expect(hit?.line).toBe(2)
-  })
-
-  it('does NOT flag ChartFrame composing its own derived legend (call expression)', () => {
-    const text = [
-      '<ChartLegend',
-      '  items={deriveLegend(series)}',
-      '  placement={placement}',
-      '/>',
-    ].join('\n')
-    const f = find(text)
-    expect(kinds(f)).not.toContain('unframed-chart')
-  })
-
-  it('does NOT flag an unrelated items={[...]} prop on a different component', () => {
-    const f = find(`<Menu items={[{ label: 'a' }]} />`)
-    expect(kinds(f)).not.toContain('unframed-chart')
-  })
-
-  it('does NOT flag when unframedChart is false', () => {
-    const f = checkSource(`<ChartLegend items={[{ key: 'a', label: 'A' }]} />`, PATH, {
-      ...DEFAULT_GUARD_CONFIG,
-      unframedChart: false,
-    })
-    expect(kinds(f)).not.toContain('unframed-chart')
-  })
-
-  it('does NOT flag a theme-allow line', () => {
-    const f = find(
-      `<ChartLegend items={[{ key: 'a', label: 'A' }]} /> // theme-allow: bespoke legend`,
-    )
-    expect(kinds(f)).not.toContain('unframed-chart')
-  })
-})
-
 // ── 15. chart-missing-aria-label ─────────────────────────────────────────────
 
 describe('chart-missing-aria-label', () => {
@@ -904,26 +846,6 @@ describe('chart-missing-aria-label', () => {
     ].join('\n')
     // `Bars` is defined locally here and only `BasaltBars` came from basalt — the local one is skipped.
     expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
-  })
-})
-
-describe('unframed-chart — the same provenance gate', () => {
-  it('does NOT flag a consumer’s OWN ChartLegend taking an items array', () => {
-    const text = [
-      'function ChartLegend({ items }: Props) {',
-      '  return <ul />',
-      '}',
-      'const view = <ChartLegend items={[{ label: "a" }]} />',
-    ].join('\n')
-    expect(kinds(find(text))).not.toContain('unframed-chart')
-  })
-
-  it('still flags the shipped ChartLegend built from an inline array', () => {
-    const text = [
-      "import { ChartLegend } from 'basalt-ui/charts'",
-      'const view = <ChartLegend items={[{ label: "a" }]} />',
-    ].join('\n')
-    expect(kinds(find(text))).toContain('unframed-chart')
   })
 })
 
@@ -1586,14 +1508,13 @@ describe('CSS applicability', () => {
     expect(kinds(f)).not.toContain('off-identity-accent')
   })
 
-  it('does NOT false-positive card-with-border/unframed-chart/chart-missing-aria-label/raw-visx-axis on CSS class selectors that echo JSX names', () => {
+  it('does NOT false-positive card-with-border/chart-missing-aria-label/raw-visx-axis on CSS class selectors that echo JSX names', () => {
     const f = checkSource(
       '.Card {\n  border: 1px solid red;\n}\n.ChartLegend {\n  display: flex;\n}\n.AxisLeft {\n  color: red;\n}\n',
       'src/charts/kinds/Card.module.css',
       DEFAULT_GUARD_CONFIG,
     )
     expect(kinds(f)).not.toContain('card-with-border')
-    expect(kinds(f)).not.toContain('unframed-chart')
     expect(kinds(f)).not.toContain('chart-missing-aria-label')
     expect(kinds(f)).not.toContain('raw-visx-axis')
   })
@@ -2935,7 +2856,6 @@ describe("profile: 'tokens-only'", () => {
     'inline-display': true,
     'raw-visx-axis': true,
     'raw-motion-value': true,
-    'unframed-chart': true,
     'chart-missing-aria-label': true,
     'raw-form-control': true,
     'sub-16-input-font': true,
@@ -2953,7 +2873,7 @@ describe("profile: 'tokens-only'", () => {
 
   it('classifies every kind in the registry — the table is exhaustive', () => {
     expect(Object.keys(MANTINE_COUPLED).toSorted()).toEqual(Object.keys(GUARD_RULES).toSorted())
-    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(27)
+    expect(Object.keys(MANTINE_COUPLED)).toHaveLength(26)
   })
 
   it('the disabled set is exactly the Mantine-coupled half — a complete partition', () => {

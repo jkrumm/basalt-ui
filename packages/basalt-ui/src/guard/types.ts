@@ -1,12 +1,17 @@
 /**
  * Guard types — Mantine-free, dependency-free (zero imports beyond TS types).
  *
- * GuardKind is the closed set of 27 violation kinds the theme guard can emit.
+ * GuardKind is the closed set of 26 violation kinds the theme guard can emit — `unframed-chart`
+ * retired at the C2 consolidation wave: its only case (a hand-authored `<ChartLegend items={[...]}>`
+ * array literal) is fully subsumed by the oxlint plugin's `basalt/chart-legend-literal`, which also
+ * catches the `.map()`-over-a-non-series form the regex never could. `'unframed-chart'` stays a
+ * recognized id in `PLUGIN_RULE_IDS`/`KNOWN_RULE_IDS` so an existing `theme-allow unframed-chart`
+ * reads as a dead waiver, not a typo.
  * Finding is the structured result per violation, replacing the old `Violation` shape.
  * GuardConfig is the per-run configuration that drives checkSource.
  */
 
-/** The 27 theme-guard violation kinds. */
+/** The 26 theme-guard violation kinds. */
 export type GuardKind =
   | 'raw-hex'
   | 'raw-color-fn'
@@ -23,7 +28,6 @@ export type GuardKind =
   | 'inline-display'
   | 'raw-visx-axis'
   | 'raw-motion-value'
-  | 'unframed-chart'
   | 'chart-missing-aria-label'
   | 'raw-form-control'
   | 'sub-16-input-font'
@@ -127,13 +131,6 @@ export type GuardConfig = {
   readonly rawVisxAxis: boolean
   /** Flag a hardcoded duration/spring/ease literal in a `transition={{...}}` prop. Default true. */
   readonly rawMotionValue: boolean
-  /**
-   * Flag a hand-rolled `<ChartLegend items={[...]}>` array literal — legend entries must be
-   * derived (e.g. `items={deriveLegend(series)}`), never authored inline, so a bespoke chart
-   * can't silently drift from the shared legend. Default `true` (ON). Set `false` to disable the
-   * `unframed-chart` check.
-   */
-  readonly unframedChart: boolean
   /**
    * Flag a chart-kind JSX usage (`<MultiLine>`, `<Bars>`, `<Donut>`, `<DualPanel>`, `<Heatmap>`,
    * `<ZonedLine>`, `<StackedArea>`, `<LineSparkline>`, `<BarSparkline>`) missing an `ariaLabel`
