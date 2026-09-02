@@ -13,8 +13,9 @@
  * The data is a pure function of the filter state (`demo/analytics-data.ts`): a re-render caused by
  * opening the `Filters (n)` sheet must not reshuffle the numbers behind it.
  */
-import { ActionIcon, Grid, SimpleGrid, Stack } from '@mantine/core'
-import { PageBar, Section, StatCard } from 'basalt-ui'
+import { ActionIcon, Stack } from '@mantine/core'
+import { PageBar, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
+import type { QueryStateLike } from 'basalt-ui'
 import {
   CompareFilter,
   FilterSet,
@@ -67,6 +68,16 @@ import {
  * gives them the same `FieldHandle` a URL field has, so the controls that read them are the SAME
  * controls (law C3: no `useState`, no `onChange`, on any lane).
  */
+const KPI_QUERY_VARIANTS = ['pending', 'error', 'empty', 'data'] as const
+type KpiQueryVariant = (typeof KPI_QUERY_VARIANTS)[number]
+
+const KPI_QUERY_OPTIONS: { value: KpiQueryVariant; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'error', label: 'Error' },
+  { value: 'empty', label: 'Empty' },
+  { value: 'data', label: 'Data' },
+]
+
 const cardViews = createLocalStore({
   key: 'dashboard-card-views',
   fields: {
@@ -76,12 +87,40 @@ const cardViews = createLocalStore({
     metric: field.enum(['revenue', 'orders'], 'revenue'),
     /** The `Funnel & retention` section's shared axis, over all three cards below it. */
     funnelView: field.enum(['absolute', 'rate'], 'absolute'),
+    /** The `Orders` KPI's breakdown — drives a demo `QueryStateLike` through all four branches. */
+    kpiQuery: field.enum(KPI_QUERY_VARIANTS, 'data'),
   },
 }).labels({
   grain: { day: 'Day', week: 'Week' },
   metric: { revenue: 'Revenue', orders: 'Orders' },
   funnelView: { absolute: 'Absolute', rate: 'Rate' },
+  kpiQuery: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
 })
+
+/**
+ * The `Orders` KPI's breakdown as a `QueryStateLike` through pending / error / empty / data —
+ * `StatCard.query` resolves it through `QueryState` at the section tier, same four-way branch
+ * `StatesPage`'s chart drives.
+ */
+function buildBreakdownQuery(variant: KpiQueryVariant): QueryStateLike<unknown> {
+  const base = { isError: false, error: null, refetch: () => {} } as const
+  switch (variant) {
+    case 'data':
+      return { ...base, data: true, fetchStatus: 'idle' }
+    case 'empty':
+      return { ...base, data: [], fetchStatus: 'idle' }
+    case 'pending':
+      return { ...base, data: undefined, fetchStatus: 'fetching' }
+    case 'error':
+      return {
+        ...base,
+        isError: true,
+        error: { status: 500, value: { message: 'the breakdown service did not answer' } },
+        data: undefined,
+        fetchStatus: 'idle',
+      }
+  }
+}
 
 /**
  * The KPI trend's bar fill. `alpha(VX.ink, 0.33)` over `BarSparkline`'s own 0.75 fill-opacity lands
@@ -172,6 +211,7 @@ export function DashboardPage() {
   const [grain] = cardViews.field.grain.use()
   const [metric] = cardViews.field.metric.use()
   const [funnelView] = cardViews.field.funnelView.use()
+  const [kpiQuery] = cardViews.field.kpiQuery.use()
   const [syncing, setSyncing] = useState(false)
   const [syncedAt, setSyncedAt] = useState<number | null>(null)
 
@@ -191,6 +231,7 @@ export function DashboardPage() {
   // `ViewTabs` in `ChartCard.actions` that only restyled the plot would not be a control worth a
   // slot.
   const grainPoints = useMemo(() => bucketByGrain(data.points, grain), [data.points, grain])
+  const ordersQuery = useMemo(() => buildBreakdownQuery(kpiQuery), [kpiQuery])
 
   // Stands in for a `refetch()`. The `SyncButton` owns the spinner, the relative age and the
   // icon-only mobile form — this only reports the two facts it reads.
@@ -269,7 +310,7 @@ export function DashboardPage() {
         ]}
       />
 
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+      <StatGroup cols={4}>
         {data.kpis.map((kpi) => (
           <StatCard
             key={kpi.key}
@@ -301,20 +342,34 @@ export function DashboardPage() {
                 label: row.label,
                 value: row.orders,
               })),
+              // The demo query the `Breakdown` ViewTabs (below, as a real `actions` JSX attribute —
+              // not the object-spread form the guard's ancestry walk cannot see through) drives,
+              // through the same four branches `StatesPage`'s chart does.
+              query: ordersQuery,
             })}
-            {...(kpi.key === 'sales' && {
-              actions: (
+            // A JSX attribute, not the spread-object form above: `basalt/bound-control-outside-home`
+            // walks JSX attribute ancestry to resolve a control's home, and a bound control assigned
+            // inside a plain object literal (however that object later reaches `actions` via spread)
+            // is invisible to that walk.
+            actions={
+              kpi.key === 'sales' ? (
                 <ActionIcon variant="subtle" aria-label="Card actions">
                   <IconDots />
                 </ActionIcon>
-              ),
-            })}
+              ) : kpi.key === 'orders' ? (
+                <ViewTabs
+                  field={cardViews.field.kpiQuery}
+                  label="Breakdown"
+                  options={KPI_QUERY_OPTIONS}
+                />
+              ) : undefined
+            }
           />
         ))}
-      </SimpleGrid>
+      </StatGroup>
 
-      <Grid gap="sm">
-        <Grid.Col span={{ base: 12, md: 8 }}>
+      <WidgetGrid cols={3}>
+        <WidgetGrid.Item span={2}>
           <ChartCard
             title="Total sales over time"
             icon={<IconChart />}
@@ -365,22 +420,20 @@ export function DashboardPage() {
               ]}
             />
           </ChartCard>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 4 }}>
-          <ChartCard
-            title="Sales by channel"
-            info="Each channel's share of the selected window, with its own trend."
-            count={data.breakdown.length}
-            // A `SelectFilter` in a CARD's `actions` slot — the same control the `PageBar` holds,
-            // bound to a local field instead of a URL one. `ChartCard` is inside the Mantine-free
-            // chart layer so its slot carries only `data-basalt-tier="widget"`; a basalt control
-            // sizes itself at `ctl`, which is why this needs no wrapper (see `ChartCard`'s doc).
-            actions={<SelectFilter field={cardViews.field.metric} label="Metric" />}
-          >
-            <BreakdownList rows={data.breakdown} metric={metric} />
-          </ChartCard>
-        </Grid.Col>
-      </Grid>
+        </WidgetGrid.Item>
+        <ChartCard
+          title="Sales by channel"
+          info="Each channel's share of the selected window, with its own trend."
+          count={data.breakdown.length}
+          // A `SelectFilter` in a CARD's `actions` slot — the same control the `PageBar` holds,
+          // bound to a local field instead of a URL one. `ChartCard` is inside the Mantine-free
+          // chart layer so its slot carries only `data-basalt-tier="widget"`; a basalt control
+          // sizes itself at `ctl`, which is why this needs no wrapper (see `ChartCard`'s doc).
+          actions={<SelectFilter field={cardViews.field.metric} label="Metric" />}
+        >
+          <BreakdownList rows={data.breakdown} metric={metric} />
+        </ChartCard>
+      </WidgetGrid>
 
       {/*
        * A SECTION with both `tabs` and `actions` — the tier between the page bar and a card
@@ -408,7 +461,7 @@ export function DashboardPage() {
           </ActionIcon>
         }
       >
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+        <WidgetGrid cols={3}>
           {SMALL_CHARTS.map((chart) => (
             <ChartCard key={chart.key} title={chart.title} info={chart.info}>
               <MultiLine
@@ -434,7 +487,7 @@ export function DashboardPage() {
               />
             </ChartCard>
           ))}
-        </SimpleGrid>
+        </WidgetGrid>
       </Section>
 
       {/* A SECTION wrapping the table, so the page shows both a section-level action and a

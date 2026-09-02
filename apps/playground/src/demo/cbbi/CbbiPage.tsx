@@ -16,8 +16,8 @@
  * responsive `align` — it writes the panel after the main column and the region takes it from there
  * (G12/G13 closed). Below `sm` that same one node stacks under the body, no twin (C9).
  */
-import { SimpleGrid, Stack, Text } from '@mantine/core'
-import { PageAside, PageBar, QueryState, Section, StatCard } from 'basalt-ui'
+import { Stack, Text } from '@mantine/core'
+import { PageAside, PageBar, QueryState, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
@@ -388,7 +388,7 @@ function CbbiOverview({
 
   return (
     <Stack gap="sm">
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="sm">
+      <StatGroup cols={4}>
         <StatCard
           icon={<IconActivity />}
           title="Confidence"
@@ -442,7 +442,7 @@ function CbbiOverview({
           unit="of 9"
           {...(hotNames !== undefined && { subtitle: hotNames, tone: 'bad' as const })}
         />
-      </SimpleGrid>
+      </StatGroup>
 
       {/*
        * Price and confidence are TWO cards, not one `DualPanel`, in the `split` layout.
@@ -563,7 +563,7 @@ function CbbiMetricGrid({
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+    <WidgetGrid cols={3}>
       {shown.map((metric) => {
         const value = latest.metrics[metric.key]
         return (
@@ -589,7 +589,7 @@ function CbbiMetricGrid({
           </ChartCard>
         )
       })}
-    </SimpleGrid>
+    </WidgetGrid>
   )
 }
 

@@ -169,6 +169,55 @@ function OverlaysSection() {
   )
 }
 
+function ConfirmSection() {
+  const [lastAnswer, setLastAnswer] = useState<boolean | null>(null)
+
+  return (
+    <Stack gap="xs">
+      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+        overlays.confirm
+      </Text>
+      <Text size="sm">
+        A two-button dialog that resolves to the answer — <code>true</code> on confirm,{' '}
+        <code>false</code> on every other exit (cancel, escape, click-outside, the close button).
+      </Text>
+      <Group gap="xs" wrap="wrap">
+        <Button
+          size="compact-sm"
+          variant="default"
+          onClick={() =>
+            void overlays
+              .confirm({ title: 'Discard draft?', onConfirm: () => {} })
+              .then(setLastAnswer)
+          }
+        >
+          overlays.confirm (normal)
+        </Button>
+        <Button
+          size="compact-sm"
+          color="red"
+          onClick={() =>
+            void overlays
+              .confirm({
+                title: 'Revoke access?',
+                body: 'The key stops working immediately.',
+                confirmLabel: 'Revoke',
+                danger: true,
+                onConfirm: () => {},
+              })
+              .then(setLastAnswer)
+          }
+        >
+          overlays.confirm (danger)
+        </Button>
+      </Group>
+      <Text size="xs" c="dimmed">
+        Resolved: <code>{lastAnswer === null ? 'none yet' : String(lastAnswer)}</code>
+      </Text>
+    </Stack>
+  )
+}
+
 function ShortcutsSection() {
   return (
     <Stack gap="xs">
@@ -236,6 +285,8 @@ export function CommandsDemoPage() {
           <RunCommandSection />
           <Divider />
           <OverlaysSection />
+          <Divider />
+          <ConfirmSection />
           <Divider />
           <ShortcutsSection />
         </Stack>

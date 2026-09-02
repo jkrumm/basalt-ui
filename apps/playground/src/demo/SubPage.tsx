@@ -1,5 +1,4 @@
-import { SimpleGrid } from '@mantine/core'
-import { PageBar, Section, StatCard } from 'basalt-ui'
+import { PageBar, Section, StatCard, StatGroup } from 'basalt-ui'
 import { FilterSet, RangeFilter } from 'basalt-ui/controls'
 import { DateRangePicker } from 'basalt-ui/controls-dates'
 import { dashboardFilters } from './dashboard-range-store'
@@ -49,7 +48,7 @@ export function SubPage({ title, description, range, stats }: SubPageProps) {
         subtitle={range === undefined ? description : `${description} · ${range}`}
         count={stats.length}
       >
-        <SimpleGrid cols={2} spacing="sm">
+        <StatGroup cols={2}>
           {stats.map((stat) => (
             <StatCard
               key={stat.key}
@@ -58,7 +57,7 @@ export function SubPage({ title, description, range, stats }: SubPageProps) {
               {...(stat.delta !== undefined && { delta: stat.delta })}
             />
           ))}
-        </SimpleGrid>
+        </StatGroup>
       </Section>
     </>
   )

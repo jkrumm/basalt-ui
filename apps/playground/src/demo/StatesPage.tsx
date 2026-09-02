@@ -7,10 +7,11 @@
  */
 import { useState } from 'react'
 import { Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
-import { EmptyState, ErrorState, LoadingState, QueryState } from 'basalt-ui'
+import { EmptyState, ErrorState, LoadingState, QueryState, Section } from 'basalt-ui'
 import type { QueryStateLike } from 'basalt-ui'
 import { ChartCard, MultiLine } from 'basalt-ui/charts'
 import { RangeFilter, ViewTabs } from 'basalt-ui/controls'
+import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import { createLocalStore, field } from 'basalt-ui/state'
 import { SERIES_DATA } from './data'
 import type { DayPoint } from './data'
@@ -31,10 +32,16 @@ const statesStore = createLocalStore({
   fields: {
     variant: field.enum(VARIANT_VALUES, 'data'),
     range: field.range({ presets: ['7d', '30d'], fallback: '30d' }),
+    /** `Section`'s own `query` demo — independent lever from the chart above. */
+    sectionVariant: field.enum(VARIANT_VALUES, 'data'),
+    /** `BasaltVirtualList`'s own `query` demo — independent lever from both above. */
+    listVariant: field.enum(VARIANT_VALUES, 'data'),
   },
 }).labels({
   variant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
   range: { '7d': 'Last 7 days', '30d': 'Last 30 days' },
+  sectionVariant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
+  listVariant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
 })
 
 function buildChartQuery(variant: Variant, refetch: () => void): QueryStateLike<DayPoint[]> {
@@ -108,6 +115,71 @@ function ChartStatesWidget() {
         </QueryState>
       </div>
     </ChartCard>
+  )
+}
+
+/** `Section`'s own `query` — the body resolves pending / error-with-retry / empty / `children`,
+ * while the header, chevron and `summary` stay drawn (law C3's uniform container contract). */
+function SectionQueryBlock() {
+  const [variant] = statesStore.field.sectionVariant.use()
+  const [retries, setRetries] = useState(0)
+  const query = buildChartQuery(variant, () => setRetries((n) => n + 1))
+
+  return (
+    <Section
+      title="Recent sessions"
+      subtitle={`Section query — refetch() calls: ${retries}`}
+      query={query}
+      empty={{
+        title: 'No sessions yet',
+        description: 'Nothing has been measured for this range.',
+      }}
+      actions={<ViewTabs field={statesStore.field.sectionVariant} options={VARIANT_OPTIONS} />}
+    >
+      <Stack gap={4}>
+        {SERIES_DATA.slice(0, 5).map((row) => (
+          <Group key={row.date} justify="space-between">
+            <Text size="sm">{row.date}</Text>
+            <Text size="sm" c="dimmed">
+              {row.sessions} sessions
+            </Text>
+          </Group>
+        ))}
+      </Stack>
+    </Section>
+  )
+}
+
+/** `BasaltVirtualList`'s own `query` — pending / error-with-retry / empty replace the scroll box,
+ * data renders `items` (here `query.data ?? []`, the shipped `<BasaltDataTable data={q.data ?? []}
+ * query={q} />` idiom). */
+function VirtualListQueryBlock() {
+  const [variant] = statesStore.field.listVariant.use()
+  const [retries, setRetries] = useState(0)
+  const query = buildChartQuery(variant, () => setRetries((n) => n + 1))
+
+  return (
+    <Section
+      title="BasaltVirtualList — query"
+      subtitle={`refetch() calls: ${retries}`}
+      actions={<ViewTabs field={statesStore.field.listVariant} options={VARIANT_OPTIONS} />}
+    >
+      <BasaltVirtualList
+        items={query.data ?? []}
+        query={query}
+        height={200}
+        estimateSize={36}
+        getItemKey={(item) => item.date}
+        renderItem={(item) => (
+          <Group px="xs" h="100%" justify="space-between" wrap="nowrap">
+            <Text size="sm">{item.date}</Text>
+            <Text size="sm" c="dimmed">
+              {item.sessions} sessions
+            </Text>
+          </Group>
+        )}
+      />
+    </Section>
   )
 }
 
@@ -187,6 +259,8 @@ export function StatesPage() {
   return (
     <Stack gap="lg">
       <ChartStatesWidget />
+      <SectionQueryBlock />
+      <VirtualListQueryBlock />
       <BuildingBlocksBlock />
     </Stack>
   )
