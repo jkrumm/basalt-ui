@@ -97,7 +97,18 @@ describe('check-theme --audit-allows — theme-allow annotations', () => {
     fixture(
       '// theme-allow hand-rolled-plot — DualPanel is not a single cartesian plot\nexport const c = 1\n',
     )
-    const { code, log } = audit()
+    // The fixture sits under tmpdir, so the node_modules walk-up finds nothing — but
+    // `resolveToolBin` then probes PATH, and under `bun run` PATH carries this repo's
+    // `node_modules/.bin`. Blank it for this call so the premise holds however the suite launches.
+    const originalPath = process.env['PATH']
+    process.env['PATH'] = ''
+    let result: ReturnType<typeof audit>
+    try {
+      result = audit()
+    } finally {
+      process.env['PATH'] = originalPath
+    }
+    const { code, log } = result
     expect(log).toContain('oxlint could not be run here')
     expect(log).not.toContain('SUPPRESSES NOTHING')
     expect(code).toBe(0)
