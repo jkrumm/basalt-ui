@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import { BasaltDataTable } from '../../../src/data'
 import type { ColumnDef } from '../../../src/data'
-import { BasaltShell } from '../../../src/index'
+import { BasaltShell, PageAside, PageBar } from '../../../src/index'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/nav/types'
-import type { FixtureSpec, ItemSpec, TableSpec } from './spec'
+import type { AsideSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -103,6 +104,65 @@ function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
   )
 }
 
+// ── The aside ─────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Called by the fixture host before every mount, so each `remount(spec)` counts from zero.
+ *
+ * The counters live on `window`, not in module state, because a test has to read them while
+ * NOTHING is mounted — the phone projection renders no node at all until its sheet is opened, and
+ * "the children were never mounted before that" is half the invariant.
+ */
+export function resetAsideMounts(): void {
+  window.basaltAsideMounts = { total: 0, live: 0 }
+}
+
+/**
+ * The aside's payload, counting its own mounts.
+ *
+ * `live` is how many instances exist RIGHT NOW: a CSS-only responsive twin — the shape law C9
+ * mandates for every other control — would render this component in both halves and `live` would
+ * be 2, with every bound control beside it subscribed to its field twice. `total` is the
+ * page-lifetime ordinal, so a projection that tears the subtree down and rebuilds it reads 2 even
+ * though `live` never left 1. `data-mounts` mirrors the ordinal onto the node itself, so a failure
+ * says which of the two shapes it was without a second query.
+ */
+function AsideProbe(): ReactElement {
+  const [mounts, setMounts] = useState(0)
+  useEffect(() => {
+    const counts = window.basaltAsideMounts
+    counts.total += 1
+    counts.live += 1
+    setMounts(counts.total)
+    return () => {
+      counts.live -= 1
+    }
+  }, [])
+  return (
+    <div data-testid="aside-probe" data-mounts={mounts}>
+      Composition
+    </div>
+  )
+}
+
+/**
+ * A row-2 payload, so `PageBar` publishes the `panelHost` claim the phone projection hangs its
+ * `Panel` pill off. Deliberately NOT a bound control: this fixture measures where the aside goes,
+ * and a store would put a second stateful thing in the tree that the mount count would then have
+ * to account for.
+ */
+function AsideBar(): ReactElement {
+  return <PageBar filters={<span data-testid="bar-filters">Filters</span>} />
+}
+
+function AsideFixture({ spec }: { spec: AsideSpec }): ReactElement {
+  return (
+    <PageAside title={spec.title}>
+      <AsideProbe />
+    </PageAside>
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
@@ -116,10 +176,14 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       sections={sections}
       {...(spec.nav && { mobileNav: spec.nav })}
     >
+      {spec.aside && <AsideBar />}
       {spec.table && <TableFixture spec={spec.table} />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />
       <div data-testid="content-end">end of content</div>
+      {/* Written AFTER the main column on purpose — that is the order the in-flow mobile form
+          inherits, and the order a consumer page uses. */}
+      {spec.aside && <AsideFixture spec={spec.aside} />}
     </BasaltShell>
   )
 }

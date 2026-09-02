@@ -12,7 +12,7 @@
  * uses.
  */
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { FilterSet, ToggleFilter } from '../controls'
@@ -28,6 +28,8 @@ const ONE_SECTION: SidebarSection[] = [
 ]
 
 let restoreMatchMedia: (() => void) | null = null
+/** How many `(min-width: …)` `MediaQueryList`s the movable stub has been asked to build. */
+let minWidthQueryCalls = 0
 
 /** A phone: no `(min-width: …)` query matches. Undone by the suite's `afterEach`, so a failing
  * assertion cannot leak the stub into the next file. */
@@ -46,6 +48,48 @@ function installMobileMatchMedia(): void {
     }) as MediaQueryList
   restoreMatchMedia = () => {
     window.matchMedia = original
+  }
+}
+
+/**
+ * A viewport that can MOVE: every `(min-width: …)` query answers `desktop` and every listener the
+ * component registered is notified when that flips.
+ *
+ * It is what proves the `useSyncExternalStore` read actually SUBSCRIBES. Every other test in this
+ * file reads the initial snapshot only, so a hook that never subscribed would pass all of them and
+ * ship an aside frozen in whichever projection the page loaded at.
+ */
+function installMovableMatchMedia(desktop: boolean): (next: boolean) => void {
+  const original = window.matchMedia
+  let matches = desktop
+  minWidthQueryCalls = 0
+  // A real `change` EVENT, not a bare call: every `(min-width: …)` reader in the tree shares this
+  // stub, and Mantine's own `useMediaQuery` reads `event.matches` off the argument.
+  const listeners = new Set<(event: MediaQueryListEvent) => void>()
+  window.matchMedia = (query: string): MediaQueryList => {
+    if (query.startsWith('(min-width:')) minWidthQueryCalls++
+    return {
+      get matches() {
+        return matches
+      },
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>
+        listeners.add(listener),
+      removeEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>
+        listeners.delete(listener),
+      dispatchEvent: () => false,
+    } as unknown as MediaQueryList
+  }
+  restoreMatchMedia = () => {
+    window.matchMedia = original
+  }
+  return (next: boolean) => {
+    matches = next
+    const event = { matches: next } as MediaQueryListEvent
+    for (const listener of listeners) listener(event)
   }
 }
 
@@ -366,6 +410,75 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('child-origins')).toBeNull()
     })
+  })
+
+  /**
+   * The C9 exception's live half: the projection follows the viewport, and it does so through the
+   * media query's own `change` event rather than a resize listener or a remount.
+   */
+  test('crossing sm moves the panel between the region and the page flow', () => {
+    const setDesktop = installMovableMatchMedia(true)
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <div data-testid="main">Main column</div>
+          <PageAside title="Weights">
+            <div data-testid="aside-child">Composition</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+
+    expect(document.querySelector('[data-basalt-page-aside="shell"]')).not.toBeNull()
+
+    act(() => {
+      setDesktop(false)
+    })
+
+    // One node still, on the other side of the breakpoint — never both (law C9).
+    expect(document.querySelectorAll('[data-basalt-page-aside]')).toHaveLength(1)
+    expect(document.querySelector('[data-basalt-page-aside="standalone"]')).not.toBeNull()
+    expect(screen.getByTestId('aside-child')).toBeDefined()
+
+    act(() => {
+      setDesktop(true)
+    })
+
+    expect(document.querySelectorAll('[data-basalt-page-aside]')).toHaveLength(1)
+    expect(document.querySelector('[data-basalt-page-aside="shell"]')).not.toBeNull()
+  })
+
+  /**
+   * The same crossing, counted. `getSnapshot` runs on every render and after every notification, so
+   * building the `MediaQueryList` inside it allocated a live platform object per read and measured
+   * one the subscription had never listened to. The semantics below are byte-identical to the test
+   * above — what is asserted extra is that no further list is built after the first.
+   */
+  test('the MediaQueryList is built once per query, not once per snapshot read', () => {
+    const setDesktop = installMovableMatchMedia(true)
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <div data-testid="main">Main column</div>
+          <PageAside title="Weights">
+            <div data-testid="aside-child">Composition</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    const afterMount = minWidthQueryCalls
+    expect(afterMount).toBeGreaterThan(0)
+
+    act(() => {
+      setDesktop(false)
+    })
+    act(() => {
+      setDesktop(true)
+    })
+
+    expect(minWidthQueryCalls).toBe(afterMount)
+    // …and the projection still follows the viewport, off that one cached instance.
+    expect(document.querySelector('[data-basalt-page-aside="shell"]')).not.toBeNull()
   })
 
   test('below sm with no PageBar row 2: wave 1 in-flow rendering, no trigger', () => {

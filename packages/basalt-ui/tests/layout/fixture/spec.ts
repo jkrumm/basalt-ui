@@ -39,6 +39,21 @@ export type TableSpec = {
   stickyHeaderOffset?: number | string
 }
 
+/**
+ * A `PageAside` claiming the shell's aside region, plus the `PageBar` row 2 its phone projection
+ * needs a pill to hang off.
+ *
+ * Exists for ONE invariant class, and it is the class happy-dom is worst at: WHICH of the aside's
+ * two projections is live is decided by a viewport read (law C9's declared exception,
+ * `docs/ASIDE-SPEC.md` §0), and happy-dom's `matchMedia` answers for one hard-coded width. Only a
+ * real browser can show the desktop panel and the phone pill in the same suite — and, crucially,
+ * that the aside's children are mounted exactly ONCE at each of them.
+ */
+export type AsideSpec = {
+  /** The aside's `title` — the sheet's heading and the `Panel` pill's accessible name. */
+  title: string
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -57,6 +72,8 @@ export type FixtureSpec = {
   bodyHeight?: number
   /** Renders a `BasaltDataTable` above the filler. Omitted ⇒ no table in the tree. */
   table?: TableSpec
+  /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
+  aside?: AsideSpec
 }
 
 declare global {
@@ -65,5 +82,11 @@ declare global {
     basaltMountFixture: (spec: FixtureSpec) => Promise<void>
     /** Paths the fixture anchor swallowed, newest last. Reset on every mount. */
     basaltNavigations: string[]
+    /**
+     * The aside probe's mount census — `live` is how many instances exist now (a responsive twin
+     * reads 2), `total` the page-lifetime ordinal (a remount reads 2 while `live` stays 1). Reset
+     * on every mount, so a test may read it while nothing is mounted at all.
+     */
+    basaltAsideMounts: { total: number; live: number }
   }
 }
