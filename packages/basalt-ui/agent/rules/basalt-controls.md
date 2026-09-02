@@ -23,24 +23,24 @@ size tier and one persistence binding, and basalt owns all three. The API is in 
 
 ## The laws
 
-| #   | Law                                                                                                                                                                 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C1  | A control lives in exactly ONE of three homes — the page bar, a section/widget header, or a form row — entered only through a slot prop.                            |
-| C2  | A basalt filter or tab has no `value`/`onChange`; it takes `field` and owns both the URL write and the localStorage mirror.                                         |
-| C3  | Tab and filter state never lives in `useState` — it derives from a store field on the URL lane or the local lane.                                                   |
-| C4  | Every field declares its lanes once, at definition, and resolves URL ⊳ localStorage ⊳ fallback uniformly for every field kind.                                      |
-| C5  | The HOME sets the size tier; an element inside a home slot carries no `size`, `w`, `fullWidth`, `visibleFrom` or `hiddenFrom`.                                      |
-| C6  | A page has one `PageBar`; its `actions` hold ≤5 entries and exactly one `primary`; a `Section` holds ≤3.                                                            |
-| C7  | A home never scrolls horizontally and never wraps — overflow folds into a `More` menu or a `Filters (n)` sheet, computed by basalt from typed data.                 |
-| C8  | Every section, card or table title is a `WidgetHeader`; the page title is the breadcrumb (or `PageBar.title` with no shell). An in-body h1/h2 is an error.          |
-| C9  | A responsive swap belongs to the control — rendering the same control twice under `visibleFrom`/`hiddenFrom` is an error.                                           |
-| C10 | A nav link carrying a store field passes `store.linkSearch` by reference; a `search:` literal in a nav definition, or a literal `useSearch({ from })`, is an error. |
-| C11 | Every table or list inside a section states its count in its header.                                                                                                |
-| C12 | Refresh/sync has ONE shape, `SyncButton`, whose `scope` picks the home (`global` → the shell header, `page` → `PageBar.sync`).                                      |
-| C13 | Sidebar blocks are declared data (`SidebarBlock[]`), never `ReactNode` slots, so rail and More-sheet projection stay basalt's.                                      |
-| C14 | An empty home renders nothing, so no route pays for a reserved row.                                                                                                 |
-| C15 | Every touch target inside a home clears the `touchControlHeight` floor below `sm`; sheet rows use `sheetRowHeight`.                                                 |
-| C16 | A new guard lands `warn` with a dated `promote` version, and the build fails once the package version reaches it while the rule is still `warn`.                    |
+| #   | Law                                                                                                                                                                                                        |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | A control lives in exactly ONE of three homes — the page bar, a section/widget header, or a form row — entered only through a slot prop.                                                                   |
+| C2  | A basalt filter or tab has no `value`/`onChange`; it takes `field` and owns both the URL write and the localStorage mirror.                                                                                |
+| C3  | Tab and filter state never lives in `useState` — it derives from a store field on the URL lane or the local lane.                                                                                          |
+| C4  | Every field declares its lanes once, at definition, and resolves URL ⊳ localStorage ⊳ fallback uniformly for every field kind.                                                                             |
+| C5  | The HOME sets the size tier; an element inside a home slot carries no `size`, `w`, `fullWidth`, `visibleFrom` or `hiddenFrom`.                                                                             |
+| C6  | A page has one `PageBar`; its `actions` hold ≤5 entries and exactly one `primary`; a `Section` holds ≤3.                                                                                                   |
+| C7  | A home never scrolls horizontally and never wraps — overflow folds into a `More` menu or a `Filters (n)` sheet, computed by basalt from typed data.                                                        |
+| C8  | Every section, card or table title is a `WidgetHeader`; the page title is the breadcrumb (or `PageBar.title` with no shell). An in-body h1/h2 is an error.                                                 |
+| C9  | A responsive swap belongs to the control — rendering the same control twice under `visibleFrom`/`hiddenFrom` is an error.                                                                                  |
+| C10 | A nav link carrying a store field passes `store.linkSearch` by reference; a `search:` literal in a nav definition, or a literal `useSearch({ from })`, is an error.                                        |
+| C11 | Every table or list inside a section states its count in its header.                                                                                                                                       |
+| C12 | Refresh/sync has ONE shape, `SyncButton`, whose `scope` picks the home (`global` → the shell header, `page` → `PageBar.sync`).                                                                             |
+| C13 | Sidebar blocks are declared data (`SidebarBlock[]`), never `ReactNode` slots, so rail and More-sheet projection stay basalt's.                                                                             |
+| C14 | An empty home renders nothing, so no route pays for a reserved row.                                                                                                                                        |
+| C15 | Every touch target inside a home clears the `touchControlHeight` floor below `sm`. The mobile `Filters (n)` sheet draws no row of its own — it renders the same `PanelRow` the aside's panel surface does. |
+| C16 | A new guard lands `warn` with a dated `promote` version, and the build fails once the package version reaches it while the rule is still `warn`.                                                           |
 
 C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTable` and C12 are
 **advisory** — the generated header above says so. A green lint run is not evidence they hold.
@@ -55,10 +55,10 @@ C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTabl
 | `SettingsRow`                                                                     | `control`                                          | Mantine `md` | ONE form field, bound to a setting         |
 | `FormRow` / `FormGroup` (`basalt-ui/forms`)                                       | children                                           | Mantine `md` | ONE form field or a labelled cluster       |
 
-- **Inside `BasaltShell`**, `PageBar` row 1 portals into the header (the breadcrumb stays the lead)
-  and row 2 renders in-flow, sticky, publishing its measured height as `--basalt-page-bar-h` for a
-  sticky table or a full-height pane to offset against. Without a shell, both rows render in flow with
-  `title` + `icon` leading. The header height is a token on every viewport — never React state.
+- **Inside `BasaltShell`** both `PageBar` rows are portals — row 1 into the header, row 2 into the
+  shell's band above the scrollport — so where you write `<PageBar>` never moves it and nothing in
+  the scrollport has chrome to clear: a sticky table head takes no offset. Without a shell both rows
+  render in flow, sticky, with `title` + `icon` leading. The header height is a token, never state.
 - **The form row is a real home, and it keeps Mantine's own `md` tier.** A raw `Select` bound to a
   setting is the right answer in `SettingsRow.control`, and the `size` prop there is load-bearing
   rather than redundant. `SettingsRow` is not a tiered slot, and no filter or size rule applies to it.
@@ -131,7 +131,6 @@ reset handler to extend.
 | `PageBar` row 2  | line 1: `ViewTabs` full-width (a `Select` past three options) · line 2: one inline pill · `Filters (n)` · the aside's `Panel` pill |
 | a section header | title · count · one inline action, the rest in a kebab; tabs past three become a `Select`                                          |
 | a widget header  | value + delta wrap under the title; the sparkline drops to bleed; one `⋯` action                                                   |
-| a sheet row      | full-width, `sheetRowHeight`, applies immediately                                                                                  |
 
 Every swap is CSS inside the control (one mount), never a JS media query — a media-query hook renders
 differently on the server than on the first client paint. Two mounts under
@@ -144,12 +143,13 @@ scopes its children to the `panel` surface, so the same `SelectFilter` that is a
 bar is a ROW in the aside. Never two components and never a prop to pick between them — the surface
 is read from where the control is mounted.
 
-| In the aside     | Write                                                                 |
-| ---------------- | --------------------------------------------------------------------- |
-| an inspector row | `PanelRow` — label above, optional `hint`, mono `readout`, `end` slot |
-| a bound slider   | `SliderControl` — min/max/step come off the handle, never props       |
-| a facet list     | `MultiSelectFilter` + `counts` (and `max`, past which the tail folds) |
-| a group of rows  | `Section` — flush inside the aside, which draws the rhythm itself     |
+| In the aside     | Write                                                                             |
+| ---------------- | --------------------------------------------------------------------------------- |
+| an inspector row | `PanelRow` — label above, optional `hint`, mono `readout`, `end` slot             |
+| a bound slider   | `SliderControl` — min/max/step come off the handle, never props                   |
+| a facet list     | `MultiSelectFilter` + `counts` (and `max`, past which the tail folds)             |
+| a group of rows  | `Section` — flush inside the aside, which draws the rhythm itself                 |
+| a choice         | `PanelChoice` — a track only while ≤3 options AND every label fits, else `Select` |
 
 - ONE `PageAside` per page, written AFTER the main content: it portals into the region from `sm` up,
   so its place in the tree is reading order, not layout.

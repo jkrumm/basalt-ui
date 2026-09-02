@@ -5,10 +5,12 @@
  *
  * **Surface** — `useFilterSurface()` is how a control decides its FORM, not a media query: `'pill'`
  * inside the bar row (and inside the desktop `+N` fold), `'sheet'` inside the mobile `Filters (n)`
- * Drawer, `'panel'` inside a `PageAside` body, where a chip in a 300px column reads as a stray
- * button and the archetype is an inspector ROW (`docs/ASIDE-SPEC.md` §1). A control renders exactly
- * one form per mount; the desktop/mobile swap WITHIN the pill form is CSS
- * (`visibleFrom`/`hiddenFrom`), never JS (C9).
+ * Drawer and `'panel'` inside a `PageAside` body render the IDENTICAL control body — a chip in a
+ * 300px column, or across a bottom drawer, reads as a stray button, so both resolve to the same
+ * inspector ROW archetype (`docs/ASIDE-SPEC.md` §1, `docs/CONTROLS-SPEC.md` §3: "sheet = panel rows
+ * inside a Drawer"); only the chrome around them differs. A control renders exactly one form per
+ * mount; the desktop/mobile swap WITHIN the pill form is CSS (`visibleFrom`/`hiddenFrom`), never JS
+ * (C9).
  *
  * **Registry** — `useFilterRegistration()` is what makes `Filters (n)` and `Reset all` derived
  * rather than hand-passed: each filter reports `{ isActive, reset }` for itself, so `FilterSet`
@@ -43,7 +45,7 @@ const FilterSurfaceContext = createContext<FilterSurface>('pill')
  *
  * @example
  * const surface = useFilterSurface()
- * if (surface === 'sheet') return <SheetField label={label}>…</SheetField>
+ * if (surface === 'sheet' || surface === 'panel') return <PanelRow label={label}>…</PanelRow>
  */
 export function useFilterSurface(): FilterSurface {
   return useContext(FilterSurfaceContext)

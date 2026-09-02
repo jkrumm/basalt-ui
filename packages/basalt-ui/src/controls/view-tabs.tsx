@@ -6,7 +6,8 @@
  * The responsive swap lives HERE, not at the call site (C9), and it is CSS — `visibleFrom` /
  * `hiddenFrom`, one mount each, never a JS media query (which renders differently on the server than
  * on the first client paint). Below `sm` a set of three or fewer stays a full-width
- * `SegmentedControl`; past that a track cannot hold readable labels on a phone, so it becomes a
+ * `SegmentedControl` — PROVIDED every label actually fits it (`panel-row.tsx`'s `useTrackFits`,
+ * shared with `PanelChoice` so the two width gates cannot drift); past either gate it becomes a
  * `Select`.
  *
  * `only` is how a tab that exists on ONE viewport is declared instead of hand-rolling a second
@@ -35,7 +36,7 @@ import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
 import { useFilterSurface } from './filter-context'
 import { useControlName } from './filter-sheet'
-import { PanelChoice, PanelRow } from './panel-row'
+import { PanelChoice, PanelRow, useTrackFits } from './panel-row'
 
 /** Past three options the phone form is a `Select`, not a track. */
 const PHONE_TRACK_MAX = 3
@@ -83,6 +84,18 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
     setValue(next as T)
   }
 
+  const phoneData = phone.map((option) => ({ value: option.value, label: option.label }))
+  const phoneCountFits = phone.length <= PHONE_TRACK_MAX
+  // Called UNCONDITIONALLY, even on the panel branch that never renders the phone form — a hook
+  // may not sit behind the `if (inPanel) return …` below (`react-hooks/rules-of-hooks`), and
+  // `useTrackFits` no-ops cheaply when `countFits` is false or its root never mounts. The same
+  // width gate `PanelChoice` runs (`panel-row.tsx`'s `useTrackFits` doc) — the count cap is the
+  // cheap first gate, a fit check underneath it is what actually decides.
+  const { rootRef: phoneRootRef, fits: phoneFits } = useTrackFits(
+    phoneCountFits,
+    phoneData.map((d) => d.value).join('|'),
+  )
+
   // The panel form. `only` is dropped on purpose: it exists to declare a tab that belongs to ONE
   // viewport, and a panel is not a viewport — every declared option is offered.
   if (inPanel) {
@@ -113,14 +126,15 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
         {...(className !== undefined && { className })}
         {...(style !== undefined && { style })}
       />
-      {phone.length <= PHONE_TRACK_MAX ? (
+      {phoneFits ? (
         <SegmentedControl
+          ref={phoneRootRef}
           aria-label={label}
           hiddenFrom="sm"
           size="ctl"
           fullWidth
           value={value}
-          data={phone.map((option) => ({ value: option.value, label: option.label }))}
+          data={phoneData}
           onChange={commit}
           {...(className !== undefined && { className })}
           {...(style !== undefined && { style })}
@@ -137,7 +151,7 @@ export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
           {...(style !== undefined && { style })}
           value={value}
           allowDeselect={false}
-          data={phone.map((option) => ({ value: option.value, label: option.label }))}
+          data={phoneData}
           onChange={(next) => {
             if (next !== null) commit(next)
           }}

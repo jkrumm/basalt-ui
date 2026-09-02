@@ -2,10 +2,11 @@
  * `basalt-ui/controls` — the filter/tab home surface (docs/CONTROLS-SPEC.md §3).
  *
  * Two form factors per control, ONE mount each, switched by CSS only (C9): the `pill` surface
- * (bordered 30px chip + popover) and the `sheet` surface (44px full-width rows inside the mobile
- * `Filters (n)` Drawer). `48em` / `47.99375em` are the `sm` breakpoint in the exact literal form
- * every other basalt CSS module uses — a media query cannot resolve a custom property, so the
- * breakpoint cannot be a token (see `content/prose.module.css`'s note).
+ * (bordered 30px chip + popover) and the `sheet` surface (`PanelRow` label-above-control rows
+ * inside the mobile `Filters (n)` Drawer — the same rows the aside's `panel` surface renders;
+ * `panel-row.module.css` owns their geometry). `48em` / `47.99375em` are the `sm` breakpoint in the
+ * exact literal form every other basalt CSS module uses — a media query cannot resolve a custom
+ * property, so the breakpoint cannot be a token (see `content/prose.module.css`'s note).
  */
 
 /* ── The pill row (FilterSet, desktop + the mobile inline head) ───────────────────────────────── */
@@ -228,21 +229,19 @@
 /* ── The sheet surface (inside the bottom Drawer) ─────────────────────────────────────────────── */
 
 /*
- * One rhythm, one kind of separator. Groups are 12px apart (`--vx-space-stack-md`) and NOTHING
- * between them draws a line: the only hairline in the sheet is the one between two option rows of
- * the SAME group (`.sheetOption`, below), which is what makes it read as a list rather than as a
- * stack of boxed sections. The pre-1.28 sheet had a footer rule, a Drawer header rule and a
- * `Radio.Group` per filter, so a six-filter sheet drew seven lines and none of them grouped
- * anything.
+ * The sheet's body holds a flat list of `PanelRow`s — the SAME rows the aside's `panel` surface
+ * renders (`panel-row.module.css`), zero gap between them: each row already draws its own
+ * `padding-block` inset and its own `.row + .row` hairline, the same "one rhythm, one separator"
+ * rule the aside's own body follows. A `gap` here would double up with that inset instead of
+ * replacing it.
  */
 .sheetBody {
   display: flex;
   flex-direction: column;
-  gap: var(--vx-space-stack-md, 0.75rem);
 }
 
 /* The Drawer header holds the title AND `Reset all` (see `FilterSheet`'s doc), so it is a row that
- * spreads rather than Mantine's default title-plus-close pair. 44px, like every sheet row. */
+ * spreads rather than Mantine's default title-plus-close pair. */
 .sheetHeader {
   min-height: var(--vx-space-sheet-row-height, 2.75rem);
   padding-block: 0;
@@ -265,141 +264,12 @@
   color: var(--vx-ink);
 }
 
-.sheetField {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-/* ── SheetOptionList / SheetDisclosure ────────────────────────────────────────────────────────── */
-
-/* A `<fieldset>` in the option-list case (see `SheetOptionList`), a plain div in the disclosure
- * case — the reset covers both, since a div ignores all of it. */
-.sheetList {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  border: none;
-  min-inline-size: 0;
-  min-width: 0;
-}
-
 /*
- * The 44px option row (C15). `<label>` in a list, `<button>` in a disclosure — one class, because
- * the two must be indistinguishable: the disclosure IS the list's last entry.
- *
- * `appearance`/`margin`/`border`/`background`/`text-align` reset the `<button>` form back to the
- * `<label>`'s box; a `<label>` ignores all five, so there is no need for a second selector.
- */
-.sheetOption {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--mantine-spacing-xs, 0.625rem);
-  width: 100%;
-  min-height: var(--vx-space-sheet-row-height, 2.75rem);
-  appearance: none;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  text-align: start;
-  color: var(--vx-muted);
-  cursor: pointer;
-}
-
-/* Hairline BETWEEN rows only — a trailing border on the last row would be the group separator this
- * sheet deliberately does not draw. */
-.sheetOption + .sheetOption,
-.sheetDisclosureBody + .sheetOption,
-.sheetOption + .sheetDisclosureBody {
-  border-top: 1px solid color-mix(in srgb, var(--vx-ink) 6%, transparent);
-}
-
-.sheetOption[data-selected] {
-  color: var(--vx-ink);
-}
-
-.sheetOption[data-disabled] {
-  color: var(--vx-faint);
-  cursor: not-allowed;
-}
-
-@media (hover: hover) {
-  .sheetOption:not([data-disabled]):hover {
-    color: var(--vx-ink);
-  }
-}
-
-/*
- * The real native radio/checkbox, visually hidden — the row's semantics, not decoration (see
- * `SheetOptionList`'s doc). Not `display: none`: a hidden input is unfocusable, which would take the
- * arrow-key group behaviour with it. Standard visually-hidden clip, and `:focus-visible` on it is
- * what draws the ROW's focus ring below.
- */
-.sheetOptionInput {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-.sheetOption:has(.sheetOptionInput:focus-visible),
-.sheetOption:focus-visible {
-  outline: 2px solid var(--vx-accent);
-  outline-offset: -2px;
-  border-radius: var(--vx-radius-ctrl);
-}
-
-.sheetOptionLabel {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--vx-text-md);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sheetOptionCheck {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  color: var(--vx-accent);
-}
-
-.sheetDisclosureBody {
-  padding-bottom: var(--vx-space-stack-sm, 0.5rem);
-}
-
-/*
- * The group heading — the package's MONO MICRO label (`docs/DESIGN-SPEC.md` §3), the same treatment
- * `shell/app-sidebar.module.css`'s `.sectionLabel` draws for a nav section. It read as a head-font
- * 13.5px line before, which is the same typography as the option rows it labels, so a group heading
- * and its first option were indistinguishable — and the sheet's only remaining structure IS the
- * heading, since it draws no rules between groups.
- */
-.sheetLabel {
-  font-family: var(--basalt-font-mono);
-  font-size: var(--vx-text-micro);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--vx-faint);
-}
-
-/*
- * The heading a `Radio.Group`/`Checkbox.Group` renders for itself (Mantine's `Input.Label`) — same
- * typography as `.sheetLabel`, which is what the other sheet fields use. Both surfaces get it: in
- * the popover it is the only place the filter's NAME appears (the pill reads the value), and in the
- * sheet it replaces a `SheetField` heading that could never be programmatically associated —
- * `Radio.Group` overwrites any `aria-labelledby` with its own.
+ * The heading a `Radio.Group`/`Checkbox.Group` renders for itself (Mantine's `Input.Label`) — the
+ * package's MONO MICRO label treatment, weighted up to the head font so it reads as a control's own
+ * name rather than as an option row. In the popover it is the only place the filter's NAME appears
+ * (the pill reads the value); the sheet and panel forms name their control through `PanelRow`'s own
+ * label instead, which is why this class is popover-only.
  */
 .groupLabel {
   font-family: var(--basalt-font-head);
@@ -407,46 +277,6 @@
   font-weight: 550;
   font-size: var(--vx-text-sm);
   color: var(--vx-muted);
-}
-
-/* The sheet's `SheetField` heading sits 2px off its list — the mono micro step above is small
- * enough that the default flow gap read as part of the first row. */
-.sheetField > .sheetLabel {
-  margin-bottom: 2px;
-}
-
-/* 44px rows — the one sheet dimension C15 pins. */
-.sheetRow {
-  display: flex;
-  align-items: center;
-  gap: var(--mantine-spacing-xs, 0.625rem);
-  min-height: var(--vx-space-sheet-row-height, 2.75rem);
-  width: 100%;
-  border-bottom: 1px solid var(--vx-surface-hairline);
-}
-
-.sheetRow:last-child {
-  border-bottom: none;
-}
-
-/*
- * A 44px row is only a 44px TOUCH TARGET if the `<label>` fills it. Mantine centres a Radio/Checkbox
- * `body` in its root and the label line-height is ~20px, so without these the tappable strip is the
- * middle 20px of the row and the outer 12px top and bottom do nothing (C15's number, not delivered).
- * Passed through `classNames`, never as a global `.sheetRow label` selector — a descendant selector
- * here would also capture a nested control's own labels.
- */
-.sheetRowBody {
-  flex: 1;
-  align-items: center;
-  min-height: inherit;
-}
-
-.sheetRowLabel {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  min-height: inherit;
 }
 
 /* ── ControlGroup ─────────────────────────────────────────────────────────────────────────────── */
@@ -541,19 +371,17 @@
   flex: 0 1 auto;
 }
 
-/* ── The facet list (MultiSelectFilter, `panel` surface) ──────────────────────────────────────── */
+/* ── The facet list (MultiSelectFilter, `panel` + `sheet` surfaces) ──────────────────────────────── */
 
 /*
  * Foundry's facet column (`docs/ASIDE-SPEC.md` §1): one 30px row per option, label left, an optional
- * mono count and a proportional bar behind it, a check at the trailing edge when selected.
+ * mono count and a proportional bar behind it, a check at the trailing edge when selected. The
+ * `sheet` surface renders the SAME list (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+ * Drawer") — a set past `max` folds behind `Show N more` on both.
  *
- * It is NOT the sheet's `SheetOptionList` at a smaller height. Two things differ and both are the
- * point: the row carries DATA (the count and its bar), and the row is the `ctl` tier rather than the
- * 44px touch tier, because an aside is a pointer surface holding ten of these in a column that a
- * phone sheet would need 440px to show.
- *
- * The semantics are the same hidden native `<input>` inside a `<label>` the sheet list uses — see
- * `SheetOptionList`'s doc for why that, and not `role="checkbox"` on a div.
+ * The semantics are a hidden native `<input>` inside a `<label>` — not `role="checkbox"` on a div —
+ * so the arrow-key group behaviour, the form-association and the announced state come for free, and
+ * the `<label>` wrapping it makes the whole row the hit target rather than a 16px mark inside it.
  */
 .facetList {
   display: flex;
@@ -648,6 +476,17 @@
   flex: none;
   align-items: center;
   color: var(--vx-accent);
+}
+
+/*
+ * The visible checkbox box a facet row draws when it carries no count/bar — the ONLY affordance an
+ * unselected, uncounted row had otherwise was none at all (`.facetCheck` above paints only once
+ * selected). Its own component (`Checkbox.Indicator`) reads `--checkbox-size-ctl` off the `size`
+ * prop, so no dimension is declared here; `flex: none` alone keeps it from being squeezed by the
+ * label's `flex: 1`.
+ */
+.facetCheckbox {
+  flex: none;
 }
 
 .facetInput {

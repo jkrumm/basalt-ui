@@ -19,7 +19,7 @@ import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, StringField } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
-import { SheetField, useControlName } from './filter-sheet'
+import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
 /** One navigation per typed phrase, not per keystroke. */
@@ -69,7 +69,9 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
     />
   )
 
-  if (surface === 'panel') {
+  // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+  // Drawer") — the same `PanelRow` label-above-control row on both surfaces.
+  if (surface === 'panel' || surface === 'sheet') {
     return (
       <PanelRow
         label={label}
@@ -79,18 +81,6 @@ export function SearchFilter(props: SearchFilterProps): ReactNode {
       >
         {input}
       </PanelRow>
-    )
-  }
-  if (surface === 'sheet') {
-    return (
-      <SheetField
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        {input}
-      </SheetField>
     )
   }
   return input

@@ -752,12 +752,31 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
         classNames: (_theme, props) =>
           (props.variant ?? 'filled') === 'filled' ? { label: controlsClasses.chipLabel } : {},
       }),
-      // Track = ink-6% tint, radius 7, 2px padding; active segment = panel bg + `shadow-ctrl`,
-      // radius 5. `--sc-radius`/`--sc-color` don't reach the root track background (Mantine
-      // hardcodes that to a raw gray step), so it's forced via `styles.root` same as Card/Paper.
-      // The active-only ink label color + weight can't live in the flat `styles.label` object
-      // (applies to every option regardless of state), so it's in segmented-control.module.css
+      // Track = ink-6% tint, radius 7, 2px padding; active segment = an ink-mixed panel fill +
+      // `shadow-ctrl`, radius 5. `--sc-radius`/`--sc-color` don't reach the root track background
+      // (Mantine hardcodes that to a raw gray step), so it's forced via `styles.root` same as
+      // Card/Paper. The active-only ink label color + weight can't live in the flat `styles.label`
+      // object (applies to every option regardless of state), so it's in segmented-control.module.css
       // instead — same pattern as NavLink's active-icon accent.
+      //
+      // The indicator's fill is `color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))`,
+      // not a flat `--vx-surface-panel` — a flat panel fill is indistinguishable from the track's
+      // OWN parent on the one surface that IS `--vx-surface-panel` (the aside's `panel` filter
+      // surface, `docs/CONTROLS-SPEC.md` §3): the track (ink-6% over panel) and the indicator (panel,
+      // flat) then differ by 6% ink with no other cue, and `shadow-ctrl` alone (a bare
+      // `0 1px 2px` drop, no ring) reads as "barely there". This is NOT the `raised`-token doctrine
+      // in `tokens/palette.ts` (`SHADOW.raised`'s "a default control nested in a Card has no boundary
+      // but the drop — raise the drop, do not reintroduce an edge") — that doctrine is scoped to the
+      // shared Button/ActionIcon/Input depth token, whose fill is a real surface color a border would
+      // outline. The indicator's own fill has no such constraint, so a second ink-mix step (12%, double
+      // the track's) is the fix: it holds up on every surface the control mounts on, not only the
+      // panel-nested one.
+      //
+      // `.control`'s `min-width: 0` (`segmented-control.module.css`) is the other half of an even
+      // `fullWidth` split — Mantine's own `.control` ships `flex: 1` with no `min-width` override, so
+      // the initial `auto` floors every option at its min-content width and a `fullWidth` track splits
+      // UNEVENLY. The label already carries `overflow: hidden` + `text-overflow: ellipsis`, so a
+      // label that no longer fits its equal share truncates instead of forcing the column wide.
       //
       // The track's padding is `SPACE_FIXED.segmentedTrackInset`, a plain literal — NOT a
       // `--vx-space-*` var — because it is density-EXEMPT: it is load-bearing for the nested-corner
@@ -767,7 +786,10 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
       // density.
       SegmentedControl: SegmentedControl.extend({
         defaultProps: { radius: radius.card },
-        classNames: { label: segmentedControlClasses.label },
+        classNames: {
+          label: segmentedControlClasses.label,
+          control: segmentedControlClasses.control,
+        },
         // `label` gets a `ctl`-only min-height (function-form `styles`, same `props.size === …` gate
         // as Button/ActionIcon/Input's `vars` overrides above) so a `size="ctl"` SegmentedControl
         // matches the ctl Button/Input box exactly instead of following its own fixed padding — see
@@ -777,21 +799,57 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           root: {
             backgroundColor: 'color-mix(in srgb, var(--vx-ink) 6%, transparent)',
             padding: `${SPACE_FIXED.segmentedTrackInset}px`,
+            // The OUTER safety net a `.control`'s own `min-width: 0` (`segmented-control.module.css`)
+            // cannot provide by itself: that rule only lets each SEGMENT shrink below its own label's
+            // content width so `fullWidth` can split evenly — it does nothing to stop the WHOLE TRACK
+            // from being squeezed by an ANCESTOR flex row with room to spare (a `Section`/`StatCard`
+            // header's `actions` slot), which silently clipped "Absolute" to "Absolut" with no
+            // ellipsis at all. `min-width: max-content` pins the root to the sum of its labels'
+            // natural widths — it now OVERFLOWS a too-narrow ancestor instead of shrinking into it,
+            // which is also what makes the overflow MEASURABLE (`panel-row.tsx`'s `useTrackFits`
+            // compares the root's rendered width against its parent's available space). Inside that
+            // floor, `fullWidth` with room to spare still splits its segments evenly exactly as
+            // before — the floor only ever raises the STARTING point flex-grow distributes surplus
+            // from, never removes the segments' own equal-share arithmetic.
+            minWidth: 'max-content',
           },
           indicator: {
-            backgroundColor: 'var(--vx-surface-panel)',
+            backgroundColor: 'color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))',
             boxShadow: 'var(--vx-shadow-ctrl)',
             borderRadius: 'var(--vx-radius-tight)',
           },
           // Conditionally spread the WHOLE key (never a present `label: undefined`) — the package
           // builds under `exactOptionalPropertyTypes`, which treats a key present-but-`undefined` as
           // a type error distinct from the key being absent.
+          //
+          // `width: '100%'` + `minWidth: 0` are load-bearing, not cosmetic: `inline-flex` is a
+          // shrink-to-fit box by default (like `inline-block`), so switching `.label` to it for
+          // vertical centering ALSO switched its width from "fills `.control`'s box" (a plain
+          // `display: block`'s default) to "sized to its own content" — which is invisible until
+          // `fullWidth` forces every `.control` to an EQUAL share (`segmented-control.module.css`'s
+          // `min-width: 0`): a label wider than that equal share then rendered at its own full
+          // content width, overflowing its column and getting hard-clipped by the track's own
+          // `overflow: hidden` instead of ellipsizing inside it ("Same period last year" cut off
+          // mid-word). `width: 100%` makes the inline-flex box fill `.control` again, and `minWidth:
+          // 0` is the same flex-item footgun `.control` itself needed — `.label` is ALSO a flex
+          // container's item once `fullWidth`'s `.root { display: flex }` applies, so it inherits an
+          // `auto` (content-based) minimum unless told otherwise.
           ...(props.size === 'ctl'
             ? {
                 label: {
                   display: 'inline-flex',
                   alignItems: 'center',
                   minHeight: `calc(var(--vx-space-control-height-ctl) * var(--mantine-scale) - ${2 * SPACE_FIXED.segmentedTrackInset}px)`,
+                  // `width: '100%'` only when `fullWidth` — it is what makes an EQUAL-SPLIT
+                  // segment's label fill its column instead of shrink-to-fit around its own text
+                  // (the "Same period last year" clipped-with-no-ellipsis case). A NON-`fullWidth`
+                  // track (a header's `actions` slot, two or three options) wants the opposite: its
+                  // label sized to its OWN content, so the root's `min-width: max-content` (below)
+                  // measures the label's true natural width rather than an equal 1/2 or 1/3 share
+                  // computed through `.control`'s `flex-basis: 0%` — forcing `width: 100%` there
+                  // too under-computed the shrink-to-fit root by a few px ("Absolute" clipped to
+                  // "Absolut" even with the floor in place).
+                  ...(props.fullWidth === true ? { width: '100%', minWidth: 0 } : {}),
                 },
               }
             : {}),
@@ -915,9 +973,13 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
           },
         },
       }),
-      // Modal/Drawer: overlay surface + overlay shadow on the content. The header goes transparent —
-      // Mantine paints it `--mantine-color-body`, which read as a grey band over the overlay
-      // surface. Title = head font; close button = the ghost idiom (floating.module.css).
+      // Modal/Drawer: overlay surface + overlay shadow on the content, the SAME surface on the
+      // header. Mantine's header is `position: sticky` by default, painted `--mantine-color-body` —
+      // basalt used to drop that to `transparent`, which reads fine over a body that never scrolls
+      // under it but shows every scrolled row straight through the title once one does (the mobile
+      // filter sheet, the shell's "More" nav sheet). The header stays sticky; only its own
+      // background moves back to opaque, matching the content box it sits above rather than the page
+      // behind it. Title = head font; close button = the ghost idiom (floating.module.css).
       Modal: Modal.extend({
         defaultProps: { radius: radius.floating },
         classNames: { close: floatingClasses.closeButton },
@@ -926,7 +988,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             backgroundColor: 'var(--vx-surface-overlay)',
             boxShadow: 'var(--vx-shadow-overlay)',
           },
-          header: { backgroundColor: 'transparent' },
+          header: { backgroundColor: 'var(--vx-surface-overlay)' },
           title: {
             fontFamily: 'var(--basalt-font-head)',
             fontWeight: 550,
@@ -941,7 +1003,7 @@ function buildTheme(data: PaletteData, options: BuildThemeOptions = {}): Mantine
             backgroundColor: 'var(--vx-surface-overlay)',
             boxShadow: 'var(--vx-shadow-overlay)',
           },
-          header: { backgroundColor: 'transparent' },
+          header: { backgroundColor: 'var(--vx-surface-overlay)' },
           title: {
             fontFamily: 'var(--basalt-font-head)',
             fontWeight: 550,
@@ -1173,12 +1235,29 @@ const CTL_SEGMENT_PADDING_Y = 2.5
 /** A `ctl` Combobox chevron. Mantine's own `xs` value; restated because it cannot be referenced. */
 const CTL_CHEVRON_SIZE = 14
 /**
+ * The `ctl` NumberInput's stepper column, in px — Mantine's own `xs` pair (`--ni-chevron-size-xs`,
+ * `--ni-right-section-width-xs`; `NumberInput.css`), restated for the same reason `CTL_CHEVRON_SIZE`
+ * is: `xs` is Mantine's own `--input-height-xs: 30px`, the ONE built-in size tier that already equals
+ * the `ctl` height, so its stepper column is the size a 30px NumberInput was always meant to carry.
+ * Both vars are load-bearing, not cosmetic — `NumberInput.mjs`'s `varsResolver` sets
+ * `--ni-chevron-size` via `getSize(size, 'ni-chevron-size')` (undeclared at `:root` for a custom
+ * size, so a `size="ctl"` NumberInput fell back to the property's initial value, and
+ * `.controls { max-width: calc(var(--ni-chevron-size) * 1.7) }` — `NumberInput.css:21` — resolved to
+ * an invalid `calc()` and dropped its `max-width` entirely, so the stacked chevrons stretched across
+ * the whole right section), and `rightSectionWidth` defaults to a raw
+ * `` `var(--ni-right-section-width-${size})` `` template (`NumberInput.mjs:412`) rather than a
+ * `getSize` call, so `ctl-tier-coverage.test.ts`'s scan cannot discover it — it is declared here
+ * because the CSS reads it, not because a scan requires it.
+ */
+const CTL_NUMBER_CHEVRON_SIZE = 10
+const CTL_NUMBER_RIGHT_SECTION_WIDTH = 17
+/**
  * The `ctl` tier's Radio/Checkbox indicator box, in px — 16, the SAME square
  * `theme/icon-slot.module.css` gives every icon in the tier, and for the same reason: a 13.5px
  * option label needs a mark it reads as part of the row rather than as a control beside it. Mantine's
  * default is `sm` (20px) and its `md` is 24px, both of which made the popover a column of controls
- * (`controls/filter-sheet.tsx`'s `SheetOptionList` doc records the sheet's version of the same
- * finding — there the fix was to remove the indicator entirely).
+ * (the sheet/panel forms found the same thing and went further — `docs/CONTROLS-SPEC.md` §3's
+ * `PanelChoice`/facet rows draw no Radio/Checkbox indicator at all, a hidden native input instead).
  */
 const CTL_TOGGLE_SIZE = 16
 /**
@@ -1268,6 +1347,8 @@ function ctlSizeVars(): Record<string, string> {
     '--sc-padding-ctl': `${pxRem(CTL_SEGMENT_PADDING_Y)} calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
     '--combobox-option-padding-ctl': `${pxRem(CTL_SEGMENT_PADDING_Y)} ${pxRem(CTL_PADDING_X)}`,
     '--combobox-chevron-size-ctl': pxRem(CTL_CHEVRON_SIZE),
+    '--ni-chevron-size-ctl': pxRem(CTL_NUMBER_CHEVRON_SIZE),
+    '--ni-right-section-width-ctl': `calc(${pxRem(CTL_NUMBER_RIGHT_SECTION_WIDTH)} * var(--mantine-scale))`,
     '--badge-height-ctl': ctlHeight,
     '--badge-padding-x-ctl': `calc(${pxRem(CTL_PADDING_X)} * var(--mantine-scale))`,
     '--badge-fz-ctl': `calc(${pxRem(VX.text.xs)} * var(--mantine-scale))`,

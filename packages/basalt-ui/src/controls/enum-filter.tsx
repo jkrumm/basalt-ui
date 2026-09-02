@@ -33,7 +33,7 @@ import type { FieldOption } from '../state'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
-import { SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { useControlName } from './filter-sheet'
 import { PanelChoice, PanelRow } from './panel-row'
 import type { FilterOption } from './select-filter'
 
@@ -100,37 +100,13 @@ export function EnumFilter<T extends string>({
   // none, because its text is the value.
   const { labelId, nameProps } = useControlName(label, inSheet || inPanel)
 
-  // The SHEET form is a `SheetOptionList` (44px rows, trailing check, hairline between rows), not
-  // the popover's `Radio.Group` — see `SheetOptionList`'s doc for why the leading radio dot had to
-  // go. Both still write through the same setter, so there is one behaviour and two surfaces.
-  if (inSheet) {
-    return (
-      <SheetField
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        <SheetOptionList
-          mode="single"
-          labelId={labelId}
-          selected={[value]}
-          options={options}
-          onToggle={(next) => {
-            // Rendered from `options` — the field's declared values, or the runtime catalogue
-            // standing in for them; the cast restores what the codec already guarantees.
-            setValue(next as T)
-          }}
-        />
-      </SheetField>
-    )
-  }
-
-  // The PANEL form (`docs/ASIDE-SPEC.md` §3): label above, control below, and the control is a
-  // full-width track while the set is small enough to read at ~300px, a `Select` past that. Not the
-  // sheet's `SheetOptionList`: an aside is a column of many rows, and a radio list per row would
-  // make one choice as tall as five.
-  if (inPanel) {
+  // The SHEET form is the PANEL form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+  // Drawer") — label above, control below, and the control is a full-width track while the set is
+  // small enough to read at ~300px, a `Select` past that. The sheet used to render a `SheetOptionList`
+  // (44px rows, a hairline between them), which did not scale: a filter with many options became a
+  // column of full-height rows as tall as the sheet itself, where a `PanelChoice` folds the same set
+  // behind a `Select` instead.
+  if (inSheet || inPanel) {
     return (
       <PanelRow
         label={label}

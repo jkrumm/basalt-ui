@@ -7,7 +7,7 @@
  * The harness is the one from `router-tanstack/search-store.router.test.tsx`, narrowed to one route
  * (the position questions are that file's job) and wrapped in a `MantineProvider`.
  */
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { ReactNode } from 'react'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -470,6 +470,63 @@ describe('MultiSelectFilter', () => {
   })
 })
 
+/**
+ * The facet row on the `panel`/`sheet` surface (`docs/CONTROLS-SPEC.md` §3, `multi-select-filter.tsx`'s
+ * `FacetList`) — an uncounted row used to be plain text with no visible affordance that it toggles
+ * at all (only `.facetCheck`'s mark appeared, and only once selected). `.mantine-CheckboxIndicator-
+ * indicator` is Mantine's own static class for `Checkbox.Indicator`'s root (the same
+ * `__staticSelector` convention `panel-row.test.tsx` reads off `SegmentedControl`'s label).
+ */
+describe('MultiSelectFilter — the facet row on the panel/sheet surface', () => {
+  const store = createSearchStore({
+    key: 'c-multi-facet',
+    fields: { channels: field.multi(['web', 'email', 'social'], []) },
+  })
+
+  test('with no counts, every row draws a visible checkbox box — not only a mark once selected', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => (
+        <FilterSetScope surface="panel" registry={null}>
+          <MultiSelectFilter field={store.field.channels} label="All channels" />
+        </FilterSetScope>
+      ),
+    })
+
+    // Three rows, three visible boxes — drawn whether or not the row is selected.
+    expect(document.querySelectorAll('.mantine-CheckboxIndicator-indicator')).toHaveLength(3)
+
+    const input = screen.getByRole('checkbox', { name: 'web' }) as HTMLInputElement
+    expect(input.checked).toBe(false)
+    fireEvent.click(input)
+    await waitFor(() => {
+      expect(input.checked).toBe(true)
+    })
+    // Still three boxes — selecting a row does not remove or replace its own.
+    expect(document.querySelectorAll('.mantine-CheckboxIndicator-indicator')).toHaveLength(3)
+  })
+
+  test('with counts, the bar/count rendering stays — no checkbox box drawn', async () => {
+    await mountPage({
+      validateSearch: store.validateSearch,
+      entry: '/dashboard',
+      Page: () => (
+        <FilterSetScope surface="panel" registry={null}>
+          <MultiSelectFilter
+            field={store.field.channels}
+            label="All channels"
+            counts={{ web: 12, email: 4, social: 1 }}
+          />
+        </FilterSetScope>
+      ),
+    })
+
+    expect(document.querySelectorAll('.mantine-CheckboxIndicator-indicator')).toHaveLength(0)
+    expect(screen.getByText('12')).toBeDefined()
+  })
+})
+
 describe('ToggleFilter', () => {
   const store = createSearchStore({
     key: 'c-toggle',
@@ -706,6 +763,60 @@ describe('ViewTabs', () => {
 
     expect(screen.getAllByRole('radio', { name: 'b', hidden: true })).toHaveLength(1)
     expect(screen.getByRole('combobox', { hidden: true })).toBeDefined()
+  })
+
+  describe('the phone form is fit-checked, not only count-checked', () => {
+    // happy-dom lays nothing out (`offsetWidth`/`clientWidth` are 0 for every element), which
+    // `useTrackFits` reads as `'unknown'` (not yet laid out) rather than "fits" — it is why every
+    // OTHER ViewTabs test above sees a track within the count cap. The overflow case has to be
+    // driven by hand: stub BOTH properties on `HTMLElement.prototype` (same technique
+    // `panel-row.test.tsx` uses for `PanelChoice`'s copy of this same gate) to a confident,
+    // uniform "does not fit" reading. Saved and restored via the ORIGINAL descriptor, never
+    // `Reflect.deleteProperty` — deleting would remove the descriptor happy-dom itself installed
+    // rather than reveal it, leaving both properties `undefined` for every test that runs after
+    // this block in the same file (same pattern `filter-set.test.tsx` uses).
+    const originalOffsetWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'offsetWidth',
+    )
+    const originalClientWidth = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'clientWidth',
+    )
+
+    afterEach(() => {
+      if (originalOffsetWidth !== undefined) {
+        Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth)
+      }
+      if (originalClientWidth !== undefined) {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
+      }
+    })
+
+    test('three options within a phone label that overflows: falls back to Select, not a clipped track', async () => {
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+        configurable: true,
+        get: () => 200,
+      })
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+        configurable: true,
+        get: () => 80,
+      })
+      const store = createSearchStore({
+        key: 'c-tabs-3-overflow',
+        fields: { tab: field.enum(['a', 'b', 'c'], 'a') },
+      })
+      await mountPage({
+        validateSearch: store.validateSearch,
+        entry: '/dashboard',
+        Page: () => <ViewTabs field={store.field.tab} />,
+      })
+
+      // The phone form (`hidden: true` — below-`sm` reachability isn't what this asserts) is a
+      // `combobox`, not a second `radiogroup`: within the count cap, the width gate alone decided.
+      expect(screen.getAllByRole('radiogroup', { hidden: true })).toHaveLength(1)
+      expect(screen.getByRole('combobox', { hidden: true })).toBeDefined()
+    })
   })
 
   test('both forms carry an accessible name — neither is an anonymous radiogroup/combobox', async () => {
@@ -1069,12 +1180,13 @@ describe('NumberFilter — the sheet form', () => {
     })
   }
 
-  test('the options form is a named option list, the stepper form a named input row', async () => {
+  test('the options form is a named choice, the stepper form a named input row', async () => {
     await openSheet()
-    // `group`, not `radiogroup`: the sheet form is a `<fieldset>` of native radios
-    // (`SheetOptionList`), pointed at its own visible `SheetField` heading.
-    expect(screen.getByRole('group', { name: 'Nights', hidden: true })).toBeDefined()
-    // The stepper is the input itself in a `SheetField` — no pill, no popover, one full-width row.
+    // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3): a 2-option preset set is a
+    // `PanelChoice` `SegmentedControl`, which carries Mantine's own `role="radiogroup"`, pointed at
+    // its own visible `PanelRow` heading.
+    expect(screen.getByRole('radiogroup', { name: 'Nights', hidden: true })).toBeDefined()
+    // The stepper is the input itself in a `PanelRow` — no pill, no popover, one full-width row.
     // Exactly ONE input in the document: `FilterSet` keeps the bar-row copy of every child mounted
     // (hidden slots are `display: none`, never unmounted), but the bar copy is a PILL whose popover
     // is closed, so the only rendered box is the sheet's.
