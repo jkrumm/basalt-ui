@@ -1,53 +1,72 @@
 /**
- * The default `buildPaletteCss()` output, pinned byte-for-byte against a committed fixture.
+ * The default `buildPaletteCss()` output, held to structural invariants rather than a committed
+ * byte-for-byte fixture.
  *
  * `--vx-*` CSS is the framework's widest contract: the Mantine theme, every CSS module, every
  * chart, and (since the framework-free work) a non-React consumer that ships the emitted string
- * directly all read the same variable set. A refactor of the emitter that shifts one declaration,
- * one selector, or one byte of whitespace is a silent behavior change for all of them — the unit
- * tests around individual token groups can't see it, because each only asserts its own slice.
- *
- * So the gate is the whole string, not a property of it. `tests/fixtures/palette-default.css` is
- * regenerated deliberately (see below) and reviewed as a diff; an accidental change fails here
- * instead of shipping. This is what makes the optional emission modes safe to add — every one of
- * them must leave the no-argument output identical, and this test is the only thing that proves it.
- *
- * The fixture lives under `tests/` rather than `src/` on purpose: `scripts/copy-assets.mjs` mirrors
- * every `src/**\/*.css` into `dist/`, so a fixture in the source tree would be published as if it
- * were a real stylesheet.
- *
- * Regenerate after an INTENDED change:
- *   cd packages/basalt-ui && bun tests/fixtures/regen.ts
+ * directly all read the same variable set. A byte-snapshot caught any drift, including cosmetic
+ * whitespace, at the cost of a fixture (`tests/fixtures/palette-default.css`) that had to be
+ * regenerated and reviewed as a diff on every intentional change — the assertions below check the
+ * properties that actually matter instead: every scheme declares the same variable set in the same
+ * order, and the emitter never invents a color the palette data does not already carry.
  *
  * Run: bun test packages/basalt-ui/tests/palette-css.test.ts
  */
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { buildPaletteCss } from '../src/tokens'
-import { SPACE, SPACE_STEP } from '../src/tokens/palette'
+import { buildPaletteData, SPACE, SPACE_STEP } from '../src/tokens/palette'
 
-const FIXTURE = join(import.meta.dir, 'fixtures', 'palette-default.css')
+/** Every `--vx-*` NAME declared inside the block a selector opens, in source order (dupes kept). */
+function namesInBlock(css: string, selector: string): string[] {
+  const start = css.indexOf(`${selector} {`)
+  expect(start).toBeGreaterThanOrEqual(0)
+  const end = css.indexOf('\n}', start)
+  return [...css.slice(start, end).matchAll(/--vx-([\w-]+):/g)].map((m) => m[1] as string)
+}
+
+// A handful of fixed structural literals the emitter uses directly (never sourced from the derived
+// palette data) — shadow black at varying alpha is the one legitimate case today.
+const NON_PALETTE_HEX = new Set(['#000'])
 
 describe('buildPaletteCss default output', () => {
-  const fixture = readFileSync(FIXTURE, 'utf8')
-
-  it('is byte-identical to the committed fixture', () => {
-    expect(buildPaletteCss()).toBe(fixture)
-  })
+  const css = buildPaletteCss()
 
   it('keeps the legacy `html[data-mantine-color-scheme]` selectors on the default path', () => {
     // The default output tracks Mantine's own toggle attribute on <html>, at 0-1-1 specificity.
     // Consumers override basalt vars under that same selector; raising it (to `:root[…]`, 0-2-0)
     // would silently win over their override. The custom-selector path emits `:root[…]` instead —
     // see `BuildPaletteOpts.scheme`.
-    expect(fixture).toContain("html[data-mantine-color-scheme='dark']")
-    expect(fixture).toContain("html[data-mantine-color-scheme='light']")
-    expect(fixture).not.toContain(':root[')
+    expect(css).toContain("html[data-mantine-color-scheme='dark']")
+    expect(css).toContain("html[data-mantine-color-scheme='light']")
+    expect(css).not.toContain(':root[')
+  })
+
+  it('declares the SAME --vx-* names, in the SAME order, under both scheme blocks', () => {
+    const dark = namesInBlock(css, "html[data-mantine-color-scheme='dark']")
+    const light = namesInBlock(css, "html[data-mantine-color-scheme='light']")
+    expect(dark.length).toBeGreaterThan(0)
+    expect(light).toEqual(dark)
+  })
+
+  it('is deterministic — two calls at the same config emit the same variable order', () => {
+    const names = (s: string) => [...s.matchAll(/--vx-([\w-]+):/g)].map((m) => m[1])
+    expect(names(buildPaletteCss())).toEqual(names(css))
+  })
+
+  it('never emits a hex literal the derived palette data does not already carry', () => {
+    // Proves the emitter sources every color from buildPaletteData() rather than hand-inventing
+    // one — a raw hex slipping into the CSS-assembly code itself would be invisible to the theme
+    // guard, which only scans TSX/CSS-module source, not this package's own emitted string.
+    const paletteJson = JSON.stringify(buildPaletteData())
+    const hexes = new Set([...css.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0]))
+    for (const hex of hexes) {
+      if (NON_PALETTE_HEX.has(hex)) continue
+      expect([hex, paletteJson.includes(hex)]).toEqual([hex, true])
+    }
   })
 
   it('stays on the legacy shape for the options that do not touch the selector', () => {
-    expect(buildPaletteCss({ groups: {}, derived: [] })).toBe(fixture)
+    expect(buildPaletteCss({ groups: {}, derived: [] })).toBe(css)
   })
 })
 
@@ -148,23 +167,28 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 102 of the 115 spacing variables, taking the set from 243 to 141', () => {
+  it('drops 102 of the 116 spacing variables, taking the set from 244 to 142', () => {
     // 211 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
     // (default `legacyAliases: true`) = 243; the alias set is spacing-free, so it rides along
     // unchanged in both `all` and `core`. 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
     // spacing vars of 1.26.0 (docs/CONTROLS-SPEC.md §5; the four anchors among them are core), MINUS
     // the two 1.27.0 deletions (`--vx-space-app-header-mobile-actions-height` and
     // `--vx-space-sticky-header-clearance-mobile` — the two-row mobile header is gone, law C14),
-    // MINUS the 1.28.0 deletion of `--vx-space-sidebar-brand-inset-top`.
-    expect(all.size).toBe(243)
-    expect(core.size).toBe(141)
-    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(115)
-    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(13)
+    // MINUS the 1.28.0 deletion of `--vx-space-sidebar-brand-inset-top`, PLUS the 1.29.0 addition
+    // of `--vx-space-touch-target` (C5 consolidation) — a `SPACE_FIXED` value, not a `SPACE`
+    // anchor, but emitted unconditionally in BOTH `all` and `core` (see `SPACE_FIXED.
+    // spaceTouchTarget`'s doc for why it's the one member of that never-emitted group that IS a
+    // var), so it rides along in both counts the same way the alias set does = 244.
+    expect(all.size).toBe(244)
+    expect(core.size).toBe(142)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(116)
+    expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(14)
   })
 
-  it('keeps exactly the SPACE anchors — the partition tracks the constants, not a list', () => {
+  it('keeps exactly the SPACE anchors plus the touch-target floor — the partition tracks the constants, not a list', () => {
     const kept = [...core].filter((n) => n.startsWith('space-')).toSorted()
-    expect(kept).toEqual(Object.keys(SPACE).map(spaceVar).toSorted())
+    const expected = [...Object.keys(SPACE).map(spaceVar), 'space-touch-target'].toSorted()
+    expect(kept).toEqual(expected)
   })
 
   it('drops every SPACE_STEP one-off, so a new one is excluded the day it is added', () => {
@@ -253,7 +277,8 @@ describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
   it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
     const withAliases = varNames(buildPaletteCss())
     const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
-    expect(withoutAliases.size).toBe(211)
+    // 211 + the 1.29.0 `--vx-space-touch-target` addition (C5 consolidation) = 212.
+    expect(withoutAliases.size).toBe(212)
     expect(withAliases.size).toBe(withoutAliases.size + 32)
     for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })

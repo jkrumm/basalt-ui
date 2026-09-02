@@ -1,5 +1,5 @@
 /**
- * `basalt-ui check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer line
+ * `check-coverage` — the 11 assertions (SURFACES consistency + the agent-layer line
  * budgets), and the generated `<!-- basalt:coverage -->` header each rule file carries
  * (docs/CONTROLS-SPEC.md §7).
  *
@@ -17,8 +17,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-import { GUARD_RULES } from '../guard/index'
-import { RULE_NAMES, SURFACES } from '../surfaces'
+import { GUARD_RULES } from '../src/guard/index'
+import { RULE_NAMES, SURFACES } from '../src/surfaces'
 import {
   COVERAGE_BLOCK_CLOSE,
   COVERAGE_BLOCK_OPEN,
@@ -28,7 +28,7 @@ import {
   coverageFor,
   readCoverageBlock,
   reconcileCoverageBlocks,
-} from './index'
+} from './check-coverage'
 
 const FRONTMATTER = `---\nsource: basalt-ui\ndescription: d\npaths:\n  - 'src/**'\n---\n`
 
@@ -64,7 +64,7 @@ describe('checkCoverage', () => {
   it('holds every shipped agent-layer file inside its budget, and the rules inside the total', () => {
     // Assertion 10, read off the real layer rather than a fixture: the budgets ARE the doctrine, so
     // the interesting failure is a shipped rule growing past one, not a synthetic file doing it.
-    const pkgRoot = resolve(import.meta.dir, '../..')
+    const pkgRoot = resolve(import.meta.dir, '..')
     const lines = (rel: string) =>
       readFileSync(resolve(pkgRoot, rel), 'utf8').split('\n').length - 1
     const total = RULE_NAMES.reduce((sum, rule) => sum + lines(`agent/rules/basalt-${rule}.md`), 0)

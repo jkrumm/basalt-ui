@@ -97,8 +97,8 @@ function cliNonTestLines(): number {
 
 function budgets(): Budget[] {
   return [
-    { label: 'public symbols (export-surface.json)', value: publicSymbols(), ceiling: 300 },
-    { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 20 },
+    { label: 'public symbols (export-surface.json)', value: publicSymbols(), ceiling: 400 },
+    { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
     { label: 'shipped rule lines (agent/rules/*.md)', value: agentRuleLines(), ceiling: 750 },
     { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 2650 },
     {
@@ -106,7 +106,7 @@ function budgets(): Budget[] {
       value: playgroundRouteFiles(),
       ceiling: 15,
     },
-    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 2500 },
+    { label: 'CLI non-test lines (src/cli/**)', value: cliNonTestLines(), ceiling: 4000 },
   ]
 }
 

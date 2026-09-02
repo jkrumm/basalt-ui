@@ -5,9 +5,25 @@
  * `init` scaffolding a guard that scans zero files, seeded configs whose `extends` resolved to
  * nothing, and `tokens:css` output basalt's own guard rejected. Every test below pins one of those
  * false-greens shut. The unit under test is always "does the tool TELL you", not "does it work".
+ *
+ * C2 (the CLI-consolidation wave) deleted the multi-repo/workspace project-DISCOVERY `doctor` and
+ * `check-theme`/`sync` used to share (`resolveProjectDir` is now BASALT_CWD → cwd, nothing
+ * inferred, nothing ascended/descended) and narrowed `doctor` to four checks (manifest exists,
+ * oxlint-preset, lefthook wired via `lefthook dump`, ai-major-parity within one package.json). The
+ * describe blocks below that tested the deleted relocation/ambiguity/icon/spacing-scale/
+ * version-match machinery were removed with it; what remains still holds.
  */
+import { execSync } from 'node:child_process'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -25,6 +41,8 @@ import {
 } from './index.ts'
 
 const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
+const REPO_ROOT = resolve(PKG_ROOT, '..', '..')
+const REAL_LEFTHOOK_BIN = resolve(REPO_ROOT, 'node_modules/.bin/lefthook')
 const CLI_VERSION = (
   JSON.parse(readFileSync(resolve(PKG_ROOT, 'package.json'), 'utf8')) as { version: string }
 ).version
@@ -83,6 +101,18 @@ function healthyFixture(): void {
   installBasalt()
 }
 
+/**
+ * Makes `dir` a REAL git repo with a resolvable `node_modules/.bin/lefthook`, so
+ * `inspectLefthookGate`'s `lefthook dump --format json` subprocess actually runs against it instead
+ * of falling into the `unreadable` (advisory) outcome. Uses this repo's own installed lefthook via
+ * a symlink — there is no reason to vendor a second copy just for a fixture.
+ */
+function enableRealLefthook(): void {
+  execSync('git init -q', { cwd: dir })
+  mkdirSync(join(dir, 'node_modules/.bin'), { recursive: true })
+  symlinkSync(REAL_LEFTHOOK_BIN, join(dir, 'node_modules/.bin/lefthook'))
+}
+
 beforeEach(() => {
   dir = mkdtempSync(resolve(tmpdir(), 'basalt-wiring-'))
 })
@@ -97,38 +127,6 @@ describe('doctor — a check that cannot run is not a check that passed', () => 
     const { code, log } = capture(() => doctor(dir))
     expect(log).toContain('All checks passed.')
     expect(code).toBe(0)
-  })
-
-  it('reports SKIPPED and exits non-zero when basalt-ui does not resolve, instead of dropping the checks', () => {
-    healthyFixture()
-    rmSync(join(dir, 'node_modules'), { recursive: true, force: true })
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('SKIPPED')
-    expect(log).toContain('does not resolve')
-    expect(log).not.toContain('All checks passed.')
-    expect(code).toBe(1)
-  })
-
-  it('finds an install that lives beside a workspace package rather than at the root', () => {
-    healthyFixture()
-    rmSync(join(dir, 'node_modules'), { recursive: true, force: true })
-    write(
-      'package.json',
-      JSON.stringify({ name: 'root', workspaces: ['packages/*'], basalt: { roots: ['src'] } }),
-    )
-    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
-    installBasalt('packages/lib')
-    const { log } = capture(() => doctor(dir))
-    expect(log).toContain('packages/lib/node_modules/basalt-ui')
-    expect(log).not.toContain('SKIPPED')
-  })
-
-  it('hard-fails when check-theme would scan zero files — the two commands may not disagree', () => {
-    healthyFixture()
-    rmSync(join(dir, 'src'), { recursive: true, force: true })
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('guard-scan: check-theme would scan 0 files')
-    expect(code).toBe(1)
   })
 
   it('hard-fails when .oxlintrc.json does not extend the shipped preset', () => {
@@ -147,50 +145,24 @@ describe('doctor — a check that cannot run is not a check that passed', () => 
     expect(log).toContain('.oxlintrc.json missing')
     expect(code).toBe(1)
   })
-
-  it('relocates to the single workspace package carrying the basalt config', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-    write('apps/web/package.json', JSON.stringify({ name: 'web', basalt: { roots: ['src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write(
-      'apps/web/.oxlintrc.json',
-      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }',
-    )
-    write(
-      join('apps/web', MANIFEST_PATH),
-      JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }),
-    )
-    installBasalt('apps/web')
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('reporting on ./apps/web')
-    expect(code).toBe(0)
-  })
 })
 
 describe('doctor — tokens-only profile', () => {
   function tokensOnlyFixture(): void {
-    write('package.json', JSON.stringify({ name: 'static-site' }))
+    write(
+      'package.json',
+      JSON.stringify({ name: 'static-site', basalt: { profile: 'tokens-only' } }),
+    )
     installBasalt()
   }
 
-  it('does not tell a Mantine-free consumer to run init, and passes on a matching version', () => {
+  it('does not tell a Mantine-free consumer to run init, and reports every check n/a', () => {
     tokensOnlyFixture()
     const { code, log } = capture(() => doctor(dir))
     expect(log).toContain('profile: tokens-only')
     expect(log).not.toContain('run `basalt-ui init` to scaffold')
-    expect(log).toContain('matches the installed basalt-ui')
+    expect(log).toContain('n/a')
     expect(code).toBe(0)
-  })
-
-  it('still reaches the CLI-vs-installed version check that the manifest failure used to shadow', () => {
-    write('package.json', JSON.stringify({ name: 'static-site' }))
-    write(
-      'node_modules/basalt-ui/package.json',
-      JSON.stringify({ name: 'basalt-ui', version: '0.4.2' }),
-    )
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('0.4.2')
-    expect(code).toBe(0) // a stale bunx fetch is a warning, not a hard failure
   })
 
   it('--framework forces the full profile on the same repo', () => {
@@ -330,91 +302,6 @@ describe('init — seeds resolve basalt where it actually installed', () => {
   })
 })
 
-describe('check-theme — finds the config a root-invoked hook cannot see', () => {
-  it('relocates to the one workspace package carrying a basalt config', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-    write('apps/web/package.json', JSON.stringify({ name: 'web', basalt: { roots: ['src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('running in ./apps/web')
-    expect(log).toContain('no off-palette colors')
-    expect(code).toBe(0)
-  })
-
-  it('reports ambiguity rather than guessing when two packages carry a config', () => {
-    ambiguousWorkspace()
-    const { code, log } = capture(() => checkTheme(dir))
-    expect(log).toContain('2 packages below it carry one')
-    expect(log).toContain('BASALT_CWD')
-    expect(code).toBe(1)
-  })
-})
-
-/** A root with no basalt config and two workspace packages that each carry one. */
-function ambiguousWorkspace(): void {
-  write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-  write('apps/a/package.json', JSON.stringify({ name: 'a', basalt: { roots: ['src'] } }))
-  write('apps/a/src/app.tsx', 'export const A = () => null\n')
-  write('apps/b/package.json', JSON.stringify({ name: 'b', basalt: { roots: ['src'] } }))
-  write('apps/b/src/app.tsx', 'export const B = () => null\n')
-}
-
-describe('doctor — an ambiguous project is terminal, exactly as it is for check-theme', () => {
-  it('short-circuits instead of running every check against the wrong root', () => {
-    ambiguousWorkspace()
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('2 packages below it carry one')
-    expect(log).toContain('BASALT_CWD')
-    expect(code).toBe(1)
-    // The bug this pins shut: falling back to the invocation cwd ran the remaining checks against
-    // a root that has no config, burying the real error under failures caused by looking there.
-    expect(log).not.toContain('would scan 0 files')
-    expect(log).not.toContain('.oxlintrc.json missing')
-    expect(log).not.toContain('manifest.json missing')
-  })
-
-  it('agrees with check-theme on the same tree', () => {
-    ambiguousWorkspace()
-    expect(capture(() => doctor(dir)).code).toBe(capture(() => checkTheme(dir)).code)
-  })
-
-  it('still runs normally once BASALT_CWD picks a package', () => {
-    ambiguousWorkspace()
-    const { code, log } = capture(() => doctor(join(dir, 'apps/a')))
-    expect(log).not.toContain('packages below it carry one')
-    expect(code).toBe(1) // no install / no manifest there — but the checks RAN
-    expect(log).toContain('guard-scan')
-  })
-})
-
-describe('doctor — no check may vanish from the report', () => {
-  it('SKIPS the spacing-scale check when there is no manifest, rather than printing nothing', () => {
-    // A Mantine app that never ran `init`: framework profile, no manifest to compare against.
-    write(
-      'package.json',
-      JSON.stringify({
-        name: 'app',
-        dependencies: { '@mantine/core': '^9.0.0' },
-        basalt: { roots: ['src'] },
-      }),
-    )
-    write('src/app.tsx', 'export const App = () => null\n')
-    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    installBasalt()
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('spacing scale')
-    expect(log).toContain('SKIPPED')
-    expect(code).toBe(1)
-  })
-
-  it('calls the spacing check n/a — not silent — for a tokens-only consumer', () => {
-    write('package.json', JSON.stringify({ name: 'site', basalt: { profile: 'tokens-only' } }))
-    installBasalt()
-    const { log } = capture(() => doctor(dir))
-    expect(log).toContain('spacing scale: n/a')
-  })
-})
-
 describe('--tokens-only and --framework are alternatives, not a precedence question', () => {
   it('check-theme rejects both together', () => {
     write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
@@ -505,14 +392,6 @@ describe('check-theme — tokens-only profile', () => {
     const { log } = capture(() => checkTheme(dir))
     expect(log).not.toContain('tokens-only profile')
     expect(log).toContain('raw-form-control')
-  })
-
-  it('doctor infers the shape and tells the consumer to declare it', () => {
-    write('package.json', JSON.stringify({ name: 'site' }))
-    installBasalt()
-    const { log } = capture(() => doctor(dir))
-    expect(log).toContain('profile: tokens-only')
-    expect(log).toContain('"profile": "tokens-only"')
   })
 })
 
@@ -755,30 +634,41 @@ describe('doctor — the oxlint-preset check resolves the path, not just the str
   })
 })
 
-describe('doctor — the lefthook extends target, the seam that fails SILENTLY', () => {
-  it('hard-fails on a missing target: lefthook merges it to zero commands and exits 0', () => {
+/**
+ * `inspectLefthookGate` reads the repo's pre-commit gate via `lefthook dump --format json` (real
+ * subprocess) rather than hand-parsed YAML — it resolves `extends`/`include`/remote configs/
+ * `root:` the way lefthook itself does, which a string match on `extends:` cannot. `enableRealLefthook`
+ * makes the fixture a genuine git repo with a resolvable local `lefthook` bin, so `dump` actually
+ * runs; the `unreadable` test deliberately skips that setup to exercise the no-binary path.
+ */
+describe('doctor — the lefthook pre-commit gate, read via `lefthook dump`', () => {
+  it('is not applicable when the repo runs no lefthook config at all', () => {
     healthyFixture()
-    write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
     const { code, log } = capture(() => doctor(dir))
-    expect(code).toBe(1)
-    expect(log).toContain('ZERO commands')
+    expect(code).toBe(0)
+    expect(log).toContain('lefthook-preset: n/a')
   })
 
-  it('passes when the target resolves', () => {
+  it('passes when a config EXTENDS the shipped preset and dump resolves a real command through it', () => {
     healthyFixture()
-    write('node_modules/basalt-ui/configs/lefthook.yml', 'pre-commit:\n  commands: {}\n')
+    enableRealLefthook()
+    write(
+      'node_modules/basalt-ui/configs/lefthook.yml',
+      'pre-commit:\n  commands:\n    check-theme:\n      run: bunx basalt-ui check-theme\n',
+    )
     write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
-    expect(log).toContain('extends the shipped lefthook preset')
+    expect(log).toContain('shows a pre-commit command running check-theme')
   })
 
   it('passes a repo that spells the gate out instead of extending — the check is the GATE', () => {
     // linewatch's root lefthook.yml runs all three jobs with `root: 'web/'`, because `extends`
     // merges commands WITHOUT their working directory: the preset's `bunx oxlint` would run at the
-    // repo root where there is no .oxlintrc.json. Testing for the extends STRING warned at a
-    // correctly-wired repo and prescribed a change that would have broken it.
+    // repo root where there is no .oxlintrc.json. `lefthook dump` resolves `root:` the same way
+    // lefthook itself does, so this is judged on the merged config, not a string match.
     healthyFixture()
+    enableRealLefthook()
     write(
       'lefthook.yml',
       "pre-commit:\n  commands:\n    theme-guard:\n      root: 'web/'\n" +
@@ -786,24 +676,106 @@ describe('doctor — the lefthook extends target, the seam that fails SILENTLY',
     )
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
-    expect(log).toContain('a pre-commit command runs check-theme directly — the gate exists')
+    expect(log).toContain('shows a pre-commit command running check-theme')
   })
 
-  it('is advisory, never confident, when neither the text nor `lefthook dump` settles it', () => {
-    // A check that is confidently wrong is worse than one that admits its limit: an `include:` or a
-    // remote config carries commands this reader never sees.
+  it('warns when dump resolves the merged config and NO command runs check-theme', () => {
+    healthyFixture()
+    enableRealLefthook()
+    write('lefthook.yml', 'pre-commit:\n  commands:\n    mine:\n      run: echo hi\n')
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('warning(s)')
+    expect(log).toContain('NO pre-commit')
+    expect(log).toContain('command runs check-theme')
+  })
+
+  it('warns instead of guessing when `lefthook dump` cannot be run at all', () => {
+    // No real lefthook bin wired (enableRealLefthook not called), so the local-bin lookup falls
+    // through to the bare `lefthook` name, which is not on PATH in a test process — an honest
+    // "cannot judge" rather than a fabricated pass or fail.
     healthyFixture()
     write('lefthook.yml', 'pre-commit:\n  commands:\n    mine:\n      run: echo hi\n')
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
-    expect(log).toContain('cannot tell a missing gate from one wired through an `include:`')
+    expect(log).toContain('could not be run or parsed')
+    expect(log).toContain('warning(s)')
+  })
+})
+
+describe('doctor — ai-major-parity within one package.json', () => {
+  it('hard-fails when dependencies and peerDependencies disagree on the ai major', () => {
+    healthyFixture()
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { roots: ['src'] },
+        dependencies: { ai: '5.0.196' },
+        peerDependencies: { ai: '^7.0.18' },
+      }),
+    )
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(1)
+    expect(log).toContain('ai package major version mismatch within this package.json')
+    expect(log).toContain('dependencies@ai5')
+    expect(log).toContain('peerDependencies@ai7')
   })
 
-  it('is not applicable when the repo runs no lefthook at all', () => {
+  it('passes when every declaring field agrees', () => {
+    healthyFixture()
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { roots: ['src'] },
+        dependencies: { ai: '^7.0.15' },
+        devDependencies: { ai: '^7.0.18' },
+      }),
+    )
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('ai package major is consistent within this package.json (ai@7)')
+  })
+
+  it('passes and names nothing to compare when this package.json declares no ai dependency', () => {
     healthyFixture()
     const { code, log } = capture(() => doctor(dir))
     expect(code).toBe(0)
-    expect(log).toContain('lefthook-preset: n/a')
+    expect(log).toContain('ai-major-parity')
+    expect(log).toContain('nothing to compare')
+  })
+
+  it('a declared aiMajorSkewReason exempts a real skew', () => {
+    healthyFixture()
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { roots: ['src'], aiMajorSkewReason: 'neutralized by a producer-side transform' },
+        dependencies: { ai: '5.0.196' },
+        peerDependencies: { ai: '^7.0.18' },
+      }),
+    )
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('exempted via basalt.aiMajorSkewReason')
+  })
+
+  it('a stale aiMajorSkewReason (majors now agree) warns rather than passing silently', () => {
+    healthyFixture()
+    write(
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { roots: ['src'], aiMajorSkewReason: 'no longer skewed, forgot to delete this' },
+        dependencies: { ai: '^7.0.18' },
+      }),
+    )
+    const { code, log } = capture(() => doctor(dir))
+    expect(code).toBe(0)
+    expect(log).toContain('aiMajorSkewReason')
+    expect(log).toContain('no longer needed')
   })
 })
 
@@ -854,13 +826,14 @@ describe('sync — basalt.roots is drift, and sync is the drift command', () => 
     expect(log).toContain('"basalt.roots" is not set')
   })
 
-  it('reports a lefthook extends target that no longer resolves', () => {
+  it('warns when dump resolves and no pre-commit command runs check-theme', () => {
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
     write('src/app.tsx', 'export const App = () => null\n')
-    write('lefthook.yml', 'extends:\n  - node_modules/basalt-ui/configs/lefthook.yml\n')
+    enableRealLefthook()
+    write('lefthook.yml', 'pre-commit:\n  commands:\n    mine:\n      run: echo hi\n')
     const { log } = capture(() => sync({}, dir))
-    expect(log).toContain('ZERO commands')
+    expect(log).toContain('no pre-commit command runs check-theme')
   })
 })
 
@@ -883,8 +856,7 @@ describe('init — the seeded lefthook.yml pins the guard to the local bin', () 
 // that package.json, and scaffolded a complete competing install (`.basalt/`, `.oxlintrc.json`,
 // `.oxfmtrc.json`, `DESIGN.md`, 13 rules, 3 skills, and in rb's case a `src/routes/__root.tsx`
 // into an app that hand-writes its router) beside the real one at the repo root. Nothing warned.
-// Both consumers reverted it by hand. `check-theme` and `doctor` already relocate; `sync` — the one
-// command that WRITES — did not.
+// Both consumers reverted it by hand.
 
 /** A workspace whose basalt install lives at the ROOT, with an app package below it. */
 function installAtRoot(): void {
@@ -930,25 +902,6 @@ describe('sync — a scaffold is init’s decision, never a drift refresh’s', 
     expect(log).toContain('basalt-ui init')
   })
 
-  it('relocates to the single workspace package carrying the install, exactly as doctor does', () => {
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-    write('apps/web/package.json', JSON.stringify({ name: 'web', basalt: { roots: ['src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write(join('apps/web', MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
-    const { code, log } = capture(() => sync({ check: true }, dir))
-    expect(log).toContain('running in ./apps/web, where it lives')
-    // --check on an unsynced package is legitimately stale; what matters is WHERE it looked.
-    expect(code).toBe(1)
-  })
-
-  it('short-circuits on an ambiguous workspace instead of picking one to scaffold', () => {
-    ambiguousWorkspace()
-    const { code, log } = capture(() => sync({}, dir))
-    expect(code).toBe(1)
-    expect(log).toContain('2 packages below it carry one')
-    expect(log).toContain('BASALT_CWD')
-  })
-
   it('says created, not recreated, for a file the ledger never recorded', () => {
     // `0 updated, 20 recreated` described a scaffold as a refresh. "Recreated" means the ledger
     // placed it once and it went missing; a file basalt never wrote here is CREATED.
@@ -971,10 +924,6 @@ describe('sync — a scaffold is init’s decision, never a drift refresh’s', 
 })
 
 // ── doctor's exit status, pinned per outcome ──────────────────────────────────────────────────
-//
-// argo reported two hard failures exiting 0. It does not reproduce (see the report), but the gap
-// that let 1.20.0 ship a SKIPPED-exits-0 bug was that the tests asserted printed TEXT and never the
-// status. These assert the status for every outcome, including the combinations.
 
 describe('doctor — exit status per outcome, not per printed string', () => {
   it('pass-only exits 0 and is the only state that may print "All checks passed"', () => {
@@ -986,8 +935,12 @@ describe('doctor — exit status per outcome, not per printed string', () => {
   it('warn-only exits 0 — a warning is a schedule, not a build break', () => {
     healthyFixture()
     write(
-      'node_modules/basalt-ui/package.json',
-      JSON.stringify({ name: 'basalt-ui', version: '0.4.2' }),
+      'package.json',
+      JSON.stringify({
+        name: 'fixture',
+        basalt: { roots: ['src'], aiMajorSkewReason: 'no longer skewed, forgot to delete this' },
+        dependencies: { ai: '^7.0.18' },
+      }),
     )
     const { code, log } = capture(() => doctor(dir))
     expect(log).toContain('warning(s)')
@@ -1005,8 +958,7 @@ describe('doctor — exit status per outcome, not per printed string', () => {
   })
 
   it('TWO hard failures exit 1 — the shape argo reported as exiting 0', () => {
-    // argo's exact pair: no manifest and no .oxlintrc.json, in a Mantine repo (so the profile
-    // stays `framework` and both checks are real rather than n/a).
+    // argo's exact pair: no manifest and no .oxlintrc.json, in a Mantine repo.
     healthyFixture()
     write(
       'package.json',
@@ -1023,104 +975,11 @@ describe('doctor — exit status per outcome, not per printed string', () => {
     expect(code).toBe(1)
   })
 
-  it('a SKIPPED check exits 1 on its own, with no failure and no warning', () => {
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    write('src/app.tsx', 'export const App = () => null\n')
-    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('SKIPPED')
-    expect(code).toBe(1)
-  })
-
-  it('an ambiguous project exits 1 before any check runs', () => {
-    ambiguousWorkspace()
-    expect(capture(() => doctor(dir)).code).toBe(1)
-  })
-
   it('contradictory profile flags exit 1', () => {
     healthyFixture()
     expect(capture(() => doctor(dir, ['--tokens-only', '--framework'])).code).toBe(1)
   })
 })
-
-// ── the project resolver, for a repo that declares no workspaces ───────────────────────────────
-//
-// linewatch keeps its whole basalt consumer in `web/` and declares no `workspaces` field anywhere.
-// Measured at its repo root, all three project-scoped commands got that wrong in a different way:
-// `check-theme` printed `✓ no off-palette colors` having scanned ZERO files, `doctor` inferred
-// `tokens-only` for a full Mantine consumer, and `sync` refused while naming `basalt-ui init` as
-// the remedy — the one command that WOULD have written a competing install at the root. The
-// workspace-declaration path already handled image-share's `apps/admin`; nothing handled this.
-
-/** linewatch's shape: no `workspaces` field, the whole consumer one directory down. */
-function undeclaredChild(child = 'web'): void {
-  write('package.json', JSON.stringify({ name: 'root' }))
-  write(`${child}/package.json`, JSON.stringify({ name: child, basalt: { roots: ['src'] } }))
-  write(`${child}/src/app.tsx`, "export const c = '#ff0000'\n")
-  write(join(child, MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
-}
-
-describe('resolveProjectDir — a repo that declares no workspaces still has a layout', () => {
-  it('sync relocates into the undeclared child instead of refusing with init as the advice', () => {
-    undeclaredChild()
-    const { log } = capture(() => sync({ check: true }, dir))
-    expect(log).toContain('running in ./web, where it lives')
-    expect(log).not.toContain('basalt-ui init')
-  })
-
-  it('sync writes NOTHING at the root it was invoked from', () => {
-    undeclaredChild()
-    capture(() => sync({}, dir))
-    expect(readdirSync(dir).toSorted()).toEqual(['package.json', 'web'])
-    expect(readPkg()['basalt']).toBeUndefined()
-  })
-
-  it('check-theme scans the child rather than reporting green over zero files', () => {
-    undeclaredChild()
-    const { code, log } = capture(() => checkTheme(dir, []))
-    expect(log).toContain('running in ./web, where it lives')
-    expect(log).not.toContain('no off-palette colors')
-    expect(code).toBe(1)
-  })
-
-  it('doctor reports on the child, so it cannot infer tokens-only from the empty root', () => {
-    undeclaredChild()
-    const { log } = capture(() => doctor(dir, []))
-    expect(log).toContain(join(dir, 'web'))
-    expect(log).not.toContain('profile: tokens-only')
-  })
-
-  it('two undeclared children are ambiguous, named, and never guessed between', () => {
-    undeclaredChild('web')
-    undeclaredChild('admin')
-    const { code, log } = capture(() => sync({}, dir))
-    expect(code).toBe(1)
-    expect(log).toContain('2 packages below it carry one')
-    expect(log).toContain('./admin')
-    expect(log).toContain('./web')
-    expect(readdirSync(dir)).not.toContain('DESIGN.md')
-  })
-
-  it('a declared workspaces field still wins — the layout scan is a fallback, not a union', () => {
-    // `stray/` carries a basalt key but is not a workspace package. Treating both as candidates
-    // would turn a working single-candidate repo into an ambiguity error on upgrade.
-    write('package.json', JSON.stringify({ name: 'root', workspaces: ['apps/*'] }))
-    write('apps/web/package.json', JSON.stringify({ name: 'web', basalt: { roots: ['src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write(join('apps/web', MANIFEST_PATH), JSON.stringify({ version: 1, files: {} }))
-    write('stray/package.json', JSON.stringify({ name: 'stray', basalt: { roots: ['src'] } }))
-    const { log } = capture(() => sync({ check: true }, dir))
-    expect(log).toContain('running in ./apps/web, where it lives')
-  })
-})
-
-// ── sync honours the profile doctor already reads ──────────────────────────────────────────────
-//
-// rollhook is tokens-only in both apps and declares it. `sync` told it to run `basalt-ui init` —
-// the exact advice `doctor`, in the same directory at the same version, exists to prevent — and
-// exited 1, which also put `sync --check` out of reach of the one CI drift gate every other
-// consumer runs.
 
 describe('sync — tokens-only is a pass, not a refusal', () => {
   function tokensOnly(): void {
@@ -1168,191 +1027,17 @@ describe('sync — tokens-only is a pass, not a refusal', () => {
 // `DESIGN.md` is a seed: written once at init, then consumer-owned and never reconciled. Its
 // opener stamped `{{BASALT_VERSION}}`, so across the seven consumers the same line read 1.0.0,
 // 1.9.0, 1.21.0 and 1.22.0 under an identical 1.22.0 install — reported three rounds running as
-// four separate doc bugs. It was one bug: a version number in a file nothing ever rewrites.
+// four separate doc bugs. The fix was in the TEMPLATE (dropping the stamped version from what
+// `init` seeds); a since-retired `migrateDesignVersionLine` used to also heal an already-seeded
+// file's stale opener in place on `sync` — dropped by C2 as one-time migration machinery a
+// greenfield, single-owner fleet no longer needs.
 
-describe('DESIGN.md carries no version, and sync heals the ones already written', () => {
-  function seeded(): void {
+describe('DESIGN.md carries no version', () => {
+  it('a fresh scaffold stamps no version at all', () => {
     write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
     write('src/app.tsx', 'export const App = () => null\n')
     capture(() => init(dir))
-  }
-
-  it('a fresh scaffold stamps no version at all', () => {
-    seeded()
     expect(read('DESIGN.md')).not.toMatch(/Managed by basalt-ui \(\d+\.\d+\.\d+\)/)
     expect(read('DESIGN.md')).toContain('run `basalt-ui doctor` for the version')
-  })
-
-  it('sync rewrites a stale opener in place and leaves the rest of the file alone', () => {
-    seeded()
-    const consumerOwned = '\n## Series\n\nOurs: hrv, rhr.\n'
-    write('DESIGN.md', `# app — Design\n\n> Managed by basalt-ui (1.9.0). Thin.\n${consumerOwned}`)
-    capture(() => sync({}, dir))
-    expect(read('DESIGN.md')).toContain(
-      '> Managed by basalt-ui — run `basalt-ui doctor` for the version. Thin.',
-    )
-    expect(read('DESIGN.md')).toContain(consumerOwned)
-  })
-
-  it('--check writes nothing, including the heal', () => {
-    seeded()
-    const stale = '# app — Design\n\n> Managed by basalt-ui (1.9.0). Thin.\n'
-    write('DESIGN.md', stale)
-    capture(() => sync({ check: true }, dir))
-    expect(read('DESIGN.md')).toBe(stale)
-  })
-
-  it('leaves an opener the consumer already rewrote by hand untouched', () => {
-    seeded()
-    const owned = '# app — Design\n\n> Our own words entirely.\n'
-    write('DESIGN.md', owned)
-    capture(() => sync({}, dir))
-    expect(read('DESIGN.md')).toBe(owned)
-  })
-})
-
-// ── The ascend direction ──────────────────────────────────────────────────────
-// Round 9, basalt-ui-obsidian: from `apps/demo` — a package with no `basalt` key of its own —
-// `check-theme` invented `roots: ["src"]`, scanned 22 of the repo's 44 guarded files, printed
-// `✓ no off-palette colors`, and reported the invention back as `basalt.roots (src)`. Its
-// `--audit-allows` then reported `0 live` for a repo carrying one live waiver: a clean slate from
-// the one command whose entire job is to deny one. `doctor`, standing in the same directory,
-// already resolved the parent. The descend direction announced itself; only ascend was silent.
-describe('check-theme / doctor — ascend to the parent config instead of fabricating one', () => {
-  /** Repo root owns the config and names TWO roots; neither package declares anything. */
-  function twoRootRepo(): void {
-    write('.git/HEAD', 'ref: refs/heads/master\n')
-    write(
-      'package.json',
-      JSON.stringify({
-        name: 'fixture',
-        workspaces: ['packages/*', 'apps/*'],
-        basalt: { roots: ['packages/lib/src', 'apps/demo/src'] },
-      }),
-    )
-    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
-    write('apps/demo/package.json', JSON.stringify({ name: 'demo' }))
-    write('apps/demo/src/App.tsx', 'export const App = () => null\n')
-  }
-
-  it('scans the WHOLE declared surface from a package that declares nothing, and says so', () => {
-    twoRootRepo()
-    // The violation sits in the sibling root — the half the fabricated `src` default never read.
-    write('packages/lib/src/Card.tsx', `export const C = () => <div style={{ borderRadius: 8 }} />`)
-
-    const { code, log } = capture(() => checkTheme(join(dir, 'apps/demo')))
-    expect(log).toContain('running in ../.., where it lives')
-    expect(code).toBe(1)
-    expect(log).toContain('raw-surface')
-  })
-
-  it('--audit-allows reports the repo’s real waiver count, not zero', () => {
-    twoRootRepo()
-    write(
-      'packages/lib/src/Card.tsx',
-      'export const C = () => <div style={{ borderRadius: 8 }} /> // theme-allow: legacy widget\n',
-    )
-
-    const { code, log } = capture(() => checkTheme(join(dir, 'apps/demo'), ['--audit-allows']))
-    expect(code).toBe(0)
-    expect(log).toContain('1 live, 0 dead')
-    expect(log).toContain('basalt.roots (packages/lib/src, apps/demo/src)')
-  })
-
-  it('doctor and check-theme now answer with the SAME project dir', () => {
-    twoRootRepo()
-    write('packages/lib/src/Card.tsx', 'export const C = () => null\n')
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
-    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    installBasalt()
-
-    const { log } = capture(() => doctor(join(dir, 'apps/demo')))
-    expect(log).toContain('reporting on ../.., where it lives')
-    expect(log).toContain(`basalt-ui doctor — ${dir}`)
-  })
-
-  it('never ascends out of the repo — no .git above cwd means no ancestor to read', () => {
-    // No `.git` anywhere: the walk has no bound, so it refuses to walk at all and the built-in
-    // defaults apply exactly as they did before. A standalone consumer is untouched by this.
-    write('package.json', JSON.stringify({ name: 'root', basalt: { roots: ['packages/lib/src'] } }))
-    write('packages/lib/package.json', JSON.stringify({ name: 'lib' }))
-    write('packages/lib/src/App.tsx', 'export const App = () => null\n')
-
-    const { code, log } = capture(() => checkTheme(join(dir, 'packages/lib')))
-    expect(log).not.toContain('where it lives')
-    expect(code).toBe(0)
-  })
-
-  it('BASALT_CWD still wins over the ascend', () => {
-    twoRootRepo()
-    write('packages/lib/src/Card.tsx', 'export const C = () => null\n')
-    write('apps/demo/package.json', JSON.stringify({ name: 'demo', basalt: { roots: ['src'] } }))
-    process.env['BASALT_CWD'] = join(dir, 'apps/demo')
-    try {
-      const { code, log } = capture(() => checkTheme(dir, ['--audit-allows']))
-      expect(code).toBe(0)
-      expect(log).toContain('basalt.roots (src)')
-    } finally {
-      delete process.env['BASALT_CWD']
-    }
-  })
-})
-
-// ── The icons check, reachable wherever doctor runs ───────────────────────────
-// Round 9, rb and argo: the root run — the ONLY invocation that can exit 0 on a monorepo layout —
-// omitted the icons check entirely, with no `⊘ SKIPPED` line. It read `cwd/public` and `cwd`'s
-// vite config, and in a monorepo both live in the app package. A check that vanishes without a
-// word is indistinguishable from one that passed.
-describe('doctor — the icons check is reachable from the root, or says why not', () => {
-  /** A monorepo whose app package owns the vite config, the public/ tree and nothing else. */
-  function appPackageRepo(viteConfig: string): void {
-    write('.git/HEAD', 'ref: refs/heads/master\n')
-    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['apps/web/src'] } }))
-    write('apps/web/src/app.tsx', 'export const App = () => null\n')
-    write('apps/web/vite.config.ts', viteConfig)
-    write('.oxlintrc.json', '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }')
-    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: CLI_VERSION }))
-    installBasalt()
-  }
-
-  it('reads the app package’s `icons` array from a ROOT-invoked run', () => {
-    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
-    write('apps/web/public/favicon.svg', '<svg/>')
-
-    const { log } = capture(() => doctor(dir))
-    expect(log).toContain("apps/web/public/ has all 1 icon file(s) basaltAppPlugin's `icons`")
-  })
-
-  it('reports a missing icon from the root too — it is not just reachable, it judges', () => {
-    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
-    write('apps/web/public/.keep', '')
-
-    const { log } = capture(() => doctor(dir))
-    expect(log).toContain('basaltAppPlugin declares icon(s) that are not in ./apps/web/public/')
-  })
-
-  it('SKIPS loudly when the plugin is configured but has no public/ beside it', () => {
-    appPackageRepo("export default basaltAppPlugin({ icons: [{ src: '/favicon.svg' }] })\n")
-
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('⊘ SKIPPED — app icons — ./apps/web configures basaltAppPlugin')
-    expect(code).toBe(1)
-  })
-
-  it('states the absence rather than omitting the line when nothing uses the plugin', () => {
-    write('.git/HEAD', 'ref: refs/heads/master\n')
-    healthyFixture()
-
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('no `basaltAppPlugin(` under this project')
-    expect(code).toBe(0)
-  })
-
-  it('`icons: false` is nothing to check, from the root as from the package', () => {
-    appPackageRepo('export default basaltAppPlugin({ icons: false })\n')
-
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).toContain('basaltAppPlugin is configured with no icons')
-    expect(code).toBe(0)
   })
 })
