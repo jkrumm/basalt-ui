@@ -21,7 +21,7 @@ import type {
   SidebarCustomBlock,
   SidebarListBlock,
   SidebarProgressBlock,
-} from '../nav/types'
+} from './nav-types'
 import { NavCountBadge } from './nav-count-badge'
 import { createPersistedState } from '../state'
 import {

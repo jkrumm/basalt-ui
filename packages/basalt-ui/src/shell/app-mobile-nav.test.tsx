@@ -25,7 +25,7 @@ import type { ReactElement } from 'react'
 import { MobileNav } from './app-mobile-nav'
 import { projectMobileNav } from './mobile-nav-model'
 import { SCROLLPORT_ATTRIBUTE } from '../common/scroll-parent'
-import type { MobileNavConfig, NavAnchorProps, SidebarItem, SidebarSection } from '../nav/types'
+import type { MobileNavConfig, NavAnchorProps, SidebarItem, SidebarSection } from './nav-types'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────────────────────────
 

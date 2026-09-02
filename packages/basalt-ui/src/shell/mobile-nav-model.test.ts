@@ -32,7 +32,7 @@ import type {
   SidebarItem,
   SidebarListBlock,
   SidebarProgressBlock,
-} from '../nav/types'
+} from './nav-types'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@
  * exactly as before.
  *
  * @example
- * import { BasaltDataTable } from 'basalt-ui/data'
+ * import { BasaltDataTable } from 'basalt-ui/data/table'
  * import { createColumnHelper } from '@tanstack/react-table'
  *
  * type Row = { name: string; age: number }
@@ -88,11 +88,11 @@ import { MultiSelectFilter } from '../controls/multi-select-filter'
 import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state'
-import { WidgetHeader } from '../widget-header'
+import { WidgetHeader } from '../dashboard'
 import { ErrorState } from '../dashboard/query-state'
 import type { QueryStateLike } from '../dashboard/query-state'
 import { dataQueryBranch } from './query-branch'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────

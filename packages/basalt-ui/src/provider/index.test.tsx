@@ -20,8 +20,8 @@
 import { render } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { BasaltProvider, composeInjectedCss, resolveConnectivityProps } from './index'
-import { useConnectivity } from '../connectivity'
+import { BasaltProvider, composeInjectedCss } from './index'
+import { useConnectivity } from './use-connectivity'
 import { createBasaltTheme } from '../theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
 import { deriveRadius, deriveSpacing } from '../tokens/palette'
@@ -99,98 +99,6 @@ describe('BasaltBridge reads theme.other.basaltDensity and injects it end to end
     // density override block getting appended on top of it.
     expect(html).not.toContain(buildDensityCss(deriveSpacing(-2)))
     expect(html.split('--vx-space-row-inset-x').length - 1).toBe(1)
-  })
-})
-
-describe('resolveConnectivityProps — the new `connectivity` object vs the deprecated flattened props (A11)', () => {
-  test('deprecated props pass through unchanged when `connectivity` is unset', () => {
-    expect(
-      resolveConnectivityProps({
-        connectivity: undefined,
-        sseUrl: 'https://example.com/sse',
-        healthUrl: 'https://example.com/health',
-        healthIntervalMs: 5_000,
-      }),
-    ).toEqual({
-      sseUrl: 'https://example.com/sse',
-      healthUrl: 'https://example.com/health',
-      healthIntervalMs: 5_000,
-    })
-  })
-
-  test('`connectivity` wins over a deprecated prop declaring the SAME key', () => {
-    expect(
-      resolveConnectivityProps({
-        connectivity: { sseUrl: 'https://new.example.com/sse' },
-        sseUrl: 'https://old.example.com/sse',
-        healthUrl: undefined,
-        healthIntervalMs: undefined,
-      }),
-    ).toEqual({ sseUrl: 'https://new.example.com/sse' })
-  })
-
-  test('`connectivity` wins WHOLESALE — a deprecated prop on a DIFFERENT key is ignored, not merged', () => {
-    expect(
-      resolveConnectivityProps({
-        connectivity: { healthUrl: 'https://new.example.com/health' },
-        sseUrl: 'https://old.example.com/sse',
-        healthUrl: undefined,
-        healthIntervalMs: undefined,
-      }),
-    ).toEqual({ healthUrl: 'https://new.example.com/health' })
-  })
-
-  test('`connectivity` wins wholesale even when it leaves a field unset — that field is NOT backfilled from the deprecated prop', () => {
-    expect(
-      resolveConnectivityProps({
-        connectivity: { healthUrl: 'https://new.example.com/health' },
-        sseUrl: undefined,
-        healthUrl: undefined,
-        healthIntervalMs: 5_000,
-      }),
-    ).toEqual({ healthUrl: 'https://new.example.com/health' })
-  })
-
-  test('warns once, dev builds only, when `connectivity` and a deprecated prop are both supplied', () => {
-    const warnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      resolveConnectivityProps({
-        connectivity: { healthUrl: 'https://new.example.com/health' },
-        sseUrl: 'https://old.example.com/sse',
-        healthUrl: undefined,
-        healthIntervalMs: undefined,
-      })
-      expect(warnSpy).toHaveBeenCalledTimes(1)
-      expect(warnSpy.mock.calls[0]?.[0]).toContain('BasaltProvider')
-    } finally {
-      warnSpy.mockRestore()
-    }
-  })
-
-  test('does NOT warn when only `connectivity` is supplied', () => {
-    const warnSpy = spyOn(console, 'warn').mockImplementation(() => {})
-    try {
-      resolveConnectivityProps({
-        connectivity: { healthUrl: 'https://new.example.com/health' },
-        sseUrl: undefined,
-        healthUrl: undefined,
-        healthIntervalMs: undefined,
-      })
-      expect(warnSpy).not.toHaveBeenCalled()
-    } finally {
-      warnSpy.mockRestore()
-    }
-  })
-
-  test('`override` — previously unreachable through BasaltProvider (A11) — flows through `connectivity`', () => {
-    expect(
-      resolveConnectivityProps({
-        connectivity: { override: { browserOnline: false } },
-        sseUrl: undefined,
-        healthUrl: undefined,
-        healthIntervalMs: undefined,
-      }),
-    ).toEqual({ override: { browserOnline: false } })
   })
 })
 

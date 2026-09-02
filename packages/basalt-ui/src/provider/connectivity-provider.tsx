@@ -8,7 +8,7 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { onlineManager } from '@tanstack/react-query'
-import type { ConnectivitySnapshot, ConnectivityProviderProps } from './types'
+import type { ConnectivitySnapshot, ConnectivityProviderProps } from './connectivity-types'
 
 // ── SSR-safe default ────────────────────────────────────────────────────────────────────────────────
 

@@ -1,10 +1,8 @@
 /**
  * Duplicate-Notifications-mount guard (F15) — a shared module-level counter, not a per-caller ref,
- * because the whole point is detecting a SECOND, unrelated caller: `<BasaltOverlays notifications />`
- * (`commands/overlays-mount.tsx`) and `<BasaltNotifications />` (`./overlay.tsx`) both render
- * Mantine's `<Notifications />` and neither can see the other mount. `overlays-mount.tsx`'s own
- * JSDoc has warned against combining them since it shipped ("do NOT mount both … (double-mount of
- * `<Notifications />`)") with nothing enforcing it — this is that enforcement, finally.
+ * because the whole point is detecting a SECOND, unrelated caller mounting `<BasaltOverlays
+ * notifications />` (`commands/overlays-mount.tsx`) at once — nested/duplicate mounts double-render
+ * Mantine's `<Notifications />` and neither instance can see the other.
  *
  * Lives here (`./notifications`), not `./commands`, so `commands` is the one importing a shared util
  * rather than the reverse — `./notifications` never depends on `./commands`. Zero `@mantine/*`
@@ -14,7 +12,7 @@
  * as `provider/lab-theme.ts`.
  */
 import { useEffect } from 'react'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 let mountedNotificationsCount = 0
 
@@ -29,9 +27,9 @@ export function useNotificationsMountGuard(): void {
     mountedNotificationsCount++
     if (mountedNotificationsCount > 1 && isDev()) {
       console.warn(
-        '[basalt] more than one Notifications overlay is mounted at once — mount ONE of ' +
-          '<BasaltOverlays notifications /> or <BasaltNotifications />, never both (they both ' +
-          "render Mantine's <Notifications />, so toasts would double-fire).",
+        '[basalt] more than one Notifications overlay is mounted at once — mount exactly ONE ' +
+          "<BasaltOverlays notifications /> (they all render Mantine's <Notifications />, so " +
+          'toasts would double-fire).',
       )
     }
     return () => {

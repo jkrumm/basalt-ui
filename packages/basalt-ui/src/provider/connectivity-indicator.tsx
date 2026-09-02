@@ -19,7 +19,7 @@ import { useRef } from 'react'
 import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { useConnectivity } from './use-connectivity'
-import type { ConnectivityStatus } from './types'
+import type { ConnectivityStatus } from './connectivity-types'
 
 export type ConnectivityIndicatorProps = BasaltProps
 

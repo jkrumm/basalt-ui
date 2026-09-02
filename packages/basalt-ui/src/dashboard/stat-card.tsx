@@ -95,12 +95,12 @@
 import { Box, Card, VisuallyHidden } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { WidgetHeader } from '../widget-header'
+import { WidgetHeader } from './widget-header'
 import type {
   WidgetHeaderDeltaProps,
   WidgetHeaderMetricProps,
   WidgetHeaderTitleProps,
-} from '../widget-header'
+} from './widget-header'
 import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
 import { cx } from '../common/props'

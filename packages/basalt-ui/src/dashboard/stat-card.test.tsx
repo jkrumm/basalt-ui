@@ -430,7 +430,7 @@ describe('stat-card.module.css — the breakdown block', () => {
 
   test('the unit beside the hero value is mono, muted and small — in widget-header, its owner', () => {
     const headerCss = readFileSync(
-      resolve(import.meta.dirname, '..', 'widget-header', 'widget-header.module.css'),
+      resolve(import.meta.dirname, 'widget-header.module.css'),
       'utf8',
     ).replace(/\/\*[\s\S]*?\*\//g, '')
     const start = headerCss.indexOf('.unit {')

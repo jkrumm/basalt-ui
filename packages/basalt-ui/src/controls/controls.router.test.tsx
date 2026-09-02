@@ -19,7 +19,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import { field } from '../router-tanstack/field'
+import { field } from '../state'
 import { createSearchStore } from '../router-tanstack/search-store'
 import { COMPARE_LABELS, COMPARE_VALUES, CompareFilter } from './compare-filter'
 import { FilterSetScope } from './filter-context'

@@ -166,8 +166,8 @@ describe('motion root-entry requirement (two independent paths)', () => {
   // first, `ThemeToggle`, remains. So unlike the `remend` F2 block above, `motion` must NOT be read
   // as droppable from RUNTIME_REQUIRED_PEERS once agent-chat goes lazy; it stays required for as
   // long as `ThemeToggle` imports `motion/react` on its own.
-  it('theme-toggle/index.tsx still imports motion/react statically', () => {
-    const source = readFileSync(join(pkgRoot, 'src/theme-toggle/index.tsx'), 'utf8')
+  it('theme/theme-toggle.tsx still imports motion/react statically', () => {
+    const source = readFileSync(join(pkgRoot, 'src/theme/theme-toggle.tsx'), 'utf8')
     expect(source).toMatch(/from 'motion\/react'/)
   })
 })

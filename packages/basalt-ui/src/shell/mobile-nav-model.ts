@@ -22,7 +22,7 @@ import type {
   SidebarBlock,
   SidebarItem,
   SidebarSection,
-} from '../nav/types'
+} from './nav-types'
 import { sidebarBlockMobile } from './sidebar-block-model'
 
 /** Hard cap on bar slots, INCLUDING More. Five 72px slots is the widest a 360px viewport holds. */

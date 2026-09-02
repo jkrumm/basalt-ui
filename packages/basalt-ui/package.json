@@ -92,20 +92,10 @@
       "import": "./dist/notifications/index.js",
       "default": "./dist/notifications/index.js"
     },
-    "./query": {
-      "types": "./dist/query/index.d.ts",
-      "import": "./dist/query/index.js",
-      "default": "./dist/query/index.js"
-    },
     "./router-tanstack": {
       "types": "./dist/router-tanstack/index.d.ts",
       "import": "./dist/router-tanstack/index.js",
       "default": "./dist/router-tanstack/index.js"
-    },
-    "./data": {
-      "types": "./dist/data/index.d.ts",
-      "import": "./dist/data/index.js",
-      "default": "./dist/data/index.js"
     },
     "./data/table": {
       "types": "./dist/data/table.d.ts",
@@ -147,11 +137,6 @@
       "import": "./dist/state.js",
       "default": "./dist/state.js"
     },
-    "./connectivity": {
-      "types": "./dist/connectivity/index.d.ts",
-      "import": "./dist/connectivity/index.js",
-      "default": "./dist/connectivity/index.js"
-    },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
     "./configs/*": "./configs/*",
@@ -165,6 +150,7 @@
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly --declarationMap && bun scripts/copy-assets.mjs && bun scripts/gen-tokens-css.mjs && bun scripts/fix-esm-extensions.mjs",
     "typecheck": "tsc --noEmit",
+    "check-budgets": "bun scripts/check-budgets.ts",
     "test": "cd ../.. && bun test packages/basalt-ui",
     "pack-test": "bash scripts/pack-test.sh",
     "prepack": "bun run build",

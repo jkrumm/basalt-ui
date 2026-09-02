@@ -30,8 +30,8 @@
  */
 import { Card, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { WidgetHeader } from '../widget-header'
-import type { WidgetHeaderTitleProps } from '../widget-header'
+import { WidgetHeader } from './widget-header'
+import type { WidgetHeaderTitleProps } from './widget-header'
 import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import { cx } from '../common/props'

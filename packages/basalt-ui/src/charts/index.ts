@@ -139,19 +139,11 @@ export { measureText, maxTextWidth } from './utils/measure-text'
 export {
   ZonedLine,
   type ZonedLineProps,
-  type ZonedLineZone,
   type ZonedLineThreshold,
   type ZonedLineRefLine,
 } from './kinds/ZonedLine'
 
-export {
-  Bars,
-  type BarsProps,
-  type BarsBar,
-  type BarsLine,
-  type BarsZone,
-  type BarsRefLine,
-} from './kinds/Bars'
+export { Bars, type BarsProps, type BarsBar, type BarsLine, type BarsRefLine } from './kinds/Bars'
 
 export { StackedArea, type StackedAreaProps } from './kinds/StackedArea'
 export { Donut, type DonutProps, type DonutDatum } from './kinds/Donut'

@@ -353,9 +353,9 @@ export const SHADOW_SURFACES: readonly ShadowSurfaceEntry[] = [
       "on the root part; Mantine's own Notification.css declares `border-radius: var(--" +
       'notification-radius)` on that same root element the styles.root boxShadow targets).',
   },
-  // ── widget-header ────────────────────────────────────────────────────────────────────────────
+  // ── dashboard (widget-header) ────────────────────────────────────────────────────────────────
   {
-    file: 'widget-header/widget-header.module.css',
+    file: 'dashboard/widget-header.module.css',
     site: '.infoBubble',
     roundedBy:
       'border-radius: var(--vx-radius-card) (co-declared in the same .infoBubble rule as the ' +

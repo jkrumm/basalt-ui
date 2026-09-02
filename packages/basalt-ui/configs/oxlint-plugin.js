@@ -81,15 +81,26 @@ import { fileURLToPath } from 'node:url'
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Guard kinds RETIRED because an oxlint AST rule fully subsumes their only case — kept recognized
+ * by `KNOWN_RULE_IDS` (below) and the guard's own `PLUGIN_RULE_IDS` copy so an existing
+ * `theme-allow <id>` reads as a dead waiver via `check-theme --audit-allows`, never as a typo.
+ *
+ * - `unframed-chart` (regex: a `<ChartLegend items={[...]}>` array literal) →
+ *   `basalt/chart-legend-literal`, which also catches the `.map()`-over-a-non-series form the
+ *   regex never could reach.
+ */
+export const RETIRED_RULE_IDS = new Set(['unframed-chart'])
+
+/**
  * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
  * by hand for the same reason `majorOf` is: this file loads standalone out of a consumer's
  * node_modules and must not import from the package.
  *
  * Exported, and `oxlint-plugin.test.ts` asserts it is EXACTLY the plugin's own rule ids plus
- * `GUARD_RULES`'s keys. Forgetting an entry here is not a cosmetic omission — an id this set does
- * not know is treated as a typo, so the annotation naming it waives nothing (see
- * {@link parseThemeAllow}); before the fail-closed change it was worse still, silently widening to
- * a blanket waiver.
+ * `GUARD_RULES`'s keys plus `RETIRED_RULE_IDS`. Forgetting an entry here is not a cosmetic
+ * omission — an id this set does not know is treated as a typo, so the annotation naming it waives
+ * nothing (see {@link parseThemeAllow}); before the fail-closed change it was worse still, silently
+ * widening to a blanket waiver.
  */
 export const KNOWN_RULE_IDS = new Set([
   // this plugin
@@ -121,6 +132,7 @@ export const KNOWN_RULE_IDS = new Set([
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
+  'no-import-meta-env',
   // These three honour `basalt-agent-allow`, never `theme-allow` — but they are real ids, so an
   // annotation naming one must parse as a (useless) scoped annotation rather than as prose.
   'agent-resume-guard',
@@ -142,7 +154,6 @@ export const KNOWN_RULE_IDS = new Set([
   'inline-display',
   'raw-visx-axis',
   'raw-motion-value',
-  'unframed-chart',
   'chart-missing-aria-label',
   'raw-form-control',
   'sub-16-input-font',
@@ -154,6 +165,9 @@ export const KNOWN_RULE_IDS = new Set([
   'hidden-inline-style',
   'in-body-page-title',
   'raw-selection-control',
+  // Retired guard kinds — no longer in GUARD_RULES, but a `theme-allow` naming one must still
+  // parse as a real (dead) waiver rather than an unknown-id typo. See RETIRED_RULE_IDS above.
+  ...RETIRED_RULE_IDS,
 ])
 
 const ALLOW_RULE_TOKEN = /^(?:basalt\/)?([a-z][a-z0-9-]*)(?=$|[\s,:—–])/
@@ -3643,36 +3657,8 @@ const queryFnUnwrap = {
  * @type {readonly DeprecatedExport[]}
  */
 export const DEPRECATED_EXPORTS = [
-  {
-    subpath: 'basalt-ui/forms',
-    name: 'field',
-    replacement: 'inputProps',
-    removeIn: '1.29.0',
-    // Not a drop-in: `inputProps` no longer returns `key`, so a rename alone would silently drop
-    // the reconciler key. The nudge stays; the rewrite is `basalt/forms-field-key`'s job.
-    fix: false,
-  },
-  {
-    subpath: 'basalt-ui',
-    name: 'BasaltProvider',
-    prop: 'sseUrl',
-    replacement: 'connectivity={{ sseUrl }}',
-    removeIn: '1.29.0',
-  },
-  {
-    subpath: 'basalt-ui',
-    name: 'BasaltProvider',
-    prop: 'healthUrl',
-    replacement: 'connectivity={{ healthUrl }}',
-    removeIn: '1.29.0',
-  },
-  {
-    subpath: 'basalt-ui',
-    name: 'BasaltProvider',
-    prop: 'healthIntervalMs',
-    replacement: 'connectivity={{ healthIntervalMs }}',
-    removeIn: '1.29.0',
-  },
+  // Empty since 1.29.0: every 1.28.x deprecation was removed on schedule. The next
+  // deprecation adds a row here in the same commit as its @deprecated JSDoc and MIGRATING entry.
 ]
 
 function deprecatedExportMessage(row) {
@@ -3914,6 +3900,51 @@ const formsFieldKey = {
   },
 }
 
+// ── Rule 31 — no-import-meta-env ────────────────────────────────────────────────────────────────
+
+const NO_IMPORT_META_ENV_MESSAGE =
+  'import.meta.env is banned in shipped basalt-ui source — this package is consumed both as a ' +
+  'Vite-bundled dep AND resolved directly by a consumer whose own bundler may define no ' +
+  'import.meta.env at all (basaltViteConfig defines process.env.NODE_ENV precisely so basalt ' +
+  'code never needs it). Use process.env.NODE_ENV instead. (basalt/no-import-meta-env)'
+
+/**
+ * `import.meta.env` — a MemberExpression whose object is the `import.meta` MetaProperty and whose
+ * property is `env`. Repo-local only: a CONSUMER's own app code legitimately uses
+ * `import.meta.env.VITE_*` for its own config, so this must never reach the shipped preset — only
+ * `/.oxlintrc.json` wires it, scoped to `packages/basalt-ui/src/**` the same way the Mantine-free
+ * boundaries above are scoped, rather than through path logic in the rule itself (unlike
+ * `token-layer-boundary`, which every package resolves the plugin from and so has to self-scope).
+ */
+// Ships: repo-local only
+const noImportMetaEnv = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow import.meta.env — basalt-ui source must use process.env.NODE_ENV.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+
+    return {
+      MemberExpression(node) {
+        const object = node.object
+        if (
+          object?.type !== 'MetaProperty' ||
+          object.meta?.name !== 'import' ||
+          object.property?.name !== 'meta'
+        )
+          return
+        if (node.computed || node.property?.name !== 'env') return
+        if (hasThemeAllow(context, node, 'no-import-meta-env')) return
+        context.report({ node, message: NO_IMPORT_META_ENV_MESSAGE })
+      },
+    }
+  },
+}
+
 // ── Grace ledger ────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -4108,5 +4139,6 @@ export default {
     'agent-resume-guard': agentResumeGuard,
     'agent-no-raw-usechat': agentNoRawUseChat,
     'ai-sdk-major': aiSdkMajor,
+    'no-import-meta-env': noImportMetaEnv,
   },
 }

@@ -1,16 +1,13 @@
 /**
- * F15 — `overlays-mount.tsx`'s own JSDoc has warned since it shipped: do NOT mount both
- * `<BasaltOverlays notifications />` and `<BasaltNotifications />` (double-mount of
- * `<Notifications />`). Nothing enforced it. `useNotificationsMountGuard` is the shared counter
- * both mount points call — this proves it actually fires across the TWO real components, not just
- * against a synthetic caller.
+ * F15 — `overlays-mount.tsx`'s own JSDoc warns: mount exactly ONE `<BasaltOverlays notifications
+ * />` per app (double-mount of `<Notifications />`). `useNotificationsMountGuard` is the shared
+ * counter that enforces it.
  */
 import { MantineProvider } from '@mantine/core'
 import { act, render } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { BasaltOverlays } from '../commands/overlays-mount'
-import { BasaltNotifications } from './overlay'
 
 function renderWith(node: ReactElement) {
   return render(<MantineProvider>{node}</MantineProvider>)
@@ -32,73 +29,61 @@ async function flushLazyImport(): Promise<void> {
   })
 }
 
-describe('duplicate Notifications-mount guard (F15)', () => {
-  test('BasaltNotifications alone does not warn', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const { unmount } = renderWith(<BasaltNotifications />)
-    expect(warn).not.toHaveBeenCalled()
-    unmount()
-    warn.mockRestore()
-  })
+function overlays() {
+  return (
+    <BasaltOverlays modals={false} spotlight={false} hotkeys={false}>
+      <div>app</div>
+    </BasaltOverlays>
+  )
+}
 
-  test('BasaltOverlays with its notifications layer enabled, alone, does not warn', async () => {
+describe('duplicate Notifications-mount guard (F15)', () => {
+  test('one BasaltOverlays with its notifications layer enabled does not warn', async () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const { unmount } = renderWith(
-      <BasaltOverlays modals={false} spotlight={false} hotkeys={false}>
-        <div>app</div>
-      </BasaltOverlays>,
-    )
+    const { unmount } = renderWith(overlays())
     expect(warn).not.toHaveBeenCalled()
     await flushLazyImport()
     unmount()
     warn.mockRestore()
   })
 
-  test('mounting BOTH BasaltNotifications and BasaltOverlays notifications at once warns', async () => {
+  test('mounting TWO BasaltOverlays at once warns', async () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const notifications = renderWith(<BasaltNotifications />)
-    const overlays = renderWith(
-      <BasaltOverlays modals={false} spotlight={false} hotkeys={false}>
-        <div>app</div>
-      </BasaltOverlays>,
-    )
+    const first = renderWith(overlays())
+    const second = renderWith(overlays())
     expect(warn).toHaveBeenCalledTimes(1)
     expect(String(warn.mock.calls[0]?.[0])).toContain('more than one Notifications overlay')
     await flushLazyImport()
-    notifications.unmount()
-    overlays.unmount()
+    first.unmount()
+    second.unmount()
     warn.mockRestore()
   })
 
-  test('BasaltOverlays notifications={false} contributes no mount — a sibling BasaltNotifications stays unwarned', () => {
+  test('a second BasaltOverlays with notifications={false} contributes no mount — stays unwarned', () => {
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
-    const notifications = renderWith(<BasaltNotifications />)
-    const overlays = renderWith(
+    const first = renderWith(overlays())
+    const second = renderWith(
       <BasaltOverlays modals={false} spotlight={false} hotkeys={false} notifications={false}>
         <div>app</div>
       </BasaltOverlays>,
     )
     expect(warn).not.toHaveBeenCalled()
-    notifications.unmount()
-    overlays.unmount()
+    first.unmount()
+    second.unmount()
     warn.mockRestore()
   })
 
-  test('in a production build, mounting BOTH at once does NOT warn — isDev() folds to false', async () => {
+  test('in a production build, mounting TWO at once does NOT warn — isDev() folds to false', async () => {
     const originalEnv = process.env['NODE_ENV']
     process.env['NODE_ENV'] = 'production'
     const warn = spyOn(console, 'warn').mockImplementation(() => {})
     try {
-      const notifications = renderWith(<BasaltNotifications />)
-      const overlays = renderWith(
-        <BasaltOverlays modals={false} spotlight={false} hotkeys={false}>
-          <div>app</div>
-        </BasaltOverlays>,
-      )
+      const first = renderWith(overlays())
+      const second = renderWith(overlays())
       expect(warn).not.toHaveBeenCalled()
       await flushLazyImport()
-      notifications.unmount()
-      overlays.unmount()
+      first.unmount()
+      second.unmount()
     } finally {
       warn.mockRestore()
       if (originalEnv === undefined) delete process.env['NODE_ENV']

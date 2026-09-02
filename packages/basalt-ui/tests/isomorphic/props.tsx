@@ -25,7 +25,6 @@ import { createLocalStore, field } from '../../src/state'
 import type { ChartSeries } from '../../src/charts'
 import { scaleBand, scaleLinear, scalePoint } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
-import { createBasaltQueryClient } from '../../src/query'
 import { defineCommands } from '../../src/commands'
 import { createThreadsStore } from '../../src/agent'
 
@@ -331,9 +330,6 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
     getItemKey: (item: { id: number }) => item.id,
   },
 
-  /* --- query --------------------------------------------------------------- */
-  QueryClientProvider: { client: createBasaltQueryClient(), children: TEXT },
-
   /* --- forms --------------------------------------------------------------- */
   // An error is REQUIRED here: `errorEntries.length === 0` returns null, and the className probe
   // would then be recording "drops the class" for a component that never rendered a box at all.
@@ -462,14 +458,11 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // provider — renders no box of its own (context, portal host, error boundary); nothing to put a
   // class on.
   BasaltErrorBoundary: 'provider',
-  BasaltNotifications: 'provider',
   BasaltOverlays: 'provider',
   BasaltQueryDevtools: 'provider',
   ChartCursorScope: 'provider',
   ConnectivityProvider: 'provider',
   FormStateProvider: 'provider',
-  QueryClientProvider: 'provider',
-  QueryErrorResetBoundary: 'provider',
   VxThemeProvider: 'provider',
 
   // svg — paints SVG children only; a class would land on a `<g>`/`<rect>`, a different styling

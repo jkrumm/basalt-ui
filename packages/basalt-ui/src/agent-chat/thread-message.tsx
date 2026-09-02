@@ -60,7 +60,7 @@ import { formatRelativeTime } from './relative-time'
 import { ToolChip } from './tool-chip'
 import { resolveVirtualize } from './virtualize'
 import type { VirtualizeOptions, VirtualizeProps } from './virtualize'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 /** The mono, uppercase, letter-spaced micro-label idiom (docs/DESIGN-SPEC.md §3) — shared by the
  * transcript's role labels and the reasoning/tool-call headers below. */

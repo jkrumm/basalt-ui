@@ -67,6 +67,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
+  'no-import-meta-env',
 ] as const
 
 /** One registered oxlint plugin rule id — the literal union of {@link PLUGIN_RULE_ID_LIST}. */
@@ -233,7 +234,7 @@ const MANTINE_BANS = [
 
 /**
  * The one hard source for the enforcement seam. Keys split into two kinds:
- * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./query, ./router-tanstack, ./forms, ./notifications, ./commands, ./data, ./data/table, ./data/virtual, ./agent, ./state, ./connectivity) — real package.json exports.
+ * - JS-subpath keys (., ./charts, ./tokens, ./theme-lab, ./vite, ./guard, ./router-tanstack, ./forms, ./notifications, ./commands, ./data/table, ./data/virtual, ./agent, ./state) — real package.json exports. `./query`, `./connectivity` and bare `./data` are dropped (C1) — their public surface is absorbed onto `.`.
  * - #-prefixed synthetic keys (#app) — the synthetic global app-wide ban layer. The #-prefix
  *   guarantees it is never mistaken for an export path.
  *
@@ -275,11 +276,14 @@ export const SURFACES = {
       'page-bar-budget',
       'shadow-basalt-export',
       // The two mount-order laws, guarded as of 1.28.0 (F5) — both same-file static ancestry, so
-      // both `warn`. `deprecated-export` sits here too: the ledger it reads spans subpaths, and
-      // `BasaltProvider`'s three flattened connectivity props are most of it.
+      // both `warn`. `deprecated-export` sits here too: the ledger it reads spans subpaths.
       'provider-above-router',
       'duplicate-notifications-mount',
       'deprecated-export',
+      // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node
+      // scripts, tests) — process.env.NODE_ENV works everywhere basalt code runs. Repo-local,
+      // scoped to all of src/**, one surface required by coverage (C2 consolidation).
+      'no-import-meta-env',
     ],
     // agent/rules/basalt-mantine.md — stated, not guarded. The other two laws that stood here
     // gained `provider-above-router` / `duplicate-notifications-mount` at 1.28.0; this one has no
@@ -289,7 +293,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query)',
     optionalPeers: [
       'react-markdown',
       'remark-gfm',
@@ -305,13 +309,7 @@ export const SURFACES = {
     layer: 'headless',
     rule: 'charts',
     skill: ['basalt-charts'],
-    guardKinds: [
-      'raw-hex',
-      'raw-color-fn',
-      'raw-visx-axis',
-      'unframed-chart',
-      'chart-missing-aria-label',
-    ],
+    guardKinds: ['raw-hex', 'raw-color-fn', 'raw-visx-axis', 'chart-missing-aria-label'],
     pluginRules: [
       'hand-rolled-plot',
       'chart-legend-literal',
@@ -395,25 +393,6 @@ export const SURFACES = {
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
   }, // 6th JS subpath
-  './query': {
-    kind: 'doctrine',
-    layer: 'headless',
-    rule: 'batteries',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    // Both laws this surface used to declare advisory (F5), guarded as of 1.28.0 and both `warn`:
-    // `query-dual-import`'s softer half reads intent ("this file is already a basalt file") and
-    // `query-fn-unwrap` is a text heuristic inside a syntactic range. See their grace entries.
-    pluginRules: ['query-dual-import', 'query-fn-unwrap'],
-    description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
-    optionalPeers: ['@tanstack/react-query-devtools'],
-    globs: {
-      shipped: [],
-      repo: ['packages/basalt-ui/src/query/**'],
-    },
-    // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
-    forbiddenImports: [...MANTINE_BANS],
-  },
   './router-tanstack': {
     kind: 'doctrine',
     layer: 'headless',
@@ -423,7 +402,7 @@ export const SURFACES = {
     // Law C10 — a nav link's `search` and a reader's `from` are both this bridge's contract.
     pluginRules: ['search-literal-link', 'use-search-from-literal'],
     description:
-      'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)',
+      'TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; the deprecated createSearchParamStore/createMultiSearchParamStore wrappers were removed in 1.29.0, C1 consolidation)',
     optionalPeers: ['@tanstack/react-router'],
     globs: {
       shipped: [],
@@ -444,7 +423,7 @@ export const SURFACES = {
     // consumer ships today (`PLUGIN_RULE_GRACE`).
     pluginRules: ['forms-field-key'],
     description:
-      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), the FormSection/FormRow/FormGroup/FormActions layout (FormRow is law C1’s form row), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)',
+      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), the FormSection/FormRow/FormGroup/FormActions layout (FormRow is law C1’s form row), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema)',
     optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },
@@ -470,18 +449,6 @@ export const SURFACES = {
     description:
       'typed command bus + overlay controller, toSpotlightActions, ShortcutsHelp, BasaltOverlays',
     optionalPeers: ['@mantine/spotlight', '@mantine/modals', '@tanstack/react-hotkeys'],
-    forbiddenImports: [],
-  },
-  './data': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'batteries',
-    skill: ['basalt-design'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in',
-    optionalPeers: ['@tanstack/react-table', '@tanstack/react-virtual'],
     forbiddenImports: [],
   },
   './data/table': {
@@ -604,7 +571,24 @@ export const SURFACES = {
     description:
       'The control tier (docs/CONTROLS-SPEC.md §3): FilterSet (nowrap row + measured +N fold + the mobile Filters (n) sheet), RangeFilter/CompareFilter/SelectFilter/MultiSelectFilter/NumberFilter/SearchFilter/ToggleFilter (each bound to a FieldHandle — no value/onChange/size, law C2/C5; NumberFilter is the field.number lane, a radio list over `options` or a stepper without), ViewTabs, and the action/sync family (ActionGroup, OverflowMenu, SyncButton, BarAction/GlobalAction). THREE surfaces, picked by the home and never by a prop (useFilterSurface): pill in a PageBar row, sheet in the mobile Filters (n) drawer, panel in a PageAside body — where every control renders an inspector/facet ROW instead of a chip (docs/ASIDE-SPEC.md §3). PanelRow is that row primitive (label above, hint, mono readout, an `end` control on the label line) and SliderControl is the one bound control with no pill form at all; the counts/max props on MultiSelectFilter render the Foundry facet list there. Every control owns its own desktop/mobile swap in CSS (C9) and renders size="ctl" internally. Resolves and renders with NO @mantine/dates installed — the custom date picker is injected through RangeFilter.customPicker from ./controls-dates.',
     optionalPeers: [],
-    forbiddenImports: [],
+    // `@mantine/dates` is an optional peer basaltViteConfig pre-bundles the whole @mantine scope
+    // for — a consumer without the peer (linewatch) must never resolve it through this surface.
+    // Nothing under src/controls may import it, statically or lazily — repo-local only, same
+    // pattern as MANTINE_BANS above (a shipped ban would be redundant with peerDependenciesMeta).
+    globs: {
+      shipped: [],
+      repo: ['packages/basalt-ui/src/controls/**'],
+    },
+    forbiddenImports: [
+      v(
+        '@mantine/dates',
+        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam.',
+      ),
+      vg(
+        '@mantine/dates/*',
+        '@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam.',
+      ),
+    ],
   },
   './controls-dates': {
     kind: 'doctrine',
@@ -637,19 +621,6 @@ export const SURFACES = {
     },
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
-  },
-
-  './connectivity': {
-    kind: 'doctrine',
-    layer: 'mantine-coupled',
-    rule: 'mantine',
-    skill: ['basalt-app'],
-    guardKinds: [],
-    pluginRules: [],
-    description:
-      'ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider',
-    optionalPeers: [],
-    forbiddenImports: [],
   },
 
   // ── Non-JS published assets (ToolingSpec; not JS subpaths — check-coverage exempts these) ─────
@@ -690,7 +661,10 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
-    pluginRules: [],
+    // query-dual-import / query-fn-unwrap: reassigned here from the now-dropped `./query` surface
+    // (C1 consolidation — createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel
+    // exports now, but their doctrine stays `batteries` — "use the shipped thing" — not `mantine`).
+    pluginRules: ['query-dual-import', 'query-fn-unwrap'],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
       // features/, etc. is also covered. The @visx/*-only-in-charts and Mantine-free charts/tokens

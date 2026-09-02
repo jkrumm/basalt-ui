@@ -34,7 +34,7 @@ import type {
   SidebarItem,
   SidebarListBlock,
   SidebarProgressBlock,
-} from '../nav/types'
+} from './nav-types'
 import type { BasaltAccountProps } from './account-types'
 import type { SettingsMenuItem } from './index'
 import { NavCountBadge } from './nav-count-badge'

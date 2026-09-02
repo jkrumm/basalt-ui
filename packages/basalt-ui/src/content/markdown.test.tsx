@@ -454,10 +454,10 @@ describe('image trust policy', () => {
     expect(container.innerHTML).not.toContain('cdn.example')
   })
 
-  test('streaming alone still defaults to untrusted (the pre-1.12 fail-safe)', async () => {
+  test('streaming alone does NOT imply untrusted — contentTrust is the only input to the policy', async () => {
     const container = await renderImages(<Markdown streaming>{IMAGE_DOC}</Markdown>)
 
-    expect(container.innerHTML).not.toContain('cdn.example')
+    expect(container.innerHTML).toContain('cdn.example')
   })
 
   test('an explicit allowedImagePrefixes opts an origin back in over the untrusted default', async () => {

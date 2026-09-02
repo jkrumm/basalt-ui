@@ -1,5 +1,8 @@
 /**
- * ./query — thin TanStack Query adapter + transport-agnostic Eden unwrap.
+ * `createBasaltQueryClient` + `unwrap` — the two TanStack Query primitives basalt ships. Folded
+ * onto the root barrel (C1 consolidation, dropping the `./query` subpath): the root already
+ * requires `@tanstack/react-query` as a peer, so a dedicated Mantine-free subpath bought nothing —
+ * and it re-exported 10 raw TanStack symbols no consumer imported through it.
  * Optional peer: @tanstack/react-query.
  */
 import { QueryClient } from '@tanstack/react-query'
@@ -19,7 +22,8 @@ const BASALT_QUERY_DEFAULTS = {
  * overrides win per-query, framework defaults are the fallback.
  *
  * @example
- * import { createBasaltQueryClient, QueryClientProvider } from 'basalt-ui/query'
+ * import { createBasaltQueryClient } from 'basalt-ui'
+ * import { QueryClientProvider } from '@tanstack/react-query'
  * import { useState } from 'react'
  *
  * function Root({ children }: { children: React.ReactNode }) {
@@ -49,7 +53,7 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * error: null }` — both signal an unexpected absence of data and should not silently resolve.
  *
  * @example
- * import { unwrap } from 'basalt-ui/query'
+ * import { unwrap } from 'basalt-ui'
  *
  * queryFn: () => unwrap(api.users.get({ query: params }))
  * // mutation:
@@ -68,30 +72,3 @@ export async function unwrap<TData>(
     )
   return data as TData
 }
-
-// ── Error decoding ────────────────────────────────────────────────────────────────────────────────
-
-export { toErrorMessage, errorStatus } from './error-message'
-
-// ── Re-exports from @tanstack/react-query ────────────────────────────────────────────────────────
-
-// Provider + boundary helpers
-export {
-  QueryClientProvider,
-  QueryErrorResetBoundary,
-  useQueryErrorResetBoundary,
-} from '@tanstack/react-query'
-
-// Primary fetch hooks — import from basalt-ui/query rather than dual-importing @tanstack/react-query
-export {
-  useQuery,
-  useSuspenseQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-  queryOptions,
-} from '@tanstack/react-query'
-
-// ── Re-export devtools helper ─────────────────────────────────────────────────────────────────────
-
-export { BasaltQueryDevtools } from './devtools'

@@ -561,13 +561,7 @@ export type FieldCodec = {
     readonly int: boolean
     readonly step: number | undefined
   }
-  /**
-   * Validate a STORED (or caller-supplied) value. `null` = unusable.
-   *
-   * Deliberately a different function from `fromSearch` for one kind: the deprecated multi store
-   * reads an empty URL array as "absent", and reusing that rule on the storage side would turn a
-   * deliberately CLEARED filter into a miss and resurrect the fallback on upgrade.
-   */
+  /** Validate a STORED (or caller-supplied) value. `null` = unusable. */
   decode(raw: unknown): unknown
   /** Pull the field out of a router search object. `null` = absent or invalid. */
   fromSearch(search: Record<string, unknown>): unknown
@@ -614,17 +608,11 @@ function sameList(a: unknown, b: unknown): boolean {
 }
 
 /**
- * Build the codec for one field. `legacyMultiEmpty` restores the DEPRECATED multi-store's rule that
- * an EMPTY url array means "absent, fall through to storage" — the deprecated wrapper's contract,
- * never the new store's, where an empty selection is a value like any other.
+ * Build the codec for one field.
  *
  * @internal — see `FieldCodec`.
  */
-export function resolveFieldCodec(
-  name: string,
-  f: AnyField,
-  opts?: { legacyMultiEmpty?: boolean },
-): FieldCodec {
+export function resolveFieldCodec(name: string, f: AnyField): FieldCodec {
   switch (f.kind) {
     case 'enum': {
       const allowed = new Set<string>(f.values)
@@ -642,19 +630,9 @@ export function resolveFieldCodec(
         }
         return f.values.filter((value) => picked.has(value))
       }
-      // The legacy empty-array rule is a URL rule ONLY. A stored `[]` is what "I cleared every
-      // filter" looks like, and the deprecated store has always read it back as `[]`.
-      const decodeUrl =
-        opts?.legacyMultiEmpty === true
-          ? (raw: unknown): unknown => {
-              const value = decode(raw)
-              return Array.isArray(value) && value.length === 0 ? null : value
-            }
-          : decode
       return single(name, f, decode, {
         optionValues: f.values,
         equals: sameList,
-        decodeUrl,
       })
     }
     case 'range': {
@@ -759,13 +737,10 @@ function single(
   extra?: {
     optionValues?: readonly string[]
     equals?: (a: unknown, b: unknown) => boolean
-    /** URL-side decoder when it differs from the storage-side one (multi, legacy layout only). */
-    decodeUrl?: (raw: unknown) => unknown
     /** Number only: the declared bounds and grain, republished onto the handle. */
     bounds?: FieldCodec['bounds']
   },
 ): FieldCodec {
-  const decodeUrl = extra?.decodeUrl ?? decode
   return {
     kind: f.kind,
     lane: f.lane,
@@ -776,7 +751,7 @@ function single(
     },
     ...(extra?.bounds !== undefined && { bounds: extra.bounds }),
     decode,
-    fromSearch: (search) => decodeUrl(search[name]),
+    fromSearch: (search) => decode(search[name]),
     toSearch: (value) => ({ [name]: value }),
     equals: extra?.equals ?? ((a, b) => a === b),
     optionValues: extra?.optionValues ?? [],
@@ -805,12 +780,6 @@ export type StoreCoreOptions = {
   readonly key: string
   readonly fields: Record<string, AnyField>
   readonly version?: number | undefined
-  /**
-   * Legacy single-value storage layout: the whole envelope value IS this field's value, the shape
-   * `createSearchParamStore` has written since 1.0.0. Set ONLY by the deprecated wrappers — a
-   * consumer's already-persisted selection has to keep resolving byte-for-byte.
-   */
-  readonly legacyValueField?: string
 }
 
 /**
@@ -967,10 +936,9 @@ function assertNoParamCollision(key: string, entries: readonly StoreEntry[]): vo
 /** @internal — the seam behind `createSearchStore` and `createLocalStore`. */
 export function createStoreCore(o: StoreCoreOptions): StoreCore {
   const version = o.version ?? 1
-  const legacy = o.legacyValueField
   const entries: StoreEntry[] = Object.entries(o.fields).map(([name, f]) => ({
     name,
-    codec: resolveFieldCodec(name, f, { legacyMultiEmpty: legacy !== undefined }),
+    codec: resolveFieldCodec(name, f),
   }))
   assertNoParamCollision(o.key, entries)
   const urlEntries = entries.filter((entry) => entry.codec.lane.url)
@@ -983,12 +951,8 @@ export function createStoreCore(o: StoreCoreOptions): StoreCore {
   const usePersistedRaw = createPersistedState<unknown>({ key: o.key, version, initial: null })
   const memory = createMemoryLane()
 
-  const toRecord = (raw: unknown): StoreRecord => {
-    if (legacy !== undefined) return raw === null || raw === undefined ? {} : { [legacy]: raw }
-    return isRecord(raw) ? raw : {}
-  }
-  const fromRecord = (record: StoreRecord): unknown =>
-    legacy !== undefined ? (record[legacy] ?? null) : record
+  const toRecord = (raw: unknown): StoreRecord => (isRecord(raw) ? raw : {})
+  const fromRecord = (record: StoreRecord): unknown => record
 
   const readRecord = (): StoreRecord => toRecord(readPersistedValue(o.key, version))
 

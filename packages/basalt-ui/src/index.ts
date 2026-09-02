@@ -15,7 +15,11 @@ export {
 // -- Common primitives (src/common) ------------------------------------------------------------
 // Not a subpath of its own: `BasaltProps` is the base every component's props extend, so it belongs
 // on the entry a consumer already imports. The module is Mantine-free (`common/boundary.test.ts`),
-// which is what lets `./charts` reach `cx`/`mergeRefs` without breaching the layer boundary.
+// which is what lets `./charts` reach `cx` without breaching the layer boundary.
+// The validate/errors internals (`useValidateProps`/`assertRequiredProps`/`requiredProp`/`oneOf`/
+// `deprecatedProp`/`duplicateMount`/`missingLayer`/`BASALT_PREFIX`) and the ref helpers
+// (`assignRef`/`mergeRefs`) are basalt's own diagnostic vocabulary, not a consumer's — no consumer
+// imports them, so they stay internal (C1 consolidation).
 export {
   type BasaltProps,
   type SlotClassNames,
@@ -24,16 +28,6 @@ export {
   type ToneWithNeutral,
   type Tier,
   cx,
-  assignRef,
-  mergeRefs,
-  BASALT_PREFIX,
-  requiredProp,
-  oneOf,
-  deprecatedProp,
-  duplicateMount,
-  missingLayer,
-  useValidateProps,
-  assertRequiredProps,
   scrollParentOf,
   SCROLLPORT_ATTRIBUTE,
 } from './common'
@@ -42,6 +36,7 @@ export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
 export { CTL_THEME, CtlSlot } from './theme'
 export type { CtlSlotProps } from './theme'
+export { ThemeToggle, type ThemeToggleProps } from './theme/theme-toggle'
 /**
  * The action vocabulary every home's `actions` slot takes (`docs/CONTROLS-SPEC.md` §2.1). The
  * OTHER components that project it (`OverflowMenu`, `SyncButton`, and the filter family) live on
@@ -54,8 +49,7 @@ export {
   type ActionGroupProps,
   type GlobalAction,
 } from './controls/actions'
-export { ThemeToggle, type ThemeToggleProps } from './theme-toggle'
-export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
+export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './common/motion'
 export {
   BasaltShell,
   NavCountBadge,
@@ -127,10 +121,10 @@ export {
 
 // ── Persisted state + the headless store kernel (state.ts) ───────────────────────────────────────
 // The `field.*` VALUE is deliberately not re-exported here. `basalt-ui/forms` used to own the
-// name `field` too and collide with this one; that forms helper is now `inputProps` (`field`
-// stays there only as a @deprecated alias — see MIGRATING.md). Import `field.*` from
-// `basalt-ui/router-tanstack` (beside `createSearchStore`) or from `basalt-ui/state` (beside
-// `createLocalStore`).
+// name `field` too and collide with this one; that forms helper is `inputProps` now (the
+// `@deprecated field` alias was removed in 1.29.0, C1 consolidation — see MIGRATING.md). Import
+// `field.*` from `basalt-ui/router-tanstack` (beside `createSearchStore`) or from `basalt-ui/state`
+// (beside `createLocalStore`).
 export {
   createPersistedState,
   type PersistedStateOptions,
@@ -161,7 +155,8 @@ export {
   type StringField,
 } from './state'
 
-// ── WidgetHeader (unified section/widget/card heading primitive, docs/CONTROLS-SPEC.md §2.2) ─────
+// ── Dashboard composites (WidgetHeader/Section heading family + KPI atoms + settings building
+// blocks, docs/CONTROLS-SPEC.md §2.2) ──────────────────────────────────────────────────────────────
 export {
   WidgetHeader,
   type WidgetHeaderDeltaProps,
@@ -173,13 +168,9 @@ export {
   DeltaBadge,
   type DeltaBadgeProps,
   type DeltaPolarity,
-} from './widget-header'
-
-// ── Section (tier-2 heading composer over WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ───────────────
-export { Section, type SectionProps, type SectionSlot } from './section'
-
-// ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
-export {
+  Section,
+  type SectionProps,
+  type SectionSlot,
   StatCard,
   type StatCardBreakdownRow,
   type StatCardProps,
@@ -208,7 +199,6 @@ export {
   type QueryStateLike,
   type QueryStateSlot,
   type QueryStateTier,
-  type QueryStateVariant,
   type QueryEmptyCopy,
   LoadingState,
   type LoadingStateProps,
@@ -216,14 +206,22 @@ export {
   type ErrorStateProps,
 } from './dashboard'
 
-// ── Connectivity (auto-mounted by BasaltProvider) ────────────────────────────────────────────────
-export { ConnectivityProvider, ConnectivityIndicator, useConnectivity } from './connectivity'
+// ── Connectivity (auto-mounted by BasaltProvider, merged into ./provider — dropped ./connectivity
+// subpath) ──────────────────────────────────────────────────────────────────────────────────────
+export { ConnectivityProvider } from './provider/connectivity-provider'
+export { ConnectivityIndicator } from './provider/connectivity-indicator'
+export { useConnectivity } from './provider/use-connectivity'
 export type {
   ConnectivityStatus,
   ConnectivitySnapshot,
   ConnectivityProviderProps,
   ConnectivityOverride,
-} from './connectivity'
+} from './provider/connectivity-types'
+
+// ── Query (createBasaltQueryClient, unwrap, lazy devtools — dropped ./query subpath) ──────────────
+export { createBasaltQueryClient, unwrap } from './query-client'
+export { BasaltQueryDevtools } from './query-devtools'
+export { toErrorMessage, errorStatus } from './common/errors'
 
 // ── Type-only re-exports for compile fixtures (H.4) ──────────────────────────────────────────────
 // SurfaceSpec/RuleName/SkillName: the value SURFACES stays internal; types only for surfaces-broken

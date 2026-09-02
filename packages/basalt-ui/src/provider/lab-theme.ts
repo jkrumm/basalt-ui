@@ -44,7 +44,7 @@ import { useMemo } from 'react'
 import { useDeriveControlsState, toDeriveOverride } from '../theme-lab/derive-state'
 import type { DeriveOverride } from '../theme-lab/derive-state'
 import { baseTheme, createBasaltTheme } from '../theme'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 type Plain = Record<string, unknown>
 

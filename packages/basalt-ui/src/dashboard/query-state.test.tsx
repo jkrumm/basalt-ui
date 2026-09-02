@@ -144,7 +144,7 @@ describe('LoadingState "page" padding is a var()-based calc expression', () => {
   test('"section" renders the bare loader with no padding wrapper', () => {
     const html = renderToStaticMarkup(
       <MantineProvider>
-        <LoadingState variant="section" />
+        <LoadingState tier="section" />
       </MantineProvider>,
     )
     expect(html).not.toContain('padding-block')
@@ -229,17 +229,11 @@ describe('a malformed result throws instead of asserting absence', () => {
 })
 
 /**
- * `tier` is the preferred spelling and `variant` the deprecated alias (audit B #19): `tier` is
- * already the package's word for "how loud is this" on `WidgetHeader` and `CtlSlot`, and `'section'`
- * meant two different things across the two spellings.
- *
- * The resolution is `tier ?? variant ?? 'page'` — asserted here rather than trusted, because a
- * consumer on `variant` gets a SILENT layout change if the alias ever stops being read: the page
- * tier still renders, just with a 64px block where a bare spinner belongs.
+ * `tier` is the package's word for "how loud is this" on `WidgetHeader` and `CtlSlot` too.
  */
 const spinnerOnly = (markup: string): boolean => !markup.includes('padding-block')
 
-describe('tier is the preferred name and variant still works', () => {
+describe('tier', () => {
   test('tier="section" renders the compact branch', () => {
     expect(
       spinnerOnly(
@@ -252,19 +246,7 @@ describe('tier is the preferred name and variant still works', () => {
     ).toBe(true)
   })
 
-  test('the deprecated variant="section" still renders the compact branch', () => {
-    expect(
-      spinnerOnly(
-        renderToStaticMarkup(
-          <MantineProvider>
-            <LoadingState variant="section" />
-          </MantineProvider>,
-        ),
-      ),
-    ).toBe(true)
-  })
-
-  test('neither given falls back to page', () => {
+  test('omitted falls back to page', () => {
     expect(
       spinnerOnly(
         renderToStaticMarkup(
@@ -274,17 +256,5 @@ describe('tier is the preferred name and variant still works', () => {
         ),
       ),
     ).toBe(false)
-  })
-
-  test('tier wins over variant when both are passed', () => {
-    expect(
-      spinnerOnly(
-        renderToStaticMarkup(
-          <MantineProvider>
-            <LoadingState tier="section" variant="page" />
-          </MantineProvider>,
-        ),
-      ),
-    ).toBe(true)
   })
 })

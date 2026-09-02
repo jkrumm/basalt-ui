@@ -2,7 +2,9 @@
  * ./notifications — Mantine notification adapter battery.
  *
  * Provides notify helpers, a typed registry, a persisted history store, and a bell/center
- * overlay component on top of @mantine/notifications.
+ * component on top of @mantine/notifications. The overlay mount is `<BasaltOverlays notifications
+ * />` (`basalt-ui/commands`) — this subpath no longer ships one of its own (C1 consolidation:
+ * `BasaltNotifications` was superseded and is removed).
  *
  * Optional peer: @mantine/notifications ^9.3.0.
  *
@@ -10,8 +12,8 @@
  *
  * @example
  * // main.tsx — mount the overlay:
- * import { BasaltNotifications } from 'basalt-ui/notifications'
- * <BasaltProvider><BasaltNotifications /><App /></BasaltProvider>
+ * import { BasaltOverlays } from 'basalt-ui/commands'
+ * <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>
  *
  * // Usage:
  * import { notifySuccess, notifyError, notifyPromise, NotificationBell } from 'basalt-ui/notifications'
@@ -84,7 +86,3 @@ export type { NotificationBellProps } from './bell'
 // ── NotificationCenter ────────────────────────────────────────────────────────
 export { NotificationCenter } from './center'
 export type { NotificationCenterProps } from './center'
-
-// ── BasaltNotifications overlay ───────────────────────────────────────────────
-export { BasaltNotifications } from './overlay'
-export type { BasaltNotificationsProps } from './overlay'

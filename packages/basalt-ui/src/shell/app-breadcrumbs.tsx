@@ -12,7 +12,7 @@
  */
 import { Anchor, Group, Text } from '@mantine/core'
 import type { CSSProperties } from 'react'
-import type { NavAnchor } from '../nav/types'
+import type { NavAnchor } from './nav-types'
 import { VX } from '../tokens'
 import type { BasaltProps } from '../common/props'
 import classes from './app-header.module.css'

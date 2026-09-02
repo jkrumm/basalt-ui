@@ -12,7 +12,7 @@ import type { ChartState } from '../primitives/ChartPending'
 import { curveFor, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesCurve } from '../series'
 import { padAutoLower } from '../utils/domain'
-import { isDev } from '../../utils/is-dev'
+import { isDev } from '../../common/is-dev'
 
 /**
  * `T = unknown` is load-bearing, not a shortcut: it keeps a consumer's existing
@@ -55,9 +55,6 @@ export type BarsLine<T = unknown> = {
   curve?: SeriesCurve
 }
 
-/** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias. */
-export type BarsZone = ZoneSpec
-
 export type BarsRefLine = {
   value: number
   color: string
@@ -84,7 +81,7 @@ export type BarsProps<T> = BasaltProps & {
   lines?: BarsLine<T>[]
 
   /** Horizontal value-range overlays (target zones, optimal bands). */
-  zones?: BarsZone[]
+  zones?: ZoneSpec[]
   /** Dashed/solid horizontal reference lines. */
   refLines?: BarsRefLine[]
 

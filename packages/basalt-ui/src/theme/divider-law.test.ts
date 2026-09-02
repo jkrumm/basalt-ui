@@ -173,7 +173,7 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
   },
 ]
 
-const CHROME_LANES = ['shell/', 'controls/', 'dashboard/', 'data/', 'widget-header/', 'theme/']
+const CHROME_LANES = ['shell/', 'controls/', 'dashboard/', 'data/', 'theme/']
 
 function isChrome(file: string): boolean {
   return CHROME_LANES.some((lane) => file.startsWith(lane))

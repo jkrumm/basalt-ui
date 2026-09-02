@@ -4,12 +4,11 @@
  * Carries the typed navigation definition (`defineNav`/`navGroup`/`navTarget`/`flattenNav`) and
  * `useNav`, which resolves it into `BasaltShell`'s `sections` + `mobileNav` props; plus the
  * StaticDataRouteOption augmentation (title/icon/navSection) for router-derived breadcrumbs, plus
- * `createSearchStore` + the `field.*` vocabulary (and the two deprecated enum-only wrappers it
- * replaced) — no Mantine, no JSX.
+ * `createSearchStore` + the `field.*` vocabulary — no Mantine, no JSX.
  */
 
 export { createSearchStore, type CreateSearchStoreOptions, type SearchStore } from './search-store'
-export { field } from './field'
+export { field } from '../state'
 export type {
   AnyField,
   BooleanField,
@@ -32,17 +31,7 @@ export type {
   SearchValues,
   StoredValues,
   StringField,
-} from './field'
-export {
-  createSearchParamStore,
-  type SearchParamStore,
-  type SearchParamStoreOptions,
-} from './search-param-store'
-export {
-  createMultiSearchParamStore,
-  type MultiSearchParamStore,
-  type MultiSearchParamStoreOptions,
-} from './multi-search-param-store'
+} from '../state'
 export { defineNav, navGroup, navTarget, flattenNav } from './nav'
 export type {
   NavItemMeta,
@@ -59,7 +48,7 @@ export type {
 } from './nav'
 export { useNav } from './use-nav'
 export type { UseNavOptions, NavBinding } from './use-nav'
-export type { NavAnchor, NavAnchorProps, NavMobilePlacement } from '../nav/types'
+export type { NavAnchor, NavAnchorProps, NavMobilePlacement } from '../shell/nav-types'
 import type { ReactNode } from 'react'
 import { useLocation, useMatches } from '@tanstack/react-router'
 

@@ -18,7 +18,7 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 import type { AnyField, FieldHandle, FieldSetOptions } from '../state'
-import { field } from './field'
+import { field } from '../state'
 import { createSearchStore } from './search-store'
 
 type Probe = { value: unknown; set: (next: unknown, opts?: FieldSetOptions) => void }

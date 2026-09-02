@@ -41,7 +41,7 @@ describe('src/common is Mantine-free', () => {
       expect(banned).toEqual([])
     })
 
-    test(`${file} has no VALUE import reaching outside common/ or utils/`, () => {
+    test(`${file} has no VALUE import reaching outside common/`, () => {
       // A type-only re-export is erased by esbuild and carries no runtime edge, so `Tier` may point
       // at widget-header. A value import may not: `./utils/is-dev` and siblings are the whole
       // allowance.
@@ -49,7 +49,7 @@ describe('src/common is Mantine-free', () => {
         source.replaceAll(/^\s*(?:import|export)\s+type\s[\s\S]*?['"][^'"]+['"]/gm, ''),
       ).filter((s) => s.startsWith('.'))
       for (const spec of valueImports) {
-        expect(spec.startsWith('./') || spec.startsWith('../utils/')).toBe(true)
+        expect(spec.startsWith('./')).toBe(true)
       }
     })
   }

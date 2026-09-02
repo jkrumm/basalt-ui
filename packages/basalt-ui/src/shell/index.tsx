@@ -40,7 +40,7 @@ import type {
   SidebarBlock,
   SidebarItem,
   SidebarSection,
-} from '../nav/types'
+} from './nav-types'
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedState } from '../state'
 import brandClasses from './app-brand.module.css'
@@ -80,8 +80,8 @@ export { PageBar, type PageBarProps, type PageBarSlot } from './page-bar'
 export { PageAside, type PageAsideProps, type PageAsideSlot } from './page-aside'
 
 /**
- * The shared nav vocabulary lives in `src/nav/types.ts` so the headless router bridge can `import
- * type` it without reaching into the Mantine layer. Re-exported here so `SidebarItem` /
+ * The shared nav vocabulary lives in `src/shell/nav-types.ts` so the headless router bridge can
+ * `import type` it without reaching into the Mantine layer. Re-exported here so `SidebarItem` /
  * `SidebarSection` keep resolving straight from `basalt-ui`, exactly as before.
  */
 export type {
@@ -102,7 +102,7 @@ export type {
   MobileNavModel,
   MobileNavSlot,
   MobileNavSurface,
-} from '../nav/types'
+} from './nav-types'
 
 /** Brand identity shown in the sidebar header (logo + name). */
 export type BrandConfig = {
@@ -276,30 +276,9 @@ const COLLAPSE_VERSION = 1
  */
 const collapseStores = new Map<string, () => readonly [boolean, (next: boolean) => void]>()
 
-/**
- * Seeds `basalt:<key>` from the raw pre-1.20.1 key once, so the switch doesn't silently re-expand
- * every consumer's sidebar. Mantine's `useLocalStorage` wrote a bare `JSON.stringify(value)` at the
- * un-namespaced key; only `'true'`/`'false'` are accepted, and only when the house key is empty.
- * A one-upgrade bridge, not a supported format — delete it once no consumer predates 1.20.1.
- */
-function migrateLegacyCollapse(key: string): void {
-  try {
-    if (window.localStorage.getItem(`basalt:${key}`) !== null) return
-    const legacy = window.localStorage.getItem(key)
-    if (legacy !== 'true' && legacy !== 'false') return
-    window.localStorage.setItem(
-      `basalt:${key}`,
-      JSON.stringify({ v: COLLAPSE_VERSION, value: legacy === 'true' }),
-    )
-  } catch {
-    // Storage blocked (private browsing, quota) — defaulting to expanded is a fine outcome.
-  }
-}
-
 function collapseStore(key: string): () => readonly [boolean, (next: boolean) => void] {
   const cached = collapseStores.get(key)
   if (cached) return cached
-  if (typeof window !== 'undefined') migrateLegacyCollapse(key)
   const store = createPersistedState<boolean>({ key, version: COLLAPSE_VERSION, initial: false })
   collapseStores.set(key, store)
   return store

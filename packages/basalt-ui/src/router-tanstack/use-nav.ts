@@ -12,7 +12,7 @@
 import { createElement, useMemo } from 'react'
 import type { ElementType, ReactNode } from 'react'
 import { Link, useMatchRoute, useRouterState } from '@tanstack/react-router'
-import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../nav/types'
+import type { MobileNavConfig, NavAnchor, SidebarItem, SidebarSection } from '../shell/nav-types'
 import { flattenNav } from './nav'
 import type { AnyNavGroup, AnyNavItem, NavConfig, NavItemId, NavTabId } from './nav'
 
