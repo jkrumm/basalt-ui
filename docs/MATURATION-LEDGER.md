@@ -11,17 +11,42 @@ Branch: `feat/cbbi-evidence-page` (19 commits ahead of `master` at start). Basel
 
 ## Waves
 
-| Wave | Scope                                                                        | Status               |
-| ---- | ---------------------------------------------------------------------------- | -------------------- |
-| 0    | Orientation, baseline check, baseline screenshots, four audits               | done                 |
-| 1    | Regressions + packaging/typesafety/wiring defects (audit A)                  | verified, committing |
-| 2    | Shared primitives from Blueprint: props/refs/errors/isomorphic harness       | open                 |
-| 3    | Components/dashboard/controls/forms gaps (audit B)                           | shipped 2026-09-02   |
-| 4    | Charts + responsive gaps (audit C)                                           | open                 |
-| 5    | Playground combination matrix + screenshot/critic loop per route             | shipped 2026-09-02   |
-| 6    | Rules: dogfood blind spots, deprecation lifecycle, `pre` folds tests         | open                 |
-| 7    | Docs: STATUS.md, MIGRATING.md, llms.txt, agent rules                         | shipped 2026-09-02   |
-| 8    | User visual-feedback round: shell scrollport, controls, StatCard, mobile nav | shipped 2026-09-02   |
+| Wave | Scope                                                                                                                                                                     | Status               |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 0    | Orientation, baseline check, baseline screenshots, four audits                                                                                                            | done                 |
+| 1    | Regressions + packaging/typesafety/wiring defects (audit A)                                                                                                               | verified, committing |
+| 2    | Shared primitives from Blueprint: props/refs/errors/isomorphic harness                                                                                                    | open                 |
+| 3    | Components/dashboard/controls/forms gaps (audit B)                                                                                                                        | shipped 2026-09-02   |
+| 4    | Charts + responsive gaps (audit C)                                                                                                                                        | open                 |
+| 5    | Playground combination matrix + screenshot/critic loop per route                                                                                                          | shipped 2026-09-02   |
+| 6    | Rules: dogfood blind spots, deprecation lifecycle, `pre` folds tests                                                                                                      | open                 |
+| 7    | Docs: STATUS.md, MIGRATING.md, llms.txt, agent rules                                                                                                                      | shipped 2026-09-02   |
+| 8    | User visual-feedback round: shell scrollport, controls, StatCard, mobile nav                                                                                              | shipped 2026-09-02   |
+| 9    | Consolidation (1.29.0): C1 dead weight, C2 lint engine, C3 playground, C4 docs, C5 boundary additions, C6 argo migration — see `.claude/maturation/consolidation-plan.md` | in-progress          |
+
+## Consolidation (1.29.0)
+
+Scope per wave (`.claude/maturation/consolidation-plan.md`):
+
+- **C1** — cut the dead weight: delete every `@deprecated` shim, merge micro-dirs
+  (`section`/`widget-header` → `dashboard`, `utils`/`motion`/`query/error-message` → `common`,
+  `theme-toggle` → `theme`, `nav` → `shell`, `connectivity` → `provider`), drop subpaths `./data`,
+  `./connectivity`, `./query`, dedupe helpers.
+- **C2** — one lint engine, a real CLI: retire regex guard kinds the AST plugin subsumes, split
+  `cli/index.ts`, dogfood the shipped rules/skills into this repo.
+- **C3** — playground 44 → 14 routes, converting evidence-only routes to tests.
+- **C4** — docs: one doctrine, one home (this wave — STATUS/specs/CLAUDE.md/shipped rules).
+- **C5** — boundary additions that delete consumer code (`format`, `ChartCard` states,
+  `BasaltErrorBoundary.onError`, imperative command handles, `useBreakpoint`, `BasaltDevDock`,
+  `SparklineGrid`, `unwrap` alignment).
+- **C6** — argo migration to 1.29.0 on a branch, recorded in `docs/ARGO-MIGRATION-LEARNINGS.md`.
+
+| Id  | Wave | Item                                                                                                                                                                                                     | Evidence                                         | Status |
+| --- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------ |
+| N1  | 9    | `--audit-allows` cannot judge a `basalt.exempt` entry, and its `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`                                                             | `docs/archive/STATUS-HISTORY.md` § Round-6 sweep | open   |
+| N2  | 9    | No `bandHeight` prop on band charts — band height is derived and floored by `VX.margin`, so a consumer wanting a taller band has no seam                                                                 | `docs/archive/STATUS-HISTORY.md` § Known gaps    | open   |
+| N3  | 9    | `ChartTooltipFloat` still has no viewport gate (portal + flip + clamp, but no measured-before-show viewport check)                                                                                       | `docs/archive/STATUS-HISTORY.md` § Known gaps    | open   |
+| N4  | 9    | `CHART_ENTRY_POINT_TAG` (`src/guard/index.ts`) is read by `chart-missing-aria-label`, not by `unframed-chart`, which keys on a JSX literal and carries no kind list — collapse the two onto one tag list | `docs/archive/STATUS-HISTORY.md` § Round-7 batch | open   |
 
 ## Items
 

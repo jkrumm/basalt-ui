@@ -1,5 +1,7 @@
 # Agent Chat — Framework Specification
 
+> Archived 2026-09-02 — superseded by `agent/rules/basalt-batteries.md` § agent (live invariants folded there); historical, not maintained.
+
 > Status: PROPOSED (2026-08-02). Target: `basalt-ui` 1.10.0 → 1.13.0, four minors, in order.
 > (The ladder started at 1.9.0. It shifted by one when 1.9.0 was released from `master` carrying
 > only the chart-layer batch, while this work was still on its branch.)

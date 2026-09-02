@@ -1,5 +1,7 @@
 # Content Spec — the `./content` surface
 
+> Archived 2026-09-02 — superseded by code JSDoc (verified: decision 3 shiki dual-theme in `content/highlighter.ts`, decision 6 slugger in `content/slug.ts`, decision 8 GuideLink/GuideDrawer in `content/guide.tsx`); decisions 1/2/4/5/7 not independently re-verified here. Historical, not maintained.
+
 > Status: IMPLEMENTED (2026-07-16, all three stages) — `packages/basalt-ui/src/content/` ships the
 > full surface below; playground demos at `/content` + `/content-overview`.
 > **Amendment (2026-07-16):** the article model (`Article<C, T>`, `sortArticles`, `filterArticles`,
@@ -22,11 +24,11 @@ basalt-ui renders data today (charts, tables, KPI cards) and conversation (agent
 surface is **content**: documentation, guides, articles, AI-streamed prose. One module makes all
 three sources render identically, batteries included:
 
-| Source | Entry | Use case |
-|-|-|-|
-| React children | `<Prose>` | hand-authored JSX articles |
-| Markdown string | `<Markdown>` | CMS content, files, **AI-streamed output** (`streaming` prop) |
-| MDX | `mdxComponents` map | content-collections / any MDX runtime |
+| Source          | Entry               | Use case                                                      |
+| --------------- | ------------------- | ------------------------------------------------------------- |
+| React children  | `<Prose>`           | hand-authored JSX articles                                    |
+| Markdown string | `<Markdown>`        | CMS content, files, **AI-streamed output** (`streaming` prop) |
+| MDX             | `mdxComponents` map | content-collections / any MDX runtime                         |
 
 Everything routes through the same primitives (typography CSS, `CodeBlock`, `Callout`,
 `MermaidDiagram`), so an AI-streamed answer, a `.md` file, and an MDX guide are visually
@@ -67,7 +69,7 @@ indistinguishable and all obey the `--vx-*` token system in both color schemes.
    `bg/fg/accent/line/muted/surface/border` token object → emits SVGs referencing CSS custom
    properties, so scheme switching is free). Optional peer. Covers flowchart/state/sequence/
    class/ER/XY. Full-grammar `mermaid` stays a consumer escape hatch (documented, not shipped).
-   Streaming-safe: a ```` ```mermaid ```` fence renders as a plain code block until the fence
+   Streaming-safe: a ` ```mermaid ` fence renders as a plain code block until the fence
    closes; render keyed on content hash; parse errors keep the last good SVG.
 5. **Article typography gets two new ladder steps.** Chat density (15px/1.55) is wrong for
    long-form reading; research consensus and every serious docs property is 16px body with
@@ -98,6 +100,7 @@ indistinguishable and all obey the `--vx-*` token system in both color schemes.
    Runtime re-validation of frontmatter that content-collections already validated at build time
    buys nothing, so no Standard Schema seam ships for content. `StandardSchemaV1` in `register.ts`
    stays what it always was — a forms/state validation seam, unrelated to content.
+
 8. **Contextual help is a first-class component.** The pattern the user cares about — "this chart
    has a guide" — ships as `GuideLink` (an unobtrusive trigger) + `GuideDrawer` (a right-side
    Drawer rendering any article via `<Markdown>`/`<MDXContent>` at chat density, with an "open
@@ -135,13 +138,13 @@ Root barrel does NOT re-export `./content` (same policy as charts/tokens: opt-in
 
 ## 4. Dependency policy
 
-| Package | Role | Policy |
-|-|-|-|
-| `react-markdown` ^10.1, `remark-gfm` ^4 | markdown rendering | already optional peers — unchanged |
-| `remend` (exact pin) | streaming repair | new bundled dep (tiny, zero-dep, Apache-2.0) |
-| `shiki` ^4.3 | syntax highlighting | new optional peer, lazy-loaded, plain-mono fallback |
-| `beautiful-mermaid` ^1 | diagrams | new optional peer, lazy-loaded, code-fence fallback |
-| `@content-collections/*`, `@mdx-js/*` | build-time content | consumer devDeps — recipe only, never imported by the package |
+| Package                                 | Role                | Policy                                                        |
+| --------------------------------------- | ------------------- | ------------------------------------------------------------- |
+| `react-markdown` ^10.1, `remark-gfm` ^4 | markdown rendering  | already optional peers — unchanged                            |
+| `remend` (exact pin)                    | streaming repair    | new bundled dep (tiny, zero-dep, Apache-2.0)                  |
+| `shiki` ^4.3                            | syntax highlighting | new optional peer, lazy-loaded, plain-mono fallback           |
+| `beautiful-mermaid` ^1                  | diagrams            | new optional peer, lazy-loaded, code-fence fallback           |
+| `@content-collections/*`, `@mdx-js/*`   | build-time content  | consumer devDeps — recipe only, never imported by the package |
 
 Everything degrades: no shiki → plain mono code; no beautiful-mermaid → fenced code display; no
 react-markdown → plain text (existing pattern).
@@ -151,7 +154,7 @@ react-markdown → plain text (existing pattern).
 - `--vx-text-h1: 26px`, `--vx-text-h2: 21px` ladder steps (+ `VX.text.h1/h2`).
 - `--vx-prose-measure: 72ch`.
 - No `--vx-code-*` color axis — shiki dual themes carry token colors (see decision 3); the code
-  block *surface* (bg, border, header) stays on existing `--vx-*` tokens.
+  block _surface_ (bg, border, header) stays on existing `--vx-*` tokens.
 - `--vx-space-sticky-header-clearance` (desktop, `>= sm`) / `--vx-space-sticky-header-clearance-mobile`
   (mobile, `< sm`) — Prose's heading `scroll-margin-top` and ArticleLayout's TOC-rail sticky `top`.
   **Coupled to `BasaltShell` on purpose**: both values are sized to clear `BasaltShell`'s own
@@ -218,8 +221,8 @@ raw stream text
 - Vega-Lite streamed chart specs — revisit only with a real consumer need; visx stays the chart
   system.
 - Versioned docs, i18n routing — consumer concerns.
-- A search *index* or indexing service (Pagefind, Algolia, server-side search) — consumer concern. The framework ships `toArticleActions`, a pure in-memory **projector** into the already-shipped Spotlight command surface (the same tier as `toRouteActions`); it does not tokenize, rank, index, or persist. An app that outgrows substring matching over a client-side array brings its own index.
-- A taxonomy vocabulary. The framework ships `Article<C, T>` generic over categories/tags and the operators over them; *which* categories and tags exist is domain data, declared consumer-side — the `VX.series` doctrine applied to content.
+- A search _index_ or indexing service (Pagefind, Algolia, server-side search) — consumer concern. The framework ships `toArticleActions`, a pure in-memory **projector** into the already-shipped Spotlight command surface (the same tier as `toRouteActions`); it does not tokenize, rank, index, or persist. An app that outgrows substring matching over a client-side array brings its own index.
+- A taxonomy vocabulary. The framework ships `Article<C, T>` generic over categories/tags and the operators over them; _which_ categories and tags exist is domain data, declared consumer-side — the `VX.series` doctrine applied to content.
 - Grouping/pagination UI. Sorting and filtering ship. Grouped section rendering and pagination await a real consumer need.
 - A list/grid view toggle. Six cards fit one screen and a list re-renders identical content narrower — it is a control that exists to look configurable.
-- A `create-basalt-docs` scaffold — deferred with the rest of the create-* family.
+- A `create-basalt-docs` scaffold — deferred with the rest of the create-\* family.

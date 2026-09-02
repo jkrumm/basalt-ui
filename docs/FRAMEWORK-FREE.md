@@ -3,10 +3,10 @@
 basalt-ui has zero runtime dependencies. `bun add basalt-ui` with no peers
 installed pulls in exactly one package — itself. No React, no Mantine, no
 bundler, and no d3/visx chart stack riding along for a component you never
-render. A static site can carry the same 204 `--vx-*` variables the framework's
-own components read, and stay in sync with them, without any of that weight.
-
-Counts on this page are for **1.21.0** and reproduce from the emitter itself:
+render. A static site can carry the same `--vx-*` variables the framework's own
+components read, and stay in sync with them, without any of that weight. The
+canonical count is whatever `dist/tokens.css` emits right now — don't quote a
+number here, it drifts across minors; reproduce it yourself:
 
 ```bash
 bunx basalt-ui tokens:css --no-legacy-aliases | grep -oE '^ +--vx-[a-z0-9-]+' | sort -u | wc -l
@@ -144,18 +144,20 @@ that way; they no longer have to.
 
 ## `only: 'core'` — drop the component spacing
 
-108 of the 204 variables are `--vx-space-*`, and 99 of those are named for a
-basalt React component: `--vx-space-agent-transcript-inset`,
-`--vx-space-toc-sub-indent`, `--vx-space-sidebar-child-row-indent`. Outside this
-framework they are dead weight.
+Most `--vx-space-*` variables are named for a basalt React component —
+`--vx-space-agent-transcript-inset`, `--vx-space-toc-sub-indent`,
+`--vx-space-sidebar-child-row-indent`. Outside this framework they are dead
+weight.
 
 `--only core` keeps the 9 generic anchors — the `stack-xs`…`stack-xl` rhythm,
-`control-height`, `input-height`, `row-inset-x`, `row-inset-y` — and takes the
-emitted set from 204 variables to 105. It is a spacing filter only: color,
-radius, shadow, type and status are identical in both modes.
+`control-height`, `input-height`, `row-inset-x`, `row-inset-y` — and drops
+every component-named space variable. It is a spacing filter only: color,
+radius, shadow, type and status are identical in both modes. Counts drift
+across minors — reproduce them with the command above (`--only core` /
+`--only all`) rather than trusting a number here.
 
-All three counts exclude the 32 deprecated camelCase aliases below, which the
-default output still emits (236 declarations in the file, 204 canonical names).
+The default output also emits a deprecated camelCase alias
+(`--vx-accentFill` and friends) beside every canonical kebab-case name;
 `--no-legacy-aliases` drops them.
 
 ## Tailwind v4 — the `@theme inline` bridge
@@ -269,14 +271,11 @@ border-color: color-mix(in srgb, var(--vx-neutral) 65%, transparent);
 ```
 
 Every `--vx-*` color is a variable that changes value across schemes. Writing
-`rgba()` means reading one scheme's hex, baking it in, and losing the other. From
-JS the `alpha(token, a)` helper does exactly the `color-mix` above:
-
-```ts
-import { alpha, VX } from 'basalt-ui/tokens'
-
-alpha(VX.neutral, 0.65) // 'color-mix(in srgb, var(--vx-neutral) 65%, transparent)'
-```
+`rgba()` means reading one scheme's hex, baking it in, and losing the other. A
+React/Mantine consumer reaches for the `alpha(token, a)` helper instead (same
+law, JS-side — see `docs/DESIGN-CORE.md` § Light / dark, opacity, and
+reactivity); a framework-free consumer has no helper and writes the
+`color-mix()` above directly.
 
 ## Three line tokens, three roles
 
@@ -376,7 +375,7 @@ commit-cleanliness in 1.21.0 (see below the table).
 | Was                                                                                                  | Now                                                                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `check-theme` reported ~100 `raw-hex` / `raw-color-fn` inside the file `tokens:css` had just written | the output opens with the `@generated basalt-ui` header, and in a `.css` file carrying it verbatim on lines 1 and 2 the guard skips the lines that are basalt custom properties, selectors, `}` or self-closing comments. No `basalt.exempt` entry needed |
-| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` in **`package.json`** (or `--tokens-only`) disables the 19 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                |
+| `raw-form-control` told a Mantine-free app to use `@mantine/core`'s `TextInput`                      | `"basalt": { "profile": "tokens-only" }` in **`package.json`** (or `--tokens-only`) disables the 18 kinds whose remedy is a Mantine component, prop, or the React theme factory. The colour and typography kinds stay live                                |
 | `raw-font-family` flagged `font-family: var(--font-sans)`                                            | a `var()` reference is not a literal; any `var(--…)` passes                                                                                                                                                                                               |
 | `doctor` exited 1 with "manifest missing — run `basalt-ui init`"                                     | `doctor` auto-detects a tokens-only consumer (no manifest + no `@mantine/core`) and checks only what applies, so the CLI-vs-installed version check is reachable in CI                                                                                    |
 
@@ -386,7 +385,7 @@ wirable into a tokens-only repo's CI beside `tokens:css --check`.
 
 **The profile is declared for `check-theme` and inferred for `doctor`, deliberately.**
 `doctor`'s profile only changes which advice it prints, never what it enforces, so
-inferring is free there. `check-theme` silences 19 kinds, and inferring that from a
+inferring is free there. `check-theme` silences 18 kinds, and inferring that from a
 missing `@mantine/core` would switch off half the guard on any repo that simply
 keeps Mantine in a different workspace package. Write the key down.
 

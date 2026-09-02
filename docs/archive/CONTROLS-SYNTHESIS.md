@@ -199,3 +199,224 @@
 | Warn grace                               | 9 items "one minor", 5 minors old | promote or declare advisory in the same commit                                                                                                                                                                                                                                                                                 |
 
 Verdict: bloated by ~3.5× and internally inconsistent in ≥16 places, with the smallest share of text carrying the only enforcement. Any controls concept must land as one new short rule + guards, and delete rather than add — otherwise it becomes the 14th restatement.
+
+---
+
+## Appended 2026-09-02 — §8 Migration, §9 Implementation waves, §10 Consumer example (lifted verbatim from CONTROLS-SPEC.md during the C4 docs-consolidation wave)
+
+Historical — the migration/wave/example content below narrates how the 1.26.0 controls concept
+shipped. Not maintained; `docs/CONTROLS-SPEC.md` §1/§2/§4/§5/§6 stay live.
+
+## 8. Migration
+
+`packages/basalt-ui/MIGRATING.md` gets one `## 1.26.0` section per wave with a row per removed or
+renamed export and its replacement.
+
+**Removed / renamed exports (MIGRATING rows):** `PageActions`, `PageActionsOutlet`,
+`PageHeaderProvider` → `PageBar` (provider stays internal); `BasaltShellProps.globalActions:
+ReactNode` → `GlobalAction[]`; `sidebarNavExtra` / `mobileNav.moreExtra` → `sidebarBlocks`;
+`StatCard.label` → `title`, `StatCard.menu` → `actions`; `ChartCard.tooltip` → `info`,
+`ChartCard.extra` → `actions`; `SettingsSection.description` → `subtitle`;
+`BasaltDataTable.toolbarActions` → `actions`; `ArticleFilterBar` → `FilterSet` + `ViewTabs` +
+`MultiSelectFilter`; `createSearchParamStore` / `createMultiSearchParamStore` → `createSearchStore`
+(deprecated wrappers until 1.29.0); `useOnlineStatus` → `useConnectivity`; tokens
+`appHeaderMobileActionsHeight`, `appShellHeaderMobileHeight`, `stickyHeaderClearanceMobile`; CSS
+`.pageActions` and its `nowrap` override (`app-header.module.css:27-43,63-72`).
+
+**Playground** (gates every promotion): `demo/dashboard-range-store.ts` → `createSearchStore`
+with `field.range`; `demo/DashboardDateFilter.tsx` deleted; `routes/dashboard.tsx` renders
+`<PageBar filters={<FilterSet><RangeFilter/></FilterSet>} actions={…}/>` with one
+`kind: 'custom'` row-1 node dogfooded; `demo/nav-model.tsx:58,230` thunks → `store.linkSearch`;
+`routes/index.tsx` redirect uses `search: store.linkSearch()`; the six `<Title order={1|2}>` → breadcrumb
+titles; the six in-body ephemeral control rows → `Section tabs`; a phone route demo exercising the
+`Filters (n)` sheet, `stickyHeader` tables under `--basalt-page-bar-h`, and a sidebar with all
+three block kinds.
+
+**argo** (`apps/dashboard`, ≈ −700 lines):
+
+1. `lib/window-stores.ts` → three `createSearchStore`s with `field.range({ presets, fallback,
+custom: true })`; strength adds `tab: field.enum(…, { persist: false })`, `exercises:
+field.multi(…)`; usage adds `range/grain/workspace/billing`, astro `tab/site/nights`, calendar
+   `view`, walking `window`. Routes: `validateSearch: store.validateSearch` (the Zod +
+   `readStored` splice in `garmin-health.tsx:54-58` ×3 goes); `presetToParams` ×3 →
+   `field.range.toWindow`.
+2. Delete `window-selector.tsx` ×4, `view-tabs.tsx` ×2 + the calendar `SegmentedControl`,
+   `filter-bar.tsx`; each page renders `<PageBar filters={<FilterSet><RangeFilter
+field={…} customPicker={DateRangePicker}/></FilterSet>} tabs={<ViewTabs field={…}/>}/>`; the four
+   navigate handlers in `strength-tracker.tsx:132-198` and the astro/usage/calendar equivalents go.
+3. `lib/nav.tsx:132` literal → `walkingStore.linkSearch`; `:110` strength thunk →
+   `strengthStore.linkSearch`.
+4. `section.tsx` ×6 → `Section`; `hero-stats.tsx` ×5 → `StatCard`; `session-history.tsx` /
+   `top-projects.tsx` wrappers → `BasaltDataTable title`.
+5. `RefreshButton` (`timer-nav.tsx`), `sync-control.tsx`, reading `SyncButton`, m365 `ActionIcon`
+   → `SyncButton` (the global one in `globalActions` with `mobile: 'bar'`).
+6. `__root.tsx:110-118` → `GlobalAction[]`: timer + bell `bar`, Hermes voice/widget + `ThemeToggle`
+   `more`; theme rows stay only in `settingsMenuItems`.
+7. Five in-chart `useState` selects (`momentum-chart.tsx:100`, …) → `field.enum(…, { url: false })`
+   on a per-feature `createLocalStore`, bound through `ChartCard.actions={<SelectFilter/>}`.
+8. `PageActions` ×8 → `PageBar`; `reading.tsx`/`hermes-chat.tsx` lose the empty row for free;
+   calendar `100dvh - 100px` → `calc(100dvh - var(--app-shell-header-height) - var(--basalt-page-bar-h, 0px))`.
+
+**linewatch** (`web`, no shell, ≈ −300 lines):
+
+1. `lib/range.ts` + the `minDuration` Zod spread + `lib/compact.ts` + `section.tsx:100` `useState`
+   → one `createSearchStore({ range: field.enum(RANGE_OPTIONS, '24h'), minDuration:
+field.number({ fallback }, { persist: false }), compact: field.boolean(false, { url: false }) })`
+   plus `createLocalStore` per section for `view`. The six compact content gates stay in linewatch
+   — they are content decisions, not spacing.
+2. `components/page-header.tsx` → `<PageBar title="linewatch" filters={<FilterSet><RangeFilter
+field={…}/></FilterSet>} actions={{ secondary: [{ kind: 'custom', node: <LiveChip/> },
+compactToggle, theme] }}/>`; the `--lw-header-h` effect, the `96px` fallback and both
+   responsive twins (`page-header.tsx:125-158`, `section.tsx:216-234`) are deleted;
+   `range-selector.tsx` deleted.
+3. `components/section.tsx` → `Section id collapsible persistKey tabs={<ViewTabs/>}`; the `useRef`
+   mirror (`:107-110`) goes; `useCardTitle` and the `''` sentinel go; `compact.contract.test.ts`
+   deleted; `StatusBar` keeps its verdict rail but its headings become `WidgetHeader tier="widget"`;
+   D16 dead references removed.
+
+## 9. Implementation waves
+
+Each wave is one `feat:` minor, independently shippable, with disjoint file groups so
+implementers can run in parallel inside a wave. All seven waves below shipped together as ONE
+release, **1.26.0, on 2026-08-27** — the per-wave 1.26.0/1.27.0/1.28.0 split in this table was the
+plan, not what happened. Promotion of the wave-6 `warn` rules is **1.27.0**, gated on the argo +
+linewatch migrations of §8.
+
+| Wave                       | File group                                                                                                                                                                                                                                                                                                          | Delivers                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 Foundations**          | `src/tokens/palette.ts`, `src/tokens/index.ts`, `src/theme/index.ts`, `src/theme/*.test.ts`, `src/dashboard/delta-badge.tsx`, `src/widget-header/**` _(new)_, `src/guard/index.ts` + `configs/oxlint-plugin.js` (grace ledger shape only)                                                                           | anchors + steps, `ctl`/`icon` var sets + coverage test, slot `CTL_THEME`, `SegmentedControl` theming, Mantine-free `DeltaBadge` + `WidgetHeader`, `{ since, promote, why }` ledger + version-gated tests, nine stale entries promoted |
+| **2 Stores**               | `src/router-tanstack/**`, `src/state.ts`, `src/index.ts` (state lines only)                                                                                                                                                                                                                                         | `createSearchStore`, `field.*`, `FieldHandle` in `./state`, `createLocalStore`, deprecated wrappers, `useOnlineStatus` removed, D11/D12 tests                                                                                         |
+| **3 Homes**                | `src/shell/index.tsx`, `src/shell/page-bar.tsx` _(new, replaces `page-header.tsx`)_, `src/shell/app-header.module.css`, `src/shell/index.test.tsx`, `src/dashboard/stat-card.tsx`, `src/dashboard/settings-section.tsx`, `src/charts/primitives/ChartCard.tsx`, `src/section/**` _(new)_, `src/data/data-table.tsx` | `PageBar` (portal row 1, sticky row 2, `--basalt-page-bar-h`), `GlobalAction[]`, header 48 everywhere, composers on `WidgetHeader`, `Section`, table title/count                                                                      |
+| **4 Controls**             | `src/controls/**` _(new)_, `src/controls-dates/**` _(new)_, `src/content/article-filter-bar.tsx` (delete) + `src/content/index.ts`, `package.json` exports, `src/surfaces.ts` (two surface entries), `scripts/pack-test.sh`                                                                                         | every control in §3, `FilterSet` + mobile sheet, `SyncButton`, `ViewTabs`, `DateRangePicker` behind the peer, pack-test step for `./controls-dates` without `@mantine/dates`                                                          |
+| **5 Sidebar blocks**       | `src/shell/app-sidebar.tsx`, `src/shell/app-sidebar.module.css`, `src/shell/app-mobile-nav.tsx`, `src/shell/mobile-nav-model.ts`, `src/nav/types.ts`, `src/shell/index.tsx` (props only, after wave 3)                                                                                                              | `SidebarBlock` union, `brand.menu`, `search.actions`, persisted folds, rail dot/ring, More projection, `sidebarNavExtra`/`moreExtra`/B14 deleted                                                                                      |
+| **6 Guards + agent layer** | `configs/oxlint-plugin.js`, `configs/oxlint-plugin.test.ts`, `src/guard/**`, `src/surfaces.ts` (`pluginRules`), `src/cli/**` (`check-coverage`), `agent/**`, `CLAUDE.md`, `MIGRATING.md`, `STATUS.md`, `docs/*.md` corrections                                                                                      | the ten rules of §6, two guard kinds, generated coverage headers, 13→6 rules, ledger dispositions of §7                                                                                                                               |
+| **7 Dogfood + consumers**  | `apps/playground/**`; then argo and linewatch PRs                                                                                                                                                                                                                                                                   | the playground gate, then the two migrations of §8; promotion of every wave-6 `warn` rule is blocked until this wave is green with ≤3 waivers                                                                                         |
+
+Wave 3 must land the playground `stickyHeader` table and a calendar-style `100dvh` layout under
+row 2 before argo moves — the sticky in-flow row is the one behaviour no consumer has run yet.
+
+## 10. Consumer example
+
+```tsx
+// src/routes/analytics.tsx — every size, placement and persistence decision is basalt's
+import { createFileRoute } from '@tanstack/react-router'
+import { SimpleGrid, Stack } from '@mantine/core'
+import { IconChartBar, IconSettings, IconUsers } from '@tabler/icons-react'
+import { PageBar, Section, StatCard } from 'basalt-ui'
+import {
+  FilterSet,
+  RangeFilter,
+  CompareFilter,
+  SelectFilter,
+  MultiSelectFilter,
+} from 'basalt-ui/controls'
+import { DateRangePicker } from 'basalt-ui/controls-dates'
+import { ChartCard, MultiLine, BarSparkline } from 'basalt-ui/charts'
+import { BasaltDataTable } from 'basalt-ui/data/table'
+import { createSearchStore, field } from 'basalt-ui/router-tanstack'
+import { useAnalytics, CHANNELS, channelColumns } from '../lib/queries/analytics'
+import { openAccounts, openMetrics, saveReport } from '../lib/commands'
+
+export const analytics = createSearchStore({
+  key: 'analytics',
+  fields: {
+    range: field.range({ presets: ['7d', '30d', '90d', 'ytd'], fallback: '30d', custom: true }),
+    compare: field.enum(['none', 'previous', 'year'], 'none'),
+    currency: field.enum(['USD', 'EUR'], 'USD'),
+    channels: field.multi(CHANNELS, []),
+  },
+}).labels({
+  range: { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days', ytd: 'Year to date' },
+})
+
+export const Route = createFileRoute('/analytics')({
+  staticData: { title: 'Analytics', icon: <IconChartBar size={16} /> }, // the breadcrumb names the page
+  validateSearch: analytics.validateSearch,
+  loaderDeps: ({ search }) => search,
+  component: AnalyticsPage,
+})
+
+function AnalyticsPage() {
+  const search = analytics.useValues()
+  const { data, isFetching, dataUpdatedAt, refetch } = useAnalytics(search)
+  return (
+    <Stack gap="md">
+      <PageBar
+        actions={{
+          primary: { key: 'save', label: 'Save as report', onClick: saveReport },
+          secondary: [
+            {
+              key: 'accounts',
+              label: 'Accounts',
+              icon: <IconUsers size={16} />,
+              onClick: openAccounts,
+            },
+          ],
+        }}
+        sync={{ syncing: isFetching, lastCompletedAt: dataUpdatedAt, onSync: refetch }}
+        filters={
+          <FilterSet>
+            <RangeFilter field={analytics.field.range} customPicker={DateRangePicker} />
+            <CompareFilter field={analytics.field.compare} />
+            <SelectFilter field={analytics.field.currency} label="Currency" />
+            <MultiSelectFilter
+              field={analytics.field.channels}
+              label="All channels"
+              noun="channels"
+            />
+          </FilterSet>
+        }
+        filtersEnd={[
+          {
+            key: 'metrics',
+            label: 'Manage metrics',
+            icon: <IconSettings size={16} />,
+            onClick: openMetrics,
+          },
+        ]}
+      />
+      <SimpleGrid cols={{ base: 2, md: 4 }}>
+        {data.kpis.map((k) => (
+          <StatCard
+            key={k.key}
+            icon={k.icon}
+            title={k.title}
+            value={k.value}
+            delta={k.delta}
+            sparklinePlacement="right"
+            sparkline={
+              <BarSparkline
+                data={k.history}
+                width={72}
+                height={28}
+                ariaLabel={`${k.title} trend`}
+              />
+            }
+          />
+        ))}
+      </SimpleGrid>
+      <Section title="Revenue" icon={<IconChartBar size={16} />} count={data.channels.length}>
+        <ChartCard
+          title="Revenue over time"
+          info="Net revenue per day against the prior window"
+          value={data.revenue.total}
+          delta={data.revenue.delta}
+        >
+          <MultiLine
+            data={data.revenue.points}
+            series={data.revenue.series}
+            ariaLabel="Revenue over time"
+          />
+        </ChartCard>
+      </Section>
+      <BasaltDataTable
+        title="Top pages"
+        data={data.topPages}
+        columns={channelColumns}
+        enableGlobalFilter
+        enablePagination
+      />
+    </Stack>
+  )
+}
+```

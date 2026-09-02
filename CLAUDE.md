@@ -10,18 +10,39 @@ three-tier `--vx-*` token system, a theme-lab, a Vite preset, raw toolchain conf
 CSS theme into the Mantine framework above. The old `./css` and `./starlight` Tailwind exports are
 **dropped**. This was recorded at the time as costless ("zero external consumers") and it was not:
 `rollhook` consumed `basalt-ui/css` across two apps and sat pinned at a dead 0.4.2 until round 4,
-19 minors later. A dropped export with no `MIGRATING.md` entry is how a consumer stalls silently. Anything below
-referencing Tailwind / OKLCH foundation palettes / ShadCN / Tremor / Starlight / Biome / Prettier /
-Astro docs is obsolete — that doctrine no longer applies.
+19 minors later. A dropped export with no `MIGRATING.md` entry is how a consumer stalls silently.
+
+## Precedence (this repo)
+
+Shipped rules in `/.claude/rules/` (when dogfooded) > `packages/basalt-ui/CLAUDE.md` > this file >
+`docs/*.md`. When two disagree, fix the lower one to match, or update both deliberately. The
+consumer-side chain is a different stack, stated in its own terms by
+`packages/basalt-ui/agent/templates/CLAUDE-block.md.tpl` (`consumer DESIGN.md > the six shipped
+basalt-* rules > basalt-* skills`) — don't conflate the two. Two global-skill over­rides apply
+inside a basalt-ui consumer (see the template): `/frontend-design`'s "bold aesthetic" push is
+overridden by restraint, and the global `visx-charts.md` rule is superseded by the shipped
+`basalt-charts.md`.
 
 ## Working Instructions
 
 The full S0→S5 argo extraction is **implemented and on `master`** — `packages/basalt-ui/src/**` is
-real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). The stale
-`feat/s0-mantine-pivot` branch is superseded; don't work from it. The historical plan
-lives in `docs/archive/BLUEPRINT.md`. `docs/STATUS.md` is the live single-source-of-truth for
-current state; `docs/archive/MATURATION-REVIEW.md` is the (now-executed) quality ledger. Do what is
-explicitly requested — don't autonomously execute large roadmap phases.
+real code, not stubs (see `packages/basalt-ui/CLAUDE.md`'s Status section). `docs/STATUS.md` is the
+live single-source-of-truth for current state. Do what is explicitly requested — don't
+autonomously execute large roadmap phases.
+
+## Consolidation doctrine (2026-09, `docs/MATURATION-LEDGER.md` § Consolidation)
+
+- **Adopt-or-delete.** A public export needs a consumer outside `apps/playground` by the next
+  minor after it ships, or it's on-notice in `MIGRATING.md`.
+- **Net-negative waves.** A consolidation PR deletes more lines than it adds; a new export needs a
+  named consumer in the brief.
+- **One doctrine, one home.** Home = the most-enforced surface stating it (shipped rule > package
+  CLAUDE.md > guard JSDoc). Everything else is a one-line link. `check-agent-doc-drift.ts` covers
+  `docs/**` and both CLAUDE.md too.
+- **Budgets are numbers**, checked by `scripts/check-budgets.ts` in `pre`: public symbols, published
+  subpaths, shipped rule lines, spec prose, playground routes, `cli/index.ts` size.
+- **Dogfood.** The repo loads its own shipped rules/skills; `/.oxlintrc.json` levels match
+  `configs/oxlint.json`.
 
 ## Critical Rules (READ FIRST)
 
@@ -33,19 +54,32 @@ explicitly requested — don't autonomously execute large roadmap phases.
   hex; retune the derive config/constants instead. A consumer retunes the identity via
   `createBasaltTheme(overrides?, { derive: { accent, neutral, lightLevel, darkLevel, vibrancy,
 accentBrightness } })` — one accent seed + five bounded knobs, contrast guaranteed by derivation.
-  The same options object also carries `fonts: { sans?, head?, mono? }` (the single font entry
-  point → `--basalt-font-*` vars), `radius` (integer −5..+5 shifting the corner-radius law; level 0
-  = today's values), and `density` (integer −3..+3, narrower than `radius` on purpose — see
-  `deriveSpacing`'s JSDoc in `packages/basalt-ui/src/tokens/palette.ts` — shifting every
-  density-tracking spacing token together via a `1 + 0.1 * level` multiplier, the `SPACE_FIXED`
-  structurals staying exempt by design; level 0 = today's values) — one config surface for every
-  theme dimension.
+  The same options object also carries `fonts: { sans?, head?, mono? }`, `radius` (integer −5..+5),
+  and `density` (integer −3..+3) — one config surface for every theme dimension. Full law:
+  `docs/DESIGN-CORE.md`.
 - **Lint**: oxlint (NOT Biome). **Format**: oxfmt (NOT Prettier). No ESLint, no Biome, no Prettier.
 - **TypeScript**: strict mode, no `any`, type inference preferred, explicit types on public exports
 - **Git**: conventional commits, **empty scope** (commitlint `scope-empty: always`), `master` branch
 - **Exports**: named only, **no default exports**
 - **Files**: `kebab-case.ts`; components `PascalCase.tsx`
 - **basalt-ui is ALWAYS a separate commit** (NPM published — lefthook `isolated-basalt-ui` guard)
+- **Published subpaths, 1.29.0 (C1):** `./query`, `./connectivity` and `./data` are dropped —
+  `./query`'s exports move to `.`/`./state`, `./connectivity` folds into `./provider`, `./data`
+  folds into `./data` (table + virtual-list) staying but the barrel narrows. `./controls-dates`
+  STAYS separate (inlining it would pull `@mantine/dates` into `./controls`). Full symbol-level
+  mapping: `packages/basalt-ui/MIGRATING.md` § Unreleased.
+
+## Charts
+
+Every single-plot cartesian chart composes **`CartesianChart`**, enforced by
+`basalt/hand-rolled-plot`; five declared non-single-plot exceptions. Ground truth:
+`docs/CHARTS-SPEC.md`.
+
+## Mantine-Free Boundary
+
+`src/charts/**`/`src/tokens/**` stay Mantine-free, `@visx/*` stays inside `charts/**` — three
+independent oxlint rules. Full layering + packaging rationale (repo-internal, not a consumer
+contract): `packages/basalt-ui/CLAUDE.md` § Layering.
 
 ## Tech Stack
 
@@ -63,10 +97,10 @@ accentBrightness } })` — one accent seed + five bounded knobs, contrast guaran
 
 ```
 basalt-ui/
-├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui, v1.0.0)
+├── packages/basalt-ui/    # the ONLY published package (npm: basalt-ui)
 ├── apps/playground/        # @basalt-ui/playground — workspace:* consumer, everyday iteration surface
 ├── apps/marketing/         # basalt-ui.com — CONTENT-FROZEN until rebuilt on Mantine post-migration
-├── docs/archive/BLUEPRINT.md  # the 5-stage argo-extraction plan
+├── docs/archive/BLUEPRINT.md  # the 5-stage argo-extraction plan (superseded, do not execute)
 └── CLAUDE.md               # you are here
 ```
 
@@ -75,7 +109,6 @@ basalt-ui/
   HMR, exact types, zero linking via `workspace:*`.
 - `apps/marketing` — basalt-ui.com. Content-frozen until rebuilt on Mantine post-migration; will
   vendor its own legacy CSS and stop depending on the package. Don't iterate on it for now.
-- `examples/*` was removed from the workspace.
 
 ## Commands
 
@@ -104,61 +137,15 @@ verify that built last would grade the previous build.
 cd packages/basalt-ui && bun run build   # dist-first tsup + styles.css copy + tsc declarations
 ```
 
-**Footgun: the playground's typecheck reads `dist`, not `src`.** Vite aliases `basalt-ui` to the
-package's `src/` (`apps/playground/vite.config.ts`), so the RUNNING playground always exercises
-source — but `apps/playground/tsconfig.json` declares no `paths`, so `tsc` resolves `basalt-ui/*`
-through node_modules → the package's `exports` → `dist/**/*.d.ts`. A new export or a widened
-signature is therefore invisible to `bun run typecheck` until `bun run build` runs, and the
-playground half can report green against types the package no longer has. Same class as the
-`check-theme`-reads-dist footgun in `packages/basalt-ui/CLAUDE.md`: **build before trusting a
-typecheck that spans both.**
+**The dist-reads-not-src footgun spans two builds you have to trust in order:** the playground's
+typecheck resolves `basalt-ui/*` through `node_modules` → `dist/**/*.d.ts` even though Vite aliases
+it to `src/` for the running app, so a new/widened export is invisible to `bun run typecheck` until
+`bun run build` runs. `packages/basalt-ui/CLAUDE.md` names the third footgun (`check-theme`) in the
+same family — build before trusting a typecheck or a theme check that spans both packages.
 
 **Pack-test (the dist gate, runs in CI):** `bun pm pack` + scratch-install of the tarball. The
 playground only exercises `src/`, never `dist/` — the pack-test is what proves the published
 artifact resolves.
-
-## Charts: one mandatory primitive
-
-Every single-plot cartesian chart composes **`CartesianChart`** (`src/charts/primitives/`), which
-owns the measured margins, both y scales and their domains, the axes, grid, the page-shared cursor,
-the crosshair and its dots, the hover/keyboard overlay and the derived tooltip — the caller supplies
-`series` and draws only marks. This is enforced by `basalt/hand-rolled-plot`, not left to
-discipline; the five non-single-plot shapes (`DualPanel`, `MirroredBars`, `BandStrip`, `Donut`,
-`Heatmap`) are the declared exceptions and compose `ChartFrame` + `useChartCursor` + `autoMargin` +
-`ChartTooltipFloat` directly — the first three behind a `theme-allow-file hand-rolled-plot`
-declaration, `Donut`/`Heatmap` render no assembly primitive so nothing fires on them. Legends and
-tooltip rows are DERIVED from `series` and never hand-authored
-(`basalt/chart-legend-literal`). Margins measure themselves from the labels actually painted
-(`autoMargin`); `VX.margin` is only a floor. The cursor is shared page-wide by default with no
-provider — `ChartCursorScope` isolates a subtree. `CartesianChart` also resolves a measured **phone
-tier** below `VX.phoneChartWidth` (smaller legend/tick fonts, tighter margin floors, a capped
-legend — no media query, a narrow grid cell is "phone" at any viewport) and a `state` prop
-(`ChartPending`/`ChartEmpty`/`ChartError`) every kind threads through. Ground truth:
-**`docs/CHARTS-SPEC.md`**.
-
-## Mantine-Free Boundary (enforced)
-
-`src/charts/**` and `src/tokens/**` may **not** import `@mantine/*`; `@visx/*` may **only** be
-imported inside `src/charts/**`. Enforced by three independent oxlint plugin rules (each its own
-rule id — disabling one never silently drops the other two):
-
-- `basalt/visx-boundary` — `@visx/*` only inside a `charts/` path segment. Shipped in the consumer
-  preset AND repo-local.
-- `basalt/visx-tooltip` — `@visx/tooltip` banned everywhere, including inside charts. Shipped AND
-  repo-local.
-- `basalt/token-layer-boundary` — `@mantine/*` banned inside `charts/`/`tokens/` path segments.
-  **Repo-local only** — it is deliberately absent from the shipped consumer preset. It protects two
-  things. **Layering**: `src/tokens/**` is pure data that `cssVariablesResolver` (Mantine-coupled)
-  reads to bind Mantine's surfaces to the same `--vx-*` vars `src/charts/**` reads, so an
-  `@mantine/*` import in either would cycle back through the theme layer or let a chart bypass
-  `--vx-*` and fork chrome/charts apart. **Packaging**: `./charts` and `./tokens` resolve and
-  render with **no `@mantine/*` installed** — real and CI-tested (`scripts/pack-test.sh`'s
-  "charts/tokens-only (no-Mantine) resolution + render" step, `scripts/check-dist-layering.mjs`'s
-  dist-graph walk, and the root barrel's non-re-export of them). The LAYER is Mantine-free — the
-  FRAMEWORK is not: the root `.` entry requires Mantine (`@mantine/core`/`@mantine/hooks` are
-  required, non-optional peers); it's just `./charts`/`./tokens` that don't. Both consequences are
-  invariants internal to this repo, not a consumer contract — a consumer's own
-  `charts/`/`tokens/`-named directories carry no such obligation.
 
 ## Validation & Quality Workflow
 
@@ -198,19 +185,12 @@ fails a mixed staging set.
 - `ci:` — CI/CD, lefthook, workflow changes; never triggers a release.
 - `chore:` / `docs:` / `refactor:` — no release.
 
-**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui has **seven consumer
-repos** as of 2026-08-22 — argo, linewatch, image-share, rb, image-gen, `basalt-ui-obsidian` (a
-downstream _library_, not an app) and rollhook (tokens only, no Mantine, no React). The doctrine
-does not rest on there being one consumer; it rests on **every consumer being in the same hands**,
-upgradeable in lockstep, with a private-repo blast radius. Two things follow: the downstream library
-means a basalt rename can propagate two hops, and `packages/basalt-ui/MIGRATING.md` is now the
-mandatory place a removed or renamed export gets written down. Revisit the doctrine only if
-basalt-ui gains a consumer outside these hands. A
-behavior change that would nominally be "breaking" (a component's resolved size shifting, a prop
-default moving, an export being renamed) ships as a plain `feat:` on the 1.x line. Document the
-change and the opt-out in the commit body; do not encode it in the version number. Cutting a major
-here buys nobody anything and costs a version-number reset — don't raise it, don't propose it,
-don't reach for the marker.
+**No majors. `feat!:` and `BREAKING CHANGE:` footers are banned.** basalt-ui has multiple consumer
+repos in the same hands, upgradeable in lockstep, with a private-repo blast radius — that is what
+the doctrine rests on, not a consumer count. `packages/basalt-ui/MIGRATING.md` is the mandatory
+place a removed or renamed export gets written down. A behavior change that would nominally be
+"breaking" ships as a plain `feat:` on the 1.x line; document the change and the opt-out in the
+commit body, never in the version number. Don't raise, propose, or reach for a major.
 
 ## Release Process
 
@@ -228,52 +208,15 @@ the OIDC identity that pushes to the registry **with provenance**.
 The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync), a dry
 run **always** first with the computed version read back, one confirmation on the number itself,
 and a follow-through to the _publish_ run — so a green exit means "on npm", not "the release job
-finished". `YES=1 make release` skips only the prompt.
-
-**The wrapper hard-refuses a major.** Majors are banned here (see "Commit type discipline" above)
-and the one way to get one by accident is a stray `feat!:` or `BREAKING CHANGE:` footer reaching
-`master` — nothing else in the pipeline checks for it. Rewrite the commit as a plain `feat:` that
-documents the change in its body, then release again.
+finished". `YES=1 make release` skips only the prompt. **The wrapper hard-refuses a major** — the
+one way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` footer reaching `master`.
+Rewrite it as a plain `feat:` and release again.
 
 **Releasing is allowed — through `make release`, and only there.** No per-release permission is
-needed; `make release` is itself the gate, because it always dry-runs first, reads the computed
-version back, and refuses a major outright. Never dispatch the workflow by hand — that path runs
-none of those checks.
-
-What has NOT changed is that releasing is a decision, not a step that follows merging. `release.yml`
-is `workflow_dispatch`-only precisely so merged never means published: don't queue a release
-unasked, and don't list one as a "remaining before ship" item. Release when there is a reason to —
+needed; the wrapper is itself the gate. Never dispatch the workflow by hand. Releasing is a
+decision, not a step that follows merging — `release.yml` is `workflow_dispatch`-only precisely so
+merged never means published: don't queue a release unasked. Release when there is a reason to —
 a consumer is blocked, a fix is wanted downstream — and say which version went out and why.
-
-## Analytics & Tracking
-
-### UTM Parameter Strategy
-
-**Philosophy**: minimal tracking with Umami Analytics — track document source, not campaigns.
-
-**Format**: a single parameter identifying the file/location:
-
-```
-?utm_source={file_location}
-```
-
-**Defined sources**: `root_readme`, `basalt_ui_readme`. (`brand_voice` dropped — its source doc was
-deleted; `npm_package` dropped — `package.json`'s `homepage` now points to GitHub, not
-`basalt-ui.com`.)
-
-**Why**: the analytics already tracks referrers (github.com, npmjs.com), there are no active
-campaigns, and one consistent parameter answers the only question that matters — "which document
-did they click from?". We don't track `utm_medium` / `utm_campaign` / `utm_content` / `utm_term`.
-
-Applies only to links that actually target `basalt-ui.com` (Umami only sees traffic on that
-domain). Both READMEs' "Documentation" links currently point off-domain (GitHub / an in-page
-anchor) until `apps/marketing` is rebuilt on Mantine (see "Structure" above), so
-neither carries a live `utm_source` today; the convention stays defined for the next doc that
-links to `basalt-ui.com` from that source:
-
-```markdown
-[Some page](https://basalt-ui.com?utm_source=root_readme)
-```
 
 ## Key Principles
 
@@ -282,16 +225,3 @@ links to `basalt-ui.com` from that source:
 - **TypeScript strict** — no shortcuts.
 - **Iterate in the playground** — see changes immediately.
 - **Document decisions** — update this file as conventions evolve.
-
-## Search Param Persistence
-
-`createSearchStore` (`basalt-ui/router-tanstack`) is the ONE store, over typed fields
-(`field.enum/multi/range/number/boolean/string`) with per-field lanes — so the enum-only scoping
-question this section used to argue is gone: a route with a wider search shape composes
-`store.validateSearch(raw)` into its own validator, and `createSearchSchemaStore` is struck.
-
-Three laws, and they are guard-backed now, not prose here: a control takes `field` and never
-`value`/`onChange`; a nav link passes `store.linkSearch` **by reference**; a reader never writes
-`useSearch({ from: '<literal>' })`. The doctrine ships to consumers in
-`packages/basalt-ui/agent/rules/basalt-state.md` (stores, lanes, nav) and `basalt-controls.md`
-(where a control lives, and what sizes it); `docs/CONTROLS-SPEC.md` §4 is the long form.

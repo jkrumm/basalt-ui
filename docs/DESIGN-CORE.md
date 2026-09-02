@@ -14,23 +14,35 @@ flow, how depth is built, what every chart composes — not the concrete hues. A
 `DESIGN.md` instantiates the palette (the brand voltage, the per-series data dictionary) on top of
 the shipped rules.
 
-## Precedence
-
-In a **consumer repo** (where this file does not exist) the law resolves highest-wins:
-
-```
-consumer DESIGN.md deltas  >  shipped basalt-* rules  >  skills / habit
-```
-
-A consumer `DESIGN.md` may **override** any instantiation choice (its palette, its accent families,
-its per-metric assignments) — but it **extends**, never contradicts, the rules. **This file** is the
-source those rules are distilled from: when it and a shipped rule disagree, fix the rule to match
-(or update both deliberately).
+**Precedence** (for this repo and for a consumer repo alike): see root `CLAUDE.md` §
+Consolidation doctrine / precedence chain. When this file and a shipped rule disagree, fix the rule
+to match (or update both deliberately) — this file is the source those rules are distilled from.
 
 > **This file governs the system, not the data.** It declares the rules, the tiers, and the
 > contract. The **per-metric colour assignments** — which series gets which hue — are a data
 > dictionary that lives only in the consumer's palette source (the executable `{light,dark}` source
 > of truth), never here.
+
+## Identity
+
+Modern zinc. Cool-neutral zinc surfaces, low-contrast panel lift on a slightly darker page, depth
+via a whisper shadow + 1px ring baked into the shadow (never a bare hairline), one saturated
+sky-blue accent (no hex here — the derive engine at `DEFAULT_DERIVE_CONFIG` is ground truth, never
+a prose table), and a three-font typographic system: body (`'Nunito Sans Variable'`), head
+(`'Hubot Sans Variable'`, `font-stretch: 88%`, headings/brand/card titles), mono
+(`'JetBrains Mono Variable'`, every numeral and micro-label). Chrome stays quiet; data and headings
+carry the character.
+
+## Accent discipline
+
+The accent appears on: the primary data series, active-nav **icons** and active **child** labels,
+links, primary buttons, focus rings, and the leader bar in meters. Chrome (borders, inactive
+states, backgrounds, general icons) stays zinc-neutral. Status colours stay reserved for status.
+One accent, used with intent. Never spend it on UI selection state (active nav row, selected tab)
+— that's not a data signal; the active row is an ink tint, not the accent fill (a filled surface
+keeps a deep accent + white label in BOTH schemes — a light fill can't carry white text and a
+darker one drops below 3:1 on the dark page; never trust Mantine's `autoContrast`, which resolves
+scheme-blindly via a brightness heuristic — the label is a `--vx-on-*` token, resolved in CSS).
 
 ## Five principles (priority order)
 
@@ -122,11 +134,8 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
 
 - **Density is the point.** This is a terminal, not a marketing page — sections separate by surface
   change and shadow-carried depth, not by large air. Card interior padding is `xs`/`sm` (11px/13px),
-  not the Mantine-default `md` — see `docs/DESIGN-SPEC.md` §8 for the exact inset.
-- **Depth = a whisper shadow + ring, not a bare hairline border** (see
-  `docs/DESIGN-SPEC.md` §8 inversion #1 — this supersedes the older "surface + hairline, never a
-  drop shadow" framing below the ring; when this section and that spec disagree on a concrete
-  value, the spec wins). Elevation tiers:
+  not the Mantine-default `md`.
+- **Depth = a whisper shadow + ring, never a bare hairline border.** Elevation tiers:
 
   | Level        | Treatment                                           | Use                                |
   | ------------ | --------------------------------------------------- | ---------------------------------- |
@@ -146,41 +155,23 @@ metric is selected, distinct colours only when 2+ are compared. Copy it.
 - **Type carried by size + weight.** A three-font system, not a single system-sans: body
   (`'Nunito Sans Variable'`), head (`'Hubot Sans Variable'`, headings/brand/card titles at
   `font-stretch: 88%`), and mono (`'JetBrains Mono Variable'`) for numbers — a tabular stack that
-  keeps metric columns aligned (a Coinbase pattern). See `docs/DESIGN-SPEC.md` §3.
+  keeps metric columns aligned (a Coinbase pattern). The type ladder itself is defined once in
+  `src/tokens/index.ts` (`VX.text.*` / `--vx-text-*`) — no font-size literals at call sites.
 
 ## Data visualization — the visx primitives contract
 
 The signature surface. The discipline is structural: a small set of primitives, always composed; a
 kind-registry for recurring shapes; never loosen the primitives to fit a one-off.
 
-### The primitive contract (see `docs/CHARTS-SPEC.md`)
-
-1. **`CartesianChart`** — every single-plot cartesian chart **MUST** compose it, and compose
-   nothing else from this list by hand. It owns the measured margins, both y scales and their
-   domains, the x scale and tick thinning, grid, zones, axes, the shared cursor, the crosshair and
-   its dots, the hover/keyboard overlay, and the derived tooltip. The caller supplies `series` + a
-   child that draws ONLY marks. Reaching past it for an axis, a tooltip or a margin means the chart
-   has drifted from every other chart. Mechanically enforced: `basalt/hand-rolled-plot` fails the
-   build on a chart-assembly primitive rendered in a file that doesn't compose `CartesianChart`
-   (escape: `theme-allow-file hand-rolled-plot — <why>`, for a genuinely non-single-plot shape —
-   see #5; `theme-allow` alone now scopes to one node).
-2. **ChartCard** — the wrapper; never a raw `<Card>`. Title + info-tooltip + extra slot.
-3. **`series` is the single source of truth** — legend entries and tooltip rows are DERIVED from it
-   (`deriveLegend` / `deriveTooltipRows`). A chart cannot show a row or a legend key it does not
-   draw. Never hand-author a legend or a tooltip row in parallel; `basalt/chart-legend-literal`
-   fails the build on a hand-written array literal passed to `ChartLegend`'s `items`.
-4. **The cursor is shared by default** (module-level store, no provider). `ChartCursorScope`
-   ISOLATES a subtree; it does not enable sharing.
-5. **Non-single-plot shapes** — five of them: `DualPanel`'s two panes, `MirroredBars`' two bar
-   panes, `BandStrip`'s missing y dimension, `Heatmap`, `Donut`. They compose `ChartFrame` +
-   `useChartCursor` + `autoMargin` + `ChartTooltipFloat` directly — same machinery, different
-   assembly. Never raw `<AxisLeft>`/`<AxisBottom>`; never import `@visx/tooltip`.
-6. **Theme-aware colours** via `VX.*` tokens. **Never** raw hex literals in chart files. **Never**
-   `localStorage.getItem('theme')`.
-
-> **Sparkline exemption.** Tiny inline charts (under `charts/sparklines/`) without legend/tooltip are
-> exempt from the `ChartCard`/`ChartLegend`/`ChartTooltip` contract — but still must use `VX` tokens
-> and stay scheme-reactive.
+Full contract, enforcement mechanics and the five non-single-plot exceptions: `docs/CHARTS-SPEC.md`
+(ground truth). The law in one paragraph: every single-plot cartesian chart composes
+`CartesianChart` and nothing else from the assembly primitives by hand — it owns margins, scales,
+axes, cursor, crosshair, hover overlay and tooltip, the caller supplies only `series` + marks.
+`series` is the single source of truth for legend and tooltip rows (never hand-authored in
+parallel). The cursor is shared by default, module-level, no provider. Every mark is `VX.*` —
+never a raw hex, never `localStorage.getItem('theme')`. Sparklines (`charts/sparklines/`) are
+exempt from the `ChartCard`/legend/tooltip wrapper contract but still token-only and
+scheme-reactive.
 
 ### Kinds vs bespoke (Rule of Three)
 
@@ -238,31 +229,6 @@ solids, neutral line/axis/grid/tooltip chrome, legend text, surface ramp). There
 `VX.series`** — the framework deliberately doesn't ship a domain dictionary. A consumer rebuilds its
 series map in one guard-exempt file and feeds it through `defineSeries` / `groupTokens` /
 `paletteOptions`.
-
-## Do's and don'ts
-
-### Do
-
-- Default to neutral; spend a hue only for trend, signal, or categorical separation.
-- Pull every colour from a token (`VX.*` / palette primitive / Mantine reskinned accent).
-- Add new colours as `{light,dark}` pairs in the palette data → wire the `--vx-*` var → expose the
-  `VX.*` ref. Use `alpha(token, a)` for opacity.
-- Define domain series app-side via `defineSeries` / `seriesTokens`, fed through `paletteOptions`.
-- Render numeric values in the mono/tabular number style.
-- Compose the chart primitives; add a kind on the third repeat.
-
-### Don't
-
-- Don't inline `hex`/`rgb()`/`hsl()`/`rgba()` in component or chart source.
-- Don't reach for raw library-default primaries for identity.
-- Don't colour a single-series chart or a lone stat "to make it pop."
-- Don't spend the identity hue on UI selection state (active nav item, selected tab) — that's not a
-  data signal; keep it a neutral fill.
-- Don't branch on colour scheme in JS or read the theme from `localStorage`.
-- Don't carry depth with a bare hairline border; use the `shadow-card` whisper-shadow-plus-ring
-  token (see `docs/DESIGN-SPEC.md` §8 inversion #1).
-- Don't enumerate per-metric colours in this file or in a consumer's `DESIGN.md` prose — that's the
-  palette data's job.
 
 ## Guardrails (mechanical enforcement)
 
