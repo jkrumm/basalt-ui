@@ -1,3 +1,62 @@
+# [1.28.0](https://github.com/jkrumm/basalt-ui/compare/v1.27.0...v1.28.0) (2026-09-02)
+
+
+### Bug Fixes
+
+* confirm settles on a throw, drafts flush on unmount, panel labels click ([fb4e9e7](https://github.com/jkrumm/basalt-ui/commit/fb4e9e7c865d364d6946d8d1cf65e7df19d2d22b))
+* forward every WidgetHeader prop a Section accepts ([39dd9af](https://github.com/jkrumm/basalt-ui/commit/39dd9afcffe08ef01ce7a69e5868cb2cca92eb01))
+* give PageBar row 2 a declared two-line phone form ([be8dbef](https://github.com/jkrumm/basalt-ui/commit/be8dbef7cea3d26bfeb1178685bba8bd56fd5747))
+* give the two CBBI distribution charts distinct chart ids ([0e76faf](https://github.com/jkrumm/basalt-ui/commit/0e76fafb984cae9a14af90cfa05f9899683a8eeb))
+* import the cbbi query types through basalt-ui/query ([ccf5738](https://github.com/jkrumm/basalt-ui/commit/ccf57386e31d6e26009e25c7501fad6cf0c2107f))
+* keep the mobile nav bar at its 48px touch floor under the seam ([6daa174](https://github.com/jkrumm/basalt-ui/commit/6daa1741a8d460e38dbdae80f4a9f96797ea9866))
+* keep the sticky table header at the scroller's top edge ([2ef7472](https://github.com/jkrumm/basalt-ui/commit/2ef7472f48f45eef0d730d25e7285a5443ad5352))
+* mount the aside panel's children once on the phone path ([badb691](https://github.com/jkrumm/basalt-ui/commit/badb6914d6dcd0830b2612d4384efeaab36c37a2))
+* raw-size-literal was inert in its own test fixture ([e547eee](https://github.com/jkrumm/basalt-ui/commit/e547eee7eb8805badd47ba577006a800ec278838))
+* widget header actions wrap at phone width, notification center fills ([a90fe7e](https://github.com/jkrumm/basalt-ui/commit/a90fe7e4a214c18fc452c7e1bc5e81d344c047bf))
+
+
+### Features
+
+* a data table contains itself horizontally ([3147d3b](https://github.com/jkrumm/basalt-ui/commit/3147d3be8cebddce6e758d92ceea741982f8d1e9))
+* a form layer on top of the @mantine/form adapter ([99d56b7](https://github.com/jkrumm/basalt-ui/commit/99d56b7020a3285a5f76ae0ed6877c33de04567d))
+* a phone tier, step curves, a format law and states in the chart layer ([d506292](https://github.com/jkrumm/basalt-ui/commit/d506292c29c190810125c33efdd0978977033118))
+* a real log axis on CartesianChart with 1-2-5 ticks ([eb6fd91](https://github.com/jkrumm/basalt-ui/commit/eb6fd91f60e26b983755aa20294a87a7affa7b5b))
+* a widget grid, a stat group, a query-aware stat card and header slices ([ea7d712](https://github.com/jkrumm/basalt-ui/commit/ea7d7120231dcfb67f52b108a88c32ad6ede6c11))
+* accent-tinted active nav rows so hover cannot impersonate them ([25021d9](https://github.com/jkrumm/basalt-ui/commit/25021d9517f4ea017bd33a3de39d24a41caafdba))
+* add the CBBI live-data evidence page to the playground ([b8fe541](https://github.com/jkrumm/basalt-ui/commit/b8fe541a6efb644f11f4f4b729801ccb3f103062))
+* add the PageAside shell region ([feb8c3a](https://github.com/jkrumm/basalt-ui/commit/feb8c3a575590bfd462be2c20c96e47acb7d4bf6))
+* delta polarity on WidgetHeader and a group tier inside the aside ([2b2083d](https://github.com/jkrumm/basalt-ui/commit/2b2083dbc98695aeb48c09398fde01280d32ee8b))
+* diagnose, preset and advise in the CBBI aside ([bc9e651](https://github.com/jkrumm/basalt-ui/commit/bc9e651f18491782e410bf8619ccabdfe1e9fd3a))
+* drop test files from the tarball and add a package.json export ([022e0c0](https://github.com/jkrumm/basalt-ui/commit/022e0c04f9f45e4f3e48e85d9d28c80df297a07f))
+* every component takes className and style; misuse throws a named error ([21a9a9a](https://github.com/jkrumm/basalt-ui/commit/21a9a9ad650d035a742438ae30ec1c2fc785f5bf))
+* fit-checked choice tracks and panel rows in the phone sheet ([2ac8ef1](https://github.com/jkrumm/basalt-ui/commit/2ac8ef1c78391321c2fe432f5e002aaf64deaba5))
+* form rows are control homes and a rule catches the missing field key ([b63b1b5](https://github.com/jkrumm/basalt-ui/commit/b63b1b5659d454aa1e8e9ef972affb4da097a925))
+* guard bound controls outside a home and teach the agent the aside ([c4935ce](https://github.com/jkrumm/basalt-ui/commit/c4935ce82e9d7d53246230027c558543d809dccf))
+* guard the wiring doctrines and give deprecations a lifecycle ([f8b4ce6](https://github.com/jkrumm/basalt-ui/commit/f8b4ce699c726c93929b10337ba05ff7b10c9a1e))
+* header above the sidebar and main as the shell scrollport ([9a9499c](https://github.com/jkrumm/basalt-ui/commit/9a9499c062121456a3e9d2b7bae3946a8d7bb763))
+* let SliderControl compose its readout and carry an end control ([b8f560b](https://github.com/jkrumm/basalt-ui/commit/b8f560b26310e0855f26df752a92d6ffb88aff5a))
+* let the CBBI page fold price and confidence into one dual-axis chart ([3d6da25](https://github.com/jkrumm/basalt-ui/commit/3d6da2583c22b26e697b06bfcabc72b89b0068fb))
+* measured rotated-label margins, heatmap thinning and a live legend rollup ([57153f7](https://github.com/jkrumm/basalt-ui/commit/57153f72d546655b2f83e54b1073f090169e1291))
+* more-sheet rows share the sidebar's density and keep a gutter ([8ea3afd](https://github.com/jkrumm/basalt-ui/commit/8ea3afd8996da55574b9b88f40318d9a5e3d25e9))
+* notification payloads narrow per kind ([3f33079](https://github.com/jkrumm/basalt-ui/commit/3f330795e84255546adf55fbcb90e8d406e4e425))
+* null gaps, log guards and measured x ticks in the chart layer ([d771508](https://github.com/jkrumm/basalt-ui/commit/d77150803d437bce16819fc98fa247ac81589692))
+* one connectivity prop, guarded wiring, non-blocking overlay mount ([f150f78](https://github.com/jkrumm/basalt-ui/commit/f150f78aca6100e53308e8fc4df05be0ecd1249f))
+* one home per field on the CBBI page ([2beb94b](https://github.com/jkrumm/basalt-ui/commit/2beb94b80794ed9a78d980be060cfa70d3d5369a))
+* overlays.confirm and notifyUndo ([94a4053](https://github.com/jkrumm/basalt-ui/commit/94a40533530eed72f025162c385e0aa87fc5a45d))
+* paint every AppShell region seam in the divider token ([f794f89](https://github.com/jkrumm/basalt-ui/commit/f794f89a27ffb0ddf35b4337b9fe9ab8c200b486))
+* playground demos follow the shell scrollport and fit-checked tracks ([c43d08d](https://github.com/jkrumm/basalt-ui/commit/c43d08d0edfd752a04a010dcfe4be286f2a2b3ff))
+* playground demos for the wave 3 surface and consumer-vantage type guards ([e777770](https://github.com/jkrumm/basalt-ui/commit/e77777016d470a4456a380e4c6d6f97799fe32d9))
+* playground follows the inputProps rename and the overlay mount change ([a7417e5](https://github.com/jkrumm/basalt-ui/commit/a7417e56b3ef7b8e14ae59231f49ded3192e3764))
+* query-aware containers, row activation, selection and typed actions ([4ad19a5](https://github.com/jkrumm/basalt-ui/commit/4ad19a5c991df88ede925b266baaf8b6d1a9b0b0))
+* rename the forms field helper to inputProps ([f82516f](https://github.com/jkrumm/basalt-ui/commit/f82516f29710f3839f2ed0e1b9f488521b20127c))
+* render bound controls as panel rows inside PageAside ([6eee086](https://github.com/jkrumm/basalt-ui/commit/6eee0861f7b7027e0148fa572513f2eb4622c246))
+* render no legend when a single series has no legend config ([48f7718](https://github.com/jkrumm/basalt-ui/commit/48f7718d467383044da87d2b519269c2bc9d794b))
+* shared common primitives for props, refs, errors and validation ([850d52c](https://github.com/jkrumm/basalt-ui/commit/850d52c1d2dca2a1101ec723094e40ea66586ee6))
+* split theme-lab boot helpers into an SSR-safe module ([a6a4b81](https://github.com/jkrumm/basalt-ui/commit/a6a4b81dd2c07dcf53dc70fe1459f9468e62c073))
+* stat card header spans the card and starts at its top ([c64b6d1](https://github.com/jkrumm/basalt-ui/commit/c64b6d1eb34ce2bc105b0a72a768ad86afce99d3))
+* stress routes in the playground for charts, data, states and primitives ([f7d8273](https://github.com/jkrumm/basalt-ui/commit/f7d82730e74f9ffef55cf6d38a6373c2bfecf631))
+* typed facet ids, a VirtualList ref handle and a required getItemKey ([4f833a2](https://github.com/jkrumm/basalt-ui/commit/4f833a2d14f1713feff76a86b3bbd26283e417b6))
+
 # [1.27.0](https://github.com/jkrumm/basalt-ui/compare/v1.26.0...v1.27.0) (2026-08-27)
 
 
