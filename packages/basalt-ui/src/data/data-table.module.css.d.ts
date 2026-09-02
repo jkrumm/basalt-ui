@@ -6,5 +6,6 @@ declare const classes: {
   readonly activatable: string
   readonly bulkBar: string
   readonly bulkCount: string
+  readonly containment: string
 }
 export default classes
