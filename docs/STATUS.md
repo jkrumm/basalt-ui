@@ -36,6 +36,7 @@ be released yet; the version column says when a capability landed, not what npm 
 | Round-10 batch — `manualPagination` imposes a contract (`manualSorting`/`manualFiltering`)                                                                                                                          | 1.25.0                         |
 | Controls concept — the three homes, the `ctl` tier, typed stores, sidebar blocks, ten guards, 13→6 rules                                                                                                            | 1.26.0                         |
 | Region seams + the `/cbbi` chrome round — four `--vx-divider` seams via `AppShell.extend({ vars })`, three 48px bands, two-line phone row 2, delta polarity, `AxisConfig.scale: 'log'`, `WidgetHeader tier="group"` | Unreleased (2026-08-30)        |
+| Maturation round — common primitives, chart phone tier and states, query-aware containers, wiring guards, deprecation lifecycle, isomorphic harness                                                                 | Unreleased (2026-09-02)        |
 
 Adopted downstream: seven consumer repos, on 1.23.1 as of the round-9 sweep (below). Round-10 and
 round-11 consumer sweeps ran against 1.24.0/1.25.0 (`.claude/feedback/round-10/`,
@@ -50,6 +51,90 @@ language is historical, see the banner on each.
 
 Ran against 1.25.0, validating round-10's `manualPagination` contract. Not summarized here yet —
 see `.claude/feedback/round-11/` per-repo reports directly.
+
+## Maturation round (2026-09)
+
+34 commits (`af51d41`..`9def67c`), executed against `docs/MATURATION-LEDGER.md` — the round's
+checklist, one row per finding (`.claude/maturation/` holds the untracked per-session audit
+evidence it cites). Four audits (packaging, components, charts, package surface) were benchmarked
+against Blueprint (`~/scratch/blueprint`), turned into one ledger, then worked in waves with
+fan-out across ledger ids rather than file-by-file. The playground combination-matrix wave ran a
+screenshot/critic loop over three rounds (m0, m1, m2) at 1440 and 390/320px; the phone-width critic
+round measured six rotated-tick-label failures, closed to zero by `5617c87`.
+
+**Wave 1 — regressions and packaging defects (audit A).** Notable finds and fixes: null values in
+`MultiLine`/`ZonedLine`/`StackedArea` were filtered and drawn across a gap instead of breaking the
+line, and grouped bars scaled a `0` baseline to `NaN` on a log axis and vanished (`af51d41`); the
+mobile nav bar dropped to 47px at density −3 after the region-seam commit moved a border onto
+`AppShell.Footer` (`3c62f4a`); 396 of 1385 tarball entries were `*.test.ts` sources and their
+declarations (`8e30445`); `basalt/raw-size-literal` shipped at error with zero test cases — never
+added to its own fixture oxlintrc (`9e32f71`); a mistyped `DataTable` facet `columnId` rendered
+nothing silently (`8f76f7c`); `BasaltOverlays`' lazy `ModalsProvider` deferred the first commit,
+producing the `setState` "hasn't mounted yet" console error on every chart-heavy route — R1
+(`0947e71`).
+
+**Wave 2 — common primitives.** `src/common/**` (`1e7b314`): `BasaltProps`, `SlotStylesProps`,
+`cx`, `mergeRefs`/`assignRef`, a prefixed `errors.ts` table, `useValidateProps` and
+`assertRequiredProps`. Rolled out across controls/shell/dashboard/forms/notifications/commands/
+connectivity/content/query/theme-lab/agent/agent-chat (`6506c9a`): the isomorphic
+`NO_CLASSNAME` ledger went 98 → 37 (18 of the remainder real gaps, the rest providers/SVG marks/
+portal targets), and required-prop misuse that used to surface as a raw `TypeError` swallowed by
+`BasaltErrorBoundary` dropped from 54 named call sites to 22 (33 remedied with a named
+`[basalt] <Component>: prop "<name>" is required` message). The isomorphic smoke harness itself
+(`f5ab686`) walks every public barrel — 161 (subpath, component) pairs — rendering each with a
+minimal prop map and asserting no throw/console error, `renderToString` where Mantine-free.
+
+**Wave 4 — chart layer.** A measured phone tier (`resolveChartTier`, `VX.phoneChartWidth = 480`)
+shrinks legend/tick fonts, tightens margin floors and caps the legend at two rows below that
+container width, with no media query; `SeriesStyle.curve` (monotone/linear/step/stepAfter/
+stepBefore); `utils/format` gained `fmtCompact`/`fmtPercent`/`fmtCurrency`/`fmtInt`, all returning
+an em dash for non-finite input; `ChartEmpty`/`ChartError` joined `ChartPending` behind one `state`
+prop (`b4284b9`). Log-axis guards stop every `LinePath`/`AreaClosed`/`Threshold` from emitting NaN
+paths, and `smartTicks` now spaces x ticks by measured label width instead of a fixed 55px
+(`af51d41`). The phone-width critic round's six measured tick-label failures — the rotated x-label
+gutter not clearing the label's own leftward projection, Heatmap column/row labels never thinned,
+auto-rotation firing without checking the rotated layout fits — went to zero: the rotated gutter is
+now measured from the painted baseline, Heatmap thins by the same law the axes use, and
+auto-rotation only fires when it paints more labels than the flat axis (`5617c87`). Duplicate
+`refLine` keys now use the index instead of colliding (`af51d41`).
+
+**Wave 6 — rules and toolchain.** Five oxlint rules shipped at `warn` under the grace mechanism:
+`provider-above-router`, `duplicate-notifications-mount`, `query-dual-import`, `query-fn-unwrap`
+and `deprecated-export` (reads a `DEPRECATED_EXPORTS` ledger, autofixes the import rename) — each
+carries a `// Ships:` line a test holds against the shipped preset (`d50020d`). `bun run pre` now
+ends in `bun test`, and `make verify` builds first, then runs `pre`, the layout suite and the
+pack-test, because `check-theme` and the playground typecheck both grade `dist` (`cca609d`).
+`packages/basalt-ui/tests/**` is now inside a tsconfig include and typechecked.
+
+**Wave 3 — components.** `WidgetGrid`/`WidgetGrid.Item` and `StatGroup` own the dashboard column
+law (`base 1 → sm min(cols,2) → lg cols` / `base 2 → sm min(cols,3) → lg cols`) so `lg` exists in
+exactly one place in the package; `StatCard.query` renders through `QueryState` under its header
+(`fa8c7e8`). `Section`, `BasaltDataTable` and `BasaltVirtualList` accept the same `QueryStateLike`
+`QueryState` takes and render pending/error/empty in their body — the table gained its first error
+branch; `BasaltDataTable` also gained `onRowActivate`, TanStack row-selection passthrough and a
+`bulkActions` bar (`e2cb0e1`). `overlays.confirm`/`confirmDelete` resolve a `Promise<boolean>`
+through the lazily-loaded modals layer and reject by name when no provider is live;
+`notifyUndo`/`notifyUndoable` wrap an optimistic mutation in an undo-window toast (`79bc1b1`).
+`PageAside` mounted its children twice on the phone path because `PageBar` published its row-2
+claim from a layout effect one commit after the in-flow branch first rendered — fixed by deferring
+that branch one commit and reading the breakpoint through `useSyncExternalStore` with a server
+snapshot; `PageAside` is the documented law-C9 exception (two portal targets, two filter surfaces,
+no CSS-only twin possible) (`fcc1e24`).
+
+**Layout test harness.** Chrome's graceful close stopped resolving on the CI host — a 30s hook
+budget expired on every green assertion, and a detached close leaks a Chrome process per file. The
+harness now launches a `BrowserServer` and connects to it, so teardown kills the process directly
+instead of relying on Bun's undeclared 5s afterAll cap (`bd01235`).
+
+**Deferred, not built this round:** brush/range-select, point annotations, candlestick, waterfall,
+bullet chart kinds (audit-c listed them; none landed — `SeriesStyle.curve` and the format/state law
+did); the five-way status-vocab fork (`StatCardTone`/`SidebarBlockTone`/`CalloutKind`/
+`AccountBadgeTone`/`NotificationIntent`) consolidated onto one shared `Tone` type that the forks now
+alias, not a single union — the forks themselves still exist; `'use client'` directives (none ship;
+a Next App Router consumer wraps the root in its own client file); a `useHotkeys` seam beyond the
+commands/spotlight battery; the forms layer rebuild (rows/groups, async resolver, submit state,
+array helper — `docs/MATURATION-LEDGER.md` C5, in progress under a separate worker as this section
+was written).
 
 ## Controls waves — 1.26.0
 
@@ -660,8 +745,11 @@ charts/tokens API, the shell, or the query/forms/notifications/commands batterie
 - **Living reference** (current, maintained alongside the code) — **`STATUS.md`** (this file,
   single source of truth), `DESIGN-SPEC.md` (2026-07 visual identity, supersedes older doctrine —
   see its "Doctrine inversions" section), `DESIGN-CORE.md`, `MANTINE-THEMING.md`,
-  `CHARTS-SPEC.md`, `CONTENT-SPEC.md`, `AGENT-CHAT-SPEC.md`,
-  `FRAMEWORK-FREE.md` (consuming the token system with no React/Mantine/bundler).
+  `CHARTS-SPEC.md`, `CONTENT-SPEC.md`, `AGENT-CHAT-SPEC.md`, `ASIDE-SPEC.md`,
+  `FRAMEWORK-FREE.md` (consuming the token system with no React/Mantine/bundler),
+  `MATURATION-LEDGER.md` (the running checklist for the current maturation loop — one row per
+  finding, status tracked to `shipped`; `.claude/maturation/` holds the untracked per-session audit
+  evidence it cites).
 - **Ships to consumers** — `packages/basalt-ui/MIGRATING.md` (per-minor API delta: what was removed
   or renamed and what replaces it), `README.md`, `llms.txt`, `AGENTS.md`, `agent/rules/*`,
   `agent/skills/*`. **Nothing under `docs/` is in the tarball** — a shipped file citing
