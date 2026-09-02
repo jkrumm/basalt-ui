@@ -8,7 +8,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — card-with-border, hidden-inline-style, in-body-page-title, inline-display, inline-spacing, mantine-shade-index, raw-form-control, raw-html-layout, raw-motion-value, raw-spacing, sub-16-input-font · oxlint rules — basalt/card-inset, basalt/deprecated-export, basalt/duplicate-notifications-mount, basalt/hand-rolled-shell, basalt/in-body-page-title, basalt/no-import-meta-env, basalt/page-bar-budget, basalt/provider-above-router, basalt/raw-scroll-container, basalt/shadow-basalt-export -->
+<!-- backed by: guard kinds — card-with-border, hidden-inline-style, in-body-page-title, inline-display, inline-spacing, mantine-shade-index, raw-form-control, raw-html-layout, raw-motion-value, raw-spacing, sub-16-input-font · oxlint rules — basalt/card-inset, basalt/deprecated-export, basalt/hand-rolled-shell, basalt/in-body-page-title, basalt/no-import-meta-env, basalt/page-bar-budget, basalt/provider-above-router, basalt/raw-scroll-container, basalt/shadow-basalt-export -->
 <!-- not guarded: no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs -->
 <!-- /basalt:coverage -->
 
@@ -33,10 +33,10 @@ the composition in its own client file.
 hotkeys and `<Notifications>` in one place, each disableable with `false`. `ModalsProvider` mounts
 as a **sibling** of `children`, not a wrapper — the imperative `modals.*`/`overlays.*` API works
 untouched, but `useModals()`/`openContextModal` need real React context, which a sibling cannot
-provide: pass `modals={false}` and mount your own `ModalsProvider` when you need either. A
-standalone `<BasaltNotifications />` is the alternative for an app with no commands layer — **never
-both in one tree** (double-mounts `<Notifications>`). Import the **layered** style bundle for every
-`@mantine/*` battery, then `basalt-ui/styles.css` last.
+provide: pass `modals={false}` and mount your own `ModalsProvider` when you need either.
+`<BasaltOverlays notifications />` is the ONE notifications mount; there is no standalone
+component any more. Import the **layered** style bundle for every `@mantine/*` battery, then
+`basalt-ui/styles.css` last.
 
 Color scheme is read and written through `useMantineColorScheme()` only — never a client store,
 never `localStorage.getItem('theme')` (guard-enforced; see basalt-state.md).

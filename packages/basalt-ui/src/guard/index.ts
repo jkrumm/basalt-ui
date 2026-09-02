@@ -873,11 +873,10 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
-  // The four F5 rules and the B4 deprecation rule — all AST-only, all outside `checkSource`'s
-  // reach: provenance here is an import graph and a JSX ancestry, neither of which a 12-line
-  // regex window has. Same reason `bound-control-outside-home` has no text-lane twin.
+  // The three remaining F5 rules and the B4 deprecation rule — all AST-only, all outside
+  // `checkSource`'s reach: provenance here is an import graph and a JSX ancestry, neither of which
+  // a 12-line regex window has. Same reason `bound-control-outside-home` has no text-lane twin.
   'provider-above-router',
-  'duplicate-notifications-mount',
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
@@ -901,6 +900,10 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // `RETIRED_RULE_IDS`) so an existing `theme-allow unframed-chart` reads as a dead waiver via
   // `--audit-allows`, never as an unknown-id typo.
   'unframed-chart',
+  // Retired plugin rule — `<BasaltNotifications />` mounted beside `<BasaltOverlays
+  // notifications>` is unreachable now that `BasaltNotifications` no longer exists as a
+  // standalone export. Mirrored by the plugin's own `RETIRED_RULE_IDS`.
+  'duplicate-notifications-mount',
 ])
 
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */

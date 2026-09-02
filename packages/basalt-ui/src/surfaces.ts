@@ -56,7 +56,6 @@ export const PLUGIN_RULE_ID_LIST = [
   'search-literal-link',
   'use-search-from-literal',
   'provider-above-router',
-  'duplicate-notifications-mount',
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
@@ -275,20 +274,20 @@ export const SURFACES = {
       'raw-scroll-container',
       'page-bar-budget',
       'shadow-basalt-export',
-      // The two mount-order laws, guarded as of 1.28.0 (F5) — both same-file static ancestry, so
-      // both `warn`. `deprecated-export` sits here too: the ledger it reads spans subpaths.
+      // The mount-order law, guarded as of 1.28.0 (F5) — same-file static ancestry, so `warn`.
+      // `deprecated-export` sits here too: the ledger it reads spans subpaths.
       'provider-above-router',
-      'duplicate-notifications-mount',
       'deprecated-export',
       // `import.meta.env` is a Vite-ism that fails outside a Vite build (SSR/server code, Node
       // scripts, tests) — process.env.NODE_ENV works everywhere basalt code runs. Repo-local,
       // scoped to all of src/**, one surface required by coverage (C2 consolidation).
       'no-import-meta-env',
     ],
-    // agent/rules/basalt-mantine.md — stated, not guarded. The other two laws that stood here
-    // gained `provider-above-router` / `duplicate-notifications-mount` at 1.28.0; this one has no
-    // AST form left to catch, because `cssVariablesResolver` is now `Omit`ted from the accepted
-    // prop type and a hand-built `createTheme` is a consumer's own call to make.
+    // agent/rules/basalt-mantine.md — stated, not guarded. The other law that stood here gained
+    // `provider-above-router` at 1.28.0; this one has no AST form left to catch, because
+    // `cssVariablesResolver` is now `Omit`ted from the accepted prop type and a hand-built
+    // `createTheme` is a consumer's own call to make. (`duplicate-notifications-mount`, the
+    // other 1.28.0 mount-order rule, retired — `BasaltNotifications` no longer exists.)
     advisoryLaws: [
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],

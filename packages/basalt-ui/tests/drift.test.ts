@@ -6,7 +6,7 @@
  *
  * Run: bun test packages/basalt-ui/tests/drift.test.ts
  */
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, describe, expect, it } from 'bun:test'
@@ -297,6 +297,8 @@ describe('sync-self', () => {
   const REPO_ROOT = join(PKG_ROOT, '..', '..')
   const RULES_SRC = join(PKG_ROOT, 'agent/rules')
   const RULES_DEST = join(REPO_ROOT, '.claude/rules')
+  const SKILLS_SRC = join(PKG_ROOT, 'agent/skills')
+  const SKILLS_DEST = join(REPO_ROOT, '.claude/skills')
 
   // `make sync-self` (`scripts/sync-self.ts`) is a PLAIN copy, not `basalt-ui sync`'s three-way
   // reconciliation — this repo is not a consumer of itself, so a stale `/.claude/rules/basalt-*.md`
@@ -308,6 +310,28 @@ describe('sync-self', () => {
       const shipped = readFileSync(join(RULES_SRC, name), 'utf8')
       const installed = readFileSync(join(RULES_DEST, name), 'utf8')
       expect([name, installed]).toEqual([name, shipped])
+    }
+  })
+
+  // The other direction: a rule dropped from `agent/rules/` (e.g. this repo's own dead-rule
+  // cleanup) must not survive in `.claude/rules` — `sync-self.ts`'s prune step is what deletes it,
+  // and this fails closed if that step regresses or `make sync-self` was never re-run.
+  it('the installed rules carry no orphan — every basalt-*.md in .claude/rules has a shipped source', () => {
+    const installed = readdirSync(RULES_DEST).filter(
+      (name) => name.startsWith('basalt-') && name.endsWith('.md'),
+    )
+    for (const name of installed) {
+      expect([name, existsSync(join(RULES_SRC, name))]).toEqual([name, true])
+    }
+  })
+
+  // Same law, the skills half.
+  it('the installed skills carry no orphan — every basalt-* dir in .claude/skills has a shipped source', () => {
+    const installed = readdirSync(SKILLS_DEST, { withFileTypes: true }).filter(
+      (e) => e.isDirectory() && e.name.startsWith('basalt-'),
+    )
+    for (const dir of installed) {
+      expect([dir.name, existsSync(join(SKILLS_SRC, dir.name))]).toEqual([dir.name, true])
     }
   })
 })

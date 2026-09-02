@@ -20,10 +20,13 @@ export function AxisLeftNumeric({
   scale,
   numTicks = 5,
   tickFormat,
+  tickValues,
 }: {
   scale: AxisScale
   numTicks?: number
   tickFormat?: TickFormatter<number>
+  /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
+  tickValues?: readonly number[]
 }) {
   const { axisFont } = useChartTierMetrics()
   return (
@@ -31,6 +34,7 @@ export function AxisLeftNumeric({
       scale={scale}
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
+      {...(tickValues !== undefined && { tickValues: [...tickValues] })}
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
@@ -49,12 +53,15 @@ export function AxisRightNumeric({
   left,
   numTicks = 5,
   tickFormat,
+  tickValues,
 }: {
   scale: AxisScale
   /** Left offset inside the Group (typically xMax). Required since AxisRight needs positioning. */
   left: number
   numTicks?: number
   tickFormat?: TickFormatter<number>
+  /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
+  tickValues?: readonly number[]
 }) {
   const { axisFont } = useChartTierMetrics()
   return (
@@ -63,6 +70,7 @@ export function AxisRightNumeric({
       scale={scale}
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
+      {...(tickValues !== undefined && { tickValues: [...tickValues] })}
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
@@ -87,11 +95,14 @@ export function AxisBottomNumeric({
   top,
   numTicks = 5,
   tickFormat,
+  tickValues,
 }: {
   scale: AxisScale
   top: number
   numTicks?: number
   tickFormat?: TickFormatter<number>
+  /** Exact tick positions (e.g. a compass axis at 0/90/180/270). Overrides `numTicks`. */
+  tickValues?: readonly number[]
 }) {
   const { axisFont } = useChartTierMetrics()
   return (
@@ -100,6 +111,7 @@ export function AxisBottomNumeric({
       scale={scale}
       numTicks={numTicks}
       {...(tickFormat !== undefined && { tickFormat })}
+      {...(tickValues !== undefined && { tickValues: [...tickValues] })}
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,

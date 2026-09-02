@@ -63,11 +63,12 @@ export type SyncOptions = {
 /**
  * The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null.
  *
- * `resolveProjectDir` relocates DOWNWARD — a root-invoked hook finding the one workspace package
- * that holds the config. The opposite direction is the shape that produced this function: a
- * consumer standing in `apps/dashboard`, the package that actually depends on basalt-ui, whose
- * install lives at the repo root above it. Nothing walks up, so `sync` read "no manifest here" as
- * "nothing scaffolded yet" and wrote a complete second consumer beside the real one.
+ * `resolveProjectDir` resolves to exactly one directory — `BASALT_CWD` when set, else the
+ * invocation cwd — and never walks. The shape that produced this function is the one that resolver
+ * doesn't cover: a consumer standing in `apps/dashboard`, the package that actually depends on
+ * basalt-ui, whose install lives at the repo root above it. With nothing walking up, `sync` read
+ * "no manifest here" as "nothing scaffolded yet" and wrote a complete second consumer beside the
+ * real one.
  */
 /**
  * The sentence `sync` prints when the cwd carries no install but an ancestor does.

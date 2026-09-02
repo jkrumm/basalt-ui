@@ -38,7 +38,6 @@ beforeEach(() => {
       jsPlugins: [PLUGIN_PATH],
       rules: {
         'basalt/provider-above-router': 'error',
-        'basalt/duplicate-notifications-mount': 'error',
         'basalt/query-dual-import': 'error',
         'basalt/query-fn-unwrap': 'error',
         'basalt/deprecated-export': 'error',
@@ -1512,8 +1511,8 @@ describe('KNOWN_RULE_IDS', () => {
   // Deduped, because ONE id is deliberately in both registries: `in-body-page-title` is a plugin
   // rule AND a guard kind (law C8 has an AST half and a text half), so one `theme-allow
   // in-body-page-title — <why>` waives both lanes rather than needing a different word per lane.
-  // `RETIRED_RULE_IDS` adds a third component: an id that used to be a guard kind, is in neither
-  // live registry, and must still parse as a (dead) waiver rather than a typo.
+  // `RETIRED_RULE_IDS` adds a third component: an id that used to be a guard kind or a plugin
+  // rule, is in neither live registry, and must still parse as a (dead) waiver rather than a typo.
   it('contains nothing else — it is exactly the union of the two registries plus retired ids', () => {
     const expected = [
       ...new Set([
@@ -3048,115 +3047,6 @@ describe('basalt/provider-above-router', () => {
     )
     expect(code).toBe(0)
     expect(rules).not.toContain('provider-above-router')
-  })
-})
-
-// ── duplicate-notifications-mount (F5) ───────────────────────────────────────
-
-describe('basalt/duplicate-notifications-mount', () => {
-  const IMPORTS =
-    `import { BasaltOverlays } from 'basalt-ui/commands'\n` +
-    `import { BasaltNotifications } from 'basalt-ui/notifications'\n`
-
-  it('flags both mounts in one file', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications>\n` +
-        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('duplicate-notifications-mount')
-  })
-
-  // `notifications` defaults to TRUE, so the attribute being absent is the same defect.
-  it('flags when BasaltOverlays writes no notifications prop at all', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n  <BasaltOverlays>\n` +
-        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('duplicate-notifications-mount')
-  })
-
-  it('does NOT flag when BasaltOverlays disables its notifications layer', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications={false}>\n` +
-        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  it('does NOT flag a standalone BasaltNotifications on its own', () => {
-    const { code, rules } = run(
-      `import { BasaltNotifications } from 'basalt-ui/notifications'\n` +
-        `export const App = () => <BasaltNotifications />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  it("does NOT flag a consumer's own components of the same names", () => {
-    const { code, rules } = run(
-      `import { BasaltOverlays } from './overlays'\n` +
-        `import { BasaltNotifications } from './notifications'\n` +
-        `export const App = () => (\n  <BasaltOverlays>\n    <BasaltNotifications />\n` +
-        `  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  it('honours a theme-allow naming the rule', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications>\n` +
-        `    {/* theme-allow duplicate-notifications-mount — two roots, never both mounted */}\n` +
-        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  // Two mounts WRITTEN, one mount RENDERED — the ternary is the shape a consumer reaches for while
-  // migrating from the standalone layer to the composed one, and it was never a double mount.
-  it('does NOT flag the two branches of one ternary', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = ({ composed }) => (\n` +
-        `  <div>{composed ? <BasaltOverlays /> : <BasaltNotifications />}</div>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  it('does NOT flag the two operands of one logical expression', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = ({ composed }) => (\n` +
-        `  <div>{(composed && <BasaltOverlays />) || <BasaltNotifications />}</div>\n)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('duplicate-notifications-mount')
-  })
-
-  // The exemption is the NEAREST common ancestor only. Two separate `&&` guards can both hold, so
-  // this stays a finding — the pair is conditional, not exclusive.
-  it('DOES flag two independently-guarded mounts under one parent', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = ({ a, b }) => (\n` +
-        `  <div>{a && <BasaltOverlays />}{b && <BasaltNotifications />}</div>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('duplicate-notifications-mount')
-  })
-
-  // One exclusive pair does not excuse a second, unconditional overlays mount.
-  it('DOES flag when a NON-exclusive overlays mount also exists', () => {
-    const { code, rules } = run(
-      `${IMPORTS}export const App = ({ composed }) => (\n` +
-        `  <BasaltOverlays>\n` +
-        `    {composed ? <BasaltOverlays /> : <BasaltNotifications />}\n` +
-        `  </BasaltOverlays>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('duplicate-notifications-mount')
   })
 })
 

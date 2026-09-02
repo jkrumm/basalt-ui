@@ -81,15 +81,18 @@ import { fileURLToPath } from 'node:url'
 // ── Shared helpers ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Guard kinds RETIRED because an oxlint AST rule fully subsumes their only case — kept recognized
- * by `KNOWN_RULE_IDS` (below) and the guard's own `PLUGIN_RULE_IDS` copy so an existing
- * `theme-allow <id>` reads as a dead waiver via `check-theme --audit-allows`, never as a typo.
+ * Guard kinds and plugin rules RETIRED — kept recognized by `KNOWN_RULE_IDS` (below) and the
+ * guard's own `PLUGIN_RULE_IDS` copy so an existing `theme-allow <id>` reads as a dead waiver via
+ * `check-theme --audit-allows`, never as a typo.
  *
  * - `unframed-chart` (regex: a `<ChartLegend items={[...]}>` array literal) →
  *   `basalt/chart-legend-literal`, which also catches the `.map()`-over-a-non-series form the
  *   regex never could reach.
+ * - `duplicate-notifications-mount` — its only case, `<BasaltNotifications />` mounted beside
+ *   `<BasaltOverlays notifications>`, is unreachable now that `BasaltNotifications` no longer
+ *   exists as a standalone export; the rule had nothing left to fire on.
  */
-export const RETIRED_RULE_IDS = new Set(['unframed-chart'])
+export const RETIRED_RULE_IDS = new Set(['unframed-chart', 'duplicate-notifications-mount'])
 
 /**
  * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
@@ -122,7 +125,6 @@ export const KNOWN_RULE_IDS = new Set([
   'search-literal-link',
   'use-search-from-literal',
   'provider-above-router',
-  'duplicate-notifications-mount',
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
@@ -3352,125 +3354,6 @@ const providerAboveRouter = {
   },
 }
 
-// ── Rule 26 — duplicate-notifications-mount ─────────────────────────────────────────────────────
-
-const DUPLICATE_NOTIFICATIONS_MOUNT_MESSAGE =
-  '<BasaltNotifications /> mounted alongside <BasaltOverlays notifications> — the two double-mount ' +
-  "Mantine's <Notifications>, so a single notify() renders twice. BasaltOverlays already composes " +
-  'the notifications layer; drop the standalone mount, or pass `notifications={false}` to ' +
-  'BasaltOverlays if the standalone one is the mount you want. ' +
-  '(basalt/duplicate-notifications-mount)'
-
-/**
- * The ancestor chain from `node` up to its `Program`, OUTERMOST first — captured during the visit,
- * because `node.parent` is only walkable then, and compared at `Program:exit`. Unlike
- * {@link ancestorTagBindings} it keeps the NODES, which is what makes a nearest-common-ancestor
- * question answerable at all.
- */
-function ancestorChain(node) {
-  const chain = []
-  let current = node
-  for (let depth = 0; current !== null && current !== undefined; depth++) {
-    if (depth > ANCESTRY_MAX_DEPTH) break
-    chain.push(current)
-    if (current.type === 'Program') break
-    current = current.parent
-  }
-  return chain.toReversed()
-}
-
-/**
- * True when two nodes sit in DIFFERENT branches of ONE conditional — `a ? <X/> : <Y/>`, or the two
- * operands of one `&&`/`||`. Exactly one of the pair ever renders, so a double-mount rule firing on
- * them would be reporting a mount that cannot happen.
- *
- * Deliberately the NEAREST common ancestor only, and deliberately expression-level: two separate
- * `cond && <X/>` expressions under one parent are NOT exclusive (both conditions can hold), and an
- * `if`/`return` split across statements is a control-flow question this does not pretend to answer.
- * The runtime guard in `src/commands/overlays-mount.tsx` is the lane that counts real mounts.
- */
-function mutuallyExclusive(chainA, chainB) {
-  let i = 0
-  while (i < chainA.length && i < chainB.length && chainA[i] === chainB[i]) i++
-  const ancestor = chainA[i - 1]
-  const branchA = chainA[i]
-  const branchB = chainB[i]
-  if (ancestor === undefined || branchA === undefined || branchB === undefined) return false
-  const [first, second] =
-    ancestor.type === 'ConditionalExpression'
-      ? [ancestor.consequent, ancestor.alternate]
-      : ancestor.type === 'LogicalExpression'
-        ? [ancestor.left, ancestor.right]
-        : [undefined, undefined]
-  if (first === undefined || second === undefined) return false
-  return (branchA === first && branchB === second) || (branchA === second && branchB === first)
-}
-
-/**
- * `<BasaltOverlays notifications>` and `<BasaltNotifications />` in ONE file — F5, the second
- * `basalt-mantine.md` law with no guard, and the static half of a warning that already exists at
- * runtime (`src/commands/overlays-mount.tsx` warns in dev when both mount).
- *
- * A pair split across the two branches of one conditional is EXEMPT: `a ? <BasaltNotifications/> :
- * <BasaltOverlays/>` is a file with two mounts written and one mount rendered, and reporting it
- * taught a consumer to reach for a waiver over code that was already right.
- *
- * `notifications` DEFAULTS to true on `BasaltOverlays`, so the absence of the attribute counts as
- * enabled and only an explicit `notifications={false}` clears it — the same polarity the component
- * itself reads. Both tags are provenance-gated through {@link collectBasaltImportMap}.
- *
- * Same-FILE only, and deliberately so: the runtime warning is the lane that sees a cross-file
- * double mount, because it counts real mounts rather than JSX. This is the cheap half that catches
- * it before the app runs, which is the whole reason a static twin is worth having.
- */
-// Ships: warn (grace → 1.30.0)
-const duplicateNotificationsMount = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description: 'Warn when BasaltOverlays and a standalone BasaltNotifications both mount.',
-    },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const ownTree = isBasaltOwnSource(getFilename(context))
-    const basalt = new Map()
-    const mounts = []
-
-    return {
-      ImportDeclaration(node) {
-        collectBasaltImportMap(node, basalt, ownTree)
-      },
-      JSXOpeningElement(node) {
-        const root = jsxRootName(node.name)
-        if (root === undefined || !basalt.has(root)) return
-        // `notifications` DEFAULTS to true, so only an explicit `={false}` clears the layer.
-        const disabled = (node.attributes ?? []).some(
-          (attr) =>
-            attr.type === 'JSXAttribute' &&
-            attr.name?.name === 'notifications' &&
-            unwrapExpressionContainer(attr.value)?.value === false,
-        )
-        mounts.push({ node, root, disabled, chain: ancestorChain(node) })
-      },
-      'Program:exit'() {
-        const overlays = mounts.filter(
-          ({ root, disabled }) => basalt.get(root) === 'BasaltOverlays' && !disabled,
-        )
-        if (overlays.length === 0) return
-        for (const { node, root, chain } of mounts) {
-          if (basalt.get(root) !== 'BasaltNotifications') continue
-          // Every enabled overlays mount on the other branch of one conditional → nothing to report.
-          if (overlays.every((overlay) => mutuallyExclusive(overlay.chain, chain))) continue
-          if (hasThemeAllow(context, node, 'duplicate-notifications-mount')) continue
-          context.report({ node, message: DUPLICATE_NOTIFICATIONS_MOUNT_MESSAGE })
-        }
-      },
-    }
-  },
-}
-
 // ── Rule 27 — query-dual-import ─────────────────────────────────────────────────────────────────
 
 /** `@tanstack/react-query` and its subpaths — never `@tanstack/react-query-devtools`. */
@@ -4021,17 +3904,6 @@ export const PLUGIN_RULE_GRACE = {
       'image-gen and the playground is measured — every one of them mounts a router, so the ' +
       'false-positive question has a real sample.',
   },
-  'duplicate-notifications-mount': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      'F5 — the static half of a double-mount the runtime already warns about in dev ' +
-      '(`src/commands/overlays-mount.tsx`). Same-file only, so like its sibling it guards a ' +
-      'fraction of the law and cannot claim `error`. It also reads a prop DEFAULT (`notifications` ' +
-      'is true when unwritten), which is the kind of polarity a consumer disagrees with exactly ' +
-      'once before it is worth knowing about — a minor at `warn` is how that disagreement arrives ' +
-      'as feedback rather than as a broken build.',
-  },
   'query-dual-import': {
     since: '1.28.0',
     promote: '1.30.0',
@@ -4128,7 +4000,6 @@ export default {
     'search-literal-link': searchLiteralLink,
     'use-search-from-literal': useSearchFromLiteral,
     'provider-above-router': providerAboveRouter,
-    'duplicate-notifications-mount': duplicateNotificationsMount,
     'query-dual-import': queryDualImport,
     'query-fn-unwrap': queryFnUnwrap,
     'deprecated-export': deprecatedExport,
