@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help pre verify test layout build release release-dry
+.PHONY: help pre verify test layout build release release-dry sync-self
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -31,3 +31,6 @@ release-dry: ## Preview the next release — dry run only, publishes nothing
 
 release: ## Dry run, show the version bump, confirm, then publish to npm
 	@scripts/release.sh
+
+sync-self: ## Install basalt-ui's own shipped rules + skills into this repo's /.claude/ (dogfood)
+	@bun packages/basalt-ui/scripts/sync-self.ts
