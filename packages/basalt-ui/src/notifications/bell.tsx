@@ -20,7 +20,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { useRef } from 'react'
 import type { BasaltProps } from '../common/props'
 import { useNotificationHistory } from './store'
-import { NotificationCenter } from './center'
+import { NOTIFICATION_POPOVER_WIDTH, NotificationCenter } from './center'
 
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
@@ -58,7 +58,14 @@ export function NotificationBell({
   }
 
   return (
-    <Popover opened={opened} onClose={close} position="bottom-end" withArrow withinPortal>
+    <Popover
+      opened={opened}
+      onClose={close}
+      position="bottom-end"
+      width={NOTIFICATION_POPOVER_WIDTH}
+      withArrow
+      withinPortal
+    >
       <Popover.Target>
         <Indicator
           color="color-mix(in srgb, var(--vx-ink) 8%, transparent)"

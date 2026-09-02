@@ -111,6 +111,56 @@ describe('the actions slot renders only when passed', () => {
   })
 })
 
+describe('the actions slot wraps only when it does not fit beside the title, below `sm` (M4)', () => {
+  // `.actions` sits inside the base `.actions { … }` rule too, so the shared `block()` helper
+  // (which takes the FIRST match) would read the desktop rule here — walk to the phone media
+  // query's own close brace first, same idiom as `theme/layout-rhythm-css.test.ts`.
+  const mediaStart = CSS.indexOf('@media (max-width: 47.99375em)')
+  const phoneBlock = (() => {
+    const braceStart = CSS.indexOf('{', mediaStart)
+    let depth = 0
+    for (let i = braceStart; i < CSS.length; i += 1) {
+      if (CSS[i] === '{') depth += 1
+      if (CSS[i] === '}') {
+        depth -= 1
+        if (depth === 0) return CSS.slice(mediaStart, i + 1)
+      }
+    }
+    throw new Error('unterminated @media block')
+  })()
+
+  test('`.actions` does not grow (no forced full-width row) but can shrink and is capped at 100%', () => {
+    // A prior version of this rule was `flex: 1 1 100%`, which forced EVERY actions slot onto its
+    // own row — even a single 24px icon that fit fine beside the title. `flex: 0 1 auto` (no grow)
+    // is what lets a short slot stay on the shared title-row line; `.titleRow`'s own `flex-wrap:
+    // wrap` is what still drops a slot that does not fit to its own line, and `max-width: 100%` is
+    // the cap once it is there alone.
+    expect(mediaStart).toBeGreaterThanOrEqual(0)
+    const start = phoneBlock.indexOf('.actions {')
+    expect(start).toBeGreaterThan(-1)
+    const rule = phoneBlock.slice(start, phoneBlock.indexOf('}', start))
+    expect(rule).toContain('flex: 0 1 auto')
+    expect(rule).toContain('min-width: 0')
+    expect(rule).toContain('max-width: 100%')
+    expect(rule).not.toContain('flex: 1 1 100%')
+    // `.actions`' OWN `flex-wrap: wrap` stays — orthogonal to the row-level law above, and what
+    // keeps a `tabs` control and a switches `Group` from being squeezed onto one shared line.
+    expect(rule).toContain('flex-wrap: wrap')
+  })
+
+  test('every real flex item inside `.actions` can shrink below its content width', () => {
+    // Both the direct-child case (a bare `actions` node) and the `CtlSlot` case (a
+    // `display: contents` wrapper one level in, so the true flex items are its grandchildren)
+    // are covered by the same declaration block.
+    const start = phoneBlock.indexOf('.actions > *,')
+    expect(start).toBeGreaterThan(-1)
+    const rule = phoneBlock.slice(start, phoneBlock.indexOf('}', start))
+    expect(rule).toContain('.actions > * > *')
+    expect(rule).toContain('flex: 1 1 auto')
+    expect(rule).toContain('min-width: 0')
+  })
+})
+
 describe('the info glyph', () => {
   const INFO = 'Measured over the trailing 30 days.'
 
