@@ -112,14 +112,15 @@ describe('coverageFor', () => {
 
   it('unions the plugin rules of every surface sharing one rule name', () => {
     // `batteries` is eight surfaces (query, forms, notifications, commands, data ×3, agent ×2,
-    // content, #app); the agent pair and `./query` carry plugin rules, and the header must name
-    // every one of them.
+    // content, #app); the agent pair, `./query` and `./forms` carry plugin rules, and the header
+    // must name every one of them.
     const { guardKinds, pluginRules } = coverageFor('batteries')
     expect(guardKinds).toEqual([])
     expect(pluginRules).toEqual([
       'agent-no-raw-usechat',
       'agent-resume-guard',
       'ai-sdk-major',
+      'forms-field-key',
       'query-dual-import',
       'query-fn-unwrap',
     ])

@@ -41,6 +41,7 @@ beforeEach(() => {
         'basalt/query-dual-import': 'error',
         'basalt/query-fn-unwrap': 'error',
         'basalt/deprecated-export': 'error',
+        'basalt/forms-field-key': 'error',
         'basalt/no-raw-font-size': 'error',
         'basalt/raw-size-literal': 'error',
         'basalt/card-inset': 'error',
@@ -1783,6 +1784,28 @@ describe('basalt/control-outside-home', () => {
     },
   )
 
+  // FormRow/FormGroup (`basalt-ui/forms`) are law C1's third home written for a `<form>` rather
+  // than a settings page — the same non-home treatment SettingsRow gets, via the same
+  // CONTROL_HOST_TAGS ancestry walk.
+  it.each(['FormRow', 'FormGroup'])(
+    'does NOT flag a raw Select nested inside a %s imported from basalt-ui/forms',
+    (host) => {
+      const { code, rules } = run(
+        `import { ${host} } from 'basalt-ui/forms'\n${MANTINE_IMPORT}` +
+          `export const C = () => <${host} label="L"><Select data={[]} /></${host}>\n`,
+      )
+      expect(code).toBe(0)
+      expect(rules).not.toContain('control-outside-home')
+    },
+  )
+
+  it('still flags a bare Select in a page body with no FormRow/FormGroup around it', () => {
+    const { rules } = run(
+      `${MANTINE_IMPORT}export const C = () => <div><Select data={[]} /></div>\n`,
+    )
+    expect(rules).toContain('control-outside-home')
+  })
+
   it('does NOT flag one under a member-expression non-home (Menu.Dropdown)', () => {
     const { rules } = run(
       `${MANTINE_IMPORT}export const C = () => <Menu.Dropdown><Select data={[]} /></Menu.Dropdown>\n`,
@@ -2034,6 +2057,16 @@ describe('basalt/bound-control-outside-home', () => {
       `import { Modal } from '@mantine/core'\n${CONTROLS_IMPORT}` +
         `export const C = () => (\n  <Modal opened>\n    <SelectFilter field={f} />\n  </Modal>\n)\n`,
     )
+    expect(rules).not.toContain('bound-control-outside-home')
+  })
+
+  // FormRow/FormGroup are the same declared non-home as SettingsRow — shared CONTROL_HOST_TAGS walk.
+  it.each(['FormRow', 'FormGroup'])('does NOT flag one inside a %s', (host) => {
+    const { code, rules } = run(
+      `import { ${host} } from 'basalt-ui/forms'\n${CONTROLS_IMPORT}` +
+        `export const C = () => <${host} label="L"><SelectFilter field={f} /></${host}>\n`,
+    )
+    expect(code).toBe(0)
     expect(rules).not.toContain('bound-control-outside-home')
   })
 
@@ -3324,14 +3357,112 @@ describe('basalt/deprecated-export', () => {
     expect(rules).not.toContain('deprecated-export')
   })
 
-  // The autofix keeps the LOCAL binding, so no call site has to move in the same edit.
-  it('autofixes the import to the replacement, aliased back to the old local name', () => {
+  // `field` → `inputProps` is NOT a drop-in rename any more (`inputProps` returns no `key`), so
+  // the row carries `fix: false`: the diagnostic still fires, but `--fix` must leave the import
+  // alone — the rewrite belongs to `basalt/forms-field-key`, which also inserts the key.
+  it('leaves a row with `fix: false` untouched under --fix while still reporting it', () => {
     const source = `import { field } from 'basalt-ui/forms'\nexport const f = field\n`
     writeFileSync(resolve(dir, 'fixture.tsx'), source)
     Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'fixture.tsx'], { cwd: dir })
-    expect(readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')).toContain(
-      `import { inputProps as field } from 'basalt-ui/forms'`,
+    expect(readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')).toBe(source)
+    const { rules } = run(source)
+    expect(rules).toContain('deprecated-export')
+  })
+})
+
+// ── forms-field-key ──────────────────────────────────────────────────────────
+
+describe('basalt/forms-field-key', () => {
+  const FORMS = `import { inputProps } from 'basalt-ui/forms'\n`
+
+  it('flags a spread inputProps() with no sibling key', () => {
+    const { code, rules, output } = run(
+      `${FORMS}export const C = () => <TextInput {...inputProps(form, 'email')} />\n`,
     )
+    expect(code).toBe(1)
+    expect(rules).toContain('forms-field-key')
+    expect(output).toContain('no sibling `key`')
+  })
+
+  it('does NOT flag the documented two-call idiom', () => {
+    const { code, rules } = run(
+      `import { fieldKey, inputProps } from 'basalt-ui/forms'\n` +
+        `export const C = () => <TextInput key={fieldKey(form, 'e')} {...inputProps(form, 'e')} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('forms-field-key')
+  })
+
+  // An `inputProps` a consumer wrote themselves is not basalt's — the same provenance gate the
+  // control and chart rules take, one lane over.
+  it('does NOT flag a same-named helper imported from somewhere else', () => {
+    const { code, rules } = run(
+      `import { inputProps } from './my-helpers'\n` +
+        `export const C = () => <TextInput {...inputProps(form, 'email')} />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('forms-field-key')
+  })
+
+  it('resolves an aliased import — `inputProps as f` is still inputProps', () => {
+    const { code, rules } = run(
+      `import { inputProps as f } from 'basalt-ui/forms'\n` +
+        `export const C = () => <TextInput {...f(form, 'email')} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('forms-field-key')
+  })
+
+  // The second message: `field` still RETURNS `key`, so it is reported whether or not the element
+  // carries one — the remedy is the rename, never an added attribute.
+  it('flags a spread field() even when the element already has a key', () => {
+    const { code, rules, output } = run(
+      `import { field } from 'basalt-ui/forms'\n` +
+        `export const C = () => <TextInput key="e" {...field(form, 'email')} />\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('forms-field-key')
+    expect(output).toContain('@deprecated 1.27 alias')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `${FORMS}export const C = () => (\n` +
+        `  // theme-allow forms-field-key — this input is remounted by its parent\n` +
+        `  <TextInput {...inputProps(form, 'email')} />\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('forms-field-key')
+  })
+
+  // The autofix has to produce COMPILING code: an inserted `fieldKey(…)` with no import is a worse
+  // outcome than the missing key it replaced.
+  it('autofixes the key in, with the same arguments, and adds fieldKey to the import once', () => {
+    const source =
+      `${FORMS}export const C = () => (\n` +
+      `  <form>\n` +
+      `    <TextInput {...inputProps(form, 'email')} label="Email" />\n` +
+      `    <TextInput {...inputProps(form, 'name')} />\n` +
+      `  </form>\n)\n`
+    writeFileSync(resolve(dir, 'fixture.tsx'), source)
+    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'fixture.tsx'], { cwd: dir })
+    const fixed = readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')
+    expect(fixed).toContain(`import { inputProps, fieldKey } from 'basalt-ui/forms'`)
+    expect(fixed).toContain(`key={fieldKey(form, 'email')} {...inputProps(form, 'email')}`)
+    expect(fixed).toContain(`key={fieldKey(form, 'name')} {...inputProps(form, 'name')}`)
+    // Once, not twice: two overlapping edits to one import declaration would drop one of them.
+    expect(fixed.match(/fieldKey,|, fieldKey/g)).toHaveLength(1)
+  })
+
+  it('does not re-add fieldKey when it is already imported', () => {
+    const source =
+      `import { fieldKey, inputProps } from 'basalt-ui/forms'\n` +
+      `export const C = () => <TextInput {...inputProps(form, 'email')} />\n`
+    writeFileSync(resolve(dir, 'fixture.tsx'), source)
+    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'fixture.tsx'], { cwd: dir })
+    const fixed = readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')
+    expect(fixed).toContain(`import { fieldKey, inputProps } from 'basalt-ui/forms'`)
+    expect(fixed).toContain(`key={fieldKey(form, 'email')}`)
   })
 })
 

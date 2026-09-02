@@ -115,6 +115,7 @@ export const KNOWN_RULE_IDS = new Set([
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
+  'forms-field-key',
   // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
   // annotation waives both. It is listed once, below, with the guard kinds.
   'visx-boundary',
@@ -1987,19 +1988,25 @@ const CONTROL_OWNER_NAMES = new Set([
 ])
 
 /**
- * Where a raw selection control legitimately lives outside a TIERED home: a settings row, an
- * overlay, a composer. Every one of these is a place the tier does not apply, so the advice ("move
- * it into a home slot") would be wrong rather than merely unwelcome.
+ * Where a raw selection control legitimately lives outside a TIERED home: a settings row, a form
+ * row, an overlay, a composer. Every one of these is a place the tier does not apply, so the advice
+ * ("move it into a home slot") would be wrong rather than merely unwelcome.
  *
  * `SettingsRow` is the form row — law C1's third home, not an exception to C1 — so
  * `control-outside-home` treating it as a home is the whole of the enforcement a settings page
  * gets, and the two tier rules deliberately do not reach inside it (see {@link SLOT_ATTRS}).
+ * `FormRow`/`FormGroup` (`basalt-ui/forms`, `src/forms/form-layout.tsx`) are the SAME home written
+ * for a `<form>` rather than a settings page — a `TextInput` bound to a field is read and typed
+ * into at Mantine's own tier, not a 30px chrome affordance — so they are added here rather than
+ * given a second walk.
  *
  * Declared with the shared slot walk rather than beside `control-outside-home` because three rules
  * read it: that rule's ancestry exemption, and {@link hostedInsideSlot} for the two tier rules.
  */
 const CONTROL_HOST_TAGS = new Set([
   'SettingsRow',
+  'FormRow',
+  'FormGroup',
   'Modal',
   'Drawer',
   'Popover.Dropdown',
@@ -2561,9 +2568,9 @@ const handRolledFilter = {
 const CONTROL_OUTSIDE_HOME_MESSAGE =
   'Raw Mantine selection control with no home — a filter, tab or action belongs in exactly one of ' +
   'the three homes (a PageBar / Section / WidgetHeader slot, or a form row), and a home is entered ' +
-  'through a slot prop (law C1). A settings row, an overlay (Modal/Drawer/Popover/Menu) and a ' +
-  'form (@mantine/form) are the declared non-homes and never report. ' +
-  '(basalt/control-outside-home)'
+  'through a slot prop (law C1). A settings row, a form row (FormRow/FormGroup), an overlay ' +
+  '(Modal/Drawer/Popover/Menu) and a form (@mantine/form) are the declared non-homes and never ' +
+  'report. (basalt/control-outside-home)'
 
 /**
  * The cross-file half of C1, and the one rule here that is openly a HEURISTIC: "this control has
@@ -2571,10 +2578,11 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * and stays warn until the playground and the five consumer repos run it with ≤3 waivers
  * (docs/CONTROLS-SPEC.md §9 wave 7).
  *
- * Four exemptions carry the false-positive load: an overlay/settings-row ancestor, an
- * {@link isOverlayConventionFile} basename (the CROSS-FILE case — the `<Modal>` lives in the
- * parent), a file that imports `@mantine/form` (a form is the third home and its inputs are not
- * filters), and the owner exemption — a file DEFINING a basalt control cannot be told to use one.
+ * Four exemptions carry the false-positive load: an overlay/settings-row/form-row ancestor
+ * ({@link CONTROL_HOST_TAGS}, `FormRow`/`FormGroup` included), an {@link isOverlayConventionFile}
+ * basename (the CROSS-FILE case — the `<Modal>` lives in the parent), a file that imports
+ * `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
+ * exemption — a file DEFINING a basalt control cannot be told to use one.
  */
 // Ships: warn (grace → 1.30.0)
 const controlOutsideHome = {
@@ -3179,8 +3187,8 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
   '`filtersEnd` / `actions` / `sync` / `control`), inside a <FilterSet>, or inside a <PageAside> ' +
   '— where the panel surface renders it as a row instead (law C1, docs/ASIDE-SPEC.md §3). ' +
   'SliderControl is not policed: it renders its own PanelRow and has no pill form. An overlay ' +
-  '(Modal/Drawer/Popover/Menu) and a settings row are the declared non-homes and never report. ' +
-  '(basalt/bound-control-outside-home)'
+  '(Modal/Drawer/Popover/Menu), a settings row and a form row (FormRow/FormGroup) are the ' +
+  'declared non-homes and never report. (basalt/bound-control-outside-home)'
 
 /**
  * A BOUND basalt control that is in no home at all — ledger G5 (`docs/ASIDE-SPEC.md` §2), the half
@@ -3607,6 +3615,7 @@ const queryFnUnwrap = {
  *   prop?: string
  *   replacement: string
  *   removeIn: string
+ *   fix?: false
  * }} DeprecatedExport
  */
 
@@ -3639,6 +3648,9 @@ export const DEPRECATED_EXPORTS = [
     name: 'field',
     replacement: 'inputProps',
     removeIn: '1.29.0',
+    // Not a drop-in: `inputProps` no longer returns `key`, so a rename alone would silently drop
+    // the reconciler key. The nudge stays; the rewrite is `basalt/forms-field-key`'s job.
+    fix: false,
   },
   {
     subpath: 'basalt-ui',
@@ -3720,7 +3732,9 @@ const deprecatedExport = {
           context.report({
             node: spec,
             message: deprecatedExportMessage(row),
-            fix: (fixer) => fixer.replaceText(spec, `${row.replacement} as ${local}`),
+            ...(row.fix === false
+              ? {}
+              : { fix: (fixer) => fixer.replaceText(spec, `${row.replacement} as ${local}`) }),
           })
         }
       },
@@ -3741,6 +3755,159 @@ const deprecatedExport = {
           if (row === undefined) continue
           if (hasThemeAllow(context, node, 'deprecated-export')) continue
           context.report({ node, message: deprecatedExportMessage(row) })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 30 — forms-field-key ───────────────────────────────────────────────────────────────────
+
+/** The subpath the forms idiom is imported from — the only provenance this rule accepts. */
+const FORMS_IMPORT_SOURCE = 'basalt-ui/forms'
+
+/** The three names this rule resolves through the local→imported map. */
+const FORMS_SPREAD_NAMES = new Set(['inputProps', 'field'])
+
+const FORMS_FIELD_KEY_MESSAGES = {
+  missing:
+    'A spread `inputProps(…)` with no sibling `key`. The field loses its reconciler key, so an ' +
+    'uncontrolled input keeps its old text through `form.reset()`, `form.setValues()` and a ' +
+    'removed list row — nothing throws and nothing type-checks differently. Write ' +
+    '`key={fieldKey(form, path)} {...inputProps(form, path)}`: `inputProps` stopped returning ' +
+    '`key` because a spread `key` is a React 19 warning, and a call site that merely kept the ' +
+    'spread compiles unchanged and silently stops resetting. ' +
+    '(basalt/forms-field-key)',
+  deprecatedAlias:
+    'A spread `field(…)`. That is the @deprecated 1.27 alias and it still bundles `key` INTO the ' +
+    'returned object, so it still logs React 19\'s `A props object containing a "key" prop is ' +
+    'being spread into JSX` on every render — kept byte-identical on purpose, because a ' +
+    'deprecation is a schedule and not a silent behaviour change. Migrate to ' +
+    '`key={fieldKey(form, path)} {...inputProps(form, path)}` (packages/basalt-ui/MIGRATING.md ' +
+    'carries the row); the alias itself is removed in 1.29.0. ' +
+    '(basalt/forms-field-key)',
+}
+
+/** The `key` attribute among a JSXOpeningElement's attributes, if it has one written literally. */
+function hasKeyAttribute(opening) {
+  for (const attr of opening?.attributes ?? []) {
+    if (attr?.type === 'JSXAttribute' && attr.name?.name === 'key') return true
+  }
+  return false
+}
+
+/**
+ * A field spread that lost its reconciler key — the guard for the one change in the 1.28.0 forms
+ * minor that a consumer's compiler cannot see.
+ *
+ * `inputProps` used to return `getInputProps(path)` AND `key` in one object, so
+ * `<TextInput {...inputProps(form, 'x')} />` covered both. It no longer returns `key` (a spread
+ * `key` is a React 19 warning), and that exact call site still type-checks, still renders and still
+ * validates — it just stops resetting. There is no compile error, no throw and no console line to
+ * find it by, which is precisely the profile a lint rule exists for.
+ *
+ * TWO forms under this one id, because they are one law read from either end:
+ *
+ * - `{...inputProps(…)}` with no sibling `key` — the post-migration mistake. Autofixed: the `key`
+ *   attribute is inserted with the SAME arguments, and `fieldKey` is added to the existing
+ *   `basalt-ui/forms` import when it is not already there, so `--fix` produces working code rather
+ *   than an unresolved identifier.
+ * - `{...field(…)}` — the pre-migration call site. Reported ALWAYS, key or no key, and deliberately
+ *   NOT autofixed: `field` still returns the bundle, so inserting a second `key` would be wrong,
+ *   and the honest remedy is the rename `basalt/deprecated-export` already nudges. This arm is a
+ *   pointer at the migration, one lane over from that rule's import-level nudge.
+ *
+ * Provenance is the `basalt-ui/forms` specifier (plus a relative import inside basalt's own `src/`,
+ * or the dogfood surface goes silent — the same gate `collectBasaltImports` uses), read through the
+ * local→imported map so `import { inputProps as f }` is covered. `inputProps` is an ordinary enough
+ * name that firing on an unimported one would be an opinion about a consumer's own helper.
+ */
+// Ships: warn (grace → 1.30.0)
+const formsFieldKey = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a spread field object that lost (or still bundles) its key.' },
+    schema: [],
+    fixable: 'code',
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const ownTree = isBasaltOwnSource(getFilename(context))
+    /** local name → the name it was imported as, for the three forms names. */
+    const imported = new Map()
+    /** The forms ImportDeclaration the `fieldKey` specifier is added to, if one exists. */
+    let formsImport
+    const candidates = []
+
+    return {
+      ImportDeclaration(node) {
+        const source = node.source?.value
+        if (typeof source !== 'string') return
+        if (source !== FORMS_IMPORT_SOURCE && !(ownTree && RELATIVE_IMPORT_SOURCE.test(source))) {
+          return
+        }
+        for (const spec of node.specifiers ?? []) {
+          const local = spec.local?.name
+          const name = spec.imported?.name ?? spec.imported?.value
+          if (typeof local !== 'string' || typeof name !== 'string') continue
+          if (name === 'fieldKey' || FORMS_SPREAD_NAMES.has(name)) {
+            imported.set(local, name)
+            if (source === FORMS_IMPORT_SOURCE) formsImport = node
+          }
+        }
+      },
+      JSXSpreadAttribute(node) {
+        const call = node.argument
+        if (call?.type !== 'CallExpression' || call.callee?.type !== 'Identifier') return
+        const opening = node.parent
+        if (opening === null || opening === undefined || opening.type !== 'JSXOpeningElement')
+          return
+        candidates.push({ node, call, local: call.callee.name, opening })
+      },
+      'Program:exit'() {
+        const text = context.sourceCode?.text ?? ''
+        const hasFieldKey = [...imported.values()].includes('fieldKey')
+        let importFixed = false
+
+        for (const { node, call, local, opening } of candidates) {
+          const name = imported.get(local)
+          if (name === undefined) continue
+          if (hasThemeAllow(context, node, 'forms-field-key')) continue
+
+          if (name === 'field') {
+            context.report({ node, message: FORMS_FIELD_KEY_MESSAGES.deprecatedAlias })
+            continue
+          }
+          if (hasKeyAttribute(opening)) continue
+
+          const args = call.arguments ?? []
+          const first = args[0]?.range
+          const last = args[args.length - 1]?.range
+          // No arguments to copy means no honest `fieldKey(…)` to write — report without a fix
+          // rather than emit one that does not compile.
+          if (first === undefined || last === undefined) {
+            context.report({ node, message: FORMS_FIELD_KEY_MESSAGES.missing })
+            continue
+          }
+          const argsText = text.slice(first[0], last[1])
+          // The import specifier is added by the FIRST fixed occurrence only: three fields in one
+          // file would otherwise emit three overlapping edits to one import, and an overlapping
+          // fix is dropped rather than merged.
+          const needsImport = !hasFieldKey && !importFixed && formsImport !== undefined
+          const lastSpec = needsImport
+            ? formsImport.specifiers?.[(formsImport.specifiers?.length ?? 0) - 1]
+            : undefined
+          if (needsImport && lastSpec !== undefined) importFixed = true
+
+          context.report({
+            node,
+            message: FORMS_FIELD_KEY_MESSAGES.missing,
+            fix: (fixer) => {
+              const fixes = [fixer.insertTextBefore(node, `key={fieldKey(${argsText})} `)]
+              if (lastSpec !== undefined) fixes.push(fixer.insertTextAfter(lastSpec, ', fieldKey'))
+              return fixes
+            },
+          })
         }
       },
     }
@@ -3846,6 +4013,20 @@ export const PLUGIN_RULE_GRACE = {
       'rule at `warn`: "this file is already a basalt file" is a claim about intent. 1.30.0 is ' +
       'when the consumer count is measured and the soft form is either kept or split off.',
   },
+  'forms-field-key': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      "the 1.28.0 forms minor took `key` out of `inputProps`' return, and the OLD call site " +
+      "(`<TextInput {...inputProps(form, 'x')} />`) survives that change with no compile error, " +
+      'no throw and no console line — it just stops resetting. This rule is the only thing that ' +
+      'reports it, which is an argument for `error`, not `warn`; it lands at `warn` anyway ' +
+      'because it fires on code every consumer is CURRENTLY shipping, and the grace minor is what ' +
+      'turns "your build is broken by the upgrade" into "your editor lists the eleven lines". ' +
+      'The `field(` arm is the same law read from the pre-migration end, and that alias is removed ' +
+      'in 1.29.0 anyway. 1.30.0 is when argo, linewatch, image-share, rb, image-gen and the ' +
+      'playground have all been through the autofix and the remainder is measured.',
+  },
   'query-fn-unwrap': {
     since: '1.28.0',
     promote: '1.30.0',
@@ -3920,6 +4101,7 @@ export default {
     'query-dual-import': queryDualImport,
     'query-fn-unwrap': queryFnUnwrap,
     'deprecated-export': deprecatedExport,
+    'forms-field-key': formsFieldKey,
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,
     'token-layer-boundary': tokenLayerBoundary,

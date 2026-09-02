@@ -53,6 +53,7 @@ C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTabl
 | `Section`                                                                         | `actions`, `tabs`                                  | `ctl`        | that section's own controls and its count  |
 | `WidgetHeader` / `ChartCard` / `StatCard` / `BasaltDataTable` / `SettingsSection` | `actions`                                          | `ctl`        | that widget's own controls and its count   |
 | `SettingsRow`                                                                     | `control`                                          | Mantine `md` | ONE form field, bound to a setting         |
+| `FormRow` / `FormGroup` (`basalt-ui/forms`)                                       | children                                           | Mantine `md` | ONE form field or a labelled cluster       |
 
 - **Inside `BasaltShell`**, `PageBar` row 1 portals into the header (the breadcrumb stays the lead)
   and row 2 renders in-flow, sticky, publishing its measured height as `--basalt-page-bar-h` for a
@@ -61,6 +62,8 @@ C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTabl
 - **The form row is a real home, and it keeps Mantine's own `md` tier.** A raw `Select` bound to a
   setting is the right answer in `SettingsRow.control`, and the `size` prop there is load-bearing
   rather than redundant. `SettingsRow` is not a tiered slot, and no filter or size rule applies to it.
+  `FormRow`/`FormGroup` are the same home written for a `<form>` rather than a settings page — a
+  control nested in either never reports either.
 - **A control's home is a decision about reach**: it belongs next to what it acts on. If it affects
   more than one widget it is promoted to the page bar; if it formats one widget it stays in that
   widget's header.

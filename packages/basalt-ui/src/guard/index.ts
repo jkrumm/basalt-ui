@@ -890,6 +890,9 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
+  // Same lane: `{...inputProps(…)}` without a sibling `key` is a JSX-ancestry claim (does this
+  // ELEMENT carry a `key` attribute?) over an import-resolved callee — neither is text.
+  'forms-field-key',
   // `in-body-page-title` is deliberately ABSENT: it is a plugin rule AND a guard kind under one id
   // (one law, two lanes, one annotation), and this set is the ids OUTSIDE `checkSource`'s reach.
   // `check-source.test.ts` asserts the two registries stay disjoint.
