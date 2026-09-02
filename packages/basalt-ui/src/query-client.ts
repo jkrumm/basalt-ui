@@ -48,27 +48,53 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * etc.). TData is inferred from the data field. Throws on the error branch so failures surface
  * to the nearest error boundary or TanStack Query's error state.
  *
- * Null guard: if `error` is falsy but `data` is `null`, unwrap throws with a descriptive message.
- * This catches 204 No Content responses and silent transport failures that return `{ data: null,
- * error: null }` — both signal an unexpected absence of data and should not silently resolve.
+ * Absence guard: if `error` is falsy but `data` is `null` OR `undefined`, unwrap throws with a
+ * descriptive message. This catches 204 No Content responses and silent transport failures that
+ * return `{ data: null, error: null }` — both signal an unexpected absence of data and should not
+ * silently resolve. `undefined` joined `null` here (C5 consolidation) so a hand-rolled fetch
+ * wrapper that leaves `data` unset on a miss — rather than explicitly `null` — is caught the same
+ * way; the two envelope shapes argo's own pre-basalt `unwrap` and basalt's ONLY differed on.
+ *
+ * **Two overloads, one name** — a Promise of the envelope (basalt's original shape,
+ * `queryFn: () => unwrap(api.x.get())`), or the ALREADY-RESOLVED envelope itself
+ * (`unwrap(await api.x.get())`, or passed directly as a `.then(unwrap)` callback — both argo's
+ * 97 call sites' shapes). Never a generic argument to disambiguate: TS infers the right overload
+ * from whether the argument IS a `Promise`.
  *
  * @example
  * import { unwrap } from 'basalt-ui'
  *
+ * // Promise-of-envelope — queryFn:
  * queryFn: () => unwrap(api.users.get({ query: params }))
  * // mutation:
  * mutationFn: (body) => unwrap(api.resource.post({ body }))
- * // manual:
- * const rows = await unwrap(api.users.get())
+ *
+ * // resolved-envelope — either shape:
+ * const rows = unwrap(await api.users.get())
+ * const rows2 = await api.users.get().then(unwrap)
  */
-export async function unwrap<TData>(
-  response: Promise<{ data: TData | null; error: unknown }>,
-): Promise<TData> {
-  const { data, error } = await response
+export function unwrap<TData>(
+  response: Promise<{ data: TData | null | undefined; error: unknown }>,
+): Promise<TData>
+export function unwrap<TData>(response: { data: TData | null | undefined; error: unknown }): TData
+export function unwrap<TData>(
+  response:
+    | Promise<{ data: TData | null | undefined; error: unknown }>
+    | { data: TData | null | undefined; error: unknown },
+): TData | Promise<TData> {
+  if (response instanceof Promise) return response.then((envelope) => unwrapEnvelope(envelope))
+  return unwrapEnvelope(response)
+}
+
+function unwrapEnvelope<TData>(envelope: {
+  data: TData | null | undefined
+  error: unknown
+}): TData {
+  const { data, error } = envelope
   if (error) throw error
-  if (data === null)
+  if (data === null || data === undefined)
     throw new Error(
-      'unwrap: null data with no error — check for a 204 response or a transport failure',
+      'unwrap: null/undefined data with no error — check for a 204 response or a transport failure',
     )
-  return data as TData
+  return data
 }

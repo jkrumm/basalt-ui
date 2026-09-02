@@ -43,14 +43,7 @@
  * read stays in JS — through `useSyncExternalStore`, so SSR, hydration and the first paint agree.
  * Recorded in `docs/CONTROLS-SPEC.md` §1 (C9) and `docs/ASIDE-SPEC.md` §0.
  */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useMantineTheme } from '@mantine/core'
@@ -61,6 +54,7 @@ import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { FilterSetScope } from '../controls/filter-context'
 import { useAsidePanelSlot } from './page-bar'
 import { useIsomorphicLayoutEffect } from './isomorphic-layout-effect'
+import { useMediaQueryMatches } from './use-breakpoint'
 import classes from './page-aside.module.css'
 
 type AsideRegion = {
@@ -131,50 +125,6 @@ export function useAsideRegion(): Pick<AsideRegion, 'claimed' | 'folded'> {
 export function AsideOutlet({ className }: { className?: string }) {
   const { setTarget } = useContext(AsideContext)
   return <div ref={setTarget} className={className} />
-}
-
-/** `window.matchMedia`, or `null` where there is no window and on a shim that does not ship it. */
-function mediaQueryList(query: string): MediaQueryList | null {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null
-  return window.matchMedia(query)
-}
-
-/**
- * Internal — a media query read through `useSyncExternalStore`, the ONE hook whose server snapshot
- * React honours during BOTH `renderToString` and the hydration pass.
- *
- * That is the whole reason it is not `@mantine/hooks`' `useMediaQuery`, which reads `matchMedia`
- * inside a `useState` INITIALIZER: on the server it returns `initialValue`, on the client's very
- * first render it returns the real match, and when that render is a HYDRATION the two disagree
- * silently — a server-rendered desktop panel hydrating on a phone against a client tree that has
- * already moved the children into the page bar's sheet. `getServerSnapshot` makes React render the
- * server's answer during hydration and re-render with the real one immediately after, which is the
- * documented, warning-free version of the same correction.
- *
- * `fallback` is what the server (and a shim with no `matchMedia`) sees. It stays the DESKTOP
- * answer, because the portalled branch is the one a shell-less or pre-hydration page can always
- * fall back to rendering.
- */
-function useMediaQueryMatches(query: string, fallback: boolean): boolean {
-  // ONE `MediaQueryList` per query, held across renders. `matchMedia()` allocates a fresh live
-  // object on every call and `getSnapshot` runs on every render AND after every store
-  // notification — so calling it in there churned an object per read, and the list `subscribe`
-  // listened on was never the one `getSnapshot` measured. Reading `.matches` off the SAME instance
-  // it subscribed to is what makes the snapshot and the notification describe one thing.
-  const list = useMemo(() => mediaQueryList(query), [query])
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (list === null) return () => {}
-      list.addEventListener('change', onStoreChange)
-      return () => {
-        list.removeEventListener('change', onStoreChange)
-      }
-    },
-    [list],
-  )
-  const getSnapshot = useCallback(() => list?.matches ?? fallback, [list, fallback])
-  const getServerSnapshot = useCallback(() => fallback, [fallback])
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
 /** The three boxes `PageAside` paints, in every projection (`common/props.ts`). */

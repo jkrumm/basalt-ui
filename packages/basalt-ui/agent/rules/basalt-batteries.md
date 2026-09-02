@@ -9,7 +9,7 @@ paths:
 ---
 
 <!-- basalt:coverage -->
-<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
+<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major, basalt/forms-field-key, basalt/query-dual-import, basalt/query-fn-unwrap -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->

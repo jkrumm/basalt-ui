@@ -37,11 +37,27 @@ export interface BasaltRegister {}
  * slot instantiates against. At 1.0 the `series`, `commands`, `overlays`, and `notifications`
  * slots ship and have concrete instantiations (define-commands.ts, define-overlays.ts,
  * define-notifications.ts); `router`, `query`, and `state` remain advisory.
+ *
+ * **Indexed-access form, not a mapped-type structural match (C5 consolidation)** — this used to
+ * read `BasaltRegister extends { [P in K]: infer S extends Constraint } ? S : {}`, which forces
+ * TS to structurally match the WHOLE `BasaltRegister` interface (every augmented slot's VALUE
+ * type, not just `K`'s) before it can answer "does slot `K` exist". That is the commands↔overlays
+ * cycle argo's `lib/overlays.tsx` documents: `defineCommands`'s inferred type has to type-check a
+ * command `run` body calling `overlays.open(…)`, which resolves `Slot<'overlays', …>` — and the
+ * OLD form's whole-interface match ALSO had to resolve `BasaltRegister['commands']`
+ * (`typeof COMMANDS`, the very type still being computed) to complete the match, because a
+ * mapped-type pattern binds every property simultaneously. `K extends keyof BasaltRegister` only
+ * needs the augmented KEY NAMES (available from declaration merging with no value-type checking
+ * at all), and `BasaltRegister[K]` then touches ONLY that one slot's value — so resolving
+ * `overlays` never has to resolve `commands` first, and a consumer can define both registries,
+ * with one calling the other's imperative controller, in a SINGLE file. Behaviourally identical to
+ * the old form for every existing augmentation (fixture J.1/J.2 pin both the `{}` fallback and the
+ * `Extract<keyof, string>` guard below); ONLY the internal resolution path changed.
  */
-export type Slot<K extends string, Constraint> = BasaltRegister extends {
-  [P in K]: infer S extends Constraint
-}
-  ? S
+export type Slot<K extends string, Constraint> = K extends keyof BasaltRegister
+  ? BasaltRegister[K] extends Constraint
+    ? BasaltRegister[K]
+    : {}
   : {}
 
 /** The consumer's registered series map, or `{}` when un-augmented. */

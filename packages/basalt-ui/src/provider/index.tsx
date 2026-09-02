@@ -15,11 +15,17 @@
  *
  * Mantine usage is allowed in this `./` root layer (unlike `src/charts/**` and `src/tokens/**`).
  */
-import { MantineProvider, useComputedColorScheme, useMantineTheme } from '@mantine/core'
+import {
+  MantineProvider,
+  useComputedColorScheme,
+  useMantineColorScheme,
+  useMantineTheme,
+} from '@mantine/core'
 import type { MantineProviderProps } from '@mantine/core'
 import { Component, useEffect, useMemo } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { VxThemeProvider } from '../charts/theme'
+import fallbackClasses from './error-fallback.module.css'
 import { ConnectivityProvider } from './connectivity-provider'
 import type { ConnectivityProviderProps } from './connectivity-types'
 import { cssVariablesResolver } from '../theme'
@@ -29,6 +35,8 @@ import type { BuildPaletteOpts } from '../tokens'
 import { isDefaultDeriveConfig } from '../tokens/derive'
 import { buildPaletteData } from '../tokens/palette'
 import { isDev } from '../common/is-dev'
+import { registerColorSchemeSetter } from '../commands/shell-bridge'
+import { PageTitle } from '../shell/page-title'
 
 /**
  * Where an error surfaced — drives consumer routing (a render error vs a global rejection differ).
@@ -114,14 +122,53 @@ function defaultOnError(error: unknown, ctx: BasaltErrorContext): void {
 
 // ── Error boundary ────────────────────────────────────────────────────────────────────────────────
 
-type BoundaryProps = {
+/**
+ * `BasaltErrorBoundary`'s props — exported (C5 consolidation) so a consumer mounting a nested
+ * boundary can name the type, e.g. for a wrapper component's own prop forwarding.
+ */
+export type BasaltErrorBoundaryProps = {
   children: ReactNode
-  onError: (error: unknown, ctx: BasaltErrorContext) => void
-  /** Optional UI to render when a render error is caught. If a function, called with the error. Defaults to null. */
+  /**
+   * Report the caught render error. Unset → `defaultOnError` (console.error in dev, no-op in
+   * prod — the same fallback `BasaltProvider`'s own top-level `onError` uses), so a NESTED
+   * boundary mounted with no `onError` still surfaces something in dev instead of silently
+   * swallowing it.
+   */
+  onError?: (error: unknown, ctx: BasaltErrorContext) => void
+  /**
+   * UI to render when a render error is caught. If a function, called with the error. Unset →
+   * {@link DefaultErrorFallback} — a minimal `PageTitle` + reload button, never a silent `null`;
+   * pass `fallback={null}` explicitly for the old swallow-it behaviour.
+   */
   fallback?: ReactNode | ((error: unknown) => ReactNode)
 }
 
 type BoundaryState = { hasError: boolean; error: unknown }
+
+/**
+ * The boundary's own default fallback — a `PageTitle` (C5's shell-less page-title primitive, so
+ * this needs no `in-body-page-title` waiver) plus a plain reload affordance. Deliberately minimal:
+ * a consumer wanting session ids, a stack trace or a "try to recover" reset (argo's own
+ * `lib/error-boundary.tsx`) still passes its own `fallback` render function — this default exists
+ * so an app that mounts `BasaltErrorBoundary` and does nothing else shows a page, not a blank one.
+ */
+function DefaultErrorFallback(): ReactNode {
+  return (
+    <div className={fallbackClasses.root}>
+      <PageTitle
+        title="Something went wrong"
+        subtitle="The page hit an unexpected error and was unloaded to keep the app stable."
+      />
+      <button
+        type="button"
+        className={fallbackClasses.reload}
+        onClick={() => window.location.reload()}
+      >
+        Reload page
+      </button>
+    </div>
+  )
+}
 
 /**
  * Error boundary that catches render-phase errors inside `BasaltProvider`. Wraps `BasaltBridge` +
@@ -133,8 +180,8 @@ type BoundaryState = { hasError: boolean; error: unknown }
  *   <MyFeature />
  * </BasaltErrorBoundary>
  */
-export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState> {
-  constructor(props: BoundaryProps) {
+export class BasaltErrorBoundary extends Component<BasaltErrorBoundaryProps, BoundaryState> {
+  constructor(props: BasaltErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false, error: undefined }
   }
@@ -144,13 +191,15 @@ export class BasaltErrorBoundary extends Component<BoundaryProps, BoundaryState>
   }
 
   override componentDidCatch(error: unknown, info: ErrorInfo): void {
-    this.props.onError(error, { kind: 'render', info })
+    const onError = this.props.onError ?? defaultOnError
+    onError(error, { kind: 'render', info })
   }
 
   override render(): ReactNode {
     if (this.state.hasError) {
       const { fallback } = this.props
-      if (fallback === undefined) return null
+      if (fallback === undefined) return <DefaultErrorFallback />
+      if (fallback === null) return null
       return typeof fallback === 'function' ? fallback(this.state.error) : fallback
     }
     return this.props.children
@@ -202,6 +251,15 @@ function BasaltBridge({
   // Resolve via Mantine's computed scheme so 'auto' follows the OS prefers-color-scheme
   // (fallback 'dark' before hydration, matching the provider's defaultColorScheme).
   const resolved = useComputedColorScheme('dark')
+
+  // `commands/shell-bridge.ts`'s `setColorScheme` handle — registered here (already inside
+  // `MantineProvider`) so a consumer's `commands.tsx` calls it with ZERO `__root.tsx` wiring,
+  // unlike argo's hand-rolled `color-scheme-bridge.ts` this seeds from (see that file's own doc).
+  const { setColorScheme: setMantineColorScheme } = useMantineColorScheme()
+  useEffect(() => {
+    registerColorSchemeSetter(setMantineColorScheme)
+    return () => registerColorSchemeSetter(null)
+  }, [setMantineColorScheme])
 
   // `createBasaltTheme`'s non-default `{ derive }` / `{ fonts }` / `{ radius }` / `{ density }`
   // paths stash the resolved values on `theme.other.basaltDerive` / `theme.other.basaltFonts` /

@@ -16,6 +16,7 @@ import {
   ROW_LINE_HEIGHT,
   SHADOW,
   SPACE,
+  SPACE_FIXED,
   SPACE_SCALE,
   SPACE_STEP,
 } from './palette'
@@ -158,6 +159,11 @@ export const VX = {
   // Fully-rounded pill affordance (scroll-to-bottom button, chips) — fixed, does not track the
   // radius knob (see `RADIUS_STEP.pill`'s doc in `tokens/palette.ts`).
   radiusPill: 'var(--vx-radius-pill)',
+  // The WCAG 2.5.5/2.5.8 touch-target floor (44px), fixed — does not track the density knob (see
+  // `SPACE_FIXED.spaceTouchTarget`'s doc in `tokens/palette.ts`). For a hit area with no `ctl`-tier
+  // home to size it — a consumer's own `@media (pointer: coarse)` CSS-module rule reads the same
+  // `--vx-space-touch-target` var this resolves to.
+  spaceTouchTarget: 'var(--vx-space-touch-target)',
 
   // Controls tier sizing (`docs/CONTROLS-SPEC.md` §5) — `var()` refs onto the density-tracking
   // `--vx-space-*` declarations `spaceDecls` emits above (same ref pattern as `radiusCard`/
@@ -743,6 +749,10 @@ function frameworkDerived(data: PaletteData, only: 'core' | 'all', legacyAliases
     // only in this static block, never in `buildRadiusCss`'s dynamic override (see
     // `RADIUS_STEP.pill`'s doc).
     decl('radius-pill', `${RADIUS_STEP.pill}px`),
+    // The WCAG touch-target floor — fixed, density-EXEMPT, so it lives only in this static block,
+    // never in `buildDensityCss`'s dynamic override (same law as `radius-pill` above; see
+    // `SPACE_FIXED.spaceTouchTarget`'s doc).
+    decl('space-touch-target', `${SPACE_FIXED.spaceTouchTarget}px`),
     ...(only === 'core' ? space.filter(isCoreSpaceDecl) : space),
     // Article-density Prose measure (docs/CONTENT-SPEC.md §5) — theme-independent, like the radii.
     decl('prose-measure', '72ch'),

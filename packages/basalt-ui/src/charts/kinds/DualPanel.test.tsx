@@ -50,6 +50,65 @@ describe('DualPanel — bottomMaxAbsFloor', () => {
   })
 })
 
+describe('DualPanel — fillBetween.aboveFill', () => {
+  test('aboveFill colors the above-side area distinctly from the below-side fill', () => {
+    const fillRows: Row[] = [
+      { date: '2026-08-01', v: 5, bar: 0 },
+      { date: '2026-08-02', v: 15, bar: 0 },
+    ]
+    const fillSeries: ChartSeries<Row>[] = [
+      { key: 'chronic', label: 'Chronic', color: '#111', mark: 'line', getValue: (d) => d.v },
+      { key: 'acute', label: 'Acute', color: '#222', mark: 'line', getValue: (d) => d.v + 1 },
+    ]
+    const html = renderToStaticMarkup(
+      <DualPanel<Row>
+        data={fillRows}
+        chartId="dp-fill"
+        getX={(d) => d.date}
+        series={fillSeries}
+        getBar={(d) => d.bar}
+        barLabel="Bar"
+        barColorPositive="#0a0"
+        barColorNegative="#a00"
+        formatTop={(v) => String(v)}
+        formatBottom={(v) => v.toFixed(2)}
+        fillBetween={{ from: 'chronic', to: 'acute', fill: '#00ff00', aboveFill: '#ff0000' }}
+      />,
+    )
+    expect(html).toContain('fill="#00ff00"')
+    expect(html).toContain('fill="#ff0000"')
+  })
+
+  test("omitting aboveFill shares one fill on both sides — today's behaviour, unchanged", () => {
+    const fillRows: Row[] = [
+      { date: '2026-08-01', v: 5, bar: 0 },
+      { date: '2026-08-02', v: 15, bar: 0 },
+    ]
+    const fillSeries: ChartSeries<Row>[] = [
+      { key: 'chronic', label: 'Chronic', color: '#111', mark: 'line', getValue: (d) => d.v },
+      { key: 'acute', label: 'Acute', color: '#222', mark: 'line', getValue: (d) => d.v + 1 },
+    ]
+    const html = renderToStaticMarkup(
+      <DualPanel<Row>
+        data={fillRows}
+        chartId="dp-fill-shared"
+        getX={(d) => d.date}
+        series={fillSeries}
+        getBar={(d) => d.bar}
+        barLabel="Bar"
+        barColorPositive="#0a0"
+        barColorNegative="#a00"
+        formatTop={(v) => String(v)}
+        formatBottom={(v) => v.toFixed(2)}
+        fillBetween={{ from: 'chronic', to: 'acute', fill: '#00ff00' }}
+      />,
+    )
+    const matches = html.match(/fill="#00ff00"/g) ?? []
+    expect(matches.length).toBeGreaterThanOrEqual(2)
+    expect(html).not.toContain('fill="#ff0000"')
+  })
+})
+
 describe('DualPanel — per-point getMarker rendering', () => {
   test('renders exactly one circle per non-null marker, honouring color/r overrides', () => {
     const markerRows: Row[] = [

@@ -49,8 +49,9 @@ export type DualPanelProps<T> = BasaltProps & {
   series: ChartSeries<T>[]
   /** Top-pane y-domain. Default 'auto' (computed from all top lines, padded). */
   topYDomain?: [number, number] | 'auto'
-  /** Shade the band between two top lines (by key), filled on both sides. */
-  fillBetween?: { from: string; to: string; fill: string }
+  /** Shade the band between two top lines (by key). `aboveFill` colors the side where `to` runs
+   * above `from` (e.g. a "bad" red) — omitted, both sides share `fill` (today's behaviour). */
+  fillBetween?: { from: string; to: string; fill: string; aboveFill?: string }
   /** Horizontal reference lines on the top pane. Solid by default; set dashed: true for a dashed line. */
   topRefLines?: { value: number; color: string; dashed?: boolean }[]
   /** Horizontal value-range bands on the top pane. */
@@ -512,7 +513,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
               clipBelowTo={topH}
               curve={fillCurve}
               belowAreaProps={{ fill: fillBetween.fill }}
-              aboveAreaProps={{ fill: fillBetween.fill }}
+              aboveAreaProps={{ fill: fillBetween.aboveFill ?? fillBetween.fill }}
             />
           )}
 

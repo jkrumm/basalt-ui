@@ -33,6 +33,11 @@ describe('resolveChartState — pending wins, then error, then empty', () => {
     expect(resolveChartState({ state: { empty: true } })).toBe('empty')
   })
 
+  test('a string empty label is also truthy — a caller supplying copy still resolves to empty', () => {
+    expect(resolveChartState({ state: { empty: 'No sessions in this window' } })).toBe('empty')
+    expect(resolveChartState({ state: { empty: '' } })).toBeNull()
+  })
+
   test('isPending remains a working alias for state.pending', () => {
     expect(resolveChartState({ isPending: true })).toBe('pending')
     expect(resolveChartState({ isPending: false })).toBeNull()
@@ -140,6 +145,17 @@ describe('ChartFrame resolves `state` into the placeholders', () => {
     const html = frame({ series, legend: {}, children: () => <svg>{BODY}</svg> })
     expect(html).toContain(BODY)
     expect(html).toContain('Series A')
+  })
+
+  test('a string empty label rides through as the ChartEmpty copy', () => {
+    const html = frame({
+      series,
+      legend: {},
+      state: { empty: 'No sessions in this window' },
+      children: () => <svg>{BODY}</svg>,
+    })
+    expect(html).toContain('No sessions in this window')
+    expect(html).not.toContain('>No data<')
   })
 })
 

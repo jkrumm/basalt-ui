@@ -18,8 +18,9 @@
  * `createPersistedState` (`../state`) keyed by `storageKey` — see `collapseStore`.
  */
 import { AppShell, Box } from '@mantine/core'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
+import { registerSidebarToggle } from '../commands/shell-bridge'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -78,6 +79,8 @@ export {
 export { AppBreadcrumbs, type AppBreadcrumbsProps } from './app-breadcrumbs'
 export { PageBar, type PageBarProps, type PageBarSlot } from './page-bar'
 export { PageAside, type PageAsideProps, type PageAsideSlot } from './page-aside'
+export { useBreakpoint, type BreakpointName } from './use-breakpoint'
+export { PageTitle, type PageTitleProps, type PageTitleSlot } from './page-title'
 
 /**
  * The shared nav vocabulary lives in `src/shell/nav-types.ts` so the headless router bridge can
@@ -122,6 +125,10 @@ export type SettingsMenuItem = {
   label: string
   icon?: ReactNode
   onClick?: (e: MouseEvent) => void
+  /** This entry is the current selection (e.g. the active theme radio, the open dev tool) — a
+   * trailing check glyph renders in every form (flat footer row, gear `Menu.Item`, the mobile
+   * More-sheet row) and the row carries `aria-current="true"`. */
+  active?: boolean
 }
 
 export type BasaltShellProps = BasaltProps & {
@@ -333,11 +340,20 @@ function ShellFrame({
   // localStorage-persisted state entirely — the consumer becomes the source of truth.
   const isCollapseControlled = collapsedProp !== undefined
   const collapsed = isCollapseControlled ? collapsedProp : storedCollapsed
-  const toggleCollapse = () => {
+  const toggleCollapse = useCallback(() => {
     const next = !collapsed
     if (!isCollapseControlled) setStoredCollapsed(next)
     onCollapsedChange?.(next)
-  }
+  }, [collapsed, isCollapseControlled, setStoredCollapsed, onCollapsedChange])
+  // `commands/shell-bridge.ts`'s `toggleSidebar` handle — registered here so a consumer's
+  // `commands.tsx` calls it with ZERO module-scope bridge of its own, unlike argo's hand-rolled
+  // `sidebar-bridge.ts` this seeds from (see that file's own doc). Re-registered whenever
+  // `toggleCollapse` itself changes identity, so the handle always flips the CURRENT state rather
+  // than a stale closure's.
+  useEffect(() => {
+    registerSidebarToggle(toggleCollapse)
+    return () => registerSidebarToggle(null)
+  }, [toggleCollapse])
 
   const activeCrumb = findActiveCrumb(sections)
   // The account row, every settings entry and every mobile-reachable sidebar block render as flat

@@ -64,3 +64,61 @@ describe('the header renders only when it has something to show', () => {
     expect(screen.queryByText('Net revenue per day')).toBeNull()
   })
 })
+
+describe('state replaces the body with a placeholder, header stays put', () => {
+  const BODY = 'CHART_BODY_MARKER'
+
+  test('pending: no children, header stays, aria-busy on the root', () => {
+    const { container } = render(
+      <ChartCard title="Revenue over time" state={{ pending: true }} placeholderHeight={320} />,
+    )
+    expect(screen.getByRole('heading', { level: 3, name: 'Revenue over time' })).toBeDefined()
+    expect(screen.queryByText(BODY)).toBeNull()
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
+    expect(screen.getByText('Loading…')).toBeDefined()
+  })
+
+  test('a title-less pending card is a valid Suspense fallback', () => {
+    render(<ChartCard state={{ pending: true }} placeholderHeight={320} />)
+    expect(screen.queryByRole('heading')).toBeNull()
+    expect(screen.getByText('Loading…')).toBeDefined()
+  })
+
+  test('empty with a string label renders that copy, not the "No data" default', () => {
+    render(
+      <ChartCard title="Strength Scan" state={{ empty: 'No data — start logging workouts.' }}>
+        {BODY}
+      </ChartCard>,
+    )
+    expect(screen.getByText('No data — start logging workouts.')).toBeDefined()
+    expect(screen.queryByText(BODY)).toBeNull()
+  })
+
+  test('error renders the thrown message and is not aria-busy', () => {
+    const { container } = render(
+      <ChartCard title="Revenue over time" state={{ error: new Error('boom') }}>
+        {BODY}
+      </ChartCard>,
+    )
+    expect(screen.getByText('boom')).toBeDefined()
+    expect(container.querySelector('[aria-busy="true"]')).toBeNull()
+  })
+
+  test('state={{}} (all-falsy) renders children unchanged, same as omitting the prop', () => {
+    render(
+      <ChartCard title="Revenue over time" state={{}}>
+        {BODY}
+      </ChartCard>,
+    )
+    expect(screen.getByText(BODY)).toBeDefined()
+  })
+
+  test('stateAction renders under the empty placeholder', () => {
+    render(
+      <ChartCard state={{ empty: true }} stateAction={<button type="button">Clear filters</button>}>
+        {BODY}
+      </ChartCard>,
+    )
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeDefined()
+  })
+})

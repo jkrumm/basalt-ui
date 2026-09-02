@@ -536,3 +536,37 @@ describe('common props (`common/props.ts`)', () => {
     expect(container.querySelector('nav.my-mobile-nav')).toBeTruthy()
   })
 })
+
+describe('SettingsMenuItem.active reaches the More surface', () => {
+  test('the active settings entry carries aria-current inside the More menu', async () => {
+    const model = projectMobileNav(
+      [
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab' }), item('activity', { mobile: 'tab' })],
+        },
+      ],
+      { extraMoreRows: 1 },
+    )
+    render(
+      <MantineProvider>
+        <MobileNav
+          model={model}
+          settingsMenuItems={[
+            { key: 'theme', label: 'Theme', onClick: () => {}, active: true },
+            { key: 'devtools', label: 'Devtools', onClick: () => {} },
+          ]}
+        />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(menu()).not.toBeNull())
+
+    const rows = Array.from(document.querySelectorAll('.mantine-Menu-item'))
+    const active = rows.find((row) => row.textContent?.includes('Theme'))
+    const inactive = rows.find((row) => row.textContent?.includes('Devtools'))
+    expect(active?.getAttribute('aria-current')).toBe('true')
+    expect(inactive?.getAttribute('aria-current')).toBeNull()
+  })
+})

@@ -79,6 +79,15 @@ export {
   type HotkeyBinding,
 } from './projectors'
 
+// ── Imperative shell handles (setColorScheme/toggleSidebar) ──────────────────
+export {
+  setColorScheme,
+  toggleSidebar,
+  type ColorScheme,
+  type ColorSchemeSetter,
+  type SidebarToggle,
+} from './shell-bridge'
+
 // ── Shortcut format utils ─────────────────────────────────────────────────────
 export { parseShortcut, detectMac, formatShortcutDisplay } from './shortcut-format'
 

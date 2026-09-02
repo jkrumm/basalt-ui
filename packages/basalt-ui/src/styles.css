@@ -40,6 +40,42 @@
 }
 
 @layer basalt {
+  /* Native/PWA chrome (C5 consolidation) — three of the five rules argo's own `styles/native.css`
+     carried, moved here so every consumer gets them for free instead of hand-copying a stylesheet.
+     The other two (safe-area padding on the sidebar/main) are CSS-module rules on those specific
+     regions, not global — see `shell/app-sidebar.module.css` and `shell/app-main.module.css`.
+     Overscroll containment and the footer's safe-area-bottom inset already ship
+     (`shell/app-main.module.css`, `shell/app-mobile-nav.module.css`) and are not repeated here. */
+
+  /* Stops iOS from inflating font sizes on a rotation into landscape — `text-size-adjust` governs
+     text INFLATION, a different failure mode than the input-zoom floor just below. */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Removes the grey tap-highlight flash on iOS/Android for anything actually tappable. Scoped to
+     the interactive roles/tags rather than `*` (argo's own rule): a highlight on non-interactive
+     content is not the flash this exists to remove, and `*` would also numb a consumer's own
+     custom interactive elements that don't match one of these. */
+  button,
+  a,
+  [role='button'],
+  [role='tab'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* A long-press on a control must not select its label or pop the iOS callout menu — inputs and
+     prose content stay selectable. Same Mantine class-hook targets argo's own rule used
+     (`.mantine-Button-root`/`.mantine-NavLink-root`/`.mantine-Burger-root`): the theme layer is
+     the one place allowed to reach for a Mantine class hook directly, per `basalt-mantine.md`. */
+  .mantine-Button-root,
+  .mantine-NavLink-root,
+  .mantine-Burger-root {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
   /* iOS input-zoom FLOOR. Safari zooms the viewport whenever a focused input computes below 16px,
      and never zooms back out on blur — the single worst mobile-form defect. 16px is the only clean
      fix: `maximum-scale=1` / `user-scalable=no` block pinch-zoom on Android (WCAG 1.4.4),

@@ -10,6 +10,7 @@ export {
   BasaltProvider,
   type BasaltProviderProps,
   BasaltErrorBoundary,
+  type BasaltErrorBoundaryProps,
   type BasaltErrorContext,
 } from './provider'
 // -- Common primitives (src/common) ------------------------------------------------------------
@@ -75,6 +76,11 @@ export {
   PageAside,
   type PageAsideProps,
   type PageAsideSlot,
+  useBreakpoint,
+  type BreakpointName,
+  PageTitle,
+  type PageTitleProps,
+  type PageTitleSlot,
   type SidebarSection,
   type SidebarItem,
   type SidebarBlock,
@@ -223,6 +229,9 @@ export { createBasaltQueryClient, unwrap } from './query-client'
 export { BasaltQueryDevtools } from './query-devtools'
 export { toErrorMessage, errorStatus } from './common/errors'
 
+// ── BasaltDevDock (C5 consolidation) ────────────────────────────────────────────────────────────
+export { BasaltDevDock, type BasaltDevDockProps, type BasaltDevDockTool } from './dev-dock'
+
 // ── Type-only re-exports for compile fixtures (H.4) ──────────────────────────────────────────────
 // SurfaceSpec/RuleName/SkillName: the value SURFACES stays internal; types only for surfaces-broken
 // fixture. GuardKind: type-only for fixture completeness. No ./surfaces subpath exposed.
@@ -262,6 +271,7 @@ export type {
   MessageAffordances,
   VirtualizeOptions,
   VirtualizeProps,
+  RowHeightProps,
   ToolChipProps,
 } from './agent-chat'
 export {

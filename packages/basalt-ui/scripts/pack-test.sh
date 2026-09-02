@@ -138,6 +138,7 @@ const subpaths = [
   'basalt-ui/charts',
   'basalt-ui/tokens',
   'basalt-ui/guard',
+  'basalt-ui/format',
   'basalt-ui/state',
   'basalt-ui/vite',
   'basalt-ui/theme-lab',
@@ -169,6 +170,13 @@ if (typeof tokens.buildPaletteCss !== 'function') throw new Error('tokens.buildP
 // the Mantine-free guard entry must load with checkSource present
 const guard = await import('basalt-ui/guard')
 if (typeof guard.checkSource !== 'function') throw new Error('guard.checkSource missing')
+
+// the Mantine-free, React-free format entry must load and format
+const format = await import('basalt-ui/format')
+if (typeof format.money !== 'function') throw new Error('format.money missing')
+if (format.money(1234, { currency: 'USD', locale: 'en-US' }) !== '$1,234') {
+  throw new Error('format.money did not format as expected')
+}
 
 // the raw oxlint preset must resolve via ./configs/* and be valid JSON
 JSON.parse(readFileSync(require.resolve('basalt-ui/configs/oxlint.json'), 'utf8'))
@@ -353,6 +361,23 @@ export { render, _k, _sk, _gk, _sev, _f }
 TS
 bunx tsc --project tsconfig.dist-vantage.json
 echo "dist-vantage tsc OK"
+
+echo "==> tsconfig \"extends\": \"basalt-ui/configs/*\" resolves via package exports"
+# Undocumented-until-now, unverified-until-now (c6-target-surface open question 12): a bare
+# `"extends": "basalt-ui/configs/tsconfig.react-app.json"` needs bundler-style package-exports
+# resolution INSIDE tsconfig's own `extends` field, which is a different resolver than the one
+# module specifiers use. Proves all three raw presets (`base`/`react-app`/`node`) resolve, not
+# just one; `--showConfig` needs at least one real input file to print anything (TS18003 on an
+# empty `include`), hence the throwaway probe file.
+echo 'export const x = 1' >extends-probe.ts
+for preset in base react-app node; do
+  cat >"tsconfig.extends-$preset.json" <<JSON
+{ "extends": "basalt-ui/configs/tsconfig.$preset.json", "include": ["extends-probe.ts"] }
+JSON
+  bunx tsc --showConfig --project "tsconfig.extends-$preset.json" >/dev/null
+  echo "tsconfig extends basalt-ui/configs/tsconfig.$preset.json OK"
+done
+rm -f extends-probe.ts tsconfig.extends-base.json tsconfig.extends-react-app.json tsconfig.extends-node.json
 
 echo "==> charts/tokens-only (no-Mantine) resolution + render"
 SCRATCH2=$(mktemp -d)

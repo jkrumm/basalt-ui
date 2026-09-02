@@ -23,10 +23,10 @@ Version: 1.27.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query)
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useBreakpoint, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)
 Layer: mantine-coupled
 Rule: basalt-mantine
-OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0
+OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0, @tanstack/react-router-devtools@^1.166.13
 
 ## basalt-ui/charts
 Import: import { ... } from 'basalt-ui/charts'
@@ -54,6 +54,11 @@ OptionalPeers: vite-plugin-pwa@^1.3.0
 ## basalt-ui/guard
 Import: import { ... } from 'basalt-ui/guard'
 Description: checkSource, GUARD_RULES, Finding types — the headless theme-guard core
+Layer: headless
+
+## basalt-ui/format
+Import: import { ... } from 'basalt-ui/format'
+Description: money/percent/integer/compact/deltaPct/duration/durationClock/clock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; charts/utils/format.ts re-exports fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate from here (C5 consolidation, one implementation)
 Layer: headless
 
 ## basalt-ui/router-tanstack

@@ -846,6 +846,17 @@ The `./configs/*` export gives consumer apps raw presets to `extends` or copy vi
 { "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }
 ```
 
+`tsconfig.json` `extends` resolves the SAME way, through package exports (`bundler`
+`moduleResolution`, CI-verified by `scripts/pack-test.sh`) — three raw presets, `base` (the shared
+strict flags), `react-app` (`base` + DOM/JSX libs) and `node` (`base` + Node types):
+
+```json
+{ "extends": "basalt-ui/configs/tsconfig.react-app.json" }
+```
+
+`.oxfmtrc.json` has no `extends` of its own — copy `configs/oxfmt.json` verbatim (`basalt-ui init`
+does this for you).
+
 ---
 
 ## `basalt-ui sync` in CI

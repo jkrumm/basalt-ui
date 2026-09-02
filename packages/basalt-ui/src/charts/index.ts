@@ -101,7 +101,12 @@ export {
   TooltipRow,
   TooltipBody,
 } from './primitives/ChartTooltip'
-export { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './primitives/Axes'
+export {
+  AxisBottomDate,
+  AxisBottomNumeric,
+  AxisLeftNumeric,
+  AxisRightNumeric,
+} from './primitives/Axes'
 export { HoverOverlay } from './primitives/HoverOverlay'
 export { ZoneRects, type ZoneSpec } from './primitives/ZoneRects'
 export { XZoneRects, type XZoneSpec } from './primitives/XZoneRects'
