@@ -17,7 +17,7 @@
  */
 import { MantineProvider, Text } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, spyOn, test } from 'bun:test'
+import { describe, expect, mock, spyOn, test } from 'bun:test'
 import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './table'
@@ -36,6 +36,12 @@ const COLUMNS = [
   col.accessor('project', { header: 'Project' }),
   col.accessor('cost', { header: 'Cost', meta: { align: 'right' } }),
 ]
+
+/** The row a checked box belongs to — the assertion that survives a reorder, unlike an index. */
+function checkedRowText(container: HTMLElement): string {
+  const box = container.querySelector('tbody input[type="checkbox"]:checked')
+  return box?.closest('tr')?.textContent ?? ''
+}
 
 function renderTable(props: Partial<BasaltDataTableProps<Row>> = {}) {
   return render(
@@ -595,5 +601,301 @@ describe('prop validation', () => {
     renderTable({ stickyHeader: true, stickyHeaderOffset: 94 })
     expect(error).not.toHaveBeenCalled()
     error.mockRestore()
+  })
+})
+
+// ── The uniform query contract (law C3, components audit #3) ──────────────────
+
+function query(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    data: undefined as unknown,
+    isError: false,
+    error: null as unknown,
+    fetchStatus: 'idle' as 'fetching' | 'paused' | 'idle',
+    refetch: () => undefined,
+    ...over,
+  }
+}
+
+/**
+ * The table had NO error branch: a 500 rendered *No data to display.* — the exact false claim
+ * `QueryState` exists to delete, one container over. All four branches are asserted against the
+ * `<tbody>`, and against the invariant that the `<thead>` survives every one of them: the table's
+ * chrome is what says WHICH data failed.
+ */
+describe('query — the four container states', () => {
+  test('pending renders the skeleton rows, header intact', () => {
+    const { container } = renderTable({ data: [], query: query({ fetchStatus: 'fetching' }) })
+    expect(container.querySelectorAll('.mantine-Skeleton-root').length).toBeGreaterThan(0)
+    expect(screen.getByRole('columnheader', { name: /Project/ })).toBeDefined()
+    expect(screen.queryByText('No data to display.')).toBeNull()
+  })
+
+  test('error renders an ErrorState row spanning every column, with a working Retry', () => {
+    const refetch = mock(() => undefined)
+    renderTable({
+      data: [],
+      query: query({ isError: true, error: new Error('upstream exploded'), refetch }),
+    })
+    expect(screen.getByText('upstream exploded')).toBeDefined()
+    // The row spans the table rather than sitting in the first column.
+    const cell = screen.getByText('upstream exploded').closest('td')
+    expect(cell?.getAttribute('colspan')).toBe(String(COLUMNS.length))
+    // Never the empty branch — that is the misreport this replaces.
+    expect(screen.queryByText('No data to display.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  test('a resolved but empty result renders the existing emptyState', () => {
+    renderTable({
+      data: [],
+      query: query({ data: [] }),
+      emptyState: <Text>Nothing matched</Text>,
+    })
+    expect(screen.getByText('Nothing matched')).toBeDefined()
+  })
+
+  test('data renders the rows', () => {
+    renderTable({ query: query({ data: ROWS }) })
+    expect(screen.getByText('argo')).toBeDefined()
+  })
+
+  test('query beats isLoading, and says so once in dev', () => {
+    resetValidatedProps()
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    renderTable({ isLoading: true, query: query({ data: ROWS }) })
+    expect(screen.getByText('argo')).toBeDefined()
+    expect(spy.mock.calls.flat().join(' ')).toContain('"query" and "isLoading" are both set')
+    spy.mockRestore()
+  })
+
+  /**
+   * The branch that differs from `QueryState` on purpose (`query-branch.ts`): an error arriving
+   * OVER cached rows keeps the rows, with no error row and no banner. `QueryState` draws a "showing
+   * cached data" banner in the same case; a container swaps only its `<tbody>`, so it has nowhere
+   * to put one. Compose `QueryState` AROUND the table when the banner is wanted.
+   */
+  test('an error over cached data keeps the rows — no error row, no banner', () => {
+    renderTable({ query: query({ data: ROWS, isError: true, error: new Error('refetch failed') }) })
+    expect(screen.getByText('argo')).toBeDefined()
+    expect(screen.queryByText('refetch failed')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+  })
+
+  test('a query missing `isError` throws rather than painting the empty state over a 500', () => {
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    expect(() =>
+      renderTable({
+        // oxlint-disable-next-line typescript/no-explicit-any -- the whole point is a bad shape
+        query: { data: undefined, fetchStatus: 'idle', refetch: () => undefined } as any,
+      }),
+    ).toThrow(/must carry \{ data, isError/)
+    spy.mockRestore()
+  })
+})
+
+// ── onRowActivate (law C11, components audit #11) ─────────────────────────────
+
+describe('onRowActivate', () => {
+  test('a click on the row hands back the ROW datum, not the cell', () => {
+    const onRowActivate = mock((_row: Row) => undefined)
+    renderTable({ onRowActivate })
+    fireEvent.click(screen.getByText('linewatch'))
+    expect(onRowActivate).toHaveBeenCalledTimes(1)
+    expect(onRowActivate.mock.calls[0]?.[0]).toEqual(ROWS[1] as Row)
+  })
+
+  test('Enter on a focused row activates it; the row is focusable and marked', () => {
+    const onRowActivate = mock((_row: Row) => undefined)
+    const { container } = renderTable({ onRowActivate })
+    const row = container.querySelector('tbody tr[data-activatable]')
+    if (!row) throw new Error('expected an activatable row')
+    expect(row.getAttribute('tabindex')).toBe('0')
+    fireEvent.keyDown(row, { key: 'Enter' })
+    expect(onRowActivate).toHaveBeenCalledTimes(1)
+  })
+
+  test('Enter on a nested control does not ALSO open the row', () => {
+    // keydown bubbles, so a row-level Enter handler fires for every focused descendant. Without the
+    // `target === currentTarget` guard the cell's own button ran and the detail opened behind it.
+    const onRowActivate = mock((_row: Row) => undefined)
+    const columns = [
+      ...COLUMNS,
+      col.display({
+        id: 'act',
+        header: 'Act',
+        cell: () => (
+          <button type="button" onClick={() => undefined}>
+            Rerun
+          </button>
+        ),
+      }),
+    ]
+    render(
+      <MantineProvider>
+        <BasaltDataTable data={ROWS} columns={columns} onRowActivate={onRowActivate} />
+      </MantineProvider>,
+    )
+    fireEvent.keyDown(screen.getAllByRole('button', { name: 'Rerun' })[0] as HTMLElement, {
+      key: 'Enter',
+    })
+    expect(onRowActivate).not.toHaveBeenCalled()
+  })
+
+  test('the row keeps its <tr> semantics — no role="button"', () => {
+    const { container } = renderTable({ onRowActivate: () => undefined })
+    const row = container.querySelector('tbody tr[data-activatable]')
+    expect(row?.getAttribute('role')).toBeNull()
+  })
+
+  test('without the prop no row is focusable or marked', () => {
+    const { container } = renderTable()
+    expect(container.querySelector('tbody tr[data-activatable]')).toBeNull()
+  })
+})
+
+// ── Row selection + the bulk bar ──────────────────────────────────────────────
+
+describe('enableRowSelection + bulkActions', () => {
+  test('no bar while nothing is selected; selecting a row raises it with the count', () => {
+    renderTable({ enableRowSelection: true, bulkActions: () => [{ key: 'x', label: 'Archive' }] })
+    expect(screen.queryByText('1 selected')).toBeNull()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 1' }))
+    expect(screen.getByText('1 selected')).toBeDefined()
+    expect(screen.getAllByRole('button', { name: 'Archive' }).length).toBeGreaterThan(0)
+  })
+
+  test('select-all counts every row on the page', () => {
+    renderTable({ enableRowSelection: true, bulkActions: () => [] })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all rows' }))
+    expect(screen.getByText('2 selected')).toBeDefined()
+  })
+
+  test('an action receives the SELECTED rows', () => {
+    const act = mock((_rows: Row[]) => undefined)
+    renderTable({
+      enableRowSelection: true,
+      bulkActions: (rows) => [{ key: 'del', label: 'Delete', onClick: () => act(rows) }],
+    })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 2' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0] as HTMLElement)
+    expect(act).toHaveBeenCalledTimes(1)
+    expect(act.mock.calls[0]?.[0]).toEqual([ROWS[1] as Row])
+  })
+
+  test('onRowSelectionChange reports the next selection map', () => {
+    const onRowSelectionChange = mock((_selection: Record<string, boolean>) => undefined)
+    renderTable({ enableRowSelection: true, onRowSelectionChange })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 1' }))
+    expect(onRowSelectionChange).toHaveBeenCalledTimes(1)
+    expect(onRowSelectionChange.mock.calls[0]?.[0]).toEqual({ '0': true })
+  })
+
+  test('ticking the box does NOT activate the row', () => {
+    const onRowActivate = mock((_row: Row) => undefined)
+    renderTable({ enableRowSelection: true, onRowActivate })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 1' }))
+    expect(onRowActivate).not.toHaveBeenCalled()
+  })
+
+  test('the empty row spans the checkbox column too', () => {
+    renderTable({ data: [], enableRowSelection: true })
+    const cell = screen.getByText('No data to display.').closest('td')
+    expect(cell?.getAttribute('colspan')).toBe(String(COLUMNS.length + 1))
+  })
+
+  test('no checkbox column at all without the flag', () => {
+    renderTable()
+    expect(screen.queryByRole('checkbox', { name: 'Select all rows' })).toBeNull()
+  })
+
+  test('getRowId pins the selection to the RECORD, so a re-sort carries it along', () => {
+    // The default id is the row INDEX: without `getRowId`, sorting leaves "row 0" selected and a
+    // different project moves into it.
+    const { container } = renderTable({ enableRowSelection: true, getRowId: (row) => row.project })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 1' }))
+    expect(checkedRowText(container)).toContain('argo')
+
+    fireEvent.click(screen.getByRole('columnheader', { name: /Project/ }))
+    fireEvent.click(screen.getByRole('columnheader', { name: /Project/ }))
+    expect(container.querySelector('tbody tr')?.textContent).toContain('linewatch')
+    expect(checkedRowText(container)).toContain('argo')
+  })
+
+  test('controlled rowSelection is rendered from the prop and never from internal state', () => {
+    const onRowSelectionChange = mock((_selection: Record<string, boolean>) => undefined)
+    const { container } = renderTable({
+      enableRowSelection: true,
+      getRowId: (row) => row.project,
+      rowSelection: { argo: true },
+      onRowSelectionChange,
+    })
+    expect(checkedRowText(container)).toContain('argo')
+
+    // The external store owns it: the table reports the NEXT map and renders nothing new until the
+    // caller passes it back. A mirrored internal copy would tick the box here anyway.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select row 2' }))
+    expect(onRowSelectionChange).toHaveBeenCalledTimes(1)
+    expect(onRowSelectionChange.mock.calls[0]?.[0]).toEqual({ argo: true, linewatch: true })
+    expect(checkedRowText(container)).toContain('argo')
+    expect(container.querySelectorAll('tbody input[type="checkbox"]:checked')).toHaveLength(1)
+  })
+
+  test('a controlled selection re-rendered from the prop drives the bulk bar', () => {
+    const { rerender } = render(
+      <MantineProvider>
+        <BasaltDataTable
+          data={ROWS}
+          columns={COLUMNS}
+          enableRowSelection
+          getRowId={(row) => row.project}
+          rowSelection={{ argo: true }}
+          bulkActions={(rows) => [{ key: 'x', label: `Archive ${rows.length}` }]}
+        />
+      </MantineProvider>,
+    )
+    expect(screen.getByText('1 selected')).toBeDefined()
+
+    rerender(
+      <MantineProvider>
+        <BasaltDataTable
+          data={ROWS}
+          columns={COLUMNS}
+          enableRowSelection
+          getRowId={(row) => row.project}
+          rowSelection={{ argo: true, linewatch: true }}
+          bulkActions={(rows) => [{ key: 'x', label: `Archive ${rows.length}` }]}
+        />
+      </MantineProvider>,
+    )
+    expect(screen.getByText('2 selected')).toBeDefined()
+    expect(screen.getAllByRole('button', { name: 'Archive 2' }).length).toBeGreaterThan(0)
+  })
+})
+
+// ── actions: BarAction[] | ReactNode (law C15) ────────────────────────────────
+
+describe('actions — the widened toolbar slot', () => {
+  test('a BarAction[] gets the C7 fold instead of a clipped row', () => {
+    renderTable({
+      actions: [
+        { key: 'a', label: 'Alpha' },
+        { key: 'b', label: 'Bravo' },
+        { key: 'c', label: 'Charlie' },
+        { key: 'd', label: 'Delta' },
+      ],
+    })
+    const desktop = document.querySelector('.mantine-visible-from-sm')
+    if (!desktop) throw new Error('expected the desktop action group')
+    expect(desktop.textContent).toContain('Alpha')
+    expect(desktop.textContent).not.toContain('Delta')
+    expect(desktop.textContent).toContain('More')
+  })
+
+  test('a ReactNode slot is unchanged', () => {
+    renderTable({ actions: <Text>Export</Text> })
+    expect(screen.getByText('Export')).toBeDefined()
+    expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
   })
 })

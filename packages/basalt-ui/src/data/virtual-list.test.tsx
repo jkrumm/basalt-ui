@@ -7,8 +7,10 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { createRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import { resetValidatedProps } from '../common/validate'
 import { BasaltVirtualList } from './virtual-list'
 import type { BasaltVirtualListHandle } from './virtual-list'
 
@@ -157,5 +159,109 @@ describe('className and classNames (common/props.ts)', () => {
     const root = container.querySelector('.my-list')
     expect(root).not.toBeNull()
     expect(root?.classList.contains('my-root')).toBe(true)
+  })
+})
+
+// ── The uniform query contract (law C3, components audit #3) ──────────────────
+
+function query(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    data: undefined as unknown,
+    isError: false,
+    error: null as unknown,
+    fetchStatus: 'idle' as 'fetching' | 'paused' | 'idle',
+    refetch: () => undefined,
+    ...over,
+  }
+}
+
+function renderWithQuery(props: {
+  items?: Row[]
+  query?: ReturnType<typeof query>
+  emptyState?: ReactNode
+  isLoading?: boolean
+}) {
+  return render(
+    <MantineProvider>
+      <BasaltVirtualList
+        items={props.items ?? ITEMS}
+        height={300}
+        renderItem={(item) => <div>{item.label}</div>}
+        getItemKey={(item) => item.id}
+        {...(props.query !== undefined && { query: props.query })}
+        {...(props.emptyState !== undefined && { emptyState: props.emptyState })}
+        {...(props.isLoading !== undefined && { isLoading: props.isLoading })}
+      />
+    </MantineProvider>,
+  )
+}
+
+/**
+ * The list took `isLoading` and nothing else, so a failed fetch and a genuinely empty list rendered
+ * the SAME blank box. All four branches, plus the invariant that every one of them keeps the
+ * declared height so the page does not reflow as the state resolves.
+ */
+// The virtualizer measures its scroll element, which has no layout under the DOM harness, so no
+// virtual ROW is ever in the document there. The sizer div — total height, `position: relative` —
+// is what proves the VIRTUAL branch was taken rather than a placeholder one.
+const sizer = (container: HTMLElement) =>
+  container.querySelector('div[style*="position: relative"]')
+
+describe('query — the four container states', () => {
+  test('pending renders the skeleton rows', () => {
+    const { container } = renderWithQuery({ items: [], query: query({ fetchStatus: 'fetching' }) })
+    expect(container.querySelectorAll('.mantine-Skeleton-root').length).toBeGreaterThan(0)
+  })
+
+  test('error renders the server message and a working Retry', () => {
+    const refetch = mock(() => undefined)
+    renderWithQuery({
+      items: [],
+      query: query({ isError: true, error: new Error('upstream exploded'), refetch }),
+    })
+    expect(screen.getByText('upstream exploded')).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  test('a resolved but empty result renders `emptyState`, never the error', () => {
+    renderWithQuery({ items: [], query: query({ data: [] }), emptyState: <div>Nothing here</div> })
+    expect(screen.getByText('Nothing here')).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+  })
+
+  test('data renders the virtual list itself, not a placeholder branch', () => {
+    const { container } = renderWithQuery({ query: query({ data: ITEMS }) })
+    expect(sizer(container)).not.toBeNull()
+    expect(container.querySelector('.mantine-Skeleton-root')).toBeNull()
+  })
+
+  test('every branch keeps the declared height, so the box does not reflow', () => {
+    for (const props of [
+      { items: [], query: query({ fetchStatus: 'fetching' as const }) },
+      { items: [], query: query({ isError: true, error: new Error('x') }) },
+      { items: [], query: query({ data: [] }), emptyState: <div>empty</div> },
+    ]) {
+      const { container, unmount } = renderWithQuery(props)
+      expect(container.querySelector('div[style*="height: 300px"]')).not.toBeNull()
+      unmount()
+    }
+  })
+
+  test('`emptyState` works without a query, and is absent when there are items', () => {
+    const { unmount } = renderWithQuery({ items: [], emptyState: <div>Nothing here</div> })
+    expect(screen.getByText('Nothing here')).toBeDefined()
+    unmount()
+    renderWithQuery({ emptyState: <div>Nothing here</div> })
+    expect(screen.queryByText('Nothing here')).toBeNull()
+  })
+
+  test('query beats isLoading, and says so once in dev', () => {
+    resetValidatedProps()
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    const { container } = renderWithQuery({ isLoading: true, query: query({ data: ITEMS }) })
+    expect(container.querySelector('.mantine-Skeleton-root')).toBeNull()
+    expect(spy.mock.calls.flat().join(' ')).toContain('"query" and "isLoading" are both set')
+    spy.mockRestore()
   })
 })

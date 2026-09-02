@@ -55,6 +55,15 @@ export function deprecatedProp(
   )
 }
 
+/**
+ * An imperative call needs a layer that is not there — the optional peer is not installed, or the
+ * mount that subscribes to its event bus is disabled. Both halves are named because the remedy
+ * differs: install it, or stop turning it off.
+ */
+export function missingLayer(component: string, layer: string, remedy: string): string {
+  return message(component, `needs ${layer}, which is not available — ${remedy}.`)
+}
+
 /** A single-mount component found a second instance alive (`BasaltProvider`, `Notifications`). */
 export function duplicateMount(component: string): string {
   return message(

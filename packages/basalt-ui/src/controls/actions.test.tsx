@@ -14,10 +14,12 @@ import type { ReactNode } from 'react'
 import {
   ActionGroup,
   BarActionRow,
+  BarActionSlot,
   BarExtrasProvider,
   OverflowMenu,
   barActionMobile,
   globalActionMobile,
+  isBarActionList,
 } from './actions'
 import type { BarAction, BarExtras } from './actions'
 
@@ -297,5 +299,72 @@ describe('BarActionRow — className placement across the sync split', () => {
     )
     expect(desktopClassed).toHaveLength(1)
     expect(desktopClassed[0]?.textContent).toContain('Second 0')
+  })
+})
+
+/**
+ * `BarActionSlot` — the shared renderer behind law C15's widened `actions` slots (`Section`,
+ * `BasaltDataTable`). The union has no discriminant, so the two things worth pinning are that the
+ * runtime test tells DATA from a NODE correctly, and that the data arm gets the real projection
+ * (the C7 fold and the mobile kebab) rather than a hand-rolled row.
+ */
+describe('BarActionSlot — the SlotActions union', () => {
+  test('isBarActionList reads a BarAction[] as data and everything else as a node', () => {
+    expect(isBarActionList([{ key: 'a', label: 'A' }])).toBe(true)
+    expect(isBarActionList([{ key: 'm', kind: 'menu', label: 'M', items: [] }])).toBe(true)
+    // A React element carries `key` too, which is exactly why `isValidElement` is the separator.
+    expect(isBarActionList(<button key="a">A</button>)).toBe(false)
+    expect(isBarActionList([<button key="a">A</button>, <button key="b">B</button>])).toBe(false)
+    expect(isBarActionList('Export')).toBe(false)
+    expect(isBarActionList(undefined)).toBe(false)
+    // An empty array is DATA — a `.filter()` that matched nothing — and the data path renders
+    // nothing for it, so both arms paint the same pixels down one branch.
+    expect(isBarActionList([])).toBe(true)
+  })
+
+  test('an empty data array renders nothing at all — no group, no kebab', () => {
+    const { container } = render(
+      <MantineProvider>
+        <BarActionSlot actions={[]} />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.mantine-visible-from-sm')).toBeNull()
+    expect(container.querySelector('.mantine-hidden-from-sm')).toBeNull()
+    expect(container.querySelector('button')).toBeNull()
+  })
+
+  test('the node arm renders verbatim — no group, no fold', () => {
+    render(
+      <MantineProvider>
+        <BarActionSlot actions={<button type="button">Export</button>} />
+      </MantineProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'Export' })).toBeDefined()
+    expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
+  })
+
+  test('the data arm gets the C7 fold: 3 inline, the rest behind More', () => {
+    render(
+      <MantineProvider>
+        <BarActionSlot actions={secondary(5)} />
+      </MantineProvider>,
+    )
+    const desktop = document.querySelector('.mantine-visible-from-sm')
+    if (!desktop) throw new Error('expected the desktop group')
+    expect(desktop.textContent).toContain('Second 0')
+    expect(desktop.textContent).toContain('Second 2')
+    expect(desktop.textContent).not.toContain('Second 3')
+    expect(desktop.textContent).toContain('More')
+  })
+
+  test('the data arm mounts the mobile kebab — the projection a ReactNode row never got', () => {
+    render(
+      <MantineProvider>
+        <BarActionSlot actions={secondary(2)} />
+      </MantineProvider>,
+    )
+    const mobile = document.querySelector('.mantine-hidden-from-sm')
+    if (!mobile) throw new Error('expected the mobile group')
+    expect(mobile.querySelector('[aria-label="More actions"]')).not.toBeNull()
   })
 })

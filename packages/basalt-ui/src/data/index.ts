@@ -57,6 +57,7 @@ export {
   type PaginationState,
   type ColumnPinningState,
   type ColumnFiltersState,
+  type RowSelectionState,
 } from './table'
 
 // ── BasaltVirtualList ─────────────────────────────────────────────────────────
