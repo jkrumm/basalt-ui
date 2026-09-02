@@ -43,6 +43,19 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   panel's; the panel paints only the page background. Its header is an `appShellHeaderHeight` band
   carrying the title in the head font (`--vx-text-md`/550 ink) — the title names the CONTENT
   (`"Composition"`), never the region (`"Panel"`).
+- **The header's height tracks the shell's page-bar band, not a fixed 48px** (chrome round
+  2026-09-02): `min-height` reads `--basalt-page-bar-h` first (`PageBar` row 2's measured height,
+  published on `documentElement` — `shell/page-bar.tsx`) and falls back to `appShellHeaderHeight`
+  only on a route with no `PageBar`, where there is no band seam to align to. MEASURED on `/cbbi`
+  1440x900 before the fix: the band's own bottom seam sat at y87 while the header's — pinned to a
+  bare 48px regardless of the band's real height — sat at y96, two hairlines nine pixels apart. The
+  `+ 1px` in `page-aside.module.css`'s `min-height` calc is load-bearing, not decorative: the
+  published var measures the band's row-2 CONTENT box only, while the band's own `border-bottom` is
+  drawn OUTSIDE that box on an unconstrained `height: auto` element — this header is the opposite
+  shape (an explicit `min-height` under the page's `box-sizing: border-box` reset, which absorbs its
+  own border INSIDE the declared height), so the raw var undershoots the band's painted edge by
+  exactly that border. The same `+ 1px` wraps both branches of the var/fallback, so the no-band
+  case still nets out at the unchanged 48px.
 - A `PageAside` child list IS the group list — no wrapper `Stack`; the body's `> * + *` rule draws
   the rhythm between direct children only.
 - **The one-home law**: the bar owns what is READ — view, window, sync — and the aside owns how it
@@ -160,3 +173,4 @@ tier="group"` (mono micro-label, `h3`) with a zero-gap row body — resolved fro
 | 3                         | `Histogram` panel kind · `MembershipToggle` over one key of a `field.multi`, off a `has`/`toggle` handle on the field (G14) — **not built, on purpose**: both gate on §0's evidence-first sequencing and have no call site until a second consumer page adopts the aside, not on any technical blocker                                                                                                                                                                                                       | a second consumer page (argo) on the aside                            |
 | 4                         | guards — `basalt/bound-control-outside-home` (the section-body branch as its OWN id, warn 1.28.0 → 1.30.0) + agent rule `basalt-controls.md` §aside — **delivered**; `aside-budget` not built (no measured incumbent) and `MIGRATING.md` untouched (nothing renamed)                                                                                                                                                                                                                                         | promote per C16                                                       |
 | chrome round (2026-08-30) | region seams, 48px bands, head-font title, group tier, one-home rule on `/cbbi`                                                                                                                                                                                                                                                                                                                                                                                                                              | `/cbbi` desktop+mobile screenshots signed off                         |
+| seam fix (2026-09-02)     | the aside header's height tracks `--basalt-page-bar-h` instead of a fixed 48px, closing the band/header seam into one line — **delivered**                                                                                                                                                                                                                                                                                                                                                                   | `/cbbi` band bottom y = aside header bottom y at 1440x900 — met       |
