@@ -31,6 +31,7 @@
 import { Card, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { WidgetHeader } from '../widget-header'
+import type { WidgetHeaderTitleProps } from '../widget-header'
 import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import { cx } from '../common/props'
@@ -49,12 +50,17 @@ const eyebrowStyle = {
 /** The three boxes `SettingsSection`/`DangerZone` paint (`common/props.ts`). */
 export type SettingsSectionSlot = 'root' | 'header' | 'body'
 
+/**
+ * Composed from the named `WidgetHeaderTitleProps` slice (audit B #2) rather than a hand-picked
+ * `title`/`subtitle` pair — which is why `icon` and `info` now reach the header too. `value`/`delta`
+ * are deliberately NOT taken: a settings section groups controls, it states no metric.
+ *
+ * `Section` and `ChartCard` still cut their own ad-hoc subsets; both should move onto the same
+ * slices.
+ */
 export type SettingsSectionProps = BasaltProps &
-  SlotStylesProps<SettingsSectionSlot> & {
-    /** Head-font section title, rendered via `WidgetHeader tier="section"`. */
-    title: string
-    /** Optional 13px muted description below the title. */
-    subtitle?: string
+  SlotStylesProps<SettingsSectionSlot> &
+  WidgetHeaderTitleProps & {
     /** Header-right slot — wrapped in `CtlSlot` (C1/C5). */
     actions?: ReactNode
     /** Section body — typically a stack of `SettingsRow`s. */
@@ -63,7 +69,9 @@ export type SettingsSectionProps = BasaltProps &
 
 export function SettingsSection({
   title,
+  icon,
   subtitle,
+  info,
   actions,
   children,
   className,
@@ -79,7 +87,9 @@ export function SettingsSection({
         <WidgetHeader
           tier="section"
           title={title}
+          {...(icon !== undefined && { icon })}
           {...(subtitle !== undefined && { subtitle })}
+          {...(info !== undefined && { info })}
           {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
         />
       </div>
@@ -132,7 +142,9 @@ export type DangerZoneProps = SettingsSectionProps
 
 export function DangerZone({
   title,
+  icon,
   subtitle,
+  info,
   actions,
   children,
   className,
@@ -153,7 +165,9 @@ export function DangerZone({
         <WidgetHeader
           tier="section"
           title={title}
+          {...(icon !== undefined && { icon })}
           {...(subtitle !== undefined && { subtitle })}
+          {...(info !== undefined && { info })}
           {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
         />
       </div>

@@ -20,28 +20,30 @@ import { toErrorMessage } from '../query/error-message'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { EmptyState } from './empty-state'
-
-/** `'page'` = a full route body (generous padding). `'section'` = a card/panel region (compact). */
-export type QueryStateVariant = 'page' | 'section'
+import { assertQueryStateLike } from '../common/query-state-like'
+import type { QueryStateLike } from '../common/query-state-like'
 
 /**
- * The structural subset of a TanStack `UseQueryResult` these components read.
+ * How loud this state is: `'page'` = a full route body (generous padding), `'section'` = a
+ * card/panel region (compact).
  *
- * Typed as a SUBSET rather than as `UseQueryResult<T>` on purpose: a composed, derived or
- * hand-rolled result must be passable without a cast, and
- * these components stay independent of which `@tanstack/react-query` major a consumer pins. This
- * is NOT a claim that the root barrel is free of that package — `./connectivity` imports
- * `onlineManager` as a value and is re-exported from `src/index.ts`. The cost of the subset is
- * that the compiler stops policing the shape — which is why {@link QueryState} asserts it at
- * runtime.
+ * Named `tier`, not `variant` (audit B #19): `tier` is already the package's word for "how loud is
+ * this" on `WidgetHeader` and `CtlSlot`, and `'section'` meant two different things across the two
+ * spellings. {@link QueryStateVariant} stays exported as an alias — nothing is renamed out from
+ * under a consumer.
  */
-export type QueryStateLike<TData> = {
-  data: TData | undefined
-  isError: boolean
-  error: unknown
-  fetchStatus: 'fetching' | 'paused' | 'idle'
-  refetch: () => unknown
-}
+export type QueryStateTier = 'page' | 'section'
+
+/** The former name of {@link QueryStateTier}. Kept as an alias; prefer `QueryStateTier`. */
+export type QueryStateVariant = QueryStateTier
+
+/**
+ * The structural subset of a TanStack `UseQueryResult` these components read — defined in
+ * `common/query-state-like.ts` and re-exported here, where consumers have always imported it from.
+ * The runtime assertion over it lives beside the type, because `./data`'s containers read the same
+ * envelope and a second copy of the check had already drifted to a weaker one.
+ */
+export type { QueryStateLike }
 
 /** Copy for the empty branch. Rendered through `EmptyState`, so it looks like every other one. */
 export type QueryEmptyCopy = {
@@ -57,19 +59,24 @@ export type QueryEmptyCopy = {
 // ── LoadingState ──────────────────────────────────────────────────────────────────────────────────
 
 export type LoadingStateProps = BasaltProps & {
-  variant?: QueryStateVariant
+  /** How loud this state is. Default `'page'`. */
+  tier?: QueryStateTier
+  /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
+  variant?: QueryStateTier
   /** Accessible name for the spinner. Say what is loading. */
   label?: string
 }
 
-/** A spinner on its own — `variant="page"` centres it in a generous block, `'section'` is bare. */
+/** A spinner on its own — `tier="page"` centres it in a generous block, `'section'` is bare. */
 export function LoadingState({
-  variant = 'page',
+  tier,
+  variant,
   label = 'Loading',
   className,
   style,
 }: LoadingStateProps): ReactNode {
-  if (variant === 'section') {
+  const resolved = tier ?? variant ?? 'page'
+  if (resolved === 'section') {
     return (
       <Loader
         size="sm"
@@ -104,7 +111,10 @@ export type ErrorStateProps = BasaltProps & {
   onRetry?: () => void
   /** Disables/spins the retry button while a refetch is in flight. */
   retrying?: boolean
-  variant?: QueryStateVariant
+  /** How loud this state is. Default `'page'`. */
+  tier?: QueryStateTier
+  /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
+  variant?: QueryStateTier
   /** Extra controls beside Retry (e.g. a "Back to shares" link). */
   action?: ReactNode
 }
@@ -119,18 +129,20 @@ export function ErrorState({
   fallback = 'The request failed.',
   onRetry,
   retrying = false,
-  variant = 'page',
+  tier,
+  variant,
   action,
   className,
   style,
 }: ErrorStateProps): ReactNode {
+  const resolved = tier ?? variant ?? 'page'
   const alert = (
     <Alert
       color="red"
       variant="light"
       title={title}
-      {...(variant === 'section' && className !== undefined && { className })}
-      {...(variant === 'section' && style !== undefined && { style })}
+      {...(resolved === 'section' && className !== undefined && { className })}
+      {...(resolved === 'section' && style !== undefined && { style })}
     >
       <Stack gap="sm">
         <Text size="sm">{toErrorMessage(error, fallback)}</Text>
@@ -147,7 +159,7 @@ export function ErrorState({
       </Stack>
     </Alert>
   )
-  if (variant === 'section') return alert
+  if (resolved === 'section') return alert
   return (
     <Stack
       py="md"
@@ -169,33 +181,6 @@ function defaultIsEmpty(data: unknown): boolean {
     return (data as { data: unknown[] }).data.length === 0
   }
   return false
-}
-
-const FETCH_STATUSES = new Set(['fetching', 'paused', 'idle'])
-
-/**
- * `QueryStateLike` is a structural subset, so TypeScript cannot protect a hand-composed result the
- * way it protects a real `UseQueryResult` — and every field it drops fails SILENTLY in the exact
- * direction this component exists to prevent. A missing `isError` renders "no data" over a 500. A
- * misspelled `fetchStatus` never leaves the spinner. A missing `refetch` renders a Retry button
- * that does nothing. Each of those is a false claim about the data, so it throws.
- */
-function assertQueryStateLike(query: unknown): asserts query is QueryStateLike<unknown> {
-  const bad = (detail: string): never => {
-    throw new Error(
-      `QueryState: \`query\` ${detail}. It must carry { data, isError, error, fetchStatus, refetch } — ` +
-        'a TanStack UseQueryResult does; a hand-composed one must spell every field, because a ' +
-        'missing branch flag renders a false claim about the data instead of an error.',
-    )
-  }
-  if (query === null || typeof query !== 'object')
-    bad(`is ${query === null ? 'null' : typeof query}`)
-  const q = query as Record<string, unknown>
-  if (!('data' in q)) bad('has no `data` key')
-  if (typeof q['isError'] !== 'boolean') bad('has no boolean `isError`')
-  if (typeof q['fetchStatus'] !== 'string' || !FETCH_STATUSES.has(q['fetchStatus']))
-    bad(`has fetchStatus=${JSON.stringify(q['fetchStatus'])}, not 'fetching' | 'paused' | 'idle'`)
-  if (typeof q['refetch'] !== 'function') bad('has no `refetch()`')
 }
 
 /**
@@ -225,7 +210,10 @@ export type QueryStateProps<TData> = BasaltProps &
     errorFallback?: string
     /** Extra controls beside Retry on the error branch. */
     errorAction?: ReactNode
-    variant?: QueryStateVariant
+    /** How loud every branch is. Default `'page'`. */
+    tier?: QueryStateTier
+    /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
+    variant?: QueryStateTier
     /** Replace the default spinner (e.g. with a skeleton grid). */
     loading?: ReactNode
   }
@@ -257,13 +245,15 @@ export function QueryState<TData>({
   errorTitle = 'Could not load',
   errorFallback = 'The request failed.',
   errorAction,
-  variant = 'page',
+  tier,
+  variant,
   loading,
   className,
   style,
   classNames,
 }: QueryStateProps<TData>): ReactNode {
-  assertQueryStateLike(query)
+  assertQueryStateLike('QueryState', query)
+  const resolvedTier = tier ?? variant ?? 'page'
   // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
   // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,
   // so it collapses back to `undefined`.
@@ -280,7 +270,7 @@ export function QueryState<TData>({
         fallback={errorFallback}
         onRetry={retry}
         retrying={retrying}
-        variant={variant}
+        tier={resolvedTier}
         {...(errorAction !== undefined && { action: errorAction })}
         {...(rootClassName !== undefined && { className: rootClassName })}
         {...(style !== undefined && { style })}
@@ -290,11 +280,11 @@ export function QueryState<TData>({
 
   if (data === undefined) {
     if (fetchStatus === 'idle' && !isError)
-      return empty ? renderEmpty(empty, variant, rootClassName, style) : null
+      return empty ? renderEmpty(empty, resolvedTier, rootClassName, style) : null
     return (
       loading ?? (
         <LoadingState
-          variant={variant}
+          tier={resolvedTier}
           {...(rootClassName !== undefined && { className: rootClassName })}
           {...(style !== undefined && { style })}
         />
@@ -305,7 +295,7 @@ export function QueryState<TData>({
   const emptyNow = isEmpty ? isEmpty(data) : defaultIsEmpty(data)
   const body = emptyNow
     ? empty
-      ? renderEmpty(empty, variant, rootClassName, style)
+      ? renderEmpty(empty, resolvedTier, rootClassName, style)
       : null
     : typeof children === 'function'
       ? children(data)
@@ -325,7 +315,7 @@ export function QueryState<TData>({
         fallback="The last refresh failed."
         onRetry={retry}
         retrying={retrying}
-        variant="section"
+        tier="section"
       />
       {body}
     </Stack>
@@ -334,14 +324,14 @@ export function QueryState<TData>({
 
 function renderEmpty(
   empty: QueryEmptyCopy,
-  variant: QueryStateVariant,
+  tier: QueryStateTier,
   className?: string,
   style?: CSSProperties,
 ): ReactNode {
   return (
     <EmptyState
       title={empty.title}
-      variant={variant}
+      tier={tier}
       {...(empty.description !== undefined && { description: empty.description })}
       {...(empty.icon !== undefined && { icon: empty.icon })}
       {...(empty.action !== undefined && { action: empty.action })}

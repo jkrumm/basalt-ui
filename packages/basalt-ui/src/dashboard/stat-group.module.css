@@ -1,0 +1,66 @@
+/*
+ * StatGroup's column law and its optional rail, in CSS (law C9). The literals are Mantine's
+ * `--mantine-breakpoint-sm` (48em) and `--mantine-breakpoint-lg` (75em) — a `@media` condition
+ * cannot read a custom property, so the number has to be written; the COUNTS are custom properties
+ * the component sets per instance.
+ */
+
+.root {
+  display: grid;
+  /* Two KPIs abreast on a phone, never one: a KPI is a short pre-formatted number, and a single
+     column turns a four-metric row into four screens of scrolling. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--vx-space-stack-md);
+}
+
+@media (min-width: 48em) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-stat-group-cols-sm), minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75em) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-stat-group-cols-lg), minmax(0, 1fr));
+  }
+}
+
+/*
+ * The rail. `column-gap: 0` and one hairline per cell, suppressed on whichever cell LEADS a row —
+ * which is why the three blocks below are bounded to mutually EXCLUSIVE ranges rather than stacked
+ * `min-width` ones. `:nth-child(3n + 1)` is more specific than the `[data-divided] > *` that draws the
+ * border, so an open-ended `sm` block would keep suppressing the wrong cells once `lg` took over.
+ */
+.root[data-divided] {
+  column-gap: 0;
+}
+
+.root[data-divided] > * {
+  border-inline-start: 1px solid var(--vx-divider);
+  padding-inline-start: var(--vx-space-stack-md);
+}
+
+@media (max-width: 47.99375em) {
+  .root[data-divided] > *:nth-child(2n + 1) {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}
+
+@media (min-width: 48em) and (max-width: 74.99375em) {
+  .root[data-divided][data-sm-cols='2'] > *:nth-child(2n + 1),
+  .root[data-divided][data-sm-cols='3'] > *:nth-child(3n + 1) {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}
+
+@media (min-width: 75em) {
+  .root[data-divided][data-cols='2'] > *:nth-child(2n + 1),
+  .root[data-divided][data-cols='3'] > *:nth-child(3n + 1),
+  .root[data-divided][data-cols='4'] > *:nth-child(4n + 1),
+  .root[data-divided][data-cols='5'] > *:nth-child(5n + 1) {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}

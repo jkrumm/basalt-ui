@@ -1,0 +1,53 @@
+/*
+ * WidgetGrid's column law, in CSS (law C9 — a responsive swap belongs to the control, never to a JS
+ * media query). The two literals below are Mantine's own `--mantine-breakpoint-sm` (48em) and
+ * `--mantine-breakpoint-lg` (75em); a `@media` condition is resolved before custom properties
+ * exist, so the number has to be written — same standing constraint `content/article-layout.
+ * module.css` documents.
+ *
+ * The COUNTS are custom properties instead, set once per instance by the component: three
+ * hand-written `repeat()` blocks would have to enumerate every `cols` value, and the whole point of
+ * this primitive is that a consumer states one desktop number and basalt owns the rest.
+ */
+
+.root {
+  display: grid;
+  /* Below `sm` a widget column is always 1 — a dashboard card holds a chart, and two of them on a
+     phone is two unreadable charts. */
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: var(--vx-space-stack-md);
+}
+
+@media (min-width: 48em) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-widget-grid-cols-sm), minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75em) {
+  .root {
+    grid-template-columns: repeat(var(--basalt-widget-grid-cols-lg), minmax(0, 1fr));
+  }
+}
+
+/*
+ * `min-width: 0` on every cell: a grid track's default `min-width: auto` is its content's intrinsic
+ * width, so one wide `<table>` or one long unbroken value blows the whole row out instead of
+ * scrolling inside its own card.
+ */
+.item {
+  grid-column: span 1;
+  min-width: 0;
+}
+
+@media (min-width: 48em) {
+  .item {
+    grid-column: span var(--basalt-widget-grid-span-sm);
+  }
+}
+
+@media (min-width: 75em) {
+  .item {
+    grid-column: span var(--basalt-widget-grid-span-lg);
+  }
+}

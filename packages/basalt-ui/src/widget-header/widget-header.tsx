@@ -123,6 +123,42 @@ export type WidgetHeaderProps = BasaltProps &
   }
 
 /**
+ * The named slices of {@link WidgetHeaderProps} its composers share, and the answer to audit B #2:
+ * four composers exposed four DIFFERENT subsets of the same base through four ad-hoc `Omit`s, so a
+ * consumer moving a KPI from `StatCard` → `ChartCard` → `Section` lost `unit`, `count`,
+ * `deltaFormat` or `deltaGlyph` with no compiler word about it. A slice is a `Pick` with a NAME:
+ * a composer states which slices it re-publishes, and an omission becomes a deliberate, readable
+ * line rather than an accident of whichever props the author happened to remember.
+ *
+ * The three are cut along the three ROWS `WidgetHeader` actually paints — the title row, the hero
+ * metric, and the delta chip on it — so "which slice does this composer take" and "which boxes does
+ * it draw" are the same question.
+ *
+ * Adopted by `StatCard` and `SettingsSection`. `Section` and `ChartCard` still cut their own
+ * subsets; both should compose these instead — the composer table in `docs/CONTROLS-SPEC.md` §2.2
+ * is the ledger of which one takes which.
+ *
+ * The title row: what every composer without exception publishes.
+ */
+export type WidgetHeaderTitleProps = Pick<WidgetHeaderProps, 'title' | 'icon' | 'subtitle' | 'info'>
+
+/**
+ * The hero metric row's value half. `value` is OPTIONAL here because it is on `WidgetHeader`; a
+ * composer whose whole reason to exist is the number (`StatCard`) redeclares it as required.
+ */
+export type WidgetHeaderMetricProps = Pick<WidgetHeaderProps, 'value' | 'unit'>
+
+/**
+ * The delta chip that rides the hero metric row — all five props together, never a subset. Splitting
+ * them is how `deltaFormat` came to type-check on `Section` and render nothing: a composer that
+ * publishes `delta` and not its formatter prints a percent sign over a pace.
+ */
+export type WidgetHeaderDeltaProps = Pick<
+  WidgetHeaderProps,
+  'delta' | 'deltaPeriod' | 'deltaPolarity' | 'deltaFormat' | 'deltaGlyph'
+>
+
+/**
  * The info affordance. A `title` attribute alone was never enough — it renders on hover only, so a
  * keyboard user focusing the glyph saw nothing at all. This is the bubble `ChartCard` used to own
  * before it composed `WidgetHeader`, moved down here so every tier gets the same behaviour:
