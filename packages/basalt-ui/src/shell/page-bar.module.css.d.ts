@@ -4,7 +4,7 @@
  */
 declare const classes: {
   readonly bar: string
-  readonly row2Sticky: string
+  readonly row2Band: string
   readonly row1: string
   readonly lead: string
   readonly icon: string

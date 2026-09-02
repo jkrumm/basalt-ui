@@ -336,7 +336,7 @@ export function PageAside(props: PageAsideProps): ReactNode {
         </div>
       ) : (
         <>
-          <div className={cx(classes.header, classNames?.header)}>
+          <div className={cx(classes.header, classNames?.header)} data-basalt-page-aside-header="">
             <span className={classes.title}>{title}</span>
             {portalled && <FoldButton folded={false} onToggle={() => setFolded(true)} />}
           </div>

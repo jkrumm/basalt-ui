@@ -1,7 +1,7 @@
 /**
  * `blocks` — the declared-data seam that replaced `navExtra` (law C13, `docs/CONTROLS-SPEC.md`
- * §2.3), plus the two other things the sidebar now owns: the `brand.menu` workspace switcher and
- * the flat-vs-menu settings footer.
+ * §2.3), plus the other thing the sidebar owns: the flat-vs-menu settings footer. The `brand.menu`
+ * workspace switcher moved out with the brand row itself — see `app-brand.test.tsx`.
  *
  * What is asserted here and what deliberately is not: CSS-module class hashes are unavailable under
  * `bun test` (see `stat-card.test.tsx` for the same constraint), and jsdom evaluates no media query,
@@ -328,37 +328,6 @@ describe('sidebar blocks — rail projection', () => {
   })
 })
 
-describe('brand.menu — the workspace switcher', () => {
-  const MENU = [
-    { key: 'switch', label: 'Switch workspace', onClick: () => {} },
-    { key: 'new', label: 'New workspace', onClick: () => {} },
-  ]
-
-  test('no menu: the brand name is plain text, not a control', () => {
-    renderSidebar({})
-    expect(screen.queryByLabelText('Argo workspace')).toBeNull()
-  })
-
-  test('with a menu the brand row becomes a `Name ▾` trigger opening the entries', async () => {
-    let picked = 0
-    renderSidebar({
-      brand: { name: 'Argo', menu: [{ ...MENU[0]!, onClick: () => (picked += 1) }, MENU[1]!] },
-    })
-
-    fireEvent.click(screen.getByLabelText('Argo workspace'))
-    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
-    expect(screen.getByText('New workspace')).toBeTruthy()
-
-    fireEvent.click(screen.getByText('Switch workspace'))
-    expect(picked).toBe(1)
-  })
-
-  test('an empty menu array is no menu — never a trigger that opens nothing', () => {
-    renderSidebar({ brand: { name: 'Argo', menu: [] } })
-    expect(screen.queryByLabelText('Argo workspace')).toBeNull()
-  })
-})
-
 /**
  * The footer threshold. A menu that opens to show two rows costs a click for nothing; eight flat
  * rows cost the nav its height. Three is the line (`docs/CONTROLS-SPEC.md` §2.3), and it is
@@ -438,7 +407,9 @@ describe('settingsMenuItems — flat at three or fewer', () => {
 describe('search.actions', () => {
   test('no actions: the trigger is the row, with no wrapper and no extra buttons', () => {
     const { container } = renderSidebar({ search: { onOpen: () => {} } })
-    expect(container.querySelectorAll('button')).toHaveLength(2) // search trigger + collapse toggle
+    // ONE button: the search trigger. The collapse toggle used to be the second — it moved into the
+    // header's brand zone (`app-brand.tsx`) with the brand row.
+    expect(container.querySelectorAll('button')).toHaveLength(1)
   })
 
   test('two actions render as icon-only buttons at the icon tier, right of the ⌘K row', () => {

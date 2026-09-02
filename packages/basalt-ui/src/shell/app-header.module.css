@@ -1,5 +1,9 @@
-/* App-shell top bar layout. ONE 48px row on every viewport —
- * [breadcrumb] ········ [page bar row 1] | [global actions].
+/* App-shell top bar layout. ONE 48px row on every viewport, spanning the FULL viewport width —
+ * [brand | collapse] [breadcrumb] ········ [page bar row 1] | [global actions].
+ *
+ * The leading zone is `app-brand.module.css`'s `.zone`: exactly `--app-shell-navbar-offset` wide,
+ * so its trailing edge lands on the sidebar|main seam and the breadcrumb after it starts on Main's
+ * own content edge. It is absent below `sm`, where there is no navbar to align with.
  *
  * The pre-1.26.0 mobile layout wrapped to a second, always-reserved row for the page actions and
  * scrolled it sideways. Both are gone (law C7 and law C14): the header height is now the
@@ -9,8 +13,8 @@
 /*
  * Transparent header (docs/DESIGN-SPEC.md §5): background stays the page body's own. Its bottom
  * edge is the `AppShell.Header` region seam, drawn by Mantine off `--app-shell-border-color` →
- * `--vx-divider`, spanning the main column only under `layout="alt"` — never a border in this
- * module.
+ * `--vx-divider`, running edge to edge now that the shell uses Mantine's DEFAULT layout rather than
+ * `alt` — never a border in this module.
  */
 .bar {
   display: flex;

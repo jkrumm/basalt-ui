@@ -18,3 +18,4 @@ export {
   missingLayer,
 } from './errors'
 export { useValidateProps, assertRequiredProps, resetValidatedProps } from './validate'
+export { scrollParentOf, SCROLLPORT_ATTRIBUTE } from './scroll-parent'

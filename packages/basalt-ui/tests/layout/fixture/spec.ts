@@ -35,8 +35,49 @@ export type TableSpec = {
   maxHeight?: number
   /** Horizontal floor — the `/data-stress` shape, which turns the container on without a cap. */
   minWidth?: number
-  /** What a consumer passes for WINDOW scroll (app header + `PageBar` row 2). */
+  /** What a consumer passes for PAGE scroll (`PageBar` row 2's band, inside Main's scrollport). */
   stickyHeaderOffset?: number | string
+  /**
+   * Column count. Two by default (the sticky-header invariants only need a header POSITION), but
+   * the phone-overflow guard needs a table wide enough to widen the page if nothing contains it —
+   * which a two-column table never is.
+   */
+  columns?: number
+  /**
+   * `stickyHeader`. Defaults to `true`, because the sticky-header invariants were written before
+   * anything else mounted a table here. The two values take two different containment roads — the
+   * static `Table.ScrollContainer` when `false`, the MEASURED wrapper when `true` and neither
+   * `maxHeight` nor `minWidth` is set (`useMeasuredContainment` in `data/data-table.tsx`) — and
+   * both are exercised, here and in the overflow guard.
+   */
+  stickyHeader?: boolean
+  /**
+   * `enableGlobalFilter` — the toolbar's search field. It states a width, which is what made the
+   * toolbar the widest box on a phone `/data` page (MEASURED at 390x844: `main.scrollWidth` 505
+   * against `clientWidth` 390) once a facet pill row sat beside it.
+   */
+  search?: boolean
+  /**
+   * How many faceted filter pills ride the toolbar beside the search. Each is a real `EnumFilter`
+   * over one of the generated columns, so the `_pillRow_` box the overflow guard reports is the
+   * production one and not a stand-in.
+   */
+  facets?: number
+}
+
+/**
+ * A `PageBar` with row-2 pills and row-1 actions, mounted for its own sake rather than as the
+ * aside's projection host. Exists for the phone-overflow guard: `PageBar`'s rows are
+ * `flex-wrap: nowrap` with no `overflow-x` by law C7, so a bar carrying several controls is one of
+ * the two shapes that can widen a 320px page.
+ */
+export type BarSpec = {
+  /** Shell-less title / row-1 lead. Ignored inside a shell, where the breadcrumb names the page. */
+  title?: string
+  /** How many filter pills ride row 2. */
+  pills?: number
+  /** How many row-1 actions ride the header portal. */
+  actions?: number
 }
 
 /**
@@ -52,6 +93,15 @@ export type TableSpec = {
 export type AsideSpec = {
   /** The aside's `title` — the sheet's heading and the `Panel` pill's accessible name. */
   title: string
+  /**
+   * Skips the accompanying `AsideBar` — the one shape the desktop panel's mobile projection needs
+   * a `PageBar` row 2 for. Exists for ONE invariant: with no `PageBar` anywhere on the route, the
+   * shell's page-bar band never mounts, `--basalt-page-bar-h` is never published, and the aside's
+   * shell header falls back to the ordinary `appShellHeaderHeight` band
+   * (`shell/page-aside.module.css`, `docs/ASIDE-SPEC.md`). Desktop-only in practice: below `sm` a
+   * `noBar` aside has nowhere to project and stays in flow (wave 1), which this flag does not test.
+   */
+  noBar?: true
 }
 
 /**
@@ -99,6 +149,10 @@ export type FixtureSpec = {
   bodyHeight?: number
   /** Renders a `BasaltDataTable` above the filler. Omitted ⇒ no table in the tree. */
   table?: TableSpec
+  /** Renders a `PageBar` carrying real controls. Omitted ⇒ no bar of its own (see `aside`). */
+  bar?: BarSpec
+  /** Renders a `StatGroup` of this many `StatCard`s, each with a bled `BarSparkline`. */
+  stats?: number
   /** Renders a `PageAside` (and, by default, the `PageBar` row 2 it projects into below `sm`). */
   aside?: AsideSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */

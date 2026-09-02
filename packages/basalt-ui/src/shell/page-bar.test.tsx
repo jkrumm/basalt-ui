@@ -224,11 +224,25 @@ describe('page-bar.module.css', () => {
   /** Declarations only — the block comments above them discuss `::before` and `overflow` by name. */
   const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
-  test('row 2 inside a shell sticks at the AppShell header-height VAR, never a measured number', () => {
-    const rule = decls.match(/\.row2Sticky\s*\{([^}]+)\}/)
+  test('row 2 inside a shell owns no geometry — the shell BAND does', () => {
+    const rule = decls.match(/\.row2Band\s*\{([^}]+)\}/)
     expect(rule).not.toBeNull()
-    expect(rule?.[1]).toContain('position: sticky')
-    expect(rule?.[1]).toContain('top: var(--app-shell-header-height, 0px)')
+    // Row 2 portals into `BasaltShell`'s band (`app-main.module.css`), a sibling of the scrollport.
+    // Nothing that positions, insets or paints it may live here: it used to be `position: sticky`
+    // inside the page flow, which made its resting y depend on whichever wrapper the consumer
+    // happened to render `<PageBar>` inside.
+    for (const banned of [
+      'position:',
+      'top:',
+      'z-index:',
+      'border-bottom',
+      'background-color',
+      'margin-top',
+      'margin-inline',
+      '--app-shell-header-height',
+    ]) {
+      expect(rule?.[1]).not.toContain(banned)
+    }
   })
 
   test('the shell-less bar sticks at the top of the document', () => {

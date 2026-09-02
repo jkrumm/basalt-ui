@@ -34,6 +34,8 @@ export {
   missingLayer,
   useValidateProps,
   assertRequiredProps,
+  scrollParentOf,
+  SCROLLPORT_ATTRIBUTE,
 } from './common'
 
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'

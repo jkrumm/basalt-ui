@@ -20,13 +20,15 @@
 import { AppShell, Box } from '@mantine/core'
 import { Fragment, useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
+import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import { AppSidebar } from './app-sidebar'
+import { AppBrand } from './app-brand'
 import { MobileNav, accountRowCount } from './app-mobile-nav'
 import { blockRowCount, projectMobileNav } from './mobile-nav-model'
 import { AppBreadcrumbs } from './app-breadcrumbs'
-import { PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
+import { PageBarBandOutlet, PageBarOutlet, PageBarProvider, usePageKebabClaimed } from './page-bar'
 import { AsideOutlet, AsideProvider, useAsideRegion } from './page-aside'
 import { OverflowMenu, globalActionAsBarAction, globalActionMobile } from '../controls/actions'
 import type { GlobalAction } from '../controls/actions'
@@ -41,8 +43,9 @@ import type {
 } from '../nav/types'
 import { CtlSlot, useBasaltSpacing } from '../theme'
 import { createPersistedState } from '../state'
+import brandClasses from './app-brand.module.css'
 import headerClasses from './app-header.module.css'
-import mobileNavClasses from './app-mobile-nav.module.css'
+import mainClasses from './app-main.module.css'
 import asideClasses from './page-aside.module.css'
 
 export { AppSidebar, type AppSidebarProps } from './app-sidebar'
@@ -376,7 +379,10 @@ function ShellFrame({
   return (
     <AppShell
       h="100dvh"
-      layout="alt"
+      // Mantine's DEFAULT layout, not `alt`: the header spans the full viewport width on top and
+      // the navbar/aside start underneath it at `top: var(--app-shell-header-offset)`. `alt` did
+      // the opposite — a full-height navbar with the header inset beside it — which put the top
+      // bar to the RIGHT of the sidebar instead of above it.
       header={{
         // ONE height at every width (law C14): nothing reserves a second mobile row any more.
         height: step.appShellHeaderHeight,
@@ -410,7 +416,9 @@ function ShellFrame({
       // `.footer` rule already adds the inset to both the height and the padding (§2.7).
       footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
       padding={SHELL_INSET}
-      {...(className !== undefined && { className })}
+      // `mainClasses.shell` is not decoration — see its rule for why the root has to establish a
+      // block formatting context now that Main is offset with margins.
+      className={cx(mainClasses.shell, className)}
       {...(style !== undefined && { style })}
     >
       {/* Region seams (docs/DESIGN-SPEC.md §5, §8 #12): Mantine's `[data-with-border]` painted in
@@ -418,6 +426,15 @@ function ShellFrame({
        * edge; never opt a section back out of its border here. */}
       <AppShell.Header px={SHELL_INSET}>
         <div className={headerClasses.bar}>
+          {/* The header's LEADING ZONE — exactly `--app-shell-navbar-offset` wide, so its trailing
+           * edge lands on the sidebar|main seam and the breadcrumb after it starts on Main's own
+           * content edge. The brand lives here rather than in the sidebar because with a full-width
+           * header a sidebar brand row painted as a SECOND 48px band under the header seam; see
+           * `app-brand.tsx`. `data-collapsed` is the rail's one signal — the zone narrows with the
+           * navbar and shows the toggle alone, exactly as the sidebar's own row did. */}
+          <div className={brandClasses.zone} data-collapsed={collapsed || undefined}>
+            <AppBrand brand={brand} collapsed={collapsed} onToggleCollapse={toggleCollapse} />
+          </div>
           <div className={headerClasses.lead}>
             <AppBreadcrumbs {...activeCrumb} />
           </div>
@@ -440,10 +457,27 @@ function ShellFrame({
         />
       </AppShell.Navbar>
 
-      {/* `mainSafeArea` closes the one real safe-area gap: Mantine sets
-       * `--app-shell-footer-offset` to the RAW footer height, so Main's own padding-bottom is
-       * short by exactly `env(safe-area-inset-bottom)` (§2.7). */}
-      <AppShell.Main className={mobileNavClasses.mainSafeArea}>{children}</AppShell.Main>
+      {/* The PAGE-BAR BAND — a shell-owned outlet between the header and the scrollport that
+       * `PageBar` row 2 portals into, the same mechanism row 1 uses one region up. It is written
+       * BEFORE Main because the two are the AppShell root's only in-flow children (every other
+       * region is `position: fixed`), so DOM order is column order: band, then whatever height is
+       * left. Empty, it is a zero-height, seam-less box (law C14). */}
+      <PageBarBandOutlet className={mainClasses.band} />
+
+      {/* MAIN IS THE SCROLLPORT (`app-main.module.css`), not the document: the scrollbar belongs
+       * on the content's own right edge, inside the aside, and every sticky offset in the package
+       * resolves against this box rather than the window. `data-basalt-scrollport` is the public
+       * handle — `scrollParentOf` (`../common`) and `MobileNav`'s scroll-to-top both resolve it —
+       * and `data-scroll-restoration-id` is the attribute TanStack Router's scroll restoration
+       * reads (`@tanstack/router-core`'s `scrollRestorationIdAttribute`), so a router-driven app
+       * restores THIS element's scrollTop instead of the window's, which no longer moves. */}
+      <AppShell.Main
+        className={mainClasses.main}
+        data-basalt-scrollport
+        data-scroll-restoration-id="basalt-main"
+      >
+        {children}
+      </AppShell.Main>
 
       {/* The outlet is bare; the region's leading seam is the AppShell's own. An unclaimed region
        * is zero-wide but NOT display-none — Mantine's collapsed aside keeps its border-box, so a

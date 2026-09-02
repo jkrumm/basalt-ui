@@ -32,16 +32,18 @@
   margin-bottom: 0;
 }
 
-/* Sticky-header clearance for in-page anchors. One value on every viewport: since the
- * controls waves the AppShell header is `appShellHeaderHeight` (48px) on phones too — the two-row
- * mobile header and its `-mobile` clearance token are gone (docs/CONTROLS-SPEC.md §2.1, law C14).
- * `--basalt-page-bar-h` (a sticky PageBar row 2, published by the shell) is added on top so a
- * heading never lands under the filter row. A `./content` consumer rendering Prose standalone (no
- * BasaltShell) overrides `--vx-space-sticky-header-clearance` itself. */
+/* Anchor clearance. One value on every viewport, and NO chrome height in it: an anchor scroll
+ * happens inside the scrollport, and since `BasaltShell` made `AppShell.Main` that box both the
+ * AppShell header and `PageBar` row 2's band are regions rendered OUTSIDE it
+ * (`shell/app-main.module.css`) — the `--basalt-page-bar-h` term this rule used to add would now
+ * push every heading a band below where it belongs, and an `--app-shell-header-height` term (gone
+ * since the controls waves) would add a header on top of that. What is left is breathing room,
+ * which is precisely what `--vx-space-sticky-header-clearance` means now (tokens/palette.ts). A
+ * `./content` consumer with its OWN fixed chrome above the scrollport overrides that token. */
 .root h2,
 .root h3,
 .root h4 {
-  scroll-margin-top: calc(var(--vx-space-sticky-header-clearance) + var(--basalt-page-bar-h, 0px));
+  scroll-margin-top: var(--vx-space-sticky-header-clearance);
 }
 
 /* Headings share family/weight/color across densities; size + margin differ below. */

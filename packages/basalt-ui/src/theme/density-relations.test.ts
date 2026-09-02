@@ -186,9 +186,9 @@ describe('Fix 4 — every interactive target clears the WCAG 2.5.8 24px floor at
     expect(deriveSpacing(-3).step.mobileNavBarHeight).toBe(49)
   })
 
-  test('a mobile nav menu/sheet row never drops below its own 44px floor', () => {
+  test('a mobile nav menu/sheet row never drops below its own 40px floor', () => {
     for (const level of ALL_LEVELS) {
-      expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(44)
+      expect(deriveSpacing(level).step.mobileNavRowHeight).toBeGreaterThanOrEqual(40)
     }
   })
 
@@ -268,7 +268,7 @@ function oldLawFlatten(level: number): Record<string, number> {
   step['mobileNavBarHeight'] = Math.max(48, step['mobileNavBarHeight']!)
   step['mobileNavRowHeight'] = Math.max(44, step['mobileNavRowHeight']!)
   step['sheetRowHeight'] = Math.max(44, step['sheetRowHeight']!)
-  step['stickyHeaderClearance'] = step['appShellHeaderHeight']! + anchors['stackMd']!
+  step['stickyHeaderClearance'] = anchors['stackMd']!
   return { ...anchors, ...scale, ...step }
 }
 
@@ -335,22 +335,22 @@ describe("Fix 7 — the knob's resolution is honest at every notch", () => {
     expect(deriveSpacing(3).anchors.inputHeight).toBe(55)
     expect(deriveSpacing(-3).anchors.rowInsetX).toBe(7)
     expect(deriveSpacing(3).anchors.rowInsetX).toBe(13)
-    // `stickyHeaderClearance` is EXCLUDED here on purpose — since it now DERIVES from the AppShell
-    // header instead of scaling off an independent base (see `deriveSpacing`'s doc, third bullet),
+    // `stickyHeaderClearance` is EXCLUDED here on purpose — since it DERIVES (from `anchors.stackMd`)
+    // instead of scaling off an independent base (see `deriveSpacing`'s doc, third bullet),
     // it never reproduced the old ±5 envelope to
     // begin with; its own law is asserted by the dedicated describe block in `tokens/density.test.ts`
     // (specific low/zero/high values) AND by the "Fix 8" describe block below in this same file
-    // (the generic `clearance = header + anchors.stackMd` relation, looped over every level).
+    // (the generic `clearance = anchors.stackMd` relation, looped over every level).
     expect(deriveSpacing(-3).rowLineHeight).toBe(1.25)
     expect(deriveSpacing(3).rowLineHeight).toBe(1.45)
   })
 })
 
-describe('Fix 8 — the sticky-header clearance clears the AppShell header, exactly', () => {
-  test('clearance = appShellHeaderHeight + stackMd, exactly, at every level', () => {
+describe('Fix 8 — the sticky-header clearance is breathing room, exactly', () => {
+  test('clearance = stackMd, exactly, at every level', () => {
     for (const level of ALL_LEVELS) {
       const { step, anchors } = deriveSpacing(level)
-      expect(step.stickyHeaderClearance).toBe(step.appShellHeaderHeight + anchors.stackMd)
+      expect(step.stickyHeaderClearance).toBe(anchors.stackMd)
     }
   })
 

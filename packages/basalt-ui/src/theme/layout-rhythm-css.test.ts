@@ -51,7 +51,7 @@ describe('app-sidebar.module.css — collapsed-rail `.footerVersion` hide', () =
   })
 })
 
-describe('page-bar.module.css — sticky rows sit under the AppShell header, above page content', () => {
+describe('page-bar.module.css — the SHELL-LESS bar sticks; the in-shell row does not', () => {
   it('`.bar` sits one layer below the AppShell header, not at the bare `z-index: 1` every sibling can equal', () => {
     const bar = PAGE_BAR_CSS.slice(
       PAGE_BAR_CSS.indexOf('.bar {'),
@@ -61,13 +61,18 @@ describe('page-bar.module.css — sticky rows sit under the AppShell header, abo
     expect(bar).not.toMatch(/z-index:\s*1\s*;/)
   })
 
-  it('`.row2Sticky` uses the same header-relative z-index as `.bar`, so the two never fall out of sync', () => {
+  it('`.row2Band` is positionless — inside a shell the BAND owns the geometry, not the row', () => {
+    // Row 2 portals into `BasaltShell`'s band (`app-main.module.css`'s `.band`), a sibling of the
+    // scrollport. Nothing here may position it: a `position: sticky` would reintroduce the exact
+    // defect the portal removed — a sticky offset clamped to whatever wrapper the consumer happened
+    // to write `<PageBar>` inside, so the same markup landed at two different y values.
     const row2 = PAGE_BAR_CSS.slice(
-      PAGE_BAR_CSS.indexOf('.row2Sticky {'),
-      PAGE_BAR_CSS.indexOf('\n}', PAGE_BAR_CSS.indexOf('.row2Sticky {')),
+      PAGE_BAR_CSS.indexOf('.row2Band {'),
+      PAGE_BAR_CSS.indexOf('\n}', PAGE_BAR_CSS.indexOf('.row2Band {')),
     )
-    expect(row2).toContain('z-index: calc(var(--app-shell-header-z-index, 100) - 1);')
-    expect(row2).not.toMatch(/z-index:\s*1\s*;/)
+    expect(row2).not.toContain('position:')
+    expect(row2).not.toContain('z-index:')
+    expect(row2).not.toContain('border-bottom')
   })
 })
 

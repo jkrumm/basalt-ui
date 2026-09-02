@@ -195,6 +195,12 @@ export type MobileNavConfig = {
   menuMax?: number
   /** @default 'More' */
   moreLabel?: string
-  /** Scroll container for active-slot re-tap. @default document.scrollingElement */
+  /**
+   * Scroll container for active-slot re-tap. Only needed when the page scrolls somewhere basalt
+   * cannot see — inside a shell the default already resolves `AppShell.Main`
+   * (`[data-basalt-scrollport]`), and outside one it falls back to the document.
+   *
+   * @default the `[data-basalt-scrollport]` element, else `document.scrollingElement`
+   */
   getScrollElement?: () => HTMLElement | null
 }

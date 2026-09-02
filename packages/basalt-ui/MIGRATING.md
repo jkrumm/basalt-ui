@@ -41,8 +41,15 @@ fixed four inference and notification defects consumers hit while porting, plus 
 got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
 grammar unchanged; only the severity of an unwaived finding moves.
 
+**One behaviour change with a blast radius past this package: `AppShell.Main` is now the
+scrollport, and the WINDOW no longer scrolls inside a `BasaltShell`.** Nothing was removed or
+renamed, but four things a consumer may be doing stop working, and all four have a one-line remedy —
+see § The shell scrollport below.
+
 What is new, one line each — nothing here renames or removes anything:
 
+- **`scrollParentOf` / `SCROLLPORT_ATTRIBUTE`** (`basalt-ui`) — resolve which box actually scrolls an
+  element (`null` = the document). The seam behind the shell scrollport change below.
 - **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
   surface in its body and a mobile projection into `PageBar` row 2 (`docs/ASIDE-SPEC.md`).
 - **`PanelRow`** (`basalt-ui/controls`) — the aside's inspector/facet row: label above, control
@@ -300,6 +307,18 @@ onConfirm })` is the counted one-liner over it ("Delete 3 items?"). Both REJECT 
     site behaves exactly as before. `DEFAULT_AUTOSAVE_DEBOUNCE_MS` is exported.
   - **Still subpath-only.** The root barrel re-exports none of this, so a consumer without
     `@mantine/form` is unaffected by importing `basalt-ui`.
+- **Mobile "More" sheet rows now 40px with the sidebar's own insets** — `--vx-space-mobile-nav-row-
+height` 44 → 40 (WCAG 2.5.5 AA touch floor, not the AAA figure the bar's own `mobileNavBarHeight`
+  still holds to). The rows themselves no longer force a bespoke touch padding over the theme's
+  `NavLink` styling; they now render with the SAME `--vx-space-row-inset-y`/`-x` padding and
+  `VX.text.md` the desktop sidebar row does. A nested (child) row gains the sidebar's own child
+  indent — a 1px `--vx-divider` left guide. Purely visual; no prop, export or behaviour changed.
+- **`NotificationCenter` defaults to `width: '100%'`, not a hardcoded `320`** — it now sizes to its
+  host instead of assuming it always sits inside its own 320px popover. `NotificationBell` fixes the
+  320px width at the `Popover` itself (`<Popover width={320}>`) instead, so nothing changes for that
+  call path; a consumer mounting `NotificationCenter` directly (a Drawer, an inline card) now gets a
+  component that shrinks to its container rather than overflowing it. `style` still merges over the
+  default, so `style={{ width: 280 }}` still wins.
 
 ### `inputProps` no longer returns `key` — pair it with the new `fieldKey`
 
@@ -761,6 +780,98 @@ bus and open every modal twice:
   </ModalsProvider>
 </BasaltOverlays>
 ```
+
+### `basalt-ui/controls` — the mobile `Filters (n)` sheet renders panel rows, not its own list
+
+**The sheet's `SheetOptionList` (44px rows, a hairline between them, one per option) is gone.**
+`useFilterSurface() === 'sheet'` now resolves to the SAME `PanelRow`/`PanelChoice`/facet-list body
+`'panel'` already renders (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a Drawer") — label
+above, full-width control below, folding past `PANEL_TRACK_MAX` (3, a `Select`) or `max` (a
+`MultiSelectFilter`'s `Show N more`) the same way the aside already did. A set with many options no
+longer grows the sheet to a full column of option rows. `RangeFilter`'s sheet form is the panel's one
+`Select` (presets plus a `Custom range…` row revealing the injected picker) instead of a
+`SheetOptionList` with the picker behind a separate disclosure row.
+
+Also fixed in the same pass: a `fullWidth` `SegmentedControl` (`PanelChoice`'s ≤3-option form, and
+`ViewTabs`) now splits its options EVENLY — Mantine's own `.control` carries no `min-width`
+override, so the initial `auto` floored each option at its content width and a `fullWidth` track
+split unevenly; a long label now ellipsizes inside its equal share instead of forcing the column
+wide. The active segment's fill is a second ink-mix step
+(`color-mix(in srgb, var(--vx-ink) 12%, var(--vx-surface-panel))`), not a flat `--vx-surface-panel`,
+so it stays visible against its own track when the whole control sits on a panel-coloured surface (a
+`PanelRow`), where a flat panel fill read as barely-there next to the 6%-tinted track around it.
+
+| Removed                                                                                                                      | Replacement                                                 | Note                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SheetOptionList`, `SheetField`, `SheetDisclosure` (`basalt-ui/controls`)                                                    | `PanelRow` / `PanelChoice` (already exported)               | Were never part of the public `./controls` barrel — internal to `filter-sheet.tsx` — so this only breaks a consumer test that imported them directly out of `basalt-ui/controls/filter-sheet` or hooked a `role="radio"` `<fieldset>` DOM shape inside the sheet (now a `PanelChoice` `SegmentedControl`, `role="radiogroup"`, or a `Select`). |
+| `SheetRow`, `sheetRowClassNames` (`basalt-ui/controls`)                                                                      | none                                                        | Also internal-only. `ToggleFilter`'s sheet form is now a `PanelRow` whose `Switch` rides the label line, the same shape the panel surface always used.                                                                                                                                                                                         |
+| `.sheetOption` / `.sheetList` / `.sheetField` / `.sheetRow` / `.sheetDisclosureBody` / `.sheetLabel` (`controls.module.css`) | `panel-row.module.css`'s `.row`/`.head`/`.control`/`.label` | CSS-module classes were never a public contract; named for a consumer that vendored a copy of the sheet's old CSS.                                                                                                                                                                                                                             |
+
+### The shell scrollport — Main scrolls, not the window
+
+`BasaltShell` dropped Mantine's `layout="alt"` (the header now spans the full viewport width, above
+the sidebar and the aside, instead of being inset beside the sidebar) and gave `AppShell.Main` a
+bounded height with `overflow: auto`. Main is therefore THE scrolling element: the document's
+`scrollHeight` equals the viewport height, the browser scrollbar sits on Main's own right edge
+(inside the aside, where the content is) instead of at the far edge of the window, and
+`window.scrollY` is pinned at 0.
+
+Main carries two handles: `data-basalt-scrollport` (basalt's own, and what `scrollParentOf` looks
+for) and `data-scroll-restoration-id="basalt-main"` (the attribute `@tanstack/router-core`'s scroll
+restoration reads, so a router-driven app restores this element rather than the window).
+
+What to change in a consumer:
+
+| If your app…                                                        | Do this                                                                                                                                                                                                     |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reads `window.scrollY` / listens for `scroll` on `window`           | `const port = scrollParentOf(el)` and read `port.scrollTop` / listen on `port` — `null` still means the window, so shell-less code is unchanged                                                             |
+| scrolls with `window.scrollTo` / `document.scrollingElement`        | target `document.querySelector('[data-basalt-scrollport]')` first, with the document as the fallback                                                                                                        |
+| uses window-based scroll restoration                                | point it at `[data-scroll-restoration-id="basalt-main"]`; TanStack Router picks it up with no config                                                                                                        |
+| overrides `--vx-space-sticky-header-clearance`                      | the token NO LONGER includes the app-shell header height — it is `anchors.stackMd` (12px at level 0), pure breathing room, because BOTH the header and the page-bar band are regions outside the scrollport |
+| passes `BasaltDataTable stickyHeaderOffset` inside a shell          | drop it entirely. Nothing overhangs the scrollport any more, so a sticky table head wants `top: 0`, which is the default                                                                                    |
+| computes a viewport-filling body from `--basalt-page-bar-h`         | inside a shell that is just `100%` now — the band is outside Main rather than scrolling with it. The var is still published                                                                                 |
+| passes `mobileNav.getScrollElement` only to reach the page scroller | you can drop it — the default resolves the scrollport now                                                                                                                                                   |
+
+Three rendering changes ride along, all visible without any code change:
+
+- **The brand moved out of the sidebar and into the header.** The header spans the full viewport
+  width now, so the sidebar's `appShellHeaderHeight` brand row painted as a SECOND 48px band under
+  the header seam. It is the header's leading zone instead — `--app-shell-navbar-offset` wide, so it
+  still tracks the rail collapse and still ends on the sidebar\|main seam — and the sidebar column
+  starts at `SidebarSearch`. `brand`, `brand.menu` and the collapse toggle are unchanged; only the
+  markup's home moved. Two consequences for a consumer mounting `AppSidebar` DIRECTLY (rather than
+  through `BasaltShell`, which is the supported path): it no longer paints a brand row, and its
+  `onToggleCollapse` prop is no longer read there — `BasaltShell` feeds it to the header instead.
+- **`PageBar` row 2 is a shell-owned BAND**, not a row in the page: it portals into an outlet
+  `BasaltShell` renders between the header and the scrollport, exactly as row 1 portals into the
+  header. It spans Main's width, carries `--vx-surface-bg` and one `--vx-divider` hairline, and is a
+  zero-height, seam-less box on a route with no `PageBar`. It is no longer sticky and no longer
+  depends on where you wrote `<PageBar>` — nested in a `Stack` or written as Main's direct child now
+  produce identical geometry. Its padding-block tightened from `--vx-space-stack-sm` to
+  `--vx-space-stack-xs`, so the bar is 8px shorter.
+- **`BasaltDataTable` contains itself horizontally by default.** A table with neither `maxHeight`
+  nor `minWidth` used to render a bare `<table>`, which sizes to its own min-content — a five-column
+  table measured 448px inside a 390px viewport and dragged the whole page sideways. Every table now
+  renders inside `Table.ScrollContainer type="native"` (`minWidth: 0` when you set none), so a wide
+  table scrolls inside its own card. `stickyHeader` with neither prop cannot take that container —
+  an `overflow-x` box computes `overflow-y` to `auto` and becomes the header's scrollport, and with
+  no height cap it has no scroll range, so the header would go inert — so it takes a wrapper whose
+  overflow is **measured** instead: while the table fits its container the wrapper declares no
+  overflow at all and the page-sticky header sticks exactly as before; once the table is wider the
+  wrapper flips to `overflow-x: auto`, the columns stay reachable, and the header is inert at that
+  width. The flip is a live `ResizeObserver` reading in both directions, so the wrapper goes back to
+  bare when the space returns (the window widened, the sidebar collapsed, the aside closed), and it
+  publishes `data-contained="true|false"`. The dev warning on that shape now states the trade rather
+  than a defect and points at `maxHeight` for a table that must both scroll and stick. Pinning takes
+  the same wrapper: the `overflow-x: auto` `Box` a pinned, uncapped, sticky table used to get is
+  gone, because it was the inert-header shape it was meant to avoid. **The TOOLBAR was the other
+  half of the same defect and is fixed with it**: the toolbar `Group` is the header row's flex item
+  (`CtlSlot` between them is `display: contents`) and carried `flex: 0 0 auto`, so a 220px search
+  beside a 230px facet pill row was an unshrinkable 461px box in a 302px column — `AppShell.Main`
+  measured `scrollWidth` 505 against `clientWidth` 390 at 390x844. It is now `flex: 0 1 auto` with
+  `min-width: 0`, and the search's `w={220}` became a flex BASIS (`flex: 0 1 220px`, floored at
+  `12ch`, capped at `100%`). The field still resolves to 220px wherever 220 fits and still never
+  grows with the table; below that the search and the pills wrap onto their own lines.
 
 ## 1.26.0 — the control tier, the page bar and the store
 

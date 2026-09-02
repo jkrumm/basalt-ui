@@ -48,14 +48,35 @@
   min-height: var(--vx-space-section-header-height, 2.25rem);
 }
 
-/* The portalled form's band matches the header band exactly (docs/DESIGN-SPEC.md §5's three top
- * bands), so the aside title's centreline meets the breadcrumb's and the brand's across the seams.
- * The bottom rule closes the top belt across the panel instead of dead-ending at the aside column
- * (§8 inversion #12) — it is also what makes the `.body > * + *` comment below ("the header already
- * bounds it") true in paint. */
+/* The portalled form's band matches the SHELL-OWNED page-bar band exactly, whenever one is
+ * present (`--basalt-page-bar-h`, `docs/DESIGN-SPEC.md` §5) — not a fixed 48px. `PageBar`
+ * publishes that var on `documentElement` from a ResizeObserver on the band's own content
+ * (`shell/page-bar.tsx`), so it inherits down to every descendant, this header included, with no
+ * extra wiring. Two seams, one line: MEASURED on `/cbbi` 1440x900, the band's outer edge (its own
+ * `border-bottom`, `app-main.module.css` `.band:not(:empty)`) used to sit at y87 while this header
+ * (unconditionally `var(--app-shell-header-height)`, 48px) sat at y96 — 9px apart.
+ *
+ * The `+ 1px` is not decorative. `--basalt-page-bar-h` measures the band's CONTENT box only (the
+ * portalled row-2 wrapper `page-bar.tsx` attaches its ResizeObserver to); the band's own
+ * `border-bottom` is drawn OUTSIDE that box, on a plain `height: auto` element, so it ADDS a pixel
+ * the published var never counted. This header is the opposite shape — an explicit `min-height`
+ * under the page's global `box-sizing: border-box` reset — so its OWN `border-bottom` is absorbed
+ * INSIDE whatever height is declared instead of adding on top. Feeding the raw var straight in
+ * therefore undershoots by exactly the band's border: `calc(38px + 1px)` = 39px, matching the
+ * band's true painted height, while the no-band fallback nets out unchanged (`calc((48px - 1px) +
+ * 1px)` = 48px) because the same `+ 1px` also wraps that branch. Without a `PageBar` there is no
+ * band seam to align to, so the header keeps closing the ordinary 48px top belt
+ * (`docs/DESIGN-SPEC.md` §5) the header and sidebar-brand bands also close.
+ */
 .panel[data-basalt-page-aside='shell'] .header {
   padding-inline: var(--vx-space-row-inset-x);
-  min-height: var(--app-shell-header-height, var(--vx-space-section-header-height, 2.25rem));
+  min-height: calc(
+    var(
+        --basalt-page-bar-h,
+        calc(var(--app-shell-header-height, var(--vx-space-section-header-height, 2.25rem)) - 1px)
+      ) +
+      1px
+  );
   border-bottom: 1px solid var(--vx-divider);
 }
 

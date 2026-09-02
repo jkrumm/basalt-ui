@@ -19,7 +19,7 @@
   --vx-space-stack-md: 12px;
   --vx-space-stack-lg: 16px;
   --vx-space-stack-xl: 24px;
-  --vx-space-sticky-header-clearance: 60px;
+  --vx-space-sticky-header-clearance: 12px;
   --vx-space-nav-icon-gap: 10px;
   --vx-space-sidebar-region-gap: 10px;
   --vx-space-prose-quote-inset-y: 2px;
@@ -99,7 +99,7 @@
   --vx-space-mobile-nav-icon-size: 24px;
   --vx-space-mobile-nav-tab-inset-y: 2px;
   --vx-space-mobile-nav-tab-inset-x: 12px;
-  --vx-space-mobile-nav-row-height: 44px;
+  --vx-space-mobile-nav-row-height: 40px;
   --vx-space-agent-rail-inset-x: 10px;
   --vx-space-agent-part-gap-top: 6px;
   --vx-space-agent-code-inset: 8px;

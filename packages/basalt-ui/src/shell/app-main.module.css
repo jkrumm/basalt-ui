@@ -1,0 +1,107 @@
+/*
+ * The shell's in-flow column: the page-bar BAND, then `AppShell.Main` as the scrollport.
+ *
+ * Mantine's own `.m_8983817` rule offsets Main with PADDING (`padding-top: calc(header-offset +
+ * padding)`, and the same shape for the three other regions) and gives it `min-height: 100dvh`, so
+ * nothing in the shell is a scroll container and the DOCUMENT scrolls. That put the scrollbar at the
+ * far right of the viewport, outside the aside, and made every sticky offset in the package a
+ * window-scroll number. These rules restate those four offsets as MARGINS and bound Main's height to
+ * the band between the header and the footer, which makes Main the one scrolling element and parks
+ * its scrollbar on its own right edge — between the content and the aside.
+ *
+ * Main stays in NORMAL FLOW (margins + flex, never `position: fixed`): a fixed Main would create a
+ * stacking context over the whole page and take the scroll-restoration story with it.
+ *
+ * These rules win over Mantine's with no `!important` and no specificity games: the consumer imports
+ * `@mantine/core/styles.layer.css`, so every Mantine rule lives in `@layer mantine`, and an
+ * UNLAYERED rule always beats a layered one. Same mechanism `app-mobile-nav.module.css` documents
+ * for the bottom sheet's height law.
+ */
+
+/*
+ * The AppShell ROOT as a COLUMN FLEX, and it is load-bearing rather than tidying.
+ *
+ * Two jobs. First, it is what lets the band SIZE ITSELF: the band is `flex: 0 0 auto` and Main is
+ * `flex: 1 1 auto`, so Main's height is whatever the band leaves over — no measurement, no
+ * `--basalt-page-bar-h` arithmetic, and nothing to go stale for the frame between a route change
+ * and the ResizeObserver. Second, a flex container's items never margin-collapse: `.main`'s
+ * `margin-top` used to collapse THROUGH the root (which carries no border or padding in
+ * `mode="fixed"`) and push the whole shell down by a header height. MEASURED before the fix: the
+ * document's `scrollHeight` read 892 against an 844px viewport, i.e. the page scrolled by exactly
+ * the 48px the margin was supposed to consume.
+ *
+ * Header, navbar, aside and footer are `position: fixed`, so they are out of flow and are not flex
+ * items — the column really only holds the band and Main. Scoped away from `mode="static"` (a grid)
+ * so it can never fight Mantine's own display: `BasaltShell` never sets that mode, and this rule
+ * should not be the reason it cannot.
+ */
+.shell:not([data-mode='static']) {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The page-bar band — `PageBar` row 2's home (`page-bar.tsx`'s `PageBarBandOutlet`), OUTSIDE the
+ * scrollport so it neither scrolls with the content nor has to stick against it.
+ *
+ * `:empty` is the whole of law C14 here: the outlet is always mounted (a portal needs a target that
+ * exists before anything portals into it), and with nothing inside it the box is zero-height, draws
+ * no seam and costs the page nothing. A route with no `PageBar` is pixel-identical to one rendered
+ * without an outlet at all.
+ */
+.band {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 0;
+  margin-top: var(--app-shell-header-offset, 0rem);
+  margin-inline-start: var(--app-shell-navbar-offset, 0rem);
+  margin-inline-end: var(--app-shell-aside-offset, 0rem);
+  padding-inline: var(--app-shell-padding);
+  background-color: var(--vx-surface-bg);
+  /* Mantine's own AppShell timing, so the band and the regions it aligns to move as one box. */
+  transition-property: margin;
+  transition-duration: var(--app-shell-transition-duration);
+  transition-timing-function: var(--app-shell-transition-timing-function);
+}
+
+/*
+ * The ONE line under the page bar. The header's own seam belongs to `AppShell.Header` one region up
+ * and is painted by Mantine's `[data-with-border]`, so the two never double up — and because this
+ * rule is gated on the band actually holding something, a page with no bar paints no line at all.
+ */
+.band:not(:empty) {
+  border-bottom: 1px solid var(--vx-divider);
+}
+
+.main {
+  /* The remainder of the column: whatever the band left. `min-height: 0` is what lets a flex item
+   * shrink below its content and therefore scroll at all. */
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+  /*
+   * The footer's inset is subtracted SEPARATELY because `--app-shell-footer-offset` is the RAW
+   * footer height: Mantine's own `.footer` rule grows the painted box by
+   * `env(safe-area-inset-bottom)` on top of that (see `app-mobile-nav.module.css`). This is the
+   * same one-inset gap the deleted `.mainSafeArea` padding used to close — folded in here, where
+   * the box is decided, instead of as a second answer further down.
+   */
+  margin-bottom: calc(var(--app-shell-footer-offset, 0rem) + env(safe-area-inset-bottom, 0px));
+  margin-inline-start: var(--app-shell-navbar-offset, 0rem);
+  margin-inline-end: var(--app-shell-aside-offset, 0rem);
+  padding: var(--app-shell-padding);
+  /* Without this a wide flex/grid child (a bare table, a nowrap control row) sizes Main to ITSELF. */
+  min-width: 0;
+  overflow-y: auto;
+  /*
+   * `auto`, never `hidden`/`clip`. Clipping would make horizontal overflow invisible instead of
+   * absent — exactly the phone defect `no-horizontal-overflow.layout.test.ts` guards, and the guard
+   * reads `main.scrollWidth <= clientWidth`, which a clip would silently satisfy.
+   */
+  overflow-x: auto;
+  /* A page that bottoms out must not hand the scroll to the document behind it. */
+  overscroll-behavior: contain;
+  /* Mantine animates `padding` here; the offsets are margins now, so the navbar-collapse transition
+   * tracks those instead. The HEIGHT is flex's job and needs no transition of its own. */
+  transition-property: margin;
+}

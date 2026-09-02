@@ -106,19 +106,6 @@ type Kind = 'between-rows' | 'region-boundary' | 'prose-typography'
 
 const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string }[] = [
   {
-    file: 'controls/controls.module.css',
-    selector:
-      '.sheetOption + .sheetOption, .sheetDisclosureBody + .sheetOption, .sheetOption + .sheetDisclosureBody',
-    kind: 'between-rows',
-    why: "The filter sheet's option rows. Written as an adjacent-sibling rule so the FIRST row has no top line — the group label above it is a header and gets no rule (C15).",
-  },
-  {
-    file: 'controls/controls.module.css',
-    selector: '.sheetRow',
-    kind: 'between-rows',
-    why: 'A 44px sheet row. Paired with `.sheetRow:last-child { border-bottom: none }` below, which the last-rule assertion checks.',
-  },
-  {
     file: 'controls/panel-row.module.css',
     selector: '.row + .row',
     kind: 'between-rows',
@@ -147,6 +134,12 @@ const LEDGER: readonly { file: string; selector: string; kind: Kind; why: string
     selector: '.header',
     kind: 'prose-typography',
     why: "An article's masthead rule — the title-block convention of a printed document, and the one place a reader expects a line under a heading.",
+  },
+  {
+    file: 'shell/app-main.module.css',
+    selector: '.band:not(:empty)',
+    kind: 'region-boundary',
+    why: "The shell's page-bar BAND — a region between the header and the scrollport, not a row inside the page — so this is the seam between the page's control bar and the content under it, the same `--vx-divider` line the header|main AppShell seam draws one region up. The `:not(:empty)` gate is law C14 in CSS: a route with no PageBar paints no line.",
   },
   {
     file: 'content/article-layout.module.css',

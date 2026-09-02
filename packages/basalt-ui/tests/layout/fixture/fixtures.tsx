@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Bars, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
+import { Bars, BarSparkline, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
 import type { BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
+import { FilterSet, SelectFilter } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data'
-import type { ColumnDef } from '../../../src/data'
-import { BasaltShell, PageAside, PageBar } from '../../../src/index'
+import type { ColumnDef, DataTableFacet } from '../../../src/data'
+import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/nav/types'
-import type { AsideSpec, ChartsSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
+import { createLocalStore, field } from '../../../src/state'
+import type { AsideSpec, BarSpec, ChartsSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -77,32 +79,162 @@ const toItem = (spec: ItemSpec, icons: boolean): SidebarItem => ({
 
 type TableRow = { id: number; name: string; value: number }
 
-/** Two plain accessor columns — the invariant is the header's POSITION, not what a cell renders. */
-const TABLE_COLUMNS: ColumnDef<TableRow>[] = [
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'value', header: 'Value' },
-]
+/**
+ * Plain accessor columns — the sticky invariant is the header's POSITION, not what a cell renders.
+ * `spec.columns` widens the set for the overflow guard: cell text is deliberately unbreakable
+ * (`Row 1 · segment 3` has no wrap opportunity a narrow column could take), because a table that
+ * CAN reflow proves nothing about containment.
+ */
+function tableColumns(count: number): ColumnDef<TableRow>[] {
+  const base: ColumnDef<TableRow>[] = [
+    { accessorKey: 'name', header: 'Name' },
+    { accessorKey: 'value', header: 'Value' },
+  ]
+  for (let i = base.length; i < count; i++) {
+    base.push({
+      id: `col${i}`,
+      header: `Column ${i + 1}`,
+      accessorFn: (row: TableRow) => `value-${row.id}-${i}`,
+    })
+  }
+  return base
+}
 
 const tableRows = (n: number): TableRow[] =>
   Array.from({ length: n }, (_, i) => ({ id: i, name: `Row ${i + 1}`, value: i * 3 }))
 
 /**
+ * The toolbar's facets — real `EnumFilter` pills over the generated columns, with the long option
+ * labels a production facet carries. A facet whose options were `a`/`b` would make the pill row
+ * narrow enough to fit anywhere, which is the opposite of what the overflow guard needs to see.
+ */
+function tableFacets(count: number): DataTableFacet<TableRow>[] {
+  const all: DataTableFacet<TableRow>[] = [
+    {
+      columnId: 'name',
+      label: 'Department',
+      options: [
+        { value: 'Row 1', label: 'Engineering' },
+        { value: 'Row 2', label: 'Customer success' },
+      ],
+    },
+    {
+      columnId: 'value',
+      label: 'Role',
+      options: [
+        { value: '0', label: 'Individual contributor' },
+        { value: '3', label: 'Engineering manager' },
+      ],
+    },
+  ]
+  return all.slice(0, count)
+}
+
+/**
  * The REAL `BasaltDataTable`, mounted with the props a consumer pairs on a scrolling body. The
  * page-level `stickyHeaderOffset` is passed on purpose: it is the prop that used to reach Mantine
  * and park the `<thead>` mid-body.
+ *
+ * `title` rides along with the toolbar because the two share the header row: the toolbar is a flex
+ * item BESIDE the title, and it was that item's `flex: 0 0 auto` (no shrink) that let a 461px
+ * search-plus-pills row sit in a 302px column and widen the page.
  */
 function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
+  const facets = tableFacets(spec.facets ?? 0)
   return (
     <BasaltDataTable
       data={tableRows(spec.rows)}
-      columns={TABLE_COLUMNS}
-      stickyHeader
+      columns={tableColumns(spec.columns ?? 2)}
+      stickyHeader={spec.stickyHeader ?? true}
       {...(spec.maxHeight !== undefined && { maxHeight: spec.maxHeight })}
       {...(spec.minWidth !== undefined && { minWidth: spec.minWidth })}
       {...(spec.stickyHeaderOffset !== undefined && {
         stickyHeaderOffset: spec.stickyHeaderOffset,
       })}
+      {...(spec.search === true && { enableGlobalFilter: true, title: 'Projects' })}
+      {...(facets.length > 0 && { facets })}
     />
+  )
+}
+
+// ── The page bar, with real controls ──────────────────────────────────────────────────────────
+
+/**
+ * ONE store at module scope, not per mount: `createLocalStore` is a per-key FACTORY and a fresh one
+ * on every render would re-subscribe every bound control (the same memo law `BasaltShell` documents
+ * for `collapseStore`). Long option labels on purpose — a pill is as wide as its longest word, and
+ * a bar of narrow pills cannot demonstrate law C7's fold.
+ */
+const BAR_VALUES = ['organic-search', 'paid-social', 'referral-traffic', 'direct-sessions'] as const
+const BAR_LABELS: Record<string, string> = {
+  'organic-search': 'Organic search',
+  'paid-social': 'Paid social',
+  'referral-traffic': 'Referral traffic',
+  'direct-sessions': 'Direct sessions',
+}
+
+const barStore = createLocalStore({
+  key: 'layout-fixture-bar',
+  fields: {
+    f0: field.enum(BAR_VALUES, 'organic-search'),
+    f1: field.enum(BAR_VALUES, 'paid-social'),
+    f2: field.enum(BAR_VALUES, 'referral-traffic'),
+    f3: field.enum(BAR_VALUES, 'direct-sessions'),
+  },
+}).labels({ f0: BAR_LABELS, f1: BAR_LABELS, f2: BAR_LABELS, f3: BAR_LABELS })
+
+const BAR_FIELD_KEYS = ['f0', 'f1', 'f2', 'f3'] as const
+
+function BarFixture({ spec }: { spec: BarSpec }): ReactElement {
+  const pills = BAR_FIELD_KEYS.slice(0, Math.min(spec.pills ?? 0, BAR_FIELD_KEYS.length))
+  const actions = Array.from({ length: spec.actions ?? 0 }, (_, i) => ({
+    key: `a${i}`,
+    label: `Action ${i + 1}`,
+    onClick: () => {},
+  }))
+  return (
+    <PageBar
+      {...(spec.title !== undefined && { title: spec.title })}
+      {...(pills.length > 0 && {
+        filters: (
+          <FilterSet>
+            {pills.map((key, i) => (
+              <SelectFilter key={key} field={barStore.field[key]} label={`Filter ${i + 1}`} />
+            ))}
+          </FilterSet>
+        ),
+      })}
+      {...(actions.length > 0 && {
+        actions: {
+          primary: actions[0]!,
+          ...(actions.length > 1 && { secondary: actions.slice(1) }),
+        },
+      })}
+    />
+  )
+}
+
+// ── The KPI row ───────────────────────────────────────────────────────────────────────────────
+
+const SPARK_DATA = Array.from({ length: 24 }, (_, i) => 10 + ((i * 7) % 19))
+
+/** `StatGroup` + `StatCard` with a BLED sparkline — the render-prop form, so the mark sizes itself
+ * to the card's measured inner width rather than to a hardcoded one. That measurement is exactly
+ * what can overshoot a 320px page if a card's own box does not stay inside its column. */
+function StatsFixture({ count }: { count: number }): ReactElement {
+  return (
+    <StatGroup cols={4}>
+      {Array.from({ length: count }, (_, i) => (
+        <StatCard
+          key={i}
+          title={`Metric ${i + 1}`}
+          value={`${(i + 1) * 1234}`}
+          sparkline={({ width, height }) => (
+            <BarSparkline data={SPARK_DATA} width={width} height={height} />
+          )}
+        />
+      ))}
+    </StatGroup>
   )
 }
 
@@ -330,7 +462,9 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       sections={sections}
       {...(spec.nav && { mobileNav: spec.nav })}
     >
-      {spec.aside && <AsideBar />}
+      {spec.aside && !spec.aside.noBar && <AsideBar />}
+      {spec.bar && <BarFixture spec={spec.bar} />}
+      {spec.stats !== undefined && <StatsFixture count={spec.stats} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
