@@ -55,21 +55,16 @@ C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTabl
 | `SettingsRow`                                                                     | `control`                                          | Mantine `md` | ONE form field, bound to a setting         |
 | `FormRow` / `FormGroup` (`basalt-ui/forms`)                                       | children                                           | Mantine `md` | ONE form field or a labelled cluster       |
 
-- **Inside `BasaltShell`** both `PageBar` rows are portals — row 1 into the header, row 2 into the
-  shell's band above the scrollport — so where you write `<PageBar>` never moves it and nothing in
-  the scrollport has chrome to clear: a sticky table head takes no offset. Without a shell both rows
-  render in flow, sticky, with `title` + `icon` leading. The header height is a token, never state.
-- **The form row is a real home, and it keeps Mantine's own `md` tier.** A raw `Select` bound to a
-  setting is the right answer in `SettingsRow.control`, and the `size` prop there is load-bearing
-  rather than redundant. `SettingsRow` is not a tiered slot, and no filter or size rule applies to it.
-  `FormRow`/`FormGroup` are the same home written for a `<form>` rather than a settings page — a
-  control nested in either never reports either.
-- **A control's home is a decision about reach**: it belongs next to what it acts on. If it affects
-  more than one widget it is promoted to the page bar; if it formats one widget it stays in that
-  widget's header.
-- **An overlay rendered by the PARENT is exempt by FILENAME**: `control-outside-home` and
-  `raw-selection-control` skip a file basenamed `*-{modal,drawer,popover,panel,form}.tsx`, since no
-  scan of it sees the `<Modal>`. Outside that: `theme-allow-file control-outside-home — overlay`.
+- **Inside `BasaltShell`** both `PageBar` rows are portals (header / the band above the scrollport)
+  — where you write `<PageBar>` never moves it. Without a shell both rows render in flow, sticky.
+  The header height is a token, never state.
+- **The form row keeps Mantine's own `md` tier** — a raw `Select` in `SettingsRow.control` is the
+  right answer, `size` there is load-bearing. Neither `SettingsRow` nor `FormRow`/`FormGroup` is a
+  tiered slot; no filter or size rule applies to them.
+- **A control's home is a decision about reach**: affects more than one widget → promote to the
+  page bar; formats one widget → stays in that widget's header.
+- **An overlay rendered by the PARENT is exempt by FILENAME** — `*-{modal,drawer,popover,panel,form}.tsx`.
+  Outside that: `theme-allow-file control-outside-home — overlay`.
 
 ## The `ctl` tier — the home sizes the control
 
@@ -81,13 +76,11 @@ C1's cross-file case, a hand-rolled section heading, C11 outside `BasaltDataTabl
 | `touchControlHeight`  | hit area below `sm`                                        | every home                                          |
 | `controlHeight`       | `size="md"`                                                | forms — unchanged                                   |
 
-Each home wraps its **slot** — never its body — in a hoisted theme provider that defaults every
-Mantine control inside it to `size="ctl"`, plus a `data-basalt-tier` attribute. So a raw `Button`
-dropped into `PageBar.actions` is already the right height with no prop, and a `size="xs"` typed
-there is law C5 (`basalt/control-size-literal`). Mantine's own `sm`/`xs` are NOT re-pointed: a
-`size="sm"` in a modal or a form keeps Mantine's height. One exception, by boundary:
-`ChartCard.actions` lives inside the Mantine-free chart layer, so it cannot mount the slot theme —
-it carries only the tier attribute, and the basalt controls placed there size themselves.
+Each home wraps its **slot** — never its body — in a hoisted theme provider defaulting every
+Mantine control inside it to `size="ctl"`. A raw `Button` in `PageBar.actions` is already the right
+height with no prop; a `size="xs"` typed there is law C5 (`basalt/control-size-literal`). Mantine's
+own `sm`/`xs` are NOT re-pointed elsewhere. Exception: `ChartCard.actions` is Mantine-free, so it
+carries only the tier attribute and its controls size themselves.
 
 ## Binding a control to a store
 
@@ -106,24 +99,21 @@ import { DateRangePicker } from 'basalt-ui/controls-dates'
 ```
 
 The store, its fields and their lanes are basalt-state.md. What this file adds: **the control takes
-`field` and nothing else about state.** No `value`, no `onChange`, no `size` — those props do not
-exist, so a wrong call site is a tsc error rather than a review comment. `ActionGroup`,
-`OverflowMenu` and `SyncButton` sit on the same subpath and take typed action DATA, never children.
+`field` and nothing else about state** — no `value`, no `onChange`, no `size`, so a wrong call site
+is a tsc error. `ActionGroup`/`OverflowMenu`/`SyncButton` take typed action DATA, never children.
 
-**The date picker is injected, never imported.** `basalt-ui/controls` resolves and renders with no
-`@mantine/dates` installed, which is what lets a consumer without a date picker use every other
-control; `DateRangePicker` comes from `basalt-ui/controls-dates` through `RangeFilter.customPicker`.
-Never import `@mantine/dates` from a shared module, and never reach for `DateInput`/`DatePickerInput`
-inside a home slot.
+**The date picker is injected, never imported.** `basalt-ui/controls` resolves with no
+`@mantine/dates` installed; `DateRangePicker` comes from `basalt-ui/controls-dates` through
+`RangeFilter.customPicker`. Never import `@mantine/dates` from a shared module or reach for
+`DateInput`/`DatePickerInput` inside a home slot.
 
 ## `FilterSet` owns the responsive story
 
 Do not build one at the call site. Above `sm`, `FilterSet` measures its own children and folds the
-tail into a `+N` pill rather than wrapping or scrolling. Below `sm`, the first `inline` children stay
-pills and one `Filters (n)` pill opens a bottom sheet where every child renders full-width, applies
-immediately, and answers one `Reset all`. **`n` and `Reset all` are DERIVED** from whether each field
-differs from its fallback — so adding a filter is one JSX line, with no count to maintain and no
-reset handler to extend.
+tail into a `+N` pill. Below `sm`, the first `inline` children stay pills and one `Filters (n)`
+pill opens a sheet where every child renders full-width and answers one `Reset all`. **`n` and
+`Reset all` are DERIVED** from whether each field differs from its fallback — adding a filter is
+one JSX line, no count or reset handler to maintain.
 
 | Below `sm`       | What basalt does                                                                                                                   |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -132,16 +122,14 @@ reset handler to extend.
 | a section header | title · count · one inline action, the rest in a kebab; tabs past three become a `Select`                                          |
 | a widget header  | value + delta wrap under the title; the sparkline drops to bleed; one `⋯` action                                                   |
 
-Every swap is CSS inside the control (one mount), never a JS media query — a media-query hook renders
-differently on the server than on the first client paint. Two mounts under
+Every swap is CSS inside the control (one mount), never a JS media query. Two mounts under
 `visibleFrom`/`hiddenFrom` is `basalt/responsive-twin`.
 
 ## The aside
 
 `PageAside` is a shell REGION, not a fourth home — C1 still names three. Its body IS a home: it
-scopes its children to the `panel` surface, so the same `SelectFilter` that is a pill in the page
-bar is a ROW in the aside. Never two components and never a prop to pick between them — the surface
-is read from where the control is mounted.
+scopes children to the `panel` surface, so the same `SelectFilter` that is a pill in the page bar
+is a ROW in the aside — never two components, the surface is read from where it's mounted.
 
 | In the aside     | Write                                                                             |
 | ---------------- | --------------------------------------------------------------------------------- |
@@ -151,35 +139,16 @@ is read from where the control is mounted.
 | a group of rows  | `Section` — flush inside the aside, which draws the rhythm itself                 |
 | a choice         | `PanelChoice` — a track only while ≤3 options AND every label fits, else `Select` |
 
-- ONE `PageAside` per page, written AFTER the main content: it portals into the region from `sm` up,
-  so its place in the tree is reading order, not layout.
-- Below `sm` it projects into `PageBar` row 2 as one `Panel` pill opening a sheet; with no row 2 —
-  and in a shell-less app — it renders in flow where the page wrote it. One node either way (C9).
-- A bound control written outside all of this (a `Section` body, a bare page stack) is
-  `basalt/bound-control-outside-home` — it renders as a stray pill. A slot prop, a `FilterSet`, a
-  `PageAside` or a `PanelRow` is a home; nothing else is.
+- ONE `PageAside` per page, written AFTER the main content — it portals into the region from `sm`
+  up, its tree position is reading order, not layout.
+- Below `sm` it projects into `PageBar` row 2 as one `Panel` pill; with no row 2 — or shell-less —
+  it renders in flow. One node either way (C9).
+- A bound control outside all of this is `basalt/bound-control-outside-home` — a slot prop, a
+  `FilterSet`, a `PageAside` or a `PanelRow` is a home; nothing else is.
 
 ## Sidebar blocks
 
 A non-destination list, a progress meter or a bespoke node in the sidebar is a `SidebarBlock` —
-declared data, three kinds (`list` / `progress` / `custom`), placed `'nav'` or `'bottom'`. Because it
-is data, basalt owns what a `ReactNode` slot could not express: a rail dot or ring when the desktop
-sidebar is collapsed, a persisted fold, and one More-sheet row per block on mobile opening a sheet of
-its items. A `custom` block is desktop-only, by design.
-
-## Anti-patterns
-
-| Instead of                                                   | Write                                                 |
-| ------------------------------------------------------------ | ----------------------------------------------------- |
-| `useState` + a `SegmentedControl` in the page body           | a store field + `ViewTabs` in the home's `tabs` slot  |
-| a raw `Select`/`MultiSelect`/`Chip.Group` as a filter        | `SelectFilter` / `MultiSelectFilter`                  |
-| a numeric threshold widened into a string enum               | `field.number` + `NumberFilter`                       |
-| `<X visibleFrom="sm"/>` beside `<X hiddenFrom="sm"/>`        | one control — the swap is already inside it           |
-| `size="xs"` on a button in a home slot                       | nothing; the home sets the tier                       |
-| a hand-written `presetToParams`                              | `field.toWindow(value)`                               |
-| a hand-counted `Filters (3)` badge                           | nothing; `FilterSet` derives it                       |
-| `overflowX: 'auto'` on a filter row                          | nothing; the fold is basalt's                         |
-| a local `Section` / `PageHeader` / `RefreshButton`           | `Section` / `PageBar` / `SyncButton`                  |
-| an in-body `<Title order={1}>`                               | the route's breadcrumb title                          |
-| the same on a shell-less surface (auth gate, error boundary) | `theme-allow in-body-page-title — shell-less surface` |
-| a hand-built joined button row                               | `ControlGroup` (or `group: true` on the actions)      |
+declared data, three kinds (`list`/`progress`/`custom`), placed `'nav'`/`'bottom'`. Because it's
+data, basalt owns what a `ReactNode` slot couldn't: a rail dot/ring when collapsed, a persisted
+fold, one More-sheet row per block. A `custom` block is desktop-only, by design.

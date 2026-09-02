@@ -245,7 +245,7 @@ scanned files, and `doctor`'s `guard-scan` check agrees with it. Each root's **p
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
-"tokens-only"` turns off the 19 kinds whose remedy is a Mantine component or prop, and must be
+"tokens-only"` turns off the 18 kinds whose remedy is a Mantine component or prop, and must be
 declared (or `--tokens-only`) — it is deliberately never inferred from a missing `@mantine/core`,
 which would silence half the guard on any repo keeping Mantine in a different workspace package.
 Other keys (`exempt`, `severity`, `spacingSteps`, `forbiddenAccents`, …) are documented on the
@@ -825,66 +825,11 @@ Current slots: `series` (read by `./charts` + `./tokens`), `commands` (read by `
 
 ## CLI
 
-```bash
-bunx basalt-ui init              # scaffold doctrine into a consumer repo — the one command with no install to resolve
-basalt-ui --version              # one bare line, exit 0 (also -v / version) — which CLI is actually running
-basalt-ui sync                   # three-way diff against .basalt/manifest.json after a basalt-ui upgrade
-basalt-ui sync --check           # CI drift gate — non-zero exit on any managed-file drift
-basalt-ui check-theme            # palette guard — fails on colors that bypass the central --vx-* system
-basalt-ui doctor                 # integration health: basalt-resolves, guard-scan, oxlint-preset, lefthook-preset, manifest presence, node_modules-vs-manifest version, spacing-scale drift, and a cross-package `ai` major-version parity check (HARD failure — walks every workspace manifest, exemptable via `basalt.aiMajorSkewReason` — see above) + warn on an icon file basaltAppPlugin references and public/ does not have
-basalt-ui doctor --tokens-only   # force the Mantine-free profile (auto-detected otherwise; --framework forces the full set)
-bunx basalt-ui tokens:css --out src/tokens.css     # emit the --vx-* stylesheet as a file you own — `bunx` ONLY if basalt is not installed here
-bunx basalt-ui fonts:css --out src/fonts.css       # emit the shipped --basalt-font-* stacks — same exception
-basalt-ui info --json            # surface map as stable JSON (InfoOutput shape); bare `info` is the human-readable form
-basalt-ui help                   # full usage; every subcommand also takes --help / -h
-```
-
-**Nothing fails open.** `--version` resolves before dispatch, so it can never run a command to
-answer which CLI ran. Every subcommand validates its flags and exits 1 naming the first one it does
-not accept — `doctor --json` used to run doctor and exit **0**, and `check-theme --audit-allow`
-scanned and reported success. An unknown command says so above the usage block.
-
-`doctor` reports **`SKIPPED`** as a third outcome beside pass/warn/fail and exits non-zero on it —
-"All checks passed" is only printable when every check actually ran. **`check-theme`, `doctor` and
-`sync` all resolve their project the same way**: `BASALT_CWD` wins, then the cwd itself, then the
-workspace packages the root declares, then a two-level layout scan. Two candidates is reported as
-ambiguous, never guessed. The scan is what a repo declaring **no `workspaces` field** needs — with
-the install one level down and nothing declaring it, every command answered about the root and
-found nothing there: `check-theme` printed "no off-palette colors" having scanned zero files, and
-`doctor` inferred `tokens-only` for a full Mantine consumer. `tokens:css` and `fonts:css` both take
-`--check` as a CI drift gate, comparing everything but the header's provenance line — so a
-basalt-ui version bump alone never forces a no-op commit in a tokens-only consumer.
-
-**Run the local bin, not `bunx`.** `bunx` does not re-resolve a package it has already cached, so a
-`bunx basalt-ui …` run can execute a version you upgraded away from — which is how one consumer
-filed a P0 against a 1.20.0 cache while pinned to 1.22.0. `init` and `sync` now render every seeded
-script, CI step, hook and piece of doctor advice with the resolved `./node_modules/.bin/basalt-ui`
-(`BASALT_BIN` overrides it, and `configs/lefthook.yml` keeps `bunx --no-install` as a deliberately
-loud fallback). `basalt-ui --version` is the one-second check.
-
-**Three commands are the sanctioned exception, and only when basalt is not installed in the repo:**
-`init` (which predates the install by definition) and `tokens:css` / `fonts:css` (the framework-free
-route, where there is nothing to install). In a repo that _does_ carry basalt — which includes every
-tokens-only consumer that keeps it as a devDependency — run those through the local bin too.
-
-`sync` strategy per file: unchanged since last write → overwrite; locally edited → skip (show diff);
-missing → recreate. `--force` overwrites local edits. The summary counts `created` and `recreated`
-apart: `recreated` means the ledger placed that file once and it went missing. On a
-`"basalt": { "profile": "tokens-only" }` consumer there is no scaffold to reconcile, so `sync`
-prints `n/a` and exits 0 — `sync --check` is wirable into a tokens-only repo's CI without a
-special case. `sync` also heals a `DESIGN.md` opener that still names a version: the file is a
-**seed**, written once and never reconciled, so any number stamped into it was stale by the next
-release.
-
-**`sync` refreshes an existing install; it does not create one.** It resolves its project exactly as
-`check-theme` and `doctor` do, and since 1.22.0 **exits 1** when the resolved project has no
-`.basalt/manifest.json`, naming the install it found above instead of scaffolding a second one
-beside it. Run it at the package that holds the manifest, or point `BASALT_CWD` at that package.
-Creating an install is `basalt-ui init`'s decision — and `doctor` now says the same sentence from
-the same directory, where it used to prescribe `init` and so recommend the very scaffold that
-refusal exists to prevent.
-
----
+`basalt-ui help` prints full usage (every subcommand also takes `--help`/`-h`); `AGENTS.md` at the
+install directory is the machine-readable companion. Run the **local bin, not `bunx`** —
+`./node_modules/.bin/basalt-ui` or a `package.json` script; `bunx` can silently run a cached version
+you've upgraded away from. The one sanctioned `bunx` invocation is `init`, because nothing is
+installed yet.
 
 ## Toolchain
 
