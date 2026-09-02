@@ -2,9 +2,10 @@
  * StatCard's sparkline placement (docs/CONTROLS-SPEC.md §2.2). `bleed` (default) keeps the historic
  * full-width row beneath the hero value, bled past the card's own inset padding — same negative
  * margins the pre-WidgetHeader version drew inline. `right` sits the sparkline beside the
- * `WidgetHeader`'s hero-value row instead, the reference-design look, and collapses back to
- * `bleed`'s stacked layout below `sm` — CSS only, no JS branch (`47.99375em` is Mantine's own
- * complement of `min-width: 48em`, same value `content/prose.module.css` derives it from).
+ * BREAKDOWN row instead, the reference-design look, and collapses back to `bleed`'s stacked layout
+ * below `sm` — CSS only for the sparkline's own box, `.metricsRow` below for the row it sits in
+ * (`47.99375em` is Mantine's own complement of `min-width: 48em`, same value
+ * `content/prose.module.css` derives it from).
  */
 
 .body {
@@ -14,31 +15,30 @@
   height: 100%;
 }
 
-/*
- * `flex-end`, not `center`: the sparkline belongs to the HERO ROW, and the hero row is the header
- * block's last line. Centred against the whole body it floated between the title and the value,
- * which reads as a third, unrelated element; bottom-aligned to the header block it sits beside the
- * number it describes, the reference layout. `gap` is the card's own control gap so the trend never
- * touches a long value.
- */
-.body[data-placement='right'] {
-  flex-direction: row;
-  align-items: flex-end;
-  gap: var(--vx-space-control-gap);
-}
-
 .header {
   min-width: 0;
 }
 
 /*
- * `flex-shrink: 0` on the header, `1` on the sparkline slot below: the hero value and its delta keep
- * their width and the TREND gives ground. The other way round, a 4-up KPI grid on a 1440 viewport
- * ellipsized `$1,294,900` to `$1294.…` in order to keep 72px of bars intact, which is the wrong
- * thing to protect. The value still carries `overflow: hidden` as the last resort, and `Card` clips.
+ * `right` placement's second row (measured defect: the "···" actions trigger, and the "Data"
+ * select, sat ~74-88px in from the card's right edge — a phone-only 13px is correct). The cause was
+ * `.body[data-placement='right']` making the WHOLE header (title row, actions included) share a row
+ * with the sparkline, so the header's own right edge — where `.actions` lives — stopped wherever the
+ * sparkline began, not at the card. `.header` is no longer placement-scoped at all now: `.body` stays
+ * a COLUMN in both placements (its base rule above), so `.header` gets the FULL card width for free
+ * via the column's default `align-items: stretch` — the actions slot's own `margin-inline-start:
+ * auto` (`widget-header.module.css`) now resolves against the true card edge. Only the breakdown —
+ * the one text `StatCard` renders itself, outside `WidgetHeader`'s box, and the one piece the
+ * `docs/CONTROLS-SPEC.md` `breakdown` doc calls "the parts the hero number is made of" — shares this
+ * row with the sparkline; `justify-content: flex-end` is what still right-aligns the sparkline on a
+ * card with no breakdown, where this row's only child.
  */
-.body[data-placement='right'] .header {
-  flex: 1 0 auto;
+.metricsRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--vx-space-control-gap);
   min-width: 0;
 }
 
@@ -56,6 +56,17 @@
   flex-direction: column;
   margin: var(--vx-space-stack-sm) 0 0;
   padding: 0;
+  min-width: 0;
+}
+
+/* Inside `.metricsRow` (`right` placement) the breakdown is no longer stacked directly under
+ * `WidgetHeader`'s own metric row in the SAME box — `.body`'s own `gap` already separates `.header`
+ * from `.metricsRow`, so the `margin-top` above would double that spacing. It also takes the row's
+ * remaining width (`flex: 1 1 auto`) so the sparkline — fixed to its own slot width — gets pushed to
+ * the row's end instead of sitting immediately after a shrink-wrapped breakdown column. */
+.metricsRow .breakdown {
+  margin-top: 0;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -120,32 +131,36 @@
 }
 
 /* Asks for `StatCard`'s `SPARKLINE_RIGHT_WIDTH`/`_HEIGHT` (handed down as custom properties, so this
- * rule and the `< sm` reset below can both reach them) and shrinks below the width before the hero
- * row does — see the `.header` note above. `min-width: 0` is what lets it. */
+ * rule and the `< sm` reset below can both reach them). `align-self: flex-end` is the one alignment
+ * this restructure keeps at the SPARKLINE's own level rather than the row's: `.metricsRow` does not
+ * set `align-items: flex-end` itself, because a card with no breakdown would then need nothing to
+ * anchor against — only the sparkline opts into sitting at the row's bottom edge, which matters once
+ * a breakdown taller than the trend's own 26px is the row's other child. */
 .sparklineRight {
   display: flex;
   flex: 0 1 var(--basalt-stat-sparkline-w, 4.5rem);
   min-width: 0;
   height: var(--basalt-stat-sparkline-h, 1.625rem);
   align-items: flex-end;
+  align-self: flex-end;
   overflow: hidden;
 }
 
 @media (max-width: 47.99375em) {
-  .body[data-placement='right'] {
+  .metricsRow {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .body[data-placement='right'] .header {
-    flex: initial;
+    justify-content: flex-start;
   }
 
   /* The row became a COLUMN, so `flex-basis` is now the main-axis HEIGHT — the 72px width would
    * become a 72px-tall box around 26px of bars. `flex: none` + the height keeps the bled trend the
-   * same 26px it is beside a hero row. */
-  .body[data-placement='right'] .sparklineRight {
+   * same 26px it is beside a hero row. `align-self: stretch` resets the row-only `flex-end` above:
+   * the cross axis is horizontal now, and this slot must fill the card's width like `.sparklineBleed`
+   * does, not shrink to its content and sit flush right. */
+  .metricsRow .sparklineRight {
     flex: none;
+    align-self: stretch;
     margin-top: auto;
     margin-inline: calc(-1 * var(--mantine-spacing-sm));
     margin-bottom: calc(-1 * var(--mantine-spacing-xs));

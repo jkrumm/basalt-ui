@@ -5,6 +5,7 @@
 declare const classes: {
   readonly body: string
   readonly header: string
+  readonly metricsRow: string
   readonly breakdown: string
   readonly breakdownRow: string
   readonly breakdownLabel: string
