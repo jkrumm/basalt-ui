@@ -28,6 +28,15 @@
  * import { runCommand } from 'basalt-ui/commands'
  * runCommand('file:save')
  *
+ * // usage.ts — the registry-free confirm dialog:
+ * import { overlays } from 'basalt-ui/commands'
+ * const ok = await overlays.confirm({ title: 'Discard draft?', onConfirm: () => reset() })
+ * overlays.confirmDelete({ subject: 'item', count: 3, onConfirm: () => removeSelected() })
+ *
+ * // Mounting ModalsProvider yourself instead of letting <BasaltOverlays> do it:
+ * import { registerModalsProvider } from 'basalt-ui/commands'
+ * useEffect(() => registerModalsProvider(), [])
+ *
  * // Open/close Spotlight programmatically:
  * import { openSpotlight, closeSpotlight } from 'basalt-ui/commands'
  * openSpotlight()
@@ -49,9 +58,12 @@ export {
   defineOverlays,
   defineOverlay,
   overlays,
+  registerModalsProvider,
   type Overlay,
   type OverlayMap,
   type OverlayKey,
+  type ConfirmOptions,
+  type ConfirmDeleteOptions,
 } from './define-overlays'
 
 // ── Projectors ────────────────────────────────────────────────────────────────

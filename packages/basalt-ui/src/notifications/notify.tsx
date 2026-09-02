@@ -7,7 +7,8 @@
  *   2. dedupKey window — module-level Map prevents duplicate keys within 1500ms
  *
  * For loading→success/error transitions use notifyPromise — it calls notifications.update
- * (never show()) so the loading state is replaced correctly.
+ * (never show()) so the loading state is replaced correctly. For an optimistic mutation with a
+ * grace period use notifyUndo — one number is both the Undo affordance and the commit delay.
  *
  * @example
  * notify({ intent: 'success', message: 'Saved' })
@@ -15,6 +16,7 @@
  * notifyPromise(apiCall(), { loading: 'Saving…', success: 'Saved', error: 'Failed' })
  */
 import type { ReactNode } from 'react'
+import { Button, Group, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { add } from './store'
 import type { NotificationIntent, NotificationActionRef } from './store'
@@ -85,6 +87,12 @@ export type NotifyOptions = {
    * only when calling `notify()` for an action registered in the notifications registry.
    */
   action?: NotificationActionRef
+  /**
+   * What the persisted history records instead of `String(message)`. Only needed when `message` is
+   * a composed ReactNode the store cannot stringify — `String(<Group/>)` is `[object Object]`.
+   * `notifyUndo` passes its plain text here because its toast body carries the Undo button.
+   */
+  historyMessage?: string
 }
 
 // ── notify ────────────────────────────────────────────────────────────────────
@@ -98,7 +106,17 @@ export type NotifyOptions = {
  * const id = notify({ intent: 'error', message: <b>Failed</b>, autoClose: false })
  */
 export function notify(opts: NotifyOptions): string {
-  const { intent = 'info', message, title, icon, autoClose, id, dedupKey, action } = opts
+  const {
+    intent = 'info',
+    message,
+    title,
+    icon,
+    autoClose,
+    id,
+    dedupKey,
+    action,
+    historyMessage,
+  } = opts
 
   // Two-layer dedup: dedupKey window guard
   if (dedupKey !== undefined && isDuplicateKey(dedupKey)) return id ?? nextId()
@@ -123,7 +141,7 @@ export function notify(opts: NotifyOptions): string {
     id: resolvedId,
     intent,
     ...(title !== undefined && { title: String(title) }),
-    message: String(message),
+    message: historyMessage ?? String(message),
     createdAt: Date.now(),
     ...(action !== undefined && { action }),
   })
@@ -184,6 +202,107 @@ export function notifyInfo(
   opts?: Omit<NotifyOptions, 'intent' | 'message'>,
 ): string {
   return notify({ ...opts, intent: 'info', message })
+}
+
+// ── notifyUndo ────────────────────────────────────────────────────────────────
+
+/** Default undo window (ms) — the toast's autoClose and the grace period are the same number. */
+const UNDO_WINDOW_MS = 6000
+
+export type NotifyUndoOptions = {
+  /** The toast text, left of the Undo button. Also what the history records. */
+  message: ReactNode
+  /** Revert the optimistic change. Runs once, on click; `onExpire` then never runs. */
+  onUndo: () => void
+  /** How long the Undo button stays offered, in ms. Also the toast's autoClose. Default: 6000. */
+  window?: number
+  /**
+   * The window elapsed with no undo — the place to COMMIT the optimistic mutation. Runs at most
+   * once, and never after `onUndo`.
+   */
+  onExpire?: () => void
+}
+
+export type NotifyUndoHandle = {
+  /** The toast id — the same id in Mantine and in the notification history. */
+  id: string
+  /**
+   * Close the toast early and settle the window NOW: `onExpire` runs (unless undo already did), so
+   * a dismissed toast can never strand an uncommitted mutation. Idempotent.
+   */
+  dismiss: () => void
+}
+
+/**
+ * Show a toast offering an Undo for `window` ms, then commit.
+ *
+ * The affordance and the grace period are ONE number: `autoClose === window`, so the button is on
+ * screen for exactly as long as undoing still does something. Exactly one of `onUndo` / `onExpire`
+ * runs, exactly once — clicking Undo cancels the timer, and letting it elapse (or calling
+ * `dismiss()`) commits.
+ *
+ * Built on `notify`, so the toast is recorded to the notification history like any other.
+ *
+ * @example
+ * // Optimistic delete: the row is already gone from the UI; commit when the window closes.
+ * setRows((rows) => rows.filter((r) => r.id !== id))
+ * notifyUndo({
+ *   message: 'Item deleted',
+ *   onUndo: () => setRows(before),
+ *   onExpire: () => api.delete(id),
+ * })
+ */
+export function notifyUndo(opts: NotifyUndoOptions): NotifyUndoHandle {
+  const { message, onUndo, window: undoWindow = UNDO_WINDOW_MS, onExpire } = opts
+  const id = nextId()
+
+  let settled = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  const settle = (undone: boolean): void => {
+    if (settled) return
+    settled = true
+    if (timer !== undefined) clearTimeout(timer)
+    notifications.hide(id)
+    if (undone) onUndo()
+    else onExpire?.()
+  }
+
+  timer = setTimeout(() => settle(false), undoWindow)
+
+  notify({
+    intent: 'info',
+    id,
+    autoClose: undoWindow,
+    historyMessage: String(message),
+    message: (
+      <Group justify="space-between" wrap="nowrap" gap="sm">
+        <Text span size="sm">
+          {message}
+        </Text>
+        <Button variant="subtle" size="compact-xs" onClick={() => settle(true)}>
+          Undo
+        </Button>
+      </Group>
+    ),
+  })
+
+  return { id, dismiss: () => settle(false) }
+}
+
+/**
+ * `notifyUndo` for the common optimistic shape: the UI already changed, `undo` puts it back, and
+ * `mutate` is what actually commits when the window closes.
+ *
+ * @example
+ * notifyUndoable(() => api.delete(id), () => setRows(before), { message: 'Item deleted' })
+ */
+export function notifyUndoable(
+  mutate: () => void,
+  undo: () => void,
+  opts: Omit<NotifyUndoOptions, 'onUndo' | 'onExpire'>,
+): NotifyUndoHandle {
+  return notifyUndo({ ...opts, onUndo: undo, onExpire: mutate })
 }
 
 // ── notifyPromise ─────────────────────────────────────────────────────────────

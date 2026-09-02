@@ -87,6 +87,9 @@ Check these three first whenever Eden types regress.
 - **Colors beyond the four intents live OUTSIDE the registry** — call Mantine's raw
   `notifications.show({ color })` directly, and accept the stated cost: a raw toast is invisible to
   the persisted history, the bell and the center, because only `notify`/`notifyPromise` record.
+- **`notifyUndo` is the undo window**, not a toast plus your own `setTimeout`: one number is both
+  the `Undo` affordance and the commit delay, `onExpire` is where the optimistic mutation commits,
+  `onUndo` reverts, and exactly one of the two ever runs.
 - History is a module-level persisted ring buffer; `useNotificationHistory` reads it, and
   `NotificationBell` (built for the shell's `globalActions`) opens a `NotificationCenter`, which also
   mounts standalone in any Drawer or panel.
@@ -106,6 +109,9 @@ Check these three first whenever Eden types regress.
   the live keys. Never hand-author a second list of the same commands.
 - Reach for `openSpotlight`/`closeSpotlight` from `basalt-ui/commands`, not Mantine's global
   `spotlight` — `BasaltOverlays` mounts against basalt's own store.
+- **A confirm dialog is not an overlay you define**: `overlays.confirm` / `overlays.confirmDelete`
+  need no registry entry and resolve to the answer. `defineOverlays` is for an overlay with a
+  payload and a body of its own.
 - **Imperative overlay vs route**: `overlays.open` for an ephemeral confirm or quick edit; a route
   for anything that must be shareable, refreshable or back-button-addressable.
 
