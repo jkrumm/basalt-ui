@@ -7,7 +7,7 @@ import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
-import { DangerZone, SettingsSection } from './settings-section'
+import { DangerZone, SettingsRow, SettingsSection } from './settings-section'
 
 function renderWith(node: ReactElement) {
   return render(<MantineProvider>{node}</MantineProvider>)
@@ -52,5 +52,22 @@ describe('DangerZone keeps its eyebrow alongside the WidgetHeader', () => {
     expect(screen.getByText('Danger Zone')).toBeDefined()
     expect(screen.getByRole('heading', { level: 2, name: 'Delete workspace' })).toBeDefined()
     expect(screen.getByText('This action cannot be undone.')).toBeDefined()
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches SettingsSection root, classNames.body reaches the rows box', () => {
+    const { container } = renderWith(
+      <SettingsSection title="Profile" className="my-section" classNames={{ body: 'my-body' }}>
+        <div>rows</div>
+      </SettingsSection>,
+    )
+    expect(container.querySelector('.my-section')).toBeTruthy()
+    expect(container.querySelector('.my-body')).toBeTruthy()
+  })
+
+  test('className reaches SettingsRow root', () => {
+    const { container } = renderWith(<SettingsRow label="Display name" className="my-row" />)
+    expect(container.querySelector('.my-row')).toBeTruthy()
   })
 })

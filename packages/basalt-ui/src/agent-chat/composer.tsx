@@ -39,6 +39,8 @@
 import { ActionIcon, Group, Kbd, Stack, Text, Textarea } from '@mantine/core'
 import type { ClipboardEvent, ComponentProps, JSX, KeyboardEvent, ReactNode, Ref } from 'react'
 import { useImperativeHandle, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { readPersistedValue } from '../state'
 import { VX } from '../tokens'
 
@@ -257,78 +259,83 @@ function liveSelection(el: HTMLTextAreaElement): { start: number; end: number } 
   return { start: selectionStart, end: selectionEnd }
 }
 
-export type ComposerProps = {
-  /** Imperative write/focus handle — see `ComposerHandle`. */
-  readonly ref?: Ref<ComposerHandle>
-  /**
-   * Called with the trimmed text plus the pending attachments. May return `void` (fire-and-forget,
-   * validated only synchronously) or a `Promise<void>` (its outcome is awaited, its timing is not).
-   *
-   * The draft and attachments clear OPTIMISTICALLY, immediately, before this settles — a chat
-   * composer has to feel instant, so Composer never sits on the typed text for a round trip.
-   * Rejecting restores them instead:
-   *   - THROW synchronously to refuse a send outright (bad input, offline, …) — the clear never
-   *     runs, exactly as before this prop went async.
-   *   - Return a promise that REJECTS to report a failure discovered later (a network error) — the
-   *     text and attachments are put back, UNLESS something has since made that unsafe:
-   *       - the user already typed something new into the (now-empty) box — their new text wins;
-   *         the failed one is not restored (surface a retry via the failed message instead);
-   *       - a LATER submit has already gone through this same draft — that one's own optimistic
-   *         clear (whether it went on to succeed or fail) wins over restoring this older one;
-   *       - the attachments are no longer empty (the caller already put something else there), or
-   *         `draftKey` has since changed (this Composer now points at a different thread/consumer
-   *         destination) — either way the attachments are left as they are rather than risking a
-   *         leak into whatever is current now.
-   * A resolved promise clears and stays cleared, same as a `void` return.
-   */
-  readonly onSubmit: (payload: ComposerSubmit) => void | Promise<void>
-  readonly placeholder?: string
-  /** Autofocuses the textarea on mount. */
-  readonly autoFocus?: boolean
-  /** Autosize ceiling for the textarea. Default 6. */
-  readonly maxRows?: number
-  /** Hard-disable, independent of streaming (e.g. offline). */
-  readonly disabled?: boolean
-  /** A run is in flight on this thread. */
-  readonly streaming?: boolean
-  /** Default false — preserves the historical `disabled={streaming}` behaviour. */
-  readonly allowSubmitWhileStreaming?: boolean
-  /** When given, the send action becomes a Stop action while `streaming`. */
-  readonly onStop?: () => void
-  /**
-   * Opaque slot rendered before the textarea (a voice recorder, a mode switch, …). Slot content
-   * that needs to WRITE into the composer — append a transcript, insert a suggestion — does so
-   * through the `ref` handle (`ComposerHandle`), not a callback prop here; see the file's
-   * `@example`.
-   */
-  readonly leftSection?: ReactNode
-  /** Opaque slot rendered between the textarea and the send action (an attach button, …). */
-  readonly rightSection?: ReactNode
-  /**
-   * Pending attachments, owned by the caller. Composer only forwards them on submit and asks for a
-   * reset afterwards — rendering previews is the caller's job, via `leftSection`/`rightSection`.
-   */
-  readonly attachments?: readonly ComposerAttachment[]
-  /**
-   * Called with `[]` optimistically the instant a submit goes out WITH pending attachments — a
-   * submit that had none to begin with skips the call rather than reporting a no-op change — and,
-   * subject to the restoration guards documented on `onSubmit`, with the original attachments
-   * again if that submit later rejects.
-   */
-  readonly onAttachmentsChange?: (next: readonly ComposerAttachment[]) => void
-  readonly onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void
-  /**
-   * Persists the unsent draft under `basalt:composer-draft:<key>`; switching keys swaps drafts, and
-   * the entry is removed (not blanked) on a successful submit.
-   *
-   * "Successful" means `onSubmit` returned (or resolved) without throwing or rejecting — a send
-   * that fails, synchronously or later over the network, restores this persisted draft instead of
-   * leaving it erased (subject to the restoration guards documented on `onSubmit`).
-   */
-  readonly draftKey?: string
-  /** Replaces the whole Enter/Shift+Enter hint row. Pass `null` to drop it entirely. */
-  readonly hint?: ReactNode
-}
+/** The three boxes `Composer` paints: `root` is the outer stack, `input` is the `Textarea`,
+ * `actions` is the Stop/Send action-button group. */
+export type ComposerSlot = 'root' | 'input' | 'actions'
+
+export type ComposerProps = BasaltProps &
+  SlotStylesProps<ComposerSlot> & {
+    /** Imperative write/focus handle — see `ComposerHandle`. */
+    readonly ref?: Ref<ComposerHandle>
+    /**
+     * Called with the trimmed text plus the pending attachments. May return `void` (fire-and-forget,
+     * validated only synchronously) or a `Promise<void>` (its outcome is awaited, its timing is not).
+     *
+     * The draft and attachments clear OPTIMISTICALLY, immediately, before this settles — a chat
+     * composer has to feel instant, so Composer never sits on the typed text for a round trip.
+     * Rejecting restores them instead:
+     *   - THROW synchronously to refuse a send outright (bad input, offline, …) — the clear never
+     *     runs, exactly as before this prop went async.
+     *   - Return a promise that REJECTS to report a failure discovered later (a network error) — the
+     *     text and attachments are put back, UNLESS something has since made that unsafe:
+     *       - the user already typed something new into the (now-empty) box — their new text wins;
+     *         the failed one is not restored (surface a retry via the failed message instead);
+     *       - a LATER submit has already gone through this same draft — that one's own optimistic
+     *         clear (whether it went on to succeed or fail) wins over restoring this older one;
+     *       - the attachments are no longer empty (the caller already put something else there), or
+     *         `draftKey` has since changed (this Composer now points at a different thread/consumer
+     *         destination) — either way the attachments are left as they are rather than risking a
+     *         leak into whatever is current now.
+     * A resolved promise clears and stays cleared, same as a `void` return.
+     */
+    readonly onSubmit: (payload: ComposerSubmit) => void | Promise<void>
+    readonly placeholder?: string
+    /** Autofocuses the textarea on mount. */
+    readonly autoFocus?: boolean
+    /** Autosize ceiling for the textarea. Default 6. */
+    readonly maxRows?: number
+    /** Hard-disable, independent of streaming (e.g. offline). */
+    readonly disabled?: boolean
+    /** A run is in flight on this thread. */
+    readonly streaming?: boolean
+    /** Default false — preserves the historical `disabled={streaming}` behaviour. */
+    readonly allowSubmitWhileStreaming?: boolean
+    /** When given, the send action becomes a Stop action while `streaming`. */
+    readonly onStop?: () => void
+    /**
+     * Opaque slot rendered before the textarea (a voice recorder, a mode switch, …). Slot content
+     * that needs to WRITE into the composer — append a transcript, insert a suggestion — does so
+     * through the `ref` handle (`ComposerHandle`), not a callback prop here; see the file's
+     * `@example`.
+     */
+    readonly leftSection?: ReactNode
+    /** Opaque slot rendered between the textarea and the send action (an attach button, …). */
+    readonly rightSection?: ReactNode
+    /**
+     * Pending attachments, owned by the caller. Composer only forwards them on submit and asks for a
+     * reset afterwards — rendering previews is the caller's job, via `leftSection`/`rightSection`.
+     */
+    readonly attachments?: readonly ComposerAttachment[]
+    /**
+     * Called with `[]` optimistically the instant a submit goes out WITH pending attachments — a
+     * submit that had none to begin with skips the call rather than reporting a no-op change — and,
+     * subject to the restoration guards documented on `onSubmit`, with the original attachments
+     * again if that submit later rejects.
+     */
+    readonly onAttachmentsChange?: (next: readonly ComposerAttachment[]) => void
+    readonly onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void
+    /**
+     * Persists the unsent draft under `basalt:composer-draft:<key>`; switching keys swaps drafts, and
+     * the entry is removed (not blanked) on a successful submit.
+     *
+     * "Successful" means `onSubmit` returned (or resolved) without throwing or rejecting — a send
+     * that fails, synchronously or later over the network, restores this persisted draft instead of
+     * leaving it erased (subject to the restoration guards documented on `onSubmit`).
+     */
+    readonly draftKey?: string
+    /** Replaces the whole Enter/Shift+Enter hint row. Pass `null` to drop it entirely. */
+    readonly hint?: ReactNode
+  }
 
 /** The default footer: the Enter / Shift+Enter keyboard contract, in the mono micro-label voice. */
 function DefaultHint(): JSX.Element {
@@ -374,6 +381,9 @@ export function Composer({
   onPaste,
   draftKey,
   hint,
+  className,
+  style,
+  classNames,
 }: ComposerProps): JSX.Element {
   // Per-instance fallback for the un-keyed case, so two keyless Composers never share a draft.
   // A lazily-initialised ref rather than `useState` — this is a create-once value React never
@@ -557,43 +567,54 @@ export function Composer({
   if (placeholder !== undefined) textareaProps.placeholder = placeholder
   if (autoFocus !== undefined) textareaProps.autoFocus = autoFocus
   if (onPaste !== undefined) textareaProps.onPaste = onPaste
+  if (classNames?.input !== undefined) textareaProps.className = cx(classNames.input)
+
+  const showActions = showStop || showSend
 
   return (
-    <Stack gap={6}>
+    <Stack
+      gap={6}
+      className={cx(classNames?.root, className)}
+      {...(style !== undefined && { style })}
+    >
       <Group gap="xs" align="flex-end" wrap="nowrap">
         {leftSection}
         <Textarea {...textareaProps} ref={textareaRef} />
         {rightSection}
-        {showStop ? (
-          <ActionIcon
-            size={42}
-            radius="md"
-            variant="filled"
-            color="red"
-            onClick={onStop}
-            aria-label="Stop generating"
-          >
-            <StopGlyph />
-          </ActionIcon>
-        ) : null}
-        {showSend ? (
-          <ActionIcon
-            size={42}
-            radius="md"
-            variant="filled"
-            onClick={submit}
-            disabled={inputDisabled || !hasPayload}
-            aria-label="Send message"
-            // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs no color
-            // override — `filled` resolves through the theme to `--vx-accent-fill` / `--vx-on-accent`.
-            // (It used to hand-wire those two vars inline, which is why this was the ONLY filled
-            // control that stayed legible while the rest of the chrome went through Mantine's
-            // scheme-blind autoContrast. The theme owns it now, and hover works again — an inline
-            // style can't express a `:hover` state.)
-          >
-            <SendGlyph />
-          </ActionIcon>
-        ) : null}
+        {showActions && (
+          <Group gap="xs" wrap="nowrap" className={cx(classNames?.actions)}>
+            {showStop ? (
+              <ActionIcon
+                size={42}
+                radius="md"
+                variant="filled"
+                color="red"
+                onClick={onStop}
+                aria-label="Stop generating"
+              >
+                <StopGlyph />
+              </ActionIcon>
+            ) : null}
+            {showSend ? (
+              <ActionIcon
+                size={42}
+                radius="md"
+                variant="filled"
+                onClick={submit}
+                disabled={inputDisabled || !hasPayload}
+                aria-label="Send message"
+                // Send action (docs/DESIGN-SPEC.md §5): the one accent-filled control. It needs no
+                // color override — `filled` resolves through the theme to `--vx-accent-fill` /
+                // `--vx-on-accent`. (It used to hand-wire those two vars inline, which is why this
+                // was the ONLY filled control that stayed legible while the rest of the chrome went
+                // through Mantine's scheme-blind autoContrast. The theme owns it now, and hover
+                // works again — an inline style can't express a `:hover` state.)
+              >
+                <SendGlyph />
+              </ActionIcon>
+            ) : null}
+          </Group>
+        )}
       </Group>
       {hint === undefined ? <DefaultHint /> : hint}
     </Stack>

@@ -30,6 +30,8 @@
  * />
  */
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle, StringField } from '../state'
 import { EnumFilter } from './enum-filter'
 
@@ -45,7 +47,7 @@ export type FilterOption = {
   readonly disabled?: boolean
 }
 
-type SelectFilterCommon = {
+type SelectFilterCommon = BasaltProps & {
   readonly label: string
   readonly icon?: ReactNode
   /** Adds a `Clear` action that writes the field back to its fallback. */
@@ -78,6 +80,14 @@ export type SelectFilterProps<T extends string> = SelectFilterEnumProps<T> | Sel
 export function SelectFilter<T extends string>(props: SelectFilterEnumProps<T>): ReactNode
 export function SelectFilter(props: SelectFilterStringProps): ReactNode
 export function SelectFilter<T extends string>(props: SelectFilterProps<T>): ReactNode {
+  // F-ERR-1: without this, a `field` that never arrived surfaces as
+  // `undefined is not an object (evaluating 'field.use')` from inside `EnumFilter`, caught by
+  // `BasaltErrorBoundary` and rendered as a blank subtree. `field` is not optional in the type, so
+  // this only ever fires on untyped JS, a `props` object built at runtime, or a store key that
+  // resolved to nothing — all three of which the message now names.
+  assertRequiredProps('SelectFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
   const { field, ...rest } = props
 
   // Two arms, one body — and they are not the same code to the compiler. `field.kind` is a NESTED

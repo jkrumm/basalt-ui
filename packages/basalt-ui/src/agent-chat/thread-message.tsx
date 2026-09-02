@@ -48,6 +48,9 @@ import type {
   TranscriptPart,
 } from '../agent'
 import { coalesceParts, narrowAgentPart, PartList } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { Markdown } from '../content/markdown'
 import { CopyAction } from '../content/copy-action'
 import { VX } from '../tokens'
@@ -546,6 +549,7 @@ function areMessageBlockPropsEqual(prev: MessageBlockProps, next: MessageBlockPr
 }
 
 const MessageBlock = memo(MessageBlockImpl, areMessageBlockPropsEqual)
+MessageBlock.displayName = 'MessageBlock'
 
 // ── Virtualization (AGENT-CHAT-SPEC.md §9) ─────────────────────────────────────
 //
@@ -596,7 +600,7 @@ type TranscriptRow = {
   readonly node: JSX.Element
 }
 
-type VirtualizedTranscriptProps = {
+type VirtualizedTranscriptProps = BasaltProps & {
   readonly rows: readonly TranscriptRow[]
   readonly height: number | string
   readonly overscan: number
@@ -615,10 +619,15 @@ type VirtualizedTranscriptProps = {
  * settle a genuine unmount/remount of every rendered row, re-firing each row's effects once and
  * risking hitting a message mid-stream during the resolve window.
  */
-function NonVirtualizedRows({ rows, height }: VirtualizedTranscriptProps): JSX.Element {
+function NonVirtualizedRows({
+  rows,
+  height,
+  className,
+  style,
+}: VirtualizedTranscriptProps): JSX.Element {
   return (
     // theme-allow raw-scroll-container — degrade target owns its own scroll node, same as the real virtualizer below.
-    <Box style={{ height, overflow: 'auto' }}>
+    <Box className={cx(className)} style={{ height, overflow: 'auto', ...style }}>
       <Stack gap="sm">
         {rows.map((row) => (
           <Fragment key={row.key}>{row.node}</Fragment>
@@ -836,6 +845,8 @@ const LazyVirtualizedRows = lazy(() =>
         overscan,
         estimateSize,
         initialScroll,
+        className,
+        style,
       }: VirtualizedTranscriptProps): JSX.Element {
         const parentRef = useRef<HTMLDivElement>(null)
         const initialScrollStateRef = useRef<InitialScrollState>({
@@ -897,8 +908,12 @@ const LazyVirtualizedRows = lazy(() =>
         })
 
         return (
-          // theme-allow raw-scroll-container — TanStack Virtual measures/scrolls this element (never nest in BasaltStickToBottom, see ./virtualize).
-          <Box ref={parentRef} style={{ height, overflow: 'auto' }}>
+          <Box
+            ref={parentRef}
+            className={cx(className)}
+            // theme-allow raw-scroll-container — TanStack Virtual measures/scrolls this element (never nest in BasaltStickToBottom, see ./virtualize).
+            style={{ height, overflow: 'auto', ...style }}
+          >
             <Box style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
               {virtualizer.getVirtualItems().map((virtualItem) => {
                 const row = rows[virtualItem.index]
@@ -931,6 +946,7 @@ const LazyVirtualizedRows = lazy(() =>
     })
     .catch(() => ({ default: NonVirtualizedRows })),
 )
+Object.assign(LazyVirtualizedRows, { displayName: 'LazyVirtualizedRows' })
 
 /**
  * Lightweight `Suspense` fallback for `VirtualizedTranscript` — shown only for the one tick the
@@ -939,14 +955,26 @@ const LazyVirtualizedRows = lazy(() =>
  * unmount/remount of the whole transcript. An empty, correctly-sized scroll pane avoids a layout
  * flash without paying that cost — it settles state before any row has meaningfully mounted.
  */
-function VirtualizeSuspenseFallback({ height }: { readonly height: number | string }): JSX.Element {
+function VirtualizeSuspenseFallback({
+  height,
+  className,
+  style,
+}: BasaltProps & { readonly height: number | string }): JSX.Element {
   // theme-allow raw-scroll-container — placeholder owns its own scroll node, matching the real virtualizer's shape.
-  return <Box style={{ height, overflow: 'auto' }} />
+  return <Box className={cx(className)} style={{ height, overflow: 'auto', ...style }} />
 }
 
 function VirtualizedTranscript(props: VirtualizedTranscriptProps): JSX.Element {
   return (
-    <Suspense fallback={<VirtualizeSuspenseFallback height={props.height} />}>
+    <Suspense
+      fallback={
+        <VirtualizeSuspenseFallback
+          height={props.height}
+          {...(props.className !== undefined && { className: props.className })}
+          {...(props.style !== undefined && { style: props.style })}
+        />
+      }
+    >
       <LazyVirtualizedRows {...props} />
     </Suspense>
   )
@@ -956,7 +984,7 @@ function VirtualizedTranscript(props: VirtualizedTranscriptProps): JSX.Element {
 
 const EMPTY_RENDERERS: PartRenderers = {}
 
-type ThreadTranscriptBase = {
+type ThreadTranscriptBase = BasaltProps & {
   /** Settled messages for the thread, oldest first. */
   readonly messages: readonly ChatMessage<TranscriptPart>[]
   /** The live (in-flight) assistant turn's parts, when a run is streaming for this thread. */
@@ -1052,7 +1080,10 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
     fallbackRenderer = DEFAULT_FALLBACK_RENDERER,
     affordances: affordancesProp,
     groupConsecutive = true,
+    className,
+    style,
   } = props
+  assertRequiredProps('ThreadTranscript', { messages }, ['messages'])
   const virtualized = resolveVirtualize(props)
 
   // Mirrors PartList's own `useMemo` (part-list.tsx:290) — avoids rebuilding the renderer
@@ -1168,12 +1199,14 @@ export function ThreadTranscript(props: ThreadTranscriptProps): JSX.Element {
         overscan={virtualized.options.overscan ?? DEFAULT_VIRTUALIZE_OVERSCAN}
         estimateSize={virtualized.options.estimateSize ?? DEFAULT_VIRTUALIZE_ESTIMATE_SIZE}
         initialScroll={virtualized.options.initialScroll ?? DEFAULT_VIRTUALIZE_INITIAL_SCROLL}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
       />
     )
   }
 
   return (
-    <Stack gap="sm">
+    <Stack gap="sm" className={cx(className)} {...(style !== undefined && { style })}>
       {rows.map((row) => (
         <Fragment key={row.key}>{row.node}</Fragment>
       ))}

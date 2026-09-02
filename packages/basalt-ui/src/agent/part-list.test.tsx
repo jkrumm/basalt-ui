@@ -12,6 +12,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { PartList } from './part-list'
+import type { PartListProps } from './part-list'
 import type { AgentPart, ToolCallPart } from './parts'
 
 afterEach(cleanup)
@@ -108,5 +109,13 @@ describe('settled — forwarded to every renderer', () => {
     const { seen, components } = settledProbe()
     render(<PartList parts={[TEXT]} components={components} settled={false} />)
     expect(seen).toEqual([false])
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('a missing `parts` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      render(<PartList {...({} as unknown as PartListProps)} />)
+    }).toThrow('[basalt] PartList: prop "parts" is required')
   })
 })

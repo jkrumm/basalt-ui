@@ -507,3 +507,10 @@ describe('nav item active/ancestor state (useNav exclusivity — router-tanstack
     expect(dashboardAnchor?.hasAttribute('aria-current')).toBe(false)
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the sidebar root', () => {
+    const { container } = renderSidebar({ className: 'my-sidebar' })
+    expect(container.querySelector('.my-sidebar')).toBeTruthy()
+  })
+})

@@ -407,3 +407,14 @@ describe('stat-card.module.css — the breakdown block', () => {
     expect(unit).toContain('color: var(--vx-muted)')
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the card root', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <StatCard title="Active Users" value="12,483" className="my-stat-card" />
+      </MantineProvider>,
+    )
+    expect(html).toContain('my-stat-card')
+  })
+})

@@ -15,8 +15,10 @@
  * escape hatch for a page that must place its branches in different DOM positions.
  */
 import { Alert, Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { toErrorMessage } from '../query/error-message'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { EmptyState } from './empty-state'
 
 /** `'page'` = a full route body (generous padding). `'section'` = a card/panel region (compact). */
@@ -54,7 +56,7 @@ export type QueryEmptyCopy = {
 
 // ── LoadingState ──────────────────────────────────────────────────────────────────────────────────
 
-export type LoadingStateProps = {
+export type LoadingStateProps = BasaltProps & {
   variant?: QueryStateVariant
   /** Accessible name for the spinner. Say what is loading. */
   label?: string
@@ -64,22 +66,35 @@ export type LoadingStateProps = {
 export function LoadingState({
   variant = 'page',
   label = 'Loading',
+  className,
+  style,
 }: LoadingStateProps): ReactNode {
-  const loader = <Loader size="sm" aria-label={label} />
-  if (variant === 'section') return loader
+  if (variant === 'section') {
+    return (
+      <Loader
+        size="sm"
+        aria-label={label}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      />
+    )
+  }
   // Same page-level vertical inset `EmptyState`'s `'page'` variant uses (`empty-state.tsx`'s
   // `PAGE_PADDING_Y`) — the finest density-tracking rhythm step scaled by an exact integer, so this
   // renders at today's 64px at level 0 and tracks every other density level with it.
   return (
-    <Center style={{ paddingBlock: 'calc(var(--vx-space-stack-xs, 0.25rem) * 16)' }}>
-      {loader}
+    <Center
+      {...(className !== undefined && { className })}
+      style={{ paddingBlock: 'calc(var(--vx-space-stack-xs, 0.25rem) * 16)', ...style }}
+    >
+      <Loader size="sm" aria-label={label} />
     </Center>
   )
 }
 
 // ── ErrorState ────────────────────────────────────────────────────────────────────────────────────
 
-export type ErrorStateProps = {
+export type ErrorStateProps = BasaltProps & {
   /** Whatever was thrown — the raw Eden/fetch envelope is fine, it gets decoded. */
   error: unknown
   /** Alert heading. Say what failed, e.g. `Could not load images`. */
@@ -106,9 +121,17 @@ export function ErrorState({
   retrying = false,
   variant = 'page',
   action,
+  className,
+  style,
 }: ErrorStateProps): ReactNode {
   const alert = (
-    <Alert color="red" variant="light" title={title}>
+    <Alert
+      color="red"
+      variant="light"
+      title={title}
+      {...(variant === 'section' && className !== undefined && { className })}
+      {...(variant === 'section' && style !== undefined && { style })}
+    >
       <Stack gap="sm">
         <Text size="sm">{toErrorMessage(error, fallback)}</Text>
         {(onRetry ?? action) !== undefined && (
@@ -125,7 +148,15 @@ export function ErrorState({
     </Alert>
   )
   if (variant === 'section') return alert
-  return <Stack py="md">{alert}</Stack>
+  return (
+    <Stack
+      py="md"
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
+    >
+      {alert}
+    </Stack>
+  )
 }
 
 // ── QueryState ────────────────────────────────────────────────────────────────────────────────────
@@ -167,24 +198,37 @@ function assertQueryStateLike(query: unknown): asserts query is QueryStateLike<u
   if (typeof q['refetch'] !== 'function') bad('has no `refetch()`')
 }
 
-export type QueryStateProps<TData> = {
-  query: QueryStateLike<TData>
-  /** A render function gets `data` narrowed to non-undefined; a plain node also works. */
-  children: ReactNode | ((data: TData) => ReactNode)
-  /** Omit to render nothing when the result is empty. */
-  empty?: QueryEmptyCopy
-  /** Override the default `[]` / `{ data: [] }` emptiness test — `() => false` disables it. */
-  isEmpty?: (data: TData) => boolean
-  /** Alert heading on the error branch — say what failed. */
-  errorTitle?: string
-  /** Shown only when the server body carries no readable message. */
-  errorFallback?: string
-  /** Extra controls beside Retry on the error branch. */
-  errorAction?: ReactNode
-  variant?: QueryStateVariant
-  /** Replace the default spinner (e.g. with a skeleton grid). */
-  loading?: ReactNode
-}
+/**
+ * ONE slot, and the single-member union is the statement (`common/props.ts` lists this among the
+ * composites): `root` is whichever branch is live — the error alert's stack, the spinner's centre,
+ * the empty state, or the cached-data wrapper. `QueryState` renders exactly one of them at a time
+ * and never two boxes at once, so there is no second slot to name; `className` and `classNames.root`
+ * both land on it, joined rather than one replacing the other.
+ *
+ * A branch a consumer wants styled DIFFERENTLY from its siblings is `LoadingState`/`ErrorState`/
+ * `EmptyState` placed by hand — that escape hatch is why they ship.
+ */
+export type QueryStateSlot = 'root'
+
+export type QueryStateProps<TData> = BasaltProps &
+  SlotStylesProps<QueryStateSlot> & {
+    query: QueryStateLike<TData>
+    /** A render function gets `data` narrowed to non-undefined; a plain node also works. */
+    children: ReactNode | ((data: TData) => ReactNode)
+    /** Omit to render nothing when the result is empty. */
+    empty?: QueryEmptyCopy
+    /** Override the default `[]` / `{ data: [] }` emptiness test — `() => false` disables it. */
+    isEmpty?: (data: TData) => boolean
+    /** Alert heading on the error branch — say what failed. */
+    errorTitle?: string
+    /** Shown only when the server body carries no readable message. */
+    errorFallback?: string
+    /** Extra controls beside Retry on the error branch. */
+    errorAction?: ReactNode
+    variant?: QueryStateVariant
+    /** Replace the default spinner (e.g. with a skeleton grid). */
+    loading?: ReactNode
+  }
 
 /**
  * Renders loading / error-with-retry / empty / children for a query result, in that order.
@@ -215,8 +259,15 @@ export function QueryState<TData>({
   errorAction,
   variant = 'page',
   loading,
+  className,
+  style,
+  classNames,
 }: QueryStateProps<TData>): ReactNode {
   assertQueryStateLike(query)
+  // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
+  // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,
+  // so it collapses back to `undefined`.
+  const rootClassName = cx(classNames?.root, className) || undefined
   const { data, isError, error, fetchStatus } = query
   const retrying = fetchStatus === 'fetching'
   const retry = (): void => void query.refetch()
@@ -231,19 +282,30 @@ export function QueryState<TData>({
         retrying={retrying}
         variant={variant}
         {...(errorAction !== undefined && { action: errorAction })}
+        {...(rootClassName !== undefined && { className: rootClassName })}
+        {...(style !== undefined && { style })}
       />
     )
   }
 
   if (data === undefined) {
-    if (fetchStatus === 'idle' && !isError) return empty ? renderEmpty(empty, variant) : null
-    return loading ?? <LoadingState variant={variant} />
+    if (fetchStatus === 'idle' && !isError)
+      return empty ? renderEmpty(empty, variant, rootClassName, style) : null
+    return (
+      loading ?? (
+        <LoadingState
+          variant={variant}
+          {...(rootClassName !== undefined && { className: rootClassName })}
+          {...(style !== undefined && { style })}
+        />
+      )
+    )
   }
 
   const emptyNow = isEmpty ? isEmpty(data) : defaultIsEmpty(data)
   const body = emptyNow
     ? empty
-      ? renderEmpty(empty, variant)
+      ? renderEmpty(empty, variant, rootClassName, style)
       : null
     : typeof children === 'function'
       ? children(data)
@@ -252,7 +314,11 @@ export function QueryState<TData>({
   if (!isError) return body
 
   return (
-    <Stack gap="sm">
+    <Stack
+      gap="sm"
+      {...(rootClassName !== undefined && { className: rootClassName })}
+      {...(style !== undefined && { style })}
+    >
       <ErrorState
         error={error}
         title="Showing cached data"
@@ -266,7 +332,12 @@ export function QueryState<TData>({
   )
 }
 
-function renderEmpty(empty: QueryEmptyCopy, variant: QueryStateVariant): ReactNode {
+function renderEmpty(
+  empty: QueryEmptyCopy,
+  variant: QueryStateVariant,
+  className?: string,
+  style?: CSSProperties,
+): ReactNode {
   return (
     <EmptyState
       title={empty.title}
@@ -274,6 +345,8 @@ function renderEmpty(empty: QueryEmptyCopy, variant: QueryStateVariant): ReactNo
       {...(empty.description !== undefined && { description: empty.description })}
       {...(empty.icon !== undefined && { icon: empty.icon })}
       {...(empty.action !== undefined && { action: empty.action })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     />
   )
 }

@@ -11,6 +11,8 @@ import { ActionIcon, Kbd, Text, UnstyledButton } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { OverflowMenu } from '../controls/actions'
 import type { BarAction } from '../controls/actions'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import classes from './sidebar-search.module.css'
 
 /**
@@ -95,13 +97,18 @@ function SearchAction({ action }: { action: BarAction }): ReactNode {
   return <ActionIcon {...shared}>{body}</ActionIcon>
 }
 
+export type SidebarSearchProps = SidebarSearchConfig &
+  BasaltProps & { actions?: SidebarSearchActions; collapsed?: boolean }
+
 export function SidebarSearch({
   onOpen,
   placeholder = 'Search…',
   shortcut,
   actions,
   collapsed,
-}: SidebarSearchConfig & { actions?: SidebarSearchActions; collapsed?: boolean }) {
+  className,
+  style,
+}: SidebarSearchProps) {
   // SSR-safe mac detection, matching the shell's other shortcut-hint logic.
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/i.test(navigator.platform)
   const hint = shortcut ?? (isMac ? '⌘K' : 'Ctrl K')
@@ -111,9 +118,10 @@ export function SidebarSearch({
       <ActionIcon
         variant="subtle"
         size="md"
-        className={classes.railBtn}
+        className={cx(classes.railBtn, className)}
         onClick={onOpen}
         aria-label="Open search"
+        {...(style !== undefined && { style })}
       >
         <IconSearch />
       </ActionIcon>
@@ -123,9 +131,10 @@ export function SidebarSearch({
   const trigger = (
     <UnstyledButton
       type="button"
-      className={classes.trigger}
+      className={cx(classes.trigger, actions === undefined && className)}
       onClick={onOpen}
       aria-label="Open search"
+      {...(actions === undefined && style !== undefined && { style })}
     >
       <IconSearch />
       <Text component="span" className={classes.label}>
@@ -139,7 +148,7 @@ export function SidebarSearch({
   if (actions === undefined) return trigger
 
   return (
-    <div className={classes.row}>
+    <div className={cx(classes.row, className)} {...(style !== undefined && { style })}>
       {trigger}
       {actions.map((action) => (
         <SearchAction key={action.key} action={action} />

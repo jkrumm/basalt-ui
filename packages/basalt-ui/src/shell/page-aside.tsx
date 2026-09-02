@@ -34,6 +34,9 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useMediaQuery } from '@mantine/hooks'
 import { useMantineTheme } from '@mantine/core'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { FilterSetScope } from '../controls/filter-context'
 import { useAsidePanelSlot } from './page-bar'
@@ -110,16 +113,19 @@ export function AsideOutlet({ className }: { className?: string }) {
   return <div ref={setTarget} className={className} />
 }
 
-export type PageAsideProps = {
-  /** Header label; also the accessible name of the region. */
-  title: string
-  /** Persists the fold at `basalt:aside:<persistKey>`. Omit for an unpersisted fold. */
-  persistKey?: string
-  /** Fold state on first render, respected only while nothing is persisted. @default false */
-  defaultFolded?: boolean
-  children: ReactNode
-  className?: string
-}
+/** The three boxes `PageAside` paints, in every projection (`common/props.ts`). */
+export type PageAsideSlot = 'root' | 'header' | 'body'
+
+export type PageAsideProps = BasaltProps &
+  SlotStylesProps<PageAsideSlot> & {
+    /** Header label; also the accessible name of the region. */
+    title: string
+    /** Persists the fold at `basalt:aside:<persistKey>`. Omit for an unpersisted fold. */
+    persistKey?: string
+    /** Fold state on first render, respected only while nothing is persisted. @default false */
+    defaultFolded?: boolean
+    children: ReactNode
+  }
 
 /** The fold glyph — `app-sidebar.tsx`'s `IconCollapse`, mirrored onto the right-hand edge, so the
  * two shell folds read as one family. Inline, because basalt ships no icon dependency. */
@@ -187,13 +193,14 @@ function FoldButton({ folded, onToggle }: { folded: boolean; onToggle: () => voi
   )
 }
 
-export function PageAside({
-  title,
-  persistKey,
-  defaultFolded = false,
-  children,
-  className,
-}: PageAsideProps): ReactNode {
+export function PageAside(props: PageAsideProps): ReactNode {
+  // F-ERR-1, and here it is an ACCESSIBILITY fault rather than a crash: `title` is both the visible
+  // header and the region's `aria-label`, so a missing one ships a landmark with no name and a
+  // header row with nothing in it — silently, on the branch a screen reader depends on.
+  assertRequiredProps('PageAside', props, ['title'], {
+    title: 'it names the region — it is the header text AND the `aria-label` on the landmark.',
+  })
+  const { title, persistKey, defaultFolded = false, children, className, style, classNames } = props
   const { target, inShell, claim, publishFolded } = useContext(AsideContext)
   // Destructured, not held as one object: the hook returns a fresh literal every render, and the
   // claim effect below would then re-run (claim → release → claim) forever. `claimPanel` is a
@@ -238,9 +245,10 @@ export function PageAside({
 
   const panel = (
     <section
-      className={[classes.panel, className].filter(Boolean).join(' ')}
+      className={cx(classes.panel, classNames?.root, className)}
       data-basalt-page-aside={portalled ? 'shell' : 'standalone'}
       aria-label={title}
+      {...(style !== undefined && { style })}
     >
       {portalled && folded ? (
         <div className={classes.rail}>
@@ -248,11 +256,11 @@ export function PageAside({
         </div>
       ) : (
         <>
-          <div className={classes.header}>
+          <div className={cx(classes.header, classNames?.header)}>
             <span className={classes.title}>{title}</span>
             {portalled && <FoldButton folded={false} onToggle={() => setFolded(true)} />}
           </div>
-          <div className={classes.body}>
+          <div className={cx(classes.body, classNames?.body)}>
             {/* The aside body IS a home (law C1) and a filter surface: `panel` is what turns every
                 bound control inside into an inspector row. `registry: null` because there is no
                 census here — no `Filters (n)`, no `Reset all`. */}

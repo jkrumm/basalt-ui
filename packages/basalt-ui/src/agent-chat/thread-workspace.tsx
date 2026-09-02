@@ -32,46 +32,58 @@
  *   )
  * }
  */
-import { Box, Divider, Flex, Skeleton, Stack, Text } from '@mantine/core'
+import { Box, Divider, Flex, Skeleton, Stack, Text, useMantineTheme } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import type { JSX, ReactNode } from 'react'
 import type { AgentPart, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
 import { useAgentThreadRuns } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { VX } from '../tokens'
 import { Composer } from './composer'
 import { ThreadDetailPanel } from './thread-detail-panel'
 import { ThreadFeed } from './thread-feed'
 
-const NARROW_BREAKPOINT = '(max-width: 768px)'
 const DETAIL_PANEL_WIDTH = 'clamp(440px, 40%, 520px)'
 
-export type ThreadWorkspaceProps = {
-  /**
-   * The thread-store hook, created ONCE at module scope via `createThreadsStore` and passed in —
-   * ThreadWorkspace must not call `createThreadsStore` itself.
-   */
-  readonly useThreads: () => ThreadsStore
-  /** The injected transport seam — one stream per `start()` call. */
-  readonly transport: AgentTransport<AgentPart, string>
-  /** Distills a finished thread into a feed-ready `AgentOutcome`. */
-  readonly resolveOutcome: OutcomeResolver<AgentPart>
-  /** Placeholder for the new-thread composer pinned under the feed. */
-  readonly newThreadPlaceholder?: string
-  /**
-   * Rendered in place of the feed once the store is hydrated and there really are no threads.
-   * Shown ONLY when `store.hydrated` is true — while an async store's initial load is still in
-   * flight, `ThreadWorkspace` holds a neutral loading state instead (see `FeedHydratingState`),
-   * so a server-backed workspace never asserts "no threads yet" before it actually knows that.
-   */
-  readonly emptyState?: ReactNode
-  /**
-   * Rendered in place of the feed when the store's initial load has failed — `!store.hydrated &&
-   * store.error !== undefined` (see `ThreadsStore.hydrated`'s doc for the discriminant). Shown
-   * instead of `FeedHydratingState`, so a rejected `listThreads` surfaces a legible failure rather
-   * than an endless skeleton.
-   */
-  readonly errorState?: ReactNode
-}
+// Static across every instance, so it stays a module-level constant rather than a per-render
+// literal, letting the no-override case keep a stable reference.
+const FULL_HEIGHT_STYLE = { height: '100%' } as const
+
+/** The four boxes `ThreadWorkspace` paints: `root` is the outermost pane split, `feed` is the
+ * thread-list pane, `composer` is the new-thread composer pinned under the feed, `detail` is the
+ * right-hand (or, below 768px, full-screen) open-thread pane. */
+export type ThreadWorkspaceSlot = 'root' | 'feed' | 'composer' | 'detail'
+
+export type ThreadWorkspaceProps = BasaltProps &
+  SlotStylesProps<ThreadWorkspaceSlot> & {
+    /**
+     * The thread-store hook, created ONCE at module scope via `createThreadsStore` and passed in —
+     * ThreadWorkspace must not call `createThreadsStore` itself.
+     */
+    readonly useThreads: () => ThreadsStore
+    /** The injected transport seam — one stream per `start()` call. */
+    readonly transport: AgentTransport<AgentPart, string>
+    /** Distills a finished thread into a feed-ready `AgentOutcome`. */
+    readonly resolveOutcome: OutcomeResolver<AgentPart>
+    /** Placeholder for the new-thread composer pinned under the feed. */
+    readonly newThreadPlaceholder?: string
+    /**
+     * Rendered in place of the feed once the store is hydrated and there really are no threads.
+     * Shown ONLY when `store.hydrated` is true — while an async store's initial load is still in
+     * flight, `ThreadWorkspace` holds a neutral loading state instead (see `FeedHydratingState`),
+     * so a server-backed workspace never asserts "no threads yet" before it actually knows that.
+     */
+    readonly emptyState?: ReactNode
+    /**
+     * Rendered in place of the feed when the store's initial load has failed — `!store.hydrated &&
+     * store.error !== undefined` (see `ThreadsStore.hydrated`'s doc for the discriminant). Shown
+     * instead of `FeedHydratingState`, so a rejected `listThreads` surfaces a legible failure rather
+     * than an endless skeleton.
+     */
+    readonly errorState?: ReactNode
+  }
 
 /** Default hint shown in the feed pane once hydrated with no threads (overridable via `emptyState`). */
 function FeedEmptyState(): JSX.Element {
@@ -146,10 +158,19 @@ export function ThreadWorkspace({
   newThreadPlaceholder,
   emptyState,
   errorState,
+  className,
+  style,
+  classNames,
 }: ThreadWorkspaceProps): JSX.Element {
+  assertRequiredProps('ThreadWorkspace', { useThreads }, ['useThreads'])
   const store = useThreads()
   const runs = useAgentThreadRuns({ transport, store, resolveOutcome })
-  const narrow = useMediaQuery(NARROW_BREAKPOINT)
+  // Matches `shell/page-aside.tsx`'s own `theme.breakpoints.sm` desktop check — read off the theme,
+  // not hardcoded, so a consumer that retunes `breakpoints.sm` moves the aside and this workspace
+  // together. `max-width` is the min-width complement: `sm − 0.00625em` (the same 0.1px offset
+  // Mantine's own CSS breakpoints use), so the two checks never straddle the same pixel.
+  const theme = useMantineTheme()
+  const narrow = useMediaQuery(`(max-width: calc(${theme.breakpoints.sm} - 0.00625em))`)
 
   const threads = store.threads
   const activeThread = threads.find((thread) => thread.id === store.activeId) ?? null
@@ -186,7 +207,12 @@ export function ThreadWorkspace({
   // A plain pane, NOT a card — the feed's own rows carry the card idiom (docs/DESIGN-SPEC.md §5),
   // so this pane stays flush with the page and the feed/detail split reads via the divider token.
   const feed = (
-    <Flex direction="column" h="100%" style={{ overflow: 'hidden' }}>
+    <Flex
+      direction="column"
+      h="100%"
+      className={cx(classNames?.feed)}
+      style={{ overflow: 'hidden' }}
+    >
       <Box style={{ flex: 1, minHeight: 0 }}>
         {threads.length === 0 ? (
           store.hydrated ? (
@@ -205,6 +231,7 @@ export function ThreadWorkspace({
         <Composer
           onSubmit={({ text }) => handleNewThread(text)}
           {...(newThreadPlaceholder !== undefined ? { placeholder: newThreadPlaceholder } : {})}
+          {...(classNames?.composer !== undefined && { className: classNames.composer })}
         />
       </Box>
     </Flex>
@@ -219,15 +246,27 @@ export function ThreadWorkspace({
       onStop={handleStop}
       onRetry={handleRetry}
       onClose={() => store.select(null)}
+      {...(classNames?.detail !== undefined && { className: classNames.detail })}
     />
   )
 
   if (narrow) {
-    return <Box style={{ height: '100%' }}>{store.activeId !== null ? detail : feed}</Box>
+    return (
+      <Box
+        className={cx(classNames?.root, className)}
+        style={style ? { ...FULL_HEIGHT_STYLE, ...style } : FULL_HEIGHT_STYLE}
+      >
+        {store.activeId !== null ? detail : feed}
+      </Box>
+    )
   }
 
   return (
-    <Flex style={{ height: '100%' }} gap="md">
+    <Flex
+      className={cx(classNames?.root, className)}
+      style={style ? { ...FULL_HEIGHT_STYLE, ...style } : FULL_HEIGHT_STYLE}
+      gap="md"
+    >
       <Box
         style={{
           flex: 1,

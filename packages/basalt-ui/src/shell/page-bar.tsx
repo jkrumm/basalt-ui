@@ -24,6 +24,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { CtlSlot } from '../theme'
 import { BarActionRow, BarExtrasProvider, globalActionAsBarAction } from '../controls/actions'
 import { FilterPill } from '../controls/filter-pill'
@@ -181,36 +183,42 @@ export function useAsidePanelSlot(): {
   return { host: panelHost, claim: claimPanel, target: panelTarget }
 }
 
-export type PageBarProps = {
-  /**
-   * Read only when there is no `BasaltShell` outlet (a shell-less app such as linewatch). Inside a
-   * shell the breadcrumb names the page and this is ignored.
-   */
-  title?: string
-  icon?: ReactNode
-  actions?: ActionGroupProps
-  /** `scope` is fixed to `'page'` — a global sync belongs in the shell's `globalActions` (law C12). */
-  sync?: Omit<SyncButtonProps, 'scope'>
-  /** `FilterSet` descendants only (law C1). */
-  filters?: ReactNode
-  /** Right-aligned row-2 actions ("Manage metrics"). */
-  filtersEnd?: BarAction[]
-  /** One `ViewTabs`. */
-  tabs?: ReactNode
-  /**
-   * Added to the bar's ROOT — the shell-less `<div data-basalt-page-bar="standalone">`, or row 2's
-   * sticky wrapper (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The one thing only the
-   * consumer's own layout knows is bleeding the sticky bar across its container's gutters
-   * (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) for the shell-less
-   * form.
-   *
-   * Scope that CSS through this class, not through a global `[data-basalt-page-bar]` selector: the
-   * data attributes are stable enough to READ (a shell-less consumer can style
-   * `[data-basalt-page-bar="standalone"]` in a pinch, and this doc is the promise that the value
-   * stays), but a global rule reaches every page in the app including the ones that want neither.
-   */
-  className?: string
-}
+/**
+ * The boxes `PageBar` paints (`common/props.ts`). `root` is whichever element is the bar's own
+ * outer node for the active mode — the shell-less standalone bar, or row 2's sticky wrapper inside
+ * a `BasaltShell` (row 1 portals into the app-shell header and has no wrapper of PageBar's own,
+ * which is what `row1`/`row2` target directly).
+ *
+ * `className`/`classNames.root` land on that same root — the shell-less
+ * `<div data-basalt-page-bar="standalone">`, or row 2's sticky wrapper
+ * (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The one thing only the consumer's own
+ * layout knows is bleeding the sticky bar across its container's gutters
+ * (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) for the shell-less
+ * form. Scope that CSS through this class, not through a global `[data-basalt-page-bar]` selector:
+ * the data attributes are stable enough to READ (a shell-less consumer can style
+ * `[data-basalt-page-bar="standalone"]` in a pinch, and this doc is the promise that the value
+ * stays), but a global rule reaches every page in the app including the ones that want neither.
+ */
+export type PageBarSlot = 'root' | 'row1' | 'row2'
+
+export type PageBarProps = BasaltProps &
+  SlotStylesProps<PageBarSlot> & {
+    /**
+     * Read only when there is no `BasaltShell` outlet (a shell-less app such as linewatch). Inside a
+     * shell the breadcrumb names the page and this is ignored.
+     */
+    title?: string
+    icon?: ReactNode
+    actions?: ActionGroupProps
+    /** `scope` is fixed to `'page'` — a global sync belongs in the shell's `globalActions` (law C12). */
+    sync?: Omit<SyncButtonProps, 'scope'>
+    /** `FilterSet` descendants only (law C1). */
+    filters?: ReactNode
+    /** Right-aligned row-2 actions ("Manage metrics"). */
+    filtersEnd?: BarAction[]
+    /** One `ViewTabs`. */
+    tabs?: ReactNode
+  }
 
 /**
  * Publishes an element's measured height as a custom property on `documentElement`.
@@ -257,11 +265,6 @@ function useMeasuredHeightVar(active: boolean): RefObject<HTMLDivElement | null>
   return ref
 }
 
-/** The bar root's own class plus the consumer's, in that order (`content/toc.tsx`'s idiom). */
-function rootClass(own: string, extra: string | undefined): string {
-  return [own, extra].filter(Boolean).join(' ')
-}
-
 export function PageBar({
   title,
   icon,
@@ -271,6 +274,8 @@ export function PageBar({
   filtersEnd,
   tabs,
   className,
+  style,
+  classNames,
 }: PageBarProps): ReactNode {
   const { target, inShell, panel, claimPanelHost, setPanelTarget } = useContext(PageBarContext)
   // An overlay's open flag, like `FilterPill`'s and `FilterSet`'s — not page state (C3).
@@ -306,7 +311,7 @@ export function PageBar({
   }, [inShell, hasRow2, claimPanelHost])
 
   const row1 = hasRow1 ? (
-    <div className={classes.row1}>
+    <div className={cx(classes.row1, classNames?.row1)}>
       {hasLead && (
         <div className={classes.lead}>
           {icon !== undefined && (
@@ -348,7 +353,7 @@ export function PageBar({
   const hasPills = filters !== undefined || panel !== null || filtersEndActions.length > 0
 
   const row2 = hasRow2 ? (
-    <div className={classes.row2}>
+    <div className={cx(classes.row2, classNames?.row2)}>
       {tabs !== undefined && (
         <div className={classes.tabs} data-basalt-page-bar-line="tabs">
           <CtlSlot>{tabs}</CtlSlot>
@@ -417,8 +422,9 @@ export function PageBar({
     return (
       <div
         ref={measureRef}
-        className={rootClass(classes.bar, className)}
+        className={cx(classes.bar, classNames?.root, className)}
         data-basalt-page-bar="standalone"
+        {...(style !== undefined && { style })}
       >
         {row1}
         {row2}
@@ -434,8 +440,9 @@ export function PageBar({
       {row2 !== null && (
         <div
           ref={measureRef}
-          className={rootClass(classes.row2Sticky, className)}
+          className={cx(classes.row2Sticky, classNames?.root, className)}
           data-basalt-page-bar="shell"
+          {...(style !== undefined && { style })}
         >
           {row2}
         </div>

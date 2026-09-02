@@ -27,6 +27,7 @@
  */
 import { Fragment, useMemo } from 'react'
 import type { JSX } from 'react'
+import { assertRequiredProps } from '../common/validate'
 import { assertNever } from '../register'
 import { alpha, VX } from '../tokens'
 import type {
@@ -285,6 +286,7 @@ export function PartList<TPart extends AgentPart = AgentPart>({
   components,
   settled = true,
 }: PartListProps<TPart>): JSX.Element {
+  assertRequiredProps('PartList', { parts }, ['parts'])
   // Memoised to avoid rebuilding the renderer map on every streaming re-render (hot path).
   // Cast required because DEFAULT_RENDERERS is typed for the base AgentPart, not the generic TPart.
   const renderers = useMemo(

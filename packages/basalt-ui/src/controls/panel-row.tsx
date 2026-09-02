@@ -24,6 +24,8 @@
  */
 import { SegmentedControl, Select } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { CtlSlot } from '../theme'
 import { InfoGlyph } from '../widget-header/widget-header'
 import classes from './panel-row.module.css'
@@ -35,7 +37,7 @@ import classes from './panel-row.module.css'
  */
 export const PANEL_TRACK_MAX = 3
 
-export type PanelRowProps = {
+export type PanelRowProps = BasaltProps & {
   /** The row's name. Rendered above the control, `xs`/550 — never inside it. */
   readonly label: string
   /** Info glyph + tooltip beside the label — the same affordance `WidgetHeader.info` draws. */
@@ -70,9 +72,15 @@ export function PanelRow({
   disabled,
   labelId,
   children,
+  className,
+  style,
 }: PanelRowProps): ReactNode {
   return (
-    <div className={classes.row} {...(disabled === true && { 'data-disabled': true })}>
+    <div
+      className={cx(classes.row, className)}
+      {...(disabled === true && { 'data-disabled': true })}
+      {...(style !== undefined && { style })}
+    >
       {/* ONE slot for the whole row, not one per line: `CtlSlot`'s marker is `display: contents`,
           so both lines stay flex children of `.row` and the tier reaches `end` and `children`
           through a single provider. */}

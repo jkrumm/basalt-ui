@@ -15,6 +15,8 @@
 import { TextInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, StringField } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { SheetField, useControlName } from './filter-sheet'
@@ -23,18 +25,20 @@ import { PanelRow } from './panel-row'
 /** One navigation per typed phrase, not per keystroke. */
 const DEBOUNCE_MS = 200
 
-export type SearchFilterProps = {
+export type SearchFilterProps = BasaltProps & {
   readonly field: FieldHandle<StringField>
   readonly placeholder?: string
   /** Sheet-form heading. @default 'Search' */
   readonly label?: string
 }
 
-export function SearchFilter({
-  field,
-  placeholder,
-  label = 'Search',
-}: SearchFilterProps): ReactNode {
+export function SearchFilter(props: SearchFilterProps): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('SearchFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, placeholder, label = 'Search', className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const draft = useDebouncedField(value, setValue)
@@ -46,6 +50,9 @@ export function SearchFilter({
   // so the name comes from `label`, or from the visible heading when the surface draws one.
   const named = surface === 'sheet' || surface === 'panel'
   const { labelId, nameProps } = useControlName(label, named)
+  // The pill form has no wrapping home — the `TextInput` itself is the root, so it takes the class
+  // directly. The panel/sheet forms wrap it in a home that becomes the root instead.
+  const isPill = surface !== 'panel' && surface !== 'sheet'
 
   const input = (
     <TextInput
@@ -57,19 +64,31 @@ export function SearchFilter({
       onChange={(event) => {
         draft.set(event.currentTarget.value)
       }}
+      {...(isPill && className !== undefined && { className })}
+      {...(isPill && style !== undefined && { style })}
     />
   )
 
   if (surface === 'panel') {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         {input}
       </PanelRow>
     )
   }
   if (surface === 'sheet') {
     return (
-      <SheetField label={label} labelId={labelId}>
+      <SheetField
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         {input}
       </SheetField>
     )

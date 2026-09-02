@@ -16,9 +16,12 @@
 import { ActionIcon, Badge, Divider, Group, Popover, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useRef } from 'react'
+import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { useConnectivity } from './use-connectivity'
 import type { ConnectivityStatus } from './types'
+
+export type ConnectivityIndicatorProps = BasaltProps
 
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
@@ -180,7 +183,7 @@ const ICON_COLOR: Record<ConnectivityStatus, string> = {
  *   {...rest}
  * />
  */
-export function ConnectivityIndicator() {
+export function ConnectivityIndicator({ className, style }: ConnectivityIndicatorProps = {}) {
   const [opened, { open, toggle, close }] = useDisclosure(false)
   const { status, details } = useConnectivity()
   const statusCfg = STATUS_CONFIG[status]
@@ -215,6 +218,8 @@ export function ConnectivityIndicator() {
           aria-label={statusCfg.label}
           aria-expanded={opened}
           aria-haspopup="dialog"
+          {...(className !== undefined && { className })}
+          {...(style !== undefined && { style })}
         >
           <WifiIcon />
         </ActionIcon>

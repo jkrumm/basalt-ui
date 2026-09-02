@@ -8,20 +8,25 @@
  *   <p>This endpoint is rate-limited to 60 requests/minute.</p>
  * </Callout>
  */
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import classes from './callout.module.css'
 
+/**
+ * One of the five `Tone` forks (`common/props.ts`) — kept as its own type because `info` has no
+ * `Tone` equivalent: `good`/`warn`/`bad` line up with `Tone` exactly, `info` is the extra kind a
+ * callout needs that a status badge does not.
+ */
 export type CalloutKind = 'info' | 'good' | 'warn' | 'bad'
 
-export type CalloutProps = {
+export type CalloutProps = BasaltProps & {
   /** Semantic kind — drives the rail/tint color and the default icon. Default `'info'`. */
   readonly kind?: CalloutKind
   readonly title?: string
   /** Overrides the default per-kind icon. Only rendered alongside a `title`. */
   readonly icon?: ReactNode
   readonly children: ReactNode
-  readonly className?: string
-  readonly style?: CSSProperties
 }
 
 const KIND_CLASS: Record<CalloutKind, string> = {
@@ -80,10 +85,11 @@ const DEFAULT_ICON: Record<CalloutKind, ReactNode> = {
 }
 
 export function Callout({ kind = 'info', title, icon, children, className, style }: CalloutProps) {
-  const rootClass = [classes.root, KIND_CLASS[kind], className].filter(Boolean).join(' ')
-
   return (
-    <div className={rootClass} {...(style !== undefined && { style })}>
+    <div
+      className={cx(classes.root, KIND_CLASS[kind], className)}
+      {...(style !== undefined && { style })}
+    >
       {title !== undefined && (
         <div className={classes.titleRow}>
           <span className={classes.icon}>{icon ?? DEFAULT_ICON[kind]}</span>

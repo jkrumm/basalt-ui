@@ -33,6 +33,8 @@ import type { ReactNode } from 'react'
 import { WidgetHeader } from '../widget-header'
 import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import classes from './settings-section.module.css'
 
 const eyebrowStyle = {
@@ -44,21 +46,36 @@ const eyebrowStyle = {
   color: VX.status.bad,
 }
 
-export type SettingsSectionProps = {
-  /** Head-font section title, rendered via `WidgetHeader tier="section"`. */
-  title: string
-  /** Optional 13px muted description below the title. */
-  subtitle?: string
-  /** Header-right slot — wrapped in `CtlSlot` (C1/C5). */
-  actions?: ReactNode
-  /** Section body — typically a stack of `SettingsRow`s. */
-  children: ReactNode
-}
+/** The three boxes `SettingsSection`/`DangerZone` paint (`common/props.ts`). */
+export type SettingsSectionSlot = 'root' | 'header' | 'body'
 
-export function SettingsSection({ title, subtitle, actions, children }: SettingsSectionProps) {
+export type SettingsSectionProps = BasaltProps &
+  SlotStylesProps<SettingsSectionSlot> & {
+    /** Head-font section title, rendered via `WidgetHeader tier="section"`. */
+    title: string
+    /** Optional 13px muted description below the title. */
+    subtitle?: string
+    /** Header-right slot — wrapped in `CtlSlot` (C1/C5). */
+    actions?: ReactNode
+    /** Section body — typically a stack of `SettingsRow`s. */
+    children: ReactNode
+  }
+
+export function SettingsSection({
+  title,
+  subtitle,
+  actions,
+  children,
+  className,
+  style,
+  classNames,
+}: SettingsSectionProps) {
   return (
-    <Card style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)' }}>
-      <div className={classes.header}>
+    <Card
+      className={cx(classNames?.root, className)}
+      style={{ padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)', ...style }}
+    >
+      <div className={cx(classes.header, classNames?.header)}>
         <WidgetHeader
           tier="section"
           title={title}
@@ -66,47 +83,72 @@ export function SettingsSection({ title, subtitle, actions, children }: Settings
           {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
         />
       </div>
-      <div className={classes.rows}>{children}</div>
+      <div className={cx(classes.rows, classNames?.body)}>{children}</div>
     </Card>
   )
 }
 
-export type SettingsRowProps = {
-  /** 13px ink label on the left. */
-  label: string
-  /** Optional 12.5px muted description under the label. */
-  description?: string
-  /** Right-aligned control (input/switch/button). */
-  control?: ReactNode
-  /** Alternative to `control` for a fully custom right-hand region. */
-  children?: ReactNode
-}
+/** The three boxes `SettingsRow` paints (`common/props.ts`). */
+export type SettingsRowSlot = 'root' | 'label' | 'control'
 
-export function SettingsRow({ label, description, control, children }: SettingsRowProps) {
+export type SettingsRowProps = BasaltProps &
+  SlotStylesProps<SettingsRowSlot> & {
+    /** 13px ink label on the left. */
+    label: string
+    /** Optional 12.5px muted description under the label. */
+    description?: string
+    /** Right-aligned control (input/switch/button). */
+    control?: ReactNode
+    /** Alternative to `control` for a fully custom right-hand region. */
+    children?: ReactNode
+  }
+
+export function SettingsRow({
+  label,
+  description,
+  control,
+  children,
+  className,
+  style,
+  classNames,
+}: SettingsRowProps) {
   return (
-    <div className={classes.row}>
-      <Stack gap={2}>
+    <div
+      className={cx(classes.row, classNames?.root, className)}
+      {...(style !== undefined && { style })}
+    >
+      <Stack gap={2} {...(classNames?.label !== undefined && { className: classNames.label })}>
         <span style={{ fontSize: VX.text.md, color: VX.ink }}>{label}</span>
         {description && (
           <span style={{ fontSize: VX.text.sm, color: VX.muted }}>{description}</span>
         )}
       </Stack>
-      <div className={classes.control}>{control ?? children}</div>
+      <div className={cx(classes.control, classNames?.control)}>{control ?? children}</div>
     </div>
   )
 }
 
 export type DangerZoneProps = SettingsSectionProps
 
-export function DangerZone({ title, subtitle, actions, children }: DangerZoneProps) {
+export function DangerZone({
+  title,
+  subtitle,
+  actions,
+  children,
+  className,
+  style,
+  classNames,
+}: DangerZoneProps) {
   return (
     <Card
+      className={cx(classNames?.root, className)}
       style={{
         padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         boxShadow: `${VX.shadowCard}, 0 0 0 1px ${alpha(VX.status.bad, 0.25)}`,
+        ...style,
       }}
     >
-      <div className={classes.header}>
+      <div className={cx(classes.header, classNames?.header)}>
         <span style={eyebrowStyle}>Danger Zone</span>
         <WidgetHeader
           tier="section"
@@ -115,7 +157,7 @@ export function DangerZone({ title, subtitle, actions, children }: DangerZonePro
           {...(actions !== undefined && { actions: <CtlSlot>{actions}</CtlSlot> })}
         />
       </div>
-      <div className={classes.rows}>{children}</div>
+      <div className={cx(classes.rows, classNames?.body)}>{children}</div>
     </Card>
   )
 }

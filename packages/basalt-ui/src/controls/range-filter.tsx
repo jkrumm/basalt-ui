@@ -34,6 +34,9 @@
 import { SegmentedControl, Select, Stack } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ComponentType, ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
+import { isDev } from '../utils/is-dev'
 import type { FieldHandle, RangeField, RangeValue } from '../state'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
@@ -49,12 +52,6 @@ const VERTICAL_FROM = 5
 const CUSTOM_ROW_LABEL = 'Custom range…'
 /** `7d`, `30d`, `24h`, `90` — a label the mono numeric treatment is for. */
 const NUMERIC_LABEL = /^\d/
-
-/** The house dev gate — `basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle
- *  constant-folds this to `false` and drops the warning. Read per call, never hoisted. */
-function isDev(): boolean {
-  return process.env['NODE_ENV'] !== 'production'
-}
 
 /** Once per label — a filter renders on every navigation, and the wiring is fixed at definition. */
 const noPickerWarned = new Set<string>()
@@ -89,7 +86,7 @@ export type RangeCustomPickerProps = {
 }
 
 /** Everything about the props that does not depend on the field's `custom` flag. */
-type RangeFilterBase<P extends string, C extends boolean> = {
+type RangeFilterBase<P extends string, C extends boolean> = BasaltProps & {
   /**
    * A range handle from either store factory. Generic over the field's `custom` flag so a
    * `field.range({ ... })` WITHOUT `custom` (whose handle is `RangeField<P, false>`, and whose
@@ -119,11 +116,18 @@ export type RangeFilterProps<P extends string, C extends boolean = boolean> = Ra
 export function RangeFilter<P extends string, C extends boolean = boolean>(
   props: RangeFilterProps<P, C>,
 ): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('RangeFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
   const {
     field,
     icon,
     customPicker,
     label = 'Range',
+    className,
+    style,
     // One cast, at the one boundary a generic `C` cannot be read through: `C` only ever describes
     // the FIELD's custom flag, and the body handles both.
   } = props as unknown as RangeFilterBase<P, boolean> & {
@@ -167,7 +171,12 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
 
   if (inPanel) {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <Select
           {...nameProps}
           allowDeselect={false}
@@ -205,7 +214,12 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
 
   if (inSheet) {
     return (
-      <SheetField label={label} labelId={labelId}>
+      <SheetField
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <SheetOptionList
           mode="single"
           labelId={labelId}
@@ -270,6 +284,8 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
       active={!isDefault}
       numeric={numeric && value.preset !== 'custom'}
       icon={icon ?? <CalendarGlyph />}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <div className={classes.optionList}>{body}</div>
     </FilterPill>

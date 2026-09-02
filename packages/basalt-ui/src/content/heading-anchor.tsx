@@ -19,18 +19,25 @@
  *   <h2 id={id}>Setup<HeadingAnchor id={id} /></h2>
  * </Prose>
  */
+import type { BasaltProps } from '../common/props'
+import { cx } from '../common/props'
 import { CopyAction } from './copy-action'
 import { LinkGlyph } from './glyphs'
 import classes from './prose.module.css'
 
-export type HeadingAnchorProps = {
+export type HeadingAnchorProps = BasaltProps & {
   /** The heading's `id` — the fragment the copied URL points at. */
   readonly id: string
   /** Accessible name for the trigger. */
   readonly label?: string
 }
 
-export function HeadingAnchor({ id, label = 'Copy link to section' }: HeadingAnchorProps) {
+export function HeadingAnchor({
+  id,
+  label = 'Copy link to section',
+  className,
+  style,
+}: HeadingAnchorProps) {
   // Resolved at click time, never at render: the component is SSR-rendered (no `window`), and the
   // live search/pathname is the honest basis for the link a reader is asking to share.
   const resolveUrl = () => {
@@ -41,7 +48,11 @@ export function HeadingAnchor({ id, label = 'Copy link to section' }: HeadingAnc
   // The span owns placement + the hover reveal; CopyAction owns the affordance itself. It also
   // carries `data-heading-anchor`, which `TableOfContents` strips when reading a heading's label.
   return (
-    <span className={classes.headingAnchor} data-heading-anchor>
+    <span
+      className={cx(classes.headingAnchor, className)}
+      data-heading-anchor
+      {...(style !== undefined && { style })}
+    >
       <CopyAction
         value={resolveUrl}
         label="Copy link"

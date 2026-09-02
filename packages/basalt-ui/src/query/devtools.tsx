@@ -10,6 +10,7 @@ import type { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 const LazyDevtools = lazy(() =>
   import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools })),
 )
+Object.assign(LazyDevtools, { displayName: 'LazyDevtools' })
 
 /**
  * Lazy, production-excluded wrapper for ReactQueryDevtools. Safe to import unconditionally —

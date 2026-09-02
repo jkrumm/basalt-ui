@@ -23,6 +23,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import type { JSX, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import type { AgentThread } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { MOTION_SPRING } from '../motion'
 import type { ComposerSubmit } from './composer'
 import { ThreadFeedRow } from './thread-feed-row'
@@ -33,7 +36,7 @@ import { ThreadOutcomeCard } from './thread-outcome-card'
  * `onSend`'s doc for why an inert composer beats a live one that eats input. */
 function noopSend(): void {}
 
-export type ThreadFeedProps = {
+export type ThreadFeedProps = BasaltProps & {
   readonly threads: AgentThread[]
   /** The currently open thread id, or null when none is selected. */
   readonly activeId: string | null
@@ -113,7 +116,10 @@ export function ThreadFeed({
   variant = 'outcome',
   onSend,
   renderRow,
+  className,
+  style,
 }: ThreadFeedProps): JSX.Element {
+  assertRequiredProps('ThreadFeed', { threads }, ['threads'])
   const reduceMotion = useReducedMotion()
 
   // The inline row's own manual-collapse override — see `ThreadFeedProps.variant`'s doc. Only ever
@@ -149,7 +155,7 @@ export function ThreadFeed({
 
   if (reduceMotion) {
     return (
-      <ScrollArea style={{ height: '100%' }}>
+      <ScrollArea className={cx(className)} style={{ height: '100%', ...style }}>
         <Stack gap="sm" p="sm">
           {threads.map((thread) => (
             <Box key={thread.id}>{rowFor(thread)}</Box>
@@ -160,7 +166,7 @@ export function ThreadFeed({
   }
 
   return (
-    <ScrollArea style={{ height: '100%' }}>
+    <ScrollArea className={cx(className)} style={{ height: '100%', ...style }}>
       <Stack gap="sm" p="sm">
         <AnimatePresence mode="popLayout" initial={false}>
           {threads.map((thread) => (

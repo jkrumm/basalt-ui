@@ -27,6 +27,8 @@ export type { TableOfContentsProps, TocItem } from './toc'
 export { ReadingProgress } from './reading-progress'
 export type { ReadingProgressProps } from './reading-progress'
 
+// `SlugTracker` is a PascalCase utility class, not a component — see its own JSDoc `@remarks`
+// (isomorphic harness finding F-DET-1). `new SlugTracker()`, never `<SlugTracker />`.
 export { headingSlug, readingTime, SlugTracker } from './slug'
 export type { ReadingTime } from './slug'
 

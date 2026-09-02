@@ -26,14 +26,13 @@
  */
 import { lazy, Suspense } from 'react'
 import type { CSSProperties, JSX, ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
 import { VX } from '../tokens'
 
 // ── Lazy-loaded StickToBottom ─────────────────────────────────────────────────
 
-type WrapperProps = {
+type WrapperProps = BasaltProps & {
   children: ReactNode
-  className?: string
-  style?: CSSProperties
 }
 
 /** Plain scrollable container rendered when use-stick-to-bottom peer is absent. */
@@ -110,15 +109,12 @@ const LazyStickToBottom = lazy(() =>
     })
     .catch(() => ({ default: PlainContainerFallback })),
 )
+Object.assign(LazyStickToBottom, { displayName: 'LazyStickToBottom' })
 
 // ── BasaltStickToBottom ───────────────────────────────────────────────────────
 
-export type BasaltStickToBottomProps = {
+export type BasaltStickToBottomProps = BasaltProps & {
   readonly children: ReactNode
-  /** Applied to the scroll content container. */
-  readonly className?: string
-  /** Applied to the outer StickToBottom element. */
-  readonly style?: CSSProperties
 }
 
 /**
@@ -143,9 +139,11 @@ export function BasaltStickToBottom({
   if (className !== undefined) fallbackProps.className = className
   if (style !== undefined) fallbackProps.style = style
 
-  const lazyProps: WrapperProps = { children }
-  if (className !== undefined) lazyProps.className = className
-  if (style !== undefined) lazyProps.style = style
+  const lazyProps: WrapperProps = {
+    children,
+    ...(className !== undefined && { className }),
+    ...(style !== undefined && { style }),
+  }
 
   return (
     <Suspense fallback={<div {...fallbackProps}>{children}</div>}>

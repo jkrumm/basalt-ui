@@ -12,8 +12,8 @@
  *
  * `actions` and `tabs` are two separate `CtlSlot`-wrapped fragments rendered in the header row
  * (C1/C5) via `WidgetHeader`'s single `actions` slot; `tabs` hides while the section is collapsed.
- * `Section` holds ≤3 actions (C6) — past that, a dev-only console warning fires (the AST guard
- * lands in wave 6).
+ * `Section` holds ≤3 actions (C6) — past that, a dev-only `useValidateProps` message fires once per
+ * title (the AST guard lands in wave 6).
  *
  * `collapsible` state persists via `createPersistedState('basalt:section:<persistKey>')` when
  * `persistKey` is given, else it is local `useState` — the header always stays drawn, only the body
@@ -48,6 +48,10 @@
  */
 import { Children, useId } from 'react'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { BASALT_PREFIX } from '../common/errors'
+import { useValidateProps } from '../common/validate'
 import { CtlSlot } from '../theme'
 import { useFilterSurface } from '../controls/filter-context'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
@@ -55,43 +59,57 @@ import { WidgetHeader } from '../widget-header'
 import type { WidgetHeaderProps } from '../widget-header'
 import classes from './section.module.css'
 
-export type SectionProps = Omit<WidgetHeaderProps, 'tier'> & {
-  /** Rendered in the header row, in its own `CtlSlot` — hidden while the section is collapsed. */
-  tabs?: ReactNode
-  /** Renders a chevron toggle in the header; the header stays drawn when closed, only `children`
-   * (and `tabs`) unmount. @default false */
-  collapsible?: boolean
-  /** Persists the fold state at `basalt:section:<persistKey>`. Omit for a local, unpersisted fold
-   * (`useState`). */
-  persistKey?: string
-  /** The fold state a section opens on, respected only while no persisted value exists — a section
-   * a reader has closed stays closed. `false` is what a long secondary block wants. @default true */
-  defaultOpen?: boolean
-  /** Rendered directly under the header and ALWAYS visible, collapsed or not: a collapsed section
-   * still states its headline figures, which is what makes collapsing it a real option. Keep it to
-   * one row — the body is what `children` is for. */
-  summary?: ReactNode
-  /** Turns the root into a scroll anchor (`id` + `scroll-margin-top` cleared for both sticky bars). */
-  id?: string
-  children: ReactNode
-}
+/**
+ * The three boxes `Section` paints, and the whole styling seam it offers (`common/props.ts`):
+ * `root` is the outer stack, `header` is the `WidgetHeader` row, `body` is the collapsible content
+ * box. `summary` is deliberately absent — it is a one-row readout under the header, not a layout
+ * box a consumer positions.
+ */
+export type SectionSlot = 'root' | 'header' | 'body'
 
-/** The house dev gate (`data/data-table.tsx`, `provider`, `charts/kinds/BandStrip` use the same
- * expression): `basaltViteConfig` defines `process.env.NODE_ENV`, so a production bundle
- * constant-folds this to `false` and drops the warning. Read per call, never hoisted. */
-function isDev(): boolean {
-  return process.env['NODE_ENV'] !== 'production'
-}
+// `classNames` is omitted alongside `tier`: `WidgetHeader` publishes its OWN slot union now, and
+// intersecting the two would let a caller write `classNames={{ metric: … }}` on a `Section` and get
+// silence. Section's three slots are its whole styling contract; the header's own slots are reached
+// on a `WidgetHeader`.
+export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames'> &
+  BasaltProps &
+  SlotStylesProps<SectionSlot> & {
+    /** Rendered in the header row, in its own `CtlSlot` — hidden while the section is collapsed. */
+    tabs?: ReactNode
+    /** Renders a chevron toggle in the header; the header stays drawn when closed, only `children`
+     * (and `tabs`) unmount. @default false */
+    collapsible?: boolean
+    /** Persists the fold state at `basalt:section:<persistKey>`. Omit for a local, unpersisted fold
+     * (`useState`). */
+    persistKey?: string
+    /** The fold state a section opens on, respected only while no persisted value exists — a section
+     * a reader has closed stays closed. `false` is what a long secondary block wants. @default true */
+    defaultOpen?: boolean
+    /** Rendered directly under the header and ALWAYS visible, collapsed or not: a collapsed section
+     * still states its headline figures, which is what makes collapsing it a real option. Keep it to
+     * one row — the body is what `children` is for. */
+    summary?: ReactNode
+    /** Turns the root into a scroll anchor (`id` + `scroll-margin-top` cleared for both sticky bars). */
+    id?: string
+    children: ReactNode
+  }
 
-/** ≤3 actions is C6 (docs/CONTROLS-SPEC.md §1) — the AST guard (`basalt/page-bar-budget`) lands in
- * wave 6; this is the dev-only stopgap so the budget is visible before the lint rule exists. */
-function warnPastActionBudget(title: string, actions: ReactNode): void {
-  if (!isDev()) return
+/**
+ * ≤3 actions is C6 (docs/CONTROLS-SPEC.md §1) — the AST guard (`basalt/page-bar-budget`) lands in
+ * wave 6; this is the dev-only stopgap so the budget is visible before the lint rule exists.
+ *
+ * Returns the message rather than logging it, because it is a {@link useValidateProps} check now:
+ * it used to `console.warn` straight from the render body, which said it again on every keystroke
+ * that re-rendered the page. The title is IN the message on purpose — the dedup key is
+ * `${component} ${message}`, so two over-budget sections only both get heard because they name
+ * themselves.
+ */
+function actionBudgetMessage(title: string, actions: ReactNode): string | null {
   const count = Children.count(actions)
-  if (count <= 3) return
-  console.warn(
-    `Section "${title}": ${count} actions exceeds the ≤3 budget (docs/CONTROLS-SPEC.md C6) — ` +
-      'move the rest behind a menu.',
+  if (count <= 3) return null
+  return (
+    `${BASALT_PREFIX} Section "${title}": ${count} actions exceeds the ≤3 budget ` +
+    '(docs/CONTROLS-SPEC.md C6) — move the rest behind a menu.'
   )
 }
 
@@ -137,8 +155,32 @@ export function Section({
   summary,
   id,
   children,
+  className,
+  style,
+  classNames,
   ...headerProps
 }: SectionProps) {
+  const { title, actions } = headerProps
+
+  // Two dev-only checks, one hook — both are misuses that RENDER fine, which is what puts them in
+  // `useValidateProps` rather than in `assertRequiredProps`.
+  //
+  //  1. A `persistKey` with nothing to fold writes a localStorage key nobody ever reads back — the
+  //     shape a consumer lands on after deleting `collapsible` and leaving the key behind.
+  //  2. More than three header actions (C6). This used to `console.warn` from the render body, so a
+  //     page that re-rendered on every keystroke reprinted it every keystroke.
+  useValidateProps(
+    'Section',
+    () => [
+      persistKey !== undefined && !collapsible
+        ? `${BASALT_PREFIX} Section "${title}": \`persistKey\` is set but \`collapsible\` is ` +
+          'false — there is no fold to persist. Add `collapsible`, or drop `persistKey`.'
+        : null,
+      actions === undefined ? null : actionBudgetMessage(title, actions),
+    ],
+    [persistKey, collapsible, title, actions],
+  )
+
   const [open, setOpen] = usePersistedOrLocal({
     scope: 'section',
     persistKey,
@@ -151,8 +193,17 @@ export function Section({
   // the only surface that stays `section`.
   const tier = useFilterSurface() === 'pill' ? 'section' : 'group'
 
-  const { title, actions } = headerProps
-  if (actions !== undefined) warnPastActionBudget(title, actions)
+  // The anchor offset is Section's own, so the caller's `style` merges OVER it rather than
+  // replacing it — a consumer setting a margin must not silently drop the scroll offset.
+  const anchorStyle =
+    id === undefined
+      ? undefined
+      : {
+          scrollMarginTop:
+            'calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))',
+        }
+  const rootStyle =
+    anchorStyle === undefined && style === undefined ? undefined : { ...anchorStyle, ...style }
 
   const headerActions =
     tabs !== undefined || actions !== undefined || collapsible ? (
@@ -167,24 +218,20 @@ export function Section({
 
   return (
     <div
-      className={classes.root}
+      className={cx(classes.root, classNames?.root, className)}
       data-tier={tier}
       {...(id !== undefined && { id })}
-      {...(id !== undefined && {
-        style: {
-          scrollMarginTop:
-            'calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))',
-        },
-      })}
+      {...(rootStyle !== undefined && { style: rootStyle })}
     >
       <WidgetHeader
         tier={tier}
         {...headerProps}
+        {...(classNames?.header !== undefined && { className: classNames.header })}
         {...(headerActions !== undefined && { actions: headerActions })}
       />
       {summary !== undefined && <div className={classes.summary}>{summary}</div>}
       {open && (
-        <div id={bodyId} className={classes.body}>
+        <div id={bodyId} className={cx(classes.body, classNames?.body)}>
           {children}
         </div>
       )}

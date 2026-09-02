@@ -14,9 +14,11 @@
 import { Button, Drawer } from '@mantine/core'
 import { useId } from 'react'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import classes from './controls.module.css'
 
-export type FilterSheetProps = {
+export type FilterSheetProps = BasaltProps & {
   readonly opened: boolean
   readonly onClose: () => void
   /**
@@ -44,6 +46,8 @@ export function FilterSheet({
   onResetAll,
   title = 'Filters',
   children,
+  className,
+  style,
 }: FilterSheetProps): ReactNode {
   return (
     <Drawer
@@ -52,6 +56,8 @@ export function FilterSheet({
       position="bottom"
       radius="sm"
       classNames={{ header: classes.sheetHeader, title: classes.sheetTitle }}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       title={
         <>
           <span className={classes.sheetTitleText}>{title}</span>
@@ -222,7 +228,7 @@ export function SheetDisclosure({
   )
 }
 
-export type SheetFieldProps = {
+export type SheetFieldProps = BasaltProps & {
   readonly label: string
   /** Stamped on the heading so a control can point `aria-labelledby` at it — see `useControlName`. */
   readonly labelId?: string
@@ -230,9 +236,15 @@ export type SheetFieldProps = {
 }
 
 /** A labelled block inside the sheet — the sheet form's outer shell for every control. */
-export function SheetField({ label, labelId, children }: SheetFieldProps): ReactNode {
+export function SheetField({
+  label,
+  labelId,
+  children,
+  className,
+  style,
+}: SheetFieldProps): ReactNode {
   return (
-    <div className={classes.sheetField}>
+    <div className={cx(classes.sheetField, className)} {...(style !== undefined && { style })}>
       <span className={classes.sheetLabel} {...(labelId !== undefined && { id: labelId })}>
         {label}
       </span>

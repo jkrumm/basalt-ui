@@ -25,6 +25,8 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
+import type { BasaltProps } from '../common/props'
+import { cx } from '../common/props'
 import { VX } from '../tokens'
 import { resolveAction } from './define-notifications'
 import { useNotificationHistory } from './store'
@@ -150,7 +152,7 @@ function NotificationItem({
 
 // ── NotificationCenter ────────────────────────────────────────────────────────
 
-export type NotificationCenterProps = {
+export type NotificationCenterProps = BasaltProps & {
   /** Maximum height of the scrollable list. Default: 320px. */
   maxHeight?: number | string
 }
@@ -169,7 +171,7 @@ export type NotificationCenterProps = {
  *   </Popover.Dropdown>
  * </Popover>
  */
-export function NotificationCenter({ maxHeight = 320 }: NotificationCenterProps) {
+export function NotificationCenter({ maxHeight = 320, className, style }: NotificationCenterProps) {
   const { items, inbox, unreadCount, markRead, markAllRead, dismiss, dismissAll, remove, clear } =
     useNotificationHistory()
   const [view, setView] = useState<CenterView>('inbox')
@@ -178,7 +180,7 @@ export function NotificationCenter({ maxHeight = 320 }: NotificationCenterProps)
   const emptyLabel = view === 'inbox' ? "You're all caught up" : 'No notifications yet'
 
   return (
-    <Stack gap="xs" style={{ width: 320 }}>
+    <Stack className={cx(className)} gap="xs" style={{ width: 320, ...style }}>
       {/* Header: title + a single mark-all-read affordance (only when there's something unread) */}
       <Group justify="space-between" align="center" wrap="nowrap">
         <Text size="sm" fw={600}>

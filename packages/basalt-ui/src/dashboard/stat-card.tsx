@@ -96,10 +96,23 @@ import { WidgetHeader } from '../widget-header'
 import type { DeltaPolarity } from '../widget-header'
 import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
 import classes from './stat-card.module.css'
 
-/** A threshold verdict on the card's value. `undefined` is never tinted — see the module docblock. */
-export type StatCardTone = 'good' | 'warn' | 'bad'
+/**
+ * A threshold verdict on the card's value. `undefined` is never tinted — see the module docblock.
+ * Alias of the common `Tone` vocabulary (audit A13) — byte-identical, kept as its own name so a
+ * consumer's existing `StatCardTone` reference never breaks.
+ */
+export type StatCardTone = Tone
+
+/**
+ * The four boxes `StatCard` paints, and the whole styling seam it offers (`common/props.ts`).
+ * `value` is not its own slot: the hero number is painted by `WidgetHeader`'s internal metrics row,
+ * which does not yet accept a slot class of its own.
+ */
+export type StatCardSlot = 'root' | 'header' | 'body' | 'sparkline'
 
 /**
  * One row of a {@link StatCardProps.breakdown} — the two or three parts a hero number is made of.
@@ -189,89 +202,90 @@ const TONE_LABEL: Record<StatCardTone, string> = {
   bad: 'Past the severe threshold',
 }
 
-export type StatCardProps = {
-  /** Head-font title, rendered via `WidgetHeader tier="widget"`. */
-  title: string
-  /** Optional leading icon, forwarded to `WidgetHeader`. */
-  icon?: ReactNode
-  /** Muted line under the hero row, forwarded to `WidgetHeader` — the unit or basis a
-   * pre-formatted `value` cannot carry (`per day`, `of 40 planned`). Not a second metric. */
-  subtitle?: string
-  /** Info tooltip beside the title, forwarded to `WidgetHeader` — how the number is computed. Never
-   * part of the heading's accessible name; see `WidgetHeaderProps.info`. */
-  info?: string
-  /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. */
-  value: string
-  /** The value's unit, muted and mono at `--vx-text-sm`, immediately after it on the hero row —
-   * forwarded to `WidgetHeader`. `412` + `TSS`, not `"412 TSS"`: a unit painted at the hero's 24px
-   * reads as a second numeral. The BASIS (`7-day rolling`) is still `subtitle`; see
-   * `WidgetHeaderProps.unit`. */
-  unit?: string
-  /**
-   * The parts the hero number is made of — compact rows under it, one line each, no hairlines.
-   *
-   * It exists because three consumers wanted a KPI card that also SPLITS its number (revenue by
-   * channel, uptime by probe) and the only shapes basalt offered were a `subtitle` (one muted line,
-   * no second column) and a table. Both hand-rolled a card instead — which is the fork
-   * `shadow-basalt-export` reports as a `HeroCard`.
-   *
-   * Deliberately not a table and deliberately unruled: the divider law puts a hairline between
-   * OPTION rows and nowhere else (`docs/CONTROLS-SPEC.md` §2.1), and a KPI card that draws three
-   * of them stops reading as one card. Keep it to two or three rows — past that the card is a
-   * table, and a table is `BasaltDataTable` in a `Section`.
-   */
-  breakdown?: readonly StatCardBreakdownRow[]
-  /** Signed delta rendered via `DeltaBadge`; omit to hide the trend chip entirely. */
-  delta?: number
-  /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
-  deltaPeriod?: string
-  /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
-   * `polarity` via `WidgetHeader`. Defaults to `'up-good'` (today's behaviour). */
-  deltaPolarity?: DeltaPolarity
-  /**
-   * Formats `delta` into the chip's label — forwarded to `WidgetHeader` and on to `DeltaBadge`.
-   * Defaults to `${Math.abs(delta).toFixed(1)}%`.
-   *
-   * A delta is not always a percentage, and the default silently claimed it was: a pace card's trend
-   * (`0:12 /km`) and a speed card's (`0.3 km/h`) both rendered as `0.3%` — a wrong unit on a KPI is
-   * the one failure worse than no chip, and it is why the consumer that needed it kept the card
-   * hand-rolled instead (the `HeroCard` fork `shadow-basalt-export` reports).
-   *
-   * @example
-   * // An absolute delta that prints its own sign — no percent, no glyph saying it twice.
-   * <StatCard title="Pace" value="5:31" unit="/km" delta={-12}
-   *   deltaFormat={(s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`}
-   *   deltaGlyph={false} />
-   */
-  deltaFormat?: (delta: number) => string
-  /** Render the ▲/▼ glyph on the delta chip. Defaults to `true`; a zero delta never shows one. Pass
-   * `false` when `deltaFormat` prints the sign itself. */
-  deltaGlyph?: boolean
-  /**
-   * Optional trend visual. Either a node, or a RENDER PROP receiving the slot's measured box.
-   *
-   * Prefer the render prop for anything from `basalt-ui/charts`: those take numeric `width`/`height`
-   * (SVG attributes), so a plain node has to hardcode a width, and a hardcoded width is not
-   * full-bleed on any viewport but the one it was typed on. With `sparklinePlacement="bleed"` the
-   * measured width is the card's own inner width including the bled inset; with `'right'` it is the
-   * fixed 72×26 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why that one is not measured).
-   *
-   * @example
-   * sparkline={({ width, height }) => <BarSparkline data={history} width={width} height={height} />}
-   */
-  sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
-  /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
-   * `'right'` sits it beside the hero value row. Collapses to `'bleed'` below `sm`. */
-  sparklinePlacement?: 'bleed' | 'right'
-  /** Header-right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`, so a
-   * raw `ActionIcon` with no `size` lands on the 24px step the 28px header row holds (C1/C5). */
-  actions?: ReactNode
-  /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
-   * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
-   * is absent, and stays untinted so a card with nothing measured can never render green. Pass
-   * `'good'` only to assert a measured value that has earned the verdict. */
-  tone?: StatCardTone
-}
+export type StatCardProps = BasaltProps &
+  SlotStylesProps<StatCardSlot> & {
+    /** Head-font title, rendered via `WidgetHeader tier="widget"`. */
+    title: string
+    /** Optional leading icon, forwarded to `WidgetHeader`. */
+    icon?: ReactNode
+    /** Muted line under the hero row, forwarded to `WidgetHeader` — the unit or basis a
+     * pre-formatted `value` cannot carry (`per day`, `of 40 planned`). Not a second metric. */
+    subtitle?: string
+    /** Info tooltip beside the title, forwarded to `WidgetHeader` — how the number is computed. Never
+     * part of the heading's accessible name; see `WidgetHeaderProps.info`. */
+    info?: string
+    /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. */
+    value: string
+    /** The value's unit, muted and mono at `--vx-text-sm`, immediately after it on the hero row —
+     * forwarded to `WidgetHeader`. `412` + `TSS`, not `"412 TSS"`: a unit painted at the hero's 24px
+     * reads as a second numeral. The BASIS (`7-day rolling`) is still `subtitle`; see
+     * `WidgetHeaderProps.unit`. */
+    unit?: string
+    /**
+     * The parts the hero number is made of — compact rows under it, one line each, no hairlines.
+     *
+     * It exists because three consumers wanted a KPI card that also SPLITS its number (revenue by
+     * channel, uptime by probe) and the only shapes basalt offered were a `subtitle` (one muted line,
+     * no second column) and a table. Both hand-rolled a card instead — which is the fork
+     * `shadow-basalt-export` reports as a `HeroCard`.
+     *
+     * Deliberately not a table and deliberately unruled: the divider law puts a hairline between
+     * OPTION rows and nowhere else (`docs/CONTROLS-SPEC.md` §2.1), and a KPI card that draws three
+     * of them stops reading as one card. Keep it to two or three rows — past that the card is a
+     * table, and a table is `BasaltDataTable` in a `Section`.
+     */
+    breakdown?: readonly StatCardBreakdownRow[]
+    /** Signed delta rendered via `DeltaBadge`; omit to hide the trend chip entirely. */
+    delta?: number
+    /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
+    deltaPeriod?: string
+    /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
+     * `polarity` via `WidgetHeader`. Defaults to `'up-good'` (today's behaviour). */
+    deltaPolarity?: DeltaPolarity
+    /**
+     * Formats `delta` into the chip's label — forwarded to `WidgetHeader` and on to `DeltaBadge`.
+     * Defaults to `${Math.abs(delta).toFixed(1)}%`.
+     *
+     * A delta is not always a percentage, and the default silently claimed it was: a pace card's trend
+     * (`0:12 /km`) and a speed card's (`0.3 km/h`) both rendered as `0.3%` — a wrong unit on a KPI is
+     * the one failure worse than no chip, and it is why the consumer that needed it kept the card
+     * hand-rolled instead (the `HeroCard` fork `shadow-basalt-export` reports).
+     *
+     * @example
+     * // An absolute delta that prints its own sign — no percent, no glyph saying it twice.
+     * <StatCard title="Pace" value="5:31" unit="/km" delta={-12}
+     *   deltaFormat={(s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`}
+     *   deltaGlyph={false} />
+     */
+    deltaFormat?: (delta: number) => string
+    /** Render the ▲/▼ glyph on the delta chip. Defaults to `true`; a zero delta never shows one. Pass
+     * `false` when `deltaFormat` prints the sign itself. */
+    deltaGlyph?: boolean
+    /**
+     * Optional trend visual. Either a node, or a RENDER PROP receiving the slot's measured box.
+     *
+     * Prefer the render prop for anything from `basalt-ui/charts`: those take numeric `width`/`height`
+     * (SVG attributes), so a plain node has to hardcode a width, and a hardcoded width is not
+     * full-bleed on any viewport but the one it was typed on. With `sparklinePlacement="bleed"` the
+     * measured width is the card's own inner width including the bled inset; with `'right'` it is the
+     * fixed 72×26 slot (see {@link SPARKLINE_RIGHT_WIDTH} for why that one is not measured).
+     *
+     * @example
+     * sparkline={({ width, height }) => <BarSparkline data={history} width={width} height={height} />}
+     */
+    sparkline?: ReactNode | ((size: StatCardSparklineSize) => ReactNode)
+    /** Where `sparkline` sits. `'bleed'` (default) is today's full-width row bled to the card edges;
+     * `'right'` sits it beside the hero value row. Collapses to `'bleed'` below `sm`. */
+    sparklinePlacement?: 'bleed' | 'right'
+    /** Header-right slot (e.g. a ghost "..." menu trigger) — wrapped in `CtlSlot tier="widget"`, so a
+     * raw `ActionIcon` with no `size` lands on the 24px step the 28px header row holds (C1/C5). */
+    actions?: ReactNode
+    /** Threshold verdict — draws an accent rail down the card's leading edge and announces itself to
+     * assistive tech. Omitting it is NOT `'good'`: omitted covers a reading that is fine AND one that
+     * is absent, and stays untinted so a card with nothing measured can never render green. Pass
+     * `'good'` only to assert a measured value that has earned the verdict. */
+    tone?: StatCardTone
+  }
 
 export function StatCard({
   title,
@@ -290,6 +304,9 @@ export function StatCard({
   sparklinePlacement = 'bleed',
   actions,
   tone,
+  className,
+  style,
+  classNames,
 }: StatCardProps) {
   const isRender = typeof sparkline === 'function'
   const bleeds = sparklinePlacement === 'bleed'
@@ -299,6 +316,7 @@ export function StatCard({
 
   return (
     <Card
+      className={cx(classNames?.root, className)}
       style={{
         // Card inset = spacing xs / sm, matching every other basalt card. `overflow: hidden` clips
         // the full-bleed sparkline to the card's rounded corners; an element's own `box-shadow`
@@ -317,6 +335,7 @@ export function StatCard({
         // Anchors the tone rail. Set unconditionally so a card's stacking context does not change
         // depending on whether it happens to have crossed a threshold this render.
         position: 'relative',
+        ...style,
       }}
       data-tone={tone}
     >
@@ -343,8 +362,8 @@ export function StatCard({
         </>
       )}
 
-      <div className={classes.body} data-placement={sparklinePlacement}>
-        <div className={classes.header}>
+      <div className={cx(classes.body, classNames?.body)} data-placement={sparklinePlacement}>
+        <div className={cx(classes.header, classNames?.header)}>
           <WidgetHeader
             tier="widget"
             title={title}
@@ -393,7 +412,10 @@ export function StatCard({
         {sparkline !== undefined && (
           <div
             ref={slot.ref}
-            className={bleeds ? classes.sparklineBleed : classes.sparklineRight}
+            className={cx(
+              bleeds ? classes.sparklineBleed : classes.sparklineRight,
+              classNames?.sparkline,
+            )}
             {...(!bleeds && {
               // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats
               // every stylesheet rule, so an inline `flexBasis: 72` also applied below `sm` — where

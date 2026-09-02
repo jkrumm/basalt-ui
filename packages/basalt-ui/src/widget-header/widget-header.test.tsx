@@ -206,3 +206,54 @@ test('the sparkline slot carries a data-placement for a future bleed layout', ()
   const spark = screen.getByTestId('spark')
   expect(spark.closest('[data-placement]')?.getAttribute('data-placement')).toBe('right')
 })
+
+/**
+ * `className`/`style` on the root and the four-slot union (`common/props.ts`). Mantine-free, so
+ * `container.firstElementChild` really is the header's own root here — no injected `<style>` node
+ * ahead of it, unlike the Mantine-wrapped composers.
+ */
+describe('className, style and the classNames slots', () => {
+  test('className and style reach the root, and className never replaces the root class', () => {
+    const { container } = render(
+      <WidgetHeader
+        tier="section"
+        title="Revenue"
+        className="my-header"
+        style={{ marginTop: '3px' }}
+      />,
+    )
+    const root = container.firstElementChild as HTMLElement
+    expect(root.classList.contains('my-header')).toBe(true)
+    expect(root.getAttribute('data-tier')).toBe('section')
+    expect(root.getAttribute('style') ?? '').toContain('margin-top: 3px')
+  })
+
+  test('each slot class lands on the box it names', () => {
+    const { container } = render(
+      <WidgetHeader
+        tier="widget"
+        title="Active Users"
+        icon={<span data-testid="glyph">◆</span>}
+        value="12,483"
+        delta={4.2}
+        classNames={{
+          root: 'slot-root',
+          title: 'slot-title',
+          metric: 'slot-metric',
+          icon: 'slot-icon',
+        }}
+      />,
+    )
+    const root = container.firstElementChild as HTMLElement
+    expect(root.classList.contains('slot-root')).toBe(true)
+    expect(root.querySelector('h3.slot-title')?.textContent).toContain('Active Users')
+    expect(root.querySelector('.slot-metric')?.textContent).toContain('12,483')
+    expect(screen.getByTestId('glyph').closest('.slot-icon')).not.toBeNull()
+  })
+
+  test('an omitted classNames leaves every box on its own class alone', () => {
+    const { container } = render(<WidgetHeader tier="widget" title="Active Users" value="1" />)
+    expect(container.querySelector('.slot-root')).toBeNull()
+    expect(container.querySelector('h3')?.textContent).toContain('Active Users')
+  })
+})

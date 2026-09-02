@@ -12,13 +12,15 @@
  * `createAdapterThreadsStore` instance) so each case can assert one exact `{ hydrated, threads }`
  * combination without racing a real async adapter.
  */
-import { MantineProvider } from '@mantine/core'
+import { DEFAULT_THEME, MantineProvider } from '@mantine/core'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import type { AgentThread, AgentTransport, OutcomeResolver, ThreadsStore } from '../agent'
 import { createThreadsStore } from '../agent'
+import { ThreadDetailPanel } from './thread-detail-panel'
 import { ThreadWorkspace } from './thread-workspace'
+import type { ThreadWorkspaceProps } from './thread-workspace'
 
 afterEach(cleanup)
 
@@ -165,5 +167,93 @@ describe('ThreadWorkspace hydration gating', () => {
 
     expect(screen.getByText('No threads yet')).toBeDefined()
     expect(screen.queryByTestId('thread-workspace-hydrating')).toBeNull()
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the wide-layout root; classNames.feed reaches the feed pane', () => {
+    const { container } = withWideViewport(() =>
+      render(
+        <MantineProvider>
+          <ThreadWorkspace
+            useThreads={() => makeStore({ hydrated: true, threads: [] })}
+            transport={stubTransport}
+            resolveOutcome={stubResolveOutcome}
+            className="my-workspace"
+            classNames={{ feed: 'my-feed-pane' }}
+          />
+        </MantineProvider>,
+      ),
+    )
+    expect(container.querySelector('.my-workspace')).not.toBeNull()
+    expect(container.querySelector('.my-feed-pane')).not.toBeNull()
+  })
+
+  test('ThreadDetailPanel: className reaches the empty-state root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ThreadDetailPanel
+          thread={null}
+          onSend={noop}
+          onStop={noop}
+          onClose={noop}
+          className="my-detail-panel"
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-detail-panel')).not.toBeNull()
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('a missing `useThreads` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      render(
+        <MantineProvider>
+          <ThreadWorkspace
+            {...({
+              transport: stubTransport,
+              resolveOutcome: stubResolveOutcome,
+            } as unknown as ThreadWorkspaceProps)}
+          />
+        </MantineProvider>,
+      )
+    }).toThrow('[basalt] ThreadWorkspace: prop "useThreads" is required')
+  })
+})
+
+describe('the narrow breakpoint (shell/page-aside.tsx parity)', () => {
+  test('is derived from theme.breakpoints.sm, not a hardcoded pixel value', () => {
+    const recordedQueries: string[] = []
+    const original = window.matchMedia
+    window.matchMedia = (query: string): MediaQueryList => {
+      recordedQueries.push(query)
+      return {
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      } as MediaQueryList
+    }
+    try {
+      render(
+        <MantineProvider>
+          <ThreadWorkspace
+            useThreads={() => makeStore({ hydrated: true, threads: [] })}
+            transport={stubTransport}
+            resolveOutcome={stubResolveOutcome}
+          />
+        </MantineProvider>,
+      )
+    } finally {
+      window.matchMedia = original
+    }
+    expect(recordedQueries).toContain(
+      `(max-width: calc(${DEFAULT_THEME.breakpoints.sm} - 0.00625em))`,
+    )
   })
 })

@@ -9,6 +9,7 @@
 
 export { ConnectivityProvider } from './connectivity-provider'
 export { ConnectivityIndicator } from './connectivity-indicator'
+export type { ConnectivityIndicatorProps } from './connectivity-indicator'
 export { useConnectivity } from './use-connectivity'
 export type {
   ConnectivityStatus,

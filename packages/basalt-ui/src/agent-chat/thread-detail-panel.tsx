@@ -26,6 +26,8 @@ import { motion } from 'motion/react'
 import type { JSX } from 'react'
 import type { AgentPart, AgentThread, StreamStatus } from '../agent'
 import { BasaltStickToBottom } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { MOTION_SPRING } from '../motion'
 import { Composer } from './composer'
 import { ThreadTranscript } from './thread-message'
@@ -45,9 +47,9 @@ function CloseGlyph(): JSX.Element {
   )
 }
 
-function EmptyPanel(): JSX.Element {
+function EmptyPanel({ className, style }: BasaltProps): JSX.Element {
   return (
-    <Box p="xl" style={{ height: '100%' }}>
+    <Box p="xl" className={cx(className)} style={{ height: '100%', ...style }}>
       <Stack align="center" justify="center" gap={4} h="100%">
         <Text fw={550} style={{ fontFamily: 'var(--basalt-font-head)', fontStretch: '88%' }}>
           No thread selected
@@ -73,7 +75,7 @@ function threadLabel(thread: AgentThread): string {
   return text.length > 0 ? text : 'Untitled'
 }
 
-export type ThreadDetailPanelProps = {
+export type ThreadDetailPanelProps = BasaltProps & {
   /** The open thread, or null when nothing is selected (renders an empty-state hint). */
   readonly thread: AgentThread | null
   /** The live (in-flight) assistant turn's parts for this thread, if a run is streaming. */
@@ -105,15 +107,17 @@ export function ThreadDetailPanel({
   onStop,
   onClose,
   onRetry,
+  className,
+  style,
 }: ThreadDetailPanelProps): JSX.Element {
   const reduceMotion = useReducedMotion()
 
-  if (thread === null) return <EmptyPanel />
+  if (thread === null) return <EmptyPanel className={className} style={style} />
 
   const streaming = runStatus === 'streaming'
 
   const panel = (
-    <Flex direction="column" h="100%">
+    <Flex direction="column" h="100%" className={cx(className)} style={style}>
       <Flex p="sm" align="center" justify="space-between">
         <Text
           fw={550}

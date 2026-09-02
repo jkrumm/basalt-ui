@@ -24,6 +24,7 @@ import { useReducedMotion } from '@mantine/hooks'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { MOTION_SPRING } from '../motion'
+import type { BasaltProps } from '../common/props'
 
 type Scheme = 'light' | 'dark' | 'auto'
 
@@ -108,7 +109,7 @@ function SchemeGlyph({ dark, reduceMotion }: { dark: boolean; reduceMotion: bool
   )
 }
 
-export type ThemeToggleProps = {
+export type ThemeToggleProps = BasaltProps & {
   /** Delay (ms) before the direct-select popover opens on hover/focus. Default 150. */
   openDelay?: number
   /** Delay (ms) before it closes after the pointer/focus leaves. Default 200. */
@@ -120,7 +121,12 @@ function nextScheme(current: Scheme): Scheme {
   return CYCLE[(CYCLE.indexOf(current) + 1) % CYCLE.length]!
 }
 
-export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeToggleProps = {}) {
+export function ThemeToggle({
+  openDelay = 150,
+  closeDelay = 200,
+  className,
+  style,
+}: ThemeToggleProps = {}) {
   const { colorScheme, setColorScheme } = useMantineColorScheme()
   const resolved = useComputedColorScheme('dark')
   const reduceMotion = useReducedMotion()
@@ -151,7 +157,8 @@ export function ThemeToggle({ openDelay = 150, closeDelay = 200 }: ThemeTogglePr
         <ActionIcon
           variant="subtle"
           color="gray"
-          style={{ borderRadius: 'var(--vx-radius-ctrl)' }}
+          {...(className !== undefined && { className })}
+          style={{ borderRadius: 'var(--vx-radius-ctrl)', ...style }}
           aria-label={`Theme: ${LABEL[colorScheme]}. Click to cycle, hover to pick directly.`}
           onClick={() => setColorScheme(nextScheme(colorScheme))}
           onMouseEnter={scheduleOpen}

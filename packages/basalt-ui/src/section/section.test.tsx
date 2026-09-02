@@ -1,7 +1,8 @@
 /**
  * `Section` — the tier-2 heading composer (docs/CONTROLS-SPEC.md §2.2): the collapse contract
  * (persisted vs local, header stays drawn, body unmounts, tabs hide), the scroll-anchor style, and
- * the ≤3-actions dev warning (C6).
+ * the two dev-only misuse warnings (the ≤3-actions budget, C6, and a persistKey with no fold), plus
+ * the `className`/`classNames`/`style` contract from `common/props.ts`.
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -9,6 +10,7 @@ import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ReactElement } from 'react'
+import { resetValidatedProps } from '../common/validate'
 import { FilterSetScope } from '../controls/filter-context'
 import { Section } from './section'
 
@@ -146,14 +148,25 @@ describe('id — the scroll-anchor contract', () => {
   })
 })
 
-// Relies on the default test-runner NODE_ENV being non-production (`isDev()` true), matching
-// `data/data-table.test.tsx`'s manualPagination dev-throw tests — no explicit env override needed.
-describe('≤3 actions — the dev-only budget warning (C6)', () => {
+/**
+ * The two dev-only misuse warnings, both on `useValidateProps` — so both print through
+ * `console.error`, not `console.warn`, and both dedup on `${component} ${message}` in MODULE state
+ * that outlives a render, a remount and this file. `resetValidatedProps()` between cases is what
+ * keeps each test's expectation about its own render rather than about test order.
+ *
+ * Relies on the default test-runner NODE_ENV being non-production (`isDev()` true), matching
+ * `data/data-table.test.tsx`'s manualPagination dev-throw tests — no explicit env override needed.
+ */
+describe('the dev-only misuse warnings', () => {
+  beforeEach(() => {
+    resetValidatedProps()
+  })
+
   // `Children.count` (like every `Children.*` helper) does not recurse into a Fragment passed as
   // a single node — an ARRAY of actions is what the count actually sees, same shape a consumer
   // building the list programmatically would pass.
-  test('4 actions warns', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+  test('4 actions warns (C6)', () => {
+    const error = spyOn(console, 'error').mockImplementation(() => {})
     renderWith(
       <Section
         title="Usage"
@@ -166,13 +179,13 @@ describe('≤3 actions — the dev-only budget warning (C6)', () => {
         <div>body</div>
       </Section>,
     )
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(String(warn.mock.calls[0]?.[0])).toContain('≤3 budget')
-    warn.mockRestore()
+    expect(error).toHaveBeenCalledTimes(1)
+    expect(String(error.mock.calls[0]?.[0])).toContain('≤3 budget')
+    error.mockRestore()
   })
 
   test('3 actions does not warn', () => {
-    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    const error = spyOn(console, 'error').mockImplementation(() => {})
     renderWith(
       <Section
         title="Usage"
@@ -185,8 +198,89 @@ describe('≤3 actions — the dev-only budget warning (C6)', () => {
         <div>body</div>
       </Section>,
     )
-    expect(warn).not.toHaveBeenCalled()
-    warn.mockRestore()
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
+  test('a persistKey with no collapsible names the section and both props', () => {
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    renderWith(
+      <Section title="Usage" persistKey="usage">
+        <div>body</div>
+      </Section>,
+    )
+    expect(error).toHaveBeenCalledTimes(1)
+    expect(String(error.mock.calls[0]?.[0])).toBe(
+      '[basalt] Section "Usage": `persistKey` is set but `collapsible` is false — there is no ' +
+        'fold to persist. Add `collapsible`, or drop `persistKey`.',
+    )
+    error.mockRestore()
+  })
+
+  test('a persistKey WITH collapsible says nothing', () => {
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    renderWith(
+      <Section title="Usage" persistKey="usage" collapsible>
+        <div>body</div>
+      </Section>,
+    )
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+})
+
+/**
+ * `className` + the three slots (`common/props.ts`). A CSS module resolves to `''` under
+ * `bun test`, so each box is found by the class the CALLER passed, and the anchor style is what
+ * proves the merge ORDER: `style` merges OVER `Section`'s own `scroll-margin-top`, never replaces
+ * it, or a consumer setting one margin silently loses the anchor offset.
+ */
+/** `MantineProvider` prepends its own `<style>` nodes, so `container.firstElementChild` is one of
+ *  THOSE, not the section — `[data-tier]` is the root's own marker and the only honest handle. */
+function sectionRoot(container: HTMLElement): HTMLElement {
+  const root = container.querySelector('[data-tier]')
+  if (!(root instanceof HTMLElement)) throw new Error('expected a Section root')
+  return root
+}
+
+describe('className, classNames and the style merge order', () => {
+  test('classNames reach root, header and body, alongside className', () => {
+    const { container } = renderWith(
+      <Section
+        title="Revenue"
+        className="my-section"
+        classNames={{ root: 'slot-root', header: 'slot-header', body: 'slot-body' }}
+      >
+        <div>body</div>
+      </Section>,
+    )
+    const root = sectionRoot(container)
+    expect(root.classList.contains('my-section')).toBe(true)
+    expect(root.classList.contains('slot-root')).toBe(true)
+    expect(root.querySelector('.slot-header')).not.toBeNull()
+    expect(root.querySelector('.slot-body')?.textContent).toBe('body')
+  })
+
+  test("the caller's style merges over the anchor offset, and neither drops the other", () => {
+    const { container } = renderWith(
+      <Section title="Revenue" id="revenue" style={{ marginTop: '3px' }}>
+        <div>body</div>
+      </Section>,
+    )
+    const style = sectionRoot(container).getAttribute('style') ?? ''
+    expect(style).toContain('margin-top: 3px')
+    expect(style).toContain('--basalt-page-bar-h')
+  })
+
+  test('a caller-set scrollMarginTop WINS — the merge order is anchor first, caller last', () => {
+    const { container } = renderWith(
+      <Section title="Revenue" id="revenue" style={{ scrollMarginTop: '9px' }}>
+        <div>body</div>
+      </Section>,
+    )
+    const style = sectionRoot(container).getAttribute('style') ?? ''
+    expect(style).toContain('scroll-margin-top: 9px')
+    expect(style).not.toContain('--basalt-page-bar-h')
   })
 })
 

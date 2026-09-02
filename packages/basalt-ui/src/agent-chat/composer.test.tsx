@@ -922,3 +922,16 @@ describe('ComposerHandle (ref)', () => {
     })
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the root; classNames.input/actions reach their slots', () => {
+    const { container } = renderComposer({
+      onSubmit: noop,
+      className: 'my-composer',
+      classNames: { input: 'my-input', actions: 'my-actions' },
+    })
+    expect(container.querySelector('.my-composer')).not.toBeNull()
+    expect(container.querySelector('.my-input')).not.toBeNull()
+    expect(container.querySelector('.my-actions')).not.toBeNull()
+  })
+})

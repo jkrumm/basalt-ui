@@ -103,17 +103,17 @@ export type BasaltProviderProps = {
   connectivity?: Omit<ConnectivityProviderProps, 'children'>
   /**
    * @deprecated Use `connectivity={{ sseUrl }}` instead. Still honoured when `connectivity` is
-   * unset or omits `sseUrl`; removed in 1.28.0.
+   * unset or omits `sseUrl`; removed in 1.29.0.
    */
   sseUrl?: string
   /**
    * @deprecated Use `connectivity={{ healthUrl }}` instead. Still honoured when `connectivity` is
-   * unset or omits `healthUrl`; removed in 1.28.0.
+   * unset or omits `healthUrl`; removed in 1.29.0.
    */
   healthUrl?: string
   /**
    * @deprecated Use `connectivity={{ healthIntervalMs }}` instead. Still honoured when
-   * `connectivity` is unset or omits `healthIntervalMs`; removed in 1.28.0.
+   * `connectivity` is unset or omits `healthIntervalMs`; removed in 1.29.0.
    */
   healthIntervalMs?: number
 } & Omit<MantineProviderProps, 'children' | 'theme' | 'defaultColorScheme' | 'cssVariablesResolver'>

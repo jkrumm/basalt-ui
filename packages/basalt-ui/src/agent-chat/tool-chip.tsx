@@ -21,6 +21,9 @@ import { useDisclosure } from '@mantine/hooks'
 import type { JSX } from 'react'
 import { isToolCallSettled } from '../agent'
 import type { ToolCallPart } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { alpha, VX } from '../tokens'
 
 // Mirrors thread-message.tsx's micro-label/rail/code-block idiom (docs/DESIGN-SPEC.md §3/§5) —
@@ -96,7 +99,7 @@ function formatDuration(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`
 }
 
-export type ToolChipProps = {
+export type ToolChipProps = BasaltProps & {
   readonly part: ToolCallPart
   readonly defaultExpanded?: boolean
   /** Rendered only in 'approval-requested'. Omit both to render a read-only chip. */
@@ -119,7 +122,10 @@ export function ToolChip({
   defaultExpanded = false,
   onApprove,
   onDeny,
+  className,
+  style,
 }: ToolChipProps): JSX.Element {
+  assertRequiredProps('ToolChip', { part }, ['part'])
   const [expanded, { toggle }] = useDisclosure(defaultExpanded)
   const { label, dotToken } = stateMeta(part)
   const settled = isToolCallSettled(part)
@@ -128,7 +134,7 @@ export function ToolChip({
   const rawInput = part.state === 'output-error' ? part.rawInput : undefined
 
   return (
-    <Box style={RAIL_STYLE}>
+    <Box className={cx(className)} style={style ? { ...RAIL_STYLE, ...style } : RAIL_STYLE}>
       <Stack gap={4}>
         <UnstyledButton onClick={toggle}>
           <Group gap={6} align="center" wrap="nowrap">

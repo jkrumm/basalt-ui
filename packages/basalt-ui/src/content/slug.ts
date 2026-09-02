@@ -28,6 +28,10 @@ export function headingSlug(text: string): string {
  * Dedupes repeated slugs within one document — the second occurrence of a slug gets `-1`, the
  * third `-2`, and so on (matches github-slugger's own collision behavior). Create one instance
  * per document/render pass; it carries no global state.
+ *
+ * @remarks not a component — an ordinary PascalCase utility class on the `content` barrel
+ * (isomorphic harness finding F-DET-1). It carries no `prototype.isReactComponent` marker, so
+ * `new SlugTracker()`, not `<SlugTracker />`.
  */
 export class SlugTracker {
   private readonly counts = new Map<string, number>()

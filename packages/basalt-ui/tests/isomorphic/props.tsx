@@ -26,6 +26,7 @@ import type { ChartSeries } from '../../src/charts'
 import { scaleBand, scaleLinear, scalePoint } from '../../src/charts'
 import { DateRangePicker } from '../../src/controls-dates'
 import { createBasaltQueryClient } from '../../src/query'
+import { defineCommands } from '../../src/commands'
 import { createThreadsStore } from '../../src/agent'
 
 /* ----------------------------------------------------------------- fixtures */
@@ -88,6 +89,18 @@ const THREAD = {
 }
 
 const useIsoThreads = createThreadsStore({ key: 'isomorphic-smoke-threads', version: 1 })
+
+/**
+ * `ShortcutsHelp` has NO prop that makes it render — it reads the command registry, and an empty
+ * one returns `null`. So the fixture is a registration, not a `MINIMAL_PROPS` row: without it the
+ * className probe records "drops the class" for a component that painted no box at all.
+ *
+ * A module-level write to `defineCommands`' stash, which is safe precisely because nothing else in
+ * this package's tests reads or writes it (the palette/hotkey suites drive their own inputs).
+ */
+defineCommands({
+  'iso:save': { label: 'Save', group: 'File', shortcut: 'Mod+S', run: () => {} },
+})
 
 const isoTransport = {
   stream: (): never => {
@@ -322,7 +335,9 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   QueryClientProvider: { client: createBasaltQueryClient(), children: TEXT },
 
   /* --- forms --------------------------------------------------------------- */
-  FormErrorSummary: { form: { errors: {} } },
+  // An error is REQUIRED here: `errorEntries.length === 0` returns null, and the className probe
+  // would then be recording "drops the class" for a component that never rendered a box at all.
+  FormErrorSummary: { form: { errors: { email: 'Enter a valid address' } } },
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },
@@ -335,7 +350,9 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   TableOfContents: { items: [{ id: 'a', label: 'A', level: 2 }] },
   HeadingAnchor: { id: 'a' },
   GuideLink: { title: 'Guide', children: TEXT },
-  GuideDrawer: { opened: false, onClose: () => {}, title: 'Guide', children: TEXT },
+  // `opened: true` for the same reason `FormErrorSummary` carries an error — a closed Drawer paints
+  // nothing, so the probe would be measuring the empty branch.
+  GuideDrawer: { opened: true, onClose: () => {}, title: 'Guide', children: TEXT },
   MermaidDiagram: { code: 'graph TD; A-->B;' },
 
   /* --- agent / agent-chat --------------------------------------------------- */
@@ -421,123 +438,74 @@ export const EXPECTED_DEFECTS: Record<string, ExpectedDefect> = {}
  * gets proven: the test compares this record against the live probe in BOTH directions, so adding
  * `className` to a component turns the suite red until its line here is removed.
  *
- * Three kinds, because they are not the same finding:
+ * Four kinds, because they are not the same finding:
  * - `provider` — renders no box of its own (context, portal host, error boundary). Nothing to put
  *   a class on; not a gap.
  * - `svg` — paints SVG children only. A class would land on a `<g>`/`<rect>`, which is a different
  *   styling question from the chrome components' one.
- * - `gap` — a component that renders a real box and drops the class. THIS is C8: 79 of
- *   98 recorded exports, and the number that would need a shared `Props`/`HTMLDivProps`
- *   primitive (audit-blueprint.md §1) to fix at once rather than one prop type at a time.
+ * - `portal` — forwards the class CORRECTLY, onto a node the probe cannot see: the probe reads
+ *   `container.innerHTML`, and a Mantine `Modal`/`Drawer` renders into `document.body`. A harness
+ *   limit recorded as one, so it does not read as a component defect. Fixing it means teaching the
+ *   probe about `baseElement`, not editing the component.
+ * - `gap` — a component that renders a real box and drops the class. THIS is C8: 15 of the
+ *   remaining 35, now that the six `BasaltProps` adopter waves forward `className` across the rest
+ *   of the barrel.
  */
-export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'gap'> = {
-  ActionGroup: 'gap',
-  AppBreadcrumbs: 'gap',
-  AppSidebar: 'gap',
-  AreaGradient: 'svg',
-  ArticleGrid: 'gap',
-  AxisBottomDate: 'svg',
-  AxisLeftNumeric: 'svg',
-  AxisRightNumeric: 'svg',
-  BandStrip: 'gap',
-  BarSparkline: 'gap',
-  Bars: 'gap',
-  BasaltDataTable: 'gap',
+export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'> = {
+  // provider — renders no box of its own (context, portal host, error boundary); nothing to put a
+  // class on.
   BasaltErrorBoundary: 'provider',
   BasaltNotifications: 'provider',
   BasaltOverlays: 'provider',
   BasaltQueryDevtools: 'provider',
-  BasaltShell: 'gap',
-  BasaltVirtualList: 'gap',
-  CartesianChart: 'gap',
-  ChartCard: 'gap',
-  ChartCenter: 'gap',
   ChartCursorScope: 'provider',
-  ChartFrame: 'gap',
-  ChartLegend: 'gap',
-  ChartPending: 'gap',
-  ChartTooltipFloat: 'gap',
-  CompareFilter: 'gap',
-  Composer: 'gap',
-  ConnectivityIndicator: 'gap',
   ConnectivityProvider: 'provider',
+  QueryClientProvider: 'provider',
+  QueryErrorResetBoundary: 'provider',
+  VxThemeProvider: 'provider',
+
+  // svg — paints SVG children only; a class would land on a `<g>`/`<rect>`, a different styling
+  // question from the chrome components' one.
+  AreaGradient: 'svg',
+  AxisBottomDate: 'svg',
+  AxisLeftNumeric: 'svg',
+  AxisRightNumeric: 'svg',
   Crosshair: 'svg',
+  HatchPattern: 'svg',
+  HoverOverlay: 'svg',
+  SeriesDot: 'svg',
+  XZoneRects: 'svg',
+  ZoneRects: 'svg',
+
+  // portal — forwards the class onto a node outside the probe's container. Not a gap.
+  GuideDrawer: 'portal',
+
+  // gap — renders a real box and drops the class.
+  ActionGroup: 'gap',
+  AppBreadcrumbs: 'gap',
+  ArticleGrid: 'gap',
+  ChartTooltipFloat: 'gap',
   CtlSlot: 'gap',
-  DangerZone: 'gap',
   DateRangePicker: 'gap',
   DeltaBadge: 'gap',
   DeriveControls: 'gap',
-  Donut: 'gap',
-  DualPanel: 'gap',
-  EmptyState: 'gap',
-  ErrorState: 'gap',
-  FilterSet: 'gap',
-  FormErrorSummary: 'gap',
-  GuideDrawer: 'gap',
-  GuideLink: 'gap',
-  HatchPattern: 'svg',
-  HeadingAnchor: 'gap',
-  Heatmap: 'gap',
-  HoverOverlay: 'svg',
-  LineSparkline: 'gap',
-  LoadingState: 'gap',
-  MirroredBars: 'gap',
-  MobileNav: 'gap',
-  MultiLine: 'gap',
-  MultiSelectFilter: 'gap',
-  NavCountBadge: 'gap',
-  NotificationBell: 'gap',
-  NotificationCenter: 'gap',
-  NumberFilter: 'gap',
   OverflowMenu: 'gap',
-  PanelRow: 'gap',
   PartList: 'gap',
-  QueryClientProvider: 'provider',
-  QueryErrorResetBoundary: 'provider',
   QueryState: 'gap',
-  RangeFilter: 'gap',
-  ReadingProgress: 'gap',
-  SearchFilter: 'gap',
-  Section: 'gap',
-  SelectFilter: 'gap',
-  SeriesDot: 'svg',
-  SettingsRow: 'gap',
-  SettingsSection: 'gap',
-  ShortcutsHelp: 'gap',
-  SidebarAccount: 'gap',
-  SidebarSearch: 'gap',
-  SliderControl: 'gap',
-  StackedArea: 'gap',
-  StatCard: 'gap',
-  SyncButton: 'gap',
   ThemeLabControls: 'gap',
-  ThemeToggle: 'gap',
-  ThreadDetailPanel: 'gap',
-  ThreadFeed: 'gap',
-  ThreadFeedRow: 'gap',
-  ThreadOutcomeCard: 'gap',
-  ThreadTranscript: 'gap',
-  ThreadWorkspace: 'gap',
-  ToggleFilter: 'gap',
-  ToolChip: 'gap',
   TooltipBody: 'gap',
   TooltipHeader: 'gap',
   TooltipRow: 'gap',
-  ViewTabs: 'gap',
-  VxThemeProvider: 'provider',
-  WidgetHeader: 'gap',
-  XZoneRects: 'svg',
-  ZoneRects: 'svg',
-  ZonedLine: 'gap',
 }
 
 /**
- * `renderToString` casualties. The whole library server-renders inside its own provider tree —
- * this is the entire list, and it is one component.
+ * `renderToString` casualties. **Empty, and that is the assertion** — the whole library
+ * server-renders inside its own provider tree, and the test compares this ledger against what
+ * actually throws in BOTH directions, so a new portal-in-render lands here as a red test rather
+ * than as a consumer's SSR crash.
+ *
+ * It held exactly one entry, `ChartTooltipFloat` (F-SSR-1: an unconditional `createPortal`, which
+ * `react-dom/server` refuses outright). Deleting the entry IS how the fix is proven — see that
+ * component's `useIsClient` guard and `ChartTooltip.test.tsx`'s server-rendering block.
  */
-export const SSR_UNSUPPORTED: Record<string, string> = {
-  ChartTooltipFloat:
-    'F-SSR-1 — renders through `createPortal`, which the server renderer does not support. The ' +
-    'tooltip is a hover artifact with nothing to emit server-side, so the fix is a mount guard ' +
-    '(render the portal only after mount), not a rewrite.',
-}
+export const SSR_UNSUPPORTED: Record<string, string> = {}

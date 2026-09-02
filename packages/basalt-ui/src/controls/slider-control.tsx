@@ -39,10 +39,12 @@
 import { Slider } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, NumberField } from '../state'
 import { PanelRow } from './panel-row'
 
-export type SliderControlProps = {
+export type SliderControlProps = BasaltProps & {
   readonly field: FieldHandle<NumberField>
   /** The row's label, and the thumb's accessible name. */
   readonly label: string
@@ -74,15 +76,13 @@ export type SliderControlProps = {
   readonly disabled?: boolean
 }
 
-export function SliderControl({
-  field,
-  label,
-  hint,
-  format,
-  readout,
-  end,
-  disabled,
-}: SliderControlProps): ReactNode {
+export function SliderControl(props: SliderControlProps): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('SliderControl', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, label, hint, format, readout, end, disabled, className, style } = props
   const [value, setValue] = field.use()
   const draft = useDraggedNumber(value, setValue)
 
@@ -97,6 +97,8 @@ export function SliderControl({
       {...(hint !== undefined && { hint })}
       {...(end !== undefined && { end })}
       {...(disabled === true && { disabled: true })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <Slider
         // The tier, stated by the control the way every control on this subpath does

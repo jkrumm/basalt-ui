@@ -12,6 +12,9 @@ import { useState } from 'react'
 import type { AgentThread } from '../agent'
 import type { ComposerSubmit } from './composer'
 import { ThreadFeed } from './thread-feed'
+import type { ThreadFeedProps } from './thread-feed'
+import { ThreadOutcomeCard } from './thread-outcome-card'
+import type { ThreadOutcomeCardProps } from './thread-outcome-card'
 
 afterEach(cleanup)
 
@@ -237,5 +240,53 @@ describe('ThreadFeed inline variant — composer send channel', () => {
 
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
     expect(textarea.disabled).toBe(true)
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the ThreadFeed root', () => {
+    const { container } = renderFeed(
+      <ThreadFeed
+        threads={buildThreads()}
+        activeId={null}
+        onSelect={() => {}}
+        className="my-feed"
+      />,
+    )
+    expect(container.querySelector('.my-feed')).not.toBeNull()
+  })
+
+  test('className reaches the ThreadOutcomeCard root', () => {
+    const thread = buildThreads()[0]
+    if (thread === undefined) throw new Error('expected a thread')
+    const { container } = renderFeed(
+      <ThreadOutcomeCard
+        thread={thread}
+        selected={false}
+        onSelect={() => {}}
+        className="my-outcome-card"
+      />,
+    )
+    expect(container.querySelector('.my-outcome-card')).not.toBeNull()
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('ThreadFeed: a missing `threads` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      renderFeed(
+        <ThreadFeed {...({ activeId: null, onSelect: () => {} } as unknown as ThreadFeedProps)} />,
+      )
+    }).toThrow('[basalt] ThreadFeed: prop "threads" is required')
+  })
+
+  test('ThreadOutcomeCard: a missing `thread` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      renderFeed(
+        <ThreadOutcomeCard
+          {...({ selected: false, onSelect: () => {} } as unknown as ThreadOutcomeCardProps)}
+        />,
+      )
+    }).toThrow('[basalt] ThreadOutcomeCard: prop "thread" is required')
   })
 })
