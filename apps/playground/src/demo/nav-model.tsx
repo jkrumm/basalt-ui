@@ -169,8 +169,12 @@ export const NAV = defineNav({
           // a real route rather than inventing one. Deliberately NOT `/charts`: a placeholder
           // pointing at a route that owns a bar slot would make BOTH that slot and More read as
           // active on it, so it borrows the route of a sibling that already lives inside More.
+          // Deliberately NOT `/components` either (the previous choice): `use-nav`'s exclusivity
+          // pass already resolves a same-`to` collision correctly via its definition-order
+          // tie-break (`use-nav.test.tsx` covers that shape directly), but the real playground nav
+          // has no reason to carry a live duplicate `to` when a distinct route works just as well.
           disabled: true,
-          link: linkOptions({ to: '/components' }),
+          link: linkOptions({ to: '/mirrored-bars' }),
         },
       ],
     ),

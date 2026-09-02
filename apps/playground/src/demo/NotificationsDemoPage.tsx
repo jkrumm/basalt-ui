@@ -408,6 +408,8 @@ function HistoryPanel() {
         )}
       </Group>
       <Paper p="sm">
+        {/* `NotificationCenter` now defaults to `width: 100%` (M4) — it shrinks with the card here
+            with no override needed; `NotificationBell` fixes the 320px width at the Popover instead. */}
         <NotificationCenter maxHeight={260} />
       </Paper>
     </Stack>
