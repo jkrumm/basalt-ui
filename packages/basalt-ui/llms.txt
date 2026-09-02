@@ -23,7 +23,7 @@ Version: 1.28.0
 
 ## basalt-ui
 Import: import { ... } from 'basalt-ui'
-Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone)
+Description: BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query)
 Layer: mantine-coupled
 Rule: basalt-mantine
 OptionalPeers: react-markdown@^10.1.0, remark-gfm@^4.0.1, rehype-sanitize@^6.0.0, remend@1.3.0, shiki@^4.3.0, beautiful-mermaid@^1.1.0
@@ -56,23 +56,16 @@ Import: import { ... } from 'basalt-ui/guard'
 Description: checkSource, GUARD_RULES, Finding types — the headless theme-guard core
 Layer: headless
 
-## basalt-ui/query
-Import: import { ... } from 'basalt-ui/query'
-Description: createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools
-Layer: headless
-Rule: basalt-batteries
-OptionalPeers: @tanstack/react-query-devtools@^5.101.0
-
 ## basalt-ui/router-tanstack
 Import: import { ... } from 'basalt-ui/router-tanstack'
-Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; deprecated createSearchParamStore/createMultiSearchParamStore wrappers until 1.29.0)
+Description: TanStack Router bridge: defineNav/navGroup/navTarget (one typed nav definition) + useNav (sections + mobileNav, spread onto BasaltShell) + useBasaltNav (active route) + useRouterBreadcrumbs + createSearchStore (typed URL > localStorage > fallback store over field.enum/multi/range/number/boolean/string; the deprecated createSearchParamStore/createMultiSearchParamStore wrappers were removed in 1.29.0, C1 consolidation)
 Layer: headless
 Rule: basalt-state
 OptionalPeers: @tanstack/react-router@^1.170.0
 
 ## basalt-ui/forms
 Import: import { ... } from 'basalt-ui/forms'
-Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), the FormSection/FormRow/FormGroup/FormActions layout (FormRow is law C1’s form row), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)
+Description: Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning; the deprecated `field` alias for `inputProps` was removed in 1.29.0, C1 consolidation), the FormSection/FormRow/FormGroup/FormActions layout (FormRow is law C1’s form row), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema)
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @mantine/form@^9.3.0
@@ -90,13 +83,6 @@ Description: typed command bus + overlay controller, toSpotlightActions, Shortcu
 Layer: mantine-coupled
 Rule: basalt-batteries
 OptionalPeers: @mantine/spotlight@^9.3.0, @mantine/modals@^9.3.0, @tanstack/react-hotkeys@0.10.0
-
-## basalt-ui/data
-Import: import { ... } from 'basalt-ui/data'
-Description: Convenience barrel pulling both TanStack Table + Virtual peer groups: BasaltDataTable, BasaltVirtualList (Mantine-rendered) — prefer ./data/table or ./data/virtual for per-feature opt-in
-Layer: mantine-coupled
-Rule: basalt-batteries
-OptionalPeers: @tanstack/react-table@>=8 <9, @tanstack/react-virtual@>=3.13.26 <4
 
 ## basalt-ui/data/table
 Import: import { ... } from 'basalt-ui/data/table'
@@ -151,12 +137,6 @@ Import: import { ... } from 'basalt-ui/state'
 Description: createPersistedState (versioned localStorage) + the store field vocabulary (field.enum/multi/range/number/boolean/string, FieldHandle, lanes) + createLocalStore, the router-free store — Mantine-free state primitives
 Layer: headless
 Rule: basalt-state
-
-## basalt-ui/connectivity
-Import: import { ... } from 'basalt-ui/connectivity'
-Description: ConnectivityProvider (aggregates browser online/offline, React Query onlineManager, SSE, and health-check pings into one status), useConnectivity, and ConnectivityIndicator — auto-mounted by BasaltProvider
-Layer: mantine-coupled
-Rule: basalt-mantine
 
 ## basalt-ui/styles.css
 Asset: basalt-ui/styles.css

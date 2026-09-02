@@ -16,30 +16,33 @@ code. Mechanics live where they can't drift: **API shape → the JSDoc on the ex
 
 Named exports only — **no default exports**. Files `kebab-case`, components `PascalCase`.
 
-| Subpath                                    | Mantine? | Owns                                                                                                                                                                                                                               |
-| ------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.`                                        | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState`                                                              |
-| `./charts`                                 | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                                                                                                       |
-| `./tokens`                                 | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                                                                                           |
-| `./controls`                               | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl` |
-| `./controls-dates`                         | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam                                                                                                                                        |
-| `./state`                                  | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                                                                                               |
-| `./router-tanstack`                        | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                                                                                             |
-| `./query`                                  | **free** | `createBasaltQueryClient`, `unwrap`, lazy devtools, `toErrorMessage`/`errorStatus`                                                                                                                                                 |
-| `./forms`                                  | coupled  | `useBasaltForm`, `inputProps`, `FormErrorSummary`, `useFormDraft`                                                                                                                                                                  |
-| `./notifications`                          | coupled  | `notify` + the typed registry, persisted history, bell + center                                                                                                                                                                    |
-| `./commands`                               | coupled  | the typed command bus, overlay controller, Spotlight projection, `BasaltOverlays`                                                                                                                                                  |
-| `./data`, `./data/table`, `./data/virtual` | coupled  | `BasaltDataTable`, `BasaltVirtualList` (prefer the narrow subpaths)                                                                                                                                                                |
-| `./agent`                                  | **free** | the headless streaming layer: transports, `useAgentStream`, `useAgentThreadRuns`, threads store                                                                                                                                    |
-| `./agent-chat`                             | coupled  | the Mantine thread-chat chrome over `./agent` (also re-exported from `.`)                                                                                                                                                          |
-| `./content`                                | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                                                                                    |
-| `./connectivity`                           | coupled  | `ConnectivityProvider`, `useConnectivity`, `ConnectivityIndicator` — auto-mounted by the provider                                                                                                                                  |
-| `./theme-lab`                              | coupled  | `ThemeLabControls` (structural-token inspector) — identity tuning is `DeriveControls`                                                                                                                                              |
-| `./guard`                                  | **free** | `checkSource`, `GUARD_RULES`, `Finding`, the allow-annotation reader                                                                                                                                                               |
-| `./vite`                                   | —        | `basaltViteConfig` (config only, never `plugins`) + `basaltAppPlugin` (head/PWA/manifest)                                                                                                                                          |
-| `./styles.css`                             | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                                                                |
-| `./tokens.css`                             | **free** | the prebuilt `--vx-*` stylesheet for a consumer with no bundler, React or Mantine                                                                                                                                                  |
-| `./configs/*`, `./llms.txt`                | —        | raw toolchain presets (real paths — `extends` needs them); the machine-readable surface map                                                                                                                                        |
+| Subpath                          | Mantine? | Owns                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.`                              | coupled  | provider + theme factory, `BasaltShell` (sidebar / mobile nav / breadcrumbs / `PageBar` / `PageAside`), `Section`, `WidgetHeader`, dashboard composites, `QueryState`, `createBasaltQueryClient`/`unwrap` (C1: absorbed from the dropped `./query`), `ConnectivityIndicator`/`useConnectivity` (C1: absorbed from the dropped `./connectivity`, provider auto-mounts it) |
+| `./charts`                       | **free** | `CartesianChart` + the kinds, sparklines, chart hooks, and a token re-export                                                                                                                                                                                                                                                                                             |
+| `./tokens`                       | **free** | `VX`, `alpha`, `BP`/`p`, `buildPaletteCss`, `defineSeries`, `seriesTokens`, `groupTokens`, `chartMargin`                                                                                                                                                                                                                                                                 |
+| `./controls`                     | coupled  | the control tier — `FilterSet`, the `FieldHandle`-bound filters, `ViewTabs`, `ActionGroup`, `OverflowMenu`, `SyncButton`; three surfaces (`pill` / `sheet` / `panel`) plus the aside's row primitives `PanelRow` + `SliderControl`                                                                                                                                       |
+| `./controls-dates`               | coupled  | `DateRangePicker` only — the `@mantine/dates` implementation of `RangeFilter`'s picker seam. STAYS separate post-C1: inlining it would pull `@mantine/dates` into `./controls`                                                                                                                                                                                           |
+| `./state`                        | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                                                                                                                                                                                                                                     |
+| `./router-tanstack`              | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                                                                                                                                                                                                                                   |
+| `./forms`                        | coupled  | `useBasaltForm`, `inputProps`, `FormErrorSummary`, `useFormDraft`                                                                                                                                                                                                                                                                                                        |
+| `./notifications`                | coupled  | `notify` + the typed registry, persisted history, bell + center                                                                                                                                                                                                                                                                                                          |
+| `./commands`                     | coupled  | the typed command bus, overlay controller, Spotlight projection, `BasaltOverlays`                                                                                                                                                                                                                                                                                        |
+| `./data/table`, `./data/virtual` | coupled  | `BasaltDataTable`, `BasaltVirtualList` (narrow subpaths only — no bare `./data` barrel)                                                                                                                                                                                                                                                                                  |
+| `./agent`                        | **free** | the headless streaming layer: transports, `useAgentStream`, `useAgentThreadRuns`, threads store                                                                                                                                                                                                                                                                          |
+| `./agent-chat`                   | coupled  | the Mantine thread-chat chrome over `./agent` (also re-exported from `.`)                                                                                                                                                                                                                                                                                                |
+| `./content`                      | coupled  | `Prose`, `Markdown`, `CodeBlock`, `MermaidDiagram`, MDX map, `ArticleLayout`, the Article model                                                                                                                                                                                                                                                                          |
+| `./theme-lab`                    | coupled  | `ThemeLabControls` (structural-token inspector) — identity tuning is `DeriveControls`                                                                                                                                                                                                                                                                                    |
+| `./guard`                        | **free** | `checkSource`, `GUARD_RULES`, `Finding`, the allow-annotation reader                                                                                                                                                                                                                                                                                                     |
+| `./vite`                         | —        | `basaltViteConfig` (config only, never `plugins`) + `basaltAppPlugin` (head/PWA/manifest)                                                                                                                                                                                                                                                                                |
+| `./styles.css`                   | —        | `@layer basalt` base styles, the iOS input floor, the font stack — mandatory import                                                                                                                                                                                                                                                                                      |
+| `./tokens.css`                   | **free** | the prebuilt `--vx-*` stylesheet for a consumer with no bundler, React or Mantine                                                                                                                                                                                                                                                                                        |
+| `./configs/*`, `./llms.txt`      | —        | raw toolchain presets (real paths — `extends` needs them); the machine-readable surface map                                                                                                                                                                                                                                                                              |
+
+**C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` are dropped — 26 published subpaths
+→ 20. `section/` + `widget-header/` merged into `src/dashboard/` (internal only, no subpath
+change); `utils/`+`motion/`+`query/error-message` merged into `src/common/`. Full symbol mapping:
+`MIGRATING.md` § Unreleased.
 
 `src/surfaces.ts` is the SSOT behind that table, `llms.txt`, `AGENTS.md`, the oxlint boundary globs
 and the doctrine triad; `check-coverage` and `tests/{surfaces-coverage,agents-sync,llms-sync}.test.ts`
@@ -297,25 +300,29 @@ prop as a line saving.
   column); `meta.numeral` is read only as `!== false`, an opt-OUT.
 - **`manualPagination` imposes a contract** on sorting, filtering and the count, and an unresolved
   one throws in dev and degrades to the honest table in production. Not silent, by design.
-- Known, not shipped: `emptyState` renders inside a `<td colSpan>` counting the raw `columns` prop;
-  no `emptyState="replace"`; no row selection or expansion.
+- **Row selection shipped 1.28.0** — TanStack row-selection passthrough, `onRowActivate` and a
+  `bulkActions` bar. Known, still not shipped: `emptyState` renders inside a `<td colSpan>` counting
+  the raw `columns` prop; no `emptyState="replace"`; no row expansion.
 
 ## CLI
 
 One bin, **named like the package** so `bunx basalt-ui` can never resolve a stranger (an unrelated
-`basalt` exists on npm — never print `bunx basalt`): `init | sync | check-theme | check-coverage |
-info | doctor | guard-hook | tokens:css | fonts:css | help`. Each subcommand's mechanics live in its
-own JSDoc in `src/cli/index.ts`; what belongs here is the five properties that are easy to break:
+`basalt` exists on npm — never print `bunx basalt`): `init | sync | check-theme | doctor |
+guard-hook | tokens:css | fonts:css | help` (C2, 1.29.0: `info` is gone — nothing published it
+depended on; `check-coverage` moved to `bun scripts/check-coverage.ts`, a repo-internal script, not
+a CLI subcommand). Each subcommand's mechanics live in its own JSDoc in `src/cli/index.ts`; what
+belongs here is the properties that are easy to break:
 
 1. **Nothing fails open.** `--version`/`-v` resolve before dispatch and print one greppable line;
    every subcommand validates its flags against `COMMAND_FLAGS` and exits 1 naming the first it does
    not accept (`doctor --json` used to run doctor and exit 0); an unknown COMMAND says so above the
    usage block rather than dumping help and reading like a choice.
-2. **One resolver, announced.** `check-theme`/`doctor`/`sync` share `resolveProjectDir`:
-   `BASALT_CWD` → cwd → declared workspace packages → a two-level descend → an **ascend** to the
-   nearest ancestor carrying a basalt project, bounded by the repo root. Two candidates is reported
-   as ambiguous, never guessed. Before the ascend existed, `check-theme` FABRICATED `roots: ["src"]`
-   and reported the invention back under that name — 22 of 44 files scanned, exit 0, no note.
+2. **One resolver: `BASALT_CWD` → cwd, and a declared `basalt.roots` — nothing inferred** (C2
+   deletes the two-level descend and the ascend-to-nearest-ancestor fallback `check-theme`/`doctor`/
+   `sync` used to share). Two candidates is reported as ambiguous, never guessed. The pre-C2 ascend
+   existed because `check-theme` used to FABRICATE `roots: ["src"]` and report the invention back
+   under that name — 22 of 44 files scanned, exit 0, no note; the fix is a declared root, not a
+   smarter guess.
 3. **`sync` refreshes; `init` creates.** `sync` exits 1 rather than scaffolding a second consumer,
    and the refusal runs BEFORE the `basalt.roots` backfill, which was half the damage. It also
    **prunes the rule/skill files a newer basalt no longer ships** (the derived namespaces are the
@@ -381,20 +388,16 @@ hard-fail their build.
   boundary protects. That change also deleted basalt's own self-exemption for both kinds — basalt
   passes `check-theme` for the same reason a consumer does, not because it silenced itself.
 
-## Deprecation lifecycle — an export leaves over one minor, never over a major
+## Deprecation lifecycle — maintainer mechanics (consumer-facing summary: `basalt-batteries.md`)
 
 Majors are banned, so a version number can never tell a consumer a name went away. The sunset runs
-through four artifacts instead, and all four land in the SAME commit:
-
-1. **The export stays shipped**, `@deprecated` in its JSDoc, delegating to the replacement.
-2. **A row in `DEPRECATED_EXPORTS`** (`configs/oxlint-plugin.js`) — `{ subpath, name, replacement,
-removeIn }`, plus `prop` when what is deprecated is a JSX attribute rather than a named export.
-   `basalt/deprecated-export` reads it and nudges every import and every prop, with an autofix on
-   the import rename that keeps the LOCAL binding (`{ inputProps as field }`), so no call site has
-   to move in the same edit.
-3. **A `MIGRATING.md` row** under `## Unreleased`, naming the replacement and the `removeIn` minor.
-4. **A `removeIn` at least one minor out**, pinned by `oxlint-plugin.test.ts`. Deprecating in 1.28.0
-   means removing in 1.29.0 at the earliest.
+through four artifacts instead, and all four land in the SAME commit: the export stays shipped
+(`@deprecated` JSDoc, delegating to the replacement), a row in `DEPRECATED_EXPORTS`
+(`configs/oxlint-plugin.js` — `{ subpath, name, replacement, removeIn }`, plus `prop` for a JSX
+attribute) that `basalt/deprecated-export` reads to nudge every import/prop with an autofix
+preserving the LOCAL binding (`{ inputProps as field }`), a `MIGRATING.md` row under `##
+Unreleased`, and a `removeIn` at least one minor out (pinned by `oxlint-plugin.test.ts` —
+deprecating in 1.28.0 means removing in 1.29.0 at the earliest).
 
 `basalt/deprecated-export` is **permanently `warn`** (`PLUGIN_RULE_ADVISORY`), and that is the whole
 difference between this mechanism and the grace one above. A grace entry promotes because the code
@@ -469,13 +472,19 @@ Majors are banned, so the version number can never warn a consumer their charts 
 `agent/**` ships in the tarball and is placed into a consumer's `.claude/` by `init`/`sync` — Claude
 Code cannot load rules or skills from `node_modules`, which is the only reason anything is copied.
 
-- **Six rules, three skills, two templates**, with budgets enforced by `check-coverage`: rules
-  ≤1,050 lines total (tokens 160 / mantine 180 / charts 140 / state 160 / controls 185 /
-  batteries 220), skills ≤100 each, `CLAUDE-block.md.tpl` 40, `DESIGN.md.tpl` 45. Thirteen files
-  carried 4,177 lines, 55% of it unguarded, with the identity paragraph restated six times.
+- **Six rules, three skills, two templates**, with budgets enforced by `scripts/check-coverage.ts`
+  (C2, 1.29.0: moved off the CLI). Consolidation wave (C4, 2026-09-02) target `AGENT_RULE_TOTAL_BUDGET`
+  ≤620 (tokens ≤130 / mantine ≤110 / charts ≤95 / state ≤100 / controls ≤120 / batteries ≤85);
+  **landed at 744** (tokens 139 / mantine 122 / charts 111 / state 121 / controls 154 /
+  batteries 97) — the C1-C16 laws table and the homes table in `basalt-controls.md` are markdown
+  tables (one row per law, not compressible by line-count) and the agent-chat WHY block moved into
+  `basalt-batteries.md` per this wave's own brief, both pushing past the stretch target; set the
+  ceiling from the landed numbers, not the target, or the next edit fails CI on day one. Thirteen
+  files carried 4,177 lines pre-consolidation, 55% of it unguarded, with the identity paragraph
+  restated six times.
 - **Every rule file opens with a GENERATED `<!-- basalt:coverage -->` block** —
-  `basalt-ui check-coverage --write` renders it from `SURFACES` (the union over every surface sharing
-  that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
+  `bun scripts/check-coverage.ts --write` renders it from `SURFACES` (the union over every surface
+  sharing that `rule`), `--check` is the CI gate, and a block that DISAGREES is a hard failure. `not guarded`
   is printed even when empty, because a rule claiming full coverage is a claim someone can check.
 - **Say each thing once**: the identity and the `theme-allow` grammar live in `basalt-tokens.md`, the
   precedence in `CLAUDE-block.md.tpl`, the overlay mount in `basalt-mantine.md`, the Eden footguns in

@@ -444,7 +444,7 @@ The `field.*` store builder (`basalt-ui/state`, `basalt-ui/router-tanstack`) is 
 ### Shell — region seams, and what moved with them
 
 **Every `AppShell` region now ends in a real, themed 1px `--vx-divider` line on its Main-facing
-edge, with no opt-out** (`docs/DESIGN-SPEC.md` §5 "Region seams", §8 inversion #12): sidebar|main
+edge, with no opt-out** (`docs/MANTINE-THEMING.md` § Chrome integration): sidebar|main
 (full height, under `layout="alt"` it owns the top-left corner), header|main (main column only),
 main|aside (full height, absent when the aside is unclaimed), main|mobile-nav (below `sm`). Mantine
 draws all four itself through `[data-with-border]`; the colour is one theme var,
@@ -879,6 +879,52 @@ Three rendering changes ride along, all visible without any code change:
   `12ch`, capped at `100%`). The field still resolves to 220px wherever 220 fits and still never
   grows with the table; below that the search and the pills wrap onto their own lines.
 
+### Consolidation (targeting 1.29.0)
+
+**Dropped subpaths — three, all folded into `.`/`./provider`, none deleted outright.**
+
+<!-- C1 symbol list -->
+
+- `./query` — dropped. `createBasaltQueryClient`, `unwrap` now on `.` (root barrel). Import from
+  `basalt-ui` instead of `basalt-ui/query`.
+- `./connectivity` — dropped. `ConnectivityProvider` (auto-mounted by `BasaltProvider`, no
+  consumer-side import needed), `useConnectivity`, `ConnectivityIndicator` now on `.`.
+- `./data` (bare) — dropped. It never carried its own exports beyond re-exporting `./data/table`
+  and `./data/virtual` — import the narrow subpath you need directly; nothing renamed.
+- `./controls-dates` — **unaffected**, stays a separate subpath (inlining it into `./controls`
+  would pull `@mantine/dates` into a subpath that must resolve without it).
+
+**Deleted `@deprecated` shims** (every one slated for 1.29.0 removal in an earlier minor's
+deprecation row — see that minor's own `MIGRATING.md` section for the original `@deprecated`
+annotation and rationale):
+
+- `state.ts`'s legacy connectivity export — use `./provider`'s `useConnectivity` instead.
+- `ZonedLine`/`Bars`' `ZoneSpec` aliases — use the canonical `AxisConfig`-scoped zone type each
+  kind now exports directly.
+- `inputProps`'s `key` return field (already shape-changed in an earlier Unreleased entry above) —
+  fully removed this minor; use `fieldKey(form, name)` alongside `inputProps(form, name)`.
+
+**On notice for 1.30.0** — a public export with exactly one consumer (the playground) as of this
+audit. Adopt-or-delete: gains a real consumer by 1.30.0 or is removed. Not a promise either way;
+record your adoption in `docs/ARGO-MIGRATION-LEARNINGS.md` if you pick one up.
+
+- **Threads/agent-chat composite tier**: `ThreadWorkspace`, `ThreadFeed`, `ThreadFeedRow`,
+  `ThreadDetailPanel`, `ThreadOutcomeCard`, `ThreadsStoreAdapter`, `createThreadsStore`,
+  `createAdapterThreadsStore`, `threadsStoreAdapterContract`, `threadPartRenderers`,
+  `definePartRenderers`.
+- **Chart kind**: `Heatmap` only — `DualPanel` has an argo consumer and `MirroredBars`/`BandStrip`
+  are consumed by linewatch, so those three are NOT on notice.
+- **Nav/shell**: `PageAside`, `PanelRow`, `SettingsRow` (playground-only as of this audit).
+- **Controls**: `SliderControl`, `SearchFilter`, `ToggleFilter`, `CompareFilter`, `OverflowMenu`,
+  `ControlGroup`.
+
+**`common/**`— the public common primitives, as a unit.**`src/common/\*\*`(shipped from the
+maturation round) is now the one place base prop/error/ref vocabulary lives:`BasaltProps`,
+`SlotStylesProps`, `cx`, `mergeRefs`/`assignRef`, the prefixed `errors.ts` table
+(`toErrorMessage`/`errorStatus`), `useValidateProps`, `assertRequiredProps`. Every basalt component
+extends `BasaltProps`for its own prop type rather than redeclaring`className`/`style`; a consumer
+composing over a basalt component should do the same.
+
 ## 1.26.0 — the control tier, the page bar and the store
 
 **One export removed and two deprecated — see § Stores below; two shell PROPS removed — see
@@ -1259,7 +1305,7 @@ homes rather than shipped repo-wide. `basalt/shadow-basalt-export` gains a renam
 → `StatCard`), so a fork that RENAMED the export is visible too. It stays a permanent advisory
 `warn`.
 
-**`profile: 'tokens-only'` now disables 19 kinds, not 17** — both new kinds are Mantine-coupled.
+**`profile: 'tokens-only'` now disables 18 kinds** — Mantine-coupled kinds, count as of this write (drifts release to release; `TOKENS_ONLY_DISABLED_KINDS.size` in `src/guard/index.ts` is ground truth, this table isn't).
 
 **`SURFACES` gains `pluginRules`** (`src/surfaces.ts`, internal — not a published subpath): every
 doctrine surface names the oxlint rules that enforce it, every registered rule maps to exactly one
@@ -1944,7 +1990,7 @@ with the whole lint half off).
 
 | Surface                                                          | Note                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 19 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                                                               |
+| `basalt.profile: 'tokens-only'` / `--tokens-only`                | disables the 18 kinds whose remedy is a Mantine component, prop or the React theme factory. `check-theme` requires it DECLARED; `doctor` infers it, because its profile only changes advice, never enforcement                                                                                                                                                                                                                               |
 | `basalt.include: [...]`                                          | scan a named file outside `roots` — and the only route to a `.json`, which is never blanket-scanned                                                                                                                                                                                                                                                                                                                                          |
 | `basalt.roots` + a `lint:basalt` script                          | written by `init` from the real layout; `init` on an existing app is a lint-debt event, not a no-op                                                                                                                                                                                                                                                                                                                                          |
 | `tokens:css --check`, `--selector-class <c>` (+ `--light-class`) | drift gate; the Tailwind `<html class="dark">` convention. There is no `scheme: { class }` API — the class form is CLI-only                                                                                                                                                                                                                                                                                                                  |
