@@ -59,6 +59,53 @@ What is new, one line each — nothing here renames or removes anything:
   `control-outside-home` matches raw Mantine tags only, so this half of law C1 was unguarded. Homes
   are the slot props plus the `FilterSet` / `PageAside` / `PanelRow` subtrees; the escape is
   `theme-allow bound-control-outside-home — <why>`.
+- **The chart phone tier** (`basalt-ui/charts`) — `resolveChartTier` / `chartTierMetrics` /
+  `useChartTier` / `useChartTierMetrics`, plus `VX.phoneChartWidth` (480). Below that MEASURED
+  container width (never a media query — a chart in a narrow grid cell on a desktop is as narrow as
+  one on a phone) a chart drops the legend and tick fonts one type step, tightens the `VX.margin`
+  FLOORS to 0.75×, shrinks the crosshair dot, narrows the tooltip 140 → 110, and caps the legend at
+  two entries with a `+N more` rollup. **This moves rendering, but only below 480px of measured
+  width** — nothing at desktop width changes. Opt back out per chart with an explicit
+  `legend.maxRows` / `margin` override. `docs/CHARTS-SPEC.md` §8.
+- **`xLabelRotate` accepts `0`**, and left UNSET now auto-rotates to 45 at the phone tier when the
+  measured labels cannot fit three ticks side by side. `0` is the documented opt-out. Also on every
+  rotated axis, at every width: the LEFT margin now clears the rotated label's leftward projection
+  (`width × cos(angle)`), which previously ran the first label off the plot, and `smartTicks` drops
+  the grid tick before an appended final one when the two would overlap. Both are corrections to
+  §1's measured-gutter law, so a rotated or a densely-labelled axis will lay out slightly
+  differently; an explicit `margin` / `xTicks` / `xTickValues` still wins.
+- **`SeriesStyle.curve`** (`basalt-ui/charts`) — `'monotone' | 'linear' | 'step' | 'stepAfter' |
+'stepBefore'`, plus the `curveFor` mapper and the newly re-exported `curveStep`/`curveStepBefore`.
+  Default `'monotone'`, which is what every kind hard-coded, so an omitted `curve` moves nothing.
+  Honoured by `MultiLine`, `DualPanel`, `ZonedLine`, `StackedArea` and `BarsLine.curve`. Two of
+  those read ONE curve for a whole shape rather than one per series: `ZonedLine` takes the PRIMARY
+  series' (its band, area and line are one reading), and `StackedArea` takes the TOPMOST VISIBLE
+  band that declares one — the last such entry in your `series` array (`AreaStack`'s bands share
+  their boundaries, so two curves would leave gaps between them). A hidden band's curve is ignored
+  either way, so a legend toggle can hand a stack to the next declarer down.
+- **Number formatters** (`basalt-ui/charts`) — `fmtCompact`, `fmtPercent`, `fmtCurrency`, `fmtInt`
+  and the `formatters` bundle, all `Intl`-backed with an explicit `locale` defaulting to the
+  runtime's. `utils/format.ts` shipped only two DATE formatters, so every call site hand-rolled
+  `` `$${v}k` ``. **Every formatter — the two date ones included — now returns an em dash for
+  non-finite input** (`NaN`, `±Infinity`, an `Invalid Date`) instead of `Intl`'s own `NaN` / `∞`.
+  A collapsed domain therefore stops painting its arithmetic accident as a tick label.
+- **`ChartEmpty` / `ChartError` / `state` / `resolveChartState`** (`basalt-ui/charts`) — the chart
+  layer's own three-state placeholder set. `state?: { pending?, error?, empty? }` on
+  `CartesianChart` / `ChartFrame` / every kind resolves pending → error → empty, so a consumer no
+  longer needs the Mantine-coupled `QueryState` (unreachable from `./charts`) to tell a 500 apart
+  from an empty result. **`isPending` still works and is not deprecated** — it is an alias for
+  `state={{ pending: true }}`. `ChartError` announces as `role="alert"`; `ChartPending` and
+  `ChartEmpty` as `role="status"`, so a screen reader hears the resolution and not only the failure.
+- **`BasaltProps` on every exported chart component** — `className` and `style` now reach the root
+  element of every kind, sparkline and primitive; `ChartCard` also takes
+  `classNames={{ root, header, body }}`. Additive: a component that ignored `className` now honours
+  it, so a stylesheet that previously had no effect starts having one.
+- **`ChartTooltipFloat` server-renders.** It was the one `renderToString` casualty in the package
+  (an unconditional `createPortal`); it now emits nothing on the server and is unchanged in the
+  browser. Consumers carrying an SSR workaround around a chart tooltip can drop it.
+- **`BREAKPOINTS`** (`basalt-ui/tokens`) — `{ article: 1200 }`. The one `@media` literal in the
+  package that was not derived from anything now has a named, testable counterpart; a `@media`
+  condition cannot read a custom property, so the literal stays and a test holds the two together.
 - **`theme-lab/boot.ts`** — `applyOverrides`/`loadOverrides`/`readVar` moved into their own
   Mantine-free, SSR-safe module (no-op / empty result with no `document`, instead of throwing).
   `basalt-ui/theme-lab` still resolves all three, unchanged, alongside `ThemeLabControls` and
@@ -71,24 +118,83 @@ What is new, one line each — nothing here renames or removes anything:
   straight through to the auto-mounted `ConnectivityProvider`. Reaches `override` for the first
   time (the only prior route was mounting a second, shadowing `ConnectivityProvider`) — see
   § BasaltProvider below.
+- **Five new oxlint rule ids, all `warn`** — `basalt/provider-above-router`,
+  `basalt/duplicate-notifications-mount`, `basalt/query-dual-import`, `basalt/query-fn-unwrap`
+  (grace to 1.30.0) and `basalt/deprecated-export` (permanently advisory). The first four guard
+  four doctrines that shipped stated-but-unguarded under a `not guarded:` banner — the provider/
+  router mount order, the `BasaltOverlays` XOR `BasaltNotifications` double-mount, the
+  `basalt-ui/query` import seam, and `queryFn` wrapping in `unwrap()`. Each is honest about its
+  reach in its own message and its grace entry: all four read ONE file, and the two query rules
+  carry a documented text heuristic. Escape with `theme-allow <rule> — <why>` as usual. Nothing
+  fails a build: every one is `warn` in the shipped preset.
+- **`basalt/deprecated-export`** — nudges an import or a prop basalt has deprecated but still ships,
+  reading the `DEPRECATED_EXPORTS` ledger beside the plugin. Today that is `field` from
+  `basalt-ui/forms` (autofixed to `inputProps as field`, so no call site moves) and the three
+  flattened `BasaltProvider` connectivity props. Permanently `warn` — a deprecation is a schedule,
+  not a defect.
 - **Dev-only duplicate-mount warnings** — `BasaltProvider` now warns when a second instance mounts
   while the first is still mounted; `<BasaltOverlays notifications />` and `<BasaltNotifications />`
   now warn when BOTH are mounted at once (previously prose-only in both cases). Both are
   `console.warn`, dev builds only, no behavior change.
+- **`WidgetHeader` and `QueryState` gained slot classes** — `classNames={{ root, title, metric,
+icon }}` on the first, `classNames={{ root }}` on the second (the branch that is live). Additive.
+  `Section` now OMITS `classNames` from the `WidgetHeaderProps` it re-publishes, so its slot union
+  stays exactly `root | header | body` — a `<Section classNames={{ metric: … }}>` that used to
+  type-check (and do nothing) is now a compile error. Reach the header's own slots on a
+  `WidgetHeader`.
+- **`Callout` extends `BasaltProps`** — `className`/`style` were already accepted and are now the
+  shared members, so `exactOptionalPropertyTypes` consumers can forward an `string | undefined`
+  through. No rendering change.
+- **`PageAside` throws on a missing `title`** — it is both the header text and the region's
+  `aria-label`, so an omitted one shipped a nameless landmark rather than a crash. Now
+  `[basalt] PageAside: prop "title" is required — …`, in every build. `title` was never optional in
+  the type; this only reaches untyped JS and runtime-built props objects.
+- **`BasaltDataTable` warns (dev only) when `stickyHeaderOffset` meets `maxHeight`/`minWidth`** —
+  the offset has always been DROPPED there (the sticky `<thead>` anchors to the scroll container's
+  own top edge, not the window). The behaviour is unchanged; it just says so now.
+
+### `BasaltDataTable` — the root is a `<div>`, not a Fragment
+
+**One structural change, no prop change.** The component returned a Fragment, so the header row, the
+table (or its scroll container) and the pagination bar were DIRECT CHILDREN of whatever the caller
+rendered it into. It now always renders a wrapper:
+
+```html
+<div class="{classNames.root} {className}" style="{style}">
+  …header row… …table / Table.ScrollContainer… …pagination bar…
+</div>
+```
+
+A `className` needs a root to live on (`common/props.ts`), and a Fragment has none — so the wrapper
+is what `className`, `style` and `classNames.root` all resolve against. It is unconditional: a table
+with no title, no toolbar and no pagination still renders it.
+
+**What breaks:** any CSS or test selector written against the OLD flat structure. A
+`.page-grid > table`, a `:first-child` rule aimed at the table, an `:nth-child` counting the header
+row and the pagination bar as siblings of your own content, or a flex/grid parent that laid those
+three boxes out itself — all now see one child. Target the wrapper instead, and give it the layout:
+
+```css
+/* before */ .page-grid > table { … }
+/* after  */ .page-grid > div > table { … }   /* or: <BasaltDataTable classNames={{ root: 'my-table' }} /> */
+```
+
+Pinned by `src/data/data-table.test.tsx` ("the root is one div carrying classNames.root, wrapping
+the table and the pagination bar"), so it cannot revert silently.
 
 ### BasaltProvider — a `connectivity` object replaces three flattened props
 
 `sseUrl` / `healthUrl` / `healthIntervalMs` on `BasaltProvider` are now `@deprecated` aliases for
-the corresponding fields on the new `connectivity` prop — **removed in 1.28.0**. `connectivity`
+the corresponding fields on the new `connectivity` prop — **removed in 1.29.0**. `connectivity`
 wins WHOLESALE once supplied, not per-key: passing `connectivity` at all makes basalt ignore the
 three deprecated props entirely, even ones `connectivity` itself leaves unset. Supplying both logs a
 dev-only warning. Move every deprecated field to `connectivity` in one pass, not one field at a time.
 
 | Removed / deprecated                      | Replacement                                                                                                                         |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `<BasaltProvider sseUrl={…} />`           | `<BasaltProvider connectivity={{ sseUrl: … }} />` — `@deprecated`, removed 1.28.0                                                   |
-| `<BasaltProvider healthUrl={…} />`        | `<BasaltProvider connectivity={{ healthUrl: … }} />` — `@deprecated`, removed 1.28.0                                                |
-| `<BasaltProvider healthIntervalMs={…} />` | `<BasaltProvider connectivity={{ healthIntervalMs: … }} />` — `@deprecated`, removed 1.28.0                                         |
+| `<BasaltProvider sseUrl={…} />`           | `<BasaltProvider connectivity={{ sseUrl: … }} />` — `@deprecated`, removed 1.29.0                                                   |
+| `<BasaltProvider healthUrl={…} />`        | `<BasaltProvider connectivity={{ healthUrl: … }} />` — `@deprecated`, removed 1.29.0                                                |
+| `<BasaltProvider healthIntervalMs={…} />` | `<BasaltProvider connectivity={{ healthIntervalMs: … }} />` — `@deprecated`, removed 1.29.0                                         |
 | (unreachable before this minor)           | `<BasaltProvider connectivity={{ override: {…} }} />` — simulate a signal for testing/demo, no second `ConnectivityProvider` needed |
 
 **`cssVariablesResolver` can no longer reach `BasaltProvider` through the passthrough

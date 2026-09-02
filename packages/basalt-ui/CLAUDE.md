@@ -45,6 +45,40 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 and the doctrine triad; `check-coverage` and `tests/{surfaces-coverage,agents-sync,llms-sync}.test.ts`
 fail on any drift. Add a subpath there first, or the gates will tell you.
 
+## Common primitives (`src/common/**`)
+
+The prop, ref, message and validation vocabulary every component shares. **Not a subpath** — the
+pieces are re-exported from the root barrel, because `BasaltProps` is the base a consumer's own
+props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
+
+- **Every component's props type extends `BasaltProps`** (`className` + `style`, both spelled
+  `| undefined` because `exactOptionalPropertyTypes` is on). The isomorphic harness counted 98 of
+  123 exports dropping `className`; the `NO_CLASSNAME` ledger in `tests/isomorphic/props.tsx`
+  ratchets in both directions, so adopting it means DELETING that component's entry.
+- **`className` + per-slot `classNames`, and nothing else** — no `styles`, no `vars`. basalt does
+  not spread `...rest` onto the DOM (which is why the harness saw zero unknown-attribute warnings),
+  and a composite that paints more than one box declares its slot union instead:
+  `SlotStylesProps<'root' | 'header' | 'body'>`. `Section` is the reference adoption.
+- **The validate idiom is two functions, and the split is the point.** `assertRequiredProps` THROWS
+  in every build, before the component reads into the prop — that is the F-ERR-1 remedy (54 of 55
+  components failed as a raw `TypeError` swallowed by `BasaltErrorBoundary`; only `QueryState` named
+  itself). `useValidateProps` is dev-only, `console.error`s each message ONCE per
+  `(component, message)`, and constant-folds away in production. A misuse that would crash anyway
+  throws; one that merely renders the wrong thing warns. `SelectFilter` and `Section` are the two
+  reference adoptions.
+- **Every message is built in `common/errors.ts`** — `requiredProp` / `oneOf` / `deprecatedProp` /
+  `duplicateMount` over one `BASALT_PREFIX`, so consumers can grep `[basalt] <Component>:`.
+- **The module is Mantine-free and `@visx`-free**, enforced twice: a `no-restricted-imports`
+  override in `.oxlintrc.json` (repo-local, like `state`/`query`/`guard`) and
+  `src/common/boundary.test.ts`, which also forbids a VALUE import reaching outside `common/` or
+  `utils/`. That is what lets `./charts` and `./tokens` reach `cx`/`mergeRefs` without breaching the
+  layer boundary. `Tier` is re-exported from `widget-header` **type-only**, so it emits no runtime
+  edge into the Mantine-coupled half.
+- `Tone`/`ToneWithNeutral` is the ONE status vocabulary. Five forks exist (`StatCardTone` and
+  `SidebarBlockTone` byte-identical; `CalloutKind`, `AccountBadgeTone`, `NotificationIntent`
+  differ) — an adopter ALIASES its fork to this type; nothing gets renamed out from under a
+  consumer.
+
 ## Layering: Mantine-coupled vs Mantine-free
 
 - `src/charts/**` and `src/tokens/**` import zero `@mantine/*`; `@visx/*` may only be imported
@@ -330,11 +364,45 @@ hard-fail their build.
 - **A `SCANNABLE_EXT` widening is outside the mechanism, by design** — the ledger is keyed per KIND
   and a file-set widening widens all of them at once. Measure the incumbent violations across every
   consumer and widen at `error`; if the count is nonzero, fix them.
+- **A rule whose OWN doc comment states its level states it in one place, in one form.** Each rule
+  carries a single `// Ships: error` / `// Ships: warn (grace → 1.30.0)` / `// Ships: warn
+(advisory)` / `// Ships: repo-local only` line directly above its `const`, and
+  `oxlint-plugin.test.ts` asserts every one against `oxlint.json` and the two ledgers. The C16 gate
+  could not catch the drift it replaces — the ledger is asserted against the preset, and a prose
+  comment is outside the ledger, so `raw-size-literal` spent several minors telling readers it
+  shipped `warn` while the preset said `error`.
 - **A relaxation needs no entry.** `inline-display`/`raw-html-layout` no longer fire inside
   `src/charts/**` because both remedies name a Mantine primitive the boundary already forbids there,
   so the finding was unactionable and the only fix was a waiver written inside the directory the
   boundary protects. That change also deleted basalt's own self-exemption for both kinds — basalt
   passes `check-theme` for the same reason a consumer does, not because it silenced itself.
+
+## Deprecation lifecycle — an export leaves over one minor, never over a major
+
+Majors are banned, so a version number can never tell a consumer a name went away. The sunset runs
+through four artifacts instead, and all four land in the SAME commit:
+
+1. **The export stays shipped**, `@deprecated` in its JSDoc, delegating to the replacement.
+2. **A row in `DEPRECATED_EXPORTS`** (`configs/oxlint-plugin.js`) — `{ subpath, name, replacement,
+removeIn }`, plus `prop` when what is deprecated is a JSX attribute rather than a named export.
+   `basalt/deprecated-export` reads it and nudges every import and every prop, with an autofix on
+   the import rename that keeps the LOCAL binding (`{ inputProps as field }`), so no call site has
+   to move in the same edit.
+3. **A `MIGRATING.md` row** under `## Unreleased`, naming the replacement and the `removeIn` minor.
+4. **A `removeIn` at least one minor out**, pinned by `oxlint-plugin.test.ts`. Deprecating in 1.28.0
+   means removing in 1.29.0 at the earliest.
+
+`basalt/deprecated-export` is **permanently `warn`** (`PLUGIN_RULE_ADVISORY`), and that is the whole
+difference between this mechanism and the grace one above. A grace entry promotes because the code
+it reports is wrong; a deprecation reports code that is _correct until a date_. Failing a build over
+a schedule is exactly what the no-majors doctrine exists to avoid — enforcement arrives when the
+export stops existing, not when this rule changes level.
+
+**Removal is its own commit**, and it deletes the row, the export and the `@deprecated` JSDoc
+together while the `MIGRATING.md` row stays forever.
+`oxlint-plugin.test.ts` scans every `src/**/index.ts(x)` barrel for a JSDoc `@deprecated` with no
+ledger row, so the published half cannot be forgotten; a deprecation written deeper in the tree is
+on the author.
 
 The plugin itself (`configs/oxlint-plugin.js`, alpha `jsPlugins`) ships inside `configs/` and is
 wired by the shipped preset, so a consumer inherits it by extending. **Read the rule list and the
