@@ -109,26 +109,19 @@ state. **Without a shell** the bar renders both rows in-flow, sticky at `top: 0`
 `#anchor` load clears the bar rather than scrolling under it. Each root carries
 `data-basalt-page-bar` (`"standalone"` / `"shell"`) and `className`; scope container-gutter bleed
 through the class, not through a global attribute selector — a seam under the bar is not the
-consumer's to draw (`docs/DESIGN-SPEC.md` §5 "Region seams").
+consumer's to draw (see `docs/MANTINE-THEMING.md` § Chrome integration for the region-seam wiring).
 
-Desktop: row 1 = lead · custom chips · ≤3 secondaries as `default` buttons + `More` (`kind: 'menu'`
-and any secondary past three) · `sync` · `primary` filled, RIGHTMOST of the page group · then the shell
-`globalActions` after a gap. Every control in the header is `ctl` (30px), globals included. Row 2 = `tabs` ·
-filter pills · `filtersEnd` right-aligned. `wrap: nowrap`; pills past the width fold into a `+N`
-menu pill.
+Desktop: row 1 = lead · custom chips · ≤3 secondaries as `default` buttons + `More` · `sync` ·
+`primary` filled, RIGHTMOST · then `globalActions` after a gap, all `ctl` (30px). Row 2 = `tabs` ·
+filter pills · `filtersEnd` right-aligned, `wrap: nowrap`, overflow folds into `+N`.
 
-Mobile: row 1 = breadcrumb · `primary` as an icon button · kebab `Menu` holding every
-`mobile: 'more'` action and the `globalActions` marked `more` · ≤2 `globalActions` marked `bar`.
-Row 2 is two declared lines: line 1 = `ViewTabs` full-width (a `Select` past three options); line 2
-= the first `FilterSet` pill inline · one `Filters (n)` pill (funnel glyph, count only when n > 0)
-opening a bottom `Drawer` where every filter renders its `sheet` FORM — which past 1.28 is the SAME
-form the aside's `panel` surface renders (§3 "Surfaces"): a `PanelRow` per filter, label above,
-full-width control below, zero gap between rows (each row draws its own hairline), a `Custom
-range…` row folded into `RangeFilter`'s own `Select` rather than a separate disclosure. `Reset all`
-rides the header beside the title, never a footer (apply immediately, `filtersEnd` folded into the
-row-1 kebab so a header has exactly one kebab — row 2 shows it from `sm` up) · the aside's `Panel`
-pill when a `PageAside` claims it (`docs/ASIDE-SPEC.md` §3); `n` = `store.useActiveCount()`. A line
-exists only when its content is mounted (C14) — filter-less, tab-less pages render no row 2 at all.
+Mobile: row 1 = breadcrumb · `primary` as an icon · kebab `Menu` holding every `mobile: 'more'`
+action + `globalActions` marked `more` · ≤2 `globalActions` marked `bar`. Row 2: line 1 = `ViewTabs`
+full-width (`Select` past three options); line 2 = first `FilterSet` pill inline · `Filters (n)`
+pill opening a Drawer where every filter renders the SAME `sheet` form the aside's `panel` surface
+does (§3) — a `PanelRow` per filter, label above, full-width control below · the aside's `Panel`
+pill when claimed. `n` = `store.useActiveCount()`; a line exists only when its content is mounted
+(C14).
 
 ### 2.2 `WidgetHeader` — tiers 2 and 3 _(new, `src/widget-header/`, Mantine-free)_
 
@@ -512,315 +505,42 @@ vars and the mono numeric-label rule in its module CSS. Inputs keep the 16px iOS
 
 ## 6. Guards
 
-All AST rules live in `configs/oxlint-plugin.js`, ids added to `KNOWN_RULE_IDS`, each honouring
-`theme-allow` / `theme-allow-file`. Ancestry is a **new** `node.parent` walk (the only existing walk
-is `isInStyleContext`; `hand-rolled-plot` is file-scoped) that stops at a **slot attribute** — a
-`JSXAttribute` named `actions | filters | tabs | sync | filtersEnd` whose owning element
-is `PageBar | Section | WidgetHeader | ChartCard | StatCard | BasaltDataTable | SettingsSection |
-FilterSet` — never at the element itself, so a body form under a `Section` never fires. Identifier
-resolution: a `const x = <JSX/>` binding used as a slot attribute value in the same file counts as
-inside that slot (argo's hoisted `headerExtra`, `cost-over-time.tsx:54-68`).
+All AST rules live in `configs/oxlint-plugin.js` (`KNOWN_RULE_IDS`), each honouring `theme-allow` /
+`theme-allow-file`. Full AST pattern, escape hatch and rationale for each id: the rule's own JSDoc
+in that file — that is the home, not restated here. Slot ancestry (the `actions | filters | tabs |
+sync | filtersEnd` attributes on `PageBar | Section | WidgetHeader | ChartCard | StatCard |
+BasaltDataTable | SettingsSection | FilterSet`) and `RAW_FILTER_TAGS`/`BOUND_TAGS` are also read
+from that file, never copied here. `SettingsRow.control` is the one form-row home exempt from the
+filter/size rules.
 
-`RAW_FILTER_TAGS = { SegmentedControl, Select, MultiSelect, NativeSelect, DatePickerInput,
-DateInput, TagsInput, Chip.Group }` (binding imported from `@mantine/*`);
-`BOUND_TAGS` is the `BOUND_TAGS` set in `configs/oxlint-plugin.js` — read it there, never a copy
-here (this line spelled out a literal set that shipped one member stale).
+| Rule id                             | Law     | Severity                                     |
+| ----------------------------------- | ------- | -------------------------------------------- |
+| `basalt/hand-rolled-filter`         | C1, C3  | error 1.26.0                                 |
+| `basalt/control-outside-home`       | C1      | warn, `promote: '1.30.0'`                    |
+| `basalt/bound-control-outside-home` | C1      | warn, `since: '1.28.0'`, `promote: '1.30.0'` |
+| `basalt/control-size-literal`       | C5      | error 1.27.0                                 |
+| `basalt/page-bar-budget`            | C6      | error 1.26.0                                 |
+| `basalt/in-body-page-title`         | C8      | error 1.27.0 (both AST + text lanes)         |
+| `basalt/responsive-twin`            | C9      | error 1.27.0                                 |
+| `basalt/search-literal-link`        | C10     | error 1.27.0                                 |
+| `basalt/use-search-from-literal`    | C10     | error 1.27.0                                 |
+| `raw-scroll-container` (widened)    | C7      | error, no grace                              |
+| `shadow-basalt-export` (extended)   | C8, C12 | permanent advisory                           |
 
-`SettingsRow.control` is the form-row home: Mantine `md`, raw inputs allowed, no filter/size rule
-applies; `control-outside-home` treats it as a home.
+Text-level twin (`src/guard`, PreToolUse hook lane): `in-body-page-title` promoted alongside its
+plugin twin; `raw-selection-control` stays `warn`, `promote: '1.30.0'`. `bound-control-outside-home`
+gets no text twin, deliberately — a bound control's identity needs the import graph a regex window
+doesn't have.
 
-| Rule id                             | Law     | AST pattern                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Escape                                                                  | Severity                                                                                                                                                          |
-| ----------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basalt/hand-rolled-filter`         | C1, C3  | `JSXOpeningElement` ∈ RAW_FILTER_TAGS inside a slot attribute (direct or via hoisted binding)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `theme-allow hand-rolled-filter — <why>`                                | **error 1.26.0** (no incumbents once the migrations land)                                                                                                         |
-| `basalt/control-outside-home`       | C1      | ∈ RAW_FILTER_TAGS with no slot ancestor, not under `SettingsRow \| Modal \| Drawer \| Popover.Dropdown \| Menu.Dropdown \| Composer`, file does not import `@mantine/form`, file does not define a basalt control WHILE importing nothing from `basalt-ui*` (the owner exemption, `hand-rolled-plot`'s `notesOwnerDefinition` shape plus an import test — `CONTROL_OWNER_NAMES` carries generic names like `PanelRow`, so a bare-name match let one local helper switch three rules off for a whole consumer file; basalt's own control sources import each other relatively, a consumer of basalt always names the package), not under `FilterSet \| PageAside \| PanelRow` — the three basalt SUBTREE homes, provenance-gated, read by BOTH C1 rules so the two cannot disagree about what a home is, file basename does not match either dialect of the declared overlay convention — kebab `*-{modal,drawer,popover,panel,form}.tsx` or PascalCase `<Subject>{Modal,Drawer,Popover,Panel,Form}.tsx`, both requiring the leading subject (`isOverlayConventionFile`, one predicate for both rules and the guard lane) — the cross-file case, where the `<Modal>` is the PARENT's | same, plus `theme-allow-file control-outside-home — overlay`            | warn, `promote: '1.30.0'` — re-dated 2026-08-28: the argo wave-7 migration has not run, and the PascalCase dialect above is expected to clear most of its 9 warns |
-| `basalt/bound-control-outside-home` | C1      | a BOUND basalt control (`BOUND_TAGS`; **`SliderControl` is deliberately NOT policed** — it always renders its own `PanelRow` and has no pill form at all, so a `Section` body is a legitimate home for it and "renders as a stray pill" would be false. The plugin has no per-tag home set, so the honest fix is dropping it rather than a private exemption) resolved through a `basalt-ui*` import with no slot ancestor, not under `FilterSet \| PageAside \| PanelRow` (the same provenance-gated subtree homes its sibling now reads) nor a `CONTROL_HOST_TAGS` member, and hosted also through a hoisted binding rendered as a subtree home's `{expr}` CHILD (`const rows = <SelectFilter/>` handed to `<PageAside>{rows}</PageAside>` — the same `Program:exit` deferral the slot lane uses), same owner exemption and the same two-dialect basename exemption (`isOverlayConventionFile`). NOT the `@mantine/form` exemption — a `FieldHandle`-bound filter is not a form input. Ledger G5 (`docs/ASIDE-SPEC.md` §2): its sibling matches raw Mantine tags only, so `<SelectFilter/>` in a `Section` body rendered as a stray pill and no lane saw it                       | `theme-allow bound-control-outside-home — <why>`, plus the `-file` form | warn, `since: '1.28.0'`, `promote: '1.30.0'` — a NEW id, not a widening (C16: a level is per-id)                                                                  |
-| `basalt/control-size-literal`       | C5      | `JSXAttribute` ∈ `{ size, w, fullWidth, visibleFrom, hiddenFrom }` on any element inside a slot attribute, EXCEPT a slot owned by `ChartCard` — the one home that cannot mount the tier theme (§5), so the control there states its own size and the rule's advice would be false. A HOISTED binding handed to several slots is exempt only when EVERY basalt home it reached is `ChartCard`: the same `size="xs"` also renders in the tiered slot, and keying the exemption on one owner made the verdict depend on JSX order                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | same                                                                    | **error 1.27.0**                                                                                                                                                  |
-| `basalt/page-bar-budget`            | C6      | >1 `PageBar` in one returned JSX tree; `actions.secondary` `ArrayExpression` >4 elements; `Section actions` >3; a second `variant="filled"` inside one slot                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | same                                                                    | **error 1.26.0**                                                                                                                                                  |
-| `basalt/in-body-page-title`         | C8      | `Title` with `order` literal 1 or 2 outside a `content/` path segment and not under `Prose \| ArticleLayout \| Modal \| Drawer`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | same                                                                    | **error 1.27.0** (both lanes — the guard kind of the same id promoted with it)                                                                                    |
-| `basalt/responsive-twin`            | C9      | two sibling `JSXElement`s where one carries `visibleFrom="X"` and the other `hiddenFrom="X"` **and** both subtrees contain the same tag ∈ RAW_FILTER_TAGS ∪ BOUND_TAGS; exempt when the file defines a basalt control and imports nothing from `basalt-ui*` (the same two-part owner test)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | same                                                                    | **error 1.27.0**                                                                                                                                                  |
-| `basalt/search-literal-link`        | C10     | `ObjectExpression` as the `search` property of a `linkOptions()` call inside a `defineNav()`/`navGroup()` argument (fires on argo `nav.tsx:132`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | same                                                                    | **error 1.27.0**                                                                                                                                                  |
-| `basalt/use-search-from-literal`    | C10     | `useSearch({ from: <StringLiteral> })` anywhere                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | same                                                                    | **error 1.27.0**                                                                                                                                                  |
-| `raw-scroll-container` (widened)    | C7      | existing `Property` visitor adds: `overflowX: 'auto' \| 'scroll'` or a Mantine `ScrollArea scrollbars="x"` reached through a slot attribute (a `Section`/`ChartCard` BODY is exempt)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | existing                                                                | error, no grace (a scroll container in a slot has no incumbent)                                                                                                   |
-| `shadow-basalt-export` (extended)   | C8, C12 | skips an ALIAS hit when the file both imports the basalt export it renames AND REFERENCES that binding as a value (a `HeroCard` composing `StatCard` is a wrapper, not a fork — the provenance test reads the IMPORTED name, so `StatCard as Base` counts; a type-only import, a value import used only in a type position and a dead import all compose nothing and stay reported; the name-COLLISION half is never exempted this way). Existing barrel collision plus `SHADOW_ALIASES`: `Section ← { PageSection, SectionTitle, SectionHeading }`, `RangeFilter ← { WindowSelector, RangeSelector, DateFilter }`, `ViewTabs ← { ViewSwitch, ViewToggle }`, `SyncButton ← { RefreshButton, SyncControl, SyncStatusButton }`, `PageBar ← { PageHeader, FilterBar }`, `StatCard ← { HeroCard, HeroStats }`                                                                                                                                                                                                                                                                                                                                                                           | rename                                                                  | permanent advisory (`ADVISORY` set)                                                                                                                               |
-
-Text-level guard kinds (`src/guard`, for the PreToolUse hook lane): `in-body-page-title`
-(`<Title order={1|2}` in consumer `src/**`) is **error 1.27.0** — promoted with its plugin twin, one
-id across two lanes; `raw-selection-control` (a RAW_FILTER_TAG on a line outside a
-`SettingsRow`/`Modal` window) stays `warn` with `promote: '1.30.0'`, re-dated alongside its AST twin
-`basalt/control-outside-home` and carrying the same two-dialect basename exemption (its own
-`isOverlayConventionFile`, pinned against the plugin's by both test files, and the same three
-subtree homes added to its host-tag window — matched by name there, because a 12-line regex has no
-import graph to gate them on). **The PascalCase dialect exempts a whole file on its basename, and
-that trade was measured before it was kept**: across argo, linewatch, image-share, rb and image-gen
-it matches 9 files, all in image-gen, and none of them renders a `<PageBar>` or sits under a
-`routes/` directory — nine overlay bodies and zero pages, so the dialect stays whole-file rather
-than growing a "does it render a page bar" predicate. Re-measure before widening the suffix set.
-**`bound-control-outside-home` gets no text twin, deliberately**: a raw tag name
-is Mantine's whatever the file does with it, while a bound control's name means nothing without the
-import graph and the ancestry — neither of which a 12-line regex window has. A text heuristic there
-would report a consumer's own `SelectFilter` sitting in its own `filters` slot, which is signal the
-plugin already has and noise the guard would add.
-
-Infrastructure in the same wave: `DoctrineSpec` gains `pluginRules: readonly PluginRuleId[]`
-(the literal union of the plugin's `rules` keys, asserted equal by `oxlint-plugin.test.ts`);
-`./controls` is a real doctrine surface (`rule: 'controls'`, `layer: 'mantine-coupled'`) carrying
-the ids above; `hand-rolled-shell` moves onto `.`'s `pluginRules`; `basalt-ui check-coverage`
-asserts every registered plugin id maps to exactly one surface and every guard kind to at least one. `PLUGIN_RULE_GRACE` and
-`GRACE_PERIOD_KINDS` become `{ since: string; promote: string; why: string }`; the tests fail when
-`package.json` version ≥ `promote` and the rule is still `warn` (C16). The 1.26.0 commit promotes
-the nine stale entries (four plugin rules, five kinds — D4) to `error` except
-`shadow-basalt-export`, which enters `ADVISORY`. Promotion of any new rule is additionally gated
-on running the shipped preset against argo, linewatch, image-share, rb, image-gen and the
-playground with ≤3 total waivers.
-
-Honest coverage: C1 as a cross-file law, hand-rolled section headings (argo's copies are
-`<Text fw={600} size="sm">` + `{children}`, which no AST heuristic matches without false positives)
-and C11/C12 are `advisory` in the generated header. Claiming otherwise is D8 again.
+Honest coverage: C1 as a cross-file law, hand-rolled section headings, and C11/C12 are `advisory`
+in the generated header — claiming full coverage there is the false-`not guarded: —` failure mode
+`basalt-batteries.md` also had (audit A5).
 
 ## 7. Agent layer
 
-13 rules / 4,177 lines become 6 / ≤1,050. Every rule header is a generated
-`<!-- basalt:coverage -->` block from `SURFACES` (`backed by: <guardKinds> · <pluginRules>` /
-`not guarded: …`), diffed by `check-coverage`, which also fails CI over budget.
-
-| File                                           | Budget | `paths:`                         | Content                                                                                                                                 |
-| ---------------------------------------------- | ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `basalt-tokens.md`                             | 160    | `src/**`                         | identity ×1, `theme-allow` grammar ×1, no hex/px literals (C13), surface token set from code (C12)                                      |
-| `basalt-mantine.md`                            | 180    | `src/**`                         | provider, shell props, `GlobalAction`, sidebar blocks, breadcrumb, overlays via `BasaltOverlays` ×1 (D1); B1–B13 rewritten against code |
-| `basalt-charts.md`                             | 140    | `**/charts/**`                   | CartesianChart law, five declared exceptions (D2), series-derived legends; API → `llms.txt`                                             |
-| `basalt-state.md` (absorbs `basalt-router.md`) | 160    | `src/**`, `apps/**/src/**` (A10) | `createSearchStore`, lanes, `FieldHandle`, `linkSearch`, `defineNav`/`useNav`, `createPersistedState`; `useOnlineStatus` gone (A12)     |
-| `basalt-controls.md` _(new)_                   | 185    | `src/**`                         | C1–C16, the homes table, the tier, the mobile table, the aside (`docs/ASIDE-SPEC.md` §4), sidebar blocks, the store-binding recipe      |
-| `basalt-batteries.md`                          | 220    | `src/**`                         | query, forms, notifications, commands, data, content, agent, app — ≤25 lines each, Eden footguns once (D6), overlay mount stated once   |
-
-Deleted: `basalt-router.md`, `basalt-query.md`, `basalt-forms.md`, `basalt-notifications.md`,
-`basalt-commands.md`, `basalt-data.md`, `basalt-content.md`, `basalt-agent.md`, `basalt-app.md`.
-`RuleName` shrinks to the six; every `SURFACES[*].rule` remaps; the set-equality test drives the
-rename. Skills ≤100 lines each, procedures only (D5, D7 collapse to one statement in
-`CLAUDE-block.md.tpl`). `CLAUDE-block.md.tpl` 40 lines, `DESIGN.md.tpl` 45 with the skill names
-fixed (D3). Package `CLAUDE.md` ≈400: invariants + footguns; CLI and plugin mechanics move to
-JSDoc and `llms.txt`.
-
-Ledger disposition. **A1–A14**: die with `basalt-router.md` and the root `CLAUDE.md` block;
-`basalt-state.md` + `basalt-controls.md` become the only placement/persistence doctrine; the
-100-line recipe JSDoc in `search-param-store.ts` becomes a pointer to this spec; A9 is moot
-(`linkSearch` required by type). **B1–B14**: B5/B6/B12/B13/B14 are code deletions in wave 3; the
-rest are prose corrections in `basalt-mantine.md` and the package `CLAUDE.md`. **C1–C13**:
-C1/C2/C4/C5/C12/C13 corrected from `palette.ts`/`tokens/index.ts`; C3 fixes `ChartCard`'s rem
-fallbacks; C6 collapses when `DeltaBadge` reads `VX.text.xs`; C7 retires with `data-numeric`;
-C8–C11 corrected in `DESIGN-SPEC.md`, `STATUS.md`, `stat-card.tsx`. **D1–D16**: D1–D3, D5–D10 die
-with the merge and generated headers; D4 becomes C16; D11/D12 fixed in the store tests; D13/D14 are
-`STATUS.md`/`ARGO-MIGRATION-LEARNINGS.md` rows in wave 6; D15/D16 are wave-7 deletions.
-
-## 8. Migration
-
-`packages/basalt-ui/MIGRATING.md` gets one `## 1.26.0` section per wave with a row per removed or
-renamed export and its replacement.
-
-**Removed / renamed exports (MIGRATING rows):** `PageActions`, `PageActionsOutlet`,
-`PageHeaderProvider` → `PageBar` (provider stays internal); `BasaltShellProps.globalActions:
-ReactNode` → `GlobalAction[]`; `sidebarNavExtra` / `mobileNav.moreExtra` → `sidebarBlocks`;
-`StatCard.label` → `title`, `StatCard.menu` → `actions`; `ChartCard.tooltip` → `info`,
-`ChartCard.extra` → `actions`; `SettingsSection.description` → `subtitle`;
-`BasaltDataTable.toolbarActions` → `actions`; `ArticleFilterBar` → `FilterSet` + `ViewTabs` +
-`MultiSelectFilter`; `createSearchParamStore` / `createMultiSearchParamStore` → `createSearchStore`
-(deprecated wrappers until 1.29.0); `useOnlineStatus` → `useConnectivity`; tokens
-`appHeaderMobileActionsHeight`, `appShellHeaderMobileHeight`, `stickyHeaderClearanceMobile`; CSS
-`.pageActions` and its `nowrap` override (`app-header.module.css:27-43,63-72`).
-
-**Playground** (gates every promotion): `demo/dashboard-range-store.ts` → `createSearchStore`
-with `field.range`; `demo/DashboardDateFilter.tsx` deleted; `routes/dashboard.tsx` renders
-`<PageBar filters={<FilterSet><RangeFilter/></FilterSet>} actions={…}/>` with one
-`kind: 'custom'` row-1 node dogfooded; `demo/nav-model.tsx:58,230` thunks → `store.linkSearch`;
-`routes/index.tsx` redirect uses `search: store.linkSearch()`; the six `<Title order={1|2}>` → breadcrumb
-titles; the six in-body ephemeral control rows → `Section tabs`; a phone route demo exercising the
-`Filters (n)` sheet, `stickyHeader` tables under `--basalt-page-bar-h`, and a sidebar with all
-three block kinds.
-
-**argo** (`apps/dashboard`, ≈ −700 lines):
-
-1. `lib/window-stores.ts` → three `createSearchStore`s with `field.range({ presets, fallback,
-custom: true })`; strength adds `tab: field.enum(…, { persist: false })`, `exercises:
-field.multi(…)`; usage adds `range/grain/workspace/billing`, astro `tab/site/nights`, calendar
-   `view`, walking `window`. Routes: `validateSearch: store.validateSearch` (the Zod +
-   `readStored` splice in `garmin-health.tsx:54-58` ×3 goes); `presetToParams` ×3 →
-   `field.range.toWindow`.
-2. Delete `window-selector.tsx` ×4, `view-tabs.tsx` ×2 + the calendar `SegmentedControl`,
-   `filter-bar.tsx`; each page renders `<PageBar filters={<FilterSet><RangeFilter
-field={…} customPicker={DateRangePicker}/></FilterSet>} tabs={<ViewTabs field={…}/>}/>`; the four
-   navigate handlers in `strength-tracker.tsx:132-198` and the astro/usage/calendar equivalents go.
-3. `lib/nav.tsx:132` literal → `walkingStore.linkSearch`; `:110` strength thunk →
-   `strengthStore.linkSearch`.
-4. `section.tsx` ×6 → `Section`; `hero-stats.tsx` ×5 → `StatCard`; `session-history.tsx` /
-   `top-projects.tsx` wrappers → `BasaltDataTable title`.
-5. `RefreshButton` (`timer-nav.tsx`), `sync-control.tsx`, reading `SyncButton`, m365 `ActionIcon`
-   → `SyncButton` (the global one in `globalActions` with `mobile: 'bar'`).
-6. `__root.tsx:110-118` → `GlobalAction[]`: timer + bell `bar`, Hermes voice/widget + `ThemeToggle`
-   `more`; theme rows stay only in `settingsMenuItems`.
-7. Five in-chart `useState` selects (`momentum-chart.tsx:100`, …) → `field.enum(…, { url: false })`
-   on a per-feature `createLocalStore`, bound through `ChartCard.actions={<SelectFilter/>}`.
-8. `PageActions` ×8 → `PageBar`; `reading.tsx`/`hermes-chat.tsx` lose the empty row for free;
-   calendar `100dvh - 100px` → `calc(100dvh - var(--app-shell-header-height) - var(--basalt-page-bar-h, 0px))`.
-
-**linewatch** (`web`, no shell, ≈ −300 lines):
-
-1. `lib/range.ts` + the `minDuration` Zod spread + `lib/compact.ts` + `section.tsx:100` `useState`
-   → one `createSearchStore({ range: field.enum(RANGE_OPTIONS, '24h'), minDuration:
-field.number({ fallback }, { persist: false }), compact: field.boolean(false, { url: false }) })`
-   plus `createLocalStore` per section for `view`. The six compact content gates stay in linewatch
-   — they are content decisions, not spacing.
-2. `components/page-header.tsx` → `<PageBar title="linewatch" filters={<FilterSet><RangeFilter
-field={…}/></FilterSet>} actions={{ secondary: [{ kind: 'custom', node: <LiveChip/> },
-compactToggle, theme] }}/>`; the `--lw-header-h` effect, the `96px` fallback and both
-   responsive twins (`page-header.tsx:125-158`, `section.tsx:216-234`) are deleted;
-   `range-selector.tsx` deleted.
-3. `components/section.tsx` → `Section id collapsible persistKey tabs={<ViewTabs/>}`; the `useRef`
-   mirror (`:107-110`) goes; `useCardTitle` and the `''` sentinel go; `compact.contract.test.ts`
-   deleted; `StatusBar` keeps its verdict rail but its headings become `WidgetHeader tier="widget"`;
-   D16 dead references removed.
-
-## 9. Implementation waves
-
-Each wave is one `feat:` minor, independently shippable, with disjoint file groups so
-implementers can run in parallel inside a wave. All seven waves below shipped together as ONE
-release, **1.26.0, on 2026-08-27** — the per-wave 1.26.0/1.27.0/1.28.0 split in this table was the
-plan, not what happened. Promotion of the wave-6 `warn` rules is **1.27.0**, gated on the argo +
-linewatch migrations of §8.
-
-| Wave                       | File group                                                                                                                                                                                                                                                                                                          | Delivers                                                                                                                                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1 Foundations**          | `src/tokens/palette.ts`, `src/tokens/index.ts`, `src/theme/index.ts`, `src/theme/*.test.ts`, `src/dashboard/delta-badge.tsx`, `src/widget-header/**` _(new)_, `src/guard/index.ts` + `configs/oxlint-plugin.js` (grace ledger shape only)                                                                           | anchors + steps, `ctl`/`icon` var sets + coverage test, slot `CTL_THEME`, `SegmentedControl` theming, Mantine-free `DeltaBadge` + `WidgetHeader`, `{ since, promote, why }` ledger + version-gated tests, nine stale entries promoted |
-| **2 Stores**               | `src/router-tanstack/**`, `src/state.ts`, `src/index.ts` (state lines only)                                                                                                                                                                                                                                         | `createSearchStore`, `field.*`, `FieldHandle` in `./state`, `createLocalStore`, deprecated wrappers, `useOnlineStatus` removed, D11/D12 tests                                                                                         |
-| **3 Homes**                | `src/shell/index.tsx`, `src/shell/page-bar.tsx` _(new, replaces `page-header.tsx`)_, `src/shell/app-header.module.css`, `src/shell/index.test.tsx`, `src/dashboard/stat-card.tsx`, `src/dashboard/settings-section.tsx`, `src/charts/primitives/ChartCard.tsx`, `src/section/**` _(new)_, `src/data/data-table.tsx` | `PageBar` (portal row 1, sticky row 2, `--basalt-page-bar-h`), `GlobalAction[]`, header 48 everywhere, composers on `WidgetHeader`, `Section`, table title/count                                                                      |
-| **4 Controls**             | `src/controls/**` _(new)_, `src/controls-dates/**` _(new)_, `src/content/article-filter-bar.tsx` (delete) + `src/content/index.ts`, `package.json` exports, `src/surfaces.ts` (two surface entries), `scripts/pack-test.sh`                                                                                         | every control in §3, `FilterSet` + mobile sheet, `SyncButton`, `ViewTabs`, `DateRangePicker` behind the peer, pack-test step for `./controls-dates` without `@mantine/dates`                                                          |
-| **5 Sidebar blocks**       | `src/shell/app-sidebar.tsx`, `src/shell/app-sidebar.module.css`, `src/shell/app-mobile-nav.tsx`, `src/shell/mobile-nav-model.ts`, `src/nav/types.ts`, `src/shell/index.tsx` (props only, after wave 3)                                                                                                              | `SidebarBlock` union, `brand.menu`, `search.actions`, persisted folds, rail dot/ring, More projection, `sidebarNavExtra`/`moreExtra`/B14 deleted                                                                                      |
-| **6 Guards + agent layer** | `configs/oxlint-plugin.js`, `configs/oxlint-plugin.test.ts`, `src/guard/**`, `src/surfaces.ts` (`pluginRules`), `src/cli/**` (`check-coverage`), `agent/**`, `CLAUDE.md`, `MIGRATING.md`, `STATUS.md`, `docs/*.md` corrections                                                                                      | the ten rules of §6, two guard kinds, generated coverage headers, 13→6 rules, ledger dispositions of §7                                                                                                                               |
-| **7 Dogfood + consumers**  | `apps/playground/**`; then argo and linewatch PRs                                                                                                                                                                                                                                                                   | the playground gate, then the two migrations of §8; promotion of every wave-6 `warn` rule is blocked until this wave is green with ≤3 waivers                                                                                         |
-
-Wave 3 must land the playground `stickyHeader` table and a calendar-style `100dvh` layout under
-row 2 before argo moves — the sticky in-flow row is the one behaviour no consumer has run yet.
-
-## 10. Consumer example
-
-```tsx
-// src/routes/analytics.tsx — every size, placement and persistence decision is basalt's
-import { createFileRoute } from '@tanstack/react-router'
-import { SimpleGrid, Stack } from '@mantine/core'
-import { IconChartBar, IconSettings, IconUsers } from '@tabler/icons-react'
-import { PageBar, Section, StatCard } from 'basalt-ui'
-import {
-  FilterSet,
-  RangeFilter,
-  CompareFilter,
-  SelectFilter,
-  MultiSelectFilter,
-} from 'basalt-ui/controls'
-import { DateRangePicker } from 'basalt-ui/controls-dates'
-import { ChartCard, MultiLine, BarSparkline } from 'basalt-ui/charts'
-import { BasaltDataTable } from 'basalt-ui/data/table'
-import { createSearchStore, field } from 'basalt-ui/router-tanstack'
-import { useAnalytics, CHANNELS, channelColumns } from '../lib/queries/analytics'
-import { openAccounts, openMetrics, saveReport } from '../lib/commands'
-
-export const analytics = createSearchStore({
-  key: 'analytics',
-  fields: {
-    range: field.range({ presets: ['7d', '30d', '90d', 'ytd'], fallback: '30d', custom: true }),
-    compare: field.enum(['none', 'previous', 'year'], 'none'),
-    currency: field.enum(['USD', 'EUR'], 'USD'),
-    channels: field.multi(CHANNELS, []),
-  },
-}).labels({
-  range: { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days', ytd: 'Year to date' },
-})
-
-export const Route = createFileRoute('/analytics')({
-  staticData: { title: 'Analytics', icon: <IconChartBar size={16} /> }, // the breadcrumb names the page
-  validateSearch: analytics.validateSearch,
-  loaderDeps: ({ search }) => search,
-  component: AnalyticsPage,
-})
-
-function AnalyticsPage() {
-  const search = analytics.useValues()
-  const { data, isFetching, dataUpdatedAt, refetch } = useAnalytics(search)
-  return (
-    <Stack gap="md">
-      <PageBar
-        actions={{
-          primary: { key: 'save', label: 'Save as report', onClick: saveReport },
-          secondary: [
-            {
-              key: 'accounts',
-              label: 'Accounts',
-              icon: <IconUsers size={16} />,
-              onClick: openAccounts,
-            },
-          ],
-        }}
-        sync={{ syncing: isFetching, lastCompletedAt: dataUpdatedAt, onSync: refetch }}
-        filters={
-          <FilterSet>
-            <RangeFilter field={analytics.field.range} customPicker={DateRangePicker} />
-            <CompareFilter field={analytics.field.compare} />
-            <SelectFilter field={analytics.field.currency} label="Currency" />
-            <MultiSelectFilter
-              field={analytics.field.channels}
-              label="All channels"
-              noun="channels"
-            />
-          </FilterSet>
-        }
-        filtersEnd={[
-          {
-            key: 'metrics',
-            label: 'Manage metrics',
-            icon: <IconSettings size={16} />,
-            onClick: openMetrics,
-          },
-        ]}
-      />
-      <SimpleGrid cols={{ base: 2, md: 4 }}>
-        {data.kpis.map((k) => (
-          <StatCard
-            key={k.key}
-            icon={k.icon}
-            title={k.title}
-            value={k.value}
-            delta={k.delta}
-            sparklinePlacement="right"
-            sparkline={
-              <BarSparkline
-                data={k.history}
-                width={72}
-                height={28}
-                ariaLabel={`${k.title} trend`}
-              />
-            }
-          />
-        ))}
-      </SimpleGrid>
-      <Section title="Revenue" icon={<IconChartBar size={16} />} count={data.channels.length}>
-        <ChartCard
-          title="Revenue over time"
-          info="Net revenue per day against the prior window"
-          value={data.revenue.total}
-          delta={data.revenue.delta}
-        >
-          <MultiLine
-            data={data.revenue.points}
-            series={data.revenue.series}
-            ariaLabel="Revenue over time"
-          />
-        </ChartCard>
-      </Section>
-      <BasaltDataTable
-        title="Top pages"
-        data={data.topPages}
-        columns={channelColumns}
-        enableGlobalFilter
-        enablePagination
-      />
-    </Stack>
-  )
-}
-```
+Six shipped rule files, one line + one link per doctrine, budgets in
+`AGENT_RULE_TOTAL_BUDGET`/per-file ceilings (code, not prose — see `packages/basalt-ui/CLAUDE.md`
+§ Shipped agent rules for the current numbers). Every rule header is a generated
+`<!-- basalt:coverage -->` block from `SURFACES`, diffed by `check-agent-doc-drift.ts`, which also
+fails CI over budget. The 13→6 file merge, the per-file content assignment, and the full A1-D16
+ledger disposition are the historical execution record: `docs/archive/CONTROLS-SYNTHESIS.md`.

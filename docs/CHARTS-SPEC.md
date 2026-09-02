@@ -2,37 +2,11 @@
 
 Ground truth for how charts are built and enforced. visx stays; what basalt puts on top of it is
 this document. Composing `CartesianChart` (single-plot) or `ChartFrame` directly (multi-pane /
-radial / matrix) is **mandatory**, not an option — see "Migration note" below for the one-time,
-dated rebuild this document reflects, and `docs/STATUS.md` § "Chart-layer rebuild — one mandatory
-cartesian primitive (2026-08-18)" for the changelog entry.
-
-## Why the layer looks like this
-
-Before 2026-08-18 the chart layer had two tiers and no rung between them:
-
-- **Kinds** (`ZonedLine`/`Bars`/`MultiLine`/…) wired legend + tooltip + crosshair + sizing
-  correctly.
-- **Anything else** fell to raw visx: ~130 lines of margin math, scales, `<svg>`, `<Group>`, grid,
-  axes, `HoverOverlay`, tooltip assembly per chart (see the pre-rebuild `SessionsRevenueChart` in
-  the playground, before it moved onto `CartesianChart`). Every cartesian kind repeated that same
-  preamble internally, so the duplication was paid 7× inside the package and once more at every
-  bespoke call site.
-
-Three consequences, all reported from real use:
-
-1. **Margins were static tokens.** `VX.margin` / `chartMargin({ rightAxis })` cannot know how wide
-   a tick label is, so long labels either clipped or got hand-nudged per chart. That was the "I
-   always push the charts around" complaint, exactly.
-2. **Sharing was opt-in and brittle.** A shared cursor needed a `ChartHoverSync` ancestor, and
-   resolved foreign keys by exact string match — a chart that folded its domain desynced, patched
-   by a manual `resolveKey`.
-3. **Two responsive paths.** `ChartFrame` (measures width + height, reserves the legend band) and
-   the legacy `ResponsiveChart` (width only). Charts on the second path sized differently from
-   charts on the first.
-
-Greenfield, one consumer, upgraded in lockstep: the rebuild broke the kind APIs rather than
-layering a compatible shim over them. It shipped as `feat:` on the 1.x line (no majors — see
-CLAUDE.md).
+radial / matrix) is **mandatory**, not an option — the result of a one-time, dated rebuild
+(2026-08-18) that broke the kind APIs rather than shimming them (greenfield, one consumer,
+upgraded in lockstep; shipped as `feat:` on the 1.x line, no majors). Why it looks like this: the
+pre-rebuild two-tier layer's static margins, opt-in cursor sharing and two responsive paths —
+`docs/archive/STATUS-HISTORY.md`.
 
 ## The shape
 
@@ -62,22 +36,10 @@ kind — the old `{ color?, r? }` had no seam for opacity or a strokeless marker
 bottom pane's tooltip row is `formatBar` (separate from `formatBottom`'s tick labels), and the
 pane's own domain is configurable via `bottomYDomain`/`bottomMaxAbsFloor`.
 
-**Reversed 2026-08-22 — `MirroredBars` ships, and the decision it replaces was recorded against
-the wrong blocker.** The old entry read _"no two-bar-pane kind with independent per-pane scales"_,
-with _"a second consumer asks for the same shape"_ as its trigger. That trigger never fired. Round 4
-framed the blocker as **independent scales**, and linewatch corrected the framing: `DualPanel`
-already had `topYDomain` and `bottomYDomain`, so per-pane domains were never what stood in the way.
-
-What actually blocked it is structural, and neither half is a domain question. `DualPanel`'s top
-pane is a **line** pane drawn with `LinePath`, and its bottom pane takes a single **signed**
-`getBar` over a symmetric domain. Two independent magnitudes are not one signed quantity, and two
-bar panes are not a line over a histogram — covering both from one kind means a mark switch, a
-second accessor, and a per-pane domain law contradicting the symmetric one `DualPanel` documents.
-`MirroredBars` is a sibling kind for that reason, not an extension.
-
-The lesson is not "wait for a second consumer". **A decision recorded against the wrong blocker
-outlives its own refutation**, because the stated trigger keeps pointing somewhere else. What
-re-opens a shape decision is a corrected diagnosis.
+`MirroredBars` (shipped 2026-08-22) is a sibling kind to `DualPanel`, not an extension of it —
+`DualPanel`'s bottom pane is one signed magnitude over a symmetric domain, not two independent bar
+panes. Why this wasn't obvious sooner (a decision recorded against the wrong blocker): see
+`docs/archive/STATUS-HISTORY.md`.
 
 ## The contract, in force today
 
@@ -101,25 +63,13 @@ test-covered one. Do not "simplify" `ChartFrame`'s container role back to `img`.
 
 ## Mechanical enforcement (oxlint)
 
-Two `basalt` oxlint plugin rules (`packages/basalt-ui/configs/oxlint-plugin.js`) make the contract
-above a build failure, not just a convention:
-
-- **`basalt/hand-rolled-plot`** — rendering a chart-assembly primitive (`AxisLeftNumeric`,
-  `AxisRightNumeric`, `AxisBottomDate`, `HoverOverlay`, `Crosshair`) in a file that does not
-  compose `CartesianChart` is a lint failure, per NODE. Escape: `theme-allow hand-rolled-plot —
-<why>` on the one node, or `theme-allow-file hand-rolled-plot — <why>` anywhere in the file, which
-  is how a genuinely non-single-plot shape declares itself (`DualPanel`, `BandStrip` and
-  `MirroredBars` carry one each — the repo's three). `-file` is the
-  1.21.0 spelling and it is required — at 1.20.0 the node form was silently promoted to whole-file.
-  The file that DEFINES `CartesianChart` is exempt definitionally, not by path.
-- **`basalt/chart-legend-literal`** — passing a hand-written array literal to `ChartLegend`'s
-  `items` prop is a lint failure; the legend must be derived from the same `series` array the chart
-  draws (`deriveLegend`, or just let `ChartFrame`/`CartesianChart` do it), so it cannot go stale and
-  keep naming a series the plot no longer draws.
-
-Both ship at `warn` in the consumer preset (`configs/oxlint.json`) for one minor and `error`
-repo-local, per the "Shipping a stricter guard — the grace minor" doctrine in
-`packages/basalt-ui/CLAUDE.md`. They promote to `error` in the next minor.
+Two `basalt` oxlint plugin rules make the contract above a build failure, not just a convention:
+`basalt/hand-rolled-plot` (a chart-assembly primitive rendered outside `CartesianChart`; escape via
+`theme-allow`/`theme-allow-file hand-rolled-plot — <why>`, the declared route for the three
+non-single-plot shapes) and `basalt/chart-legend-literal` (a hand-written array literal passed to
+`ChartLegend`'s `items` instead of a `series`-derived one). Full AST pattern and rationale: each
+rule's own JSDoc in `packages/basalt-ui/configs/oxlint-plugin.js` — that is the home, not restated
+here. Grace/promotion mechanics: `packages/basalt-ui/CLAUDE.md` § grace period.
 
 ## 1. Auto-measured margins
 
@@ -499,40 +449,18 @@ tooltip anchor arithmetic. The hook itself is **not exported**; what ships on `b
 `BandFold` / `BandTooltipConfig` / `BandTooltipRowContext` types, and
 `HatchPattern` / `hatchFill` / `hatchSizeFor` for the absence fill.
 
-### The kinds were proven by porting, not by review
-
-Built against linewatch's real charts in a scratch copy, and measured there:
-
-| File                                      | Before   | After   |
-| ----------------------------------------- | -------- | ------- |
-| `availability-strip.tsx`                  | 613      | 321     |
-| `link-speed-strip.tsx`                    | 642      | 389     |
-| `throughput-chart.tsx`                    | 532      | 247     |
-| `follower-anchor.ts` (+ its 70-line test) | 97       | 0       |
-| **total**                                 | **1884** | **957** |
-
-All 11 of linewatch's `hand-rolled-plot` waivers retire; its live `theme-allow` count goes 14 → 3,
-none of the three chart-related. The port also caught two live bugs nothing else had: a `NaN`
-series value painted `y="NaN" height="NaN"` bars, and a non-finite `absentFraction` painted
-`width="NaN"` bands. Both fail silently — no error, no warning — and on a monitoring strip a
-missing mark reads as missing coverage rather than as a bug.
-
-**Doctrine, and the point of the exercise: a new kind is proven by porting a real consumer's call
-sites and reporting what it could NOT express.** A demo page proves nothing, because a demo is
-written against the API that exists. `StatCard.tone` shipped in 1.7.0 with no such check and four
-consumers re-rolled the card anyway.
+**Proven by porting, not by review**: built against linewatch's real charts (1884 → 957 lines
+across three files, all 11 `hand-rolled-plot` waivers retired, two live NaN-rendering bugs caught).
+Full evidence: `docs/archive/STATUS-HISTORY.md`. **The doctrine this proved: a new kind is proven
+by porting a real consumer's call sites and reporting what it could NOT express** — a demo page
+proves nothing.
 
 ### What the two kinds still cannot express
 
-Reported from that port, not deferred silently:
-
-- **No `bandHeight` prop.** Band height is derived and floored by `VX.margin`, so linewatch had to
-  raise its axis height rather than lower the band.
-- **`getBand` / `getAbsentFraction` never see the fold's bookkeeping.** The accessor gets the
-  merged datum; how many members were folded into it, and how many of those measured anything, are
-  the consumer's own fields to carry.
-- **`BandStrip` derives exactly one tooltip row.** Anything beyond it stays hand-authored in
-  `tooltip.extraRows`.
+- **No `bandHeight` prop** — band height is derived and floored by `VX.margin`.
+- **`getBand`/`getAbsentFraction` never see the fold's bookkeeping** — the consumer carries fold
+  counts itself.
+- **`BandStrip` derives exactly one tooltip row** — more stays hand-authored in `tooltip.extraRows`.
 
 ## 8. The phone tier — measured, never a media query
 
@@ -591,59 +519,28 @@ Two consequences worth stating, because both are places the tier could otherwise
 
 ## 9. Number formats, and the three "nothing to draw" states
 
-**`utils/format.ts` ships numbers now, not only dates.** It had exactly two date formatters, so every
-demo and every consumer hand-rolled `` `$${v}k` `` — a template literal that is not locale-aware, not
-compact-aware, and different in each place it was written. `fmtCompact` (`1.2k`, `3.4M`),
-`fmtPercent` (`{ input: 'ratio' | 'percent' }` — declared, never guessed from magnitude, because a
-ratio of 1.2 and a percentage of 1.2 are both ordinary numbers), `fmtCurrency`
-(`{ currency, compact? }`) and `fmtInt` are `Intl.NumberFormat` with the arguments already decided.
-Every one takes an explicit `locale` defaulting to `undefined` — `Intl`'s own "use the runtime's
-locale", which is right for a reader and wrong for a test, so the tests pin `en-US`. `formatters`
-bundles all six (the four numeric plus the two date ones) for a call site that wants the set.
+`utils/format.ts` ships numbers, not only dates: `fmtCompact` (`1.2k`), `fmtPercent`
+(`{ input: 'ratio' | 'percent' }`, declared not guessed), `fmtCurrency`, `fmtInt` — all
+`Intl.NumberFormat`, explicit `locale` (tests pin `en-US`). **Every formatter returns `NON_FINITE`**
+(an em dash) for `NaN`/`±Infinity`/`Invalid Date` — one law across the module, because
+`Intl.NumberFormat` otherwise renders `NaN` as the literal string `NaN`. Guard is on
+non-finiteness, never falsiness — a finite `0` formats normally.
 
-**Every formatter returns `NON_FINITE` (an em dash, U+2014) for input it cannot represent** — `NaN`,
-`±Infinity`, and for the two date ones an `Invalid Date`. It is one law across the module rather
-than a guard at each call site, because the failure is not the caller's: `Intl.NumberFormat` renders
-`NaN` as the literal string `NaN` and `Infinity` as `∞`, so a collapsed domain (an empty series, a
-0/0 rate, a log scale reaching zero) painted its own arithmetic accident as a tick label and a
-tooltip read `NaN%`. A chart may say it does not know; it may not print a number that is not one.
-The guard is on non-finiteness, never on falsiness — a finite `0` formats normally.
-
-**`ChartEmpty` and `ChartError` join `ChartPending`.** The chart layer had only the third state, so a
-consumer wanting the other two had to reach for `dashboard/QueryState` — which renders Mantine and is
-unreachable from `./charts` entirely. What they wrote instead is the four-way switch `QueryState`
-exists to own, and the documented failure mode is a 500 rendering as `No data`.
-
-`CartesianChart`/`ChartFrame` (and every kind, which forwards it) take
-`state?: { pending?, error?, empty? }` — the shape a query result already has — and resolve it with
-`resolveChartState`. **Precedence is fixed and is the product: pending → error → empty.** A refetch
-in flight over a stale error is pending, not failed; a query that errored has no standing to claim
-its result was empty. All three suppress the legend for the reason pending always did (a legend
-naming a series with nothing to point at is its own small lie), and only `pending` sets `aria-busy`.
-`isPending` remains a working alias for `state={{ pending: true }}` and is not going away — it
-predates the prop and every kind forwards it. Both new placeholders are Mantine-free, reserve the
-plot rect, draw nothing that could be mistaken for a measurement, and take an optional `action` slot
-the caller fills.
-
-**All three are announced, and only the failure interrupts.** `ChartError` is `role="alert"`;
-`ChartPending` and `ChartEmpty` are `role="status"` (polite). A screen reader that heard only the
-`alert` heard the one outcome and none of the resolutions — the same asymmetry, in the assistive
-lane, that the four-way switch had in the visual one.
+`CartesianChart`/`ChartFrame` (and every kind) take `state?: { pending?, error?, empty? }`,
+resolved by `resolveChartState`. **Precedence is fixed: pending → error → empty** — a refetch over
+a stale error is pending, not failed. All three suppress the legend; only `pending` sets
+`aria-busy`. `isPending` remains a working alias, not going away. `ChartError` is `role="alert"`;
+`ChartPending`/`ChartEmpty` are `role="status"` (polite) — only the failure interrupts a screen
+reader.
 
 ## 10. Shared component props
 
-Every exported chart component takes **`BasaltProps`** (`className`, `style`, merged onto its ROOT
-element — never replacing the component's own). 98 of 123 exported components dropped `className`,
-so a consumer needing one margin had to fork the component (isomorphic finding C8). For a kind, the
-root is the `ChartFrame` box it composes, so the class travels the whole way down. `ChartCard`
-additionally publishes a slot set, `SlotStylesProps<'root' | 'header' | 'body'>`; a slot class never
-replaces the root `className`, both land.
-
-Two smaller adoptions ride along. Every `memo(...)`-wrapped kind carries a **`displayName`** — nine
-kinds all reading as `Memo` in a DevTools flame graph named nothing (audit A16). And every kind opens
-with **`assertRequiredProps('<Kind>', props, [...])`**, so a missing accessor throws
-`[basalt] MultiLine: prop "data" is required` instead of an `undefined is not a function` from inside
-visx that `BasaltErrorBoundary` swallows into a blank subtree (F-ERR-1).
+Every exported chart component takes **`BasaltProps`** (`className`/`style`, merged onto its ROOT
+— never replacing the component's own). `ChartCard` additionally publishes
+`SlotStylesProps<'root' | 'header' | 'body'>`. Every `memo(...)`-wrapped kind carries a
+**`displayName`**; every kind opens with `assertRequiredProps('<Kind>', props, [...])`, so a
+missing accessor throws a named error instead of an opaque visx crash `BasaltErrorBoundary`
+swallows into a blank subtree.
 
 ## Invariants (unchanged)
 
@@ -658,17 +555,3 @@ visx that `BasaltErrorBoundary` swallows into a blank subtree (F-ERR-1).
   (e.g. `97.5 kg (92.5 × 3)`), not just the plotted number.
 - Chart chrome sizes itself from the MEASURED container, never from a viewport media query (§8), and
   a size that is measured for a margin is measured at the font that gets painted.
-
-## Migration note (one-time, 2026-08-18)
-
-Package-internal plus the playground. argo is the only external consumer and upgrades in lockstep;
-its charts move to `CartesianChart` there, not here.
-
-| Removed                                                                                 | Use instead                                                         |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `ResponsiveChart`                                                                       | `ChartFrame` (or `CartesianChart`)                                  |
-| `ChartHoverSync` (opt **in** to sharing)                                                | nothing (shared by default); `ChartCursorScope` to opt **out**      |
-| `useHoverSync` + `useChartTooltip` in a kind                                            | `CartesianChart`                                                    |
-| `yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` / `yAutoPad` / `numTicksY` / `formatYTick` | `y={{ domain, autoMaxFloor, autoMinCeil, autoPad, ticks, format }}` |
-| `chartMargin({ rightAxis: true })`                                                      | pass `y2`; margins measure themselves                               |
-| `resolveKey`                                                                            | nothing — resolution is domain-aware                                |

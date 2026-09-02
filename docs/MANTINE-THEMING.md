@@ -187,32 +187,7 @@ the muddy mid-gray ramp** and adopts the lighter surface ramp the charts already
 
 ---
 
-## 5. `variantColorResolver` — shadcn-flavoured variants (optional)
-
-`variantColorResolver({ color, variant, gradient, theme }) => { background, hover, color, border, hoverColor? }`
-customises how _every_ variant paints. The shadcn move is: a filled primary always uses a crisp
-contrast text, and `default`/`subtle` lean on the neutral surface+hairline rather than a tinted
-accent. Compose on top of the default resolver so only the deltas are specified:
-
-```ts
-import { defaultVariantColorsResolver, type VariantColorsResolver } from '@mantine/core'
-
-export const variantColorResolver: VariantColorsResolver = (input) => {
-  const out = defaultVariantColorsResolver(input)
-  if (input.variant === 'filled') {
-    return { ...out, color: 'var(--mantine-color-white)', hoverColor: 'var(--mantine-color-white)' }
-  }
-  return out
-}
-```
-
-`autoContrast` already handles most filled-text contrast, so a custom resolver is a _refinement_,
-not a requirement — adopt only if specific variants need shadcn-exact treatment. mantinehub instead
-routes contrast through per-component `vars` (see §7).
-
----
-
-## 6. Component theming — default props, Styles API, data attributes
+## 5. Component theming — default props, Styles API, data attributes
 
 Three escalating levers, cheapest first. **Always prefer the cheapest that does the job.**
 
@@ -222,11 +197,11 @@ Three escalating levers, cheapest first. **Always prefer the cheapest that does 
    NavLink: NavLink.extend({ defaultProps: { variant: 'light' } }),
    ```
    > `Card`/`Paper` are **not** themed via `defaultProps` — depth comes from `styles.root` forcing
-   > `boxShadow: 'var(--vx-shadow-card)'` + `borderRadius: 'var(--vx-radius-card)'`, no
-   > `withBorder` (`docs/DESIGN-SPEC.md` §8 inversions #1 and #5 supersede the `withBorder`/`radius:
-'md'` shape shown above for a generic default-props example).
-2. **`vars`** — compute CSS variables from `(theme, props)`; the mantinehub technique for routing a
-   component's fill/text to `*-filled`/`*-contrast` per `color` prop (see §7). Surgical, no CSS file.
+   > `boxShadow: 'var(--vx-shadow-card)'` + `borderRadius: 'var(--vx-radius-card)'`, no `withBorder`
+   > (see `DESIGN-CORE.md` § Layout, elevation, shapes — this is the generic example, not the shape
+   > basalt ships).
+2. **`vars`** — compute CSS variables from `(theme, props)`, routing a component's fill/text to
+   `*-filled`/`*-contrast` per `color` prop. Surgical, no CSS file.
 3. **`classNames` + CSS modules** — when structure/state styling is needed. Style by **data
    attributes**, never by deep selectors: `data-active`, `data-variant`, `data-disabled`,
    `data-hovered`, `data-checked`, … e.g. an active sidebar item is `&[data-active] { … }`.
@@ -240,127 +215,59 @@ Compound components drop the dot in the `components` key: `Menu.Item` → `MenuI
 
 ---
 
-## 7. The mantinehub / shadcn technique, distilled
-
-Source studied: `RubixCube-Innovations/mantine-theme-builder` (mantinehub.com). What it actually
-does — and what basalt adopts vs rejects:
-
-**The mechanism** (two moves, no per-component CSS files):
-
-1. A **`cssVariablesResolver`** that redefines the _surface system_ — `--mantine-color-body`,
-   `--mantine-color-default`, `--mantine-color-default-border`, `--mantine-color-dimmed`,
-   `--mantine-color-text`, a neutral `secondary` ramp — to a chosen neutral palette (Zinc/Slate).
-   This is 90% of why it "looks shadcn." **Basalt adopts this verbatim** (§4), binding to `--vx-*`.
-2. Per-component **`vars`** that route fills/text to `--mantine-color-{color}-contrast` and
-   `-filled`, so a filled control always gets crisp foreground text regardless of accent. Basalt
-   gets most of this free via `autoContrast`; adopt the `vars` pattern only where a component
-   misbehaves.
-
-**Other settings it ships:** `focusRing: "never"` (basalt keeps `'auto'` — accessibility), custom
-`radius`/`spacing`/`fontSizes`/`lineHeights` scales, `primaryShade {light:9,dark:0}` for a _neutral_
-(near-black/near-white) primary, `Geist` font, soft shadow scale, `Card` `withBorder`.
-
-**Adopt:** the surface-variable resolver; deliberate radius/spacing/type scales; `Card`/`Paper`
-`withBorder` defaults; the `vars`-routing trick as needed.
-**Reject:** their neutral-as-primary (`primaryShade {dark:0}`) — basalt's primary is a _hue_, not a
-neutral; `focusRing:"never"`; importing their Zinc/Slate ramps — basalt's neutral is its own
-gray/lightGray/darkGray ramps, already defined.
-
----
-
-## 8. Chrome integration — the shell
+## 6. Chrome integration — the shell
 
 The chrome advances in lockstep with `createBasaltTheme` and `DESIGN-CORE.md` so they never drift.
 
-### 8.1 Unified token graph (theme)
+### 6.1 Unified token graph (theme)
 
 - Add the `cssVariablesResolver` of §4 (surfaces/border/dimmed ← `--vx-*`). _Highest-value,
   lowest-risk step — do first._ `BasaltProvider` pre-wires it.
-- Decide `defaultRadius`. Basalt keeps the v9 default **`defaultRadius: 'md'`** (8px) for controls;
-  cards/panels bypass the radius scale entirely and resolve straight to `--vx-radius-card` (10px —
-  `docs/DESIGN-SPEC.md` §8 inversion #5 supersedes the earlier `sm`/4px-controls, `md`/8px-cards
-  split described here).
+- `defaultRadius`/`--vx-radius-card` values: see §2's table (the derive engine is ground truth, not
+  this doc — see `DESIGN-CORE.md`).
 - Add `fontFamilyMonospace`, `fontWeights`, and force `Card`/`Paper` `styles.root` to
   `boxShadow: 'var(--vx-shadow-card)'` (no `withBorder`) — depth is a whisper shadow + ring baked
-  into that one token, not a bare hairline (`docs/DESIGN-SPEC.md` §8 inversion #1 supersedes the
-  older surface-+-hairline framing).
-- `variantColorResolver` (§5): **optional**, defer until a variant visibly needs it.
+  into that one token, not a bare hairline (`DESIGN-CORE.md` § Layout, elevation, shapes).
 
-### 8.2 The shell: sidebar + breadcrumb
+### 6.2 The shell: sidebar + breadcrumb
 
 `BasaltShell` composes a full-height grouped sidebar (desktop only), a slim breadcrumb top bar with
 page-header slots, a collapsible desktop icon-rail, and a mobile bottom tab bar (no drawer — the
 full-height mobile sidebar drawer was deleted in 1.19.0). Router coupling (typed navigation, active
 detection, badge counts) stays **consumer-side** — the shell is presentational and router-agnostic.
 
-- **App shell.** A full-width **top bar** carrying the brand zone, the breadcrumb, the page bar's
-  row 1 and the global actions + a **grouped sidebar** under it (muted uppercase section labels,
-  starting at `SidebarSearch`) — transparent, with the region seam on the bar's bottom edge. The
-  brand is the bar's leading zone, `--app-shell-navbar-offset` wide (`shell/app-brand.tsx`), not the
-  sidebar's first row: with a full-width header that row painted as a second 48px band under the
-  seam.
-  `withBorder` still gates each region's edge, exactly as Mantine ships it (`<AppShell
-withBorder={true}>` by default, each `AppShell.<Region>` falling back to that context value); the
-  theme changes only the COLOUR every gated edge paints, once, via
-  `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`
-  — no shell module or consumer sets `--app-shell-border-color` or `withBorder` directly, except the
-  aside, whose `withBorder={aside.claimed}` gates its own edge on the claim rather than the shared
-  default (`docs/DESIGN-SPEC.md` §5 "Region seams"). The shell runs Mantine's DEFAULT `AppShell`
-  layout, not `alt`: the header spans the full viewport width and its seam runs edge to edge, with
-  the sidebar's and the aside's seams starting under it.
-- **`AppShell.Main` is the scrollport.** Mantine offsets Main with `padding-*` and `min-height:
-100dvh`, which leaves nothing in the shell scrolling and puts the browser scrollbar at the far edge
-  of the window, outside the aside. `shell/app-main.module.css` restates those offsets as MARGINS,
-  so Main is the one scrolling element. It wins over Mantine's rule with no `!important`: the
-  consumer imports `@mantine/core/styles.layer.css`, so Mantine's rules are inside `@layer mantine`
-  and an unlayered rule always outranks a layered one.
-- **The AppShell ROOT is a column flex**, from the same module. Its only in-flow children are the
-  page-bar band and Main (header/navbar/aside/footer are all `position: fixed`, hence out of flow),
-  so `band { flex: 0 0 auto }` + `main { flex: 1 1 auto; min-height: 0 }` sizes Main to whatever the
-  band leaves — no height arithmetic and nothing to go stale between a route change and a
-  ResizeObserver. It is also what stops margin collapsing: before the flex root, Main's `margin-top`
-  collapsed THROUGH a root that carries no border or padding in `mode="fixed"` and pushed the
-  document down by a header height (`scrollHeight` 892 against an 844px viewport).
-- **Top-bar slots own the page header.** The bar has two zones, not one. A **page slot**: the active
-  route portals its full control row (window/range selectors, tabs, filters) into the bar via a
-  `PageActions` outlet, so pages drop their in-body `<Title>` H1 — the breadcrumb names the page and
-  the controls move up, reclaiming vertical density. A shell-owned **global slot**: persistent
-  app-level widgets (timers, refresh, notifications, today's tasks, health). On mobile the bar wraps
-  to two rows (lead + global on row 1, a single horizontally-scrollable page-action row on row 2).
-
-  > **Why a portal, not route static data:** the controls are live — they close over the page's
-  > search-param handlers, query data, and local state — so they must render inside the page's React
-  > subtree while _appearing_ in the bar. A page contributes only its actions; the breadcrumb is
-  > still nav-derived in the shell.
-
-  > **Gotcha:** nested Mantine `Group`s default to `flex-wrap: wrap` and stack/clip in the slim bar
-  > — force descendant `.mantine-Group-root { flex-wrap: nowrap }` (scoped to the outlet) so the row
-  > stays one scrollable line.
-
-- **Neutral nav active state** — _ink earns its colour applied to chrome:_ a nav selection is UI
-  state, not a data signal, so the active item is a quiet neutral fill (a scheme-adaptive
-  `color-mix` of `--vx-neutral`, with the NavLink colour forced to text colour), **never** the
-  identity hue.
-- **Collapsible sidebar (desktop icon-rail).** A persisted collapse flag (via basalt's own
-  `createPersistedState`) drives the navbar to a 48px rail (responsive `width: { base: 216, sm:
-collapsed ? 48 : 216 }`); the sidebar itself doesn't render below `sm` at all — there is no mobile
-  drawer, so no CSS gate is needed to protect one. Toggle via the header chevron; there is no
-  `Cmd/Ctrl+B` hotkey.
-- **Sidebar header + footer.** Header = brand + a `visibleFrom="sm"` collapse chevron. Footer =
-  a consumer-supplied `Menu` of `settingsMenuItems` behind a "Settings" row (opt-in — it renders only
-  when entries are supplied), optionally followed by an `account` row. basalt ships no built-in
-  theme-select control; a theme switcher is a consumer-supplied settings-menu entry (or global-slot
-  widget) if the app wants one.
-- **Mobile bottom nav** (an `AppShell.Footer` with `height {base: mobileNavBarHeight, sm:0}` +
-  permanently `collapsed: { mobile: true }` navbar): a **curated** set of primaries as icon+short-label
-  tabs with a neutral active fill, plus a trailing **Menu**/**Drawer** "More" surface (inferred from
-  row count, not a full nav drawer) that holds everything else — settings, account, theme switcher.
-- **Nav count badges.** A count is a data _signal_, so "ink earns its colour" lets it carry the **one
-  spot of identity colour** in the otherwise-neutral nav (the active state stays neutral): a `Badge
-size="sm" variant="light"` in the NavLink right-section, rendered only when `> 0` and auto-hidden
-  in the collapsed rail (the right-section is `display:none` there). Ship the count-badge pattern via
-  `NavCountBadge`; the counts themselves are consumer-supplied (read-only queries that degrade to 0
-  on error).
+- **App shell.** A full-width top bar (brand zone, breadcrumb, `PageBar` row 1, global actions)
+  over a grouped sidebar, transparent, region seam on the bar's bottom edge. `withBorder` still
+  gates each region's edge as Mantine ships it; the theme changes only the COLOUR every gated edge
+  paints, once, via `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color':
+'var(--vx-divider)' } }) })` — no module sets that var or `withBorder` directly except the aside
+  (`withBorder={aside.claimed}`, gated on the claim). Runs Mantine's DEFAULT layout, not `alt`: the
+  header spans the full viewport width, sidebar/aside seams start under it.
+- **`AppShell.Main` is the scrollport.** Mantine offsets Main with `padding-*`, which puts the
+  scrollbar at the far window edge, outside the aside. `shell/app-main.module.css` restates those
+  offsets as MARGINS instead, so Main is the one scrolling element — it wins with no `!important`
+  because Mantine's own rules sit inside `@layer mantine` (layered import required).
+- **The AppShell ROOT is a column flex.** Its only in-flow children are the page-bar band and Main
+  (every other region is `position: fixed`), so `band { flex: 0 0 auto }` + `main { flex: 1 1 auto;
+min-height: 0 }` sizes Main to whatever the band leaves — no height arithmetic, nothing to go
+  stale between a route change and a ResizeObserver.
+- **Top-bar slots own the page header** — a page slot (the active route portals its control row in
+  via `PageActions`, dropping the in-body `<Title>`) and a shell-owned global slot (persistent
+  app-level widgets). Mobile wraps to two rows. Portal, not route static data: the controls close
+  over the page's search-param handlers and local state, so they must render inside the page's own
+  React subtree while appearing in the bar.
+- **Neutral nav active state** — a nav selection is UI state, not a data signal: a quiet neutral
+  fill, never the identity hue.
+- **Collapsible sidebar** — a persisted flag drives the navbar to a 48px rail; the sidebar doesn't
+  render below `sm` at all (no mobile drawer, so no CSS gate needed). Toggle via the header chevron,
+  no `Cmd/Ctrl+B` hotkey.
+- **Sidebar header + footer** — header is brand + a collapse chevron; footer is an opt-in
+  consumer-supplied settings `Menu` then an `account` row. basalt ships no built-in theme-select.
+- **Mobile bottom nav** — a curated set of primaries as icon+label tabs, neutral active fill, plus
+  a trailing Menu/Drawer "More" surface (inferred from row count) holding the rest.
+- **Nav count badges** — a count is a data signal, so it carries the ONE spot of identity colour in
+  the otherwise-neutral nav: `Badge size="sm" variant="light"` in the right-section, `> 0` only,
+  auto-hidden in the collapsed rail. Ship via `NavCountBadge`; counts are consumer-supplied.
 
 #### Chrome ↔ charts share one surface system
 
@@ -378,36 +285,17 @@ uses the lighter surface ramp instead of the muddy mid-gray default):
 
 #### Mantine accent name map
 
-Every Mantine accent (`blue`/`red`/`teal`/…) is overridden with a designed family via `ramp10()`, so
-`color="blue"`-style props are on-palette with zero call-site changes. `primaryColor: blue`;
-`primaryShade: 6` — one shade in BOTH schemes, because a filled surface does not invert: it is
-squeezed between its white label (≥4.5:1) and the page behind it (≥3:1), and only one luminance band
-satisfies both on both pages. Shade 6 of every family is pinned to that band (`FILL` / `ACCENT` in
-`tokens/palette.ts`), and `--mantine-color-{family}-filled` is bridged onto the `--vx-*` tokens, so
-the chrome is single-sourced and the theme lab can retune it live. Mantine has **no** `gold`/`vermilion`
-name — map to the nearest accent (`yellow`, `red`, `orange`, `green`, `blue`, `gray`). Off-identity
-accent names that resolve to non-identity hues should be rejected by the guard (see `DESIGN-CORE.md`
-guardrails) — use a status hue or a series token instead.
-
-### 8.3 ShadCN sidebar anatomy → Mantine mapping
-
-For reference, _not_ a 1:1 port:
-
-| ShadCN                               | Mantine realization                                                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `SidebarProvider` / `useSidebar`     | `AppShell` + a persisted collapse flag                                                                                    |
-| `Sidebar` / `SidebarContent`         | `AppShell.Navbar` + scroll area                                                                                           |
-| `SidebarHeader` / `SidebarFooter`    | top `Group` / bottom-pinned `Group` (flex spacer)                                                                         |
-| `SidebarGroup` + `SidebarGroupLabel` | `Stack` + a muted `Text` (uppercase caption)                                                                              |
-| `SidebarMenuButton` (+ `isActive`)   | `NavLink` (+ `active` / `data-active`)                                                                                    |
-| `SidebarMenuBadge`                   | `NavLink.rightSection` → `Badge` (`NavCountBadge`)                                                                        |
-| `collapsible="icon"`                 | `AppShell` navbar width swap + icon-only items in `Tooltip`                                                               |
-| mobile sheet                         | not ported — `MobileNav` bottom tab bar + a Menu/Drawer "More" surface, navbar permanently `collapsed={{ mobile: true }}` |
-| `Cmd/Ctrl+B` toggle                  | not shipped — collapse toggles via the header chevron only                                                                |
+Every Mantine accent (`blue`/`red`/`teal`/…) is overridden with a designed family via `ramp10()`,
+so `color="blue"`-style props are on-palette with zero call-site changes. `primaryShade: 6` — one
+shade in BOTH schemes, because a filled surface does not invert: squeezed between its white label
+(≥4.5:1) and the page (≥3:1), only one luminance band satisfies both. Shade 6 is pinned to that
+band (`FILL`/`ACCENT` in `tokens/palette.ts`); `--mantine-color-{family}-filled` bridges onto
+`--vx-*`. Mantine has no `gold`/`vermilion` — map to the nearest accent. Off-identity accent names
+are guard-rejected (`DESIGN-CORE.md` guardrails) — use a status hue or series token instead.
 
 ---
 
-## 9. Iteration loop
+## 7. Iteration loop
 
 The theme-lab live-overrides `--vx-*` on `<html>`; because chrome binds to those vars, the lab
 retunes **chrome and charts together**. Tune by eye in the running app → "Copy JSON" → bake into the
@@ -418,7 +306,7 @@ page, and a mobile viewport. Diff against this doc's targets; iterate.
 
 ---
 
-## 10. Pitfalls
+## 8. Pitfalls
 
 - **FART (flash of wrong theme):** `ColorSchemeScript defaultColorScheme` must equal the provider's
   — keep them in sync.

@@ -1,5 +1,7 @@
 # Basalt UI — Design Spec (2026-07 overhaul)
 
+> Archived 2026-09-02 — superseded by `docs/DESIGN-CORE.md` (identity/accent absorbed) and code (hex tables deleted everywhere; the derive engine at `DEFAULT_DERIVE_CONFIG` is ground truth, never a prose hex). Historical, not maintained — the accent hexes below (#0077bd/#8ec5ff) are NOT current; do not cite them.
+
 Canonical distillation of the Claude Design handoff ("Dashboard redesign for modern aesthetics").
 This file is the single source of truth for the visual system. Where this spec contradicts older
 doctrine comments in the codebase, **this spec wins** (see "Doctrine inversions" at the bottom).
