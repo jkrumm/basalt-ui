@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartCursorScope } from '../cursor/scope'
 import { CartesianChart } from '../primitives/CartesianChart'
 import { StackedArea } from './StackedArea'
+import type { AxisConfig } from '../primitives/CartesianChart'
 import type { ChartSeries } from '../series'
 
 type Row = { date: string; a: number; b: number }
@@ -221,5 +222,27 @@ describe('StackedArea — BasaltProps', () => {
     const root = container.querySelector('.my-chart')
     expect(root).not.toBeNull()
     expect((root as HTMLElement).style.opacity).toBe('0.5')
+  })
+})
+
+/**
+ * The stack sums band heights directly (a running total per x), which has no additive zero on a
+ * log scale — the same contract `Bars`' stacked layout enforces (`docs/CHARTS-SPEC.md`'s null-gap
+ * + log contract). `y.scale` is typed out of `StackedAreaProps`; the cast below simulates a JS
+ * consumer (or a type-unsafe escape hatch) reaching past that.
+ */
+describe('StackedArea — rejects a log y-axis', () => {
+  test('throws in dev, naming the offending config', () => {
+    expect(() =>
+      render(
+        <StackedArea<Row>
+          data={rows}
+          chartId="sa-log"
+          getX={(d) => d.date}
+          series={series}
+          y={{ scale: 'log' } as unknown as Omit<AxisConfig<Row>, 'scale'>}
+        />,
+      ),
+    ).toThrow(/StackedArea: cannot use a log axis/)
   })
 })

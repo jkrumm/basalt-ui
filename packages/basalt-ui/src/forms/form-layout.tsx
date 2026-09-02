@@ -133,7 +133,12 @@ export type FormRowProps = BasaltProps &
     label: string
     /** Muted line under the label: the rule, the unit, the example. Never the error. */
     hint?: string
-    /** The field's error, rendered under the control. Pass `form.errors[path]` — falsy renders nothing. */
+    /**
+     * The field's error, rendered under the control. Falsy renders nothing. For a Mantine input
+     * wired through `inputProps(form, path)`, Mantine's own `Input.Wrapper` already renders
+     * `form.errors[path]` — passing it here too would render it twice. Reserve this prop for
+     * children that render no error of their own: a raw input, a custom control.
+     */
     error?: ReactNode
     /** Marks the field required: an accent `*` for sighted readers, `(required)` for assistive tech. */
     required?: boolean
@@ -157,8 +162,16 @@ export type FormRowProps = BasaltProps &
  * `disabled` prop to thread, no `cloneElement`, real `:disabled` styling from Mantine.
  *
  * @example
- * <FormRow label="Email" hint="We only use it for receipts." required error={form.errors['email']}>
+ * // A Mantine input wired through inputProps already renders its own error via Input.Wrapper —
+ * // omit `error` here, or it renders twice.
+ * <FormRow label="Email" hint="We only use it for receipts." required>
  *   <TextInput key={fieldKey(form, 'email')} {...inputProps(form, 'email')} />
+ * </FormRow>
+ *
+ * @example
+ * // A raw control renders no error of its own — pass it explicitly.
+ * <FormRow label="Email" required error={form.errors['email']}>
+ *   <input value={form.values.email} onChange={(e) => form.setFieldValue('email', e.target.value)} />
  * </FormRow>
  */
 export function FormRow(props: FormRowProps) {

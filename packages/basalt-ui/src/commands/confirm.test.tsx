@@ -13,7 +13,7 @@
 import { MantineProvider } from '@mantine/core'
 import { ModalsProvider, modals } from '@mantine/modals'
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BasaltOverlays } from './overlays-mount'
@@ -135,6 +135,34 @@ describe('overlays.confirm', () => {
 
     await click('Revoke')
     expect(await answer).toBe(true)
+    host.unmount()
+  })
+
+  test('a throwing onConfirm still resolves the promise to true', async () => {
+    const host = renderModalsHost()
+
+    // `settle(true)` — the exact closure `confirm()` hands Mantine as `onConfirm` — is captured
+    // here and invoked DIRECTLY rather than through a real button click. A real click's throw
+    // would unwind through React's own synthetic dispatch uncaught (same as any DOM event
+    // listener a browser reports rather than propagates back to the caller), which happy-dom
+    // reproduces faithfully enough that it destabilizes React's shared act()/scheduler state for
+    // every test after it in this process — a harness hazard, not something this test is about.
+    // Calling the captured closure directly exercises the identical `settle` code path with none
+    // of that risk.
+    const openConfirmModal = spyOn(modals, 'openConfirmModal')
+    const answer = overlays.confirm({
+      title: 'Discard draft?',
+      onConfirm: () => {
+        throw new Error('boom')
+      },
+    })
+    await flush()
+
+    const payload = openConfirmModal.mock.calls[0]?.[0]
+    expect(() => payload?.onConfirm?.()).toThrow('boom')
+
+    expect(await answer).toBe(true)
+    openConfirmModal.mockRestore()
     host.unmount()
   })
 

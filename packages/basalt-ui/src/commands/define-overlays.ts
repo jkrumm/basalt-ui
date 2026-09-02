@@ -290,9 +290,12 @@ async function confirm(options: ConfirmOptions): Promise<boolean> {
     const settle = (confirmed: boolean): void => {
       if (settled) return
       settled = true
-      if (confirmed) onConfirm()
-      else onCancel?.()
-      resolve(confirmed)
+      try {
+        if (confirmed) onConfirm()
+        else onCancel?.()
+      } finally {
+        resolve(confirmed)
+      }
     }
 
     modals.openConfirmModal({

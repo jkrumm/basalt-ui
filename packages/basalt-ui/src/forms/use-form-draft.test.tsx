@@ -162,19 +162,15 @@ describe('autosave', () => {
     expect(localStorage.getItem(storageKey(key))).toContain('Ada')
   })
 
-  test('unmounting mid-window drops the pending write rather than firing into a dead tree', async () => {
+  test('unmounting mid-window flushes the pending write rather than dropping it', async () => {
     const key = freshKey()
     const { result, unmount } = renderDraft({ autosave: { debounceMs: 30 } }, key)
     act(() => result.current.form.setFieldValue('name', 'Ada'))
     expect(localStorage.getItem(storageKey(key))).toBeNull()
 
     unmount()
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 60))
-    })
-    // The timer was cleared on unmount: nothing was written, and no update reached the unmounted
-    // store subscriber (which is what would have logged a React warning).
-    expect(localStorage.getItem(storageKey(key))).toBeNull()
+    // The pending window flushed synchronously on cleanup — a closed tab keeps the sentence.
+    expect(localStorage.getItem(storageKey(key))).toContain('Ada')
   })
 
   test('clearDraft wins over a pending autosave window that already fired', async () => {
