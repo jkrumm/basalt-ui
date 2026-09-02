@@ -78,7 +78,7 @@ describe('oxlint preset sync contract', () => {
 
   // ── Surfaces the plugin rules do NOT cover keep their Mantine-free no-restricted-imports ban ──
   // The plugins only fire on charts/tokens path segments (see oxlint-plugin.js's visx-boundary and
-  // token-layer-boundary rules), so guard/query/router-tanstack/agent/state stay enforced the old
+  // token-layer-boundary rules), so guard/router-tanstack/agent/state stay enforced the old
   // way — minus the now-redundant @visx/* pattern, since basalt/visx-boundary bans @visx/* outside
   // charts universally.
 
@@ -86,7 +86,6 @@ describe('oxlint preset sync contract', () => {
     const projected = projectBanList('repo')
     const globs = [
       'packages/basalt-ui/src/guard/**',
-      'packages/basalt-ui/src/query/**',
       'packages/basalt-ui/src/router-tanstack/**',
       'packages/basalt-ui/src/agent/**',
       'packages/basalt-ui/src/state.ts',

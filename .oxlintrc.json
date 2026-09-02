@@ -32,12 +32,12 @@
     "basalt/hand-rolled-filter": "error",
     "basalt/control-outside-home": "warn",
     "basalt/bound-control-outside-home": "warn",
-    "basalt/control-size-literal": "warn",
+    "basalt/control-size-literal": "error",
     "basalt/page-bar-budget": "error",
-    "basalt/in-body-page-title": "warn",
-    "basalt/responsive-twin": "warn",
-    "basalt/search-literal-link": "warn",
-    "basalt/use-search-from-literal": "warn",
+    "basalt/in-body-page-title": "error",
+    "basalt/responsive-twin": "error",
+    "basalt/search-literal-link": "error",
+    "basalt/use-search-from-literal": "error",
     "basalt/provider-above-router": "warn",
     "basalt/duplicate-notifications-mount": "warn",
     "basalt/query-dual-import": "warn",
@@ -110,32 +110,6 @@
       }
     },
     {
-      "files": ["packages/basalt-ui/src/query/**"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "paths": [
-              {
-                "name": "@mantine/core",
-                "message": "query must be Mantine-free — no Mantine imports allowed."
-              },
-              {
-                "name": "@mantine/hooks",
-                "message": "query must be Mantine-free — no Mantine imports allowed."
-              }
-            ],
-            "patterns": [
-              {
-                "group": ["@mantine/*"],
-                "message": "query must be Mantine-free — no Mantine imports allowed."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "files": ["packages/basalt-ui/src/router-tanstack/**"],
       "rules": {
         "no-restricted-imports": [
@@ -181,6 +155,28 @@
               {
                 "group": ["@mantine/*"],
                 "message": "agent must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/basalt-ui/src/controls/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/dates",
+                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/dates/*"],
+                "message": "@mantine/dates is an OPTIONAL peer (docs/CONTROLS-SPEC.md §3) — ./controls must resolve with no @mantine/dates installed. The one reach lives in src/controls-dates/, injected into range-filter.tsx’s customPicker seam."
               }
             ]
           }
