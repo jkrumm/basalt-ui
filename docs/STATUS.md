@@ -136,6 +136,21 @@ commands/spotlight battery; the forms layer rebuild (rows/groups, async resolver
 array helper — `docs/MATURATION-LEDGER.md` C5, in progress under a separate worker as this section
 was written).
 
+**Wave 8 — the visual-feedback round (2026-09-02).** Nine defects the user called out from
+screenshots, each traced to a measured cause before it was touched (ledger V1–V11). The one with a
+blast radius: `BasaltShell` dropped `layout="alt"` — the header spans the full width with the brand
+in its leading zone, `AppShell.Main` is the one scrollport (the document never scrolls, the
+scrollbar sits between content and aside), PageBar row 2 is a shell-owned band under the header,
+and every sticky offset in the package lost its header term (`scrollParentOf` is the consumer seam,
+`MIGRATING.md` § The shell scrollport). Around it: StatCard headers top-aligned with actions flush
+right; SegmentedControl equal split + a fit-checked track law (`useTrackFits`); the phone filter
+sheet renders panel rows; sidebar active rows are accent-tinted so hover can't impersonate them;
+the More sheet at 40px rows with a real gutter; and a horizontal-overflow guard in real Chrome at
+390/360/320 that caught a bare `BasaltDataTable`, its toolbar, and `WidgetHeader.actions`. A
+headless-Chrome finding worth keeping: the installed Chrome paints its first frame ~4s after a cold
+launch on this host, so any screenshot taken earlier shows 200px charts — the m5 harness warms the
+browser first.
+
 ## Controls waves — 1.26.0
 
 Five `feat:` commits implementing `docs/CONTROLS-SPEC.md`, whose evidence ledger is

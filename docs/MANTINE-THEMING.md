@@ -293,16 +293,34 @@ page-header slots, a collapsible desktop icon-rail, and a mobile bottom tab bar 
 full-height mobile sidebar drawer was deleted in 1.19.0). Router coupling (typed navigation, active
 detection, badge counts) stays **consumer-side** — the shell is presentational and router-agnostic.
 
-- **App shell.** A full-height **grouped sidebar** (muted uppercase section labels; brand pinned
-  top-left) + a slim **breadcrumb top bar** — transparent, with the region seam on its bottom edge.
+- **App shell.** A full-width **top bar** carrying the brand zone, the breadcrumb, the page bar's
+  row 1 and the global actions + a **grouped sidebar** under it (muted uppercase section labels,
+  starting at `SidebarSearch`) — transparent, with the region seam on the bar's bottom edge. The
+  brand is the bar's leading zone, `--app-shell-navbar-offset` wide (`shell/app-brand.tsx`), not the
+  sidebar's first row: with a full-width header that row painted as a second 48px band under the
+  seam.
   `withBorder` still gates each region's edge, exactly as Mantine ships it (`<AppShell
 withBorder={true}>` by default, each `AppShell.<Region>` falling back to that context value); the
   theme changes only the COLOUR every gated edge paints, once, via
   `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`
   — no shell module or consumer sets `--app-shell-border-color` or `withBorder` directly, except the
   aside, whose `withBorder={aside.claimed}` gates its own edge on the claim rather than the shared
-  default (`docs/DESIGN-SPEC.md` §5 "Region seams"). `AppShell layout="alt"` runs the sidebar's seam
-  full height and scopes the header's to the main column.
+  default (`docs/DESIGN-SPEC.md` §5 "Region seams"). The shell runs Mantine's DEFAULT `AppShell`
+  layout, not `alt`: the header spans the full viewport width and its seam runs edge to edge, with
+  the sidebar's and the aside's seams starting under it.
+- **`AppShell.Main` is the scrollport.** Mantine offsets Main with `padding-*` and `min-height:
+100dvh`, which leaves nothing in the shell scrolling and puts the browser scrollbar at the far edge
+  of the window, outside the aside. `shell/app-main.module.css` restates those offsets as MARGINS,
+  so Main is the one scrolling element. It wins over Mantine's rule with no `!important`: the
+  consumer imports `@mantine/core/styles.layer.css`, so Mantine's rules are inside `@layer mantine`
+  and an unlayered rule always outranks a layered one.
+- **The AppShell ROOT is a column flex**, from the same module. Its only in-flow children are the
+  page-bar band and Main (header/navbar/aside/footer are all `position: fixed`, hence out of flow),
+  so `band { flex: 0 0 auto }` + `main { flex: 1 1 auto; min-height: 0 }` sizes Main to whatever the
+  band leaves — no height arithmetic and nothing to go stale between a route change and a
+  ResizeObserver. It is also what stops margin collapsing: before the flex root, Main's `margin-top`
+  collapsed THROUGH a root that carries no border or padding in `mode="fixed"` and pushed the
+  document down by a header height (`scrollHeight` 892 against an 844px viewport).
 - **Top-bar slots own the page header.** The bar has two zones, not one. A **page slot**: the active
   route portals its full control row (window/range selectors, tabs, filters) into the bar via a
   `PageActions` outlet, so pages drop their in-body `<Title>` H1 — the breadcrumb names the page and

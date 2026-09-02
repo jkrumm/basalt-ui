@@ -286,26 +286,53 @@ dead code against the `!important` floor.
   a flat Button becomes the only flat control in the row — most visibly next to a `size="md"`
   TextInput, pinned to the identical height by `--vx-space-control-height`.
 
+- **Main is the scrollport, and it is the only scrolling box.** `AppShell.Main` turns Mantine's
+  region PADDING offsets into margins (`app-main.module.css`), so the document does not scroll and
+  the scrollbar sits on the content's own right edge — between Main and the aside, not at the far
+  edge of the window past both regions. It is in normal flow (never `position: fixed`), carries
+  `data-basalt-scrollport` and TanStack Router's `data-scroll-restoration-id`, and its `overflow-x`
+  is `auto` rather than `hidden`: hiding a sideways overflow makes it invisible, not absent, and the
+  phone guard (`tests/layout/no-horizontal-overflow.layout.test.ts`) reads exactly that box.
+- **The page-bar band is a REGION, not a row in the page.** The AppShell root is a column flex whose
+  only in-flow children are the band and Main (every other region is `position: fixed`), so the band
+  takes the height it needs and Main takes the rest — no measurement, no `--basalt-page-bar-h`
+  arithmetic. `PageBar` row 2 portals into it, exactly as row 1 portals into the header. It spans
+  Main's width (navbar\|aside offsets), draws the single `--vx-divider` seam under itself, and is a
+  zero-height, seam-less box on a route with no `PageBar` (law C14, `.band:not(:empty)`). Because it
+  is outside the scrollport, nothing inside Main has any chrome to clear: a sticky table head, a
+  `.tocRail` and an `#anchor` all resolve against Main's own top edge.
 - **Sidebar**: transparent (page bg, no panel); no internal rules; its trailing edge is the shell's
-  region seam (below). The brand row is an `appShellHeaderHeight` band, centred with the header,
-  ~216px wide. Section headers are micro-labels. Active item = ink-9% tint (NO panel fill, NO
-  shadow — a selected row, not a raised control) + **accent-colored icon** + weight 600 ink text,
-  hovering to ink-13%; inactive = muted text, faint icon; hover = ink-6% tint. Child items indent
-  with a 1px `divider` left border; active child = accent text, weight 600. Count badges: mono
-  micro (11px), ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name (15px
-  semibold) + mono micro (11px) uppercase faint meta line.
-- **Header**: transparent; its bottom edge is the region seam, spanning the main column only
-  (`layout="alt"`) — the body scrolls under it, so the surfaces are not continuous. Inset `sm`, the
+  region seam (below). It starts directly with `SidebarSearch` — **the brand row moved into the
+  header** (below): under a full-width header an `appShellHeaderHeight` brand band here painted as a
+  second 48px row beneath the header seam. Section headers are micro-labels. Active item = **accent-12% tint** (NO panel fill,
+  NO shadow — a selected row, not a raised control) + **accent-colored icon** + weight 600 ink
+  text, hovering to accent-16%; inactive = muted text, faint icon; hover = ink-5% tint. `data-active`
+  is the only style hook (`aria-current` stays on the DOM for a11y, not a CSS selector) — it was an
+  ink-9%/ink-6% pairing until the two tints read as the same row highlight under a pointer, which is
+  why active moved to the accent family entirely. Child items indent with a 1px `divider` left
+  border; active child = the same accent-12%/16% fill plus accent text, weight 600. Count badges:
+  mono micro (11px), ink-8% bg, radius 5. Footer: initials block (ink-10%, radius 7, mono) + name
+  (15px semibold) + mono micro (11px) uppercase faint meta line.
+- **Header**: transparent; its bottom edge is the region seam, and it spans the FULL viewport width
+  — Mantine's default `AppShell` layout, not `alt`. The header sits above the sidebar and the aside,
+  both of which start under it at `--app-shell-header-offset`; the body scrolls under it, so the
+  surfaces are not continuous. Inset `sm`, the
   same as `AppShell padding`, so the breadcrumb's left edge and the global actions' right edge sit
-  on the card column's edges. Breadcrumb 13.5px: parents faint, separator
+  on the card column's edges. Its row is `[brand ⌄ | collapse] [breadcrumb] ··· [page bar row 1] |
+[global actions]`: the **leading zone** (`app-brand.tsx`) is exactly `--app-shell-navbar-offset`
+  wide, so it tracks the rail collapse with no React state, its trailing edge lands on the
+  sidebar\|main seam, and the breadcrumb after it starts on Main's own content edge. Collapsed, the
+  zone narrows to the rail and shows the toggle alone, centred on the rail's icon column. Below `sm`
+  there is no navbar to align with and the zone is absent — the breadcrumb owns the phone lead. Breadcrumb 13.5px: parents faint, separator
   line-colored, current page in head font ~14.5px/550. The search trigger moved to the sidebar
   (`SidebarSearch`, below the brand) — it is not header chrome. The header's own right side is the
   page-actions slot and the global-actions slot; any control dropped there (icon button, segmented
   range) shares the header's depth tokens (`shadow-raised` for the control, never `shadow-card`).
 - **Region seams** (2026-08-30): every `AppShell` region ends in a 1px `--vx-divider` line on its
-  Main-facing edge — sidebar\|main (full height under `layout="alt"`, so it owns the top-left corner
-  and the header line starts at it), header\|main (main column only), main\|aside (full height,
-  absent when unclaimed), main\|mobile-nav (< sm). Mantine draws all four through its own
+  Main-facing edge — header\|body (the FULL viewport width, so it owns the top corners and both the
+  sidebar and the aside seams start under it), sidebar\|main (from the header seam down),
+  main\|aside (same, absent when unclaimed), main\|mobile-nav (< sm), plus the page-bar band's own
+  bottom seam (`app-main.module.css`, painted only when a `PageBar` claims the band). Mantine draws all four through its own
   `[data-with-border]` rules; the colour is ONE theme var,
   `AppShell.extend({ vars: () => ({ root: { '--app-shell-border-color': 'var(--vx-divider)' } }) })`.
   No shell module declares a region edge, no section ever takes `withBorder`, **except the aside
@@ -314,9 +341,12 @@ dead code against the `!important` floor.
   gates the border the same way it gates the width. A consumer never sets either. Chrome INSIDE a
   region stays line-free: sidebar brand/sections/footer, card and section headers — the one
   exception is the aside's own header, which carries `border-bottom: 1px solid --vx-divider`
-  (`shell/page-aside.module.css`) so the 48px top belt closes across the aside the same way the
-  header and sidebar-brand bands do, even though the aside's `AppShell.Aside` box itself stays
-  line-free above that header. Between-rows rules (aside groups, panel rows, settings rows)
+  (`shell/page-aside.module.css`) so its seam closes across the aside the same way the header and
+  sidebar-brand bands do, even though the aside's `AppShell.Aside` box itself stays line-free above
+  that header. The header's own height tracks `--basalt-page-bar-h` (the shell's page-bar band,
+  `PageBar` row 2) first and falls back to the ordinary 48px `appShellHeaderHeight` band only where
+  there is no `PageBar` claiming one — so the two seams read as ONE line rather than two, whichever
+  height the band actually renders at (2026-09-02). Between-rows rules (aside groups, panel rows, settings rows)
   keep `--vx-divider` and drop their last line. `--vx-divider` is the only layout-line token — a
   relative ink-alpha on light and white-alpha on dark, so the seam holds ≥1.15:1 over page and panel
   under every derive knob and neutral seed (test-pinned). `--vx-surface-hairline` is the card ring
@@ -327,6 +357,20 @@ dead code against the `!important` floor.
   carries no line at rest; whether it gets one is decided from screenshots, not doctrine — if it
   lands it is inset to the content column, `--vx-divider`, and ledgered in `divider-law.test.ts` as
   `region-boundary`, never a JS stuck-state.
+- **Mobile bottom bar / More sheet** (2026-09-02): the bottom-sheet ("More") rows share ONE row
+  vocabulary with the desktop sidebar's `.link` instead of a bespoke touch geometry — the theme's
+  `NavLink.extend` already forces `--vx-space-row-inset-y`/`-x` padding, `VX.text.md` font-size and
+  `--vx-space-row-line-height` line-height on every NavLink root, so the sheet's own CSS module adds
+  only what the theme does not: a touch-target `min-height` floor
+  (`--vx-space-mobile-nav-row-height`, 40px — WCAG 2.5.5 AA, not the AAA 44pt figure the bar's own
+  `mobileNavBarHeight` still holds to). Nested (child) rows carry the sidebar's own child indent — a
+  1px `--vx-divider` left guide plus `--vx-space-sidebar-child-list-indent`/
+  `--vx-space-sidebar-child-row-indent` — drawn per row rather than on a wrapper, since the flat
+  sheet has none of the sidebar's `.childList` grouping. Row-to-row gap is 1 (the sidebar's own nav
+  Stack gap), section-label-to-rows gap and between-group gap reuse
+  `--vx-space-sidebar-section-label-gap`/`--vx-space-sidebar-section-gap`. The sheet's
+  `ScrollArea.Autosize` reserves its own scrollbar gutter (`offsetScrollbars="present"`) instead of
+  floating the overlay bar over the rows' trailing edge.
 - **Segmented control**: track = ink-6% tint, radius 7, 2px padding, 2px gap; active segment =
   panel bg + `shadow-ctrl`, radius 5, ink text weight 600; inactive = muted, transparent. Numeric
   segment labels (1D/7D/30D) are mono `VX.text.xs` (12.5px) via a bare `data-numeric` attribute on
