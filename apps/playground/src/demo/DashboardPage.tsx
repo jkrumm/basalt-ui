@@ -342,7 +342,7 @@ export function DashboardPage() {
                 label: row.label,
                 value: row.orders,
               })),
-              // The demo query the `Breakdown` ViewTabs (below, as a real `actions` JSX attribute —
+              // The demo query the `Breakdown` switcher (below, as a real `actions` JSX attribute —
               // not the object-spread form the guard's ancestry walk cannot see through) drives,
               // through the same four branches `StatesPage`'s chart does.
               query: ordersQuery,
@@ -357,7 +357,14 @@ export function DashboardPage() {
                   <IconDots />
                 </ActionIcon>
               ) : kpi.key === 'orders' ? (
-                <ViewTabs
+                // `SelectFilter`, not `ViewTabs`: four options is past `ViewTabs`' desktop
+                // `SegmentedControl` width (its own >3-option collapse to a plain `Select` is
+                // phone-only, `view-tabs.tsx`), and this 281px card has no room for a four-segment
+                // track. `SelectFilter` is the field-bound, home-slot-legal shape of the same
+                // `docs/CONTROLS-SPEC.md` `ViewTabs` row's ">3 → Select" rule — a raw Mantine
+                // `Select` with `value`/`onChange` here trips `basalt/hand-rolled-filter` (laws
+                // C1–C3: a control in a home slot takes a `field`, never a value/onChange pair).
+                <SelectFilter
                   field={cardViews.field.kpiQuery}
                   label="Breakdown"
                   options={KPI_QUERY_OPTIONS}

@@ -11,8 +11,9 @@
  *    not a hand-kept number.
  * 3. The sheet renders every filter full-width at 44px rows, applies immediately, and offers
  *    `Reset all` (law C15).
- * 4. The `stickyHeader` table's head parks under row 2 via `--basalt-page-bar-h`, the measured
- *    height basalt publishes — there is no `useEffect` and no hardcoded fallback in this file.
+ * 4. The `stickyHeader` table's head sticks at the top of `AppShell.Main` and needs NO offset: the
+ *    page bar's band is a shell region outside the scrollport now, so there is no chrome inside it
+ *    to clear — and no `useEffect` and no hardcoded fallback in this file either.
  * 5. `ViewTabs` past three options becomes a `Select` rather than a squeezed segmented control.
  *
  * Every control is bound to a `FieldHandle`, so nothing here holds filter state and nothing here
@@ -160,7 +161,6 @@ export function ControlsMobilePage() {
           data={ROWS}
           columns={COLUMNS}
           stickyHeader
-          stickyHeaderOffset="calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))"
           striped
           highlightOnHover
           verticalSpacing="xs"
