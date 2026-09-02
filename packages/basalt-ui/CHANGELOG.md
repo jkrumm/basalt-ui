@@ -1,3 +1,16 @@
+# [1.29.0](https://github.com/jkrumm/basalt-ui/compare/v1.28.0...v1.29.0) (2026-09-02)
+
+
+### Bug Fixes
+
+* record every 1.29.0 removal, retire the dead notifications rule, tickValues ([21a6c28](https://github.com/jkrumm/basalt-ui/commit/21a6c287ad020e50dad7004135e1695bce58e2d6))
+
+
+### Features
+
+* a format module, chart states by flag, useBreakpoint, command handles ([dbf38f7](https://github.com/jkrumm/basalt-ui/commit/dbf38f79d01a2333181cf3f490f66ae8cd0dffbf))
+* transport message ids, onError and hydrated resume in the agent layer ([a30959e](https://github.com/jkrumm/basalt-ui/commit/a30959ef81eac0f555e0ad06e6fe68366cb358a8))
+
 # [1.28.0](https://github.com/jkrumm/basalt-ui/compare/v1.27.0...v1.28.0) (2026-09-02)
 
 
