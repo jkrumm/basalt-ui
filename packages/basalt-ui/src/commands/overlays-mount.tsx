@@ -2,10 +2,10 @@
  * overlays-mount — composable overlay mount for basalt-ui apps.
  *
  * `BasaltOverlays` bundles ModalsProvider, Spotlight, and Notifications into a single mount point.
- * Put it inside BasaltProvider, before the router. It replaces the standalone
- * `<BasaltNotifications />` from `basalt-ui/notifications` — do NOT mount both
- * `<BasaltOverlays notifications />` and `<BasaltNotifications />` in the same tree (double-mount
- * of `<Notifications />`).
+ * Put it inside BasaltProvider, before the router. It is the ONLY notifications mount — the
+ * standalone `basalt-ui/notifications` overlay it superseded is gone (C1 consolidation); mounting
+ * a second, hand-rolled `<Notifications />` alongside `<BasaltOverlays notifications />` still
+ * double-mounts the overlay and is still wrong for the same reason.
  *
  * Every layer — ModalsProvider included — mounts as a SIBLING of `children`, never as a wrapper:
  * see the comment in the component body (R1). `@mantine/modals`' imperative API (`modals.open*`,
@@ -33,8 +33,8 @@
  * code. The re-exported `openSpotlight` / `closeSpotlight` helpers delegate to this store.
  *
  * @example
- * // main.tsx — replace <BasaltNotifications /> with <BasaltOverlays>. Use the layered bundle —
- * // the unlayered one outranks basalt's `@layer basalt` styles regardless of specificity:
+ * // main.tsx — mount <BasaltOverlays>. Use the layered bundle — the unlayered one outranks
+ * // basalt's `@layer basalt` styles regardless of specificity:
  * import { BasaltOverlays } from 'basalt-ui/commands'
  * import '@mantine/spotlight/styles.layer.css'
  *
@@ -244,7 +244,7 @@ Object.assign(LazyNotifications, { displayName: 'LazyNotifications' })
 // ── NotificationsLayer (runs the shared duplicate-mount guard, F15) ───────────
 
 /** Wraps `LazyNotifications` so `useNotificationsMountGuard` only fires while this layer is
- * actually enabled — a sibling of `BasaltNotifications` importing the SAME shared counter. */
+ * actually enabled — the shared counter guards against any second `<Notifications />` mount. */
 function NotificationsLayer({
   notificationsProps,
 }: {
@@ -278,9 +278,7 @@ function HotkeysMount() {
  * `children`. All three layers are enabled by default; pass `false` to disable. A disabled layer's
  * optional peer is never imported.
  *
- * Mount exactly ONE BasaltOverlays per app. Do NOT combine with a standalone
- * `<BasaltNotifications />` from `basalt-ui/notifications` — that would double-mount
- * `<Notifications />`.
+ * Mount exactly ONE BasaltOverlays per app — a second instance double-mounts `<Notifications />`.
  *
  * @example
  * <BasaltProvider>

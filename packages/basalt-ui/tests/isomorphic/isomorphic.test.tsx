@@ -22,7 +22,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import type { ReactElement, ReactNode } from 'react'
 import { BasaltProvider } from '../../src/provider'
 import { createBasaltTheme } from '../../src/theme'
-import { createBasaltQueryClient } from '../../src/query'
+import { createBasaltQueryClient } from '../../src/query-client'
 import { describeOutcome, detectComponents, probeElement, renderProbe, ssrProbe } from './harness'
 import {
   EXPECTED_DEFECTS,
@@ -82,19 +82,15 @@ const SUBPATHS: Subpath[] = await Promise.all(
       ['./controls-dates', '../../src/controls-dates/index.ts', false],
       ['./forms', '../../src/forms/index.ts', false],
       ['./dashboard', '../../src/dashboard/index.ts', false],
-      ['./section', '../../src/section/index.ts', false],
-      ['./widget-header', '../../src/widget-header/index.ts', false],
       ['./shell', '../../src/shell/index.tsx', false],
-      ['./data', '../../src/data/index.ts', false],
+      ['./data/table', '../../src/data/table.ts', false],
+      ['./data/virtual', '../../src/data/virtual.ts', false],
       ['./notifications', '../../src/notifications/index.ts', false],
       ['./commands', '../../src/commands/index.ts', false],
-      ['./connectivity', '../../src/connectivity/index.ts', false],
-      ['./query', '../../src/query/index.ts', false],
       ['./content', '../../src/content/index.ts', false],
       ['./agent', '../../src/agent/index.ts', true],
       ['./agent-chat', '../../src/agent-chat/index.ts', false],
       ['./theme-lab', '../../src/theme-lab/index.tsx', false],
-      ['./theme-toggle', '../../src/theme-toggle/index.tsx', false],
     ] as const
   ).map(async ([id, path, mantineFree]) => ({
     id,

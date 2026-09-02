@@ -38,7 +38,7 @@
  * <PartList parts={coalesceParts(parts)} />
  */
 import type { AgentPart, ReasoningPart, TextPart, ToolCallPart } from './parts'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 type TextLike = TextPart | ReasoningPart
 

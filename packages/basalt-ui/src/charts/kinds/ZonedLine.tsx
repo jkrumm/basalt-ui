@@ -14,9 +14,6 @@ import { curveFor, definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 
-/** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias for back-compat. */
-export type ZonedLineZone = ZoneSpec
-
 /** Semi-transparent fill above (or below) a threshold value, tracking the line. */
 export type ZonedLineThreshold = {
   value: number
@@ -46,7 +43,7 @@ export type ZonedLineProps<T> = BasaltProps & {
   /** Y-axis. Collapses the old `yDomain` / `yAutoMaxFloor` / `yAutoMinCeil` / `yAutoPad` /
    * `numTicksY` / `formatYTick` prop soup into one object. */
   y?: AxisConfig<T>
-  zones?: ZonedLineZone[]
+  zones?: ZoneSpec[]
   /** Vertical x-range overlays (time windows), rendered behind the line. Bounds are `getX`
    * domain keys. */
   xZones?: XZoneSpec[]

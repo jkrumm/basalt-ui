@@ -207,28 +207,6 @@ describe('BasaltShell collapse persistence', () => {
     expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
     expect(localStorage.getItem(key)).toBeNull()
   })
-
-  test('adopts a pre-1.20.1 raw value once, so an upgrade keeps the sidebar collapsed', () => {
-    const key = 'collapse-legacy'
-    localStorage.clear()
-    // Exactly what `@mantine/hooks`' useLocalStorage wrote: JSON at the un-namespaced key.
-    localStorage.setItem(key, 'true')
-
-    renderShell(key)
-
-    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
-  })
-
-  test('a value already in the house key wins over a stale legacy one', () => {
-    const key = 'collapse-both'
-    localStorage.clear()
-    localStorage.setItem(key, 'true')
-    localStorage.setItem(`basalt:${key}`, JSON.stringify({ v: 1, value: false }))
-
-    renderShell(key)
-
-    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: false }))
-  })
 })
 
 /**

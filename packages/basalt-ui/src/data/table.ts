@@ -31,28 +31,9 @@ export type {
   DataTableFacetOption,
 } from './data-table'
 
-// ── @tanstack/react-table convenience re-exports ──────────────────────────────
-// These are the handful of table primitives a consumer needs at the call site;
-// importing them from basalt-ui/data/table avoids a separate @tanstack/react-table import.
-// useReactTable + flexRender + the row-model builders (getCoreRowModel/getSortedRowModel/
-// getFilteredRowModel/getPaginationRowModel) are the raw escape hatch: a bespoke, fully custom
-// table can be built from this subpath alone, with no direct @tanstack/react-table import in
-// consumer code.
-export {
-  createColumnHelper,
-  useReactTable,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  type ColumnDef,
-  type SortingState,
-  type ColumnHelper,
-  type PaginationState,
-  type ColumnPinningState,
-  // The selection map `rowSelection`/`onRowSelectionChange` speak — `Record<rowId, boolean>`.
-  type RowSelectionState,
-  // The type `onColumnFiltersChange` hands back — needed at the call site for server-side faceting.
-  type ColumnFiltersState,
-} from '@tanstack/react-table'
+// ── @tanstack/react-table convenience re-export ───────────────────────────────
+// `createColumnHelper` is the one raw TanStack symbol every `BasaltDataTable` call site needs to
+// build its `columns` array (C1 consolidation: every OTHER pass-through — `useReactTable`,
+// `flexRender`, the row-model builders, and the type re-exports — was unused by any consumer;
+// import TanStack directly for those).
+export { createColumnHelper } from '@tanstack/react-table'

@@ -9,7 +9,7 @@
  * A default re-derived per call site is how the count and the renderer drift apart (see
  * `accountRowCount`'s doc for the same failure with account rows).
  */
-import type { SidebarBlock } from '../nav/types'
+import type { SidebarBlock } from './nav-types'
 
 /** Envelope version for a persisted fold flag. Bump only if the value stops being a boolean. */
 export const FOLD_VERSION = 1

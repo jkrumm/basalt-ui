@@ -52,7 +52,6 @@ const subpaths = [
   { rel: 'charts/index.js', banVisx: false },
   { rel: 'guard/index.js', banVisx: true },
   { rel: 'state.js', banVisx: true },
-  { rel: 'query/index.js', banVisx: true },
   { rel: 'router-tanstack/index.js', banVisx: true },
   { rel: 'agent/index.js', banVisx: true },
 ]

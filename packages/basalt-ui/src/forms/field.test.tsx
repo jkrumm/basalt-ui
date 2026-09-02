@@ -7,43 +7,13 @@
  * suite. It is asserted the way `tests/isomorphic/harness.ts` does — spy, render, read — rather
  * than by inspecting the returned object, because the object shape is the mechanism and the silent
  * console is the contract.
- *
- * The deprecated `field` alias is NOT that function any more, and its tests say so in the strongest
- * available terms: it keeps the 1.27 return shape, `key` included. An alias would have changed what
- * every existing `{...field(form, 'x')}` DOES without changing whether it compiles, and a
- * deprecation is a schedule rather than a behaviour change (`../../CLAUDE.md`). The pin is
- * therefore byte-for-byte equivalence to 1.27 — including the React 19 key-spread warning, which is
- * asserted as PRESENT here and absent for the new idiom above.
  */
 import { MantineProvider, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { render, renderHook } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
-import { field, fieldKey, inputProps } from './field'
+import { fieldKey, inputProps } from './field'
 import { useBasaltForm } from './create-form'
-
-describe('field (deprecated, 1.27 shape)', () => {
-  test('still returns `key` INSIDE the object — the 1.27 behaviour, unchanged', () => {
-    const { result } = renderHook(() => useForm({ initialValues: { email: '' } }))
-    const form = result.current
-
-    const props = field(form, 'email')
-    expect(props.key).toBe(form.key('email'))
-
-    const expectedGetInputProps = form.getInputProps('email')
-    for (const [prop, value] of Object.entries(expectedGetInputProps)) {
-      if (typeof value === 'function') {
-        expect(typeof props[prop as keyof typeof props]).toBe('function')
-        continue
-      }
-      expect(props[prop as keyof typeof props]).toEqual(value)
-    }
-  })
-
-  test('is NOT an alias of inputProps — aliasing would have been a silent behaviour change', () => {
-    expect(field).not.toBe(inputProps)
-  })
-})
 
 describe('inputProps', () => {
   test('returns getInputProps() — and NOT `key`, which is what React 19 warns about', () => {
@@ -91,29 +61,6 @@ function Fields() {
     </form>
   )
 }
-
-function DeprecatedField() {
-  const form = useBasaltForm<{ name: string }>({ initialValues: { name: '' } })
-  // The whole point of the assertion below — this is what a not-yet-migrated consumer still writes.
-  return <TextInput {...field(form, 'name')} label="Name" />
-}
-
-describe('the deprecated spread still warns — that warning IS the migration signal', () => {
-  test('a spread `field(…)` logs React 19 key-spread', () => {
-    const error = spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      render(
-        <MantineProvider>
-          <DeprecatedField />
-        </MantineProvider>,
-      )
-      const logged = error.mock.calls.map((args) => String(args[0]))
-      expect(logged.filter((message) => message.includes('"key" prop')).length).toBeGreaterThan(0)
-    } finally {
-      error.mockRestore()
-    }
-  })
-})
 
 describe('the documented idiom renders silently', () => {
   test('three fields log no React key-spread warning', () => {

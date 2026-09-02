@@ -6,7 +6,7 @@
  * the lanes, `validateSearch`/`linkSearch`/`readStored`, and the option labels.
  */
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
-import { field } from './field'
+import { field } from '../state'
 import { createSearchStore } from './search-store'
 
 /** Writes the store's envelope directly — one entry per store, `{ fieldName: value }`. */

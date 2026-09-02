@@ -22,7 +22,7 @@ import { HoverOverlay } from '../primitives/HoverOverlay'
 import type { ChartState } from '../primitives/ChartPending'
 import type { ChartLegendConfig, SeriesStyle } from '../series'
 import { fmtAxisDate } from '../utils/format'
-import { isDev } from '../../utils/is-dev'
+import { isDev } from '../../common/is-dev'
 
 /**
  * A state a strip can draw. Extends `SeriesStyle` rather than `ChartSeries` because a band has no

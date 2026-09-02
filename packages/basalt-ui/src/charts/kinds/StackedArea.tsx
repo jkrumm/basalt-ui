@@ -8,7 +8,7 @@ import type { AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import type { ChartState } from '../primitives/ChartPending'
 import { curveFor } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
-import { isDev } from '../../utils/is-dev'
+import { isDev } from '../../common/is-dev'
 
 export type StackedAreaProps<T> = BasaltProps & {
   data: T[]

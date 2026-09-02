@@ -10,7 +10,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import type { UseFormReturnType } from '@mantine/form'
-import { toErrorMessage } from '../query/error-message'
+import { toErrorMessage } from '../common/errors'
 
 // ── The server field-error envelope ───────────────────────────────────────────
 

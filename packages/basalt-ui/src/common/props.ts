@@ -60,7 +60,7 @@ export type ToneWithNeutral = Tone | 'neutral'
  * twice — `WidgetHeaderTier` stays the name on the public barrel; `Tier` is what `common`-aware
  * code spells. Type-only, so this file emits no runtime edge into the Mantine-coupled half.
  */
-export type { WidgetHeaderTier as Tier } from '../widget-header/widget-header'
+export type { WidgetHeaderTier as Tier } from '../dashboard/widget-header'
 
 /**
  * The class joiner. Replaces the `[a, b].filter(Boolean).join(' ')` spelled out in seven files

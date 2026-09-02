@@ -7,7 +7,7 @@
  *
  * Internal to `agent-chat/` — not part of the public barrel.
  */
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 const RELATIVE_TIME_FORMAT = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 

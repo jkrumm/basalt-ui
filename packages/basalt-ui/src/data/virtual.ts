@@ -3,10 +3,10 @@
  * rendered with a Mantine Box scroll container.
  *
  * Optional peer: @tanstack/react-virtual >=3.13.26 <4. This list works on any 3.x — the floor is
- * set by ./agent-chat's virtualize mode (see ./data/index.ts), so do not lower it.
+ * set by ./agent-chat's virtualize mode, so do not lower it.
  *
- * Use this fine subpath instead of the `./data` barrel when your app only needs the virtual list
- * — it does NOT value-import @tanstack/react-table, so the data-table peer is never required.
+ * This subpath does NOT value-import @tanstack/react-table, so the data-table peer is never
+ * required — use `./data/table` when your app only needs the table.
  *
  * Install with:
  *   bun add @tanstack/react-virtual

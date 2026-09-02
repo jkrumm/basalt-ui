@@ -6,7 +6,7 @@
  * into an Alert, so both are asserted here.
  */
 import { describe, expect, test } from 'bun:test'
-import { errorStatus, toErrorMessage } from './error-message'
+import { errorStatus, toErrorMessage } from './errors'
 
 describe('toErrorMessage — decode ladder', () => {
   test('Error instance → message', () => {

@@ -24,7 +24,7 @@
  */
 import type { ReactNode } from 'react'
 import type { Slot } from '../register'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 // ── Context ───────────────────────────────────────────────────────────────────
 

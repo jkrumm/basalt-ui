@@ -16,7 +16,7 @@
  */
 import { Alert, Button, Center, Group, Loader, Stack, Text } from '@mantine/core'
 import type { CSSProperties, ReactNode } from 'react'
-import { toErrorMessage } from '../query/error-message'
+import { toErrorMessage } from '../common/errors'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { EmptyState } from './empty-state'
@@ -29,13 +29,9 @@ import type { QueryStateLike } from '../common/query-state-like'
  *
  * Named `tier`, not `variant` (audit B #19): `tier` is already the package's word for "how loud is
  * this" on `WidgetHeader` and `CtlSlot`, and `'section'` meant two different things across the two
- * spellings. {@link QueryStateVariant} stays exported as an alias — nothing is renamed out from
- * under a consumer.
+ * spellings.
  */
 export type QueryStateTier = 'page' | 'section'
-
-/** The former name of {@link QueryStateTier}. Kept as an alias; prefer `QueryStateTier`. */
-export type QueryStateVariant = QueryStateTier
 
 /**
  * The structural subset of a TanStack `UseQueryResult` these components read — defined in
@@ -61,8 +57,6 @@ export type QueryEmptyCopy = {
 export type LoadingStateProps = BasaltProps & {
   /** How loud this state is. Default `'page'`. */
   tier?: QueryStateTier
-  /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
-  variant?: QueryStateTier
   /** Accessible name for the spinner. Say what is loading. */
   label?: string
 }
@@ -70,12 +64,11 @@ export type LoadingStateProps = BasaltProps & {
 /** A spinner on its own — `tier="page"` centres it in a generous block, `'section'` is bare. */
 export function LoadingState({
   tier,
-  variant,
   label = 'Loading',
   className,
   style,
 }: LoadingStateProps): ReactNode {
-  const resolved = tier ?? variant ?? 'page'
+  const resolved = tier ?? 'page'
   if (resolved === 'section') {
     return (
       <Loader
@@ -113,8 +106,6 @@ export type ErrorStateProps = BasaltProps & {
   retrying?: boolean
   /** How loud this state is. Default `'page'`. */
   tier?: QueryStateTier
-  /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
-  variant?: QueryStateTier
   /** Extra controls beside Retry (e.g. a "Back to shares" link). */
   action?: ReactNode
 }
@@ -130,12 +121,11 @@ export function ErrorState({
   onRetry,
   retrying = false,
   tier,
-  variant,
   action,
   className,
   style,
 }: ErrorStateProps): ReactNode {
-  const resolved = tier ?? variant ?? 'page'
+  const resolved = tier ?? 'page'
   const alert = (
     <Alert
       color="red"
@@ -212,8 +202,6 @@ export type QueryStateProps<TData> = BasaltProps &
     errorAction?: ReactNode
     /** How loud every branch is. Default `'page'`. */
     tier?: QueryStateTier
-    /** @deprecated Renamed to `tier` — see {@link QueryStateTier}. Still honoured; `tier` wins. */
-    variant?: QueryStateTier
     /** Replace the default spinner (e.g. with a skeleton grid). */
     loading?: ReactNode
   }
@@ -246,14 +234,13 @@ export function QueryState<TData>({
   errorFallback = 'The request failed.',
   errorAction,
   tier,
-  variant,
   loading,
   className,
   style,
   classNames,
 }: QueryStateProps<TData>): ReactNode {
   assertQueryStateLike('QueryState', query)
-  const resolvedTier = tier ?? variant ?? 'page'
+  const resolvedTier = tier ?? 'page'
   // One class for every branch — see {@link QueryStateSlot}. `cx` returns `''` when both are
   // absent, and an empty `className` on a branch that previously carried none would be a DOM diff,
   // so it collapses back to `undefined`.

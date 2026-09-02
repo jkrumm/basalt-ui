@@ -29,7 +29,7 @@
  * // parts === [{ id: 'p1', type: 'text', text: 'Hello' }]
  */
 import type { ReasoningPart, TextPart } from './parts'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 type TextLike = TextPart | ReasoningPart
 

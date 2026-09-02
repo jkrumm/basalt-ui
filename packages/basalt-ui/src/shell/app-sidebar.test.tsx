@@ -16,7 +16,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { AppSidebar } from './app-sidebar'
 import type { AppSidebarProps } from './app-sidebar'
-import type { SidebarBlock } from '../nav/types'
+import type { SidebarBlock } from './nav-types'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: AppSidebarProps['sections'] = [

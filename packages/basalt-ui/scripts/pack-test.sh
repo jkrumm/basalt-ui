@@ -143,17 +143,14 @@ const subpaths = [
   'basalt-ui/theme-lab',
   'basalt-ui/styles.css',
   'basalt-ui/tokens.css',
-  'basalt-ui/query',
   'basalt-ui/router-tanstack',
   'basalt-ui/forms',
   'basalt-ui/notifications',
   'basalt-ui/commands',
-  'basalt-ui/data',
   'basalt-ui/data/table',
   'basalt-ui/data/virtual',
   'basalt-ui/agent',
   'basalt-ui/agent-chat',
-  'basalt-ui/connectivity',
   'basalt-ui/content',
   'basalt-ui/controls',
   'basalt-ui/controls-dates',
@@ -181,18 +178,14 @@ const pkgJson = JSON.parse(readFileSync(require.resolve('basalt-ui/package.json'
 if (pkgJson.name !== 'basalt-ui') throw new Error(`basalt-ui/package.json name is '${pkgJson.name}', not 'basalt-ui'`)
 
 // headless adapter smoke imports (peers installed — these load without a DOM/provider)
-const queryMod = await import('basalt-ui/query')
-if (typeof queryMod.createBasaltQueryClient !== 'function') throw new Error('query.createBasaltQueryClient missing')
-console.log('smoke: basalt-ui/query OK')
-
 const agentMod = await import('basalt-ui/agent')
 if (typeof agentMod.useAgentStream !== 'function') throw new Error('agent.useAgentStream missing')
 if (typeof agentMod.edenTransport !== 'function') throw new Error('agent.edenTransport missing')
 console.log('smoke: basalt-ui/agent OK')
 
 const routerTanstackMod = await import('basalt-ui/router-tanstack')
-if (typeof routerTanstackMod.createMultiSearchParamStore !== 'function') {
-  throw new Error('router-tanstack.createMultiSearchParamStore missing')
+if (typeof routerTanstackMod.createSearchStore !== 'function') {
+  throw new Error('router-tanstack.createSearchStore missing')
 }
 console.log('smoke: basalt-ui/router-tanstack OK')
 

@@ -21,7 +21,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import type { SidebarItem, SidebarSection } from '../nav/types'
+import type { SidebarItem, SidebarSection } from '../shell/nav-types'
 import type { AnyNavItem } from './nav'
 import { defineNav, navGroup } from './nav'
 import { useNav } from './use-nav'

@@ -212,12 +212,11 @@ function isMemoryLane(entry: StoreEntry): boolean {
 }
 
 /**
- * The store, plus the one knob the deprecated wrappers need: `legacyValueField` keeps the
- * enum-only stores' single-value storage layout so an already-persisted selection still resolves.
- * Not exported from the barrel — `createSearchStore` is the public door.
+ * The store's implementation. Not exported from the barrel — `createSearchStore` is the public
+ * door.
  */
 export function buildSearchStore<const S extends Record<string, AnyField>>(
-  o: CreateSearchStoreOptions<S> & { legacyValueField?: string },
+  o: CreateSearchStoreOptions<S>,
 ): InternalSearchStore<S> {
   assertNoLazyUrlFallback(o.key, o.fields)
   const core = createStoreCore(o)

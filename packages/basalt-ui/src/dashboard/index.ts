@@ -1,4 +1,14 @@
-export { DeltaBadge, type DeltaBadgeProps } from './delta-badge'
+export {
+  WidgetHeader,
+  type WidgetHeaderDeltaProps,
+  type WidgetHeaderMetricProps,
+  type WidgetHeaderProps,
+  type WidgetHeaderSlot,
+  type WidgetHeaderTier,
+  type WidgetHeaderTitleProps,
+} from './widget-header'
+export { DeltaBadge, type DeltaBadgeProps, type DeltaPolarity } from './delta-badge'
+export { Section, type SectionProps, type SectionSlot } from './section'
 export {
   StatCard,
   type StatCardBreakdownRow,
@@ -30,7 +40,6 @@ export {
   type QueryStateLike,
   type QueryStateSlot,
   type QueryStateTier,
-  type QueryStateVariant,
   type QueryEmptyCopy,
   LoadingState,
   type LoadingStateProps,

@@ -11,7 +11,7 @@ import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ConnectivityProvider } from './connectivity-provider'
 import { useConnectivity } from './use-connectivity'
-import type { ConnectivitySnapshot } from './types'
+import type { ConnectivitySnapshot } from './connectivity-types'
 
 /**
  * Compile-time proof that `queryOnline` is `boolean`, not `boolean | null` — this only type-checks

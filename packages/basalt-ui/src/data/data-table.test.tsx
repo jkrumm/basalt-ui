@@ -18,11 +18,11 @@
 import { MantineProvider, Text } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, mock, spyOn, test } from 'bun:test'
+import type { ColumnFiltersState } from '@tanstack/react-table'
 import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './table'
 import type { BasaltDataTableProps } from './data-table'
-import type { ColumnFiltersState } from './table'
 
 type Row = { project: string; cost: number }
 const col = createColumnHelper<Row>()

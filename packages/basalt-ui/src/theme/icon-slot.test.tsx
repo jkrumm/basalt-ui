@@ -24,7 +24,7 @@ import type { ReactNode } from 'react'
 import { ActionGroup } from '../controls/actions'
 import { FilterPill } from '../controls/filter-pill'
 import { SyncButton } from '../controls/sync-button'
-import { WidgetHeader } from '../widget-header/widget-header'
+import { WidgetHeader } from '../dashboard/widget-header'
 import { IconSlot } from './icon-slot'
 
 const ICON_SLOT_CSS = readFileSync(join(import.meta.dir, 'icon-slot.module.css'), 'utf8')

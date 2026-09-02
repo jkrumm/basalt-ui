@@ -18,6 +18,7 @@ import basaltPlugin, {
   KNOWN_RULE_IDS,
   PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
+  RETIRED_RULE_IDS,
 } from './oxlint-plugin.js'
 import { CTL_THEME } from '../src/theme/ctl-theme'
 import { GUARD_RULES, PLUGIN_RULE_IDS } from '../src/guard/index.ts'
@@ -1511,9 +1512,15 @@ describe('KNOWN_RULE_IDS', () => {
   // Deduped, because ONE id is deliberately in both registries: `in-body-page-title` is a plugin
   // rule AND a guard kind (law C8 has an AST half and a text half), so one `theme-allow
   // in-body-page-title — <why>` waives both lanes rather than needing a different word per lane.
-  it('contains nothing else — it is exactly the union of the two registries', () => {
+  // `RETIRED_RULE_IDS` adds a third component: an id that used to be a guard kind, is in neither
+  // live registry, and must still parse as a (dead) waiver rather than a typo.
+  it('contains nothing else — it is exactly the union of the two registries plus retired ids', () => {
     const expected = [
-      ...new Set([...Object.keys(basaltPlugin.rules), ...Object.keys(GUARD_RULES)]),
+      ...new Set([
+        ...Object.keys(basaltPlugin.rules),
+        ...Object.keys(GUARD_RULES),
+        ...RETIRED_RULE_IDS,
+      ]),
     ].toSorted()
     expect([...KNOWN_RULE_IDS].toSorted()).toEqual(expected)
   })
@@ -1529,6 +1536,15 @@ describe('KNOWN_RULE_IDS', () => {
   it('every plugin rule is classifiable by the guard — its own id set or a guard kind', () => {
     for (const id of Object.keys(basaltPlugin.rules)) {
       expect([id, PLUGIN_RULE_IDS.has(id) || Object.hasOwn(GUARD_RULES, id)]).toEqual([id, true])
+    }
+  })
+
+  // A retired id has to be classifiable too, on both sides — `RETIRED_RULE_IDS` is this plugin's
+  // copy, `PLUGIN_RULE_IDS` (src/guard) is the guard's. Drift between them would mean
+  // `--audit-allows` classifies a retired id one way from `check-theme` and another from oxlint.
+  it('every retired id is in the guard’s PLUGIN_RULE_IDS too', () => {
+    for (const id of RETIRED_RULE_IDS) {
+      expect([id, PLUGIN_RULE_IDS.has(id)]).toEqual([id, true])
     }
   })
 })
@@ -3295,80 +3311,8 @@ describe('basalt/query-fn-unwrap', () => {
 
 // ── deprecated-export (B4) ───────────────────────────────────────────────────
 
-describe('basalt/deprecated-export', () => {
-  it('flags a deprecated named import', () => {
-    const { code, rules, output } = run(
-      `import { field } from 'basalt-ui/forms'\nexport const f = field\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('deprecated-export')
-    expect(output).toContain('inputProps')
-  })
-
-  it('does NOT flag the replacement', () => {
-    const { code, rules } = run(
-      `import { inputProps } from 'basalt-ui/forms'\nexport const f = inputProps\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  it('does NOT flag a same-named import from somewhere else', () => {
-    const { code, rules } = run(`import { field } from 'basalt-ui/state'\nexport const f = field\n`)
-    expect(code).toBe(0)
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  it('flags each deprecated BasaltProvider connectivity prop', () => {
-    const { code, rules, output } = run(
-      `import { BasaltProvider } from 'basalt-ui'\n` +
-        `export const App = () => (\n` +
-        `  <BasaltProvider sseUrl="/e" healthUrl="/h" healthIntervalMs={5000}>{null}</BasaltProvider>\n)\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('deprecated-export')
-    expect(output).toContain('connectivity')
-  })
-
-  it('does NOT flag the connectivity object prop', () => {
-    const { code, rules } = run(
-      `import { BasaltProvider } from 'basalt-ui'\n` +
-        `export const App = () => <BasaltProvider connectivity={{ sseUrl: '/e' }}>{null}</BasaltProvider>\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  it("does NOT flag an sseUrl on a consumer's own component", () => {
-    const { code, rules } = run(
-      `import { BasaltProvider } from './provider'\n` +
-        `export const App = () => <BasaltProvider sseUrl="/e">{null}</BasaltProvider>\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  it('honours a theme-allow naming the rule', () => {
-    const { code, rules } = run(
-      `// theme-allow deprecated-export — pinned to 1.27.0 until the forms port lands\n` +
-        `import { field } from 'basalt-ui/forms'\nexport const f = field\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('deprecated-export')
-  })
-
-  // `field` → `inputProps` is NOT a drop-in rename any more (`inputProps` returns no `key`), so
-  // the row carries `fix: false`: the diagnostic still fires, but `--fix` must leave the import
-  // alone — the rewrite belongs to `basalt/forms-field-key`, which also inserts the key.
-  it('leaves a row with `fix: false` untouched under --fix while still reporting it', () => {
-    const source = `import { field } from 'basalt-ui/forms'\nexport const f = field\n`
-    writeFileSync(resolve(dir, 'fixture.tsx'), source)
-    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'fixture.tsx'], { cwd: dir })
-    expect(readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')).toBe(source)
-    const { rules } = run(source)
-    expect(rules).toContain('deprecated-export')
-  })
-})
+// deprecated-export's behaviour tests were removed with the last ledger row in 1.29.0; the
+// ledger-shape and barrel-scan assertions below keep the mechanism honest until the next row.
 
 // ── forms-field-key ──────────────────────────────────────────────────────────
 

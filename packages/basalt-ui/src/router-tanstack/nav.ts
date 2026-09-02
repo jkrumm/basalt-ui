@@ -12,7 +12,7 @@
  * No JSX and no Mantine in this module — `./router-tanstack` is a headless barrel by contract.
  */
 import type { ReactNode } from 'react'
-import type { NavMobilePlacement, NavSectionMobile } from '../nav/types'
+import type { NavMobilePlacement, NavSectionMobile } from '../shell/nav-types'
 
 // ── authoring shapes ─────────────────────────────────────────────────────────────────────────────
 

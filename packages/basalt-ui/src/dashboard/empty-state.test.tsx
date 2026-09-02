@@ -17,10 +17,10 @@ import { describe, expect, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { EmptyState } from './empty-state'
 
-function markup(variant: 'page' | 'section') {
+function markup(tier: 'page' | 'section') {
   return renderToStaticMarkup(
     <MantineProvider>
-      <EmptyState title="No results" variant={variant} />
+      <EmptyState title="No results" tier={tier} />
     </MantineProvider>,
   )
 }

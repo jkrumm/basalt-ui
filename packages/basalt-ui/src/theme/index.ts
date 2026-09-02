@@ -104,6 +104,13 @@ export { useBasaltSpacing } from './use-basalt-spacing'
 // merge/precedence contract.
 export { CTL_THEME, CtlSlot, type CtlSlotProps } from './ctl-theme'
 
+// `ThemeToggle` moved into this directory (C1 consolidation, merging the former `theme-toggle/`
+// dir) but is deliberately NOT re-exported from this barrel: it imports `motion/react` eagerly,
+// and this file resolves from `./controls` (via `CtlSlot`) among others — re-exporting it here
+// would make `motion` a hard transitive peer of every consumer of this barrel, not just of
+// `ThemeToggle` itself. The root barrel (`src/index.ts`) imports it straight from
+// `./theme/theme-toggle`, unchanged from before the merge.
+
 // Typed `theme.other.basaltDerive` / `theme.other.basaltFonts` / `theme.other.basaltRadius` /
 // `theme.other.basaltDensity` reads (Mantine's `MantineThemeOther` ships an index signature, so
 // this merge is additive — no widening of the existing `[key: string]: any`). Set by

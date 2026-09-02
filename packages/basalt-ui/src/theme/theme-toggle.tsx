@@ -23,7 +23,7 @@ import {
 import { useReducedMotion } from '@mantine/hooks'
 import { AnimatePresence, motion } from 'motion/react'
 import { useRef, useState } from 'react'
-import { MOTION_SPRING } from '../motion'
+import { MOTION_SPRING } from '../common/motion'
 import type { BasaltProps } from '../common/props'
 
 type Scheme = 'light' | 'dark' | 'auto'

@@ -7,7 +7,7 @@
  * mean warns once in dev and renders on (`useValidateProps`).
  */
 import { useEffect } from 'react'
-import { isDev } from '../utils/is-dev'
+import { isDev } from './is-dev'
 import { requiredProp } from './errors'
 
 /** A check returns the message(s) it has, or nothing. `null`/`undefined` entries are ignored. */

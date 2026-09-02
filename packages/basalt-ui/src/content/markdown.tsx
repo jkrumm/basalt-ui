@@ -101,10 +101,9 @@ export type MarkdownProps = {
    * default to same-origin `['/']`; `'trusted'` (your own authored content) keeps
    * `['https://', '/']`. An explicit `allowedImagePrefixes` always wins over both.
    *
-   * Default: `'untrusted'` when `streaming` is set, `'trusted'` otherwise. That default only
-   * preserves the pre-1.12 fail-safe — it is NOT the policy. Settledness has nothing to do with
-   * trust: a FINISHED agent message is still model-generated, so any surface rendering agent text
-   * must pin `contentTrust="untrusted"` explicitly rather than lean on `streaming`.
+   * Default: `'trusted'`. Settledness has nothing to do with trust: a FINISHED agent message is
+   * still model-generated, so any surface rendering agent text must pin `contentTrust="untrusted"`
+   * explicitly rather than lean on `streaming`.
    */
   readonly contentTrust?: MarkdownContentTrust
   /**
@@ -618,10 +617,7 @@ export function Markdown({
   density = 'article',
   measure,
   streaming = false,
-  // `streaming` as the trust DEFAULT is backward compatibility only (pre-1.12 the image policy was
-  // read straight off `streaming`, so dropping it would silently widen every existing streaming
-  // call site). It is a floor, never the policy — see the prop's JSDoc.
-  contentTrust = streaming ? 'untrusted' : 'trusted',
+  contentTrust = 'trusted',
   components,
   fenceRenderers,
   sanitizeSchema,

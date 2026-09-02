@@ -28,7 +28,7 @@ import type { ReactNode, RefObject } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { CtlSlot } from '../theme'
-import { InfoGlyph } from '../widget-header/widget-header'
+import { InfoGlyph } from '../dashboard/widget-header'
 import classes from './panel-row.module.css'
 
 /**

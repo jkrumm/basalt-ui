@@ -20,8 +20,7 @@ export type { UseBasaltFormOptions } from './create-form'
 
 // ── inputProps ────────────────────────────────────────────────────────────────
 // Two calls, never one object: `key` inside a spread is a React 19 warning. See field.ts.
-// `field` ships alongside as a @deprecated alias — see field.ts.
-export { inputProps, fieldKey, field } from './field'
+export { inputProps, fieldKey } from './field'
 
 // ── layout — law C1's third home, the form row ────────────────────────────────
 export { FormSection, FormRow, FormGroup, FormActions } from './form-layout'

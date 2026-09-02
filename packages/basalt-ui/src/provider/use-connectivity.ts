@@ -2,8 +2,8 @@
  * useConnectivity — reads the aggregated connectivity status from ConnectivityContext.
  *
  * Throws if used outside a ConnectivityProvider. `BasaltProvider` auto-mounts
- * `ConnectivityProvider`, so this hook works with zero setup in the common case; the removed
- * `useOnlineStatus` (formerly `basalt-ui/state`) is replaced by this hook (see MIGRATING.md).
+ * `ConnectivityProvider`, so this hook works with zero setup in the common case. It replaced the
+ * former online-status hook that lived on `basalt-ui/state` (see MIGRATING.md).
  *
  * @example
  * const { status, details } = useConnectivity()
@@ -11,7 +11,7 @@
  */
 import { useContext } from 'react'
 import { ConnectivityContext } from './connectivity-provider'
-import type { ConnectivitySnapshot } from './types'
+import type { ConnectivitySnapshot } from './connectivity-types'
 
 export function useConnectivity(): ConnectivitySnapshot {
   const snapshot = useContext(ConnectivityContext)

@@ -19,7 +19,7 @@
  *   interface BasaltRegister { commands: typeof COMMANDS }
  * }
  *
- * // main.tsx — mount composable overlays (replaces <BasaltNotifications />):
+ * // main.tsx — mount composable overlays:
  * import { BasaltOverlays } from 'basalt-ui/commands'
  * import '@mantine/spotlight/styles.layer.css'
  * <BasaltProvider><BasaltOverlays><App /></BasaltOverlays></BasaltProvider>

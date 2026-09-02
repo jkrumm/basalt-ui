@@ -29,7 +29,7 @@ import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 import { missingLayer } from '../common/errors'
 import type { Slot } from '../register'
-import { isDev } from '../utils/is-dev'
+import { isDev } from '../common/is-dev'
 
 // ── Lazy @mantine/modals resolution ───────────────────────────────────────────
 // @mantine/modals is an OPTIONAL peer — never imported at module evaluation time, so importing

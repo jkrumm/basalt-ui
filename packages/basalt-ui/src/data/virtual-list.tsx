@@ -5,7 +5,7 @@
  * set by ./agent-chat's virtualize mode (see ./data/index.ts), so do not lower it.
  *
  * @example
- * import { BasaltVirtualList } from 'basalt-ui/data'
+ * import { BasaltVirtualList } from 'basalt-ui/data/virtual'
  *
  * const items = Array.from({ length: 10_000 }, (_, i) => ({ id: i, label: `Row ${i}` }))
  * <BasaltVirtualList

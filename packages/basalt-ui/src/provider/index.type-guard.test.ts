@@ -17,8 +17,6 @@ function accept(props: BasaltProviderProps): BasaltProviderProps {
 accept({ children: null })
 accept({ children: null, connectivity: { sseUrl: 'https://example.com/sse' } })
 accept({ children: null, connectivity: { override: { browserOnline: false } } })
-// The deprecated flattened props still type-check — removed in 1.28.0, not yet.
-accept({ children: null, sseUrl: 'https://example.com/sse', healthIntervalMs: 15_000 })
 
 // ── Invalid — must be a tsc error ──────────────────────────────────────────────
 

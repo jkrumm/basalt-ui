@@ -3,9 +3,9 @@
     "ActionGroup",
     "AppBreadcrumbs",
     "AppSidebar",
-    "BASALT_PREFIX",
     "BasaltErrorBoundary",
     "BasaltProvider",
+    "BasaltQueryDevtools",
     "BasaltShell",
     "CTL_THEME",
     "Composer",
@@ -47,31 +47,26 @@
     "WidgetGrid",
     "WidgetHeader",
     "assertNever",
-    "assertRequiredProps",
-    "assignRef",
     "baseTheme",
     "createAdapterThreadsStore",
+    "createBasaltQueryClient",
     "createBasaltTheme",
     "createLocalStore",
     "createPersistedState",
     "createThreadsStore",
     "cssVariablesResolver",
     "cx",
-    "deprecatedProp",
-    "duplicateMount",
+    "errorStatus",
     "heuristicOutcome",
-    "mergeRefs",
-    "missingLayer",
-    "oneOf",
     "projectMobileNav",
     "readPersistedValue",
-    "requiredProp",
     "scrollParentOf",
     "threadPartRenderers",
     "threadsStoreAdapterContract",
+    "toErrorMessage",
+    "unwrap",
     "useAgentThreadRuns",
-    "useConnectivity",
-    "useValidateProps"
+    "useConnectivity"
   ],
   "./charts": [
     "AreaClosed",
@@ -231,7 +226,6 @@
     "FormRow",
     "FormSection",
     "FormStateProvider",
-    "field",
     "fieldKey",
     "inputProps",
     "isFieldErrorEnvelope",
@@ -266,7 +260,6 @@
     "useCommandHotkeys"
   ],
   "./notifications": [
-    "BasaltNotifications",
     "NotificationBell",
     "NotificationCenter",
     "add",
@@ -291,25 +284,7 @@
     "resolveAction",
     "useNotificationHistory"
   ],
-  "./query": [
-    "BasaltQueryDevtools",
-    "QueryClientProvider",
-    "QueryErrorResetBoundary",
-    "createBasaltQueryClient",
-    "errorStatus",
-    "queryOptions",
-    "toErrorMessage",
-    "unwrap",
-    "useInfiniteQuery",
-    "useMutation",
-    "useQuery",
-    "useQueryClient",
-    "useQueryErrorResetBoundary",
-    "useSuspenseQuery"
-  ],
   "./router-tanstack": [
-    "createMultiSearchParamStore",
-    "createSearchParamStore",
     "createSearchStore",
     "defineNav",
     "field",
@@ -320,27 +295,7 @@
     "useNav",
     "useRouterBreadcrumbs"
   ],
-  "./data": [
-    "BasaltDataTable",
-    "BasaltVirtualList",
-    "createColumnHelper",
-    "flexRender",
-    "getCoreRowModel",
-    "getFilteredRowModel",
-    "getPaginationRowModel",
-    "getSortedRowModel",
-    "useReactTable"
-  ],
-  "./data/table": [
-    "BasaltDataTable",
-    "createColumnHelper",
-    "flexRender",
-    "getCoreRowModel",
-    "getFilteredRowModel",
-    "getPaginationRowModel",
-    "getSortedRowModel",
-    "useReactTable"
-  ],
+  "./data/table": ["BasaltDataTable", "createColumnHelper"],
   "./data/virtual": ["BasaltVirtualList"],
   "./agent": [
     "BasaltStickToBottom",
@@ -432,6 +387,5 @@
     "globalActionMobile"
   ],
   "./controls-dates": ["DateRangePicker"],
-  "./state": ["createLocalStore", "createPersistedState", "field", "readPersistedValue"],
-  "./connectivity": ["ConnectivityIndicator", "ConnectivityProvider", "useConnectivity"]
+  "./state": ["createLocalStore", "createPersistedState", "field", "readPersistedValue"]
 }

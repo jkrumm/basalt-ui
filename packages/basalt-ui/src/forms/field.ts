@@ -10,8 +10,10 @@
  * three warnings per page. The bundle was basalt's own invention; Mantine's documented idiom is
  * `key={form.key(path)} {...form.getInputProps(path)}`, and this is that idiom with basalt's names.
  *
- * The `@deprecated` `field` alias below did NOT follow it there — it still returns the 1.27 bundle,
- * because a deprecated export is a schedule and not a silent behaviour change. See its own doc.
+ * The `@deprecated` `field` alias that used to live here is removed (1.29.0, C1 consolidation) —
+ * `basalt-ui/forms`' `field` collided in name with the `field` store builder on `basalt-ui/state`,
+ * which was the whole reason for the rename in the first place. Write
+ * `key={fieldKey(form, path)} {...inputProps(form, path)}`.
  */
 import type { LooseKeys, UseFormReturnType } from '@mantine/form'
 
@@ -54,26 +56,4 @@ export function fieldKey<Values extends Record<string, unknown>, Path extends Lo
   path: Path,
 ): string {
   return form.key(path)
-}
-
-/**
- * @deprecated Renamed to `inputProps` in 1.x — collides with the `field` store builder in
- * `basalt-ui/state`. Kept until the forms surface next changes; removal ships as a plain `feat:`,
- * never a major. Write `key={fieldKey(form, path)} {...inputProps(form, path)}` instead.
- *
- * **It is NOT `export const field = inputProps` any more, and the difference is the whole point.**
- * It returns the 1.27 shape — `getInputProps(path)` PLUS `key` — because an alias of the new
- * `inputProps` would have changed what every existing `<TextInput {...field(form, 'x')} />` does
- * without changing whether it compiles: the element loses its reconciler key, keeps its old text
- * through `form.reset()`, and nothing anywhere says so. A deprecated export is a SCHEDULE, not a
- * behaviour change (`../../CLAUDE.md`, "Deprecation lifecycle"), so this one keeps its behaviour
- * byte for byte — including the React 19 `A props object containing a "key" prop is being spread
- * into JSX` warning it has always produced. That warning is the migration signal; `1.29.0` removing
- * the export is the deadline. `basalt/forms-field-key` reports every remaining call site.
- */
-export function field<Values extends Record<string, unknown>, Path extends LooseKeys<Values>>(
-  form: UseFormReturnType<Values>,
-  path: Path,
-): ReturnType<UseFormReturnType<Values>['getInputProps']> & { key: string } {
-  return { ...form.getInputProps(path), key: form.key(path) }
 }

@@ -3,7 +3,7 @@
  * tier="widget"` title row (icon/info/value/delta/count/actions) plus an optional subtitle, over a
  * clipped chart body. Do not wrap visx charts in bare divs.
  *
- * `WidgetHeader` lives in `src/widget-header/` and is itself Mantine-free, so composing it here
+ * `WidgetHeader` lives in `src/dashboard/` and is itself Mantine-free, so composing it here
  * keeps `./charts` resolving with no `@mantine/*` installed (`check-dist-layering.mjs`,
  * `basalt/token-layer-boundary`). The `actions` slot cannot mount `CtlSlot` (Mantine-coupled) for
  * the same reason — it carries only `data-basalt-tier="widget"`; a basalt control placed there
@@ -16,8 +16,8 @@ import type { CSSProperties, ReactNode } from 'react'
 import { cx } from '../../common/props'
 import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { VX } from '../../tokens'
-import { WidgetHeader } from '../../widget-header'
-import type { DeltaPolarity } from '../../widget-header'
+import { WidgetHeader } from '../../dashboard/widget-header'
+import type { DeltaPolarity } from '../../dashboard/delta-badge'
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
 // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the same value), never a

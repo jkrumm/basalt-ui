@@ -1,7 +1,8 @@
 /**
- * ./query/devtools — prod-safe lazy wrapper for @tanstack/react-query-devtools.
- * The devtools package is an OPTIONAL peer — never imported at module evaluation time.
- * The dynamic import() resolves only when rendered in non-production.
+ * `BasaltQueryDevtools` — prod-safe lazy wrapper for @tanstack/react-query-devtools. Folded onto
+ * the root barrel alongside `query-client.ts` (C1 consolidation, dropping the `./query` subpath).
+ * The devtools package is an OPTIONAL peer — never imported at module evaluation time. The dynamic
+ * import() resolves only when rendered in non-production.
  */
 import { lazy, Suspense } from 'react'
 import type { ComponentProps } from 'react'
@@ -18,7 +19,7 @@ Object.assign(LazyDevtools, { displayName: 'LazyDevtools' })
  * import fires. In production this returns null immediately.
  *
  * @example
- * import { BasaltQueryDevtools } from 'basalt-ui/query'
+ * import { BasaltQueryDevtools } from 'basalt-ui'
  *
  * function Root() {
  *   return (
