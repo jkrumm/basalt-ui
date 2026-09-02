@@ -17,13 +17,22 @@
  * (G12/G13 closed). Below `sm` that same one node stacks under the body, no twin (C9).
  */
 import { Stack, Text } from '@mantine/core'
-import { PageAside, PageBar, QueryState, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
+import {
+  createBasaltQueryClient,
+  PageAside,
+  PageBar,
+  QueryState,
+  Section,
+  StatCard,
+  StatGroup,
+  WidgetGrid,
+} from 'basalt-ui'
 import type { StatCardTone } from 'basalt-ui'
 import { ChartCard, Heatmap, LineSparkline, MultiLine, VX, ZonedLine } from 'basalt-ui/charts'
 import type { AxisConfig, ChartSeries, ZoneSpec } from 'basalt-ui/charts'
 import { FilterSet, RangeFilter, ViewTabs } from 'basalt-ui/controls'
-import { BasaltDataTable } from 'basalt-ui/data'
-import { createBasaltQueryClient, QueryClientProvider } from 'basalt-ui/query'
+import { BasaltDataTable } from 'basalt-ui/data/table'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { alpha } from 'basalt-ui/tokens'
 import { useMemo, useState } from 'react'
 import { IconActivity, IconChart, IconComponents, IconCurrency } from '../icons'

@@ -11,7 +11,7 @@
  * fence upgrading from plain code to a diagram once it settles).
  */
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@mantine/core'
+import { Button, Tabs } from '@mantine/core'
 import { Link } from '@tanstack/react-router'
 import {
   ArticleLayout,
@@ -21,6 +21,7 @@ import {
   headingSlug,
   Markdown,
 } from 'basalt-ui/content'
+import { ContentOverviewPage } from './ContentOverviewPage'
 
 const VITE_CONFIG_SNIPPET = `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -147,6 +148,26 @@ function StreamingDemo() {
 }
 
 export function ContentDemoPage() {
+  const [tab, setTab] = useState<'article' | 'overview'>('article')
+  return (
+    <Tabs value={tab} onChange={(v) => setTab((v as 'article' | 'overview') ?? 'article')}>
+      <Tabs.List>
+        <Tabs.Tab value="article">Article</Tabs.Tab>
+        <Tabs.Tab value="overview">Overview</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel value="article" pt="md">
+        <ContentArticleDemo />
+      </Tabs.Panel>
+      <Tabs.Panel value="overview" pt="md">
+        {/* `/content-overview` absorbed here (audit E §7) — its own `PageBar` renders only while
+            this panel is active, so the whole route still carries exactly one at a time (law C6). */}
+        <ContentOverviewPage />
+      </Tabs.Panel>
+    </Tabs>
+  )
+}
+
+function ContentArticleDemo() {
   return (
     <ArticleLayout
       meta={{

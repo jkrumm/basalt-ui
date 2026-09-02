@@ -87,7 +87,7 @@ function ChartStatesWidget() {
       <div style={{ minHeight: 240 }}>
         <QueryState
           query={query}
-          variant="section"
+          tier="section"
           errorTitle="Could not load sessions"
           errorFallback="The sessions index did not answer."
           empty={{
@@ -200,13 +200,13 @@ function BuildingBlocksBlock() {
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb="xs">
             LoadingState — section
           </Text>
-          <LoadingState variant="section" label="Loading sessions" />
+          <LoadingState tier="section" label="Loading sessions" />
         </Paper>
         <Paper p="sm" withBorder mih={140}>
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb="xs">
             LoadingState — page
           </Text>
-          <LoadingState variant="page" label="Loading the page" />
+          <LoadingState tier="page" label="Loading the page" />
         </Paper>
         <Paper p="sm" withBorder>
           <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb="xs">
@@ -216,7 +216,7 @@ function BuildingBlocksBlock() {
             error={{ status: 500, value: {} }}
             title="Could not load sessions"
             fallback="The sessions index did not answer."
-            variant="section"
+            tier="section"
           />
         </Paper>
         <Paper p="sm" withBorder>
@@ -227,7 +227,7 @@ function BuildingBlocksBlock() {
             error={{ status: 401, value: {} }}
             title="Could not start the admin"
             fallback="Minting the asset token failed."
-            variant="page"
+            tier="page"
           />
         </Paper>
         <Paper p="sm" withBorder>
@@ -235,7 +235,7 @@ function BuildingBlocksBlock() {
             EmptyState — section
           </Text>
           <EmptyState
-            variant="section"
+            tier="section"
             title="No sessions yet"
             description="Nothing measured for this range."
           />
@@ -245,7 +245,7 @@ function BuildingBlocksBlock() {
             EmptyState — page
           </Text>
           <EmptyState
-            variant="page"
+            tier="page"
             title="Nothing here yet"
             description="Once data arrives, it renders here."
           />

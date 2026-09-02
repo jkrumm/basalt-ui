@@ -5,7 +5,7 @@
  * (1 000 rows).
  *
  * Edge states:
- *   • Clear data → the real `EmptyState` (variant="section") renders via `emptyState`.
+ *   • Clear data → the real `EmptyState` (tier="section") renders via `emptyState`.
  *   • Toggle isLoading → skeletonRows (5) render instead of real rows.
  *   • Search / department / role filters narrow the row set; the pagination bar tracks the
  *     filtered count.
@@ -22,14 +22,19 @@ import {
   Paper,
   Stack,
   Switch,
+  Tabs,
   Text,
   Title,
 } from '@mantine/core'
 import { EmptyState } from 'basalt-ui'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
-import type { DataTableFacet, SortingState } from 'basalt-ui/data/table'
+import type { DataTableFacet } from 'basalt-ui/data/table'
+import { DataStressPage } from './DataStressPage'
+import { DataTableChromeDemoPage } from './DataTableChromeDemoPage'
+import { QueryDemoPage } from './QueryDemoPage'
 import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import { VX } from 'basalt-ui/tokens'
+import type { SortingState } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import { IconSearch } from './icons'
 
@@ -201,7 +206,7 @@ function TableSection() {
             icon={<IconSearch />}
             title="No employees found"
             description="Try adjusting your filters or search terms."
-            variant="section"
+            tier="section"
           />
         }
         onSortingChange={setLastSorting}
@@ -364,15 +369,37 @@ export function DataDemoPage() {
         </Stack>
       </Paper>
 
-      <Paper p="sm">
-        <Stack gap="md">
-          <TableSection />
-          <Divider />
-          <PinnedTableSection />
-          <Divider />
-          <VirtualListSection />
-        </Stack>
-      </Paper>
+      {/* `/data-table-chrome`, `/data-stress`, and `/query` absorbed here (audit E §7). Only
+          `DataStressPage` carries its own `PageBar`, and only while its tab is active, so the
+          route still carries exactly one at a time (law C6). */}
+      <Tabs defaultValue="overview">
+        <Tabs.List>
+          <Tabs.Tab value="overview">Overview</Tabs.Tab>
+          <Tabs.Tab value="chrome">Table chrome</Tabs.Tab>
+          <Tabs.Tab value="stress">Stress</Tabs.Tab>
+          <Tabs.Tab value="query">Query</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="overview" pt="md">
+          <Paper p="sm">
+            <Stack gap="md">
+              <TableSection />
+              <Divider />
+              <PinnedTableSection />
+              <Divider />
+              <VirtualListSection />
+            </Stack>
+          </Paper>
+        </Tabs.Panel>
+        <Tabs.Panel value="chrome" pt="md">
+          <DataTableChromeDemoPage />
+        </Tabs.Panel>
+        <Tabs.Panel value="stress" pt="md">
+          <DataStressPage />
+        </Tabs.Panel>
+        <Tabs.Panel value="query" pt="md">
+          <QueryDemoPage />
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   )
 }

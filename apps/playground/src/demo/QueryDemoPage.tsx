@@ -1,6 +1,7 @@
 /**
- * QueryDemoPage — exercises createBasaltQueryClient, unwrap, QueryClientProvider,
- * and BasaltQueryDevtools from basalt-ui/query with a mock Eden-shaped response.
+ * QueryDemoPage — exercises createBasaltQueryClient, unwrap, BasaltQueryDevtools (root barrel,
+ * C1 dropped `./query`) + QueryClientProvider from @tanstack/react-query, with a mock Eden-shaped
+ * response.
  * No backend required: the mock queryFn resolves a static { data, error } envelope.
  *
  * Edge states: toggle the error switch to force the error envelope — unwrap() throws,
@@ -15,20 +16,20 @@ import {
   Stack,
   Switch,
   Table,
+  Tabs,
   Text,
   Title,
 } from '@mantine/core'
+import { BasaltQueryDevtools, createBasaltQueryClient, toErrorMessage, unwrap } from 'basalt-ui'
 import {
-  BasaltQueryDevtools,
-  createBasaltQueryClient,
   QueryClientProvider,
-  toErrorMessage,
-  unwrap,
   useQuery,
   useQueryClient,
   useQueryErrorResetBoundary,
-} from 'basalt-ui/query'
+} from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { QueryStateDemoPage } from './QueryStateDemoPage'
+import { StatesPage } from './StatesPage'
 
 // ── Mock data ─────────────────────────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,44 @@ export function QueryDemoPage() {
 
   return (
     <QueryClientProvider client={client}>
+      <Tabs defaultValue="client">
+        <Tabs.List>
+          <Tabs.Tab value="client">Client</Tabs.Tab>
+          <Tabs.Tab value="query-state">Query state</Tabs.Tab>
+          <Tabs.Tab value="states">States</Tabs.Tab>
+        </Tabs.List>
+        {/* `/query-state` and `/states` absorbed here (audit E §7) — neither carries its own
+            `PageBar`, so nesting them under this tab set adds none (law C6). */}
+        <Tabs.Panel value="client" pt="md">
+          <QueryClientPanel
+            staleTimeMs={staleTimeMs}
+            forceError={forceError}
+            setForceError={setForceError}
+          />
+        </Tabs.Panel>
+        <Tabs.Panel value="query-state" pt="md">
+          <QueryStateDemoPage />
+        </Tabs.Panel>
+        <Tabs.Panel value="states" pt="md">
+          <StatesPage />
+        </Tabs.Panel>
+      </Tabs>
+      <BasaltQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  )
+}
+
+function QueryClientPanel({
+  staleTimeMs,
+  forceError,
+  setForceError,
+}: {
+  staleTimeMs: number
+  forceError: boolean
+  setForceError: (v: boolean) => void
+}) {
+  return (
+    <>
       <Stack gap="md" p="md">
         <div>
           <Title order={3}>./query adapter</Title>
@@ -182,8 +221,6 @@ export function QueryDemoPage() {
 
         <ResetBoundaryNote />
       </Stack>
-
-      <BasaltQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </>
   )
 }

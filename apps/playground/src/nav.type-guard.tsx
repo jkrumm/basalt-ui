@@ -43,8 +43,8 @@ export const NAV = defineNav({
         children: [
           {
             id: 'sessions',
-            label: 'Sessions',
-            link: linkOptions({ to: '/dashboard/sessions', search: DASH_SEARCH }),
+            label: 'Revenue',
+            link: linkOptions({ to: '/dashboard/revenue', search: DASH_SEARCH }),
             // A GRANDCHILD — two levels below the group. Both halves of the contract are checked
             // against it: it is `Exact`-checked like any other item (row 4b), and it is present in
             // the id union `navTarget` takes (row 11).
@@ -67,7 +67,7 @@ export const NAV = defineNav({
 // than the argument, which is the failure mode every row below is downstream of.
 
 export const dashTo: '/dashboard' = NAV.groups[0].items[1].link.to
-export const sessionsTo: '/dashboard/sessions' = NAV.groups[0].items[1].children[0].link.to
+export const sessionsTo: '/dashboard/revenue' = NAV.groups[0].items[1].children[0].link.to
 export const groupId: 'lab' = NAV.groups[1].id
 
 // ── 2. a route path that does not exist ──────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ export const searchThunk = defineNav({
       {
         id: 'threads',
         label: 'Threads',
-        link: linkOptions({ to: '/threads', search: () => ({ thread: 'latest' }) }),
+        link: linkOptions({ to: '/agent', search: () => ({ thread: 'latest' }) }),
       },
     ]),
   ],
@@ -265,7 +265,7 @@ export const dashTarget: { readonly to: '/dashboard'; readonly search: typeof DA
 // used to make a grandchild a compile error against an id the runtime finds perfectly well; the row
 // below is the grandchild case, and it is the pin on that agreement.
 export const sessionsTarget: {
-  readonly to: '/dashboard/sessions'
+  readonly to: '/dashboard/revenue'
   readonly search: typeof DASH_SEARCH
 } = navTarget(NAV, 'sessions')
 

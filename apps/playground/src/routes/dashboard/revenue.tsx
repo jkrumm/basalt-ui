@@ -8,6 +8,9 @@ export const Route = createFileRoute('/dashboard/revenue')({
   component: RevenuePage,
 })
 
+// NOT `demo/fixtures/format.ts`'s `money` — these values are already scaled to thousands
+// (`data.ts`'s `generateDashboardData`), so the shared raw-dollar formatter would silently drop
+// the `k` and misstate the magnitude by 1000x.
 const fmtMoney = (v: number) => `$${v.toFixed(1)}k`
 
 function RevenuePage() {

@@ -34,7 +34,9 @@ import {
 } from '@mantine/core'
 import { EmptyState, PageBar, SettingsSection } from 'basalt-ui'
 import type { ReactNode } from 'react'
+import { ActivityPage } from './ActivityPage'
 import { IconSearch } from './icons'
+import { PrimitivesPage } from './PrimitivesPage'
 
 /** A titled surface section — every component group sits inside one of these so its surface shows.
  * Named `ComponentGroup`, not `Section`: a local `Section` would shadow the shipped export of that
@@ -57,6 +59,31 @@ export function ComponentsPage() {
           owns its size, its overflow fold and its mobile projection (laws C5/C7). */}
       <PageBar actions={{ secondary: [{ key: 'export', label: 'Export', onClick: () => {} }] }} />
 
+      {/* `/primitives` and `/activity` absorbed here (audit E §7) — one PageBar for the whole
+          route (law C6), each former page's body unchanged as a panel. */}
+      <Tabs defaultValue="surfaces">
+        <Tabs.List>
+          <Tabs.Tab value="surfaces">Surfaces</Tabs.Tab>
+          <Tabs.Tab value="primitives">Primitives</Tabs.Tab>
+          <Tabs.Tab value="activity">Activity</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="surfaces" pt="md">
+          <ComponentsSurfaces />
+        </Tabs.Panel>
+        <Tabs.Panel value="primitives" pt="md">
+          <PrimitivesPage />
+        </Tabs.Panel>
+        <Tabs.Panel value="activity" pt="md">
+          <ActivityPage />
+        </Tabs.Panel>
+      </Tabs>
+    </Stack>
+  )
+}
+
+function ComponentsSurfaces() {
+  return (
+    <Stack gap="md">
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <ComponentGroup title="Buttons">
           <Group gap="sm">
@@ -241,7 +268,7 @@ export function ComponentsPage() {
               Clear filters
             </Button>
           }
-          variant="section"
+          tier="section"
         />
       </ComponentGroup>
 

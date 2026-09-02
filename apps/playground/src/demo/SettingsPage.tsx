@@ -51,8 +51,10 @@ import type { NotificationIntent } from 'basalt-ui/notifications'
 import { createPersistedState } from 'basalt-ui/state'
 import { COLOR_GROUPS, DeriveControls, ThemeLabControls } from 'basalt-ui/theme-lab'
 import { alpha, VX } from 'basalt-ui/tokens'
+import { ConnectivityDemoPage } from './ConnectivityDemoPage'
 import { IconCopy, IconReset } from './icons'
 import { DEMO_SERIES } from './series'
+import { UserStatePage } from './UserStatePage'
 import { scenarioToAccountState, scenarioToPlan, useUserScenario } from './user-scenario-store'
 import type { UserScenario } from './user-scenario-store'
 
@@ -555,6 +557,10 @@ export function SettingsPage() {
       <ShortcutsSection />
       <ConnectivitySection />
       <DeveloperSection />
+      {/* `/user` and `/connectivity` absorbed here (audit E §7) — same `SettingsSection` idiom as
+          every block above, no PageBar of their own to conflict with (law C6). */}
+      <UserStatePage />
+      <ConnectivityDemoPage />
     </Stack>
   )
 }
