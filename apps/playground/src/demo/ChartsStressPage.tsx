@@ -12,6 +12,9 @@ import {
   ChartCursorScope,
   CartesianChart,
   Donut,
+  fmtCompact,
+  fmtCurrency,
+  fmtPercent,
   Heatmap,
   LinePath,
   MultiLine,
@@ -33,6 +36,24 @@ const stressStore = createLocalStore({
   key: 'charts-stress',
   fields: { scale: field.enum(['linear', 'log'], 'linear') },
 }).labels({ scale: { linear: 'Linear', log: 'Log' } })
+
+// The page-local axis for block (i) — SeriesStyle.curve, toggled live over one series.
+const CURVE_VALUES = ['monotone', 'linear', 'step'] as const
+
+const curveStore = createLocalStore({
+  key: 'charts-stress-curve',
+  fields: { curve: field.enum(CURVE_VALUES, 'monotone') },
+}).labels({ curve: { monotone: 'Monotone', linear: 'Linear', step: 'Step' } })
+
+// The page-local axis for block (k) — the chart layer's own `state` prop, toggled through all
+// four branches like every other demo `QueryStateLike` on this page, but with NO `QueryState`
+// import: `state` is read directly by `MultiLine`/`CartesianChart` (Mantine-free).
+const CHART_STATE_VALUES = ['pending', 'error', 'empty', 'data'] as const
+
+const chartStateStore = createLocalStore({
+  key: 'charts-stress-state',
+  fields: { variant: field.enum(CHART_STATE_VALUES, 'data') },
+}).labels({ variant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' } })
 
 // ── (a) Grouped bars + a store-bound y.scale + a legend toggle ──────────────────────────────────
 
@@ -477,6 +498,166 @@ function DonutHeatmapBlock() {
   )
 }
 
+// ── (i) SeriesStyle.curve — a store-bound ViewTabs over one series ─────────────────────────────
+
+const CURVE_SERIES_BASE: Omit<ChartSeries<DayPoint>, 'curve'> = {
+  key: 'sessions',
+  label: 'Sessions',
+  color: demoColors.sessions,
+  mark: 'line',
+  getValue: (d) => d.sessions,
+}
+
+function CurveBlock() {
+  const [curve] = curveStore.field.curve.use()
+  const series = useMemo<ChartSeries<DayPoint>[]>(() => [{ ...CURVE_SERIES_BASE, curve }], [curve])
+  return (
+    <ChartCard
+      title="(i) MultiLine — SeriesStyle.curve"
+      subtitle="Monotone / linear / step, over the same series"
+      info="curve switches the d3 interpolation between plotted points — monotone is smoothed and overshoot-free, linear is honest for samples, step holds the value between points rather than interpolating through values that never existed."
+      actions={
+        <ViewTabs
+          field={curveStore.field.curve}
+          options={[
+            { value: 'monotone', label: 'Monotone' },
+            { value: 'linear', label: 'Linear' },
+            { value: 'step', label: 'Step' },
+          ]}
+        />
+      }
+    >
+      <MultiLine<DayPoint>
+        data={SERIES_DATA}
+        height={220}
+        chartId="stress-curve"
+        getX={(d) => d.date}
+        series={series}
+      />
+    </ChartCard>
+  )
+}
+
+// ── (j) Number formatters as axis/tooltip format ────────────────────────────────────────────────
+
+function AxisFormatBlock() {
+  return (
+    <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+      <ChartCard
+        title="(j1) y.format — fmtCompact"
+        subtitle="1.2k / 3.4M — Intl compact notation"
+        info="The axis formatter for a count whose range spans several digits — no more hand-rolled `${v}k`."
+      >
+        <MultiLine<DayPoint>
+          data={SERIES_DATA}
+          height={180}
+          chartId="stress-fmt-compact"
+          getX={(d) => d.date}
+          y={{ format: (v) => fmtCompact(v) }}
+          series={[
+            {
+              key: 'revenue',
+              label: 'Revenue',
+              color: demoColors.revenue,
+              mark: 'line',
+              getValue: (d) => d.revenue * 1000,
+            },
+          ]}
+        />
+      </ChartCard>
+      <ChartCard
+        title="(j2) y.format — fmtPercent"
+        subtitle="A ratio, formatted as a percentage"
+        info="fmtPercent(value, { input: 'ratio' }) — the axis states what the number MEANS instead of guessing from its magnitude."
+      >
+        <MultiLine<DayPoint>
+          data={SERIES_DATA}
+          height={180}
+          chartId="stress-fmt-percent"
+          getX={(d) => d.date}
+          y={{ domain: [0, 1], format: (v) => fmtPercent(v) }}
+          series={[
+            {
+              key: 'churn',
+              label: 'Churn',
+              color: demoColors.churn,
+              mark: 'line',
+              getValue: (d) => d.churn / 100,
+            },
+          ]}
+        />
+      </ChartCard>
+      <ChartCard
+        title="(j3) y.format — fmtCurrency"
+        subtitle="USD, compact"
+        info="fmtCurrency(value, { currency: 'USD', compact: true }) — locale-aware money, one call instead of a template literal per chart."
+      >
+        <MultiLine<DayPoint>
+          data={SERIES_DATA}
+          height={180}
+          chartId="stress-fmt-currency"
+          getX={(d) => d.date}
+          y={{ format: (v) => fmtCurrency(v, { currency: 'USD', compact: true }) }}
+          series={[
+            {
+              key: 'revenue',
+              label: 'Revenue',
+              color: demoColors.revenue,
+              mark: 'line',
+              getValue: (d) => d.revenue * 1000,
+            },
+          ]}
+        />
+      </ChartCard>
+    </SimpleGrid>
+  )
+}
+
+// ── (k) The chart layer's own `state` — ChartPending / ChartError / ChartEmpty ─────────────────
+
+function ChartStateBlock() {
+  const [variant] = chartStateStore.field.variant.use()
+  return (
+    <ChartCard
+      title="(k) MultiLine — state"
+      subtitle="ChartPending / ChartError / ChartEmpty, via the state prop"
+      info="state={{ pending, error, empty }} resolves the chart layer's own three-state placeholder set — no QueryState import, no Mantine: MultiLine and CartesianChart read it directly."
+      actions={
+        <ViewTabs
+          field={chartStateStore.field.variant}
+          options={[
+            { value: 'pending', label: 'Pending' },
+            { value: 'error', label: 'Error' },
+            { value: 'empty', label: 'Empty' },
+            { value: 'data', label: 'Data' },
+          ]}
+        />
+      }
+    >
+      <MultiLine<DayPoint>
+        data={SERIES_DATA}
+        height={220}
+        chartId="stress-state"
+        getX={(d) => d.date}
+        state={{
+          pending: variant === 'pending',
+          error: variant === 'error' ? new Error('the sessions index did not answer') : undefined,
+          empty: variant === 'empty',
+        }}
+        series={[
+          {
+            key: 'sessions',
+            label: 'Sessions',
+            color: demoColors.sessions,
+            mark: 'line',
+            getValue: (d) => d.sessions,
+          },
+        ]}
+      />
+    </ChartCard>
+  )
+}
+
 export function ChartsStressPage() {
   const gapCount = useMemo(() => GAP_DATA.filter((d) => d.value === null).length, [])
 
@@ -495,6 +676,9 @@ export function ChartsStressPage() {
       <WideLabelBlock />
       <SparseStackedAreaBlock />
       <DonutHeatmapBlock />
+      <CurveBlock />
+      <AxisFormatBlock />
+      <ChartStateBlock />
     </Stack>
   )
 }

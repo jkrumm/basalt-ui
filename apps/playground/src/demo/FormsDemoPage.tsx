@@ -1,24 +1,25 @@
 /**
  * FormsDemoPage — exercises basalt-ui/forms:
- * useBasaltForm + inputProps + FormErrorSummary + useFormDraft with a Valibot schema.
+ * useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft (autosave) with a Valibot
+ * schema, laid out through FormSection/FormRow/FormActions — law C1's third home.
  *
- * Demo: a project entry form (name, email, budget) with draft persistence.
- * Draft is autosaved on every value change (via onValuesChange wired to saveDraft ref),
- * restored on mount, and cleared on successful submit.
+ * Demo: a project entry form (name, email, budget) with draft persistence. The draft is autosaved
+ * on every value change via `useFormDraft`'s own subscription (`autosave: true`), restored on
+ * mount, and cleared on successful submit.
  */
+import { Divider, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
+import type { BarAction } from 'basalt-ui/controls'
 import {
-  Button,
-  Divider,
-  Group,
-  NumberInput,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
-import { useBasaltForm, inputProps, FormErrorSummary, useFormDraft } from 'basalt-ui/forms'
-import { useRef, useState } from 'react'
+  FormActions,
+  FormErrorSummary,
+  FormRow,
+  FormSection,
+  fieldKey,
+  inputProps,
+  useBasaltForm,
+  useFormDraft,
+} from 'basalt-ui/forms'
+import { useState } from 'react'
 import * as v from 'valibot'
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -38,32 +39,18 @@ const INITIAL: ProjectValues = { name: '', email: '', budget: 0 }
 function ProjectForm() {
   const [submitted, setSubmitted] = useState<ProjectValues | null>(null)
 
-  // saveDraft is stable across renders via the ref pattern below.
-  // We hold a ref so we can pass it into useBasaltForm's onValuesChange without
-  // creating a dependency cycle (form needs saveDraft, useFormDraft needs form).
-  const saveDraftRef = useRef<(() => void) | null>(null)
-
   const form = useBasaltForm<ProjectValues>({
     initialValues: INITIAL,
     schema: ProjectSchema,
     mode: 'uncontrolled',
-    // Wire autosave: calls saveDraftRef.current on every field change.
-    // The ref is populated by useFormDraft after the hook runs (hooks run top-to-bottom,
-    // but useBasaltForm runs on each render so the ref is always current by the time
-    // onValuesChange fires in user interactions — not on the initial render call itself).
-    onValuesChange: () => {
-      saveDraftRef.current?.()
-    },
   })
 
-  const { hasDraft, saveDraft, clearDraft } = useFormDraft<ProjectValues>(form, {
+  const { hasDraft, clearDraft } = useFormDraft<ProjectValues>(form, {
     key: 'demo-project-form',
     version: 1,
     schema: ProjectSchema,
+    autosave: true,
   })
-
-  // Keep saveDraftRef in sync with the stable saveDraft from the hook.
-  saveDraftRef.current = saveDraft
 
   const handleSubmit = (values: ProjectValues): void => {
     setSubmitted(values)
@@ -71,9 +58,25 @@ function ProjectForm() {
     form.reset()
   }
 
+  const actions: BarAction[] = [
+    { key: 'submit', label: 'Submit', onClick: () => form.onSubmit(handleSubmit)() },
+    { key: 'validate', label: 'Force validate', onClick: () => form.validate() },
+    ...(hasDraft
+      ? [
+          {
+            key: 'clear-draft',
+            label: 'Clear draft',
+            onClick: () => {
+              clearDraft()
+              form.reset()
+            },
+          } satisfies BarAction,
+        ]
+      : []),
+  ]
+
   return (
     <Stack gap="md">
-      {/* Draft indicator */}
       {hasDraft && (
         <Text size="sm" c="dimmed">
           Draft restored — your unsaved work has been loaded.
@@ -81,55 +84,43 @@ function ProjectForm() {
       )}
 
       <form onSubmit={form.onSubmit(handleSubmit)} noValidate>
-        <Stack gap="sm">
-          {/* Accessible error summary — renders null when form is clean */}
+        <FormSection title="Project entry">
           <FormErrorSummary form={form} title="Fix these errors before submitting" />
 
-          <TextInput
-            {...inputProps(form, 'name')}
-            label="Project name"
-            placeholder="My project"
-            required
-          />
-          <TextInput
-            {...inputProps(form, 'email')}
-            label="Contact email"
-            placeholder="you@example.com"
-            type="email"
-            required
-          />
-          <NumberInput
-            {...inputProps(form, 'budget')}
-            label="Budget (USD)"
-            placeholder="0"
-            min={0}
-            decimalScale={2}
-            required
-          />
+          <FormRow label="Project name">
+            <TextInput
+              key={fieldKey(form, 'name')}
+              {...inputProps(form, 'name')}
+              placeholder="My project"
+              required
+            />
+          </FormRow>
+          <FormRow label="Contact email">
+            <TextInput
+              key={fieldKey(form, 'email')}
+              {...inputProps(form, 'email')}
+              placeholder="you@example.com"
+              type="email"
+              required
+            />
+          </FormRow>
+          <FormRow label="Budget (USD)">
+            <NumberInput
+              key={fieldKey(form, 'budget')}
+              {...inputProps(form, 'budget')}
+              placeholder="0"
+              min={0}
+              decimalScale={2}
+              required
+            />
+          </FormRow>
 
-          <Group mt="xs">
-            <Button type="submit">Submit</Button>
-            <Button variant="outline" color="orange" onClick={() => form.validate()}>
-              Force validate
-            </Button>
-            {hasDraft && (
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={() => {
-                  clearDraft()
-                  form.reset()
-                }}
-              >
-                Clear draft
-              </Button>
-            )}
-          </Group>
+          <FormActions actions={actions} />
           <Text size="xs" c="dimmed">
             "Force validate" surfaces all errors before the first submit attempt — useful for guided
             wizards or save-and-review flows where the user hasn't touched every field.
           </Text>
-        </Stack>
+        </FormSection>
       </form>
 
       {submitted !== null && (
@@ -156,8 +147,8 @@ export function FormsDemoPage() {
       <div>
         <Title order={3}>./forms adapter</Title>
         <Text size="sm" c="dimmed" mt={4}>
-          useBasaltForm + inputProps + FormErrorSummary + useFormDraft (Valibot schema, draft
-          restore/autosave/clear)
+          useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft (autosave), laid out
+          through FormSection/FormRow/FormActions
         </Text>
       </div>
 
@@ -174,12 +165,7 @@ export function FormsDemoPage() {
       </Paper>
 
       <Paper p="sm">
-        <Stack gap="xs">
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed">
-            Project entry form
-          </Text>
-          <ProjectForm />
-        </Stack>
+        <ProjectForm />
       </Paper>
     </Stack>
   )

@@ -6,15 +6,19 @@
  * subpath, audit-b-components.md #17) with a `LineSparkline` per row and the ref handle
  * (`scrollToIndex`/`scrollToEnd`).
  */
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Group, Stack, Text } from '@mantine/core'
-import { PageBar, Section } from 'basalt-ui'
-import { FilterSet, RangeFilter, SearchFilter } from 'basalt-ui/controls'
+import { PageAside, PageBar, Section } from 'basalt-ui'
+import type { QueryStateLike } from 'basalt-ui'
+import { overlays } from 'basalt-ui/commands'
+import { FilterSet, RangeFilter, SearchFilter, ViewTabs } from 'basalt-ui/controls'
 import { BasaltDataTable, createColumnHelper } from 'basalt-ui/data/table'
 import type { PaginationState } from 'basalt-ui/data/table'
 import { BasaltVirtualList } from 'basalt-ui/data/virtual'
 import type { BasaltVirtualListHandle } from 'basalt-ui/data/virtual'
 import { LineSparkline, VX } from 'basalt-ui/charts'
+import { notifySuccess, notifyUndo } from 'basalt-ui/notifications'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { dataStressFilters } from './data-stress-store'
 
 // ── The manually-paginated table ─────────────────────────────────────────────────────────────────
@@ -63,21 +67,66 @@ const COLUMNS = [
 const RANGE_DAYS: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 }
 const PAGE_SIZE = 10
 
-function ManualPaginationTable() {
-  const [range] = dataStressFilters.field.range.use()
-  const [query] = dataStressFilters.field.query.use()
+// The table's own view axis (law C3, local lane) — a demo `QueryStateLike` through all four
+// branches, same pattern `StatesPage`'s chart drives.
+const TABLE_QUERY_VARIANTS = ['pending', 'error', 'empty', 'data'] as const
+type TableQueryVariant = (typeof TABLE_QUERY_VARIANTS)[number]
+
+const TABLE_QUERY_OPTIONS: { value: TableQueryVariant; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'error', label: 'Error' },
+  { value: 'empty', label: 'Empty' },
+  { value: 'data', label: 'Data' },
+]
+
+const tableViews = createLocalStore({
+  key: 'data-stress-table-query',
+  fields: { queryVariant: field.enum(TABLE_QUERY_VARIANTS, 'data') },
+}).labels({
+  queryVariant: { pending: 'Pending', error: 'Error', empty: 'Empty', data: 'Data' },
+})
+
+function buildTableQuery(
+  variant: TableQueryVariant,
+  page: Session[],
+  refetch: () => void,
+): QueryStateLike<Session[]> {
+  const base = { isError: false, error: null, refetch } as const
+  switch (variant) {
+    case 'data':
+      return { ...base, data: page, fetchStatus: 'idle' }
+    case 'empty':
+      return { ...base, data: [], fetchStatus: 'idle' }
+    case 'pending':
+      return { ...base, data: undefined, fetchStatus: 'fetching' }
+    case 'error':
+      return {
+        ...base,
+        isError: true,
+        error: { status: 500, value: { message: 'the sessions index is rebuilding' } },
+        data: undefined,
+        fetchStatus: 'idle',
+      }
+  }
+}
+
+type ManualPaginationTableProps = {
+  /** The live row set, derived one level up — the aside reads the same array (see `DataStressPage`). */
+  filtered: Session[]
+  setRemovedIds: (update: (prev: ReadonlySet<number>) => ReadonlySet<number>) => void
+  onRowActivate: (row: Session) => void
+}
+
+function ManualPaginationTable({
+  filtered,
+  setRemovedIds,
+  onRowActivate,
+}: ManualPaginationTableProps) {
+  const [queryVariant] = tableViews.field.queryVariant.use()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   })
-
-  const filtered = useMemo(() => {
-    const maxAge = RANGE_DAYS[range.preset] ?? 90
-    const q = query.trim().toLowerCase()
-    return ALL_SESSIONS.filter(
-      (row) => row.daysAgo <= maxAge && (q === '' || row.session.toLowerCase().includes(q)),
-    )
-  }, [range, query])
 
   // Filtering can shrink the row set below the current page — clamp rather than render an empty
   // page with a live "next" control pointing nowhere.
@@ -87,22 +136,35 @@ function ManualPaginationTable() {
     pageIndex * pagination.pageSize,
     (pageIndex + 1) * pagination.pageSize,
   )
+  const tableQuery = useMemo(
+    () => buildTableQuery(queryVariant, page, () => {}),
+    [queryVariant, page],
+  )
 
   return (
     <Section
       title="Sessions"
       subtitle="manualPagination — the table renders exactly one page; the pager bar reads 'of N' from rowCount, not from data.length"
       count={filtered.length}
+      actions={
+        <ViewTabs
+          field={tableViews.field.queryVariant}
+          label="Query"
+          options={TABLE_QUERY_OPTIONS}
+        />
+      }
     >
       <BasaltDataTable
-        data={page}
+        data={tableQuery.data ?? []}
         columns={COLUMNS}
+        query={tableQuery}
         enableSorting={false}
         striped
         highlightOnHover
         verticalSpacing="xs"
+        // `minWidth` makes the table its own scrollport, so the header sticks to that edge and a
+        // page-chrome offset would only warn (and used to park the thead mid-body — P1).
         stickyHeader
-        stickyHeaderOffset="calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))"
         minWidth={720}
         enablePagination
         manualPagination
@@ -110,6 +172,40 @@ function ManualPaginationTable() {
         pageCount={pageCount}
         initialPagination={pagination}
         onPaginationChange={setPagination}
+        enableRowSelection
+        bulkActions={(rows) => [
+          {
+            key: 'export',
+            label: `Export ${rows.length}`,
+            onClick: () =>
+              notifySuccess(`Exported ${rows.length} session${rows.length === 1 ? '' : 's'}`),
+          },
+          {
+            key: 'delete',
+            label: 'Delete',
+            danger: true,
+            onClick: () => {
+              void overlays.confirmDelete({
+                subject: 'session',
+                count: rows.length,
+                onConfirm: () => {
+                  const ids = rows.map((row) => row.id)
+                  setRemovedIds((prev) => new Set([...prev, ...ids]))
+                  notifyUndo({
+                    message: `${rows.length} session${rows.length === 1 ? '' : 's'} deleted`,
+                    onUndo: () =>
+                      setRemovedIds((prev) => {
+                        const next = new Set(prev)
+                        for (const id of ids) next.delete(id)
+                        return next
+                      }),
+                  })
+                },
+              })
+            },
+          },
+        ]}
+        onRowActivate={onRowActivate}
       />
     </Section>
   )
@@ -183,6 +279,39 @@ function VirtualListBlock() {
 }
 
 export function DataStressPage() {
+  const [range] = dataStressFilters.field.range.use()
+  const [query] = dataStressFilters.field.query.use()
+  // The optimistic-delete lane the table's bulk action writes to; `notifyUndo`'s `onUndo` restores
+  // an id, `onExpire` is where a real app would commit the mutation.
+  const [removedIds, setRemovedIds] = useState<ReadonlySet<number>>(new Set())
+
+  // Derived at PAGE level, not inside the table, because the aside reads the same set: a detail
+  // panel showing a row the table has filtered or deleted away is the defect this placement fixes.
+  const filtered = useMemo(() => {
+    const maxAge = RANGE_DAYS[range.preset] ?? 90
+    const q = query.trim().toLowerCase()
+    return ALL_SESSIONS.filter(
+      (row) =>
+        !removedIds.has(row.id) &&
+        row.daysAgo <= maxAge &&
+        (q === '' || row.session.toLowerCase().includes(q)),
+    )
+  }, [range, query, removedIds])
+
+  // The row → detail hook that pairs with `PageAside` (`onRowActivate`) — lifted here because the
+  // aside is a page-level region, not something the table owns. An ID rather than the row OBJECT:
+  // the panel renders the row as it is NOW, so a filter change or a delete is reflected there
+  // instead of leaving a snapshot taken at click time on screen.
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const selected =
+    selectedId === null ? null : (filtered.find((row) => row.id === selectedId) ?? null)
+
+  // …and a selection that fell out of the set is DROPPED, not merely hidden — otherwise undoing the
+  // delete silently repopulates a panel the user already watched empty out.
+  useEffect(() => {
+    if (selectedId !== null && selected === null) setSelectedId(null)
+  }, [selectedId, selected])
+
   return (
     <Stack gap="sm">
       <PageBar
@@ -198,8 +327,30 @@ export function DataStressPage() {
         `--basalt-page-bar-h`, and a horizontal scroll forced by `minWidth` at phone width — none of
         the three tested together before this route.
       </Text>
-      <ManualPaginationTable />
+      <ManualPaginationTable
+        filtered={filtered}
+        setRemovedIds={setRemovedIds}
+        onRowActivate={(row) => setSelectedId(row.id)}
+      />
       <VirtualListBlock />
+
+      <PageAside title="Session detail" persistKey="data-stress">
+        {selected === null ? (
+          <Text size="sm" c="dimmed">
+            Click a row (or press Enter on a focused one) to inspect it here.
+          </Text>
+        ) : (
+          <Stack gap="xs">
+            <Text fw={600}>{selected.session}</Text>
+            <Text size="sm" c="dimmed">
+              {selected.region} · {selected.device} · {selected.browser}
+            </Text>
+            <Text size="sm">Duration: {selected.durationMin} min</Text>
+            <Text size="sm">Revenue: ${selected.revenueUsd}</Text>
+            <Text size="sm">{selected.daysAgo} days ago</Text>
+          </Stack>
+        )}
+      </PageAside>
     </Stack>
   )
 }

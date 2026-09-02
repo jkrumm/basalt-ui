@@ -45,13 +45,15 @@ import {
   notifyInfo,
   notifyPromise,
   notifySuccess,
+  notifyUndo,
+  notifyUndoable,
   notifyWarning,
   remove,
   useNotificationHistory,
   NotificationCenter,
 } from 'basalt-ui/notifications'
 import { VX } from 'basalt-ui/tokens'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 // ── Action bridge ─────────────────────────────────────────────────────────────
 // Registry `run` handlers are module-scope, so they can't call component hooks (navigate, modal)
@@ -68,16 +70,16 @@ const demoActions = {
 const DEMO_NOTIFS = defineNotifications({
   'demo:upload-success': {
     intent: 'success',
-    toMessage: (p: unknown) => `Uploaded ${(p as { name: string }).name}`,
+    toMessage: (p: { name: string }) => `Uploaded ${p.name}`,
   },
   'demo:save-error': {
     intent: 'error',
     toMessage: () => 'Failed to save — try again',
-    action: { label: 'Open details', run: (p: unknown) => demoActions.openDetails(p) },
+    action: { label: 'Open details', run: (p: { id: number }) => demoActions.openDetails(p) },
   },
   'demo:quota-warn': {
     intent: 'warning',
-    toMessage: (p: unknown) => `Storage ${(p as { pct: number }).pct}% full`,
+    toMessage: (p: { pct: number }) => `Storage ${p.pct}% full`,
     action: { label: 'Manage storage', run: () => demoActions.manageStorage() },
   },
 })
@@ -313,6 +315,81 @@ function HistoryMutationSection() {
   )
 }
 
+// ── notifyUndo / notifyUndoable ───────────────────────────────────────────────
+
+const UNDO_START_COUNT = 5
+
+/**
+ * The optimistic-delete shape both helpers exist for: `count` drops the moment a button is
+ * clicked (the UI already changed), `Undo` within the window restores it, and letting the window
+ * elapse — or calling `dismiss()` — COMMITS, bumping `committed` in `onExpire`. `count` and
+ * `committed` are deliberately two numbers: the first is what the optimistic UI shows right away,
+ * the second only moves once the mutation is real.
+ */
+function UndoSection() {
+  const [count, setCount] = useState(UNDO_START_COUNT)
+  const [committed, setCommitted] = useState(0)
+
+  return (
+    <Stack gap="xs">
+      <Text size="xs" tt="uppercase" fw={600} c="dimmed">
+        notifyUndo / notifyUndoable
+      </Text>
+      <Text size="sm">
+        <code>count</code>: {count} · <code>committed</code> (via <code>onExpire</code>):{' '}
+        {committed}
+      </Text>
+      <Group gap="xs" wrap="wrap">
+        <Button
+          size="compact-sm"
+          variant="default"
+          disabled={count === 0}
+          onClick={() => {
+            setCount((n) => n - 1)
+            notifyUndo({
+              message: 'Item removed',
+              onUndo: () => setCount((n) => n + 1),
+              onExpire: () => setCommitted((n) => n + 1),
+            })
+          }}
+        >
+          notifyUndo — remove one
+        </Button>
+        <Button
+          size="compact-sm"
+          variant="default"
+          disabled={count === 0}
+          onClick={() => {
+            setCount((n) => n - 1)
+            notifyUndoable(
+              () => setCommitted((n) => n + 1),
+              // Functional, never a captured absolute `count`: two removals then one undo would
+              // otherwise restore BOTH, because the second click's closure still held the count
+              // from before the first. Same reason the `notifyUndo` button above uses one.
+              () => setCount((n) => n + 1),
+              {
+                message: 'Item removed (notifyUndoable)',
+              },
+            )
+          }}
+        >
+          notifyUndoable — remove one
+        </Button>
+        <Button
+          size="compact-sm"
+          variant="subtle"
+          onClick={() => {
+            setCount(UNDO_START_COUNT)
+            setCommitted(0)
+          }}
+        >
+          Reset
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
 // ── History panel ─────────────────────────────────────────────────────────────
 
 function HistoryPanel() {
@@ -380,6 +457,8 @@ export function NotificationsDemoPage() {
           <ToastButtons />
           <Divider />
           <PromiseButtons />
+          <Divider />
+          <UndoSection />
           <Divider />
           <TypedRegistrySection />
         </Stack>
