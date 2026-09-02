@@ -525,7 +525,11 @@ function CbbiOverview({
         subtitle="The hero value is today's reading — find it along the axis."
         count={bins.length}
       >
-        <CbbiDistributionBars bins={bins} height={MAIN_CHART_HEIGHT} />
+        <CbbiDistributionBars
+          bins={bins}
+          height={MAIN_CHART_HEIGHT}
+          chartId="cbbi-distribution-overview"
+        />
       </ChartCard>
     </Stack>
   )
