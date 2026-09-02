@@ -18,18 +18,7 @@ declare const classes: {
   readonly sheetHeader: string
   readonly sheetTitle: string
   readonly sheetTitleText: string
-  readonly sheetField: string
-  readonly sheetList: string
-  readonly sheetOption: string
-  readonly sheetDisclosureBody: string
-  readonly sheetOptionInput: string
-  readonly sheetOptionLabel: string
-  readonly sheetOptionCheck: string
-  readonly sheetLabel: string
   readonly groupLabel: string
-  readonly sheetRow: string
-  readonly sheetRowBody: string
-  readonly sheetRowLabel: string
   readonly phoneSelect: string
   readonly facetList: string
   readonly facetOption: string
@@ -37,6 +26,7 @@ declare const classes: {
   readonly facetLabel: string
   readonly facetCount: string
   readonly facetCheck: string
+  readonly facetCheckbox: string
   readonly facetInput: string
   readonly facetMore: string
 }

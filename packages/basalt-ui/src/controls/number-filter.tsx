@@ -63,7 +63,7 @@ import { EnumFilter } from './enum-filter'
 import type { ChoiceHandle } from './enum-filter'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
-import { SheetField, useControlName } from './filter-sheet'
+import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
 /** One row of a numeric preset set. Narrower than `FilterOption` — a preset is never `disabled`:
@@ -131,7 +131,7 @@ export function NumberFilter(props: NumberFilterProps): ReactNode {
 /**
  * The `options` form. It renders no radio list of its own — it ADAPTS the number handle into
  * `EnumFilter`'s `ChoiceHandle<string>` and hands it over, so the popover's `Radio.Group`, the
- * sheet's `SheetOptionList`, the registration and the pill readout are the ones already tested for
+ * sheet/panel `PanelChoice`, the registration and the pill readout are the ones already tested for
  * `SelectFilter`/`CompareFilter` rather than a numeric copy of all four.
  *
  * The adapter is a projection, not a store: the URL still holds a NUMBER (`nights=3`, not `'3'`),
@@ -241,7 +241,9 @@ function NumberStepper({
     />
   )
 
-  if (inPanel) {
+  // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+  // Drawer") — the same `PanelRow` label-above-control row on both surfaces.
+  if (inPanel || inSheet) {
     return (
       <PanelRow
         label={label}
@@ -251,19 +253,6 @@ function NumberStepper({
       >
         {input}
       </PanelRow>
-    )
-  }
-
-  if (inSheet) {
-    return (
-      <SheetField
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        {input}
-      </SheetField>
     )
   }
 

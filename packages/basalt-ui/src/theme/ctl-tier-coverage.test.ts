@@ -71,6 +71,12 @@ const CTL_TIER_COMPONENTS = [
   // widen a shipped `error` rule. The last test in this file allows the direction (themed ⊆
   // scanned), which is what makes this legal rather than drift.
   'Slider',
+  // Also scanned WITHOUT being in `CTL_THEME`, same shape as `Slider`: `number-filter.tsx` states
+  // `size="ctl"` on its own `NumberInput` rather than through the slot default. Its chevron column
+  // (`--ni-chevron-size`) reads through `getSize`, so this entry is what makes the scan below catch
+  // a missing `--ni-chevron-size-ctl`; `--ni-right-section-width-ctl` is declared in `ctlSizeVars`
+  // regardless — see that constant's doc for why the scan cannot discover it on its own.
+  'NumberInput',
 ] as const
 
 /** Every `.mjs` file (not `.mjs.map`) under a component directory, recursing into subcomponents but

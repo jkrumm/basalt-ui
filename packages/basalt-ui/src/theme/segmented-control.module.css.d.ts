@@ -4,5 +4,6 @@
  */
 declare const classes: {
   readonly label: string
+  readonly control: string
 }
 export default classes

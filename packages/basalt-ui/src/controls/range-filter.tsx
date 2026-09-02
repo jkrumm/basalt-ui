@@ -10,16 +10,12 @@
  * `theme/segmented-control.module.css` owns; that attribute is what retired the per-consumer
  * `theme-allow` + inline `fontFamily` hack (C7).
  *
- * In the PANEL (a `PageAside` body) they render as one `Select` — label above, the presets plus a
- * `Custom range…` ROW inside the same list, which reveals the SAME injected picker underneath. A
- * track cannot hold five date presets at ~300px, and a second control beside the choice would cost
- * the column a row it does not have.
- *
- * In the SHEET they render as a `SheetOptionList`, and the custom picker sits behind a
- * `Custom range…` disclosure row. A vertical `SegmentedControl` stretched across a bottom drawer
- * read as a broken control rather than a choice (see `SheetOptionList`'s doc), and an unconditional
- * calendar pushed every OTHER filter in the sheet below the fold — the sheet holds all of them, and
- * `RangeFilter` is one.
+ * In the PANEL and the SHEET (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a Drawer")
+ * they render as one `Select` — label above, the presets plus a `Custom range…` ROW inside the same
+ * list, which reveals the SAME injected picker underneath. A track cannot hold five date presets at
+ * ~300px (or across a bottom drawer, where a vertical `SegmentedControl` read as a broken control
+ * rather than a choice), and a second control beside the choice would cost the column — or an
+ * unconditional calendar pushed below every OTHER filter in the sheet — a row it does not have.
  *
  * The custom picker is INJECTED, never imported: `basalt-ui/controls-dates` holds the
  * `@mantine/dates` implementation, and this module must resolve for a consumer who has no
@@ -42,7 +38,7 @@ import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { CalendarGlyph } from './glyphs'
-import { SheetDisclosure, SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
 /** Past four presets the track goes vertical. */
@@ -169,7 +165,12 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
   }, [value.preset])
   const showPicker = allowsCustom && Picker !== undefined
 
-  if (inPanel) {
+  // The sheet form is the panel form (`docs/CONTROLS-SPEC.md` §3: "sheet = panel rows inside a
+  // Drawer") — one `Select` holding the presets plus a `Custom range…` row, which reveals the same
+  // injected picker underneath. It used to be a `SheetOptionList` with the picker behind a separate
+  // `SheetDisclosure` row; the `Select` already folds both into one control, so the disclosure had
+  // no job left.
+  if (inPanel || inSheet) {
     return (
       <PanelRow
         label={label}
@@ -209,46 +210,6 @@ export function RangeFilter<P extends string, C extends boolean = boolean>(
           />
         )}
       </PanelRow>
-    )
-  }
-
-  if (inSheet) {
-    return (
-      <SheetField
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        <SheetOptionList
-          mode="single"
-          labelId={labelId}
-          selected={[value.preset]}
-          options={presets.map((option) => ({ value: option.value, label: option.label }))}
-          onToggle={(next) => {
-            setCustomOpen(false)
-            // Rendered from `field.options`, so `next` is always a declared preset — the cast
-            // restores what the codec already guarantees.
-            setValue({ preset: next } as RangeValue<P | 'custom'>)
-          }}
-        />
-        {showPicker && (
-          <SheetDisclosure
-            label="Custom range…"
-            expanded={customOpen}
-            onToggle={() => {
-              setCustomOpen((open) => !open)
-            }}
-          >
-            <Picker
-              value={{ from: value.from, to: value.to }}
-              onChange={({ from, to }) => {
-                setValue({ preset: 'custom', from, to } as RangeValue<P | 'custom'>)
-              }}
-            />
-          </SheetDisclosure>
-        )}
-      </SheetField>
     )
   }
 

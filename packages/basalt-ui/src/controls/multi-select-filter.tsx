@@ -32,7 +32,7 @@ import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
-import { CheckGlyph, SheetField, SheetOptionList, useControlName } from './filter-sheet'
+import { CheckGlyph, useControlName } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
 /** How many facet rows a panel shows before the rest fold behind `Show N more`. Six is the point at
@@ -103,32 +103,12 @@ export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProp
     setValue(has ? value.filter((v) => v !== next) : [...value, next as T])
   }
 
-  // The SHEET form is a `SheetOptionList` in `multi` mode — 44px rows, a trailing check on each
-  // selected one, hairlines between rows only. Same reasoning as `EnumFilter`: the popover keeps
-  // Mantine's `Checkbox.Group`, the sheet reads as a list of options rather than a stack of boxes.
-  if (inSheet) {
-    return (
-      <SheetField
-        label={label}
-        labelId={labelId}
-        {...(className !== undefined && { className })}
-        {...(style !== undefined && { style })}
-      >
-        <SheetOptionList
-          mode="multi"
-          labelId={labelId}
-          selected={value}
-          options={options}
-          onToggle={toggle}
-        />
-      </SheetField>
-    )
-  }
-
-  // The PANEL form — the facet column. Not the sheet's list at a smaller height: it carries the
-  // count and its bar, and it is the `ctl` tier rather than the 44px touch tier (see `.facetOption`
-  // in `controls.module.css`).
-  if (inPanel) {
+  // The SHEET form is the PANEL form — the facet column (`docs/CONTROLS-SPEC.md` §3: "sheet = panel
+  // rows inside a Drawer"). It used to render a `SheetOptionList` in `multi` mode (44px rows, a
+  // trailing check, no fold), which meant a set with many options was a sheet as tall as the set;
+  // the facet column folds past `max` behind `Show N more` instead, which is the shape a set of
+  // unknown size actually needs.
+  if (inSheet || inPanel) {
     return (
       <PanelRow
         label={label}
@@ -235,8 +215,8 @@ function FacetList({
   const peak = options.reduce((top, option) => Math.max(top, counts?.[option.value] ?? 0), 0)
 
   return (
-    // A real `<fieldset>` named by the row's own label, for the same reason `SheetOptionList` uses
-    // one — the native element carries the grouping semantics, and the heading is already visible.
+    // A real `<fieldset>` named by the row's own label — the native element carries the grouping
+    // semantics, and the heading is already visible.
     <fieldset className={classes.facetList} aria-labelledby={labelId}>
       {shown.map((option) => {
         const isSelected = selected.includes(option.value)
@@ -250,8 +230,7 @@ function FacetList({
           >
             {/* theme-allow raw-form-control — the input is NEVER PAINTED. Visually hidden
                 (`.facetInput`), it exists only to carry the row's semantics; the surface the reader
-                sees and clicks is the `<label>` around it. Same construction, same reasoning as
-                `SheetOptionList` — see its doc. */}
+                sees and clicks is the `<label>` around it. */}
             <input
               className={classes.facetInput}
               type="checkbox"
@@ -263,16 +242,31 @@ function FacetList({
                 onToggle(option.value)
               }}
             />
-            {count !== undefined && peak > 0 && (
-              <span
-                className={classes.facetBar}
+            {count === undefined ? (
+              // No count/bar on this row — without a visible box, an unselected row was plain
+              // text with no affordance that it toggles at all (only a checkmark appeared, and
+              // only once selected). `size="ctl"` reads `--checkbox-size-ctl`
+              // (`theme/index.ts`'s `ctlSizeVars`), the same var every other home's `Checkbox`
+              // resolves through. Decorative — the real toggle semantics live on `.facetInput`.
+              <Checkbox.Indicator
+                className={classes.facetCheckbox}
+                size="ctl"
+                checked={isSelected}
                 aria-hidden
-                style={{ '--facet-fill': `${(count / peak) * 100}%` } as CSSProperties}
+                {...(option.disabled === true && { disabled: true })}
               />
+            ) : (
+              peak > 0 && (
+                <span
+                  className={classes.facetBar}
+                  aria-hidden
+                  style={{ '--facet-fill': `${(count / peak) * 100}%` } as CSSProperties}
+                />
+              )
             )}
             <span className={classes.facetLabel}>{option.label}</span>
             {count !== undefined && <span className={classes.facetCount}>{count}</span>}
-            {isSelected && (
+            {count !== undefined && isSelected && (
               <span className={classes.facetCheck} aria-hidden>
                 <CheckGlyph />
               </span>

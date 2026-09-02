@@ -14,6 +14,28 @@
 }
 
 /*
+ * Mantine's own `.control` ships `flex: 1` with no `min-width` override, so its initial value
+ * (`auto`) floors every option at its min-content width — a `fullWidth` track therefore still
+ * splits UNEVENLY (a long label's column stays wider than its siblings) instead of dividing the
+ * track equally, which is what `fullWidth` promises. `min-width: 0` lets flex-basis (not content)
+ * decide each column's share; Mantine's own `.label` already carries `overflow: hidden` +
+ * `text-overflow: ellipsis`, so a label that no longer fits its equal share truncates instead of
+ * forcing the column wide.
+ *
+ * Scoped to `[data-full-width]` — the same attribute Mantine's own CSS keys `display: flex` off
+ * (`SegmentedControl.css`) — because a bare `.control { min-width: 0 }` regressed the OTHER shape:
+ * a non-`fullWidth` track (two or three options in a `Section`/`StatCard` header's `actions` slot)
+ * is shrink-to-fit by design, and stripping every segment's min-content floor let a squeezing
+ * ancestor collapse it below its own labels' natural width with no ellipsis at all ("Absolute"
+ * clipped to "Absolut"). Outside `fullWidth`, `.control` keeps the browser's own `min-width: auto`
+ * — the ordinary flex-item protection — and the root's own `min-width: max-content`
+ * (`theme/index.ts`'s `SegmentedControl.extend`) is the backstop above it.
+ */
+[data-full-width] .control {
+  min-width: 0;
+}
+
+/*
  * Numeric segment labels read mono `VX.text.xs` (`docs/CONTROLS-SPEC.md` §3 last paragraph, C7) —
  * a consumer opts in with a bare `data-numeric` attribute on the `SegmentedControl` itself (an
  * unrecognized native prop, forwarded onto the root `Box` via Mantine's own `...others` spread,
