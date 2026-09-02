@@ -11,7 +11,7 @@
  *  7. Every headless surface is Mantine-free — via all 3 forbiddenImports bans, OR (for
  *     TOKEN_LAYER_BOUNDARY_SURFACES members, ./charts/./tokens) exemption backed by the repo-
  *     local-only basalt/token-layer-boundary plugin rule's LIVE registration — verified here, not
- *     in checkCoverage() itself (see cli/index.ts's assertion-7 comment for why it can't).
+ *     in checkCoverage() itself (see scripts/check-coverage.ts's assertion-7 comment for why it can't).
  *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
  *
  * Uses checkCoverage() as the primary gate (exit-code assertion), then redundant structural
@@ -30,7 +30,7 @@ import {
   TOKEN_LAYER_BOUNDARY_SURFACES,
 } from '../packages/basalt-ui/src/surfaces'
 import type { DoctrineSpec } from '../packages/basalt-ui/src/surfaces'
-import { checkCoverage } from '../packages/basalt-ui/src/cli'
+import { checkCoverage } from '../packages/basalt-ui/scripts/check-coverage'
 
 const root = join(import.meta.dir, '..')
 const pkgRoot = join(root, 'packages/basalt-ui')

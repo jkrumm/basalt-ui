@@ -69,10 +69,13 @@ jobs:
         run: bun ./bin/basalt-ui.mjs check-theme
 
       - name: Coverage check (SURFACES projection gate)
-        run: bun ./packages/basalt-ui/bin/basalt-ui.mjs check-coverage
+        run: bun packages/basalt-ui/scripts/check-coverage.ts --check
 
       - name: Agent doc drift check (removed-API guard on agent/**)
         run: bun packages/basalt-ui/scripts/check-agent-doc-drift.ts
+
+      - name: Budgets gate (symbols, subpaths, rule lines, spec prose, routes, CLI lines)
+        run: bun packages/basalt-ui/scripts/check-budgets.ts
 
       - name: Pack test (dist resolution gate)
         run: bun --filter basalt-ui pack-test
