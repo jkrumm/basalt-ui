@@ -20,8 +20,15 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ScrollToOptions, Virtualizer } from '@tanstack/react-virtual'
 import { useImperativeHandle, useRef } from 'react'
 import type { ReactNode, Ref } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
+
+/** The two boxes `BasaltVirtualList` paints: `root` is the scroll container, `row` is each
+ * absolutely-positioned virtual item. */
+export type BasaltVirtualListSlot = 'root' | 'row'
 
 /**
  * Props for {@link BasaltVirtualList}.
@@ -36,48 +43,49 @@ import type { ReactNode, Ref } from 'react'
  *   getItemKey: (item) => item.id,
  * }
  */
-export type BasaltVirtualListProps<T> = {
-  /** All items in the list (unsliced — virtualization is handled internally). */
-  items: T[]
-  /** Height of the scroll container. Accepts a CSS value ('400px', '60vh') or a number in px. */
-  height: number | string
-  /**
-   * Estimated row height in px (used for virtual layout before measure).
-   * @default 40
-   */
-  estimateSize?: number
-  /**
-   * Number of items rendered beyond the visible viewport (above + below) to reduce flicker.
-   * @default 5
-   */
-  overscan?: number
-  /**
-   * Render function for a single item. Receives the item and its list index.
-   * The returned node is placed inside an absolutely-positioned row container.
-   */
-  renderItem: (item: T, index: number) => ReactNode
-  /**
-   * Stable key for each item, handed straight to the virtualizer's own `getItemKey` — required,
-   * not merely recommended: the previous index fallback hid stale rows across a mutation (an
-   * insert/delete shifting every index below it keeps rendering the OLD item at each shifted
-   * index until React's own reconciliation happens to catch up), silently, in the one component
-   * whose job is a long mutable list.
-   */
-  getItemKey: (item: T, index: number) => string | number
-  /**
-   * When true, renders skeleton placeholder rows at the given height instead of the virtual item
-   * list. The scroll container is still rendered at the specified `height`. Use while async data
-   * is loading.
-   */
-  isLoading?: boolean
-  /**
-   * Number of skeleton rows to render when `isLoading` is true.
-   * @default 5
-   */
-  skeletonRows?: number
-  /** Imperative scroll handle — see {@link BasaltVirtualListHandle}. */
-  ref?: Ref<BasaltVirtualListHandle>
-}
+export type BasaltVirtualListProps<T> = BasaltProps &
+  SlotStylesProps<BasaltVirtualListSlot> & {
+    /** All items in the list (unsliced — virtualization is handled internally). */
+    items: T[]
+    /** Height of the scroll container. Accepts a CSS value ('400px', '60vh') or a number in px. */
+    height: number | string
+    /**
+     * Estimated row height in px (used for virtual layout before measure).
+     * @default 40
+     */
+    estimateSize?: number
+    /**
+     * Number of items rendered beyond the visible viewport (above + below) to reduce flicker.
+     * @default 5
+     */
+    overscan?: number
+    /**
+     * Render function for a single item. Receives the item and its list index.
+     * The returned node is placed inside an absolutely-positioned row container.
+     */
+    renderItem: (item: T, index: number) => ReactNode
+    /**
+     * Stable key for each item, handed straight to the virtualizer's own `getItemKey` — required,
+     * not merely recommended: the previous index fallback hid stale rows across a mutation (an
+     * insert/delete shifting every index below it keeps rendering the OLD item at each shifted
+     * index until React's own reconciliation happens to catch up), silently, in the one component
+     * whose job is a long mutable list.
+     */
+    getItemKey: (item: T, index: number) => string | number
+    /**
+     * When true, renders skeleton placeholder rows at the given height instead of the virtual item
+     * list. The scroll container is still rendered at the specified `height`. Use while async data
+     * is loading.
+     */
+    isLoading?: boolean
+    /**
+     * Number of skeleton rows to render when `isLoading` is true.
+     * @default 5
+     */
+    skeletonRows?: number
+    /** Imperative scroll handle — see {@link BasaltVirtualListHandle}. */
+    ref?: Ref<BasaltVirtualListHandle>
+  }
 
 /**
  * Imperative escape hatch for {@link BasaltVirtualList} — the virtualizer's own `scrollToIndex` /
@@ -130,17 +138,25 @@ export type BasaltVirtualListHandle = {
  *   getItemKey={(item) => item.id}
  * />
  */
-export function BasaltVirtualList<T>({
-  items,
-  height,
-  estimateSize = 40,
-  overscan = 5,
-  renderItem,
-  getItemKey,
-  isLoading = false,
-  skeletonRows = 5,
-  ref,
-}: BasaltVirtualListProps<T>) {
+export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
+  // F-ERR-1: without this, a list missing `items`/`renderItem`/`getItemKey` fails deep inside
+  // `useVirtualizer` as a raw `TypeError` caught by `BasaltErrorBoundary` — a blank subtree with no
+  // message naming any of the three.
+  assertRequiredProps('BasaltVirtualList', props, ['items', 'renderItem', 'getItemKey'])
+  const {
+    items,
+    height,
+    estimateSize = 40,
+    overscan = 5,
+    renderItem,
+    getItemKey,
+    isLoading = false,
+    skeletonRows = 5,
+    ref,
+    className,
+    style,
+    classNames,
+  } = props
   const parentRef = useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -170,8 +186,16 @@ export function BasaltVirtualList<T>({
 
   if (isLoading) {
     return (
-      // theme-allow raw-scroll-container — matches the virtualizer's own scroll box below, so the skeleton doesn't reflow.
-      <Box style={{ height, overflow: 'auto' }}>
+      <Box
+        className={cx(classNames?.root, className)}
+        style={{
+          height,
+          // theme-allow raw-scroll-container — matches the virtualizer's own scroll box below, so
+          // the skeleton doesn't reflow.
+          overflow: 'auto',
+          ...style,
+        }}
+      >
         {Array.from({ length: skeletonRows }, (_, i) => (
           <Box
             key={`skeleton-${i}`}
@@ -197,10 +221,12 @@ export function BasaltVirtualList<T>({
   return (
     <Box
       ref={parentRef}
+      className={cx(classNames?.root, className)}
       style={{
         height,
         // theme-allow raw-scroll-container — TanStack Virtual measures this element as the scroll container.
         overflow: 'auto',
+        ...style,
       }}
     >
       {/* Inner sizer — defines total scroll height for the virtualizer */}
@@ -216,6 +242,7 @@ export function BasaltVirtualList<T>({
           return (
             <Box
               key={virtualItem.key}
+              className={cx(classNames?.row)}
               style={{
                 position: 'absolute',
                 top: 0,

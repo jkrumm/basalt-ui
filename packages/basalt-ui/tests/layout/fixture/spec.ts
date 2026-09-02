@@ -23,6 +23,22 @@ export type ItemSpec = {
 /** `tab: true` gives the whole SECTION one bar slot — the menu/sheet cardinality-inference path. */
 export type SectionSpec = { label: string; items: ItemSpec[]; tab?: true }
 
+/**
+ * A `BasaltDataTable` rendered in the shell body. Exists for ONE invariant class: a sticky
+ * `<thead>` inside `Table.ScrollContainer`, whose anchor is the scroller's own top edge and not
+ * the page's. happy-dom cannot observe it at all — `position: sticky` is a layout outcome.
+ */
+export type TableSpec = {
+  /** Body rows. Enough of them that `maxHeight` actually overflows. */
+  rows: number
+  /** Caps the body, so the container is a real vertical scrollport. */
+  maxHeight?: number
+  /** Horizontal floor — the `/data-stress` shape, which turns the container on without a cap. */
+  minWidth?: number
+  /** What a consumer passes for WINDOW scroll (app header + `PageBar` row 2). */
+  stickyHeaderOffset?: number | string
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -39,6 +55,8 @@ export type FixtureSpec = {
   colorScheme?: 'light' | 'dark'
   /** Filler height in px above the `[data-testid="content-end"]` sentinel. */
   bodyHeight?: number
+  /** Renders a `BasaltDataTable` above the filler. Omitted ⇒ no table in the tree. */
+  table?: TableSpec
 }
 
 declare global {

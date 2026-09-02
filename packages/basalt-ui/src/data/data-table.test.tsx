@@ -6,7 +6,9 @@
  *     the raw escape. `type="scrollarea"` would silently break a sticky header (ScrollArea's
  *     viewport becomes the positioning context), so the emitted `--table-max-height` var and the
  *     absence of a ScrollArea root are both asserted.
- *  2. `stickyHeader` reaches the `<table>`.
+ *  2. `stickyHeader` reaches the `<table>`, and `stickyHeaderOffset` reaches it ONLY when the page
+ *     is the scrollport — inside the scroll container the header's anchor is that box's own top
+ *     edge, and the offset parked the header mid-body.
  *  3. `meta.align` reaches BOTH the `<th>` and the `<td>` — a right-aligned header over
  *     left-aligned money is the defect this replaces.
  *  4. A misspelled alignment VALUE throws. The key is a compile error
@@ -15,7 +17,8 @@
  */
 import { MantineProvider, Text } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, spyOn, test } from 'bun:test'
+import { resetValidatedProps } from '../common/validate'
 import { BasaltDataTable } from './data-table'
 import { createColumnHelper } from './table'
 import type { BasaltDataTableProps } from './data-table'
@@ -72,6 +75,28 @@ describe('stickyHeader and table chrome', () => {
     const { container } = renderTable({ maxHeight: 480, stickyHeader: true })
     expect(container.querySelector('thead')?.getAttribute('data-sticky')).toBe('true')
     expect(renderTable().container.querySelector('thead')?.getAttribute('data-sticky')).toBeNull()
+  })
+
+  test('stickyHeaderOffset reaches a page-scrolled table and is DROPPED inside the scroller', () => {
+    // The offset is the height of the page's fixed chrome (app header + `PageBar` row 2), so it is
+    // only meaningful while the WINDOW is the scrollport. A `maxHeight`/`minWidth` table owns its
+    // own, and the offset then parked the `<thead>` that many pixels down INSIDE the body, over the
+    // first rows — `tests/layout/data-table.layout.test.ts` measures the geometry in a real browser.
+    const paged = renderTable({ stickyHeader: true, stickyHeaderOffset: 94 })
+    expect(paged.container.querySelector('table')?.getAttribute('style') ?? '').toContain(
+      '--table-sticky-header-offset',
+    )
+    for (const scrolling of [{ maxHeight: 480 }, { minWidth: 640 }]) {
+      const { container } = renderTable({
+        stickyHeader: true,
+        stickyHeaderOffset: 94,
+        ...scrolling,
+      })
+      expect(container.querySelector('table')?.getAttribute('style') ?? '').not.toContain(
+        '--table-sticky-header-offset',
+      )
+      expect(container.querySelector('thead')?.getAttribute('data-sticky')).toBe('true')
+    }
   })
 
   test('withTableBorder defaults OFF and can be turned on for a table that needs a frame', () => {
@@ -474,5 +499,101 @@ describe('initialColumnPinning', () => {
     const cost = headers.find((th) => th.textContent === 'Cost')
     expect(project?.style.position).toBe('sticky')
     expect(cost?.style.position).not.toBe('sticky')
+  })
+})
+
+describe('className and classNames (common/props.ts)', () => {
+  test('className reaches the root; classNames.table reaches the table element', () => {
+    const { container } = renderTable({
+      className: 'my-table',
+      classNames: { table: 'my-thead' },
+    })
+    expect(container.querySelector('.my-table')).not.toBeNull()
+    expect(container.querySelector('table.my-thead')).not.toBeNull()
+  })
+
+  /**
+   * The ROOT SHAPE, pinned — because it moved. A className home needs a root, so the component now
+   * always renders a wrapper `<div>` where it used to return a Fragment, and the table and the
+   * pagination bar were the caller's own direct children before that. Any `:first-child` /
+   * `> table` selector a consumer wrote against the old flat structure now has to target the
+   * wrapper (`MIGRATING.md` § Unreleased). This test is what makes a silent revert impossible.
+   */
+  test('the root is one div carrying classNames.root, wrapping the table and the pagination bar', () => {
+    const { container } = renderTable({
+      className: 'my-table',
+      classNames: { root: 'slot-root', footer: 'slot-footer' },
+      maxHeight: 480,
+      enablePagination: true,
+    })
+    const root = container.querySelector('.slot-root')
+    if (!(root instanceof HTMLElement)) throw new Error('expected a root element')
+    expect(root.tagName).toBe('DIV')
+    expect(root.classList.contains('my-table')).toBe(true)
+    // Direct children, in order: the scroll container holding the table, then the pagination bar.
+    const children = [...root.children]
+    expect(children).toHaveLength(2)
+    expect(children[0]?.className).toContain('mantine-TableScrollContainer-scrollContainer')
+    expect(children[0]?.querySelector('table')).not.toBeNull()
+    expect(children[1]?.className).toContain('slot-footer')
+    // The table is no longer a child of whatever the caller rendered this into.
+    expect(container.querySelector('table')?.parentElement).not.toBe(container)
+  })
+
+  test('style reaches the root, and no style attribute is written without one', () => {
+    expect(
+      renderTable({ style: { marginTop: '3px' }, classNames: { root: 'slot-root' } })
+        .container.querySelector('.slot-root')
+        ?.getAttribute('style') ?? '',
+    ).toContain('margin-top: 3px')
+    expect(
+      renderTable({ classNames: { root: 'slot-bare' } })
+        .container.querySelector('.slot-bare')
+        ?.getAttribute('style'),
+    ).toBeNull()
+  })
+})
+
+/**
+ * The two `common/validate.ts` lanes, and the split is the point: `data`/`columns` would crash
+ * inside `useReactTable` either way, so they THROW; a `stickyHeaderOffset` that gets dropped still
+ * renders a correct-looking table, so it warns once in dev and renders on.
+ */
+describe('prop validation', () => {
+  for (const missing of ['data', 'columns'] as const) {
+    test(`a missing \`${missing}\` throws a message naming the component and the prop`, () => {
+      const props = { data: ROWS, columns: COLUMNS } as Record<string, unknown>
+      delete props[missing]
+      expect(() =>
+        render(
+          <MantineProvider>
+            <BasaltDataTable {...(props as unknown as BasaltDataTableProps<Row>)} />
+          </MantineProvider>,
+        ),
+      ).toThrow(`[basalt] BasaltDataTable: prop "${missing}" is required.`)
+    })
+  }
+
+  test('stickyHeaderOffset beside a scroll container warns once, and renders on', () => {
+    resetValidatedProps()
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    const { container } = renderTable({
+      stickyHeader: true,
+      stickyHeaderOffset: 94,
+      maxHeight: 480,
+    })
+    expect(error).toHaveBeenCalledTimes(1)
+    expect(String(error.mock.calls[0]?.[0])).toContain('"stickyHeaderOffset" is ignored beside')
+    // Rendered on — the warning is about a dropped prop, not a broken table.
+    expect(container.querySelector('thead')?.getAttribute('data-sticky')).toBe('true')
+    error.mockRestore()
+  })
+
+  test('stickyHeaderOffset on a page-scrolled table says nothing', () => {
+    resetValidatedProps()
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    renderTable({ stickyHeader: true, stickyHeaderOffset: 94 })
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
   })
 })

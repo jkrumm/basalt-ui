@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react'
+import { BasaltDataTable } from '../../../src/data'
+import type { ColumnDef } from '../../../src/data'
 import { BasaltShell } from '../../../src/index'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/nav/types'
-import type { FixtureSpec, ItemSpec } from './spec'
+import type { FixtureSpec, ItemSpec, TableSpec } from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -68,6 +70,39 @@ const toItem = (spec: ItemSpec, icons: boolean): SidebarItem => ({
   }),
 })
 
+// ── The data table ────────────────────────────────────────────────────────────────────────────
+
+type TableRow = { id: number; name: string; value: number }
+
+/** Two plain accessor columns — the invariant is the header's POSITION, not what a cell renders. */
+const TABLE_COLUMNS: ColumnDef<TableRow>[] = [
+  { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'value', header: 'Value' },
+]
+
+const tableRows = (n: number): TableRow[] =>
+  Array.from({ length: n }, (_, i) => ({ id: i, name: `Row ${i + 1}`, value: i * 3 }))
+
+/**
+ * The REAL `BasaltDataTable`, mounted with the props a consumer pairs on a scrolling body. The
+ * page-level `stickyHeaderOffset` is passed on purpose: it is the prop that used to reach Mantine
+ * and park the `<thead>` mid-body.
+ */
+function TableFixture({ spec }: { spec: TableSpec }): ReactElement {
+  return (
+    <BasaltDataTable
+      data={tableRows(spec.rows)}
+      columns={TABLE_COLUMNS}
+      stickyHeader
+      {...(spec.maxHeight !== undefined && { maxHeight: spec.maxHeight })}
+      {...(spec.minWidth !== undefined && { minWidth: spec.minWidth })}
+      {...(spec.stickyHeaderOffset !== undefined && {
+        stickyHeaderOffset: spec.stickyHeaderOffset,
+      })}
+    />
+  )
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
@@ -81,6 +116,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       sections={sections}
       {...(spec.nav && { mobileNav: spec.nav })}
     >
+      {spec.table && <TableFixture spec={spec.table} />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />
       <div data-testid="content-end">end of content</div>
