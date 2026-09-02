@@ -18,6 +18,8 @@ import type { ReactNode } from 'react'
 import { ActionIcon, Button, Drawer } from '@mantine/core'
 import type { DrawerProps } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
+import type { BasaltProps } from '../common/props'
+import { cx } from '../common/props'
 import classes from './guide.module.css'
 import type { ArticleNavTarget } from './article-layout'
 import { Markdown } from './markdown'
@@ -54,7 +56,7 @@ function GuideGlyph() {
   )
 }
 
-export type GuideDrawerProps = {
+export type GuideDrawerProps = BasaltProps & {
   readonly opened: boolean
   readonly onClose: () => void
   readonly title: string
@@ -78,6 +80,8 @@ export function GuideDrawer({
   fullPageHref,
   renderLink = defaultRenderLink,
   size = 440,
+  className,
+  style,
 }: GuideDrawerProps) {
   return (
     <Drawer
@@ -86,6 +90,8 @@ export function GuideDrawer({
       position="right"
       size={size}
       title={<span className={classes.drawerTitle}>{title}</span>}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <div className={classes.body}>
         {markdown !== undefined ? (
@@ -111,7 +117,7 @@ export function GuideDrawer({
   )
 }
 
-export type GuideLinkProps = {
+export type GuideLinkProps = BasaltProps & {
   /** Trigger label. Default `'Guide'`. */
   readonly label?: string
   readonly title: string
@@ -131,6 +137,8 @@ export function GuideLink({
   fullPageHref,
   renderLink,
   iconOnly = false,
+  className,
+  style,
 }: GuideLinkProps) {
   const [opened, { open, close }] = useDisclosure(false)
 
@@ -141,9 +149,10 @@ export function GuideLink({
           variant="subtle"
           color="gray"
           size="sm"
-          className={classes.trigger}
+          className={cx(classes.trigger, className)}
           onClick={open}
           aria-label={label}
+          {...(style !== undefined && { style })}
         >
           <GuideGlyph />
         </ActionIcon>
@@ -152,9 +161,10 @@ export function GuideLink({
           variant="subtle"
           color="gray"
           size="compact-xs"
-          className={classes.trigger}
+          className={cx(classes.trigger, className)}
           leftSection={<GuideGlyph />}
           onClick={open}
+          {...(style !== undefined && { style })}
         >
           <span className={classes.triggerLabel}>{label}</span>
         </Button>

@@ -13,9 +13,11 @@
  */
 import type { RefObject } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import type { BasaltProps } from '../common/props'
+import { cx } from '../common/props'
 import classes from './reading-progress.module.css'
 
-export type ReadingProgressProps = {
+export type ReadingProgressProps = BasaltProps & {
   /** The element to track scroll progress through. Default: the whole document. */
   readonly target?: RefObject<HTMLElement | null>
 }
@@ -34,7 +36,7 @@ function computeProgress(target: HTMLElement | null | undefined): number {
   return Math.min(1, Math.max(0, ratio))
 }
 
-export function ReadingProgress({ target }: ReadingProgressProps = {}) {
+export function ReadingProgress({ target, className, style }: ReadingProgressProps = {}) {
   const [progress, setProgress] = useState(0)
   const frame = useRef<number | null>(null)
 
@@ -60,7 +62,11 @@ export function ReadingProgress({ target }: ReadingProgressProps = {}) {
   }, [target])
 
   return (
-    <div className={classes.root} aria-hidden>
+    <div
+      className={cx(classes.root, className)}
+      aria-hidden
+      {...(style !== undefined && { style })}
+    >
       <div className={classes.fill} style={{ transform: `scaleX(${progress})` }} />
     </div>
   )

@@ -22,6 +22,9 @@ import { Badge, Group, Skeleton, Stack, Text, UnstyledButton } from '@mantine/co
 import { useHover } from '@mantine/hooks'
 import type { JSX } from 'react'
 import type { AgentThread, ThreadStatus } from '../agent'
+import { assertRequiredProps } from '../common/validate'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { alpha, VX } from '../tokens'
 import { formatRelativeTime } from './relative-time'
 
@@ -118,7 +121,7 @@ function OutcomeBody({ thread }: { thread: AgentThread }): JSX.Element {
 
 // ── ThreadOutcomeCard ─────────────────────────────────────────────────────────
 
-export type ThreadOutcomeCardProps = {
+export type ThreadOutcomeCardProps = BasaltProps & {
   readonly thread: AgentThread
   /** Whether this row is the active/open thread — applies a subtle highlight. */
   readonly selected: boolean
@@ -138,7 +141,10 @@ export function ThreadOutcomeCard({
   thread,
   selected,
   onSelect,
+  className,
+  style,
 }: ThreadOutcomeCardProps): JSX.Element {
+  assertRequiredProps('ThreadOutcomeCard', { thread }, ['thread'])
   const { hovered, ref } = useHover<HTMLButtonElement>()
   const isPreviewing =
     thread.outcome === null && (thread.status === 'pending' || thread.status === 'streaming')
@@ -157,6 +163,7 @@ export function ThreadOutcomeCard({
       ref={ref}
       onClick={onSelect}
       w="100%"
+      className={cx(className)}
       style={{
         display: 'block',
         padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
@@ -164,6 +171,7 @@ export function ThreadOutcomeCard({
         boxShadow: VX.shadowCard,
         backgroundColor: background,
         transition: 'background-color 120ms ease',
+        ...style,
       }}
     >
       {isPreviewing ? <OutcomeSkeleton /> : <OutcomeBody thread={thread} />}

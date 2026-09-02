@@ -51,3 +51,14 @@ describe('EmptyState padding', () => {
     expect(pageHtml).not.toBe(sectionHtml)
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the root', () => {
+    const html = renderToStaticMarkup(
+      <MantineProvider>
+        <EmptyState title="No results" className="my-empty-state" />
+      </MantineProvider>,
+    )
+    expect(html).toContain('my-empty-state')
+  })
+})

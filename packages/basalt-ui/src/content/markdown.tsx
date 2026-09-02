@@ -394,6 +394,7 @@ const LazyReactMarkdown = lazy(() =>
     })
     .catch(() => ({ default: ({ text }: BridgeProps) => <PlainTextFallback text={text} /> })),
 )
+Object.assign(LazyReactMarkdown, { displayName: 'LazyReactMarkdown' })
 
 // ── Streaming block rendering ──────────────────────────────────────────────────────────────────
 
@@ -443,6 +444,7 @@ function BlockRenderer({
 // Referential stability of `components`/`urlTransform` (both memoized by the caller) is what makes
 // this memo skip re-rendering an unchanged settled block — see the module JSDoc.
 const MemoizedBlock = memo(BlockRenderer)
+MemoizedBlock.displayName = 'MemoizedBlock'
 
 // ── Lazy-loaded remend ─────────────────────────────────────────────────────────────────────────
 

@@ -250,3 +250,52 @@ describe('shell kebab extras are scoped to the page bar', () => {
     expect(mobile()?.textContent).toContain('Metrics')
   })
 })
+
+/**
+ * `className`/`style` on the row, which is a FRAGMENT — so the question is which of its groups the
+ * caller's class lands on, and how many of them. Both variants get it (the swap is CSS, law C9),
+ * and the desktop half gets it exactly once even when `syncNode` splits it in two.
+ */
+function renderRow(props: Parameters<typeof BarActionRow>[0]) {
+  return render(
+    <MantineProvider>
+      <BarActionRow {...props} />
+    </MantineProvider>,
+  )
+}
+
+describe('BarActionRow — className placement across the sync split', () => {
+  test('with a syncNode and nothing to lead with, the primary-only group takes className/style', () => {
+    renderRow({
+      host: 'slot',
+      primary: { key: 'new', label: 'New run' },
+      syncNode: <span>sync</span>,
+      className: 'my-actions',
+      style: { marginInlineStart: 'auto' },
+    })
+    // Both variants are mounted at once (the swap is CSS, law C9), so the class lands on the mobile
+    // group too — the assertion is about the DESKTOP half, which is the one the sync node splits.
+    const desktopClassed = [...document.querySelectorAll('.my-actions')].filter((el) =>
+      el.className.includes('mantine-visible-from-sm'),
+    )
+    expect(desktopClassed).toHaveLength(1)
+    const group = desktopClassed[0] as HTMLElement
+    expect(group.textContent).toBe('New run')
+    expect(group.getAttribute('style') ?? '').toContain('margin-inline-start: auto')
+  })
+
+  test('with a lead group present the class stays there — never on both desktop groups', () => {
+    renderRow({
+      host: 'slot',
+      primary: { key: 'new', label: 'New run' },
+      secondary: secondary(1),
+      syncNode: <span>sync</span>,
+      className: 'my-actions',
+    })
+    const desktopClassed = [...document.querySelectorAll('.my-actions')].filter((el) =>
+      el.className.includes('mantine-visible-from-sm'),
+    )
+    expect(desktopClassed).toHaveLength(1)
+    expect(desktopClassed[0]?.textContent).toContain('Second 0')
+  })
+})

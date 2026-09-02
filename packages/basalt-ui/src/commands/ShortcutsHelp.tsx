@@ -19,13 +19,15 @@
  */
 import { useEffect, useState } from 'react'
 import { Box, Group, Kbd, Stack, Text, Title } from '@mantine/core'
+import type { BasaltProps } from '../common/props'
+import { cx } from '../common/props'
 import { toShortcutList } from './projectors'
 import { detectMac, parseShortcut } from './shortcut-format'
 import { VX } from '../tokens'
 
 // ── ShortcutsHelpProps ────────────────────────────────────────────────────────
 
-export type ShortcutsHelpProps = {
+export type ShortcutsHelpProps = BasaltProps & {
   /** Section title. Default: 'Keyboard shortcuts'. */
   title?: string
   /** Max-width passthrough (Mantine style prop). */
@@ -69,7 +71,12 @@ function ShortcutRow({
  * @example
  * <ShortcutsHelp title="Keyboard shortcuts" />
  */
-export function ShortcutsHelp({ title = 'Keyboard shortcuts', maw }: ShortcutsHelpProps) {
+export function ShortcutsHelp({
+  title = 'Keyboard shortcuts',
+  maw,
+  className,
+  style,
+}: ShortcutsHelpProps) {
   // Default false — SSR and first client render produce non-mac glyphs (no hydration mismatch).
   // Post-mount effect flips to true on macOS, triggering a single client-only re-render.
   const [isMac, setIsMac] = useState(false)
@@ -94,7 +101,7 @@ export function ShortcutsHelp({ title = 'Keyboard shortcuts', maw }: ShortcutsHe
   }
 
   return (
-    <Box maw={maw}>
+    <Box maw={maw} className={cx(className)} {...(style !== undefined && { style })}>
       <Title order={5} mb="sm">
         {title}
       </Title>

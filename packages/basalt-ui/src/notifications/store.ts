@@ -21,6 +21,13 @@ import { useSyncExternalStore } from 'react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Mantine's own notification vocabulary — kept as its own type rather than aliased to
+ * `common/props.ts`'s `Tone` (`'good' | 'warn' | 'bad'`) because `@mantine/notifications` and
+ * `INTENT_COLOR`/`INTENT_ROLE` key off exactly these four strings. Roughly:
+ * `success` ~ `Tone.good`, `error`/`warning` ~ `Tone.bad`/`Tone.warn`, `info` has no `Tone`
+ * equivalent (`ToneWithNeutral`'s `'neutral'` is the nearest fit).
+ */
 export type NotificationIntent = 'success' | 'error' | 'warning' | 'info'
 
 /**

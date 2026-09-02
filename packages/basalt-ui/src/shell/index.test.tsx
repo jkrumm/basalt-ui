@@ -501,3 +501,14 @@ describe('BasaltShell region seams', () => {
     expect(source).toContain('withBorder={aside.claimed}')
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the AppShell root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} className="my-shell" />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.mantine-AppShell-root.my-shell')).not.toBeNull()
+  })
+})

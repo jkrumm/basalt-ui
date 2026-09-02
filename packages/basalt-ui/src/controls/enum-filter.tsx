@@ -28,6 +28,7 @@
  */
 import { Button, Radio, Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
 import type { FieldOption } from '../state'
 import classes from './controls.module.css'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
@@ -52,7 +53,7 @@ export type ChoiceHandle<T extends string> = {
   clear(): void
 }
 
-export type EnumFilterProps<T extends string> = {
+export type EnumFilterProps<T extends string> = BasaltProps & {
   readonly field: ChoiceHandle<T>
   readonly label: string
   readonly icon?: ReactNode
@@ -79,6 +80,8 @@ export function EnumFilter<T extends string>({
   clearable,
   numeric,
   options: optionsProp,
+  className,
+  style,
 }: EnumFilterProps<T>): ReactNode {
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
@@ -102,7 +105,12 @@ export function EnumFilter<T extends string>({
   // go. Both still write through the same setter, so there is one behaviour and two surfaces.
   if (inSheet) {
     return (
-      <SheetField label={label} labelId={labelId}>
+      <SheetField
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <SheetOptionList
           mode="single"
           labelId={labelId}
@@ -124,7 +132,12 @@ export function EnumFilter<T extends string>({
   // make one choice as tall as five.
   if (inPanel) {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <PanelChoice
           nameProps={nameProps}
           value={value}
@@ -188,6 +201,8 @@ export function EnumFilter<T extends string>({
       active={!isDefault}
       {...(numeric === true && { numeric: true })}
       {...(icon !== undefined && { icon })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <div className={classes.optionList}>{body}</div>
     </FilterPill>

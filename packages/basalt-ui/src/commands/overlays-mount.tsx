@@ -169,6 +169,7 @@ const LazyModalsProvider = lazy(() =>
     .then((m) => ({ default: m.ModalsProvider }))
     .catch(() => ({ default: PassthroughFragment })),
 )
+Object.assign(LazyModalsProvider, { displayName: 'LazyModalsProvider' })
 
 // ── Lazy SpotlightMount (falls back to rendering nothing) ─────────────────────
 
@@ -224,6 +225,7 @@ const LazySpotlightMount = lazy<
     })
     .catch(() => ({ default: NullFallback })),
 )
+Object.assign(LazySpotlightMount, { displayName: 'LazySpotlightMount' })
 
 // ── Lazy Notifications (falls back to rendering nothing) ──────────────────────
 
@@ -236,6 +238,7 @@ const LazyNotifications = lazy<ComponentType<NotificationsProps>>(() =>
     .then((m) => ({ default: m.Notifications as ComponentType<NotificationsProps> }))
     .catch(() => ({ default: NotificationsFallback })),
 )
+Object.assign(LazyNotifications, { displayName: 'LazyNotifications' })
 
 // ── NotificationsLayer (runs the shared duplicate-mount guard, F15) ───────────
 

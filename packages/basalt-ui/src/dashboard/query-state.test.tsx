@@ -151,6 +151,57 @@ describe('LoadingState "page" padding is a var()-based calc expression', () => {
   })
 })
 
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the QueryState empty-branch root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <QueryState query={result({ fetchStatus: 'idle' })} empty={EMPTY} className="my-qs">
+          {() => null}
+        </QueryState>
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-qs')).toBeTruthy()
+  })
+
+  // One slot, four branches — `classNames.root` has to reach whichever one is live, and it joins
+  // `className` rather than replacing it.
+  test('classNames.root joins className on every branch it can render', () => {
+    const branches: [string, QueryStateLike<Row[]>][] = [
+      ['empty', result({ fetchStatus: 'idle' })],
+      ['loading', result({ fetchStatus: 'fetching' })],
+      ['error with no data', result({ isError: true, error: new Error('boom') })],
+      ['cached data behind a failed refetch', result({ isError: true, data: [{ id: 1 }] })],
+    ]
+    for (const [, query] of branches) {
+      const { container, unmount } = render(
+        <MantineProvider>
+          <QueryState
+            query={query}
+            empty={EMPTY}
+            className="my-qs"
+            classNames={{ root: 'slot-qs' }}
+          >
+            {() => <div>rows</div>}
+          </QueryState>
+        </MantineProvider>,
+      )
+      const root = container.querySelector('.slot-qs')
+      expect(root).toBeTruthy()
+      expect(root?.classList.contains('my-qs')).toBe(true)
+      unmount()
+    }
+  })
+
+  test('className reaches LoadingState', () => {
+    const { container } = render(
+      <MantineProvider>
+        <LoadingState className="my-loading" />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-loading')).toBeTruthy()
+  })
+})
+
 describe('a malformed result throws instead of asserting absence', () => {
   const cases: [string, unknown][] = [
     ['missing isError', { data: undefined, error: null, fetchStatus: 'idle', refetch: () => 0 }],

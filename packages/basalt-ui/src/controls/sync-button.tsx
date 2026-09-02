@@ -23,10 +23,12 @@
 import { ActionIcon, Button, Tooltip } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { IconSlot } from '../theme/icon-slot'
 import classes from './sync-button.module.css'
 
-export type SyncButtonProps = {
+export type SyncButtonProps = BasaltProps & {
   syncing: boolean
   /** Last successful completion. `undefined`/`null` renders no age at all. */
   lastCompletedAt?: number | Date | null
@@ -134,6 +136,8 @@ export function SyncButton({
   scope,
   label = 'Sync',
   error,
+  className,
+  style,
 }: SyncButtonProps): ReactNode {
   const age = useRelativeAge(lastCompletedAt)
   // Wherever the label is not painted — every `global` mount, and a `page` mount below `sm` — the
@@ -172,7 +176,12 @@ export function SyncButton({
       withArrow
     >
       {scope === 'global' ? (
-        <ActionIcon variant="default" {...control}>
+        <ActionIcon
+          variant="default"
+          {...control}
+          {...(className !== undefined && { className })}
+          {...(style !== undefined && { style })}
+        >
           <IconSlot>
             <RefreshGlyph spinning={syncing} />
           </IconSlot>
@@ -180,7 +189,8 @@ export function SyncButton({
       ) : (
         <Button
           variant="default"
-          className={classes.pageButton}
+          className={cx(classes.pageButton, className)}
+          {...(style !== undefined && { style })}
           leftSection={
             <IconSlot>
               <RefreshGlyph spinning={syncing} />

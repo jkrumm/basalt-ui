@@ -43,6 +43,9 @@ import type {
   StreamStatus,
   TranscriptPart,
 } from '../agent'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { VX } from '../tokens'
 import type { ComposerProps, ComposerSubmit } from './composer'
 import { Composer } from './composer'
@@ -78,6 +81,15 @@ function ChevronGlyph({ expanded }: { expanded: boolean }): JSX.Element {
     </svg>
   )
 }
+
+// Card idiom (docs/DESIGN-SPEC.md §5) — static across every row, so it stays a module-level
+// constant rather than a per-render literal, letting the no-override case keep a stable reference.
+const CARD_STYLE = {
+  borderRadius: VX.radiusCard,
+  boxShadow: VX.shadowCard,
+  backgroundColor: VX.surface.panel,
+  overflow: 'hidden',
+} as const
 
 type ThreadFeedRowBase = {
   /**
@@ -128,7 +140,7 @@ type ThreadFeedRowBase = {
  * of the body growing to the thread's full length). Omit both and the row's transcript is
  * content-sized, as before.
  */
-export type ThreadFeedRowProps = ThreadFeedRowBase & VirtualizeProps
+export type ThreadFeedRowProps = ThreadFeedRowBase & VirtualizeProps & BasaltProps
 
 /** The row header's title: the resolved outcome title, else a plain placeholder — this row never
  * falls back to scanning the first user message the way `ThreadOutcomeCard`'s `promptOf` does,
@@ -159,7 +171,10 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
     onSend,
     onStop,
     composerProps,
+    className,
+    style,
   } = props
+  assertRequiredProps('ThreadFeedRow', { thread }, ['thread'])
 
   // Resolved through the shared narrowing point rather than by destructuring `virtualize`/`height`
   // apart — see `resolveVirtualize`'s doc for why the two must be read together.
@@ -191,14 +206,7 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
   const streaming = liveStatus === 'streaming'
 
   return (
-    <Box
-      style={{
-        borderRadius: VX.radiusCard,
-        boxShadow: VX.shadowCard,
-        backgroundColor: VX.surface.panel,
-        overflow: 'hidden',
-      }}
-    >
+    <Box className={cx(className)} style={style ? { ...CARD_STYLE, ...style } : CARD_STYLE}>
       <UnstyledButton
         onClick={() => onToggle(thread.id)}
         w="100%"

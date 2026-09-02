@@ -313,6 +313,19 @@ describe('className reaches the bar root in both forms', () => {
     )
     expect(shellRow()?.classList.contains('argo-bleed')).toBe(true)
   })
+
+  test('classNames.row2 reaches the row-2 box', () => {
+    render(
+      <MantineProvider>
+        <PageBar
+          title="linewatch"
+          tabs={<span data-testid="row2" />}
+          classNames={{ row2: 'my-row2' }}
+        />
+      </MantineProvider>,
+    )
+    expect(document.querySelector('.my-row2')).toBeTruthy()
+  })
 })
 
 /**

@@ -18,6 +18,7 @@ import type {
   TranscriptPart,
 } from '../agent'
 import { ThreadFeedRow } from './thread-feed-row'
+import type { ThreadFeedRowProps } from './thread-feed-row'
 
 afterEach(cleanup)
 
@@ -506,5 +507,40 @@ describe('ThreadFeedRow forwards virtualize/height to the transcript', () => {
       expect(rendered).toBeGreaterThan(0)
       expect(rendered).toBeLessThan(120)
     })
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded={false}
+          onToggle={() => {}}
+          onSend={() => {}}
+          className="my-row"
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-row')).not.toBeNull()
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('a missing `thread` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      render(
+        <MantineProvider>
+          <ThreadFeedRow
+            {...({
+              expanded: false,
+              onToggle: () => {},
+              onSend: () => {},
+            } as unknown as ThreadFeedRowProps)}
+          />
+        </MantineProvider>,
+      )
+    }).toThrow('[basalt] ThreadFeedRow: prop "thread" is required')
   })
 })

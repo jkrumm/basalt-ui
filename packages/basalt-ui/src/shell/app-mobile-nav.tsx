@@ -20,6 +20,9 @@ import { Drawer, Menu, NavLink, ScrollArea, Stack, Text, UnstyledButton } from '
 import { useReducedMotion } from '@mantine/hooks'
 import { Fragment, useState } from 'react'
 import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type {
   MobileNavConfig,
   MobileNavGroup,
@@ -51,7 +54,7 @@ type LinkSlot = Extract<MobileNavSlot, { kind: 'link' }>
 /** A slot that raises a surface. `menu` and `sheet` share one shape — only the renderer differs. */
 type SurfaceSlot = Exclude<MobileNavSlot, LinkSlot>
 
-export type MobileNavProps = {
+export type MobileNavProps = BasaltProps & {
   /** The projection from `projectMobileNav` — `BasaltShell` builds it, memoized. */
   model: MobileNavModel
   config?: MobileNavConfig | undefined
@@ -251,7 +254,10 @@ export function MobileNav({
   account,
   settingsMenuItems,
   blocks,
+  className,
+  style,
 }: MobileNavProps): ReactElement {
+  assertRequiredProps('MobileNav', { model }, ['model'], { model: '`model.slots`' })
   // `openKey` is the ONLY slot state here, and it is keyed by slot rather than holding a slot
   // object: `sections` identity churning on every consumer render must not close an open menu.
   const [openKey, setOpenKey] = useState<string | null>(null)
@@ -601,7 +607,11 @@ export function MobileNav({
   )
 
   return (
-    <nav className={classes.bar} aria-label="Primary">
+    <nav
+      className={cx(classes.bar, className)}
+      aria-label="Primary"
+      {...(style !== undefined && { style })}
+    >
       {model.slots.map((slot) => {
         if (slot.kind === 'link') return linkTab(slot)
         if (slot.kind === 'menu') return menuSlot(slot)

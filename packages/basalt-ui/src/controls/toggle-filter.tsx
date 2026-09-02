@@ -14,19 +14,27 @@
  */
 import { Switch } from '@mantine/core'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { BooleanField, FieldHandle } from '../state'
 import { useFilterRegistration, useFilterSurface } from './filter-context'
 import { FilterPill } from './filter-pill'
 import { sheetRowClassNames } from './filter-sheet'
 import { PanelRow } from './panel-row'
 
-export type ToggleFilterProps = {
+export type ToggleFilterProps = BasaltProps & {
   readonly field: FieldHandle<BooleanField>
   readonly label: string
   readonly icon?: ReactNode
 }
 
-export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNode {
+export function ToggleFilter(props: ToggleFilterProps): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('ToggleFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, label, icon, className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   useFilterRegistration(!field.isDefault(value), () => {
@@ -46,6 +54,8 @@ export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNo
             }}
           />
         }
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
       />
     )
   }
@@ -63,6 +73,8 @@ export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNo
         onChange={(event) => {
           setValue(event.currentTarget.checked)
         }}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
       />
     )
   }
@@ -77,6 +89,8 @@ export function ToggleFilter({ field, label, icon }: ToggleFilterProps): ReactNo
       onClick={() => {
         setValue(!value)
       }}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     />
   )
 }

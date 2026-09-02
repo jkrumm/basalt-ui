@@ -55,6 +55,8 @@
 import { NumberInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, NumberField } from '../state'
 import classes from './controls.module.css'
 import { EnumFilter } from './enum-filter'
@@ -71,7 +73,7 @@ export type NumberFilterOption = {
   readonly label: string
 }
 
-export type NumberFilterProps = {
+export type NumberFilterProps = BasaltProps & {
   readonly field: FieldHandle<NumberField>
   /** The popover/sheet heading and the accessible name — never the pill text, which reads the
    *  VALUE (see `EnumFilter`'s doc for why a pill may only print what is selected). */
@@ -89,7 +91,13 @@ export type NumberFilterProps = {
   readonly step?: number
 }
 
-export function NumberFilter({ field, label, icon, options, step }: NumberFilterProps): ReactNode {
+export function NumberFilter(props: NumberFilterProps): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('NumberFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, label, icon, options, step, className, style } = props
   // Two BRANCHES, two components, and never a conditional hook: the radio form's state lives in
   // `EnumFilter` and the stepper's in `NumberStepper`, so which one mounts is decided once by a prop
   // that does not change across a mount's life.
@@ -100,6 +108,8 @@ export function NumberFilter({ field, label, icon, options, step }: NumberFilter
         label={label}
         options={options}
         {...(icon !== undefined && { icon })}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
       />
     )
   }
@@ -112,6 +122,8 @@ export function NumberFilter({ field, label, icon, options, step }: NumberFilter
       label={label}
       {...(icon !== undefined && { icon })}
       {...(grain !== undefined && { step: grain })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     />
   )
 }
@@ -135,7 +147,9 @@ function NumberChoice({
   label,
   icon,
   options,
-}: {
+  className,
+  style,
+}: BasaltProps & {
   readonly field: FieldHandle<NumberField>
   readonly label: string
   readonly icon?: ReactNode
@@ -169,6 +183,8 @@ function NumberChoice({
       numeric
       options={rows}
       {...(icon !== undefined && { icon })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     />
   )
 }
@@ -179,7 +195,9 @@ function NumberStepper({
   label,
   icon,
   step,
-}: {
+  className,
+  style,
+}: BasaltProps & {
   readonly field: FieldHandle<NumberField>
   readonly label: string
   readonly icon?: ReactNode
@@ -225,7 +243,12 @@ function NumberStepper({
 
   if (inPanel) {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         {input}
       </PanelRow>
     )
@@ -233,7 +256,12 @@ function NumberStepper({
 
   if (inSheet) {
     return (
-      <SheetField label={label} labelId={labelId}>
+      <SheetField
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         {input}
       </SheetField>
     )
@@ -245,6 +273,8 @@ function NumberStepper({
       numeric
       active={!isDefault}
       {...(icon !== undefined && { icon })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <div className={classes.optionList}>{input}</div>
     </FilterPill>

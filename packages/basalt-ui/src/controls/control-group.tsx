@@ -30,9 +30,11 @@
  */
 import { Box } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import classes from './controls.module.css'
 
-export type ControlGroupProps = {
+export type ControlGroupProps = BasaltProps & {
   readonly children: ReactNode
   /**
    * `none` (the default) JOINS the children: no gap, one shared hairline between each pair, and the
@@ -46,16 +48,21 @@ export type ControlGroupProps = {
    * @default 'none'
    */
   readonly gap?: 'none' | 'tight'
-  readonly className?: string
 }
 
-export function ControlGroup({ children, gap = 'none', className }: ControlGroupProps): ReactNode {
+export function ControlGroup({
+  children,
+  gap = 'none',
+  className,
+  style,
+}: ControlGroupProps): ReactNode {
   return (
     // A Mantine `Box`, not a raw `<div>` — `basalt/raw-html-layout` flags layout styling on a bare
     // HTML tag, the same reason `CtlSlot` uses one.
     <Box
-      className={className === undefined ? classes.group : `${classes.group} ${className}`}
+      className={cx(classes.group, className)}
       data-gap={gap}
+      {...(style !== undefined && { style })}
     >
       {children}
     </Box>

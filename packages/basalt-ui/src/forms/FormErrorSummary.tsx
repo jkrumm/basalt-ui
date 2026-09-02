@@ -4,12 +4,14 @@
  */
 import { Alert, List, Text } from '@mantine/core'
 import type { UseFormReturnType } from '@mantine/form'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { alpha, VX } from '../tokens'
 
 // ── FormErrorSummary ──────────────────────────────────────────────────────────
 
 /** Props for FormErrorSummary. */
-export type FormErrorSummaryProps<Values extends Record<string, unknown>> = {
+export type FormErrorSummaryProps<Values extends Record<string, unknown>> = BasaltProps & {
   form: UseFormReturnType<Values>
   /** Accessible heading shown above the error list. Defaults to "Please fix the following errors". */
   title?: string
@@ -35,10 +37,13 @@ export type FormErrorSummaryProps<Values extends Record<string, unknown>> = {
  *   )
  * }
  */
-export function FormErrorSummary<Values extends Record<string, unknown>>({
-  form,
-  title = 'Please fix the following errors',
-}: FormErrorSummaryProps<Values>) {
+export function FormErrorSummary<Values extends Record<string, unknown>>(
+  props: FormErrorSummaryProps<Values>,
+) {
+  // F-ERR-1: without this, a missing `form` fails deep inside `Object.entries(form.errors)` as a
+  // raw `TypeError` caught by `BasaltErrorBoundary` — a blank subtree with no message naming it.
+  assertRequiredProps('FormErrorSummary', props, ['form'])
+  const { form, title = 'Please fix the following errors', className, style } = props
   const errorEntries = Object.entries(form.errors)
   if (errorEntries.length === 0) return null
 
@@ -46,6 +51,8 @@ export function FormErrorSummary<Values extends Record<string, unknown>>({
     <Alert
       role="alert"
       title={<Text fw={600}>{title}</Text>}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       styles={{
         root: {
           backgroundColor: alpha(VX.status.bad, 0.13),

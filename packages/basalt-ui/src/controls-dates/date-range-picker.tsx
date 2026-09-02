@@ -24,9 +24,16 @@
  */
 import { DatePicker } from '@mantine/dates'
 import type { ReactNode } from 'react'
+import { assertRequiredProps } from '../common/validate'
 import type { RangeCustomPickerProps } from '../controls/range-filter'
 
-export function DateRangePicker({ value, onChange }: RangeCustomPickerProps): ReactNode {
+export function DateRangePicker(props: RangeCustomPickerProps): ReactNode {
+  // F-ERR-1 — without this a missing `value` surfaces as `undefined is not an object
+  // (evaluating 'value.from')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('DateRangePicker', props, ['value'], {
+    value: "pass `{ from, to }` — usually injected by `RangeFilter`'s `customPicker`.",
+  })
+  const { value, onChange } = props
   return (
     <DatePicker
       type="range"

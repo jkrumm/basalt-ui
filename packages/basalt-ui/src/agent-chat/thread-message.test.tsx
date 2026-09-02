@@ -20,7 +20,7 @@ import {
   resolveInitialScrollAction,
   ThreadTranscript,
 } from './thread-message'
-import type { InitialScrollState } from './thread-message'
+import type { InitialScrollState, ThreadTranscriptProps } from './thread-message'
 
 // `nonVirtualizedRowsFallback` is a plain function component but its export name (this module's
 // test-only-escape-hatch convention, matching `messageBlockRenderCounter`) is lowercase-first, so
@@ -1281,5 +1281,42 @@ describe('virtualization (AGENT-CHAT-SPEC.md §9)', () => {
 
       scrollToSpy.mockRestore()
     })
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the non-virtualized root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ThreadTranscript messages={buildMessages(1)} className="my-transcript" />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-transcript')).not.toBeNull()
+  })
+
+  test('className reaches the virtualized (Suspense-fallback) root', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ThreadTranscript
+          messages={buildMessages(1)}
+          virtualize
+          height={300}
+          className="my-virtual-transcript"
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('.my-virtual-transcript')).not.toBeNull()
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('a missing `messages` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      render(
+        <MantineProvider>
+          <ThreadTranscript {...({} as unknown as ThreadTranscriptProps)} />
+        </MantineProvider>,
+      )
+    }).toThrow('[basalt] ThreadTranscript: prop "messages" is required')
   })
 })

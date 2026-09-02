@@ -6,8 +6,11 @@
  */
 import type { ReactNode } from 'react'
 
-/** Badge tone for a role/plan chip. No dedicated tone union exists elsewhere in the shell/tokens
- * layers, so this is defined locally. */
+/**
+ * Badge tone for a role/plan chip. A different member set from `common`'s `Tone` (`common/props.ts`,
+ * audit A13) — `'neutral' | 'brand'` have no `Tone` equivalent — so this stays its own type rather
+ * than an alias; see `Tone` for the base three-tone vocabulary the rest of the framework shares.
+ */
 export type AccountBadgeTone = 'neutral' | 'brand' | 'success' | 'warn'
 
 /** The signed-in user's identity. `image` is nullable and currently unused by `SidebarAccount`

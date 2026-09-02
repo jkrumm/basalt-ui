@@ -8,6 +8,8 @@
  * <CompareFilter field={analytics.field.compare} />
  */
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle } from '../state'
 import { EnumFilter } from './enum-filter'
 import { SwapGlyph } from './glyphs'
@@ -39,7 +41,7 @@ export const COMPARE_LABELS: Readonly<Record<CompareValue, string>> = {
   year: 'Same period last year',
 }
 
-export type CompareFilterProps = {
+export type CompareFilterProps = BasaltProps & {
   readonly field: FieldHandle<EnumField<CompareValue>>
   /** @default 'Compare' */
   readonly label?: string
@@ -48,7 +50,13 @@ export type CompareFilterProps = {
   readonly icon?: ReactNode
 }
 
-export function CompareFilter({ field, label = 'Compare', icon }: CompareFilterProps): ReactNode {
+export function CompareFilter(props: CompareFilterProps): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces from inside `EnumFilter` as
+  // `undefined is not an object (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('CompareFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, label = 'Compare', icon, className, style } = props
   // Read through the handle's own options so a consumer's `labels()` and its option ORDER both
   // survive; only an UNLABELLED row (label === value) takes basalt's default string.
   const options = field.options.map((option) =>
@@ -56,7 +64,16 @@ export function CompareFilter({ field, label = 'Compare', icon }: CompareFilterP
       ? { value: option.value, label: COMPARE_LABELS[option.value] }
       : option,
   )
-  return <EnumFilter field={field} label={label} icon={icon ?? <SwapGlyph />} options={options} />
+  return (
+    <EnumFilter
+      field={field}
+      label={label}
+      icon={icon ?? <SwapGlyph />}
+      options={options}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
+    />
+  )
 }
 
 function isCompareValue(value: string): value is CompareValue {

@@ -401,3 +401,15 @@ describe('MobileNav', () => {
     expect(document.querySelector('.mantine-Drawer-body')?.children).toHaveLength(1)
   })
 })
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the bar root', () => {
+    const model = projectMobileNav([{ label: 'Main', items: [item('home')] }])
+    const { container } = render(
+      <MantineProvider>
+        <MobileNav model={model} className="my-mobile-nav" />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('nav.my-mobile-nav')).toBeTruthy()
+  })
+})

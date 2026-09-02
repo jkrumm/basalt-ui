@@ -20,6 +20,8 @@
 import { AppShell, Box } from '@mantine/core'
 import { Fragment, useMemo } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import { AppSidebar } from './app-sidebar'
 import { MobileNav, accountRowCount } from './app-mobile-nav'
 import { blockRowCount, projectMobileNav } from './mobile-nav-model'
@@ -44,9 +46,10 @@ import mobileNavClasses from './app-mobile-nav.module.css'
 import asideClasses from './page-aside.module.css'
 
 export { AppSidebar, type AppSidebarProps } from './app-sidebar'
-export { NavCountBadge } from './nav-count-badge'
+export { NavCountBadge, type NavCountBadgeProps } from './nav-count-badge'
 export {
   SidebarSearch,
+  type SidebarSearchProps,
   type SidebarSearchConfig,
   type SidebarSearchActions,
 } from './sidebar-search'
@@ -69,9 +72,9 @@ export {
   MOBILE_MENU_MAX_DEFAULT,
   MOBILE_MORE_KEY,
 } from './mobile-nav-model'
-export { AppBreadcrumbs } from './app-breadcrumbs'
-export { PageBar, type PageBarProps } from './page-bar'
-export { PageAside, type PageAsideProps } from './page-aside'
+export { AppBreadcrumbs, type AppBreadcrumbsProps } from './app-breadcrumbs'
+export { PageBar, type PageBarProps, type PageBarSlot } from './page-bar'
+export { PageAside, type PageAsideProps, type PageAsideSlot } from './page-aside'
 
 /**
  * The shared nav vocabulary lives in `src/nav/types.ts` so the headless router bridge can `import
@@ -118,7 +121,7 @@ export type SettingsMenuItem = {
   onClick?: (e: MouseEvent) => void
 }
 
-export type BasaltShellProps = {
+export type BasaltShellProps = BasaltProps & {
   /**
    * Brand identity for the sidebar header. Supplying `menu` turns the brand row into a `Name ▾`
    * workspace switcher — the rows are `AccountMenuItem`s, the shape the account menu already uses.
@@ -310,6 +313,7 @@ const SHELL_INSET = 'sm' as const
  * has to READ to size `AppShell.Aside`, so it cannot be the component that provides it.
  */
 export function BasaltShell(props: BasaltShellProps) {
+  assertRequiredProps('BasaltShell', props, ['brand', 'sections'])
   return (
     <PageBarProvider globalActions={props.globalActions ?? []}>
       <AsideProvider>
@@ -333,6 +337,8 @@ function ShellFrame({
   account,
   search,
   children,
+  className,
+  style,
 }: BasaltShellProps) {
   // The active density level's resolved spacing — the AppShell dimensions below must track it
   // (see `SPACE_STEP_BASE`'s "shell/index.tsx" group doc in `tokens/palette.ts`): their contents
@@ -404,6 +410,8 @@ function ShellFrame({
       // `.footer` rule already adds the inset to both the height and the padding (§2.7).
       footer={{ height: { base: step.mobileNavBarHeight, sm: 0 } }}
       padding={SHELL_INSET}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {/* Region seams (docs/DESIGN-SPEC.md §5, §8 #12): Mantine's `[data-with-border]` painted in
        * `--vx-divider` by the theme's `AppShell.extend({ vars })`. No shell module draws a region

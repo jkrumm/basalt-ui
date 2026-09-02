@@ -28,6 +28,9 @@
  */
 import { SegmentedControl, Select } from '@mantine/core'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { EnumField, FieldHandle } from '../state'
 import classes from './controls.module.css'
 import { useFilterSurface } from './filter-context'
@@ -44,7 +47,7 @@ export type ViewTabsOption<T extends string> = {
   readonly only?: 'sm-up' | 'sm-down'
 }
 
-export type ViewTabsProps<T extends string> = {
+export type ViewTabsProps<T extends string> = BasaltProps & {
   readonly field: FieldHandle<EnumField<T>>
   /** Defaults to `field.options` (every declared value, labelled by `store.labels()`). */
   readonly options?: readonly ViewTabsOption<T>[]
@@ -58,11 +61,13 @@ export type ViewTabsProps<T extends string> = {
   readonly label?: string
 }
 
-export function ViewTabs<T extends string>({
-  field,
-  options,
-  label = 'View',
-}: ViewTabsProps<T>): ReactNode {
+export function ViewTabs<T extends string>(props: ViewTabsProps<T>): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('ViewTabs', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, options, label = 'View', className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const inPanel = surface === 'panel'
@@ -82,12 +87,20 @@ export function ViewTabs<T extends string>({
   // viewport, and a panel is not a viewport — every declared option is offered.
   if (inPanel) {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <PanelChoice nameProps={nameProps} value={value} options={all} onChange={commit} />
       </PanelRow>
     )
   }
 
+  // No single root: exactly one of the two forms below is visible at once (CSS `visibleFrom`/
+  // `hiddenFrom`, law C9), so `className`/`style` land on both — whichever one paints is the one a
+  // reader ever sees carrying them.
   return (
     <>
       <SegmentedControl
@@ -97,6 +110,8 @@ export function ViewTabs<T extends string>({
         value={value}
         data={desktop.map((option) => ({ value: option.value, label: option.label }))}
         onChange={commit}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
       />
       {phone.length <= PHONE_TRACK_MAX ? (
         <SegmentedControl
@@ -107,6 +122,8 @@ export function ViewTabs<T extends string>({
           value={value}
           data={phone.map((option) => ({ value: option.value, label: option.label }))}
           onChange={commit}
+          {...(className !== undefined && { className })}
+          {...(style !== undefined && { style })}
         />
       ) : (
         <Select
@@ -116,7 +133,8 @@ export function ViewTabs<T extends string>({
           // BOUNDED, not greedy — see `.phoneSelect`'s comment in `controls.module.css`. This is the
           // control owning its own responsive form (law C9), which is also why it is not a `w` prop
           // at the call site (C5, `basalt/control-size-literal`).
-          className={classes.phoneSelect}
+          className={cx(classes.phoneSelect, className)}
+          {...(style !== undefined && { style })}
           value={value}
           allowDeselect={false}
           data={phone.map((option) => ({ value: option.value, label: option.label }))}

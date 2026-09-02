@@ -12,6 +12,29 @@ export {
   BasaltErrorBoundary,
   type BasaltErrorContext,
 } from './provider'
+// -- Common primitives (src/common) ------------------------------------------------------------
+// Not a subpath of its own: `BasaltProps` is the base every component's props extend, so it belongs
+// on the entry a consumer already imports. The module is Mantine-free (`common/boundary.test.ts`),
+// which is what lets `./charts` reach `cx`/`mergeRefs` without breaching the layer boundary.
+export {
+  type BasaltProps,
+  type SlotClassNames,
+  type SlotStylesProps,
+  type Tone,
+  type ToneWithNeutral,
+  type Tier,
+  cx,
+  assignRef,
+  mergeRefs,
+  BASALT_PREFIX,
+  requiredProp,
+  oneOf,
+  deprecatedProp,
+  duplicateMount,
+  useValidateProps,
+  assertRequiredProps,
+} from './common'
+
 export { createBasaltTheme, baseTheme, cssVariablesResolver } from './theme'
 export type { BasaltFontsConfig, CreateBasaltThemeOptions } from './theme'
 export { CTL_THEME, CtlSlot } from './theme'
@@ -33,8 +56,10 @@ export { MOTION_DURATION, MOTION_SPRING, MOTION_EASE_STANDARD } from './motion'
 export {
   BasaltShell,
   NavCountBadge,
+  type NavCountBadgeProps,
   AppSidebar,
   SidebarSearch,
+  type SidebarSearchProps,
   type SidebarSearchConfig,
   type SidebarSearchActions,
   SidebarAccount,
@@ -46,10 +71,13 @@ export {
   MOBILE_MENU_MAX_DEFAULT,
   MOBILE_MORE_KEY,
   AppBreadcrumbs,
+  type AppBreadcrumbsProps,
   PageBar,
   type PageBarProps,
+  type PageBarSlot,
   PageAside,
   type PageAsideProps,
+  type PageAsideSlot,
   type SidebarSection,
   type SidebarItem,
   type SidebarBlock,
@@ -134,6 +162,7 @@ export {
 export {
   WidgetHeader,
   type WidgetHeaderProps,
+  type WidgetHeaderSlot,
   type WidgetHeaderTier,
   DeltaBadge,
   type DeltaBadgeProps,
@@ -141,25 +170,30 @@ export {
 } from './widget-header'
 
 // ── Section (tier-2 heading composer over WidgetHeader, docs/CONTROLS-SPEC.md §2.2) ───────────────
-export { Section, type SectionProps } from './section'
+export { Section, type SectionProps, type SectionSlot } from './section'
 
 // ── Dashboard composites (KPI atoms + settings building blocks) ──────────────────────────────────
 export {
   StatCard,
   type StatCardBreakdownRow,
   type StatCardProps,
+  type StatCardSlot,
   type StatCardTone,
   EmptyState,
   type EmptyStateProps,
+  type EmptyStateSlot,
   SettingsSection,
   type SettingsSectionProps,
+  type SettingsSectionSlot,
   SettingsRow,
   type SettingsRowProps,
+  type SettingsRowSlot,
   DangerZone,
   type DangerZoneProps,
   QueryState,
   type QueryStateProps,
   type QueryStateLike,
+  type QueryStateSlot,
   type QueryStateVariant,
   type QueryEmptyCopy,
   LoadingState,

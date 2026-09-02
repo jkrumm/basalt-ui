@@ -15,6 +15,7 @@
 import { ActionIcon, Button, Group, Menu } from '@mantine/core'
 import { createContext, useContext, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
 import type { NavAnchor } from '../nav/types'
 import type { AnyNavLink } from '../router-tanstack/nav'
 import { IconSlot } from '../theme/icon-slot'
@@ -75,7 +76,7 @@ export type BarAction = BarActionItem | BarActionMenu | BarActionCustom
  * A home's `actions` slot. `primary` is SINGULAR by type — that is the whole enforcement of law
  * C6's "exactly one primary"; there is no runtime check because a second one cannot be written.
  */
-export type ActionGroupProps = {
+export type ActionGroupProps = BasaltProps & {
   primary?: BarAction
   secondary?: BarAction[]
 }
@@ -309,7 +310,7 @@ function menuRows(actions: readonly BarAction[]): ReactNode[] {
   })
 }
 
-export type OverflowMenuProps = {
+export type OverflowMenuProps = BasaltProps & {
   actions: readonly BarAction[]
   /**
    * `more` — the labelled desktop `More` button. `kebab` — the mobile ⋯ icon button.
@@ -329,6 +330,8 @@ export function OverflowMenu({
   actions,
   trigger = 'more',
   label = 'More',
+  className,
+  style,
 }: OverflowMenuProps): ReactNode {
   if (actions.length === 0) return null
   return (
@@ -352,7 +355,13 @@ export function OverflowMenu({
           // `size="ctl"` explicitly, not inherited: the kebab is rendered by `HeaderGlobalActions`
           // too, which is shell chrome rather than a home's slot, so there is no `CtlSlot` above it
           // there. 28px beside 30px buttons is the mismatch the header read as.
-          <ActionIcon variant="subtle" size="ctl" aria-label={label}>
+          <ActionIcon
+            variant="subtle"
+            size="ctl"
+            aria-label={label}
+            {...(className !== undefined && { className })}
+            {...(style !== undefined && { style })}
+          >
             <IconSlot className={classes.kebabIcon}>
               <DotsGlyph />
             </IconSlot>
@@ -365,6 +374,8 @@ export function OverflowMenu({
                 <ChevronGlyph />
               </IconSlot>
             }
+            {...(className !== undefined && { className })}
+            {...(style !== undefined && { style })}
           >
             {label}
           </Button>
@@ -462,6 +473,8 @@ export function BarActionRow({
   viewport = 'both',
   mobileOnly = [],
   syncNode,
+  className,
+  style,
 }: BarActionRowProps): ReactNode {
   const context = useContext(BarExtrasContext)
   // Read unconditionally (hook order), scoped afterwards — see this type's doc.
@@ -518,10 +531,20 @@ export function BarActionRow({
 
   const desktopLead = inline.length > 0 || desktopOverflow.length > 0 || syncNode === undefined
 
+  // The caller's `className`/`style` land on the ONE desktop group and the ONE mobile group. A
+  // `syncNode` splits the desktop row in two, and with nothing to lead with (no inline actions, no
+  // overflow) the lead group does not render at all — the primary-only group beside the sync button
+  // IS the desktop row then, so it takes them instead of dropping them. Never both groups: two nodes
+  // carrying one `style` is a layout the caller did not write.
+  const rootProps = {
+    ...(className !== undefined && { className }),
+    ...(style !== undefined && { style }),
+  }
+
   return (
     <>
       {hasDesktop && desktopLead && (
-        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm">
+        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm" {...rootProps}>
           {joinRuns(inline, { viewport: 'desktop' }).map((run) =>
             run.length === 1 ? (
               <BarEntry key={run[0]!.key} action={run[0]!} emphasis="secondary" />
@@ -539,12 +562,12 @@ export function BarActionRow({
       )}
       {syncNode}
       {syncNode !== undefined && desktopPrimary !== null && (
-        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm">
+        <Group gap={BAR_GAP} wrap="nowrap" visibleFrom="sm" {...(!desktopLead && rootProps)}>
           {desktopPrimary}
         </Group>
       )}
       {hasMobile && (
-        <Group gap={BAR_GAP} wrap="nowrap" hiddenFrom="sm">
+        <Group gap={BAR_GAP} wrap="nowrap" hiddenFrom="sm" {...rootProps}>
           {joinRuns(mobileBar, { viewport: 'mobile', excludeKey: primary?.key }).map((run) =>
             run.length === 1 ? (
               <BarEntry

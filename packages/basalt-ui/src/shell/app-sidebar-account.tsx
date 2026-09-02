@@ -18,6 +18,9 @@
  */
 import { Group, Menu, Skeleton, Stack, Text, UnstyledButton } from '@mantine/core'
 import { useBasaltSpacing } from '../theme'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { BasaltAccountProps } from './account-types'
 import classes from './app-sidebar.module.css'
 
@@ -59,9 +62,14 @@ function IconUser() {
   )
 }
 
-function AccountSkeleton() {
+function AccountSkeleton({ className, style }: BasaltProps) {
   return (
-    <Group className={classes.accountRow} gap="sm" wrap="nowrap">
+    <Group
+      className={cx(classes.accountRow, className)}
+      gap="sm"
+      wrap="nowrap"
+      {...(style !== undefined && { style })}
+    >
       <Skeleton height={28} width={28} style={{ borderRadius: 'var(--vx-radius-card)' }} />
       <Stack gap={4} className={classes.accountText}>
         <Skeleton height={10} width="70%" radius="sm" />
@@ -71,7 +79,9 @@ function AccountSkeleton() {
   )
 }
 
-export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps) {
+export function SidebarAccount(props: BasaltAccountProps & BasaltProps) {
+  assertRequiredProps('SidebarAccount', props, ['state'])
+  const { state, actions, showEmail, className, style } = props
   // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarAccountMenuWidth`) — read the ACTIVE
   // resolved level, not the frozen level-0 constant, so the dropdown widens with its rows as density
   // rises (see that constant's own doc in `tokens/palette.ts`). Called unconditionally, ahead of the
@@ -79,12 +89,21 @@ export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps
   const { step } = useBasaltSpacing()
 
   if (state.status === 'loading') {
-    return <AccountSkeleton />
+    return (
+      <AccountSkeleton
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      />
+    )
   }
 
   if (state.status === 'unauthenticated') {
     return (
-      <UnstyledButton className={classes.accountRow} onClick={actions?.onSignIn}>
+      <UnstyledButton
+        className={cx(classes.accountRow, className)}
+        onClick={actions?.onSignIn}
+        {...(style !== undefined && { style })}
+      >
         <IconUser />
         <Text className={classes.accountText} size="sm" fw={500}>
           Sign in
@@ -99,7 +118,11 @@ export function SidebarAccount({ state, actions, showEmail }: BasaltAccountProps
   return (
     <Menu position="right-end" withArrow width={step.sidebarAccountMenuWidth} zIndex={500}>
       <Menu.Target>
-        <UnstyledButton className={classes.accountRow} aria-label="Account menu">
+        <UnstyledButton
+          className={cx(classes.accountRow, className)}
+          aria-label="Account menu"
+          {...(style !== undefined && { style })}
+        >
           <InitialsBlock name={identity.name} />
           <Stack gap={2} className={classes.accountText}>
             <Text className={classes.accountName} truncate>

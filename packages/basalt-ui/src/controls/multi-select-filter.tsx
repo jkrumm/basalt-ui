@@ -25,6 +25,8 @@
 import { Button, Checkbox, Stack } from '@mantine/core'
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { FieldHandle, MultiField } from '../state'
 import type { FilterOption } from './select-filter'
 import classes from './controls.module.css'
@@ -37,7 +39,7 @@ import { PanelRow } from './panel-row'
  *  which a facet column stops being a list you scan and starts being one you scroll. */
 const PANEL_FACET_MAX = 6
 
-export type MultiSelectFilterProps<T extends string> = {
+export type MultiSelectFilterProps<T extends string> = BasaltProps & {
   readonly field: FieldHandle<MultiField<T>>
   readonly label: string
   readonly icon?: ReactNode
@@ -71,15 +73,13 @@ export type MultiSelectFilterProps<T extends string> = {
   readonly max?: number
 }
 
-export function MultiSelectFilter<T extends string>({
-  field,
-  label,
-  icon,
-  noun,
-  counts,
-  max,
-  options: optionsProp,
-}: MultiSelectFilterProps<T>): ReactNode {
+export function MultiSelectFilter<T extends string>(props: MultiSelectFilterProps<T>): ReactNode {
+  // F-ERR-1 — without this a missing `field` surfaces as `undefined is not an object
+  // (evaluating 'field.use')`, caught by `BasaltErrorBoundary`.
+  assertRequiredProps('MultiSelectFilter', props, ['field'], {
+    field: 'bind it to a store field (`store.field.<name>`), never a value/onChange pair.',
+  })
+  const { field, label, icon, noun, counts, max, options: optionsProp, className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
   const isDefault = field.isDefault(value)
@@ -108,7 +108,12 @@ export function MultiSelectFilter<T extends string>({
   // Mantine's `Checkbox.Group`, the sheet reads as a list of options rather than a stack of boxes.
   if (inSheet) {
     return (
-      <SheetField label={label} labelId={labelId}>
+      <SheetField
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <SheetOptionList
           mode="multi"
           labelId={labelId}
@@ -125,7 +130,12 @@ export function MultiSelectFilter<T extends string>({
   // in `controls.module.css`).
   if (inPanel) {
     return (
-      <PanelRow label={label} labelId={labelId}>
+      <PanelRow
+        label={label}
+        labelId={labelId}
+        {...(className !== undefined && { className })}
+        {...(style !== undefined && { style })}
+      >
         <FacetList
           labelId={labelId}
           options={options}
@@ -182,6 +192,8 @@ export function MultiSelectFilter<T extends string>({
       label={carriesInformation ? `${value.length} ${noun ?? label.toLowerCase()}` : label}
       active={!isDefault}
       {...(icon !== undefined && { icon })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       <div className={classes.optionList}>{body}</div>
     </FilterPill>

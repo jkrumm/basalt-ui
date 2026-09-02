@@ -7,6 +7,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { ToolChip } from './tool-chip'
+import type { ToolChipProps } from './tool-chip'
 import type { ToolCallPart } from '../agent'
 
 afterEach(cleanup)
@@ -135,5 +136,27 @@ describe('a malformed/unrecognized state never throws (F3)', () => {
     const malformed = { ...BASE, state: 'bogus-future-state' } as unknown as ToolCallPart
     expect(() => renderChip(malformed)).not.toThrow()
     expect(screen.getByText('unknown')).not.toBeNull()
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className reaches the root', () => {
+    const { container } = renderChip(
+      { ...BASE, state: 'output-available', input: {}, output: {} },
+      { className: 'my-chip' },
+    )
+    expect(container.querySelector('.my-chip')).not.toBeNull()
+  })
+})
+
+describe('assertRequiredProps (F-ERR-1)', () => {
+  test('a missing `part` throws a named message, not a raw TypeError', () => {
+    expect(() => {
+      render(
+        <MantineProvider>
+          <ToolChip {...({} as unknown as ToolChipProps)} />
+        </MantineProvider>,
+      )
+    }).toThrow('[basalt] ToolChip: prop "part" is required')
   })
 })

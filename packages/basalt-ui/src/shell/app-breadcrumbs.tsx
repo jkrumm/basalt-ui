@@ -14,6 +14,7 @@ import { Anchor, Group, Text } from '@mantine/core'
 import type { CSSProperties } from 'react'
 import type { NavAnchor } from '../nav/types'
 import { VX } from '../tokens'
+import type { BasaltProps } from '../common/props'
 import classes from './app-header.module.css'
 
 /** Parent/section crumbs — faint. */
@@ -31,13 +32,7 @@ const currentStyle: CSSProperties = {
   color: 'var(--vx-ink)',
 }
 
-export function AppBreadcrumbs({
-  section,
-  parent,
-  parentAnchor,
-  parentHref,
-  page,
-}: {
+export type AppBreadcrumbsProps = BasaltProps & {
   section?: string
   /** Parent item label — shown when the active page is a nested child (e.g. "Dashboard"). */
   parent?: string | undefined
@@ -49,10 +44,25 @@ export function AppBreadcrumbs({
   /** Parent item href — the no-router fallback; ignored when `parentAnchor` is present. */
   parentHref?: string | undefined
   page?: string
-}) {
+}
+
+export function AppBreadcrumbs({
+  section,
+  parent,
+  parentAnchor,
+  parentHref,
+  page,
+  className,
+  style,
+}: AppBreadcrumbsProps) {
   if (!page) return null
   return (
-    <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+    <Group
+      gap={6}
+      wrap="nowrap"
+      {...(className !== undefined && { className })}
+      style={{ minWidth: 0, ...style }}
+    >
       {/*
         The ANCESTOR crumbs, in one box so CSS can drop them below `sm` — law C9's swap, owned by the
         component, no JS media query and no first-paint flash. On a phone the header row is the

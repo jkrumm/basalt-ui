@@ -33,6 +33,8 @@
  */
 import { Children, isValidElement, useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import classes from './controls.module.css'
 import { FilterSetScope, useFilterCensus } from './filter-context'
 import { FilterPill } from './filter-pill'
@@ -44,18 +46,25 @@ const FOLD_PILL_WIDTH = 52
 /** `--vx-space-control-gap`'s level-0 value — the fallback when the row has no computed style. */
 const FALLBACK_GAP = 6
 
-export type FilterSetProps = {
-  readonly children: ReactNode
-  /**
-   * How many children stay inline pills below `sm`. The rest are reachable only through the
-   * `Filters (n)` sheet — which always holds every child, inline ones included.
-   *
-   * @default 1
-   */
-  readonly inline?: number
-}
+export type FilterSetProps = BasaltProps &
+  SlotStylesProps<'root' | 'sheet'> & {
+    readonly children: ReactNode
+    /**
+     * How many children stay inline pills below `sm`. The rest are reachable only through the
+     * `Filters (n)` sheet — which always holds every child, inline ones included.
+     *
+     * @default 1
+     */
+    readonly inline?: number
+  }
 
-export function FilterSet({ children, inline = 1 }: FilterSetProps): ReactNode {
+export function FilterSet({
+  children,
+  inline = 1,
+  className,
+  style,
+  classNames,
+}: FilterSetProps): ReactNode {
   const items = Children.toArray(children)
   const { registry, activeCount, resetAll } = useFilterCensus()
   const [sheetOpened, setSheetOpened] = useState(false)
@@ -81,7 +90,12 @@ export function FilterSet({ children, inline = 1 }: FilterSetProps): ReactNode {
 
   return (
     <>
-      <div className={classes.pillRow} ref={rowRef} data-filter-row>
+      <div
+        className={cx(classes.pillRow, classNames?.root, className)}
+        ref={rowRef}
+        data-filter-row
+        {...(style !== undefined && { style })}
+      >
         <FilterSetScope surface="pill" registry={registry}>
           {items.map((child, index) => (
             // `Children.toArray` already stamped a stable `.0`/`.1`-style key on every child, so
@@ -131,7 +145,12 @@ export function FilterSet({ children, inline = 1 }: FilterSetProps): ReactNode {
       </div>
 
       {anyFoldedOnMobile && (
-        <FilterSheet opened={sheetOpened} onClose={closeSheet} onResetAll={resetAll}>
+        <FilterSheet
+          opened={sheetOpened}
+          onClose={closeSheet}
+          onResetAll={resetAll}
+          {...(classNames?.sheet !== undefined && { className: classNames.sheet })}
+        >
           <FilterSetScope surface="sheet" registry={null}>
             {items}
           </FilterSetScope>

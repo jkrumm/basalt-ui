@@ -20,7 +20,7 @@ import { useFilterSurface } from '../controls/filter-context'
 import { Section } from '../section'
 import { createLocalStore, field } from '../state'
 import { BasaltShell, PageAside, PageBar } from './index'
-import type { SidebarSection } from './index'
+import type { PageAsideProps, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
 const ONE_SECTION: SidebarSection[] = [
@@ -384,5 +384,36 @@ describe('PageAside — the panel surface and the mobile projection', () => {
     expect(document.querySelector('[data-basalt-page-aside="standalone"]')).not.toBeNull()
     expect(screen.getByTestId('aside-child')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Weights' })).toBeNull()
+  })
+})
+
+describe('common props (`common/props.ts`)', () => {
+  test('className and classNames.body reach the in-flow panel (shell-less)', () => {
+    render(
+      <MantineProvider>
+        <PageAside title="Panel" className="my-aside" classNames={{ body: 'my-aside-body' }}>
+          <div>Composition</div>
+        </PageAside>
+      </MantineProvider>,
+    )
+    expect(document.querySelector('.my-aside')).toBeTruthy()
+    expect(document.querySelector('.my-aside-body')).toBeTruthy()
+  })
+
+  // F-ERR-1: `title` is the header text AND the landmark's `aria-label`, so losing it ships a
+  // nameless region rather than a crash — the failure a raw `TypeError` would never have named.
+  test('a missing title throws a message naming the component, the prop and why', () => {
+    expect(() =>
+      render(
+        <MantineProvider>
+          <PageAside {...({} as unknown as PageAsideProps)}>
+            <div>Composition</div>
+          </PageAside>
+        </MantineProvider>,
+      ),
+    ).toThrow(
+      '[basalt] PageAside: prop "title" is required — it names the region — it is the header ' +
+        'text AND the `aria-label` on the landmark.',
+    )
   })
 })

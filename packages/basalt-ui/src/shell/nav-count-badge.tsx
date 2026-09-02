@@ -6,6 +6,9 @@
  */
 import { Badge } from '@mantine/core'
 import { VX } from '../tokens'
+import type { BasaltProps } from '../common/props'
+
+export type NavCountBadgeProps = BasaltProps & { count: number }
 
 /**
  * Sidebar nav count badge (docs/DESIGN-SPEC.md §5): mono micro (11px), ink-8% bg, radius 5, height 16,
@@ -14,11 +17,13 @@ import { VX } from '../tokens'
  * combinations land on the ink-tint idiom. Returns `null` for a zero/empty count so the badge slot
  * stays clean ("ink earns its color", DESIGN.md).
  */
-export function NavCountBadge({ count }: { count: number }) {
+export function NavCountBadge({ count, className, style }: NavCountBadgeProps) {
   if (!count) return null
   return (
     <Badge
       size="sm"
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       styles={{
         root: {
           backgroundColor: 'color-mix(in srgb, var(--vx-ink) 8%, transparent)',

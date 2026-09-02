@@ -16,11 +16,13 @@
 import { Button, Popover } from '@mantine/core'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
 import { IconSlot } from '../theme/icon-slot'
 import classes from './controls.module.css'
 import { UpDownGlyph } from './glyphs'
 
-export type FilterPillProps = {
+export type FilterPillProps = BasaltProps & {
   readonly label: string
   readonly icon?: ReactNode
   /** Non-default → accent-tinted border. Derived from `field.isDefault(value)`, never hand-set. */
@@ -39,7 +41,6 @@ export type FilterPillProps = {
    * where `aria-expanded` (which Mantine's `Popover.Target` supplies) is the correct state.
    */
   readonly pressed?: boolean
-  readonly className?: string
   /** Set by `FilterSet` on its own fold/sheet pills; a filter never passes either of these. */
   readonly hideGlyph?: boolean
   /** `data-shown` — the CSS hook that reveals the `+N` fold pill once folding is needed. */
@@ -56,6 +57,7 @@ export function FilterPill({
   ariaLabel,
   pressed,
   className,
+  style,
   hideGlyph,
   shown,
 }: FilterPillProps): ReactNode {
@@ -68,8 +70,9 @@ export function FilterPill({
     <Button
       variant="default"
       size="ctl"
-      className={className === undefined ? classes.pill : `${classes.pill} ${className}`}
+      className={cx(classes.pill, className)}
       classNames={{ label: classes.pillLabel }}
+      {...(style !== undefined && { style })}
       {...(active === true && { 'data-active': true })}
       {...(numeric === true && { 'data-numeric': true })}
       {...(ariaLabel !== undefined && { 'aria-label': ariaLabel })}

@@ -18,13 +18,14 @@
 import { ActionIcon, Indicator, Popover } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useRef } from 'react'
+import type { BasaltProps } from '../common/props'
 import { useNotificationHistory } from './store'
 import { NotificationCenter } from './center'
 
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
 
-export type NotificationBellProps = {
+export type NotificationBellProps = BasaltProps & {
   /** Tooltip label. Default: 'Notifications'. */
   label?: string
 }
@@ -38,7 +39,11 @@ export type NotificationBellProps = {
  *   {...rest}
  * />
  */
-export function NotificationBell({ label = 'Notifications' }: NotificationBellProps) {
+export function NotificationBell({
+  label = 'Notifications',
+  className,
+  style,
+}: NotificationBellProps) {
   const [opened, { open, toggle, close }] = useDisclosure(false)
   const { unreadCount } = useNotificationHistory()
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -78,6 +83,8 @@ export function NotificationBell({ label = 'Notifications' }: NotificationBellPr
             aria-label={label}
             aria-expanded={opened}
             aria-haspopup="dialog"
+            {...(className !== undefined && { className })}
+            {...(style !== undefined && { style })}
           >
             {/* Bell icon (simple SVG — no @tabler/icons dep per house rules) */}
             <svg

@@ -34,6 +34,9 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { cx } from '../common/props'
+import type { BasaltProps } from '../common/props'
+import { assertRequiredProps } from '../common/validate'
 import type { BrandConfig, SettingsMenuItem } from './index'
 import type { SidebarBlock, SidebarItem, SidebarSection } from '../nav/types'
 import { NavCountBadge } from './nav-count-badge'
@@ -56,7 +59,7 @@ import { VX } from '../tokens'
 import { useBasaltSpacing } from '../theme'
 import classes from './app-sidebar.module.css'
 
-export type AppSidebarProps = {
+export type AppSidebarProps = BasaltProps & {
   /**
    * Brand identity. Supplying `menu` turns the brand row into a `Name ▾` workspace switcher —
    * the entries are the existing `AccountMenuItem` shape, so a consumer already mapping account
@@ -469,17 +472,21 @@ function NavItemRow({ item, collapsed }: { item: SidebarItem; collapsed: boolean
   )
 }
 
-export function AppSidebar({
-  brand,
-  sections,
-  collapsed,
-  onToggleCollapse,
-  settingsMenuItems,
-  settingsMenu = 'auto',
-  account,
-  search,
-  blocks,
-}: AppSidebarProps) {
+export function AppSidebar(props: AppSidebarProps) {
+  assertRequiredProps('AppSidebar', props, ['brand'])
+  const {
+    brand,
+    sections,
+    collapsed,
+    onToggleCollapse,
+    settingsMenuItems,
+    settingsMenu = 'auto',
+    account,
+    search,
+    blocks,
+    className,
+    style,
+  } = props
   // Density-tracking Menu dropdown width (`SPACE_STEP.sidebarSettingsMenuWidth`) — read the ACTIVE
   // resolved level, not the frozen level-0 constant (see that constant's own doc in
   // `tokens/palette.ts`).
@@ -570,7 +577,13 @@ export function AppSidebar({
     )
 
   return (
-    <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
+    <Stack
+      gap={0}
+      h="100%"
+      className={cx(classes.root, className)}
+      data-collapsed={collapsed || undefined}
+      {...(style !== undefined && { style })}
+    >
       <Group className={classes.brand} gap="sm" wrap="nowrap">
         <Group className={classes.brandLead} gap="sm" wrap="nowrap">
           {brand.logoSrc && (

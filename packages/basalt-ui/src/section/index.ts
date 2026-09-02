@@ -1,1 +1,1 @@
-export { Section, type SectionProps } from './section'
+export { Section, type SectionProps, type SectionSlot } from './section'
