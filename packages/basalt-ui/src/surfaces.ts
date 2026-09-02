@@ -55,6 +55,11 @@ export const PLUGIN_RULE_ID_LIST = [
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
+  'provider-above-router',
+  'duplicate-notifications-mount',
+  'query-dual-import',
+  'query-fn-unwrap',
+  'deprecated-export',
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
@@ -268,11 +273,18 @@ export const SURFACES = {
       'raw-scroll-container',
       'page-bar-budget',
       'shadow-basalt-export',
+      // The two mount-order laws, guarded as of 1.28.0 (F5) — both same-file static ancestry, so
+      // both `warn`. `deprecated-export` sits here too: the ledger it reads spans subpaths, and
+      // `BasaltProvider`'s three flattened connectivity props are most of it.
+      'provider-above-router',
+      'duplicate-notifications-mount',
+      'deprecated-export',
     ],
-    // agent/rules/basalt-mantine.md — stated, not guarded.
+    // agent/rules/basalt-mantine.md — stated, not guarded. The other two laws that stood here
+    // gained `provider-above-router` / `duplicate-notifications-mount` at 1.28.0; this one has no
+    // AST form left to catch, because `cssVariablesResolver` is now `Omit`ted from the accepted
+    // prop type and a hand-built `createTheme` is a consumer's own call to make.
     advisoryLaws: [
-      'BasaltProvider mounts above the router (Mantine context must exist before RouterProvider)',
-      'BasaltOverlays XOR a standalone BasaltNotifications — never both in one tree (double-mounts <Notifications>)',
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
@@ -388,12 +400,10 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
-    pluginRules: [],
-    // agent/rules/basalt-batteries.md — stated, not guarded.
-    advisoryLaws: [
-      'import query hooks from basalt-ui/query, never dual-import @tanstack/react-query',
-      'queryFn wraps the call in unwrap()',
-    ],
+    // Both laws this surface used to declare advisory (F5), guarded as of 1.28.0 and both `warn`:
+    // `query-dual-import`'s softer half reads intent ("this file is already a basalt file") and
+    // `query-fn-unwrap` is a text heuristic inside a syntactic range. See their grace entries.
+    pluginRules: ['query-dual-import', 'query-fn-unwrap'],
     description: 'createBasaltQueryClient, transport-agnostic unwrap, lazy BasaltQueryDevtools',
     optionalPeers: ['@tanstack/react-query-devtools'],
     globs: {

@@ -14,6 +14,7 @@ import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
 import basaltPlugin, {
   CTL_THEME_TAGS,
+  DEPRECATED_EXPORTS,
   KNOWN_RULE_IDS,
   PLUGIN_RULE_ADVISORY,
   PLUGIN_RULE_GRACE,
@@ -35,6 +36,11 @@ beforeEach(() => {
       plugins: [],
       jsPlugins: [PLUGIN_PATH],
       rules: {
+        'basalt/provider-above-router': 'error',
+        'basalt/duplicate-notifications-mount': 'error',
+        'basalt/query-dual-import': 'error',
+        'basalt/query-fn-unwrap': 'error',
+        'basalt/deprecated-export': 'error',
         'basalt/no-raw-font-size': 'error',
         'basalt/raw-size-literal': 'error',
         'basalt/card-inset': 'error',
@@ -2909,4 +2915,537 @@ describe('PLUGIN_RULE_ID_LIST ↔ the plugin', () => {
       'responsive-twin',
     ])
   })
+})
+
+// ── provider-above-router (F5) ───────────────────────────────────────────────
+
+describe('basalt/provider-above-router', () => {
+  const IMPORTS =
+    `import { BasaltProvider } from 'basalt-ui'\n` +
+    `import { RouterProvider } from '@tanstack/react-router'\n`
+
+  it('flags a BasaltProvider rendered inside a RouterProvider', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n` +
+        `  <RouterProvider router={r}>\n    <BasaltProvider>{null}</BasaltProvider>\n` +
+        `  </RouterProvider>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('provider-above-router')
+  })
+
+  it('does NOT flag the correct order — provider above router', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n` +
+        `  <BasaltProvider>\n    <RouterProvider router={r} />\n  </BasaltProvider>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('provider-above-router')
+  })
+
+  // Provenance both ways: the tag names alone are not the finding.
+  it("does NOT flag a consumer's own BasaltProvider (no basalt import)", () => {
+    const { code, rules } = run(
+      `import { RouterProvider } from '@tanstack/react-router'\n` +
+        `import { BasaltProvider } from './my-provider'\n` +
+        `export const App = () => (\n  <RouterProvider router={r}>\n` +
+        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('provider-above-router')
+  })
+
+  it('does NOT flag a RouterProvider that is not TanStack s', () => {
+    const { code, rules } = run(
+      `import { BasaltProvider } from 'basalt-ui'\n` +
+        `import { RouterProvider } from 'other-router'\n` +
+        `export const App = () => (\n  <RouterProvider router={r}>\n` +
+        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('provider-above-router')
+  })
+
+  // The alias is why the ancestry is read by BINDING and not by written tag name.
+  it('flags through an aliased RouterProvider import', () => {
+    const { code, rules } = run(
+      `import { BasaltProvider } from 'basalt-ui'\n` +
+        `import { RouterProvider as Router } from '@tanstack/react-router'\n` +
+        `export const App = () => (\n  <Router router={r}>\n` +
+        `    <BasaltProvider>{null}</BasaltProvider>\n  </Router>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('provider-above-router')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n  <RouterProvider router={r}>\n` +
+        `    {/* theme-allow provider-above-router — legacy bootstrap, ported next minor */}\n` +
+        `    <BasaltProvider>{null}</BasaltProvider>\n  </RouterProvider>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('provider-above-router')
+  })
+
+  // The documented limit of the heuristic — stated in the rule's own JSDoc, pinned here so a
+  // future widening has to move this test rather than discover the gap.
+  it('does NOT see a cross-file composition (static JSX ancestry only)', () => {
+    const { code, rules } = run(
+      `import { BasaltProvider } from 'basalt-ui'\n` +
+        `import { Routes } from './routes'\n` +
+        `export const App = () => (\n  <Routes>\n    <BasaltProvider>{null}</BasaltProvider>\n` +
+        `  </Routes>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('provider-above-router')
+  })
+})
+
+// ── duplicate-notifications-mount (F5) ───────────────────────────────────────
+
+describe('basalt/duplicate-notifications-mount', () => {
+  const IMPORTS =
+    `import { BasaltOverlays } from 'basalt-ui/commands'\n` +
+    `import { BasaltNotifications } from 'basalt-ui/notifications'\n`
+
+  it('flags both mounts in one file', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications>\n` +
+        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('duplicate-notifications-mount')
+  })
+
+  // `notifications` defaults to TRUE, so the attribute being absent is the same defect.
+  it('flags when BasaltOverlays writes no notifications prop at all', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n  <BasaltOverlays>\n` +
+        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('duplicate-notifications-mount')
+  })
+
+  it('does NOT flag when BasaltOverlays disables its notifications layer', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications={false}>\n` +
+        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  it('does NOT flag a standalone BasaltNotifications on its own', () => {
+    const { code, rules } = run(
+      `import { BasaltNotifications } from 'basalt-ui/notifications'\n` +
+        `export const App = () => <BasaltNotifications />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  it("does NOT flag a consumer's own components of the same names", () => {
+    const { code, rules } = run(
+      `import { BasaltOverlays } from './overlays'\n` +
+        `import { BasaltNotifications } from './notifications'\n` +
+        `export const App = () => (\n  <BasaltOverlays>\n    <BasaltNotifications />\n` +
+        `  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = () => (\n  <BasaltOverlays notifications>\n` +
+        `    {/* theme-allow duplicate-notifications-mount — two roots, never both mounted */}\n` +
+        `    <BasaltNotifications />\n  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  // Two mounts WRITTEN, one mount RENDERED — the ternary is the shape a consumer reaches for while
+  // migrating from the standalone layer to the composed one, and it was never a double mount.
+  it('does NOT flag the two branches of one ternary', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = ({ composed }) => (\n` +
+        `  <div>{composed ? <BasaltOverlays /> : <BasaltNotifications />}</div>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  it('does NOT flag the two operands of one logical expression', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = ({ composed }) => (\n` +
+        `  <div>{(composed && <BasaltOverlays />) || <BasaltNotifications />}</div>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('duplicate-notifications-mount')
+  })
+
+  // The exemption is the NEAREST common ancestor only. Two separate `&&` guards can both hold, so
+  // this stays a finding — the pair is conditional, not exclusive.
+  it('DOES flag two independently-guarded mounts under one parent', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = ({ a, b }) => (\n` +
+        `  <div>{a && <BasaltOverlays />}{b && <BasaltNotifications />}</div>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('duplicate-notifications-mount')
+  })
+
+  // One exclusive pair does not excuse a second, unconditional overlays mount.
+  it('DOES flag when a NON-exclusive overlays mount also exists', () => {
+    const { code, rules } = run(
+      `${IMPORTS}export const App = ({ composed }) => (\n` +
+        `  <BasaltOverlays>\n` +
+        `    {composed ? <BasaltOverlays /> : <BasaltNotifications />}\n` +
+        `  </BasaltOverlays>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('duplicate-notifications-mount')
+  })
+})
+
+// ── query-dual-import (F5) ───────────────────────────────────────────────────
+
+describe('basalt/query-dual-import', () => {
+  it('flags a file importing from both @tanstack/react-query and basalt-ui/query', () => {
+    const { code, rules, output } = run(
+      `import { useQuery } from '@tanstack/react-query'\n` +
+        `import { unwrap } from 'basalt-ui/query'\n` +
+        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(get()) })\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('query-dual-import')
+    expect(output).toContain('Dual query import')
+  })
+
+  // The softer half — the one that actually catches the drift, and why the rule is `warn`.
+  it('flags a raw @tanstack/react-query import beside a basalt root import', () => {
+    const { code, rules, output } = run(
+      `import { useQuery } from '@tanstack/react-query'\n` +
+        `import { QueryState } from 'basalt-ui'\n` +
+        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: get })\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('query-dual-import')
+    expect(output).toContain('Raw @tanstack/react-query import')
+  })
+
+  it('does NOT flag basalt-ui/query on its own', () => {
+    const { code, rules } = run(
+      `import { useQuery, unwrap } from 'basalt-ui/query'\n` +
+        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(get()) })\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-dual-import')
+  })
+
+  // `import type` is erased at compile time — there is no runtime import to route through the
+  // seam, and typing against the library's own result type is what `QueryStateLike` documents as
+  // legitimate. Same skip `agent-no-raw-usechat` and `ai-sdk-major` take.
+  it('does NOT flag a type-only @tanstack/react-query import beside basalt-ui/query', () => {
+    const { code, rules } = run(
+      `import type { UseQueryResult } from '@tanstack/react-query'\n` +
+        `import { unwrap } from 'basalt-ui/query'\n` +
+        `export const pick = (q: UseQueryResult<number>) => unwrap(q.data)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-dual-import')
+  })
+
+  it('does NOT flag @tanstack/react-query in a file with no basalt import', () => {
+    const { code, rules } = run(
+      `import { useQuery } from '@tanstack/react-query'\n` +
+        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: get })\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-dual-import')
+  })
+
+  // The devtools package is a different package, not a subpath.
+  it('does NOT flag @tanstack/react-query-devtools', () => {
+    const { code, rules } = run(
+      `import { ReactQueryDevtools } from '@tanstack/react-query-devtools'\n` +
+        `import { unwrap } from 'basalt-ui/query'\n` +
+        `export const D = () => <ReactQueryDevtools />\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-dual-import')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `// theme-allow query-dual-import — the persister API has no basalt re-export yet\n` +
+        `import { useQuery } from '@tanstack/react-query'\n` +
+        `import { unwrap } from 'basalt-ui/query'\n` +
+        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(g()) })\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-dual-import')
+  })
+})
+
+// ── query-fn-unwrap (F5) ─────────────────────────────────────────────────────
+
+describe('basalt/query-fn-unwrap', () => {
+  const IMPORT = `import { unwrap } from 'basalt-ui/query'\n`
+
+  it('flags a queryFn that fetches with no unwrap', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const o = { queryKey: ['t'], queryFn: () => fetch('/api/t') }\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('query-fn-unwrap')
+  })
+
+  it('flags the async .json() form', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const o = {\n  queryKey: ['t'],\n` +
+        `  queryFn: async () => (await fetch('/api/t')).json(),\n}\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('query-fn-unwrap')
+  })
+
+  it('does NOT flag a queryFn that wraps the call', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const o = { queryKey: ['t'], queryFn: () => unwrap(fetch('/api/t')) }\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-fn-unwrap')
+  })
+
+  it('does NOT flag a queryFn with no fetch in it', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const o = { queryKey: ['t'], queryFn: () => client.t.get() }\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-fn-unwrap')
+  })
+
+  // The scope gate: with no basalt-ui/query import this is an opinion about `fetch`, which basalt
+  // does not have.
+  it('does NOT flag a file that never imports basalt-ui/query', () => {
+    const { code, rules } = run(
+      `export const o = { queryKey: ['t'], queryFn: () => fetch('/api/t') }\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-fn-unwrap')
+  })
+
+  // The documented blind spot — a reference, not a function literal. Pinned so a widening moves it.
+  it('does NOT see a queryFn passed as a reference', () => {
+    const { code, rules } = run(
+      `${IMPORT}const load = () => fetch('/api/t')\n` +
+        `export const o = { queryKey: ['t'], queryFn: load }\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-fn-unwrap')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `${IMPORT}export const o = {\n  queryKey: ['t'],\n` +
+        `  // theme-allow query-fn-unwrap — raw Response is the point, this reads a blob\n` +
+        `  queryFn: () => fetch('/api/t'),\n}\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('query-fn-unwrap')
+  })
+})
+
+// ── deprecated-export (B4) ───────────────────────────────────────────────────
+
+describe('basalt/deprecated-export', () => {
+  it('flags a deprecated named import', () => {
+    const { code, rules, output } = run(
+      `import { field } from 'basalt-ui/forms'\nexport const f = field\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('deprecated-export')
+    expect(output).toContain('inputProps')
+  })
+
+  it('does NOT flag the replacement', () => {
+    const { code, rules } = run(
+      `import { inputProps } from 'basalt-ui/forms'\nexport const f = inputProps\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  it('does NOT flag a same-named import from somewhere else', () => {
+    const { code, rules } = run(`import { field } from 'basalt-ui/state'\nexport const f = field\n`)
+    expect(code).toBe(0)
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  it('flags each deprecated BasaltProvider connectivity prop', () => {
+    const { code, rules, output } = run(
+      `import { BasaltProvider } from 'basalt-ui'\n` +
+        `export const App = () => (\n` +
+        `  <BasaltProvider sseUrl="/e" healthUrl="/h" healthIntervalMs={5000}>{null}</BasaltProvider>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('deprecated-export')
+    expect(output).toContain('connectivity')
+  })
+
+  it('does NOT flag the connectivity object prop', () => {
+    const { code, rules } = run(
+      `import { BasaltProvider } from 'basalt-ui'\n` +
+        `export const App = () => <BasaltProvider connectivity={{ sseUrl: '/e' }}>{null}</BasaltProvider>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  it("does NOT flag an sseUrl on a consumer's own component", () => {
+    const { code, rules } = run(
+      `import { BasaltProvider } from './provider'\n` +
+        `export const App = () => <BasaltProvider sseUrl="/e">{null}</BasaltProvider>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  it('honours a theme-allow naming the rule', () => {
+    const { code, rules } = run(
+      `// theme-allow deprecated-export — pinned to 1.27.0 until the forms port lands\n` +
+        `import { field } from 'basalt-ui/forms'\nexport const f = field\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('deprecated-export')
+  })
+
+  // The autofix keeps the LOCAL binding, so no call site has to move in the same edit.
+  it('autofixes the import to the replacement, aliased back to the old local name', () => {
+    const source = `import { field } from 'basalt-ui/forms'\nexport const f = field\n`
+    writeFileSync(resolve(dir, 'fixture.tsx'), source)
+    Bun.spawnSync([OXLINT_BIN, '-c', '.oxlintrc.json', '--fix', 'fixture.tsx'], { cwd: dir })
+    expect(readFileSync(resolve(dir, 'fixture.tsx'), 'utf8')).toContain(
+      `import { inputProps as field } from 'basalt-ui/forms'`,
+    )
+  })
+})
+
+// ── the deprecation ledger (B4) ──────────────────────────────────────────────
+
+describe('DEPRECATED_EXPORTS', () => {
+  const pkgVersion = (
+    JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
+      version: string
+    }
+  ).version
+
+  it('carries a replacement and a removeIn at least one minor out on every row', () => {
+    const [major, minor] = pkgVersion.split('.').map(Number)
+    const floor = `${major}.${(minor as number) + 1}.0`
+    for (const row of DEPRECATED_EXPORTS) {
+      expect([row.name, row.replacement.length > 0]).toEqual([row.name, true])
+      expect([row.name, /^\d+\.\d+\.\d+$/.test(row.removeIn)]).toEqual([row.name, true])
+      expect([row.name, compareSemver(row.removeIn, floor) >= 0]).toEqual([row.name, true])
+    }
+  })
+
+  it('names a real published subpath on every row', () => {
+    const exports = Object.keys(
+      (
+        JSON.parse(readFileSync(resolve(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
+          exports: Record<string, unknown>
+        }
+      ).exports,
+    )
+    for (const row of DEPRECATED_EXPORTS) {
+      const subpath = row.subpath === 'basalt-ui' ? '.' : row.subpath.replace('basalt-ui', '.')
+      expect([row.subpath, exports.includes(subpath)]).toEqual([row.subpath, true])
+    }
+  })
+
+  /**
+   * The barrel half of the lifecycle: a JSDoc `@deprecated` on a published barrel with no ledger
+   * row is an export nothing nudges anyone off. Deliberately scoped to `src/**' + '/index.ts(x)` —
+   * the files a consumer's import resolves through. To add one: write the `@deprecated` JSDoc, add
+   * the `DEPRECATED_EXPORTS` row, add the `MIGRATING.md` row.
+   */
+  it('has a row for every @deprecated JSDoc tag on a published barrel', () => {
+    const barrels = [
+      ...new Bun.Glob('src/**/index.{ts,tsx}').scanSync({
+        cwd: resolve(import.meta.dirname, '..'),
+        absolute: true,
+      }),
+    ]
+    const names = new Set(DEPRECATED_EXPORTS.map((row) => row.prop ?? row.name))
+    for (const file of barrels) {
+      const lines = readFileSync(file, 'utf8').split('\n')
+      for (const [index, line] of lines.entries()) {
+        if (!/^\s*\*\s*@deprecated\b/.test(line)) continue
+        const declared = lines
+          .slice(index, index + 12)
+          .map((l) => /^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*[:(]/.exec(l)?.[1])
+          .find((name) => name !== undefined)
+        expect([file, declared, declared !== undefined && names.has(declared)]).toEqual([
+          file,
+          declared,
+          true,
+        ])
+      }
+    }
+  })
+})
+
+// ── the `Ships:` claim above each rule (F26) ─────────────────────────────────
+
+/**
+ * F26 was a rule's own doc comment claiming a level it did not ship at, with nothing able to catch
+ * it: the C16 ledger is asserted against the preset, and a COMMENT is outside the ledger. So the
+ * claim is now one normalised line — `// Ships: <level>` directly above each rule's `const` — and
+ * this is the assertion that makes it as checkable as the ledger it restates.
+ */
+describe('the `Ships:` line above each rule', () => {
+  const source = readFileSync(resolve(import.meta.dirname, 'oxlint-plugin.js'), 'utf8')
+  const lines = source.split('\n')
+  const shipped = JSON.parse(readFileSync(resolve(import.meta.dirname, 'oxlint.json'), 'utf8')) as {
+    rules: Record<string, unknown>
+  }
+  // The registry block maps rule id → the `const` implementing it.
+  const registry = [
+    ...source.slice(source.indexOf('export default {')).matchAll(/^ {4}'([\w-]+)': (\w+),$/gm),
+  ].map(([, id, binding]) => ({ id: id as string, binding: binding as string }))
+
+  it('covers every registered rule', () => {
+    expect(registry.map((r) => r.id).toSorted()).toEqual(Object.keys(basaltPlugin.rules).toSorted())
+  })
+
+  for (const { id, binding } of registry) {
+    it(`${id}: the claim matches oxlint.json`, () => {
+      const at = lines.indexOf(`const ${binding} = {`)
+      expect([id, at]).not.toEqual([id, -1])
+      const claim = /^\/\/ Ships: (.+)$/.exec(lines[at - 1] as string)?.[1]
+      const level = shipped.rules[`basalt/${id}`]
+      if (level === undefined) {
+        expect([id, claim]).toEqual([id, 'repo-local only'])
+        return
+      }
+      if (Object.hasOwn(PLUGIN_RULE_GRACE, id)) {
+        const { promote } = PLUGIN_RULE_GRACE[id] as GraceEntry
+        expect([id, claim]).toEqual([id, `warn (grace → ${promote})`])
+        expect([id, level]).toEqual([id, 'warn'])
+        return
+      }
+      if (Object.hasOwn(PLUGIN_RULE_ADVISORY, id)) {
+        expect([id, claim]).toEqual([id, 'warn (advisory)'])
+        expect([id, level]).toEqual([id, 'warn'])
+        return
+      }
+      expect([id, claim]).toEqual([id, 'error'])
+      expect([id, level]).toEqual([id, 'error'])
+    })
+  }
 })

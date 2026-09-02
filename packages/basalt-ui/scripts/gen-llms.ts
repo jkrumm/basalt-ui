@@ -68,13 +68,20 @@ for (const [key, spec] of Object.entries(SURFACES)) {
     .filter((p) => optionalPeerSet.has(p) && p in peerDeps)
     .map((p) => `${p}@${peerDeps[p]}`)
 
+  // `SURFACES` is a `satisfies` literal, so a surface that simply omits `description` has no such
+  // property on its inferred type — `in` narrows where a `?.` cannot. Same reason `rule` is spread
+  // conditionally rather than set to `undefined`: `exactOptionalPropertyTypes` is on.
+  const description =
+    ('description' in spec ? spec.description : undefined) ??
+    `basalt-ui${key === '.' ? '' : key} subpath`
+
   rows.push({
     importSpec,
-    description: spec.description ?? `basalt-ui${key === '.' ? '' : key} subpath`,
+    description,
     layer: spec.layer,
     optionalPeers: resolvedPeers,
     isAsset,
-    rule: spec.kind === 'doctrine' ? spec.rule : undefined,
+    ...(spec.kind === 'doctrine' ? { rule: spec.rule } : {}),
   })
 }
 
