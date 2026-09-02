@@ -136,15 +136,28 @@ function collectKeys(items: readonly SidebarItem[], out: Set<string>): void {
 
 /**
  * Depth-first flatten, parent before children — the order every candidate list and the zero-config
- * fallback read. Nesting is NOT lost: this is the lookup/selection view, while the overflow and
- * group rendering below keep the tree (today's projection flattens it away, which is why a nested
- * destination reads as a sibling of its own parent on mobile).
+ * fallback read. Nesting is NOT lost: this is the lookup/selection view only (deciding which
+ * destinations are eligible for a bar slot), while the overflow and group rendering below keep the
+ * tree — `pruneOverflowTree` even preserves it across a covered parent, so a nested destination
+ * renders indented under its parent (or its parent's group anchor) rather than as a flat sibling.
  */
 function flattenItems(items: readonly SidebarItem[], out: SidebarItem[]): void {
   for (const item of items) {
     out.push(item)
     flattenItems(item.children ?? [], out)
   }
+}
+
+/**
+ * Attaches `children` to a shallow copy of `item` — or omits `children` from it entirely when
+ * there are none, rather than leaving a stale empty array — and pushes the result onto `out`.
+ * Shared tail of `pruneTree`/`pruneOverflowTree`'s keep branches.
+ */
+function pushWithChildren(out: SidebarItem[], item: SidebarItem, children: SidebarItem[]): void {
+  const next: SidebarItem = { ...item }
+  if (children.length > 0) next.children = children
+  else delete next.children
+  out.push(next)
 }
 
 /**
@@ -163,10 +176,51 @@ function pruneTree(
       out.push(...children)
       continue
     }
-    const next: SidebarItem = { ...item }
-    if (children.length > 0) next.children = children
-    else delete next.children
-    out.push(next)
+    pushWithChildren(out, item, children)
+  }
+  return out
+}
+
+/**
+ * `pruneTree`'s overflow-only sibling — the More surface has TWO independent reasons a destination
+ * drops out, and they no longer resolve the same way. `hidden` (a consumer opted the destination
+ * fully out via rule 1) still hoists exactly like `pruneTree`: nothing should hint a hidden node
+ * exists, so its visible children rise to fill its place. `covered` (the destination already has
+ * its OWN slot elsewhere in the bar — a tab, or another section's slot) used to hoist identically,
+ * which is the bug this function fixes: hoisting discards the tree edge between a covered PARENT
+ * and its still-overflowing children, so `Sessions`/`Traffic`/`Revenue` rendered as flat siblings
+ * with no indication they belong under `Dashboard` at all — depth information the renderer has no
+ * way to reconstruct once it is gone. A covered parent with surviving children is kept instead, as
+ * the GROUP ANCHOR those children nest under (same row shape and same destination it already is on
+ * the bar — tapping it in the sheet does exactly what tapping its tab does); a covered LEAF (no
+ * surviving children) still drops entirely, since rule 7's original reasoning — a destination with
+ * nowhere new to add is not worth a second, redundant row — still holds for that case unchanged.
+ */
+function pruneOverflowTree(
+  items: readonly SidebarItem[],
+  isHidden: (item: SidebarItem) => boolean,
+  isCovered: (item: SidebarItem) => boolean,
+): SidebarItem[] {
+  const out: SidebarItem[] = []
+  for (const item of items) {
+    const children = pruneOverflowTree(item.children ?? [], isHidden, isCovered)
+    if (isHidden(item)) {
+      out.push(...children)
+      continue
+    }
+    if (isCovered(item)) {
+      // A covered leaf contributes nothing new — drop it, exactly like `pruneTree` would.
+      if (children.length === 0) continue
+      // Rule 12 (`hasActiveDestination`'s doc): this destination is covered, so its REAL slot is
+      // what lights when it is the active route — its own tab, or another section's slot. The
+      // anchor copied here is not that slot, so its own `active` is forced false; only a
+      // surviving CHILD's activeness may roll up and light the surface this anchor sits inside.
+      // Without this a route at the covered parent lit BOTH its own tab and the anchor's
+      // enclosing More/section surface — two `aria-current="page"` tabs for one location.
+      out.push({ ...item, active: false, children })
+      continue
+    }
+    pushWithChildren(out, item, children)
   }
   return out
 }
@@ -335,7 +389,8 @@ function buildCandidates(
   return fallback
 }
 
-/** Rule 7 — the leftovers, grouped by source section, tree intact. */
+/** Rule 7 — the leftovers, grouped by source section, tree intact — including a covered
+ *  parent kept on as its surviving children's group anchor (`pruneOverflowTree`'s doc). */
 function buildOverflow(
   sections: readonly SidebarSection[],
   covered: Set<string>,
@@ -344,9 +399,10 @@ function buildOverflow(
   for (const section of sections) {
     const hidden = isSectionHidden(section)
     if (hidden) continue
-    const items = pruneTree(
+    const items = pruneOverflowTree(
       section.items,
-      (item) => placementOf(item, hidden) !== 'hidden' && !covered.has(item.key),
+      (item) => placementOf(item, hidden) === 'hidden',
+      (item) => covered.has(item.key),
     )
     if (items.length === 0) continue
     groups.push({ key: section.label, label: section.label, items })

@@ -23,6 +23,7 @@ import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
+import { SCROLLPORT_ATTRIBUTE } from '../common/scroll-parent'
 import type {
   MobileNavConfig,
   MobileNavGroup,
@@ -270,10 +271,19 @@ export function MobileNav({
 
   const close = () => setOpenKey(null)
 
-  /** §2.5 — re-tapping the ACTIVE slot scrolls to top instead of pushing a redundant history entry. */
+  /**
+   * §2.5 — re-tapping the ACTIVE slot scrolls to top instead of pushing a redundant history entry.
+   *
+   * `AppShell.Main` is the shell's scrollport (`app-main.module.css`), so `document.scrollingElement`
+   * scrolls nothing inside a shell and the tap read as dead. The declared handle comes FIRST after
+   * the consumer's own override, and the document stays the fallback for a shell-less app.
+   */
   const scrollToTop = () => {
     const target =
-      config?.getScrollElement?.() ?? document.scrollingElement ?? document.documentElement
+      config?.getScrollElement?.() ??
+      document.querySelector(`[${SCROLLPORT_ATTRIBUTE}]`) ??
+      document.scrollingElement ??
+      document.documentElement
     target.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
   }
 
@@ -555,19 +565,31 @@ export function MobileNav({
           timingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
-        <ScrollArea.Autosize mah="62dvh" type="scroll">
-          <Stack gap="xs">
+        {/* `offsetScrollbars="present"` reserves the overlay bar's own gutter (Mantine's
+            `data-offset-scrollbars`) instead of floating it over the rows' trailing edge — the
+            sheet has no spare right inset the way the sidebar's `.navScroll` bleed does. The outer
+            Stack's gap and the group Stack's `gap={2}` both reuse the sidebar's section rhythm
+            (`--vx-space-sidebar-section-gap`/`-section-label-gap`); the inner `gap={1}` is the
+            sidebar's own row-to-row gap (`app-sidebar.tsx`'s nav `Stack gap={1}`).
+            `scrollbarSize={8}` (down from Mantine's 12px default) is the tightest gutter that still
+            clears a touch-sized thumb without the row overlap the M4 fix was written against; the
+            `.sheet :global(.mantine-Drawer-body)` rule in the CSS module trims the body's own
+            RIGHT padding by that same 8px, so the reserved gutter fills the gap it opened instead
+            of stacking on top of the (symmetric) Drawer `padding="md"` — measured 18/18, not the
+            18/30 the untrimmed body produced. */}
+        <ScrollArea.Autosize mah="62dvh" type="scroll" offsetScrollbars="present" scrollbarSize={8}>
+          <Stack gap="var(--vx-space-sidebar-section-gap)">
             {slot.groups.map((group) => (
               <Stack key={group.key} gap={2}>
                 {sheetGroupLabel(group)}
-                {rows(group.items, 0, sheetRow)}
+                <Stack gap={1}>{rows(group.items, 0, sheetRow)}</Stack>
               </Stack>
             ))}
             {slot.isMore && moreBlocks.length > 0 ? (
-              <Stack gap={2}>{moreBlocks.map(sheetBlockRow)}</Stack>
+              <Stack gap={1}>{moreBlocks.map(sheetBlockRow)}</Stack>
             ) : null}
             {slot.isMore && extraRows.length > 0 ? (
-              <Stack gap={2}>{extraRows.map(sheetActionRow)}</Stack>
+              <Stack gap={1}>{extraRows.map(sheetActionRow)}</Stack>
             ) : null}
           </Stack>
         </ScrollArea.Autosize>
@@ -600,8 +622,8 @@ export function MobileNav({
         timingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
       }}
     >
-      <ScrollArea.Autosize mah="62dvh" type="scroll">
-        <Stack gap={2}>{block.items.map(blockItemRow)}</Stack>
+      <ScrollArea.Autosize mah="62dvh" type="scroll" offsetScrollbars="present" scrollbarSize={8}>
+        <Stack gap={1}>{block.items.map(blockItemRow)}</Stack>
       </ScrollArea.Autosize>
     </Drawer>
   )

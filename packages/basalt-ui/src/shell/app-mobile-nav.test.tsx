@@ -24,6 +24,7 @@ import { describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { MobileNav } from './app-mobile-nav'
 import { projectMobileNav } from './mobile-nav-model'
+import { SCROLLPORT_ATTRIBUTE } from '../common/scroll-parent'
 import type { MobileNavConfig, NavAnchorProps, SidebarItem, SidebarSection } from '../nav/types'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────────────────────────
@@ -399,6 +400,128 @@ describe('MobileNav', () => {
     expect(header).not.toBeNull()
     expect(header?.querySelector('.mantine-Drawer-close')).not.toBeNull()
     expect(document.querySelector('.mantine-Drawer-body')?.children).toHaveLength(1)
+  })
+
+  /**
+   * M4 — the scrollbar used to float over the rows' trailing 12px (Mantine's overlay bar is
+   * absolutely positioned by default). `offsetScrollbars="present"` reserves its own gutter
+   * instead, which shows up as `data-offset-scrollbars` on the `ScrollArea` viewport
+   * (`ScrollArea.mjs`) — the only part of the fix that is DOM-observable under happy-dom; the
+   * actual x-range vs the rows' right edge is the layout suite's job
+   * (`tests/layout/mobile-nav.layout.test.ts`).
+   */
+  test('12. the sheet scroll area reserves scrollbar gutter instead of overlaying the rows', async () => {
+    renderBar([
+      {
+        label: 'Reports',
+        mobile: { tab: true },
+        items: Array.from({ length: 9 }, (_, i) => item(`row${i + 1}`)),
+      },
+      { label: 'Main', items: [item('home')] },
+    ])
+
+    fireEvent.click(screen.getByLabelText('Reports'))
+    await waitFor(() => expect(drawer()).not.toBeNull())
+
+    const viewport = document.querySelector('.mantine-Drawer-body .mantine-ScrollArea-viewport')
+    expect(viewport).not.toBeNull()
+    expect(viewport?.getAttribute('data-offset-scrollbars')).toBe('present')
+  })
+
+  /**
+   * `scrollToTop`'s three-way fallback (`AppShell.Main` is the shell's scrollport — see the
+   * handler's own doc comment). No `getScrollElement` configured, but a `[data-basalt-scrollport]`
+   * element exists in the document: that declared handle wins over the historical
+   * `document.scrollingElement` default, because `document.scrollingElement` scrolls nothing inside
+   * a shell.
+   */
+  test('13. re-tapping ACTIVE with no getScrollElement configured scrolls the declared scrollport element', () => {
+    const scrolled: ScrollToOptions[] = []
+    const port = document.createElement('div')
+    port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    port.scrollTo = ((options: ScrollToOptions) => {
+      scrolled.push(options)
+    }) as typeof port.scrollTo
+    document.body.appendChild(port)
+
+    try {
+      renderBar([
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab', active: true, Anchor: testAnchor('anchor-home') })],
+        },
+      ])
+
+      clickCancelable(screen.getByTestId('anchor-home'))
+      expect(scrolled).toHaveLength(1)
+      expect(scrolled[0]?.top).toBe(0)
+    } finally {
+      port.remove()
+    }
+  })
+
+  /** The consumer's own handle is asked FIRST — a declared scrollport in the document must never
+   *  override an explicit `getScrollElement`. */
+  test('14. a configured getScrollElement wins over a declared scrollport element', () => {
+    const scrolledConfigured: ScrollToOptions[] = []
+    const scrolledPort: ScrollToOptions[] = []
+    const configured = document.createElement('div')
+    configured.scrollTo = ((options: ScrollToOptions) => {
+      scrolledConfigured.push(options)
+    }) as typeof configured.scrollTo
+
+    const port = document.createElement('div')
+    port.setAttribute(SCROLLPORT_ATTRIBUTE, '')
+    port.scrollTo = ((options: ScrollToOptions) => {
+      scrolledPort.push(options)
+    }) as typeof port.scrollTo
+    document.body.appendChild(port)
+
+    try {
+      renderBar(
+        [
+          {
+            label: 'Main',
+            items: [
+              item('home', { mobile: 'tab', active: true, Anchor: testAnchor('anchor-home') }),
+            ],
+          },
+        ],
+        { getScrollElement: () => configured },
+      )
+
+      clickCancelable(screen.getByTestId('anchor-home'))
+      expect(scrolledConfigured).toHaveLength(1)
+      expect(scrolledPort).toHaveLength(0)
+    } finally {
+      port.remove()
+    }
+  })
+
+  /** Neither configured nor present in the document: the shell-less fallback,
+   *  `document.scrollingElement` (which is `document.documentElement` — the pre-shell default). */
+  test('15. with neither getScrollElement nor a declared scrollport, falls back to document.scrollingElement', () => {
+    const scrolled: ScrollToOptions[] = []
+    const original = document.documentElement.scrollTo
+    document.documentElement.scrollTo = ((options: ScrollToOptions) => {
+      scrolled.push(options)
+    }) as typeof document.documentElement.scrollTo
+
+    try {
+      expect(document.querySelector(`[${SCROLLPORT_ATTRIBUTE}]`)).toBeNull()
+      renderBar([
+        {
+          label: 'Main',
+          items: [item('home', { mobile: 'tab', active: true, Anchor: testAnchor('anchor-home') })],
+        },
+      ])
+
+      clickCancelable(screen.getByTestId('anchor-home'))
+      expect(scrolled).toHaveLength(1)
+      expect(scrolled[0]?.top).toBe(0)
+    } finally {
+      document.documentElement.scrollTo = original
+    }
   })
 })
 

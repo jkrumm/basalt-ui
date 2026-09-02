@@ -16,16 +16,10 @@
    * `padding-bottom: env(safe-area-inset-bottom)`. Adding it here double-counts the inset. */
 }
 
-/* Mantine sets --app-shell-footer-OFFSET to the raw height WITHOUT the inset, so Main's
- * padding-bottom is short by exactly one inset. This is the only real safe-area gap. */
-@media (max-width: 47.99375em) {
-  .mainSafeArea {
-    padding-bottom: calc(
-      var(--app-shell-footer-offset, 0rem) + var(--app-shell-padding) +
-        env(safe-area-inset-bottom, 0px)
-    );
-  }
-}
+/* The `.mainSafeArea` padding-bottom that used to live here is GONE, not moved wholesale: Mantine
+ * sets --app-shell-footer-OFFSET to the raw height WITHOUT the inset, and `app-main.module.css`
+ * now subtracts the offset AND the inset from Main's height, so the one real safe-area gap is
+ * closed where the scrollport's box is decided. A padding here would double-count it. */
 
 .tab {
   flex: 1 1 0;
@@ -120,9 +114,9 @@
   overscroll-behavior: contain;
 }
 
-/* The theme's `Menu.extend` pins `styles.item` padding + font-size to the dense DESKTOP values
- * INLINE, so a touch-sized mobile row needs `!important` — same cascade problem, same reason, as
- * `.row` below. */
+/* The theme's `Menu.extend` already pins `styles.item` to the row-inset tokens INLINE (the same
+ * vocabulary the sheet's `.row` now reads too) but sets no `min-height` — that's the one thing
+ * this override still supplies, over the theme's own unset default. */
 .menuItem {
   min-height: var(--vx-space-mobile-nav-row-height) !important;
   align-items: center;
@@ -201,6 +195,22 @@
   max-height: min(70dvh, 100%);
 }
 
+/*
+ * M5 — symmetric row insets. Mantine's Drawer `padding="md"` (18px) is symmetric by construction,
+ * but `offsetScrollbars="present"` (the M4 scrollbar-gutter fix) reserves its gutter INSIDE the
+ * body on top of that padding, on the scrollbar side only — measured 18px left / 30px right before
+ * this rule (18 body padding + the then-12px default gutter). Trimming the body's own right inset
+ * by exactly `scrollbarSize` (8px, set alongside `offsetScrollbars` in the JSX) leaves the reserved
+ * gutter to fill the gap it opened instead of stacking on top of it: 10 body + 8 gutter = 18,
+ * matching the untouched left side. The thumb still lives entirely inside that 8px zone, past the
+ * row's own right edge — it never overlaps a row, which is the invariant `offsetScrollbars` exists
+ * to hold; only its OWN width moved, not whether it reserves one. No `!important`: this module is
+ * unlayered and already wins over Mantine's `@layer mantine` body rule (see `.sheet` above).
+ */
+.sheet :global(.mantine-Drawer-body) {
+  padding-inline-end: calc(var(--mantine-spacing-md) - 8px);
+}
+
 /* Sheet title = a micro-label (docs/DESIGN-SPEC.md §3), matching the sidebar's `.sectionLabel`. */
 .sheetTitle {
   font-family: var(--basalt-font-mono);
@@ -214,7 +224,7 @@
 /*
  * Mantine's `ModalBase` header forces a `min-height` of `calc(3.75rem * var(--mantine-scale))`
  * (60px) — sized for a real dialog title, not a 10px micro-label, and a big share of "unnecessarily
- * big". `--vx-space-mobile-nav-row-height` pins it to the same 44px touch-target floor as every
+ * big". `--vx-space-mobile-nav-row-height` pins it to the same touch-target floor as every
  * other row in this bar instead. The header's close button IS the dismiss affordance now — no
  * separate grabber: there was never swipe-to-dismiss behind it (Mantine ships no drag primitive),
  * so a plain decorative bar bought nothing an explicit, focusable close control doesn't already
@@ -225,16 +235,22 @@
   padding: 0 var(--mantine-spacing-md);
 }
 
-/* Large tap rows inside the sheet. NavLink rows reuse the sidebar's neutral active fill.
- * `padding` needs `!important`: the theme's `NavLink.extend` forces the dense desktop row padding
- * (6px 10px) INLINE on every NavLink root, which would shrink these touch targets otherwise. */
+/*
+ * Large tap rows inside the sheet — ONE row vocabulary with the desktop sidebar's `.link`
+ * (docs/DESIGN-SPEC.md §5): the theme's `NavLink.extend` already forces `--vx-space-row-inset-y`/
+ * `-x` padding, `VX.text.md` font-size and `--vx-space-row-line-height` line-height INLINE on every
+ * NavLink root AND its label (`theme/index.ts`'s `styles.root`/`styles.label`), so this rule no
+ * longer fights that — it used to force the dense desktop row's padding back OPEN with
+ * `!important`, which is exactly how a "44px touch row" and a "29px sidebar row" ended up as two
+ * unrelated geometries for the same list. What is left here is only what the theme does not supply:
+ * the touch-target `min-height` floor (`--vx-space-mobile-nav-row-height`, 40px — WCAG 2.5.5 AA).
+ */
 .row {
   display: flex;
   align-items: center;
   gap: var(--mantine-spacing-sm);
   width: 100%;
   min-height: var(--vx-space-mobile-nav-row-height);
-  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) !important;
   border-radius: var(--mantine-radius-sm);
   color: var(--mantine-color-text);
   touch-action: manipulation;
@@ -279,14 +295,19 @@
   color: var(--mantine-color-text) !important;
 }
 
+/*
+ * Nested (child) rows — same idiom as the sidebar's `.childList` (docs/DESIGN-SPEC.md §5, "Child
+ * items"): a 1px `--vx-divider` left guide plus the sidebar's own child indent, reusing the exact
+ * tokens rather than inventing a mobile-only indent. The sidebar draws the guide on a wrapper
+ * around the whole child group; a flat sheet has no such wrapper, so the guide is drawn per row
+ * instead and `width` is pulled in by the same amount the row is pushed out, so it still ends flush
+ * with its parent's right edge.
+ */
 .rowNested {
-  padding-inline-start: calc(var(--mantine-spacing-md) + 12px) !important;
-}
-
-/* Sheet rows read at the mobile body size — the theme pins the label at the dense desktop 13px
- * INLINE (`styles.label`), so `!important` is required to restore it. */
-.row :global(.mantine-NavLink-label) {
-  font-size: var(--mantine-font-size-md) !important;
+  width: calc(100% - var(--vx-space-sidebar-child-list-indent));
+  margin-inline-start: var(--vx-space-sidebar-child-list-indent);
+  border-left: 1px solid var(--vx-divider);
+  padding-inline-start: var(--vx-space-sidebar-child-row-indent) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

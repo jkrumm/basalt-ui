@@ -91,9 +91,11 @@ layout('mobile nav — real layout', () => {
   /**
    * INVARIANT 1 — a short sheet hugs its content.
    *
-   * THE regression. Measured at 390x844 with 7 rows: sheet top 446.25, height 397.75, bottom 844
-   * (flush), and only **18px** of padding under the last row. Under the bug that gap was ~446 and
-   * the top was 0. The gap is the sharp assertion; the height bound is the blunt backstop.
+   * THE regression. Measured at 390x844 with 7 rows (re-measured after the M4 row-height change —
+   * rows are now 40px, not 46.25): sheet top 500, height 344, bottom 844 (flush), and still **18px**
+   * of padding under the last row (unchanged — that gap comes from the Drawer's own `padding="md"` +
+   * safe-area, not row height). Under the bug that gap was ~446 and the top was 0. The gap is the
+   * sharp assertion; the height bound is the blunt backstop.
    */
   test('a 7-row sheet hugs its content instead of filling the viewport', async () => {
     const p = await openFixture(sheetSpec(7))
@@ -117,7 +119,7 @@ layout('mobile nav — real layout', () => {
     )
     expectHeightAtMost(
       sheet,
-      p.viewport.height * 0.6, // 506.4; measured 397.75
+      p.viewport.height * 0.6, // 506.4; measured 344
       'a 7-row sheet must not occupy most of the viewport — `height: auto` is what lets it hug',
       [lastRow],
       p.viewport,
@@ -130,7 +132,7 @@ layout('mobile nav — real layout', () => {
     )
     // It is still a BOTTOM sheet, flush to the bottom edge (measured: bottom === 844).
     expectGapAtMost(p.bounds(), sheet, 'bottom', 1, 'a bottom sheet sits on the viewport floor')
-    // And it does not scroll: measured scrollHeight 336 === clientHeight 336.
+    // And it does not scroll: measured scrollHeight 286 === clientHeight 286.
     expectDoesNotScroll(
       'sheet body',
       await p.scroll(SHEET_BODY),
@@ -139,12 +141,14 @@ layout('mobile nav — real layout', () => {
   })
 
   /**
-   * INVARIANT 1B (small phone) — the same 7-row sheet, but at 320x568 the 70dvh cap (397.6) sits
-   * almost exactly ON the sheet's natural content height (397.8): this is the viewport where the
-   * cap and the hug law meet, not where either wins with headroom to spare. INVARIANT 1's `40`/
-   * `0.6×height` bounds assume the headroom PHONE has and do not transfer — what must hold here
-   * instead is the pair that always holds regardless of which law is binding: never past the cap,
-   * never spilling the viewport, still flush to the bottom edge.
+   * INVARIANT 1B (small phone) — the same 7-row sheet, but at 320x568 against the 70dvh cap
+   * (397.6). Before the M4 row-height change this was the viewport where the cap and the sheet's
+   * natural content height met almost exactly (397.8 vs 397.6, no headroom to spare); at the new
+   * 40px row height the natural content height is 344, comfortably under the cap, so this invariant
+   * is no longer the tight case — kept anyway as the smallest supported viewport. INVARIANT 1's
+   * `40`/`0.6×height` bounds assume the headroom PHONE has and do not transfer — what must hold
+   * here instead is the pair that always holds regardless of which law is binding: never past the
+   * cap, never spilling the viewport, still flush to the bottom edge.
    */
   test('a 7-row sheet still respects the cap at the small-phone viewport', async () => {
     const p = await openFixture(sheetSpec(7), PHONE_SMALL)
@@ -173,8 +177,9 @@ layout('mobile nav — real layout', () => {
    *
    * Two independent laws: `.sheet { max-height: min(70dvh, 100%) }` (unlayered CSS module) caps the
    * whole sheet, and `ScrollArea.Autosize mah="62dvh"` inside decides when scrolling starts.
-   * Measured at 390x844 with 30 rows: sheet height 585.27 against a 590.8 cap; body scrollHeight
-   * 1446 vs clientHeight 523; page scrollHeight 844 === clientHeight 844. Every bound below is a
+   * Measured at 390x844 with 30 rows (re-measured after the M4 row-height change): sheet height
+   * 581.27 against a 590.8 cap; body scrollHeight 1229 vs clientHeight 523; page scrollHeight 844
+   * === clientHeight 844. Every bound below is a
    * formula over `p.viewport`, so parameterizing over a smaller viewport is free — PHONE_SMALL is
    * where the cap is tightest and the scroller has the least room to prove itself.
    *
@@ -318,8 +323,8 @@ layout('mobile nav — real layout', () => {
   /**
    * INVARIANT 5 — no content is trapped under the bar. Mantine sets `--app-shell-footer-offset` to
    * the RAW footer height, so `AppShell.Main`'s padding-bottom is short by exactly one safe-area
-   * inset; `.mainSafeArea` patches it. Measured: main padding-bottom 69px, content-end bottom
-   * 775.25, bar top 788 — clears by 12.75px.
+   * inset; `.main`'s own `margin-bottom` calc (`app-main.module.css`) adds it back. Measured: main
+   * padding-bottom 69px, content-end bottom 775.25, bar top 788 — clears by 12.75px.
    */
   test('scrolled to the end, the last content pixel sits above the bar', async () => {
     const p = await openFixture(sheetSpec(3, { bodyHeight: 4000 }))
@@ -329,18 +334,21 @@ layout('mobile nav — real layout', () => {
     expectFullyInside(
       await p.box('content end', CONTENT_END),
       above(bar, p.viewport),
-      'AppShell.Main padding-bottom + .mainSafeArea must clear the footer — no content may hide ' +
-        'under the bar',
+      'AppShell.Main padding-bottom + .main margin-bottom must clear the footer — no content may ' +
+        'hide under the bar',
       p.viewport,
     )
   })
 
   /**
    * INVARIANT 6 — touch targets hold their floors at every density level. `deriveSpacing` clamps
-   * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(44, …)`
-   * (tokens/palette.ts). This is the end-to-end proof that the floor survives
-   * derive → CSS var → Mantine inline styles → cascade, including the `!important` the module CSS
-   * needs to beat the theme's dense-desktop inline padding.
+   * `mobileNavBarHeight` with `Math.max(49, …)` and `mobileNavRowHeight` with `Math.max(40, …)`
+   * (tokens/palette.ts — the row floor moved from 44 to 40, the WCAG 2.5.5 AA figure, once the
+   * sheet's rows switched to the sidebar's own row-inset vocabulary; the AAA-figure floor stays on
+   * `mobileNavBarHeight`, unchanged). This is the end-to-end proof that the floor survives
+   * derive → CSS var → Mantine inline styles → cascade — the row now clears it purely via
+   * `min-height`, since the sidebar's own padding + line-height no longer produce a taller row on
+   * their own the way the old bespoke touch padding did.
    *
    * The region seam (docs/DESIGN-SPEC.md §5) is drawn by Mantine's `[data-with-border]` rule
    * directly on the `AppShell.Footer` box that `mobileNavBarHeight` sizes, not by `.bar` itself —
@@ -349,12 +357,15 @@ layout('mobile nav — real layout', () => {
    * `Math.max(49, …)` buys the pixel the seam claims back; a slot no longer loses a further pixel
    * of its own, since the border moved off `.bar`.
    *
-   * Measured (bar / min slot / min sheet row): d=−3 → 48 / 48 / 44; d=0 → 55 / 55 / 46.25;
-   * d=+3 → 72 / 72 / 57. Bar and slot now match exactly at every density.
+   * Measured (bar / min slot / min sheet row), re-measured after the M4 row-height change: d=−3 →
+   * 48 / 48 / 40; d=0 → 55 / 55 / 40; d=+3 → 72 / 72 / 52. The row is floor-bound (exactly 40) at
+   * d=−3 and d=0 — the sidebar's own row-inset padding no longer produces a taller row on its own —
+   * and content-bound (52, past the floor) at d=+3, where the density-scaled padding + line-height
+   * exceed it. Bar and slot are unchanged from before this minor.
    *
    * One page, three remounts: remounting is ~5x cheaper than a new browser context.
    */
-  test('touch targets hold the 44/48px floors at density −3, 0 and +3', async () => {
+  test('touch targets hold the 40/44/48px floors at density −3, 0 and +3', async () => {
     const p = await openFixture(sheetSpec(7))
     for (const density of [-3, 0, 3]) {
       await p.remount(sheetSpec(7, { density }))
@@ -398,8 +409,8 @@ layout('mobile nav — real layout', () => {
       for (const [i, box] of rows.entries()) {
         expectHeightAtLeast(
           { name: `row ${i} @density ${density}`, box },
-          44,
-          'every sheet row keeps the 44px touch-target floor at every density level',
+          40,
+          'every sheet row keeps the 40px touch-target floor at every density level',
         )
       }
       await p.dismiss()
@@ -482,5 +493,61 @@ layout('mobile nav — real layout', () => {
       vertical,
       'the 2px pill inset must ride `--vx-space-mobile-nav-tab-inset-y` for the same reason',
     )
+  })
+
+  /**
+   * INVARIANT 9 (M5) — symmetric row insets, without reopening the M4 overlap invariant.
+   *
+   * `offsetScrollbars="present"` reserves its gutter INSIDE the Drawer body, on top of the body's
+   * own symmetric `padding="md"` (18px) — before this fix that measured 18px left / 30px right (18
+   * body padding + the then-12px default gutter). `scrollbarSize={8}` plus trimming the body's own
+   * right inset by that same 8px (`.sheet :global(.mantine-Drawer-body)` in the CSS module) puts
+   * both sides back at 18px: 10 trimmed body padding + 8 gutter = 18, matching the untouched left
+   * side. The gutter still reserves real space past the row's own right edge — only its WIDTH
+   * moved, not whether it reserves one — so the thumb must never intersect a row while scrolling.
+   */
+  test("the sheet's row insets are symmetric, and the scrollbar gutter never overlaps a row", async () => {
+    const p = await openFixture(sheetSpec(30))
+    await p.tap(tab('Library'))
+    await p.waitFor(SHEET)
+
+    const sheet = await p.box('sheet', SHEET)
+    const rows = await p.boxes(SHEET_ROWS)
+    if (rows.length === 0) throw new Error('LAYOUT: the sheet rendered no rows')
+
+    for (const [i, row] of rows.entries()) {
+      const leftInset = row.left - sheet.box.left
+      const rightInset = sheet.box.right - row.right
+      if (Math.abs(leftInset - rightInset) > 1) {
+        throw new Error(
+          `LAYOUT: row ${i} insets are not symmetric — left ${leftInset.toFixed(2)}px vs right ` +
+            `${rightInset.toFixed(2)}px (must match within 1px).`,
+        )
+      }
+    }
+
+    // Force the thumb to actually paint (`type="scroll"` shows it on interaction, not at rest),
+    // then read every row's box again — the invariant is that it never overlaps one WHILE SCROLLING,
+    // not merely at the moment the sheet opens.
+    await p.raw.evaluate(() => {
+      const viewport = document.querySelector(
+        '.mantine-Drawer-content .mantine-ScrollArea-viewport',
+      )
+      if (viewport) viewport.scrollTop = 200
+    })
+    await p.raw.mouse.move(sheet.box.right - 4, sheet.box.top + 200)
+    await p.raw.waitForTimeout(150)
+
+    const track = await p.box('vertical scrollbar track', `${SHEET} [data-orientation="vertical"]`)
+    const scrolledRows = await p.boxes(SHEET_ROWS)
+    const overlapping = scrolledRows.filter(
+      (row) => row.right > track.box.left + 0.5 && row.left < track.box.right - 0.5,
+    )
+    if (overlapping.length > 0) {
+      throw new Error(
+        `LAYOUT: ${overlapping.length} row(s) overlap the scrollbar track ` +
+          `[${track.box.left.toFixed(2)}, ${track.box.right.toFixed(2)}] while scrolling.`,
+      )
+    }
   })
 })

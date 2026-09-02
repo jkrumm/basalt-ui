@@ -5,7 +5,6 @@
  */
 declare const classes: {
   readonly bar: string
-  readonly mainSafeArea: string
   readonly tab: string
   readonly tabIcon: string
   readonly tabDot: string
