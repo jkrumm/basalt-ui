@@ -301,8 +301,13 @@ describe('projectMobileNav', () => {
    * The exclusivity half, and the one that was missing: an ITEM tab covers only the destination its
    * tap navigates to, so a nested child that lives in the overflow lights the OVERFLOW slot instead.
    * Lighting both was the defect — a bar cannot tell a reader they are in two places.
+   *
+   * `reports` is covered (it has its own tab) but still contributes a row here: `daily` survives
+   * into the overflow, so `reports` stays on as `daily`'s group ANCHOR (`pruneOverflowTree`'s doc)
+   * rather than vanishing and hoisting `daily` to the top level — which is also why this is a real
+   * two-row MENU and not the rows-≡-1 collapse-to-link case (that shape has its own test below).
    */
-  test('12. an ITEM tab does NOT light for a child it cannot navigate to — that child’s slot does', () => {
+  test('12. an ITEM tab does NOT light for a child it cannot navigate to — the overflow slot does', () => {
     const model = projectMobileNav([
       {
         label: 'Main',
@@ -315,8 +320,67 @@ describe('projectMobileNav', () => {
 
     const active = model.slots.filter((slot) => slot.active)
     expect(active.length).toBe(1)
-    expect(active[0]?.key).toBe('daily')
+    expect(active[0]?.key).toBe(MOBILE_MORE_KEY)
     expect(slotAt(model, 0).active).toBe(false)
+
+    const more = moreSlot(model)
+    expect(more.kind).toBe('menu')
+    expect(rowKeys(more.groups)).toEqual(['reports', 'daily'])
+    const [reports] = more.groups[0]?.items ?? []
+    const daily = reports?.children?.[0]
+    // The anchor itself reads inactive (rule 12 above) — only its child does.
+    expect(reports?.active).toBe(false)
+    expect(daily?.key).toBe('daily')
+    expect(daily?.active).toBe(true)
+  })
+
+  /**
+   * The group-anchor half of the same law, isolated from activeness: a covered parent with
+   * surviving children renders as a REAL row (same destination its own tab already is) with its
+   * children nested under it, rather than hoisting them to the top level with no indication of
+   * what they belong to (`pruneOverflowTree`'s doc — the M4 fix).
+   */
+  test('12b. a covered parent stays as the group anchor for its overflowing children', () => {
+    const model = projectMobileNav([
+      {
+        label: 'Overview',
+        items: [
+          item('dashboard', {
+            mobile: 'tab',
+            children: [item('sessions'), item('traffic'), item('revenue')],
+          }),
+          item('activity', { mobile: 'tab' }),
+        ],
+      },
+    ])
+
+    const more = moreSlot(model)
+    expect(rowKeys(more.groups)).toEqual(['dashboard', 'sessions', 'traffic', 'revenue'])
+    const [dashboard] = more.groups[0]?.items ?? []
+    expect(dashboard?.key).toBe('dashboard')
+    expect(dashboard?.children?.map((child) => child.key)).toEqual([
+      'sessions',
+      'traffic',
+      'revenue',
+    ])
+  })
+
+  /**
+   * The mirror case: a covered LEAF (no surviving children) still drops entirely rather than
+   * becoming a pointless anchor with nothing nested under it — rule 7's original reasoning holds
+   * unchanged for this shape.
+   */
+  test('12c. a covered leaf with no surviving children still drops from the overflow', () => {
+    const model = projectMobileNav([
+      {
+        label: 'Main',
+        items: [item('reports', { mobile: 'tab' }), item('other', { mobile: 'tab' })],
+      },
+      { label: 'Rest', items: [item('settings'), item('billing')] },
+    ])
+
+    const more = moreSlot(model)
+    expect(rowKeys(more.groups)).toEqual(['settings', 'billing'])
   })
 
   /**
