@@ -1,0 +1,145 @@
+/*
+ * The form layout law (law C1's THIRD home — the form row), in CSS.
+ *
+ * Every gap here is a density-tracking `--vx-space-*` token, so `createBasaltTheme({ density })`
+ * moves a form the same way it moves a settings page. The two settings tokens are reused
+ * deliberately rather than forked: a form row and a `SettingsRow` are the same shape at the same
+ * rhythm, and a second pair of numbers is how the two drift apart.
+ *
+ * The `47.99375em` literal is the `sm` breakpoint (law C9 — the responsive swap is CSS, never a JS
+ * media query). A `@media` condition cannot read a custom property, so the number is written.
+ */
+
+/* ── FormSection ─────────────────────────────────────────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-sm);
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-md);
+}
+
+/* ── FormRow ─────────────────────────────────────────────────────────────────────────────────── */
+
+/*
+ * Label left, control right. The control column is the wider one: a label is a phrase, a control is
+ * an input that has to hold real content. `align-items: start` so a two-line label does not centre
+ * itself against a one-line input.
+ */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: start;
+  gap: var(--vx-space-settings-row-gap);
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  min-inline-size: 0;
+}
+
+.label {
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+}
+
+.hint {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-muted);
+}
+
+.required {
+  color: var(--vx-status-bad);
+  margin-inline-start: var(--vx-space-stack-xs);
+}
+
+/*
+ * The control cell is a `fieldset` — see `form-state.tsx` for why. Every one of these five
+ * declarations is undoing a UA default (border, padding, margin, min-inline-size: min-content),
+ * not styling: a fieldset that keeps them draws a box around every row and refuses to shrink.
+ */
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  min-inline-size: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.error {
+  font-size: var(--vx-text-sm);
+  color: var(--vx-status-bad);
+}
+
+/* The phone twin: the control needs the full width, so the label goes above it. */
+@media (max-width: 47.99375em) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--vx-space-stack-xs);
+  }
+}
+
+/* ── FormGroup ───────────────────────────────────────────────────────────────────────────────── */
+
+/* Same UA reset as `.control`, same reason. */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+  min-inline-size: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * A `<legend>` is absolutely positioned into the fieldset's border by the UA. With no border to sit
+ * in, `float: left` + `width: 100%` is the one portable way to put it back in normal flow.
+ */
+.legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  font-size: var(--vx-text-md);
+  color: var(--vx-ink);
+}
+
+.groupControls {
+  display: flex;
+  clear: both;
+}
+
+.groupControls[data-direction='column'] {
+  flex-direction: column;
+  gap: var(--vx-space-stack-xs);
+}
+
+.groupControls[data-direction='row'] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--vx-space-control-gap);
+}
+
+/* ── FormActions ─────────────────────────────────────────────────────────────────────────────── */
+
+/* Same UA reset again. Trailing-aligned: the confirming action is where the eye leaves the form. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--vx-space-control-gap);
+  min-inline-size: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}

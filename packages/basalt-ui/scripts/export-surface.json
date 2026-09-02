@@ -222,13 +222,24 @@
     "unmatchedExemptPatterns"
   ],
   "./forms": [
+    "DEFAULT_AUTOSAVE_DEBOUNCE_MS",
+    "FormActions",
     "FormErrorSummary",
+    "FormGroup",
+    "FormRow",
+    "FormSection",
+    "FormStateProvider",
     "field",
+    "fieldKey",
     "inputProps",
+    "isFieldErrorEnvelope",
     "schemaResolver",
     "useBasaltForm",
+    "useFieldArray",
     "useForm",
-    "useFormDraft"
+    "useFormDraft",
+    "useFormState",
+    "useFormSubmit"
   ],
   "./commands": [
     "BasaltOverlays",

@@ -32,7 +32,7 @@ export type FormErrorSummaryProps<Values extends Record<string, unknown>> = Basa
  *   return (
  *     <form onSubmit={form.onSubmit(console.log)}>
  *       <FormErrorSummary form={form} title="Fix these before submitting" />
- *       <TextInput {...inputProps(form, 'email')} label="Email" />
+ *       <TextInput key={fieldKey(form, 'email')} {...inputProps(form, 'email')} label="Email" />
  *     </form>
  *   )
  * }

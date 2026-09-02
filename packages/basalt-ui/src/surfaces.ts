@@ -60,6 +60,7 @@ export const PLUGIN_RULE_ID_LIST = [
   'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
+  'forms-field-key',
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
@@ -437,9 +438,13 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-design'],
     guardKinds: [],
-    pluginRules: [],
+    // The one change in the 1.28.0 forms minor a compiler cannot see: `inputProps` stopped
+    // returning `key`, and the pre-1.28.0 spread still type-checks, renders and validates — it
+    // only stops resetting. `warn` through the 1.30.0 grace because it fires on what every
+    // consumer ships today (`PLUGIN_RULE_GRACE`).
+    pluginRules: ['forms-field-key'],
     description:
-      'Mantine form adapter: useBasaltForm, inputProps, FormErrorSummary, useFormDraft (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)',
+      'Mantine form layer: useBasaltForm + inputProps/fieldKey (two calls — a spread `key` is a React 19 warning), the FormSection/FormRow/FormGroup/FormActions layout (FormRow is law C1’s form row), useFormSubmit (submit state, decoded errors, server fieldErrors, focus-first-error, validateAsync), FormStateProvider disable propagation, useFieldArray, FormErrorSummary, useFormDraft with autosave (Standard Schema; deprecated `field` alias for `inputProps` until the surface next changes)',
     optionalPeers: ['@mantine/form'],
     forbiddenImports: [],
   },

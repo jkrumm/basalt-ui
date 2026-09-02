@@ -10,7 +10,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
-import { inputProps } from './field'
+import { fieldKey, inputProps } from './field'
 import { FormErrorSummary } from './FormErrorSummary'
 import { useBasaltForm } from './create-form'
 import type { StandardSchemaV1 } from '../register'
@@ -68,13 +68,11 @@ function FormHarness() {
     initialValues: { name: '' },
     schema: requiredNameSchema(),
   })
-  // `key` must be passed as a real JSX key, not spread — React warns (and a future major errors)
-  // on a "key" prop reaching the DOM via spread.
-  const { key, ...nameProps } = inputProps(form, 'name')
   return (
     <form data-testid="form" onSubmit={form.onSubmit(() => {})}>
       <FormErrorSummary form={form} />
-      <input key={key} {...nameProps} aria-label="Name" />
+      {/* `key` is its own call, never part of the spread — see field.ts. */}
+      <input key={fieldKey(form, 'name')} {...inputProps(form, 'name')} aria-label="Name" />
       <button type="submit">Submit</button>
     </form>
   )
