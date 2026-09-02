@@ -365,4 +365,39 @@ layout('BasaltDataTable sticky header — real layout', () => {
       PHONE,
     )
   })
+
+  /**
+   * INVARIANT 7 — a phone-folded `PageBar` row 2 needs no `stickyHeaderOffset` either (absorbed
+   * from the retired `/controls-mobile`, audit E §7). Both the app header and `PageBar` row 2 are
+   * shell regions rendered OUTSIDE `AppShell.Main`'s scrollport (see `PAGE_OFFSET`'s own doc
+   * comment above) — folding row 2 into one `Filters (n)` pill on a phone does not change that, so
+   * a bare `stickyHeader` table under it still wants `top: 0` and gets it with no consumer offset,
+   * no `useEffect`, no hardcoded fallback.
+   */
+  test('a phone-folded PageBar row 2 does not push the sticky header off Main’s top edge', async () => {
+    const p = await openFixture(
+      {
+        sections: [
+          { label: 'Main', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
+        ],
+        bar: { pills: 5 },
+        table: { rows: 40 },
+      },
+      PHONE,
+    )
+    await expectContained(p, false, 'a bare two-column table fits a 390px phone many times over')
+
+    const main = await p.box('main', MAIN)
+    const thead = await p.box('thead', THEAD)
+    const contentTop = main.box.top + Number.parseFloat(await p.computed(MAIN, 'padding-top'))
+    expectGapAtMost(
+      band("Main's content box", contentTop, main.box.bottom, thead),
+      thead,
+      'top',
+      0.5,
+      'a folded PageBar row 2 is a shell region, not scrollport content — the sticky header must ' +
+        "still pin to Main's content top with no offset",
+      PHONE,
+    )
+  })
 })

@@ -131,6 +131,28 @@ export type ChartsSpec = {
   xLabelRotate?: 0 | 45 | 90
 }
 
+/**
+ * A `basalt-ui/agent-chat` transcript, mounted in the shell body. Exists for the invariants happy-
+ * dom cannot see at all (`docs/AGENT-CHAT-SPEC.md`'s `@tanstack/react-virtual` integration):
+ * `measureElement` actually measuring variable-height rows, a virtualized scroll node recovering
+ * after a `display: none` ancestor toggle, and `anchorTo: 'end'` + `followOnAppend` staying pinned
+ * to a live turn's tail against a real scroll.
+ */
+export type AgentSpec = {
+  /** Seed message count, oldest first — deliberately non-uniform height (see `buildAgentMessages`). */
+  messages: number
+  /** Fixed px height for the windowed transcript body. */
+  height: number
+  /**
+   * `'virtualized'` (default) — a bare, windowed `ThreadTranscript`. `'inlineRow'` — the same
+   * transcript nested inside a collapsed→expandable `ThreadFeedRow` (the lazy-mount-then-kept-
+   * mounted, `display: none` remount-measure path). `'anchorToEnd'` — virtualized, plus a
+   * `data-testid="agent-start-stream"` button that drives one live turn through `liveParts`/
+   * `liveStatus`, for `anchorTo: 'end'` + `followOnAppend` against a real scroll.
+   */
+  mode?: 'virtualized' | 'inlineRow' | 'anchorToEnd'
+}
+
 export type FixtureSpec = {
   sections: SectionSpec[]
   nav?: { maxTabs?: number; menuMax?: number; moreLabel?: string }
@@ -157,6 +179,8 @@ export type FixtureSpec = {
   aside?: AsideSpec
   /** Renders one `basalt-ui/charts` kind above the filler. Omitted ⇒ no chart in the tree. */
   charts?: ChartsSpec
+  /** Renders a `basalt-ui/agent-chat` transcript above the filler. Omitted ⇒ no transcript. */
+  agent?: AgentSpec
 }
 
 declare global {

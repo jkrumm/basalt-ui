@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
+import { ThreadFeedRow, ThreadTranscript } from '../../../src/agent-chat'
+import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
 import { Bars, BarSparkline, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
 import type { BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
 import { FilterSet, SelectFilter } from '../../../src/controls'
@@ -9,7 +11,15 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { BasaltShell, PageAside, PageBar, StatCard, StatGroup } from '../../../src/index'
 import type { NavAnchor, SidebarItem, SidebarSection } from '../../../src/shell/nav-types'
 import { createLocalStore, field } from '../../../src/state'
-import type { AsideSpec, BarSpec, ChartsSpec, FixtureSpec, ItemSpec, TableSpec } from './spec'
+import type {
+  AgentSpec,
+  AsideSpec,
+  BarSpec,
+  ChartsSpec,
+  FixtureSpec,
+  ItemSpec,
+  TableSpec,
+} from './spec'
 
 /** A consumer-sized (18px) glyph — the bar normalizes it to `--vx-space-mobile-nav-icon-size` in
  *  CSS, which is part of what the geometry assertions cover. */
@@ -450,6 +460,144 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
   )
 }
 
+// ── The agent transcript ──────────────────────────────────────────────────────────────────────
+
+/** Deliberately non-uniform lengths — a one-line ack beside a several-sentence reply — so a
+ * uniform fixture never masks a `measureElement` regression the way `AgentTranscriptVirtualizeDemoPage`'s
+ * own doc warns about. */
+const AGENT_MESSAGE_BODIES = [
+  'Got it.',
+  'Here is a longer reply that spans a couple of lines to vary the measured row height across the seeded thread — a uniform-height fixture would hide exactly this regression class.',
+  'Sure, one moment.',
+  'Let me check that for you — a medium-length reply with enough words to wrap onto a second line on a narrow viewport.',
+  'Done.',
+]
+
+function buildAgentMessages(count: number): ChatMessage<TranscriptPart>[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `agent-m${i}`,
+    role: i % 2 === 0 ? 'user' : 'assistant',
+    parts: [
+      {
+        id: `agent-m${i}-p1`,
+        type: 'text',
+        text: AGENT_MESSAGE_BODIES[i % AGENT_MESSAGE_BODIES.length] as string,
+      },
+    ],
+    createdAt: i,
+  }))
+}
+
+/** `mode: 'virtualized'` (default) — a bare, windowed `ThreadTranscript`. `className` reaches the
+ * virtualizer's own scroll root (`BasaltProps`), which is the stable selector a layout test reads
+ * scroll geometry off. */
+function VirtualizedTranscriptFixture({ spec }: { spec: AgentSpec }): ReactElement {
+  const messages = useMemo(() => buildAgentMessages(spec.messages), [spec.messages])
+  return (
+    <ThreadTranscript
+      className="lyt-agent-scroll"
+      messages={messages}
+      virtualize
+      height={spec.height}
+    />
+  )
+}
+
+/** `mode: 'inlineRow'` — the same transcript nested inside a collapsed→expandable `ThreadFeedRow`,
+ * for the lazy-mount-then-kept-mounted `display: none` remount-measure path. */
+function InlineRowFixture({ spec }: { spec: AgentSpec }): ReactElement {
+  const messages = useMemo(() => buildAgentMessages(spec.messages), [spec.messages])
+  const [expanded, setExpanded] = useState(false)
+  const thread: AgentThread<TranscriptPart> = useMemo(
+    () => ({
+      id: 'agent-row',
+      messages,
+      outcome: { title: 'Fixture thread', summary: `${spec.messages} messages`, status: 'done' },
+      status: 'done',
+      read: true,
+      createdAt: 0,
+      updatedAt: 0,
+    }),
+    [messages, spec.messages],
+  )
+  return (
+    <>
+      <button type="button" data-testid="agent-row-toggle" onClick={() => setExpanded((v) => !v)}>
+        Toggle
+      </button>
+      <ThreadFeedRow
+        thread={thread}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        onSend={() => {}}
+        virtualize
+        height={spec.height}
+      />
+    </>
+  )
+}
+
+const STREAM_WORDS = Array.from({ length: 40 }, (_, i) => `word${i}`)
+const STREAM_STEP_MS = 60
+
+/** `mode: 'anchorToEnd'` — virtualized, plus a live turn driven purely through `liveParts`/
+ * `liveStatus` (no transport needed) so a test can watch `anchorTo: 'end'` + `followOnAppend`
+ * track a live append against a real scroll, then hold once the reader scrolls away. */
+function AnchorToEndFixture({ spec }: { spec: AgentSpec }): ReactElement {
+  const [messages, setMessages] = useState<ChatMessage<TranscriptPart>[]>(() =>
+    buildAgentMessages(spec.messages),
+  )
+  const [liveParts, setLiveParts] = useState<TranscriptPart[] | undefined>(undefined)
+  const [liveStatus, setLiveStatus] = useState<StreamStatus | undefined>(undefined)
+
+  const start = useCallback(() => {
+    let i = 0
+    setLiveStatus('streaming')
+    setLiveParts([{ id: 'live-p1', type: 'text', text: '' }])
+    const interval = setInterval(() => {
+      i += 1
+      const text = STREAM_WORDS.slice(0, i).join(' ')
+      setLiveParts([{ id: 'live-p1', type: 'text', text }])
+      if (i >= STREAM_WORDS.length) {
+        clearInterval(interval)
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: 'live-final',
+            role: 'assistant',
+            parts: [{ id: 'live-p1', type: 'text', text }],
+            createdAt: Date.now(),
+          },
+        ])
+        setLiveParts(undefined)
+        setLiveStatus(undefined)
+      }
+    }, STREAM_STEP_MS)
+  }, [])
+
+  return (
+    <>
+      <button type="button" data-testid="agent-start-stream" onClick={start}>
+        Start streaming
+      </button>
+      <ThreadTranscript
+        className="lyt-agent-scroll"
+        messages={messages}
+        {...(liveParts !== undefined && { liveParts })}
+        {...(liveStatus !== undefined && { liveStatus })}
+        virtualize
+        height={spec.height}
+      />
+    </>
+  )
+}
+
+function AgentFixture({ spec }: { spec: AgentSpec }): ReactElement {
+  if (spec.mode === 'inlineRow') return <InlineRowFixture spec={spec} />
+  if (spec.mode === 'anchorToEnd') return <AnchorToEndFixture spec={spec} />
+  return <VirtualizedTranscriptFixture spec={spec} />
+}
+
 export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
   const icons = spec.icons ?? true
   const sections: SidebarSection[] = spec.sections.map((section) => ({
@@ -468,6 +616,7 @@ export function ShellFixture({ spec }: { spec: FixtureSpec }): ReactElement {
       {spec.stats !== undefined && <StatsFixture count={spec.stats} />}
       {spec.table && <TableFixture spec={spec.table} />}
       {spec.charts && <ChartsFixture spec={spec.charts} />}
+      {spec.agent && <AgentFixture spec={spec.agent} />}
       {/* theme-allow -- a measured filler height IS the fixture's payload, not a themed size */}
       <div style={{ height: spec.bodyHeight ?? 0 }} />
       <div data-testid="content-end">end of content</div>

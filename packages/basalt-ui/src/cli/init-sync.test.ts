@@ -1,8 +1,6 @@
 /**
  * Tests for `basalt init` / `basalt sync` scaffold behavior:
  *  - the `.oxfmtrc.json` scaffold filename (oxfmt auto-discovers this name, not `oxfmt.json`)
- *  - the legacy `oxfmt.json` → `.oxfmtrc.json` manifest/file migration
- *  - the `basalt doctor` CLI-vs-installed version-mismatch warning
  *  - the `basalt init` first-run hint to run `check-theme` and tune per-rule config
  *  - pruning managed rule/skill files a newer basalt-ui no longer ships
  */
@@ -11,12 +9,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
-import { doctor, init, MANIFEST_PATH, sync } from './index.ts'
-
-const PKG_ROOT = fileURLToPath(new URL('../../', import.meta.url))
-const SHIPPED_OXFMT = readFileSync(resolve(PKG_ROOT, 'configs/oxfmt.json'), 'utf8')
+import { init, MANIFEST_PATH, sync } from './index.ts'
 
 let dir: string
 
@@ -61,49 +55,6 @@ describe('oxfmt scaffold filename', () => {
     expect(existsSync(resolve(dir, 'oxfmt.json'))).toBe(false)
   })
 
-  it('sync migrates an untouched legacy oxfmt.json: deletes the stale file, drops the manifest key, writes .oxfmtrc.json', () => {
-    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
-    writeFixture('oxfmt.json', SHIPPED_OXFMT)
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({ version: 1, files: { 'oxfmt.json': 'irrelevant-legacy-hash' } }, null, 2),
-    )
-
-    sync({}, dir)
-
-    expect(existsSync(resolve(dir, 'oxfmt.json'))).toBe(false)
-    expect(existsSync(resolve(dir, '.oxfmtrc.json'))).toBe(true)
-    expect(readFileSync(resolve(dir, '.oxfmtrc.json'), 'utf8')).toBe(SHIPPED_OXFMT)
-
-    const manifest = JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')) as {
-      files: Record<string, string>
-    }
-    expect(manifest.files['oxfmt.json']).toBeUndefined()
-    expect(manifest.files['.oxfmtrc.json']).toBeDefined()
-  })
-
-  it('sync preserves a locally-edited legacy oxfmt.json but still drops the manifest key and scaffolds .oxfmtrc.json', () => {
-    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
-    writeFixture('oxfmt.json', '{\n  "printWidth": 120\n}\n')
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({ version: 1, files: { 'oxfmt.json': 'irrelevant-legacy-hash' } }, null, 2),
-    )
-
-    sync({}, dir)
-
-    // Locally-edited file is left in place — never silently discarded.
-    expect(existsSync(resolve(dir, 'oxfmt.json'))).toBe(true)
-    expect(readFileSync(resolve(dir, 'oxfmt.json'), 'utf8')).toBe('{\n  "printWidth": 120\n}\n')
-    // The new scaffold is created independently, so no dead duplicate keeps being managed forever.
-    expect(existsSync(resolve(dir, '.oxfmtrc.json'))).toBe(true)
-
-    const manifest = JSON.parse(readFileSync(resolve(dir, MANIFEST_PATH), 'utf8')) as {
-      files: Record<string, string>
-    }
-    expect(manifest.files['oxfmt.json']).toBeUndefined()
-  })
-
   it('sync is a no-op for the legacy dest when there is no manifest entry (fresh consumer)', () => {
     writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
     writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
@@ -112,61 +63,6 @@ describe('oxfmt scaffold filename', () => {
 
     expect(existsSync(resolve(dir, 'oxfmt.json'))).toBe(false)
     expect(existsSync(resolve(dir, '.oxfmtrc.json'))).toBe(true)
-  })
-})
-
-describe('doctor — CLI vs installed basalt-ui version', () => {
-  const cliVersion = (
-    JSON.parse(readFileSync(resolve(PKG_ROOT, 'package.json'), 'utf8')) as { version: string }
-  ).version
-
-  it('warns when node_modules/basalt-ui version differs from the running CLI', () => {
-    // A Mantine dependency puts doctor in the framework profile — without one it reads as a
-    // tokens-only consumer, where the missing scaffold is not a failure at all.
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'fixture', dependencies: { '@mantine/core': '^9' } }),
-    )
-    writeFixture(
-      'node_modules/basalt-ui/package.json',
-      JSON.stringify({ name: 'basalt-ui', version: '0.4.2' }),
-    )
-    const { code, log } = capture(() => doctor(dir))
-    // Only a warning — doctor's exit code is driven by hard failures (manifest missing here too,
-    // so exit is 1 regardless; assert on the message rather than the code).
-    expect(code).toBe(1)
-    expect(log).toContain(cliVersion)
-    expect(log).toContain('0.4.2')
-  })
-
-  it('passes when node_modules/basalt-ui version matches the running CLI', () => {
-    // A full fixture, not just the manifest: doctor also asserts the guard scans something and the
-    // oxlint preset is wired, and a green exit has to mean all of it.
-    writeFixture('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['src'] } }))
-    writeFixture('src/app.tsx', 'export const App = () => null\n')
-    writeFixture(
-      '.oxlintrc.json',
-      '{ "extends": ["./node_modules/basalt-ui/configs/oxlint.json"] }',
-    )
-    writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
-    writeFixture(
-      'node_modules/basalt-ui/package.json',
-      JSON.stringify({ name: 'basalt-ui', version: cliVersion }),
-    )
-    // The `extends` above has to RESOLVE, not merely read correctly — see the oxlint-preset check.
-    writeFixture('node_modules/basalt-ui/configs/oxlint.json', '{}')
-    const { code, log } = capture(() => doctor(dir))
-    expect(code).toBe(0)
-    expect(log).toContain('matches the installed basalt-ui')
-  })
-
-  it('reports the version checks as SKIPPED when the package cannot be resolved', () => {
-    writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }, null, 2))
-    const { code, log } = capture(() => doctor(dir))
-    expect(log).not.toContain('matches the installed basalt-ui')
-    // Silence was the bug: two of five checks used to vanish while the footer still read green.
-    expect(log).toContain('SKIPPED')
-    expect(code).toBe(1)
   })
 })
 

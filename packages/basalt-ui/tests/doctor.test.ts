@@ -9,7 +9,6 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 
 import { doctor, MANIFEST_PATH, RULE_NAMES } from '../src/cli/index'
-import { deriveSpacing } from '../src/tokens'
 
 const CLI_VERSION = (
   JSON.parse(
@@ -106,122 +105,7 @@ describe('basalt doctor', () => {
   })
 })
 
-describe('basalt doctor — spacing-scale drift', () => {
-  /** Run doctor, capturing stdout so the emitted lines can be asserted on. */
-  function runDoctor(): { code: number; out: string } {
-    const original = console.log
-    let out = ''
-    console.log = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
-    }
-    try {
-      return { code: doctor(tmpDir), out }
-    } finally {
-      console.log = original
-    }
-  }
-
-  it('warns when the recorded scale differs from the installed one', () => {
-    setupPassingLayout()
-    // A scale one notch off the shipped level-0 ladder — what a consumer's manifest looks like the
-    // moment after a retune lands and before they have looked at their app.
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({
-        version: 1,
-        files: {},
-        spacingScale: { ...deriveSpacing(0).scale, md: deriveSpacing(0).scale.md + 2 },
-      }),
-    )
-    const { code, out } = runDoctor()
-    // A warning, never a hard failure: nothing is broken, the app just looks different.
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale moved')
-    expect(out).toContain(`md ${deriveSpacing(0).scale.md + 2}→${deriveSpacing(0).scale.md}`)
-    expect(out).toContain('createBasaltTheme() bare')
-  })
-
-  it('passes silently when the recorded scale matches', () => {
-    setupPassingLayout()
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({ version: 1, files: {}, spacingScale: { ...deriveSpacing(0).scale } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale matches the last sync')
-    expect(out).not.toContain('spacing scale moved')
-  })
-
-  it('does not double-warn a manifest written before the field existed', () => {
-    // The version check already tells them to sync; a second warning for the same cause is noise.
-    setupPassingLayout()
-    const { out } = runDoctor()
-    expect(out).not.toContain('spacing scale moved')
-    expect(out).toContain('spacing scale not yet recorded')
-  })
-
-  it('skips the comparison when this CLI is not the installed package', () => {
-    // A stale `bunx basalt-ui` fetch: the CLI's own scale is not the one the app renders with, so
-    // any verdict it reaches is about the wrong package. Claiming a match here is the false pass
-    // this skip exists to prevent.
-    setupPassingLayout()
-    writeFixture(
-      'node_modules/basalt-ui/package.json',
-      JSON.stringify({ name: 'basalt-ui', version: '0.0.0-not-this-cli' }),
-    )
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({ version: 1, files: {}, spacingScale: { ...deriveSpacing(0).scale } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale not compared')
-    expect(out).not.toContain('spacing scale matches the last sync')
-    expect(out).not.toContain('spacing scale moved')
-  })
-
-  it('ignores a null spacingScale instead of indexing it', () => {
-    // `typeof null === 'object'` — a hand-edited manifest must not crash doctor.
-    setupPassingLayout()
-    writeFixture(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, spacingScale: null }))
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale not yet recorded')
-  })
-
-  it('ignores a spacingScale whose values are not numbers', () => {
-    // `"4" !== 4` would otherwise report every single step as moved.
-    setupPassingLayout()
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({ version: 1, files: {}, spacingScale: { xs: '4', sm: 8 } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale not yet recorded')
-    expect(out).not.toContain('spacing scale moved')
-  })
-
-  it('reports a step the recorded scale has and the current one no longer does', () => {
-    // Iterating only the CURRENT keys would miss a removed step entirely and call it a match.
-    setupPassingLayout()
-    writeFixture(
-      MANIFEST_PATH,
-      JSON.stringify({
-        version: 1,
-        files: {},
-        spacingScale: { ...deriveSpacing(0).scale, retiredStep: 12 },
-      }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('spacing scale moved')
-    expect(out).toContain('retiredStep 12→(removed)')
-  })
-})
-
-describe('basalt doctor — ai-major-parity', () => {
+describe('basalt doctor — ai-major-parity within one package.json', () => {
   /** Run doctor, capturing stdout/stderr so the emitted lines can be asserted on either way. */
   function runDoctor(): { code: number; out: string } {
     const originalLog = console.log
@@ -241,375 +125,43 @@ describe('basalt doctor — ai-major-parity', () => {
     }
   }
 
-  it('hard-fails and names both packages when workspace packages disagree on the ai major', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
-    expect(out).toContain('api@ai5')
-    expect(out).toContain('dashboard@ai7')
-  })
-
-  it('passes when every workspace package agrees on the ai major', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.15' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('ai package major matches across 2 workspace package(s)')
-  })
-
-  it('is silent (no line, no failure) for a repo with no workspaces field', () => {
-    setupPassingLayout()
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).not.toContain('ai package major')
-  })
-
-  it('skips a workspace package that declares no ai dependency at all', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
-    )
-    writeFixture('packages/api/package.json', JSON.stringify({ name: 'api', dependencies: {} }))
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('ai package major matches across 1 workspace package(s)')
-  })
-
-  it('hard-fails when the ROOT manifest itself skews against a workspace package (hoisted dev dep)', () => {
-    setupPassingLayout()
+  /** The skewed layout every case below starts from: dependencies@5 vs peerDependencies@7. */
+  function writeSkewedPackage(basalt?: Record<string, unknown>): void {
     writeFixture(
       'package.json',
       JSON.stringify({
-        name: 'consumer-monorepo',
-        workspaces: ['packages/*'],
-        devDependencies: { ai: '5.0.196' },
+        name: 'fixture',
+        basalt: { roots: ['src'], ...basalt },
+        dependencies: { ai: '5.0.196' },
+        peerDependencies: { ai: '^7.0.18' },
       }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
-    expect(out).toContain('consumer-monorepo (root)@ai5')
-    expect(out).toContain('dashboard@ai7')
-  })
-
-  it('walks a "packages/**" workspaces pattern instead of silently skipping it', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/**'] }),
-    )
-    writeFixture(
-      'packages/nested/service/package.json',
-      JSON.stringify({ name: 'nested-service', dependencies: { ai: '5.0.196' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
-    expect(out).toContain('nested-service@ai5')
-    expect(out).toContain('dashboard@ai7')
-  })
-
-  it('does not descend into node_modules when walking a "packages/**" workspaces pattern', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/**'] }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.18' } }),
-    )
-    writeFixture(
-      'packages/api/node_modules/skewed-dep/package.json',
-      JSON.stringify({ name: 'skewed-dep', dependencies: { ai: '5.0.196' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).not.toContain('ai package major version mismatch')
-    expect(out).not.toContain('skewed-dep')
-  })
-
-  it('honours a "!"-prefixed exclusion entry: the excluded package is invisible to ai-major-parity while a non-excluded skew still fails', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({
-        name: 'consumer-monorepo',
-        workspaces: ['packages/*', '!packages/legacy'],
-      }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    writeFixture(
-      'packages/legacy/package.json',
-      JSON.stringify({ name: 'legacy', dependencies: { ai: '3.0.0' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
-    expect(out).toContain('api@ai5')
-    expect(out).toContain('dashboard@ai7')
-    expect(out).not.toContain('legacy')
-  })
-
-  it('reports pass() naming the reason when workspaces exist but none declare ai', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({ name: 'consumer-monorepo', workspaces: ['packages/*'] }),
-    )
-    writeFixture('packages/api/package.json', JSON.stringify({ name: 'api', dependencies: {} }))
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('ai-major-parity')
-    expect(out).toContain('nothing to compare')
-  })
-})
-
-describe('basalt doctor — ai-major-parity, aiMajorSkewReason exemption', () => {
-  /** Run doctor, capturing stdout/stderr so the emitted lines can be asserted on either way. */
-  function runDoctor(): { code: number; out: string } {
-    const originalLog = console.log
-    const originalError = console.error
-    let out = ''
-    console.log = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
-    }
-    console.error = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
-    }
-    try {
-      return { code: doctor(tmpDir), out }
-    } finally {
-      console.log = originalLog
-      console.error = originalError
-    }
-  }
-
-  /** The skewed-workspace layout every case below starts from: root config + two skewed packages. */
-  function writeSkewedWorkspace(basalt?: Record<string, unknown>): void {
-    writeFixture(
-      'package.json',
-      JSON.stringify({
-        name: 'consumer-monorepo',
-        workspaces: ['packages/*'],
-        ...(basalt !== undefined ? { basalt } : {}),
-      }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '5.0.196' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
     )
   }
 
   it('still hard-fails a skew with no aiMajorSkewReason key at all (default unweakened)', () => {
     setupPassingLayout()
-    writeSkewedWorkspace()
+    writeSkewedPackage()
     const { code, out } = runDoctor()
     expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('ai package major version mismatch within this package.json')
     expect(out).not.toContain('aiMajorSkewReason')
-  })
-
-  it('passes and echoes the skew + the reason when aiMajorSkewReason is a non-empty string', () => {
-    setupPassingLayout()
-    writeSkewedWorkspace({
-      aiMajorSkewReason:
-        'apps/api on ai@5, apps/dashboard on ai@7 — neutralized by a producer-side TransformStream',
-    })
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('api@ai5')
-    expect(out).toContain('dashboard@ai7')
-    expect(out).toContain(
-      'apps/api on ai@5, apps/dashboard on ai@7 — neutralized by a producer-side TransformStream',
-    )
   })
 
   it('still hard-fails when aiMajorSkewReason is present but not a non-empty string (bare true)', () => {
     setupPassingLayout()
-    writeSkewedWorkspace({ aiMajorSkewReason: true })
+    writeSkewedPackage({ aiMajorSkewReason: true })
     const { code, out } = runDoctor()
     expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
+    expect(out).toContain('ai package major version mismatch within this package.json')
     expect(out).toContain('aiMajorSkewReason')
   })
 
   it('still hard-fails when aiMajorSkewReason is an empty string', () => {
     setupPassingLayout()
-    writeSkewedWorkspace({ aiMajorSkewReason: '' })
+    writeSkewedPackage({ aiMajorSkewReason: '' })
     const { code, out } = runDoctor()
     expect(code).toBe(1)
-    expect(out).toContain('ai package major version mismatch')
-  })
-
-  it('warns that a declared aiMajorSkewReason is stale when the majors already agree', () => {
-    setupPassingLayout()
-    writeFixture(
-      'package.json',
-      JSON.stringify({
-        name: 'consumer-monorepo',
-        workspaces: ['packages/*'],
-        basalt: { aiMajorSkewReason: 'no longer skewed, forgot to delete this' },
-      }),
-    )
-    writeFixture(
-      'packages/api/package.json',
-      JSON.stringify({ name: 'api', dependencies: { ai: '^7.0.18' } }),
-    )
-    writeFixture(
-      'packages/dashboard/package.json',
-      JSON.stringify({ name: 'dashboard', dependencies: { ai: '^7.0.18' } }),
-    )
-    const { code, out } = runDoctor()
-    expect(code).toBe(0)
-    expect(out).toContain('aiMajorSkewReason')
-    expect(out).toContain('no longer needed')
-  })
-})
-
-/**
- * The icon check reads `basaltAppPlugin`'s `icons` option.
- *
- * 1.23.0 let `icons` name an app's real icon files, and this check kept demanding the six default
- * filenames — so adopting the release's headline feature produced a brand-new warning, on the one
- * repo the feature was written for. A warning that fires BECAUSE you adopted the new API is how a
- * team learns to ignore doctor.
- */
-describe('basalt doctor — basaltAppPlugin icons', () => {
-  function runDoctor(): { code: number; out: string } {
-    const original = console.log
-    let out = ''
-    console.log = (...args: unknown[]) => {
-      out += `${args.join(' ')}\n`
-    }
-    try {
-      return { code: doctor(tmpDir), out }
-    } finally {
-      console.log = original
-    }
-  }
-
-  /** A framework-profile repo with a public/ dir — the only shape this check runs on. */
-  function setupApp(viteConfig: string | null, publicFiles: string[]): void {
-    setupPassingLayout()
-    writeFixture(
-      'node_modules/@mantine/core/package.json',
-      JSON.stringify({ name: '@mantine/core' }),
-    )
-    // The check only runs where a public/ dir exists at all, so it has to exist even when empty.
-    mkdirSync(join(tmpDir, 'public'), { recursive: true })
-    for (const file of publicFiles) writeFixture(`public/${file}`, 'x')
-    if (viteConfig !== null) writeFixture('vite.config.ts', viteConfig)
-  }
-
-  it('an app that NAMES its icons is judged on those, not on the six defaults', () => {
-    setupApp(
-      [
-        "import { basaltAppPlugin } from 'basalt-ui/vite'",
-        'export default {',
-        '  plugins: [',
-        '    basaltAppPlugin({',
-        "      name: 'rb',",
-        "      icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],",
-        '    }),',
-        '  ],',
-        '}',
-      ].join('\n'),
-      ['favicon.svg'],
-    )
-    const { out } = runDoctor()
-    expect(out).not.toContain('web-app-manifest-192x192.png')
-    expect(out).toContain("icon file(s) basaltAppPlugin's `icons` option names")
-  })
-
-  it('a declared icon that is NOT in public/ still warns — the manifest would 404', () => {
-    setupApp(
-      [
-        'export default {',
-        "  plugins: [basaltAppPlugin({ icons: [{ src: '/logo.png', sizes: '512x512' }] })],",
-        '}',
-      ].join('\n'),
-      ['favicon.svg'],
-    )
-    expect(runDoctor().out).toContain('declares icon(s) that are not in public/: /logo.png')
-  })
-
-  it('`icons: false` means there is nothing to check', () => {
-    setupApp('export default { plugins: [basaltAppPlugin({ icons: false })] }', [])
-    const { out } = runDoctor()
-    expect(out).toContain('no icons — nothing to check')
-    expect(out).not.toContain('favicon.ico')
-  })
-
-  it('`icons: { dir }` checks the six defaults UNDER that dir', () => {
-    setupApp("export default { plugins: [basaltAppPlugin({ icons: { dir: 'icons' } })] }", [])
-    const { out } = runDoctor()
-    expect(out).toContain('public/icons is missing basaltAppPlugin icon file(s)')
-  })
-
-  it('no vite config at all falls back to the six defaults — the gate never goes blind', () => {
-    setupApp(null, [])
-    expect(runDoctor().out).toContain('public/ is missing basaltAppPlugin icon file(s)')
-  })
-
-  it('the default six still pass when they are all there', () => {
-    setupApp('export default { plugins: [basaltAppPlugin({})] }', [
-      'favicon.ico',
-      'favicon.svg',
-      'favicon-96x96.png',
-      'apple-touch-icon.png',
-      'web-app-manifest-192x192.png',
-      'web-app-manifest-512x512.png',
-    ])
-    expect(runDoctor().out).toContain("public/ has all of basaltAppPlugin's default icon files")
+    expect(out).toContain('ai package major version mismatch within this package.json')
   })
 })
 

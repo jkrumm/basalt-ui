@@ -1,16 +1,9 @@
 /**
- * basalt-ui CLI — `init`, `sync`, `check-theme`, `check-coverage`.
+ * basalt-ui CLI — `init`, `sync`, `check-theme`, `doctor`.
  *
  * `checkTheme` is a thin FS walker over the headless guard core (`../guard`). It reads the
  * BasaltConfig, builds a GuardConfig, walks the source roots, calls `checkSource` per file,
  * collects Finding[], groups/reports findings, and returns an exit code.
- *
- * `checkCoverage` asserts 11 invariants: guardKinds ⊆ GUARD_RULES, rule files on disk, skill files
- * on disk, subpath-export-coverage, exports→SURFACES reverse, globs required for non-empty
- * forbiddenImports, headless Mantine-ban completeness, optionalPeers
- * peerDependencies/peerDependenciesMeta presence, every plugin rule on exactly one surface, every
- * guard kind on at least one, and the agent-layer line budgets. See `checkCoverage`'s own JSDoc for
- * what each one buys.
  *
  * `init` / `sync` scaffold and reconcile the framework's *agentic* surface into a consumer repo:
  * Claude Code rules + skills, a managed CLAUDE.md block, a DESIGN.md seed, and the toolchain
@@ -36,29 +29,16 @@ import {
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  checkSource,
-  DEFAULT_GUARD_CONFIG,
-  GENERATED_HEADER_LINE,
-  findAllowAnnotations,
-  guardKindRemedy,
-  GUARD_RULES,
-  guardWaiverHint,
-  neutralizeAllowAnnotation,
-  TOKENS_ONLY_DISABLED_KINDS,
-  unmatchedExemptPatterns,
-} from '../guard'
-import type { Finding, GuardConfig, GuardKind, GuardSeverity } from '../guard'
-import { evaluateGuardHook } from '../guard/guard-hook'
-import {
-  PLUGIN_RULE_ID_LIST,
-  RULE_NAMES,
-  SKILL_NAMES,
-  SURFACES,
-  TOKEN_LAYER_BOUNDARY_SURFACES,
-} from '../surfaces'
-import type { DoctrineSpec, RuleName, SurfaceSpec } from '../surfaces'
-import { buildPaletteCss, deriveSpacing } from '../tokens'
+import { DEFAULT_GUARD_CONFIG, guardWaiverHint } from '../guard'
+import type { GuardConfig, GuardKind, GuardSeverity } from '../guard'
+import { RULE_NAMES, SKILL_NAMES } from '../surfaces'
+import { checkTheme } from './check-theme'
+import { doctor } from './doctor'
+import { guardHook } from './guard-hook'
+import { COMMAND_OPTIONS, USAGE, unknownFlag } from './help'
+import { init } from './init'
+import { sync } from './sync'
+import { fontsCss, normalizeColorFunctions, tokensCss } from './tokens-css'
 
 /** Shape of the optional `"basalt"` key in a consumer's package.json. */
 export type BasaltConfig = {
@@ -239,16 +219,16 @@ export type BasaltConfig = {
  * One `basalt.exemptRules` value: the historical bare path list, or the same list with the reason
  * it exists. See `BasaltConfig.exemptRules`.
  */
-type ExemptRuleEntry = string[] | { paths: string[]; reason: string }
+export type ExemptRuleEntry = string[] | { paths: string[]; reason: string }
 
 /** The paths half of an exemption entry, whichever form it was written in. */
-function exemptRulePaths(entry: ExemptRuleEntry | undefined): string[] {
+export function exemptRulePaths(entry: ExemptRuleEntry | undefined): string[] {
   if (entry === undefined) return []
   return Array.isArray(entry) ? entry : entry.paths
 }
 
 /** The recorded reason for an exemption entry, or null for the bare-array form. */
-function exemptRuleReason(entry: ExemptRuleEntry | undefined): string | null {
+export function exemptRuleReason(entry: ExemptRuleEntry | undefined): string | null {
   if (entry === undefined || Array.isArray(entry)) return null
   return entry.reason.trim().length > 0 ? entry.reason.trim() : null
 }
@@ -258,7 +238,7 @@ function exemptRuleReason(entry: ExemptRuleEntry | undefined): string | null {
  * the guard: it is accountability for a human reading a diff and for `--audit-allows`, and giving
  * the scan a second shape to understand would only be a way for the two to disagree.
  */
-function resolveExemptRules(cfg: BasaltConfig): GuardConfig['exemptRules'] {
+export function resolveExemptRules(cfg: BasaltConfig): GuardConfig['exemptRules'] {
   if (cfg.exemptRules === undefined) return DEFAULT_GUARD_CONFIG.exemptRules
   const out: Partial<Record<GuardKind, string[]>> = {}
   for (const [kind, entry] of Object.entries(cfg.exemptRules)) {
@@ -267,8 +247,8 @@ function resolveExemptRules(cfg: BasaltConfig): GuardConfig['exemptRules'] {
   return out
 }
 
-const DEFAULT_ROOT = 'src'
-const DEFAULT_ROOTS = [DEFAULT_ROOT]
+export const DEFAULT_ROOT = 'src'
+export const DEFAULT_ROOTS = [DEFAULT_ROOT]
 
 /**
  * The configured source roots, or the built-in default. The ONE resolution every roots-derived seed
@@ -276,7 +256,7 @@ const DEFAULT_ROOTS = [DEFAULT_ROOT]
  * would let `[]` through and render an empty oxfmt glob into the seeded CI, reproducing the exact
  * "matches zero files" break this derivation exists to prevent.
  */
-function resolveRoots(cfg: BasaltConfig): string[] {
+export function resolveRoots(cfg: BasaltConfig): string[] {
   return cfg.roots?.length ? cfg.roots : DEFAULT_ROOTS
 }
 
@@ -311,13 +291,13 @@ function toRootGlob(root: string): string {
  * directs every consumer to put raw hex series colors there). Shares `resolveSeriesModulePath` with
  * `buildTemplateVars`'s `{{SERIES_MODULE_PATH}}`, so the seeded path and the exemption can't drift.
  */
-function defaultExempt(cfg: BasaltConfig): string[] {
+export function defaultExempt(cfg: BasaltConfig): string[] {
   return [resolveSeriesModulePath(cfg)]
 }
 
-const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
+export const SKIP = /\.gen\.ts$|\.test\.[tj]sx?$|\.d\.ts$/
 /** Filenames that look like they ARE the palette source, for the check-theme escape-hatch hint. */
-const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
+export const SERIES_MODULE_HINT_RE = /(series|palette)\.tsx?$/i
 
 const SEVERITY_VALUES: readonly string[] = ['warn', 'error']
 
@@ -353,7 +333,7 @@ function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
   return { ...cfg, severity: kept as Partial<Record<GuardKind, GuardSeverity>> }
 }
 
-function readBasaltConfig(cwd: string): BasaltConfig {
+export function readBasaltConfig(cwd: string): BasaltConfig {
   try {
     const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
       basalt?: BasaltConfig
@@ -415,7 +395,7 @@ function walkSourceFiles(dir: string, out: string[] = []): string[] {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** A path relative to `fromDir`, POSIX-separated and always explicitly relative (`./` / `../`). */
-function relativePosix(fromDir: string, toPath: string): string {
+export function relativePosix(fromDir: string, toPath: string): string {
   const rel = relative(fromDir, toPath).replace(/\\/g, '/')
   if (rel === '') return '.'
   return rel.startsWith('.') ? rel : `./${rel}`
@@ -432,7 +412,7 @@ function relativePosix(fromDir: string, toPath: string): string {
  * OUTWARD from the consumer dir first, then across the workspace packages — and every caller
  * renders its paths from the answer rather than assuming the root.
  */
-type BasaltInstall = {
+export type BasaltInstall = {
   /** Absolute path of the resolved `node_modules/basalt-ui` directory, or null when unresolvable. */
   dir: string | null
   /** The resolved copy's own version, or null. */
@@ -457,7 +437,7 @@ function basaltInstallAt(dir: string): { dir: string; version: string | null } |
 }
 
 /** Resolve the installed basalt-ui: cwd, then every ancestor, then the workspace packages. */
-function findBasaltInstall(cwd: string): BasaltInstall {
+export function findBasaltInstall(cwd: string): BasaltInstall {
   const own = basaltInstallAt(cwd)
   if (own !== null) return { ...own, how: 'cwd' }
 
@@ -484,21 +464,9 @@ function findBasaltInstall(cwd: string): BasaltInstall {
  * root-relative form when nothing resolves (a pre-install `init`), so the seed is still the shape a
  * later `bun install` makes true.
  */
-function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string): string {
+export function shippedAssetPath(install: BasaltInstall, fromDir: string, asset: string): string {
   if (install.dir === null) return `./node_modules/basalt-ui/${asset}`
   return `${relativePosix(fromDir, install.dir)}/${asset}`
-}
-
-/** True when `dir` is a basalt-configured project — it carries the manifest or a `basalt` key. */
-function hasBasaltProject(dir: string): boolean {
-  if (existsSync(resolve(dir, MANIFEST_PATH))) return true
-  const raw = readIfExists(resolve(dir, 'package.json'))
-  if (raw === null) return false
-  try {
-    return (JSON.parse(raw) as { basalt?: unknown }).basalt !== undefined
-  } catch {
-    return false
-  }
 }
 
 /**
@@ -512,99 +480,26 @@ function hasBasaltProject(dir: string): boolean {
  * genuinely ambiguous and reported as such; `BASALT_CWD` is the explicit override.
  */
 type ProjectResolution = {
-  /** The directory to read. Equals the invocation cwd unless a relocation happened. */
+  /** The directory to read. Equals the invocation cwd unless BASALT_CWD relocated it. */
   dir: string
-  /** The invocation cwd when the command relocated away from it, else null. */
+  /** The invocation cwd when BASALT_CWD relocated the command away from it, else null. */
   relocatedFrom: string | null
-  /** Candidate project dirs when relocation was impossible because several exist, else null. */
-  ambiguous: string[] | null
 }
 
 /**
- * Basalt projects in `cwd`'s immediate subtree — the fallback for a repo that declares no
- * `workspaces` field at all.
- *
- * {@link collectWorkspacePackages} is the primary source and it is exact, but it answers `[]` for
- * every repo whose root `package.json` carries no `workspaces` key. linewatch is that shape: the
- * entire basalt consumer lives in `web/`, with no workspace declaration anywhere. Measured at its
- * repo root, all three project-scoped commands got that wrong in a different way — `check-theme`
- * printed `✓ no off-palette colors` having scanned ZERO files, `doctor` inferred `tokens-only` for
- * a full Mantine consumer, and `sync` refused while naming `basalt-ui init` as the remedy, which is
- * the one command that WOULD have written a competing install at the root. A gate that reports
- * green having looked at nothing is the failure this resolver exists to prevent, so the search
- * falls back to the layout when there is no declaration to read.
- *
- * Bounded to two levels (`web/`, `apps/admin/`), dot-directories and `node_modules` skipped, and it
- * never descends INTO a project it found — a consumer's own nested package is not a rival candidate.
+ * Which directory a project-scoped command reads: `BASALT_CWD` when set, else the invocation cwd
+ * — nothing inferred, nothing walked. Workspace-glob discovery and ancestor/descendant fallbacks
+ * (multi-repo speculation for a single-owner fleet where every consumer runs its own commands from
+ * its own directory) were deleted; a monorepo package that needs a different root sets `BASALT_CWD`
+ * explicitly, or the invoking script's `root:`/`cwd` does.
  */
-function descendantProjects(cwd: string, depth = 2): string[] {
-  if (depth === 0) return []
-  const out: string[] = []
-  for (const name of subdirNames(cwd, { skipDotDirs: true })) {
-    const dir = resolve(cwd, name)
-    if (hasBasaltProject(dir)) out.push(dir)
-    else out.push(...descendantProjects(dir, depth - 1))
-  }
-  return out
-}
-
-/**
- * The nearest ANCESTOR of `cwd`, within the same repo, that is a basalt project — or null.
- *
- * The descend direction was handled and announced; ascend was not, and it fabricated instead. From
- * `apps/demo` in a two-root repo, `readBasaltConfig` answered `{}`, `resolveRoots` substituted the
- * built-in `['src']`, and check-theme scanned 22 of the repo's 44 guarded files, reported
- * `✓ no off-palette colors`, and printed the invention back as `basalt.roots (src)`. Its
- * `--audit-allows` then reported `0 live` for a repo carrying a live waiver — a clean slate from
- * the one command whose entire job is to deny one. `doctor`, standing in that same directory,
- * already resolved the parent install and named it, so the two commands disagreed about the same
- * repo.
- *
- * Bounded by {@link findRepoRoot}, inclusive: an ancestor outside the repo is not this project's
- * config. `repoRoot === cwd` means either cwd IS the root (nothing above it to ascend to) or there
- * is no `.git` anywhere (no bound to walk within) — both answer null, which leaves a standalone
- * unconfigured consumer on the built-in defaults exactly as before.
- */
-function ascendantProject(cwd: string): string | null {
-  const repoRoot = findRepoRoot(cwd)
-  if (repoRoot === cwd) return null
-  let current = dirname(cwd)
-  for (;;) {
-    if (hasBasaltProject(current)) return current
-    if (current === repoRoot) return null
-    const parent = dirname(current)
-    if (parent === current) return null
-    current = parent
-  }
-}
-
-function resolveProjectDir(cwd: string): ProjectResolution {
+export function resolveProjectDir(cwd: string): ProjectResolution {
   const override = process.env['BASALT_CWD']
-  if (override !== undefined && override.length > 0) {
-    const dir = isAbsolute(override) ? override : resolve(cwd, override)
-    return { dir, relocatedFrom: dir === cwd ? null : cwd, ambiguous: null }
+  if (override === undefined || override.length === 0) {
+    return { dir: cwd, relocatedFrom: null }
   }
-  if (hasBasaltProject(cwd)) return { dir: cwd, relocatedFrom: null, ambiguous: null }
-
-  const declared = collectWorkspacePackages(cwd)
-    .packages.filter((pkg) => pkg.dir !== cwd && hasBasaltProject(pkg.dir))
-    .map((pkg) => pkg.dir)
-  // The workspace declaration wins whenever there is one — it is exact, and a repo that declares
-  // its packages has already said where they are. The layout scan only answers for the repos that
-  // declare nothing; see descendantProjects.
-  const candidates = declared.length > 0 ? declared : descendantProjects(cwd)
-  if (candidates.length === 1) {
-    return { dir: candidates[0] as string, relocatedFrom: cwd, ambiguous: null }
-  }
-  if (candidates.length > 1) return { dir: cwd, relocatedFrom: null, ambiguous: candidates }
-
-  // Nothing at cwd and nothing below it: look UP before falling back to a default. See
-  // {@link ascendantProject} — the fabricated `roots: ['src']` this replaces is what let a scan
-  // pass over half a repo and an audit report zero waivers for a repo that has one.
-  const above = ascendantProject(cwd)
-  if (above !== null) return { dir: above, relocatedFrom: cwd, ambiguous: null }
-
-  return { dir: cwd, relocatedFrom: null, ambiguous: null }
+  const dir = isAbsolute(override) ? override : resolve(cwd, override)
+  return { dir, relocatedFrom: dir === cwd ? null : cwd }
 }
 
 /**
@@ -623,10 +518,10 @@ function resolveProjectDir(cwd: string): ProjectResolution {
  *   dependency in a workspace package rather than the one holding the basalt config, which is
  *   precisely this round's "reports green while enforcing nothing" failure with the guard's own
  *   hand on the switch.
- * - `doctor` ({@link inferredProfile}) only changes which ADVICE it prints, never what it enforces,
- *   so it may infer from absence and then tell the consumer to write the key down.
+ * - `doctor` no longer infers a profile at all (workspace-wide Mantine detection was deleted along
+ *   with the rest of the multi-repo discovery); it reads the same declaration `check-theme` does.
  */
-function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
+export function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
   if (flags.includes('--tokens-only')) return 'tokens-only'
   if (flags.includes('--framework')) return 'framework'
   return cfg.profile === 'tokens-only' ? 'tokens-only' : 'framework'
@@ -638,33 +533,8 @@ function declaredProfile(cfg: BasaltConfig, flags: readonly string[]): DoctorPro
  * vs `--selector-attribute`. Silently preferring one meant a CI step that accumulated both flags
  * enforced whichever the code happened to test first.
  */
-function conflictingProfileFlags(flags: readonly string[]): boolean {
+export function conflictingProfileFlags(flags: readonly string[]): boolean {
   return flags.includes('--tokens-only') && flags.includes('--framework')
-}
-
-/** True when nothing anywhere in the workspace declares Mantine — see {@link inferredProfile}. */
-function workspaceHasMantine(cwd: string): boolean {
-  if (hasDependency(cwd, '@mantine/core')) return true
-  return collectWorkspacePackages(cwd).packages.some((pkg) =>
-    hasDependency(pkg.dir, '@mantine/core'),
-  )
-}
-
-/**
- * `doctor`'s profile: the declaration if there is one, else inferred from no scaffold manifest and
- * no `@mantine/core` anywhere in the workspace. Advice only — see {@link declaredProfile}.
- */
-function inferredProfile(cwd: string, cfg: BasaltConfig, flags: readonly string[]): DoctorProfile {
-  if (
-    flags.includes('--tokens-only') ||
-    flags.includes('--framework') ||
-    cfg.profile !== undefined
-  ) {
-    return declaredProfile(cfg, flags)
-  }
-  return !existsSync(resolve(cwd, MANIFEST_PATH)) && !workspaceHasMantine(cwd)
-    ? 'tokens-only'
-    : 'framework'
 }
 
 /**
@@ -672,7 +542,7 @@ function inferredProfile(cwd: string, cfg: BasaltConfig, flags: readonly string[
  * + `SKIP` + `exempt` filtering lives, so `doctor`'s "the guard sees zero files" check can never
  * disagree with what `check-theme` does.
  */
-function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
+export function scannableFiles(cwd: string, cfg: BasaltConfig): string[] {
   const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
   const seen = new Set<string>()
   const out: string[] = []
@@ -738,7 +608,7 @@ const PLAIN_JSON_HINT_PATH = 'manifest.json'
  * member as the whole answer — plus one sentence saying which remedy is being withheld and why.
  * The remedy text still comes from the guard's own registry; only the class mapping is decided here.
  */
-function waiverHintFor(relPath: string, profile: DoctorProfile): string {
+export function waiverHintFor(relPath: string, profile: DoctorProfile): string {
   if (profile !== 'tokens-only' || !relPath.endsWith('.webmanifest')) {
     return guardWaiverHint(relPath)
   }
@@ -746,537 +616,6 @@ function waiverHintFor(relPath: string, profile: DoctorProfile): string {
     `${guardWaiverHint(PLAIN_JSON_HINT_PATH)} (basaltAppPlugin would emit the file instead, but ` +
     "it needs basalt's Vite/React layer, which a tokens-only consumer has opted out of.)"
   )
-}
-
-/**
- * Theme guard — thin FS walker over the headless `../guard` core. Reads BasaltConfig, builds a
- * GuardConfig, walks roots, calls checkSource per file, collects Finding[], groups/reports, returns
- * 0 (clean) / 1 (violations). A `theme-allow` comment exempts a line.
- *
- * Runs against `resolveProjectDir(cwd)`, not `cwd` — see that type's doc for why a root-invoked
- * hook or CI step has to find the package the config lives in rather than scan nothing and pass.
- */
-export function checkTheme(
-  invocationCwd: string = process.cwd(),
-  flags: readonly string[] = [],
-): number {
-  if (conflictingProfileFlags(flags)) {
-    console.error(
-      'basalt-ui check-theme: --tokens-only and --framework are alternatives — pass one.',
-    )
-    return 1
-  }
-  const project = resolveProjectDir(invocationCwd)
-  if (project.ambiguous !== null) {
-    console.error(
-      `✖ basalt-ui check-theme: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
-        `packages below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
-        'run it from one of them, or set BASALT_CWD to pick.',
-    )
-    return 1
-  }
-  const cwd = project.dir
-  if (project.relocatedFrom !== null) {
-    console.log(
-      `basalt-ui check-theme: no basalt config at ${project.relocatedFrom} — running in ` +
-        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.`,
-    )
-  }
-  const cfg = readBasaltConfig(cwd)
-  const roots = resolveRoots(cfg)
-  const profile = declaredProfile(cfg, flags)
-  if (profile === 'tokens-only') {
-    console.log(
-      'basalt-ui check-theme: tokens-only profile — ' +
-        `${TOKENS_ONLY_DISABLED_KINDS.size} Mantine-coupled kinds are off; the color and typography ` +
-        'kinds still apply. Pass --framework to force the full set.',
-    )
-  }
-
-  const guardCfg: GuardConfig = {
-    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
-    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
-    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
-    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
-    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
-    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
-    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
-    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
-    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
-    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
-    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
-    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
-    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
-    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
-    allowComment: 'theme-allow',
-    exemptRules: resolveExemptRules(cfg),
-    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
-    ...(profile === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
-  }
-
-  const findings: Finding[] = []
-  const scanned = scannableFiles(cwd, cfg)
-  for (const rel of scanned) {
-    findings.push(...checkSource(readFileSync(resolve(cwd, rel), 'utf8'), rel, guardCfg))
-  }
-
-  if (scanned.length === 0) {
-    // A configured-but-wrong root is never intentional, and silently scanning 0 files under the
-    // built-in defaults (argo's pre-migration layout) is the same failure mode for every other
-    // consumer — both cases fail loud instead of warn-plus-green.
-    if (cfg.roots === undefined) {
-      console.error(
-        `✖ basalt-ui check-theme: 0 files scanned — no "basalt.roots" configured in package.json, and ` +
-          `the built-in default roots (${DEFAULT_ROOTS.join(', ')}) matched zero files. ` +
-          'Set "basalt": { "roots": [...] } in package.json to point at your source directories.',
-      )
-    } else {
-      console.error(
-        `✖ basalt-ui check-theme: 0 files scanned — the configured "basalt.roots" (${roots.join(', ')}) ` +
-          'matched zero files. Check the paths in "basalt.roots" in package.json.',
-      )
-    }
-    return 1
-  }
-
-  // The audit is a REPORT over the same scan, not a second scan with different rules — it runs
-  // after the 0-files gate so "every waiver is dead" can never mean "nothing was read".
-  if (flags.includes('--audit-allows')) return auditAllows(cwd, cfg, guardCfg, scanned)
-
-  // An exemption that matched nothing is reported, never silently honoured. A WARNING rather than a
-  // failure: the entry enforced exactly nothing before this line existed, so failing on it would
-  // break a green build at upgrade time over config that was already inert — `--audit-allows` is
-  // the lane that exits non-zero on a dead waiver, for a consumer who opts into that gate.
-  for (const unmatched of unmatchedExemptPatterns(guardCfg, scanned)) {
-    console.error(
-      `⚠ basalt-ui check-theme: "basalt.exemptRules" entry ${unmatched.kind}: ` +
-        `"${unmatched.pattern}" ` +
-        (unmatched.reason === 'unknown-kind'
-          ? 'names no guard kind — it exempts nothing at all (a typo, or a kind that was renamed).'
-          : 'matched none of the scanned files — it suppresses nothing, and reads as coverage in a ' +
-            'config review while enforcing as much as an empty object.'),
-    )
-  }
-
-  if (findings.length === 0) {
-    console.log('✓ Theme guard: no off-palette colors.')
-    return 0
-  }
-
-  // Errors and warnings are reported as two separate blocks, not one list with a column: a
-  // consumer scanning the output needs "what breaks my build" answered before "what will later".
-  const errors = findings.filter((f) => f.severity === 'error')
-  const warnings = findings.filter((f) => f.severity === 'warn')
-
-  const report = (group: Finding[], heading: string): void => {
-    const byFile = new Map<string, Finding[]>()
-    for (const f of group) {
-      const list = byFile.get(f.relPath) ?? []
-      list.push(f)
-      byFile.set(f.relPath, list)
-    }
-    console.error(heading)
-    for (const [file, vs] of [...byFile].toSorted()) {
-      console.error(file)
-      for (const v of vs.toSorted((a, b) => a.line - b.line)) {
-        console.error(`  ${String(v.line).padStart(4)}  ${v.kind.padEnd(22)} ${v.text}`)
-      }
-      console.error('')
-    }
-  }
-
-  if (warnings.length > 0) {
-    report(
-      warnings,
-      // Deliberately neutral about WHY a kind is a warning. Two origins reach this block — a kind
-      // in its grace minor, and a consumer's own `basalt.severity` override — and the finding
-      // doesn't carry which. Promising promotion next minor would be wrong for the second.
-      `⚠ Theme guard: ${warnings.length} warning(s) — reported, not fatal. A kind warns while it ` +
-        'is in its grace minor, or because `basalt.severity` turned it down; fix on your own ' +
-        'schedule.\n',
-    )
-  }
-  if (errors.length > 0) {
-    report(errors, `✖ Theme guard: ${errors.length} off-palette / off-identity violation(s)\n`)
-  }
-
-  // Remedies come from the guard's own rule registry, never from a copy kept here: the local table
-  // this replaced had no entry for any of the five kinds 1.20.0 added, so exactly the new findings
-  // — the ones whose whole argument is "this looks correct and is not" — printed no argument.
-  const presentKinds = [...new Set(findings.map((f) => f.kind))].toSorted()
-  // And the closer is per FILE CLASS: prescribing a `theme-allow` comment to a .webmanifest (which
-  // has no comment syntax) is what pushed two consumers into a blanket exemption instead.
-  const waiverHints = [
-    ...new Set(findings.map((f) => waiverHintFor(f.relPath, profile))),
-  ].toSorted()
-  console.error(['Fix:', ...presentKinds.map(guardKindRemedy), ...waiverHints].join(' '))
-
-  // A violation in a file that looks like the palette source itself is likely intentional — point
-  // at the exempt escape hatch instead of leaving the author to search for it.
-  if (findings.some((f) => SERIES_MODULE_HINT_RE.test(f.relPath))) {
-    console.error(
-      'Hint: if a flagged file IS your palette/series source, exempt it via ' +
-        '"basalt": { "exempt": ["<path>"] } in package.json.',
-    )
-  }
-  // Warnings alone pass. That is the whole point of the grace minor: a consumer takes the upgrade
-  // on a green build and schedules the fix, instead of the release scheduling it for them.
-  return errors.length > 0 ? 1 : 0
-}
-
-// ── check-theme --audit-allows — every waiver, and whether it still suppresses anything ─────────
-
-/** `relPath:line:kind` — a finding's identity for set arithmetic across two runs of the same file. */
-function findingKey(f: Finding): string {
-  return `${f.relPath}:${f.line}:${f.kind}`
-}
-
-/** One annotation the guard cannot judge, queued for the oxlint half of the audit. */
-type PluginProbe = {
-  /** Index into the report's line array, so the verdict lands where the placeholder sits. */
-  readonly slot: number
-  readonly rel: string
-  /** 1-based line of the annotation, as {@link findAllowAnnotations} reports it. */
-  readonly line: number
-  readonly ids: readonly string[]
-  readonly site: string
-  readonly suffix: string
-}
-
-/** One oxlint diagnostic, as `--format=json` renders it — only the fields the audit reads. */
-type OxlintDiagnostic = {
-  code?: unknown
-  filename?: unknown
-  labels?: { span?: { line?: unknown } }[]
-}
-
-/** The nearest `node_modules/.bin/<name>` walking up from `dir`, else `name` if it is on PATH. */
-function resolveToolBin(dir: string, name: string): string | null {
-  let current = dir
-  for (;;) {
-    const candidate = resolve(current, 'node_modules/.bin', name)
-    if (existsSync(candidate)) return candidate
-    const parent = resolve(current, '..')
-    if (parent === current) break
-    current = parent
-  }
-  const probe = spawnSync(name, ['--version'], { stdio: 'ignore', timeout: 10_000 })
-  return probe.error === undefined && probe.status === 0 ? name : null
-}
-
-/** `line:rule` counts for one file's diagnostics — a multiset, so two findings on a line differ. */
-function diagnosticCounts(
-  diagnostics: readonly OxlintDiagnostic[],
-  filename: string,
-): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const d of diagnostics) {
-    if (d.filename !== filename) continue
-    const code = typeof d.code === 'string' ? d.code : ''
-    const rule = /^basalt\((.+)\)$/.exec(code)?.[1]
-    if (rule === undefined) continue
-    const line = d.labels?.[0]?.span?.line
-    const key = `${typeof line === 'number' ? line : 0}:${rule}`
-    counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return counts
-}
-
-/**
- * The oxlint half of the audit: what each plugin-rule annotation still suppresses.
- *
- * The `check-theme` half proves a verdict by re-running `checkSource` with one occurrence
- * neutralized. The `error`-severity design rules do not live there — they live in the oxlint
- * plugin — so the audit declined to judge them and printed "not a check-theme kind". In a
- * chart-heavy consumer that was 8 of 8 and 11 of 14: a CI gate that exited 0 having inspected
- * nothing. The method generalizes exactly, one level over: neutralize the annotation, re-run
- * oxlint over that file, and the findings that appear are what it covers.
- *
- * oxlint has no stdin mode, so a probe has to be a real file. It is written BESIDE the original —
- * same directory, so the same `.oxlintrc.json`, the same `charts/` path segment, the same nearest
- * `package.json` — and removed in a `finally`. Returns null when oxlint cannot be run at all, which
- * is a "cannot judge", never a "dead".
- */
-function probePluginRules(
-  cwd: string,
-  guardCfg: GuardConfig,
-  probes: readonly PluginProbe[],
-  sources: ReadonlyMap<string, string>,
-): Map<number, string[]> | null {
-  if (probes.length === 0) return new Map()
-  const bin = resolveToolBin(cwd, 'oxlint')
-  if (bin === null) return null
-
-  const written: string[] = []
-  const probePaths = new Map<number, string>()
-  try {
-    for (const probe of probes) {
-      // Neutralized by the guard's own helper, so the oxlint probe and the checkSource probe can
-      // never differ by a substitution detail — a verdict that disagrees between the two halves of
-      // one audit is worse than no verdict.
-      const probed = neutralizeAllowAnnotation(sources.get(probe.rel) ?? '', probe.line, guardCfg)
-      const dot = probe.rel.lastIndexOf('.')
-      const rel =
-        dot === -1
-          ? `${probe.rel}.basalt-audit-${probe.slot}`
-          : `${probe.rel.slice(0, dot)}.basalt-audit-${probe.slot}${probe.rel.slice(dot)}`
-      const abs = resolve(cwd, rel)
-      if (existsSync(abs)) continue
-      writeFileSync(abs, probed, 'utf8')
-      written.push(abs)
-      probePaths.set(probe.slot, rel)
-    }
-    if (probePaths.size === 0) return null
-
-    const targets = [...new Set(probes.map((p) => p.rel)), ...probePaths.values()]
-    const run = spawnSync(bin, ['--format=json', '--no-error-on-unmatched-pattern', ...targets], {
-      cwd,
-      encoding: 'utf8',
-      timeout: 120_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-    if (run.error !== undefined || typeof run.stdout !== 'string') return null
-    let diagnostics: OxlintDiagnostic[]
-    try {
-      diagnostics =
-        (JSON.parse(run.stdout) as { diagnostics?: OxlintDiagnostic[] }).diagnostics ?? []
-    } catch {
-      return null
-    }
-
-    const verdicts = new Map<number, string[]>()
-    for (const probe of probes) {
-      const probeRel = probePaths.get(probe.slot)
-      if (probeRel === undefined) continue
-      const before = diagnosticCounts(diagnostics, probe.rel)
-      const after = diagnosticCounts(diagnostics, probeRel)
-      const revealed: string[] = []
-      for (const [key, count] of after) {
-        if (count <= (before.get(key) ?? 0)) continue
-        const [line = '', rule = ''] = key.split(':')
-        revealed.push(`${rule}@${line}`)
-      }
-      verdicts.set(probe.slot, revealed.toSorted())
-    }
-    return verdicts
-  } finally {
-    for (const abs of written) {
-      try {
-        unlinkSync(abs)
-      } catch {
-        // The probe is a temp file basalt owns; a failed unlink must not mask the audit's verdict.
-      }
-    }
-  }
-}
-
-/**
- * `check-theme --audit-allows` — list every active waiver and prove, per waiver, whether it still
- * suppresses anything.
- *
- * The accountability release shipped `theme-allow-unscoped`, which reports a waiver that names no
- * rule — but a waiver that is perfectly well written and covers a finding that no longer exists is
- * invisible to it, and to everything else. Two consumers found five of those by hand, by editing
- * the token out and re-running the guard. This is that method, automated: for each annotation the
- * file is re-checked with THAT occurrence neutralized, and the findings that appear are exactly
- * what it suppresses. Nothing is inferred from the annotation's text, so the audit cannot disagree
- * with the scan — it IS the scan, run twice.
- *
- * `basalt.exemptRules` entries are audited the same way, one pattern at a time. That also answers
- * the question the key could never answer for itself: a pattern that matches no scanned file (a
- * real relative path, say, where the matcher takes whole path SEGMENTS) suppresses nothing and is
- * reported as dead rather than passing silently.
- *
- * Exit 1 when anything is dead, so it can be wired into CI as a gate. A waiver nobody re-checks is
- * how a rule quietly stops applying to the file that needed the exception most.
- */
-function auditAllows(
-  cwd: string,
-  cfg: BasaltConfig,
-  guardCfg: GuardConfig,
-  scanned: string[],
-): number {
-  const token = guardCfg.allowComment
-  const lines: string[] = [`\nbasalt-ui check-theme --audit-allows — ${cwd}\n`]
-  let dead = 0
-  let live = 0
-  let outOfReach = 0
-  let unaccountable = 0
-
-  // ── theme-allow annotations ─────────────────────────────────────────────────
-  const waiverLines: string[] = []
-  const pluginProbes: PluginProbe[] = []
-  const sources = new Map<string, string>()
-  for (const rel of scanned) sources.set(rel, readFileSync(resolve(cwd, rel), 'utf8'))
-
-  for (const rel of scanned) {
-    const text = sources.get(rel) ?? ''
-    if (!text.includes(token)) continue
-    const baseline = checkSource(text, rel, guardCfg)
-    const baselineKeys = new Set(
-      baseline.filter((f) => f.kind !== 'theme-allow-unscoped').map(findingKey),
-    )
-    const unscopedAt = new Map(
-      baseline.filter((f) => f.kind === 'theme-allow-unscoped').map((f) => [f.line, f.token]),
-    )
-    // Enumerated by the guard, never by a regex kept here: `findAllowAnnotations` shares its
-    // collector with `checkSource`, so the audit lists exactly the annotations the scan honours.
-    // The private mirror this replaced was already one comment shape behind.
-    for (const site of findAllowAnnotations(text, rel, guardCfg)) {
-      const revealed = checkSource(
-        neutralizeAllowAnnotation(text, site.line, guardCfg),
-        rel,
-        guardCfg,
-      )
-        .filter((f) => f.kind !== 'theme-allow-unscoped' && !baselineKeys.has(findingKey(f)))
-        .map((f) => `${f.kind}@${f.line}`)
-      const note = unscopedAt.get(site.line)
-      if (note !== undefined) unaccountable++
-      const label = `  ${rel}:${site.line}`.padEnd(52)
-      const suffix = note === undefined ? '' : ` [${note}]`
-      if (revealed.length > 0) {
-        live++
-        waiverLines.push(`${label} suppresses ${[...new Set(revealed)].join(', ')}${suffix}`)
-        continue
-      }
-      // Nothing in check-theme's reach moved. If the annotation names a PLUGIN rule, the oxlint
-      // half decides it — a placeholder holds the slot so the report stays in file/line order.
-      if (site.pluginRules.length > 0 && site.guardKinds.length === 0) {
-        pluginProbes.push({
-          slot: waiverLines.length,
-          rel,
-          line: site.line,
-          ids: site.pluginRules,
-          site: label,
-          suffix,
-        })
-        waiverLines.push('')
-        continue
-      }
-      if (site.guardKinds.length === 0 && site.unknownRules.length > 0) {
-        outOfReach++
-        waiverLines.push(
-          `${label} scoped to ${site.unknownRules.join(', ')} — names no guard kind and no ` +
-            'plugin rule, so this audit cannot judge it (most likely a typo, which ' +
-            `theme-allow-unscoped reports)${suffix}`,
-        )
-        continue
-      }
-      dead++
-      waiverLines.push(`${label} SUPPRESSES NOTHING — dead, delete it${suffix}`)
-    }
-  }
-
-  // ── the oxlint half — plugin-rule annotations, judged the same way ──────────
-  const pluginVerdicts = probePluginRules(cwd, guardCfg, pluginProbes, sources)
-  for (const probe of pluginProbes) {
-    const revealed = pluginVerdicts?.get(probe.slot)
-    if (revealed === undefined) {
-      outOfReach++
-      waiverLines[probe.slot] =
-        `${probe.site} scoped to ${probe.ids.join(', ')} — an oxlint plugin rule, and oxlint ` +
-        `could not be run here, so this audit cannot judge it${probe.suffix}`
-      continue
-    }
-    if (revealed.length > 0) {
-      live++
-      waiverLines[probe.slot] =
-        `${probe.site} suppresses ${revealed.join(', ')} (oxlint)${probe.suffix}`
-      continue
-    }
-    dead++
-    waiverLines[probe.slot] =
-      `${probe.site} SUPPRESSES NOTHING — dead, delete it (proved by re-running oxlint over the ` +
-      `file with this annotation neutralized)${probe.suffix}`
-  }
-
-  lines.push(`${token} annotations (${waiverLines.length}):`)
-  lines.push(...(waiverLines.length === 0 ? ['  (none)'] : waiverLines))
-
-  // ── basalt.exemptRules entries ──────────────────────────────────────────────
-  const exemptLines: string[] = []
-  let exemptCount = 0
-  const declared = Object.entries(cfg.exemptRules ?? {}) as [GuardKind, ExemptRuleEntry][]
-  if (declared.length > 0) {
-    const baselineKeys = new Set<string>()
-    for (const rel of scanned) {
-      for (const f of checkSource(sources.get(rel) ?? '', rel, guardCfg))
-        baselineKeys.add(findingKey(f))
-    }
-    for (const [kind, entry] of declared) {
-      const reason = exemptRuleReason(entry)
-      for (const pattern of exemptRulePaths(entry)) {
-        exemptCount++
-        const probeCfg: GuardConfig = {
-          ...guardCfg,
-          exemptRules: {
-            ...guardCfg.exemptRules,
-            [kind]: exemptRulePaths(entry).filter((p) => p !== pattern),
-          },
-        }
-        const revealed = new Set<string>()
-        for (const rel of scanned) {
-          for (const f of checkSource(sources.get(rel) ?? '', rel, probeCfg)) {
-            if (!baselineKeys.has(findingKey(f))) revealed.add(f.relPath)
-          }
-        }
-        const site = `  ${kind}: "${pattern}"`.padEnd(52)
-        const why = reason === null ? ' [no reason recorded]' : ` — ${reason}`
-        if (revealed.size === 0) {
-          dead++
-          const unmatched = unmatchedExemptPatterns(guardCfg, scanned).find(
-            (u) => u.kind === kind && u.pattern === pattern,
-          )
-          exemptLines.push(
-            `${site} SUPPRESSES NOTHING — ` +
-              (unmatched === undefined
-                ? 'the files it matches have no such finding; delete it'
-                : unmatched.reason === 'unknown-kind'
-                  ? 'it names no guard kind (a typo, or a renamed kind)'
-                  : 'it matches no scanned file at all') +
-              why,
-          )
-        } else {
-          live++
-          exemptLines.push(
-            `${site} suppresses findings in ${[...revealed].toSorted().join(', ')}${why}`,
-          )
-        }
-      }
-    }
-  }
-  lines.push(`\nbasalt.exemptRules entries (${exemptCount}):`)
-  lines.push(...(exemptLines.length === 0 ? ['  (none)'] : exemptLines))
-
-  lines.push(
-    `\n${live} live, ${dead} dead, ${outOfReach} unjudgeable, ${unaccountable} ` +
-      'unaccountable (reported as theme-allow-unscoped by a normal run).',
-  )
-  // The audit reads exactly what `check-theme` reads, and that is `scannableFiles` — which is
-  // WIDER than `basalt.roots`: it also takes each root's sibling `index.html` and `public/` tree
-  // (see appShellFiles) and anything named in `basalt.include`. Two consumers reported a live
-  // `public/site.webmanifest` waiver under a scope line saying files outside `roots` are not
-  // audited; the line was wrong, not the scan. Saying the scope out loud is the difference between
-  // "0 dead" and "0 dead, over these files" — so it has to name every class actually reached.
-  const includes = cfg.include ?? []
-  lines.push(
-    `Scope: the ${scanned.length} file(s) check-theme scans — everything under basalt.roots ` +
-      `(${resolveRoots(cfg).join(', ')}), plus each root's sibling index.html and public/ tree, ` +
-      (includes.length === 0
-        ? 'plus anything named in basalt.include (none). '
-        : `plus basalt.include (${includes.join(', ')}). `) +
-      'A waiver in a file none of those reach is not audited — widen roots, or name it in ' +
-      'basalt.include, or accept that nothing polices that file.',
-  )
-  if (dead > 0) {
-    lines.push(
-      'A dead waiver is not harmless: it is an exception nobody re-checked, and it will silently ' +
-        'cover the next real finding on that line.',
-    )
-  }
-  console.log(lines.join('\n'))
-  return dead > 0 ? 1 : 0
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1326,7 +665,7 @@ type ManagedFile = {
 }
 
 /** Everything a template needs to resolve its `{{…}}` placeholders. */
-type RenderContext = {
+export type RenderContext = {
   pkgRoot: string
   vars: TemplateVars
 }
@@ -1359,19 +698,19 @@ type TemplateVars = {
 // (`<!-- basalt:begin 1.0.0 -->`), so the region is matched by the begin PREFIX, not an exact string.
 const BLOCK_BEGIN_PREFIX = '<!-- basalt:begin'
 const BLOCK_END = '<!-- basalt:end -->'
-const MANIFEST_PATH = '.basalt/manifest.json'
+export const MANIFEST_PATH = '.basalt/manifest.json'
 
-function sha256(text: string): string {
+export function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex')
 }
 
-function readIfExists(abs: string): string | null {
+export function readIfExists(abs: string): string | null {
   if (!existsSync(abs)) return null
   return readFileSync(abs, 'utf8')
 }
 
 /** Read a shipped source asset from the package root; null if the sibling hasn't authored it yet. */
-function readSource(pkgRoot: string, source: string): string | null {
+export function readSource(pkgRoot: string, source: string): string | null {
   return readIfExists(resolve(pkgRoot, source))
 }
 
@@ -1386,7 +725,7 @@ function readPackageName(cwd: string): string {
 }
 
 /** The framework's own published version, read from the package root package.json. */
-function readFrameworkVersion(pkgRoot: string): string {
+export function readFrameworkVersion(pkgRoot: string): string {
   try {
     const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
       version?: string
@@ -1407,7 +746,7 @@ function readFrameworkVersion(pkgRoot: string): string {
  * placed here. Every emitted invocation goes through this function so there is one place for it to
  * be right.
  */
-function basaltBinCommand(install: BasaltInstall, cwd: string): string {
+export function basaltBinCommand(install: BasaltInstall, cwd: string): string {
   if (install.dir === null) return 'bunx basalt-ui'
   const binDir = resolve(install.dir, '..', '.bin')
   return `${relativePosix(cwd, binDir).replace(/^\.\//, '')}/basalt-ui`
@@ -1474,7 +813,7 @@ function applyBlock(host: string, block: string): string {
  * Explicit `--with-router` / `--with-query` CLI flags force-include a router/query scaffold even
  * when the peer isn't detected in the consumer's package.json yet (e.g. it's about to be added).
  */
-type ScaffoldFlags = {
+export type ScaffoldFlags = {
   withRouter?: boolean
   withQuery?: boolean
   /** `--merge-lint`: splice the shipped preset's `extends` into an `.oxlintrc.json` init would keep. */
@@ -1482,7 +821,7 @@ type ScaffoldFlags = {
 }
 
 /** Router/query peer presence, resolved from detection + explicit flags. */
-type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
+export type PeerFlags = { hasRouter: boolean; hasQuery: boolean }
 
 /** True when `pkgName` appears in the consumer's dependencies, devDependencies, or peerDependencies. */
 function hasDependency(cwd: string, pkgName: string): boolean {
@@ -1508,7 +847,7 @@ function hasDependency(cwd: string, pkgName: string): boolean {
  * which seed scaffolds to write) and `basalt-ui sync` (so it doesn't silently re-seed a scaffold whose
  * peer was never installed) call this once, up front.
  */
-function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
+export function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
   return {
     hasRouter: flags.withRouter === true || hasDependency(cwd, '@tanstack/react-router'),
     hasQuery: flags.withQuery === true || hasDependency(cwd, '@tanstack/react-query'),
@@ -1520,7 +859,7 @@ function resolvePeerFlags(cwd: string, flags: ScaffoldFlags): PeerFlags {
  * repo-root-shaped seeds are safe to write. `init`/`sync` compute it once per run via
  * `resolvePlacement` and print the matching skip notices themselves; `managedFiles` only reads it.
  */
-type PlacementFlags = {
+export type PlacementFlags = {
   /** True when the package directory IS the detected repo root, or no `.git` exists anywhere above
    *  it (a consumer not using git keeps today's behaviour exactly). False means the package lives
    *  in a subdirectory of the repo (a monorepo's `web/`, say) — lefthook and GitHub Actions both
@@ -1538,7 +877,7 @@ type PlacementFlags = {
 }
 
 /** The default placement — today's single-package-at-repo-root behaviour, unconditionally. */
-const ROOT_PLACEMENT: PlacementFlags = {
+export const ROOT_PLACEMENT: PlacementFlags = {
   isPackageRepoRoot: true,
   repoRoot: '',
   relocatedQueryClient: null,
@@ -1550,7 +889,7 @@ const ROOT_PLACEMENT: PlacementFlags = {
  * Stops at the filesystem root. Returns `dir` itself when no `.git` is found anywhere, so a
  * consumer not using git falls back to today's behaviour exactly.
  */
-function findRepoRoot(dir: string): string {
+export function findRepoRoot(dir: string): string {
   let current = dir
   for (;;) {
     if (existsSync(resolve(current, '.git'))) return current
@@ -1603,7 +942,7 @@ function findRelocatedQueryClient(cwd: string): string | null {
 }
 
 /** Resolve a run's placement flags once, from the consumer cwd. */
-function resolvePlacement(cwd: string): PlacementFlags {
+export function resolvePlacement(cwd: string): PlacementFlags {
   const repoRoot = findRepoRoot(cwd)
   return {
     isPackageRepoRoot: repoRoot === cwd,
@@ -1613,7 +952,10 @@ function resolvePlacement(cwd: string): PlacementFlags {
 }
 
 /** The full managed-file manifest. Stable, declarative — the single source of truth for init/sync. */
-function managedFiles(peers: PeerFlags, placement: PlacementFlags = ROOT_PLACEMENT): ManagedFile[] {
+export function managedFiles(
+  peers: PeerFlags,
+  placement: PlacementFlags = ROOT_PLACEMENT,
+): ManagedFile[] {
   // ── managed: exactly what Claude reads ──────────────────────────────────────
   const rules: ManagedFile[] = RULE_NAMES.map((name) => ({
     dest: `.claude/rules/basalt-${name}.md`,
@@ -1772,7 +1114,7 @@ function managedFiles(peers: PeerFlags, placement: PlacementFlags = ROOT_PLACEME
   return [...rules, ...skills, claudeBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
 }
 
-type Manifest = {
+export type Manifest = {
   version: 1
   /** The basalt-ui version that last wrote this manifest — `doctor`'s one reconciliation axis. */
   basaltVersion?: string
@@ -1793,7 +1135,7 @@ type Manifest = {
   spacingScale?: Record<string, number>
 }
 
-function readManifest(cwd: string): Manifest {
+export function readManifest(cwd: string): Manifest {
   const raw = readIfExists(resolve(cwd, MANIFEST_PATH))
   if (raw === null) return { version: 1, files: {} }
   try {
@@ -1818,26 +1160,6 @@ function readManifest(cwd: string): Manifest {
   } catch {
     return { version: 1, files: {} }
   }
-}
-
-/** The pre-rename oxfmt scaffold dest, superseded by `.oxfmtrc.json` (oxfmt's auto-discovered name). */
-const LEGACY_OXFMT_DEST = 'oxfmt.json'
-
-/**
- * One-time cleanup for consumers who ran `init`/`sync` before the `.oxfmtrc.json` rename: drops the
- * stale `oxfmt.json` manifest entry so it stops being reconciled/recreated forever, and deletes the
- * on-disk file when it still byte-matches the shipped default (untouched since the last sync). A
- * locally-edited copy is left in place — the manifest entry alone determines "was basalt tracking
- * this", so a fresh consumer (no legacy entry) is a no-op.
- */
-function migrateLegacyOxfmt(cwd: string, pkgRoot: string, manifest: Manifest): void {
-  if (!(LEGACY_OXFMT_DEST in manifest.files)) return
-  delete manifest.files[LEGACY_OXFMT_DEST]
-  const legacyAbs = resolve(cwd, LEGACY_OXFMT_DEST)
-  const onDisk = readIfExists(legacyAbs)
-  if (onDisk === null) return
-  const shipped = readSource(pkgRoot, 'configs/oxfmt.json')
-  if (shipped !== null && onDisk === shipped) unlinkSync(legacyAbs)
 }
 
 /**
@@ -1869,14 +1191,14 @@ export function retiredManagedDests(
 }
 
 /** Outcome of one prune pass — `removed` was deleted, `drifted` was locally edited and left alone. */
-type PruneResult = { removed: string[]; drifted: string[] }
+export type PruneResult = { removed: string[]; drifted: string[] }
 
 /**
  * Report a prune pass. Always names the files: a doctrine file DISAPPEARING from a consumer's
  * `.claude/` is exactly the class of change the sync diff exists to be reviewed, and `9 removed`
  * with no names is what made the kept-files line a false green before 1.23.0.
  */
-function reportPrune(pruned: PruneResult): void {
+export function reportPrune(pruned: PruneResult): void {
   if (pruned.removed.length > 0) {
     console.log(
       `\nRetired by this basalt-ui version (deleted — they no longer ship):\n` +
@@ -1905,7 +1227,7 @@ function reportPrune(pruned: PruneResult): void {
  * entry dropped; a locally-edited one is LEFT in place, reported, and keeps its entry so
  * `sync --check` stays red and `--force` can still finish the job. `dryRun` is `--check`.
  */
-function pruneRetiredManagedFiles(
+export function pruneRetiredManagedFiles(
   cwd: string,
   manifest: Manifest,
   files: readonly ManagedFile[],
@@ -1948,40 +1270,13 @@ function removeEmptyParentDir(fileAbs: string): void {
 }
 
 /** The frozen `> Managed by basalt-ui (1.9.0).` opener every pre-fix DESIGN.md seed carries. */
-const DESIGN_VERSION_LINE = /^(> Managed by basalt-ui) \(\d+\.\d+\.\d+\)\./m
-
-/**
- * Strip the frozen version out of an already-seeded `DESIGN.md` opener.
- *
- * `DESIGN.md` is a `seed`: written once, then consumer-owned and never reconciled. It opened with
- * `> Managed by basalt-ui ({{BASALT_VERSION}})`, which is accurate for exactly as long as it takes
- * to run one upgrade — measured across the seven consumers the same line read 1.0.0, 1.9.0, 1.21.0
- * and 1.22.0 under an identical 1.22.0 install, and three rounds of reports treated that as four
- * separate doc bugs. It was one: a version number in a file nothing ever rewrites.
- *
- * Dropping it from the template fixes new scaffolds only — every existing consumer would carry its
- * stale number forever, since sync does not touch a seed. So sync deletes the parenthetical in
- * place, and only that: not a re-seed, not a three-way merge. Everything else in the file is left
- * exactly as the consumer wrote it, and a DESIGN.md whose opener was already rewritten by hand
- * does not match at all.
- */
-function migrateDesignVersionLine(cwd: string): void {
-  const dest = resolve(cwd, 'DESIGN.md')
-  const onDisk = readIfExists(dest)
-  if (onDisk === null || !DESIGN_VERSION_LINE.test(onDisk)) return
-  writeFileEnsuringDir(
-    dest,
-    onDisk.replace(DESIGN_VERSION_LINE, '$1 — run `basalt-ui doctor` for the version.'),
-  )
-}
-
-function writeFileEnsuringDir(abs: string, content: string): void {
+export function writeFileEnsuringDir(abs: string, content: string): void {
   mkdirSync(dirname(abs), { recursive: true })
   writeFileSync(abs, content)
 }
 
 /** Resolve the package root at runtime (two levels up from dist/cli/index.js). */
-function packageRoot(): string {
+export function packageRoot(): string {
   return fileURLToPath(new URL('../../', import.meta.url))
 }
 
@@ -1990,7 +1285,7 @@ function packageRoot(): string {
  * marker-spliced file the "current" unit is the existing region (markers included); otherwise it
  * is the whole file.
  */
-type UnitState = {
+export type UnitState = {
   /** The managed unit's current bytes on disk (block region / whole file). */
   current: string | null
   /** The managed unit's desired bytes from the shipped source. null = source not shipped yet. */
@@ -2006,7 +1301,7 @@ function extractBlockRegion(host: string | null): string | null {
 }
 
 /** Read the current vs desired managed-unit bytes for a file. */
-function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitState {
+export function unitState(file: ManagedFile, cwd: string, ctx: RenderContext): UnitState {
   const desired = file.render(ctx)
   const destAbs = resolve(cwd, file.dest)
   const onDisk = readIfExists(destAbs)
@@ -2039,7 +1334,7 @@ type Classification = 'unchanged' | 'drifted' | 'missing' | 'current'
  * Deliberately whitespace-only — word content is untouched, so a genuine hand-edit inside the block
  * still changes the normalized text and still classifies `drifted`.
  */
-function normalizeForLedger(text: string): string {
+export function normalizeForLedger(text: string): string {
   return text
     .replace(/(<!-- basalt:begin)\s+\S+(\s*-->)/, '$1$2')
     .split('\n')
@@ -2062,7 +1357,7 @@ function normalizeForLedger(text: string): string {
  * recording the normalized hash lets `classify()` normalize `state.current` the same way and
  * compare directly against it, no separate historical-hash storage required.
  */
-function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
+export function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
   const destAbs = resolve(cwd, file.dest)
   if (file.markers) {
     const host = readIfExists(destAbs) ?? ''
@@ -2103,7 +1398,7 @@ function writeUnit(file: ManagedFile, cwd: string, desired: string): string {
  * - drifted  : on disk matches NONE of the above (a real, word-level local edit) → skip unless
  *              --force.
  */
-function classify(state: UnitState, manifestHash: string | undefined): Classification {
+export function classify(state: UnitState, manifestHash: string | undefined): Classification {
   if (state.current === null) return 'missing'
   if (state.desired !== null && state.current === state.desired) return 'current'
   const currentHash = sha256(state.current)
@@ -2118,7 +1413,7 @@ function classify(state: UnitState, manifestHash: string | undefined): Classific
   return 'drifted'
 }
 
-function diffSummary(file: ManagedFile, state: UnitState): string {
+export function diffSummary(file: ManagedFile, state: UnitState): string {
   const cur = state.current ?? ''
   const des = state.desired ?? ''
   const curLines = cur.split('\n').length
@@ -2127,7 +1422,7 @@ function diffSummary(file: ManagedFile, state: UnitState): string {
 }
 
 /** Build the render context for a run from the package root + consumer cwd/config. */
-function renderContext(cwd: string): RenderContext {
+export function renderContext(cwd: string): RenderContext {
   const pkgRoot = packageRoot()
   return { pkgRoot, vars: buildTemplateVars(pkgRoot, cwd, readBasaltConfig(cwd)) }
 }
@@ -2142,7 +1437,10 @@ function renderContext(cwd: string): RenderContext {
  * happened. Deliberately a JSON round-trip rather than a textual splice: key ORDER is preserved by
  * `JSON.parse`/`stringify`, and anything fancier would be a formatter this CLI has no business being.
  */
-function patchPackageJson(cwd: string, mutate: (pkg: Record<string, unknown>) => boolean): boolean {
+export function patchPackageJson(
+  cwd: string,
+  mutate: (pkg: Record<string, unknown>) => boolean,
+): boolean {
   const abs = resolve(cwd, 'package.json')
   const raw = readIfExists(abs)
   if (raw === null) return false
@@ -2182,7 +1480,7 @@ function detectRoots(cwd: string): string[] {
 }
 
 /** What `reconcileRoots` found — the one roots decision `init` and `sync` both report from. */
-type RootsState =
+export type RootsState =
   /** The key was absent and has just been written. */
   | { readonly kind: 'wrote'; readonly roots: string[] }
   /** The key is absent and nothing plausible could be inferred. */
@@ -2211,7 +1509,7 @@ function rootCovers(root: string, detected: string): boolean {
  * consumer decides. Silently widening someone's deliberate scope would turn an upgrade into an
  * unplanned lint debt.
  */
-function reconcileRoots(cwd: string, opts: { write: boolean }): RootsState {
+export function reconcileRoots(cwd: string, opts: { write: boolean }): RootsState {
   const declared = readBasaltConfig(cwd).roots
   const detected = detectRoots(cwd)
   if (declared !== undefined) {
@@ -2230,7 +1528,7 @@ function reconcileRoots(cwd: string, opts: { write: boolean }): RootsState {
 }
 
 /** The lines `init`/`sync` print for a roots reconciliation. Empty when there is nothing to say. */
-function rootsNotices(state: RootsState): { log: string[]; error: string[] } {
+export function rootsNotices(state: RootsState): { log: string[]; error: string[] } {
   if (state.kind === 'wrote') {
     return {
       log: [
@@ -2283,42 +1581,31 @@ function rootsNotices(state: RootsState): { log: string[]; error: string[] } {
 function stripJsonc(text: string): string {
   let out = ''
   let inString = false
-  let escaped = false
-  let i = 0
-  while (i < text.length) {
+  for (let i = 0; i < text.length; i++) {
     const ch = text[i] as string
     if (inString) {
       out += ch
-      if (escaped) escaped = false
-      else if (ch === '\\') escaped = true
+      if (ch === '\\') out += text[++i] ?? ''
       else if (ch === '"') inString = false
-      i += 1
       continue
     }
-    if (ch === '"') {
-      inString = true
-      out += ch
-      i += 1
+    if (ch === '"') inString = true
+    else if (ch === '/' && text[i + 1] === '/') {
+      while (i < text.length && text[i] !== '\n') i++
       continue
-    }
-    if (ch === '/' && text[i + 1] === '/') {
-      while (i < text.length && text[i] !== '\n') i += 1
-      continue
-    }
-    if (ch === '/' && text[i + 1] === '*') {
+    } else if (ch === '/' && text[i + 1] === '*') {
       i += 2
-      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i += 1
-      i += 2
+      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i++
+      i++
       continue
     }
     out += ch
-    i += 1
   }
   return out.replace(/,(\s*[}\]])/g, '$1')
 }
 
 /** Parse a JSONC document, or null when it does not parse at all. */
-function parseJsonc(text: string): Record<string, unknown> | null {
+export function parseJsonc(text: string): Record<string, unknown> | null {
   try {
     return JSON.parse(stripJsonc(text)) as Record<string, unknown>
   } catch {
@@ -2327,7 +1614,7 @@ function parseJsonc(text: string): Record<string, unknown> | null {
 }
 
 /** Outcome of splicing the shipped preset into an `.oxlintrc.json` the consumer already had. */
-type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
+export type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comments'
 
 /**
  * The `extends` entry pointing at the shipped oxlint preset, or null when none does.
@@ -2338,7 +1625,7 @@ type MergeLintResult = 'added' | 'already' | 'absent' | 'unreadable' | 'has-comm
  * to start with `NotFound` while a check built to prove the framework is ON reports green. The
  * caller resolves this against the config's own directory — see `extendsSeam`.
  */
-function basaltPresetEntry(entries: unknown): string | null {
+export function basaltPresetEntry(entries: unknown): string | null {
   if (!Array.isArray(entries)) return null
   const match = entries.find(
     (entry): entry is string =>
@@ -2347,17 +1634,14 @@ function basaltPresetEntry(entries: unknown): string | null {
   return match ?? null
 }
 
-// ── The two `extends` seams init writes once and nothing ever revisits ───────────────────────────
+// ── The lefthook gate — checked via `lefthook dump`, not hand-rolled YAML parsing ────────────────
 //
-// `.oxlintrc.json` and `lefthook.yml` are consumer-owned after the first write: `sync` never
-// touches either. So 1.20.0's path-resolution fix reached NEW scaffolds only — every existing
-// monorepo consumer kept a root-relative `extends` that resolves to nothing. oxlint at least
-// hard-errors (`NotFound`). lefthook does not: a missing extends target merges to ZERO commands and
-// exits 0, so `lefthook dump` is clean and the repo silently has no pre-commit gate at all.
-//
-// Both seams therefore need a checker that resolves the path rather than pattern-matching the
-// string, and both `doctor` (the gate) and `sync` (the command an upgrade actually runs) report
-// through it.
+// `lefthook dump` resolves `extends`/`include`/remote configs/`root:` the same way lefthook itself
+// does, so this reads the MERGED config lefthook actually runs rather than pattern-matching the
+// YAML text for an `extends:` entry (which cannot tell a resolvable seam from a broken one, and
+// cannot see a gate spelled out directly instead of via `extends` at all). Best-effort: lefthook is
+// a consumer tool basalt neither installs nor requires, so an absent binary or a dump that fails
+// downgrades the verdict to a warning that says so, rather than inventing a pass or a fail.
 
 const LEFTHOOK_CONFIG_NAMES = ['lefthook.yml', 'lefthook.yaml', '.lefthook.yml', '.lefthook.yaml']
 
@@ -2366,138 +1650,54 @@ function findLefthookConfig(dir: string): string | null {
   return LEFTHOOK_CONFIG_NAMES.find((name) => existsSync(resolve(dir, name))) ?? null
 }
 
-/**
- * The `extends:` entries of a lefthook YAML — the block-sequence form init seeds and the inline
- * array form a consumer may write instead.
- *
- * A three-line reader rather than a YAML dependency: this parses ONE top-level key whose value is a
- * list of plain scalars, and a wrong answer costs a diagnostic, never a write.
- */
-function yamlUnquote(raw: string): string {
-  return raw.trim().replace(/^['"]|['"]$/g, '')
-}
-
-function yamlExtendsEntries(text: string): string[] {
-  const lines = text.split('\n')
+/** Every command's `run:` string across every hook in a `lefthook dump --format json` payload. */
+function lefthookDumpRunLines(dump: Record<string, unknown>): string[] {
   const out: string[] = []
-  for (const [index, line] of lines.entries()) {
-    const inline = /^extends:\s*\[(.*)\]\s*$/.exec(line ?? '')
-    if (inline !== null) {
-      out.push(...(inline[1] ?? '').split(',').map(yamlUnquote).filter(Boolean))
-      continue
-    }
-    if (!/^extends:\s*(#.*)?$/.test(line ?? '')) continue
-    for (const next of lines.slice(index + 1)) {
-      if (/^\s*(#.*)?$/.test(next ?? '')) continue
-      const item = /^\s*-\s*(.+?)\s*$/.exec(next ?? '')
-      if (item === null) break
-      out.push(yamlUnquote(item[1] ?? ''))
+  for (const hook of Object.values(dump)) {
+    if (typeof hook !== 'object' || hook === null || !('commands' in hook)) continue
+    const commands = (hook as { commands?: unknown }).commands
+    if (typeof commands !== 'object' || commands === null) continue
+    for (const command of Object.values(commands as Record<string, unknown>)) {
+      const run = (command as { run?: unknown } | undefined)?.run
+      if (typeof run === 'string') out.push(run)
     }
   }
   return out
 }
 
-/** The state of one shipped-preset `extends` seam in a consumer-owned config. */
-type ExtendsSeam =
+export type LefthookGate =
   /** No such config file — nothing is wired, and that is a legitimate consumer choice. */
   | { readonly kind: 'no-file' }
-  /** The file exists but names no basalt preset. */
-  | { readonly kind: 'unwired'; readonly file: string }
-  /** It names one, and the path resolves to nothing — the silent-gate case. */
-  | { readonly kind: 'broken'; readonly file: string; readonly entry: string }
-  | { readonly kind: 'ok'; readonly file: string; readonly entry: string }
+  /** A command runs the guard — the gate exists. */
+  | { readonly kind: 'wired'; readonly file: string }
+  /** `lefthook dump` merged everything and no command runs the guard — provably no gate. */
+  | { readonly kind: 'absent'; readonly file: string }
+  /** A config exists but `lefthook dump --format json` could not be run or parsed. */
+  | { readonly kind: 'unreadable'; readonly file: string }
 
-/**
- * Resolve a lefthook config's basalt `extends` entry against the directory the config lives in —
- * which is how lefthook itself resolves it.
- */
-function inspectLefthookSeam(repoRoot: string): ExtendsSeam {
+export function inspectLefthookGate(repoRoot: string): LefthookGate {
   const file = findLefthookConfig(repoRoot)
   if (file === null) return { kind: 'no-file' }
-  const raw = readIfExists(resolve(repoRoot, file))
-  if (raw === null) return { kind: 'no-file' }
-  const entry = yamlExtendsEntries(raw).find((e) => e.endsWith('basalt-ui/configs/lefthook.yml'))
-  if (entry === undefined) return { kind: 'unwired', file }
-  return existsSync(resolve(repoRoot, entry))
-    ? { kind: 'ok', file, entry }
-    : { kind: 'broken', file, entry }
-}
-
-/** A `run:` value that invokes the theme guard — the one command that IS the pre-commit gate. */
-const LEFTHOOK_GUARD_RUN = /^\s*run:\s*.*\bcheck-theme\b/m
-
-/**
- * The merged lefthook config as `lefthook dump` renders it, or null when it cannot be obtained.
- *
- * Authoritative where the YAML text is not: `dump` resolves `extends`, `include`, remote configs
- * and per-command `root:`, so it answers "does a gate exist" for a repo that wired the jobs its own
- * way. Best-effort by design — lefthook is a consumer tool basalt neither installs nor requires, so
- * an absent binary downgrades the verdict to advisory rather than inventing one.
- */
-function lefthookDump(repoRoot: string): string | null {
   const localBin = resolve(repoRoot, 'node_modules/.bin/lefthook')
   const bin = existsSync(localBin) ? localBin : 'lefthook'
+  let dump: Record<string, unknown> | null = null
   try {
-    const result = spawnSync(bin, ['dump'], {
+    const result = spawnSync(bin, ['dump', '--format', 'json'], {
       cwd: repoRoot,
       encoding: 'utf8',
       timeout: 10_000,
       stdio: ['ignore', 'pipe', 'ignore'],
     })
-    if (result.error !== undefined || result.status !== 0) return null
-    return result.stdout
+    dump =
+      result.error === undefined && result.status === 0
+        ? (JSON.parse(result.stdout) as Record<string, unknown>)
+        : null
   } catch {
-    return null
+    dump = null
   }
-}
-
-/**
- * Whether the repo's pre-commit hook genuinely runs basalt's gates — not whether it `extends` the
- * shipped preset.
- *
- * The 1.21.0 check tested for the extends STRING, and a consumer whose root config spells the same
- * three jobs out with a per-command `root:` (because `extends` merges commands WITHOUT their
- * working directory, which would run `bunx oxlint` where there is no `.oxlintrc.json`) was warned
- * at, and told to make a change that would have broken it. A check that is confidently wrong is
- * worse than one that admits its limit, so this one asks the question three ways and says which
- * answer it got:
- *
- * - `lefthook dump` — authoritative, resolves extends/include/remote/`root:` the same way lefthook
- *   itself does.
- * - the config text — enough to see a gate spelled out in the root file, which is the shape that
- *   produced the false positive.
- * - neither — `advisory`, reported as a warning that names what it could not see.
- */
-type LefthookGate =
-  | { readonly kind: 'no-file' }
-  | { readonly kind: 'extends-ok'; readonly file: string; readonly entry: string }
-  | { readonly kind: 'extends-broken'; readonly file: string; readonly entry: string }
-  /** A command runs the guard directly. `proof` names what established it. */
-  | { readonly kind: 'wired'; readonly file: string; readonly proof: 'dump' | 'config' }
-  /** `lefthook dump` merged everything and no command runs the guard — provably no gate. */
-  | { readonly kind: 'absent'; readonly file: string }
-  /** No dump, no extends, no guard command in the text — unknown, not absent. */
-  | { readonly kind: 'advisory'; readonly file: string }
-
-function inspectLefthookGate(repoRoot: string): LefthookGate {
-  const seam = inspectLefthookSeam(repoRoot)
-  if (seam.kind === 'no-file') return { kind: 'no-file' }
-  // A resolvable extends is the wiring basalt seeds; report it as itself rather than as a generic
-  // "a command exists", since the remedy for a BROKEN one is specific and worth keeping.
-  if (seam.kind === 'ok') return { kind: 'extends-ok', file: seam.file, entry: seam.entry }
-  if (seam.kind === 'broken') {
-    return { kind: 'extends-broken', file: seam.file, entry: seam.entry }
-  }
-
-  const dump = lefthookDump(repoRoot)
-  if (dump !== null) {
-    return LEFTHOOK_GUARD_RUN.test(dump)
-      ? { kind: 'wired', file: seam.file, proof: 'dump' }
-      : { kind: 'absent', file: seam.file }
-  }
-  const raw = readIfExists(resolve(repoRoot, seam.file)) ?? ''
-  if (LEFTHOOK_GUARD_RUN.test(raw)) return { kind: 'wired', file: seam.file, proof: 'config' }
-  return { kind: 'advisory', file: seam.file }
+  if (dump === null) return { kind: 'unreadable', file }
+  const wired = lefthookDumpRunLines(dump).some((run) => /\bcheck-theme\b/.test(run))
+  return wired ? { kind: 'wired', file } : { kind: 'absent', file }
 }
 
 /**
@@ -2506,7 +1706,7 @@ function inspectLefthookGate(repoRoot: string): LefthookGate {
  * lint-debt notice `init` prints), and that is a decision, not a scaffold step. Prepends the preset
  * so the consumer's own `extends` entries still win.
  */
-function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
+export function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
   const abs = resolve(cwd, '.oxlintrc.json')
   const raw = readIfExists(abs)
   if (raw === null) return 'absent'
@@ -2530,971 +1730,22 @@ function mergeOxlintExtends(cwd: string, presetPath: string): MergeLintResult {
   return 'added'
 }
 
-/**
- * What a consumer LOSES by `init` keeping a file it already had — the half the aggregate
- * `20 written, 2 kept` never said. A kept `.oxlintrc.json` is the headline case: the framework's
- * whole lint half stays off, and every gate downstream reports green over it.
- */
-const KEPT_FILE_COST: Record<string, string> = {
-  '.oxlintrc.json':
-    'the shipped oxlint preset (the basalt/* design rules AND the jsx-a11y / import / promise / ' +
-    'unicorn plugins) is NOT active — nothing else turns it on, and every gate stays green ' +
-    'without it. Re-run with `--merge-lint` to splice the extends in, or add it by hand.',
-  'lefthook.yml':
-    'the pre-commit oxlint / oxfmt / check-theme jobs are not wired — add `extends: ' +
-    '[<preset>]` to your own file.',
-  '.github/workflows/check.yml':
-    'CI does not run check-theme or the sync drift gate — copy those steps into your own workflow.',
-  '.oxfmtrc.json': 'your existing formatter config stands; basalt formats nothing on its own.',
-  'DESIGN.md': 'the design brief Claude reads is yours, not the seeded one.',
-}
-
-/** Scaffold all managed files into the consumer repo, then write the manifest. Idempotent. Returns 0. */
-export function init(cwd: string = process.cwd(), scaffoldFlags: ScaffoldFlags = {}): number {
-  // ── Describe the repo BEFORE rendering anything ───────────────────────────
-  // Every roots-derived seed (the CI oxfmt globs, DESIGN.md's series path, the default scan
-  // exemption) renders from `basalt.roots`, so the key has to exist first. Writing it is what
-  // stops a workspace repo scaffolding a guard that scans zero files while doctor reports green.
-  const install = findBasaltInstall(cwd)
-  if (install.dir === null) {
-    console.error(
-      `⚠ basalt-ui init: basalt-ui does not resolve from ${cwd} or any directory above it — the ` +
-        'seeded `extends` paths and CI steps are being written against the repo root by assumption. ' +
-        'Install basalt-ui here (or at the repo root) and re-run `basalt-ui init` so they resolve.',
-    )
-  }
-
-  const rootsState = reconcileRoots(cwd, { write: true })
-
-  // Built AFTER the roots patch — every roots-derived template variable reads the key just written.
-  const ctx = renderContext(cwd)
-
-  // `basalt-tokens.md` tells the consumer to wire `oxlint . && basalt-ui check-theme` into their
-  // lint, and init's own closing message says to run check-theme next — but nothing ever added a
-  // script, so the guard stayed manual for exactly as long as someone remembered it.
-  const lintScript = `oxlint . && ${ctx.vars.BASALT_BIN} check-theme`
-  const seededLintScript = patchPackageJson(cwd, (pkg) => {
-    const scripts = (pkg['scripts'] ?? {}) as Record<string, unknown>
-    if (scripts['lint:basalt'] !== undefined) return false
-    pkg['scripts'] = { ...scripts, 'lint:basalt': lintScript }
-    return true
-  })
-
-  const manifest = readManifest(cwd)
-  migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
-  const peers = resolvePeerFlags(cwd, scaffoldFlags)
-  const placement = resolvePlacement(cwd)
-  const files = managedFiles(peers, placement)
-
-  const writtenFiles: string[] = []
-  const keptFiles: string[] = []
-  const missingSources: string[] = []
-
-  for (const file of files) {
-    const state = unitState(file, cwd, ctx)
-    if (state.desired === null) {
-      missingSources.push(file.source)
-      continue
-    }
-
-    // Whole files (managed + seed) are skip-if-exists on init; a marker-spliced region always
-    // inserts/updates itself inside its host file.
-    const destExists = existsSync(resolve(cwd, file.dest))
-    if (!file.markers && destExists) {
-      // Already present — keep the consumer's copy untouched. Record the SHIPPED hash (normalized,
-      // same ledger form `writeUnit` uses) so a later sync treats a pre-existing-but-different file
-      // as locally drifted (skip unless --force), never silently clobbering a file the consumer
-      // authored before init.
-      manifest.files[file.dest] = sha256(normalizeForLedger(state.desired))
-      keptFiles.push(file.dest)
-      continue
-    }
-
-    const hash = writeUnit(file, cwd, state.desired)
-    manifest.files[file.dest] = hash
-    writtenFiles.push(file.dest)
-  }
-
-  // A re-`init` over an existing install reconciles the derived namespaces too — otherwise the only
-  // route out of a retired rule file is `sync`, and `init` is what a consumer reaches for after an
-  // upgrade that changed the doctrine set.
-  const pruned = pruneRetiredManagedFiles(cwd, manifest, files)
-
-  const mergeLint: MergeLintResult | null =
-    scaffoldFlags.mergeLint === true ? mergeOxlintExtends(cwd, ctx.vars.OXLINT_PRESET_PATH) : null
-
-  manifest.basaltVersion = ctx.vars.BASALT_VERSION
-  manifest.spacingScale = { ...deriveSpacing(0).scale }
-  writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
-
-  console.log(
-    `basalt-ui init: ${writtenFiles.length} written, ${keptFiles.length} kept, manifest at ${MANIFEST_PATH}`,
-  )
-  reportPrune(pruned)
-  if (missingSources.length > 0) {
-    console.log(
-      `basalt-ui init: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
-    )
-  }
-  // Naming the kept files is the fix for the report's headline false-green: `20 written, 2 kept`
-  // named neither the file nor the consequence, so a repo that already had an `.oxlintrc.json`
-  // ended up with the framework's lint half off and every gate downstream reporting green.
-  if (keptFiles.length > 0) {
-    console.log(`\nKept (already present — basalt did not touch them):`)
-    for (const dest of keptFiles) {
-      const cost = KEPT_FILE_COST[dest]
-      console.log(cost === undefined ? `  · ${dest}` : `  · ${dest} — ${cost}`)
-    }
-  }
-  if (mergeLint !== null) {
-    const mergeMessage: Record<MergeLintResult, string> = {
-      added: `spliced "${ctx.vars.OXLINT_PRESET_PATH}" into the existing .oxlintrc.json extends`,
-      already: '.oxlintrc.json already extends the shipped preset — nothing to do',
-      absent:
-        'no existing .oxlintrc.json to merge into (the seeded one already extends the preset)',
-      unreadable: '.oxlintrc.json is not valid JSON — merge the extends entry by hand',
-      'has-comments':
-        '.oxlintrc.json carries comments; rewriting it would delete them (usually the reason each ' +
-        `rule is off). Add "extends": ["${ctx.vars.OXLINT_PRESET_PATH}"] as the first entry by hand.`,
-    }
-    console.log(`basalt-ui init: --merge-lint — ${mergeMessage[mergeLint]}`)
-  }
-  const rootsMessages = rootsNotices(rootsState)
-  for (const line of rootsMessages.log) console.log(`basalt-ui init: ${line}`)
-  for (const line of rootsMessages.error) console.error(`⚠ basalt-ui init: ${line}`)
-  if (seededLintScript) {
-    console.log(`basalt-ui init: added the "lint:basalt" script (${lintScript}) to package.json.`)
-  }
-  // lefthook.yml / .github/workflows/check.yml are repo-root-shaped — neither lefthook nor GitHub
-  // Actions reads config from anywhere but the repo root, so a package living in a subdirectory
-  // skips both rather than relocating them into a spot nothing reads.
-  if (!placement.isPackageRepoRoot) {
-    console.log(
-      `basalt-ui init: skipped lefthook.yml (this package is not the repo root — repo root ` +
-        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
-        `${ctx.vars.LEFTHOOK_PRESET_PATH} from your root lefthook.yml instead, and give its ` +
-        `check-theme command \`env: { BASALT_CWD: ${relativePosix(placement.repoRoot, cwd)} }\` ` +
-        'so the guard runs where your basalt config actually lives.',
-    )
-    console.log(
-      `basalt-ui init: skipped .github/workflows/check.yml (this package is not the repo root — ` +
-        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
-        `repo root; copy the steps from ${shippedAssetPath(install, placement.repoRoot, 'configs/check.yml')} ` +
-        'into your root CI workflow instead.',
-    )
-  }
-  if (placement.relocatedQueryClient !== null) {
-    console.log(
-      `basalt-ui init: skipped src/query-client.ts (found an existing query client at ` +
-        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
-        're-seeding at the original path.',
-    )
-  }
-  // query-client.ts / __root.tsx reference the optional TanStack peers directly — seeding them
-  // without the peer installed would ship an unresolved import. Hint how to opt in instead.
-  if (!peers.hasQuery) {
-    console.log(
-      'basalt-ui init: skipped src/query-client.ts (no @tanstack/react-query dependency detected) — ' +
-        'install it, or re-run with --with-query, to scaffold it.',
-    )
-  }
-  if (!peers.hasRouter || !peers.hasQuery) {
-    console.log(
-      'basalt-ui init: skipped src/routes/__root.tsx (needs both @tanstack/react-router and ' +
-        '@tanstack/react-query) — install both, or re-run with --with-router --with-query, to scaffold it.',
-    )
-  }
-  // The guard-hook PreToolUse registration is NOT written automatically — add it manually to
-  // .claude/settings.json so every Write/Edit/MultiEdit goes through the theme guard.
-  console.log(
-    `\nTheme guard hook: add to .claude/settings.json → hooks.PreToolUse to catch violations before they land:\n` +
-      `  "hooks": {\n` +
-      `    "PreToolUse": [\n` +
-      `      {\n` +
-      `        "matcher": "Write|Edit|MultiEdit",\n` +
-      `        "hooks": [{ "type": "command", "command": "${ctx.vars.BASALT_BIN} guard-hook" }]\n` +
-      `      }\n` +
-      `    ]\n` +
-      `  }`,
-  )
-  // `init` on an existing app is a LINT-DEBT EVENT, not a no-op — the shipped preset turns on whole
-  // oxlint plugins the repo was never linted against, so previously-clean code lands with real
-  // findings on the first run. Naming the plugins (derived from the preset, so the count can't
-  // drift) is what turns that from a nasty surprise into a scheduled triage.
-  const presetPlugins = readOxlintPresetPlugins(ctx.pkgRoot)
-  if (presetPlugins.length > 0) {
-    console.log(
-      `\nLint debt: adopting the shipped oxlint preset on an EXISTING app is not a no-op — it turns ` +
-        `on ${presetPlugins.length} plugins (${presetPlugins.join(', ')}) plus the basalt/* design ` +
-        'rules, on code never linted against them. Run `oxlint .` now and triage the count before ' +
-        'your next commit; turn a rule off in your own .oxlintrc.json with a written reason rather ' +
-        'than blanket-disabling a plugin.',
-    )
-  }
-  console.log(
-    'Activate the hooks: `lefthook install` — the seeded lefthook.yml is inert until the git hooks ' +
-      'are written, and looks configured either way.',
-  )
-  // First adoption on a previously guard-clean repo can surface a wall of findings (the 1.0 guard
-  // adds several rule kinds beyond a legacy local guard) — steer toward tuning config, not mass-allow.
-  console.log(
-    `\nFirst run: run \`${ctx.vars.BASALT_BIN} check-theme\` next (or \`bun run lint:basalt\`), then ` +
-      'tune the per-rule `basalt.*` config keys in package.json for anything that fires — do not ' +
-      'mass-`theme-allow` findings. Then `basalt-ui doctor` to confirm the wiring actually took.',
-  )
-  return 0
-}
-
-/** The oxlint plugins the shipped preset switches on — read from the preset, never restated. */
-function readOxlintPresetPlugins(pkgRoot: string): string[] {
-  const raw = readSource(pkgRoot, 'configs/oxlint.json')
-  if (raw === null) return []
-  try {
-    const plugins = (JSON.parse(raw) as { plugins?: unknown }).plugins
-    return isStringArray(plugins) ? plugins : []
-  } catch {
-    return []
-  }
-}
-
-type SyncOptions = {
-  force?: boolean
-  check?: boolean
-  /** The raw flag list, read for `--tokens-only` / `--framework` exactly as check-theme reads it. */
-  flags?: readonly string[]
-}
-
-/**
- * The nearest ANCESTOR of `dir` (exclusive) carrying a basalt manifest, or null.
- *
- * `resolveProjectDir` relocates DOWNWARD — a root-invoked hook finding the one workspace package
- * that holds the config. The opposite direction is the shape that produced this function: a
- * consumer standing in `apps/dashboard`, the package that actually depends on basalt-ui, whose
- * install lives at the repo root above it. Nothing walks up, so `sync` read "no manifest here" as
- * "nothing scaffolded yet" and wrote a complete second consumer beside the real one.
- */
-/**
- * The sentence `sync` prints when the cwd carries no install but an ancestor does.
- *
- * Shared with `doctor` deliberately. The two commands already share `resolveProjectDir`, but not
- * the ADVICE: `sync` named the parent install (1.22.0's "stop scaffolding a second consumer" fix)
- * while `doctor`, in the same directory, kept prescribing `basalt-ui init` — so following doctor
- * literally performed the exact mistake that fix exists to prevent. One function, one sentence.
- */
-function parentInstallAdvice(cwd: string, parent: string, verb: string): string {
-  return (
-    `This repo's install is at ${relativePosix(cwd, parent)} (${parent}) — run ${verb} there, ` +
-    'or set BASALT_CWD to it.'
-  )
-}
-
-function findManifestAbove(dir: string): string | null {
-  let current = resolve(dir, '..')
-  for (;;) {
-    if (existsSync(resolve(current, MANIFEST_PATH))) return current
-    const parent = resolve(current, '..')
-    if (parent === current) return null
-    current = parent
-  }
-}
-
-/**
- * Reconcile managed files with the shipped versions via a sha256 three-way compare.
- *
- * - `--check` makes NO writes; exits non-zero if any managed file is out-of-date or locally drifted
- *   (a CI freshness gate), exit 0 when all current.
- * - `--force` overwrites locally-drifted files instead of skipping them.
- *
- * Runs against `resolveProjectDir(cwd)`, exactly as `check-theme` and `doctor` do — and then
- * REFUSES rather than scaffolding when the resolved project has no manifest. See
- * {@link findManifestAbove} for the failure that bought this: `sync` is the drift refresh and
- * `init` is the scaffold, so placing twenty files on a cwd that was never a consumer is a decision
- * `sync` does not get to make silently.
- */
-export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd()): number {
-  const syncFlags = opts.flags ?? []
-  if (conflictingProfileFlags(syncFlags)) {
-    console.error('basalt-ui sync: --tokens-only and --framework are alternatives — pass one.')
-    return 1
-  }
-  const project = resolveProjectDir(invocationCwd)
-  if (project.ambiguous !== null) {
-    console.error(
-      `✖ basalt-ui sync: no basalt config at ${invocationCwd}, and ${project.ambiguous.length} ` +
-        `packages below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
-        'run it from one of them, or set BASALT_CWD to pick.',
-    )
-    return 1
-  }
-  const cwd = project.dir
-  if (project.relocatedFrom !== null) {
-    console.log(
-      `basalt-ui sync: no basalt config at ${project.relocatedFrom} — running in ` +
-        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.`,
-    )
-  }
-
-  // Profile before the refusal, because in a tokens-only consumer the refusal's own advice is
-  // wrong: it names `basalt-ui init`, and `doctor` in the same directory at the same version says
-  // in so many words that init is NOT the fix there — it places a Mantine doctrine the consumer
-  // has no use for. Mirrors doctor's manifest row verbatim, and exits 0 so `sync --check` is
-  // wirable into a tokens-only repo's CI (the one drift gate every other consumer runs).
-  //
-  // DECLARED, never inferred — the same asymmetry check-theme applies, for the same reason: the
-  // answer SILENCES the whole reconciliation, and inferring it from a missing @mantine/core would
-  // turn a framework consumer that keeps Mantine in a sibling package into a silent no-op.
-  if (declaredProfile(readBasaltConfig(cwd), syncFlags) === 'tokens-only') {
-    console.log(
-      `basalt-ui sync: ${MANIFEST_PATH}: n/a — a tokens-only consumer has no scaffold to ` +
-        'reconcile. The token layer is refreshed by re-running `basalt-ui tokens:css`, and ' +
-        '`tokens:css --check` is its drift gate. Pass --framework to force the full profile.',
-    )
-    return 0
-  }
-
-  // The refusal runs BEFORE reconcileRoots, which WRITES `basalt.roots` into package.json — that
-  // key is half the damage: a second `basalt` block means check-theme scans a different tree
-  // depending on which directory it was invoked from.
-  if (!existsSync(resolve(cwd, MANIFEST_PATH))) {
-    const elsewhere = findManifestAbove(cwd)
-    const wouldWrite = managedFiles(resolvePeerFlags(cwd, {}), resolvePlacement(cwd)).length
-    console.error(
-      `✖ basalt-ui sync: no ${MANIFEST_PATH} at ${cwd} — refusing to scaffold. ` +
-        `\`sync\` refreshes an EXISTING basalt install; creating one is \`basalt-ui init\`'s ` +
-        `decision, and continuing here would write ${wouldWrite} managed file(s) into this ` +
-        'directory.' +
-        (elsewhere === null
-          ? ' No manifest exists at any ancestor either — run `basalt-ui init` here if this ' +
-            'package really is meant to be a consumer.'
-          : ` ${parentInstallAdvice(cwd, elsewhere, 'sync')}`),
-    )
-    return 1
-  }
-
-  // Before renderContext, which reads `basalt.roots` for the roots-derived template variables.
-  const rootsState = reconcileRoots(cwd, { write: opts.check !== true })
-  const ctx = renderContext(cwd)
-  const manifest = readManifest(cwd)
-  if (!opts.check) {
-    migrateLegacyOxfmt(cwd, ctx.pkgRoot, manifest)
-    migrateDesignVersionLine(cwd)
-  }
-  const peers = resolvePeerFlags(cwd, {})
-  const placement = resolvePlacement(cwd)
-  const files = managedFiles(peers, placement)
-
-  let updated = 0
-  // `created` and `recreated` were one counter, and `0 updated, 20 recreated` is what a full
-  // scaffold printed — a word that means "it was here, it went missing, I put it back" describing
-  // twenty files this directory never had. The ledger already knows which: an entry in
-  // `manifest.files` is basalt saying it placed the file once.
-  let created = 0
-  let recreated = 0
-  let skippedDrift = 0
-  let staleForCheck = 0
-  const driftLines: string[] = []
-  const missingSources: string[] = []
-
-  for (const file of files) {
-    const state = unitState(file, cwd, ctx)
-    if (state.desired === null) {
-      missingSources.push(file.source)
-      continue
-    }
-
-    const tracked = manifest.files[file.dest] !== undefined
-
-    // `seed` is written once, then owned by the consumer — never reconciled, never reported.
-    if (file.mode === 'seed') {
-      if (state.current === null && !opts.check) {
-        manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-        if (tracked) recreated++
-        else created++
-      }
-      continue
-    }
-
-    const kind = classify(state, manifest.files[file.dest])
-
-    if (kind === 'current') {
-      // On-disk bytes already equal `desired` exactly — record the ledger's normalized form
-      // (not the raw bytes) so this entry keeps behaving like every other `writeUnit`-recorded
-      // hash for a future classify() call.
-      manifest.files[file.dest] = sha256(normalizeForLedger(state.desired))
-      continue
-    }
-
-    if (kind === 'drifted' && !opts.force) {
-      driftLines.push(diffSummary(file, state))
-      staleForCheck++
-      skippedDrift++
-      continue
-    }
-
-    // missing | unchanged | (drifted && force) → write the shipped version.
-    staleForCheck++
-    if (opts.check) continue
-    manifest.files[file.dest] = writeUnit(file, cwd, state.desired)
-    if (kind !== 'missing') updated++
-    else if (tracked) recreated++
-    else created++
-  }
-
-  // Retired rules/skills: the derived namespaces (RULE_NAMES / SKILL_NAMES) are the only managed
-  // sets whose MEMBERSHIP moves between versions, so this is where an upstream deletion reaches a
-  // consumer. Counted into `staleForCheck` so `sync --check` is red until it is applied — a rule
-  // file basalt stopped shipping is drift, and the agent goes on reading it otherwise.
-  const pruned = pruneRetiredManagedFiles(cwd, manifest, files, {
-    dryRun: opts.check === true,
-    force: opts.force === true,
-  })
-  staleForCheck += pruned.removed.length + pruned.drifted.length
-
-  // Placement notices — informational, never affect the exit code (a skipped tooling seed or a
-  // relocated scaffold is a legitimate consumer choice, not a sync failure).
-  if (!placement.isPackageRepoRoot) {
-    console.log(
-      `basalt-ui sync: skipped lefthook.yml (this package is not the repo root — repo root ` +
-        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
-        'node_modules/basalt-ui/configs/lefthook.yml from your root lefthook.yml instead.',
-    )
-    console.log(
-      `basalt-ui sync: skipped .github/workflows/check.yml (this package is not the repo root — ` +
-        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
-        'repo root; extend node_modules/basalt-ui/configs/check.yml from your root CI workflow instead.',
-    )
-  }
-  if (placement.relocatedQueryClient !== null) {
-    console.log(
-      `basalt-ui sync: skipped src/query-client.ts (found an existing query client at ` +
-        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
-        're-seeding at the original path.',
-    )
-  }
-
-  const rootsMessages = rootsNotices(rootsState)
-  for (const line of rootsMessages.log) console.log(`basalt-ui sync: ${line}`)
-  for (const line of rootsMessages.error) console.error(`⚠ basalt-ui sync: ${line}`)
-
-  // The two `extends` seams sync does NOT own. Reported here because sync is the command an
-  // UPGRADE runs, and an upgrade is exactly when a resolved path goes stale — 1.20.0 fixed the
-  // paths `init` renders and reached no existing consumer at all. Informational: these are
-  // consumer-owned files, and `doctor` is the gate that fails on them.
-  const install = findBasaltInstall(cwd)
-  const lefthookSeam = inspectLefthookSeam(placement.repoRoot)
-  if (lefthookSeam.kind === 'broken') {
-    console.error(
-      `⚠ basalt-ui sync: ${lefthookSeam.file} extends "${lefthookSeam.entry}", which does not ` +
-        'exist — lefthook merges a missing extends target into ZERO commands and still exits 0, ' +
-        'so there is no pre-commit gate. Repoint it at ' +
-        `"${shippedAssetPath(install, placement.repoRoot, 'configs/lefthook.yml')}".`,
-    )
-  }
-  const oxlintrcRaw = readIfExists(resolve(cwd, '.oxlintrc.json'))
-  const oxlintEntry =
-    oxlintrcRaw === null ? null : basaltPresetEntry(parseJsonc(oxlintrcRaw)?.['extends'])
-  if (oxlintEntry !== null && !existsSync(resolve(cwd, oxlintEntry))) {
-    console.error(
-      `⚠ basalt-ui sync: .oxlintrc.json extends "${oxlintEntry}", which does not exist — oxlint ` +
-        'refuses to start on a missing extends target (`NotFound`). Repoint it at ' +
-        `"${shippedAssetPath(install, cwd, 'configs/oxlint.json')}".`,
-    )
-  }
-
-  if (opts.check) {
-    if (driftLines.length > 0) {
-      console.error('basalt-ui sync --check: locally-drifted managed files:')
-      for (const l of driftLines) console.error(l)
-    }
-    const retired = [...pruned.removed, ...pruned.drifted]
-    if (retired.length > 0) {
-      console.error(
-        `basalt-ui sync --check: ${retired.length} retired rule/skill file(s) still present: ` +
-          `${retired.join(', ')} — run \`basalt-ui sync\`.`,
-      )
-    }
-    if (staleForCheck > 0) {
-      console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
-      return 1
-    }
-    console.log('✓ basalt-ui sync --check: all managed files current.')
-    return 0
-  }
-
-  manifest.basaltVersion = ctx.vars.BASALT_VERSION
-  manifest.spacingScale = { ...deriveSpacing(0).scale }
-  writeFileEnsuringDir(resolve(cwd, MANIFEST_PATH), `${JSON.stringify(manifest, null, 2)}\n`)
-
-  console.log(
-    `basalt-ui sync: ${updated} updated, ${created} created, ${recreated} recreated, ` +
-      `${skippedDrift} skipped (drift), ${pruned.removed.length} retired.`,
-  )
-  reportPrune(pruned)
-  if (driftLines.length > 0) {
-    console.log('Locally-edited files were skipped (run with --force to overwrite):')
-    for (const l of driftLines) console.log(l)
-  }
-  if (missingSources.length > 0) {
-    console.log(
-      `basalt-ui sync: ${missingSources.length} shipped asset(s) not present, skipped: ${missingSources.join(', ')}`,
-    )
-  }
-  return 0
-}
-
 // ──────────────────────────────────────────────────────────────────────────────
-// coverage headers — the generated `<!-- basalt:coverage -->` block per rule file
-// ──────────────────────────────────────────────────────────────────────────────
-
-/** The block's delimiters. Both are HTML comments, so the block renders as nothing in a viewer. */
-export const COVERAGE_BLOCK_OPEN = '<!-- basalt:coverage -->'
-export const COVERAGE_BLOCK_CLOSE = '<!-- /basalt:coverage -->'
-
-const COVERAGE_BLOCK_RE = /<!-- basalt:coverage -->[\s\S]*?<!-- \/basalt:coverage -->/
-
-/**
- * What actually enforces one rule file's doctrine, as the file itself should state it.
- *
- * Derived from SURFACES — the union over every doctrine surface carrying that `rule`, because
- * `rule` is many-to-one (`data` covers `./data`, `./data/table`, `./data/virtual`; `mantine` covers
- * `.` and `./connectivity`). Naming only one surface's coverage would understate the rule.
- */
-export function coverageFor(rule: RuleName): {
-  guardKinds: string[]
-  pluginRules: string[]
-  advisoryLaws: string[]
-} {
-  const specs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
-    (s): s is DoctrineSpec => s.kind === 'doctrine' && s.rule === rule,
-  )
-  const unique = (values: readonly string[]): string[] => [...new Set(values)].toSorted()
-  return {
-    guardKinds: unique(specs.flatMap((s) => [...s.guardKinds])),
-    pluginRules: unique(specs.flatMap((s) => [...s.pluginRules])),
-    // NOT sorted, and not deduped across surfaces by content: an advisory law is a sentence, and
-    // its order is the order the spec argues it in.
-    advisoryLaws: specs.flatMap((s) => [...(s.advisoryLaws ?? [])]),
-  }
-}
-
-/**
- * The generated block for one rule, verbatim — HTML comments only, one claim per line so a diff
- * points at the claim that changed rather than at a reflowed paragraph.
- *
- * `not guarded` is printed even when empty, and that is the point: a rule file whose block says
- * `not guarded: —` is claiming full coverage, which is a claim someone can check. A block that
- * simply omitted the section would read as "nothing to declare" whether or not anyone had looked
- * (D8 — see docs/CONTROLS-SPEC.md §6 "Honest coverage").
- */
-export function coverageBlock(rule: RuleName): string {
-  const { guardKinds, pluginRules, advisoryLaws } = coverageFor(rule)
-  const backedBy = [
-    guardKinds.length > 0 ? `guard kinds — ${guardKinds.join(', ')}` : 'guard kinds — none',
-    pluginRules.length > 0
-      ? `oxlint rules — ${pluginRules.map((id) => `basalt/${id}`).join(', ')}`
-      : 'oxlint rules — none',
-  ].join(' · ')
-  const lines = [
-    COVERAGE_BLOCK_OPEN,
-    '<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->',
-    `<!-- backed by: ${backedBy} -->`,
-  ]
-  if (advisoryLaws.length === 0) lines.push('<!-- not guarded: — -->')
-  else for (const law of advisoryLaws) lines.push(`<!-- not guarded: ${law} -->`)
-  lines.push(COVERAGE_BLOCK_CLOSE)
-  return lines.join('\n')
-}
-
-/** The block a rule file currently carries, or null when it has none yet. */
-export function readCoverageBlock(text: string): string | null {
-  return COVERAGE_BLOCK_RE.exec(text)?.[0] ?? null
-}
-
-/**
- * `text` with `block` in it — replacing the existing block, or inserted directly below the YAML
- * frontmatter (the rule files' `paths:` header is load-bearing and must stay first).
- */
-export function applyCoverageBlock(text: string, block: string): string {
-  if (COVERAGE_BLOCK_RE.test(text)) return text.replace(COVERAGE_BLOCK_RE, block)
-  const frontmatter = /^---\n[\s\S]*?\n---\n/.exec(text)
-  if (frontmatter === null) return `${block}\n\n${text}`
-  const end = frontmatter[0].length
-  return `${text.slice(0, end)}\n${block}\n${text.slice(end)}`
-}
-
-/**
- * Reconcile every rule file's coverage block against SURFACES.
- *
- * `'write'` refreshes them; `'check'` is the CI gate. A rule file with NO block yet is REPORTED,
- * never failed — the blocks are inserted by the agent-layer wave that rewrites those files, and a
- * gate that failed before they exist would have to be landed disabled, which is how a gate stays
- * disabled. A block that exists and DISAGREES is a hard failure: that is drift, and drift in a
- * coverage claim is the defect the block was added for.
- */
-export function reconcileCoverageBlocks(
-  pkgRoot: string,
-  mode: 'write' | 'check',
-): { failures: string[]; notes: string[] } {
-  const failures: string[] = []
-  const notes: string[] = []
-  for (const rule of RULE_NAMES) {
-    const rel = `agent/rules/basalt-${rule}.md`
-    const path = resolve(pkgRoot, rel)
-    if (!existsSync(path)) continue // assertion 2 already reports a missing rule file
-    const text = readFileSync(path, 'utf8')
-    const current = readCoverageBlock(text)
-    const expected = coverageBlock(rule)
-    if (mode === 'check') {
-      if (current === null) notes.push(`${rel}: no <!-- basalt:coverage --> block yet`)
-      else if (current !== expected) {
-        failures.push(
-          `${rel}: coverage block is out of sync with SURFACES (check-coverage --write)`,
-        )
-      }
-      continue
-    }
-    if (current === expected) {
-      notes.push(`${rel}: unchanged`)
-      continue
-    }
-    writeFileSync(path, applyCoverageBlock(text, expected), 'utf8')
-    notes.push(`${rel}: ${current === null ? 'block inserted' : 'block updated'}`)
-  }
-  return { failures, notes }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// check-coverage — 10-assertion coverage gate
+// workspace-glob primitives — shared by findBasaltInstall and reconcileRoots (`doctor` moved to
+// its own file in C2 and no longer walks the workspace: ai-major-parity is scoped to one
+// package.json, and project resolution is BASALT_CWD → cwd, nothing inferred).
 // ──────────────────────────────────────────────────────────────────────────────
 
 /**
- * Per-file line budgets for the shipped agent layer (`docs/CONTROLS-SPEC.md` §7's target table).
- *
- * A budget, not a guideline: seven `src/**`-scoped rules loaded ~2,000 lines on any source edit
- * before the merge, and 55% of that text was doctrine nothing enforced. The numbers are the bar the
- * spec argued, so they live beside the gate that reads them rather than in prose.
- */
-const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 140,
-  'agent/rules/basalt-mantine.md': 125,
-  'agent/rules/basalt-charts.md': 115,
-  'agent/rules/basalt-state.md': 125,
-  'agent/rules/basalt-controls.md': 155,
-  'agent/rules/basalt-batteries.md': 100,
-  'agent/skills/basalt-app/SKILL.md': 100,
-  'agent/skills/basalt-design/SKILL.md': 100,
-  'agent/skills/basalt-charts/SKILL.md': 100,
-  'agent/templates/CLAUDE-block.md.tpl': 40,
-  'agent/templates/DESIGN.md.tpl': 45,
-}
-
-/** The whole-layer bar — a per-file budget alone can be satisfied by adding a seventh rule file. */
-const AGENT_RULE_TOTAL_BUDGET = 750
-
-/**
- * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
- * (with `--write` / `--check`) reconcile the generated `<!-- basalt:coverage -->` header of every
- * rule file against SURFACES. Returns 0 when all pass; 1 when any fail (console.error each failure).
- *
- * Eleven assertions:
- *  1. Every doctrine spec's guardKinds ⊆ keyof GUARD_RULES.
- *  2. Every doctrine rule (deduped) maps to agent/rules/basalt-{rule}.md on disk.
- *  3. Every doctrine skill (deduped) maps to agent/skills/{skill}/SKILL.md on disk.
- *  4. Every non-#, non-'.' JS-subpath SURFACES key has a package.json exports entry.
- *  5. Every real package.json exports key has a SURFACES entry.
- *  6. Every surface with non-empty forbiddenImports has a globs field.
- *  7. Every headless surface is Mantine-free — via all 3 `forbiddenImports` bans, OR (for
- *     `TOKEN_LAYER_BOUNDARY_SURFACES` members, `./charts`/`./tokens`) exemption, since their
- *     Mantine-free guarantee is covered by the repo-local-only `basalt/token-layer-boundary`
- *     plugin rule instead — this assertion cannot verify that rule's live registration itself (see
- *     the assertion's own comment below for why); basalt's own CI does
- *     (`tests/surfaces-coverage.test.ts`).
- *  8. Every doctrine optionalPeers entry exists in peerDependencies AND peerDependenciesMeta.
- *  9. Every registered oxlint plugin rule (PLUGIN_RULE_ID_LIST) maps to EXACTLY ONE surface's
- *     `pluginRules` — so a new rule cannot ship homeless, and one rule cannot be counted twice as
- *     coverage. Like assertion 7 this reads SURFACES only: whether the plugin really registers
- *     those ids is asserted against the plugin itself in `configs/oxlint-plugin.test.ts`, which a
- *     shipped CLI running from a consumer's node_modules cannot do.
- * 10. Every shipped agent-layer file is inside its line budget, and the six rules are inside the
- *     whole-layer total (`AGENT_LINE_BUDGETS` / `AGENT_RULE_TOTAL_BUDGET`).
- * 11. Every `GUARD_RULES` kind appears on at least one doctrine surface — assertion 9's twin for
- *     the text lane. Without it a kind could ship, be documented as a law in the spec, and be
- *     omitted from every generated coverage header, which is how two wave-6 kinds left
- *     `agent/rules/basalt-controls.md` printing "guard kinds — none" (D8). Unlike 9 this is
- *     one-directional: a kind may legitimately appear on SEVERAL surfaces (`raw-hex` is on
- *     `./charts` and `./tokens`), because a text scan is not partitioned by subpath the way a
- *     plugin rule id is.
- *
- * Tooling surfaces are exempt from assertions 1–3 by the discriminant.
- * Synthetic #-keys participate in assertions 1 and 2 but feed assertion 3 only
- * via the deduped skill union (no independent per-#-surface skill row).
- */
-export function checkCoverage(flags: readonly string[] = []): number {
-  const pkgRoot = packageRoot()
-  const failures: string[] = []
-  const notes: string[] = []
-
-  const allSpecs = Object.entries(SURFACES) as [string, SurfaceSpec][]
-  const doctrineSpecs = (Object.values(SURFACES) as SurfaceSpec[]).filter(
-    (s): s is DoctrineSpec => s.kind === 'doctrine',
-  )
-
-  // ── Assertion 1: every doctrine spec's guardKinds ⊆ keyof GUARD_RULES ──────
-  const validGuardKinds = new Set(Object.keys(GUARD_RULES))
-  for (const [key, spec] of allSpecs) {
-    if (spec.kind !== 'doctrine') continue
-    for (const kind of spec.guardKinds) {
-      if (!validGuardKinds.has(kind)) {
-        failures.push(
-          `SURFACES['${key}'].guardKinds includes '${kind}' which is not in GUARD_RULES`,
-        )
-      }
-    }
-  }
-
-  // ── Assertion 2: every doctrine rule (deduped) → agent/rules/basalt-{rule}.md ──
-  for (const rule of RULE_NAMES) {
-    const rulePath = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
-    if (!existsSync(rulePath)) {
-      failures.push(
-        `Missing rule file: agent/rules/basalt-${rule}.md (derived from SURFACES doctrine rules)`,
-      )
-    }
-  }
-
-  // ── Assertion 3: every doctrine skill (deduped) → agent/skills/{skill}/SKILL.md ──
-  // Mirrors assertion 2's shape — skills ship in the npm package and are placed by init/sync,
-  // so a skill referenced by SURFACES must exist as a shipped asset at the package root.
-  for (const skill of SKILL_NAMES) {
-    const skillPath = resolve(pkgRoot, `agent/skills/${skill}/SKILL.md`)
-    if (!existsSync(skillPath)) {
-      failures.push(
-        `Missing skill file: agent/skills/${skill}/SKILL.md (derived from SURFACES doctrine skills)`,
-      )
-    }
-  }
-
-  // ── Assertion 4: subpath-export-coverage ────────────────────────────────────
-  // Every non-#, non-'.' JS-subpath SURFACES key must have a package.json exports entry.
-  let pkgExports: Set<string> = new Set()
-  try {
-    const consumerPkgPath = resolve(pkgRoot, 'package.json')
-    const consumerPkg = JSON.parse(readFileSync(consumerPkgPath, 'utf8')) as {
-      exports?: Record<string, unknown>
-    }
-    pkgExports = new Set(Object.keys(consumerPkg.exports ?? {}))
-  } catch {
-    failures.push(`Cannot read package.json at ${pkgRoot}`)
-  }
-
-  for (const key of Object.keys(SURFACES)) {
-    if (key.startsWith('#') || key === '.') continue
-    if (!pkgExports.has(key)) {
-      failures.push(
-        `SURFACES key '${key}' is a JS subpath but has no entry in package.json exports`,
-      )
-    }
-  }
-
-  // ── Assertion 5: every real package.json exports key has a SURFACES entry ────
-  // Excludes ./styles.css, ./package.json and ./configs/* (non-JS assets / raw file paths).
-  for (const exportKey of pkgExports) {
-    if (
-      exportKey === '.' ||
-      exportKey === './styles.css' ||
-      exportKey === './package.json' ||
-      exportKey.startsWith('./configs/')
-    )
-      continue
-    if (!Object.hasOwn(SURFACES, exportKey)) {
-      failures.push(`package.json exports key '${exportKey}' has no matching SURFACES entry`)
-    }
-  }
-
-  // ── Assertion 6: every surface with non-empty forbiddenImports has a globs field ──
-  for (const [key, spec] of allSpecs) {
-    if (spec.forbiddenImports.length === 0) continue
-    if (!('globs' in spec) || spec.globs === undefined) {
-      failures.push(
-        `SURFACES['${key}'] has non-empty forbiddenImports but no globs field (required for oxlint emission)`,
-      )
-    }
-  }
-
-  // ── Assertion 7: every headless surface is Mantine-free ──────────────────────
-  // Guarantees the Mantine-free boundary — a future headless surface without coverage fails here.
-  // Coverage is either all 3 forbiddenImports bans, OR membership in
-  // `TOKEN_LAYER_BOUNDARY_SURFACES` (`./charts`/`./tokens`), whose Mantine-free guarantee comes
-  // from the `basalt/token-layer-boundary` plugin rule instead — protects both layering (tokens
-  // upstream of Mantine) and packaging (those two subpaths resolve with no `@mantine/*` installed,
-  // CI-tested via `scripts/pack-test.sh` + `scripts/check-dist-layering.mjs`; see surfaces.ts's
-  // `TOKEN_LAYER_BOUNDARY_SURFACES` doc comment). This assertion CANNOT also verify
-  // that rule's live registration: `check-coverage` is a shipped CLI subcommand whose assertions
-  // must all read pkgRoot-relative paths so it works from inside a consumer's node_modules — and a
-  // repo-local `.oxlintrc.json` read from an installed package path-resolves to the CONSUMER's own
-  // config, not basalt's. That "fails loudly if enforcement is removed" guarantee lives in
-  // basalt's own CI instead (`tests/surfaces-coverage.test.ts`, via
-  // `hasTokenLayerBoundaryRegistered` against `.oxlintrc.json`).
-  const REQUIRED_MANTINE_BANS = ['@mantine/core', '@mantine/hooks', '@mantine/*'] as const
-
-  for (const [key, spec] of allSpecs) {
-    if (spec.layer !== 'headless') continue
-    if (TOKEN_LAYER_BOUNDARY_SURFACES.has(key)) continue
-    for (const required of REQUIRED_MANTINE_BANS) {
-      const hasBan = spec.forbiddenImports.some((fi) => fi.spec === required)
-      if (!hasBan) {
-        failures.push(
-          `SURFACES['${key}'] is headless but missing Mantine ban for '${required}' in forbiddenImports`,
-        )
-      }
-    }
-  }
-
-  // ── Assertion 8: every doctrine optionalPeers entry → peerDependencies + peerDependenciesMeta ──
-  // Closes the silent-drop gap: an optionalPeer listed in SURFACES but absent from package.json
-  // means the published package never tells npm about the dependency.
-  let peerDependencies: Record<string, string> = {}
-  let peerDependenciesMeta: Record<string, { optional?: boolean }> = {}
-  try {
-    const frameworkPkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
-      peerDependencies?: Record<string, string>
-      peerDependenciesMeta?: Record<string, { optional?: boolean }>
-    }
-    peerDependencies = frameworkPkg.peerDependencies ?? {}
-    peerDependenciesMeta = frameworkPkg.peerDependenciesMeta ?? {}
-  } catch {
-    failures.push(`Cannot read package.json peerDependencies at ${pkgRoot}`)
-  }
-
-  for (const spec of doctrineSpecs) {
-    for (const peer of spec.optionalPeers ?? []) {
-      if (!(peer in peerDependencies)) {
-        failures.push(
-          `SURFACES doctrine optionalPeer '${peer}' is not listed in package.json peerDependencies`,
-        )
-      }
-      if (peerDependenciesMeta[peer]?.optional !== true) {
-        failures.push(
-          `SURFACES doctrine optionalPeer '${peer}' is not marked optional in package.json peerDependenciesMeta`,
-        )
-      }
-    }
-  }
-
-  // ── Assertion 9: every plugin rule maps to exactly one surface ───────────────
-  // The plugin's own rules were the one half of the enforcement seam SURFACES did not model, so a
-  // generated coverage header could name a guard kind and stay silent about the AST rule doing the
-  // actual work (D8). Now every id has exactly one home, and "exactly" is both directions: an
-  // unmapped id is a rule no doc claims, a doubly-mapped one is coverage counted twice.
-  const surfacesPerPluginRule = new Map<string, string[]>()
-  for (const [key, spec] of allSpecs) {
-    if (spec.kind !== 'doctrine') continue
-    for (const id of spec.pluginRules) {
-      surfacesPerPluginRule.set(id, [...(surfacesPerPluginRule.get(id) ?? []), key])
-    }
-  }
-  for (const id of PLUGIN_RULE_ID_LIST) {
-    const owners = surfacesPerPluginRule.get(id) ?? []
-    if (owners.length === 1) continue
-    failures.push(
-      owners.length === 0
-        ? `Plugin rule 'basalt/${id}' maps to no surface — add it to one surface's pluginRules`
-        : `Plugin rule 'basalt/${id}' maps to ${owners.length} surfaces (${owners.join(', ')}) — exactly one`,
-    )
-  }
-
-  // ── Assertion 10: the agent layer stays inside its line budgets ─────────────
-  // The budgets ARE the doctrine (docs/CONTROLS-SPEC.md §7): thirteen rules reached 4,177 lines by
-  // growing a few lines at a time, each addition locally reasonable, and the only thing that
-  // notices is a number nobody is checking. A rule over budget is over budget in the commit that
-  // did it, not four minors later.
-  for (const [rel, budget] of Object.entries(AGENT_LINE_BUDGETS)) {
-    const abs = resolve(pkgRoot, rel)
-    if (!existsSync(abs)) continue // assertions 2/3 already report a missing rule or skill
-    const lines = readFileSync(abs, 'utf8').split('\n').length - 1
-    if (lines > budget) failures.push(`${rel}: ${lines} lines exceeds its ${budget}-line budget`)
-  }
-  const ruleTotal = RULE_NAMES.reduce((sum, rule) => {
-    const abs = resolve(pkgRoot, `agent/rules/basalt-${rule}.md`)
-    return existsSync(abs) ? sum + readFileSync(abs, 'utf8').split('\n').length - 1 : sum
-  }, 0)
-  if (ruleTotal > AGENT_RULE_TOTAL_BUDGET) {
-    failures.push(
-      `agent/rules/*.md: ${ruleTotal} lines total exceeds the ${AGENT_RULE_TOTAL_BUDGET}-line budget`,
-    )
-  }
-
-  // ── Assertion 11: every guard kind maps to at least one surface ──────────────
-  // The guard-kind twin of assertion 9. Assertion 1 already checks the other direction (no surface
-  // names a kind that does not exist); this one catches the kind nobody claims, whose coverage
-  // header therefore under-reports the lane that actually enforces it.
-  const surfacedGuardKinds = new Set<string>()
-  for (const spec of doctrineSpecs) {
-    for (const kind of spec.guardKinds) surfacedGuardKinds.add(kind)
-  }
-  for (const kind of Object.keys(GUARD_RULES)) {
-    if (surfacedGuardKinds.has(kind)) continue
-    failures.push(
-      `Guard kind '${kind}' maps to no surface — add it to one surface's guardKinds so the ` +
-        `generated coverage headers name it`,
-    )
-  }
-
-  // ── Coverage headers (--write / --check) ─────────────────────────────────────
-  const write = flags.includes('--write')
-  const check = flags.includes('--check')
-  if (write && check) {
-    failures.push('--write and --check are alternatives; pass one')
-  } else if (write || check) {
-    const result = reconcileCoverageBlocks(pkgRoot, write ? 'write' : 'check')
-    failures.push(...result.failures)
-    notes.push(...result.notes)
-  }
-
-  // ── Report ──────────────────────────────────────────────────────────────────
-  for (const note of notes) {
-    console.log(`  ${note}`)
-  }
-
-  if (failures.length === 0) {
-    console.log('✓ check-coverage: all 11 assertions pass.')
-    return 0
-  }
-
-  console.error(`✖ check-coverage: ${failures.length} failure(s)`)
-  for (const f of failures) {
-    console.error(`  ${f}`)
-  }
-  return 1
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// doctor — consumer repo integration health check
-// ──────────────────────────────────────────────────────────────────────────────
-
-type DoctorResult = {
-  /** Number of hard failures (exit non-zero). */
-  hardFailures: number
-  /** Number of warnings (informational only). */
-  warnings: number
-  /**
-   * Number of checks that could not RUN (as opposed to ran and passed). Counted separately and
-   * exits non-zero on its own: under bun's isolated linker `doctor` used to drop two of its five
-   * checks and still print "All checks passed", which is the same false-green this whole surface
-   * exists to remove. A check that cannot run is not a check that passed.
-   */
-  skipped: number
-}
-
-/**
- * Which shape of consumer `doctor` is looking at.
+ * Which shape of consumer a project-scoped command is looking at.
  *
  * `framework` — the Mantine app the scaffold is for. `tokens-only` — a consumer that took the
  * `--vx-*` layer and nothing else (rollhook: no Mantine, no manifest, `tokens:css` output). Telling
  * the second to "run `basalt-ui init`" is the wrong instruction: init scaffolds Mantine rules,
- * skills and a DESIGN.md it will never read. Auto-detected, forced by `--framework` / `--tokens-only`.
+ * skills and a DESIGN.md it will never read. DECLARED only (`--framework` / `--tokens-only`, or
+ * `"basalt": { "profile": "tokens-only" }`) — never inferred; see {@link declaredProfile}.
  */
-type DoctorProfile = 'framework' | 'tokens-only'
+export type DoctorProfile = 'framework' | 'tokens-only'
 
 type WorkspacePackage = { readonly name: string; readonly dir: string }
 
@@ -3636,1297 +1887,9 @@ function collectWorkspacePackages(cwd: string): WorkspaceWalk {
 }
 
 /** Narrows to a string array — shared by `collectWorkspacePackages`'s two `workspaces` shapes. */
-function isStringArray(value: unknown): value is string[] {
+export function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
 }
-
-/**
- * First run of digits in a semver range string (`^7.0.15` → `7`), or null if there is none.
- *
- * Duplicated verbatim in `configs/oxlint-plugin.js` — that file must stay import-free from this
- * package (it loads via `jsPlugins` out of a consumer's node_modules, before this package's own
- * code is necessarily resolvable), so the duplication is structural, not an oversight. Keep both
- * copies in sync by hand; a future parsing fix (pre-release suffixes, say) must land in both.
- */
-function majorOf(range: string | undefined): number | null {
-  if (typeof range !== 'string') return null
-  const match = range.match(/\d+/)
-  return match === null ? null : Number(match[0])
-}
-
-/** The `ai` package's declared major at `dir`'s own `package.json`, or null if undeclared/unreadable. */
-function aiMajorAt(dir: string): number | null {
-  const raw = readIfExists(resolve(dir, 'package.json'))
-  if (raw === null) return null
-  try {
-    const pkg = JSON.parse(raw) as {
-      dependencies?: Record<string, string>
-      devDependencies?: Record<string, string>
-      peerDependencies?: Record<string, string>
-    }
-    return majorOf(
-      pkg.dependencies?.['ai'] ?? pkg.devDependencies?.['ai'] ?? pkg.peerDependencies?.['ai'],
-    )
-  } catch {
-    return null
-  }
-}
-
-/**
- * Splits `basalt.aiMajorSkewReason` into a validated reason (or null) plus whether the key was
- * present at all but failed validation. A present-but-invalid value (anything other than a
- * non-empty string — including a bare `true`) is treated as absent for the pass/fail decision, same
- * as a missing key, but doctor's failure message still calls out that the key exists and is
- * malformed rather than silently falling back to the plain "no exemption" message — a forgotten key
- * and a broken one are different mistakes and deserve different guidance.
- */
-function resolveAiMajorSkewReason(cfg: BasaltConfig): {
-  reason: string | null
-  presentButInvalid: boolean
-} {
-  const raw = cfg.aiMajorSkewReason
-  if (raw === undefined) return { reason: null, presentButInvalid: false }
-  if (typeof raw === 'string' && raw.trim().length > 0) {
-    return { reason: raw, presentButInvalid: false }
-  }
-  return { reason: null, presentButInvalid: true }
-}
-
-/**
- * Check a consumer repo's basalt integration and print a pass/warn report.
- *
- * With the plugin retired there is exactly ONE version axis — the npm package — so doctor verifies
- * one thing: the basalt-ui resolved in the consumer's node_modules against the version recorded in
- * .basalt/manifest.json at the last init/sync. File-level drift is `sync --check`'s job, not
- * doctor's.
- *
- * The checks are numbered in the order they run and print — there is no gap, and the number in a
- * section header below is the number in the report.
- *
- * Hard failures (exit non-zero):
- *   1. .basalt/manifest.json exists (init was run).
- *   2. `basalt-resolves`: basalt-ui resolves from here. Unresolvable used to make checks silently
- *      VANISH from the report (5 checks became 3) while the footer still read "All checks passed".
- *      It is also the moment `bunx basalt-ui` stops using the pinned copy.
- *   6. `guard-scan`: `check-theme` would scan MORE than zero files. `check-theme` already exits 1
- *      on "0 files scanned"; doctor disagreeing with it in the same repo is the bug.
- *   7. `oxlint-preset`: the consumer's `.oxlintrc.json` actually `extends` the shipped preset AND
- *      that path RESOLVES. `init` keeps an existing config, so the framework's whole lint half can
- *      be off with nothing to say so — one repo carried six real violations invisibly across five
- *      minors that way. Matching the string alone reproduced the same false green one layer in: a
- *      well-shaped entry pointing at a path that no longer exists passed this check in the very
- *      tree where oxlint refused to start with `NotFound`.
- *   8. `lefthook-preset`: the repo-root lefthook config's `extends` target resolves. lefthook
- *      merges a MISSING target into zero commands and exits 0 — no error, a clean `lefthook dump`,
- *      and no pre-commit gate. Nothing but a check can see that. Not-extending-at-all is a warning
- *      (a consumer may run their own hooks); extending a path that isn't there is a hard failure.
- *   10. `ai-major-parity`: every workspace package that declares the `ai` package agrees on its
- *      major version. `basalt/ai-sdk-major` (the oxlint plugin rule) cannot catch this — it checks
- *      a linted file's NEAREST package.json, so a lint run scoped to one workspace package only
- *      ever sees that package's own `ai` major and is perfectly happy; the cross-package skew (one
- *      package streaming on `ai@5`, another parsing it on `ai@7`) only a repo-wide manifest walk
- *      can see. Skipped entirely when `cwd` has no `workspaces` field or none of its packages
- *      declare `ai`. A detected skew is exempt-able via `basalt.aiMajorSkewReason` (a non-empty
- *      reason string, not a bare `true`) in the consumer's package.json — an intentional
- *      producer/consumer split neutralized by a transform is a locked decision, not a defect, and
- *      the written reason IS the pin that a permanently-failing guard would otherwise lack. Missing
- *      or invalid (empty/non-string) still hard-fails exactly as if the key were absent.
- *
- * Warnings (non-fatal):
- *   3. The installed node_modules/basalt-ui version matches the manifest's basaltVersion
- *      (a mismatch means the package was upgraded but `sync` never ran — the placed doctrine is
- *      stale).
- *   4. The spacing scale still matches the one stamped into the manifest at the last init/sync
- *      (skipped when there is no manifest to compare against; a neutral pass when this CLI is
- *      demonstrably not the installed package — see the check).
- *   5. The running CLI's own version matches the installed basalt-ui (catches a stale
- *      `bunx basalt-ui` npm fetch; best-effort, skipped if node_modules is absent).
- *   9. The icon files `basaltAppPlugin` (basalt-ui/vite) references exist under the app package's
- *      public/ — the package found via `basalt.roots`, not just cwd, so a root-invoked run still
- *      reaches it. Never silently omitted: no plugin call anywhere is a pass that says so, a
- *      plugin call with no public/ beside it is a SKIPPED.
- *   10 (second half). A declared `basalt.aiMajorSkewReason` when the ai majors currently AGREE — the
- *      exemption is stale and can be deleted; an exemption nobody revisits is how a real, later
- *      skew slips through unnoticed.
- *
- * An AMBIGUOUS project (no config here, several workspace packages carrying one) short-circuits
- * before any of them, exactly as `check-theme` does: running the remaining checks against the wrong
- * root buries the one real error under spurious ones.
- *
- * SKIPPED is now a third outcome beside pass/warn/fail and exits non-zero on its own — a check that
- * cannot run is not a check that passed. "Not applicable to this profile" is a pass, not a skip.
- *
- * Returns the exit code: 0 = all good, 1 = one or more hard failures or unrunnable checks.
- */
-export function doctor(invocationCwd: string = process.cwd(), flags: string[] = []): number {
-  if (conflictingProfileFlags(flags)) {
-    console.error('basalt-ui doctor: --tokens-only and --framework are alternatives — pass one.')
-    return 1
-  }
-  const project = resolveProjectDir(invocationCwd)
-  // Ambiguity is terminal, exactly as it is for check-theme. Falling back to `invocationCwd` ran
-  // every remaining check against the WRONG root and buried the one real error under spurious
-  // ones — guard-scan reporting 0 files, .oxlintrc.json "missing" — which is this round's own
-  // false-report bug class reappearing inside the fix for it.
-  if (project.ambiguous !== null) {
-    console.error(
-      `\nbasalt-ui doctor — ${invocationCwd}\n\n` +
-        `  ✖ no basalt config at ${invocationCwd}, and ${project.ambiguous.length} packages ` +
-        `below it carry one (${project.ambiguous.map((d) => relativePosix(invocationCwd, d)).join(', ')}) — ` +
-        'run doctor from one of them, or set BASALT_CWD to pick.\n\n' +
-        '1 hard failure(s), 0 warning(s).\n',
-    )
-    return 1
-  }
-  const cwd = project.dir
-  const cfg = readBasaltConfig(cwd)
-  const result: DoctorResult = { hardFailures: 0, warnings: 0, skipped: 0 }
-  const lines: string[] = [`\nbasalt-ui doctor — ${cwd}\n`]
-
-  function pass(msg: string): void {
-    lines.push(`  ✓ ${msg}`)
-  }
-  function warn(msg: string): void {
-    lines.push(`  ⚠ ${msg}`)
-    result.warnings++
-  }
-  function skip(msg: string): void {
-    lines.push(`  ⊘ SKIPPED — ${msg}`)
-    result.skipped++
-  }
-  function fail(msg: string): void {
-    lines.push(`  ✖ ${msg}`)
-    result.hardFailures++
-  }
-
-  if (project.relocatedFrom !== null) {
-    lines.push(
-      `  → no basalt config at ${project.relocatedFrom} — reporting on ` +
-        `${relativePosix(project.relocatedFrom, cwd)}, where it lives.\n`,
-    )
-  }
-
-  // ── Profile ────────────────────────────────────────────────────────────────
-  const manifestAbs = resolve(cwd, MANIFEST_PATH)
-  const manifestExists = existsSync(manifestAbs)
-  // Non-null ⇒ this directory is a package UNDER a configured repo, not an unscaffolded consumer.
-  // Every remedy below that would otherwise say "run `basalt-ui init`" points at the parent
-  // instead — see {@link parentInstallAdvice}.
-  const parentInstall = manifestExists ? null : findManifestAbove(cwd)
-  const profile = inferredProfile(cwd, cfg, flags)
-  if (profile === 'tokens-only') {
-    lines.push(
-      '  profile: tokens-only — checking the token layer only. The scaffold checks below are not\n' +
-        '  applicable; `basalt-ui init` is NOT the fix here, it places a Mantine doctrine you have no\n' +
-        '  use for. Pass --framework to force the full profile.\n',
-    )
-    // check-theme will NOT infer this — it silences 17 kinds, so it moves only on a declaration.
-    // Doctor is the surface that can safely detect the shape, so it is the one that has to say so.
-    if (cfg.profile === undefined) {
-      lines.push(
-        '  → inferred (no .basalt/manifest.json and no @mantine/core in this workspace). Write it\n' +
-          '    down as "basalt": { "profile": "tokens-only" } in package.json — check-theme does not\n' +
-          '    infer it, so today it still reports the Mantine-only kinds against this repo.\n',
-      )
-    }
-  }
-
-  // ── Hard check 1: manifest exists ──────────────────────────────────────────
-  if (profile === 'tokens-only') {
-    pass(`${MANIFEST_PATH}: n/a — a tokens-only consumer has no scaffold to reconcile`)
-  } else if (manifestExists) {
-    pass(`${MANIFEST_PATH} exists`)
-  } else if (parentInstall !== null) {
-    fail(
-      `${MANIFEST_PATH} missing here, but this is not an unscaffolded consumer. ` +
-        `${parentInstallAdvice(cwd, parentInstall, 'doctor')} \`basalt-ui init\` is NOT the fix: ` +
-        'it would scaffold a SECOND consumer beside the real one.',
-    )
-  } else {
-    fail(`${MANIFEST_PATH} missing — run \`basalt-ui init\` to scaffold the consumer repo`)
-  }
-
-  // ── Hard check 2: basalt-ui resolves from here ─────────────────────────────
-  // Unresolvable used to make checks 3 and 5 VANISH from the report while the footer still read
-  // "All checks passed" — 5 checks silently became 3. It is also the moment `bunx basalt-ui`
-  // stops using the pinned copy and quietly downloads a different one from npm, so the failure
-  // has to be loud rather than absent.
-  const install = findBasaltInstall(cwd)
-  const installedVersion = install.version
-  if (install.dir === null) {
-    fail(
-      `basalt-ui does not resolve from ${cwd}, any directory above it, or any workspace package — ` +
-        'so every version check below is unrunnable, `extends: [<preset>]` cannot resolve, and ' +
-        '`bunx basalt-ui` will silently fetch a DIFFERENT copy from npm instead of your pinned ' +
-        'one. Add basalt-ui as a dependency here (or at the repo root) and re-run.',
-    )
-  } else if (install.how === 'cwd') {
-    pass(
-      `basalt-ui resolves at ./node_modules/basalt-ui (${installedVersion ?? 'unknown version'})`,
-    )
-  } else {
-    pass(
-      `basalt-ui resolves at ${relativePosix(cwd, install.dir)} (${installedVersion ?? 'unknown version'}, ` +
-        `found via the ${install.how}) — seeded \`extends\` paths and CI steps must use that path, ` +
-        'not ./node_modules/basalt-ui.',
-    )
-  }
-
-  // ── Warn check 3: installed basalt-ui version matches the manifest ─────────
-  // THE one version axis. The manifest records the version whose init/sync placed the doctrine;
-  // node_modules is what the app actually resolves. A mismatch means "upgrade landed, sync didn't".
-  if (profile === 'framework' && manifestExists && installedVersion === null) {
-    skip(
-      'installed-vs-manifest version — basalt-ui did not resolve, so there is nothing to compare',
-    )
-  }
-  if (manifestExists && installedVersion !== null) {
-    const manifestVersion = readManifest(cwd).basaltVersion
-    if (manifestVersion === undefined) {
-      warn(
-        `${MANIFEST_PATH} records no basaltVersion (written by an older basalt-ui) — run ` +
-          '`basalt-ui sync` to refresh the doctrine and stamp the manifest.',
-      )
-    } else if (manifestVersion !== installedVersion) {
-      warn(
-        `installed basalt-ui (${installedVersion}) differs from the version that last synced ` +
-          `(${manifestVersion}) — the placed doctrine is stale; run \`basalt-ui sync\`.`,
-      )
-    } else {
-      pass(`installed basalt-ui (${installedVersion}) matches the manifest's basaltVersion`)
-    }
-  }
-
-  const cliVersion = readFrameworkVersion(packageRoot())
-
-  // ── Warn check 4: the spacing scale has not moved under the app ────────────
-  // The only check here that reports a change in RENDERED OUTPUT rather than in placed files. A
-  // retune of the spacing bases moves every surface in an app calling `createBasaltTheme()` bare,
-  // and majors are banned by design, so nothing in the version number says so — 1.2.0's retune
-  // shipped under "tighten the sidebar, open up components" and sat unverified in production for a
-  // day. Diffing the current scale against what last synced makes that move something a consumer
-  // is told rather than something they have to notice.
-  //
-  // The scale that matters is the INSTALLED package's — that is what the app renders with — but
-  // `deriveSpacing` here is the RUNNING CLI's, which a stale `bunx basalt-ui` fetch makes a
-  // different package. Rather than load the installed tokens entry (async, and doctor is sync),
-  // the comparison is skipped whenever the two versions are known to disagree: a false "matches"
-  // is worse than no answer. Check 5 below names that disagreement, so this stays a neutral note.
-  const cliIsTheInstall = installedVersion === null || installedVersion === cliVersion
-  if (profile === 'tokens-only') {
-    pass('spacing scale: n/a — a tokens-only consumer renders no basalt Mantine theme')
-  } else if (!manifestExists) {
-    // Printing NOTHING is the failure SKIPPED exists to end: the check simply vanished from the
-    // report whenever there was no manifest, which is precisely when it is least safe to assume.
-    skip(
-      `spacing scale — no ${MANIFEST_PATH} records the scale this app last synced with, so there ` +
-        'is nothing to compare against',
-    )
-  } else if (!cliIsTheInstall) {
-    pass(
-      `spacing scale not compared — this CLI (${cliVersion}) is not the installed basalt-ui ` +
-        `(${installedVersion}), so its scale is not the one the app renders with`,
-    )
-  } else {
-    const recorded = readManifest(cwd).spacingScale
-    const current = deriveSpacing(0).scale as Record<string, number>
-    if (recorded === undefined) {
-      // Silent for a manifest written before this field existed — the version check above already
-      // says "run sync", and a second warning for the same cause is noise.
-      pass('spacing scale not yet recorded — `basalt-ui sync` will stamp it')
-    } else {
-      // Over the UNION of both key sets: a step the scale gained since the last sync is a move the
-      // app feels, and so is one it lost. Iterating only `current` would miss the second.
-      const steps = [...new Set([...Object.keys(current), ...Object.keys(recorded)])].toSorted()
-      const moved = steps
-        .filter((step) => recorded[step] !== current[step])
-        .map((step) => `${step} ${recorded[step] ?? '(none)'}→${current[step] ?? '(removed)'}`)
-      if (moved.length > 0) {
-        warn(
-          `the spacing scale moved since the last sync (${moved.join(', ')}) — every surface in an ` +
-            'app calling createBasaltTheme() bare shifts with it. Review the app visually, then run ' +
-            '`basalt-ui sync` to record the new scale.',
-        )
-      } else {
-        pass('spacing scale matches the last sync')
-      }
-    }
-  }
-
-  // ── Warn check 5: running CLI version matches the consumer's installed basalt-ui ────
-  // Catches the failure mode where bunx fetches a stale published package instead of the local
-  // install — the CLI that ran doctor and the package resolved from the consumer's node_modules
-  // silently disagree.
-  if (installedVersion === null) {
-    skip('CLI-vs-installed version — basalt-ui did not resolve, so there is no installed version')
-  } else if (installedVersion !== cliVersion) {
-    warn(
-      `running CLI version (${cliVersion}) differs from the installed basalt-ui version at ` +
-        `${install.dir === null ? 'node_modules' : relativePosix(cwd, install.dir)} (${installedVersion}) — ` +
-        'likely a stale `bunx basalt-ui` fetch from npm; run the local bin ' +
-        '(`node_modules/.bin/basalt-ui`, or a package.json script) so the pinned copy is the one ' +
-        'that runs.',
-    )
-  } else {
-    pass(`CLI version (${cliVersion}) matches the installed basalt-ui`)
-  }
-
-  // ── Hard check 6: the guard would actually scan something ──────────────────
-  // `check-theme` exits 1 on "0 files scanned" — doctor reporting all-green in the SAME repo is
-  // the disagreement consumers reported: init ran, doctor passed, and the palette guard was a
-  // no-op the whole time because no `basalt.roots` described the workspace layout.
-  if (profile === 'tokens-only') {
-    pass('guard-scan: n/a — the theme guard is a Mantine-app check')
-  } else {
-    const scanned = scannableFiles(cwd, cfg)
-    if (scanned.length === 0) {
-      fail(
-        `guard-scan: check-theme would scan 0 files — the roots (${resolveRoots(cfg).join(', ')}) ` +
-          `match nothing under ${cwd}, so the palette guard is a no-op that still exits green in ` +
-          'every gate that does not run it. Set "basalt": { "roots": [...] } in package.json.',
-      )
-    } else {
-      pass(
-        `guard-scan: check-theme covers ${scanned.length} file(s) under ${resolveRoots(cfg).join(', ')}`,
-      )
-    }
-  }
-
-  // ── Hard check 7: the consumer's oxlint config extends the shipped preset ──
-  // `init` KEEPS an existing `.oxlintrc.json`, so a repo can carry the whole scaffold with the
-  // framework's lint half switched off and nothing anywhere saying so. One repo ran five minors
-  // that way and surfaced six real `basalt/no-raw-font-size` errors the moment it was wired.
-  if (profile === 'tokens-only') {
-    pass('oxlint-preset: n/a — the shipped preset is a Mantine/React preset')
-  } else {
-    const oxlintrcRaw = readIfExists(resolve(cwd, '.oxlintrc.json'))
-    if (oxlintrcRaw === null) {
-      fail(
-        '.oxlintrc.json missing — the shipped oxlint preset (the basalt/* design rules) is not ' +
-          'active. ' +
-          (parentInstall === null
-            ? 'Run `basalt-ui init` to seed it.'
-            : `${parentInstallAdvice(cwd, parentInstall, 'doctor')} The preset is seeded once, at ` +
-              'the install — not per package.'),
-      )
-    } else {
-      // JSONC: oxlint accepts comments and real consumer configs carry them.
-      const parsed = parseJsonc(oxlintrcRaw)
-      if (parsed === null) {
-        skip(
-          '.oxlintrc.json does not parse as JSON/JSONC — cannot tell whether it extends the preset',
-        )
-      } else {
-        const entry = basaltPresetEntry(parsed['extends'])
-        const correct = shippedAssetPath(install, cwd, 'configs/oxlint.json')
-        if (entry === null) {
-          fail(
-            '.oxlintrc.json does NOT extend the shipped preset — every basalt/* design rule is off ' +
-              `and oxlint reports green without them. Add "extends": ["${correct}"], or re-run ` +
-              '`basalt-ui init --merge-lint` to splice it in.',
-          )
-        } else if (!existsSync(resolve(cwd, entry)) && entry === correct && install.dir !== null) {
-          // The path is the one basalt resolves from and the asset still isn't there — a partial
-          // or corrupted install, not a stale path. Saying "repoint it at <the same string>" would
-          // be the unhelpful shape of a correct diagnosis.
-          fail(
-            `.oxlintrc.json extends "${entry}", which does not exist (${resolve(cwd, entry)}) — ` +
-              'basalt-ui resolves there but ships no `configs/oxlint.json` at that path, so oxlint ' +
-              'refuses to start (`NotFound`) and nothing is linted. Reinstall basalt-ui.',
-          )
-        } else if (!existsSync(resolve(cwd, entry))) {
-          // The string is right and the file is not there. oxlint refuses to start at all
-          // (`invalid config file … NotFound`), so a green line here is a check that proves the
-          // framework is ON while the linter is dead — the same false-green class this check was
-          // added to close, one layer in. `install` already computed the true path in this run.
-          fail(
-            `.oxlintrc.json extends "${entry}", which does not exist (${resolve(cwd, entry)}) — ` +
-              'oxlint refuses to start on a missing extends target (`NotFound`), so nothing is ' +
-              `linted at all. Repoint it at "${correct}", where basalt-ui actually resolves.`,
-          )
-        } else {
-          pass(`.oxlintrc.json extends the shipped basalt-ui oxlint preset (${entry})`)
-        }
-      }
-    }
-  }
-
-  // ── Check 8: the pre-commit hook actually runs the guard ───────────────────
-  // The loudest silent failure in the toolchain: lefthook merges a MISSING extends target into
-  // zero commands and exits 0 — `lefthook dump` prints the extends line, no commands, and a clean
-  // exit — so a repo whose path went stale has no pre-commit gate and nothing anywhere says so.
-  // Unlike oxlint there is no error to notice, which is why this has to be a check rather than a
-  // remedy line someone reads after a failure.
-  //
-  // But a BROKEN extends is the only half of this that can be asserted from the string. Whether a
-  // gate EXISTS is a different question, and 1.21.0 answered it by testing for the extends target
-  // — warning at a correctly-wired repo and prescribing a change that would have broken it. See
-  // {@link inspectLefthookGate}: `lefthook dump` where it runs, the config text where it doesn't,
-  // and an advisory that names the gap where neither settles it.
-  const repoRoot = findRepoRoot(cwd)
-  const lefthookGate =
-    profile === 'tokens-only' ? { kind: 'n/a' as const } : inspectLefthookGate(repoRoot)
-  const lefthookCorrect = shippedAssetPath(install, repoRoot, 'configs/lefthook.yml')
-  if (lefthookGate.kind === 'n/a') {
-    pass('lefthook-preset: n/a — a tokens-only consumer wires its own hooks')
-  } else if (lefthookGate.kind === 'no-file') {
-    pass(`lefthook-preset: n/a — no lefthook config at ${repoRoot}`)
-  } else if (lefthookGate.kind === 'extends-ok') {
-    pass(`${lefthookGate.file} extends the shipped lefthook preset (${lefthookGate.entry})`)
-  } else if (lefthookGate.kind === 'wired') {
-    // Extending the preset is basalt's recommendation, not the contract. The contract is that a
-    // commit cannot land without the guard running, and a repo spelling the jobs out with a
-    // per-command `root:` satisfies it — `extends` merges commands without their working
-    // directory, so for that repo the preset is the thing that would NOT work.
-    pass(
-      `lefthook-preset: ${lefthookGate.file} does not extend the shipped preset, but a pre-commit ` +
-        `command runs check-theme directly — the gate exists (read from ` +
-        (lefthookGate.proof === 'dump'
-          ? '`lefthook dump`, so extends/include/root: are all resolved).'
-          : 'the config text; `lefthook dump` was not runnable here, so an `include:` or a ' +
-            'remote config was not consulted).'),
-    )
-  } else if (lefthookGate.kind === 'extends-broken') {
-    fail(
-      `${lefthookGate.file} extends "${lefthookGate.entry}", which does not exist ` +
-        `(${resolve(repoRoot, lefthookGate.entry)}) — lefthook merges a missing extends ` +
-        'target into ZERO commands and still exits 0, so this repo has no pre-commit gate and ' +
-        `\`lefthook dump\` looks clean. Repoint it at "${lefthookCorrect}".`,
-    )
-  } else if (lefthookGate.kind === 'absent') {
-    // Warn, not fail — same tier the string-matching version used. A consumer may deliberately
-    // gate in CI only, and doctor does not get to promote its own advice to a build break.
-    warn(
-      `${lefthookGate.file}: \`lefthook dump\` resolves the merged config and NO pre-commit ` +
-        'command runs check-theme — the theme guard is not gating commits. Either add ' +
-        `"extends: [${lefthookCorrect}]", or add your own command running ` +
-        `\`${basaltBinCommand(install, cwd)} check-theme\` (with \`root:\` if it must run in a ` +
-        'subdirectory).',
-    )
-  } else {
-    warn(
-      `${lefthookGate.file} names no basalt gate and \`lefthook dump\` could not be run here, so ` +
-        'this check cannot tell a missing gate from one wired through an `include:` or a remote ' +
-        'config it never read — treat it as advisory. If the guard really is unwired, add ' +
-        `"extends: [${lefthookCorrect}]" or your own command running ` +
-        `\`${basaltBinCommand(install, cwd)} check-theme\`.`,
-    )
-  }
-
-  // ── Warn check 8: the icon files basaltAppPlugin actually references exist ────
-  // basalt-ui/vite's basaltAppPlugin (head/manifest metadata) references six filenames by default
-  // (the realfavicongenerator convention), but since 1.23.0 an app can NAME its own — so the option
-  // is read (see {@link readAppIconsOption}) rather than assumed.
-  //
-  // It used to read `cwd` alone, and in a monorepo the vite config lives in the app PACKAGE while
-  // the only invocation that exits 0 is the repo root. The check therefore vanished from the root
-  // run with no line at all — the failure mode SKIPPED exists to eliminate — leaving no single
-  // invocation that both passes and checks the icons. It now resolves the app package the same way
-  // the scan does, off `basalt.roots`; see {@link findAppPluginDir}.
-  if (profile === 'framework') {
-    const appDir = findAppPluginDir(cwd, cfg)
-    const iconsIn = appDir ?? cwd
-    const icons = readAppIconsOption(iconsIn)
-    const here = appDir === null || appDir === cwd ? '' : `${relativePosix(cwd, appDir)}/`
-    const publicDir = resolve(iconsIn, 'public')
-    if (appDir === null && !existsSync(publicDir)) {
-      // No `basaltAppPlugin(` anywhere under the declared roots and no public/ here: nothing in
-      // this project references icon files, so there is nothing to check — and saying so is the
-      // point. A check that vanishes without a word is indistinguishable from one that passed.
-      pass('app icons: no `basaltAppPlugin(` under this project and no public/ — nothing to check')
-    } else if (icons.kind === 'none') {
-      pass('basaltAppPlugin is configured with no icons — nothing to check')
-    } else if (!existsSync(publicDir)) {
-      skip(
-        `app icons — ${here === '' ? 'this package' : here.replace(/\/$/, '')} configures ` +
-          'basaltAppPlugin, but there is no `public/` beside its vite config, so the files it ' +
-          "references cannot be located. Use Vite's public-dir convention, or set `icons: false` " +
-          'if this app ships none.',
-      )
-    } else if (icons.kind === 'explicit') {
-      // The app NAMED its icons, so those are the only files it owes. Checking the six defaults
-      // here is what told 1.23.0's flagship adopter to generate five files it deliberately lacks.
-      const missing = icons.sources.filter(
-        (src) => !existsSync(resolve(publicDir, src.replace(/^\//, ''))),
-      )
-      if (missing.length > 0) {
-        warn(
-          `basaltAppPlugin declares icon(s) that are not in ${here}public/: ${missing.join(', ')} — ` +
-            'the manifest and the head links will point at a 404. Place them, or drop them from ' +
-            'the `icons` array.',
-        )
-      } else {
-        pass(
-          `${here}public/ has all ${icons.sources.length} icon file(s) basaltAppPlugin's ` +
-            '`icons` option names',
-        )
-      }
-    } else {
-      const dir = icons.kind === 'default' ? icons.dir : null
-      const iconRoot = dir === null ? publicDir : resolve(publicDir, dir.replace(/^\//, ''))
-      const shown = dir === null ? `${here}public/` : `${here}public/${dir.replace(/^\//, '')}`
-      const missingIcons = DEFAULT_APP_ICON_FILES.filter((f) => !existsSync(resolve(iconRoot, f)))
-      if (missingIcons.length > 0) {
-        warn(
-          `${shown} is missing basaltAppPlugin icon file(s): ${missingIcons.join(', ')} — generate ` +
-            `them (e.g. via realfavicongenerator.net) and place them at the ${shown} root, or name ` +
-            "the icons this app really has via the plugin's `icons` array.",
-        )
-      } else {
-        pass(`${shown} has all of basaltAppPlugin's default icon files`)
-      }
-    }
-  }
-
-  // ── Hard check 9: ai package major version parity across workspace packages ─
-  // basalt/ai-sdk-major (the lint rule) is per-file against the NEAREST package.json, so a lint
-  // run scoped to one workspace package only ever sees that package's own `ai` major and is
-  // perfectly happy. The real defect is CROSS-package (argo defect 1: apps/api on ai@5 producing a
-  // stream apps/dashboard's ai@7 client can't parse) and only a repo-wide manifest walk sees it —
-  // this is that walk. Hard failure, not a warning: a skewed pair throws at runtime, it doesn't
-  // just look different. `basalt.aiMajorSkewReason` exempts an INTENTIONAL skew (e.g. a
-  // producer-side TransformStream neutralizing the divergent enum value) — see the BasaltConfig
-  // JSDoc for its exact semantics; a stale declaration (skew resolved, reason still present) warns
-  // instead of passing silently.
-  const workspaceWalk = collectWorkspacePackages(cwd)
-  const aiMajors = workspaceWalk.packages
-    .map((pkg) => ({ name: pkg.name, major: aiMajorAt(pkg.dir) }))
-    .filter((entry): entry is { name: string; major: number } => entry.major !== null)
-  const { reason: aiMajorSkewReason, presentButInvalid: aiMajorSkewReasonInvalid } =
-    resolveAiMajorSkewReason(cfg)
-  if (aiMajors.length > 0) {
-    const distinctMajors = new Set(aiMajors.map((entry) => entry.major))
-    if (distinctMajors.size > 1) {
-      const summary = aiMajors.map((entry) => `${entry.name}@ai${entry.major}`).join(', ')
-      if (aiMajorSkewReason !== null) {
-        pass(
-          `ai package major version mismatch across workspace packages: ${summary} — exempted via ` +
-            `basalt.aiMajorSkewReason: "${aiMajorSkewReason}"`,
-        )
-      } else if (aiMajorSkewReasonInvalid) {
-        fail(
-          `ai package major version mismatch across workspace packages: ${summary} — ` +
-            'basalt.aiMajorSkewReason is present but is not a non-empty string (a bare `true` is ' +
-            'not accepted); the exemption must carry a written reason, e.g. ' +
-            '`aiMajorSkewReason: "apps/api on ai@5, apps/dashboard on ai@7, neutralized by a ' +
-            'producer-side TransformStream"`.',
-        )
-      } else {
-        fail(`ai package major version mismatch across workspace packages: ${summary}`)
-      }
-    } else {
-      const [major] = distinctMajors
-      if (aiMajorSkewReason !== null) {
-        warn(
-          `basalt.aiMajorSkewReason ("${aiMajorSkewReason}") is declared but the ai package major ` +
-            `already matches across all ${aiMajors.length} workspace package(s) declaring it ` +
-            `(ai@${major}) — the exemption is no longer needed and can be deleted.`,
-        )
-      } else {
-        pass(
-          `ai package major matches across ${aiMajors.length} workspace package(s) declaring it (ai@${major})`,
-        )
-      }
-    }
-  } else if (workspaceWalk.hasWorkspacesField) {
-    // A hard check that can silently not run is worse than one that is absent — say so.
-    pass('ai-major-parity: no workspace package declares the ai dependency — nothing to compare')
-  }
-
-  // ── Report ──────────────────────────────────────────────────────────────────
-  // "All checks passed" is only printable when every check ran AND passed. A skipped check counts
-  // against the exit code on its own — the report that dropped two of five checks and still
-  // claimed green is the bug this footer exists to make impossible.
-  lines.push('')
-  if (result.hardFailures === 0 && result.warnings === 0 && result.skipped === 0) {
-    lines.push('All checks passed.')
-  } else {
-    const parts: string[] = []
-    if (result.hardFailures > 0) parts.push(`${result.hardFailures} hard failure(s)`)
-    if (result.skipped > 0) parts.push(`${result.skipped} check(s) SKIPPED (could not run)`)
-    parts.push(`${result.warnings} warning(s)`)
-    lines.push(`${parts.join(', ')}.`)
-  }
-  lines.push('')
-
-  if (result.hardFailures > 0 || result.skipped > 0) {
-    console.error(lines.join('\n'))
-    return 1
-  }
-  console.log(lines.join('\n'))
-  return 0
-}
-
-/** The six filenames `basaltAppPlugin` references when `icons` is left at its default. */
-const DEFAULT_APP_ICON_FILES = [
-  'favicon.ico',
-  'favicon.svg',
-  'favicon-96x96.png',
-  'apple-touch-icon.png',
-  'web-app-manifest-192x192.png',
-  'web-app-manifest-512x512.png',
-] as const
-
-const VITE_CONFIG_FILES = [
-  'vite.config.ts',
-  'vite.config.mts',
-  'vite.config.cts',
-  'vite.config.js',
-  'vite.config.mjs',
-  'vite.config.cjs',
-] as const
-
-/**
- * The directory whose vite config actually calls `basaltAppPlugin(` — cwd, or the app package the
- * declared roots point into. Null when no vite config under this project calls it.
- *
- * `basalt.roots: ["apps/web/src"]` already names where the app is; the icon check just never used
- * it, so from the repo root — the only invocation that can exit 0 on a monorepo layout — it found
- * no vite config and silently emitted nothing. Each root is walked from its own directory up to
- * cwd, nearest first, so `apps/web/src` resolves to `apps/web`, the package that owns both the
- * vite config and the `public/` tree.
- */
-function findAppPluginDir(cwd: string, cfg: BasaltConfig): string | null {
-  const seen = new Set<string>()
-  const candidates: string[] = []
-  const add = (dir: string): void => {
-    if (seen.has(dir)) return
-    seen.add(dir)
-    candidates.push(dir)
-  }
-  add(cwd)
-  for (const root of resolveRoots(cfg)) {
-    let current = resolve(cwd, root)
-    // A root that escapes cwd (`../shared`) is not this project's app package — never walk out.
-    while (current !== cwd && !relative(cwd, current).startsWith('..')) {
-      add(current)
-      const parent = dirname(current)
-      if (parent === current) break
-      current = parent
-    }
-  }
-  for (const dir of candidates) {
-    const configPath = VITE_CONFIG_FILES.map((f) => resolve(dir, f)).find((f) => existsSync(f))
-    if (configPath === undefined) continue
-    if (readIfExists(configPath)?.includes('basaltAppPlugin(') === true) return dir
-  }
-  return null
-}
-
-/**
- * What `basaltAppPlugin`'s `icons` option says this app actually has.
- *
- * `unknown` = no vite config, no `basaltAppPlugin(` call, or an `icons` value this bounded read
- * cannot classify — all three fall back to the six-default check, so the gate can only ever get
- * NARROWER than it was, never blinder.
- */
-type AppIconsOption =
-  | { kind: 'default'; dir: string | null }
-  | { kind: 'none' }
-  | { kind: 'explicit'; sources: readonly string[] }
-  | { kind: 'unknown' }
-
-/** The balanced `(`…`)` / `{`…`}` / `[`…`]` span starting at `open`, or null if it never closes. */
-function balancedSpan(text: string, open: number): string | null {
-  const pairs: Record<string, string> = { '(': ')', '{': '}', '[': ']' }
-  const closer = pairs[text[open] as string]
-  if (closer === undefined) return null
-  let depth = 0
-  for (let i = open; i < text.length; i++) {
-    const ch = text[i] as string
-    if (ch === text[open]) depth++
-    else if (ch === closer) {
-      depth--
-      if (depth === 0) return text.slice(open, i + 1)
-    }
-  }
-  return null
-}
-
-/**
- * Read the `icons` option out of the consumer's vite config.
- *
- * 1.23.0 let `icons` name an app's REAL icon files; doctor's icon check kept demanding the six
- * default filenames and never read the option, so adopting the release's headline feature produced
- * a brand-new warning — on the very repo the feature was written for. A warning that fires BECAUSE
- * you adopted the new API teaches people to ignore doctor.
- *
- * doctor does not run the build, so the plugin's resolved answer is not available to it; this is a
- * bounded textual read of the config file, the same shape the guard uses on source. It is
- * deliberately conservative: anything it cannot classify returns `unknown` and the old check runs.
- */
-function readAppIconsOption(cwd: string): AppIconsOption {
-  const configPath = VITE_CONFIG_FILES.map((f) => resolve(cwd, f)).find((f) => existsSync(f))
-  if (configPath === undefined) return { kind: 'unknown' }
-  const text = readIfExists(configPath)
-  if (text === null) return { kind: 'unknown' }
-  const call = text.indexOf('basaltAppPlugin(')
-  if (call === -1) return { kind: 'unknown' }
-  const args = balancedSpan(text, call + 'basaltAppPlugin'.length)
-  if (args === null) return { kind: 'unknown' }
-  const key = args.search(/\bicons\s*:/)
-  if (key === -1) return { kind: 'default', dir: null }
-  const valueStart = args.indexOf(':', key) + 1
-  const rest = args.slice(valueStart).trimStart()
-  if (rest.startsWith('false')) return { kind: 'none' }
-  const offset = args.length - rest.length
-  if (rest.startsWith('[')) {
-    const list = balancedSpan(args, offset)
-    if (list === null) return { kind: 'unknown' }
-    const sources = [...list.matchAll(/\bsrc\s*:\s*['"`]([^'"`]+)['"`]/g)].map(
-      (m) => m[1] as string,
-    )
-    // An empty array means "this app has no icons" to the plugin, same as `false`.
-    return sources.length === 0 ? { kind: 'none' } : { kind: 'explicit', sources }
-  }
-  if (rest.startsWith('{')) {
-    const obj = balancedSpan(args, offset)
-    if (obj === null) return { kind: 'unknown' }
-    const dir = /\bdir\s*:\s*['"`]([^'"`]+)['"`]/.exec(obj)
-    return { kind: 'default', dir: dir === null ? null : (dir[1] as string) }
-  }
-  return { kind: 'unknown' }
-}
-
-/** Read the value that follows a `--flag` in an argv slice; `undefined` when absent or terminal. */
-function flagValue(flags: string[], name: string): string | undefined {
-  const i = flags.indexOf(name)
-  if (i === -1) return undefined
-  const value = flags[i + 1]
-  return value === undefined || value.startsWith('--') ? undefined : value
-}
-
-/**
- * The generated-file header: the canonical marker line (imported from the guard, which owns it),
- * then the version + invocation that produced the file.
- *
- * Both lines are load-bearing, not decoration — `checkSource` only exempts a stylesheet whose line
- * 1 is the marker verbatim AND whose line 2 parses as this provenance line. Reword either half and
- * basalt starts reporting its own output again (116 findings in rollhook's token sheet).
- */
-function generatedHeader(version: string, command: string, flags: string[]): string {
-  const shown = flags.filter((f) => f !== '--check')
-  const invocation = shown.length === 0 ? command : `${command} ${shown.join(' ')}`
-  return `${GENERATED_HEADER_LINE}\n/* basalt-ui ${version} — \`basalt-ui ${invocation}\` */\n`
-}
-
-/**
- * The provenance line, split so only the VERSION token can be neutralized.
- *
- * Deliberately the same shape as the guard's `GENERATED_PROVENANCE_LINE` (`src/guard/index.ts`),
- * which is what the `@generated` exemption tests line 2 against — the two must keep agreeing, so
- * this is written to match, not to be lenient. A line that does not match is left VERBATIM, which
- * is what makes a deleted, reworded or forged header fail `--check` instead of being blanked into
- * agreement.
- */
-const PROVENANCE_VERSION =
-  /^(\/\* basalt-ui )(\d+\.\d+\.\d+\S*)( — `basalt-ui (?:tokens:css|fonts:css)[^`]*` \*\/)$/
-
-/** The provenance line's version token, or null when line 2 is not a provenance line at all. */
-function provenanceVersion(css: string): string | null {
-  const match = PROVENANCE_VERSION.exec(css.split('\n')[1] ?? '')
-  return match === null ? null : (match[2] as string)
-}
-
-/**
- * The generated file with only the provenance line's VERSION TOKEN neutralized — what `--check`
- * actually compares.
- *
- * `--check` used to gate the whole file byte-for-byte, so every basalt-ui release forced a
- * mandatory no-op commit in every consumer that commits a generated sheet. 1.23.1 fixed that by
- * blanking the whole of line 2 — and line 2 is the line that carries the exact invocation, which
- * line 1 tells the reader to regenerate with. The gate stopped verifying the one instruction it
- * hands out: rollhook's header was rewritten from `--only core --no-legacy-aliases` to `--only all
- * --with-legacy-aliases` and `--check` passed clean.
- *
- * So the version token is replaced by a sentinel and the rest of the line still gates. A release
- * alone never trips the check; a changed flag, a reworded header, and a header that is simply gone
- * all do.
- *
- * The version STAYS in the file rather than being dropped, because the consumer this command exists
- * for — a framework-free site running `bunx basalt-ui tokens:css` with no basalt in its dependency
- * tree at all — has no other record of which version emitted it, and no `doctor` to ask.
- *
- * Line-aligned, never dropped, so the reported line counts still match the files on disk. The
- * `@generated` exemption is untouched by all of this: nothing here changes what
- * {@link generatedHeader} emits, and {@link PROVENANCE_VERSION} is matched to the guard's own
- * provenance regex rather than replacing it.
- */
-function withoutProvenanceVersion(css: string): string {
-  const lines = css.split('\n')
-  const line = lines[1]
-  if (line === undefined) return css
-  const match = PROVENANCE_VERSION.exec(line)
-  if (match === null) return css
-  lines[1] = `${match[1] as string}<version>${match[3] as string}`
-  return lines.join('\n')
-}
-
-/** The leading `major.minor.patch` of a version string as numbers, or null when it has none. */
-function versionTriple(version: string): number[] | null {
-  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
-  return match === null ? null : [Number(match[1]), Number(match[2]), Number(match[3])]
-}
-
-/**
- * How the on-disk provenance version relates to the one that just ran — measured, not assumed.
- *
- * The success message asserted the file "still names an older basalt-ui" without ever reading the
- * token, so `0.0.1-nonsense` got the same sentence. Both sides are parsed; the numeric triples are
- * compared and anything that does not order cleanly is reported as merely different.
- */
-function describeVersionSkew(onDisk: string, current: string): string {
-  const a = versionTriple(onDisk)
-  const b = versionTriple(current)
-  if (a === null || b === null) return 'a different'
-  for (let i = 0; i < 3; i++) {
-    const left = a[i] as number
-    const right = b[i] as number
-    if (left < right) return 'an older'
-    if (left > right) return 'a newer'
-  }
-  return 'a different'
-}
-
-/**
- * Space- and number-normalize the argument list of a legacy color function so the emitted file
- * survives a normal repo's formatter.
- *
- * This is FORMATTING ONLY and deliberately the CLI's single deviation from "print exactly what
- * `buildPaletteCss` returned": `rgba(255,255,255,0.6)` and `rgba(255, 255, 255, 0.6)` are the same
- * colour, the shipped palette emits the first form on the dark side and the second on the light
- * side, and a consumer committing the output ate a lint-ignore entry for the difference. The token
- * VALUES are untouched — nothing here can change what basalt's tokens are.
- *
- * Trailing zeros go the same way and for the same reason: prettier rewrites `0.10` → `0.1`, so the
- * two `rgba(28, 25, 23, 0.10)` alphas in the light shadow tokens were the whole reason the one
- * framework-free consumer still could not lint its committed sheet — `--fix` and `tokens:css
- * --check` disagreed forever, and the lint-ignore entry survived two releases. Only a bare decimal
- * literal is touched (never a `%`, a `var()` or a unit), and `0.10`/`0.1` are the same number.
- *
- * Exported for tests, so the expectation can be computed rather than restated.
- */
-export function normalizeColorFunctions(css: string): string {
-  return css.replace(/\b(rgba?|hsla?)\(([^()]*)\)/g, (_match, fn: string, args: string) => {
-    const parts = args.split(',').map((part) => normalizeCssNumber(part.trim()))
-    return `${fn}(${parts.join(', ')})`
-  })
-}
-
-/** `0.10` → `0.1`, `1.0` → `1`; anything that is not a bare decimal literal is returned verbatim. */
-function normalizeCssNumber(arg: string): string {
-  if (!/^\d+\.\d+$/.test(arg)) return arg
-  return arg.replace(/\.?0+$/, '')
-}
-
-/** A scheme-class emission uses this sentinel attribute, then rewrites it to a class selector. */
-const SCHEME_CLASS_SENTINEL = 'data-basalt-scheme-class'
-
-/**
- * Write (or drift-check) a generated stylesheet. `--check` makes no writes and exits 1 when the
- * file on disk differs from what would be emitted — the CI gate for a committed `tokens:css`
- * artifact, mirroring `sync --check`. Without `--out` the content goes to stdout unchanged.
- */
-function emitGeneratedCss(content: string, flags: string[], cwd: string, command: string): number {
-  const out = flagValue(flags, '--out')
-  const check = flags.includes('--check')
-  if (out === undefined) {
-    if (check) {
-      console.error(
-        `${command}: --check needs --out <path> — there is nothing to compare stdout to.`,
-      )
-      return 1
-    }
-    process.stdout.write(content)
-    return 0
-  }
-  const target = isAbsolute(out) ? out : resolve(cwd, out)
-  const shown = relative(cwd, target) || target
-  if (check) {
-    const onDisk = readIfExists(target)
-    if (onDisk === null) {
-      console.error(
-        `✖ ${command} --check: ${shown} does not exist — run without --check to write it.`,
-      )
-      return 1
-    }
-    if (withoutProvenanceVersion(onDisk) === withoutProvenanceVersion(content)) {
-      const diskVersion = provenanceVersion(onDisk)
-      const currentVersion = provenanceVersion(content)
-      const skew =
-        diskVersion !== null && currentVersion !== null && diskVersion !== currentVersion
-          ? ` (Its provenance line names basalt-ui ${diskVersion}, ` +
-            `${describeVersionSkew(diskVersion, currentVersion)} release than the ` +
-            `${currentVersion} that just ran — only that version token is excluded from the ` +
-            'comparison. Re-run without --check whenever you want it refreshed.)'
-          : ''
-      console.log(`✓ ${command} --check: ${shown} is up to date.${skew}`)
-      return 0
-    }
-    // Name the provenance line when it is the ONLY thing that moved: the diff is one line the
-    // reader is about to scroll past, and a rewritten invocation is the failure that bought this
-    // branch — line 1 tells them to regenerate with line 2, so line 2 has to be true.
-    const diskLines = onDisk.split('\n')
-    const wantLines = content.split('\n')
-    const provenanceOnly =
-      diskLines.length === wantLines.length &&
-      diskLines.every((line, i) => i === 1 || line === wantLines[i]) &&
-      diskLines[1] !== wantLines[1]
-    if (provenanceOnly) {
-      console.error(
-        `✖ ${command} --check: ${shown}'s \`@generated\` provenance line does not match the ` +
-          'command that produced this content — the token values agree, line 2 does not.\n' +
-          `  on disk: ${diskLines[1]}\n` +
-          `  emitted: ${wantLines[1]}\n` +
-          'Line 1 tells the reader to regenerate with line 2, so line 2 is gated: run the emitted ' +
-          'invocation without --check and commit the result, or change the flags this check runs ' +
-          'with to the ones the file was really built from. Only the version token is exempt.',
-      )
-      return 1
-    }
-    console.error(
-      `✖ ${command} --check: ${shown} differs from what \`basalt-ui ${command}\` emits today ` +
-        `(on disk ${diskLines.length} lines, emitted ${wantLines.length}) — ` +
-        're-run the same command without --check and commit the result. Only the `@generated` ' +
-        "provenance line's VERSION token is excluded from this comparison, so a release alone " +
-        'never trips it — but its flags do.',
-    )
-    return 1
-  }
-  mkdirSync(dirname(target), { recursive: true })
-  writeFileSync(target, content)
-  console.log(`wrote ${content.split('\n').length} lines → ${shown}`)
-  return 0
-}
-
-/**
- * tokens:css — emit the `--vx-*` stylesheet, optionally retargeted.
- *
- * The escape hatch from installing anything: a static site runs this once (`bunx basalt-ui
- * tokens:css --selector-attribute data-theme --out src/tokens.css`) and consumes basalt's token
- * system as plain CSS, with no package in its dependency tree at all. `basalt-ui/tokens.css` is the
- * same artifact for a consumer that does install; this command exists for the ones that shouldn't
- * have to just to change a selector.
- *
- * It parses flags and calls `buildPaletteCss` for the token VALUES — the CLI and the API must not
- * be able to disagree about what basalt's tokens are. What it adds is strictly file framing for an
- * artifact a consumer COMMITS: the `@generated` header (the guard's skip marker), a trailing
- * newline, and `rgba()` argument spacing. All three were reported by the one framework-free
- * consumer as the reasons the output could not simply be committed.
- */
-export function tokensCss(flags: string[], cwd: string = process.cwd()): number {
-  const attribute = flagValue(flags, '--selector-attribute')
-  const schemeClass = flagValue(flags, '--selector-class')
-  const lightClass = flagValue(flags, '--light-class')
-  const darkValue = flagValue(flags, '--dark-value')
-  const lightValue = flagValue(flags, '--light-value')
-  const defaultScheme = flagValue(flags, '--default-scheme')
-
-  const only = flagValue(flags, '--only')
-
-  if (defaultScheme !== undefined && !['dark', 'light', 'none'].includes(defaultScheme)) {
-    console.error(
-      `tokens:css: --default-scheme must be dark, light or none (got '${defaultScheme}')`,
-    )
-    return 1
-  }
-  if (only !== undefined && !['core', 'all'].includes(only)) {
-    console.error(`tokens:css: --only must be core or all (got '${only}')`)
-    return 1
-  }
-  if (schemeClass !== undefined && attribute !== undefined) {
-    console.error(
-      'tokens:css: --selector-class and --selector-attribute are alternatives — pass one.',
-    )
-    return 1
-  }
-  if (schemeClass !== undefined && /[^\w-]/.test(schemeClass)) {
-    console.error(
-      `tokens:css: --selector-class must be a plain CSS class name (got '${schemeClass}')`,
-    )
-    return 1
-  }
-  if (lightClass !== undefined && /[^\w-]/.test(lightClass)) {
-    console.error(`tokens:css: --light-class must be a plain CSS class name (got '${lightClass}')`)
-    return 1
-  }
-
-  // A class selector is Tailwind's universal dark convention (`<html class="dark">`) and was
-  // reachable before only by parking dark on the bare `:root` via --default-scheme. `buildPaletteCss`
-  // emits attribute selectors, so the class form is produced by emitting against a sentinel
-  // attribute this CLI chose itself and rewriting exactly those selectors — a rewrite of strings
-  // the command generated deterministically, never of a token value.
-  const resolvedDarkValue = schemeClass !== undefined ? schemeClass : darkValue
-  const resolvedLightValue = schemeClass !== undefined ? (lightClass ?? 'light') : lightValue
-  const resolvedAttribute = schemeClass !== undefined ? SCHEME_CLASS_SENTINEL : attribute
-
-  const scheme = {
-    ...(resolvedAttribute === undefined ? {} : { attribute: resolvedAttribute }),
-    ...(resolvedDarkValue === undefined ? {} : { darkValue: resolvedDarkValue }),
-    ...(resolvedLightValue === undefined ? {} : { lightValue: resolvedLightValue }),
-  }
-
-  let css = buildPaletteCss({
-    ...(Object.keys(scheme).length === 0 ? {} : { scheme }),
-    ...(defaultScheme === undefined
-      ? {}
-      : { defaultScheme: defaultScheme as 'dark' | 'light' | 'none' }),
-    ...(flags.includes('--media-fallback') ? { mediaFallback: true } : {}),
-    ...(only === undefined ? {} : { only: only as 'core' | 'all' }),
-    // The tokens-only consumer is exactly the one who writes these names by hand, so they are also
-    // the one who wants the deprecated camelCase aliases gone — and this command is their only
-    // entry point. Without the flag the CLI and the API could disagree about what basalt's tokens
-    // are, which is the one thing this command is documented never to allow.
-    ...(flags.includes('--no-legacy-aliases') ? { legacyAliases: false } : {}),
-  })
-
-  if (schemeClass !== undefined) {
-    css = css.replace(
-      new RegExp(`\\[${SCHEME_CLASS_SENTINEL}='([\\w-]+)'\\]`, 'g'),
-      (_match, value: string) => `.${value}`,
-    )
-  }
-
-  const version = readFrameworkVersion(packageRoot())
-  const content = `${generatedHeader(version, 'tokens:css', flags)}${normalizeColorFunctions(css)}\n`
-  return emitGeneratedCss(content, flags, cwd, 'tokens:css')
-}
-
-/** Every `--basalt-font-*` declaration in the shipped stylesheet, in source order. */
-function readShippedFontDecls(pkgRoot: string): { name: string; value: string }[] {
-  const css = readSource(pkgRoot, 'dist/styles.css') ?? readSource(pkgRoot, 'src/styles.css')
-  if (css === null) return []
-  const decls: { name: string; value: string }[] = []
-  for (const match of css.matchAll(/(--basalt-font[\w-]*)\s*:\s*([^;]+);/g)) {
-    decls.push({
-      name: match[1] as string,
-      value: (match[2] as string).replace(/\s+/g, ' ').trim(),
-    })
-  }
-  return decls
-}
-
-/**
- * fonts:css — emit the shipped `--basalt-font-*` stacks as plain CSS.
- *
- * The typeface half of the framework-free route, which had no supported path at all: `tokens.css`
- * emits no font vars, `styles.css` is the one place the defaults live and a framework-free consumer
- * is told not to import it, and `buildFontsCss` returns `''` unless the caller already knows the
- * stacks. The one non-Mantine consumer lost its font identity entirely and hardcoded the stacks —
- * which the theme guard then flagged as `raw-font-family`.
- *
- * The declarations are READ from the shipped stylesheet rather than restated here, so this command
- * and `basalt-ui/styles.css` can never name different typefaces. Note the fonts themselves are
- * `@fontsource-variable/*` packages: without them the stacks fall through to their own system
- * fallbacks, which is the intended framework-free behaviour.
- */
-export function fontsCss(flags: string[], cwd: string = process.cwd()): number {
-  const pkgRoot = packageRoot()
-  const decls = readShippedFontDecls(pkgRoot)
-  if (decls.length === 0) {
-    console.error(
-      'fonts:css: could not read the shipped font stacks from styles.css — this is a packaging ' +
-        'bug in basalt-ui, not a config error.',
-    )
-    return 1
-  }
-  const body = `:root {\n${decls.map((d) => `  ${d.name}: ${d.value};`).join('\n')}\n}\n`
-  const header = generatedHeader(readFrameworkVersion(pkgRoot), 'fonts:css', flags)
-  return emitGeneratedCss(`${header}${body}`, flags, cwd, 'fonts:css')
-}
-
-/**
- * guard-hook — PreToolUse stdin adapter.
- *
- * Reads a JSON PreToolUse payload from stdin, evaluates it against the consumer's GuardConfig
- * (from the "basalt" key in the nearest package.json), and writes the Claude Code hook response
- * to stdout. Always exits 0 — the hook must never block Claude on a parse error or non-file tool.
- */
-export async function guardHook(cwd: string = process.cwd()): Promise<number> {
-  let raw: string
-  try {
-    // Bun: Bun.stdin.text() drains stdin to a string; under Node fall back to manual drain.
-    if (typeof (globalThis as Record<string, unknown>)['Bun'] !== 'undefined') {
-      raw = await globalThis['Bun'].stdin.text()
-    } else {
-      const chunks: Buffer[] = []
-      for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
-      raw = Buffer.concat(chunks).toString('utf8')
-    }
-  } catch {
-    // Unreadable stdin → allow
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
-    return 0
-  }
-
-  let payload: unknown
-  try {
-    payload = JSON.parse(raw)
-  } catch {
-    // Malformed JSON → allow (never block on a bad payload)
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
-    return 0
-  }
-
-  const cfg = readBasaltConfig(cwd)
-  const guardCfg: GuardConfig = {
-    spacingSteps: cfg.spacingSteps ?? DEFAULT_GUARD_CONFIG.spacingSteps,
-    rawRadius: cfg.rawRadius ?? DEFAULT_GUARD_CONFIG.rawRadius,
-    forbiddenAccents: cfg.forbiddenAccents ?? DEFAULT_GUARD_CONFIG.forbiddenAccents,
-    mantineShadeIndex: cfg.mantineShadeIndex ?? DEFAULT_GUARD_CONFIG.mantineShadeIndex,
-    rawSurface: cfg.rawSurface ?? DEFAULT_GUARD_CONFIG.rawSurface,
-    cardWithBorder: cfg.cardWithBorder ?? DEFAULT_GUARD_CONFIG.cardWithBorder,
-    offSystemSurfaceVar: cfg.offSystemSurfaceVar ?? DEFAULT_GUARD_CONFIG.offSystemSurfaceVar,
-    rawHtmlLayout: cfg.rawHtmlLayout ?? DEFAULT_GUARD_CONFIG.rawHtmlLayout,
-    inlineSpacing: cfg.inlineSpacing ?? DEFAULT_GUARD_CONFIG.inlineSpacing,
-    inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
-    rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
-    rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
-    rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
-    sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
-    allowComment: 'theme-allow',
-    exemptRules: resolveExemptRules(cfg),
-    severity: cfg.severity ?? DEFAULT_GUARD_CONFIG.severity,
-    // Same detection check-theme uses: the hook must never block an edit over advice the app
-    // cannot take ("use @mantine/core's Select") in a repo with no Mantine.
-    ...(declaredProfile(cfg, []) === 'tokens-only' ? { profile: 'tokens-only' as const } : {}),
-  }
-
-  // Honor the consumer's roots / exempt / skip config so the hook never blocks edits to exempted
-  // palette source or files outside the guarded roots (mirrors checkTheme's file-walk scoping).
-  const roots = cfg.roots ?? DEFAULT_ROOTS
-  const exempt = new Set(cfg.exempt ?? defaultExempt(cfg))
-  const isInScope = (filePath: string): boolean => {
-    const abs = isAbsolute(filePath) ? filePath : resolve(cwd, filePath)
-    const rel = relative(cwd, abs).replace(/\\/g, '/')
-    if (rel === '' || rel.startsWith('..')) return false
-    if (SKIP.test(rel) || exempt.has(rel)) return false
-    return roots.some((root) => {
-      const r = root.replace(/\\/g, '/').replace(/\/+$/, '')
-      return rel === r || rel.startsWith(`${r}/`)
-    })
-  }
-
-  const result = evaluateGuardHook(payload, guardCfg, { isInScope })
-
-  if (result.permissionDecision === 'deny' && result.reason !== undefined) {
-    process.stdout.write(
-      JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: 'PreToolUse',
-          permissionDecision: 'deny',
-          permissionDecisionReason: result.reason,
-        },
-      }) + '\n',
-    )
-  } else {
-    process.stdout.write(
-      '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}\n',
-    )
-  }
-  return 0
-}
-
-/**
- * Every flag each subcommand accepts — the table the unknown-flag gate reads.
- *
- * An unrecognized flag used to be SILENTLY IGNORED and the command exited 0: `check-theme
- * --audit-allow` scanned normally and reported success, `doctor --json` printed the human report.
- * That is the same fail-open shape `--version` had, and it is worse on a CLI agents drive
- * programmatically, where a typo'd gate reads as a passing gate.
- */
-const COMMAND_FLAGS: Record<string, readonly string[]> = {
-  init: ['--with-router', '--with-query', '--merge-lint'],
-  sync: ['--force', '--check', '--tokens-only', '--framework'],
-  'check-theme': ['--audit-allows', '--tokens-only', '--framework'],
-  'check-coverage': ['--write', '--check'],
-  doctor: ['--tokens-only', '--framework'],
-  'guard-hook': [],
-  'tokens:css': [
-    '--out',
-    '--check',
-    '--selector-attribute',
-    '--selector-class',
-    '--light-class',
-    '--dark-value',
-    '--light-value',
-    '--default-scheme',
-    '--media-fallback',
-    '--only',
-    '--no-legacy-aliases',
-  ],
-  'fonts:css': ['--out', '--check'],
-}
-
-/** Flags whose VALUE is the next argv token — skipped by the gate so `--out dist/x.css` does not
- * read `dist/x.css` as a second flag. */
-const VALUE_FLAGS = new Set([
-  '--out',
-  '--selector-attribute',
-  '--selector-class',
-  '--light-class',
-  '--dark-value',
-  '--light-value',
-  '--default-scheme',
-  '--only',
-])
-
-/** The first flag `cmd` does not accept, or null. Unknown commands return null — the dispatcher's
- * default branch already names those. */
-function unknownFlag(cmd: string, flags: readonly string[]): string | null {
-  const allowed = COMMAND_FLAGS[cmd]
-  if (allowed === undefined) return null
-  for (let i = 0; i < flags.length; i++) {
-    const flag = flags[i] as string
-    if (!flag.startsWith('-')) continue
-    if (!allowed.includes(flag)) return flag
-    if (VALUE_FLAGS.has(flag)) i++
-  }
-  return null
-}
-
-/** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
-const USAGE =
-  'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
-  '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
-  '                  check-theme [--audit-allows] | check-coverage [--write|--check] |\n' +
-  '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
-  'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
-  '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
-  '  `basalt.exemptRules` entry, with what each one still suppresses — proved by re-running the\n' +
-  '  guard with that one waiver neutralized, not by reading its text. Exits 1 on a waiver that\n' +
-  '  suppresses nothing (dead), which is what makes it usable as a CI gate.\n\n' +
-  'tokens:css [--out <path>] [--check] [--selector-attribute <attr> | --selector-class <class>]\n' +
-  '           [--light-class <class>] [--dark-value <v>] [--light-value <v>]\n' +
-  '           [--default-scheme <dark|light|none>] [--media-fallback] [--only <core|all>]\n' +
-  '           [--no-legacy-aliases]\n' +
-  '  Emit the --vx-* stylesheet (stdout unless --out). Defaults reproduce basalt-ui/tokens.css.\n' +
-  '  --selector-class emits `:root.dark` instead of an attribute selector (the Tailwind convention).\n' +
-  '  --check writes nothing and exits 1 when --out differs from what would be emitted (a CI gate).\n' +
-  '  --no-legacy-aliases drops the deprecated camelCase spellings (--vx-accentFill and friends),\n' +
-  '  which are emitted by default as aliases of the canonical kebab-case names.\n\n' +
-  'fonts:css [--out <path>] [--check]\n' +
-  '  Emit the shipped --basalt-font-* stacks as plain CSS — the typeface half of the token layer,\n' +
-  '  otherwise reachable only by importing styles.css.\n\n' +
-  'doctor [--tokens-only|--framework]\n' +
-  '  Auto-detects a tokens-only consumer (no manifest + no @mantine/core) and checks only what\n' +
-  '  applies. A check that cannot RUN is reported as SKIPPED and exits non-zero.\n\n' +
-  'sync [--force] [--check] [--tokens-only|--framework]\n' +
-  '  Refreshes an EXISTING install; it never creates one (that is init). A tokens-only consumer\n' +
-  '  has no scaffold to reconcile, so sync reports n/a and exits 0 there — as doctor does.\n\n' +
-  'check-theme / doctor / sync all resolve their project the same way: they honour BASALT_CWD, and\n' +
-  'relocate to the single package below the cwd carrying a basalt config when invoked from a repo\n' +
-  'root that has none — several carrying one is ambiguous and exits 1 in ALL THREE.\n' +
-  '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +
-  'Every subcommand accepts --help / -h to print this message and exit without running.\n' +
-  '--version / -v prints the resolved package version and exits 0 — the one command that proves\n' +
-  'WHICH basalt-ui ran, which a `bunx` cache can otherwise make a lie. An unknown command or an\n' +
-  'unrecognized flag exits 1 and names what it did not understand; neither is ever ignored.'
 
 /**
  * CLI dispatcher — parses argv (subcommand + flags) and returns the command's exit code. The bin
@@ -4962,9 +1925,10 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   if (cmd !== undefined) {
     const bad = unknownFlag(cmd, flags)
     if (bad !== null) {
+      const accepted = Object.keys(COMMAND_OPTIONS[cmd] ?? {}).map((k) => `--${k}`)
       console.error(
         `basalt-ui ${cmd}: unrecognized flag '${bad}'. ` +
-          `Accepted: ${(COMMAND_FLAGS[cmd] ?? []).join(' ') || '(none)'} --help\n`,
+          `Accepted: ${accepted.join(' ') || '(none)'} --help\n`,
       )
       return 1
     }
@@ -4983,8 +1947,6 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       )
     case 'check-theme':
       return checkTheme(cwd, flags)
-    case 'check-coverage':
-      return checkCoverage(flags)
     case 'doctor':
       return doctor(cwd, flags)
     case 'guard-hook':
@@ -5007,8 +1969,12 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
   }
 }
 
-// Re-export the managed-file manifest for testing / introspection (no default export).
-// `normalizeForLedger` is exported so tests can compute a fixture's expected ledger hash without
-// duplicating the normalization algorithm — it stays call-site-internal to writeUnit/classify.
-export { managedFiles, MANIFEST_PATH, normalizeForLedger, RULE_NAMES, SKILL_NAMES }
-export type { ManagedFile, Manifest, SyncOptions, DoctorResult }
+// `RULE_NAMES`/`SKILL_NAMES` re-exported for testing / introspection (no default export).
+export { RULE_NAMES, SKILL_NAMES }
+export type { ManagedFile }
+
+// Re-export every split-out command so `import { X } from './index'` keeps working — `index.ts` is
+// dispatch + shared helpers only (C2); the command implementations live in their own files.
+export { checkTheme, doctor, guardHook, init, sync, fontsCss, normalizeColorFunctions, tokensCss }
+export type { SyncOptions } from './sync'
+export type { DoctorResult } from './doctor'
