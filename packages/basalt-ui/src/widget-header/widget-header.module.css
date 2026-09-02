@@ -40,6 +40,51 @@
     flex-wrap: wrap;
     row-gap: var(--vx-space-stack-sm);
   }
+
+  /*
+   * WRAP ONLY WHEN IT DOES NOT FIT (M4 follow-up) — `flex: 1 1 100%` forced EVERY actions slot onto
+   * its own row, even a single 24px icon that fit beside the title fine (a KPI card's lone `···`
+   * menu dropped under the title and pushed the value down with it). `flex: 0 1 auto` restores
+   * ordinary flex sizing: no grow, so a short slot stays put beside the title on the shared row;
+   * `min-width: 0` plus `flex-shrink: 1` (part of the same shorthand, overriding the base rule's
+   * `flex-shrink: 0`) let it shrink and, once `.titleRow`'s own `flex-wrap: wrap` decides it truly
+   * does not fit, drop to its own line. `max-width: 100%` is the cap once it IS alone on that line —
+   * without it a `.actions` still carrying unshrinkable content (the `visibleFrom="sm"` control plus
+   * a nowrap switch `Group`, see below) can overflow the card rather than shrink into it. The base
+   * rule's `margin-inline-start: auto` still applies in both states — right-aligned beside the title
+   * when it fits, right-aligned as the lone item on its own wrapped line when it does not.
+   *
+   * `.actions` keeps its OWN `flex-wrap: wrap` from the prior fix: `Section` can hand it a `tabs`
+   * control (`CtlSlot`-wrapped) AND an `actions` control (another `CtlSlot`) in the same slot, and
+   * without this a nowrap `Group` of switches beside a view-switch control gets squeezed into one
+   * shared line and overflows below its own min-content width — the exact regression this rule
+   * once fixed. It is orthogonal to the row-level "wrap only when it does not fit" law above: with
+   * one child, wrapping has nothing to do, so a lone `···` menu still stays on the title line.
+   *
+   * The real flex items get `flex: 1 1 auto; min-width: 0` so they can shrink or (via the `> * > *`
+   * twin) stack within whatever width `.actions` itself resolves to — a full-width phone `Select`
+   * still reads as its own full-width line because the CONTROL sets that itself (`ViewTabs`'
+   * `fullWidth`/`.phoneSelect`), not because `.actions` forces it.
+   *
+   * The `> * > *` twin exists because `CtlSlot` (`theme/ctl-theme.tsx`) wraps a home's actions in a
+   * `display: contents` box — invisible to the flex box tree, so its OWN children (not it) are the
+   * real flex items. `display: contents` elements still match `.actions > *` by DOM structure but
+   * carry no box to apply `flex`/`min-width` to, hence styling one level deeper as well; a call site
+   * that skips `CtlSlot` and hands `actions` a real element directly gets the same rule from the
+   * first selector.
+   */
+  .actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .actions > *,
+  .actions > * > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 }
 
 .root[data-tier='section'] .titleRow {
@@ -240,6 +285,7 @@
   align-items: center;
   gap: var(--vx-space-control-gap, 0.375rem);
   margin-inline-start: auto;
+  min-width: 0;
 }
 
 /* Directly under the title row, 4px off it — 1px put it inside the title's own line box, so a

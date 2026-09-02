@@ -66,6 +66,11 @@ const INTENT_STATUS: Record<NotificationIntent, string> = {
 
 type CenterView = 'inbox' | 'all'
 
+/** The popover width `NotificationBell` fixes at the `Popover` level (see `NotificationCenter`'s
+ *  own doc for why WIDTH lives there and not on this component). Shared so the two call sites and
+ *  this doc's example never drift apart. */
+export const NOTIFICATION_POPOVER_WIDTH = 320
+
 // ── NotificationItem ──────────────────────────────────────────────────────────
 
 function NotificationItem({
@@ -162,10 +167,16 @@ export type NotificationCenterProps = BasaltProps & {
  * registry-resolved action buttons. Designed to be mounted inside a Popover or Drawer (e.g.
  * NotificationBell).
  *
- * @example
- * import { NotificationCenter } from 'basalt-ui/notifications'
+ * Sizes to its host's full width (`width: 100%`) rather than a fixed px — a popover default that
+ * overflowed any inline mount. `NotificationBell` fixes the WIDTH at the Popover level instead
+ * (`<Popover width={NOTIFICATION_POPOVER_WIDTH}>`), which is the correct home for a
+ * popover-specific dimension; a consumer mounting this directly controls the same thing through
+ * its own container.
  *
- * <Popover>
+ * @example
+ * import { NOTIFICATION_POPOVER_WIDTH, NotificationCenter } from 'basalt-ui/notifications'
+ *
+ * <Popover width={NOTIFICATION_POPOVER_WIDTH}>
  *   <Popover.Dropdown>
  *     <NotificationCenter />
  *   </Popover.Dropdown>
@@ -180,7 +191,7 @@ export function NotificationCenter({ maxHeight = 320, className, style }: Notifi
   const emptyLabel = view === 'inbox' ? "You're all caught up" : 'No notifications yet'
 
   return (
-    <Stack className={cx(className)} gap="xs" style={{ width: 320, ...style }}>
+    <Stack className={cx(className)} gap="xs" style={{ width: '100%', ...style }}>
       {/* Header: title + a single mark-all-read affordance (only when there's something unread) */}
       <Group justify="space-between" align="center" wrap="nowrap">
         <Text size="sm" fw={600}>
