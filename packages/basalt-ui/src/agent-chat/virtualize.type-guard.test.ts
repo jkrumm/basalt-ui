@@ -14,7 +14,8 @@
  * convention) still verifies it.
  */
 import { describe, expect, test } from 'bun:test'
-import type { VirtualizeProps } from './virtualize'
+import { resolveRowHeight } from './virtualize'
+import type { RowHeightProps, VirtualizeProps } from './virtualize'
 
 function accept(props: VirtualizeProps): VirtualizeProps {
   return props
@@ -45,5 +46,51 @@ describe('VirtualizeProps (type-guard)', () => {
     // No runtime behavior to assert: the proof is that this file type-checks at all. A single
     // trivial assertion keeps this a normal bun:test file rather than an empty-suite oddity.
     expect(true).toBe(true)
+  })
+})
+
+// ── B3 — RowHeightProps widens ONLY the `height`-without-`virtualize` branch ──────────────────
+// `ThreadFeedRow`'s own contract (RowHeightProps) allows what VirtualizeProps forbids above —
+// `height` with no `virtualize` — while keeping the virtualized branch identical.
+
+function acceptRowHeight(props: RowHeightProps): RowHeightProps {
+  return props
+}
+
+acceptRowHeight({})
+acceptRowHeight({ virtualize: false })
+// The one combination VirtualizeProps' own type-guard rejects at line 35 above — RowHeightProps
+// widens exactly this.
+acceptRowHeight({ virtualize: false, height: 400 })
+acceptRowHeight({ height: 400 })
+acceptRowHeight({ virtualize: true, height: 400 })
+acceptRowHeight({ virtualize: { overscan: 3 }, height: 400 })
+
+// @ts-expect-error `height` is still required when `virtualize: true` — B3 does not touch this half
+acceptRowHeight({ virtualize: true })
+
+describe('resolveRowHeight (B3)', () => {
+  test('virtualize: true|VirtualizeOptions resolves to the "virtualized" branch, unchanged from resolveVirtualize', () => {
+    expect(resolveRowHeight({ virtualize: true, height: 400 })).toEqual({
+      kind: 'virtualized',
+      virtualize: { options: {}, height: 400 },
+    })
+    expect(resolveRowHeight({ virtualize: { overscan: 3 }, height: '50vh' })).toEqual({
+      kind: 'virtualized',
+      virtualize: { options: { overscan: 3 }, height: '50vh' },
+    })
+  })
+
+  test('height alone (no virtualize) resolves to the new "bounded" branch', () => {
+    expect(resolveRowHeight({ height: 300 })).toEqual({ kind: 'bounded', height: 300 })
+    expect(resolveRowHeight({ virtualize: false, height: '50%' })).toEqual({
+      kind: 'bounded',
+      height: '50%',
+    })
+  })
+
+  test('neither height nor virtualize resolves to "content-sized"', () => {
+    expect(resolveRowHeight({})).toEqual({ kind: 'content-sized' })
+    expect(resolveRowHeight({ virtualize: false })).toEqual({ kind: 'content-sized' })
   })
 })

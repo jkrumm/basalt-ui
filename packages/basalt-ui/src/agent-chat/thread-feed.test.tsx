@@ -5,7 +5,7 @@
  * both — see `thread-feed.tsx`'s module doc for why that split exists in the first place.
  */
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'bun:test'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
@@ -240,6 +240,55 @@ describe('ThreadFeed inline variant — composer send channel', () => {
 
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
     expect(textarea.disabled).toBe(true)
+  })
+})
+
+// ── B5 — anchor="end" ─────────────────────────────────────────────────────────────────────────
+// argo's hermes-chat hand-rolls its own bottom-anchored scroll shell (`chat-page.tsx`:
+// `Stack gap="xs" p="sm" mih="100%" justify="flex-end"` inside a raw `overflowY: auto` box, plus a
+// manual `scrollToBottom()` ref effect) around `renderRow` — `anchor="end"` is that shell, owned by
+// `ThreadFeed` itself, so a bottom-anchored consumer no longer has to reimplement it.
+
+describe('ThreadFeed — B5 anchor', () => {
+  test('default anchor ("start") renders without a bottom-anchor justify — unchanged', () => {
+    const { container } = renderFeed(
+      <ThreadFeed threads={buildThreads()} activeId={null} onSelect={() => {}} />,
+    )
+
+    expect(screen.getByText('First thread')).toBeDefined()
+    expect(container.querySelector('[style*="flex-end"]')).toBeNull()
+  })
+
+  test('anchor="end" still renders every thread (via renderRow, the argo shape)', async () => {
+    render(
+      <MantineProvider>
+        <ThreadFeed
+          threads={buildThreads()}
+          activeId={null}
+          onSelect={() => {}}
+          anchor="end"
+          renderRow={(thread) => <div data-testid={`anchor-end-${thread.id}`}>{thread.id}</div>}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('anchor-end-t1')).toBeDefined()
+    // `anchor="end"` wraps in `BasaltStickToBottom`, which lazy-loads `use-stick-to-bottom` —
+    // `waitFor` rides that resolution out inside `act()` so it can't leak an unwrapped-suspense
+    // warning into a later test.
+    await waitFor(() => {
+      expect(screen.getByTestId('anchor-end-t1')).toBeDefined()
+    })
+  })
+
+  test('anchor="end" applies a bottom-anchored (flex-end) justify to the row stack', async () => {
+    const { container } = renderFeed(
+      <ThreadFeed threads={buildThreads()} activeId={null} onSelect={() => {}} anchor="end" />,
+    )
+
+    await waitFor(() => {
+      expect(container.querySelector('[style*="flex-end"]')).not.toBeNull()
+    })
   })
 })
 

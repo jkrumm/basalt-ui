@@ -96,6 +96,14 @@ export type UseAgentThreadRunsArgs<TPart = AgentPart> = {
    * Required when TPart is not the default AgentPart union.
    */
   readonly toUserParts?: (input: string) => TPart[]
+  /**
+   * Called when a turn's stream throws — never for an `AbortError` (an intentional stop()/
+   * supersede, not a failure worth surfacing). Fires from the SAME catch branch that sets
+   * `onFailureStatus` on the thread, so a caller wanting a toast/notification for a genuine
+   * transport error (a 409/503/401, argo's hermes-chat S19) no longer has to wrap every transport
+   * call in its own generator to intercept the throw — see `consumeAndFinalize`'s catch block.
+   */
+  readonly onError?: (info: { readonly threadId: string; readonly error: unknown }) => void
 }
 
 // ── useAgentThreadRuns return type ────────────────────────────────────────────
@@ -207,6 +215,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
   resolveOutcome: OutcomeResolver<TPart>
   setRuns: Dispatch<SetStateAction<Map<string, ThreadRunState<TPart>>>>
   onFailureStatus: ThreadStatus
+  onError?: (info: { readonly threadId: string; readonly error: unknown }) => void
 }): Promise<void> {
   const {
     threadId,
@@ -219,6 +228,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
     resolveOutcome,
     setRuns,
     onFailureStatus,
+    onError,
   } = args
   let parts: TPart[] = []
   try {
@@ -314,6 +324,7 @@ async function consumeAndFinalize<TPart extends PartLike>(args: {
       next.delete(threadId)
       return next
     })
+    onError?.({ threadId, error: err })
   }
 }
 
@@ -435,6 +446,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   store,
   resolveOutcome,
   toUserParts,
+  onError,
 }: UseAgentThreadRunsArgs<TPart>): UseAgentThreadRunsReturn<TPart> {
   const [runs, setRuns] = useState<Map<string, ThreadRunState<TPart>>>(new Map())
   // Mirrors the latest `runs` state every render so stop() (a plain callback, not a render) can
@@ -442,6 +454,10 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   // updater — same mirroring pattern as storeRef/transportRef below.
   const runsRef = useRef(runs)
   runsRef.current = runs
+  // Mirrors the latest onError every render (same pattern as storeRef/transportRef) so a stale
+  // closure from an earlier render never fires instead of the consumer's current callback.
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
 
   // Refs: mutable per-render state that must not trigger re-renders.
   const controllersRef = useRef<Map<string, AbortController>>(new Map())
@@ -520,9 +536,12 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
   // seeing a phantom in-flight turn no controller is driving anymore, and `stop()` on it was a
   // permanent no-op (nothing left in `controllersRef` to abort) — see `stop()`'s own doc. Scoped to
   // exactly the threadIds this pass is aborting (not a blind `runs.clear()`): the mount-reconcile
-  // effect below runs AFTER this cleanup completes, in the same synchronous commit (both are
-  // `[]`-dep effects on this same fiber, so StrictMode/`<Activity>` destroy-then-recreate both
-  // together, in declaration order) — a resumable thread's reconcile pass registers a FRESH
+  // effect below runs AFTER this cleanup completes, in the same synchronous commit — StrictMode's
+  // dev-only double-invoke and `<Activity>` hide/show both destroy-then-recreate EVERY mount effect
+  // on this fiber together, in declaration order, regardless of each effect's own dep array (this
+  // one stays `[]`; the reconcile effect below is `[store.hydrated]` as of R3 — the double-invoke
+  // guarantee is about the mount/unmount CYCLE, not per-effect dep memoization) — a resumable
+  // thread's reconcile pass registers a FRESH
   // controller and a fresh `runs` entry there, and this teardown must never clobber that. It
   // can't: by the time this cleanup runs, nothing has created a NEW entry for these threadIds yet
   // (that only happens in the reconcile effect, still to come), so scoping to the ids this pass is
@@ -547,17 +566,37 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
     [],
   )
 
-  // Reconcile orphaned in-flight threads on mount: a persisted thread can be stuck 'pending' or
-  // 'streaming' after a reload/remount, since controllersRef and `runs` both start empty — nothing
-  // would otherwise resolve that skeleton. If the transport supports resumption and the thread has
-  // a resumeToken (from a StartPart emitted before the disconnect) plus a user message to resume
-  // from, attempt to reconnect the run instead. Any other case — no resume(), no resumeToken, no
-  // user message, or the resume itself failing — falls back to 'interrupted' so the UI renders a
-  // resend prompt instead of an unresolving skeleton (today's behavior, unchanged as the fallback
-  // path). Mount-only by design (empty deps): this is a one-time sweep of whatever was persisted
-  // when this manager first attaches, not a recurring check — a thread only needs reconciling once
-  // per stale mount.
+  // Reconcile orphaned in-flight threads once the store is HYDRATED: a persisted thread can be
+  // stuck 'pending' or 'streaming' after a reload/remount, since controllersRef and `runs` both
+  // start empty — nothing would otherwise resolve that skeleton. If the transport supports
+  // resumption and the thread has a resumeToken (from a StartPart emitted before the disconnect)
+  // plus a user message to resume from, attempt to reconnect the run instead. Any other case — no
+  // resume(), no resumeToken, no user message, or the resume itself failing — falls back to
+  // 'interrupted' so the UI renders a resend prompt instead of an unresolving skeleton (today's
+  // behavior, unchanged as the fallback path).
+  //
+  // R3: keyed on `store.hydrated` rather than a bare `[]`-dep effect. `ThreadsStore.hydrated` is
+  // always `true` for the localStorage store (createPersistedState resolves synchronously), so this
+  // still fires on the very first commit for every consumer that predates this change — no behavior
+  // change there. It only matters for an ASYNC store (`createAdapterThreadsStore`): with `[]`, this
+  // ran on mount while `store.threads` was still the adapter's empty pre-load snapshot, so every
+  // orphaned thread from a previous session was invisible to the sweep — reconcile-after-reload was
+  // silently dead for exactly the store shape (server-backed, paginated) that most needs it. Firing
+  // again when `hydrated` flips true re-sweeps against the now-real `storeRef.current.threads`.
+  //
+  // Deliberately NO separate "has this already run" ref here — the sweep is naturally idempotent:
+  // a thread only qualifies as orphaned while its status is 'pending'/'streaming' AND it has no
+  // live controller, and this effect's own first pass either moves the status off that pair
+  // ('interrupted', or eventually 'done'/'error' once the resumed/started run settles) or registers
+  // a controller for it synchronously (before the first `await`) — so a second invocation with the
+  // SAME `store.hydrated` value (including React 19 StrictMode's dev-only double-invoke of every
+  // mount effect, and an `<Activity>` hide/show — see use-agent-thread-runs.wedge.test.tsx) finds
+  // nothing left to reconcile except whatever its own sibling invocation genuinely orphaned by
+  // aborting an in-flight controller, which is exactly the case that file's (b)/(c) tests require
+  // resume() to fire again for. An explicit "ran once" ref would suppress that second, legitimate
+  // sweep and reintroduce the F3 wedge for `store.hydrated`-keyed remounts.
   useEffect(() => {
+    if (!store.hydrated) return
     for (const thread of storeRef.current.threads) {
       const orphaned =
         (thread.status === 'pending' || thread.status === 'streaming') &&
@@ -606,10 +645,14 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         resolveOutcome,
         setRuns,
         onFailureStatus: 'interrupted',
+        onError: (info) => onErrorRef.current?.(info),
       })
     }
+    // Only `store.hydrated` — every other read in this body goes through a ref (storeRef,
+    // resolveTransport→transportRef/transportsRef, resolveOutcome closed over from the hook's own
+    // args) precisely so this effect's re-run trigger is `hydrated` alone. See the doc above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [store.hydrated])
 
   const start = useCallback(
     (threadId: string, input: string): void => {
@@ -643,7 +686,13 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         threadId,
         controller,
         // Namespaced by threadId — same choice, same caveat, as the mount-time resume call above.
-        generator: withPartIds(threadId, resolvedTransport.stream(input, controller.signal)),
+        // ctx.messageId is this turn's OWN idempotency key (userMessage.id, just minted above) —
+        // a transport that accepts it (aiSdkTransport) mints its wire-level message with the SAME
+        // id instead of a second, unrelated one (R1 — see AgentTransport.stream's doc).
+        generator: withPartIds(
+          threadId,
+          resolvedTransport.stream(input, controller.signal, { messageId: userMessage.id }),
+        ),
         userMessage,
         controllersRef,
         appendedRef,
@@ -651,6 +700,7 @@ export function useAgentThreadRuns<TPart extends PartLike = AgentPart>({
         resolveOutcome,
         setRuns,
         onFailureStatus: 'error',
+        onError: (info) => onErrorRef.current?.(info),
       })
     },
     [resolveOutcome],

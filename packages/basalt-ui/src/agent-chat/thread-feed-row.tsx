@@ -33,18 +33,20 @@
  * />
  */
 import { Box, Group, Stack, Text, UnstyledButton } from '@mantine/core'
-import type { JSX } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { useState } from 'react'
 import type {
   AgentThread,
+  ChatMessage,
   ForeignPart,
   PartRenderer,
   PartRenderers,
   StreamStatus,
   TranscriptPart,
 } from '../agent'
+import { BasaltStickToBottom } from '../agent'
 import { cx } from '../common/props'
-import type { BasaltProps } from '../common/props'
+import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
 import { VX } from '../tokens'
 import type { ComposerProps, ComposerSubmit } from './composer'
@@ -52,8 +54,8 @@ import { Composer } from './composer'
 import type { MessageAffordances } from './message-affordances'
 import { formatRelativeTime } from './relative-time'
 import { ThreadTranscript } from './thread-message'
-import { resolveVirtualize } from './virtualize'
-import type { VirtualizeProps } from './virtualize'
+import { resolveRowHeight } from './virtualize'
+import type { RowHeightProps, VirtualizeProps } from './virtualize'
 
 /** A minimal, dependency-free chevron — rotates 90deg when expanded (same inline-svg idiom as
  * `composer.tsx`'s `SendGlyph`/`StopGlyph`: no icon-library dependency for a one-off glyph). */
@@ -106,6 +108,30 @@ type ThreadFeedRowBase = {
   readonly expanded: boolean
   /** Called with the thread's id when the header is clicked/activated. */
   readonly onToggle: (id: string) => void
+  /**
+   * Header title override. Falls back to `thread.outcome?.title ?? 'Untitled thread'` (today's
+   * behavior, unchanged) when omitted. For a server-titled thread whose title is never distilled
+   * into a basalt `AgentOutcome` (argo's hermes-chat S4 — title/summary/type/pin are server-owned
+   * and never guessed client-side), pass it directly instead of forcing an outcome shape onto data
+   * that never had one.
+   */
+  readonly title?: string
+  /** Header summary override, same fallback rule as `title` (`thread.outcome?.summary ?? ''`). */
+  readonly summary?: string
+  /** Rendered at the START of the header row, before the title/summary stack — a pin icon, a type
+   * badge (argo's hermes-chat S5). Absent by default; renders nothing extra when omitted. */
+  readonly headerLeft?: ReactNode
+  /** Rendered at the END of the header row, before the timestamp and chevron — a collapsed-only
+   * streaming indicator (argo's hermes-chat S5). Absent by default; renders nothing extra when
+   * omitted. */
+  readonly headerRight?: ReactNode
+  /**
+   * Overrides the transcript source: when provided, the row renders THESE messages instead of
+   * reading `thread.messages` directly (argo's hermes-chat S6 — the confirmed transcript is an
+   * optimistic-overlay MERGE over the store's messages, not the store's messages verbatim).
+   * Defaults to `thread.messages`.
+   */
+  readonly messages?: readonly ChatMessage<TranscriptPart>[]
   /** The live (in-flight) assistant turn's parts, when a run is streaming for this thread. */
   readonly liveParts?: readonly TranscriptPart[]
   /** The live run's status — drives the in-progress indicator on the live block. */
@@ -137,16 +163,29 @@ type ThreadFeedRowBase = {
  * `virtualize`/`height` are forwarded straight to the row's `ThreadTranscript`, carrying the same
  * union guard: an inline row holding a very long thread can window it, and doing so REQUIRES a
  * `height` (the transcript then owns a fixed-height scroll node inside the expanded body, instead
- * of the body growing to the thread's full length). Omit both and the row's transcript is
- * content-sized, as before.
+ * of the body growing to the thread's full length). `height` alone (no `virtualize`) is B3's
+ * bounded-but-not-virtualized mode — see `RowHeightProps`'s own doc. Omit both and the row's
+ * transcript is content-sized, as before.
  */
-export type ThreadFeedRowProps = ThreadFeedRowBase & VirtualizeProps & BasaltProps
+export type ThreadFeedRowProps = ThreadFeedRowBase &
+  RowHeightProps &
+  SlotStylesProps<'root' | 'header' | 'body'> &
+  BasaltProps
 
-/** The row header's title: the resolved outcome title, else a plain placeholder — this row never
- * falls back to scanning the first user message the way `ThreadOutcomeCard`'s `promptOf` does,
- * since an inline row's own expanded transcript already shows that prompt a scroll away. */
-function rowTitle(thread: AgentThread<TranscriptPart>): string {
-  return thread.outcome?.title ?? 'Untitled thread'
+/** The row header's title: the `title` prop override, else the resolved outcome title, else a
+ * plain placeholder — this row never falls back to scanning the first user message the way
+ * `ThreadOutcomeCard`'s `promptOf` does, since an inline row's own expanded transcript already
+ * shows that prompt a scroll away. */
+function rowTitle(thread: AgentThread<TranscriptPart>, titleOverride: string | undefined): string {
+  return titleOverride ?? thread.outcome?.title ?? 'Untitled thread'
+}
+
+/** The row header's summary: the `summary` prop override, else the resolved outcome summary. */
+function rowSummary(
+  thread: AgentThread<TranscriptPart>,
+  summaryOverride: string | undefined,
+): string {
+  return summaryOverride ?? thread.outcome?.summary ?? ''
 }
 
 /**
@@ -162,6 +201,11 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
     thread,
     expanded,
     onToggle,
+    title,
+    summary: summaryOverride,
+    headerLeft,
+    headerRight,
+    messages,
     liveParts,
     liveStatus,
     renderers,
@@ -171,16 +215,21 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
     onSend,
     onStop,
     composerProps,
+    classNames,
     className,
     style,
   } = props
   assertRequiredProps('ThreadFeedRow', { thread }, ['thread'])
 
   // Resolved through the shared narrowing point rather than by destructuring `virtualize`/`height`
-  // apart — see `resolveVirtualize`'s doc for why the two must be read together.
-  const virtualized = resolveVirtualize(props)
+  // apart — see `resolveRowHeight`'s doc for why the two must be read together, and why it is a
+  // three-way (virtualized / bounded / content-sized) resolve rather than `resolveVirtualize`'s
+  // binary one (B3 adds the 'bounded' branch).
+  const rowHeight = resolveRowHeight(props)
   const virtualizeProps: VirtualizeProps =
-    virtualized === null ? {} : { virtualize: virtualized.options, height: virtualized.height }
+    rowHeight.kind === 'virtualized'
+      ? { virtualize: rowHeight.virtualize.options, height: rowHeight.virtualize.height }
+      : {}
 
   // Lazy-mount + keep-mounted: flips true on the row's first expand and never resets. Everything
   // below this line renders — once — the first time `expanded` becomes true, and stays in the tree
@@ -197,7 +246,9 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
     setHasOpened(true)
   }
 
-  const summary = thread.outcome?.summary ?? ''
+  const resolvedTitle = rowTitle(thread, title)
+  const resolvedSummary = rowSummary(thread, summaryOverride)
+  const transcriptMessages = messages ?? thread.messages
 
   // The composer half of `liveStatus`: `Composer` only shows its Stop action and gates the
   // textarea when it is TOLD a run is streaming (`composer.tsx`'s `showStop`/`inputDisabled`) — it
@@ -205,18 +256,37 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
   // Stop never rendered and a second turn could still be typed into a live thread.
   const streaming = liveStatus === 'streaming'
 
+  const transcript = (
+    <ThreadTranscript
+      messages={transcriptMessages}
+      {...(liveParts !== undefined ? { liveParts } : {})}
+      {...(liveStatus !== undefined ? { liveStatus } : {})}
+      {...(renderers !== undefined ? { renderers } : {})}
+      {...(fallbackRenderer !== undefined ? { fallbackRenderer } : {})}
+      {...(affordances !== undefined ? { affordances } : {})}
+      {...(groupConsecutive !== undefined ? { groupConsecutive } : {})}
+      {...virtualizeProps}
+    />
+  )
+
   return (
-    <Box className={cx(className)} style={style ? { ...CARD_STYLE, ...style } : CARD_STYLE}>
+    <Box
+      className={cx(classNames?.root, className)}
+      style={style ? { ...CARD_STYLE, ...style } : CARD_STYLE}
+      data-expanded={expanded}
+    >
       <UnstyledButton
         onClick={() => onToggle(thread.id)}
         w="100%"
         aria-expanded={expanded}
+        {...(classNames?.header !== undefined && { className: classNames.header })}
         style={{
           display: 'block',
           padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
         }}
       >
         <Group justify="space-between" gap="xs" wrap="nowrap" align="center">
+          {headerLeft}
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
             <Text
               fw={550}
@@ -227,14 +297,15 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
                 fontStretch: '88%',
               }}
             >
-              {rowTitle(thread)}
+              {resolvedTitle}
             </Text>
-            {summary.length > 0 && (
+            {resolvedSummary.length > 0 && (
               <Text size="xs" c="dimmed" lineClamp={1}>
-                {summary}
+                {resolvedSummary}
               </Text>
             )}
           </Stack>
+          {headerRight}
           <Text
             style={{
               fontFamily: 'var(--basalt-font-mono)',
@@ -251,6 +322,7 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
       {hasOpened && (
         <Box
           data-testid="thread-feed-row-body"
+          {...(classNames?.body !== undefined && { className: classNames.body })}
           style={{
             display: expanded ? 'block' : 'none',
             padding: 'var(--mantine-spacing-sm)',
@@ -258,16 +330,19 @@ export function ThreadFeedRow(props: ThreadFeedRowProps): JSX.Element {
           }}
         >
           <Stack gap="sm">
-            <ThreadTranscript
-              messages={thread.messages}
-              {...(liveParts !== undefined ? { liveParts } : {})}
-              {...(liveStatus !== undefined ? { liveStatus } : {})}
-              {...(renderers !== undefined ? { renderers } : {})}
-              {...(fallbackRenderer !== undefined ? { fallbackRenderer } : {})}
-              {...(affordances !== undefined ? { affordances } : {})}
-              {...(groupConsecutive !== undefined ? { groupConsecutive } : {})}
-              {...virtualizeProps}
-            />
+            {rowHeight.kind === 'bounded' ? (
+              <BasaltStickToBottom
+                style={{
+                  height: rowHeight.height,
+                  // theme-allow raw-scroll-container — BasaltStickToBottom owns this scroll node (see stick-to-bottom.tsx).
+                  overflowY: 'auto',
+                }}
+              >
+                {transcript}
+              </BasaltStickToBottom>
+            ) : (
+              transcript
+            )}
             <Composer
               onSubmit={onSend}
               streaming={streaming}

@@ -286,6 +286,106 @@ describe('useAgentThreadRuns — concurrency, no-op guard, finalize order, failu
     expect(result.current.runs.has(threadId)).toBe(false)
   })
 
+  // R2 — onError: a caller (argo's hermes-chat S19) can surface a genuine transport failure
+  // (409/503/401) as a toast without wrapping every transport call in its own generator.
+  test('R2: onError fires with {threadId, error} for a genuine (non-abort) failure', async () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+    const boom = new Error('boom')
+
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream() {
+        throw boom
+        // eslint-disable-next-line no-unreachable
+        yield { id: 'p1', type: 'text', text: 'unreachable' }
+      },
+    }
+
+    const errors: { threadId: string; error: unknown }[] = []
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        onError: (info) => errors.push(info),
+      }),
+    )
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+
+    await waitFor(() => {
+      expect(store.threads.find((t) => t.id === threadId)?.status).toBe('error')
+    })
+    expect(errors).toEqual([{ threadId, error: boom }])
+  })
+
+  test('R2: onError never fires for an AbortError (stop() is an intentional cancel, not a failure)', async () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+
+    const transport: AgentTransport<AgentPart, string> = {
+      // oxlint-disable-next-line require-yield -- hangs until aborted; never has anything to yield
+      async *stream(_input, signal) {
+        await new Promise((resolve) => {
+          signal?.addEventListener('abort', () => resolve(undefined))
+        })
+      },
+    }
+
+    const errors: { threadId: string; error: unknown }[] = []
+    const { result } = renderHook(() =>
+      useAgentThreadRuns({
+        transport,
+        store,
+        resolveOutcome,
+        onError: (info) => errors.push(info),
+      }),
+    )
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+    act(() => {
+      result.current.stop(threadId)
+    })
+
+    await waitFor(() => {
+      expect(store.threads.find((t) => t.id === threadId)?.status).toBe('done')
+    })
+    expect(errors).toEqual([])
+  })
+
+  // R1 — the transport receives the SAME id useAgentThreadRuns.start() minted for the user's
+  // ChatMessage, instead of having to mint (and the consumer having to reconcile) a second one.
+  test('R1: stream() receives ctx.messageId matching the appended user ChatMessage.id', async () => {
+    const store = createTestThreadsStore()
+    const threadId = store.create()
+
+    const seenCtx: ({ readonly messageId: string } | undefined)[] = []
+    const transport: AgentTransport<AgentPart, string> = {
+      async *stream(_input, _signal, ctx) {
+        seenCtx.push(ctx)
+        yield { id: 'p1', type: 'text', text: 'hi' }
+      },
+    }
+
+    const { result } = renderHook(() => useAgentThreadRuns({ transport, store, resolveOutcome }))
+
+    act(() => {
+      result.current.start(threadId, 'hi')
+    })
+
+    await waitFor(() => {
+      expect(store.threads.find((t) => t.id === threadId)?.status).toBe('done')
+    })
+
+    const userMessageId = store.threads.find((t) => t.id === threadId)?.messages[0]?.id
+    if (userMessageId === undefined) throw new Error('expected the user ChatMessage to have an id')
+    expect(seenCtx).toEqual([{ messageId: userMessageId }])
+  })
+
   test('retry() is a no-op when nothing has been cached for that thread', () => {
     // No store.create() here on purpose: a freshly-created 'pending' thread is itself swept by
     // the mount-reconcile effect (it treats any 'pending'/'streaming' thread with no live

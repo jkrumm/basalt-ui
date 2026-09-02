@@ -395,7 +395,11 @@ export function aiSdkTransport<TPart = AgentPart>(
       // diffPart), so a replayed run rewrites in place instead of duplicating — the literal
       // condition this assertion stands for.
       idempotentReplay: true,
-      async *stream(input: string, signal?: AbortSignal): AsyncGenerator<TPart> {
+      async *stream(
+        input: string,
+        signal?: AbortSignal,
+        ctx?: { readonly messageId: string },
+      ): AsyncGenerator<TPart> {
         // Synthesized locally, first — we already know the chat id client-side, so there is no
         // need to wait on the server to hand us a run id (unlike a river-style protocol).
         yield { id: `${chatId}#start`, type: 'start', runId: chatId, resumeToken: chatId } as TPart
@@ -403,9 +407,12 @@ export function aiSdkTransport<TPart = AgentPart>(
         const { httpTransport, readUIMessageStream: readStream } = await resolveAiSdk()
         const userMessage: UIMessage = {
           // This id is what AI SDK's own backend persistence/dedup keys turns hang off — the same
-          // idempotency-key cost as basalt's own ChatMessage.id (see mintMessageId's doc), so
-          // mintMessageId, not mintThreadId, is the right helper here.
-          id: mintMessageId(),
+          // idempotency-key cost as basalt's own ChatMessage.id (see mintMessageId's doc). Prefer
+          // the caller's OWN idempotency key (ctx.messageId — the id useAgentThreadRuns.start()
+          // already minted for this turn's ChatMessage) so the two never diverge for one turn; only
+          // a caller that omits ctx (useAgentStream, a hand-rolled stream() call) falls back to
+          // minting a fresh one here.
+          id: ctx?.messageId ?? mintMessageId(),
           role: 'user',
           parts: [{ type: 'text', text: input }],
         }
