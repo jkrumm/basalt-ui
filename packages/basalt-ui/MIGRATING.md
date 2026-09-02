@@ -925,6 +925,60 @@ maturation round) is now the one place base prop/error/ref vocabulary lives:`Bas
 extends `BasaltProps`for its own prop type rather than redeclaring`className`/`style`; a consumer
 composing over a basalt component should do the same.
 
+### Additions (targeting 1.29.0)
+
+C5 consolidation — every item below names the argo lines it lets a consumer delete
+(`.claude/maturation/consolidation-plan.md` §C5, `audit-f-argo-consumer.md`). All additive; nothing
+in this block removes or renames an existing export.
+
+- **`basalt-ui/format`** — new subpath, Mantine-free and React-free: `money`, `percent`, `integer`,
+  `compact`, `deltaPct`, `duration` (seconds → `"1h 02m"`; `{ unit: 'minutes' }` for a
+  minutes-based input), `durationClock` (`"1:02:03"`), `clock`, `relativeTime`, `weekday`, `km`,
+  `kcal` — plus the original chart-formatter names (`fmtCompact`/`fmtPercent`/`fmtCurrency`/
+  `fmtInt`/`fmtAxisDate`/`fmtTooltipDate`/`NON_FINITE`/`formatters`), now re-exported from here;
+  `./charts`' `utils/format.ts` is an internal re-export shim, not a second implementation.
+- **`ChartState.empty`** widens to `boolean | string` — a string is both truthy and the label
+  `ChartEmpty` paints. `ChartCard` gains `state?: ChartState`, `placeholderHeight?: number`
+  (default 240) and `stateAction?: ReactNode`, and `children` is now optional so a title-less
+  pending card can be a route's own `<Suspense fallback>`. Resolution order is the same
+  `resolveChartState` precedence every kind already has — pending → error → empty — and
+  `state={{}}`/omitting `state` renders `children` unchanged. `ChartCenter`'s `width` widens to
+  `number | string` (`'100%'` for a non-measured block body).
+- **`DualPanel`'s `fillBetween` gains `aboveFill?: string`** — the above-side fill color; omitted,
+  both sides keep sharing `fill` (unchanged behaviour). **`AxisBottomNumeric`** exported from
+  `./charts` — the numeric twin of `AxisLeftNumeric`, for a bespoke continuous-x plot.
+- **`useBreakpoint(name, edge?, options?)`** on the root barrel — SSR/hydration-safe media query
+  over `theme.breakpoints`, built on `useSyncExternalStore` (not `@mantine/hooks`' `useMediaQuery`,
+  which mismatches during hydration). `edge` is `'min'` (default, "at least this wide") or `'max'`.
+  `page-aside.tsx` now composes this hook's own internals instead of a private duplicate.
+- **`--vx-space-touch-target` / `VX.spaceTouchTarget`** — the WCAG touch-target floor (44px),
+  density-exempt. The one `SPACE_FIXED` member that IS emitted as a CSS var (every other one stays
+  JS-only) — a consumer's own `@media (pointer: coarse)` CSS-module rule reads it directly.
+- **`SettingsMenuItem.active?: boolean`** — renders a trailing check glyph and `aria-current` in
+  every projection (the sidebar's flat rows and gear menu, the mobile More sheet).
+- **`basalt-ui/commands` gains imperative shell handles**: `setColorScheme(scheme)` and
+  `toggleSidebar()`, wired automatically — `BasaltProvider` registers the Mantine color-scheme
+  setter, `BasaltShell` registers the collapse toggle, so a command's `run` calls either with zero
+  `__root.tsx` bridge wiring (unlike the hand-rolled `color-scheme-bridge.ts`/`sidebar-bridge.ts`
+  shape this seeds from). `Slot<K, Constraint>` (`register.ts`) changed its internal resolution
+  from a whole-interface mapped-type match to an indexed-access form — same public behaviour,
+  fixes the commands↔overlays same-file type cycle a command calling `overlays.open(...)` used to
+  hit while `defineCommands`'s own type was still being inferred.
+- **`BasaltDevDock`** on the root barrel — a fixed, dev-only bottom drawer hosting TanStack Router
+  devtools, TanStack Query devtools and the theme lab, each peer lazy-loaded. New optional peer:
+  `@tanstack/react-router-devtools`.
+- **`BasaltErrorBoundaryProps`** is now exported; `onError` is optional (defaults to the same
+  console-warn-in-dev fallback `BasaltProvider`'s own top-level `onError` uses); an omitted
+  `fallback` now renders a minimal built-in default (a `PageTitle` + reload button) instead of
+  `null` — pass `fallback={null}` explicitly for the old swallow-it behaviour. **`PageTitle`** is a
+  new shell-less page-title primitive on the root barrel (a plain `<h1>`, not Mantine's `<Title>`,
+  so it needs no `in-body-page-title` waiver) — the remedy for the `in-body-page-title` waiver a
+  shell-less error/auth page used to need.
+- **`unwrap` gains a second overload** — the original took only a `Promise` of the `{ data, error }`
+  envelope; it now also accepts the ALREADY-RESOLVED envelope directly (`unwrap(await api.x.get())`,
+  or as a bare `.then(unwrap)` callback), inferring which overload from whether the argument IS a
+  `Promise`. The absence guard also now throws on `undefined` data, not just `null`.
+
 ## 1.26.0 — the control tier, the page bar and the store
 
 **One export removed and two deprecated — see § Stores below; two shell PROPS removed — see
@@ -966,6 +1020,18 @@ never subject to the C16 gate: see "Lint and guard rules that tightened" below f
 Consumers who never overrode `basalt.severity` for any of the eight kinds/rules above and never
 waived them see these findings for the first time as `error`; measure against the shipped preset
 before upgrading if that's a concern (`basalt-ui check-theme --audit-allows`, `oxlint .`).
+
+- **`AgentTransport.stream`'s third param** (`basalt-ui/agent`) — `ctx?: { messageId: string }`;
+  `aiSdkTransport` and `useAgentThreadRuns.start()`/`retry()` now share ONE id per turn instead of two.
+- **`useAgentThreadRuns({ onError })`** (`basalt-ui/agent`) — a genuine (non-abort) stream failure
+  per thread, for a toast without wrapping the transport.
+- **`useAgentThreadRuns` re-sweeps when `store.hydrated` flips true** (`basalt-ui/agent`) —
+  resume-after-reload now works for an async `createAdapterThreadsStore`; no API change.
+- **`ThreadFeedRow` gains `title`/`summary`/`headerLeft`/`headerRight`/`messages`/`classNames`**
+  (`basalt-ui/agent-chat`) — header and transcript overrides plus slot classes for a server-titled row.
+- **`ThreadFeedRow.height` no longer requires `virtualize`** (`basalt-ui/agent-chat`) — a bounded,
+  auto-scrolling body via `BasaltStickToBottom`.
+- **`ThreadFeed.anchor`** (`basalt-ui/agent-chat`) — `'end'` for a bottom-anchored chat feed.
 
 ### Composers — WidgetHeader-backed renames (docs/CONTROLS-SPEC.md §2.2)
 

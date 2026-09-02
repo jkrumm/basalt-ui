@@ -293,7 +293,7 @@ export const SURFACES = {
       "no second cssVariablesResolver — don't hand-build createTheme or re-add the resolver basalt already installs",
     ],
     description:
-      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query)',
+      'BasaltProvider, createBasaltTheme, BasaltShell + sidebar/mobile-nav/breadcrumbs, PageBar, PageAside, useBreakpoint, NavCountBadge, ThemeToggle, ThreadWorkspace + thread-chat components, WidgetHeader, dashboard composites (DeltaBadge, StatCard with threshold tone, EmptyState, QueryState/LoadingState/ErrorState, SettingsSection/SettingsRow/DangerZone), ConnectivityProvider/useConnectivity/ConnectivityIndicator (auto-mounted, C1: absorbed from the dropped ./connectivity), createBasaltQueryClient/unwrap/BasaltQueryDevtools (C1: absorbed from the dropped ./query), BasaltDevDock (C5: lazy Router/Query devtools + theme lab in one dock)',
     optionalPeers: [
       'react-markdown',
       'remark-gfm',
@@ -301,6 +301,7 @@ export const SURFACES = {
       'remend',
       'shiki',
       'beautiful-mermaid',
+      '@tanstack/react-router-devtools',
     ],
     forbiddenImports: [], // the no-charts/tokens-reexport invariant is comment-only today; Phase-4 plugin
   },
@@ -393,6 +394,17 @@ export const SURFACES = {
     // @visx/* ban dropped — `basalt/visx-boundary` now bans it universally outside charts.
     forbiddenImports: [...MANTINE_BANS],
   }, // 6th JS subpath
+  './format': {
+    kind: 'tooling',
+    layer: 'headless',
+    description:
+      'money/percent/integer/compact/deltaPct/duration/durationClock/clock/relativeTime/weekday/km/kcal — Intl-backed, Mantine-free, React-free formatting; charts/utils/format.ts re-exports fmtCompact/fmtPercent/fmtCurrency/fmtInt/fmtAxisDate/fmtTooltipDate from here (C5 consolidation, one implementation)',
+    globs: {
+      shipped: [],
+      repo: ['packages/basalt-ui/src/format/**'],
+    },
+    forbiddenImports: [...MANTINE_BANS],
+  },
   './router-tanstack': {
     kind: 'doctrine',
     layer: 'headless',

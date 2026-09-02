@@ -26,6 +26,16 @@
   padding: 0 var(--vx-space-row-inset-x);
 }
 
+/* Installed PWA (C5 consolidation, seeded from argo's `styles/native.css`): clear the landscape
+ * notch on the side the sidebar touches. `max()` is a FLOOR — the inset only grows the padding
+ * past its normal value, never shrinks it. Right inset is `app-main.module.css`'s to draw; the
+ * PWA's top inset needs no rule here (the status bar uses the opaque `default` style). */
+@media (display-mode: standalone) {
+  .root {
+    padding-left: max(var(--vx-space-row-inset-x), env(safe-area-inset-left));
+  }
+}
+
 .link {
   font-size: var(--vx-text-md);
   border-radius: var(--vx-radius-ctrl) !important;

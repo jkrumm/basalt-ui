@@ -7,7 +7,7 @@ paths:
 ---
 
 <!-- basalt:coverage -->
-<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
+<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — localstorage-theme · oxlint rules — basalt/search-literal-link, basalt/use-search-from-literal -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->

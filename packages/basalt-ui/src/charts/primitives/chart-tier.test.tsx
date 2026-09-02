@@ -159,9 +159,12 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
       </CartesianChart>,
     )
 
-    const entry = await screen.findByRole('button', { name: 'v' })
-    const legend = entry.parentElement
-    expect(legend?.style.fontSize).toBe(`${chartTierMetrics('phone').legendFontSize}px`)
+    // The legend entry exists on the unmeasured desktop frame too; wait for the PHONE paint, not
+    // for the first entry (same race as the tick-font test above under full-suite load).
+    await waitFor(() => {
+      const legend = screen.getByRole('button', { name: 'v' }).parentElement
+      expect(legend?.style.fontSize).toBe(`${chartTierMetrics('phone').legendFontSize}px`)
+    })
   })
 })
 
@@ -239,10 +242,11 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
         height={CHART_HEIGHT}
       />,
     )
+    // The axis exists on the unmeasured desktop frame too — wait for the phone-font gutter itself.
     await waitFor(() => {
       expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
+      expect(bottomMarginOf(container)).toBe(expectedBottom)
     })
-    expect(bottomMarginOf(container)).toBe(expectedBottom)
   })
 
   test('MirroredBars does too — both kinds share the one hook', async () => {
@@ -261,10 +265,11 @@ describe(`useBandPlot measures at the tier it paints (${PHONE_WIDTH}px)`, () => 
         height={CHART_HEIGHT}
       />,
     )
+    // The axis exists on the unmeasured desktop frame too — wait for the phone-font gutter itself.
     await waitFor(() => {
       expect(container.querySelector('.visx-axis-bottom')).not.toBeNull()
+      expect(bottomMarginOf(container)).toBe(expectedBottom)
     })
-    expect(bottomMarginOf(container)).toBe(expectedBottom)
   })
 
   test('and both paint every tick at that same font — measured IS painted', async () => {

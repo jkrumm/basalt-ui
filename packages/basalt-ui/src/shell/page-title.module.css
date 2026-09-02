@@ -1,0 +1,33 @@
+/*
+ * `PageTitle` — the shell-less page-title primitive (C5 consolidation, `docs/CONTROLS-SPEC.md`
+ * law C8's third named spot alongside the breadcrumb and `PageBar.title`). Same treatment as
+ * `page-bar.module.css`'s `.title` (head font, 88% stretch, weight 550) — a page is named once,
+ * and every named spot reads identically regardless of which one a given surface uses.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-nav-icon-gap, 8px);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--basalt-font-head);
+  font-size: var(--vx-text-xl);
+  font-weight: 550;
+  font-stretch: 88%;
+  color: var(--vx-ink);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--vx-text-sm);
+  color: var(--vx-faint);
+}

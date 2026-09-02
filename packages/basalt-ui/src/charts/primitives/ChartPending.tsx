@@ -3,12 +3,14 @@ import type { BasaltProps } from '../../common/props'
 import { VX } from '../../tokens'
 
 export type ChartCenterProps = BasaltProps & {
-  width: number
+  /** A block body (a title-less pending `ChartCard`, a non-`ChartFrame` body) has no measured
+   * plot width to reserve — `'100%'` fills its container instead of a pixel figure. */
+  width: number | string
   height: number
   children: ReactNode
 }
 
-const centerStyle = (width: number, height: number): CSSProperties => ({
+const centerStyle = (width: number | string, height: number): CSSProperties => ({
   width,
   height,
   display: 'flex',
@@ -40,7 +42,7 @@ export function ChartCenter({
 }
 
 export type ChartPendingProps = BasaltProps & {
-  width: number
+  width: number | string
   height: number
   /** Default `'Loading…'`. */
   label?: string
@@ -113,8 +115,12 @@ export type ChartState = {
   pending?: boolean
   /** Truthy = the query failed. Any thrown value; an `Error`'s `message` is used as the label. */
   error?: unknown
-  /** The query resolved and there is genuinely nothing to plot. */
-  empty?: boolean
+  /**
+   * The query resolved and there is genuinely nothing to plot. `true`, or the empty label
+   * itself — a string is truthy AND the copy `ChartEmpty` paints, so a consumer with its own
+   * "No data" wording never needs a ternary around the placeholder.
+   */
+  empty?: boolean | string
 }
 
 /** Which placeholder {@link ChartState} resolves to, or `null` to draw the chart. */
@@ -132,12 +138,12 @@ export function resolveChartState(input: {
   const { state, isPending } = input
   if (isPending === true || state?.pending === true) return 'pending'
   if (state?.error !== undefined && state.error !== null && state.error !== false) return 'error'
-  if (state?.empty === true) return 'empty'
+  if (state?.empty) return 'empty'
   return null
 }
 
 export type ChartEmptyProps = BasaltProps & {
-  width: number
+  width: number | string
   height: number
   /** Default `'No data'`. */
   label?: string
@@ -188,7 +194,7 @@ export function ChartEmpty({
 }
 
 export type ChartErrorProps = BasaltProps & {
-  width: number
+  width: number | string
   height: number
   /** Overrides the text outright. Omitted, an `Error`'s own `message` is used, else
    * `'Could not load chart'` — a failure never borrows the empty state's copy. */

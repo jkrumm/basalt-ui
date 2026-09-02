@@ -402,6 +402,30 @@ describe('settingsMenuItems — flat at three or fewer', () => {
       expect(screen.getByText('Integrations')).toBeTruthy()
     })
   })
+
+  describe('active — the current selection carries aria-current', () => {
+    test('flat form: the active row is aria-current, its siblings are not', () => {
+      renderSidebar({
+        settingsMenuItems: [{ ...three[0]!, active: true }, three[1]!, three[2]!],
+      })
+      expect(screen.getByLabelText('Settings').getAttribute('aria-current')).toBe('true')
+      expect(screen.getByLabelText('Integrations').getAttribute('aria-current')).toBeNull()
+    })
+
+    test('menu form: the active entry is aria-current inside the dropdown', async () => {
+      renderSidebar({
+        settingsMenuItems: [
+          ...three,
+          { key: 'devtools', label: 'Devtools', onClick: () => {}, active: true },
+        ],
+      })
+      fireEvent.click(screen.getByLabelText('Settings'))
+      await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+      expect(
+        screen.getByText('Devtools').closest('[role="menuitem"]')?.getAttribute('aria-current'),
+      ).toBe('true')
+    })
+  })
 })
 
 describe('search.actions', () => {

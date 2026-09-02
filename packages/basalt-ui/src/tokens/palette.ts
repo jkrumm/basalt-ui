@@ -760,6 +760,18 @@ export const SPACE_FIXED = {
    * `[-3, 3]` range can produce) for no compensating benefit, since the two radii it sits between
    * never move independently of each other. */
   segmentedTrackInset: 2,
+  /**
+   * The WCAG 2.5.5/2.5.8 touch-target floor (44px) for a hit area that has no `ctl`-tier home to
+   * size it — a raw CSS-module rule bumping a control's hit area under `@media (pointer: coarse)`
+   * (C5 consolidation: argo carried three such rules with a hand-picked 44/46px literal apiece).
+   * Density-exempt for the same reason `touchControlHeight`'s FLOOR is: a target this small must
+   * never shrink further, whatever the density knob says elsewhere. Unlike the rest of this
+   * object, this ONE key IS emitted as a `--vx-*` var (`tokens/index.ts`'s `space-touch-target`) —
+   * the others stay JS-only because nothing outside the framework's own components reads them, but
+   * this floor's whole purpose is being read by a CONSUMER's own `.module.css`, which cannot
+   * import a JS ref at all.
+   */
+  spaceTouchTarget: 44,
 } as const
 
 /**

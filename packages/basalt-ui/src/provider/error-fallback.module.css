@@ -1,0 +1,21 @@
+/* The boundary renders ABOVE MantineProvider, so its fallback is plain HTML styled here — no
+   Mantine primitive, no inline style object (hidden-inline-style). Tokens only. */
+.root {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: var(--vx-space-stack-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--vx-space-stack-md);
+}
+
+.reload {
+  align-self: flex-start;
+  font: inherit;
+  cursor: pointer;
+  padding: var(--vx-space-stack-xs) var(--vx-space-stack-md);
+  border: 1px solid var(--vx-divider);
+  border-radius: var(--vx-radius-ctrl);
+  background: transparent;
+  color: inherit;
+}

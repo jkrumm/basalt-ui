@@ -149,6 +149,7 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   AxisLeftNumeric: { scale: linearScale },
   AxisRightNumeric: { scale: linearScale, left: 200 },
   AxisBottomDate: { scale: bandScale, top: 100, tickValues: KEYS },
+  AxisBottomNumeric: { scale: linearScale, top: 100 },
 
   /* --- charts: the kinds -------------------------------------------------- */
   MultiLine: { data: ROWS, chartId: 'iso-multiline', getX, series: SERIES, height: 200 },
@@ -397,6 +398,7 @@ export const SVG_HOSTED: ReadonlySet<string> = new Set([
   'AreaGradient',
   'AreaStack',
   'AxisBottomDate',
+  'AxisBottomNumeric',
   'AxisLeftNumeric',
   'AxisRightNumeric',
   'Bar',
@@ -469,6 +471,7 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   // question from the chrome components' one.
   AreaGradient: 'svg',
   AxisBottomDate: 'svg',
+  AxisBottomNumeric: 'svg',
   AxisLeftNumeric: 'svg',
   AxisRightNumeric: 'svg',
   Crosshair: 'svg',

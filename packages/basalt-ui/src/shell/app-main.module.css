@@ -105,3 +105,14 @@
    * tracks those instead. The HEIGHT is flex's job and needs no transition of its own. */
   transition-property: margin;
 }
+
+/* Installed PWA (C5 consolidation, seeded from argo's `styles/native.css`): clear the landscape
+ * notch on the side Main touches. `max()` is a FLOOR over `.main`'s own `padding` shorthand above
+ * — same mechanism as `app-sidebar.module.css`'s left counterpart. The bottom inset already rides
+ * `margin-bottom` above (`env(safe-area-inset-bottom)`); the PWA's top inset needs no rule here
+ * (the status bar uses the opaque `default` style, per argo's own seed comment). */
+@media (display-mode: standalone) {
+  .main {
+    padding-right: max(var(--app-shell-padding), env(safe-area-inset-right));
+  }
+}

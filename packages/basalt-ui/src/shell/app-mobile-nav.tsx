@@ -95,6 +95,26 @@ function IconMore() {
   )
 }
 
+/** The `ActionRow.active` glyph — same shape as `app-sidebar.tsx`'s own copy (no icon dependency
+ * to import between the two render trees). */
+function IconCheck() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 12l5 5l10 -10" />
+    </svg>
+  )
+}
+
 /** A row the More surface derives from `account`/`settingsMenuItems` — never a destination. */
 type ActionRow = {
   key: string
@@ -102,6 +122,8 @@ type ActionRow = {
   icon?: ReactNode
   danger?: boolean
   onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined
+  /** Mirrors `SettingsMenuItem.active` — a trailing check + `aria-current` in every row form. */
+  active?: boolean
 }
 
 /**
@@ -172,6 +194,7 @@ function settingsRows(items: SettingsMenuItem[] | undefined): ActionRow[] {
     label: item.label,
     icon: item.icon,
     onClick: item.onClick,
+    ...(item.active !== undefined && { active: item.active }),
   }))
 }
 
@@ -234,8 +257,10 @@ const menuActionRow = (row: ActionRow) => (
     key={row.key}
     className={classes.menuItem}
     leftSection={row.icon}
+    rightSection={row.active ? <IconCheck /> : undefined}
     {...(row.danger ? { color: 'red' } : {})}
     onClick={(event: MouseEvent<HTMLElement>) => row.onClick?.(event)}
+    aria-current={row.active ? 'true' : undefined}
   >
     {row.label}
   </Menu.Item>
@@ -480,11 +505,13 @@ export function MobileNav({
       classNames={{ root: classes.row }}
       label={row.label}
       leftSection={row.icon}
+      rightSection={row.active ? <IconCheck /> : undefined}
       {...(row.danger ? { color: 'red' } : {})}
       onClick={(event: MouseEvent<HTMLElement>) => {
         row.onClick?.(event)
         close()
       }}
+      aria-current={row.active ? 'true' : undefined}
     />
   )
 

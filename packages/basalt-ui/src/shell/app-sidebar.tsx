@@ -149,6 +149,27 @@ function IconGear() {
   )
 }
 
+/** The `SettingsMenuItem.active` glyph — no icon package, so a plain inline mark like `IconGear`
+ * above. Shared shape with `app-mobile-nav.tsx`'s own copy (that module's More sheet is a
+ * different render tree and basalt ships no icon dependency to import between them). */
+function IconCheck() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5 12l5 5l10 -10" />
+    </svg>
+  )
+}
+
 const HOVER_OPEN_DELAY = 150
 const HOVER_CLOSE_DELAY = 200
 
@@ -465,6 +486,7 @@ export function AppSidebar(props: AppSidebarProps) {
             className={classes.footerBtn}
             onClick={entry.onClick}
             aria-label={entry.label}
+            aria-current={entry.active ? 'true' : undefined}
           >
             {/* A FIXED slot, so rows align on one icon column whether or not each ships an icon —
                 and the gear fallback is functional, not decorative: in the collapsed rail the label
@@ -477,6 +499,7 @@ export function AppSidebar(props: AppSidebarProps) {
             </Text>
             {/* The rail ring rides the FIRST row only — one progress block is one mark. */}
             {index === 0 ? ringMark : null}
+            {entry.active ? <IconCheck /> : null}
           </UnstyledButton>
         ))}
         {versionLabel !== undefined && (
@@ -499,7 +522,13 @@ export function AppSidebar(props: AppSidebarProps) {
           </Menu.Target>
           <Menu.Dropdown>
             {settingsItems.map((entry) => (
-              <Menu.Item key={entry.key} leftSection={entry.icon} onClick={entry.onClick}>
+              <Menu.Item
+                key={entry.key}
+                leftSection={entry.icon}
+                rightSection={entry.active ? <IconCheck /> : undefined}
+                onClick={entry.onClick}
+                aria-current={entry.active ? 'true' : undefined}
+              >
                 {entry.label}
               </Menu.Item>
             ))}

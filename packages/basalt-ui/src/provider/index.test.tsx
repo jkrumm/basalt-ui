@@ -17,10 +17,11 @@
  * Converting this to mount through the DOM harness would only be worth it if a future assertion here
  * needed live DOM behavior (event handling, layout, effects) rather than the static markup string.
  */
-import { render } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { describe, expect, spyOn, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { BasaltProvider, composeInjectedCss } from './index'
+import { BasaltErrorBoundary, BasaltProvider, composeInjectedCss } from './index'
+import { setColorScheme } from '../commands/shell-bridge'
 import { useConnectivity } from './use-connectivity'
 import { createBasaltTheme } from '../theme'
 import { buildDensityCss, buildFontsCss, buildPaletteCss, buildRadiusCss } from '../tokens'
@@ -200,5 +201,90 @@ describe('BasaltProvider cssVariablesResolver precedence — the rest spread can
     } as unknown as Parameters<typeof BasaltProvider>[0]
     render(<BasaltProvider {...propsWithResolver} />)
     expect(maliciousResolverCalled).toBe(false)
+  })
+})
+
+describe('BasaltErrorBoundary — onError optional, default fallback (C5)', () => {
+  function Boom(): never {
+    throw new Error('boom')
+  }
+
+  // React logs caught render errors to the console regardless of the boundary — silence it so
+  // the expected-error assertions below don't spam test output, matching this repo's own
+  // house pattern for error-boundary tests elsewhere in the suite.
+  const suppressConsoleError = () => spyOn(console, 'error').mockImplementation(() => {})
+
+  test('onError is optional — an unhandled boundary does not throw, and does not need one', () => {
+    const restore = suppressConsoleError()
+    try {
+      expect(() =>
+        render(
+          <BasaltErrorBoundary>
+            <Boom />
+          </BasaltErrorBoundary>,
+        ),
+      ).not.toThrow()
+    } finally {
+      restore.mockRestore()
+    }
+  })
+
+  test('fallback omitted renders the built-in DefaultErrorFallback (a PageTitle), not null', () => {
+    const restore = suppressConsoleError()
+    try {
+      render(
+        <BasaltErrorBoundary onError={() => {}}>
+          <Boom />
+        </BasaltErrorBoundary>,
+      )
+      expect(screen.getByRole('heading', { level: 1, name: 'Something went wrong' })).toBeDefined()
+    } finally {
+      restore.mockRestore()
+    }
+  })
+
+  test('fallback={null} explicitly opts back into the old swallow-it behaviour', () => {
+    const restore = suppressConsoleError()
+    try {
+      const { container } = render(
+        <BasaltErrorBoundary onError={() => {}} fallback={null}>
+          <Boom />
+        </BasaltErrorBoundary>,
+      )
+      expect(container.innerHTML).toBe('')
+    } finally {
+      restore.mockRestore()
+    }
+  })
+
+  test('a supplied fallback function still wins over the default', () => {
+    const restore = suppressConsoleError()
+    try {
+      render(
+        <BasaltErrorBoundary onError={() => {}} fallback={(e) => <p>Custom: {String(e)}</p>}>
+          <Boom />
+        </BasaltErrorBoundary>,
+      )
+      expect(screen.getByText('Custom: Error: boom')).toBeDefined()
+    } finally {
+      restore.mockRestore()
+    }
+  })
+})
+
+describe("BasaltProvider registers commands/shell-bridge.ts's setColorScheme handle (C5)", () => {
+  test('setColorScheme actually flips the resolved color scheme end to end', () => {
+    function Probe() {
+      return <div data-mantine-color-scheme />
+    }
+    render(
+      <BasaltProvider defaultColorScheme="dark">
+        <Probe />
+      </BasaltProvider>,
+    )
+    // Mantine mirrors the active scheme onto <html data-mantine-color-scheme>.
+    expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('dark')
+    act(() => setColorScheme('light'))
+    expect(document.documentElement.getAttribute('data-mantine-color-scheme')).toBe('light')
   })
 })

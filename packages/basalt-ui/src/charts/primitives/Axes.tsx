@@ -76,6 +76,43 @@ export function AxisRightNumeric({
 }
 
 /**
+ * Themed bottom numeric axis — the numeric twin of {@link AxisLeftNumeric}, for a plot whose x is
+ * a continuous number rather than a date/category (e.g. `sky-panorama.tsx`'s azimuth 0–360°,
+ * `docs/CHARTS-SPEC.md` issue #52). Exists so a bespoke continuous-x plot — declared exempt from
+ * `CartesianChart` by a `theme-allow-file hand-rolled-plot` waiver, since the point-scale x axis
+ * that primitive builds cannot represent one — stops re-implementing tick text/color/font by hand.
+ */
+export function AxisBottomNumeric({
+  scale,
+  top,
+  numTicks = 5,
+  tickFormat,
+}: {
+  scale: AxisScale
+  top: number
+  numTicks?: number
+  tickFormat?: TickFormatter<number>
+}) {
+  const { axisFont } = useChartTierMetrics()
+  return (
+    <AxisBottom
+      top={top}
+      scale={scale}
+      numTicks={numTicks}
+      {...(tickFormat !== undefined && { tickFormat })}
+      tickLabelProps={{
+        fill: VX.faint,
+        fontFamily: TICK_FONT_FAMILY,
+        fontSize: axisFont,
+        textAnchor: 'middle',
+      }}
+      stroke={VX.surface.border}
+      tickStroke={VX.surface.border}
+    />
+  )
+}
+
+/**
  * Nudge a rotated tick label back onto its tick. Both are the d3 idiom for the angle: a 45° label
  * hangs from the tick's lower-left, a 90° one is centred on the tick's vertical line.
  *

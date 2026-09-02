@@ -18,6 +18,8 @@ import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { VX } from '../../tokens'
 import { WidgetHeader } from '../../dashboard/widget-header'
 import type { DeltaPolarity } from '../../dashboard/delta-badge'
+import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
+import type { ChartState } from './ChartPending'
 
 // Surfaces resolve per theme via CSS vars, so the styles are static (no useMemo/isDark).
 // Depth = `shadow-card` (a whisper shadow + a 1px ring baked into the same value), never a
@@ -99,7 +101,22 @@ export type ChartCardProps = BasaltProps &
     count?: number
     /** Right-aligned slot — carries `data-basalt-tier="widget"` (no `CtlSlot`; see module doc). */
     actions?: ReactNode
-    children: ReactNode
+    /**
+     * Any resolved state (pending → error → empty, same precedence `resolveChartState` gives
+     * every chart kind) REPLACES `children` with its placeholder at `placeholderHeight` — the
+     * header still renders unchanged, so a card's title never reflows through the pending → drawn
+     * transition. `state={{}}` (or an all-falsy state) renders `children`, same as omitting the
+     * prop.
+     */
+    state?: ChartState
+    /** Body height while a placeholder shows. Default 240 (`ChartFrame`'s own default height). */
+    placeholderHeight?: number
+    /** Affordance under a pending/empty/error label — a retry button, a "clear filters" link.
+     * Forwarded to whichever placeholder resolves. */
+    stateAction?: ReactNode
+    /** Optional so a title-less pending card can BE a route's `<Suspense>` fallback
+     * (`<ChartCard state={{ pending: true }} placeholderHeight={320} />`, no `children` at all). */
+    children?: ReactNode
   }
 
 export function ChartCard({
@@ -113,11 +130,15 @@ export function ChartCard({
   deltaPolarity,
   count,
   actions,
+  state,
+  placeholderHeight = 240,
+  stateAction,
   className,
   classNames,
   style,
   children,
 }: ChartCardProps) {
+  const resolvedState = resolveChartState({ ...(state !== undefined && { state }) })
   const hasHeader =
     title !== undefined ||
     info !== undefined ||
@@ -127,7 +148,11 @@ export function ChartCard({
     count !== undefined
 
   return (
-    <div className={cx(classNames?.root, className)} style={{ ...cardStyle, ...style }}>
+    <div
+      className={cx(classNames?.root, className)}
+      style={{ ...cardStyle, ...style }}
+      {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
+    >
       {hasHeader && (
         <div
           {...(classNames?.header !== undefined && { className: classNames.header })}
@@ -154,7 +179,25 @@ export function ChartCard({
         {...(classNames?.body !== undefined && { className: classNames.body })}
         style={bodyClipStyle}
       >
-        {children}
+        {resolvedState === 'pending' ? (
+          <ChartPending width="100%" height={placeholderHeight} />
+        ) : resolvedState === 'error' ? (
+          <ChartError
+            width="100%"
+            height={placeholderHeight}
+            error={state?.error}
+            action={stateAction}
+          />
+        ) : resolvedState === 'empty' ? (
+          <ChartEmpty
+            width="100%"
+            height={placeholderHeight}
+            {...(typeof state?.empty === 'string' && { label: state.empty })}
+            action={stateAction}
+          />
+        ) : (
+          children
+        )}
       </div>
     </div>
   )

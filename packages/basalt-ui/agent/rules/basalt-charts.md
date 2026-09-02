@@ -6,7 +6,7 @@ paths:
 ---
 
 <!-- basalt:coverage -->
-<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
+<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — chart-missing-aria-label, raw-color-fn, raw-hex, raw-visx-axis · oxlint rules — basalt/chart-in-raw-surface, basalt/chart-legend-literal, basalt/hand-rolled-plot, basalt/visx-boundary, basalt/visx-tooltip -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->

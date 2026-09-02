@@ -283,7 +283,11 @@ export function ChartFrame({
           ) : resolvedState === 'error' ? (
             <ChartError width={plot.width} height={plot.height} error={state?.error} />
           ) : resolvedState === 'empty' ? (
-            <ChartEmpty width={plot.width} height={plot.height} />
+            <ChartEmpty
+              width={plot.width}
+              height={plot.height}
+              {...(typeof state?.empty === 'string' && { label: state.empty })}
+            />
           ) : (
             children({ ...plot, hidden })
           ))}

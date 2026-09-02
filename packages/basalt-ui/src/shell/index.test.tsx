@@ -5,7 +5,7 @@
  * disagrees with the renderer ships silently without a test that renders `BasaltShell` itself.
  */
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -13,6 +13,7 @@ import { ActionGroup } from '../controls/actions'
 import { baseTheme } from '../theme'
 import { PageAside } from './page-aside'
 import { BasaltShell, PageBar } from './index'
+import { toggleSidebar } from '../commands/shell-bridge'
 import type { BasaltAccountProps, SidebarBlock, SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -206,6 +207,16 @@ describe('BasaltShell collapse persistence', () => {
 
     expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
     expect(localStorage.getItem(key)).toBeNull()
+  })
+
+  test("commands/shell-bridge.ts's toggleSidebar flips the SAME persisted state the button does (C5)", () => {
+    const key = 'collapse-envelope-bridge'
+    localStorage.clear()
+    renderShell(key)
+
+    act(() => toggleSidebar())
+
+    expect(localStorage.getItem(`basalt:${key}`)).toBe(JSON.stringify({ v: 1, value: true }))
   })
 })
 

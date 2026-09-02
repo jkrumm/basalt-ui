@@ -30,7 +30,7 @@ import { IconSlot } from './icon-slot'
 const ICON_SLOT_CSS = readFileSync(join(import.meta.dir, 'icon-slot.module.css'), 'utf8')
 const CONTROLS_CSS = readFileSync(join(import.meta.dir, '../controls/controls.module.css'), 'utf8')
 const WIDGET_HEADER_CSS = readFileSync(
-  join(import.meta.dir, '../widget-header/widget-header.module.css'),
+  join(import.meta.dir, '../dashboard/widget-header.module.css'),
   'utf8',
 )
 

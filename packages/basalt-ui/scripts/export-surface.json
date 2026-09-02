@@ -3,6 +3,7 @@
     "ActionGroup",
     "AppBreadcrumbs",
     "AppSidebar",
+    "BasaltDevDock",
     "BasaltErrorBoundary",
     "BasaltProvider",
     "BasaltQueryDevtools",
@@ -27,6 +28,7 @@
     "NavCountBadge",
     "PageAside",
     "PageBar",
+    "PageTitle",
     "QueryState",
     "SCROLLPORT_ATTRIBUTE",
     "Section",
@@ -66,6 +68,7 @@
     "toErrorMessage",
     "unwrap",
     "useAgentThreadRuns",
+    "useBreakpoint",
     "useConnectivity"
   ],
   "./charts": [
@@ -73,6 +76,7 @@
     "AreaGradient",
     "AreaStack",
     "AxisBottomDate",
+    "AxisBottomNumeric",
     "AxisLeftNumeric",
     "AxisRightNumeric",
     "BandStrip",
@@ -218,6 +222,28 @@
     "neutralizeAllowAnnotation",
     "unmatchedExemptPatterns"
   ],
+  "./format": [
+    "NON_FINITE",
+    "clock",
+    "compact",
+    "deltaPct",
+    "duration",
+    "durationClock",
+    "fmtAxisDate",
+    "fmtCompact",
+    "fmtCurrency",
+    "fmtInt",
+    "fmtPercent",
+    "fmtTooltipDate",
+    "formatters",
+    "integer",
+    "kcal",
+    "km",
+    "money",
+    "percent",
+    "relativeTime",
+    "weekday"
+  ],
   "./forms": [
     "DEFAULT_AUTOSAVE_DEBOUNCE_MS",
     "FormActions",
@@ -253,10 +279,12 @@
     "parseShortcut",
     "registerModalsProvider",
     "runCommand",
+    "setColorScheme",
     "toHotkeyBindings",
     "toRouteActions",
     "toShortcutList",
     "toSpotlightActions",
+    "toggleSidebar",
     "useCommandHotkeys"
   ],
   "./notifications": [
