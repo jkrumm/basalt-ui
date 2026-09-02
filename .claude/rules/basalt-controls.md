@@ -7,7 +7,7 @@ paths:
 ---
 
 <!-- basalt:coverage -->
-<!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
+<!-- GENERATED from src/surfaces.ts — `bun scripts/check-coverage.ts --write`. Do not hand-edit. -->
 <!-- backed by: guard kinds — raw-selection-control · oxlint rules — basalt/bound-control-outside-home, basalt/control-outside-home, basalt/control-size-literal, basalt/hand-rolled-filter, basalt/responsive-twin -->
 <!-- not guarded: C1 as a cross-file law (a control placed in one file, its home declared in another) -->
 <!-- not guarded: hand-rolled section headings (argo writes `<Text fw={600} size="sm">` + children, which no AST heuristic matches without false positives) -->

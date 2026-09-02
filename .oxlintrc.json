@@ -110,6 +110,32 @@
       }
     },
     {
+      "files": ["packages/basalt-ui/src/format/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@mantine/core",
+                "message": "format must be Mantine-free — no Mantine imports allowed."
+              },
+              {
+                "name": "@mantine/hooks",
+                "message": "format must be Mantine-free — no Mantine imports allowed."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@mantine/*"],
+                "message": "format must be Mantine-free — no Mantine imports allowed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/basalt-ui/src/router-tanstack/**"],
       "rules": {
         "no-restricted-imports": [

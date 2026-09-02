@@ -18,10 +18,11 @@
     "test": "bun test",
     "test:layout": "bun --config=./packages/basalt-ui/tests/layout/bunfig.toml test --timeout 60000 packages/basalt-ui/tests/layout",
     "check-theme": "cd packages/basalt-ui && bun bin/basalt-ui.mjs check-theme",
-    "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme && bun test",
+    "pre": "bun run fmt:check && bun run lint && bun run typecheck && bun run check-theme && bun run check-budgets && bun test",
     "prepare": "lefthook install",
     "hooks:install": "lefthook install",
-    "hooks:uninstall": "lefthook uninstall"
+    "hooks:uninstall": "lefthook uninstall",
+    "check-budgets": "cd packages/basalt-ui && bun scripts/check-budgets.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.4",
