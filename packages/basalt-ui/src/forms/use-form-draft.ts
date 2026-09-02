@@ -245,10 +245,15 @@ function useAutosave<Values extends Record<string, unknown>>(
     }, debounceRef.current)
   }, [])
 
-  // An unmount mid-window drops the pending write rather than firing it into a dead component.
+  // An unmount mid-window flushes the pending write rather than dropping it — a closed tab keeps
+  // the sentence.
   useEffect(
     () => () => {
-      if (timerRef.current !== null) clearTimeout(timerRef.current)
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+        saveRef.current()
+      }
     },
     [],
   )

@@ -8,6 +8,7 @@ import type { AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import type { ChartState } from '../primitives/ChartPending'
 import { curveFor } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
+import { isDev } from '../../utils/is-dev'
 
 export type StackedAreaProps<T> = BasaltProps & {
   data: T[]
@@ -21,8 +22,9 @@ export type StackedAreaProps<T> = BasaltProps & {
   /** Axis config for ticks/format/grid. `domain` defaults to the summed per-point stack total
    * (padded ×1.1, or `autoMaxFloor` if higher) rather than a per-series max — the seam a stacked
    * chart needs, since the plotted quantity is the cumulative band top, not any one series' own
-   * value. Pass a fixed tuple or your own function to override. */
-  y?: AxisConfig<T>
+   * value. Pass a fixed tuple or your own function to override. No `scale` — stacking sums bar
+   * heights directly and a log axis has no additive zero to sum from. */
+  y?: Omit<AxisConfig<T>, 'scale'>
   /** Exact number of x ticks. Default: as many as fit. Ignored when `xTickValues` is set. */
   xTicks?: number
   /** Which domain keys get a tick, from the full key list and the resolved plot width. Takes
@@ -106,6 +108,15 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
     className,
     style,
   } = props
+
+  // The stack sums band heights via `getValue` totals directly — a log axis has no additive zero
+  // to sum from (`docs/CHARTS-SPEC.md`'s null-gap + log contract, mirrored from `Bars`' own guard).
+  if (isDev() && (y as { scale?: string } | undefined)?.scale === 'log') {
+    throw new Error(
+      'StackedArea: cannot use a log axis (y.scale: "log") — the stack sums band heights, ' +
+        'and a log axis has no additive zero to sum from.',
+    )
+  }
 
   // The plotted quantity is the CUMULATIVE stack top, not any one series' value — the built-in
   // 'auto' domain (per-series max) would clip a multi-band stack. Skipped when the caller already

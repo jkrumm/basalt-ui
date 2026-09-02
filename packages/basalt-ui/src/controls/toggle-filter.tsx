@@ -11,6 +11,7 @@
  * <ToggleFilter field={filters.field.errorsOnly} label="Errors only" />
  */
 import { Switch } from '@mantine/core'
+import { useId } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -34,6 +35,7 @@ export function ToggleFilter(props: ToggleFilterProps): ReactNode {
   const { field, label, icon, className, style } = props
   const [value, setValue] = field.use()
   const surface = useFilterSurface()
+  const id = useId()
   useFilterRegistration(!field.isDefault(value), () => {
     field.clear()
   })
@@ -44,8 +46,10 @@ export function ToggleFilter(props: ToggleFilterProps): ReactNode {
     return (
       <PanelRow
         label={label}
+        htmlFor={id}
         end={
           <Switch
+            id={id}
             aria-label={label}
             checked={value}
             onChange={(event) => {

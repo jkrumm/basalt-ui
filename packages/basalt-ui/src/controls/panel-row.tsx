@@ -66,6 +66,12 @@ export type PanelRowProps = BasaltProps & {
    * `useControlName`'s doc.
    */
   readonly labelId?: string
+  /**
+   * When set, renders the label as a `<label htmlFor={htmlFor}>` instead of a bare `<span>`, so
+   * clicking the label text also activates the control — the affordance Mantine's own labelled
+   * inputs give for free. Pass the `end` control's id (a `Switch`, typically).
+   */
+  readonly htmlFor?: string
   /** The full-width control line. Omitted for a row whose control rides `end`. */
   readonly children?: ReactNode
 }
@@ -77,6 +83,7 @@ export function PanelRow({
   end,
   disabled,
   labelId,
+  htmlFor,
   children,
   className,
   style,
@@ -92,9 +99,19 @@ export function PanelRow({
           through a single provider. */}
       <CtlSlot>
         <div className={classes.head}>
-          <span className={classes.label} {...(labelId !== undefined && { id: labelId })}>
-            {label}
-          </span>
+          {htmlFor !== undefined ? (
+            <label
+              htmlFor={htmlFor}
+              className={classes.label}
+              {...(labelId !== undefined && { id: labelId })}
+            >
+              {label}
+            </label>
+          ) : (
+            <span className={classes.label} {...(labelId !== undefined && { id: labelId })}>
+              {label}
+            </span>
+          )}
           {hint !== undefined && <InfoGlyph text={hint} />}
           {readout !== undefined && <span className={classes.readout}>{readout}</span>}
           {end !== undefined && <span className={classes.end}>{end}</span>}

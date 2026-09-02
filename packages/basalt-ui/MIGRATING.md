@@ -93,6 +93,12 @@ What is new, one line each — nothing here renames or removes anything:
   band that declares one — the last such entry in your `series` array (`AreaStack`'s bands share
   their boundaries, so two curves would leave gaps between them). A hidden band's curve is ignored
   either way, so a legend toggle can hand a stack to the next declarer down.
+- **Single-series legend suppressed by default** (`basalt-ui/charts`) — since commit `5e0ade1`, a
+  chart with exactly one visible series and no `legend` prop renders no legend. Pass `legend={{}}`
+  (or any explicit config) to keep it.
+- **`Bars`' baseline is now the axis' domain floor**, not `yScale(0)` — previously a y domain that
+  did not reach 0 drew the bar off the bottom of the plot; now it stops at the domain's own floor,
+  which also makes a log y-axis usable on `Bars`. A domain that includes 0 is unchanged.
 - **Number formatters** (`basalt-ui/charts`) — `fmtCompact`, `fmtPercent`, `fmtCurrency`, `fmtInt`
   and the `formatters` bundle, all `Intl`-backed with an explicit `locale` defaulting to the
   runtime's. `utils/format.ts` shipped only two DATE formatters, so every call site hand-rolled
