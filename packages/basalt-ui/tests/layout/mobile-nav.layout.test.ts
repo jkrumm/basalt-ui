@@ -27,6 +27,7 @@ import {
   SHEET_BODY,
   SHEET_ROWS,
   above,
+  CLOSE_BUDGET_MS,
   closeLayoutSuite,
   expectDoesNotScroll,
   expectFullyInside,
@@ -85,7 +86,7 @@ const pillSpec = (extra: Partial<FixtureSpec> = {}): FixtureSpec => ({
 })
 
 layout('mobile nav — real layout', () => {
-  afterAll(closeLayoutSuite)
+  afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
   /**
    * INVARIANT 1 — a short sheet hugs its content.

@@ -17,7 +17,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium } from 'playwright-core'
-import type { Browser, Page } from 'playwright-core'
+import type { Browser, BrowserServer, Page } from 'playwright-core'
 import type { FixtureSpec } from './fixture/spec'
 
 // ── Selectors ─────────────────────────────────────────────────────────────────────────────────
@@ -125,6 +125,8 @@ const FIXTURE_ENTRY = new URL('./fixture/main.tsx', import.meta.url).pathname
 const FIXTURE_HTML = new URL('./fixture/index.html', import.meta.url).pathname
 
 let browser: Browser | null = null
+/** The Chrome process behind `browser` — owned so teardown can end it, not merely ask it to. */
+let chromeServer: BrowserServer | null = null
 let server: ReturnType<typeof Bun.serve> | null = null
 let outDir = ''
 let origin = ''
@@ -243,8 +245,13 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
 
   phase = 'launching Chrome'
   let chrome: Browser
+  let chromeProcess: BrowserServer
   try {
-    chrome = await chromium.launch({
+    // `launchServer` + `connect` instead of `launch`: a plain `Browser` exposes no process handle,
+    // and Google Chrome's graceful `close()` has been observed to never resolve on this host (a
+    // 30 s hook budget expired with every assertion green). `BrowserServer.kill()` ends the
+    // process in ~20 ms and leaves no orphan to slow the next launch.
+    chromeProcess = await chromium.launchServer({
       // playwright-core's own per-platform table resolves `/opt/google/chrome/chrome` on linux —
       // exactly what ubuntu-latest's Chrome .deb installs — and the .app bundle on darwin. NOTHING
       // is ever downloaded. Use the channel, not `executablePath`, which Playwright documents as
@@ -256,6 +263,7 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
       // protected. Locally the sandbox works, so keep it.
       chromiumSandbox: !process.env['CI'],
     })
+    chrome = await chromium.connect(chromeProcess.wsEndpoint())
   } catch (error) {
     await discard()
     if (process.env['CI']) {
@@ -276,10 +284,12 @@ async function bootLayoutSuite(gen: number): Promise<boolean> {
 
   if (gen !== generation) {
     await discard(chrome)
+    await chromeProcess.kill()
     return false
   }
 
   browser = chrome
+  chromeServer = chromeProcess
   server = local
   outDir = dir
   origin = local.url.origin
@@ -334,12 +344,24 @@ export async function initLayoutSuite(): Promise<boolean> {
   }
 }
 
+/**
+ * How long the graceful Chrome shutdown may take. Bun caps a hook at an undeclared 5000 ms unless
+ * the hook DECLARES its own budget — `afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)` — and Google
+ * Chrome's teardown is not under this suite's control: on a loaded host it has been measured at
+ * 5–6 s, which read as three "(unnamed) hook timed out" failures against a suite whose every
+ * assertion had passed. Detaching the close instead is not an option — a Chrome that outlives the
+ * test process is an orphan that slows every later launch on the machine.
+ */
+export const CLOSE_BUDGET_MS = 30_000
+
 export async function closeLayoutSuite(): Promise<void> {
   generation++ // anything still booting is abandoned and must not publish over this teardown
   await browser?.close()
+  await chromeServer?.kill()
   server?.stop(true)
   if (outDir) await rm(outDir, { recursive: true, force: true })
   browser = null
+  chromeServer = null
   server = null
   outDir = ''
   origin = ''

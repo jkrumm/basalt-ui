@@ -18,6 +18,7 @@
  */
 import { afterAll, describe, expect, test } from 'bun:test'
 import {
+  CLOSE_BUDGET_MS,
   closeLayoutSuite,
   fixtureHtml,
   initLayoutSuite,
@@ -69,7 +70,7 @@ const lightPath = ready ? probe(bootStyle({ colorScheme: 'light' })) : ''
 const autoPath = ready ? probe(bootStyle({ colorScheme: 'auto' })) : ''
 const optOutPath = ready ? probe(bootStyle({ colorScheme: false })) : ''
 
-afterAll(closeLayoutSuite)
+afterAll(closeLayoutSuite, CLOSE_BUDGET_MS)
 
 const SPEC = {
   sections: [{ label: 'Main', items: [{ key: 'home', label: 'Home', active: true }] }],
