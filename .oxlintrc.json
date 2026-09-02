@@ -43,6 +43,7 @@
     "basalt/query-dual-import": "warn",
     "basalt/query-fn-unwrap": "warn",
     "basalt/deprecated-export": "warn",
+    "basalt/forms-field-key": "warn",
     "basalt/visx-boundary": "error",
     "basalt/visx-tooltip": "error",
     "basalt/token-layer-boundary": "error",
