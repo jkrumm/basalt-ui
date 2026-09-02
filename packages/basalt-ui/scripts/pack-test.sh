@@ -106,6 +106,10 @@ SCRATCH5=""
 trap 'rm -rf "$SCRATCH" "$SCRATCH2" "$SCRATCH3" "$SCRATCH4" "$SCRATCH5"; rm -f "$LISTFILE"' EXIT
 cd "$SCRATCH"
 echo '{ "name": "scratch", "private": true, "type": "module" }' >package.json
+# vite is pinned to the package's own dev version: an unpinned `vite` resolves to the registry's
+# latest, and the gate then grades whatever rolldown published minutes ago — CI went red on
+# 2026-09-02 because rolldown 1.2.7 was live while its linux-x64 binding was still at 1.2.6. The
+# gate proves the ARTIFACT resolves; vite compatibility is the playground's and `make verify`'s job.
 scratch_install "$ABS_TGZ" \
   react react-dom \
   @mantine/core @mantine/hooks \
@@ -116,7 +120,7 @@ scratch_install "$ABS_TGZ" \
   "@tanstack/react-table@>=8 <9" "@tanstack/react-virtual@>=3.13.26 <4" \
   "react-markdown@^10.1.0" "remark-gfm@^4.0.1" \
   "use-stick-to-bottom@^1.1.6" \
-  vite \
+  "vite@8.0.16" \
   typescript \
   "@visx/axis@4.0.0" "@visx/curve@4.0.0" "@visx/event@4.0.0" "@visx/grid@4.0.0" \
   "@visx/group@4.0.0" "@visx/responsive@4.0.0" "@visx/scale@4.0.0" "@visx/shape@4.0.0" \
