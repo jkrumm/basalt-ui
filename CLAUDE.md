@@ -130,7 +130,11 @@ declaration, `Donut`/`Heatmap` render no assembly primitive so nothing fires on 
 tooltip rows are DERIVED from `series` and never hand-authored
 (`basalt/chart-legend-literal`). Margins measure themselves from the labels actually painted
 (`autoMargin`); `VX.margin` is only a floor. The cursor is shared page-wide by default with no
-provider — `ChartCursorScope` isolates a subtree. Ground truth: **`docs/CHARTS-SPEC.md`**.
+provider — `ChartCursorScope` isolates a subtree. `CartesianChart` also resolves a measured **phone
+tier** below `VX.phoneChartWidth` (smaller legend/tick fonts, tighter margin floors, a capped
+legend — no media query, a narrow grid cell is "phone" at any viewport) and a `state` prop
+(`ChartPending`/`ChartEmpty`/`ChartError`) every kind threads through. Ground truth:
+**`docs/CHARTS-SPEC.md`**.
 
 ## Mantine-Free Boundary (enforced)
 
