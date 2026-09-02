@@ -159,13 +159,30 @@ formatter returning `Mar 08 14:00` overlapped at every width. `CartesianChart` m
 constant-only behavior — this is what `xLabelRotate` does, since a rotated label no longer competes
 for HORIZONTAL room with its neighbour.
 
-**`xLabelRotate?: 45 | 90`** tilts the x tick labels counter-clockwise, anchored at their right
+**`xLabelRotate?: 0 | 45 | 90`** tilts the x tick labels counter-clockwise, anchored at their right
 edge, and deepens the bottom gutter by the rotated label's projected height instead of its width
 (`autoMargin`'s `rotate` input) — the same measured-not-assumed law, applied to the rotation case.
 Reach for it on a phone-width chart whose `formatX` is unavoidably wide (a timestamp with a time
 component, a long category name): rotating trades horizontal crowding for vertical gutter depth,
 which is normally the cheaper axis to spend on a narrow viewport. `Bars`, `MultiLine`, `StackedArea`
 and `ZonedLine` all forward it to `CartesianChart` the same way they already forward `formatX`.
+**Left UNSET it is now the phone tier's default** (§8), and **`0` is the opt-out**.
+
+**A rotated label also reaches into the LEFT gutter, and that half was missing.** The label is
+anchored at its right edge and tilts counter-clockwise, so it runs down-AND-LEFT from its tick —
+and the first tick sits at the plot's left edge. `autoMargin` therefore clears
+`widest x label × cos(angle)` on the left as well: 0.71× the label at 45°, and exactly zero at 90°,
+where the string runs straight down and costs no horizontal room. Before this, `/charts-stress`
+block (f2) rendered `Mar 01 14:00` as `ar 01 14:00` — the bottom gutter grew for rotation and the
+left one did not. An explicit `margin` override still wins last.
+
+**The appended final x tick no longer prints on top of its neighbour.** `smartTicks` appends the
+last key unconditionally (below), which lands it a PARTIAL step from the last tick on the grid — so
+at wide-enough labels the pair overlaps at every tick count and every width, not at an unlucky one
+(measured at 1440px on `/charts-stress` block (f1)). When that gap is narrower than one label,
+the grid tick before it is dropped instead. Index 0 is never the one dropped: the left edge is the
+label a reader orients from. `smartTicksEvery` takes an exact count and no width, so it cannot
+measure this and is unchanged.
 
 ## 2. `CartesianChart`
 
@@ -257,8 +274,19 @@ labels on top of each other at the right edge — at every count, not at an unlu
 the consumer that reported it: linewatch's `lib/axis.ts` goes 200 → 160 lines. It shrinks, it does
 not die; the surviving 160 are domain formatters basalt has no business owning.
 
-`xLabelRotate?: 45 | 90` is the phone answer to a `formatX` too wide to keep spacing ticks
+`xLabelRotate?: 0 | 45 | 90` is the phone answer to a `formatX` too wide to keep spacing ticks
 horizontally — see §1 for the mechanics and the measured-gutter law it follows.
+
+**`SeriesStyle.curve?: 'monotone' | 'linear' | 'step' | 'stepAfter' | 'stepBefore'`** picks the
+interpolation between two plotted points. Default `'monotone'` — today's behaviour everywhere, so an
+omitted `curve` moves nothing. Honoured by `MultiLine` (per series), `ZonedLine` (the primary series'
+curve governs its line, its area fill AND its threshold bands — they are one measurement drawn three
+ways), `StackedArea` (ONE curve for the whole stack, taken from the first visible series that
+declares one: the bands share their boundaries, so two curves would leave gaps between them) and the
+`Bars` line overlays (`BarsLine.curve`). Reach for a step curve when the quantity is
+piecewise-constant — a price tier, a config value, a discrete state — because a smoothed curve
+through those draws intermediate values that never existed. `curveFor` is exported for a
+hand-composed plot drawing its own `LinePath` from the same `series` array.
 
 `PlotContext` handed to `children`: `{ data, visible, hidden, xScale, yScale, y2Scale, xMax, yMax,
 margin, cursorPoint, highlighted }`. Draw `visible` — never the `series` prop — so a legend toggle
@@ -347,6 +375,14 @@ CONTAINS the key, so answering at all would be a crosshair on a bucket that prov
   clamp, measure-before-show) is handled once in `ChartTooltipFloat` for both modes.
 - **Keyboard.** The hover overlay is focusable; ←/→ scrub the cursor, Escape clears it. The tooltip
   is `aria-live="polite"`.
+- **It renders nothing on the server.** `ChartTooltipFloat` was the ONE `renderToString` casualty in
+  the whole package (`isomorphic-findings.md` F-SSR-1): `createPortal` throws outright in
+  `react-dom/server`. The guard is a `useSyncExternalStore` server snapshot, not a `typeof document`
+  check and not a `useEffect`-set flag — under a DOM-preloaded test runner `document` exists while
+  `renderToString` still refuses portals, and an effect-set flag would cost a frame on the client,
+  which on a hover that has already happened is a visible blink. The server snapshot is `false` and
+  the client's FIRST render is already `true`, so nothing moves in the browser. The ledger entry in
+  `tests/isomorphic/props.tsx` is now empty, and the test asserts that in both directions.
 - **`formatHeader?: (key, d) => string`** on `tooltip` (also `TooltipHeader`'s own `format` prop,
   and the identical seam on `DualPanel`'s `tooltipLabel` sibling `formatHeader`, so the two stay in
   sync). Default: `fmtTooltipDate`, unchanged. The seam exists because `fmtTooltipDate` regexes
@@ -458,6 +494,108 @@ Reported from that port, not deferred silently:
 - **`BandStrip` derives exactly one tooltip row.** Anything beyond it stays hand-authored in
   `tooltip.extraRows`.
 
+## 8. The phone tier — measured, never a media query
+
+`src/charts/**` had no breakpoint literal anywhere in it: legend font, tick font, `VX.margin`,
+`dotR` and the tooltip's `minWidth: 140` were identical at 1920px and at 320px (audit-c #12). It now
+resolves **two tiers**, and it resolves them from the width `ChartFrame` already MEASURES.
+
+A viewport breakpoint would answer the wrong question. A chart in a two-column grid cell on a 1440px
+desktop is exactly as narrow as one filling a phone, and `@media` cannot see that; the
+`ResizeObserver` can. It also keeps the layer Mantine-free — `theme.breakpoints` is on the coupled
+side of the boundary.
+
+- **`resolveChartTier(containerW)`** (`primitives/chart-frame-layout.ts`) returns `'phone'` below
+  `VX.phoneChartWidth` (480) and `'desktop'` otherwise. An UNMEASURED box (`containerW <= 0` — SSR,
+  or before the observer's first callback) is `'desktop'`: the first frame must not paint phone
+  chrome it then undoes one frame later.
+- **`ChartFrame` publishes it once**, through `ChartTierProvider`; the axes, the legend, the
+  crosshair dots and the tooltip read it back with `useChartTierMetrics()`. Outside a `ChartFrame`
+  the default is `'desktop'`, so a hand-composed plot keeps today's sizes.
+- **`chartTierMetrics(tier)`** is the whole size set, in one frozen object per tier, so a new
+  tier-sensitive size is added in one place and read by name rather than branched on at each site.
+
+| Metric             | desktop                         | phone              |
+| ------------------ | ------------------------------- | ------------------ |
+| axis tick font     | `VX.axisFont` (`TEXT.micro`)    | `TEXT.nano`        |
+| legend font        | `VX.legendFontSize` (`TEXT.sm`) | `TEXT.xs`          |
+| crosshair `dotR`   | `VX.dotR`                       | one step in        |
+| tooltip `minWidth` | 140                             | 110                |
+| legend entry cap   | none                            | 2, then `+N more`  |
+| margin FLOORS      | `VX.margin`                     | `VX.margin × 0.75` |
+
+Two consequences worth stating, because both are places the tier could otherwise lie:
+
+- **The tick font is threaded into the MEASUREMENT, not just the paint.** `autoMargin` takes the
+  tier's `fontPx` and its tightened `floor`, and `xLabelPxFor` measures at the same size — §1's
+  measured-equals-painted law holds per tier or it holds nowhere. The margin floors only ever
+  tighten; the measured law above them is untouched. That includes `useBandPlot`, which measures the
+  gutters for `BandStrip` and `MirroredBars`: those kinds paint through the same `AxisBottomDate`,
+  so a hook that measured at the desktop font while the axis painted the phone one would break the
+  law in the one place no `CartesianChart` call site could catch it. `Heatmap` reads the tier for
+  its own row/column labels and gradient endpoints for the same reason, though it measures nothing.
+- **`xLabelRotate` left unset auto-rotates to 45 at the phone tier** when the measured labels cannot
+  fit three ticks side by side (`autoXLabelRotate`). Two ticks is a labelled left edge, a labelled
+  right edge and nothing to read between them. Desktop never auto-rotates: rotating spends
+  bottom-gutter depth, which is the cheap axis on a phone and the expensive one on a screen that had
+  horizontal room all along. **`xLabelRotate: 0` is the opt-out.**
+
+## 9. Number formats, and the three "nothing to draw" states
+
+**`utils/format.ts` ships numbers now, not only dates.** It had exactly two date formatters, so every
+demo and every consumer hand-rolled `` `$${v}k` `` — a template literal that is not locale-aware, not
+compact-aware, and different in each place it was written. `fmtCompact` (`1.2k`, `3.4M`),
+`fmtPercent` (`{ input: 'ratio' | 'percent' }` — declared, never guessed from magnitude, because a
+ratio of 1.2 and a percentage of 1.2 are both ordinary numbers), `fmtCurrency`
+(`{ currency, compact? }`) and `fmtInt` are `Intl.NumberFormat` with the arguments already decided.
+Every one takes an explicit `locale` defaulting to `undefined` — `Intl`'s own "use the runtime's
+locale", which is right for a reader and wrong for a test, so the tests pin `en-US`. `formatters`
+bundles all six (the four numeric plus the two date ones) for a call site that wants the set.
+
+**Every formatter returns `NON_FINITE` (an em dash, U+2014) for input it cannot represent** — `NaN`,
+`±Infinity`, and for the two date ones an `Invalid Date`. It is one law across the module rather
+than a guard at each call site, because the failure is not the caller's: `Intl.NumberFormat` renders
+`NaN` as the literal string `NaN` and `Infinity` as `∞`, so a collapsed domain (an empty series, a
+0/0 rate, a log scale reaching zero) painted its own arithmetic accident as a tick label and a
+tooltip read `NaN%`. A chart may say it does not know; it may not print a number that is not one.
+The guard is on non-finiteness, never on falsiness — a finite `0` formats normally.
+
+**`ChartEmpty` and `ChartError` join `ChartPending`.** The chart layer had only the third state, so a
+consumer wanting the other two had to reach for `dashboard/QueryState` — which renders Mantine and is
+unreachable from `./charts` entirely. What they wrote instead is the four-way switch `QueryState`
+exists to own, and the documented failure mode is a 500 rendering as `No data`.
+
+`CartesianChart`/`ChartFrame` (and every kind, which forwards it) take
+`state?: { pending?, error?, empty? }` — the shape a query result already has — and resolve it with
+`resolveChartState`. **Precedence is fixed and is the product: pending → error → empty.** A refetch
+in flight over a stale error is pending, not failed; a query that errored has no standing to claim
+its result was empty. All three suppress the legend for the reason pending always did (a legend
+naming a series with nothing to point at is its own small lie), and only `pending` sets `aria-busy`.
+`isPending` remains a working alias for `state={{ pending: true }}` and is not going away — it
+predates the prop and every kind forwards it. Both new placeholders are Mantine-free, reserve the
+plot rect, draw nothing that could be mistaken for a measurement, and take an optional `action` slot
+the caller fills.
+
+**All three are announced, and only the failure interrupts.** `ChartError` is `role="alert"`;
+`ChartPending` and `ChartEmpty` are `role="status"` (polite). A screen reader that heard only the
+`alert` heard the one outcome and none of the resolutions — the same asymmetry, in the assistive
+lane, that the four-way switch had in the visual one.
+
+## 10. Shared component props
+
+Every exported chart component takes **`BasaltProps`** (`className`, `style`, merged onto its ROOT
+element — never replacing the component's own). 98 of 123 exported components dropped `className`,
+so a consumer needing one margin had to fork the component (isomorphic finding C8). For a kind, the
+root is the `ChartFrame` box it composes, so the class travels the whole way down. `ChartCard`
+additionally publishes a slot set, `SlotStylesProps<'root' | 'header' | 'body'>`; a slot class never
+replaces the root `className`, both land.
+
+Two smaller adoptions ride along. Every `memo(...)`-wrapped kind carries a **`displayName`** — nine
+kinds all reading as `Memo` in a DevTools flame graph named nothing (audit A16). And every kind opens
+with **`assertRequiredProps('<Kind>', props, [...])`**, so a missing accessor throws
+`[basalt] MultiLine: prop "data" is required` instead of an `undefined is not a function` from inside
+visx that `BasaltErrorBoundary` swallows into a blank subtree (F-ERR-1).
+
 ## Invariants (unchanged)
 
 - Mantine-free: `charts/**` and `tokens/**` import no `@mantine/*`; `@visx/*` only inside
@@ -469,6 +607,8 @@ Reported from that port, not deferred silently:
   not — a sub-1 opacity there would read as a rendering bug, not as data.
 - `ChartSeries.formatValue` is `(v: number, d: T) => string` — a row can cite the hovered datum
   (e.g. `97.5 kg (92.5 × 3)`), not just the plotted number.
+- Chart chrome sizes itself from the MEASURED container, never from a viewport media query (§8), and
+  a size that is measured for a margin is measured at the font that gets painted.
 
 ## Migration note (one-time, 2026-08-18)
 
