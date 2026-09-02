@@ -228,13 +228,14 @@ export function Section({
 
   // The anchor offset is Section's own, so the caller's `style` merges OVER it rather than
   // replacing it — a consumer setting a margin must not silently drop the scroll offset.
+  //
+  // NO chrome height in this offset. An anchor scroll happens inside the SCROLLPORT, and since
+  // `AppShell.Main` became that box (`shell/app-main.module.css`) BOTH the app header and `PageBar`
+  // row 2's band are shell regions rendered outside it — counting either would land every `#anchor`
+  // that far below its own heading. What is left is breathing room, which is exactly what
+  // `--vx-space-sticky-header-clearance` means (tokens/palette.ts, `deriveSpacing`).
   const anchorStyle =
-    id === undefined
-      ? undefined
-      : {
-          scrollMarginTop:
-            'calc(var(--app-shell-header-height, 0px) + var(--basalt-page-bar-h, 0px))',
-        }
+    id === undefined ? undefined : { scrollMarginTop: 'var(--vx-space-sticky-header-clearance)' }
   const rootStyle =
     anchorStyle === undefined && style === undefined ? undefined : { ...anchorStyle, ...style }
 

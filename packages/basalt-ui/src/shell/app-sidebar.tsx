@@ -18,7 +18,6 @@
  * favor of this package.
  */
 import {
-  ActionIcon,
   Box,
   Collapse,
   Group,
@@ -61,13 +60,18 @@ import classes from './app-sidebar.module.css'
 
 export type AppSidebarProps = BasaltProps & {
   /**
-   * Brand identity. Supplying `menu` turns the brand row into a `Name ▾` workspace switcher —
+   * Brand identity. Supplying `menu` turns the header's brand into a `Name ▾` workspace switcher —
    * the entries are the existing `AccountMenuItem` shape, so a consumer already mapping account
    * actions needs no second vocabulary.
    */
   brand: BrandConfig & { menu?: AccountMenuItem[] }
   sections: SidebarSection[]
   collapsed: boolean
+  /**
+   * Consumed by the HEADER's brand zone (`app-brand.tsx`), not by this component — the collapse
+   * toggle moved up there with the brand. Still declared here because it is part of the sidebar's
+   * collapse contract and `BasaltShell` feeds both halves from one place.
+   */
   onToggleCollapse: () => void
   /**
    * Footer settings-menu entries (theme switcher, devtools, …) — supplied by the consumer.
@@ -126,27 +130,6 @@ export type AppSidebarProps = BasaltProps & {
   blocks?: SidebarBlock[]
 }
 
-/** Inline collapse/expand chevrons — keeps the shell icon-dependency-free. */
-function IconCollapse({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M4 4h16v16H4z" />
-      <path d="M9 4v16" />
-      {collapsed ? <path d="M14 9l3 3l-3 3" /> : <path d="M16 9l-3 3l3 3" />}
-    </svg>
-  )
-}
-
 function IconGear() {
   return (
     <svg
@@ -171,54 +154,6 @@ const HOVER_CLOSE_DELAY = 200
 
 /** `settingsMenuItems` at or under this count render as flat rows — see the prop's JSDoc. */
 const FLAT_SETTINGS_MAX = 3
-
-/**
- * The brand name, and — when `brand.menu` is supplied — the workspace switcher it becomes.
- *
- * The entries are `AccountMenuItem`s: the shell already had exactly this row shape (label, icon,
- * onClick, danger) for the account menu, and a second vocabulary for the same dropdown would be
- * two things to keep in step for no gain. The chevron is inline text, not an icon dependency.
- */
-function BrandName({
-  brand,
-  menuWidth,
-}: {
-  brand: BrandConfig & { menu?: AccountMenuItem[] }
-  menuWidth: number
-}) {
-  const label = (
-    <Text className={classes.brandName} fz={VX.text.xl} fw={550}>
-      {brand.name}
-    </Text>
-  )
-  const menu = brand.menu
-  if (menu === undefined || menu.length === 0) return label
-
-  return (
-    <Menu position="bottom-start" withArrow width={menuWidth} zIndex={500}>
-      <Menu.Target>
-        <UnstyledButton className={classes.brandButton} aria-label={`${brand.name} workspace`}>
-          {label}
-          {/* `open` is the DOWN glyph — a switcher's affordance points at its dropdown, and this is
-              the same chevron every fold in the sidebar uses rather than a second one. */}
-          <IconChevron open />
-        </UnstyledButton>
-      </Menu.Target>
-      <Menu.Dropdown>
-        {menu.map((entry) => (
-          <Menu.Item
-            key={entry.key}
-            leftSection={entry.icon}
-            {...(entry.danger === true && { color: 'red' })}
-            onClick={entry.onClick}
-          >
-            {entry.label}
-          </Menu.Item>
-        ))}
-      </Menu.Dropdown>
-    </Menu>
-  )
-}
 
 /** True when the item or any descendant is active — drives inline child expansion. */
 function hasActiveDescendant(item: SidebarItem): boolean {
@@ -478,7 +413,10 @@ export function AppSidebar(props: AppSidebarProps) {
     brand,
     sections,
     collapsed,
-    onToggleCollapse,
+    // `onToggleCollapse` is deliberately NOT read here any more — the toggle it drives moved into
+    // the header's leading zone with the brand (`app-brand.tsx`). The prop stays on
+    // `AppSidebarProps` because it is the shell's public seam for a consumer-owned collapse, and
+    // dropping it would break every call site for no gain.
     settingsMenuItems,
     settingsMenu = 'auto',
     account,
@@ -584,35 +522,11 @@ export function AppSidebar(props: AppSidebarProps) {
       data-collapsed={collapsed || undefined}
       {...(style !== undefined && { style })}
     >
-      <Group className={classes.brand} gap="sm" wrap="nowrap">
-        <Group className={classes.brandLead} gap="sm" wrap="nowrap">
-          {brand.logoSrc && (
-            <img
-              src={brand.logoSrc}
-              alt={brand.logoAlt ?? brand.name}
-              width={26}
-              height={26}
-              style={{ display: 'block' }}
-            />
-          )}
-          <BrandName brand={brand} menuWidth={step.sidebarAccountMenuWidth} />
-        </Group>
-        <ActionIcon
-          variant="subtle"
-          // A numeric size, not the named `"md"` — same opt-out as `connectivity-indicator.tsx`'s
-          // toolbar icon (see that comment): this is a plain collapse-toggle icon, not a control meant
-          // to match a `size="md"` Input/Button, so it must not pick up the theme's `ActionIcon.extend`
-          // control-height override. Reproduces Mantine's own static `--ai-size-md` (28px).
-          size={28}
-          visibleFrom="sm"
-          className={classes.ghostIcon}
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <IconCollapse collapsed={collapsed} />
-        </ActionIcon>
-      </Group>
-
+      {/* NO brand row. It moved into the header's leading zone (`app-brand.tsx`) when the shell
+          dropped `layout="alt"`: with a full-width header, an `appShellHeaderHeight` brand band
+          here painted as a second 48px row under the header seam. The column now starts with
+          `SidebarSearch` — at the same inset it always had. `brand` stays a prop because
+          `brand.version` labels the settings footer below. */}
       {search && (
         <div className={classes.searchSlot}>
           <SidebarSearch {...search} collapsed={collapsed} />

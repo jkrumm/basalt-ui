@@ -1,0 +1,109 @@
+/*
+ * The header's leading zone (docs/DESIGN-SPEC.md §5). Moved here from `app-sidebar.module.css`
+ * verbatim — the brand did not change, only where it is painted.
+ *
+ * NO border and no background: the zone is part of the header row, so the header's own
+ * `AppShell.Header` region seam is the only line under it. The sidebar column below now starts
+ * directly with `SidebarSearch`.
+ *
+ * The zone's WIDTH is `--app-shell-navbar-offset`, so it tracks the rail collapse with no React
+ * state and lands its trailing edge exactly on the sidebar|main seam. The negative
+ * `margin-inline-start` cancels `AppShell.Header`'s own `px` inset so the zone starts at the
+ * viewport edge and re-applies that inset as padding — which is what puts the brand lead on the
+ * same x as the sidebar rows below it.
+ */
+.zone {
+  flex: 0 0 var(--app-shell-navbar-offset, 0rem);
+  width: var(--app-shell-navbar-offset, 0rem);
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  /* The full header row, not just the toggle's own 28px — so the zone's box is the band it looks
+   * like, and the rail's centred toggle centres against the whole row. */
+  align-self: stretch;
+  margin-inline-start: calc(-1 * var(--app-shell-padding, 0px));
+  padding-inline: var(--app-shell-padding, 0px);
+  overflow: hidden;
+  /* Mantine's own AppShell timing, so the zone and the navbar under it move as one box. */
+  transition-property: flex-basis, width;
+  transition-duration: var(--app-shell-transition-duration);
+  transition-timing-function: var(--app-shell-transition-timing-function);
+}
+
+/* Below `sm` there is no navbar at all (the bottom bar is the whole nav), so the zone would be a
+ * zero-width box holding a hidden toggle. The breadcrumb owns the phone header's lead. */
+@media (max-width: 47.99375em) {
+  .zone {
+    display: none;
+  }
+}
+
+.brand {
+  justify-content: space-between;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.brandLead {
+  min-width: 0;
+}
+
+/* Brand name — head font at stretch 88% (docs/DESIGN-SPEC.md §3); the 18px/550 land as `fz`/`fw`
+ * props (inline, deterministic against Mantine's own Text base rule). */
+.brandName {
+  font-family: var(--basalt-font-head);
+  font-stretch: 88%;
+}
+
+/* Workspace switcher (`brand.menu`) — the brand name plus a chevron, as a row-shaped trigger. The
+ * chevron is faint until hover so the brand still reads as the brand, not as a control. */
+.brandButton {
+  display: flex;
+  align-items: center;
+  gap: var(--vx-space-sidebar-section-label-gap);
+  min-width: 0;
+  padding: 0;
+  color: var(--vx-faint);
+  cursor: pointer;
+}
+
+.brandButton:hover {
+  color: var(--vx-ink);
+}
+
+/*
+ * Icon-only ghost button in shell chrome (the collapse toggle) — docs/DESIGN-SPEC.md §5:
+ * transparent, faint icon, hover ink-6% + ink, radius 6. `!important` because it competes with
+ * Mantine's own compiled ActionIcon variant CSS. This is the one copy — `sidebar-search.module.css`
+ * mirrors it rather than keeping its own duplicate.
+ */
+.ghostIcon {
+  color: var(--vx-faint) !important;
+  border-radius: var(--vx-radius-ctrl) !important;
+}
+
+.ghostIcon:hover {
+  background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent) !important;
+  color: var(--vx-ink) !important;
+}
+
+/*
+ * The rail form, mirroring exactly what the sidebar's own brand row did when collapsed: the lead
+ * (logo + name) hides and the toggle centres. The zone drops its inset so the toggle's centre lands
+ * on the rail's icon column rather than 13px right of it.
+ */
+@media (min-width: 48em) {
+  .zone[data-collapsed] {
+    padding-inline: 0;
+  }
+
+  .zone[data-collapsed] .brand {
+    justify-content: center;
+  }
+
+  .zone[data-collapsed] .brandLead {
+    display: none;
+  }
+}

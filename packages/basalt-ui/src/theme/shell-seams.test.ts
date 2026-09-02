@@ -67,14 +67,23 @@ function scanShellBorders(): BorderDecl[] {
 const found = scanShellBorders()
 
 describe('shell chrome — the only border-family declarations left', () => {
-  test('the inventory equals exactly the sidebar child-guide, the aside between-groups rule and the aside header seam', () => {
-    // A new chrome edge must be classified HERE — as the sidebar's child-list guide, the aside's
-    // between-groups rule or the aside header's seam-continuation rule are, or as a region seam
-    // this file does not scan at all.
+  test('the inventory equals exactly the sidebar child-guide, the page-bar band, the aside between-groups rule and the aside header seam', () => {
+    // A new chrome edge must be classified HERE — as the sidebar's child-list guide, the shell's
+    // page-bar band seam, the aside's between-groups rule or the aside header's seam-continuation
+    // rule are, or as a region seam this file does not scan at all.
     const summary = found.map((f) => `${f.file} → ${f.selector}`).toSorted()
     expect(summary).toEqual(
       [
         'app-sidebar.module.css → .childList',
+        // The ONE line under the in-shell page bar, drawn by the shell's own band region rather
+        // than by anything PageBar renders. The app header's seam is Mantine's, one region up, so
+        // the two never double up.
+        'app-main.module.css → .band:not(:empty)',
+        // The mobile "More" sheet's nested row guide — a flat sheet has no wrapper to draw the
+        // sidebar's `.childList` guide ON, so each nested row draws its own left edge instead,
+        // pulling its own `width` in by the same amount so it still ends flush with the sheet's
+        // right edge (see the rule's own doc in `app-mobile-nav.module.css`).
+        'app-mobile-nav.module.css → .rowNested',
         'page-aside.module.css → .body > * + *',
         "page-aside.module.css → .panel[data-basalt-page-aside='shell'] .header",
       ].toSorted(),
@@ -91,7 +100,7 @@ describe('shell chrome — the only border-family declarations left', () => {
 })
 
 /** The `{ selector }` rule body, bounded by its own closing brace — same idiom as
- * `layout-rhythm-css.test.ts`'s `.bar`/`.row2Sticky` slices. */
+ * `layout-rhythm-css.test.ts`'s `.bar`/`.row2Band` slices. */
 function ruleBody(css: string, selector: string): string {
   const start = css.indexOf(selector)
   expect(start).toBeGreaterThanOrEqual(0)
@@ -124,13 +133,23 @@ describe("no region edge in a region module — that seam is Mantine's AppShell.
   })
 })
 
-describe('the shared top bands — brand row and aside header at one appShellHeaderHeight', () => {
-  test('app-sidebar .brand reads the header-height var, not a fixed px inset', () => {
-    const css = readFileSync(join(SHELL_DIR, 'app-sidebar.module.css'), 'utf8')
-    const rule = ruleBody(css, '.brand {')
-    expect(rule).toContain('var(--app-shell-header-height')
-    expect(rule).not.toMatch(/min-height:\s*\d/)
-    expect(rule).not.toMatch(/padding-top:\s*\d/)
+describe('the shared top bands — brand zone and aside header at one appShellHeaderHeight', () => {
+  test("the brand is the HEADER's leading zone, not a second band under the sidebar's own seam", () => {
+    // The brand row used to be `app-sidebar.module.css`'s `.brand`, an `appShellHeaderHeight` band
+    // at the top of the navbar. That worked under `layout="alt"`, where the header was inset beside
+    // a full-height navbar and the two bands sat side by side. With a full-width header it became a
+    // SECOND 48px row painted under the header seam, so it moved into the header itself
+    // (`app-brand.tsx`). Its height is now the header row's; what it owns is its WIDTH, which has
+    // to be the navbar offset or the breadcrumb after it stops landing on Main's content edge.
+    const sidebar = readFileSync(join(SHELL_DIR, 'app-sidebar.module.css'), 'utf8')
+    expect(sidebar).not.toContain('.brand')
+
+    const brand = readFileSync(join(SHELL_DIR, 'app-brand.module.css'), 'utf8')
+    const zone = ruleBody(brand, '.zone {')
+    expect(zone).toContain('flex: 0 0 var(--app-shell-navbar-offset')
+    expect(zone).toContain('width: var(--app-shell-navbar-offset')
+    // No px literal anywhere in the zone's own box: a fixed width would stop tracking the rail.
+    expect(zone).not.toMatch(/:\s*\d+px/)
   })
 
   test("page-aside's shell header reads the header-height var, not a fixed px inset", () => {

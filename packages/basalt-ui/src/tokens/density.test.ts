@@ -125,24 +125,25 @@ describe('rowLineHeight follows its own additive law, not the multiplier', () =>
   })
 })
 
-describe('stickyHeaderClearance derives from the AppShell header, not an independent base', () => {
-  test('level -3/0/+3: 43 / 60 / 77 — appShellHeaderHeight + anchors.stackMd at each level', () => {
+describe('stickyHeaderClearance is breathing room, with no chrome height folded in', () => {
+  test('level -3/0/+3: 9 / 12 / 15 — anchors.stackMd at each level', () => {
     const low = deriveSpacing(-3)
     const zero = deriveSpacing(0)
     const high = deriveSpacing(3)
-    expect(low.step.stickyHeaderClearance).toBe(43)
-    expect(low.step.stickyHeaderClearance).toBe(low.step.appShellHeaderHeight + low.anchors.stackMd)
-    expect(zero.step.stickyHeaderClearance).toBe(60)
-    expect(high.step.stickyHeaderClearance).toBe(77)
-    expect(high.step.stickyHeaderClearance).toBe(
-      high.step.appShellHeaderHeight + high.anchors.stackMd,
-    )
+    expect(low.step.stickyHeaderClearance).toBe(9)
+    expect(low.step.stickyHeaderClearance).toBe(low.anchors.stackMd)
+    expect(zero.step.stickyHeaderClearance).toBe(12)
+    expect(high.step.stickyHeaderClearance).toBe(15)
+    expect(high.step.stickyHeaderClearance).toBe(high.anchors.stackMd)
   })
 
-  test('every level: the clearance exceeds the header it exists to clear, exactly by anchors.stackMd', () => {
+  test('every level: the clearance carries NO app-header height — that chrome is outside the scrollport', () => {
     for (let level = -3; level <= 3; level++) {
       const { step, anchors } = deriveSpacing(level)
-      expect(step.stickyHeaderClearance - step.appShellHeaderHeight).toBe(anchors.stackMd)
+      expect(step.stickyHeaderClearance).toBe(anchors.stackMd)
+      // The regression this pins: `AppShell.Main` is the scrollport, so adding the header height
+      // back would park every scrolled-to heading a whole header below where it belongs.
+      expect(step.stickyHeaderClearance).toBeLessThan(step.appShellHeaderHeight)
     }
   })
 })
@@ -188,9 +189,9 @@ describe('buildDensityCss', () => {
     // REM, not px — see the input-height describe block below for why.
     expect(css).toContain('--vx-space-input-height: 3.4375rem;')
     expect(css).toContain('--vx-space-control-height: 3.4375rem;')
-    // 77, not the anchor/scale/step multiplier result for an 84px base — it is DERIVED (the header
-    // plus anchors.stackMd), see the dedicated describe block above.
-    expect(css).toContain('--vx-space-sticky-header-clearance: 77px;')
+    // 15, not the anchor/scale/step multiplier result for an 84px base — it is DERIVED (exactly
+    // anchors.stackMd), see the dedicated describe block above.
+    expect(css).toContain('--vx-space-sticky-header-clearance: 15px;')
     // JS-number-only constants (Timeline's bulletSize, VX chart geometry, Progress's size) have no
     // CSS var to override — see `spaceDecls`'s doc in `tokens/index.ts`.
     expect(css).not.toContain('--vx-space-timeline-bullet')

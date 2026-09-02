@@ -20,14 +20,16 @@
  *   `rowInsetY`, the 4px stack rhythm, and the sidebar SIZES (`sidebarAvatarSize`,
  *   `sidebarSearchTriggerHeight`, the two Menu widths) were held back on purpose — see that commit.
  * - `SPACE_STEP.stickyHeaderClearance` moved from 84 (the original literal) through an
- * intermediate single derived value of 108, then a responsive PAIR (Decision 3), to its FINAL shape:
- * ONE value, 60, DERIVED as `appShellHeaderHeight + anchors.stackMd`. Deriving it fixed the original
- * 84's drift from the header it was supposed to clear; the `stickyHeaderClearanceMobile` half of the
- * pair was deleted in 1.26.0 along with the two-row mobile header it existed for — the AppShell
- * header is one 48px row at every viewport now (law C14, `docs/CONTROLS-SPEC.md` §2.1), so
- * `appShellHeaderMobileHeight` and `appHeaderMobileActionsHeight` went with it. See `deriveSpacing`'s
- * doc in `tokens/palette.ts` for the full rationale. Every value NOT named above is still
- * byte-identical to the pre-tokenization number it replaced.
+ * intermediate single derived value of 108, a responsive PAIR (Decision 3), and one value of 60
+ * (`appShellHeaderHeight + anchors.stackMd`), to its CURRENT shape: 12, DERIVED as `anchors.stackMd`
+ * alone. Deriving it fixed the original 84's drift from the header it was supposed to clear; the
+ * `stickyHeaderClearanceMobile` half of the pair was deleted in 1.26.0 along with the two-row mobile
+ * header it existed for. The header term itself went when `BasaltShell` made `AppShell.Main` the
+ * scrollport (`shell/app-main.module.css`): the app header is OUTSIDE that box now, so a clearance
+ * counting it pushed every consumer a full header down inside the content. The chrome that IS inside
+ * the scrollport — `PageBar` row 2 — is added in CSS as `var(--basalt-page-bar-h, 0px)` by the two
+ * consumers that face it. See `deriveSpacing`'s doc in `tokens/palette.ts` for the full rationale.
+ * Every value NOT named above is still byte-identical to the pre-tokenization number it replaced.
  */
 import { DEFAULT_THEME, mergeMantineTheme } from '@mantine/core'
 import type { MantineTheme } from '@mantine/core'
@@ -292,11 +294,11 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ]
 > = [
   // DERIVED, not an independent literal — see `deriveSpacing`'s doc (`tokens/palette.ts`, third
-  // bullet) for why 60 (not 84) is the level-0 value: the ONE key deliberately exempt from the
-  // "every SPACE_STEP number is locked at level 0" invariant this file otherwise enforces (locked
-  // here, not skipped, precisely so a future regression back to 84 shows up as a failing assertion
-  // rather than a silent revert).
-  ['stickyHeaderClearance', 60, 'space-sticky-header-clearance'],
+  // bullet) for why 12 (not 84, and no longer 60) is the level-0 value: the ONE key deliberately
+  // exempt from the "every SPACE_STEP number is locked at level 0" invariant this file otherwise
+  // enforces (locked here, not skipped, precisely so a future regression back to 84 — or back to
+  // the header-inclusive 60 — shows up as a failing assertion rather than a silent revert).
+  ['stickyHeaderClearance', 12, 'space-sticky-header-clearance'],
   ['navIconGap', 10, 'space-nav-icon-gap'],
   ['sidebarRegionGap', 10, 'space-sidebar-region-gap'],
   ['proseQuoteInsetY', 2, 'space-prose-quote-inset-y'],
@@ -394,7 +396,7 @@ const SPACE_STEP_SWEEP: ReadonlyArray<
   ['mobileNavIconSize', 24, 'space-mobile-nav-icon-size'],
   ['mobileNavTabInsetY', 2, 'space-mobile-nav-tab-inset-y'],
   ['mobileNavTabInsetX', 12, 'space-mobile-nav-tab-inset-x'],
-  ['mobileNavRowHeight', 44, 'space-mobile-nav-row-height'],
+  ['mobileNavRowHeight', 40, 'space-mobile-nav-row-height'],
   ['mobileNavMenuWidth', 232, null],
   ['agentRailInsetX', 10, 'space-agent-rail-inset-x'],
   ['agentPartGapTop', 6, 'space-agent-part-gap-top'],

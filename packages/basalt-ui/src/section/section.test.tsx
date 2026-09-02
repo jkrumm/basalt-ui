@@ -132,8 +132,12 @@ describe('id — the scroll-anchor contract', () => {
     expect(root).not.toBeNull()
     const style = root?.getAttribute('style') ?? ''
     expect(style).toContain('scroll-margin-top')
-    expect(style).toContain('--app-shell-header-height')
-    expect(style).toContain('--basalt-page-bar-h')
+    expect(style).toContain('--vx-space-sticky-header-clearance')
+    // NEITHER shell region: the anchor scrolls inside `AppShell.Main`, and both the header and
+    // `PageBar` row 2's band are rendered outside that scrollport — counting either lands every
+    // anchor that far below its own heading.
+    expect(style).not.toContain('--app-shell-header-height')
+    expect(style).not.toContain('--basalt-page-bar-h')
   })
 
   test('omitting id sets neither an id nor the anchor style', () => {
@@ -269,7 +273,7 @@ describe('className, classNames and the style merge order', () => {
     )
     const style = sectionRoot(container).getAttribute('style') ?? ''
     expect(style).toContain('margin-top: 3px')
-    expect(style).toContain('--basalt-page-bar-h')
+    expect(style).toContain('--vx-space-sticky-header-clearance')
   })
 
   test('a caller-set scrollMarginTop WINS — the merge order is anchor first, caller last', () => {

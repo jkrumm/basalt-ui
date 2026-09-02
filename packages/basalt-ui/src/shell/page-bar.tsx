@@ -7,10 +7,11 @@
  * - **Inside `BasaltShell`** row 1 (`actions`, `sync`) portals into the existing 48px app-shell
  *   header — the same slot/portal mechanism `PageActions` used through 1.25.0, which this replaces.
  *   The breadcrumb stays the header's lead, so `title` is ignored. Row 2 (`tabs`, `filters`,
- *   `filtersEnd`) renders IN-FLOW at the top of the page content, sticky under the header, and
- *   publishes its measured height as `--basalt-page-bar-h` on `documentElement` so a page can
- *   compute a viewport-filling body (`calc(100dvh - var(--app-shell-header-height) -
- *   var(--basalt-page-bar-h, 0px))`) without measuring anything itself.
+ *   `filtersEnd`) portals into a shell-owned band between the header and the scrollport
+ *   (`PageBarBandOutlet`, mounted once by `BasaltShell`) — it is never in-flow or sticky inside the
+ *   scrollport itself, since the band already sits outside it. The outlet renders unconditionally
+ *   as a zero-height, seam-less box while no page claims it (law C14), so an empty home costs
+ *   nothing.
  * - **Without a shell** both rows render in-flow, sticky at the top of the document, with
  *   `title` + `icon` leading row 1 — the page title is the bar's job when there is no breadcrumb
  *   (law C8). The published height then covers the whole bar, since that is what content clears.
@@ -22,7 +23,7 @@
  * linewatch's `page-header.tsx` measure-and-publish effect became the framework behaviour below.
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import type { ReactNode, RefObject } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
@@ -58,6 +59,16 @@ type PageBarSlots = {
   /** The header node row 1 portals into. `null` outside a shell, and until the outlet mounts. */
   target: HTMLElement | null
   setTarget: (el: HTMLElement | null) => void
+  /**
+   * The BAND node row 2 portals into — a shell-owned box between the header and the scrollport.
+   * Same mechanism as `target` one region down, and it exists for the same reason: where a row
+   * renders must not depend on where the consumer wrote `<PageBar>` in its page tree. Row 2 used to
+   * render in flow at the top of Main and stick there, which meant a bar nested inside a `Stack`
+   * (every real page) had `position: sticky` clamped to that wrapper and sat one shell padding low.
+   * `null` outside a shell, and until the outlet mounts.
+   */
+  bandTarget: HTMLElement | null
+  setBandTarget: (el: HTMLElement | null) => void
   /** True only under `BasaltShell` — the provider is shell-internal, so the context IS the probe. */
   inShell: boolean
   /** Shell `globalActions` marked `mobile: 'more'`, already shaped as kebab rows. */
@@ -81,6 +92,8 @@ type PageBarSlots = {
 const NO_SLOTS: PageBarSlots = {
   target: null,
   setTarget: () => {},
+  bandTarget: null,
+  setBandTarget: () => {},
   inShell: false,
   mobileMoreActions: [],
   kebabClaims: 0,
@@ -107,6 +120,7 @@ export function PageBarProvider({
   children: ReactNode
 }): ReactNode {
   const [target, setTarget] = useState<HTMLElement | null>(null)
+  const [bandTarget, setBandTarget] = useState<HTMLElement | null>(null)
   const [kebabClaims, setKebabClaims] = useState(0)
   const [panelHostClaims, setPanelHostClaims] = useState(0)
   const [panel, setPanel] = useState<AsidePanelClaim | null>(null)
@@ -139,6 +153,8 @@ export function PageBarProvider({
   const value: PageBarSlots = {
     target,
     setTarget,
+    bandTarget,
+    setBandTarget,
     inShell: true,
     mobileMoreActions,
     kebabClaims,
@@ -164,6 +180,20 @@ export function PageBarOutlet({ className }: { className?: string }) {
   return <div ref={setTarget} className={className} />
 }
 
+/**
+ * Internal — the BAND between the header and the scrollport that the active page's row 2 portals
+ * into. `BasaltShell` mounts exactly one.
+ *
+ * It is rendered unconditionally and is a zero-height, seam-less box while no `PageBar` claims it:
+ * law C14 says an empty home renders nothing, and an outlet that only existed once something was
+ * inside it could not be a portal target in the first place. The `:empty` seam rule in
+ * `app-main.module.css` is what makes "nothing mounted" and "nothing painted" the same state.
+ */
+export function PageBarBandOutlet({ className }: { className?: string }) {
+  const { setBandTarget } = useContext(PageBarContext)
+  return <div ref={setBandTarget} className={className} />
+}
+
 /** Internal — `true` while a page's `ActionGroup` owns the header's one mobile kebab. */
 export function usePageKebabClaimed(): boolean {
   return useContext(PageBarContext).kebabClaims > 0
@@ -185,12 +215,12 @@ export function useAsidePanelSlot(): {
 
 /**
  * The boxes `PageBar` paints (`common/props.ts`). `root` is whichever element is the bar's own
- * outer node for the active mode — the shell-less standalone bar, or row 2's sticky wrapper inside
- * a `BasaltShell` (row 1 portals into the app-shell header and has no wrapper of PageBar's own,
+ * outer node for the active mode — the shell-less standalone bar, or row 2's wrapper inside the
+ * shell's band (row 1 portals into the app-shell header and has no wrapper of PageBar's own,
  * which is what `row1`/`row2` target directly).
  *
  * `className`/`classNames.root` land on that same root — the shell-less
- * `<div data-basalt-page-bar="standalone">`, or row 2's sticky wrapper
+ * `<div data-basalt-page-bar="standalone">`, or row 2's band wrapper
  * (`data-basalt-page-bar="shell"`) inside a `BasaltShell`. The one thing only the consumer's own
  * layout knows is bleeding the sticky bar across its container's gutters
  * (`margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter)`) for the shell-less
@@ -223,29 +253,49 @@ export type PageBarProps = BasaltProps &
 /**
  * Publishes an element's measured height as a custom property on `documentElement`.
  *
- * **A LAYOUT effect, and a plain ref rather than ref-state.** Both halves buy the same thing: the
- * property exists at the FIRST paint. A passive effect publishes it one frame later, which is a
- * frame in which a cold load of `/page#anchor` has already scrolled — `scroll-margin-top` reads
- * `var(--basalt-page-bar-h, 0px)`, so the anchored heading lands under the sticky bar and stays
- * there. A `useState` node would also have cost a second commit before the measure could run.
+ * **A LAYOUT effect, and a CALLBACK REF keyed into the effect.** The layout effect is what puts the
+ * property in place before the FIRST paint: a passive effect publishes it one frame later, which is
+ * a frame in which a cold load of `/page#anchor` has already scrolled past its heading.
+ *
+ * The callback ref replaced a plain `RefObject`, and the reason is the row-2 portal. A `RefObject`
+ * is not a dependency, so the effect ran ONCE — on the commit where `active` became true — and read
+ * whatever `ref.current` held at that instant. In a shell that is `null`: the band outlet publishes
+ * its node through state, so row 2 has no target to portal into until the SECOND commit, by which
+ * time `active` has not changed and the effect never re-runs. The observer was then attached to
+ * nothing and `--basalt-page-bar-h` was never published. Node-as-state costs one extra commit
+ * before the first measurement and is the only form that survives a target arriving late.
  *
  * The `height > 0` guard is the whole point: a ResizeObserver fires once with a zero box while the
  * element is still being laid out (and again whenever it is hidden), and publishing that zero is
  * what made a consumer's sticky offset collapse mid-navigation. The property is removed on unmount
  * so a route without a bar does not inherit the last one's height.
  */
-function useMeasuredHeightVar(active: boolean): RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null)
+function publishBarHeight(node: HTMLElement): void {
+  const { height } = node.getBoundingClientRect()
+  if (height > 0) {
+    document.documentElement.style.setProperty(PAGE_BAR_HEIGHT_VAR, `${height}px`)
+  }
+}
+
+function useMeasuredHeightVar(active: boolean): (el: HTMLDivElement | null) => void {
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
+  const activeRef = useRef(active)
+  activeRef.current = active
+
+  // The FIRST measurement happens here, in the ref callback, which React runs during the COMMIT —
+  // before paint, before layout effects, and one full commit before the state below has propagated.
+  // That is what keeps the property in place for a cold `/page#anchor` load. The state is only how
+  // the observer effect learns the node exists, which it has to, because in a shell the node is a
+  // portal into an outlet that publishes ITS node through state too: `active` alone is not a
+  // dependency that changes when the target finally arrives.
+  const attach = useCallback((el: HTMLDivElement | null) => {
+    setNode(el)
+    if (el !== null && activeRef.current) publishBarHeight(el)
+  }, [])
 
   useIsomorphicLayoutEffect(() => {
-    const node = ref.current
     if (!active || node === null) return
-    const publish = () => {
-      const { height } = node.getBoundingClientRect()
-      if (height > 0) {
-        document.documentElement.style.setProperty(PAGE_BAR_HEIGHT_VAR, `${height}px`)
-      }
-    }
+    const publish = () => publishBarHeight(node)
     publish()
     // Guarded like `FilterSet`'s identical call: happy-dom and jsdom ship no `ResizeObserver`, and a
     // consumer's page test mounting a bar without the shim would otherwise throw from this effect.
@@ -260,9 +310,9 @@ function useMeasuredHeightVar(active: boolean): RefObject<HTMLDivElement | null>
       observer.disconnect()
       document.documentElement.style.removeProperty(PAGE_BAR_HEIGHT_VAR)
     }
-  }, [active])
+  }, [active, node])
 
-  return ref
+  return attach
 }
 
 export function PageBar({
@@ -277,7 +327,8 @@ export function PageBar({
   style,
   classNames,
 }: PageBarProps): ReactNode {
-  const { target, inShell, panel, claimPanelHost, setPanelTarget } = useContext(PageBarContext)
+  const { target, bandTarget, inShell, panel, claimPanelHost, setPanelTarget } =
+    useContext(PageBarContext)
   // An overlay's open flag, like `FilterPill`'s and `FilterSet`'s — not page state (C3).
   const [panelOpened, setPanelOpened] = useState(false)
 
@@ -432,21 +483,32 @@ export function PageBar({
     )
   }
 
-  // In a shell: row 1 lives in the header (a portal), row 2 stays in the page flow and sticks
-  // underneath it. `target` is null for the first commit only — the outlet's ref sets it.
+  // In a shell BOTH rows are portals: row 1 into the header, row 2 into the shell-owned band
+  // between the header and the scrollport. Neither target exists on the first commit — the outlets'
+  // refs set them — so a `null` target renders nothing for exactly one frame.
+  //
+  // Row 2 portals rather than rendering in flow because WHERE the band paints must not depend on
+  // where the consumer wrote `<PageBar>`. In flow it was `position: sticky` inside whatever wrapper
+  // held it, so a bar nested one `Stack` deep — which is every real page — had its sticky offset
+  // clamped to that wrapper's top edge and sat one `--app-shell-padding` below the header seam,
+  // while a bar written as Main's direct child sat flush. Same markup, two geometries. Out here the
+  // band is a sibling of the scrollport, so it is neither sticky nor nested and there is one answer.
   return (
     <>
       {row1 !== null && target !== null && createPortal(row1, target)}
-      {row2 !== null && (
-        <div
-          ref={measureRef}
-          className={cx(classes.row2Sticky, classNames?.root, className)}
-          data-basalt-page-bar="shell"
-          {...(style !== undefined && { style })}
-        >
-          {row2}
-        </div>
-      )}
+      {row2 !== null &&
+        bandTarget !== null &&
+        createPortal(
+          <div
+            ref={measureRef}
+            className={cx(classes.row2Band, classNames?.root, className)}
+            data-basalt-page-bar="shell"
+            {...(style !== undefined && { style })}
+          >
+            {row2}
+          </div>,
+          bandTarget,
+        )}
       {panelSheet}
     </>
   )

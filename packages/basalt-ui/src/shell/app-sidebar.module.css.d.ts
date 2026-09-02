@@ -7,10 +7,6 @@ declare const classes: {
   readonly root: string
   readonly link: string
   readonly navItem: string
-  readonly brand: string
-  readonly brandLead: string
-  readonly brandName: string
-  readonly brandButton: string
   readonly searchSlot: string
   readonly navScroll: string
   readonly navViewport: string
@@ -28,7 +24,6 @@ declare const classes: {
   readonly sectionHeader: string
   readonly subnavDropdown: string
   readonly childList: string
-  readonly ghostIcon: string
   readonly block: string
   readonly blockHeader: string
   readonly blockHeaderButton: string

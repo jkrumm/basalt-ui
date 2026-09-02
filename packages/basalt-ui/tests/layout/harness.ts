@@ -48,6 +48,9 @@ export const ACTIVE_PILL = `${BAR} [data-active] > span`
 /** The glyph inside the active pill — the bar normalizes it to the icon-size token. */
 export const ACTIVE_PILL_ICON = `${ACTIVE_PILL} > svg`
 export const CONTENT_END = '[data-testid="content-end"]'
+/** `AppShell.Main` — THE scrollport since `shell/app-main.module.css`, by its own declared handle
+ * rather than by a Mantine class, because that attribute is the thing consumers are promised. */
+export const MAIN = '[data-basalt-scrollport]'
 
 /** A bar slot by accessible name — `aria-label={slot.label}` on both link and surface tabs. */
 export function tab(label: string): string {
@@ -83,6 +86,21 @@ export type Box = {
 /** A box that knows what it is, so a failure can print a readable scene. */
 export type Named = { readonly name: string; readonly box: Box }
 export type ScrollInfo = { readonly scrollHeight: number; readonly clientHeight: number }
+/**
+ * What "the page does not scroll sideways" resolves to, measured on BOTH boxes that can break it.
+ * The document half is the classic symptom; the Main half is the one that survived the shell
+ * rework, because `AppShell.Main` carries `overflow-x: auto` — so a too-wide child now widens
+ * MAIN instead of the document and the document reading alone would go quietly green.
+ */
+export type HorizontalOverflow = {
+  readonly innerWidth: number
+  readonly documentScrollWidth: number
+  /** `null` when nothing declares `[data-basalt-scrollport]` — a shell-less tree. */
+  readonly main: { readonly scrollWidth: number; readonly clientWidth: number } | null
+  /** Every painted element whose right edge crosses the viewport, nearest the leaf first. */
+  readonly offenders: readonly string[]
+}
+
 export type OverlayCensus = {
   readonly counts: Readonly<Record<string, number>>
   readonly bodyOverflow: string
@@ -99,6 +117,8 @@ export type LayoutPage = {
   computed(selector: string, property: string): Promise<string>
   /** `'page'` measures `document.scrollingElement`. */
   scroll(selector: string): Promise<ScrollInfo>
+  /** Horizontal scroll geometry for the document and for Main — the overflow guard's raw reading. */
+  horizontalOverflow(): Promise<HorizontalOverflow>
   census(): Promise<OverlayCensus>
   navigations(): Promise<string[]>
   tap(selector: string): Promise<void>
@@ -481,6 +501,35 @@ export async function openFixture(
         if (!element) throw new Error(`LAYOUT: no scroll container matched \`${s}\``)
         return { scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }
       }, selector),
+    horizontalOverflow: () =>
+      page.evaluate<HorizontalOverflow, string>((mainSelector) => {
+        const innerWidth = window.innerWidth
+        const main = document.querySelector(mainSelector)
+        // The offender list is what turns "something is 71px too wide" into a fix. Zero-box
+        // elements are skipped: an `aria-hidden` measuring span is not the thing that widened
+        // the page, and listing it buries the one element that did.
+        const offenders: string[] = []
+        for (const element of document.querySelectorAll('*')) {
+          const rect = element.getBoundingClientRect()
+          if (rect.width === 0 || rect.height === 0) continue
+          if (rect.right <= innerWidth + 0.5) continue
+          const cls = String(element.className || '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+          offenders.push(
+            `${element.tagName.toLowerCase()}${cls.map((c) => `.${c}`).join('')} ` +
+              `right=${rect.right.toFixed(1)} width=${rect.width.toFixed(1)}`,
+          )
+        }
+        return {
+          innerWidth,
+          documentScrollWidth: document.documentElement.scrollWidth,
+          main:
+            main === null ? null : { scrollWidth: main.scrollWidth, clientWidth: main.clientWidth },
+          offenders: offenders.slice(-8),
+        }
+      }, MAIN),
     census: () =>
       page.evaluate(
         (sels) => ({
@@ -503,9 +552,15 @@ export async function openFixture(
       await settle()
     },
     async scrollToEnd() {
-      await page.evaluate(() => {
-        document.scrollingElement?.scrollTo({ top: 1e7, behavior: 'instant' })
-      })
+      // The SCROLLPORT, not the document. `BasaltShell` scrolls `AppShell.Main`
+      // (`shell/app-main.module.css`), so `document.scrollingElement.scrollTo` is a no-op inside a
+      // shell — every "scroll to the end and measure" assertion would silently measure the top of
+      // the page instead, which is the failure mode this harness exists to make impossible. Same
+      // resolution order `MobileNav`'s scroll-to-top uses, document fallback included.
+      await page.evaluate((mainSelector) => {
+        const target = document.querySelector(mainSelector) ?? document.scrollingElement
+        target?.scrollTo({ top: 1e7, behavior: 'instant' })
+      }, MAIN)
       await settle()
     },
     settle,
@@ -741,4 +796,38 @@ export function expectStrictlyIncreasing(
       [],
     )
   }
+}
+
+/**
+ * NOTHING SCROLLS SIDEWAYS. Both readings, because either alone can pass while the page is broken:
+ * the document stays honest only because `AppShell.Main` clips nothing and scrolls instead, and
+ * Main's own reading is the one that catches a child that outgrew its column.
+ *
+ * This is a GUARD, not a measurement of one component: the phone defect it exists for was a bare
+ * five-column `<table>` at 448px inside a 390px viewport, and the next one will be some other
+ * element that forgot `min-width: 0`. The offender list is printed so the failure names it.
+ */
+export function expectNoHorizontalOverflow(
+  overflow: HorizontalOverflow,
+  why: string,
+  viewport?: Viewport,
+): void {
+  const breaches = [
+    overflow.documentScrollWidth > overflow.innerWidth + 0.5
+      ? `document.scrollWidth = ${px(overflow.documentScrollWidth)} > innerWidth ` +
+        `${px(overflow.innerWidth)}`
+      : '',
+    overflow.main !== null && overflow.main.scrollWidth > overflow.main.clientWidth + 0.5
+      ? `main.scrollWidth = ${px(overflow.main.scrollWidth)} > clientWidth ` +
+        `${px(overflow.main.clientWidth)}`
+      : '',
+  ].filter(Boolean)
+  if (breaches.length === 0) return
+  fail(
+    why,
+    'document.scrollWidth <= innerWidth AND main.scrollWidth <= main.clientWidth',
+    `${breaches.join('; ')}\n  widest boxes: ${overflow.offenders.join('\n                ') || '(none)'}`,
+    [],
+    viewport,
+  )
 }

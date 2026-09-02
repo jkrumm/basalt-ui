@@ -6,6 +6,17 @@
  * `headingSlug`/`SlugTracker` when authoring the headings. Sticky positioning is the consumer's
  * job; this component is just the rail.
  *
+ * The spy resolves WHICH BOX SCROLLS (`scrollParentOf`) instead of assuming the window: inside
+ * `BasaltShell` that is `AppShell.Main` (`shell/app-main.module.css`), so both the observer's root
+ * and the bottom-edge arithmetic have to be that element — a window listener there never fires and
+ * a viewport-rooted observer measures the wrong band. `null` means the document scrolls, which is
+ * the shell-less case and behaves exactly as before.
+ *
+ * The active rail item carries `aria-current="location"` (WAI-ARIA APG's own recommendation for a
+ * link set that navigates within one page, rather than `"page"`/`"true"`) — both a genuine a11y fix
+ * (previously `activeId` drove `classes.active` alone, so a screen reader had no signal at all) and
+ * the one DOM-observable hook for `activeId` that does not depend on a CSS Modules class hash.
+ *
  * @example
  * import { TableOfContents, headingSlug } from 'basalt-ui/content'
  *
@@ -18,6 +29,7 @@
 import type { MouseEvent, RefObject } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@mantine/hooks'
+import { scrollParentOf } from '../common/scroll-parent'
 import classes from './toc.module.css'
 
 export type TocItem = {
@@ -79,6 +91,11 @@ export function TableOfContents({
   // Set while a clicked item owns the rail; `resolve` stands down until it's released.
   const pinnedRef = useRef<string | null>(null)
   const releasePinRef = useRef<(() => void) | null>(null)
+  // The rail's own node — the probe `scrollParentOf` walks from when there is no `containerRef`.
+  const navRef = useRef<HTMLElement | null>(null)
+  // The resolved scrollport (`null` = the document), published by the spy effect so the click-pin
+  // release below listens for `scrollend` on the same box the spy is watching.
+  const portRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     return () => releasePinRef.current?.()
@@ -108,6 +125,10 @@ export function TableOfContents({
       .filter((el): el is HTMLElement => el !== null)
     if (elements.length === 0) return
 
+    const port = scrollParentOf(containerRef?.current ?? navRef.current)
+    portRef.current = port
+    const scroller: Window | HTMLElement = port ?? window
+
     const intersecting = new Set<string>()
 
     const resolve = () => {
@@ -118,8 +139,9 @@ export function TableOfContents({
       // Bottom edge: the last sections are usually shorter than the observer's 70% dead zone, so
       // their headings can NEVER reach the activation band — the rail would stall on whichever
       // section last made it in. Once the page bottoms out, the final item is the honest answer.
-      const doc = document.documentElement
-      if (window.innerHeight + window.scrollY >= doc.scrollHeight - 2) {
+      const box = port ?? document.documentElement
+      const seen = port ? port.clientHeight + port.scrollTop : window.innerHeight + window.scrollY
+      if (seen >= box.scrollHeight - 2) {
         const last = elements[elements.length - 1]
         if (last) setActiveId(last.id)
         return
@@ -134,7 +156,9 @@ export function TableOfContents({
       // Nothing intersecting — the last heading already scrolled past, or (above the first one,
       // i.e. at the very top of the article) the first heading, so the rail always marks where the
       // reader actually is instead of showing nothing until the first heading reaches the band.
-      const passed = elements.filter((el) => el.getBoundingClientRect().top < 0)
+      // "Past" is measured against the SCROLLER's top edge, which for the window case is 0.
+      const originTop = port ? port.getBoundingClientRect().top : 0
+      const passed = elements.filter((el) => el.getBoundingClientRect().top < originTop)
       const current = passed[passed.length - 1] ?? elements[0]
       if (current) setActiveId(current.id)
     }
@@ -147,19 +171,22 @@ export function TableOfContents({
         }
         resolve()
       },
-      { rootMargin: '-80px 0px -70% 0px' },
+      // `root: null` IS the viewport — the shell-less case, unchanged. Inside a shell the root has
+      // to be the scrollport or the `-70%` dead zone is measured against a box nothing scrolls.
+      { root: port, rootMargin: '-80px 0px -70% 0px' },
     )
 
     for (const el of elements) observer.observe(el)
     // The observer only fires when an intersection CHANGES; the bottom edge above resolves on
     // scroll position alone, so it needs a scroll signal too. Re-setting the same id is a no-op
     // for React, so this stays free on every frame that doesn't move the rail.
-    window.addEventListener('scroll', resolve, { passive: true })
+    scroller.addEventListener('scroll', resolve, { passive: true })
     return () => {
       observer.disconnect()
-      window.removeEventListener('scroll', resolve)
+      scroller.removeEventListener('scroll', resolve)
+      portRef.current = null
     }
-  }, [resolvedItems])
+  }, [resolvedItems, containerRef])
 
   if (resolvedItems.length === 0) return null
 
@@ -174,15 +201,18 @@ export function TableOfContents({
     setActiveId(id)
     pinnedRef.current = id
 
+    // The same box the spy watches — `scrollend` on `window` never fires for a scroll that happened
+    // inside `AppShell.Main`, which would leave the rail pinned for the full `CLICK_PIN_MAX_MS`.
+    const scroller: Window | HTMLElement = portRef.current ?? window
     let timer: ReturnType<typeof setTimeout> | null = null
     const release = () => {
       pinnedRef.current = null
       if (timer !== null) clearTimeout(timer)
-      window.removeEventListener('scrollend', release)
+      scroller.removeEventListener('scrollend', release)
       releasePinRef.current = null
     }
     timer = setTimeout(release, CLICK_PIN_MAX_MS)
-    window.addEventListener('scrollend', release, { once: true })
+    scroller.addEventListener('scrollend', release, { once: true })
     releasePinRef.current = release
   }
 
@@ -200,7 +230,7 @@ export function TableOfContents({
   const navClass = [classes.root, className].filter(Boolean).join(' ')
 
   return (
-    <nav className={navClass} aria-label={title}>
+    <nav ref={navRef} className={navClass} aria-label={title}>
       <div className={classes.header}>{title}</div>
       <ul className={classes.list}>
         {resolvedItems.map((item) => (
@@ -214,6 +244,13 @@ export function TableOfContents({
               ]
                 .filter(Boolean)
                 .join(' ')}
+              // `classes.active` alone used to be the ONLY signal of which item the spy picked —
+              // both a real a11y gap (nothing here told assistive tech which section is current)
+              // and, incidentally, the reason a consumer/test could not observe `activeId` without
+              // reading CSS. `location` (not `page`/`true`) is the value WAI-ARIA's Authoring
+              // Practices call out BY NAME for exactly this widget: a set of links navigating
+              // within a single page, as opposed to a set of links to different pages.
+              aria-current={activeId === item.id ? 'location' : undefined}
               onClick={handleClick(item.id)}
             >
               {item.label}

@@ -61,7 +61,7 @@
 }
 
 /*
- * Collapsed rail button — mirrors app-sidebar.module.css's `.ghostIcon`: faint icon, radius 6,
+ * Collapsed rail button — mirrors app-brand.module.css's `.ghostIcon`: faint icon, radius 6,
  * hover ink-6% + ink. `!important` for the same reason as that rule: it competes with Mantine's
  * own compiled ActionIcon variant CSS.
  *

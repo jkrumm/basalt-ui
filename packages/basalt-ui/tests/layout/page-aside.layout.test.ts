@@ -139,4 +139,44 @@ layout('PageAside projections — real layout', () => {
     // …and opening the sheet did not also revive the in-flow form the wave-1 branch renders.
     expect(await phone.count(`${ASIDE} ${PROBE}`)).toBe(0)
   })
+
+  /**
+   * INVARIANT 4 — the aside header's own bottom seam meets the shell's page-bar band seam, so the
+   * two 1px `--vx-divider` hairlines read as ONE line rather than two 9px apart (MEASURED on
+   * `/cbbi` 1440x900 before the fix: band bottom y87, aside header bottom y96).
+   *
+   * The band's PAINTED bottom edge is `ROW_2`'s outer wrapper (`app-main.module.css`'s `.band`,
+   * the `PageBarBandOutlet` `ROW_2` portals into) — one px below `ROW_2`'s own box, because that
+   * wrapper draws the band's `border-bottom` OUTSIDE an otherwise unconstrained `height: auto` box.
+   * There is no stable selector for it (a plain CSS-module class with no `data-*` hook), so it is
+   * read as `ROW_2`'s parent, the same escape hatch `LayoutPage.raw` documents itself for.
+   */
+  test('the aside header seam meets the page-bar band seam, not 9px above it', async () => {
+    const p = await openFixture(ASIDE_SPEC, DESKTOP)
+    const header = await p.box('aside header', `${ASIDE} [data-basalt-page-aside-header]`)
+    const bandBottom = await p.raw.evaluate((sel) => {
+      const row2 = document.querySelector(sel)
+      const outlet = row2?.parentElement
+      if (outlet === null || outlet === undefined) return null
+      return outlet.getBoundingClientRect().bottom
+    }, ROW_2)
+    expect(bandBottom).not.toBeNull()
+    expect(Math.abs(header.box.bottom - (bandBottom as number))).toBeLessThanOrEqual(0.5)
+  })
+
+  /**
+   * INVARIANT 5 — with no `PageBar` on the route there is no band seam to align to, so the aside
+   * header keeps closing the ordinary `appShellHeaderHeight` top belt (`docs/DESIGN-SPEC.md` §5)
+   * instead of collapsing to the band's absent height. `noBar` drops the fixture's `AsideBar` so
+   * `--basalt-page-bar-h` is never published — the CSS fallback chain is what this pins.
+   */
+  test('with no PageBar, the aside header stays the ordinary 48px band', async () => {
+    const p = await openFixture(
+      { ...ASIDE_SPEC, aside: { title: 'Composition', noBar: true } },
+      DESKTOP,
+    )
+    const header = await p.box('aside header', `${ASIDE} [data-basalt-page-aside-header]`)
+    expect(header.box.height).toBeGreaterThanOrEqual(47.5)
+    expect(header.box.height).toBeLessThanOrEqual(48.5)
+  })
 })

@@ -26,16 +26,23 @@
 }
 
 /*
- * Row 2 inside a shell: in the page flow, sticky under the 48px header. `--app-shell-header-height`
- * is Mantine's own AppShell variable, so the offset tracks the header at any density with no React
- * state and no measurement. `z-index` sits one layer below the header itself (see `.bar` above) —
- * high enough to stay above ordinary page content, never above the AppShell header.
+ * Row 2 inside a shell — the CONTENT of the shell's band, not a band of its own.
+ *
+ * Nothing positional here on purpose. `BasaltShell` renders the band
+ * (`app-main.module.css`'s `.band`) as a sibling of the scrollport, between the header and Main,
+ * and row 2 portals into it (`page-bar.tsx`). The band owns the width, the inset and the single
+ * `--vx-divider` seam under it; this rule only has to fill it.
+ *
+ * There is deliberately no `position: sticky` left. When row 2 lived in the page flow it stuck to
+ * whatever scrollport contained it, which made its resting position depend on the consumer's own
+ * DOM: nested one `Stack` deep — every real page — the sticky constraint rectangle was that
+ * wrapper, so the band sat one `--app-shell-padding` below the header seam, while a bar written as
+ * Main's direct child sat flush. Outside the scrollport there is nothing to stick to and nothing to
+ * be clamped by.
  */
-.row2Sticky {
-  position: sticky;
-  top: var(--app-shell-header-height, 0px);
-  z-index: calc(var(--app-shell-header-z-index, 100) - 1);
-  background-color: var(--vx-surface-bg);
+.row2Band {
+  width: 100%;
+  min-width: 0;
 }
 
 .row1 {
@@ -112,10 +119,16 @@
  * `min-height: var(--vx-space-page-bar-row-height)` (40px) left a 30px pill floating inside a 40px
  * box with the 5px above and below it belonging to nothing — and because the row sat in a `Stack`
  * that already spaced it, the visible gap between the header and the pills read as ~19px while the
- * gap from the pills to the first card read as ~19px too. Symmetric padding on the row itself is the
- * same total height (46px vs 40px) with both halves owned by one declaration, so the sticky bar's
- * published height covers exactly the band it paints — including below `sm`, where `.row2` becomes a
- * COLUMN of `.tabs` then `.pills` and `padding-block` still owns both edges of the taller band.
+ * gap from the pills to the first card read as ~19px too. Symmetric padding on the row itself is
+ * one declaration owning both halves, so the sticky bar's published height covers exactly the band
+ * it paints — including below `sm`, where `.row2` becomes a COLUMN of `.tabs` then `.pills` and
+ * `padding-block` still owns both edges of the taller band.
+ *
+ * `stackXs` and not `stackSm`: the row sits inside the shell's own bordered band
+ * (`app-main.module.css`'s `.band`), so it no longer has to carry the visual separation in
+ * whitespace — 4px above and below a 30px `ctl` pill still clears it (38px total) and buys back 8px
+ * of content on every page.
+ * Row 1's 40px `--vx-space-page-bar-row-height` is untouched: it is a HEIGHT token, not padding.
  */
 .row2 {
   display: flex;
@@ -123,7 +136,7 @@
   align-items: center;
   gap: var(--vx-space-control-gap);
   min-width: 0;
-  padding-block: var(--vx-space-stack-sm);
+  padding-block: var(--vx-space-stack-xs);
 }
 
 /* The tabs' own line — a direct flex child so a `fullWidth` `ViewTabs` gets the whole row instead

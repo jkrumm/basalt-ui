@@ -640,8 +640,12 @@ const SPACE_STEP_BASE = {
   mobileNavTabInsetY: 2,
   /** Active-pill inset around the slot icon, horizontal. */
   mobileNavTabInsetX: 12,
-  /** Menu/sheet row height. Floored at 44px in `deriveSpacing` (Apple HIG 44pt / WCAG 2.5.5 AAA). */
-  mobileNavRowHeight: 44,
+  /** Menu/sheet row height. Floored at 40px in `deriveSpacing` — a deliberate design choice, not
+   *  a WCAG floor: it's the row height shared with the desktop sidebar rows, above the WCAG 2.5.8
+   *  AA minimum (24px) and below the 2.5.5 AAA figure (44px, the size `mobileNavBarHeight`/
+   *  `sheetRowHeight` still hold to) — the shortest box that still reads as ONE row vocabulary with
+   *  the sidebar instead of a bespoke touch size. */
+  mobileNavRowHeight: 40,
   /** More/group `<Menu width={…}>`. JS-consumed, no var — same rationale as
    *  `sidebarSettingsMenuWidth` directly above. */
   mobileNavMenuWidth: 232,
@@ -875,22 +879,26 @@ const ROW_LINE_HEIGHT_STEP = 1 / 30
  *    value) below the accessible floor (22px at level -3) while also crowding out its fixed-size icon
  *    and `Kbd` chip.
  *  - `step.stickyHeaderClearance` is not scaled off its own base AT ALL — `SPACE_STEP_BASE` has no
- *    such key any more (see that table's doc). It is computed AFTER the rest of `step`, as
- *    `step.appShellHeaderHeight + anchors.stackMd`. An independent literal can only be tuned against
- *    ONE header height and then drifts from it: the original 84 was tuned against a 48px desktop
- *    header and under-cleared the pre-1.26.0 96px mobile one by 12px at level 0, before density
- *    entered the picture at all. Deriving it removes that whole failure mode — and since 1.26.0 the
- *    AppShell header is ONE 48px row at every viewport (law C14), so the `stickyHeaderClearanceMobile`
- *    half of the old responsive pair is deleted rather than re-derived. The `+ anchors.stackMd`
- *    breathing room (not a bare `+ 0`) keeps a scrolled-to heading off the header's bottom edge, and
- *    tracks density like the header height it is added to, so the margin never freezes at one notch.
- *    Level 0: `48 + 12 = 60` (a deliberate BREAK from the pre-derivation 84 — see
- *    `theme/spacing.test.ts` for why `stickyHeaderClearance` alone is exempt from the byte-identity
- *    gate every other spacing token is held to).
- *    **Consumer coupling (accepted, not hidden):** the value assumes `BasaltShell`'s own AppShell
- *    header height — a `./content` consumer NOT rendering inside `BasaltShell` (e.g. `Prose`/
- *    `ArticleLayout` standalone) gets a clearance number tuned for a header it may not have, and must
- *    override `--vx-space-sticky-header-clearance` itself. Documented on the `./content` surface too
+ *    such key any more (see that table's doc). It is computed AFTER the rest of `step`, and it is
+ *    now exactly `anchors.stackMd` — pure BREATHING ROOM, with no chrome height folded into it.
+ *    It used to be `step.appShellHeaderHeight + anchors.stackMd` (60 at level 0), which was correct
+ *    while the DOCUMENT scrolled under a fixed 48px app header. It no longer does: `BasaltShell`
+ *    makes `AppShell.Main` the scrollport (`shell/app-main.module.css`), and the header sits OUTSIDE
+ *    that box — so a clearance that still counted the header parked every scrolled-to heading and
+ *    every sticky rail 48px too far down, inside the content instead of above it.
+ *    What the two consumers need is the chrome INSIDE the scrollport — but `PageBar` row 2 now
+ *    portals into a shell-owned band outside the scrollport (see `shell/page-bar.tsx`), so there is
+ *    no page-bar term left to add: both `content/prose.module.css`'s `scroll-margin-top` and
+ *    `content/article-layout.module.css`'s `.tocRail` now use `--vx-space-sticky-header-clearance`
+ *    alone. Keeping the token free of any chrome assumption is what makes it honest on a page with
+ *    no page bar, which is most of them.
+ *    The value still tracks density (it IS a density anchor), so the margin never freezes at one
+ *    notch. Level 0: 12 (a second deliberate BREAK from the byte-identity gate — see
+ *    `theme/spacing.test.ts` for why `stickyHeaderClearance` alone is exempt from it).
+ *    **Consumer coupling (removed, not hidden):** the value no longer assumes ANY header height, so
+ *    a `./content` consumer outside `BasaltShell` (e.g. `Prose`/`ArticleLayout` standalone) gets a
+ *    number that is correct for it too. A consumer with its OWN fixed chrome above the scrollport
+ *    still overrides `--vx-space-sticky-header-clearance`. Documented on the `./content` surface too
  *    (`docs/CONTENT-SPEC.md` §5), not only here.
  *
  * `rowLineHeight` is the ONE exception to the multiplier entirely: `1.35 + ROW_LINE_HEIGHT_STEP *
@@ -999,16 +1007,17 @@ export function deriveSpacing(level: number): SpaceValues {
   // box) would render at 47px if the floor stopped at 48. +1 buys back exactly the pixel the seam
   // claims, so the tappable bar itself still measures >= 48.
   mappedStep.mobileNavBarHeight = Math.max(49, mappedStep.mobileNavBarHeight)
-  mappedStep.mobileNavRowHeight = Math.max(44, mappedStep.mobileNavRowHeight)
+  mappedStep.mobileNavRowHeight = Math.max(40, mappedStep.mobileNavRowHeight)
   // Same floor family, same reason — `sheetRowHeight`'s own doc names it "same floor family as
   // `mobileNavRowHeight`", but nothing enforced that below level 0 until now.
   mappedStep.sheetRowHeight = Math.max(44, mappedStep.sheetRowHeight)
   const step: SpaceValues['step'] = {
     ...mappedStep,
-    // DERIVED from the header it clears, plus density-tracking breathing room — see this function's
+    // Density-tracking breathing room and NOTHING else — the app header is outside the scrollport
+    // now, so folding its height in here would push every consumer down by it. See this function's
     // doc (third bullet) for the full rationale, and `theme/spacing.test.ts` for why
     // `stickyHeaderClearance` alone is exempt from the level-0 byte-identity gate.
-    stickyHeaderClearance: mappedStep.appShellHeaderHeight + anchors.stackMd,
+    stickyHeaderClearance: anchors.stackMd,
   }
 
   return {
