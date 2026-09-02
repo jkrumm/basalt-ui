@@ -130,15 +130,16 @@ describe(`a chart measured at ${PHONE_WIDTH}px paints the phone tier`, () => {
       </CartesianChart>,
     )
 
+    // The unmeasured first frame paints the desktop tier by design (see resolveChartTier(0));
+    // the phone frame follows once the box is measured. Wait for THAT paint, not for the first
+    // `<text>` — on a slow runner the first paint is the desktop one and the assertion must not
+    // race it.
+    const fontSizes = () =>
+      new Set([...container.querySelectorAll('text')].map((node) => node.getAttribute('font-size')))
     await waitFor(() => {
-      expect(container.querySelectorAll('text').length).toBeGreaterThan(0)
+      expect(fontSizes()).toEqual(new Set([String(chartTierMetrics('phone').axisFont)]))
     })
-
-    const fontSizes = new Set(
-      [...container.querySelectorAll('text')].map((node) => node.getAttribute('font-size')),
-    )
-    expect(fontSizes).toEqual(new Set([String(chartTierMetrics('phone').axisFont)]))
-    expect(fontSizes.has(String(VX.axisFont))).toBe(false)
+    expect(fontSizes().has(String(VX.axisFont))).toBe(false)
   })
 
   test('the legend renders at the phone label size', async () => {

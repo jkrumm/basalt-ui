@@ -206,6 +206,9 @@ describe('the server field-error envelope', () => {
       />,
     )
     act(submitForm)
+    // Two separate waits so a failure names its half: the envelope reaching the field, then the
+    // focus that applyFieldErrors places synchronously after it.
+    await waitFor(() => expect(text('error')).not.toBe(''))
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Name')))
   })
 })
