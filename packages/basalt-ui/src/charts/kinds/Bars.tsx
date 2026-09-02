@@ -1,14 +1,16 @@
-import { curveMonotoneX } from '@visx/curve'
 import { LinePath } from '@visx/shape'
 import { memo, useMemo } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import type { CursorResolution } from '../cursor/resolve'
 import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { AxisConfig, CartesianTooltipConfig, PlotContext } from '../primitives/CartesianChart'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { LINE_OVERLAY_STROKE_WIDTH } from '../series'
-import type { ChartLegendConfig, ChartSeries } from '../series'
+import type { ChartState } from '../primitives/ChartPending'
+import { curveFor, LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import type { ChartLegendConfig, ChartSeries, SeriesCurve } from '../series'
 import { padAutoLower } from '../utils/domain'
 import { isDev } from '../../utils/is-dev'
 
@@ -49,6 +51,8 @@ export type BarsLine<T = unknown> = {
   tooltip?: boolean
   /** Dims the plotted stroke AND the legend swatch, never the tooltip row (`SeriesStyle.strokeOpacity`). */
   strokeOpacity?: number
+  /** Interpolation for this overlay. Default `'monotone'` — see `SeriesCurve`. */
+  curve?: SeriesCurve
 }
 
 /** @deprecated Use ZoneSpec from primitives/ZoneRects. Kept as an alias. */
@@ -62,7 +66,7 @@ export type BarsRefLine = {
   axisSide?: 'left' | 'right'
 }
 
-export type BarsProps<T> = {
+export type BarsProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
@@ -116,8 +120,9 @@ export type BarsProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
-  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
-  xLabelRotate?: 45 | 90
+  /** Tilt the x tick labels 45° or 90°, or `0` to opt out of the phone tier's auto-rotation —
+   * see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 0 | 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -136,6 +141,9 @@ export type BarsProps<T> = {
   ariaLabel?: string
   /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 /**
@@ -151,6 +159,10 @@ export type BarsProps<T> = {
  * with per-bar nulls (nulls become visual gaps, not domain holes).
  */
 function BarsInner<T>(props: BarsProps<T>) {
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('Bars', props, ['data', 'getX', 'getValue', 'positiveBars'])
   const {
     data,
     height,
@@ -177,6 +189,9 @@ function BarsInner<T>(props: BarsProps<T>) {
     legend,
     ariaLabel,
     isPending,
+    state,
+    className,
+    style,
   } = props
 
   // Stacking sums bar heights via `posOffset`/`negOffset` in yScale units directly — a log axis
@@ -311,6 +326,9 @@ function BarsInner<T>(props: BarsProps<T>) {
       {...(margin !== undefined && { margin })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(ctx) => (
         <BarsMarks
@@ -550,7 +568,7 @@ function BarsMarks<T>({
             strokeWidth={ln.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
             strokeDasharray={ln.dashed ? VX.dashArray : undefined}
             strokeOpacity={dim(ln.key) * (ln.strokeOpacity ?? 1)}
-            curve={curveMonotoneX}
+            curve={curveFor(ln.curve)}
           />
         )
       })}
@@ -566,4 +584,8 @@ function BarsMarks<T>({
  * Hand-memoized: React Compiler does not process the shipped dist, so we wrap the
  * hot bars kind in `React.memo` to retain the auto-memoization it had as source.
  */
-export const Bars = memo(BarsInner) as typeof BarsInner
+const BarsMemo = memo(BarsInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+BarsMemo.displayName = 'Bars'
+export const Bars = BarsMemo as typeof BarsInner

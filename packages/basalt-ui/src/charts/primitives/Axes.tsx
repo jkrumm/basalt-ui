@@ -2,6 +2,7 @@ import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis'
 import type { AxisScale, TickFormatter } from '@visx/axis'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'
+import { useChartTierMetrics } from './chart-tier'
 
 /**
  * Tick label font — mono, per `docs/DESIGN-SPEC.md` §5 ("ticks mono 10.5px faint"). Not a `VX.*`
@@ -10,7 +11,10 @@ import { fmtAxisDate } from '../utils/format'
  */
 const TICK_FONT_FAMILY = 'var(--basalt-font-mono)'
 
-/** Themed left numeric axis — baked-in theme colors + font size. */
+/** Themed left numeric axis — baked-in theme colors + font size. The tick font tracks the ambient
+ * chart tier (`docs/CHARTS-SPEC.md` §8); a caller measuring its own gutter must measure at the
+ * SAME size (`chartTierMetrics().axisFont` into `autoMargin`'s `fontPx`), or the measured label
+ * and the painted one stop being the same string's width. */
 export function AxisLeftNumeric({
   scale,
   numTicks = 5,
@@ -20,6 +24,7 @@ export function AxisLeftNumeric({
   numTicks?: number
   tickFormat?: TickFormatter<number>
 }) {
+  const { axisFont } = useChartTierMetrics()
   return (
     <AxisLeft
       scale={scale}
@@ -28,7 +33,7 @@ export function AxisLeftNumeric({
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
-        fontSize: VX.axisFont,
+        fontSize: axisFont,
         dx: -4,
       }}
       stroke={VX.surface.border}
@@ -50,6 +55,7 @@ export function AxisRightNumeric({
   numTicks?: number
   tickFormat?: TickFormatter<number>
 }) {
+  const { axisFont } = useChartTierMetrics()
   return (
     <AxisRight
       left={left}
@@ -59,7 +65,7 @@ export function AxisRightNumeric({
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
-        fontSize: VX.axisFont,
+        fontSize: axisFont,
         dx: 4,
       }}
       stroke={VX.surface.border}
@@ -100,6 +106,7 @@ export function AxisBottomDate({
    */
   rotate?: 45 | 90
 }) {
+  const { axisFont } = useChartTierMetrics()
   const rotated = rotate === undefined ? undefined : ROTATED_OFFSET[rotate]
   return (
     <AxisBottom
@@ -110,7 +117,7 @@ export function AxisBottomDate({
       tickLabelProps={{
         fill: VX.faint,
         fontFamily: TICK_FONT_FAMILY,
-        fontSize: VX.axisFont,
+        fontSize: axisFont,
         textAnchor: rotated === undefined ? 'middle' : 'end',
         ...(rotate !== undefined && { angle: -rotate }),
         ...(rotated !== undefined && { dx: rotated.dx, dy: rotated.dy }),

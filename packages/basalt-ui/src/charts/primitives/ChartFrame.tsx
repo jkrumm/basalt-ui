@@ -1,16 +1,24 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
+import type { BasaltProps } from '../../common/props'
 import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
 import type { ChartLegendConfig, LegendPlacement, SeriesStyle } from '../series'
-import { legendEntryCap, resolvePlotRect } from './chart-frame-layout'
+import {
+  chartTierMetrics,
+  legendEntryCap,
+  resolveChartTier,
+  resolvePlotRect,
+} from './chart-frame-layout'
+import { ChartTierProvider } from './chart-tier'
 import { ChartLegend } from './ChartLegend'
-import { ChartPending } from './ChartPending'
+import { ChartEmpty, ChartError, ChartPending, resolveChartState } from './ChartPending'
+import type { ChartState } from './ChartPending'
 
 /** Re-exported for `ChartFrame.test.tsx` and any other consumer that previously reached these
  * through `ChartFrame` — the layout math itself lives in `./chart-frame-layout` (pure, DOM-free). */
-export { legendEntryCap, resolvePlotRect } from './chart-frame-layout'
+export { legendEntryCap, resolvePlotRect, resolveChartTier } from './chart-frame-layout'
 
 const DEFAULT_HEIGHT = 240
 const DEFAULT_MIN_WIDTH = 200
@@ -36,7 +44,7 @@ export type ChartFrameLegend = {
   toggle?: boolean
 }
 
-export type ChartFrameProps = {
+export type ChartFrameProps = BasaltProps & {
   /** Series identity — drives the derived legend. Pass the SAME array the kind draws + tooltips from. */
   series: readonly SeriesStyle[]
   /** Fixed height in pixels. Used when neither `aspectRatio` nor `fill` is set. Default 240. */
@@ -56,8 +64,19 @@ export type ChartFrameProps = {
    * three-state "nothing to draw" rationale) over the full plot rect in place of `children`,
    * suppresses the legend entirely (a legend naming a series with nothing yet to point at is its
    * own small lie), and marks the outer container `aria-busy="true"`.
+   *
+   * An alias for `state={{ pending: true }}` and staying that way — it predates {@link ChartState}
+   * and every kind forwards it.
    */
   isPending?: boolean
+  /**
+   * The three "nothing to draw" states in one prop — the shape a query result already has. Wins
+   * over `isPending`, which stays a supported alias for `state={{ pending: true }}`. Precedence is
+   * pending → error → empty ({@link resolveChartState}); each renders its own placeholder over the
+   * full plot rect in place of `children` and suppresses the legend, and only `pending` marks the
+   * container `aria-busy`.
+   */
+  state?: ChartState
   /**
    * Accessible text alternative for the chart, applied as `aria-label` (+ `role="group"`) on the
    * outer container so screen readers announce something other than an unlabeled graphic. Every
@@ -157,6 +176,9 @@ export function ChartFrame({
   legend = {},
   ariaLabel,
   isPending = false,
+  state,
+  className,
+  style,
   children,
 }: ChartFrameProps): ReactNode {
   const { ref: containerRef, width: containerW, height: containerH } = useChartSize()
@@ -174,7 +196,11 @@ export function ChartFrame({
 
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'
-  const legendVisible = legend !== false && !isPending
+  // Every non-null state replaces the plot, and all three suppress the legend for one reason: a
+  // legend naming a series with nothing to point at is its own small lie.
+  const resolvedState = resolveChartState({ ...(state !== undefined && { state }), isPending })
+  const legendVisible = legend !== false && resolvedState === null
+  const tier = resolveChartTier(containerW)
 
   const resolvedHeight = fill
     ? containerH
@@ -199,6 +225,18 @@ export function ChartFrame({
   // A fixed-height frame grows around its legend; a `fill` one cannot, so its legend rolls up
   // instead of eating the plot (see `legendEntryCap`). Top/bottom only — a side legend costs
   // width, not height.
+  // The tier's own cap folds in as an upper bound BEFORE the fill measurement, so a phone-width
+  // `fill` frame can only ever roll up further, never less (`chartTierMetrics`).
+  const tierMaxRows = chartTierMetrics(tier).legendMaxRows
+  const callerMaxRows =
+    legend === false
+      ? undefined
+      : legend.maxRows === undefined
+        ? tierMaxRows
+        : tierMaxRows === undefined
+          ? legend.maxRows
+          : Math.min(legend.maxRows, tierMaxRows)
+
   const maxRows =
     legend === false
       ? undefined
@@ -207,12 +245,12 @@ export function ChartFrame({
             items: legendItems,
             containerW,
             available: resolvedHeight - VX.minPlotHeight,
-            ...(legend.maxRows !== undefined && { callerMaxRows: legend.maxRows }),
+            ...(callerMaxRows !== undefined && { callerMaxRows }),
           })
-        : legend.maxRows
+        : callerMaxRows
 
   const legendNode =
-    legend === false || isPending ? null : (
+    legend === false || resolvedState !== null ? null : (
       <div ref={legendRef} style={legendWrapperStyle(vertical)}>
         <ChartLegend
           items={legendItems}
@@ -229,21 +267,28 @@ export function ChartFrame({
     )
 
   return (
-    <div
-      ref={containerRef}
-      style={outerStyle(fill, vertical)}
-      {...(ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
-      {...(isPending && { 'aria-busy': 'true' })}
-    >
-      {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
-      {plot.width > 0 &&
-        plot.height > 0 &&
-        (isPending ? (
-          <ChartPending width={plot.width} height={plot.height} />
-        ) : (
-          children({ ...plot, hidden })
-        ))}
-      {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}
-    </div>
+    <ChartTierProvider tier={tier}>
+      <div
+        ref={containerRef}
+        {...(className !== undefined && { className })}
+        style={{ ...outerStyle(fill, vertical), ...style }}
+        {...(ariaLabel !== undefined && { role: 'group', 'aria-label': ariaLabel })}
+        {...(resolvedState === 'pending' && { 'aria-busy': 'true' })}
+      >
+        {legendNode !== null && (placement === 'top' || placement === 'left') && legendNode}
+        {plot.width > 0 &&
+          plot.height > 0 &&
+          (resolvedState === 'pending' ? (
+            <ChartPending width={plot.width} height={plot.height} />
+          ) : resolvedState === 'error' ? (
+            <ChartError width={plot.width} height={plot.height} error={state?.error} />
+          ) : resolvedState === 'empty' ? (
+            <ChartEmpty width={plot.width} height={plot.height} />
+          ) : (
+            children({ ...plot, hidden })
+          ))}
+        {legendNode !== null && (placement === 'bottom' || placement === 'right') && legendNode}
+      </div>
+    </ChartTierProvider>
   )
 }

@@ -17,6 +17,11 @@
   grid-template-columns: minmax(0, var(--vx-prose-measure));
 }
 
+/* The literal below MUST equal `BREAKPOINTS.article` (src/tokens/index.ts) — a `@media`
+ * condition is resolved before custom properties exist, so `max-width: var(--x)` is invalid CSS
+ * and a stylesheet with a responsive rule has no choice but to write the number. The token is the
+ * readable half; `article-layout.breakpoint.test.ts` asserts the two agree, the same
+ * "literal must match the token" idiom as `styles.floor.test.ts`. Change both or neither. */
 @media (max-width: 1200px) {
   .root {
     grid-template-columns: minmax(0, var(--vx-prose-measure));

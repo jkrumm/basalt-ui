@@ -4,6 +4,7 @@
  */
 
 import { VX } from '../../tokens'
+import type { ChartMargin } from '../../tokens'
 import type { LegendEntry } from './ChartLegend'
 import { measureText } from '../utils/measure-text'
 
@@ -13,6 +14,102 @@ const LEGEND_LINE_H = Math.ceil(VX.legendFontSize * 1.35)
 const LEGEND_PAD_Y = 10
 /** Swatch plus the gap to its label — the fixed part of a legend entry's width. */
 const LEGEND_SWATCH_W = 24
+
+/**
+ * The two size tiers a chart resolves to. There are exactly two, and there is no `tablet`: the
+ * tier exists to answer "is there room for full-size chrome around the plot", which is a yes/no
+ * question, and a third rung would need a third calibrated metric set nothing has asked for.
+ */
+export type ChartTier = 'phone' | 'desktop'
+
+/**
+ * The tier a chart's chrome resolves to, from the width of the box it was MEASURED in — never
+ * from a media query.
+ *
+ * A viewport breakpoint answers the wrong question. A chart in a 2-column grid cell on a 1440px
+ * desktop is exactly as narrow as one filling a phone, and `@media` cannot see that; the
+ * `ResizeObserver` `ChartFrame` already runs can. It also keeps this file (and the whole chart
+ * layer) Mantine-free — `theme.breakpoints` is on the coupled side of the boundary.
+ *
+ * An UNMEASURED box (`containerW <= 0` — SSR, or before the observer's first callback) resolves
+ * to `'desktop'`: the first frame must not paint phone chrome that then re-lays-out one frame
+ * later, and `resolvePlotRect` already treats an unmeasured width as the first-frame case.
+ */
+export function resolveChartTier(containerW: number): ChartTier {
+  return containerW > 0 && containerW < VX.phoneChartWidth ? 'phone' : 'desktop'
+}
+
+/**
+ * How much of `VX.margin` a phone-tier chart keeps as its FLOOR. The measured law is unchanged —
+ * a side may still only grow past its floor (`autoMargin`) — this only stops a static token from
+ * spending 44px of a 360px chart on a gutter three characters wide.
+ */
+const PHONE_MARGIN_SCALE = 0.75
+
+/** Phone-tier crosshair dot radius. One step in, so the marker still reads as a punched hole at
+ * the smaller stroke widths a narrow chart draws. */
+const PHONE_DOT_R = Math.max(VX.dotR - 1, 2)
+
+/** Legend entries a phone-tier legend renders before rolling the rest into `+N more`. Two is the
+ * cap because a third entry wraps at every realistic phone width, and a wrapped legend is what
+ * eats the plot (`legendEntryCap`). */
+const PHONE_LEGEND_MAX_ROWS = 2
+
+/** Tooltip `minWidth`, per tier — 140px is 39% of a 360px screen. */
+const TOOLTIP_MIN_WIDTH = { desktop: 140, phone: 110 } as const
+
+/** Every size a chart's chrome resolves per tier. One object so a new tier-sensitive size is added
+ * in one place and read by name, rather than each primitive branching on the tier itself. */
+export type ChartTierMetrics = {
+  /** Which tier these are, so a consumer of the metrics never needs both values threaded. */
+  tier: ChartTier
+  /** Axis tick label font size, px. Threaded into BOTH `autoMargin`'s measurement and the painted
+   * axis — measured labels must be the painted labels (`docs/CHARTS-SPEC.md` §1). */
+  axisFont: number
+  /** Legend label font size, px. */
+  legendFontSize: number
+  /** Crosshair dot radius, px. */
+  dotR: number
+  /** Floating tooltip `minWidth`, px. */
+  tooltipMinWidth: number
+  /** Default entry cap on the legend, or `undefined` for no default cap. An explicit
+   * `legend.maxRows` still wins as the upper bound. */
+  legendMaxRows: number | undefined
+  /** Per-side margin FLOORS (`VX.margin` is a floor, never a ceiling — §1). */
+  margin: ChartMargin
+}
+
+const DESKTOP_METRICS: ChartTierMetrics = {
+  tier: 'desktop',
+  axisFont: VX.axisFont,
+  legendFontSize: VX.legendFontSize,
+  dotR: VX.dotR,
+  tooltipMinWidth: TOOLTIP_MIN_WIDTH.desktop,
+  legendMaxRows: undefined,
+  margin: VX.margin,
+}
+
+const PHONE_METRICS: ChartTierMetrics = {
+  tier: 'phone',
+  // One step DOWN the shared type ladder, never an arbitrary px value: micro → nano for ticks,
+  // sm → xs for the legend (`TEXT` in tokens/index.ts).
+  axisFont: VX.text.nano,
+  legendFontSize: VX.text.xs,
+  dotR: PHONE_DOT_R,
+  tooltipMinWidth: TOOLTIP_MIN_WIDTH.phone,
+  legendMaxRows: PHONE_LEGEND_MAX_ROWS,
+  margin: {
+    top: Math.round(VX.margin.top * PHONE_MARGIN_SCALE),
+    right: Math.round(VX.margin.right * PHONE_MARGIN_SCALE),
+    bottom: Math.round(VX.margin.bottom * PHONE_MARGIN_SCALE),
+    left: Math.round(VX.margin.left * PHONE_MARGIN_SCALE),
+  },
+}
+
+/** The resolved sizes for one tier. Frozen module constants — never a new object per render. */
+export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
+  return tier === 'phone' ? PHONE_METRICS : DESKTOP_METRICS
+}
 
 /**
  * Resolve the plot rect from the measured box and the measured legend band. Pure and exported so

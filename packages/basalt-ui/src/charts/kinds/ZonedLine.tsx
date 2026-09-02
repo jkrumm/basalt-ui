@@ -1,14 +1,16 @@
-import { curveMonotoneX } from '@visx/curve'
 import { AreaClosed, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
 import { memo, useMemo } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import type { CursorResolution } from '../cursor/resolve'
 import { AreaGradient, areaFillUrl } from '../primitives/AreaGradient'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
+import type { ChartState } from '../primitives/ChartPending'
+import { curveFor, definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 
@@ -30,7 +32,7 @@ export type ZonedLineRefLine = {
   dashed?: boolean
 }
 
-export type ZonedLineProps<T> = {
+export type ZonedLineProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
@@ -58,8 +60,9 @@ export type ZonedLineProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
-  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
-  xLabelRotate?: 45 | 90
+  /** Tilt the x tick labels 45° or 90°, or `0` to opt out of the phone tier's auto-rotation —
+   * see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 0 | 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -83,6 +86,9 @@ export type ZonedLineProps<T> = {
   ariaLabel?: string
   /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 type Pt<T> = T & { __y: number | null }
@@ -112,6 +118,10 @@ function linePoints<T>(series: ChartSeries<T> | undefined, data: readonly T[]): 
  * gap rather than interpolating across it.
  */
 function ZonedLineInner<T>(props: ZonedLineProps<T>) {
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('ZonedLine', props, ['data', 'getX', 'series'])
   const {
     data,
     chartId,
@@ -133,6 +143,9 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
     legend,
     ariaLabel,
     isPending,
+    state,
+    className,
+    style,
   } = props
 
   // Default the line overlay to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied
@@ -166,6 +179,9 @@ function ZonedLineInner<T>(props: ZonedLineProps<T>) {
       {...(legend !== undefined && { legend })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(ctx: PlotContext<T>) => (
         <ZonedLineMarks
@@ -207,6 +223,10 @@ function ZonedLineMarks<T>({
   // and the second emits a NaN path command, which per SVG error handling blanks the ENTIRE path
   // from that point on.
   const defined = definedOn(yScale)
+  // ONE curve for all three shapes: the threshold band, the area fill and the line are the SAME
+  // series drawn three ways, so a step line over a monotone fill would be two different readings
+  // of one measurement.
+  const curve = curveFor(primary?.curve)
   // Never reached with a null `__y`: d3's line/area generators call the position accessors only
   // for points `defined` accepted. The `NaN` floor is a type-level one, and it can never paint at
   // zero the way a `?? 0` would.
@@ -231,7 +251,7 @@ function ZonedLineMarks<T>({
           y1={yOf}
           clipAboveTo={0}
           clipBelowTo={yMax}
-          curve={curveMonotoneX}
+          curve={curve}
           belowAreaProps={{ fill: t.side === 'above' ? t.fill : 'transparent' }}
           aboveAreaProps={{ fill: t.side === 'below' ? t.fill : 'transparent' }}
         />
@@ -248,7 +268,7 @@ function ZonedLineMarks<T>({
             x={(d) => xScale(getX(d)) ?? 0}
             y={yOf}
             yScale={yScale}
-            curve={curveMonotoneX}
+            curve={curve}
             fill={areaFillUrl(areaId)}
           />
         </>
@@ -264,7 +284,7 @@ function ZonedLineMarks<T>({
           strokeWidth={primary.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
           strokeDasharray={primary.dash === 'dashed' ? VX.dashArray : undefined}
           strokeOpacity={primary.strokeOpacity ?? 1}
-          curve={curveMonotoneX}
+          curve={curve}
         />
       )}
     </>
@@ -275,4 +295,8 @@ function ZonedLineMarks<T>({
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot ZonedLine kind is
  * wrapped in `React.memo` to retain the auto-memoization it had as source (parity with Bars).
  */
-export const ZonedLine = memo(ZonedLineInner) as typeof ZonedLineInner
+const ZonedLineMemo = memo(ZonedLineInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+ZonedLineMemo.displayName = 'ZonedLine'
+export const ZonedLine = ZonedLineMemo as typeof ZonedLineInner

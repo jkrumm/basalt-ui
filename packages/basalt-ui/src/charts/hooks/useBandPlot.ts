@@ -17,10 +17,10 @@
 import { scaleBand } from '@visx/scale'
 import { useCallback, useMemo, useRef } from 'react'
 import type { ReactNode, RefObject } from 'react'
-import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
 import { autoMargin } from '../layout/auto-margin'
+import { useChartTierMetrics } from '../primitives/chart-tier'
 import { maxTextWidth } from '../utils/measure-text'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
 import { useChartCursor } from './useChartCursor'
@@ -177,6 +177,12 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     tooltip,
   } = input
 
+  // The tier `ChartFrame` resolved from its own MEASURED width. A banded plot needs exactly the
+  // two things `CartesianChart` reads off it: the tick font its gutters are MEASURED at (the same
+  // one `AxisBottomDate` paints — measured labels must be the painted labels, §1) and the tightened
+  // margin FLOORS (`docs/CHARTS-SPEC.md` §8).
+  const tier = useChartTierMetrics()
+
   const hasLeftAxis = leftLabels !== undefined && leftLabels.length > 0
   const xLabelsAll = useMemo(() => data.map((d) => formatX(getX(d))), [data, getX, formatX])
 
@@ -185,11 +191,13 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
     const measured = autoMargin({
       ...(leftLabels !== undefined && { left: leftLabels }),
       bottom: xLabelsAll,
+      fontPx: tier.axisFont,
+      floor: tier.margin,
       ...(marginOverride !== undefined && { override: marginOverride }),
     })
     if (marginOverride?.left !== undefined && marginOverride.right !== undefined) return measured
 
-    const halfXLabel = Math.ceil(maxTextWidth(xLabelsAll, VX.axisFont) / 2)
+    const halfXLabel = Math.ceil(maxTextWidth(xLabelsAll, tier.axisFont) / 2)
     // A band axis puts its FIRST tick on the plot's left edge, so the left gutter needs the same
     // half-label law `autoMargin` already applies on the right. `autoMargin` cannot know that —
     // its left law measures a left AXIS, which a band plot may not have.
@@ -199,18 +207,18 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
       ...(marginOverride?.left === undefined && {
         left: hasLeftAxis
           ? left
-          : capTerminalGutter(left, width, TERMINAL_GUTTER_MAX_FRACTION.left, VX.margin.left),
+          : capTerminalGutter(left, width, TERMINAL_GUTTER_MAX_FRACTION.left, tier.margin.left),
       }),
       ...(marginOverride?.right === undefined && {
         right: capTerminalGutter(
           measured.right,
           width,
           TERMINAL_GUTTER_MAX_FRACTION.right,
-          VX.margin.right,
+          tier.margin.right,
         ),
       }),
     }
-  }, [leftLabels, xLabelsAll, marginOverride, hasLeftAxis, width])
+  }, [leftLabels, xLabelsAll, marginOverride, hasLeftAxis, width, tier.axisFont, tier.margin])
 
   const plotWidth = Math.max(width - margin.left - margin.right, 0)
 
@@ -253,7 +261,10 @@ export function useBandPlot<T>(input: UseBandPlotInput<T>): BandPlot<T> {
   // The horizontal room one x tick label needs, from the labels `smartTicks` could actually pick —
   // same measured-spacing law `CartesianChart` applies (`docs/CHARTS-SPEC.md` §1). `keys` (not
   // `xLabelsAll`) because ticks are chosen from the post-fold key list.
-  const xLabelPx = useMemo(() => xLabelPxFor(keys.map(formatX)), [keys, formatX])
+  const xLabelPx = useMemo(
+    () => xLabelPxFor(keys.map(formatX), tier.axisFont),
+    [keys, formatX, tier.axisFont],
+  )
 
   const tickValues = useMemo(
     () => [

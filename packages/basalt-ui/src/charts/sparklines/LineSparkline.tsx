@@ -3,9 +3,10 @@ import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
 import { useMemo } from 'react'
+import type { BasaltProps } from '../../common/props'
 import { VX } from '../../tokens'
 
-type LineSparklineProps = {
+export type LineSparklineProps = BasaltProps & {
   data: number[]
   width: number
   height: number
@@ -18,7 +19,15 @@ type LineSparklineProps = {
  * Quiet single-hue trend line (docs/DESIGN-SPEC.md §5: "single 1.6px faint line, no fill, no
  * axes, no dots"). Sparklines default to `VX.faint`, not the bolder `VX.line` used by full charts.
  */
-export function LineSparkline({ data, width, height, color, ariaLabel }: LineSparklineProps) {
+export function LineSparkline({
+  data,
+  width,
+  height,
+  color,
+  ariaLabel,
+  className,
+  style,
+}: LineSparklineProps) {
   const strokeColor = color ?? VX.faint
   const a11yProps = ariaLabel !== undefined ? { role: 'img' as const, 'aria-label': ariaLabel } : {}
 
@@ -36,12 +45,17 @@ export function LineSparkline({ data, width, height, color, ariaLabel }: LineSpa
     return scaleLinear<number>({ domain: [min - pad, max + pad], range: [height, 0] })
   }, [data, height])
 
-  if (data.length < 2) return <svg width={width} height={height} {...a11yProps} />
+  const rootProps = {
+    ...(className !== undefined && { className }),
+    ...(style !== undefined && { style }),
+  }
+
+  if (data.length < 2) return <svg width={width} height={height} {...rootProps} {...a11yProps} />
 
   const indexed = data.map((v, i) => ({ v, i }))
 
   return (
-    <svg width={width} height={height} {...a11yProps}>
+    <svg width={width} height={height} {...rootProps} {...a11yProps}>
       <Group>
         <LinePath<{ v: number; i: number }>
           data={indexed}

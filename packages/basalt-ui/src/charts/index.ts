@@ -42,6 +42,8 @@ export {
 export {
   type SeriesMark,
   type SeriesDash,
+  type SeriesCurve,
+  curveFor,
   type SeriesRole,
   type LegendPlacement,
   type ChartLegendConfig,
@@ -73,10 +75,25 @@ export {
   type ChartCenterProps,
   ChartPending,
   type ChartPendingProps,
+  ChartEmpty,
+  type ChartEmptyProps,
+  ChartError,
+  type ChartErrorProps,
+  type ChartState,
+  type ResolvedChartState,
+  resolveChartState,
 } from './primitives/ChartPending'
+export {
+  useChartTier,
+  useChartTierMetrics,
+  chartTierMetrics,
+  resolveChartTier,
+  type ChartTier,
+  type ChartTierMetrics,
+} from './primitives/chart-tier'
 export { Crosshair, SeriesDot } from './primitives/Crosshair'
 export { HatchPattern, hatchFill, hatchSizeFor } from './primitives/HatchPattern'
-export { ChartCard, type ChartCardProps } from './primitives/ChartCard'
+export { ChartCard, type ChartCardProps, type ChartCardSlot } from './primitives/ChartCard'
 export { ChartLegend, type LegendEntry } from './primitives/ChartLegend'
 export {
   ChartTooltipFloat,
@@ -102,8 +119,19 @@ export type { CursorResolution, DomainKind } from './cursor/resolve'
 export { useChartSize, type UseChartSizeResult, type ChartSize } from './hooks/useChartSize'
 
 // ── Utils ────────────────────────────────────────────────────────────────
-export { fmtAxisDate, fmtTooltipDate } from './utils/format'
-export { smartTicks, smartTicksEvery } from './utils/ticks'
+export {
+  fmtAxisDate,
+  fmtTooltipDate,
+  fmtCompact,
+  type FmtCompactOptions,
+  fmtPercent,
+  type FmtPercentOptions,
+  fmtCurrency,
+  type FmtCurrencyOptions,
+  fmtInt,
+  formatters,
+} from './utils/format'
+export { smartTicks, smartTicksEvery, xLabelPxFor, autoXLabelRotate } from './utils/ticks'
 export { autoMargin, probeAxisLabels, type AutoMarginInput } from './layout/auto-margin'
 export { measureText, maxTextWidth } from './utils/measure-text'
 
@@ -140,7 +168,12 @@ export {
 export { MirroredBars, type MirroredBarsProps, type MirroredBarPane } from './kinds/MirroredBars'
 
 // ── Sparklines ───────────────────────────────────────────────────────────
-export { LineSparkline, BarSparkline } from './sparklines'
+export {
+  LineSparkline,
+  type LineSparklineProps,
+  BarSparkline,
+  type BarSparklineProps,
+} from './sparklines'
 
 // ── Re-exported visx primitives ──────────────────────────────────────────
 // Bespoke charts (genuinely unique compositions per CLAUDE.md) need raw
@@ -155,6 +188,8 @@ export {
   curveMonotoneX,
   curveLinear,
   curveCatmullRom,
+  curveStep,
   curveStepAfter,
+  curveStepBefore,
   curveBasis,
 } from '@visx/curve'

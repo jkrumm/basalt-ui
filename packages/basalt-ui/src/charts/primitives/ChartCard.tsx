@@ -13,6 +13,8 @@
  * the `''`-as-hidden-header sentinel a consumer used to reach for otherwise.
  */
 import type { CSSProperties, ReactNode } from 'react'
+import { cx } from '../../common/props'
+import type { BasaltProps, SlotStylesProps } from '../../common/props'
 import { VX } from '../../tokens'
 import { WidgetHeader } from '../../widget-header'
 import type { DeltaPolarity } from '../../widget-header'
@@ -52,31 +54,40 @@ const headerWrapStyle: CSSProperties = {
   padding: 'var(--mantine-spacing-xs, 0.6875rem) var(--mantine-spacing-sm, 0.8125rem) 4px',
 }
 
-export type ChartCardProps = {
-  /** Optional — the header renders only when this or one of info/value/actions/icon/count is set. */
-  title?: string
-  /** Optional leading icon, forwarded to `WidgetHeader`. */
-  icon?: ReactNode
-  /** Optional muted line rendered below the title row — does NOT by itself trigger the header. */
-  subtitle?: string
-  /** Renders `WidgetHeader`'s info glyph beside the title — a `More information` button whose
-   * bubble opens on hover, focus and click. Never part of the heading's accessible name. */
-  info?: string
-  /** Pre-formatted metric value, on the hero-metric row with `delta`. */
-  value?: string
-  /** Signed delta rendered via `DeltaBadge`, alongside `value`. */
-  delta?: number
-  /** Comparison timeframe forwarded to `DeltaBadge` (e.g. `MoM`). */
-  deltaPeriod?: string
-  /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
-   * `polarity`. Defaults to `'up-good'` (today's behaviour). */
-  deltaPolarity?: DeltaPolarity
-  /** Mono count tag after the title. */
-  count?: number
-  /** Right-aligned slot — carries `data-basalt-tier="widget"` (no `CtlSlot`; see module doc). */
-  actions?: ReactNode
-  children: ReactNode
-}
+/**
+ * The three boxes a `ChartCard` paints, and therefore the slot set a consumer may class
+ * (`SlotStylesProps`). `root` is the card itself (shadow, radius, panel background), `header` the
+ * unclipped title band, `body` the clipped chart well. There is deliberately no slot for
+ * `WidgetHeader`'s own internals — that component owns its own contract.
+ */
+export type ChartCardSlot = 'root' | 'header' | 'body'
+
+export type ChartCardProps = BasaltProps &
+  SlotStylesProps<ChartCardSlot> & {
+    /** Optional — the header renders only when this or one of info/value/actions/icon/count is set. */
+    title?: string
+    /** Optional leading icon, forwarded to `WidgetHeader`. */
+    icon?: ReactNode
+    /** Optional muted line rendered below the title row — does NOT by itself trigger the header. */
+    subtitle?: string
+    /** Renders `WidgetHeader`'s info glyph beside the title — a `More information` button whose
+     * bubble opens on hover, focus and click. Never part of the heading's accessible name. */
+    info?: string
+    /** Pre-formatted metric value, on the hero-metric row with `delta`. */
+    value?: string
+    /** Signed delta rendered via `DeltaBadge`, alongside `value`. */
+    delta?: number
+    /** Comparison timeframe forwarded to `DeltaBadge` (e.g. `MoM`). */
+    deltaPeriod?: string
+    /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
+     * `polarity`. Defaults to `'up-good'` (today's behaviour). */
+    deltaPolarity?: DeltaPolarity
+    /** Mono count tag after the title. */
+    count?: number
+    /** Right-aligned slot — carries `data-basalt-tier="widget"` (no `CtlSlot`; see module doc). */
+    actions?: ReactNode
+    children: ReactNode
+  }
 
 export function ChartCard({
   title,
@@ -89,6 +100,9 @@ export function ChartCard({
   deltaPolarity,
   count,
   actions,
+  className,
+  classNames,
+  style,
   children,
 }: ChartCardProps) {
   const hasHeader =
@@ -100,9 +114,12 @@ export function ChartCard({
     count !== undefined
 
   return (
-    <div style={cardStyle}>
+    <div className={cx(classNames?.root, className)} style={{ ...cardStyle, ...style }}>
       {hasHeader && (
-        <div style={headerWrapStyle}>
+        <div
+          {...(classNames?.header !== undefined && { className: classNames.header })}
+          style={headerWrapStyle}
+        >
           <WidgetHeader
             tier="widget"
             title={title ?? ''}
@@ -120,7 +137,12 @@ export function ChartCard({
           />
         </div>
       )}
-      <div style={bodyClipStyle}>{children}</div>
+      <div
+        {...(classNames?.body !== undefined && { className: classNames.body })}
+        style={bodyClipStyle}
+      >
+        {children}
+      </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { VX } from '../../tokens'
+import { maxTextWidth } from '../utils/measure-text'
 import { autoMargin, probeAxisLabels } from './auto-margin'
 import { logTickValues, niceLogDomain } from './log-ticks'
 
@@ -40,6 +41,18 @@ describe('autoMargin', () => {
     expect(m.left).toBe(4)
     expect(m.top).toBe(0)
   })
+
+  test('a ROTATED x label with no right axis reserves only the floor — nothing overhangs right', () => {
+    // Rotated labels anchor at their right edge and hang LEFT of their tick (rotatedLeftOverhang),
+    // so the last tick's label costs the right gutter nothing, unlike the unrotated half-width case.
+    const m = autoMargin({ bottom: ['2026-08-18T12:00'], rotate: 45 })
+    expect(m.right).toBe(VX.margin.right)
+  })
+
+  test('a right axis still widens the right gutter even when the x labels are rotated', () => {
+    const m = autoMargin({ right: ['$1,000.00'], bottom: ['2026-08-18T12:00'], rotate: 45 })
+    expect(m.right).toBeGreaterThan(VX.margin.right)
+  })
 })
 
 describe('probeAxisLabels — scale: log', () => {
@@ -73,5 +86,33 @@ describe('probeAxisLabels — scale: log', () => {
   test('the grouped default keeps sub-unit digits instead of truncating to "0"', () => {
     const { format: resolved } = probeAxisLabels({ domain: [1e-8, 1e-6], ticks: 5, scale: 'log' })
     expect(resolved(1e-7)).not.toBe('0')
+  })
+})
+
+describe('autoMargin — a ROTATED x label reaches into the LEFT gutter', () => {
+  const bottom = ['Mar 01 14:00', 'Mar 02 14:00']
+
+  test('45° widens left past the token floor — the first label hangs off the plot otherwise', () => {
+    const flat = autoMargin({ bottom })
+    const tilted = autoMargin({ bottom, rotate: 45 })
+    expect(tilted.left).toBeGreaterThan(flat.left)
+    expect(tilted.left).toBeGreaterThan(VX.margin.left)
+  })
+
+  test('the widening IS the measured projection — width × cos(45°)', () => {
+    const width = maxTextWidth(bottom, VX.axisFont)
+    expect(autoMargin({ bottom, rotate: 45 }).left).toBe(
+      Math.ceil(Math.max(VX.margin.left, width * Math.cos(Math.PI / 4))),
+    )
+  })
+
+  test('90° costs NO horizontal room — the string runs straight down from its tick', () => {
+    expect(autoMargin({ bottom, rotate: 90 }).left).toBe(autoMargin({ bottom }).left)
+  })
+
+  test('an unrotated axis is untouched, and a left axis still wins when it is wider', () => {
+    expect(autoMargin({ bottom }).left).toBe(VX.margin.left)
+    const withAxis = autoMargin({ left: ['1,000,000,000'], bottom, rotate: 45 })
+    expect(withAxis.left).toBeGreaterThanOrEqual(autoMargin({ bottom, rotate: 45 }).left)
   })
 })

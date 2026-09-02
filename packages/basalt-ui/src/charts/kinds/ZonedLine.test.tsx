@@ -245,3 +245,29 @@ describe('ZonedLine — nulls gap and a log axis never emits NaN', () => {
     expect(linePath(html)).not.toBe('')
   })
 })
+
+/**
+ * `BasaltProps` (`common/props.ts`): 98 of 123 exported components dropped `className`, so a
+ * consumer needing one margin had to fork the component. A kind's root element is the
+ * `ChartFrame` box it composes, so the assertion is that the class travels all the way down.
+ */
+describe('ZonedLine — BasaltProps', () => {
+  test('className and style land on the root element', () => {
+    const series: ChartSeries<Row>[] = [
+      { key: 'v', label: 'V', color: '#111', mark: 'line', getValue: (d) => d.v },
+    ]
+    const { container } = render(
+      <ZonedLine<Row>
+        data={rows}
+        chartId="zl-classname"
+        getX={(d) => d.date}
+        series={series}
+        className="my-chart"
+        style={{ opacity: 0.5 }}
+      />,
+    )
+    const root = container.querySelector('.my-chart')
+    expect(root).not.toBeNull()
+    expect((root as HTMLElement).style.opacity).toBe('0.5')
+  })
+})
