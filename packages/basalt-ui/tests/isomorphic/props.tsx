@@ -338,6 +338,13 @@ export const MINIMAL_PROPS: Record<string, Record<string, unknown>> = {
   // An error is REQUIRED here: `errorEntries.length === 0` returns null, and the className probe
   // would then be recording "drops the class" for a component that never rendered a box at all.
   FormErrorSummary: { form: { errors: { email: 'Enter a valid address' } } },
+  // The layout primitives each `assertRequiredProps` their label/title (F-ERR-1), so the empty-props
+  // render is a throw rather than a smoke test.
+  FormSection: { title: 'Billing', children: TEXT },
+  FormRow: { label: 'Email', children: TEXT },
+  FormGroup: { label: 'Notify me about', children: TEXT },
+  FormActions: { actions: TEXT },
+  FormStateProvider: { children: TEXT },
 
   /* --- content ------------------------------------------------------------- */
   Prose: { children: TEXT },
@@ -460,6 +467,7 @@ export const NO_CLASSNAME: Record<string, 'provider' | 'svg' | 'portal' | 'gap'>
   BasaltQueryDevtools: 'provider',
   ChartCursorScope: 'provider',
   ConnectivityProvider: 'provider',
+  FormStateProvider: 'provider',
   QueryClientProvider: 'provider',
   QueryErrorResetBoundary: 'provider',
   VxThemeProvider: 'provider',
