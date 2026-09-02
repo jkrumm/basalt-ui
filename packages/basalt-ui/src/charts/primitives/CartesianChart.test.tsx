@@ -943,3 +943,43 @@ describe('CartesianChart — two refLines at the same value on the same axis', (
     expect(errors.filter((e) => e.toLowerCase().includes('key'))).toEqual([])
   })
 })
+
+/**
+ * A rotated x label is anchored at its RIGHT edge and tilts counter-clockwise, so it runs
+ * down-and-LEFT from its tick — and the first tick sits at the plot's left edge. At
+ * `VX.margin.left` the first label simply ran off the chart (`/charts-stress` block (f2) rendered
+ * `Mar 01 14:00` as `ar 01 14:00`). The bottom gutter always grew for rotation; the left one is
+ * the half that was missing.
+ */
+describe('CartesianChart — a rotated x axis widens the LEFT margin', () => {
+  const renderPlain = (props: Record<string, unknown>): string =>
+    renderToStaticMarkup(
+      <CartesianChart
+        data={rows}
+        chartId="rot-left"
+        getX={(d) => d.date}
+        series={[seriesFor('a')]}
+        legend={false}
+        formatX={(key) => `${key} 14:00 CEST`}
+        {...props}
+      >
+        {() => null}
+      </CartesianChart>,
+    )
+
+  /** The plot `Group`'s x offset — i.e. the resolved left margin. */
+  const leftOf = (markup: string): number =>
+    Number(/visx-group" transform="translate\(([\d.]+), [\d.]+\)/.exec(markup)?.[1] ?? '0')
+
+  test('45° pushes the plot right so the first label has room', () => {
+    expect(leftOf(renderPlain({ xLabelRotate: 45 }))).toBeGreaterThan(leftOf(renderPlain({})))
+  })
+
+  test('90° does not — a vertical label costs no horizontal room', () => {
+    expect(leftOf(renderPlain({ xLabelRotate: 90 }))).toBe(leftOf(renderPlain({})))
+  })
+
+  test('an explicit margin override still wins last — the escape hatch survives', () => {
+    expect(leftOf(renderPlain({ xLabelRotate: 45, margin: { left: 4 } }))).toBe(4)
+  })
+})

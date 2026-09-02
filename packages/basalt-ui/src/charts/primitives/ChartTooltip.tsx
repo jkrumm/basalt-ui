@@ -1,8 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { VX } from '../../tokens'
 import { fmtTooltipDate } from '../utils/format'
+import { useChartTierMetrics } from './chart-tier'
 
 // Panel bg + shadow-card, radius 8 (docs/DESIGN-SPEC.md §5's "Tooltip/popover/menu" idiom) — the
 // same depth-via-shadow treatment as ChartCard, never a `border` property. Surfaces resolve per
@@ -18,7 +19,6 @@ const TOOLTIP_STYLES: CSSProperties = {
   lineHeight: '18px',
   color: VX.ink,
   boxShadow: VX.shadowCard,
-  minWidth: 140,
 }
 
 /** Tooltip header — shows formatted date + optional right-aligned label with color. */
@@ -140,6 +140,21 @@ export function TooltipBody({ children }: { children: ReactNode }) {
   return <div style={{ padding: '5px 0' }}>{children}</div>
 }
 
+/**
+ * "Am I on the client?", answered SYNCHRONOUSLY and hydration-safely.
+ *
+ * `useSyncExternalStore` is the one hook whose server snapshot React honours during BOTH
+ * `renderToString` and the hydration pass, so the server sees `false` and the client's very first
+ * render already sees `true` — no effect, no extra frame, and therefore no one-frame flash of a
+ * missing tooltip on a hover that has already happened. An `useEffect`-set flag would be correct
+ * on the server and a render late on the client. The store never emits, so nothing ever
+ * re-subscribes.
+ */
+const neverSubscribe = () => () => {}
+const onClient = () => true
+const onServer = () => false
+const useIsClient = (): boolean => useSyncExternalStore(neverSubscribe, onClient, onServer)
+
 /** Gap between the anchor point and the tooltip box, and the minimum distance kept from the
  * viewport edge. */
 const TOOLTIP_GAP = 12
@@ -152,6 +167,13 @@ const VIEWPORT_MARGIN = 8
  *
  * The box is measured after mount via `useLayoutEffect`, so the first paint of a given tooltip is
  * hidden rather than misplaced — a tooltip that flashes at the wrong corner reads as a bug.
+ *
+ * **It renders NOTHING on the server.** `createPortal` throws outright in `react-dom/server`
+ * ("Portals are not currently supported by the server renderer"), and an unconditional portal made
+ * this the single component in the package that could not be server-rendered. The guard is
+ * {@link useIsClient}, not a `typeof document` check: under a DOM-preloaded test runner `document`
+ * exists while `renderToString` still refuses portals. A tooltip is a hover artifact with nothing
+ * to emit server-side, so rendering nothing is the whole fix, not a degradation.
  */
 export function ChartTooltipFloat({
   anchor,
@@ -168,6 +190,8 @@ export function ChartTooltipFloat({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState<{ width: number; height: number } | null>(null)
+  const isClient = useIsClient()
+  const { tooltipMinWidth } = useChartTierMetrics()
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -181,8 +205,10 @@ export function ChartTooltipFloat({
   }, [children, anchor])
 
   if (anchor === null) return null
-  // SSR guard: react-dom/server has no jsdom and does not support portals.
-  if (typeof document === 'undefined') return null
+  // The SSR guard — see the component doc. A `typeof document` check does NOT cover this: under a
+  // jsdom/happy-dom-preloaded test runner `document` exists while `renderToString` still refuses
+  // portals, which is exactly how this shipped.
+  if (!isClient) return null
 
   const width = box?.width ?? 0
   const height = box?.height ?? 0
@@ -203,7 +229,13 @@ export function ChartTooltipFloat({
       ref={ref}
       role="tooltip"
       {...(ariaLive && { 'aria-live': 'polite' as const })}
-      style={{ ...TOOLTIP_STYLES, left, top, visibility: box === null ? 'hidden' : 'visible' }}
+      style={{
+        ...TOOLTIP_STYLES,
+        minWidth: tooltipMinWidth,
+        left,
+        top,
+        visibility: box === null ? 'hidden' : 'visible',
+      }}
     >
       {children}
     </div>,

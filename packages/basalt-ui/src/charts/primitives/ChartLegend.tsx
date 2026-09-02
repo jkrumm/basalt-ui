@@ -1,6 +1,8 @@
 import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react'
-import { VX, alpha } from '../../tokens'
+import type { BasaltProps } from '../../common/props'
+import { alpha, VX } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
+import { useChartTierMetrics } from './chart-tier'
 
 export type LegendEntry = {
   key: string
@@ -74,7 +76,7 @@ function orderEntries(
   return { entries, dividerAfter }
 }
 
-function wrapperStyle(placement: LegendPlacement): CSSProperties {
+function wrapperStyle(placement: LegendPlacement, fontSize: number): CSSProperties {
   const vertical = placement === 'left' || placement === 'right'
   return {
     display: 'flex',
@@ -85,7 +87,7 @@ function wrapperStyle(placement: LegendPlacement): CSSProperties {
     columnGap: VX.legendGap,
     rowGap: VX.legendGap,
     padding: '8px 0 2px',
-    fontSize: VX.legendFontSize,
+    fontSize,
     color: VX.muted,
   }
 }
@@ -258,7 +260,11 @@ function LegendChild({ item }: { item: LegendEntry }) {
  *
  * `onToggle` makes an entry a real toggle: clicking it hides the series in the plot, the tooltip,
  * and the auto y-domain together (`ChartFrame` owns the `hidden` set — see `docs/CHARTS-SPEC.md`
- * §5). Omit it for a static legend; a hidden entry is announced via `aria-pressed`.
+ * §5).
+ *
+ * The label font and the DEFAULT entry cap both track the ambient chart tier (§8): inside a
+ * phone-width `ChartFrame` the legend drops one type step and rolls up past two entries. An
+ * explicit `maxRows` always wins. Omit it for a static legend; a hidden entry is announced via `aria-pressed`.
  */
 export function ChartLegend({
   items,
@@ -270,7 +276,9 @@ export function ChartLegend({
   placement = 'bottom',
   groups = false,
   maxRows,
-}: {
+  className,
+  style,
+}: BasaltProps & {
   items: LegendEntry[]
   highlighted?: string | null
   onHighlight?: (key: string | null) => void
@@ -283,6 +291,7 @@ export function ChartLegend({
   groups?: boolean
   maxRows?: number
 }) {
+  const tier = useChartTierMetrics()
   const handleEnter = (e: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset['legendKey']
     if (key !== undefined) onHighlight?.(key)
@@ -296,8 +305,8 @@ export function ChartLegend({
   const idPrefix = chartId ? `${chartId}-` : ''
   const vertical = placement === 'left' || placement === 'right'
   const { entries, dividerAfter } = orderEntries(items, groups)
-  const visible =
-    maxRows !== undefined && maxRows < entries.length ? entries.slice(0, maxRows) : entries
+  const cap = maxRows ?? tier.legendMaxRows
+  const visible = cap !== undefined && cap < entries.length ? entries.slice(0, cap) : entries
   const hiddenCount = entries.length - visible.length
 
   const nodes: ReactNode[] = []
@@ -348,5 +357,12 @@ export function ChartLegend({
     )
   }
 
-  return <div style={wrapperStyle(placement)}>{nodes}</div>
+  return (
+    <div
+      {...(className !== undefined && { className })}
+      style={{ ...wrapperStyle(placement, tier.legendFontSize), ...style }}
+    >
+      {nodes}
+    </div>
+  )
 }

@@ -1,12 +1,15 @@
-import { curveMonotoneX } from '@visx/curve'
 import { AreaStack } from '@visx/shape'
 import { memo, useCallback, useMemo } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import type { CursorResolution } from '../cursor/resolve'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { AxisConfig, PlotContext } from '../primitives/CartesianChart'
+import type { ChartState } from '../primitives/ChartPending'
+import { curveFor } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 
-export type StackedAreaProps<T> = {
+export type StackedAreaProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
@@ -28,8 +31,9 @@ export type StackedAreaProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
-  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
-  xLabelRotate?: 45 | 90
+  /** Tilt the x tick labels 45° or 90°, or `0` to opt out of the phone tier's auto-rotation —
+   * see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 0 | 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -43,6 +47,9 @@ export type StackedAreaProps<T> = {
   ariaLabel?: string
   /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 /**
@@ -76,6 +83,10 @@ function rowIsDense<T>(d: T, bands: readonly ChartSeries<T>[]): boolean {
  * to restore the original bottom-to-top stacking order for `AreaStack`'s `keys`.
  */
 function StackedAreaInner<T>(props: StackedAreaProps<T>) {
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('StackedArea', props, ['data', 'getX', 'series'])
   const {
     data,
     chartId,
@@ -91,6 +102,9 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
     legend,
     ariaLabel,
     isPending,
+    state,
+    className,
+    style,
   } = props
 
   // The plotted quantity is the CUMULATIVE stack top, not any one series' value — the built-in
@@ -160,6 +174,9 @@ function StackedAreaInner<T>(props: StackedAreaProps<T>) {
       {...(legend !== undefined && { legend })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(ctx) => <StackedAreaMarks getX={getX} ctx={ctx} />}
     </CartesianChart>
@@ -186,6 +203,14 @@ function StackedAreaMarks<T>({ getX, ctx }: { getX: (d: T) => string; ctx: PlotC
   // `AreaStack` wants a mutable array; `ctx.data` is readonly. Copy once per data change.
   const rows = useMemo(() => [...ctx.data], [ctx.data])
 
+  // `AreaStack` draws every band from ONE curve — the bands share their boundaries, so two curves
+  // would leave gaps and overlaps between them. `visible` is in `reversedSeries` order (top band
+  // first), so this resolves to the TOPMOST VISIBLE band that declares a `curve` — the last such
+  // entry in the caller's own `series` array. A band declaring none is skipped rather than read as
+  // the monotone default, and a HIDDEN one is never consulted, so a legend toggle can hand the
+  // stack to the next declarer down. `series.curve.test.tsx` pins all four halves of that.
+  const curve = curveFor(visible.find((s) => s.curve !== undefined)?.curve)
+
   return (
     <AreaStack<T, string>
       data={rows}
@@ -198,7 +223,7 @@ function StackedAreaMarks<T>({ getX, ctx }: { getX: (d: T) => string; ctx: PlotC
       // a missing band reads as a measured zero and the bands above it slide down onto it.
       value={(d, key) => seriesByKey.get(key)?.getValue(d) ?? 0}
       defined={(d) => rowIsDense(d.data, visible)}
-      curve={curveMonotoneX}
+      curve={curve}
     >
       {({ stacks, path }) =>
         stacks.map((stack) => (
@@ -220,4 +245,8 @@ function StackedAreaMarks<T>({ getX, ctx }: { getX: (d: T) => string; ctx: PlotC
  * hot stacked-area kind in `React.memo` to retain the auto-memoization it had as source
  * (parity with ZonedLine / Bars / MultiLine).
  */
-export const StackedArea = memo(StackedAreaInner) as typeof StackedAreaInner
+const StackedAreaMemo = memo(StackedAreaInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+StackedAreaMemo.displayName = 'StackedArea'
+export const StackedArea = StackedAreaMemo as typeof StackedAreaInner

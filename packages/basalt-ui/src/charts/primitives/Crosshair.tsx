@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { VX } from '../../tokens'
+import { useChartTierMetrics } from './chart-tier'
 
 /**
  * The shared vertical hover crosshair — one implementation for what used to be five hand-rolled
@@ -22,6 +23,9 @@ export function Crosshair({
 /**
  * The punched-out hover marker: a filled circle whose stroke is the chart background color, so it
  * reads as a "hole" cut into the line on both themes. Centralizes the `dotStroke = chart-bg` trick.
+ *
+ * The default radius tracks the ambient chart tier (`docs/CHARTS-SPEC.md` §8) — an explicit `r`
+ * (a `getMarker`'s own radius) still wins.
  */
 export function SeriesDot({
   cx,
@@ -34,7 +38,6 @@ export function SeriesDot({
   color: string
   r?: number
 }): ReactNode {
-  return (
-    <circle cx={cx} cy={cy} r={r ?? VX.dotR} fill={color} stroke={VX.dotStroke} strokeWidth={2} />
-  )
+  const { dotR } = useChartTierMetrics()
+  return <circle cx={cx} cy={cy} r={r ?? dotR} fill={color} stroke={VX.dotStroke} strokeWidth={2} />
 }

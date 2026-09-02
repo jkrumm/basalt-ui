@@ -2,6 +2,8 @@ import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
 import { memo, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import { VX, alpha } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
@@ -19,6 +21,7 @@ import {
 import { Crosshair } from '../primitives/Crosshair'
 import { HatchPattern, hatchFill, hatchSizeFor } from '../primitives/HatchPattern'
 import { HoverOverlay } from '../primitives/HoverOverlay'
+import type { ChartState } from '../primitives/ChartPending'
 import { deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { fmtAxisDate } from '../utils/format'
@@ -47,7 +50,7 @@ export type MirroredBarPane = {
   format: (v: number) => string
 }
 
-export type MirroredBarsProps<T> = {
+export type MirroredBarsProps<T> = BasaltProps & {
   data: readonly T[]
   chartId: string
   /** Extracts the x-domain key — a slot start, hence the `'leading'` cursor default. */
@@ -92,6 +95,9 @@ export type MirroredBarsProps<T> = {
   margin?: Partial<ChartMargin>
   ariaLabel?: string
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 const DEFAULT_UP_FRACTION = 0.35
@@ -137,7 +143,12 @@ function assertPaneKey<T>(
  * `useBandPlot` choreography instead, which is where the sharing actually belongs.
  */
 function MirroredBarsInner<T>(props: MirroredBarsProps<T>) {
-  const { series, chartId, height, fill, legend, ariaLabel, isPending } = props
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('MirroredBars', props, ['data', 'getX', 'series', 'up', 'down'])
+  const { series, chartId, height, fill, legend, ariaLabel, isPending, state, className, style } =
+    props
 
   return (
     <ChartFrame
@@ -147,6 +158,9 @@ function MirroredBarsInner<T>(props: MirroredBarsProps<T>) {
       {...(fill !== undefined && { fill })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <MirroredBarsPlot {...props} plot={plot} />}
@@ -488,4 +502,8 @@ function usePaneMax<T>(
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot kind is wrapped in
  * `React.memo` to retain the auto-memoization it had as source (parity with `DualPanel`).
  */
-export const MirroredBars = memo(MirroredBarsInner) as typeof MirroredBarsInner
+const MirroredBarsMemo = memo(MirroredBarsInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+MirroredBarsMemo.displayName = 'MirroredBars'
+export const MirroredBars = MirroredBarsMemo as typeof MirroredBarsInner

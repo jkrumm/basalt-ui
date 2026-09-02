@@ -286,6 +286,42 @@ export const VX = {
    * legend rolls up).
    */
   minPlotHeight: 120,
+  /**
+   * The measured CONTAINER width, in px, below which a chart resolves to its phone tier
+   * (`resolveChartTier`, `docs/CHARTS-SPEC.md` §8): one step smaller legend and tick fonts,
+   * tightened margin floors, a smaller crosshair dot, a narrower tooltip, and a two-entry legend
+   * rollup.
+   *
+   * Deliberately NOT a media query and NOT a `theme.breakpoints` value. A chart in a two-column
+   * grid cell on a 1440px desktop is as narrow as one on a phone, and only the element's own
+   * measured box knows that — the viewport does not. It also keeps the chart layer Mantine-free:
+   * `theme.breakpoints` lives on the coupled side of the boundary.
+   */
+  phoneChartWidth: 480,
+} as const
+
+/**
+ * Layout breakpoints, in px, for the places CSS cannot read a custom property.
+ *
+ * A `@media` query's condition is resolved before custom properties exist, so
+ * `@media (max-width: var(--x))` is invalid CSS — a stylesheet with a responsive rule has no
+ * choice but to write the number. This constant is the other half of that literal: the CSS states
+ * the number and names the token beside it, and a test asserts the two agree
+ * (`content/article-layout.breakpoint.test.ts`, the same "literal must match the token" idiom as
+ * `styles.floor.test.ts`).
+ *
+ * Only breakpoints that are genuinely a CSS-authored `@media` belong here. A component that can
+ * measure its own box uses the measurement instead (`VX.phoneChartWidth`), and Mantine chrome uses
+ * `theme.breakpoints`.
+ */
+export const BREAKPOINTS = {
+  /**
+   * `content/article-layout.module.css` — below this the TOC rail is dropped and the article
+   * collapses to a single centred column. Well above the `sm` (48em/768px) shell breakpoint on
+   * purpose: the rail needs the prose measure PLUS its own width plus the column gap, which runs
+   * out long before the shell goes mobile.
+   */
+  article: 1200,
 } as const
 
 /** Resolved chart plot-area margins — the return shape of {@link chartMargin}. */

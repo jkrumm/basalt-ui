@@ -2,8 +2,11 @@ import { Group } from '@visx/group'
 import { Pie } from '@visx/shape'
 import { memo, useMemo, useState } from 'react'
 import type { PointerEvent, ReactNode } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import { ChartTooltipFloat, TooltipBody, TooltipRow } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
+import type { ChartState } from '../primitives/ChartPending'
 import { VX } from '../../tokens'
 import type { SeriesStyle } from '../series'
 import type { SeriesKey } from '../../register'
@@ -15,7 +18,7 @@ import type { SeriesKey } from '../../register'
  */
 export type DonutDatum<K extends string = SeriesKey> = { key: K; value: number }
 
-export type DonutProps<K extends string = SeriesKey> = {
+export type DonutProps<K extends string = SeriesKey> = BasaltProps & {
   data: DonutDatum<K>[]
   /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
   height?: number
@@ -54,6 +57,9 @@ export type DonutProps<K extends string = SeriesKey> = {
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 /**
@@ -66,7 +72,21 @@ export type DonutProps<K extends string = SeriesKey> = {
  * category sync (donut ↔ bar, via a generalized key) is a distinct, deliberately deferred feature.
  */
 function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
-  const { data, height, colorForKey, seriesLabel = (k) => k, ariaLabel, isPending } = props
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('Donut', props, ['data', 'colorForKey'])
+  const {
+    data,
+    height,
+    colorForKey,
+    seriesLabel = (k) => k,
+    ariaLabel,
+    isPending,
+    state,
+    className,
+    style,
+  } = props
 
   const series: SeriesStyle[] = data.map((d) => ({
     key: d.key,
@@ -81,6 +101,9 @@ function DonutInner<K extends string = SeriesKey>(props: DonutProps<K>) {
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(plot) => <DonutPlot {...props} plot={plot} />}
     </ChartFrame>
@@ -245,4 +268,8 @@ function DonutPlot<K extends string = SeriesKey>(props: DonutPlotProps<K>) {
  * Hand-memoized: React Compiler does not process the shipped dist, so we wrap the
  * hot donut kind in `React.memo` to retain the auto-memoization it had as source.
  */
-export const Donut = memo(DonutInner) as typeof DonutInner
+const DonutMemo = memo(DonutInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+DonutMemo.displayName = 'Donut'
+export const Donut = DonutMemo as typeof DonutInner

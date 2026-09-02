@@ -1,2 +1,2 @@
-export { LineSparkline } from './LineSparkline'
-export { BarSparkline } from './BarSparkline'
+export { LineSparkline, type LineSparklineProps } from './LineSparkline'
+export { BarSparkline, type BarSparklineProps } from './BarSparkline'

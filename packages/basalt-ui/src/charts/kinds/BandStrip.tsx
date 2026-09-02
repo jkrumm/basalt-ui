@@ -1,6 +1,8 @@
 import { Group } from '@visx/group'
 import { memo, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import { VX, alpha } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
@@ -17,6 +19,7 @@ import {
 import { Crosshair } from '../primitives/Crosshair'
 import { HatchPattern, hatchFill, hatchSizeFor } from '../primitives/HatchPattern'
 import { HoverOverlay } from '../primitives/HoverOverlay'
+import type { ChartState } from '../primitives/ChartPending'
 import type { ChartLegendConfig, SeriesStyle } from '../series'
 import { fmtAxisDate } from '../utils/format'
 import { isDev } from '../../utils/is-dev'
@@ -79,7 +82,7 @@ export type BandSpan = {
   }
 }
 
-export type BandStripProps<T> = {
+export type BandStripProps<T> = BasaltProps & {
   data: readonly T[]
   /** Stable id — identifies this chart as the cursor's source. */
   chartId: string
@@ -123,6 +126,9 @@ export type BandStripProps<T> = {
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 const DEFAULT_MARKER_INSET = 6
@@ -181,7 +187,12 @@ function formatBandValue<T>(style: BandStripSeries<T>, datum: T): string {
  * nothing measured, and a fact that must not be read off the ramp.
  */
 function BandStripInner<T>(props: BandStripProps<T>) {
-  const { series, chartId, height, fill, legend, ariaLabel, isPending } = props
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('BandStrip', props, ['data', 'getX', 'series', 'getBand'])
+  const { series, chartId, height, fill, legend, ariaLabel, isPending, state, className, style } =
+    props
 
   return (
     <ChartFrame
@@ -191,6 +202,9 @@ function BandStripInner<T>(props: BandStripProps<T>) {
       {...(fill !== undefined && { fill })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <BandStripPlot {...props} plot={plot} />}
@@ -448,4 +462,8 @@ function deriveBandRow<T>(
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot kind is wrapped in
  * `React.memo` to retain the auto-memoization it had as source (parity with `DualPanel`).
  */
-export const BandStrip = memo(BandStripInner) as typeof BandStripInner
+const BandStripMemo = memo(BandStripInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+BandStripMemo.displayName = 'BandStrip'
+export const BandStrip = BandStripMemo as typeof BandStripInner

@@ -1,17 +1,19 @@
-import { curveMonotoneX } from '@visx/curve'
 import { LinePath } from '@visx/shape'
 import { memo, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import type { CursorResolution } from '../cursor/resolve'
 import type { CartesianTooltipConfig, AxisConfig, PlotContext } from '../primitives/CartesianChart'
 import { CartesianChart } from '../primitives/CartesianChart'
 import type { XZoneSpec } from '../primitives/XZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
-import { definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
+import type { ChartState } from '../primitives/ChartPending'
+import { curveFor, definedOn, LINE_OVERLAY_STROKE_WIDTH, toPlotPoint } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { VX } from '../../tokens'
 
-export type MultiLineProps<T> = {
+export type MultiLineProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels, forwarded to `CartesianChart`. Default 240. */
   height?: number
@@ -42,8 +44,9 @@ export type MultiLineProps<T> = {
   xTickValues?: (keys: readonly string[], xMax: number) => readonly string[]
   /** X tick label formatter. Default `fmtAxisDate` (DD.MM). */
   formatX?: (key: string) => string
-  /** Tilt the x tick labels 45° or 90° — see `CartesianChartProps.xLabelRotate`. */
-  xLabelRotate?: 45 | 90
+  /** Tilt the x tick labels 45° or 90°, or `0` to opt out of the phone tier's auto-rotation —
+   * see `CartesianChartProps.xLabelRotate`. */
+  xLabelRotate?: 0 | 45 | 90
   /**
    * How a sibling chart's broadcast cursor key resolves against this chart's points. Default
    * `'nearest'`. Pass `'leading'` when `getX` returns a bucket's leading edge (a weekly series
@@ -62,6 +65,9 @@ export type MultiLineProps<T> = {
   ariaLabel?: string
   /** Forwarded to `CartesianChart` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 const STAR_R = 6
@@ -106,6 +112,10 @@ function seriesPoints<T>(series: ChartSeries<T>, data: readonly T[]): LinePt<T>[
  * across it.
  */
 function MultiLineInner<T>(props: MultiLineProps<T>) {
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('MultiLine', props, ['data', 'getX', 'series'])
   const {
     data,
     chartId,
@@ -127,6 +137,9 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
     legend,
     ariaLabel,
     isPending,
+    state,
+    className,
+    style,
   } = props
 
   // Default line overlays to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) — applied once
@@ -157,6 +170,9 @@ function MultiLineInner<T>(props: MultiLineProps<T>) {
       {...(legend !== undefined && { legend })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(ctx: PlotContext<T>) => <MultiLineMarks getX={getX} markerShape={markerShape} ctx={ctx} />}
     </CartesianChart>
@@ -283,7 +299,7 @@ function MultiLineMarks<T>({
             strokeWidth={s.strokeWidth ?? LINE_OVERLAY_STROKE_WIDTH}
             strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
             strokeOpacity={dimOpacity(s) * (s.strokeOpacity ?? 1)}
-            curve={curveMonotoneX}
+            curve={curveFor(s.curve)}
           />
         )
       })}
@@ -297,4 +313,8 @@ function MultiLineMarks<T>({
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot MultiLine kind is
  * wrapped in `React.memo` to retain the auto-memoization it had as source (parity with ZonedLine).
  */
-export const MultiLine = memo(MultiLineInner) as typeof MultiLineInner
+const MultiLineMemo = memo(MultiLineInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+MultiLineMemo.displayName = 'MultiLine'
+export const MultiLine = MultiLineMemo as typeof MultiLineInner

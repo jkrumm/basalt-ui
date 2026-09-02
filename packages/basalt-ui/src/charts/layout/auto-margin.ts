@@ -42,8 +42,16 @@ export type AutoMarginInput = {
   bottom?: readonly string[]
   /** Degrees of counter-clockwise rotation applied to the x tick labels. Default 0. */
   rotate?: number
-  /** Tick-label font size. Default `VX.axisFont`. */
+  /** Tick-label font size. Default `VX.axisFont`. A phone-tier chart passes its own smaller size
+   * (`chartTierMetrics().axisFont`) — the measured label must be the painted label. */
   fontPx?: number
+  /**
+   * Per-side FLOORS. Default `VX.margin`. The phone tier passes its tightened set
+   * (`chartTierMetrics().margin`) so a static 44px left gutter does not spend an eighth of a 360px
+   * chart on a three-character label. The law itself does not move: a side may still only ever
+   * grow past its floor.
+   */
+  floor?: ChartMargin
   /** Explicit per-side overrides — applied LAST, so an escape hatch always wins. */
   override?: Partial<ChartMargin>
 }
@@ -51,11 +59,16 @@ export type AutoMarginInput = {
 /**
  * Resolve the four margins from measured labels.
  *
- * Law, per side:
- * - `left` — widest left label + gap, floored at `VX.margin.left`.
- * - `right` — with a right axis: widest right label + gap. Without one: half the widest x label,
- *   so the LAST x tick (centered on the plot's right edge) cannot clip. Both floored at
- *   `VX.margin.right`.
+ * Law, per side (the floors are `VX.margin` by default; a tier may tighten them via `floor`):
+ * - `left` — widest left label + gap, floored at `VX.margin.left`. When the x labels are ROTATED
+ *   they also reach into this gutter, so the left side additionally clears their leftward
+ *   projection — see {@link rotatedLeftOverhang}.
+ * - `right` — with a right axis: widest right label + gap. Without one, and the x labels are NOT
+ *   rotated: half the widest x label, so the LAST x tick (centered on the plot's right edge)
+ *   cannot clip. Without one AND rotated: nothing — a rotated label is anchored at its right edge
+ *   (`textAnchor: 'end'`, same as {@link rotatedLeftOverhang}), so it hangs left of its tick, not
+ *   right, and reserving half its width would pad a side nothing paints into. Every case is
+ *   floored at `VX.margin.right`.
  * - `bottom` — one label line (or the rotated bounding height) + gap, floored at
  *   `VX.margin.bottom`.
  * - `top` — `VX.margin.top`. Nothing measures into it; a chart that draws into the top gutter
@@ -63,7 +76,7 @@ export type AutoMarginInput = {
  */
 export function autoMargin(input: AutoMarginInput = {}): ChartMargin {
   const fontPx = input.fontPx ?? VX.axisFont
-  const { left = [], right = [], bottom = [], rotate = 0, override } = input
+  const { left = [], right = [], bottom = [], rotate = 0, floor = VX.margin, override } = input
 
   const leftWidth = maxTextWidth(left, fontPx)
   const rightWidth = maxTextWidth(right, fontPx)
@@ -78,17 +91,38 @@ export function autoMargin(input: AutoMarginInput = {}): ChartMargin {
             Math.abs(lineHeight(fontPx) * Math.cos(radians)),
         )
 
+  /**
+   * How far a rotated x label reaches LEFT of its own tick.
+   *
+   * `AxisBottomDate` anchors a rotated label at its right edge (`textAnchor: 'end'`) and rotates it
+   * counter-clockwise, so the string runs down-and-to-the-LEFT from the tick it belongs to. The
+   * FIRST tick sits at the plot's left edge, so its label hangs into the left gutter and, at
+   * `VX.margin.left`, straight off the chart — visible at `/charts-stress` block (f2), where
+   * `Mar 01 14:00` printed as `ar 01 14:00`.
+   *
+   * The projection is `width · cos(angle)`: 0.71× the label at 45°, and zero at 90°, where the
+   * string runs straight down and costs no horizontal room at all. This is the same
+   * measured-not-assumed law the bottom gutter already followed — the left side simply never got
+   * its half. Nothing moves for an unrotated axis.
+   */
+  const rotatedLeftOverhang = rotate === 0 ? 0 : Math.abs(bottomWidth * Math.cos(radians))
+
   return {
-    top: override?.top ?? VX.margin.top,
+    top: override?.top ?? floor.top,
     right:
       override?.right ??
       Math.ceil(
-        Math.max(VX.margin.right, right.length > 0 ? rightWidth + AXIS_TICK_GAP : bottomWidth / 2),
+        Math.max(
+          floor.right,
+          right.length > 0 ? rightWidth + AXIS_TICK_GAP : rotate === 0 ? bottomWidth / 2 : 0,
+        ),
       ),
-    bottom: override?.bottom ?? Math.ceil(Math.max(VX.margin.bottom, bottomExtent + AXIS_TICK_GAP)),
+    bottom: override?.bottom ?? Math.ceil(Math.max(floor.bottom, bottomExtent + AXIS_TICK_GAP)),
     left:
       override?.left ??
-      Math.ceil(Math.max(VX.margin.left, left.length > 0 ? leftWidth + AXIS_TICK_GAP : 0)),
+      Math.ceil(
+        Math.max(floor.left, left.length > 0 ? leftWidth + AXIS_TICK_GAP : 0, rotatedLeftOverhang),
+      ),
   }
 }
 

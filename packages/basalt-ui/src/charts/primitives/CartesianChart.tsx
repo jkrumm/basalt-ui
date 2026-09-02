@@ -3,6 +3,7 @@ import { Group } from '@visx/group'
 import { scaleLinear, scaleLog, scalePoint } from '@visx/scale'
 import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import type { BasaltProps } from '../../common/props'
 import { VX } from '../../tokens'
 import type { ChartMargin } from '../../tokens'
 import type { CursorResolution } from '../cursor/resolve'
@@ -13,9 +14,11 @@ import { deriveLegend, deriveTooltipRows } from '../series'
 import type { ChartLegendConfig, ChartSeries } from '../series'
 import { padAutoLower, padAutoUpper } from '../utils/domain'
 import { fmtAxisDate } from '../utils/format'
-import { smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
+import { autoXLabelRotate, smartTicks, smartTicksEvery, xLabelPxFor } from '../utils/ticks'
 import { AxisBottomDate, AxisLeftNumeric, AxisRightNumeric } from './Axes'
 import { ChartFrame, resolveLegend } from './ChartFrame'
+import { useChartTierMetrics } from './chart-tier'
+import type { ChartState } from './ChartPending'
 import { ChartTooltipFloat, TooltipBody, TooltipHeader, TooltipRow } from './ChartTooltip'
 import { Crosshair, SeriesDot } from './Crosshair'
 import { HoverOverlay } from './HoverOverlay'
@@ -154,7 +157,7 @@ export type PlotContext<T> = {
   highlighted: string | null
 }
 
-export type CartesianChartProps<T> = {
+export type CartesianChartProps<T> = BasaltProps & {
   data: T[]
   /** Stable id — identifies this chart as the cursor's source. */
   chartId: string
@@ -192,9 +195,15 @@ export type CartesianChartProps<T> = {
    * (`docs/CHARTS-SPEC.md` §1), so nothing clips.
    *
    * This is the phone answer to a label too wide to repeat horizontally: rotating keeps every tick
-   * the axis would otherwise have to thin away. Default: no rotation.
+   * the axis would otherwise have to thin away — which is why, LEFT UNSET, it is now the phone
+   * tier's DEFAULT: below `VX.phoneChartWidth`, labels too wide to fit three ticks side by side
+   * auto-rotate to 45 (`autoXLabelRotate`). Nothing changes at desktop width, and nothing changes
+   * for a chart that already passes a value.
+   *
+   * **`0` is the opt-out** — "never rotate, thin the axis instead" — and is the only way to get
+   * the pre-tier behaviour back on a phone-width chart with very wide labels.
    */
-  xLabelRotate?: 45 | 90
+  xLabelRotate?: 0 | 45 | 90
   /** Value-range bands on the left scale, drawn behind the marks. */
   zones?: ZoneSpec[]
   /** X-range bands (time windows), drawn behind the marks. */
@@ -229,6 +238,13 @@ export type CartesianChartProps<T> = {
   cursorResolution?: CursorResolution
   ariaLabel?: string
   isPending?: boolean
+  /**
+   * The three "nothing to draw" states in one prop, forwarded to `ChartFrame` — pending → error →
+   * empty, resolved by `resolveChartState`. The Mantine-free answer to `dashboard/QueryState`,
+   * which `./charts` cannot import; `isPending` remains a supported alias for
+   * `state={{ pending: true }}`.
+   */
+  state?: ChartState
   /** Draw ONLY the marks. Everything around them is the primitive's job. */
   children: (ctx: PlotContext<T>) => ReactNode
 }
@@ -372,6 +388,9 @@ export function CartesianChart<T>({
   cursorResolution,
   ariaLabel,
   isPending,
+  state,
+  className,
+  style,
   children,
 }: CartesianChartProps<T>): ReactNode {
   const [highlighted, setHighlighted] = useState<string | null>(null)
@@ -385,6 +404,9 @@ export function CartesianChart<T>({
       {...(fill !== undefined && { fill })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       legend={resolveLegend(
         legend,
         { highlighted, onHighlight: setHighlighted },
@@ -423,7 +445,15 @@ export function CartesianChart<T>({
 
 type CartesianPlotProps<T> = Omit<
   CartesianChartProps<T>,
-  'height' | 'aspectRatio' | 'fill' | 'legend' | 'isPending' | 'margin'
+  | 'height'
+  | 'aspectRatio'
+  | 'fill'
+  | 'legend'
+  | 'isPending'
+  | 'state'
+  | 'margin'
+  | 'className'
+  | 'style'
 > & {
   plot: { width: number; height: number; hidden: ReadonlySet<string> }
   highlighted: string | null
@@ -456,6 +486,10 @@ function CartesianPlot<T>({
   children,
 }: CartesianPlotProps<T>): ReactNode {
   const { hidden } = plot
+  // The tier `ChartFrame` resolved from its own MEASURED width. Everything sized by it here is
+  // the half a hook cannot reach: the tick font the margins are MEASURED at, and the margin
+  // floors themselves (`docs/CHARTS-SPEC.md` §8).
+  const tier = useChartTierMetrics()
 
   const visible = useMemo(() => series.filter((s) => !hidden.has(s.key)), [series, hidden])
   const leftSeries = useMemo(() => visible.filter((s) => s.axis !== 'right'), [visible])
@@ -522,23 +556,59 @@ function CartesianPlot<T>({
 
   /** The horizontal room one x tick label needs: the widest string that could be painted, plus
    * breathing space to its neighbour. Feeds `smartTicks`, which otherwise thinned the axis by a
-   * constant that knew nothing about the label. Rotated labels stack diagonally instead of
-   * side by side, so their width no longer governs the spacing. */
-  const xLabelPx = useMemo(
-    () => (xLabelRotate === undefined ? xLabelPxFor(xLabels) : undefined),
-    [xLabels, xLabelRotate],
-  )
+   * constant that knew nothing about the label. Measured at the tick font the axis will actually
+   * paint, which the tier moves (`docs/CHARTS-SPEC.md` §8). */
+  const xLabelPx = useMemo(() => xLabelPxFor(xLabels, tier.axisFont), [xLabels, tier.axisFont])
 
-  const margin = useMemo(
+  /** The margin an UNROTATED axis resolves to. It is the final margin in every case except an
+   * auto-rotated phone axis, and it is what the rotation decision itself is measured against —
+   * deciding needs an `xMax`, and `xMax` needs a margin, so the unrotated pass breaks the loop. */
+  const flatMargin = useMemo(
     () =>
       autoMargin({
         left: leftLabels,
         right: rightLabels,
         bottom: xLabels,
-        ...(xLabelRotate !== undefined && { rotate: xLabelRotate }),
+        fontPx: tier.axisFont,
+        floor: tier.margin,
         ...(marginOverride !== undefined && { override: marginOverride }),
       }),
-    [leftLabels, rightLabels, xLabels, xLabelRotate, marginOverride],
+    [leftLabels, rightLabels, xLabels, tier.axisFont, tier.margin, marginOverride],
+  )
+
+  // An explicit `xLabelRotate` always wins — including `0`, which is the documented "never rotate"
+  // opt-out. Only an unset one falls through to the phone tier's own default.
+  const rotate =
+    xLabelRotate ??
+    autoXLabelRotate({
+      tier: tier.tier,
+      xMax: Math.max(plot.width - flatMargin.left - flatMargin.right, 0),
+      labelPx: xLabelPx,
+    })
+
+  const margin = useMemo(
+    () =>
+      rotate === 0
+        ? flatMargin
+        : autoMargin({
+            left: leftLabels,
+            right: rightLabels,
+            bottom: xLabels,
+            rotate,
+            fontPx: tier.axisFont,
+            floor: tier.margin,
+            ...(marginOverride !== undefined && { override: marginOverride }),
+          }),
+    [
+      flatMargin,
+      rotate,
+      leftLabels,
+      rightLabels,
+      xLabels,
+      tier.axisFont,
+      tier.margin,
+      marginOverride,
+    ],
   )
 
   // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────
@@ -564,9 +634,11 @@ function CartesianPlot<T>({
       xTickValues !== undefined
         ? [...xTickValues(keys, xMax)]
         : xTicks === undefined
-          ? smartTicks(keys, xMax, xLabelPx)
+          ? // A rotated label stacks diagonally instead of beside its neighbour, so its WIDTH no
+            // longer governs tick spacing — the constant floor takes over, exactly as before.
+            smartTicks(keys, xMax, rotate === 0 ? xLabelPx : undefined)
           : smartTicksEvery(keys, xTicks),
-    [keys, xMax, xTicks, xTickValues, xLabelPx],
+    [keys, xMax, xTicks, xTickValues, xLabelPx, rotate],
   )
 
   const cursor = useChartCursor<T>({
@@ -710,7 +782,7 @@ function CartesianPlot<T>({
             scale={xScale}
             tickValues={tickValues}
             tickFormat={(v) => formatX(String(v))}
-            {...(xLabelRotate !== undefined && { rotate: xLabelRotate })}
+            {...(rotate !== 0 && { rotate })}
           />
 
           <HoverOverlay

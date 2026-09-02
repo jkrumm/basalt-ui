@@ -1,4 +1,3 @@
-import { curveMonotoneX } from '@visx/curve'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { scaleLinear, scalePoint } from '@visx/scale'
@@ -6,6 +5,8 @@ import { Bar, LinePath } from '@visx/shape'
 import { Threshold } from '@visx/threshold'
 import { memo, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import { AxisBottomDate, AxisLeftNumeric } from '../primitives/Axes'
 import {
   ChartTooltipFloat,
@@ -18,16 +19,17 @@ import { Crosshair, SeriesDot } from '../primitives/Crosshair'
 import { HoverOverlay } from '../primitives/HoverOverlay'
 import { ZoneRects } from '../primitives/ZoneRects'
 import type { ZoneSpec } from '../primitives/ZoneRects'
+import type { ChartState } from '../primitives/ChartPending'
 import type { CursorResolution } from '../cursor/resolve'
 import { useChartCursor } from '../hooks/useChartCursor'
 import { autoMargin, probeAxisLabels } from '../layout/auto-margin'
-import { deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
+import { curveFor, deriveTooltipRows, LINE_OVERLAY_STROKE_WIDTH } from '../series'
 import type { ChartLegendConfig, ChartSeries, SeriesStyle } from '../series'
 import { VX } from '../../tokens'
 import { fmtAxisDate } from '../utils/format'
 import { smartTicks, xLabelPxFor } from '../utils/ticks'
 
-export type DualPanelProps<T> = {
+export type DualPanelProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels, forwarded to the internal `ChartFrame`. Default 240. */
   height?: number
@@ -98,6 +100,9 @@ export type DualPanelProps<T> = {
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 const PANE_GAP = 12
@@ -115,8 +120,23 @@ const PANE_GAP = 12
  * when a series has nulls; lines/bars skip null points (visual gaps).
  */
 function DualPanelInner<T>(props: DualPanelProps<T>) {
-  const { series, chartId, height, barLabel, barColorPositive, legend, ariaLabel, isPending } =
-    props
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('DualPanel', props, ['data', 'getX', 'series', 'getBar'])
+  const {
+    series,
+    chartId,
+    height,
+    barLabel,
+    barColorPositive,
+    legend,
+    ariaLabel,
+    isPending,
+    state,
+    className,
+    style,
+  } = props
 
   // Default the top-pane line overlays to the redesign's 1.9px stroke (docs/DESIGN-SPEC.md §5) —
   // applied once here so the plotted line, the derived legend swatch, and the derived tooltip row
@@ -144,6 +164,9 @@ function DualPanelInner<T>(props: DualPanelProps<T>) {
       {...(height !== undefined && { height })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
       legend={resolveLegend(legend)}
     >
       {(plot) => <DualPanelPlot {...props} series={styledSeries} plot={plot} />}
@@ -391,6 +414,17 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
     return out
   }, [data, fillBetween, visibleSeries])
 
+  // The fill reads the FROM line's curve — same law as ZonedLine's "one curve for all shapes
+  // drawn from one series", extended to the two lines a fill spans: the band takes its shape from
+  // the line it hugs on the low side.
+  const fillCurve = useMemo(
+    () =>
+      curveFor(
+        fillBetween ? visibleSeries.find((s) => s.key === fillBetween.from)?.curve : undefined,
+      ),
+    [fillBetween, visibleSeries],
+  )
+
   type LinePt = { __d: T; __y: number }
   // Per-line valid points, computed once per (data, visibleSeries) — not re-walked inside the
   // render map every paint (parity with MultiLine's seriesPts).
@@ -476,7 +510,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
               y1={(p) => topYScale(p.__to)}
               clipAboveTo={0}
               clipBelowTo={topH}
-              curve={curveMonotoneX}
+              curve={fillCurve}
               belowAreaProps={{ fill: fillBetween.fill }}
               aboveAreaProps={{ fill: fillBetween.fill }}
             />
@@ -507,7 +541,7 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
                 strokeWidth={s.strokeWidth ?? VX.lineWidth}
                 strokeDasharray={s.dash === 'dashed' ? VX.dashArray : undefined}
                 strokeOpacity={s.strokeOpacity ?? 1}
-                curve={curveMonotoneX}
+                curve={curveFor(s.curve)}
               />
             )
           })}
@@ -673,4 +707,8 @@ function DualPanelPlot<T>(props: DualPanelPlotProps<T>) {
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot DualPanel kind is
  * wrapped in `React.memo` to retain the auto-memoization it had as source (parity with ZonedLine).
  */
-export const DualPanel = memo(DualPanelInner) as typeof DualPanelInner
+const DualPanelMemo = memo(DualPanelInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+DualPanelMemo.displayName = 'DualPanel'
+export const DualPanel = DualPanelMemo as typeof DualPanelInner

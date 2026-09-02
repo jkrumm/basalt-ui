@@ -1,8 +1,9 @@
 import { scaleLinear } from '@visx/scale'
 import { useMemo } from 'react'
+import type { BasaltProps } from '../../common/props'
 import { VX } from '../../tokens'
 
-type BarSparklineProps = {
+export type BarSparklineProps = BasaltProps & {
   data: number[]
   width: number
   height: number
@@ -47,6 +48,8 @@ export function BarSparkline({
   emphasizeLast = false,
   emphasisColor,
   ariaLabel,
+  className,
+  style,
 }: BarSparklineProps) {
   const fillColor = color ?? VX.faint
   const lastColor = emphasisColor ?? VX.accent
@@ -57,14 +60,19 @@ export function BarSparkline({
     return scaleLinear<number>({ domain: [0, max], range: [0, height] })
   }, [data, height])
 
-  if (!data.length) return <svg width={width} height={height} {...a11yProps} />
+  const rootProps = {
+    ...(className !== undefined && { className }),
+    ...(style !== undefined && { style }),
+  }
+
+  if (!data.length) return <svg width={width} height={height} {...rootProps} {...a11yProps} />
 
   const step = width / data.length
   const barWidth = Math.max(step - barGap, 1)
   const lastIndex = data.length - 1
 
   return (
-    <svg width={width} height={height} {...a11yProps}>
+    <svg width={width} height={height} {...rootProps} {...a11yProps}>
       {data.map((v, i) => {
         const bh = Math.max(yScale(Math.max(v, 0)), 0)
         const isLast = emphasizeLast && i === lastIndex

@@ -1,6 +1,8 @@
 import { Group } from '@visx/group'
 import type { PointerEvent, ReactNode } from 'react'
 import { memo, useMemo, useState } from 'react'
+import { assertRequiredProps } from '../../common/validate'
+import type { BasaltProps } from '../../common/props'
 import {
   ChartTooltipFloat,
   TooltipBody,
@@ -8,6 +10,8 @@ import {
   TooltipRow,
 } from '../primitives/ChartTooltip'
 import { ChartFrame } from '../primitives/ChartFrame'
+import { useChartTierMetrics } from '../primitives/chart-tier'
+import type { ChartState } from '../primitives/ChartPending'
 import { VX, alpha } from '../../tokens'
 
 /** A single resolved heatmap cell — the unit the tooltip and hover operate on. */
@@ -16,7 +20,7 @@ type HeatmapCell = { row: string; col: string; value: number }
 /** A hovered cell plus the viewport anchor `ChartTooltipFloat` positions against. */
 type HeatmapTip = HeatmapCell & { anchor: { x: number; y: number } }
 
-export type HeatmapProps<T> = {
+export type HeatmapProps<T> = BasaltProps & {
   data: T[]
   /** Fixed height in pixels. Used when neither `aspectRatio` nor `fill` is set. Default 240. */
   height?: number
@@ -57,6 +61,9 @@ export type HeatmapProps<T> = {
   ariaLabel?: string
   /** Forwarded to `ChartFrame` — see `ChartPending`'s JSDoc for the three-state rationale. */
   isPending?: boolean
+  /** The three "nothing to draw" states in one prop — pending → error → empty. See
+   * `ChartState`; `isPending` stays a supported alias for `state={{ pending: true }}`. */
+  state?: ChartState
 }
 
 /** Build a first-seen-ordered list of unique keys from data via an accessor. */
@@ -101,7 +108,12 @@ const LEGEND_LABEL_H = 16
  * `ChartFrame`'s own derived legend, since Heatmap already ships its own gradient strip.
  */
 function HeatmapInner<T>(props: HeatmapProps<T>) {
-  const { chartId, height, aspectRatio, fill, ariaLabel, isPending } = props
+  // F-ERR-1: name the component and the prop. Without this a missing accessor surfaces
+  // from inside visx as `undefined is not a function`, which `BasaltErrorBoundary`
+  // swallows into a blank subtree that names nothing.
+  assertRequiredProps('Heatmap', props, ['data', 'getRow', 'getCol', 'getValue'])
+  const { chartId, height, aspectRatio, fill, ariaLabel, isPending, state, className, style } =
+    props
 
   return (
     <ChartFrame
@@ -113,6 +125,9 @@ function HeatmapInner<T>(props: HeatmapProps<T>) {
       {...(fill !== undefined && { fill })}
       {...(ariaLabel !== undefined && { ariaLabel })}
       {...(isPending !== undefined && { isPending })}
+      {...(state !== undefined && { state })}
+      {...(className !== undefined && { className })}
+      {...(style !== undefined && { style })}
     >
       {(plot) => <HeatmapPlot {...props} plot={plot} />}
     </ChartFrame>
@@ -146,6 +161,11 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
     legend,
   } = props
   const { width, height } = plot
+
+  // The row/column labels and the gradient legend's endpoints read like axis ticks, so they take
+  // the tier's tick font for the same reason `Axes.tsx` does — a 360px heatmap that painted its
+  // categories at the desktop size would be the one chart still ignoring §8.
+  const { axisFont } = useChartTierMetrics()
 
   const [tip, setTip] = useState<HeatmapTip | null>(null)
 
@@ -212,7 +232,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
               x={PAD_LEFT - 6}
               y={ri * cellH + cellH / 2 + 4}
               textAnchor="end"
-              fontSize={VX.axisFont}
+              fontSize={axisFont}
               fontFamily={LABEL_FONT_FAMILY}
               fill={VX.faint}
             >
@@ -229,7 +249,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
               x={ci * cellW + cellW / 2}
               y={16}
               textAnchor="middle"
-              fontSize={VX.axisFont}
+              fontSize={axisFont}
               fontFamily={LABEL_FONT_FAMILY}
               fill={VX.faint}
             >
@@ -252,7 +272,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
               x={0}
               y={LEGEND_H + 12}
               textAnchor="start"
-              fontSize={VX.axisFont}
+              fontSize={axisFont}
               fontFamily={LABEL_FONT_FAMILY}
               fill={VX.faint}
             >
@@ -262,7 +282,7 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
               x={gridW}
               y={LEGEND_H + 12}
               textAnchor="end"
-              fontSize={VX.axisFont}
+              fontSize={axisFont}
               fontFamily={LABEL_FONT_FAMILY}
               fill={VX.faint}
             >
@@ -294,4 +314,8 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
  * Hand-memoized: React Compiler does not process the shipped dist, so the hot Heatmap kind is
  * wrapped in `React.memo` to retain auto-memoization (parity with ZonedLine / Bars).
  */
-export const Heatmap = memo(HeatmapInner) as typeof HeatmapInner
+const HeatmapMemo = memo(HeatmapInner)
+// Without it every kind reads as `Memo` in React DevTools (audit A16) — a profiler flame
+// graph of nine identically-named nodes names nothing.
+HeatmapMemo.displayName = 'Heatmap'
+export const Heatmap = HeatmapMemo as typeof HeatmapInner

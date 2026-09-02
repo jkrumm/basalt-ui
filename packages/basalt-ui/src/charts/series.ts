@@ -7,6 +7,13 @@
  * share one definition.
  */
 
+import {
+  curveLinear,
+  curveMonotoneX,
+  curveStep,
+  curveStepAfter,
+  curveStepBefore,
+} from '@visx/curve'
 import type { LegendEntry } from './primitives/ChartLegend'
 
 /**
@@ -23,6 +30,43 @@ export type SeriesMark = 'line' | 'bar' | 'area'
 
 /** Only meaningful for `mark: 'line'`. */
 export type SeriesDash = 'solid' | 'dashed'
+
+/**
+ * The interpolation between two plotted points. Named rather than a raw d3 `CurveFactory` so the
+ * set is closed, serializable, and identical across every kind — a chart cannot pick a curve the
+ * legend swatch and the sibling chart next to it do not also understand.
+ *
+ * - `monotone` (default, today's behaviour everywhere) — smoothed, overshoot-free.
+ * - `linear` — straight segments. The honest choice when the points are samples, not a signal.
+ * - `step` / `stepAfter` / `stepBefore` — the value HOLDS between samples and changes at one x.
+ *   Reach for these when the quantity is piecewise-constant (a price tier, a config value, a
+ *   discrete state): a smoothed curve through them draws intermediate values that never existed.
+ *   `stepAfter` holds the value forward from its own x, `stepBefore` holds it back from the next,
+ *   `step` changes at the midpoint.
+ */
+export type SeriesCurve = 'monotone' | 'linear' | 'step' | 'stepAfter' | 'stepBefore'
+
+/** d3's curve-factory shape, taken from a curve we already import rather than from
+ * `@visx/vendor/d3-shape` — that package is a transitive of `@visx/curve`, not one of the nine
+ * exact-pinned peers, so naming it in an import would add an undeclared dependency. */
+type CurveFactory = typeof curveMonotoneX
+
+const CURVES: Record<SeriesCurve, CurveFactory> = {
+  monotone: curveMonotoneX,
+  linear: curveLinear,
+  step: curveStep,
+  stepAfter: curveStepAfter,
+  stepBefore: curveStepBefore,
+}
+
+/**
+ * The d3 curve factory for a {@link SeriesCurve}. `undefined` resolves to `curveMonotoneX` — the
+ * value every kind hard-coded before this seam existed, so an omitted `curve` moves nothing.
+ * Exported for a hand-composed plot that draws its own `LinePath` from the same `series` array.
+ */
+export function curveFor(curve?: SeriesCurve): CurveFactory {
+  return curve === undefined ? curveMonotoneX : CURVES[curve]
+}
 
 /** Drives legend grouping/dividers. */
 export type SeriesRole = 'series' | 'overlay' | 'reference'
@@ -56,6 +100,12 @@ export type SeriesStyle = {
   mark: SeriesMark
   /** Default 'solid'. */
   dash?: SeriesDash
+  /**
+   * Interpolation between points for the line/area shapes this series draws. Default `'monotone'`
+   * — today's behaviour, unchanged, everywhere. See {@link SeriesCurve} for when a step curve is
+   * the honest one. Silently no-ops on `mark: 'bar'`, which has nothing to interpolate.
+   */
+  curve?: SeriesCurve
   /** Default VX.lineWidth (one width, everywhere). */
   strokeWidth?: number
   /** bar/area: the swatch honors this so it cannot lie. */
