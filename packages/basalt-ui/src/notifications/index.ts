@@ -19,6 +19,10 @@
  * notifyError('Failed', { title: 'Upload error' })
  * notifyPromise(save(), { loading: 'Saving…', success: 'Saved', error: 'Failed' })
  *
+ * // Optimistic mutation with an undo window (the toast's autoClose IS the window):
+ * import { notifyUndo } from 'basalt-ui/notifications'
+ * notifyUndo({ message: 'Item deleted', onUndo: () => restore(), onExpire: () => api.delete(id) })
+ *
  * // Shell bell (globalActions slot):
  * <BasaltShell globalActions={[{ key: 'notifications', node: <NotificationBell />, mobile: 'bar' }]} ... />
  */
@@ -31,8 +35,15 @@ export {
   notifyWarning,
   notifyInfo,
   notifyPromise,
+  notifyUndo,
+  notifyUndoable,
 } from './notify'
-export type { NotifyOptions, NotifyPromiseMessages } from './notify'
+export type {
+  NotifyOptions,
+  NotifyPromiseMessages,
+  NotifyUndoOptions,
+  NotifyUndoHandle,
+} from './notify'
 
 // ── defineNotification + defineNotifications + typed emit ─────────────────────
 export {

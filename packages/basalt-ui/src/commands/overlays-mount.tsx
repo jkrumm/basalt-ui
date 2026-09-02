@@ -62,6 +62,7 @@ import type { NotificationsProps } from '@mantine/notifications'
 import type { SpotlightActionData } from '@mantine/spotlight'
 import { runCommand } from './define-commands'
 import type { CommandId } from './define-commands'
+import { useModalsLayer } from './define-overlays'
 import { toSpotlightActions } from './projectors'
 import { useCommandHotkeys } from './useCommandHotkeys'
 import { useNotificationsMountGuard } from '../notifications/mount-guard'
@@ -298,6 +299,12 @@ export function BasaltOverlays({
   projectCommands = true,
   children,
 }: BasaltOverlaysProps) {
+  // Register the modals layer this mount serves, so `overlays.confirm` can reject with a named
+  // error instead of returning a promise nothing will ever settle (nothing subscribes to the modals
+  // event bus when no provider is up). With `modals={false}` nothing is registered here — a
+  // consumer mounting `<ModalsProvider>` themselves calls `registerModalsProvider()` instead.
+  useModalsLayer(enableModals)
+
   // `children` sits OUTSIDE every Suspense boundary, and that is load-bearing (R1): React.lazy
   // suspends on its first render even when the module is already warm, so a boundary wrapping the
   // app defers the app's FIRST COMMIT past a microtask tick. TanStack Router's async loadMatches
