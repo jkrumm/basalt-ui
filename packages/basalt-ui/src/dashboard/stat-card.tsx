@@ -335,6 +335,45 @@ export function StatCard({
       </dl>
     )
 
+  // Wraps `breakdownRows` in `QueryState` when a query is supplied — computed once, consumed by
+  // whichever placement branch below actually renders it (`bleed` inside `.header`, `right` inside
+  // `.metricsRow`), never both.
+  const breakdownContent: ReactNode =
+    query === undefined ? (
+      breakdownRows
+    ) : (
+      <QueryState query={query} tier="section">
+        {breakdownRows}
+      </QueryState>
+    )
+
+  const sparklineNode: ReactNode =
+    sparkline === undefined ? null : (
+      <div
+        ref={slot.ref}
+        className={cx(
+          bleeds ? classes.sparklineBleed : classes.sparklineRight,
+          classNames?.sparkline,
+        )}
+        {...(!bleeds && {
+          // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats every
+          // stylesheet rule, so an inline `flexBasis: 72` also applied below `sm` — where `'right'`
+          // collapses `.metricsRow` to a COLUMN and flex-basis is therefore the main-axis HEIGHT.
+          // The mobile sparkline rendered in a 72px-tall box holding 26px of bars, which is the dead
+          // band under every KPI value on a phone. Handed to CSS as values instead, the media query
+          // can reset the box and the numbers still live in one place.
+          style: {
+            '--basalt-stat-sparkline-w': `${SPARKLINE_RIGHT_WIDTH}px`,
+            '--basalt-stat-sparkline-h': `${SPARKLINE_RIGHT_HEIGHT}px`,
+          } as CSSProperties,
+        })}
+      >
+        {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is a
+            visible 0-width box that then jumps, which is worse than one frame of nothing. */}
+        {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
+      </div>
+    )
+
   return (
     <Card
       className={cx(classNames?.root, className)}
@@ -407,44 +446,24 @@ export function StatCard({
             })}
           />
 
-          {/* INSIDE `.header`, not beside it: with `sparklinePlacement="right"` the body is a flex
-              ROW, so a third child here would sit next to the trend rather than under the number it
-              splits. The header block is the card's text column in both placements — which is also
-              why the `query` branch lands here rather than around the whole card. */}
-          {query === undefined ? (
-            breakdownRows
-          ) : (
-            <QueryState query={query} tier="section">
-              {breakdownRows}
-            </QueryState>
-          )}
+          {/* INSIDE `.header` for `bleed` ONLY (measured defect: `right` used to put the WHOLE
+              header — actions included — beside the sparkline, so `.actions`' own
+              `margin-inline-start: auto` resolved against wherever the sparkline began instead of
+              the card's true right edge). For `right`, breakdown moves to `.metricsRow` below,
+              beside the sparkline instead — `.header` now stays the FULL card width in both
+              placements, so the actions slot always reaches the same edge the phone form already
+              got right. */}
+          {bleeds && breakdownContent}
         </div>
 
-        {sparkline !== undefined && (
-          <div
-            ref={slot.ref}
-            className={cx(
-              bleeds ? classes.sparklineBleed : classes.sparklineRight,
-              classNames?.sparkline,
+        {bleeds
+          ? sparklineNode
+          : (breakdownContent !== null || sparklineNode !== null) && (
+              <div className={classes.metricsRow}>
+                {breakdownContent}
+                {sparklineNode}
+              </div>
             )}
-            {...(!bleeds && {
-              // CUSTOM PROPERTIES, not `flexBasis`/`height` directly. A React inline style beats
-              // every stylesheet rule, so an inline `flexBasis: 72` also applied below `sm` — where
-              // `'right'` collapses to a COLUMN and flex-basis is therefore the main-axis HEIGHT.
-              // The mobile sparkline rendered in a 72px-tall box holding 26px of bars, which is the
-              // dead band under every KPI value on a phone. Handed to CSS as values instead, the
-              // media query can reset the box and the numbers still live in one place.
-              style: {
-                '--basalt-stat-sparkline-w': `${SPARKLINE_RIGHT_WIDTH}px`,
-                '--basalt-stat-sparkline-h': `${SPARKLINE_RIGHT_HEIGHT}px`,
-              } as CSSProperties,
-            })}
-          >
-            {/* A measured slot renders nothing on the first commit (width 0) — an SVG at width 0 is
-                a visible 0-width box that then jumps, which is worse than one frame of nothing. */}
-            {isRender ? measured.width > 0 && sparkline(measured) : sparkline}
-          </div>
-        )}
       </div>
     </Card>
   )

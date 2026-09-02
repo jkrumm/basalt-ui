@@ -20,6 +20,8 @@
  * behavior (e.g. computed styles, focus/hover interaction) rather than the static markup string.
  */
 import { MantineProvider } from '@mantine/core'
+// Aliased: the file already has a local `render(tone?)` helper (below) for the tone-rail tests.
+import { render as renderIntoDom } from '@testing-library/react'
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -152,6 +154,38 @@ describe('sparklinePlacement', () => {
   test('right sits the sparkline beside the hero-value row', () => {
     const markup = renderWithSparkline('right')
     expect(markup).toContain('data-placement="right"')
+  })
+
+  // The bug this pins: `.body[data-placement='right']` used to bottom-align its whole row via
+  // `align-items: flex-end`, which reads correctly only because the header happens to come FIRST in
+  // markup order — swap the two children and the same CSS would anchor the sparkline to the top
+  // instead. The header staying the body's first child, in every placement, is what makes
+  // `align-items: flex-start` (the fix) and the sparkline's own `align-self: flex-end` both resolve
+  // against the right box.
+  describe("the header is always the body element's first child", () => {
+    function renderOrdered(placement: 'bleed' | 'right') {
+      return renderToStaticMarkup(
+        <MantineProvider>
+          <StatCard
+            title="Active Users"
+            value="12,483"
+            sparkline={<span data-testid="spark-marker">spark</span>}
+            sparklinePlacement={placement}
+            classNames={{ header: 'header-marker' }}
+          />
+        </MantineProvider>,
+      )
+    }
+
+    test('bleed', () => {
+      const markup = renderOrdered('bleed')
+      expect(markup.indexOf('header-marker')).toBeLessThan(markup.indexOf('spark-marker'))
+    })
+
+    test('right', () => {
+      const markup = renderOrdered('right')
+      expect(markup.indexOf('header-marker')).toBeLessThan(markup.indexOf('spark-marker'))
+    })
   })
 })
 
@@ -405,6 +439,149 @@ describe('stat-card.module.css — the breakdown block', () => {
     expect(unit).toContain('font-family: var(--basalt-font-mono)')
     expect(unit).toContain('font-size: var(--vx-text-sm)')
     expect(unit).toContain('color: var(--vx-muted)')
+  })
+})
+
+/**
+ * The header-full-width restructure (measured defect: the "···" actions trigger and the "Data"
+ * select sat 74-88px in from the card's right edge on `right`-placement cards, instead of the
+ * correct 13px the phone form already got). `.body[data-placement='right']` used to make the WHOLE
+ * header — actions included — share a row with the sparkline, so `.actions`' own
+ * `margin-inline-start: auto` (`widget-header.module.css`) resolved against wherever the sparkline
+ * began rather than the card. `.header` is no longer placement-scoped: `.body` stays a column in
+ * both placements, so `.header` gets the full card width from the column's own default
+ * `align-items: stretch`. Only `.metricsRow` (breakdown + sparkline) is placement-specific now.
+ */
+describe('stat-card.module.css — the header is never scoped to the right-placement row', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+  const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  test('`.body` carries no placement-specific row rule — it stays a column for both placements', () => {
+    expect(decls).not.toContain(`.body[data-placement='right'] {`)
+  })
+
+  test('`.header` carries no placement-specific rule at all — full width is the default, not a fix', () => {
+    expect(decls).not.toContain(`.body[data-placement='right'] .header`)
+  })
+})
+
+/**
+ * `.metricsRow` — `right` placement's `[breakdown | sparkline]` row, entirely separate from
+ * `.header` now (see the describe block above). `justify-content: flex-end` is what still
+ * right-aligns the sparkline on a card with no breakdown, where it is the row's only child; the
+ * breakdown itself takes the remaining width so the sparkline lands at the row's end either way.
+ */
+describe("stat-card.module.css — .metricsRow (right placement's breakdown + sparkline row)", () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+  const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  function rule(selector: string): string {
+    const start = decls.indexOf(`${selector} {`)
+    expect(start).toBeGreaterThan(-1)
+    return decls.slice(start, decls.indexOf('}', start))
+  }
+
+  test('is a row, right-aligned, so a lone sparkline (no breakdown) still lands at the end', () => {
+    const row = rule('.metricsRow')
+    expect(row).toContain('flex-direction: row')
+    expect(row).toContain('justify-content: flex-end')
+  })
+
+  test("the breakdown takes the remaining width, pushing the sparkline to the row's end", () => {
+    expect(rule('.metricsRow .breakdown')).toContain('flex: 1 1 auto')
+  })
+
+  test("the breakdown drops its own top margin here — `.body`'s gap already separates it from the header", () => {
+    expect(rule('.metricsRow .breakdown')).toContain('margin-top: 0')
+  })
+
+  test("the sparkline still anchors to the row's bottom edge, for a breakdown taller than its 26px", () => {
+    expect(rule('.sparklineRight')).toContain('align-self: flex-end')
+  })
+
+  test('below sm, the row becomes a column and the sparkline resets to stretch — full width, not flush end', () => {
+    const start = decls.indexOf('@media (max-width: 47.99375em) {')
+    expect(start).toBeGreaterThan(-1)
+    const mobileBlock = decls.slice(start)
+    expect(mobileBlock).toContain('.metricsRow {')
+    expect(mobileBlock).toContain('flex-direction: column')
+    expect(mobileBlock).toContain('.metricsRow .sparklineRight {')
+    expect(mobileBlock).toContain('align-self: stretch')
+  })
+})
+
+/**
+ * The breakdown-clipping fix stays true under the restructure too (measured defect: the "Orders"
+ * card's `breakdown` values were cut off at the card's right edge, `stat-card.tsx`'s doc on
+ * `SelectFilter`). `.breakdownLabel`'s own ellipsis is still the fallback for a breakdown row wider
+ * than `.metricsRow` ends up being, and the value stays whole.
+ */
+describe('stat-card.module.css — a breakdown row still ellipsizes its label before it clips', () => {
+  const css = readFileSync(resolve(import.meta.dirname, 'stat-card.module.css'), 'utf8')
+  const decls = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  function rule(selector: string): string {
+    const start = decls.indexOf(`${selector} {`)
+    expect(start).toBeGreaterThan(-1)
+    return decls.slice(start, decls.indexOf('}', start))
+  }
+
+  test('the label has its own ellipsis fallback', () => {
+    const label = rule('.breakdownLabel')
+    expect(label).toContain('overflow: hidden')
+    expect(label).toContain('text-overflow: ellipsis')
+    expect(label).toContain('white-space: nowrap')
+  })
+
+  test('the value never shrinks — it stays whole and right-aligned, the label ellipsizes first', () => {
+    expect(rule('.breakdownValue')).toContain('flex-shrink: 0')
+  })
+})
+
+/**
+ * The DOM-level half of the restructure: for `right` placement, the breakdown moves OUT of
+ * `.header` and into `.metricsRow`, alongside the sparkline — `.header` renders `WidgetHeader`
+ * alone. For `bleed`, nothing changes: the breakdown stays inside `.header`, directly under
+ * `WidgetHeader`'s own metric row, exactly as before this fix.
+ */
+describe('StatCard — breakdown lives in `.metricsRow` for `right`, in `.header` for `bleed`', () => {
+  // Real DOM (`tests/setup/dom.ts`), not `renderToStaticMarkup`: proving one element CONTAINS
+  // another is a `.contains()` question, not something a markup-string index game can answer
+  // reliably — WidgetHeader's own internal divs close before `.header`'s wrapper does, so hunting
+  // for "the next `</div>`" finds an INNER close tag, not the wrapper's own.
+  function renderWithBreakdown(placement: 'bleed' | 'right') {
+    return renderIntoDom(
+      <MantineProvider>
+        <StatCard
+          title="Orders"
+          value="8,749"
+          sparklinePlacement={placement}
+          sparkline={<span>spark</span>}
+          breakdown={[{ label: 'Direct', value: '3,185' }]}
+          classNames={{ header: 'header-marker' }}
+        />
+      </MantineProvider>,
+    )
+  }
+
+  test('right: the breakdown sits OUTSIDE the header, beside the sparkline in `.metricsRow`', () => {
+    const { container } = renderWithBreakdown('right')
+    const header = container.querySelector('.header-marker')
+    const dl = container.querySelector('dl')
+    expect(header).not.toBeNull()
+    expect(dl).not.toBeNull()
+    expect(header?.contains(dl)).toBe(false)
+    // Same row as the sparkline: both are children of `dl`'s own parent.
+    expect(dl?.parentElement?.textContent).toContain('spark')
+  })
+
+  test('bleed: the breakdown sits INSIDE the header, unchanged from before this fix', () => {
+    const { container } = renderWithBreakdown('bleed')
+    const header = container.querySelector('.header-marker')
+    const dl = container.querySelector('dl')
+    expect(header).not.toBeNull()
+    expect(dl).not.toBeNull()
+    expect(header?.contains(dl)).toBe(true)
   })
 })
 
