@@ -136,6 +136,31 @@ What is new, one line each — nothing here renames or removes anything:
   while the first is still mounted; `<BasaltOverlays notifications />` and `<BasaltNotifications />`
   now warn when BOTH are mounted at once (previously prose-only in both cases). Both are
   `console.warn`, dev builds only, no behavior change.
+- **`WidgetGrid` + `WidgetGrid.Item` and `StatGroup`** (`basalt-ui`) — the dashboard column law,
+  owned once. `cols` is the DESKTOP count and the only number you state: `WidgetGrid` resolves
+  `base 1 → sm min(cols, 2) → lg cols`; `StatGroup` (the KPI row) resolves
+  `base 2 → sm min(cols, 3) → lg cols`. `<WidgetGrid.Item span={2}>` widens one cell and is clamped
+  to the live count at each breakpoint. `StatGroup divided` swaps the column gap for a hairline rail. **These two are the only
+  place `lg` exists in the package** — `sm` remains the only breakpoint a consumer writes
+  (`docs/CONTROLS-SPEC.md` §2). Replaces hand-written `SimpleGrid cols={{ base, md }}` /
+  `Grid.Col span={{ base: 12, md: 8 }}`; Mantine's responsive `cols` object is deliberately not a
+  prop.
+- **`StatCard.query`** — `QueryStateLike`, the same structural subset `QueryState` takes. Supplied,
+  the card renders its pending / error / empty branch through `QueryState` at the `'section'` tier
+  INSIDE the body, directly under the header, which stays put. Omitted, nothing changes. `value` is
+  still yours to format — pass a placeholder while the query is pending.
+- **`WidgetHeaderTitleProps` / `WidgetHeaderMetricProps` / `WidgetHeaderDeltaProps`** (`basalt-ui`)
+  — the named `Pick` slices of `WidgetHeaderProps` its composers share, cut along the three rows the
+  header paints. `StatCardProps` and `SettingsSectionProps` now compose them instead of re-declaring
+  props one at a time; **both gained props as a result** — `SettingsSection`/`DangerZone` now accept
+  and FORWARD `icon` and `info`. Nothing was removed from either (pinned by
+  `src/dashboard/stat-card-props.test.ts`). `Section` and `ChartCard` still cut their own subsets.
+- **`tier` replaces `variant` on `QueryState` / `LoadingState` / `ErrorState` / `EmptyState`** —
+  `tier` is the package's word for "how loud is this" (`WidgetHeader`, `CtlSlot`), and `'section'`
+  meant two different things across the two spellings. `variant` is `@deprecated` and still
+  honoured; resolution is `tier ?? variant ?? 'page'`, so nothing moves until you change the prop.
+  `QueryStateTier` is the new type name; `QueryStateVariant` stays exported as an alias. No removal
+  is scheduled — this is a preferred spelling, not a sunset.
 - **`WidgetHeader` and `QueryState` gained slot classes** — `classNames={{ root, title, metric,
 icon }}` on the first, `classNames={{ root }}` on the second (the branch that is live). Additive.
   `Section` now OMITS `classNames` from the `WidgetHeaderProps` it re-publishes, so its slot union
@@ -152,6 +177,85 @@ icon }}` on the first, `classNames={{ root }}` on the second (the branch that is
 - **`BasaltDataTable` warns (dev only) when `stickyHeaderOffset` meets `maxHeight`/`minWidth`** —
   the offset has always been DROPPED there (the sticky `<thead>` anchors to the scroll container's
   own top edge, not the window). The behaviour is unchanged; it just says so now.
+- **`query` on `Section`, `BasaltDataTable` and `BasaltVirtualList`** — law C3's uniform container
+  contract. Pass a `QueryStateLike` (a TanStack `UseQueryResult` is one) and the container resolves
+  the body: pending → its own placeholder (`QueryState`'s section-tier spinner / the table's
+  skeleton rows / the list's skeleton rows), error with no data → an `ErrorState` with the query's
+  own `refetch` behind Retry, anything else → the content, or the empty branch. **The table and the
+  list had NO error branch at all**, so a 500 rendered _No data to display._ / a blank box — the
+  false claim `QueryState` exists to delete. Additive: omit `query` and nothing changes.
+  `Section` also gains `empty?: QueryEmptyCopy` (copy for that branch, `QueryState`'s own type) and
+  `BasaltVirtualList` gains `emptyState?: ReactNode` (which works with or without `query`).
+  `isLoading` still works on both containers and is NOT deprecated; passing it beside `query` lets
+  `query` win and warns once in dev. The chrome stays drawn through every branch — a table keeps its
+  `<thead>`, toolbar and pagination bar, a `Section` keeps its header, chevron and `summary` — which
+  is why this is not `QueryState` wrapped around the container. A refetch that fails over rows
+  already on screen keeps the rows with no banner; compose `QueryState` AROUND the container for
+  that.
+- **`BasaltDataTable.onRowActivate`** — `(row: T) => void`, fired by a click on the row and by Enter
+  on a focused one. The row → detail hook that pairs with `PageAside`. The row keeps its native
+  `<tr>` semantics and takes `tabIndex=0` + `data-activatable` rather than `role="button"` (a role
+  swap costs the column-header announcement that is the reason the data is in a table); the cursor
+  and focus ring come from a module class. A click originating inside the selection checkbox does
+  not activate.
+- **`BasaltDataTable` row selection** — `enableRowSelection` prepends a checkbox column (header =
+  select-all on the page) and arms TanStack's row-selection feature; `rowSelection` /
+  `onRowSelectionChange` are the controlled pair over TanStack's own `RowSelectionState` (now
+  re-exported from `basalt-ui/data` and `basalt-ui/data/table`), and `getRowId` makes a selection
+  survive a re-sort or a refetch (the default id is the row INDEX). `bulkActions` renders a bar
+  above the table while ≥1 row is selected — the count, then the actions, through the SAME
+  `BarAction[]` vocabulary `PageBar` uses, so the ≤3-inline fold and the mobile kebab are basalt's
+  here too. **Its signature is `(rows: T[]) => BarAction[]`, a function and not a bare array**, and
+  deliberately: `BarActionItem.onClick` stays `() => void` (one unforked vocabulary across every
+  home), so the selected rows reach a handler through the closure you write — and an UNCONTROLLED
+  table can offer bulk actions at all, since the selection lives inside it.
+- **`Section.actions` and `BasaltDataTable.actions` accept `BarAction[] | ReactNode`** — law C15.
+  Handed typed data, basalt owns the C6 budget and the C7 overflow fold (≤3 inline, the rest behind
+  `More`, one kebab below `sm`) exactly as `PageBar` does; handed a node, rendering is byte-for-byte
+  what it was. Every entry lands in `secondary` — a `BarAction[]` carries no primary marker, and C6's
+  "exactly one primary" stays the page bar's rule. `Section`'s ≤3 dev warning now counts an array
+  EXACTLY (`Children.count` read one as a single child). Both slots were `ReactNode` before, so no
+  call site moves.
+- **`overlays.confirm` / `overlays.confirmDelete`** (`basalt-ui/commands`) — the two-button dialog
+  every consumer was registering as a `defineOverlays` entry with its own button pair, now
+  registry-free: `confirm({ title, body?, confirmLabel?, cancelLabel?, danger?, onConfirm,
+onCancel? })` resolves `true`/`false` and fires exactly one callback, whichever exit the user takes
+  (cancel, escape, click-outside and the close button all count as `false`). `danger` paints the
+  confirm button in the theme's derived destructive family. `confirmDelete({ subject, count?,
+onConfirm })` is the counted one-liner over it ("Delete 3 items?"). Both REJECT with a named
+  `[basalt] overlays.confirm: …` error when the `@mantine/modals` peer is absent, or when no
+  `ModalsProvider` is live — previously either returned a promise nothing would ever settle, because
+  the imperative API is a window event bus with nothing subscribed. `@mantine/modals` stays lazily
+  imported, so the peer is still optional. Additive: `defineOverlays` and `overlays.open` are
+  unchanged.
+- **`registerModalsProvider()`** (`basalt-ui/commands`) — how a consumer who mounts
+  `<ModalsProvider>` THEMSELVES (with `<BasaltOverlays modals={false}>`, or with no `BasaltOverlays`
+  at all) tells `overlays.confirm` the layer is up. `<BasaltOverlays>` registers its own provider, so
+  the default path needs nothing. Call it from an effect and return its result as the cleanup:
+
+  ```tsx
+  useEffect(() => registerModalsProvider(), [])
+  ```
+
+  Availability is a COUNTER of live providers, not a flag, so two overlapping mounts (a route swap
+  mounting the next shell before unmounting the last) never report "no layer" while one is serving.
+  There is no way to detect the provider from outside React — its context is only readable through
+  `useModals()`, and `confirm` is an imperative call with no component to read it from — so the
+  registration is explicit and unregistered is indistinguishable from absent.
+
+- **`notifyUndo` / `notifyUndoable`** (`basalt-ui/notifications`) — an undo window on top of the
+  existing toast machinery: `notifyUndo({ message, onUndo, window = 6000, onExpire })` shows a toast
+  carrying an `Undo` button and returns `{ id, dismiss() }`. The affordance and the grace period are
+  ONE number (`autoClose === window`), and exactly one of `onUndo` / `onExpire` runs, exactly once —
+  `onExpire` is where the optimistic mutation COMMITS. `dismiss()` settles the window immediately
+  (running `onExpire`), so a dismissed toast can never strand an uncommitted change.
+  `notifyUndoable(mutate, undo, opts)` is the same thing spelled for the optimistic shape. No new
+  store — the toast is recorded to the notification history like any other.
+- **`NotifyOptions.historyMessage`** — what the persisted history records when `message` is a
+  composed ReactNode the store cannot stringify (`String(<Group/>)` is `[object Object]`). Defaults
+  to today's `String(message)`, so nothing moves unless you pass it. `notifyUndo` uses it.
+- **`missingLayer`** (`basalt-ui`) — a message builder beside `requiredProp`/`oneOf`/`duplicateMount`
+  for "this call needs a layer that is not mounted or not installed". Additive.
 
 ### `BasaltDataTable` — the root is a `<div>`, not a Fragment
 
