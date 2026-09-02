@@ -166,12 +166,6 @@ export type BasaltConfig = {
    */
   rawMotionValue?: boolean
   /**
-   * Flag a hand-rolled `<ChartLegend items={[...]}>` array literal — legend entries must be
-   * derived (e.g. `items={deriveLegend(series)}`), never authored inline. Default: `true` (ON).
-   * Set `false` to disable the `unframed-chart` check.
-   */
-  unframedChart?: boolean
-  /**
    * Flag a chart entry-point JSX tag (`MultiLine`/`Bars`/`Donut`/`DualPanel`/`Heatmap`/`ZonedLine`/
    * `StackedArea`/`LineSparkline`/`BarSparkline`) missing an `ariaLabel` prop. Default: `true`
    * (ON). Set `false` to disable the `chart-missing-aria-label` check.
@@ -812,7 +806,6 @@ export function checkTheme(
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
     rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
@@ -3182,12 +3175,12 @@ export function reconcileCoverageBlocks(
  * spec argued, so they live beside the gate that reads them rather than in prose.
  */
 const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
-  'agent/rules/basalt-tokens.md': 160,
-  'agent/rules/basalt-mantine.md': 180,
-  'agent/rules/basalt-charts.md': 140,
-  'agent/rules/basalt-state.md': 160,
-  'agent/rules/basalt-controls.md': 185,
-  'agent/rules/basalt-batteries.md': 220,
+  'agent/rules/basalt-tokens.md': 140,
+  'agent/rules/basalt-mantine.md': 125,
+  'agent/rules/basalt-charts.md': 115,
+  'agent/rules/basalt-state.md': 125,
+  'agent/rules/basalt-controls.md': 155,
+  'agent/rules/basalt-batteries.md': 100,
   'agent/skills/basalt-app/SKILL.md': 100,
   'agent/skills/basalt-design/SKILL.md': 100,
   'agent/skills/basalt-charts/SKILL.md': 100,
@@ -3196,7 +3189,7 @@ const AGENT_LINE_BUDGETS: Readonly<Record<string, number>> = {
 }
 
 /** The whole-layer bar — a per-file budget alone can be satisfied by adding a seventh rule file. */
-const AGENT_RULE_TOTAL_BUDGET = 1050
+const AGENT_RULE_TOTAL_BUDGET = 750
 
 /**
  * Assert the 11 invariants against the live SURFACES + GUARD_RULES + the shipped agent layer, and
@@ -4264,130 +4257,6 @@ export function doctor(invocationCwd: string = process.cwd(), flags: string[] = 
   return 0
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// info — SURFACES-derived surface map
-// ──────────────────────────────────────────────────────────────────────────────
-
-/** One row in the `basalt info` output — one per published JS subpath export. */
-export type InfoSubpath = {
-  path: string
-  description: string
-  layer: string
-  rule: string | null
-  skills: readonly string[]
-  optionalPeers: string[]
-}
-
-/** The stable JSON shape for `basalt info --json`. */
-export type InfoOutput = {
-  name: string
-  version: string
-  subpaths: InfoSubpath[]
-}
-
-/**
- * Print a human-readable (or JSON) map of the published basalt-ui surface derived from
- * SURFACES + package.json. Every row is live-derived — the subpath list cannot drift.
- *
- * `basalt info`         → human-readable table
- * `basalt info --json`  → stable JSON (InfoOutput shape)
- */
-export function info(flags: string[]): number {
-  const pkgRoot = packageRoot()
-
-  // Read package.json for name, version, peerDependencies, peerDependenciesMeta, and exports.
-  let pkgName = 'basalt-ui'
-  let pkgVersion = '0.0.0'
-  let peerDeps: Record<string, string> = {}
-  let peerMeta: Record<string, { optional?: boolean }> = {}
-  let pkgExports: Record<string, unknown> = {}
-  try {
-    const pkg = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8')) as {
-      name?: string
-      version?: string
-      peerDependencies?: Record<string, string>
-      peerDependenciesMeta?: Record<string, { optional?: boolean }>
-      exports?: Record<string, unknown>
-    }
-    pkgName = pkg.name ?? pkgName
-    pkgVersion = pkg.version ?? pkgVersion
-    peerDeps = pkg.peerDependencies ?? {}
-    peerMeta = pkg.peerDependenciesMeta ?? {}
-    pkgExports = pkg.exports ?? {}
-  } catch {
-    // proceed with defaults
-  }
-
-  // Derive optional peer set: all peers marked optional in peerDependenciesMeta.
-  const optionalPeerSet = new Set(
-    Object.entries(peerMeta)
-      .filter(([, m]) => m.optional === true)
-      .map(([name]) => name),
-  )
-
-  // Build subpath rows from SURFACES — only real JS subpath keys (non-#, non-'./configs/*').
-  // Restrict to keys that also appear in package.json exports so we match what is published.
-  const publishedExportKeys = new Set(Object.keys(pkgExports))
-
-  const subpaths: InfoSubpath[] = []
-  for (const [key, spec] of Object.entries(SURFACES) as [string, SurfaceSpec][]) {
-    if (key.startsWith('#')) continue
-    if (!publishedExportKeys.has(key)) continue
-
-    const docSpec = spec.kind === 'doctrine' ? spec : null
-
-    // Resolve optional peers from spec.optionalPeers (SURFACES SSOT), with versions from package.json.
-    const specPeers: readonly string[] =
-      docSpec !== null && 'optionalPeers' in docSpec && Array.isArray(docSpec.optionalPeers)
-        ? docSpec.optionalPeers
-        : []
-    const optionalPeers = specPeers
-      .filter((p) => optionalPeerSet.has(p) && p in peerDeps)
-      .map((p) => `${p}@${peerDeps[p]}`)
-
-    subpaths.push({
-      path: `basalt-ui${key === '.' ? '' : key.slice(1)}`,
-      description: spec.description ?? `basalt-ui${key === '.' ? '' : key} subpath`,
-      layer: spec.layer,
-      rule: docSpec?.rule ?? null,
-      skills: docSpec?.skill ?? [],
-      optionalPeers,
-    })
-  }
-
-  const output: InfoOutput = { name: pkgName, version: pkgVersion, subpaths }
-
-  if (flags.includes('--json')) {
-    console.log(JSON.stringify(output, null, 2))
-    return 0
-  }
-
-  // Human-readable output
-  console.log(`\nbasalt-ui v${pkgVersion} — published surface\n`)
-  const COL = { path: 32, layer: 18, rule: 18, skills: 36 }
-  const header = [
-    'SUBPATH'.padEnd(COL.path),
-    'LAYER'.padEnd(COL.layer),
-    'RULE'.padEnd(COL.rule),
-    'SKILLS'.padEnd(COL.skills),
-    'OPTIONAL PEERS',
-  ].join('  ')
-  console.log(header)
-  console.log('-'.repeat(header.length))
-  for (const row of output.subpaths) {
-    const line = [
-      row.path.padEnd(COL.path),
-      row.layer.padEnd(COL.layer),
-      (row.rule ?? '—').padEnd(COL.rule),
-      (row.skills.join(', ') || '—').padEnd(COL.skills),
-      row.optionalPeers.join(', ') || '—',
-    ].join('  ')
-    console.log(line)
-  }
-  console.log('')
-  return 0
-}
-
 /** The six filenames `basaltAppPlugin` references when `icons` is left at its default. */
 const DEFAULT_APP_ICON_FILES = [
   'favicon.ico',
@@ -4917,7 +4786,6 @@ export async function guardHook(cwd: string = process.cwd()): Promise<number> {
     inlineDisplay: cfg.inlineDisplay ?? DEFAULT_GUARD_CONFIG.inlineDisplay,
     rawVisxAxis: cfg.rawVisxAxis ?? DEFAULT_GUARD_CONFIG.rawVisxAxis,
     rawMotionValue: cfg.rawMotionValue ?? DEFAULT_GUARD_CONFIG.rawMotionValue,
-    unframedChart: cfg.unframedChart ?? DEFAULT_GUARD_CONFIG.unframedChart,
     chartMissingAriaLabel: cfg.chartMissingAriaLabel ?? DEFAULT_GUARD_CONFIG.chartMissingAriaLabel,
     rawFormControl: cfg.rawFormControl ?? DEFAULT_GUARD_CONFIG.rawFormControl,
     sub16InputFont: cfg.sub16InputFont ?? DEFAULT_GUARD_CONFIG.sub16InputFont,
@@ -4977,7 +4845,6 @@ const COMMAND_FLAGS: Record<string, readonly string[]> = {
   sync: ['--force', '--check', '--tokens-only', '--framework'],
   'check-theme': ['--audit-allows', '--tokens-only', '--framework'],
   'check-coverage': ['--write', '--check'],
-  info: ['--json'],
   doctor: ['--tokens-only', '--framework'],
   'guard-hook': [],
   'tokens:css': [
@@ -5028,7 +4895,6 @@ const USAGE =
   'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
   '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] | check-coverage [--write|--check] |\n' +
-  '                  info [--json] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
   '  --audit-allows reports instead of scanning: every `theme-allow` annotation and every\n' +
@@ -5119,8 +4985,6 @@ export function run(argv: string[], cwd: string = process.cwd()): number | Promi
       return checkTheme(cwd, flags)
     case 'check-coverage':
       return checkCoverage(flags)
-    case 'info':
-      return info(flags)
     case 'doctor':
       return doctor(cwd, flags)
     case 'guard-hook':

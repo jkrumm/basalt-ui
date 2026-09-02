@@ -1,7 +1,7 @@
 /**
  * ./guard — headless policy core. Mantine-free, dependency-free.
  *
- * GUARD_RULES: the closed registry of all 27 violation kinds.
+ * GUARD_RULES: the closed registry of all 26 violation kinds.
  * checkSource:  pure (text, relPath, cfg) → Finding[]. No FS, no walk, no console.
  */
 import type { Finding, GuardConfig, GuardKind, GuardSeverity } from './types'
@@ -409,31 +409,23 @@ const MOTION_TRANSITION_NUMERIC =
   /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
 const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
 
-// A hand-rolled <ChartLegend items={[ …array literal… ]}> — legend entries authored inline
-// instead of derived (`items={deriveLegend(series)}`, a call expression, which must NOT match).
-// Scoped to the JSX tag itself ([^>]* is bounded by the tag's own closing `>`, which also makes
-// this a full-text scan rather than the per-line style every other kind uses — a multi-line-
-// formatted <ChartLegend ...\n  items={[...\n/> still resolves to one match). Bounded scans over
-// text this small are not a performance concern.
-const RAW_CHART_LEGEND_ARRAY = /<ChartLegend\b[^>]*?\bitems\s*=\s*\{\s*\[/g
-
 // A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — full opening/self-closing tag,
 // scanned for a missing `ariaLabel` prop (an accessible text alternative for the SVG graphic).
-// Bounded, full-text scan (like RAW_CHART_LEGEND_ARRAY above) so a multi-line-formatted tag still
-// resolves to one match. The scan must survive two `>` decoys inside an opening tag: an explicit
-// JSX generic argument (`<MultiLine<Point>`) — consumed by the optional `<[^<>]*>` group — and
-// arrow functions in prop expressions (`getX={(d) => d.date}`) — consumed atomically by the `=>`
-// alternative so their `>` never terminates the tag early. A bare `>` comparison inside a prop
-// expression still ends the match (accepted limitation of the bounded scan).
+// Bounded, full-text scan so a multi-line-formatted tag still resolves to one match. The scan must
+// survive two `>` decoys inside an opening tag: an explicit JSX generic argument
+// (`<MultiLine<Point>`) — consumed by the optional `<[^<>]*>` group — and arrow functions in prop
+// expressions (`getX={(d) => d.date}`) — consumed atomically by the `=>` alternative so their `>`
+// never terminates the tag early. A bare `>` comparison inside a prop expression still ends the
+// match (accepted limitation of the bounded scan).
 const CHART_ENTRY_POINT_TAG =
   /<(MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
 
-// ── Tag provenance, shared by the two chart tag rules ────────────────────────────────────────────
+// ── Tag provenance, shared by chart-missing-aria-label ────────────────────────────────────────────
 //
-// Both `chart-missing-aria-label` and `unframed-chart` key on a JSX tag NAME, which is the whole of
-// their signal — so a consumer's OWN component that merely shares a shipped kind's name collected
-// the finding too. Reported by a consumer on 1.23.0: a hand-composed local `<MirroredBars>` was
+// `chart-missing-aria-label` keys on a JSX tag NAME, which is the whole of its signal — so a
+// consumer's OWN component that merely shares a shipped kind's name collected the finding too.
+// Reported by a consumer on 1.23.0: a hand-composed local `<MirroredBars>` was
 // told to pass an `ariaLabel` prop it does not accept, by a rule that presents as a correctness
 // finding rather than as a naming one. `shadow-basalt-export` / `ai-sdk-major` scope through
 // `isBasaltScopedFile` (package-level); the analogous file-level signal here is where the name in
@@ -632,7 +624,6 @@ export const DEFAULT_GUARD_CONFIG: GuardConfig = {
   inlineDisplay: true,
   rawVisxAxis: true,
   rawMotionValue: true,
-  unframedChart: true,
   chartMissingAriaLabel: true,
   rawFormControl: true,
   sub16InputFont: true,
@@ -899,11 +890,17 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'visx-boundary',
   'visx-tooltip',
   'token-layer-boundary',
+  'no-import-meta-env',
   // These three honour `basalt-agent-allow`, never `theme-allow` — but they are still REAL ids, so
   // a `theme-allow ai-sdk-major` must parse as a (useless) scoped annotation rather than as prose.
   'agent-resume-guard',
   'agent-no-raw-usechat',
   'ai-sdk-major',
+  // Retired guard kinds — `unframed-chart`'s only case (`<ChartLegend items={[...]}>`) is fully
+  // subsumed by `basalt/chart-legend-literal`. Kept here (mirrored by the plugin's own
+  // `RETIRED_RULE_IDS`) so an existing `theme-allow unframed-chart` reads as a dead waiver via
+  // `--audit-allows`, never as an unknown-id typo.
+  'unframed-chart',
 ])
 
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */
@@ -1518,7 +1515,6 @@ export const TOKENS_ONLY_DISABLED_KINDS: ReadonlySet<GuardKind> = new Set([
   'inline-display',
   'raw-visx-axis',
   'raw-motion-value',
-  'unframed-chart',
   'chart-missing-aria-label',
   'raw-form-control',
   'sub-16-input-font',
@@ -1747,7 +1743,7 @@ type GuardRule = {
 }
 
 /**
- * The closed registry of all 27 guard kinds. The triad test asserts
+ * The closed registry of all 26 guard kinds. The triad test asserts
  * `surface.guardKinds ⊆ keyof GUARD_RULES` at runtime.
  *
  * raw-surface, raw-html-layout, and sub-16-input-font are handled inline in checkSource
@@ -1899,15 +1895,6 @@ export const GUARD_RULES = {
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
       'Route animation timing through MOTION_DURATION / MOTION_SPRING / MOTION_EASE_STANDARD (basalt-ui motion tokens) instead of a hardcoded duration/spring/ease.',
-  },
-  'unframed-chart': {
-    kind: 'unframed-chart',
-    pattern: RAW_CHART_LEGEND_ARRAY, // handled inline (full-text tag-scoped scan); entry keeps registry complete
-    enabled: (cfg: GuardConfig) => cfg.unframedChart,
-    // JSX-tag-shaped (`<ChartLegend items={[…]}>`) — never appears in CSS text.
-    appliesTo: (relPath) => !relPath.endsWith('.css'),
-    message:
-      'Hand-rolled ChartLegend built from an inline array literal — pass a derived legend (deriveLegend(series)), or compose ChartFrame, which derives it for you.',
   },
   'chart-missing-aria-label': {
     kind: 'chart-missing-aria-label',
@@ -2342,32 +2329,16 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     }
   }
 
-  // Both chart tag rules below gate on tag PROVENANCE (see the block above LOCAL_COMPONENT_DEF).
-  // Computed once, and only if one of the two actually runs.
-  const unframedChartRuns =
-    GUARD_RULES['unframed-chart'].enabled!(cfg) && ruleApplies('unframed-chart', relPath)
+  // The aria-label tag rule below gates on tag PROVENANCE (see the block above LOCAL_COMPONENT_DEF).
+  // Computed once, and only if the rule actually runs.
   const ariaLabelRuns =
     GUARD_RULES['chart-missing-aria-label'].enabled!(cfg) &&
     ruleApplies('chart-missing-aria-label', relPath)
-  const localNames =
-    unframedChartRuns || ariaLabelRuns ? localComponentNames(codeText) : new Set<string>()
-  const basaltNames =
-    unframedChartRuns || ariaLabelRuns ? basaltImportedNames(codeText) : new Set<string>()
+  const localNames = ariaLabelRuns ? localComponentNames(codeText) : new Set<string>()
+  const basaltNames = ariaLabelRuns ? basaltImportedNames(codeText) : new Set<string>()
   const isShippedTag = (tag: string): boolean => basaltNames.has(tag) || !localNames.has(tag)
 
-  // unframed-chart — full-text tag-scoped scan (not per-line, see RAW_CHART_LEGEND_ARRAY comment).
-  // Scans `codeText` (comment-stripped) so a legend example inside a comment can't match; reports
-  // at the line of the `items={[` token itself. Skipped wholesale when `ChartLegend` is this file's
-  // OWN component: a consumer's legend taking an `items` array is not the shipped one that derives
-  // its entries, and the remedy ("pass deriveLegend(series)") is unreachable there.
-  if (unframedChartRuns && isShippedTag('ChartLegend')) {
-    for (const m of codeText.matchAll(RAW_CHART_LEGEND_ARRAY)) {
-      const lineNo = codeText.slice(0, (m.index ?? 0) + m[0].length).split('\n').length
-      push('unframed-chart', lineNo, 'items={[')
-    }
-  }
-
-  // chart-missing-aria-label — full-text tag-scoped scan (same shape as unframed-chart above).
+  // chart-missing-aria-label — full-text tag-scoped scan.
   // A tag is a violation only when its own (possibly multi-line) prop list has no `ariaLabel=`.
   // Reports at the tag's OPENING line, like card-with-border below and unlike the end-of-match
   // arithmetic this used to do: on a multi-line-formatted chart the end lands on the closing `/>`,
