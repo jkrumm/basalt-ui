@@ -113,26 +113,31 @@ export function useNav<
       // chain: the widened `AnyNavLink['search']` is `unknown`, which `LinkComponentProps` rejects.
       // The consumer gets zero casts, which is the point.
       //
-      // `activeOptions: { exact: true }` is what makes `resolveState` above the ONLY authority on
-      // active, and it is not a preference — a `Link` computes its own `isActive` (default
-      // `activeOptions.exact: false`, i.e. prefix) and spreads `{ 'data-status': 'active',
-      // 'aria-current': 'page' }` LAST, after `activeProps` and after every caller prop
-      // (`@tanstack/react-router/dist/esm/link.js` — `...isActive && STATIC_ACTIVE_PROPS` is the
-      // final entry of the returned object). So `aria-current` cannot be overridden from outside;
-      // the only lever is `isActive` itself. Left at its default, the router re-derived the exact
-      // fuzzy match this resolver exists to replace, and at `/dashboard/sessions` BOTH the parent
-      // and the child anchor carried `aria-current="page"` even with basalt's own model marking one
-      // of them an ancestor — verified in Chrome, and the reason the first attempt at this fix
-      // measured as no fix at all.
+      // `activeOptions: { exact: true, includeSearch: true }` is what makes `resolveState` above
+      // the ONLY authority on active, and it is not a preference — a `Link` computes its own
+      // `isActive` (default `activeOptions.exact: false`, i.e. prefix) and spreads
+      // `{ 'data-status': 'active', 'aria-current': 'page' }` LAST, after `activeProps` and after
+      // every caller prop (`@tanstack/react-router/dist/esm/link.js` — `...isActive &&
+      // STATIC_ACTIVE_PROPS` is the final entry of the returned object). So `aria-current` cannot
+      // be overridden from outside; the only lever is `isActive` itself. Left at its default, the
+      // router re-derived the exact fuzzy match this resolver exists to replace, and at
+      // `/dashboard/sessions` BOTH the parent and the child anchor carried `aria-current="page"`
+      // even with basalt's own model marking one of them an ancestor — verified in Chrome, and the
+      // reason the first attempt at this fix measured as no fix at all. `includeSearch` already
+      // defaults to `true` upstream; naming it here is belt-and-braces so a future default change
+      // cannot silently reopen the gap.
       //
       // Exact here does NOT narrow basalt's own law. `resolveState` still matches fuzzily and still
       // lights an item whose exact route is never visited; that item is simply named by the
       // `aria-current` `app-sidebar.tsx` stamps itself, which survives because the router's spread
-      // is conditional on ITS `isActive` being true.
+      // is conditional on ITS `isActive` being true. The CSS side no longer treats `aria-current`
+      // as a style hook either (`theme/nav-link.module.css`, `shell/app-sidebar.module.css`), so
+      // `use-nav`'s single `data-active` winner is the one visual authority even if the router's
+      // own `isActive` ever disagreed.
       const Anchor: NavAnchor = (props) =>
         createElement(Link as ElementType, {
           ...item.link,
-          activeOptions: { exact: true },
+          activeOptions: { exact: true, includeSearch: true },
           ...props,
         })
 

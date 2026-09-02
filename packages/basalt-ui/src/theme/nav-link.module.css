@@ -1,20 +1,32 @@
 /*
- * Active nav row = heavier weight over the ink tint `--nl-bg` carries (set in theme/index.ts,
- * applied unconditionally by Mantine's own `[data-active]` CSS). NO depth: an active row is a
- * SELECTED ROW, not a raised control — it deliberately reads as a stronger version of the hover
- * tint rather than as a button, so the row never competes with the real filled controls around it.
+ * Active nav row = an ACCENT-tinted fill plus heavier weight, so the row reads unambiguously as
+ * SELECTED rather than merely hovered (docs/DESIGN-SPEC.md §5). The fill was previously the ink
+ * tint `--nl-bg` carries (theme/index.ts) at 9% — visually indistinguishable from the 6% ink hover
+ * tint on a dark surface, which is what let a hovered row read as a second active item. NO depth:
+ * an active row is a SELECTED ROW, not a raised control.
+ *
+ * `[data-active]` is the ONLY style hook here — `use-nav.ts` already resolves exactly one winner
+ * per route and stamps `data-active` on it, so keying these selectors on `aria-current="page"` too
+ * only risked a second, looser router-native match repainting a row basalt's own model disagreed
+ * with. `aria-current` stays on the DOM (React Router/TanStack Router set it) for a11y; it is just
+ * not a CSS hook.
  *
  * Applied at the THEME level via `classNames` so it reaches EVERY NavLink render path — including a
- * consumer's router `<Link>` mounted through `SidebarItem.Anchor`, which a shell-scoped CSS
- * module never
- * sees. Mantine's `styles` prop only takes flat inline properties (a nested `&[data-active]` there
- * throws a React warning), so the state selectors live here. React Router's NavLink marks the
- * active item via `aria-current` rather than the `active` prop's `data-active`, so both states are
- * matched.
+ * consumer's router `<Link>` mounted through `SidebarItem.Anchor`, which a shell-scoped CSS module
+ * never sees. Mantine's `styles` prop only takes flat inline properties (a nested `&[data-active]`
+ * there throws a React warning), so the state selectors live here.
  */
-.root[data-active],
-.root[aria-current='page'] {
+.root[data-active] {
+  background-color: color-mix(in srgb, var(--vx-accent) 12%, transparent);
   font-weight: 600;
+}
+
+/* Active + hover — one step stronger than the resting active fill, so a pointer over the active row
+ * still reads as feedback rather than as a flat, unresponsive selection. */
+@media (hover: hover) {
+  .root[data-active]:hover {
+    background-color: color-mix(in srgb, var(--vx-accent) 16%, transparent);
+  }
 }
 
 /*
@@ -22,39 +34,38 @@
  * — the label stays ink (via `--nl-color`). Targets Mantine's own `data-position` attribute rather
  * than a custom class, so the rightSection (child-expand chevron) is untouched.
  */
-.root[data-active] [data-position='left'],
-.root[aria-current='page'] [data-position='left'] {
+.root[data-active] [data-position='left'] {
   color: var(--vx-accent);
 }
 
 /*
  * Inactive rows: muted text, faint icon (docs/DESIGN-SPEC.md §5 Sidebar — "inactive = muted text,
  * faint icon"). Mantine's own NavLink.css never sets a color on the base rule — it only colors the
- * label under `[data-active]`/`[aria-current='page']` — so an inactive row otherwise falls through
- * to the ambient `--mantine-color-text` (ink), same reasoning as the active-icon rule above.
+ * label under `[data-active]` — so an inactive row otherwise falls through to the ambient
+ * `--mantine-color-text` (ink), same reasoning as the active-icon rule above.
  */
-.root:not([data-active]):not([aria-current='page']) {
+.root:not([data-active]) {
   color: var(--vx-muted);
 }
 
-.root:not([data-active]):not([aria-current='page']) [data-position='left'] {
+.root:not([data-active]) [data-position='left'] {
   color: var(--vx-faint);
 }
 
 /*
- * Inactive hover — the ink-6% ghost tint + ink text/icon (docs/DESIGN-SPEC.md §5). Lives here (not
- * only in the shell module) so a consumer's `SidebarItem.Anchor` path gets the same hover;
- * Mantine's own
- * hover fill uses `:where(scheme) .m_*:hover` (gray-0/dark-6), which this outranks on specificity.
- * Active rows keep their panel fill + `--nl-hover` untouched.
+ * Inactive hover — the ink-5% ghost tint + ink text/icon (docs/DESIGN-SPEC.md §5; dropped from 6%
+ * so it reads clearly below the active row's 12% accent fill instead of nearly matching its old 9%
+ * ink fill). Lives here (not only in the shell module) so a consumer's `SidebarItem.Anchor` path
+ * gets the same hover; Mantine's own hover fill uses `:where(scheme) .m_*:hover` (gray-0/dark-6),
+ * which this outranks on specificity. Active rows keep their accent fill above, untouched here.
  */
 @media (hover: hover) {
-  .root:not([data-active]):not([aria-current='page']):hover {
-    background-color: color-mix(in srgb, var(--vx-ink) 6%, transparent);
+  .root:not([data-active]):hover {
+    background-color: color-mix(in srgb, var(--vx-ink) 5%, transparent);
     color: var(--vx-ink);
   }
 
-  .root:not([data-active]):not([aria-current='page']):hover [data-position='left'] {
+  .root:not([data-active]):hover [data-position='left'] {
     color: var(--vx-ink);
   }
 }
