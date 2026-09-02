@@ -22,7 +22,11 @@ live in basalt-tokens.md — not restated here.
 
 Mount `BasaltProvider` at the top of the tree, **above the router** (Mantine's context must exist
 before any route renders), with `theme={createBasaltTheme(overrides)}`. Then the data layer, then
-`RouterProvider`. Don't hand-build `createTheme` and don't add a second `cssVariablesResolver`.
+`RouterProvider`. Don't hand-build `createTheme` and don't add a second `cssVariablesResolver`. The
+canonical composition — `BasaltProvider > QueryClientProvider > BasaltOverlays > RouterProvider`,
+and why that order is load-bearing — is the README's "Composition order" section; don't restate the
+tree here. No `'use client'` directive ships in the package; a Next.js App Router consumer wraps
+the composition in its own client file.
 
 **Overlays mount exactly once, through `BasaltOverlays`** (`basalt-ui/commands`), inside
 `BasaltProvider`: it composes `ModalsProvider`, Spotlight (against basalt's own store), the command

@@ -10,7 +10,7 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major, basalt/query-dual-import, basalt/query-fn-unwrap -->
+<!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major, basalt/forms-field-key, basalt/query-dual-import, basalt/query-fn-unwrap -->
 <!-- not guarded: — -->
 <!-- /basalt:coverage -->
 
@@ -60,18 +60,26 @@ Check these three first whenever Eden types regress.
 - **`useBasaltForm` is the entry**: `mode: 'uncontrolled'` by default (no per-keystroke re-render)
   and `schemaResolver(schema, { sync: true })` when a `schema` is passed. Type a schema param as
   `StandardSchemaV1` from `basalt-ui`, never `ZodSchema` — Valibot, Zod 4, ArkType and Effect all
-  satisfy it structurally.
-- **`validate` is deliberately omitted** from its options — a cross-field or async rule that the
-  schema cannot express drops to a raw `useForm`.
-- **`inputProps(form, path)` is the one spread** every uncontrolled Mantine field needs (it bundles
-  `getInputProps` + `key`); writing the two by hand is how one gets forgotten. `field` is a
-  `@deprecated` alias — it collides with the `field` store builder in `basalt-ui/state`.
+  satisfy it. `validate` stays off its options: a cross-field rule drops to a raw `useForm`, an
+  async one to `useFormSubmit`'s `validateAsync`.
+- **A field is TWO calls on one line**, never one object — a spread `key` is a React 19 warning:
+  `<TextInput key={fieldKey(form, 'x')} {...inputProps(form, 'x')} />`. Dropping it is worse: the
+  field keeps its old text through `form.reset()` and nothing type-checks differently, so
+  **`basalt/forms-field-key`** guards it and autofixes it in. `field` is `@deprecated` (it
+  collides with `basalt-ui/state`'s) and NOT an alias — it still bundles `key`.
+- **`FormRow` is law C1's form row** (label left, control right, label above below `sm`) inside a
+  **`FormSection`**, clusters in a **`FormGroup`**, **`FormActions`** at the end. `SettingsRow` is
+  the settings-page variant — pick by page, never fork a third.
+- **`useFormSubmit` owns the submit**, not a hand-rolled `try`/`catch`: it decodes the throw into
+  the form-level `submitError`, routes a `{ fieldErrors }` envelope back onto the fields as inline
+  errors and focuses the first. Hand its `isSubmitting` to **`FormStateProvider`** and the layout
+  disables itself — never thread `disabled` per input; a custom control reads **`useFormState`**.
+- **`useFieldArray` is the list field**; `key(index)` is positional — reorder by an item id.
 - **`FormErrorSummary` goes at the TOP of the form** so assistive tech lands on it after a failed
   submit. It renders `null` on a clean form, so include it unconditionally.
-- **`useFormDraft` persists through `createPersistedState`** — wire `saveDraft` into
-  `onValuesChange` for autosave, call `clearDraft()` in the success path, keep `key` stable across
-  renders (changing it recreates the store and loses the draft) and bump `version` on a shape change.
-- Errors are inline field errors; a toast is for submit-level failure only.
+- **`useFormDraft` persists through `createPersistedState`** — `autosave: true` owns its own
+  subscription, `clearDraft()` on success, keep `key` stable (changing it loses the draft), bump
+  `version` on a shape change.
 
 ## `./notifications` — `@mantine/notifications`
 
