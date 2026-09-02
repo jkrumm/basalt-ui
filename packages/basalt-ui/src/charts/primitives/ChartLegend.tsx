@@ -1,4 +1,5 @@
 import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from 'react'
+import { useState } from 'react'
 import type { BasaltProps } from '../../common/props'
 import { alpha, VX } from '../../tokens'
 import type { SeriesRole, LegendPlacement } from '../series'
@@ -265,6 +266,12 @@ function LegendChild({ item }: { item: LegendEntry }) {
  * The label font and the DEFAULT entry cap both track the ambient chart tier (§8): inside a
  * phone-width `ChartFrame` the legend drops one type step and rolls up past two entries. An
  * explicit `maxRows` always wins. Omit it for a static legend; a hidden entry is announced via `aria-pressed`.
+ *
+ * **The rollup is a disclosure, not a label.** A cap of two leaves six of eight plotted colours
+ * unnamed, and a `+6 more` that is a `<span>` gives a phone reader no way to learn them — a
+ * categorical encoding the chart draws and refuses to decode. The chip is a `<button>` carrying
+ * `aria-expanded`: expanded, every entry renders, the legend band grows, and `ChartFrame`'s
+ * observer re-flows the frame around it (the plot keeps `VX.minPlotHeight`).
  */
 export function ChartLegend({
   items,
@@ -292,6 +299,7 @@ export function ChartLegend({
   maxRows?: number
 }) {
   const tier = useChartTierMetrics()
+  const [expanded, setExpanded] = useState(false)
   const handleEnter = (e: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => {
     const key = e.currentTarget.dataset['legendKey']
     if (key !== undefined) onHighlight?.(key)
@@ -306,8 +314,8 @@ export function ChartLegend({
   const vertical = placement === 'left' || placement === 'right'
   const { entries, dividerAfter } = orderEntries(items, groups)
   const cap = maxRows ?? tier.legendMaxRows
-  const visible = cap !== undefined && cap < entries.length ? entries.slice(0, cap) : entries
-  const hiddenCount = entries.length - visible.length
+  const rolledUp = cap === undefined ? 0 : Math.max(entries.length - cap, 0)
+  const visible = rolledUp > 0 && !expanded ? entries.slice(0, cap) : entries
 
   const nodes: ReactNode[] = []
   visible.forEach((item, i) => {
@@ -349,11 +357,17 @@ export function ChartLegend({
     if (dividerAfter.has(i))
       nodes.push(<LegendDivider key={`divider-${item.key}`} columnLayout={vertical} />)
   })
-  if (hiddenCount > 0) {
+  if (rolledUp > 0) {
     nodes.push(
-      <span key="legend-more" style={LEGEND_ITEM_BASE}>
-        +{hiddenCount} more
-      </span>,
+      <button
+        key="legend-more"
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((prev) => !prev)}
+        style={{ ...LEGEND_ITEM_BUTTON, cursor: 'pointer', textDecoration: 'underline' }}
+      >
+        {expanded ? 'Show less' : `+${rolledUp} more`}
+      </button>,
     )
   }
 

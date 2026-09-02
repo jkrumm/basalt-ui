@@ -114,8 +114,10 @@ export type BandStripProps<T> = BasaltProps & {
   cursorResolution?: CursorResolution
   tooltip?: BandTooltipConfig<T> | false
   legend?: ChartLegendConfig | false
-  /** Colour of the absence hatch. Names a `series` entry, so absence is legended like any other
-   * state — a hatched band is the one mark a reader cannot decode from an axis. Default
+  /** Colour of the absence hatch, AND the state that is absent. Names a `series` entry, so absence
+   * is legended like any other state — a hatched band is the one mark a reader cannot decode from
+   * an axis. A slot in this state hatches across its whole width unless its own `absentFraction`
+   * says otherwise; a slot in any other state hatches only its `absentFraction`. Default
    * `VX.neutral`, unnamed. A key naming no `series` entry throws (a PROP, so a typo can only be a
    * wiring error) rather than falling back to the unnamed default. */
   absentState?: string
@@ -287,7 +289,15 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       // Clamped AND finite-checked. `foldedFrom` is carried by the consumer's datum, so a
       // 0/0 on an un-folded slot arrives here as NaN — which `Math.min`/`Math.max` propagate
       // straight into `width="NaN"`, a band that silently fails to paint.
-      const absent = clampFraction(span.absentFraction)
+      // A slot whose STATE is the absent one is absent in whole — `absentState` and
+      // `absentFraction` are two ways of saying the same thing, and gating the hatch on the
+      // fraction alone meant a strip declaring `absentState` painted a flat fill while the docs,
+      // the demo and its own `<pattern>` all promised hatching. An explicit `absentFraction` still
+      // wins: a partially-covered slot in the absent state says so itself.
+      const absent =
+        span.state === absentState
+          ? clampFraction(span.absentFraction ?? 1)
+          : clampFraction(span.absentFraction)
       const measuredWidth = bandWidth * (1 - absent)
       const hatchWidth = bandWidth - measuredWidth
       const markerKey = span.marker?.state ?? span.state
@@ -335,7 +345,7 @@ function BandStripPlot<T>(props: BandStripPlotProps<T>) {
       )
     })
     return out
-  }, [bands, getBand, getX, styleByKey, hidden, bandWidth, step, stripHeight, hatchId])
+  }, [bands, getBand, getX, styleByKey, hidden, bandWidth, step, stripHeight, hatchId, absentState])
 
   if (plotWidth <= 0 || bands.length === 0) return null
 

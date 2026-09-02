@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import { VX } from '../../tokens'
 import { maxTextWidth } from '../utils/measure-text'
-import { autoMargin, probeAxisLabels } from './auto-margin'
+import {
+  ROTATED_LABEL_OFFSET,
+  autoMargin,
+  probeAxisLabels,
+  rotatedLabelExtents,
+} from './auto-margin'
 import { logTickValues, niceLogDomain } from './log-ticks'
 
 describe('autoMargin', () => {
@@ -99,11 +104,47 @@ describe('autoMargin — a ROTATED x label reaches into the LEFT gutter', () => 
     expect(tilted.left).toBeGreaterThan(VX.margin.left)
   })
 
-  test('the widening IS the measured projection — width × cos(45°)', () => {
+  test('the widening is the PAINTED box — the bare projection left the label 6px short', () => {
     const width = maxTextWidth(bottom, VX.axisFont)
-    expect(autoMargin({ bottom, rotate: 45 }).left).toBe(
-      Math.ceil(Math.max(VX.margin.left, width * Math.cos(Math.PI / 4))),
+    const bareProjection = width * Math.cos(Math.PI / 4)
+    const left = autoMargin({ bottom, rotate: 45 }).left
+    // The old law stopped at `width × cos θ`, and the axis then painted the label through
+    // `ROTATED_LABEL_OFFSET[45].dx` (−6) with its glyphs reaching back over the anchor by their
+    // ascent — measured 3.2px off the SVG's left edge at 390. Measured is now painted.
+    expect(left).toBeGreaterThan(Math.ceil(bareProjection))
+    expect(left).toBeGreaterThanOrEqual(Math.ceil(bareProjection - ROTATED_LABEL_OFFSET[45].dx))
+    expect(left).toBe(
+      Math.ceil(
+        Math.max(
+          VX.margin.left,
+          rotatedLabelExtents({ labelWidth: width, fontPx: VX.axisFont, rotate: 45 }).left,
+        ),
+      ),
     )
+  })
+
+  test('the bottom gutter clears the axis’ own label drop, its dy nudge and the descender', () => {
+    const width = maxTextWidth(bottom, VX.axisFont)
+    const { below } = rotatedLabelExtents({ labelWidth: width, fontPx: VX.axisFont, rotate: 45 })
+    // Every rotated label's box bottom used to land EXACTLY on the SVG's height (220.0 of 220):
+    // the measure counted a centred line box from the axis line, the paint hangs a rotated one
+    // from a baseline `tickLength + max(10, fontPx) + dy` below it.
+    expect(below).toBeGreaterThan(width * Math.sin(Math.PI / 4) + 8 + VX.axisFont)
+    expect(autoMargin({ bottom, rotate: 45 }).bottom).toBe(
+      Math.ceil(Math.max(VX.margin.bottom, below)),
+    )
+  })
+
+  test('90° hangs the whole label below the axis and none of it left', () => {
+    const width = maxTextWidth(bottom, VX.axisFont)
+    const { left, below } = rotatedLabelExtents({
+      labelWidth: width,
+      fontPx: VX.axisFont,
+      rotate: 90,
+    })
+    expect(below).toBeGreaterThan(width)
+    // Only the `dx` nudge and the clearance — the string runs straight down from its tick.
+    expect(left).toBeLessThan(VX.margin.left)
   })
 
   test('90° costs NO horizontal room — the string runs straight down from its tick', () => {

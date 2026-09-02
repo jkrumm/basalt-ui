@@ -1,6 +1,7 @@
 import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis'
 import type { AxisScale, TickFormatter } from '@visx/axis'
 import { VX } from '../../tokens'
+import { ROTATED_LABEL_OFFSET } from '../layout/auto-margin'
 import { fmtAxisDate } from '../utils/format'
 import { useChartTierMetrics } from './chart-tier'
 
@@ -77,11 +78,12 @@ export function AxisRightNumeric({
 /**
  * Nudge a rotated tick label back onto its tick. Both are the d3 idiom for the angle: a 45° label
  * hangs from the tick's lower-left, a 90° one is centred on the tick's vertical line.
+ *
+ * Imported, never re-declared: `autoMargin` measures the gutter THROUGH this same nudge
+ * (`rotatedLabelExtents`), and a second copy here is exactly how the painted label came to sit
+ * 6px left of the box the measurement had reserved (`docs/CHARTS-SPEC.md` §1).
  */
-const ROTATED_OFFSET: Record<45 | 90, { dx: number; dy: number }> = {
-  45: { dx: -6, dy: 2 },
-  90: { dx: -4, dy: 4 },
-}
+const ROTATED_OFFSET = ROTATED_LABEL_OFFSET
 
 /** Themed bottom date axis — baked-in smartTicks + DD.MM formatting. */
 export function AxisBottomDate({

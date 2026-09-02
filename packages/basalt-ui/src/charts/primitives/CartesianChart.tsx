@@ -560,21 +560,30 @@ function CartesianPlot<T>({
    * paint, which the tier moves (`docs/CHARTS-SPEC.md` §8). */
   const xLabelPx = useMemo(() => xLabelPxFor(xLabels, tier.axisFont), [xLabels, tier.axisFont])
 
+  /** Everything `autoMargin` measures except the rotation — shared by all three passes below so a
+   * measured label can never differ between the one that DECIDES and the one that PAINTS. */
+  const marginInput = useMemo(
+    () => ({
+      left: leftLabels,
+      right: rightLabels,
+      bottom: xLabels,
+      fontPx: tier.axisFont,
+      floor: tier.margin,
+      ...(marginOverride !== undefined && { override: marginOverride }),
+    }),
+    [leftLabels, rightLabels, xLabels, tier.axisFont, tier.margin, marginOverride],
+  )
+
   /** The margin an UNROTATED axis resolves to. It is the final margin in every case except an
    * auto-rotated phone axis, and it is what the rotation decision itself is measured against —
    * deciding needs an `xMax`, and `xMax` needs a margin, so the unrotated pass breaks the loop. */
-  const flatMargin = useMemo(
-    () =>
-      autoMargin({
-        left: leftLabels,
-        right: rightLabels,
-        bottom: xLabels,
-        fontPx: tier.axisFont,
-        floor: tier.margin,
-        ...(marginOverride !== undefined && { override: marginOverride }),
-      }),
-    [leftLabels, rightLabels, xLabels, tier.axisFont, tier.margin, marginOverride],
-  )
+  const flatMargin = useMemo(() => autoMargin(marginInput), [marginInput])
+
+  /** And the margin a 45° axis would resolve to — the OTHER half of the decision. A rotated label
+   * reaches into the left gutter, so rotating spends plot width; `autoXLabelRotate` refuses the
+   * trade when what is left cannot hold three labels at their projected pitch, which is how block
+   * (f1) at 320 used to rotate itself into a clipped axis (§8). */
+  const rotated45Margin = useMemo(() => autoMargin({ ...marginInput, rotate: 45 }), [marginInput])
 
   // An explicit `xLabelRotate` always wins — including `0`, which is the documented "never rotate"
   // opt-out. Only an unset one falls through to the phone tier's own default.
@@ -584,31 +593,17 @@ function CartesianPlot<T>({
       tier: tier.tier,
       xMax: Math.max(plot.width - flatMargin.left - flatMargin.right, 0),
       labelPx: xLabelPx,
+      rotatedXMax: Math.max(plot.width - rotated45Margin.left - rotated45Margin.right, 0),
     })
 
   const margin = useMemo(
     () =>
       rotate === 0
         ? flatMargin
-        : autoMargin({
-            left: leftLabels,
-            right: rightLabels,
-            bottom: xLabels,
-            rotate,
-            fontPx: tier.axisFont,
-            floor: tier.margin,
-            ...(marginOverride !== undefined && { override: marginOverride }),
-          }),
-    [
-      flatMargin,
-      rotate,
-      leftLabels,
-      rightLabels,
-      xLabels,
-      tier.axisFont,
-      tier.margin,
-      marginOverride,
-    ],
+        : rotate === 45
+          ? rotated45Margin
+          : autoMargin({ ...marginInput, rotate }),
+    [flatMargin, rotated45Margin, marginInput, rotate],
   )
 
   // ── Pass 2: the real scales, now that the plot rect is known ────────────────────────────────

@@ -3,6 +3,7 @@
  * `src/charts/**` is Mantine-free, so `renderToStaticMarkup` needs no provider wrapper.
  */
 import { describe, expect, test } from 'bun:test'
+import { fireEvent, render as renderDom, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ChartLegend } from './ChartLegend'
 import type { LegendEntry } from './ChartLegend'
@@ -74,5 +75,46 @@ describe('ChartLegend strokeOpacity — the swatch cannot lie about a dimmed lin
       },
     ])
     expect(markup).toContain('stroke-opacity="0.4"')
+  })
+})
+
+/**
+ * The rollup is a DISCLOSURE, not a caption. A phone-tier cap of two left six of eight plotted
+ * colours unnamed behind a `<span>` reading `+6 more` — a categorical encoding the chart draws and
+ * then refuses to decode, with no way to reach the rest.
+ */
+describe('ChartLegend rollup — +N more expands', () => {
+  const items: LegendEntry[] = ['a', 'b', 'c', 'd', 'e'].map((key) => ({
+    key,
+    label: `Series ${key}`,
+    color: 'var(--vx-fill-1)',
+  }))
+
+  test('the chip is a button announcing its collapsed state', () => {
+    const markup = renderToStaticMarkup(<ChartLegend items={items} maxRows={2} />)
+    expect(markup).toContain('aria-expanded="false"')
+    expect(markup).toContain('+3 more')
+  })
+
+  test('clicking it reveals every entry, and the chip flips to a collapse', () => {
+    renderDom(<ChartLegend items={items} maxRows={2} />)
+    expect(screen.queryByRole('button', { name: 'Series e' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '+3 more' }))
+
+    for (const item of items) {
+      expect(screen.getByRole('button', { name: item.label })).not.toBeNull()
+    }
+    const chip = screen.getByRole('button', { name: 'Show less' })
+    expect(chip.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(chip)
+    expect(screen.queryByRole('button', { name: 'Series e' })).toBeNull()
+  })
+
+  test('a legend that already fits renders no chip at all', () => {
+    const markup = renderToStaticMarkup(<ChartLegend items={items} maxRows={5} />)
+    expect(markup).not.toContain('more')
+    expect(markup).not.toContain('aria-expanded')
   })
 })
