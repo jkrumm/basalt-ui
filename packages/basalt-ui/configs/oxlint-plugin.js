@@ -110,6 +110,11 @@ export const KNOWN_RULE_IDS = new Set([
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
+  'provider-above-router',
+  'duplicate-notifications-mount',
+  'query-dual-import',
+  'query-fn-unwrap',
+  'deprecated-export',
   // `in-body-page-title` is BOTH a plugin rule and a guard kind — one id, two lanes, so one
   // annotation waives both. It is listed once, below, with the guard kinds.
   'visx-boundary',
@@ -453,6 +458,7 @@ function isInStyleContext(context, node) {
  * literals under its own `src/tokens/` and silence both rules. Deleting the exemption is simpler
  * than re-gating it on package identity: the simplest gate is no gate.
  */
+// Ships: error
 const noRawFontSize = {
   meta: {
     type: 'suggestion',
@@ -518,6 +524,7 @@ const SIZE_ATTRS = new Set(['size', 'fz', 'fontSize'])
  * the token system has an opinion about type scale and spacing, not about how many pixels wide one
  * glyph box is.
  */
+// Ships: error
 const rawSizeLiteral = {
   meta: {
     type: 'suggestion',
@@ -558,6 +565,7 @@ function attrValue(attr) {
   return unwrapExpressionContainer(attr.value)
 }
 
+// Ships: error
 const cardInset = {
   meta: {
     type: 'suggestion',
@@ -647,6 +655,7 @@ function subtreeHasChart(node) {
   return false
 }
 
+// Ships: error
 const chartInRawSurface = {
   meta: {
     type: 'suggestion',
@@ -732,6 +741,7 @@ function enclosingHomeOwner(node) {
  * code is small enough to fix rather than schedule. A consumer who disagrees turns the whole rule
  * down in their own config.
  */
+// Ships: error
 const rawScrollContainer = {
   meta: {
     type: 'suggestion',
@@ -866,6 +876,7 @@ function boundaryVisitor(reportFor) {
 // segment named `charts` is deliberately permissive, not restrictive — it only ever widens where
 // visx is allowed, never narrows where it's flagged elsewhere. "Your visx lives in a charts/ dir"
 // is the intended convention.
+// Ships: error
 const visxBoundary = {
   meta: {
     type: 'suggestion',
@@ -897,6 +908,7 @@ const visxBoundary = {
 // Rule 6 — visx-tooltip: @visx/tooltip banned everywhere, including inside charts. Fires ahead of
 // (and instead of) basalt/visx-boundary for that one specifier — basalt's own src/ never imports
 // @visx/tooltip, so no theme-allow-style exemption is needed here either.
+// Ships: error
 const visxTooltip = {
   meta: {
     type: 'suggestion',
@@ -920,6 +932,7 @@ const visxTooltip = {
 // @mantine/* installed (see the file-header comment for the cycle/fork + packaging rationale).
 // Repo-local only — never registered in the shipped consumer preset, since this governs basalt's
 // own internal layering/packaging, not a consumer contract.
+// Ships: repo-local only
 const tokenLayerBoundary = {
   meta: {
     type: 'suggestion',
@@ -981,6 +994,7 @@ function propertyKeyName(node) {
 
 // Deliberately NO `hasThemeAllow` escape — see basalt/visx-boundary's comment for why these
 // guards use their own token (`basalt-agent-allow`, see the file-header comment) instead.
+// Ships: error
 const agentResumeGuard = {
   meta: {
     type: 'problem',
@@ -1027,6 +1041,7 @@ const RAW_USE_CHAT_SOURCES = new Set(['@ai-sdk/react', 'ai/react'])
 const RAW_USE_CHAT_NAMES = new Set(['useChat', 'useCompletion'])
 
 // Deliberately NO `hasThemeAllow` escape — see the file-header comment.
+// Ships: error
 const agentNoRawUseChat = {
   meta: {
     type: 'problem',
@@ -1222,6 +1237,7 @@ function aiSdkMajorMessage(consumerMajor) {
 // version skew is still a fact about two package.json files, but a written, intentional
 // producer/consumer pair (see `doctor`'s `aiMajorSkewReason`) needs a way to say so at the import
 // site too, not just be permanently blocked.
+// Ships: error
 const aiSdkMajor = {
   meta: {
     type: 'problem',
@@ -1314,6 +1330,7 @@ const HAND_ROLLED_PLOT_MESSAGE =
   'the file. To waive just THIS node and stay policed on the rest, write `theme-allow ' +
   'hand-rolled-plot — <why>` on its own line above it. (basalt/hand-rolled-plot)'
 
+// Ships: error
 const handRolledPlot = {
   meta: {
     type: 'suggestion',
@@ -1424,6 +1441,7 @@ function isMapCall(node) {
   )
 }
 
+// Ships: error
 const chartLegendLiteral = {
   meta: {
     type: 'suggestion',
@@ -1690,6 +1708,7 @@ function shadowBasaltExportMessage(name) {
  * tokens does not. `warn`, not `error`: a name collision is evidence, not proof, and a consumer
  * with a genuinely different `Composer` should be told once, not blocked.
  */
+// Ships: warn (advisory)
 const shadowBasaltExport = {
   meta: {
     type: 'suggestion',
@@ -1818,6 +1837,7 @@ const HAND_ROLLED_SHELL_MESSAGE =
  * it. The module that DEFINES `BasaltShell` is exempt by declaration, not by path — a rule saying
  * "compose X" cannot fire inside X.
  */
+// Ships: error
 const handRolledShell = {
   meta: {
     type: 'suggestion',
@@ -2258,17 +2278,25 @@ function hasAncestorTag(node, tags) {
 }
 
 /**
- * The BINDINGS of every JSX ancestor of `node` whose tag is in `tags` — {@link hasAncestorTag} for a
+ * The BINDINGS of every JSX ancestor of `node`, nearest first — {@link hasAncestorTag} for a
  * PROVENANCE-gated set. It returns names rather than a boolean for the same reason
  * {@link slotOwnerBinding} does: whether that `PanelRow` is basalt's is answered by the import list,
  * which is only complete at `Program:exit`, while the ancestry is only walkable during the visit.
+ *
+ * `tags` is OPTIONAL, and omitting it is the second real use rather than a convenience: a rule
+ * whose ancestor set is not known until the import list is complete cannot filter by tag NAME at
+ * all (`RouterProvider as Router` is an ordinary thing to write), so it takes every binding and
+ * resolves them at exit. `provider-above-router` is that caller.
  */
 function ancestorTagBindings(node, tags) {
   const found = []
   let current = node.parent
   for (let depth = 0; current !== null && current !== undefined; depth++) {
     if (depth > ANCESTRY_MAX_DEPTH || current.type === 'Program') break
-    if (current.type === 'JSXElement' && tags.has(jsxTagName(current.openingElement?.name) ?? '')) {
+    if (
+      current.type === 'JSXElement' &&
+      (tags === undefined || tags.has(jsxTagName(current.openingElement?.name) ?? ''))
+    ) {
       const root = jsxRootName(current.openingElement?.name)
       if (root !== undefined) found.push(root)
     }
@@ -2483,6 +2511,7 @@ const HAND_ROLLED_FILTER_MESSAGE =
  * `SettingsRow.control`, the form-row home — see {@link SLOT_ATTRS} for why a raw input is right
  * there.
  */
+// Ships: error
 const handRolledFilter = {
   meta: {
     type: 'problem',
@@ -2547,6 +2576,7 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * parent), a file that imports `@mantine/form` (a form is the third home and its inputs are not
  * filters), and the owner exemption — a file DEFINING a basalt control cannot be told to use one.
  */
+// Ships: warn (grace → 1.30.0)
 const controlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -2680,6 +2710,7 @@ export const CTL_THEME_TAGS = new Set([
  */
 const TIERLESS_SLOT_OWNERS = new Set(['ChartCard'])
 
+// Ships: error
 const controlSizeLiteral = {
   meta: {
     type: 'suggestion',
@@ -2799,6 +2830,7 @@ function actionsAttributeValue(node) {
  * The four countable halves of C6. `error` from the start: every one of them is arithmetic over a
  * literal the file wrote down, with no heuristic and no layout intent to guess at.
  */
+// Ships: error
 const pageBarBudget = {
   meta: {
     type: 'problem',
@@ -2914,6 +2946,7 @@ function titleOrderOf(node) {
  * lanes on purpose, so one `theme-allow in-body-page-title — <why>` waives both rather than
  * needing a different word per enforcement surface.
  */
+// Ships: error
 const inBodyPageTitle = {
   meta: {
     type: 'suggestion',
@@ -2986,6 +3019,7 @@ function subtreeControlTags(node, into = new Set(), depth = 0) {
  * subtrees both render the same control tag. A file that DEFINES a basalt control is exempt — the
  * one legitimate double mount is the CSS swap inside the control itself.
  */
+// Ships: error
 const responsiveTwin = {
   meta: {
     type: 'suggestion',
@@ -3067,6 +3101,7 @@ function insideNavDefinition(node) {
   return false
 }
 
+// Ships: error
 const searchLiteralLink = {
   meta: {
     type: 'suggestion',
@@ -3100,6 +3135,7 @@ const USE_SEARCH_FROM_LITERAL_MESSAGE =
   '(law C10) — take the value as a prop, or read it through the store field. ' +
   '(basalt/use-search-from-literal)'
 
+// Ships: error
 const useSearchFromLiteral = {
   meta: {
     type: 'suggestion',
@@ -3167,6 +3203,7 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
  * 12-line window has neither. A text heuristic here would report a consumer's own `SelectFilter` in
  * its own `filters` slot — signal the plugin already has, noise the guard would add.
  */
+// Ships: warn (grace → 1.30.0)
 const boundControlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -3215,6 +3252,495 @@ const boundControlOutsideHome = {
           if (hosted || slots.resolve(captured) || slots.inSubtreeHome(captured)) continue
           if (hasThemeAllow(context, node, 'bound-control-outside-home')) continue
           context.report({ node, message: BOUND_CONTROL_OUTSIDE_HOME_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 25 — provider-above-router ─────────────────────────────────────────────────────────────
+
+/** `@tanstack/react-router` and its subpaths — never `@tanstack/react-router-devtools`. */
+const TANSTACK_ROUTER_SOURCE = /^@tanstack\/react-router(?:\/|$)/
+
+const PROVIDER_ABOVE_ROUTER_MESSAGE =
+  '<BasaltProvider> is rendered INSIDE <RouterProvider> — invert them. Mantine context has to ' +
+  'exist before any route renders, so the mount order is BasaltProvider → the data layer → ' +
+  'RouterProvider (agent/rules/basalt-mantine.md). A route that renders a themed component ' +
+  'before the provider mounts reads Mantine defaults, not the basalt theme. ' +
+  '(basalt/provider-above-router)'
+
+/**
+ * `BasaltProvider` mounted BELOW a TanStack `RouterProvider` — F5, the first of the three
+ * `basalt-mantine.md` laws that shipped under a `not guarded: —` banner.
+ *
+ * Both tags are provenance-gated: `BasaltProvider` through {@link collectBasaltImportMap} (so a
+ * consumer's own component of that name is not this one) and `RouterProvider` through an
+ * `@tanstack/react-router` import, by its LOCAL binding rather than its written name. The inverse
+ * nesting — the correct one — is not a finding, and neither is either tag alone.
+ *
+ * **STATIC JSX ancestry only, and that is the whole heuristic.** The two providers have to be
+ * written in one JSX tree in one file for this to see anything. The common real shape (`main.tsx`
+ * renders `<BasaltProvider><App/></BasaltProvider>` and `App` renders `<RouterProvider/>`) is
+ * INVERTED cross-file and correct; the inverted-and-wrong cross-file shape is equally invisible.
+ * A rule that followed the composition would need the module graph, which an oxlint rule does not
+ * have — so this catches the one-file case and the law stays advisory for the rest. That is why it
+ * lands at `warn`.
+ */
+// Ships: warn (grace → 1.30.0)
+const providerAboveRouter = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a BasaltProvider rendered inside a TanStack RouterProvider.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const ownTree = isBasaltOwnSource(getFilename(context))
+    const basalt = new Map()
+    const routers = new Set()
+    const candidates = []
+
+    return {
+      ImportDeclaration(node) {
+        collectBasaltImportMap(node, basalt, ownTree)
+        const source = node.source?.value
+        if (typeof source !== 'string' || !TANSTACK_ROUTER_SOURCE.test(source)) return
+        for (const spec of node.specifiers ?? []) {
+          const imported = spec.imported?.name ?? spec.imported?.value
+          if (imported === 'RouterProvider' && typeof spec.local?.name === 'string') {
+            routers.add(spec.local.name)
+          }
+        }
+      },
+      JSXOpeningElement(node) {
+        const root = jsxRootName(node.name)
+        if (root === undefined || !basalt.has(root)) return
+        candidates.push({ node, root, ancestors: ancestorTagBindings(node) })
+      },
+      'Program:exit'() {
+        for (const { node, root, ancestors } of candidates) {
+          if (basalt.get(root) !== 'BasaltProvider') continue
+          if (!ancestors.some((name) => routers.has(name))) continue
+          if (hasThemeAllow(context, node, 'provider-above-router')) continue
+          context.report({ node, message: PROVIDER_ABOVE_ROUTER_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 26 — duplicate-notifications-mount ─────────────────────────────────────────────────────
+
+const DUPLICATE_NOTIFICATIONS_MOUNT_MESSAGE =
+  '<BasaltNotifications /> mounted alongside <BasaltOverlays notifications> — the two double-mount ' +
+  "Mantine's <Notifications>, so a single notify() renders twice. BasaltOverlays already composes " +
+  'the notifications layer; drop the standalone mount, or pass `notifications={false}` to ' +
+  'BasaltOverlays if the standalone one is the mount you want. ' +
+  '(basalt/duplicate-notifications-mount)'
+
+/**
+ * The ancestor chain from `node` up to its `Program`, OUTERMOST first — captured during the visit,
+ * because `node.parent` is only walkable then, and compared at `Program:exit`. Unlike
+ * {@link ancestorTagBindings} it keeps the NODES, which is what makes a nearest-common-ancestor
+ * question answerable at all.
+ */
+function ancestorChain(node) {
+  const chain = []
+  let current = node
+  for (let depth = 0; current !== null && current !== undefined; depth++) {
+    if (depth > ANCESTRY_MAX_DEPTH) break
+    chain.push(current)
+    if (current.type === 'Program') break
+    current = current.parent
+  }
+  return chain.toReversed()
+}
+
+/**
+ * True when two nodes sit in DIFFERENT branches of ONE conditional — `a ? <X/> : <Y/>`, or the two
+ * operands of one `&&`/`||`. Exactly one of the pair ever renders, so a double-mount rule firing on
+ * them would be reporting a mount that cannot happen.
+ *
+ * Deliberately the NEAREST common ancestor only, and deliberately expression-level: two separate
+ * `cond && <X/>` expressions under one parent are NOT exclusive (both conditions can hold), and an
+ * `if`/`return` split across statements is a control-flow question this does not pretend to answer.
+ * The runtime guard in `src/commands/overlays-mount.tsx` is the lane that counts real mounts.
+ */
+function mutuallyExclusive(chainA, chainB) {
+  let i = 0
+  while (i < chainA.length && i < chainB.length && chainA[i] === chainB[i]) i++
+  const ancestor = chainA[i - 1]
+  const branchA = chainA[i]
+  const branchB = chainB[i]
+  if (ancestor === undefined || branchA === undefined || branchB === undefined) return false
+  const [first, second] =
+    ancestor.type === 'ConditionalExpression'
+      ? [ancestor.consequent, ancestor.alternate]
+      : ancestor.type === 'LogicalExpression'
+        ? [ancestor.left, ancestor.right]
+        : [undefined, undefined]
+  if (first === undefined || second === undefined) return false
+  return (branchA === first && branchB === second) || (branchA === second && branchB === first)
+}
+
+/**
+ * `<BasaltOverlays notifications>` and `<BasaltNotifications />` in ONE file — F5, the second
+ * `basalt-mantine.md` law with no guard, and the static half of a warning that already exists at
+ * runtime (`src/commands/overlays-mount.tsx` warns in dev when both mount).
+ *
+ * A pair split across the two branches of one conditional is EXEMPT: `a ? <BasaltNotifications/> :
+ * <BasaltOverlays/>` is a file with two mounts written and one mount rendered, and reporting it
+ * taught a consumer to reach for a waiver over code that was already right.
+ *
+ * `notifications` DEFAULTS to true on `BasaltOverlays`, so the absence of the attribute counts as
+ * enabled and only an explicit `notifications={false}` clears it — the same polarity the component
+ * itself reads. Both tags are provenance-gated through {@link collectBasaltImportMap}.
+ *
+ * Same-FILE only, and deliberately so: the runtime warning is the lane that sees a cross-file
+ * double mount, because it counts real mounts rather than JSX. This is the cheap half that catches
+ * it before the app runs, which is the whole reason a static twin is worth having.
+ */
+// Ships: warn (grace → 1.30.0)
+const duplicateNotificationsMount = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Warn when BasaltOverlays and a standalone BasaltNotifications both mount.',
+    },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const ownTree = isBasaltOwnSource(getFilename(context))
+    const basalt = new Map()
+    const mounts = []
+
+    return {
+      ImportDeclaration(node) {
+        collectBasaltImportMap(node, basalt, ownTree)
+      },
+      JSXOpeningElement(node) {
+        const root = jsxRootName(node.name)
+        if (root === undefined || !basalt.has(root)) return
+        // `notifications` DEFAULTS to true, so only an explicit `={false}` clears the layer.
+        const disabled = (node.attributes ?? []).some(
+          (attr) =>
+            attr.type === 'JSXAttribute' &&
+            attr.name?.name === 'notifications' &&
+            unwrapExpressionContainer(attr.value)?.value === false,
+        )
+        mounts.push({ node, root, disabled, chain: ancestorChain(node) })
+      },
+      'Program:exit'() {
+        const overlays = mounts.filter(
+          ({ root, disabled }) => basalt.get(root) === 'BasaltOverlays' && !disabled,
+        )
+        if (overlays.length === 0) return
+        for (const { node, root, chain } of mounts) {
+          if (basalt.get(root) !== 'BasaltNotifications') continue
+          // Every enabled overlays mount on the other branch of one conditional → nothing to report.
+          if (overlays.every((overlay) => mutuallyExclusive(overlay.chain, chain))) continue
+          if (hasThemeAllow(context, node, 'duplicate-notifications-mount')) continue
+          context.report({ node, message: DUPLICATE_NOTIFICATIONS_MOUNT_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 27 — query-dual-import ─────────────────────────────────────────────────────────────────
+
+/** `@tanstack/react-query` and its subpaths — never `@tanstack/react-query-devtools`. */
+const TANSTACK_QUERY_SOURCE = /^@tanstack\/react-query(?:\/|$)/
+
+/** The `basalt-ui/query` subpath, exactly — the seam the hooks are supposed to arrive through. */
+const BASALT_QUERY_SOURCE = 'basalt-ui/query'
+
+/** The root barrel — where `QueryState` and the dashboard composites live. */
+const BASALT_ROOT_SOURCE = 'basalt-ui'
+
+const QUERY_DUAL_IMPORT_MESSAGE =
+  'Dual query import — this file imports from @tanstack/react-query AND from basalt-ui/query. ' +
+  'Take the hooks, the client factory and `unwrap` from basalt-ui/query only: two entry points to ' +
+  'one library is how a second QueryClient, a second devtools bundle and a duplicated ' +
+  '`toErrorMessage` reach an app (agent/rules/basalt-batteries.md). ' +
+  '(basalt/query-dual-import)'
+
+const QUERY_ROOT_IMPORT_MESSAGE =
+  'Raw @tanstack/react-query import in a basalt file — the hooks come through basalt-ui/query, ' +
+  'which re-exports them beside `createBasaltQueryClient`, `unwrap`, `toErrorMessage` and the lazy ' +
+  'devtools (agent/rules/basalt-batteries.md). Import from basalt-ui/query instead. ' +
+  '(basalt/query-dual-import)'
+
+/**
+ * The `basalt-batteries.md` law "import query hooks from `basalt-ui/query`, never dual-import
+ * `@tanstack/react-query`" — F5, and one of the two `./query` surfaces that shipped advisory.
+ *
+ * TWO forms, one id, because they are one law read at two strengths. The DUAL form (both
+ * specifiers present) is the law verbatim. The softer form — a raw `@tanstack/react-query` import
+ * in a file that also imports the basalt root barrel — is a heuristic: it says "this file is
+ * already a basalt file, so the query seam is right there", and it is the form that actually
+ * catches the drift, since a file that has never heard of `basalt-ui/query` cannot dual-import.
+ * The softer form is why the whole rule lands at `warn` rather than `error`.
+ *
+ * Gated on the LITERAL specifier, never on `ownTree` relative resolution: basalt's own
+ * `src/query/**` and `src/dashboard/query-state.tsx` import `@tanstack/react-query` because they
+ * ARE the seam, and they reach their siblings relatively. A file that writes `basalt-ui/query` is
+ * by definition a consumer of the published surface.
+ */
+// Ships: warn (grace → 1.30.0)
+const queryDualImport = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a raw @tanstack/react-query import beside a basalt import.' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const raw = []
+    let basaltQuery = false
+    let basaltRoot = false
+
+    return {
+      ImportDeclaration(node) {
+        const source = node.source?.value
+        if (typeof source !== 'string') return
+        if (source === BASALT_QUERY_SOURCE) basaltQuery = true
+        else if (source === BASALT_ROOT_SOURCE) basaltRoot = true
+        // `import type { UseQueryResult } from '@tanstack/react-query'` is erased at compile time
+        // — there is no runtime import to route through the seam, and typing against the library's
+        // own result type is exactly what `QueryStateLike` documents as legitimate. Same skip
+        // `agent-no-raw-usechat` and `ai-sdk-major` take.
+        else if (TANSTACK_QUERY_SOURCE.test(source) && node.importKind !== 'type') raw.push(node)
+      },
+      'Program:exit'() {
+        if (!basaltQuery && !basaltRoot) return
+        const message = basaltQuery ? QUERY_DUAL_IMPORT_MESSAGE : QUERY_ROOT_IMPORT_MESSAGE
+        for (const node of raw) {
+          if (hasThemeAllow(context, node, 'query-dual-import')) continue
+          context.report({ node, message })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 28 — query-fn-unwrap ───────────────────────────────────────────────────────────────────
+
+const QUERY_FN_UNWRAP_MESSAGE =
+  'queryFn fetches without unwrap() — `unwrap` throws on the error branch AND on a null data with ' +
+  'no error (a 204, a silent transport failure), and both are caller bugs that have to surface as ' +
+  'a rejected query rather than as `data: null` rendered through the success branch ' +
+  '(agent/rules/basalt-batteries.md). Wrap the call: `queryFn: () => unwrap(client.thing.get())`. ' +
+  '(basalt/query-fn-unwrap)'
+
+/** A bare `fetch(` / `unwrap(` call, as written — the two halves of this rule's text heuristic. */
+const FETCH_CALL = /\bfetch\s*\(/
+const UNWRAP_CALL = /\bunwrap\s*\(/
+
+/**
+ * A `queryFn` that fetches and never `unwrap`s it — F5, the second unguarded `./query` law.
+ *
+ * **The heuristic is deliberately one sentence long, and it is a TEXT test inside a SYNTACTIC
+ * range**: the rule takes the source span of the `queryFn` property's own function value and fires
+ * only when `fetch(` appears in it and `unwrap(` does not. Nothing resolves, nothing follows a
+ * helper out of the span.
+ *
+ * What that buys and what it costs, both stated so neither is a surprise. It sees the two shapes
+ * the doctrine is actually written against — `queryFn: () => fetch(url)` and
+ * `queryFn: async () => (await fetch(url)).json()`. It does NOT see a `queryFn: fetchThing`
+ * reference, an Eden/Treaty call (`client.thing.get()` contains no `fetch(`), or an `unwrap`
+ * applied one frame out; and it counts an `unwrap(` anywhere in the span, including one applied to
+ * something else. A stricter version would need the call graph. The narrow version fires on the
+ * form a consumer writes by reflex on day one, which is the one the law exists for.
+ *
+ * Scoped to files importing `basalt-ui/query` literally, for the reason {@link queryDualImport}
+ * gives: without that gate it is an opinion about `fetch`, which basalt does not have.
+ */
+// Ships: warn (grace → 1.30.0)
+const queryFnUnwrap = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on a queryFn that fetches without wrapping the call in unwrap().' },
+    schema: [],
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    const candidates = []
+    let basaltQuery = false
+
+    return {
+      ImportDeclaration(node) {
+        if (node.source?.value === BASALT_QUERY_SOURCE) basaltQuery = true
+      },
+      Property(node) {
+        if (propertyKeyName(node) !== 'queryFn') return
+        const value = node.value
+        if (value?.type !== 'ArrowFunctionExpression' && value?.type !== 'FunctionExpression') {
+          return
+        }
+        candidates.push({ node, value })
+      },
+      'Program:exit'() {
+        if (!basaltQuery) return
+        const text = context.sourceCode?.text ?? ''
+        for (const { node, value } of candidates) {
+          const [start, end] = value.range ?? []
+          if (typeof start !== 'number' || typeof end !== 'number') continue
+          const body = text.slice(start, end)
+          if (!FETCH_CALL.test(body) || UNWRAP_CALL.test(body)) continue
+          if (hasThemeAllow(context, node, 'query-fn-unwrap')) continue
+          context.report({ node, message: QUERY_FN_UNWRAP_MESSAGE })
+        }
+      },
+    }
+  },
+}
+
+// ── Rule 29 — deprecated-export ─────────────────────────────────────────────────────────────────
+
+/**
+ * @typedef {{
+ *   subpath: string
+ *   name: string
+ *   prop?: string
+ *   replacement: string
+ *   removeIn: string
+ * }} DeprecatedExport
+ */
+
+/**
+ * The deprecation ledger — every export that is `@deprecated` but still SHIPPED, with what to
+ * write instead and the minor it goes away in. B4: majors are banned here, so a rename cannot be
+ * signalled by a version number; the lifecycle is instead "ship the alias, lint the old name, write
+ * the MIGRATING row, remove it a minor later" (`../CLAUDE.md`, "Deprecation lifecycle").
+ *
+ * A row without `prop` is a NAMED IMPORT from `subpath` — reported on the specifier, with an
+ * autofix that rewrites it to `{ <replacement> as <local> }` so no call site has to move in the
+ * same edit. **That autofix is the row's contract**: only a DROP-IN rename belongs here. A
+ * deprecation whose replacement takes a different shape (`createSearchParamStore` →
+ * `createSearchStore` + a `fields` object) would need the fix suppressed before it could be a row,
+ * and until then it lives in `MIGRATING.md` alone. A row WITH `prop` is a JSX ATTRIBUTE on the component `name`, imported from `subpath`
+ * — no autofix, because the three connectivity props collapse into ONE object prop and a
+ * per-attribute rewrite would produce three `connectivity=` attributes on one tag.
+ *
+ * **Adding a row is the whole job.** Deprecate the export in its JSDoc, add the row here with a
+ * `removeIn` at least one minor out, add the `MIGRATING.md` row, and this rule starts nudging.
+ * `oxlint-plugin.test.ts` scans every `src/**\/index.ts(x)` barrel for a JSDoc `@deprecated` and
+ * fails when one has no row here, so the barrel half cannot be forgotten. Removing the export is a
+ * separate commit that deletes the row in the same change.
+ *
+ * @type {readonly DeprecatedExport[]}
+ */
+export const DEPRECATED_EXPORTS = [
+  {
+    subpath: 'basalt-ui/forms',
+    name: 'field',
+    replacement: 'inputProps',
+    removeIn: '1.29.0',
+  },
+  {
+    subpath: 'basalt-ui',
+    name: 'BasaltProvider',
+    prop: 'sseUrl',
+    replacement: 'connectivity={{ sseUrl }}',
+    removeIn: '1.29.0',
+  },
+  {
+    subpath: 'basalt-ui',
+    name: 'BasaltProvider',
+    prop: 'healthUrl',
+    replacement: 'connectivity={{ healthUrl }}',
+    removeIn: '1.29.0',
+  },
+  {
+    subpath: 'basalt-ui',
+    name: 'BasaltProvider',
+    prop: 'healthIntervalMs',
+    replacement: 'connectivity={{ healthIntervalMs }}',
+    removeIn: '1.29.0',
+  },
+]
+
+function deprecatedExportMessage(row) {
+  const what =
+    row.prop === undefined
+      ? `\`${row.name}\` from ${row.subpath}`
+      : `\`${row.prop}\` on <${row.name}>`
+  return (
+    `Deprecated basalt export — ${what} is superseded by \`${row.replacement}\` and is removed in ` +
+    `${row.removeIn}. It still resolves today, so nothing is broken yet; migrate before that minor ` +
+    '(packages/basalt-ui/MIGRATING.md carries the row). ' +
+    '(basalt/deprecated-export)'
+  )
+}
+
+/**
+ * A shipped-but-`@deprecated` export still being imported or written — B4, the sunset half of the
+ * lifecycle whose absence the blueprint audit found (§8): the grace mechanism covers a rule getting
+ * STRICTER, and nothing covered an export going away.
+ *
+ * Permanently `warn` ({@link PLUGIN_RULE_ADVISORY}), for the same reason `shadow-basalt-export` is:
+ * a deprecation is a schedule, not a defect. The code compiles and runs; promoting this to `error`
+ * would break a consumer's build for something that still works, which is the one thing the
+ * no-majors doctrine exists to avoid. The `removeIn` minor is where it becomes an error — by the
+ * export ceasing to exist.
+ */
+// Ships: warn (advisory)
+const deprecatedExport = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Warn on an import or prop that basalt has deprecated but still ships.' },
+    schema: [],
+    fixable: 'code',
+  },
+  create(context) {
+    if (isTestFile(context)) return {}
+    if (isBasaltOwnSource(getFilename(context))) return {}
+    const importRows = DEPRECATED_EXPORTS.filter((row) => row.prop === undefined)
+    const propRows = DEPRECATED_EXPORTS.filter((row) => row.prop !== undefined)
+    const components = new Map()
+    const candidates = []
+
+    return {
+      ImportDeclaration(node) {
+        const source = node.source?.value
+        if (typeof source !== 'string') return
+        for (const spec of node.specifiers ?? []) {
+          const imported = spec.imported?.name ?? spec.imported?.value
+          const local = spec.local?.name
+          if (typeof imported !== 'string' || typeof local !== 'string') continue
+          for (const row of propRows) {
+            if (source === row.subpath && imported === row.name) components.set(local, row.name)
+          }
+          const row = importRows.find((r) => r.subpath === source && r.name === imported)
+          if (row === undefined) continue
+          if (hasThemeAllow(context, spec, 'deprecated-export')) continue
+          context.report({
+            node: spec,
+            message: deprecatedExportMessage(row),
+            fix: (fixer) => fixer.replaceText(spec, `${row.replacement} as ${local}`),
+          })
+        }
+      },
+      JSXAttribute(node) {
+        const name = node.name?.name
+        if (typeof name !== 'string') return
+        const owner = node.parent
+        if (owner === null || owner === undefined || owner.type !== 'JSXOpeningElement') return
+        const root = jsxRootName(owner.name)
+        if (root === undefined) return
+        candidates.push({ node, root, name })
+      },
+      'Program:exit'() {
+        for (const { node, root, name } of candidates) {
+          const component = components.get(root)
+          if (component === undefined) continue
+          const row = propRows.find((r) => r.name === component && r.prop === name)
+          if (row === undefined) continue
+          if (hasThemeAllow(context, node, 'deprecated-export')) continue
+          context.report({ node, message: deprecatedExportMessage(row) })
         }
       },
     }
@@ -3285,6 +3811,52 @@ export const PLUGIN_RULE_GRACE = {
       'is when the incumbent count across argo, linewatch, image-share, rb, image-gen and the ' +
       'playground is re-measured.',
   },
+  'provider-above-router': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      'F5 — one of the three basalt-mantine.md laws that shipped under a `not guarded: —` banner. ' +
+      'It reads STATIC JSX ancestry inside one file, which is a genuine fraction of the law: the ' +
+      'usual real shape composes the two providers across modules, where no oxlint rule can see ' +
+      'the nesting at all. Landing it at `error` would state a certainty the implementation does ' +
+      'not have. 1.30.0 is when the incumbent count across argo, linewatch, image-share, rb, ' +
+      'image-gen and the playground is measured — every one of them mounts a router, so the ' +
+      'false-positive question has a real sample.',
+  },
+  'duplicate-notifications-mount': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      'F5 — the static half of a double-mount the runtime already warns about in dev ' +
+      '(`src/commands/overlays-mount.tsx`). Same-file only, so like its sibling it guards a ' +
+      'fraction of the law and cannot claim `error`. It also reads a prop DEFAULT (`notifications` ' +
+      'is true when unwritten), which is the kind of polarity a consumer disagrees with exactly ' +
+      'once before it is worth knowing about — a minor at `warn` is how that disagreement arrives ' +
+      'as feedback rather than as a broken build.',
+  },
+  'query-dual-import': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      'F5 — the basalt-batteries.md law with no guard. TWO forms under one id: the dual import ' +
+      '(both `@tanstack/react-query` and `basalt-ui/query` in one file) is the law verbatim, and ' +
+      'the softer form — a raw `@tanstack/react-query` import in a file that also imports the ' +
+      'basalt root barrel — is the heuristic that actually catches the drift, since a file that ' +
+      'never names `basalt-ui/query` cannot dual-import. The soft form is what holds the whole ' +
+      'rule at `warn`: "this file is already a basalt file" is a claim about intent. 1.30.0 is ' +
+      'when the consumer count is measured and the soft form is either kept or split off.',
+  },
+  'query-fn-unwrap': {
+    since: '1.28.0',
+    promote: '1.30.0',
+    why:
+      'F5 — the second unguarded ./query law. Openly a TEXT heuristic inside a syntactic range: ' +
+      '`fetch(` present in the queryFn span and `unwrap(` absent. It cannot see a `queryFn: ' +
+      'fetchThing` reference, an Eden/Treaty call, or an unwrap one frame out, and it counts an ' +
+      '`unwrap(` applied to anything. That is a deliberate floor rather than a first draft, and a ' +
+      'rule whose stated reach is this narrow has no business failing a build. 1.30.0 is when the ' +
+      'measured false-positive load decides whether it promotes or stays advisory.',
+  },
 }
 
 /**
@@ -3307,6 +3879,16 @@ export const PLUGIN_RULE_ADVISORY = {
       '1.22.0 (`isBasaltScopedFile` plus a component-shaped declaration). A name collision is ' +
       'strong evidence and not proof, and renaming defeats it outright, so this stays a permanent ' +
       'warn rather than a grace entry with no honest promote date.',
+  },
+  'deprecated-export': {
+    since: '1.28.0',
+    why:
+      'B4, the sunset half of the deprecation lifecycle (`../CLAUDE.md`). A deprecation is a ' +
+      'SCHEDULE, not a defect: the code compiles, runs and is correct until the `removeIn` minor, ' +
+      'so promoting this to `error` would fail a consumer build over something that still works — ' +
+      'the one outcome the no-majors doctrine exists to avoid. There is no version at which that ' +
+      'stops being true, which is what makes it advisory rather than a grace entry: enforcement ' +
+      'arrives by the export ceasing to exist, not by this rule changing level.',
   },
 }
 
@@ -3333,6 +3915,11 @@ export default {
     'responsive-twin': responsiveTwin,
     'search-literal-link': searchLiteralLink,
     'use-search-from-literal': useSearchFromLiteral,
+    'provider-above-router': providerAboveRouter,
+    'duplicate-notifications-mount': duplicateNotificationsMount,
+    'query-dual-import': queryDualImport,
+    'query-fn-unwrap': queryFnUnwrap,
+    'deprecated-export': deprecatedExport,
     'visx-boundary': visxBoundary,
     'visx-tooltip': visxTooltip,
     'token-layer-boundary': tokenLayerBoundary,

@@ -1,4 +1,13 @@
+// The EMIT config. `tsconfig.json` widened its `include` to `src` + `tests` (H5 — `tests/isomorphic/
+// props.tsx`'s prop maps were outside every program, so a wrong prop value failed at runtime rather
+// than at `bun run typecheck`), and with it `rootDir` had to widen to the package root or every
+// tests/ file is a TS6059. Emit does not follow: `rootDir` comes back to `src` and `tests` is
+// excluded, so `dist/` keeps the flat shape the subpath exports resolve against.
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.test.tsx"]
+  "compilerOptions": {
+    "rootDir": "src",
+    "noEmit": false
+  },
+  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }

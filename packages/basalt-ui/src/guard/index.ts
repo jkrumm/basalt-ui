@@ -882,6 +882,14 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'responsive-twin',
   'search-literal-link',
   'use-search-from-literal',
+  // The four F5 rules and the B4 deprecation rule — all AST-only, all outside `checkSource`'s
+  // reach: provenance here is an import graph and a JSX ancestry, neither of which a 12-line
+  // regex window has. Same reason `bound-control-outside-home` has no text-lane twin.
+  'provider-above-router',
+  'duplicate-notifications-mount',
+  'query-dual-import',
+  'query-fn-unwrap',
+  'deprecated-export',
   // `in-body-page-title` is deliberately ABSENT: it is a plugin rule AND a guard kind under one id
   // (one law, two lanes, one annotation), and this set is the ids OUTSIDE `checkSource`'s reach.
   // `check-source.test.ts` asserts the two registries stay disjoint.

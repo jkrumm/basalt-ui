@@ -5,13 +5,17 @@
     "types": ["bun"],
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "./dist",
-    "noEmit": false,
+    "noEmit": true,
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationMap": true
   },
-  "include": ["src"],
+  // `tests` is included so `tests/isomorphic/props.tsx`'s prop maps are checked against the
+  // components they feed (H5) — a wrong value used to fail at runtime, not at `bun run typecheck`.
+  // Carrying them forces `rootDir` to the package root, so this config is CHECK-only (`noEmit`);
+  // `tsconfig.build.json` is the one that emits, and it narrows both back.
+  "include": ["src", "tests"],
   "exclude": ["node_modules", "dist"]
 }

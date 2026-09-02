@@ -10,9 +10,8 @@ paths:
 
 <!-- basalt:coverage -->
 <!-- GENERATED from src/surfaces.ts — `basalt-ui check-coverage --write`. Do not hand-edit. -->
-<!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major -->
-<!-- not guarded: import query hooks from basalt-ui/query, never dual-import @tanstack/react-query -->
-<!-- not guarded: queryFn wraps the call in unwrap() -->
+<!-- backed by: guard kinds — none · oxlint rules — basalt/agent-no-raw-usechat, basalt/agent-resume-guard, basalt/ai-sdk-major, basalt/query-dual-import, basalt/query-fn-unwrap -->
+<!-- not guarded: — -->
 <!-- /basalt:coverage -->
 
 # Basalt Batteries — the adapter surfaces
