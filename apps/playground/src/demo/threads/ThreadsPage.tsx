@@ -14,6 +14,7 @@
 import { Stack, Text, Title } from '@mantine/core'
 import { createThreadsStore, ThreadWorkspace } from 'basalt-ui'
 import type { JSX } from 'react'
+import { AgentThreadFeedInlineDemoPage } from '../AgentThreadFeedInlineDemoPage'
 import { mockOutcomeResolver, mockThreadTransport } from './thread-scenarios'
 
 // One stable store at module scope — createThreadsStore must be called ONCE per key, not inside
@@ -43,6 +44,10 @@ export function ThreadsPage(): JSX.Element {
           newThreadPlaceholder="Ask anything — e.g. create a todo to water the plants tomorrow"
         />
       </div>
+
+      {/* `/agent-thread-feed-inline` absorbed here (audit E §7) — `ThreadFeedRow`'s inline-expand
+          mount-once invariant, next to the unchanged inbox row. */}
+      <AgentThreadFeedInlineDemoPage />
     </Stack>
   )
 }

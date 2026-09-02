@@ -116,7 +116,7 @@ export function AgentAiSdkDemoPage() {
               icon={<IconSparkle />}
               title="Ask one question to start"
               description="The reply streams for a few seconds, then the demo backend deliberately abandons the connection partway through — watch the panel below, then reload this tab."
-              variant="section"
+              tier="section"
             />
           </Stack>
         ) : (

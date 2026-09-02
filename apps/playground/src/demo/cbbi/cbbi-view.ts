@@ -16,7 +16,7 @@ import {
   zoneOf,
 } from './cbbi-data'
 import type { CbbiMetricKey, CbbiRow, CbbiZone } from './cbbi-data'
-import { createColumnHelper } from 'basalt-ui/data'
+import { createColumnHelper } from 'basalt-ui/data/table'
 
 /** One plotted point. */
 export type CbbiPoint = {

@@ -155,7 +155,7 @@ export function QueryStateDemoPage() {
           <ThrowBoundary key={`${scenario}-${String(malformed)}-${String(skeleton)}`}>
             <QueryState
               query={passed}
-              variant="section"
+              tier="section"
               errorTitle="Could not load albums"
               errorFallback="The library did not answer."
               errorAction={
@@ -198,14 +198,14 @@ export function QueryStateDemoPage() {
       >
         <Group align="flex-start" grow>
           <Paper py="xs" px="sm" withBorder>
-            <LoadingState variant="section" label="Minting an asset token" />
+            <LoadingState tier="section" label="Minting an asset token" />
           </Paper>
           <Paper py="xs" px="sm" withBorder>
             <ErrorState
               error={{ status: 401, value: {} }}
               title="Could not start the admin"
               fallback="Minting the image asset token failed. The API may be down."
-              variant="section"
+              tier="section"
               onRetry={() => setRetries((n) => n + 1)}
               action={
                 <Button size="xs" variant="subtle">

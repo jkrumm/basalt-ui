@@ -60,7 +60,10 @@ acceptTranscript({ messages, height: 400 })
 // @ts-expect-error `height` is required when `virtualize: true` (ThreadFeedRowProps)
 acceptRow({ thread, expanded: false, onToggle: noopToggle, onSend: noopSend, virtualize: true })
 
-// @ts-expect-error `height` is forbidden when `virtualize` is omitted/false (ThreadFeedRowProps)
+// NOT an error (B3): `ThreadFeedRowProps` widened past `VirtualizeProps` to `RowHeightProps`,
+// which allows `height` ALONE as the 'bounded' row mode (a fixed-height, non-virtualized
+// transcript wrapped in `BasaltStickToBottom`) — this used to be the fourth invalid combination
+// here and no longer is; see `virtualize.ts`'s `RowHeightProps` doc for the three-way resolve.
 acceptRow({ thread, expanded: false, onToggle: noopToggle, onSend: noopSend, height: 400 })
 
 // PROVES: the virtualize/height union guard (packages/basalt-ui/src/agent-chat/virtualize.ts) holds

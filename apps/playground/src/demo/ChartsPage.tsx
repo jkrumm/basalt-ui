@@ -46,6 +46,7 @@ import {
   Bars,
   CartesianChart,
   ChartCard,
+  ChartCursorScope,
   curveMonotoneX,
   Donut,
   DualPanel,
@@ -74,6 +75,9 @@ import {
 } from './data'
 import type { ChannelVolumePoint, DayPoint, HeatCell, LiftPoint, LoadPoint } from './data'
 import { demoColor, demoColors } from './series'
+import { BandStripDemoPage } from './BandStripDemoPage'
+import { ChartsPrimitivesPage } from './ChartsPrimitivesPage'
+import { MirroredBarsDemoPage } from './MirroredBarsDemoPage'
 
 const fmtInt = (v: number) => Math.round(v).toLocaleString('en-US')
 const fmtKg = (v: number) => `${Math.round(v)} kg`
@@ -420,6 +424,77 @@ function ChannelMixCard() {
   )
 }
 
+// ── Cursor scoping — the one block absorbed from the retired /charts-stress (audit E §7): the
+// only demo of `ChartCursorScope` isolating a subtree from the page's shared default cursor. ──────
+
+const SCOPE_A_SERIES: ChartSeries<DayPoint>[] = [
+  {
+    key: 'revenue',
+    label: 'Revenue',
+    color: demoColors.revenue,
+    mark: 'line',
+    getValue: (d) => d.revenue,
+  },
+]
+const SCOPE_B_SERIES: ChartSeries<DayPoint>[] = [
+  { key: 'churn', label: 'Churn', color: demoColors.churn, mark: 'line', getValue: (d) => d.churn },
+]
+
+function CursorScopeBlock() {
+  return (
+    <Stack gap="sm">
+      <Text size="sm" c="dimmed">
+        Two unrelated same-domain-kind pairs. The first pair shares the page's default cursor (hover
+        either and its sibling's crosshair moves too). The second pair is wrapped in{' '}
+        <code>ChartCursorScope</code>: hovering either of the two below moves only each other,
+        isolated from every other chart on the page.
+      </Text>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <ChartCard title="Unscoped — Revenue" subtitle="Shares the page cursor">
+          <ZonedLine<DayPoint>
+            data={SERIES_DATA}
+            height={200}
+            chartId="charts-unscoped-a"
+            getX={(d) => d.date}
+            series={SCOPE_A_SERIES}
+          />
+        </ChartCard>
+        <ChartCard title="Unscoped — Churn" subtitle="Shares the page cursor">
+          <ZonedLine<DayPoint>
+            data={SERIES_DATA}
+            height={200}
+            chartId="charts-unscoped-b"
+            getX={(d) => d.date}
+            series={SCOPE_B_SERIES}
+          />
+        </ChartCard>
+      </SimpleGrid>
+      <ChartCursorScope>
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+          <ChartCard title="Scoped — Tenant 1" subtitle="Isolated pair, via ChartCursorScope">
+            <ZonedLine<DayPoint>
+              data={SERIES_DATA}
+              height={200}
+              chartId="charts-scoped-a"
+              getX={(d) => d.date}
+              series={SCOPE_A_SERIES}
+            />
+          </ChartCard>
+          <ChartCard title="Scoped — Tenant 2" subtitle="Isolated pair, via ChartCursorScope">
+            <ZonedLine<DayPoint>
+              data={SERIES_DATA}
+              height={200}
+              chartId="charts-scoped-b"
+              getX={(d) => d.date}
+              series={SCOPE_B_SERIES}
+            />
+          </ChartCard>
+        </SimpleGrid>
+      </ChartCursorScope>
+    </Stack>
+  )
+}
+
 export function ChartsPage() {
   return (
     <Stack gap="sm">
@@ -632,6 +707,15 @@ export function ChartsPage() {
       >
         <ChannelVolumeChart data={CHANNEL_VOLUME} chartId="charts-channel-volume" />
       </ChartCard>
+
+      {/* ── Absorbed routes (audit E §7): /band-strip, /mirrored-bars in full; one cursor-scoping
+          section from /charts-stress; the whole hand-rolled-primitives page from
+          /charts-primitives (the sanctioned escape hatch, ChartFrame + useChartCursor +
+          autoMargin composed directly). ── */}
+      <CursorScopeBlock />
+      <BandStripDemoPage />
+      <MirroredBarsDemoPage />
+      <ChartsPrimitivesPage />
     </Stack>
   )
 }

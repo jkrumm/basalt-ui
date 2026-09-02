@@ -323,31 +323,7 @@ export function histogram(values: readonly number[], bins: number): HistogramBin
   return out
 }
 
-/** `0.4077` → `41%`. The index is read as a percentage everywhere it is stated. */
-export function pct(value: number): string {
-  return `${Math.round(value * 100)}%`
-}
-
-/** `0.4077` → `0.408`. The mono reading in the panel and the table, where the third digit matters. */
-export function ratio(value: number): string {
-  return value.toFixed(3)
-}
-
-const USD = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
-
-export function money(value: number): string {
-  return `$${USD.format(Math.round(value))}`
-}
-
-/** `2026-08-28` → `Aug 26` — an axis tick that stays legible across a four-year window. */
-export function fmtMonthTick(key: string): string {
-  const date = new Date(`${key}T00:00:00Z`)
-  if (Number.isNaN(date.getTime())) return key
-  return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' })
-}
-
-/** Percent change from `before` to `after`, the sign `DeltaBadge` wants. */
-export function deltaPct(after: number, before: number): number | undefined {
-  if (before === 0 || !Number.isFinite(before)) return undefined
-  return ((after - before) / Math.abs(before)) * 100
-}
+// `money`/`pct`/`ratio`/`fmtMonthTick`/`deltaPct` moved to `demo/fixtures/format.ts` (audit E §3/
+// §7, the shared formatter module) — re-exported here so every one of this file's nine consumers
+// sees no import change.
+export { deltaPct, fmtMonthTick, money, pct, ratio } from '../fixtures/format'

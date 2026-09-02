@@ -85,7 +85,7 @@ export function ContentOverviewPage() {
             icon={<IconSearch />}
             title="No matching guides"
             description="Try a different category or clear the selected tags."
-            variant="section"
+            tier="section"
           />
         ) : (
           <ArticleGrid>

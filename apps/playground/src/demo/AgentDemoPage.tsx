@@ -168,7 +168,7 @@ function ChatEmptyState({ onPick }: { onPick: (text: string) => void }) {
         icon={<IconSparkle />}
         title="Start a conversation"
         description="A streaming chat over basalt-ui/agent. Pick a simulation below, or try a prompt:"
-        variant="section"
+        tier="section"
         action={
           <Group gap="xs" justify="center" maw={460}>
             {SUGGESTIONS.map((s) => (
