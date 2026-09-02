@@ -51,6 +51,7 @@
     "basalt/ai-sdk-major": "error"
   },
   "ignorePatterns": [
+    ".claude/**",
     "dist",
     "node_modules",
     "apps/marketing/**",
