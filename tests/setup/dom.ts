@@ -145,7 +145,12 @@ if (typeof document.fonts === 'undefined') {
   })
 }
 
-const { cleanup } = await import('@testing-library/react')
+const { cleanup, configure } = await import('@testing-library/react')
+
+// `waitFor`/`findBy*` default to 1000ms, which the full suite crosses under load (a Menu
+// opening took 1007ms inside `make verify`). Ceiling only — a passing wait returns as fast as
+// before; only a genuinely stuck one waits longer before failing.
+configure({ asyncUtilTimeout: 5000 })
 
 afterEach(() => {
   cleanup()
