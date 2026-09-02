@@ -53,7 +53,11 @@ import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { useValidateProps } from '../common/validate'
 import { CtlSlot } from '../theme'
+import { BarActionSlot, isBarActionList } from '../controls/actions'
+import type { SlotActions } from '../controls/actions'
 import { useFilterSurface } from '../controls/filter-context'
+import { QueryState } from '../dashboard/query-state'
+import type { QueryEmptyCopy, QueryStateLike } from '../dashboard/query-state'
 import { usePersistedOrLocal } from '../state/persisted-or-local'
 import { WidgetHeader } from '../widget-header'
 import type { WidgetHeaderProps } from '../widget-header'
@@ -71,9 +75,33 @@ export type SectionSlot = 'root' | 'header' | 'body'
 // intersecting the two would let a caller write `classNames={{ metric: … }}` on a `Section` and get
 // silence. Section's three slots are its whole styling contract; the header's own slots are reached
 // on a `WidgetHeader`.
-export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames'> &
+export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames' | 'actions'> &
   BasaltProps &
   SlotStylesProps<SectionSlot> & {
+    /**
+     * Header actions, in either form (law C15): a typed `BarAction[]`, which basalt projects through
+     * the SAME row `PageBar` and `ActionGroup` use — ≤3 inline, the rest folded into `More`, one
+     * kebab below `sm` — or an opaque `ReactNode` a caller drew itself, rendered verbatim. The ≤3
+     * budget (C6) is checked against whichever form is given.
+     */
+    actions?: SlotActions
+    /**
+     * The section's async result. Given one, the BODY renders through `QueryState` at the section
+     * tier — pending / error-with-retry / empty each REPLACE `children`, data renders them — while
+     * the header, the fold chevron and `summary` stay drawn throughout, so a section never blinks out
+     * of the page while it refetches.
+     *
+     * This is law C3's uniform container contract (`docs/CONTROLS-SPEC.md` §1): without it every
+     * caller re-derives the four-way switch `QueryState` exists to delete, and gets it wrong in the
+     * one direction that matters — "nothing here" printed over a 500.
+     */
+    query?: QueryStateLike<unknown>
+    /**
+     * Copy for `query`'s EMPTY branch, rendered through `EmptyState` like every other one. Omit to
+     * render nothing when the result is empty — `QueryState`'s own contract, unchanged. Ignored
+     * without `query`.
+     */
+    empty?: QueryEmptyCopy
     /** Rendered in the header row, in its own `CtlSlot` — hidden while the section is collapsed. */
     tabs?: ReactNode
     /** Renders a chevron toggle in the header; the header stays drawn when closed, only `children`
@@ -104,8 +132,10 @@ export type SectionProps = Omit<WidgetHeaderProps, 'tier' | 'classNames'> &
  * `${component} ${message}`, so two over-budget sections only both get heard because they name
  * themselves.
  */
-function actionBudgetMessage(title: string, actions: ReactNode): string | null {
-  const count = Children.count(actions)
+function actionBudgetMessage(title: string, actions: SlotActions): string | null {
+  // Both arms of the union are counted, and the typed one is counted EXACTLY: `Children.count` over
+  // a `BarAction[]` would report the array's length as one child.
+  const count = isBarActionList(actions) ? actions.length : Children.count(actions)
   if (count <= 3) return null
   return (
     `${BASALT_PREFIX} Section "${title}": ${count} actions exceeds the ≤3 budget ` +
@@ -148,6 +178,9 @@ function ChevronToggle({
 }
 
 export function Section({
+  actions,
+  query,
+  empty,
   tabs,
   collapsible = false,
   persistKey,
@@ -160,7 +193,7 @@ export function Section({
   classNames,
   ...headerProps
 }: SectionProps) {
-  const { title, actions } = headerProps
+  const { title } = headerProps
 
   // Two dev-only checks, one hook — both are misuses that RENDER fine, which is what puts them in
   // `useValidateProps` rather than in `assertRequiredProps`.
@@ -209,7 +242,11 @@ export function Section({
     tabs !== undefined || actions !== undefined || collapsible ? (
       <>
         {tabs !== undefined && open && <CtlSlot>{tabs}</CtlSlot>}
-        {actions !== undefined && <CtlSlot>{actions}</CtlSlot>}
+        {actions !== undefined && (
+          <CtlSlot>
+            <BarActionSlot actions={actions} />
+          </CtlSlot>
+        )}
         {collapsible && (
           <ChevronToggle open={open} onToggle={() => setOpen(!open)} controls={bodyId} />
         )}
@@ -232,7 +269,16 @@ export function Section({
       {summary !== undefined && <div className={classes.summary}>{summary}</div>}
       {open && (
         <div id={bodyId} className={cx(classes.body, classNames?.body)}>
-          {children}
+          {query === undefined ? (
+            children
+          ) : (
+            // `tier="section"` is the compact one: a bare spinner rather than a 64px centred
+            // block, and the error alert without the page-level stack around it. A Section IS the
+            // region, so the state belongs inside its body, never around its header.
+            <QueryState query={query} tier="section" {...(empty !== undefined && { empty })}>
+              {children}
+            </QueryState>
+          )}
         </div>
       )}
     </div>

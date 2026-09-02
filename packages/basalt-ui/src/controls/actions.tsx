@@ -13,7 +13,7 @@
  * media query, so there is no first-paint flash and no hook that re-renders on resize.
  */
 import { ActionIcon, Button, Group, Menu } from '@mantine/core'
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, isValidElement, useContext, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { BasaltProps } from '../common/props'
 import type { NavAnchor } from '../nav/types'
@@ -614,6 +614,62 @@ export function BarActionRow({
  */
 export function ActionGroup(props: ActionGroupProps): ReactNode {
   return <BarActionRow {...props} host="slot" />
+}
+
+/**
+ * A home's `actions` slot in the two forms it accepts (law C15): typed `BarAction[]` DATA, or an
+ * opaque `ReactNode` row the caller drew itself.
+ *
+ * Three homes took a bare `ReactNode` (`Section`, `BasaltDataTable`, `StatCard`) while `PageBar` and
+ * the shell took typed data, so only half the framework got the C6 budget and the C7 overflow fold —
+ * the `ReactNode` half was clipped on a phone with no kebab to fold into. Widening those slots to
+ * this union is what puts the fold back in basalt's hands without moving any existing call site: a
+ * node still renders verbatim.
+ */
+export type SlotActions = BarAction[] | ReactNode
+
+/**
+ * Which arm of {@link SlotActions} a value is, at runtime — the union has no discriminant, and a
+ * `ReactNode` can itself be an array (a fragment list), so "is it an array" is not the test.
+ *
+ * A `BarAction` is a plain object carrying a STRING `key`; a React element carries `key` too (often
+ * `null`) but answers `isValidElement`, which is what separates the two. An EMPTY array takes the
+ * DATA arm: `[]` is what a caller's `.filter()` returns when nothing survived it, and the data path
+ * renders exactly nothing for it (`BarActionRow` bails on an empty row) — so both arms paint the
+ * same pixels and the typed one keeps `Section`'s ≤3 count and every other reader on one branch,
+ * instead of re-deciding per emptiness.
+ */
+export function isBarActionList(actions: SlotActions): actions is BarAction[] {
+  return (
+    Array.isArray(actions) &&
+    actions.every(
+      (entry) =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        !isValidElement(entry) &&
+        typeof (entry as { key?: unknown }).key === 'string',
+    )
+  )
+}
+
+/**
+ * Renders a {@link SlotActions} slot: the typed form goes through the SAME projection `PageBar` and
+ * `ActionGroup` use — inline up to {@link DESKTOP_SECONDARY_MAX}, the rest folded into `More`, and a
+ * mobile kebab below `sm` — and the node form is returned untouched.
+ *
+ * Every entry lands in `secondary`: a `BarAction[]` carries no primary marker, and law C6's "exactly
+ * one primary" is the page bar's rule, enforced by `ActionGroupProps.primary` being singular. A home
+ * that wants a filled action passes a node, or an `ActionGroup` of its own.
+ *
+ * `host="slot"`, never `'page'` — only `PageBar` row 1 may read the shell's global actions and claim
+ * the single mobile kebab (see {@link BarActionRowProps}).
+ *
+ * @example
+ * <Section title="Runs" actions={[{ key: 'export', label: 'Export', onClick: exportCsv }]} />
+ */
+export function BarActionSlot({ actions }: { actions: SlotActions }): ReactNode {
+  if (!isBarActionList(actions)) return actions
+  return <BarActionRow secondary={actions} host="slot" />
 }
 
 /**

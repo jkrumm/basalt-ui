@@ -9,5 +9,12 @@
 export { type BasaltProps, type SlotClassNames, type SlotStylesProps } from './props'
 export { type Tone, type ToneWithNeutral, type Tier, cx } from './props'
 export { assignRef, mergeRefs } from './refs'
-export { BASALT_PREFIX, requiredProp, oneOf, deprecatedProp, duplicateMount } from './errors'
+export {
+  BASALT_PREFIX,
+  requiredProp,
+  oneOf,
+  deprecatedProp,
+  duplicateMount,
+  missingLayer,
+} from './errors'
 export { useValidateProps, assertRequiredProps, resetValidatedProps } from './validate'

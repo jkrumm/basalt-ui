@@ -22,7 +22,11 @@ import { useImperativeHandle, useRef } from 'react'
 import type { ReactNode, Ref } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
-import { assertRequiredProps } from '../common/validate'
+import { BASALT_PREFIX } from '../common/errors'
+import { assertRequiredProps, useValidateProps } from '../common/validate'
+import { ErrorState } from '../dashboard/query-state'
+import type { QueryStateLike } from '../dashboard/query-state'
+import { dataQueryBranch } from './query-branch'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -76,8 +80,29 @@ export type BasaltVirtualListProps<T> = BasaltProps &
      * When true, renders skeleton placeholder rows at the given height instead of the virtual item
      * list. The scroll container is still rendered at the specified `height`. Use while async data
      * is loading.
+     *
+     * Superseded by `query`, which resolves this branch AND the two this prop cannot express — pass
+     * both and `query` wins, with a dev warning.
      */
     isLoading?: boolean
+    /**
+     * The result behind `items`, resolved into a body: pending → the skeleton rows, error with no
+     * data → an `ErrorState` inside the scroll box (the query's own `refetch` behind Retry),
+     * anything else → the rows, or `emptyState` when `items` is empty.
+     *
+     * Law C3's uniform container contract (`docs/CONTROLS-SPEC.md` §1). The list took `isLoading`
+     * and nothing else (components audit #3), so a failed fetch and a genuinely empty list rendered
+     * the same blank box — the exact false claim `QueryState` exists to delete.
+     *
+     * The container keeps its declared `height` through every branch, so the page does not jump as
+     * the state resolves.
+     */
+    query?: QueryStateLike<unknown>
+    /**
+     * Rendered inside the scroll container when `items` is empty and nothing is pending. Omit to
+     * keep today's rendering — an empty box. Works with or without `query`.
+     */
+    emptyState?: ReactNode
     /**
      * Number of skeleton rows to render when `isLoading` is true.
      * @default 5
@@ -151,12 +176,28 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
     renderItem,
     getItemKey,
     isLoading = false,
+    query,
+    emptyState,
     skeletonRows = 5,
     ref,
     className,
     style,
     classNames,
   } = props
+
+  // `query` resolves the pending branch `isLoading` used to own, plus the error and empty ones the
+  // boolean cannot express — so it wins outright, and says so rather than letting the flag look
+  // broken.
+  useValidateProps(
+    'BasaltVirtualList',
+    () =>
+      query === undefined || props.isLoading === undefined
+        ? null
+        : `${BASALT_PREFIX} BasaltVirtualList: props "query" and "isLoading" are both set — ` +
+          '"query" wins and "isLoading" is ignored. Drop "isLoading".',
+    [query === undefined, props.isLoading === undefined],
+  )
+
   const parentRef = useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -184,18 +225,38 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
     [rowVirtualizer],
   )
 
-  if (isLoading) {
+  const branch = query === undefined ? undefined : dataQueryBranch('BasaltVirtualList', query)
+  const showSkeleton = branch === undefined ? isLoading : branch === 'pending'
+  // Every non-virtual branch paints into the SAME box at the SAME declared height, so the page does
+  // not reflow as one state resolves into the next.
+  const boxProps = {
+    className: cx(classNames?.root, className),
+    style: {
+      height,
+      // theme-allow raw-scroll-container — matches the virtualizer's own scroll box below, so a
+      // placeholder branch doesn't reflow.
+      overflow: 'auto' as const,
+      ...style,
+    },
+  }
+
+  if (branch === 'error' && query !== undefined) {
     return (
-      <Box
-        className={cx(classNames?.root, className)}
-        style={{
-          height,
-          // theme-allow raw-scroll-container — matches the virtualizer's own scroll box below, so
-          // the skeleton doesn't reflow.
-          overflow: 'auto',
-          ...style,
-        }}
-      >
+      <Box {...boxProps}>
+        <ErrorState
+          error={query.error}
+          title="Could not load"
+          tier="section"
+          retrying={query.fetchStatus === 'fetching'}
+          onRetry={() => void query.refetch()}
+        />
+      </Box>
+    )
+  }
+
+  if (showSkeleton) {
+    return (
+      <Box {...boxProps}>
         {Array.from({ length: skeletonRows }, (_, i) => (
           <Box
             key={`skeleton-${i}`}
@@ -217,6 +278,8 @@ export function BasaltVirtualList<T>(props: BasaltVirtualListProps<T>) {
       </Box>
     )
   }
+
+  if (items.length === 0 && emptyState !== undefined) return <Box {...boxProps}>{emptyState}</Box>
 
   return (
     <Box

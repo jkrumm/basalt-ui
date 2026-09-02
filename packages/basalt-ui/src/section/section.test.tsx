@@ -6,7 +6,7 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ReactElement } from 'react'
@@ -434,5 +434,151 @@ describe('forwards every WidgetHeader prop (unit, deltaPolarity, deltaFormat, de
       </Section>,
     )
     expect(screen.getByText('42')).toBeDefined()
+  })
+})
+
+/**
+ * `query` — law C3's uniform container contract on a `Section` (components audit #3). The four
+ * branches, and the invariant that makes it a CONTAINER prop rather than a wrapper: the header, the
+ * chevron and `summary` stay drawn through every one of them, so a section never vanishes off the
+ * page mid-refetch.
+ */
+function query(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    data: undefined as unknown,
+    isError: false,
+    error: null as unknown,
+    fetchStatus: 'idle' as 'fetching' | 'paused' | 'idle',
+    refetch: () => undefined,
+    ...over,
+  }
+}
+
+describe('query — the four container states', () => {
+  test('pending replaces the body with a spinner, and keeps the header drawn', () => {
+    renderWith(
+      <Section title="Runs" query={query({ fetchStatus: 'fetching' })}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Runs' })).toBeDefined()
+    expect(screen.queryByText('body')).toBeNull()
+    expect(screen.getByLabelText('Loading')).toBeDefined()
+  })
+
+  test('error replaces the body with the SERVER message and a retry, header still drawn', () => {
+    const refetch = mock(() => undefined)
+    renderWith(
+      <Section
+        title="Runs"
+        summary={<span>summary row</span>}
+        query={query({ isError: true, error: new Error('upstream exploded'), refetch })}
+      >
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Runs' })).toBeDefined()
+    expect(screen.getByText('summary row')).toBeDefined()
+    expect(screen.queryByText('body')).toBeNull()
+    expect(screen.getByText('upstream exploded')).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(refetch).toHaveBeenCalledTimes(1)
+  })
+
+  test('empty replaces the body with the `empty` copy — never with a false error', () => {
+    renderWith(
+      <Section title="Runs" query={query({ data: [] })} empty={{ title: 'No runs yet' }}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.queryByText('body')).toBeNull()
+    expect(screen.getByText('No runs yet')).toBeDefined()
+  })
+
+  test('data renders children', () => {
+    renderWith(
+      <Section title="Runs" query={query({ data: [1, 2] })}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('body')).toBeDefined()
+  })
+
+  test('no `query` renders children untouched — the prop is opt-in', () => {
+    renderWith(
+      <Section title="Runs">
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByText('body')).toBeDefined()
+  })
+})
+
+/**
+ * `actions` as typed data (law C15). The point is not that the buttons render — a `ReactNode` row
+ * did that already — but that basalt owns the C7 fold and the mobile kebab once the caller hands it
+ * data instead of nodes.
+ */
+describe('actions — the BarAction[] | ReactNode union', () => {
+  test('a BarAction[] folds past 3 into More, inside the header', () => {
+    renderWith(
+      <Section
+        title="Runs"
+        actions={[
+          { key: 'a', label: 'Alpha' },
+          { key: 'b', label: 'Bravo' },
+          { key: 'c', label: 'Charlie' },
+          { key: 'd', label: 'Delta' },
+        ]}
+      >
+        <div>body</div>
+      </Section>,
+    )
+    const desktop = document.querySelector('.mantine-visible-from-sm')
+    if (!desktop) throw new Error('expected the desktop action group')
+    expect(desktop.textContent).toContain('Alpha')
+    expect(desktop.textContent).not.toContain('Delta')
+    expect(desktop.textContent).toContain('More')
+  })
+
+  test('a BarAction runs its onClick', () => {
+    const onClick = mock(() => undefined)
+    renderWith(
+      <Section title="Runs" actions={[{ key: 'export', label: 'Export', onClick }]}>
+        <div>body</div>
+      </Section>,
+    )
+    fireEvent.click(screen.getAllByRole('button', { name: 'Export' })[0] as HTMLElement)
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  test('a ReactNode row is unchanged — rendered verbatim, no group around it', () => {
+    renderWith(
+      <Section title="Runs" actions={<button type="button">Export</button>}>
+        <div>body</div>
+      </Section>,
+    )
+    expect(screen.getByRole('button', { name: 'Export' })).toBeDefined()
+    expect(document.querySelector('.mantine-visible-from-sm')).toBeNull()
+  })
+
+  test('the C6 budget counts the ARRAY exactly, not as one child', () => {
+    resetValidatedProps()
+    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    renderWith(
+      <Section
+        title="Overbudget"
+        actions={[
+          { key: 'a', label: 'A' },
+          { key: 'b', label: 'B' },
+          { key: 'c', label: 'C' },
+          { key: 'd', label: 'D' },
+        ]}
+      >
+        <div>body</div>
+      </Section>,
+    )
+    expect(spy.mock.calls.flat().join(' ')).toContain('4 actions exceeds the ≤3 budget')
+    spy.mockRestore()
   })
 })

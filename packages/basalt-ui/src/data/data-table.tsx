@@ -32,7 +32,17 @@
  *   enablePagination
  * />
  */
-import { Box, Group, Pagination, Select, Skeleton, Table, Text, TextInput } from '@mantine/core'
+import {
+  Box,
+  Checkbox,
+  Group,
+  Pagination,
+  Select,
+  Skeleton,
+  Table,
+  Text,
+  TextInput,
+} from '@mantine/core'
 import type { MantineSpacing } from '@mantine/core'
 import type {
   Column,
@@ -42,6 +52,7 @@ import type {
   FilterFn,
   PaginationState,
   RowData,
+  RowSelectionState,
   SortingState,
   Table as TanstackTable,
   Updater,
@@ -54,13 +65,15 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps } from '../common/props'
 import { BASALT_PREFIX } from '../common/errors'
 import { assertRequiredProps, useValidateProps } from '../common/validate'
 import { FilterSet } from '../controls'
+import { ActionGroup, BarActionSlot } from '../controls/actions'
+import type { BarAction, SlotActions } from '../controls/actions'
 // `EnumFilter` is deliberately NOT on the `./controls` barrel (`docs/CONTROLS-SPEC.md` §3 —
 // reaching for it directly is hand-rolling a filter, `basalt/hand-rolled-filter`); a facet column
 // is the one place inside the framework itself that legitimately builds a `FieldHandle` over
@@ -71,7 +84,11 @@ import { CtlSlot } from '../theme'
 import { alpha, VX } from '../tokens'
 import type { EnumField, FieldHandle, MultiField } from '../state'
 import { WidgetHeader } from '../widget-header'
+import { ErrorState } from '../dashboard/query-state'
+import type { QueryStateLike } from '../dashboard/query-state'
+import { dataQueryBranch } from './query-branch'
 import { isDev } from '../utils/is-dev'
+import classes from './data-table.module.css'
 
 // ── Column alignment ──────────────────────────────────────────────────────────
 
@@ -280,6 +297,70 @@ function resolveFacetColumn<T>(
   return undefined
 }
 
+// ── Row selection ─────────────────────────────────────────────────────────────
+
+/**
+ * The synthetic checkbox column `enableRowSelection` prepends. Its id is namespaced so it can never
+ * collide with a real accessor key, and it is excluded from sorting — a checkbox column sorts by
+ * selection state, which is a reordering nobody asked for.
+ */
+const SELECT_COLUMN_ID = '__basalt_select__'
+
+/**
+ * Built per render inside a `useMemo`, not hoisted as a constant: `ColumnDef` is generic in `T`, and
+ * a single shared instance would have to be cast at every call site.
+ *
+ * `onClick`'s `stopPropagation` is the load-bearing line. The checkbox lives inside the row, and a
+ * row carrying `onRowActivate` opens a detail from a click — so without it, ticking the box also
+ * navigated away from the table the tick was meant to act on.
+ */
+function selectionColumn<T>(): ColumnDef<T, unknown> {
+  return {
+    id: SELECT_COLUMN_ID,
+    enableSorting: false,
+    header: ({ table }) => (
+      <Checkbox
+        size="xs"
+        aria-label="Select all rows"
+        checked={table.getIsAllPageRowsSelected()}
+        indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+        onChange={table.getToggleAllPageRowsSelectedHandler()}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        size="xs"
+        aria-label={`Select row ${row.index + 1}`}
+        checked={row.getIsSelected()}
+        disabled={!row.getCanSelect()}
+        onChange={row.getToggleSelectedHandler()}
+        onClick={(event) => event.stopPropagation()}
+      />
+    ),
+  }
+}
+
+/**
+ * The bar a selection raises, above the table and below its header — the count, then the actions,
+ * through the SAME `BarAction[]` vocabulary `PageBar` uses, so the ≤3-inline fold and the mobile
+ * kebab are basalt's here too (law C7/C15) instead of a hand-rolled `Group` of buttons.
+ *
+ * It renders only while at least one row is selected. A bar reserved at zero is a row of page
+ * furniture that says nothing, and a table that changes height when the first box is ticked is the
+ * price of not reserving it — the cheaper of the two, because the selection is what the reader just
+ * caused.
+ */
+function BulkActionBar({ count, actions }: { count: number; actions: BarAction[] }) {
+  return (
+    <Group className={classes.bulkBar} gap="xs" align="center" wrap="wrap" mb="xs">
+      <Text className={classes.bulkCount}>{count} selected</Text>
+      <CtlSlot>
+        <ActionGroup secondary={actions} />
+      </CtlSlot>
+    </Group>
+  )
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -370,8 +451,30 @@ export type BasaltDataTableProps<T> = BasaltProps &
     /**
      * When true, renders skeleton placeholder rows instead of the empty-state branch.
      * The header remains visible. Use while async data is loading.
+     *
+     * Superseded by `query`, which resolves this branch AND the two this prop cannot express — pass
+     * both and `query` wins, with a dev warning.
      */
     isLoading?: boolean
+    /**
+     * The result behind `data`, resolved into a body: pending → the skeleton rows below, error with
+     * no data → an `ErrorState` row spanning the table (with the query's own `refetch` behind
+     * Retry), anything else → the rows, or `emptyState` when none are visible.
+     *
+     * This is law C3's uniform container contract (`docs/CONTROLS-SPEC.md` §1). The table had NO
+     * error branch at all (components audit #3), so a 500 rendered *No data to display.* — the
+     * exact false claim `QueryState` was built to delete, one container over.
+     *
+     * The header, toolbar, `<thead>` and pagination bar stay drawn through every branch: only the
+     * `<tbody>` swaps, which is why this is not `QueryState` wrapped around the table. A refetch
+     * that fails while rows are already on screen keeps the rows — compose `QueryState` AROUND the
+     * table when you want its cached-data banner too.
+     *
+     * @example
+     * const q = useQuery({ queryKey: ['rows'], queryFn: () => api.rows() })
+     * <BasaltDataTable data={q.data ?? []} columns={columns} query={q} />
+     */
+    query?: QueryStateLike<unknown>
     /**
      * Number of skeleton rows to render when `isLoading` is true.
      * @default 5
@@ -443,8 +546,68 @@ export type BasaltDataTableProps<T> = BasaltProps &
      * Right-aligned toolbar slot (e.g. an "Export" button). Renders the toolbar row even when no
      * search input or facets are configured. Renamed from `toolbarActions` — the toolbar (search +
      * facets + this slot) is wrapped in `CtlSlot` (C1/C5), so its controls resolve to the `ctl` tier.
+     *
+     * Two accepted forms (law C15): a typed `BarAction[]`, projected through the same row `PageBar`
+     * and `ActionGroup` use — ≤3 inline, the rest folded into `More`, one kebab below `sm` — or an
+     * opaque `ReactNode`, rendered verbatim exactly as before.
      */
-    actions?: ReactNode
+    actions?: SlotActions
+
+    // ── Row activation + selection ────────────────────────────────────────────────
+
+    /**
+     * Makes each row openable — click, or Enter on a focused row — with the ROW's original datum.
+     * The hook that pairs a table with `PageAside`: row → detail, without the caller adding an
+     * `onClick` to every cell renderer.
+     *
+     * The row keeps its native `<tr>` semantics and takes `tabIndex=0` plus `data-activatable`,
+     * never `role="button"`: a role swap takes the row out of the table's row/cell semantics, so a
+     * screen reader stops announcing each cell's column header — which is the reason the data is in
+     * a table. Cursor and focus ring come from the module class.
+     *
+     * A click that originates inside the selection checkbox does NOT activate (the checkbox stops
+     * the event); a click on a control your own `cell` renders should do the same.
+     *
+     * @example
+     * <BasaltDataTable data={rows} columns={columns} onRowActivate={(row) => setSelected(row)} />
+     */
+    onRowActivate?: (row: T) => void
+    /**
+     * Prepends a checkbox column (header = select-all on the page) and arms TanStack's row-selection
+     * feature. Selection is uncontrolled unless `rowSelection` is passed.
+     * @default false
+     */
+    enableRowSelection?: boolean
+    /**
+     * Controlled selection — TanStack's own `RowSelectionState` (`Record<rowId, boolean>`), keyed by
+     * `getRowId` (row index by default). Omit for uncontrolled selection held by the table.
+     */
+    rowSelection?: RowSelectionState
+    /** Called with the next `RowSelectionState` on every selection change, controlled or not. */
+    onRowSelectionChange?: (selection: RowSelectionState) => void
+    /**
+     * Stable row id, handed to TanStack. Pass one whenever the selection must survive a re-sort, a
+     * page change or a refetch — the default id is the row's INDEX, so row 3 stays "selected" when a
+     * different record moves into position 3.
+     */
+    getRowId?: (row: T, index: number) => string
+    /**
+     * The actions a selection offers, rendered in a bar above the table while at least one row is
+     * selected — and nothing at all while none is.
+     *
+     * A FUNCTION of the selected rows, not a bare array, and that is the whole signature decision:
+     * `BarActionItem.onClick` is `() => void` (the one vocabulary every home shares, unforked), so
+     * the rows have to reach the handler through the closure the caller writes here. It also means
+     * an UNCONTROLLED table can offer bulk actions at all — the selection lives inside the table,
+     * and this is how it gets out.
+     *
+     * @example
+     * bulkActions={(rows) => [
+     *   { key: 'export', label: `Export ${rows.length}`, onClick: () => exportCsv(rows) },
+     *   { key: 'delete', label: 'Delete', danger: true, onClick: () => remove(rows) },
+     * ]}
+     */
+    bulkActions?: (rows: T[]) => BarAction[]
 
     // ── Pagination ────────────────────────────────────────────────────────────────
 
@@ -800,6 +963,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     highlightOnHover,
     emptyState,
     isLoading = false,
+    query,
     skeletonRows = 5,
     initialSorting,
     onSortingChange,
@@ -812,6 +976,12 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     onColumnFiltersChange,
     manualFiltering = false,
     actions,
+    onRowActivate,
+    enableRowSelection = false,
+    rowSelection,
+    onRowSelectionChange,
+    getRowId,
+    bulkActions,
     enablePagination = false,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     initialPagination,
@@ -840,21 +1010,35 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     initialPagination ?? { pageIndex: 0, pageSize: pageSizeOptions[0] ?? 10 },
   )
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialColumnPinning ?? {})
+  // Uncontrolled by default; `rowSelection`, when passed, is the truth and this only mirrors it so
+  // the updater below has a base to apply against.
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({})
+  const rowSelectionState = rowSelection ?? internalRowSelection
 
   // `stickyHeaderOffset` is DROPPED whenever the table owns a scroll container — see
   // `resolvedStickyHeaderOffset` below for why it is always wrong there. Dropping it silently is
   // the part worth a message: the header still sticks, so the table looks right until it overlaps
   // the page chrome the offset was measured against, and nothing anywhere says the prop was ignored.
+  //
+  // The second check is `query` beside `isLoading`: `query` resolves the pending branch AND the two
+  // `isLoading` cannot express, so it wins outright. Silently, that reads as the boolean having no
+  // effect — which is indistinguishable from a bug in the caller's own loading flag.
   useValidateProps(
     'BasaltDataTable',
-    () =>
+    () => [
       stickyHeaderOffset === undefined || (maxHeight === undefined && minWidth === undefined)
         ? null
         : `${BASALT_PREFIX} BasaltDataTable: prop "stickyHeaderOffset" is ignored beside ` +
           '"maxHeight"/"minWidth" — those render a scroll container, and the sticky `<thead>` then ' +
           "anchors to that box's own top edge rather than to the window. Drop the offset, or drop " +
           'the cap and let the page scroll.',
-    [stickyHeaderOffset, maxHeight, minWidth],
+      query === undefined || props.isLoading === undefined
+        ? null
+        : `${BASALT_PREFIX} BasaltDataTable: props "query" and "isLoading" are both set — "query" ` +
+          'wins and "isLoading" is ignored. `query` already resolves the pending branch, plus the ' +
+          'error and empty ones the boolean cannot express. Drop "isLoading".',
+    ],
+    [stickyHeaderOffset, maxHeight, minWidth, query === undefined, props.isLoading === undefined],
   )
 
   const handleSortingChange = useCallback(
@@ -901,10 +1085,29 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
     [onPaginationChange],
   )
 
+  const handleRowSelectionChange = useCallback(
+    (updater: Updater<RowSelectionState>) => {
+      // CONTROLLED: the caller's map is the base AND the only writer. Mirroring it into state too
+      // would leave a copy that the caller never moves, and that stale copy becomes the selection
+      // the moment `rowSelection` goes back to `undefined` — plus every tick would render twice for
+      // one change. Report the next map and let the caller own it.
+      if (rowSelection !== undefined) {
+        onRowSelectionChange?.(typeof updater === 'function' ? updater(rowSelection) : updater)
+        return
+      }
+      setInternalRowSelection((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater
+        onRowSelectionChange?.(next)
+        return next
+      })
+    },
+    [rowSelection, onRowSelectionChange],
+  )
+
   // Facets are TanStack `columnFilters` entries under the hood — inject an exact-match (or
   // any-of, for `multiple`) filterFn onto the matching column so the built-in `includesString`
   // auto-filter (substring match) never misfires against a Select's exact option value.
-  const tableColumns = useMemo(() => {
+  const facetColumns = useMemo(() => {
     if (!facets || facets.length === 0) return columns
     const facetById = new Map(facets.map((facet) => [facet.columnId, facet]))
     return columns.map((column) => {
@@ -928,6 +1131,14 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       return { ...column, filterFn }
     })
   }, [columns, facets])
+
+  // The checkbox column is PREPENDED here rather than asked of the caller, so `columns` stays the
+  // caller's own data columns and `meta.align` / `numeral` never have to reason about a synthetic
+  // one. Everything counting columns downstream reads `columnCount`, below.
+  const tableColumns = useMemo(
+    () => (enableRowSelection ? [selectionColumn<T>(), ...facetColumns] : facetColumns),
+    [facetColumns, enableRowSelection],
+  )
 
   // Enforced before the table is built, so the degraded options below are the ones TanStack gets —
   // a degraded table must not merely hide a control, it must not compute the answer either.
@@ -959,12 +1170,18 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
       columnFilters,
       columnPinning,
       ...(enablePagination && { pagination }),
+      ...(enableRowSelection && { rowSelection: rowSelectionState }),
     },
     onSortingChange: handleSortingChange,
     onGlobalFilterChange: handleGlobalFilterChange,
     onColumnFiltersChange: handleColumnFiltersChange,
     onColumnPinningChange: setColumnPinning,
     ...(enablePagination && { onPaginationChange: handlePaginationChange }),
+    ...(enableRowSelection && {
+      enableRowSelection: true,
+      onRowSelectionChange: handleRowSelectionChange,
+    }),
+    ...(getRowId !== undefined && { getRowId }),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -988,6 +1205,37 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
   const showSearch = enableGlobalFilter && filteringEnabled
   const showFacets = hasFacets && filteringEnabled
   const showToolbar = showSearch || showFacets || Boolean(actions)
+
+  // ── The query branch (law C3) ───────────────────────────────────────────────
+  // `query`, when given, owns the body: it resolves the pending branch `isLoading` used to own,
+  // plus the error branch the table had none of. `isLoading` stays live for every caller who never
+  // had a query result to hand — the dev warning above covers the pair.
+  const branch = query === undefined ? undefined : dataQueryBranch('BasaltDataTable', query)
+  const showSkeleton = branch === undefined ? isLoading : branch === 'pending'
+  const queryError = branch === 'error' && query !== undefined ? query : undefined
+
+  // Every colSpan and every skeleton row counts the RENDERED columns, which is one more than
+  // `columns` once the checkbox column is prepended — a stale count left the empty state and the
+  // error row one cell short of the header.
+  const columnCount = columns.length + (enableRowSelection ? 1 : 0)
+
+  // `getSelectedRowModel()` is TanStack's own memo, so its `rows` array keeps its identity until
+  // the selection or the row model actually moves — which is what makes both memos below hold.
+  const selectedModelRows = enableRowSelection ? table.getSelectedRowModel().rows : undefined
+  const selectedRows = useMemo(
+    () => selectedModelRows?.map((row) => row.original) ?? [],
+    [selectedModelRows],
+  )
+  // `bulkActions` is the caller's function of the selection, and calling it inline rebuilt every
+  // action object on every render of the table — new `onClick` identities into the whole bar, for a
+  // selection that had not changed.
+  const bulkBarActions = useMemo(
+    () =>
+      bulkActions === undefined || selectedRows.length === 0
+        ? undefined
+        : bulkActions(selectedRows),
+    [bulkActions, selectedRows],
+  )
   const headerGroups = enablePinning ? getOrderedHeaderGroups(table) : table.getHeaderGroups()
   // The rows actually rendered, not `data` — a filter or a page index that matches nothing leaves
   // `data` non-empty while the body has nothing in it, and a blank body reads as a broken table.
@@ -1072,10 +1320,25 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
         ))}
       </Table.Thead>
       <Table.Tbody>
-        {isLoading ? (
+        {queryError !== undefined ? (
+          // The branch the table did not have (components audit #3). It spans every rendered
+          // column and carries the query's OWN `refetch` behind Retry, so the failure is reported
+          // where the rows would have been — not as an empty table saying nothing failed.
+          <Table.Tr>
+            <Table.Td colSpan={columnCount}>
+              <ErrorState
+                error={queryError.error}
+                title="Could not load"
+                tier="section"
+                retrying={queryError.fetchStatus === 'fetching'}
+                onRetry={() => void queryError.refetch()}
+              />
+            </Table.Td>
+          </Table.Tr>
+        ) : showSkeleton ? (
           Array.from({ length: skeletonRows }, (_, rowIndex) => (
             <Table.Tr key={`skeleton-${rowIndex}`}>
-              {columns.map((_, colIndex) => (
+              {Array.from({ length: columnCount }, (__, colIndex) => (
                 <Table.Td key={`skeleton-${rowIndex}-${colIndex}`}>
                   <Skeleton height={16} radius="sm" />
                 </Table.Td>
@@ -1084,7 +1347,7 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
           ))
         ) : rows.length === 0 ? (
           <Table.Tr>
-            <Table.Td colSpan={columns.length}>
+            <Table.Td colSpan={columnCount}>
               {emptyState ?? (
                 <Text c="dimmed" ta="center" size="sm" py="sm">
                   No data to display.
@@ -1102,7 +1365,28 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                 ]
               : row.getVisibleCells()
             return (
-              <Table.Tr key={row.id}>
+              <Table.Tr
+                key={row.id}
+                {...(enableRowSelection && row.getIsSelected() && { 'data-selected': true })}
+                {...(onRowActivate !== undefined && {
+                  className: classes.activatable,
+                  'data-activatable': true,
+                  tabIndex: 0,
+                  onClick: () => onRowActivate(row.original),
+                  // Enter only. Space is the browser's own page-scroll on a focused non-button, and
+                  // stealing it from a keyboard reader moving down a long table costs more than the
+                  // second activation key buys.
+                  onKeyDown: (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
+                    if (event.key !== 'Enter') return
+                    // Only the ROW's own Enter. A cell may hold a button, a link or the selection
+                    // checkbox, and keydown bubbles — so without this an Enter on a nested control
+                    // fired that control AND opened the row's detail behind it.
+                    if (event.target !== event.currentTarget) return
+                    event.preventDefault()
+                    onRowActivate(row.original)
+                  },
+                })}
+              >
                 {cells.map((cell) => {
                   const pinnedStyle = enablePinning
                     ? getPinnedCellStyle(table, cell.column)
@@ -1210,11 +1494,14 @@ export function BasaltDataTable<T>(props: BasaltDataTableProps<T>) {
                     })}
                   </FilterSet>
                 )}
-                {actions}
+                {actions !== undefined && <BarActionSlot actions={actions} />}
               </Group>
             </CtlSlot>
           )}
         </Group>
+      )}
+      {bulkBarActions !== undefined && (
+        <BulkActionBar count={selectedRows.length} actions={bulkBarActions} />
       )}
       {scrolls ? (
         <Table.ScrollContainer
