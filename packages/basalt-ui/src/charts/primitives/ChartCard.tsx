@@ -62,6 +62,19 @@ const headerWrapStyle: CSSProperties = {
  */
 export type ChartCardSlot = 'root' | 'header' | 'body'
 
+/**
+ * The props below are a HAND-CUT subset of `WidgetHeaderProps`, and that is the open half of audit
+ * B #2: `widget-header` now publishes named slices (`WidgetHeaderTitleProps`,
+ * `WidgetHeaderMetricProps`, `WidgetHeaderDeltaProps`) precisely so a composer's omissions are
+ * declared rather than accidental, and `StatCard`/`SettingsSection` already compose them.
+ *
+ * `ChartCard` cannot yet: it lives inside the Mantine-free `charts/` boundary, and every prop here
+ * is spelled out so a `./charts`-only consumer reads the whole contract without following a type
+ * into another module. What that costs is visible in the omissions — no `unit`, no `deltaFormat`,
+ * no `deltaGlyph`, no `sparkline` — so a KPI moved from a `StatCard` into a `ChartCard` loses them
+ * silently. Compose the slices here next time this file is open; the ledger of which composer takes
+ * which is `docs/CONTROLS-SPEC.md` §2.2.
+ */
 export type ChartCardProps = BasaltProps &
   SlotStylesProps<ChartCardSlot> & {
     /** Optional — the header renders only when this or one of info/value/actions/icon/count is set. */

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { VX } from '../../tokens'
 import { maxTextWidth } from './measure-text'
-import { autoXLabelRotate, smartTicks, smartTicksEvery, xLabelPxFor } from './ticks'
+import { autoXLabelRotate, smartTicks, smartTicksEvery, thinLabels, xLabelPxFor } from './ticks'
 
 const keys = (n: number): string[] => Array.from({ length: n }, (_, i) => `k${i}`)
 
@@ -80,6 +80,69 @@ describe('autoXLabelRotate — the phone tier’s default rotation', () => {
   test('an unmeasured plot or a zero-width label never rotates', () => {
     expect(autoXLabelRotate({ tier: 'phone', xMax: 0, labelPx: 90 })).toBe(0)
     expect(autoXLabelRotate({ tier: 'phone', xMax: 300, labelPx: 0 })).toBe(0)
+  })
+})
+
+describe('autoXLabelRotate — rotating must FIT, not merely be wanted', () => {
+  // `/charts-stress` block (f1) at 320: the flat axis holds two labels, and so does the rotated
+  // one once its deeper left gutter is paid for. Rotating buys nothing and spends 40px of plot.
+  const F1_AT_320 = { tier: 'phone', xMax: 190, labelPx: 81, rotatedXMax: 155 } as const
+
+  test('a rotation that paints no more labels than the flat axis is refused', () => {
+    expect(autoXLabelRotate(F1_AT_320)).toBe(0)
+    // ...and it is the FIT that refuses it: the same chart without the check still rotates.
+    expect(autoXLabelRotate({ tier: 'phone', xMax: 190, labelPx: 81 })).toBe(45)
+  })
+
+  test('a rotation that DOES buy a label is still taken', () => {
+    // Two tilted labels where one horizontal one fit — the trade §8 was introduced for.
+    expect(autoXLabelRotate({ tier: 'phone', xMax: 264, labelPx: 134, rotatedXMax: 246 })).toBe(45)
+  })
+
+  test('a plot the rotated margin leaves too narrow for two labels is refused', () => {
+    expect(autoXLabelRotate({ tier: 'phone', xMax: 200, labelPx: 90, rotatedXMax: 100 })).toBe(0)
+  })
+})
+
+/** `n` hour columns, the shape `/charts-stress` block (h2) paints. */
+const cols = (n: number): string[] => Array.from({ length: n }, (_, i) => `${i + 8}:00`)
+
+describe('thinLabels — the measured law for a kind that paints its own labels', () => {
+  test('keeps every k-th label so two painted neighbours can never overlap', () => {
+    // 12 columns over a 279px grid = 23.25px each; a 38px label needs every other one.
+    const keep = [...thinLabels(cols(12), 23.25, 38)].toSorted((a, b) => a - b)
+    // 10 is dropped rather than printed under the final label, one band away from it.
+    expect(keep).toEqual([0, 2, 4, 6, 8, 11])
+    for (let i = 1; i < keep.length; i += 1) {
+      expect(((keep[i] as number) - (keep[i - 1] as number)) * 23.25).toBeGreaterThanOrEqual(38)
+    }
+  })
+
+  test('a band wide enough for its label keeps all of them', () => {
+    expect(thinLabels(cols(4), 60, 38).size).toBe(4)
+  })
+
+  test('the first and last band always keep theirs', () => {
+    const keep = thinLabels(cols(12), 10, 60)
+    expect(keep.has(0)).toBe(true)
+    expect(keep.has(11)).toBe(true)
+  })
+
+  test('the grid label before a colliding final one is dropped, not printed under it', () => {
+    // step 5 over 12 bands leaves the last one 1 band (10px) past the grid — under one label.
+    const keep = thinLabels(cols(12), 10, 45)
+    expect(keep.has(5)).toBe(true)
+    expect(keep.has(10)).toBe(false)
+    expect(keep.has(11)).toBe(true)
+  })
+
+  test('an unmeasured band keeps only the two a reader orients from', () => {
+    expect([...thinLabels(cols(6), 0, 38)]).toEqual([0, 5])
+  })
+
+  test('an empty set stays empty and a single label survives', () => {
+    expect(thinLabels([], 20, 38).size).toBe(0)
+    expect([...thinLabels(['8:00'], 1, 38)]).toEqual([0])
   })
 })
 

@@ -58,6 +58,46 @@ export function smartTicks(dates: string[], xMax: number, labelPx?: number): str
   return dates.filter((_, i) => keep.has(i))
 }
 
+/**
+ * Which of a BAND axis's category labels may be painted so that no two neighbours overlap — the
+ * same measured law {@link smartTicks} applies to a point axis, for a chart that lays its labels
+ * out itself instead of through the `Axis*` primitives.
+ *
+ * `Heatmap` was the one kind rendering labels as plain `<text>`, and therefore the one kind exempt
+ * from §1's measured-margin law: it printed all 12 columns at 390px, ten of them overlapping. Here
+ * `bandPx` is the pitch between two neighbouring labels (a cell's width for columns, its height for
+ * rows) and `labelPx` the room one label needs ({@link xLabelPxFor} for a horizontal run, the line
+ * box for a vertical one); a label is kept every `ceil(labelPx / bandPx)` bands, so the gap between
+ * two painted labels is never narrower than one label.
+ *
+ * The first and last band always keep theirs — they are the two a reader orients from — and when
+ * the last one lands a partial step from the grid, the grid label before it is dropped rather than
+ * printed underneath, exactly as `smartTicks` does with its appended final tick.
+ */
+export function thinLabels(
+  labels: readonly string[],
+  bandPx: number,
+  labelPx: number,
+): Set<number> {
+  const keep = new Set<number>()
+  const last = labels.length - 1
+  if (last < 0) return keep
+  keep.add(0)
+  if (last === 0) return keep
+  if (bandPx <= 0 || labelPx <= 0) {
+    keep.add(last)
+    return keep
+  }
+  const step = Math.max(1, Math.ceil(labelPx / bandPx))
+  for (let i = 0; i <= last; i += step) keep.add(i)
+  const lastOnGrid = Math.floor(last / step) * step
+  if (lastOnGrid !== last && lastOnGrid > 0 && (last - lastOnGrid) * bandPx < labelPx) {
+    keep.delete(lastOnGrid)
+  }
+  keep.add(last)
+  return keep
+}
+
 /** Variant of smartTicks that targets an exact tick count rather than deriving from width. */
 export function smartTicksEvery(dates: string[], count: number): string[] {
   if (dates.length === 0) return []
@@ -73,6 +113,10 @@ export function smartTicksEvery(dates: string[], count: number): string[] {
  */
 const MIN_HORIZONTAL_TICKS = 3
 
+/** Horizontal projection of a 45°-rotated label — `cos 45°`. A tilted label still competes for
+ * horizontal room, just for `0.71×` of it. */
+const COS_45 = Math.SQRT1_2
+
 /**
  * The phone tier's default x-label rotation: 45° when the labels are so wide that fewer than
  * {@link MIN_HORIZONTAL_TICKS} of them fit side by side, else none.
@@ -86,6 +130,17 @@ const MIN_HORIZONTAL_TICKS = 3
  *
  * Deliberately measured against the same `labelPx` `smartTicks` thins by, so the decision and the
  * thinning cannot disagree about how wide a label is.
+ *
+ * **Wanting to rotate is not the same as rotating fitting.** A rotated label reaches into the LEFT
+ * gutter (`rotatedLabelExtents`), so rotating BUYS bottom-gutter depth and SPENDS plot width — and
+ * at a narrow enough box it spends more than it buys. `/charts-stress` block (f1) is the case:
+ * three clean horizontal labels at 390, and at 320 an auto-rotation that reached off the left edge
+ * and bought not one extra label for it. So the trade is CHECKED, not assumed. Pass `rotatedXMax`
+ * (the width left once `autoMargin({ rotate: 45 })` has taken its deeper left gutter) and the
+ * rotation is taken only when the rotated axis paints MORE labels than the flat one at its
+ * projected pitch (`labelPx · cos 45°`), and at least two of them. Otherwise the axis stays flat
+ * and `smartTicks` thins further — two readable horizontal labels beat two tilted ones in a
+ * narrower plot. Omit `rotatedXMax` and the check is skipped.
  */
 export function autoXLabelRotate(input: {
   tier: ChartTier
@@ -93,9 +148,16 @@ export function autoXLabelRotate(input: {
   xMax: number
   /** What one x label needs horizontally ({@link xLabelPxFor}). */
   labelPx: number
+  /** Plot width that would REMAIN once the rotated margin takes its deeper left gutter
+   * (`autoMargin({ rotate: 45 })`). Omit to skip the fit check. */
+  rotatedXMax?: number
 }): 0 | 45 {
-  const { tier, xMax, labelPx } = input
+  const { tier, xMax, labelPx, rotatedXMax } = input
   if (tier !== 'phone') return 0
   if (labelPx <= 0 || xMax <= 0) return 0
-  return Math.floor(xMax / labelPx) < MIN_HORIZONTAL_TICKS ? 45 : 0
+  const flatLabels = Math.floor(xMax / labelPx)
+  if (flatLabels >= MIN_HORIZONTAL_TICKS) return 0
+  if (rotatedXMax === undefined) return 45
+  const rotatedLabels = Math.floor(rotatedXMax / (labelPx * COS_45))
+  return rotatedLabels >= 2 && rotatedLabels > flatLabels ? 45 : 0
 }

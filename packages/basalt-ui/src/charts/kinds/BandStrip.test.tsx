@@ -192,6 +192,42 @@ describe('BandStrip — absenceFraction splits a folded band', () => {
     expect(Number(painted[0]?.getAttribute('width'))).toBeGreaterThan(0)
   })
 
+  test('a slot in the `absentState` hatches in full — the prop and the fraction say one thing', () => {
+    // The demo declares `absentState` and no `absentFraction`, the docs promise a hatch, and the
+    // strip emitted the `<pattern>` and then referenced it from nothing: an absent slot painted a
+    // flat grey indistinguishable from a measured one.
+    const { container } = renderStrip({ data: [slot('2026-08-01', null)], absentState: 'absent' })
+    const painted = [...container.querySelectorAll('rect[fill]')].filter(
+      (r) => r.getAttribute('fill') !== 'transparent',
+    )
+    expect(painted).toHaveLength(1)
+    expect(painted[0]?.getAttribute('fill')).toBe('url(#strip-band-absent)')
+  })
+
+  test('without `absentState` nothing moves — the same slot keeps its flat state fill', () => {
+    const { container } = renderStrip({ data: [slot('2026-08-01', null)] })
+    const painted = [...container.querySelectorAll('rect[fill]')].filter(
+      (r) => r.getAttribute('fill') !== 'transparent',
+    )
+    expect(painted[0]?.getAttribute('fill')).not.toBe('url(#strip-band-absent)')
+  })
+
+  test('an explicit `absentFraction` still wins over the state — a part-covered absent slot', () => {
+    const partial: Slot = { key: '2026-08-01', loss: null, folded: 4, unmeasured: 1 }
+    const { container } = renderStrip({
+      data: [partial],
+      getBand: () => ({ state: 'absent', absentFraction: 0.25 }),
+      absentState: 'absent',
+    })
+    const painted = [...container.querySelectorAll('rect[fill]')].filter(
+      (r) => r.getAttribute('fill') !== 'transparent',
+    )
+    expect(painted).toHaveLength(2)
+    const measured = Number(painted[0]?.getAttribute('width'))
+    const hatched = Number(painted[1]?.getAttribute('width'))
+    expect(hatched / (measured + hatched)).toBeCloseTo(0.25, 5)
+  })
+
   test('a fully absent band is all hatch and no fill', () => {
     const gone: Slot = { key: '2026-08-01', loss: 2, folded: 3, unmeasured: 3 }
     const { container } = renderStrip({ data: [gone] })

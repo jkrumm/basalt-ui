@@ -12,6 +12,8 @@ import {
 import { ChartFrame } from '../primitives/ChartFrame'
 import { useChartTierMetrics } from '../primitives/chart-tier'
 import type { ChartState } from '../primitives/ChartPending'
+import { maxTextWidth } from '../utils/measure-text'
+import { thinLabels, xLabelPxFor } from '../utils/ticks'
 import { VX, alpha } from '../../tokens'
 
 /** A single resolved heatmap cell — the unit the tooltip and hover operate on. */
@@ -92,6 +94,10 @@ const LABEL_FONT_FAMILY = 'var(--basalt-font-mono)'
 const PAD_LEFT = 44
 const PAD_BOTTOM = 24
 const PAD_TOP = 8
+
+/** Line box of one category label at `fontPx` — the vertical room a row label needs, and so the
+ * pitch below which the row labels thin (`thinLabels`). Same 1.35em line box `autoMargin` uses. */
+const labelLineHeight = (fontPx: number): number => Math.ceil(fontPx * 1.35)
 // Height of the optional gradient legend strip (+ its label line).
 const LEGEND_H = 8
 const LEGEND_LABEL_H = 16
@@ -101,7 +107,10 @@ const LEGEND_LABEL_H = 16
  * color at an opacity derived from its value; empty cells stay a faint neutral track.
  * Generalizes argo's day-of-week × hour-of-day heatmap. Categorical axes are rendered as
  * plain themed `<text>` (cells are not date-categorical, so there's no shared cursor here) —
- * per-cell hover drives the local tooltip directly.
+ * per-cell hover drives the local tooltip directly. Painting them outside the `Axis*` primitives
+ * does NOT exempt them from §1's measured law: both runs thin through {@link thinLabels} and the
+ * right gutter reserves half the widest column label, so no two painted labels overlap and the
+ * last one cannot clip.
  *
  * Composes `ChartFrame` purely for measuring (`height`/`aspectRatio`/`fill`, the same three
  * sizing modes every other kind exposes) — `legend={false}` and an empty `series` opt out of
@@ -184,12 +193,32 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
     return { lookup: map, max: m }
   }, [data, getRow, getCol, getValue])
 
+  const rowLabels = useMemo(() => rows.map(rowLabel), [rows, rowLabel])
+  const colLabels = useMemo(() => cols.map(colLabel), [cols, colLabel])
+
   const legendH = legend ? LEGEND_H + LEGEND_LABEL_H : 0
-  const gridW = Math.max(0, width - PAD_LEFT)
+  // The last column label is CENTRED on the last cell, so half of it hangs past the grid — the
+  // same reason `autoMargin` reserves half the widest x label on the right. Measured, not a
+  // constant: at 390px `19:00` used to print straight off the SVG's own clip edge.
+  const padRight = Math.ceil(maxTextWidth(colLabels, axisFont) / 2)
+  const gridW = Math.max(0, width - PAD_LEFT - padRight)
   const gridH = Math.max(0, height - PAD_TOP - PAD_BOTTOM - legendH)
   const cellW = cols.length > 0 ? gridW / cols.length : 0
   const cellH = rows.length > 0 ? gridH / rows.length : 0
   const legendGradientId = `${chartId}-heat-legend`
+
+  // §1's measured law, applied to the one kind that paints its labels as plain `<text>` rather
+  // than through the `Axis*` primitives: a label every `ceil(labelPx / cellPitch)` bands, so two
+  // painted neighbours can never overlap. Columns thin horizontally by the widest label, rows
+  // vertically by the line box.
+  const keptCols = useMemo(
+    () => thinLabels(colLabels, cellW, xLabelPxFor(colLabels, axisFont)),
+    [colLabels, cellW, axisFont],
+  )
+  const keptRows = useMemo(
+    () => thinLabels(rowLabels, cellH, labelLineHeight(axisFont)),
+    [rowLabels, cellH, axisFont],
+  )
 
   const show = (row: string, col: string, value: number, event: PointerEvent<SVGRectElement>) => {
     setTip({ row, col, value, anchor: { x: event.clientX, y: event.clientY } })
@@ -226,36 +255,40 @@ function HeatmapPlot<T>(props: HeatmapPlotProps<T>) {
 
         {/* Row labels (left). */}
         <Group left={0} top={PAD_TOP}>
-          {rows.map((row, ri) => (
-            <text
-              key={row}
-              x={PAD_LEFT - 6}
-              y={ri * cellH + cellH / 2 + 4}
-              textAnchor="end"
-              fontSize={axisFont}
-              fontFamily={LABEL_FONT_FAMILY}
-              fill={VX.faint}
-            >
-              {rowLabel(row)}
-            </text>
-          ))}
+          {rows.map((row, ri) =>
+            keptRows.has(ri) ? (
+              <text
+                key={row}
+                x={PAD_LEFT - 6}
+                y={ri * cellH + cellH / 2 + 4}
+                textAnchor="end"
+                fontSize={axisFont}
+                fontFamily={LABEL_FONT_FAMILY}
+                fill={VX.faint}
+              >
+                {rowLabels[ri]}
+              </text>
+            ) : null,
+          )}
         </Group>
 
         {/* Column labels (bottom). */}
         <Group left={PAD_LEFT} top={PAD_TOP + gridH}>
-          {cols.map((col, ci) => (
-            <text
-              key={col}
-              x={ci * cellW + cellW / 2}
-              y={16}
-              textAnchor="middle"
-              fontSize={axisFont}
-              fontFamily={LABEL_FONT_FAMILY}
-              fill={VX.faint}
-            >
-              {colLabel(col)}
-            </text>
-          ))}
+          {cols.map((col, ci) =>
+            keptCols.has(ci) ? (
+              <text
+                key={col}
+                x={ci * cellW + cellW / 2}
+                y={16}
+                textAnchor="middle"
+                fontSize={axisFont}
+                fontFamily={LABEL_FONT_FAMILY}
+                fill={VX.faint}
+              >
+                {colLabels[ci]}
+              </text>
+            ) : null,
+          )}
         </Group>
 
         {/* Optional gradient legend strip below the grid. */}
