@@ -510,6 +510,206 @@ describe('ThreadFeedRow forwards virtualize/height to the transcript', () => {
   })
 })
 
+// ── B1 — header overrides for a server-titled thread ─────────────────────────────────────────
+// argo's hermes-chat never populates `thread.outcome` (title/summary/type/pin are server-owned —
+// see `hermes-transport.ts`'s `resolveHermesOutcome`), so the outcome-only header always rendered
+// "Untitled thread" for a real Hermes thread. `title`/`summary`/`headerLeft`/`headerRight` close
+// that gap without forcing an `AgentOutcome` shape onto data that never had one.
+
+describe('ThreadFeedRow — B1 header overrides', () => {
+  test('title/summary props override the outcome-derived header', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded={false}
+          onToggle={() => {}}
+          onSend={() => {}}
+          title="Server-titled thread"
+          summary="Server summary"
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Server-titled thread')).toBeDefined()
+    expect(screen.getByText('Server summary')).toBeDefined()
+    // The outcome's own title ("A resolved thread", set by `buildThread`) must NOT also render —
+    // the override replaces the fallback, it doesn't render both.
+    expect(screen.queryByText('A resolved thread')).toBeNull()
+  })
+
+  test('omitting title/summary falls back to today’s outcome-derived header, unchanged', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded={false}
+          onToggle={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('A resolved thread')).toBeDefined()
+    expect(screen.getByText('Summary text')).toBeDefined()
+  })
+
+  test('headerLeft renders before the title, headerRight before the timestamp/chevron', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded={false}
+          onToggle={() => {}}
+          onSend={() => {}}
+          headerLeft={<span data-testid="row-header-left">pin</span>}
+          headerRight={<span data-testid="row-header-right">●</span>}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('row-header-left')).toBeDefined()
+    expect(screen.getByTestId('row-header-right')).toBeDefined()
+  })
+})
+
+// ── B2 — messages override ────────────────────────────────────────────────────────────────────
+// argo's confirmed transcript is `mergeOptimisticMessages(serverMessages, thread.messages, …)`
+// (chat-view.tsx), NOT `thread.messages` verbatim — a row that always reads `thread.messages`
+// forces a fork just to render the merged array.
+
+describe('ThreadFeedRow — B2 messages override', () => {
+  test('messages prop overrides the transcript source instead of reading thread.messages', () => {
+    const storeMessage = textMessage('store-only', 'user', T0)
+    const overrideMessage = textMessage('override-only', 'assistant', T0 + 60_000)
+
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith([storeMessage])}
+          expanded
+          onToggle={() => {}}
+          onSend={() => {}}
+          messages={[overrideMessage]}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('agent-message-override-only')).toBeDefined()
+    expect(screen.queryByTestId('agent-message-store-only')).toBeNull()
+  })
+
+  test('omitting messages falls back to thread.messages, unchanged', () => {
+    const storeMessage = textMessage('store-only-2', 'user', T0)
+
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith([storeMessage])}
+          expanded
+          onToggle={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('agent-message-store-only-2')).toBeDefined()
+  })
+})
+
+// ── B3 — height WITHOUT virtualize ────────────────────────────────────────────────────────────
+// argo's row bounds its body at 480px with inner scroll (no `@tanstack/react-virtual` peer
+// installed) — today's union forbids `height` unless `virtualize` is also on.
+
+describe('ThreadFeedRow — B3 bounded height without virtualize', () => {
+  test('height alone wraps the transcript in a fixed-height scroll node, with every message still rendered (unwindowed)', async () => {
+    const messages = [textMessage('hb1', 'user', T0), textMessage('hb2', 'assistant', T0 + 60_000)]
+
+    const { container } = render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith(messages)}
+          expanded
+          onToggle={() => {}}
+          onSend={() => {}}
+          height={240}
+        />
+      </MantineProvider>,
+    )
+
+    // Unlike the virtualized case above, nothing is windowed — both messages are in the DOM.
+    expect(screen.getByTestId('agent-message-hb1')).toBeDefined()
+    expect(screen.getByTestId('agent-message-hb2')).toBeDefined()
+    // The bounded scroll node carries the requested height, both in `BasaltStickToBottom`'s
+    // Suspense fallback <div> (style forwarded verbatim) and once the lazy `use-stick-to-bottom`
+    // import resolves — `waitFor` rides out that resolution so it settles inside `act()` instead
+    // of leaking an unwrapped-suspense warning into a later test.
+    await waitFor(() => {
+      expect(container.querySelector('[style*="240"]')).not.toBeNull()
+    })
+  })
+
+  test('omitting both height and virtualize renders the transcript content-sized, unchanged', () => {
+    render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={threadWith([textMessage('cs1', 'user', T0)])}
+          expanded
+          onToggle={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByTestId('agent-message-cs1')).toBeDefined()
+  })
+})
+
+// ── B4 — classNames slots + data-expanded ─────────────────────────────────────────────────────
+// argo's fork carries its own `wrapper`/`header`/`conversationWrapper` CSS-module classes and a
+// `data-expanded` attribute (thread-feed-row.tsx/.module.css) — the shipped row had no slot seam.
+
+describe('ThreadFeedRow — B4 classNames slots + data-expanded', () => {
+  test('classNames.root/header/body reach their respective elements', () => {
+    const { container } = render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded
+          onToggle={() => {}}
+          onSend={() => {}}
+          classNames={{ root: 'row-root', header: 'row-header', body: 'row-body' }}
+        />
+      </MantineProvider>,
+    )
+
+    expect(container.querySelector('.row-root')).not.toBeNull()
+    expect(container.querySelector('.row-header')).not.toBeNull()
+    expect(container.querySelector('.row-body')).not.toBeNull()
+  })
+
+  test('data-expanded on the root reflects the expanded prop', () => {
+    const { container, rerender } = render(
+      <MantineProvider>
+        <ThreadFeedRow
+          thread={buildThread([])}
+          expanded={false}
+          onToggle={() => {}}
+          onSend={() => {}}
+        />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('[data-expanded="false"]')).not.toBeNull()
+
+    rerender(
+      <MantineProvider>
+        <ThreadFeedRow thread={buildThread([])} expanded onToggle={() => {}} onSend={() => {}} />
+      </MantineProvider>,
+    )
+    expect(container.querySelector('[data-expanded="true"]')).not.toBeNull()
+  })
+})
+
 describe('common props (`common/props.ts`)', () => {
   test('className reaches the root', () => {
     const { container } = render(

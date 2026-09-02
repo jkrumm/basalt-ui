@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import type { JSX, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import type { AgentThread } from '../agent'
+import { BasaltStickToBottom } from '../agent'
 import { cx } from '../common/props'
 import type { BasaltProps } from '../common/props'
 import { assertRequiredProps } from '../common/validate'
@@ -69,6 +70,16 @@ export type ThreadFeedProps = BasaltProps & {
    * (`onStop`/`liveParts`/`liveStatus`) the built-in `'inline'` row doesn't expose; see `variant`
    * and `onSend`. */
   readonly renderRow?: (thread: AgentThread) => ReactNode
+  /**
+   * Scroll anchor. `'start'` (default) is today's top-anchored `ScrollArea` feed, unchanged.
+   * `'end'` anchors the feed's growth to the BOTTOM instead — a `BasaltStickToBottom` scroll node
+   * (auto-follows the live turn, same container `ThreadDetailPanel` uses) rather than `ScrollArea`,
+   * with the row stack `justify`-ed to the end and grown to the full height so a short feed still
+   * sits at the bottom rather than floating at the top. This is what a bottom-anchored chat feed
+   * (argo's hermes-chat S15 — oldest→newest top→bottom, pinned last, `renderRow`-driven) needs
+   * instead of hand-rolling its own scroll shell around `renderRow`.
+   */
+  readonly anchor?: 'start' | 'end'
 }
 
 function defaultRow(
@@ -116,6 +127,7 @@ export function ThreadFeed({
   variant = 'outcome',
   onSend,
   renderRow,
+  anchor = 'start',
   className,
   style,
 }: ThreadFeedProps): JSX.Element {
@@ -153,36 +165,50 @@ export function ThreadFeed({
       ? renderRow(thread)
       : defaultRow(thread, variant, activeId, collapsedId, handleInlineToggle, onSelect, onSend)
 
-  if (reduceMotion) {
+  // B5: `anchor="end"` grows the stack to the full scroll height and pins its content to the
+  // bottom, so a feed with only a couple of threads still sits flush against the composer instead
+  // of floating at the top of an otherwise-empty ScrollArea.
+  const stackAnchorProps = anchor === 'end' ? { justify: 'flex-end' as const, mih: '100%' } : {}
+
+  const list = reduceMotion ? (
+    <Stack gap="sm" p="sm" {...stackAnchorProps}>
+      {threads.map((thread) => (
+        <Box key={thread.id}>{rowFor(thread)}</Box>
+      ))}
+    </Stack>
+  ) : (
+    <Stack gap="sm" p="sm" {...stackAnchorProps}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        {threads.map((thread) => (
+          <motion.div
+            key={thread.id}
+            layout
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={MOTION_SPRING}
+          >
+            {rowFor(thread)}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </Stack>
+  )
+
+  // `anchor="end"`: a `BasaltStickToBottom` scroll node instead of `ScrollArea` — it owns an
+  // initial scroll-to-end on mount and auto-follows appended content (the live turn), which a
+  // plain `ScrollArea` has no notion of.
+  if (anchor === 'end') {
     return (
-      <ScrollArea className={cx(className)} style={{ height: '100%', ...style }}>
-        <Stack gap="sm" p="sm">
-          {threads.map((thread) => (
-            <Box key={thread.id}>{rowFor(thread)}</Box>
-          ))}
-        </Stack>
-      </ScrollArea>
+      <BasaltStickToBottom className={cx(className)} style={{ height: '100%', ...style }}>
+        {list}
+      </BasaltStickToBottom>
     )
   }
 
   return (
     <ScrollArea className={cx(className)} style={{ height: '100%', ...style }}>
-      <Stack gap="sm" p="sm">
-        <AnimatePresence mode="popLayout" initial={false}>
-          {threads.map((thread) => (
-            <motion.div
-              key={thread.id}
-              layout
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={MOTION_SPRING}
-            >
-              {rowFor(thread)}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </Stack>
+      {list}
     </ScrollArea>
   )
 }

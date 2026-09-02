@@ -113,6 +113,54 @@ export type ResolvedVirtualize = {
 }
 
 /**
+ * `ThreadFeedRow`'s OWN height contract (B3) — a strict superset of {@link VirtualizeProps} that
+ * additionally allows `height` WITHOUT `virtualize`. This is deliberately NOT a widening of
+ * `VirtualizeProps` itself (see `virtualize.type-guard.test.ts`, which pins that union rejecting
+ * `{ height }` with no `virtualize`): the two `height` modes mean different things and route to
+ * different DOM. `virtualize: true|VirtualizeOptions` + `height` still hands the row's transcript a
+ * fixed-size scroll container `@tanstack/react-virtual` owns and measures (unchanged, forwarded to
+ * `ThreadTranscript` via `resolveVirtualize`). `height` ALONE — no `virtualize` — wraps the row's
+ * TRANSCRIPT in a fixed-height `BasaltStickToBottom` (the same auto-follow-the-live-turn container
+ * `ThreadDetailPanel` already uses), leaving the composer outside/below it: a bounded, scrolling
+ * row for a thread the caller does not want to virtualize (argo's hermes-chat S7 — a 480px
+ * transcript body with inner scroll, no `@tanstack/react-virtual` peer installed).
+ */
+export type RowHeightProps =
+  | { readonly virtualize?: false; readonly height?: number | string }
+  | { readonly virtualize: true | VirtualizeOptions; readonly height: number | string }
+
+/** The resolved shape of {@link RowHeightProps} — exactly one of the three row body layouts. */
+export type ResolvedRowHeight =
+  | { readonly kind: 'virtualized'; readonly virtualize: ResolvedVirtualize }
+  | { readonly kind: 'bounded'; readonly height: number | string }
+  | { readonly kind: 'content-sized' }
+
+/**
+ * The single narrowing point `ThreadFeedRow` resolves {@link RowHeightProps} through — mirrors
+ * {@link resolveVirtualize}'s role for `VirtualizeProps`, extended with the `'bounded'` branch B3
+ * adds. Runtime-checked rather than routed through `resolveVirtualize` itself: `RowHeightProps`'
+ * inactive branch relaxes `height` from `never` to `number | string | undefined`, which is NOT
+ * structurally assignable to `VirtualizeProps` (by design — see this type's own doc), so the two
+ * resolvers stay independent rather than one calling the other with a cast.
+ */
+export function resolveRowHeight(props: RowHeightProps): ResolvedRowHeight {
+  const { virtualize, height } = props
+  if (virtualize === true || (typeof virtualize === 'object' && virtualize !== null)) {
+    // The union guarantees `height` is present on this branch — see resolveVirtualize's own doc
+    // for why the pairing is re-stated here instead of narrowed automatically.
+    return {
+      kind: 'virtualized',
+      virtualize: {
+        options: virtualize === true ? {} : virtualize,
+        height: height as number | string,
+      },
+    }
+  }
+  if (height !== undefined) return { kind: 'bounded', height }
+  return { kind: 'content-sized' }
+}
+
+/**
  * Narrows a `VirtualizeProps` pair once, centrally: `null` when virtualization is off, otherwise
  * the options object (normalizing the bare `virtualize: true` shorthand to `{}`) alongside the
  * `height` the union guarantees is present. Every component accepting `VirtualizeProps` resolves

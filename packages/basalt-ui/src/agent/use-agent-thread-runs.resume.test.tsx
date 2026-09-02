@@ -292,3 +292,104 @@ describe('useAgentThreadRuns — mount-time reconcile', () => {
     })
   })
 })
+
+// ── R3 — the reconcile effect keyed on `store.hydrated` ──────────────────────────────────────
+//
+// The bare `[]`-dep effect above ran once, at mount, over whatever `store.threads` held AT THAT
+// INSTANT. For `createAdapterThreadsStore` (an async, server-backed store), that instant is BEFORE
+// the first `listThreads` resolves — `store.threads` is still the adapter's empty pre-load
+// snapshot, `store.hydrated` is `false`, and the effect never runs again once hydration completes,
+// so a thread orphaned by a reload/remount was invisible to the sweep for the store shape that most
+// needs it (S16 in the maturation doc). This double models exactly that shape: `hydrated`/`threads`
+// start empty/false and only "arrive" on a later render, mimicking the adapter's async load.
+describe('useAgentThreadRuns — reconcile effect keyed on store.hydrated (R3)', () => {
+  test('an async store: hydrated flips true AFTER mount → the reconcile sweep still runs against the newly-loaded threads', async () => {
+    const now = Date.now()
+    const userMessage: ChatMessage<AgentPart> = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      parts: [{ id: 'seed-user-part', type: 'text', text: 'hello' }],
+      createdAt: now,
+    }
+    const orphanedThread: AgentThread<AgentPart> = {
+      id: crypto.randomUUID(),
+      messages: [userMessage],
+      outcome: null,
+      status: 'streaming',
+      read: false,
+      createdAt: now,
+      updatedAt: now,
+      resumeToken: 'async-resume-token',
+    }
+
+    // Mutable closure state the store's getters read — mimics an adapter store whose `threads`/
+    // `hydrated` only reflect the real data once its first `listThreads` resolves.
+    let hydrated = false
+    let threads: AgentThread<AgentPart>[] = []
+
+    const store: ThreadsStore<AgentPart> = {
+      get threads() {
+        return threads
+      },
+      activeId: null,
+      select() {},
+      create() {
+        return crypto.randomUUID()
+      },
+      appendMessage() {},
+      setOutcome(id, outcome) {
+        threads = threads.map((thread) => (thread.id === id ? { ...thread, outcome } : thread))
+      },
+      setStatus(id, status) {
+        threads = threads.map((thread) => (thread.id === id ? { ...thread, status } : thread))
+      },
+      setResumeToken(id, token) {
+        threads = threads.map((thread) => {
+          if (thread.id !== id) return thread
+          const { resumeToken: _resumeToken, ...rest } = thread
+          return { ...rest, ...(token !== undefined ? { resumeToken: token } : {}) }
+        })
+      },
+      markRead() {},
+      remove() {},
+      clear() {},
+      get hydrated() {
+        return hydrated
+      },
+      error: undefined,
+    }
+
+    const resumeArgs: string[] = []
+    const transport: ResumableAgentTransport<AgentPart, string> = {
+      async *stream() {},
+      async *resume(token) {
+        resumeArgs.push(token)
+        yield { id: 'p1', type: 'text', text: 'resumed' }
+      },
+      idempotentReplay: true as const,
+    }
+
+    const { rerender } = renderHook(
+      ({ store: currentStore }: { store: ThreadsStore<AgentPart> }) =>
+        useAgentThreadRuns({ transport, store: currentStore, resolveOutcome }),
+      { initialProps: { store } },
+    )
+
+    // Nothing to reconcile at mount — `store.hydrated` is false and `store.threads` is still the
+    // adapter's empty pre-load snapshot, exactly like `createAdapterThreadsStore` before its first
+    // `listThreads` resolves.
+    expect(resumeArgs).toEqual([])
+    expect(store.threads).toEqual([])
+
+    // Hydration "arrives": the real threads (including the orphaned streaming one) land, and
+    // `hydrated` flips true — the same shape as the adapter's load resolving.
+    threads = [orphanedThread]
+    hydrated = true
+    rerender({ store })
+
+    await waitFor(() => {
+      expect(store.threads.find((thread) => thread.id === orphanedThread.id)?.status).toBe('done')
+    })
+    expect(resumeArgs).toEqual(['async-resume-token'])
+  })
+})

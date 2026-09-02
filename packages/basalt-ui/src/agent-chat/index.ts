@@ -25,11 +25,13 @@ export type { ThreadFeedRowProps } from './thread-feed-row'
 
 // ── Shared transcript/row contracts ───────────────────────────────────────────
 // Type-only. Both are named in the PUBLIC props of components exported above
-// (`ThreadTranscriptProps.affordances`, `ThreadFeedRowProps`'s virtualize union), so a consumer
-// that wants to hold one in a typed variable needs to be able to name it. No runtime export here —
-// the resolution/defaults live inside the components.
+// (`ThreadTranscriptProps.affordances`, `ThreadFeedRowProps`'s height union), so a consumer that
+// wants to hold one in a typed variable needs to be able to name it. No runtime export here — the
+// resolution/defaults live inside the components. `RowHeightProps` (B3) is `ThreadFeedRow`'s OWN
+// height contract — a superset of `VirtualizeProps` that also allows `height` without
+// `virtualize` — kept alongside it for the same reason.
 export type { MessageAffordances } from './message-affordances'
-export type { VirtualizeOptions, VirtualizeProps } from './virtualize'
+export type { RowHeightProps, VirtualizeOptions, VirtualizeProps } from './virtualize'
 
 // ── ThreadOutcomeCard ─────────────────────────────────────────────────────────
 export { ThreadOutcomeCard } from './thread-outcome-card'
