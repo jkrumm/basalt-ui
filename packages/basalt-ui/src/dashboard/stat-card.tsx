@@ -22,6 +22,9 @@
  * `src/dashboard` stays @visx-free — `sparkline` is a plain `ReactNode` slot, never a chart import
  * here. Pass a `LineSparkline`/`BarSparkline` from `basalt-ui/charts` at the call site.
  *
+ * `query` hands the card's pending/error/empty branch to `QueryState` at the `'section'` tier,
+ * rendered under the header rather than over it — the title row is chrome and must not flicker.
+ *
  * `tone` marks the card as past a threshold with an accent rail down its leading edge. It exists
  * because `value` is typed `string`: without it, a card whose number has crossed a threshold reads
  * exactly as calm as one that hasn't, and the only way out from the consumer side is to wrap the
@@ -93,11 +96,17 @@ import { Box, Card, VisuallyHidden } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { WidgetHeader } from '../widget-header'
-import type { DeltaPolarity } from '../widget-header'
+import type {
+  WidgetHeaderDeltaProps,
+  WidgetHeaderMetricProps,
+  WidgetHeaderTitleProps,
+} from '../widget-header'
 import { CtlSlot } from '../theme'
 import { VX } from '../tokens'
 import { cx } from '../common/props'
 import type { BasaltProps, SlotStylesProps, Tone } from '../common/props'
+import { QueryState } from './query-state'
+import type { QueryStateLike } from './query-state'
 import classes from './stat-card.module.css'
 
 /**
@@ -202,25 +211,29 @@ const TONE_LABEL: Record<StatCardTone, string> = {
   bad: 'Past the severe threshold',
 }
 
+/**
+ * `StatCard` re-publishes three NAMED `WidgetHeader` slices (`WidgetHeaderTitleProps` /
+ * `WidgetHeaderMetricProps` / `WidgetHeaderDeltaProps`, audit B #2) rather than re-declaring the
+ * props one by one — which is how `count` came to be missing here and `unit` missing on `Section`,
+ * with nothing in either type saying whether that was a decision.
+ *
+ * Two deliberate departures from the slices, and they are the whole omission list:
+ *
+ *  - **`value` is REQUIRED.** A KPI card with no number is an empty box; on `WidgetHeader` the same
+ *    prop is optional because a section heading legitimately has none.
+ *  - **`count` is not taken.** It is the table/list count (law C11) and a KPI card is neither.
+ *
+ * `Section` and `ChartCard` still cut their own ad-hoc subsets; both should move onto these same
+ * three slices.
+ */
 export type StatCardProps = BasaltProps &
-  SlotStylesProps<StatCardSlot> & {
-    /** Head-font title, rendered via `WidgetHeader tier="widget"`. */
-    title: string
-    /** Optional leading icon, forwarded to `WidgetHeader`. */
-    icon?: ReactNode
-    /** Muted line under the hero row, forwarded to `WidgetHeader` — the unit or basis a
-     * pre-formatted `value` cannot carry (`per day`, `of 40 planned`). Not a second metric. */
-    subtitle?: string
-    /** Info tooltip beside the title, forwarded to `WidgetHeader` — how the number is computed. Never
-     * part of the heading's accessible name; see `WidgetHeaderProps.info`. */
-    info?: string
-    /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. */
+  SlotStylesProps<StatCardSlot> &
+  WidgetHeaderTitleProps &
+  Omit<WidgetHeaderMetricProps, 'value'> &
+  WidgetHeaderDeltaProps & {
+    /** Pre-formatted KPI value string (mono ~24px, weight 600, ink) — the hero-row value. Required
+     * here, unlike on `WidgetHeader`: see the type's own doc. */
     value: string
-    /** The value's unit, muted and mono at `--vx-text-sm`, immediately after it on the hero row —
-     * forwarded to `WidgetHeader`. `412` + `TSS`, not `"412 TSS"`: a unit painted at the hero's 24px
-     * reads as a second numeral. The BASIS (`7-day rolling`) is still `subtitle`; see
-     * `WidgetHeaderProps.unit`. */
-    unit?: string
     /**
      * The parts the hero number is made of — compact rows under it, one line each, no hairlines.
      *
@@ -235,32 +248,21 @@ export type StatCardProps = BasaltProps &
      * table, and a table is `BasaltDataTable` in a `Section`.
      */
     breakdown?: readonly StatCardBreakdownRow[]
-    /** Signed delta rendered via `DeltaBadge`; omit to hide the trend chip entirely. */
-    delta?: number
-    /** Optional comparison timeframe shown after the delta (e.g. `MoM`) — forwarded to `DeltaBadge`. */
-    deltaPeriod?: string
-    /** Which sign reads as the good verdict on the delta chip — forwarded to `DeltaBadge`'s
-     * `polarity` via `WidgetHeader`. Defaults to `'up-good'` (today's behaviour). */
-    deltaPolarity?: DeltaPolarity
     /**
-     * Formats `delta` into the chip's label — forwarded to `WidgetHeader` and on to `DeltaBadge`.
-     * Defaults to `${Math.abs(delta).toFixed(1)}%`.
+     * The async result behind the number. Supplied, the card renders its pending / error / empty
+     * branch through {@link QueryState} at the `'section'` tier, INSIDE the card body and directly
+     * under the header — so the title, the icon and the info glyph stay put while the reading below
+     * them resolves. Omitted, the card renders exactly as it always has (audit B #3).
      *
-     * A delta is not always a percentage, and the default silently claimed it was: a pace card's trend
-     * (`0:12 /km`) and a speed card's (`0.3 km/h`) both rendered as `0.3%` — a wrong unit on a KPI is
-     * the one failure worse than no chip, and it is why the consumer that needed it kept the card
-     * hand-rolled instead (the `HeroCard` fork `shadow-basalt-export` reports).
+     * It exists because the alternative every consumer wrote is the four-way switch `QueryState`
+     * exists to delete, and got it wrong in the direction that renders "no data" over a 500. The
+     * BRANCH is basalt's; the number is not — `value` is still whatever you formatted, so pass a
+     * placeholder (`'—'`) while the query is pending rather than a stale one.
      *
      * @example
-     * // An absolute delta that prints its own sign — no percent, no glyph saying it twice.
-     * <StatCard title="Pace" value="5:31" unit="/km" delta={-12}
-     *   deltaFormat={(s) => `${s < 0 ? '−' : '+'}0:${String(Math.abs(s)).padStart(2, '0')} /km`}
-     *   deltaGlyph={false} />
+     * <StatCard title="Active users" value={q.data ? fmt(q.data.count) : '—'} query={q} />
      */
-    deltaFormat?: (delta: number) => string
-    /** Render the ▲/▼ glyph on the delta chip. Defaults to `true`; a zero delta never shows one. Pass
-     * `false` when `deltaFormat` prints the sign itself. */
-    deltaGlyph?: boolean
+    query?: QueryStateLike<unknown>
     /**
      * Optional trend visual. Either a node, or a RENDER PROP receiving the slot's measured box.
      *
@@ -295,6 +297,7 @@ export function StatCard({
   value,
   unit,
   breakdown,
+  query,
   delta,
   deltaPeriod,
   deltaPolarity,
@@ -313,6 +316,24 @@ export function StatCard({
   // Only a render prop needs a measurement; a plain node sizes itself.
   const slot = useSlotWidth(isRender)
   const measured: StatCardSparklineSize = { width: slot.width, height: SPARKLINE_RIGHT_HEIGHT }
+
+  // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which is the
+  // one semantic that survives a reader meeting the card out of context.
+  const breakdownRows =
+    breakdown === undefined || breakdown.length === 0 ? null : (
+      <dl className={classes.breakdown}>
+        {breakdown.map((row) => (
+          <div
+            key={row.label}
+            className={classes.breakdownRow}
+            {...(row.tone !== undefined && { 'data-tone': row.tone })}
+          >
+            <dt className={classes.breakdownLabel}>{row.label}</dt>
+            <dd className={classes.breakdownValue}>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    )
 
   return (
     <Card
@@ -386,27 +407,17 @@ export function StatCard({
             })}
           />
 
-          {breakdown !== undefined &&
-            breakdown.length > 0 && (
-              // A `<dl>`, not a table and not a stack of divs: each row IS a term and its value, which
-              // is the one semantic that survives a reader meeting the card out of context.
-              //
-              // INSIDE `.header`, not beside it: with `sparklinePlacement="right"` the body is a flex
-              // ROW, so a third child here would sit next to the trend rather than under the number
-              // it splits. The header block is the card's text column in both placements.
-              <dl className={classes.breakdown}>
-                {breakdown.map((row) => (
-                  <div
-                    key={row.label}
-                    className={classes.breakdownRow}
-                    {...(row.tone !== undefined && { 'data-tone': row.tone })}
-                  >
-                    <dt className={classes.breakdownLabel}>{row.label}</dt>
-                    <dd className={classes.breakdownValue}>{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
+          {/* INSIDE `.header`, not beside it: with `sparklinePlacement="right"` the body is a flex
+              ROW, so a third child here would sit next to the trend rather than under the number it
+              splits. The header block is the card's text column in both placements — which is also
+              why the `query` branch lands here rather than around the whole card. */}
+          {query === undefined ? (
+            breakdownRows
+          ) : (
+            <QueryState query={query} tier="section">
+              {breakdownRows}
+            </QueryState>
+          )}
         </div>
 
         {sparkline !== undefined && (

@@ -1,8 +1,8 @@
 /**
  * EmptyState — a centered icon/title/description/action stack for empty data regions (no shipped
- * illustration assets — `icon` is a plain, faint-rendered `ReactNode` slot). `variant="page"` uses
- * generous vertical padding for a full-page empty state; `variant="section"` is compact, for an
- * empty card/panel region.
+ * illustration assets — `icon` is a plain, faint-rendered `ReactNode` slot). `tier="page"` uses
+ * generous vertical padding for a full-page empty state; `tier="section"` is compact, for an
+ * empty card/panel region (`variant` is the deprecated spelling of the same prop — audit B #19).
  *
  * @example
  * import { EmptyState } from 'basalt-ui'
@@ -12,7 +12,7 @@
  *   title="No results"
  *   description="Try adjusting your filters or search terms."
  *   action={<Button onClick={onReset}>Clear filters</Button>}
- *   variant="section"
+ *   tier="section"
  * />
  */
 import { Center, Stack } from '@mantine/core'
@@ -38,7 +38,11 @@ export type EmptyStateProps = BasaltProps &
     description?: string
     /** Optional call-to-action rendered below the description. */
     action?: ReactNode
-    /** `'page'` (default) = generous padding for a full-page state; `'section'` = compact. */
+    /** How loud this state is: `'page'` (default) = generous padding for a full-page state;
+     * `'section'` = compact. */
+    tier?: 'page' | 'section'
+    /** @deprecated Renamed to `tier` (audit B #19) — `tier` is the package's word for "how loud is
+     * this". Still honoured; `tier` wins when both are passed. */
     variant?: 'page' | 'section'
   }
 
@@ -58,11 +62,13 @@ export function EmptyState({
   title,
   description,
   action,
-  variant = 'page',
+  tier,
+  variant,
   className,
   style,
   classNames,
 }: EmptyStateProps) {
+  const resolved = tier ?? variant ?? 'page'
   return (
     <Stack
       align="center"
@@ -70,7 +76,7 @@ export function EmptyState({
       className={cx(classNames?.root, className)}
       style={{
         padding:
-          variant === 'page'
+          resolved === 'page'
             ? `${PAGE_PADDING_Y} ${PAGE_PADDING_X}`
             : `${SECTION_PADDING_Y} ${SECTION_PADDING_X}`,
         textAlign: 'center',
