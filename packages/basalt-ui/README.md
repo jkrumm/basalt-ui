@@ -128,6 +128,31 @@ createRoot(document.getElementById('root')!).render(
 > `@mantine/spotlight/styles.layer.css` if you install those optional-peer batteries
 > (`./notifications` / `./commands` — see [Adapter batteries](#adapter-batteries) below).
 
+### Composition order
+
+The canonical stack, once a router and a query client join the example above:
+
+```tsx
+<BasaltProvider theme={theme}>
+  <QueryClientProvider client={queryClient}>
+    <BasaltOverlays>
+      <RouterProvider router={router} />
+    </BasaltOverlays>
+  </QueryClientProvider>
+</BasaltProvider>
+```
+
+The order is load-bearing, not stylistic: `BasaltProvider` auto-mounts `ConnectivityProvider`
+(`./connectivity`), which aggregates React-Query's own status and so must sit **above** the query
+client; `BasaltOverlays` must sit **inside** the theme, since Modals/Spotlight/Notifications
+resolve `--vx-*` tokens through Mantine's context; the router goes **last** so every route
+component renders with the theme, the data layer and the overlay layer already mounted above it.
+`agent/rules/basalt-mantine.md` points here rather than restating the tree.
+
+**No `'use client'` directive ships anywhere in the package.** A Next.js App Router consumer wraps
+this whole composition in its own client file (`'use client'` at the top) and renders that from a
+server layout — basalt stays framework-agnostic and does not guess at the boundary.
+
 ### Theming
 
 The shipped palette isn't a fixed set of hexes — it's **generated** from one accent seed + five
@@ -307,7 +332,7 @@ deleted rather than silently surviving into the next real skew.
 | `./guard`           | **free** | `checkSource`, `GUARD_RULES`, `Finding` types — the headless theme-guard core; plus the annotation reader `--audit-allows` is built on: `findAllowAnnotations`, `neutralizeAllowAnnotation`, `NEUTRALIZED_ALLOW_TOKEN`, `PLUGIN_RULE_IDS`, `AllowAnnotationSite`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `./query`           | **free** | `createBasaltQueryClient`, transport-agnostic `unwrap`, lazy `BasaltQueryDevtools`, `toErrorMessage` / `errorStatus` — the only route to those two; the root barrel does not re-export them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `./router-tanstack` | **free** | TanStack Router bridge: `defineNav`/`navGroup`/`navTarget`/`flattenNav` + `useNav` (→ `{ sections, mobileNav }`), `useBasaltNav` (active route), `useRouterBreadcrumbs`, and `createSearchStore` + the `field.*` vocabulary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `./forms`           | coupled  | Mantine form adapter: `useBasaltForm`, `inputProps`, `FormErrorSummary`, `useFormDraft` (Standard Schema)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `./notifications`   | coupled  | Mantine notifications: `notify` helpers, typed registry, persisted history, `NotificationBell`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `./commands`        | coupled  | Typed command bus + overlay controller, `toSpotlightActions`, `ShortcutsHelp`, `BasaltOverlays`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `./data`            | coupled  | Convenience barrel pulling both peer groups: `BasaltDataTable`, `BasaltVirtualList` (Mantine-rendered) — prefer `./data/table` / `./data/virtual` for per-feature opt-in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -573,7 +598,7 @@ bun add @mantine/form
 ```
 
 ```tsx
-import { useBasaltForm, field, FormErrorSummary } from 'basalt-ui/forms'
+import { useBasaltForm, inputProps, FormErrorSummary } from 'basalt-ui/forms'
 
 const form = useBasaltForm({ initialValues: { email: '' } })
 ```
