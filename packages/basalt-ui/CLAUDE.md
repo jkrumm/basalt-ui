@@ -26,7 +26,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 | `./state`                                  | **free** | `createPersistedState` + the field vocabulary (`field.*`, `FieldHandle`, lanes) + `createLocalStore`                                                                                                                               |
 | `./router-tanstack`                        | **free** | the TanStack bridge: `defineNav`/`useNav`, `useBasaltNav`, `useRouterBreadcrumbs`, `createSearchStore`                                                                                                                             |
 | `./query`                                  | **free** | `createBasaltQueryClient`, `unwrap`, lazy devtools, `toErrorMessage`/`errorStatus`                                                                                                                                                 |
-| `./forms`                                  | coupled  | `useBasaltForm`, `field`, `FormErrorSummary`, `useFormDraft`                                                                                                                                                                       |
+| `./forms`                                  | coupled  | `useBasaltForm`, `inputProps`, `FormErrorSummary`, `useFormDraft`                                                                                                                                                                  |
 | `./notifications`                          | coupled  | `notify` + the typed registry, persisted history, bell + center                                                                                                                                                                    |
 | `./commands`                               | coupled  | the typed command bus, overlay controller, Spotlight projection, `BasaltOverlays`                                                                                                                                                  |
 | `./data`, `./data/table`, `./data/virtual` | coupled  | `BasaltDataTable`, `BasaltVirtualList` (prefer the narrow subpaths)                                                                                                                                                                |
@@ -52,17 +52,21 @@ pieces are re-exported from the root barrel, because `BasaltProps` is the base a
 props extend and `src/surfaces.ts` stays the SSOT for real subpaths.
 
 - **Every component's props type extends `BasaltProps`** (`className` + `style`, both spelled
-  `| undefined` because `exactOptionalPropertyTypes` is on). The isomorphic harness counted 98 of
-  123 exports dropping `className`; the `NO_CLASSNAME` ledger in `tests/isomorphic/props.tsx`
-  ratchets in both directions, so adopting it means DELETING that component's entry.
+  `| undefined` because `exactOptionalPropertyTypes` is on). The isomorphic harness first counted 98
+  of 123 exports dropping `className`; six adopter waves closed most of it, down to 37 of 125 (18 of
+  those real gaps, the rest providers/SVG marks/portal targets). The `NO_CLASSNAME` ledger in
+  `tests/isomorphic/props.tsx` ratchets in both directions, so adopting it means DELETING that
+  component's entry.
 - **`className` + per-slot `classNames`, and nothing else** — no `styles`, no `vars`. basalt does
   not spread `...rest` onto the DOM (which is why the harness saw zero unknown-attribute warnings),
   and a composite that paints more than one box declares its slot union instead:
   `SlotStylesProps<'root' | 'header' | 'body'>`. `Section` is the reference adoption.
 - **The validate idiom is two functions, and the split is the point.** `assertRequiredProps` THROWS
-  in every build, before the component reads into the prop — that is the F-ERR-1 remedy (54 of 55
-  components failed as a raw `TypeError` swallowed by `BasaltErrorBoundary`; only `QueryState` named
-  itself). `useValidateProps` is dev-only, `console.error`s each message ONCE per
+  in every build, before the component reads into the prop — that is the F-ERR-1 remedy. F-ERR-1
+  originally named 54 call sites failing as a raw `TypeError` swallowed by `BasaltErrorBoundary`
+  (only `QueryState` named itself); six adopter waves remedied 33 of them, leaving 22 still raw —
+  visx-adjacent chart primitives (`AreaClosed`, `CartesianChart`, `ChartFrame`, …) and three misses
+  (`OverflowMenu`, `ThreadDetailPanel`, the third-party `QueryClientProvider` re-export). `useValidateProps` is dev-only, `console.error`s each message ONCE per
   `(component, message)`, and constant-folds away in production. A misuse that would crash anyway
   throws; one that merely renders the wrong thing warns. `SelectFilter` and `Section` are the two
   reference adoptions.

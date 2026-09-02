@@ -32,8 +32,11 @@ at 1.3.0, `./agent-chat` at 1.10.0.
 
 ## Unreleased
 
-**Nothing removed. Additive throughout, and enforcement tightened: five oxlint rules plus one guard
-kind became `error`, and one new rule id shipped at `warn`.** The store half of this minor also
+**Nothing removed, and ONE thing changed shape: `inputProps` no longer returns `key`** — a silent
+behaviour change at every field call site, caught by the new `basalt/forms-field-key` and described
+in its own § below. Read that one before upgrading; the rest of the minor is additive, with
+enforcement tightened: five oxlint rules plus one guard
+kind became `error`, and new rule ids shipped at `warn`. The store half of this minor also
 fixed four inference and notification defects consumers hit while porting, plus two ways a fallback
 got pinned into localStorage — see § Stores below. Every level change honours the `theme-allow`
 grammar unchanged; only the severity of an unwaived finding moves.
@@ -118,9 +121,12 @@ What is new, one line each — nothing here renames or removes anything:
   straight through to the auto-mounted `ConnectivityProvider`. Reaches `override` for the first
   time (the only prior route was mounting a second, shadowing `ConnectivityProvider`) — see
   § BasaltProvider below.
-- **Five new oxlint rule ids, all `warn`** — `basalt/provider-above-router`,
-  `basalt/duplicate-notifications-mount`, `basalt/query-dual-import`, `basalt/query-fn-unwrap`
-  (grace to 1.30.0) and `basalt/deprecated-export` (permanently advisory). The first four guard
+- **Six new oxlint rule ids, all `warn`** — `basalt/provider-above-router`,
+  `basalt/duplicate-notifications-mount`, `basalt/query-dual-import`, `basalt/query-fn-unwrap`,
+  `basalt/forms-field-key` (grace to 1.30.0) and `basalt/deprecated-export` (permanently
+  advisory). `forms-field-key` is the one that matters most in this minor — it is the only thing
+  that reports the `inputProps` call sites below, which a compiler cannot see; see § `inputProps`.
+  The first four guard
   four doctrines that shipped stated-but-unguarded under a `not guarded:` banner — the provider/
   router mount order, the `BasaltOverlays` XOR `BasaltNotifications` double-mount, the
   `basalt-ui/query` import seam, and `queryFn` wrapping in `unwrap()`. Each is honest about its
@@ -131,7 +137,9 @@ What is new, one line each — nothing here renames or removes anything:
   reading the `DEPRECATED_EXPORTS` ledger beside the plugin. Today that is `field` from
   `basalt-ui/forms` (autofixed to `inputProps as field`, so no call site moves) and the three
   flattened `BasaltProvider` connectivity props. Permanently `warn` — a deprecation is a schedule,
-  not a defect.
+  not a defect. **On the `field` row, take the two fixes in order**: that rename lands the new
+  `inputProps` shape, which has no `key`, and `basalt/forms-field-key` then reports the same line
+  and inserts the `key`. Two `--fix` passes, or one manual edit writing both.
 - **Dev-only duplicate-mount warnings** — `BasaltProvider` now warns when a second instance mounts
   while the first is still mounted; `<BasaltOverlays notifications />` and `<BasaltNotifications />`
   now warn when BOTH are mounted at once (previously prose-only in both cases). Both are
@@ -256,6 +264,80 @@ onConfirm })` is the counted one-liner over it ("Delete 3 items?"). Both REJECT 
   to today's `String(message)`, so nothing moves unless you pass it. `notifyUndo` uses it.
 - **`missingLayer`** (`basalt-ui`) — a message builder beside `requiredProp`/`oneOf`/`duplicateMount`
   for "this call needs a layer that is not mounted or not installed". Additive.
+- **`emit`'s payload now narrows per kind** (`basalt-ui/notifications`) — `NotificationSpec<P>` and
+  `NotificationAction<P>` are generic, `P` inferred from `toMessage`/`action.run`'s parameter, the
+  same mechanism `Overlay<P>` uses for `render`. Annotate the payload shape and `emit('kind', …)`
+  requires it, a wrong shape is a tsc error. A kind that annotates neither function keeps today's
+  `payload?: unknown` — additive, no existing `defineNotifications` call needs a change.
+- **The form layer** (`basalt-ui/forms`) — `./forms` was an adapter with no layout, no submit
+  lifecycle, no array helper and no disabled propagation (audit B #5). Seven new exports, all
+  additive; `useBasaltForm`, `FormErrorSummary` and `useFormDraft`'s existing signature are
+  untouched. `inputProps` is the one exception, and it is not additive — see § `inputProps` no
+  longer returns `key` below.
+  - **`FormSection` / `FormRow` / `FormGroup` / `FormActions`** — the layout. `FormRow` IS law C1's
+    third home, the form row: label left / control right, label above below `sm`, the swap in CSS
+    (law C9). It does NOT replace `SettingsRow` — that stays the settings-page variant, and both
+    keep Mantine's `md` tier rather than mounting a `CtlSlot`. `FormActions` takes the same
+    `BarAction[] | ReactNode` union law C15 gave `Section.actions`.
+  - **`useFormSubmit(form, handler, options?)`** — `{ submit, isSubmitting, submitError, reset }`.
+    Catches the handler's throw and decodes it through `toErrorMessage` (override with `mapError`),
+    routes a thrown `{ fieldErrors }` envelope onto the fields via `form.setErrors`, and focuses the
+    first errored field on BOTH failure paths. `isSubmitting` is Mantine's own `form.submitting`,
+    not a second flag beside it.
+  - **`options.validateAsync`** — the async validation rule `useBasaltForm` has no room for:
+    `schemaResolver(schema, { sync: true })` is still hard-coded, so `validate()`/`isValid()` stay
+    synchronous, and the async rule runs at submit time after the schema and before the handler.
+  - **`FormStateProvider` / `useFormState`** — `{ disabled, submitting }`. The layout primitives
+    read it and disable their control region through a native `<fieldset disabled>`, so nothing has
+    to be threaded to each input and no child is cloned. Nesting ORs; it cannot re-enable.
+  - **`useFieldArray(form, path)`** — `{ items, append, remove, move, key }` over
+    `insertListItem`/`removeListItem`/`reorderListItem` + `form.key`. `key(index)` is POSITIONAL
+    (Mantine's list actions do not rotate the form key generation) — a user-reorderable list still
+    wants an id on the item.
+  - **`useFormDraft(form, { autosave })`** — `true`, or `{ debounceMs }`. The hook now owns its own
+    `form.watch` subscription, replacing the documented `saveDraftRef` + `onValuesChange` dance. It
+    is OFF by default and READ ONCE at mount (the watch set is a hook count), so every existing call
+    site behaves exactly as before. `DEFAULT_AUTOSAVE_DEBOUNCE_MS` is exported.
+  - **Still subpath-only.** The root barrel re-exports none of this, so a consumer without
+    `@mantine/form` is unaffected by importing `basalt-ui`.
+
+### `inputProps` no longer returns `key` — pair it with the new `fieldKey`
+
+**This is the one thing in the minor that needs a code change at every call site, and the compiler
+will not tell you about a single one of them.** It is a one-line-per-field edit:
+
+```tsx
+/* before (1.27) */ <TextInput {...inputProps(form, 'email')} />
+/* after          */ <TextInput key={fieldKey(form, 'email')} {...inputProps(form, 'email')} />
+```
+
+**Exactly what changed.** In 1.27 `inputProps(form, path)` returned `form.getInputProps(path)` **and
+`key`** in one object, so a single spread covered both. It now returns `form.getInputProps(path)`
+and nothing else; `fieldKey(form, path)` is the other half, written as a real JSX `key` attribute.
+The bundle was basalt's own invention, and React 19 logs `A props object containing a "key" prop is
+being spread into JSX` on every render of it — three fields, three warnings per page.
+`key={form.key(path)} {...form.getInputProps(path)}` is Mantine's own documented idiom; `fieldKey` +
+`inputProps` is that idiom with basalt's names.
+
+**What breaks if you only upgrade and do nothing.** Nothing type-checks differently, nothing throws
+and no warning is logged — the 1.27 call site is still a valid spread of a valid object. The element
+simply has no `key` any more, so React reuses the DOM node and an uncontrolled input keeps its old
+text through `form.reset()`, `form.setValues()` and a removed list row. That is the entire failure
+mode: a form that stops resetting, with no signal anywhere.
+
+**What catches it: `basalt/forms-field-key`**, new in this minor at `warn` (grace to 1.30.0). It
+reports every `{...inputProps(…)}` spread whose element carries no sibling `key`, and it
+**autofixes** — inserting `key={fieldKey(<same args>)}` and adding `fieldKey` to the existing
+`basalt-ui/forms` import. Run `oxlint --fix` over the app and read the diff; the escape hatch for an
+element genuinely remounted by its parent is `theme-allow forms-field-key — <why>`.
+
+**The deprecated `field` alias did NOT follow `inputProps` here.** It is no longer
+`export const field = inputProps`: it keeps the 1.27 return shape, `key` included, so
+`{...field(form, 'x')}` behaves in 1.28.0 byte for byte as it did in 1.27 — including the React 19
+key-spread warning. An alias would have changed what every existing call site DOES without changing
+whether it compiles, and a deprecation is a schedule, not a behaviour change. `forms-field-key`
+reports the `field(` spread too, with its own message pointing here; the alias itself is removed in
+`1.29.0`.
 
 ### `BasaltDataTable` — the root is a `<div>`, not a Fragment
 
@@ -328,9 +410,9 @@ Two unrelated exports shared the name `field`: the forms adapter's `getInputProp
 the `field.enum/multi/range/number/boolean/string` store-field builder in `basalt-ui/state` and
 `basalt-ui/router-tanstack`. A page combining a form and a filter store had to alias one on import.
 
-| Removed / renamed           | Replacement  | Note                                                                                                                                                                                                                                                         |
-| --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `field` (`basalt-ui/forms`) | `inputProps` | Same signature — `inputProps(form, path)`. `field` still resolves from `basalt-ui/forms` as a `@deprecated` alias, so nothing breaks; the alias goes away the next time the forms surface changes, and that removal ships as a plain `feat:`, never a major. |
+| Removed / renamed           | Replacement  | Note                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field` (`basalt-ui/forms`) | `inputProps` | Same signature — `inputProps(form, path)`. `field` still resolves from `basalt-ui/forms` as a `@deprecated` alias, so nothing breaks; the alias goes away the next time the forms surface changes, and that removal ships as a plain `feat:`, never a major. **Since the Unreleased minor the two are no longer the same function**: `inputProps` dropped `key` from its return and `field` did not — see § `inputProps` no longer returns `key`. |
 
 The `field.*` store builder (`basalt-ui/state`, `basalt-ui/router-tanstack`) is untouched.
 
