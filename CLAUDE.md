@@ -89,8 +89,14 @@ bun run lint               # oxlint
 bun run fmt                # oxfmt (write)
 bun run fmt:check          # oxfmt (check only)
 bun run typecheck          # tsc across package + playground (see the dist footgun below)
-bun run pre                # fmt:check && lint && typecheck (run before committing)
+bun run pre                # fmt:check && lint && typecheck && check-theme && bun test
+make verify                # build + pre + the layout suite + pack-test — the full gate
 ```
+
+`pre` runs the unit suite; the **layout** suite (real CSS geometry in headless Chrome, ~10s) stays
+out of it and is reached by `make layout` or by `make verify`. `make verify` builds FIRST on
+purpose — `pre`'s `check-theme` and the playground's typecheck both resolve through `dist`, so a
+verify that built last would grade the previous build.
 
 **Package (`packages/basalt-ui`):**
 
@@ -153,7 +159,8 @@ rule id — disabling one never silently drops the other two):
 ## Validation & Quality Workflow
 
 1. Make changes.
-2. Run `bun run pre` (fmt:check + lint + typecheck) to validate.
+2. Run `bun run pre` (fmt:check + lint + typecheck + check-theme + tests) to validate; `make
+verify` adds the layout suite, the build and the pack-test.
 3. Fix errors in changed files only — don't refactor untouched code.
 4. Commit with conventional format (empty scope).
 
