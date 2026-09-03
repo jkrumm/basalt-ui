@@ -52,6 +52,12 @@ What is new, one line each — nothing here renames or removes anything:
   the prior structural stand-in rejected a class instance under TS weak-type detection (no property
   overlap, no index signature), forcing `router={router as never}`. It is now `router?: object`:
   any non-null object is assignable, and the devtools panel remains the only reader.
+- **`unwrap` collapses to ONE generic signature with a conditional return**, replacing the two
+  overloads this same minor introduced. The overload pair resolved `unwrap` to `unknown` whenever it
+  was passed as a bare callback (`api.threads.get().then(unwrap)`) — `.then()` reads the declared
+  type of the reference rather than applying an overload, and TS cannot propagate generic inference
+  across an overload set the way it can for a single signature. `.then(unwrap)` now infers `TData`
+  again, alongside `unwrap(await p)` and `unwrap(p)` — nothing about the runtime behaviour changed.
 - **`scrollParentOf` / `SCROLLPORT_ATTRIBUTE`** (`basalt-ui`) — resolve which box actually scrolls an
   element (`null` = the document). The seam behind the shell scrollport change below.
 - **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
