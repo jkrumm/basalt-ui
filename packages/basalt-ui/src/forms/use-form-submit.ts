@@ -82,7 +82,7 @@ export type UseFormSubmitOptions<Values extends Record<string, unknown>> = {
   onError?: (err: unknown) => void
   /**
    * Turns a thrown value into the message `submitError` carries. Defaults to `toErrorMessage`
-   * (`basalt-ui/query`), which already unwraps `Error`, `{ message }` and Eden's `{ status, value }`.
+   * (root barrel), which already unwraps `Error`, `{ message }` and Eden's `{ status, value }`.
    * Override it to brand the copy or to branch on `errorStatus(err)`.
    */
   mapError?: (err: unknown) => string

@@ -4,7 +4,7 @@
  *
  * Scaffold written by `basalt-ui init`. This file is yours — `basalt-ui sync` will not overwrite it.
  */
-import { createBasaltQueryClient } from 'basalt-ui/query'
+import { createBasaltQueryClient } from 'basalt-ui'
 
 export const queryClient = createBasaltQueryClient({
   // staleTime: 60_000,   // optional: global cache freshness window (ms)

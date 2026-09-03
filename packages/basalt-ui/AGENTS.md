@@ -31,7 +31,7 @@ Toolchain: Bun runtime, oxlint + oxfmt, conventional commits (empty scope), `mas
 ## Hard rules
 
 **Mantine-free boundary**: `basalt-ui/charts`, `basalt-ui/tokens`, `basalt-ui/guard`,
-`basalt-ui/query`, `basalt-ui/router-tanstack`, `basalt-ui/agent`, and `basalt-ui/state` must
+`basalt-ui/router-tanstack`, `basalt-ui/agent`, and `basalt-ui/state` must
 import zero `@mantine/*`. `@visx/*` is permitted only inside `src/charts/**`. `@visx/*`
 (`basalt/visx-boundary`) is enforced by an oxlint plugin rule in both the repo and the shipped
 consumer preset.
