@@ -38,7 +38,6 @@ beforeEach(() => {
       jsPlugins: [PLUGIN_PATH],
       rules: {
         'basalt/provider-above-router': 'error',
-        'basalt/query-dual-import': 'error',
         'basalt/query-fn-unwrap': 'error',
         'basalt/deprecated-export': 'error',
         'basalt/forms-field-key': 'error',
@@ -3050,85 +3049,9 @@ describe('basalt/provider-above-router', () => {
   })
 })
 
-// ── query-dual-import (F5) ───────────────────────────────────────────────────
-
-describe('basalt/query-dual-import', () => {
-  it('flags a file importing from both @tanstack/react-query and basalt-ui/query', () => {
-    const { code, rules, output } = run(
-      `import { useQuery } from '@tanstack/react-query'\n` +
-        `import { unwrap } from 'basalt-ui/query'\n` +
-        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(get()) })\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('query-dual-import')
-    expect(output).toContain('Dual query import')
-  })
-
-  // The softer half — the one that actually catches the drift, and why the rule is `warn`.
-  it('flags a raw @tanstack/react-query import beside a basalt root import', () => {
-    const { code, rules, output } = run(
-      `import { useQuery } from '@tanstack/react-query'\n` +
-        `import { QueryState } from 'basalt-ui'\n` +
-        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: get })\n`,
-    )
-    expect(code).toBe(1)
-    expect(rules).toContain('query-dual-import')
-    expect(output).toContain('Raw @tanstack/react-query import')
-  })
-
-  it('does NOT flag basalt-ui/query on its own', () => {
-    const { code, rules } = run(
-      `import { useQuery, unwrap } from 'basalt-ui/query'\n` +
-        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(get()) })\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('query-dual-import')
-  })
-
-  // `import type` is erased at compile time — there is no runtime import to route through the
-  // seam, and typing against the library's own result type is what `QueryStateLike` documents as
-  // legitimate. Same skip `agent-no-raw-usechat` and `ai-sdk-major` take.
-  it('does NOT flag a type-only @tanstack/react-query import beside basalt-ui/query', () => {
-    const { code, rules } = run(
-      `import type { UseQueryResult } from '@tanstack/react-query'\n` +
-        `import { unwrap } from 'basalt-ui/query'\n` +
-        `export const pick = (q: UseQueryResult<number>) => unwrap(q.data)\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('query-dual-import')
-  })
-
-  it('does NOT flag @tanstack/react-query in a file with no basalt import', () => {
-    const { code, rules } = run(
-      `import { useQuery } from '@tanstack/react-query'\n` +
-        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: get })\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('query-dual-import')
-  })
-
-  // The devtools package is a different package, not a subpath.
-  it('does NOT flag @tanstack/react-query-devtools', () => {
-    const { code, rules } = run(
-      `import { ReactQueryDevtools } from '@tanstack/react-query-devtools'\n` +
-        `import { unwrap } from 'basalt-ui/query'\n` +
-        `export const D = () => <ReactQueryDevtools />\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('query-dual-import')
-  })
-
-  it('honours a theme-allow naming the rule', () => {
-    const { code, rules } = run(
-      `// theme-allow query-dual-import — the persister API has no basalt re-export yet\n` +
-        `import { useQuery } from '@tanstack/react-query'\n` +
-        `import { unwrap } from 'basalt-ui/query'\n` +
-        `export const useThing = () => useQuery({ queryKey: ['t'], queryFn: () => unwrap(g()) })\n`,
-    )
-    expect(code).toBe(0)
-    expect(rules).not.toContain('query-dual-import')
-  })
-})
+// `basalt/query-dual-import` is RETIRED (`RETIRED_RULE_IDS`) — its own describe block was removed
+// along with the rule; see `KNOWN_RULE_IDS` below for the coverage that remains: it is still a
+// valid (dead) `theme-allow` id, never a typo.
 
 // ── query-fn-unwrap (F5) ─────────────────────────────────────────────────────
 

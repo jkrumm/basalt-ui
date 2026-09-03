@@ -56,7 +56,6 @@ export const PLUGIN_RULE_ID_LIST = [
   'search-literal-link',
   'use-search-from-literal',
   'provider-above-router',
-  'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
   'forms-field-key',
@@ -672,10 +671,12 @@ export const SURFACES = {
     rule: 'batteries',
     skill: ['basalt-app'],
     guardKinds: [],
-    // query-dual-import / query-fn-unwrap: reassigned here from the now-dropped `./query` surface
-    // (C1 consolidation — createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel
-    // exports now, but their doctrine stays `batteries` — "use the shipped thing" — not `mantine`).
-    pluginRules: ['query-dual-import', 'query-fn-unwrap'],
+    // query-fn-unwrap: reassigned here from the now-dropped `./query` surface (C1 consolidation —
+    // createBasaltQueryClient/unwrap/BasaltQueryDevtools are root barrel exports now, but their
+    // doctrine stays `batteries` — "use the shipped thing" — not `mantine`). `query-dual-import`
+    // was retired alongside it — its premise (a raw `@tanstack/react-query` import beside
+    // `basalt-ui/query`) is unreachable now that the `./query` subpath is gone.
+    pluginRules: ['query-fn-unwrap'],
     globs: {
       // Shipped is a catch-all (not just src/**+app/**) so consumer code under components/, lib/,
       // features/, etc. is also covered. The @visx/*-only-in-charts and Mantine-free charts/tokens

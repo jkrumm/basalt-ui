@@ -91,8 +91,16 @@ import { fileURLToPath } from 'node:url'
  * - `duplicate-notifications-mount` — its only case, `<BasaltNotifications />` mounted beside
  *   `<BasaltOverlays notifications>`, is unreachable now that `BasaltNotifications` no longer
  *   exists as a standalone export; the rule had nothing left to fire on.
+ * - `query-dual-import` — its whole premise (a raw `@tanstack/react-query` import beside
+ *   `basalt-ui/query`) is unreachable now that C1 (1.29.0) dropped the `./query` subpath: a
+ *   consumer MUST import `@tanstack/react-query` directly, so the rule warned on every such
+ *   import instead of the drift it was written to catch.
  */
-export const RETIRED_RULE_IDS = new Set(['unframed-chart', 'duplicate-notifications-mount'])
+export const RETIRED_RULE_IDS = new Set([
+  'unframed-chart',
+  'duplicate-notifications-mount',
+  'query-dual-import',
+])
 
 /**
  * Rule ids a `theme-allow` may name — this plugin's own rules plus `src/guard`'s kinds. Duplicated
@@ -3354,82 +3362,14 @@ const providerAboveRouter = {
   },
 }
 
-// ── Rule 27 — query-dual-import ─────────────────────────────────────────────────────────────────
+// Rule 27 — query-dual-import — RETIRED. 1.29.0 dropped every raw TanStack re-export from
+// `basalt-ui/query` (the subpath itself is gone), so "dual-importing `@tanstack/react-query`
+// beside `basalt-ui/query`" is no longer a thing a consumer can even do — a consumer MUST import
+// `@tanstack/react-query` directly now, and this rule warned on every such import (90+ false
+// positives on argo alone). See `RETIRED_RULE_IDS` below.
 
-/** `@tanstack/react-query` and its subpaths — never `@tanstack/react-query-devtools`. */
-const TANSTACK_QUERY_SOURCE = /^@tanstack\/react-query(?:\/|$)/
-
-/** The `basalt-ui/query` subpath, exactly — the seam the hooks are supposed to arrive through. */
+/** The `basalt-ui/query` subpath, exactly — kept for `query-fn-unwrap`'s own gate below. */
 const BASALT_QUERY_SOURCE = 'basalt-ui/query'
-
-/** The root barrel — where `QueryState` and the dashboard composites live. */
-const BASALT_ROOT_SOURCE = 'basalt-ui'
-
-const QUERY_DUAL_IMPORT_MESSAGE =
-  'Dual query import — this file imports from @tanstack/react-query AND from basalt-ui/query. ' +
-  'Take the hooks, the client factory and `unwrap` from basalt-ui/query only: two entry points to ' +
-  'one library is how a second QueryClient, a second devtools bundle and a duplicated ' +
-  '`toErrorMessage` reach an app (agent/rules/basalt-batteries.md). ' +
-  '(basalt/query-dual-import)'
-
-const QUERY_ROOT_IMPORT_MESSAGE =
-  'Raw @tanstack/react-query import in a basalt file — the hooks come through basalt-ui/query, ' +
-  'which re-exports them beside `createBasaltQueryClient`, `unwrap`, `toErrorMessage` and the lazy ' +
-  'devtools (agent/rules/basalt-batteries.md). Import from basalt-ui/query instead. ' +
-  '(basalt/query-dual-import)'
-
-/**
- * The `basalt-batteries.md` law "import query hooks from `basalt-ui/query`, never dual-import
- * `@tanstack/react-query`" — F5, and one of the two `./query` surfaces that shipped advisory.
- *
- * TWO forms, one id, because they are one law read at two strengths. The DUAL form (both
- * specifiers present) is the law verbatim. The softer form — a raw `@tanstack/react-query` import
- * in a file that also imports the basalt root barrel — is a heuristic: it says "this file is
- * already a basalt file, so the query seam is right there", and it is the form that actually
- * catches the drift, since a file that has never heard of `basalt-ui/query` cannot dual-import.
- * The softer form is why the whole rule lands at `warn` rather than `error`.
- *
- * Gated on the LITERAL specifier, never on `ownTree` relative resolution: basalt's own
- * `src/query/**` and `src/dashboard/query-state.tsx` import `@tanstack/react-query` because they
- * ARE the seam, and they reach their siblings relatively. A file that writes `basalt-ui/query` is
- * by definition a consumer of the published surface.
- */
-// Ships: warn (grace → 1.30.0)
-const queryDualImport = {
-  meta: {
-    type: 'suggestion',
-    docs: { description: 'Warn on a raw @tanstack/react-query import beside a basalt import.' },
-    schema: [],
-  },
-  create(context) {
-    if (isTestFile(context)) return {}
-    const raw = []
-    let basaltQuery = false
-    let basaltRoot = false
-
-    return {
-      ImportDeclaration(node) {
-        const source = node.source?.value
-        if (typeof source !== 'string') return
-        if (source === BASALT_QUERY_SOURCE) basaltQuery = true
-        else if (source === BASALT_ROOT_SOURCE) basaltRoot = true
-        // `import type { UseQueryResult } from '@tanstack/react-query'` is erased at compile time
-        // — there is no runtime import to route through the seam, and typing against the library's
-        // own result type is exactly what `QueryStateLike` documents as legitimate. Same skip
-        // `agent-no-raw-usechat` and `ai-sdk-major` take.
-        else if (TANSTACK_QUERY_SOURCE.test(source) && node.importKind !== 'type') raw.push(node)
-      },
-      'Program:exit'() {
-        if (!basaltQuery && !basaltRoot) return
-        const message = basaltQuery ? QUERY_DUAL_IMPORT_MESSAGE : QUERY_ROOT_IMPORT_MESSAGE
-        for (const node of raw) {
-          if (hasThemeAllow(context, node, 'query-dual-import')) continue
-          context.report({ node, message })
-        }
-      },
-    }
-  },
-}
 
 // ── Rule 28 — query-fn-unwrap ───────────────────────────────────────────────────────────────────
 
@@ -3904,18 +3844,6 @@ export const PLUGIN_RULE_GRACE = {
       'image-gen and the playground is measured — every one of them mounts a router, so the ' +
       'false-positive question has a real sample.',
   },
-  'query-dual-import': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      'F5 — the basalt-batteries.md law with no guard. TWO forms under one id: the dual import ' +
-      '(both `@tanstack/react-query` and `basalt-ui/query` in one file) is the law verbatim, and ' +
-      'the softer form — a raw `@tanstack/react-query` import in a file that also imports the ' +
-      'basalt root barrel — is the heuristic that actually catches the drift, since a file that ' +
-      'never names `basalt-ui/query` cannot dual-import. The soft form is what holds the whole ' +
-      'rule at `warn`: "this file is already a basalt file" is a claim about intent. 1.30.0 is ' +
-      'when the consumer count is measured and the soft form is either kept or split off.',
-  },
   'forms-field-key': {
     since: '1.28.0',
     promote: '1.30.0',
@@ -4000,7 +3928,6 @@ export default {
     'search-literal-link': searchLiteralLink,
     'use-search-from-literal': useSearchFromLiteral,
     'provider-above-router': providerAboveRouter,
-    'query-dual-import': queryDualImport,
     'query-fn-unwrap': queryFnUnwrap,
     'deprecated-export': deprecatedExport,
     'forms-field-key': formsFieldKey,

@@ -734,6 +734,16 @@ half is deliberately NOT exempted the same way — a local `StatCard` beside an
 `import { StatCard as Base }` kept the name AND a piece of the original, which is the fork shape this
 rule most wants to see.
 
+### Guards — `basalt/query-dual-import` removed
+
+**Retired, not merely relaxed** — its `RETIRED_RULE_IDS` entry (kept recognized, so an existing
+`theme-allow query-dual-import` still reads as a dead waiver rather than a typo) and its
+`PLUGIN_RULE_GRACE` ledger row are both deleted. Its whole premise — a raw `@tanstack/react-query`
+import beside `basalt-ui/query` — went unreachable the moment `./query` dropped (see § Consolidation
+above): a consumer now MUST import `@tanstack/react-query` directly, and the rule warned on every
+one of those imports instead of the drift it was written to catch (90+ false positives on a single
+consumer). `query-fn-unwrap` is unaffected — it is a different rule, still `warn` (grace → 1.30.0).
+
 ### `basalt-ui/data` — a typed facet id, and a required `getItemKey`
 
 **`BasaltDataTable`: a mistyped `facets[].columnId` used to render no pill, silently — `if

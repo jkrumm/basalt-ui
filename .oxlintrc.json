@@ -39,7 +39,6 @@
     "basalt/search-literal-link": "error",
     "basalt/use-search-from-literal": "error",
     "basalt/provider-above-router": "warn",
-    "basalt/query-dual-import": "warn",
     "basalt/query-fn-unwrap": "warn",
     "basalt/deprecated-export": "warn",
     "basalt/forms-field-key": "warn",
