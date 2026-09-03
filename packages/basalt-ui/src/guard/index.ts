@@ -154,8 +154,8 @@ const INLINE_FONT_SIZE =
 // A `Card` / `Paper` opening tag carrying `withBorder`. Card depth is `--vx-shadow-card`, whose 1px
 // ring lives INSIDE the shadow value; `withBorder` therefore adds a SECOND, real `border` property
 // on top of it (the theme's `styles.root` pins bg/shadow/radius but never clears `border`), and the
-// card reads heavy/boxed. Bounded full-text tag scan, same shape as CHART_ENTRY_POINT_TAG below, so
-// a multi-line-formatted tag still resolves to one match.
+// card reads heavy/boxed. Bounded full-text tag scan, same shape as CHART_ENTRY_POINT_TAG_START below,
+// so a multi-line-formatted tag still resolves to one match.
 //
 // Two deliberate non-matches:
 //   • `<Card.Section withBorder>` — a section DIVIDER, not card depth. Excluded by the `(?![\w.])`
@@ -409,17 +409,48 @@ const MOTION_TRANSITION_NUMERIC =
   /\btransition\s*=\s*\{\{[^}]*\b(?:duration|stiffness|damping|mass)\s*:\s*-?\d/g
 const MOTION_TRANSITION_EASE_ARRAY = /\btransition\s*=\s*\{\{[^}]*\bease\s*:\s*\[/g
 
-// A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — full opening/self-closing tag,
-// scanned for a missing `ariaLabel` prop (an accessible text alternative for the SVG graphic).
-// Bounded, full-text scan so a multi-line-formatted tag still resolves to one match. The scan must
-// survive two `>` decoys inside an opening tag: an explicit JSX generic argument
-// (`<MultiLine<Point>`) — consumed by the optional `<[^<>]*>` group — and arrow functions in prop
-// expressions (`getX={(d) => d.date}`) — consumed atomically by the `=>` alternative so their `>`
-// never terminates the tag early. A bare `>` comparison inside a prop expression still ends the
-// match (accepted limitation of the bounded scan).
-const CHART_ENTRY_POINT_TAG =
-  /<(MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?(?:=>|[^>])*?>/g
+// A chart entry-point JSX tag (the 7 kinds + 2 sparklines) — matches the opening `<Name` plus an
+// optional explicit JSX generic argument (`<MultiLine<Point>`); the rest of the tag (up to its
+// closing `>`) is resolved by `scanChartTagClose` below, brace-depth aware, so it survives every
+// `>`-shaped decoy inside a prop expression — arrow functions (`=>`), comparisons (`>=`, `<=`),
+// shifts (`>>`) — without needing to enumerate them: a `>` only closes the tag outside every `{…}`.
+const CHART_ENTRY_POINT_TAG_START =
+  /<(MultiLine|Bars|BandStrip|Donut|DualPanel|Heatmap|MirroredBars|ZonedLine|StackedArea|LineSparkline|BarSparkline)\b(?:<[^<>]*>)?/g
 const HAS_ARIA_LABEL_PROP = /\bariaLabel\s*=/
+
+/**
+ * Scans forward from `start` (immediately after a chart tag's name/generic-args) for the `>` that
+ * closes the JSX tag. Curly-brace depth aware: a `>` only closes the tag at depth 0, so anything
+ * living inside a `{…}` prop expression — `=>`, `>=`, `<=`, `>>`, a nested JSX child's own `>` —
+ * never ends the tag early. String/template literals are skipped verbatim so a quoted `>`
+ * cannot perturb the depth count either. Returns the index of the closing `>`, or -1 if the tag
+ * never closes (malformed/truncated source — the caller treats that as no match).
+ */
+function scanChartTagClose(codeText: string, start: number): number {
+  let depth = 0
+  let i = start
+  while (i < codeText.length) {
+    const ch = codeText[i]
+    if (ch === '"' || ch === "'" || ch === '`') {
+      const quote = ch
+      i++
+      while (i < codeText.length && codeText[i] !== quote) {
+        i += codeText[i] === '\\' ? 2 : 1
+      }
+      i++
+      continue
+    }
+    if (ch === '{') {
+      depth++
+    } else if (ch === '}') {
+      depth = Math.max(0, depth - 1)
+    } else if (ch === '>' && depth === 0) {
+      return i
+    }
+    i++
+  }
+  return -1
+}
 
 // ── Tag provenance, shared by chart-missing-aria-label ────────────────────────────────────────────
 //
@@ -472,13 +503,13 @@ function basaltImportedNames(codeText: string): ReadonlySet<string> {
 const RAW_FORM_CONTROL = /<(?:input|select|textarea)\b/g
 
 // A raw form-control's own opening tag — bounded full-text scan (same shape as CARD_SURFACE_TAG /
-// CHART_ENTRY_POINT_TAG), used ONLY by sub-16-input-font to search the tag's own inline `style`
+// CHART_ENTRY_POINT_TAG_START), used ONLY by sub-16-input-font to search the tag's own inline `style`
 // for a sub-floor fontSize.
 const RAW_FORM_CONTROL_TAG = /<(?:input|select|textarea)\b(?:=>|[^>])*?>/g
 
 // ── Control-home patterns (docs/CONTROLS-SPEC.md §6 — the text lane of laws C1/C8) ──────────────
 //
-// Bounded full-text tag scans, the CARD_SURFACE_TAG / CHART_ENTRY_POINT_TAG shape: a `<Title>` and a
+// Bounded full-text tag scans, the CARD_SURFACE_TAG / CHART_ENTRY_POINT_TAG_START shape: a `<Title>` and a
 // `<Select>` are both routinely formatted across lines, so a per-line regex would see neither.
 
 /** A `<Title …>` opening tag, however it is wrapped. `order` is judged separately, on the tag text. */
@@ -1904,7 +1935,7 @@ export const GUARD_RULES = {
   },
   'chart-missing-aria-label': {
     kind: 'chart-missing-aria-label',
-    pattern: CHART_ENTRY_POINT_TAG, // handled inline (full-text tag-scoped scan); entry keeps registry complete
+    pattern: CHART_ENTRY_POINT_TAG_START, // handled inline (full-text tag-scoped scan); entry keeps registry complete
     enabled: (cfg: GuardConfig) => cfg.chartMissingAriaLabel,
     // JSX-tag-shaped (`<MultiLine …>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
@@ -2352,12 +2383,15 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   // that is missing the prop. The allow-comment is honored anywhere in the tag's span, so a
   // `theme-allow` that used to sit on the closing line keeps working.
   if (ariaLabelRuns) {
-    for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG)) {
-      const tagText = m[0]
+    for (const m of codeText.matchAll(CHART_ENTRY_POINT_TAG_START)) {
+      const matchStart = m.index ?? 0
       // A tag this file defines itself is not the shipped kind — it does not take `ariaLabel`.
       if (!isShippedTag(m[1] as string)) continue
+      const closeIdx = scanChartTagClose(codeText, matchStart + m[0].length)
+      if (closeIdx === -1) continue
+      const tagText = codeText.slice(matchStart, closeIdx + 1)
       if (HAS_ARIA_LABEL_PROP.test(tagText)) continue
-      const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
+      const startLine = codeText.slice(0, matchStart).split('\n').length
       const endLine = startLine + (tagText.split('\n').length - 1)
       if (isAllowedInRange(startLine, endLine, 'chart-missing-aria-label')) continue
       findings.push({

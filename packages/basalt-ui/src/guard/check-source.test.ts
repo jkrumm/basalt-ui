@@ -847,6 +847,25 @@ describe('chart-missing-aria-label', () => {
     // `Bars` is defined locally here and only `BasaltBars` came from basalt — the local one is skipped.
     expect(kinds(find(text))).not.toContain('chart-missing-aria-label')
   })
+
+  // ── `>=`/`<=`/`>>` inside a prop expression must not close the tag early ────
+  //
+  // The scan used to treat `=>` as the only `>`-shaped decoy it could survive, so a `>=`/`<=`
+  // comparison inside a prop expression (e.g. a ternary fed to `tooltipLabel`) truncated the match
+  // before a LATER `ariaLabel` prop was seen, reporting a false "missing aria-label". Reported
+  // against a real `<DualPanel>` whose `tooltipLabel` compared a value with `>=`.
+
+  it('sees ariaLabel PAST a `>=` comparison in an earlier prop expression', () => {
+    const f = find(
+      `<DualPanel data={points} tooltipLabel={(d) => (d.v >= 0 ? 'a' : 'b')} ariaLabel="x" />`,
+    )
+    expect(kinds(f)).not.toContain('chart-missing-aria-label')
+  })
+
+  it('still flags the same tag shape genuinely missing ariaLabel', () => {
+    const f = find(`<DualPanel data={points} tooltipLabel={(d) => (d.v >= 0 ? 'a' : 'b')} />`)
+    expect(kinds(f)).toContain('chart-missing-aria-label')
+  })
 })
 
 // ── 16. card-with-border ─────────────────────────────────────────────────────
