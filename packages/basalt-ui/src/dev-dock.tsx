@@ -42,11 +42,14 @@ const TOOL_TITLE: Record<BasaltDevDockTool, string> = {
   theme: 'Theme Lab',
 }
 
-// Minimal structural shape of a TanStack `Router` instance — avoids a hard, eager type
-// dependency on `@tanstack/react-router` for a consumer who never renders the `'router'` tool.
-// `TanStackRouterDevtoolsPanel` itself takes the real (much wider) `AnyRouter` type; this
-// structural subset is only what THIS component threads through as a prop.
-type DevDockRouter = { __routerHasBeenSetup?: unknown } | Record<string, unknown>
+// Any non-null object — avoids a hard, eager type dependency on `@tanstack/react-router` for a
+// consumer who never renders the `'router'` tool, while still accepting a REAL `Router` class
+// instance with no cast. A narrower structural type (matching a `Router` field, or falling back
+// to `Record<string, unknown>`) used to reject that instance under TS weak-type detection: a
+// class instance declares no index signature, so it has no excess-property overlap with either
+// branch. `TanStackRouterDevtoolsPanel` itself takes the real (much wider) `AnyRouter` type; the
+// devtools panel is the only reader of this prop, so `object` is exactly as wide as it needs to be.
+type DevDockRouter = object
 
 const LazyRouterDevtoolsPanel = lazy(() =>
   import('@tanstack/react-router-devtools').then((m) => ({
@@ -135,8 +138,8 @@ export function BasaltDevDock({
           {tool === 'router' && router !== undefined && (
             <LazyRouterDevtoolsPanel
               // The devtools panel's own `router` prop takes the real `AnyRouter` type;
-              // `DevDockRouter` is deliberately a narrower structural stand-in so this module
-              // never eagerly imports the router's types.
+              // `DevDockRouter` is deliberately the widest structural stand-in (`object`) so this
+              // module never eagerly imports the router's types.
               // oxlint-disable-next-line typescript/no-explicit-any -- see above
               router={router as any}
               isOpen
