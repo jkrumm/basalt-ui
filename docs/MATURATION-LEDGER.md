@@ -11,18 +11,18 @@ Branch: `feat/cbbi-evidence-page` (19 commits ahead of `master` at start). Basel
 
 ## Waves
 
-| Wave | Scope                                                                                                                                                                     | Status               |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 0    | Orientation, baseline check, baseline screenshots, four audits                                                                                                            | done                 |
-| 1    | Regressions + packaging/typesafety/wiring defects (audit A)                                                                                                               | verified, committing |
-| 2    | Shared primitives from Blueprint: props/refs/errors/isomorphic harness                                                                                                    | open                 |
-| 3    | Components/dashboard/controls/forms gaps (audit B)                                                                                                                        | shipped 2026-09-02   |
-| 4    | Charts + responsive gaps (audit C)                                                                                                                                        | open                 |
-| 5    | Playground combination matrix + screenshot/critic loop per route                                                                                                          | shipped 2026-09-02   |
-| 6    | Rules: dogfood blind spots, deprecation lifecycle, `pre` folds tests                                                                                                      | open                 |
-| 7    | Docs: STATUS.md, MIGRATING.md, llms.txt, agent rules                                                                                                                      | shipped 2026-09-02   |
-| 8    | User visual-feedback round: shell scrollport, controls, StatCard, mobile nav                                                                                              | shipped 2026-09-02   |
-| 9    | Consolidation (1.29.0): C1 dead weight, C2 lint engine, C3 playground, C4 docs, C5 boundary additions, C6 argo migration — see `.claude/maturation/consolidation-plan.md` | in-progress          |
+| Wave | Scope                                                                                                                                                                     | Status                                 |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| 0    | Orientation, baseline check, baseline screenshots, four audits                                                                                                            | done                                   |
+| 1    | Regressions + packaging/typesafety/wiring defects (audit A)                                                                                                               | verified, committing                   |
+| 2    | Shared primitives from Blueprint: props/refs/errors/isomorphic harness                                                                                                    | open                                   |
+| 3    | Components/dashboard/controls/forms gaps (audit B)                                                                                                                        | shipped 2026-09-02                     |
+| 4    | Charts + responsive gaps (audit C)                                                                                                                                        | open                                   |
+| 5    | Playground combination matrix + screenshot/critic loop per route                                                                                                          | shipped 2026-09-02                     |
+| 6    | Rules: dogfood blind spots, deprecation lifecycle, `pre` folds tests                                                                                                      | open                                   |
+| 7    | Docs: STATUS.md, MIGRATING.md, llms.txt, agent rules                                                                                                                      | shipped 2026-09-02                     |
+| 8    | User visual-feedback round: shell scrollport, controls, StatCard, mobile nav                                                                                              | shipped 2026-09-02                     |
+| 9    | Consolidation (1.29.0): C1 dead weight, C2 lint engine, C3 playground, C4 docs, C5 boundary additions, C6 argo migration — see `.claude/maturation/consolidation-plan.md` | shipped 2026-09-03 (C6 on argo 1.29.2) |
 
 ## Consolidation (1.29.0)
 
@@ -41,12 +41,26 @@ Scope per wave (`.claude/maturation/consolidation-plan.md`):
   `SparklineGrid`, `unwrap` alignment).
 - **C6** — argo migration to 1.29.0 on a branch, recorded in `docs/ARGO-MIGRATION-LEARNINGS.md`.
 
-| Id  | Wave | Item                                                                                                                                                                                                     | Evidence                                         | Status |
-| --- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------ |
-| N1  | 9    | `--audit-allows` cannot judge a `basalt.exempt` entry, and its `scoped to …` line does not distinguish `theme-allow` from `theme-allow-file`                                                             | `docs/archive/STATUS-HISTORY.md` § Round-6 sweep | open   |
-| N2  | 9    | No `bandHeight` prop on band charts — band height is derived and floored by `VX.margin`, so a consumer wanting a taller band has no seam                                                                 | `docs/archive/STATUS-HISTORY.md` § Known gaps    | open   |
-| N3  | 9    | `ChartTooltipFloat` still has no viewport gate (portal + flip + clamp, but no measured-before-show viewport check)                                                                                       | `docs/archive/STATUS-HISTORY.md` § Known gaps    | open   |
-| N4  | 9    | `CHART_ENTRY_POINT_TAG` (`src/guard/index.ts`) is read by `chart-missing-aria-label`, not by `unframed-chart`, which keys on a JSX literal and carries no kind list — collapse the two onto one tag list | `docs/archive/STATUS-HISTORY.md` § Round-7 batch | open   |
+### C6 outcome (2026-09-03)
+
+argo is on 1.29.2 in `master` with zero workarounds (argo PRs #8–#14: twelve waves, one
+strictness wave, one bump; ≈ −3,000 dashboard lines). Every adopt / reject / gap verdict is a row
+in argo's `apps/dashboard/docs/ARGO-MIGRATION-LEARNINGS.md`. Six basalt defects surfaced: five
+shipped as 1.29.1, the sixth (1.29.1's own `unwrap` regression on Eden's union response) as
+1.29.2 — a basalt type change needs a type test against the Eden union shape. Open items
+C6-1..4 (onError `messageId`, compact `duration`/`relativeTime`, `StatGroupCols` 6, flat
+`ThreadFeedRow` root) live in `.claude/maturation/c6-progress.md` with their argo consumers.
+
+**1.30.0 adopt-or-delete verdicts** (evidence = the argo file that decides it):
+
+| Export                                                                                                                                   | Verdict                                              | Evidence                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ThreadWorkspace`, `ThreadDetailPanel`, `ThreadOutcomeCard`, `ThreadFeed` `'outcome'`, `createThreadsStore`, `createAdapterThreadsStore` | **delete**                                           | rejected on structure (`c6-agent-chat-fit.md` §4); the row tier + `./agent` runtime stay (`hermes-row.tsx`, `chat-page.tsx`) |
+| `Heatmap`                                                                                                                                | **delete** unless linewatch adopts                   | argo `time-of-day-chart.tsx` rejected it; no other consumer                                                                  |
+| `DualPanel`, `MirroredBars`, `BandStrip`                                                                                                 | **keep**                                             | two argo consumers; linewatch consumes the other two                                                                         |
+| `PanelRow`, `SliderControl`, `ToggleFilter`                                                                                              | **decide on the astro aside at 300px**               | `map-settings-panel.tsx` under `PageAside`: adopt if raw Mantine wraps, else delete                                          |
+| `SearchFilter`, `CompareFilter`, `OverflowMenu`, `ControlGroup`                                                                          | **delete** unless linewatch/image-share consume them | no argo candidate                                                                                                            |
+| `format.duration`, `format.relativeTime`                                                                                                 | **keep, add a compact style**                        | argo kept four formatters over zero-padded minutes and "just now"                                                            |
 
 ## Items
 
