@@ -1,3 +1,10 @@
+## [1.29.2](https://github.com/jkrumm/basalt-ui/compare/v1.29.1...v1.29.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* distribute unwrap's NonNullable over Eden's union response shape ([d46bc00](https://github.com/jkrumm/basalt-ui/commit/d46bc00ae46fcbe76e0b89516140735b1f3295fb))
+
 ## [1.29.1](https://github.com/jkrumm/basalt-ui/compare/v1.29.0...v1.29.1) (2026-09-03)
 
 
