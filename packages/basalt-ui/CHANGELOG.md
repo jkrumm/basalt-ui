@@ -1,3 +1,13 @@
+## [1.29.1](https://github.com/jkrumm/basalt-ui/compare/v1.29.0...v1.29.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* collapse unwrap's two overloads into one conditional generic ([80152d7](https://github.com/jkrumm/basalt-ui/commit/80152d7d8030ce3455d8ba4f314e6aa59a88feab))
+* let BasaltDevDock's router prop accept a real TanStack Router ([955cdfc](https://github.com/jkrumm/basalt-ui/commit/955cdfca02d28e04e4665e652f1b0a53eb92cdfb))
+* make chart-missing-aria-label's tag scan brace-depth aware ([0d6c122](https://github.com/jkrumm/basalt-ui/commit/0d6c12239e99dc26b15d202050810c7788317acf))
+* retire basalt/query-dual-import — its premise is unreachable post-C1 ([372bc1f](https://github.com/jkrumm/basalt-ui/commit/372bc1fa9a32008a1cde2f13e0a2f826262cbe39))
+
 # [1.29.0](https://github.com/jkrumm/basalt-ui/compare/v1.28.0...v1.29.0) (2026-09-02)
 
 
