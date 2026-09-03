@@ -63,6 +63,16 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * `unwrap` reference — so `api.threads.get().then(unwrap)` silently widened. A single generic
  * signature has exactly one type to read regardless of how the reference is used.
  *
+ * **The conditional infers the raw `data` type and strips `null`/`undefined` from it**, rather
+ * than inferring the already-narrowed `Envelope<TData>`'s `TData` directly — Eden Treaty's
+ * response type is a UNION of envelope shapes (`{ data: T; error: null } | { data: null; error:
+ * EdenFetchError }`), and inferring through `Envelope<infer TData>` reads `TData` off whichever
+ * union member the conditional happens to match, landing on `T | null` at every Eden call site. A
+ * conditional type distributes over a union input when the checked type is a bare type parameter,
+ * so inferring `D` from `{ data: infer D; error: unknown }` and wrapping the result in
+ * `NonNullable` runs the check per union member and unions the results back together —
+ * `NonNullable<T> | NonNullable<null>` collapses to `T`.
+ *
  * @example
  * import { unwrap } from 'basalt-ui'
  *
@@ -86,12 +96,14 @@ export function unwrap<R extends Envelope | Promise<Envelope>>(response: R): Unw
 type Envelope<TData = unknown> = { data: TData | null | undefined; error: unknown }
 
 /** `unwrap`'s conditional return: a `Promise<TData>` when `R` is a promised envelope, `TData` when
- * it is an already-resolved one — inferred off the SAME `R` the overload used to split on. */
+ * it is an already-resolved one — inferred off the SAME `R` the overload used to split on, and
+ * distributing over a union `R` (see the JSDoc above) so an Eden Treaty response's null branch
+ * never leaks into the resolved type. */
 type UnwrapResult<R> =
-  R extends Promise<Envelope<infer TData>>
-    ? Promise<TData>
-    : R extends Envelope<infer TData>
-      ? TData
+  R extends Promise<{ data: infer TData; error: unknown }>
+    ? Promise<NonNullable<TData>>
+    : R extends { data: infer TData; error: unknown }
+      ? NonNullable<TData>
       : never
 
 function unwrapEnvelope<TData>(envelope: Envelope<TData>): TData {

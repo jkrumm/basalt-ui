@@ -60,3 +60,13 @@ describe('unwrap — resolved-envelope overload', () => {
     expect(unwrap({ data: false, error: null })).toBe(false)
   })
 })
+
+describe('unwrap — Eden Treaty union envelope', () => {
+  test('returns data from the success member', () => {
+    expect(unwrap({ data: { id: 'a' }, error: null })).toEqual({ id: 'a' })
+  })
+
+  test('throws the error member', () => {
+    expect(() => unwrap({ data: null, error: { status: 500 } })).toThrow()
+  })
+})

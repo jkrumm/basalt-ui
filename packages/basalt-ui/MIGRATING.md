@@ -58,6 +58,13 @@ What is new, one line each — nothing here renames or removes anything:
   type of the reference rather than applying an overload, and TS cannot propagate generic inference
   across an overload set the way it can for a single signature. `.then(unwrap)` now infers `TData`
   again, alongside `unwrap(await p)` and `unwrap(p)` — nothing about the runtime behaviour changed.
+- **`unwrap` strips `null`/`undefined` from a union-typed Eden response again** — the single
+  conditional signature above still inferred `TData` off `Envelope<infer TData>`, and an Eden
+  Treaty response is a UNION of envelopes (`{ data: T; error: null } | { data: null; error:
+EdenFetchError }`), not one envelope with a nullable `data`; inferring through the wrapper type
+  read `T | null` at every Eden call site. `UnwrapResult` now infers the raw `data` field and wraps
+  it in `NonNullable`, which distributes over a union `R` — `unwrap(await api.x.get())` resolves to
+  `T` again, with no `| null`. Runtime unchanged.
 - **`scrollParentOf` / `SCROLLPORT_ATTRIBUTE`** (`basalt-ui`) — resolve which box actually scrolls an
   element (`null` = the document). The seam behind the shell scrollport change below.
 - **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
