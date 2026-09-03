@@ -48,6 +48,10 @@ see § The shell scrollport below.
 
 What is new, one line each — nothing here renames or removes anything:
 
+- **`BasaltDevDock`'s `router` prop now accepts a real TanStack `Router` instance with no cast** —
+  the prior structural stand-in rejected a class instance under TS weak-type detection (no property
+  overlap, no index signature), forcing `router={router as never}`. It is now `router?: object`:
+  any non-null object is assignable, and the devtools panel remains the only reader.
 - **`scrollParentOf` / `SCROLLPORT_ATTRIBUTE`** (`basalt-ui`) — resolve which box actually scrolls an
   element (`null` = the document). The seam behind the shell scrollport change below.
 - **`PageAside`** (`basalt-ui`) — the right-hand aside REGION a route claims, with the panel filter
