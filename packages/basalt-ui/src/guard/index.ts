@@ -877,7 +877,6 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // `checkSource`'s reach: provenance here is an import graph and a JSX ancestry, neither of which
   // a 12-line regex window has. Same reason `bound-control-outside-home` has no text-lane twin.
   'provider-above-router',
-  'query-dual-import',
   'query-fn-unwrap',
   'deprecated-export',
   // Same lane: `{...inputProps(…)}` without a sibling `key` is a JSX-ancestry claim (does this
@@ -904,6 +903,10 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   // notifications>` is unreachable now that `BasaltNotifications` no longer exists as a
   // standalone export. Mirrored by the plugin's own `RETIRED_RULE_IDS`.
   'duplicate-notifications-mount',
+  // Retired plugin rule — its whole premise (a raw `@tanstack/react-query` import beside
+  // `basalt-ui/query`) is unreachable now that C1 (1.29.0) dropped the `./query` subpath.
+  // Mirrored by the plugin's own `RETIRED_RULE_IDS`.
+  'query-dual-import',
 ])
 
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */

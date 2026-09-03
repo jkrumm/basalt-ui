@@ -121,7 +121,6 @@ describe('coverageFor', () => {
       'agent-resume-guard',
       'ai-sdk-major',
       'forms-field-key',
-      'query-dual-import',
       'query-fn-unwrap',
     ])
   })
