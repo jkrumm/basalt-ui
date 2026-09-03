@@ -18,8 +18,7 @@ import type { CbbiRow } from './cbbi-data'
 
 const HOUR = 60 * 60 * 1000
 
-// The return type is left to inference rather than reaching past the seam for `UseQueryResult` —
-// the one import this page is not allowed to dual-source (basalt/query-dual-import).
+// The return type is left to inference rather than reaching past the seam for `UseQueryResult`.
 export function useCbbi() {
   return useQuery<CbbiRow[], Error>({
     queryKey: ['cbbi'],
