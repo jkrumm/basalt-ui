@@ -55,11 +55,13 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * wrapper that leaves `data` unset on a miss — rather than explicitly `null` — is caught the same
  * way; the two envelope shapes argo's own pre-basalt `unwrap` and basalt's ONLY differed on.
  *
- * **Two overloads, one name** — a Promise of the envelope (basalt's original shape,
- * `queryFn: () => unwrap(api.x.get())`), or the ALREADY-RESOLVED envelope itself
- * (`unwrap(await api.x.get())`, or passed directly as a `.then(unwrap)` callback — both argo's
- * 97 call sites' shapes). Never a generic argument to disambiguate: TS infers the right overload
- * from whether the argument IS a `Promise`.
+ * **One generic signature, a conditional return** — a Promise of the envelope (basalt's original
+ * shape, `queryFn: () => unwrap(api.x.get())`) or the ALREADY-RESOLVED envelope itself
+ * (`unwrap(await api.x.get())`), both resolve `TData` off the same conditional. The two-overload
+ * form this replaced (1.29.0) resolved `unwrap` to `unknown` whenever it was passed as a bare
+ * callback — `.then(unwrap)` never applies an overload, it just reads the declared type of the
+ * `unwrap` reference — so `api.threads.get().then(unwrap)` silently widened. A single generic
+ * signature has exactly one type to read regardless of how the reference is used.
  *
  * @example
  * import { unwrap } from 'basalt-ui'
@@ -69,27 +71,30 @@ export function createBasaltQueryClient(config?: QueryClientConfig): QueryClient
  * // mutation:
  * mutationFn: (body) => unwrap(api.resource.post({ body }))
  *
- * // resolved-envelope — either shape:
+ * // resolved-envelope — either shape, including a bare `.then(unwrap)` callback:
  * const rows = unwrap(await api.users.get())
  * const rows2 = await api.users.get().then(unwrap)
  */
-export function unwrap<TData>(
-  response: Promise<{ data: TData | null | undefined; error: unknown }>,
-): Promise<TData>
-export function unwrap<TData>(response: { data: TData | null | undefined; error: unknown }): TData
-export function unwrap<TData>(
-  response:
-    | Promise<{ data: TData | null | undefined; error: unknown }>
-    | { data: TData | null | undefined; error: unknown },
-): TData | Promise<TData> {
-  if (response instanceof Promise) return response.then((envelope) => unwrapEnvelope(envelope))
-  return unwrapEnvelope(response)
+export function unwrap<R extends Envelope | Promise<Envelope>>(response: R): UnwrapResult<R> {
+  if (response instanceof Promise) {
+    return response.then((envelope) => unwrapEnvelope(envelope)) as unknown as UnwrapResult<R>
+  }
+  return unwrapEnvelope(response as Envelope) as unknown as UnwrapResult<R>
 }
 
-function unwrapEnvelope<TData>(envelope: {
-  data: TData | null | undefined
-  error: unknown
-}): TData {
+/** Transport-agnostic `{ data, error }` result shape — Eden Treaty, a raw fetch wrapper, etc. */
+type Envelope<TData = unknown> = { data: TData | null | undefined; error: unknown }
+
+/** `unwrap`'s conditional return: a `Promise<TData>` when `R` is a promised envelope, `TData` when
+ * it is an already-resolved one — inferred off the SAME `R` the overload used to split on. */
+type UnwrapResult<R> =
+  R extends Promise<Envelope<infer TData>>
+    ? Promise<TData>
+    : R extends Envelope<infer TData>
+      ? TData
+      : never
+
+function unwrapEnvelope<TData>(envelope: Envelope<TData>): TData {
   const { data, error } = envelope
   if (error) throw error
   if (data === null || data === undefined)
