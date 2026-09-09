@@ -59,16 +59,20 @@ column is added at the same time — one edit, in the release commit.
 | **forms** (`./forms`)       | —                                           | `field` → `inputProps`, **`inputProps` drops `key`**, the layout tier (§ `inputProps`) | `field` DELETED — and the `--fix` recipe no longer works (§ Consolidation) | —                                   |
 | **data** (`./data/table`)   | —                                           | root is a `<div>`, row selection, `getItemKey` required (§ `basalt-ui/data`)           | `./data` + `./query` + `./connectivity` dropped (§ Consolidation)          | —                                   |
 | **CLI** (`basalt-ui`)       | —                                           | —                                                                                      | **resolver stops relocating; `doctor` loses 6 of 10 checks** (§ CLI)       | —                                   |
-| **guards**                  | five rules → `error` (§ Guards)             | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                           | —                                   |
+| **guards**                  | five rules → `error` (§ Guards)             | six new ids at `warn` (§ preamble)                                                     | `query-dual-import` retired in 1.29.1 (§ Guards)                           | four rules → `error` (§ Guards)     |
 
 ---
 
 ## Unreleased — the chrome wave
 
-**One wave of pure CHROME, which removes and renames nothing: eight spacing numbers move, the
-mobile More surface becomes a compact popover instead of a bottom sheet, and the aside's phone pill
-takes the aside's own title.** Nothing to fix — but the app looks different, so read § Chrome below
-for the table and the opt-outs before you diff a screenshot.
+**Mostly CHROME, which removes and renames nothing: eight spacing numbers move, the mobile More
+surface becomes a compact popover instead of a bottom sheet, and the aside's phone pill takes the
+aside's own title.** Read § Chrome for the table and the opt-outs before you diff a screenshot.
+
+**The one thing that can fail your build: four guard rules promote from `warn` to `error`** — and
+all four were measured at ZERO incumbents across every consumer in the fleet before the promotion,
+so the expected cost is nothing. § Guards has the measurement and the one rule that did NOT
+promote.
 
 ### Chrome — the spacing pass, the More popover, and the aside's pill
 
@@ -149,6 +153,43 @@ are not a `FilterSet`, so unlike `Filters (n)` there is no census to derive one 
   `filtersEnd`. A page whose bar carries `actions` alone therefore renders the aside in flow at the
   bottom of the page — deliberate, pinned by tests, and invisible on the desktop it was authored
   on, so `PageAside` now says it once in dev. The remedy is to give that bar a row 2.
+
+### Guards — four rules promote to `error`, and the C1 pair does not
+
+Every one of these six entries said in its own `why` that this release "is when the incumbent count
+across argo, linewatch, image-share, rb, image-gen and the playground is re-measured" (law C16).
+That measurement was taken 2026-09-09, with all seven consumers freshly migrated to 1.29.2 and
+basalt built from `master`, by running `npx oxlint .` in each repo and counting by rule id:
+
+| Rule                                                              | argo | image-gen | image-share | rb  | linewatch | meteo | obsidian | playground | Verdict      |
+| ----------------------------------------------------------------- | ---- | --------- | ----------- | --- | --------- | ----- | -------- | ---------- | ------------ |
+| `basalt/provider-above-router`                                    | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
+| `basalt/forms-field-key`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
+| `basalt/query-fn-unwrap`                                          | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
+| `basalt/bound-control-outside-home`                               | 0    | 0         | 0           | 0   | 0         | 0     | 0        | 0          | → `error`    |
+| `basalt/control-outside-home` + `raw-selection-control` (one law) | 2    | 10        | 6           | 8   | 0         | 0     | 0        | 3          | stays `warn` |
+
+**The four promotions cost nothing to take.** They were measured at zero, in every consumer, before
+being flipped — which is the entire point of a grace window: it is a period in which the count is
+allowed to fall to zero on its own, not a timer that fires regardless. If one of them fires in your
+app, it is finding something none of the fleet had, and the message names the remedy.
+
+**The C1 pair is extended to 1.31.0, and the reason is not the count.** 29 incumbents is a large
+number, but the argument is that **this release is the first in which either lane names a home those
+29 can reach.** Every home both messages listed was a shell slot — `PageBar` / `Section` /
+`WidgetHeader` — so a consumer mounting `BasaltProvider` and no `BasaltShell` had no reachable home
+at all: image-gen is a Tauri window with a hand-rolled header and carries 10 of the 29 by itself,
+and `basalt/bound-control-outside-home` closed the `ViewTabs` escape it would otherwise have taken.
+This release adds the missing sentence to both messages — a `PageBar` outside a shell renders in
+flow, sticky, with its own `title`, which is what `PageBar` has always actually done — so the
+remedy exists from now, not before. Promoting a rule to `error` in the same minor that first makes
+it satisfiable hands you zero minors to act on the answer. **1.31.0 is when those 29 are measured
+against this number.**
+
+Riding along, and the reason a single waiver now works: `control-outside-home` (the AST lane) and
+`raw-selection-control` (the text lane) are one law with two rule ids, and until now
+`theme-allow control-outside-home` parsed in the text lane and waived nothing there. A waiver naming
+either id now covers both, at line scope and at `theme-allow-file` scope, in both directions.
 
 ## 1.29.2 — `unwrap` over a union-typed Eden response
 

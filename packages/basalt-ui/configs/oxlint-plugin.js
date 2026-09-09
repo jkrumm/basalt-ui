@@ -2706,7 +2706,7 @@ const CONTROL_OUTSIDE_HOME_MESSAGE =
  * `@mantine/form` (a form is the third home and its inputs are not filters), and the owner
  * exemption — a file DEFINING a basalt control cannot be told to use one.
  */
-// Ships: warn (grace → 1.30.0)
+// Ships: warn (grace → 1.31.0)
 const controlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -3395,7 +3395,7 @@ const BOUND_CONTROL_OUTSIDE_HOME_MESSAGE =
  * 12-line window has neither. A text heuristic here would report a consumer's own `SelectFilter` in
  * its own `filters` slot — signal the plugin already has, noise the guard would add.
  */
-// Ships: warn (grace → 1.30.0)
+// Ships: error
 const boundControlOutsideHome = {
   meta: {
     type: 'suggestion',
@@ -3484,7 +3484,7 @@ const PROVIDER_ABOVE_ROUTER_MESSAGE =
  * have — so this catches the one-file case and the law stays advisory for the rest. That is why it
  * lands at `warn`.
  */
-// Ships: warn (grace → 1.30.0)
+// Ships: error
 const providerAboveRouter = {
   meta: {
     type: 'suggestion',
@@ -3568,7 +3568,7 @@ const UNWRAP_CALL = /\bunwrap\s*\(/
  * Scoped to files importing `basalt-ui/query` literally, for the reason {@link queryDualImport}
  * gives: without that gate it is an opinion about `fetch`, which basalt does not have.
  */
-// Ships: warn (grace → 1.30.0)
+// Ships: error
 const queryFnUnwrap = {
   meta: {
     type: 'suggestion',
@@ -3798,7 +3798,7 @@ function hasKeyAttribute(opening) {
  * local→imported map so `import { inputProps as f }` is covered. `inputProps` is an ordinary enough
  * name that firing on an unimported one would be an opinion about a consumer's own helper.
  */
-// Ships: warn (grace → 1.30.0)
+// Ships: error
 const formsFieldKey = {
   meta: {
     type: 'suggestion',
@@ -3968,73 +3968,32 @@ const noImportMetaEnv = {
 export const PLUGIN_RULE_GRACE = {
   'control-outside-home': {
     since: '1.26.0',
-    promote: '1.30.0',
+    promote: '1.31.0',
     why:
       'the wave-6 control guards (docs/CONTROLS-SPEC.md §6). The one openly HEURISTIC rule of the ' +
       'set — "this control has no home" is a claim about layout intent, so its false-positive load ' +
       'is carried by four exemptions (overlay/settings-row ancestor, the overlay FILENAME ' +
       'convention below, @mantine/form, owner definition) rather than by certainty. The other five ' +
-      'wave-6 rules promoted at 1.27.0; this one did not, and the reason is measured rather than ' +
-      'cautious: the wave-7 run found 9 remaining warns in argo, every one of them a control in a ' +
-      'modal/form module whose `<Modal>` is rendered by the PARENT — the cross-file case law C1 is ' +
-      'explicitly advisory about, which no ancestry walk inside one file can ever see. ' +
-      '{@link isOverlayConventionFile} exempts that declared naming convention, in BOTH the kebab ' +
-      '(`edit-session-modal.tsx`) and the PascalCase (`CbbiPanel.tsx`) dialect. Re-dated ' +
-      '2026-08-28 — the argo wave-7 migration has not run; the PascalCase overlay convention (this ' +
-      'change) is expected to clear most of the 9. 1.30.0 is when the remainder is re-measured. A ' +
-      "file outside the convention that is still an overlay's own body declares it with " +
+      'wave-6 rules promoted at 1.27.0; this one has not, across three re-datings. ' +
+      'RE-MEASURED 2026-09-09, every consumer freshly migrated to 1.29.2 and basalt built from ' +
+      'master: 29 incumbents across five repos — image-gen 10, rb 8, image-share 6, the playground ' +
+      '3, argo 2 — and zero in linewatch, meteo and obsidian. The 1.28.0 prediction held: ' +
+      "{@link isOverlayConventionFile} took argo's 9 cross-file overlay warns down to 2, which is " +
+      'the part of the remainder that was ever going to fall to an exemption. ' +
+      'Extended to 1.31.0, and the argument is NOT the count — it is that 1.30.0 is the first ' +
+      'release in which this rule names an answer the 29 can reach. Every home it listed was a ' +
+      'shell slot (PageBar / Section / WidgetHeader), so a consumer that mounts `BasaltProvider` ' +
+      'and no `BasaltShell` had no reachable home at all: image-gen is a Tauri window with a ' +
+      'hand-rolled header and carries 10 of the 29 by itself, and `bound-control-outside-home` ' +
+      'closed the `ViewTabs` escape it would otherwise have taken. 1.30.0 adds the missing ' +
+      'sentence to both messages ({@link SHELL_LESS_HOME_HINT} — a `PageBar` outside a shell ' +
+      'renders in flow, sticky, with its own title, which is what `src/shell/page-bar.tsx` ' +
+      'actually does). Promoting a rule to `error` in the same minor that first makes it ' +
+      'satisfiable hands a consumer zero minors to act on the answer, which is exactly the failure ' +
+      'the grace mechanism exists to prevent. 1.31.0 is when the 29 have been through the new home ' +
+      'and the remainder is measured against that number. A file outside the convention that is ' +
+      "still an overlay's own body declares it with " +
       '`theme-allow-file control-outside-home — overlay`.',
-  },
-  'bound-control-outside-home': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      'ASIDE-SPEC G5 — a bound control in a section body rendered as a stray pill and nothing saw ' +
-      'it. `control-outside-home` matches raw Mantine tags only, so the whole basalt half of law ' +
-      'C1 was unguarded: `<SelectFilter field={…}/>` written into a `Section` body or a bare page ' +
-      'stack passed every lane. A NEW id rather than a widening (C16 — a level is per-id), landing ' +
-      'warn because it inherits the sibling rule\'s heuristic: "this control has no home" is a ' +
-      'claim about layout intent, and the ancestry it reads now spans four subtree homes ' +
-      '(FilterSet / PageAside / PanelRow / the overlay hosts) that only shipped in 1.27.0. 1.30.0 ' +
-      'is when the incumbent count across argo, linewatch, image-share, rb, image-gen and the ' +
-      'playground is re-measured.',
-  },
-  'provider-above-router': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      'F5 — one of the three basalt-mantine.md laws that shipped under a `not guarded: —` banner. ' +
-      'It reads STATIC JSX ancestry inside one file, which is a genuine fraction of the law: the ' +
-      'usual real shape composes the two providers across modules, where no oxlint rule can see ' +
-      'the nesting at all. Landing it at `error` would state a certainty the implementation does ' +
-      'not have. 1.30.0 is when the incumbent count across argo, linewatch, image-share, rb, ' +
-      'image-gen and the playground is measured — every one of them mounts a router, so the ' +
-      'false-positive question has a real sample.',
-  },
-  'forms-field-key': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      "the 1.28.0 forms minor took `key` out of `inputProps`' return, and the OLD call site " +
-      "(`<TextInput {...inputProps(form, 'x')} />`) survives that change with no compile error, " +
-      'no throw and no console line — it just stops resetting. This rule is the only thing that ' +
-      'reports it, which is an argument for `error`, not `warn`; it lands at `warn` anyway ' +
-      'because it fires on code every consumer is CURRENTLY shipping, and the grace minor is what ' +
-      'turns "your build is broken by the upgrade" into "your editor lists the eleven lines". ' +
-      'The `field(` arm is the same law read from the pre-migration end, and that alias is removed ' +
-      'in 1.29.0 anyway. 1.30.0 is when argo, linewatch, image-share, rb, image-gen and the ' +
-      'playground have all been through the autofix and the remainder is measured.',
-  },
-  'query-fn-unwrap': {
-    since: '1.28.0',
-    promote: '1.30.0',
-    why:
-      'F5 — the second unguarded ./query law. Openly a TEXT heuristic inside a syntactic range: ' +
-      '`fetch(` present in the queryFn span and `unwrap(` absent. It cannot see a `queryFn: ' +
-      'fetchThing` reference, an Eden/Treaty call, or an unwrap one frame out, and it counts an ' +
-      '`unwrap(` applied to anything. That is a deliberate floor rather than a first draft, and a ' +
-      'rule whose stated reach is this narrow has no business failing a build. 1.30.0 is when the ' +
-      'measured false-positive load decides whether it promotes or stays advisory.',
   },
 }
 

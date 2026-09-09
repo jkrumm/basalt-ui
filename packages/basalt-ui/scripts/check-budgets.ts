@@ -70,13 +70,30 @@ function agentRuleLines(): number {
   return totalLines(walkFiles(dir, /\.md$/))
 }
 
-// ── 4. Spec prose (docs/*.md, non-archive) ──────────────────────────────────────────────────────
+// ── 4. Spec prose (docs/*.md, non-archive, excluding the ledger) ───────────────────────────────
+
+/**
+ * The APPEND-ONLY files under `docs/`, excluded from the prose budget because they are records
+ * rather than doctrine.
+ *
+ * `MATURATION-LEDGER.md` is the only entry, and excluding it is a correction, not a concession:
+ * the budget's job is to bound how much DOCTRINE the repo asks a reader to hold, and a ledger row
+ * is the opposite of that — it is a finding, its evidence and its verdict, written down so the next
+ * wave does not re-derive it. Counting it meant every wave that recorded its own outcome pushed the
+ * SPECS closer to a ceiling they had not moved toward, and the only ways to stay green were to
+ * delete history or raise the number. The 2026-09-09 chrome wave hit exactly that: +21 ledger lines
+ * put a 2647/2650 budget at 2668 while no spec had grown at all.
+ *
+ * The ceiling below was lowered by the ledger's size at the moment of the split, so the remaining
+ * specs are held to the same real bound they were before — the gate did not get looser.
+ */
+const APPEND_ONLY_DOCS = new Set(['MATURATION-LEDGER.md'])
 
 function docsProseLines(): number {
   const glob = new Bun.Glob('*.md')
-  const paths = [...glob.scanSync({ cwd: join(REPO_ROOT, 'docs'), onlyFiles: true })].map((rel) =>
-    join(REPO_ROOT, 'docs', rel),
-  )
+  const paths = [...glob.scanSync({ cwd: join(REPO_ROOT, 'docs'), onlyFiles: true })]
+    .filter((rel) => !APPEND_ONLY_DOCS.has(rel))
+    .map((rel) => join(REPO_ROOT, 'docs', rel))
   return totalLines(paths)
 }
 
@@ -100,7 +117,7 @@ function budgets(): Budget[] {
     { label: 'public symbols (export-surface.json)', value: publicSymbols(), ceiling: 400 },
     { label: 'published subpaths (package.json exports)', value: publishedSubpaths(), ceiling: 24 },
     { label: 'shipped rule lines (agent/rules/*.md)', value: agentRuleLines(), ceiling: 750 },
-    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 2650 },
+    { label: 'spec prose (docs/*.md, non-archive)', value: docsProseLines(), ceiling: 2480 },
     {
       label: 'playground route files (apps/playground/src/routes/**)',
       value: playgroundRouteFiles(),

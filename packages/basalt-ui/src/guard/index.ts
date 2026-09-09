@@ -740,19 +740,22 @@ export type GraceEntry = { since: string; promote: string; why: string }
 export const GRACE_PERIOD_KINDS: Partial<Record<GuardKind, GraceEntry>> = {
   'raw-selection-control': {
     since: '1.26.0',
-    promote: '1.30.0',
+    promote: '1.31.0',
     why:
       'new in the wave-6 control guards (docs/CONTROLS-SPEC.md §6, law C1). The text lane cannot ' +
       'see ancestry, so "no home" is approximated by a 12-line host-tag window — the loosest ' +
       'reading in the guard, and the reason this one lands warn rather than error even though its ' +
-      'law is settled. It moved from 1.27.0 to 1.30.0 with its AST twin, `basalt/control-outside-' +
-      'home`, whose PLUGIN_RULE_GRACE entry carries the measurement: the wave-7 run left 9 warns ' +
-      'in argo, all of them a control in a modal/form module whose `<Modal>` is rendered by the ' +
-      'PARENT — law C1 cross-file, which neither lane can see. `isOverlayConventionFile` (this ' +
-      'file, and the same regex in the plugin) exempts that declared naming convention in both ' +
-      'lanes. Re-dated 2026-08-28 — the argo wave-7 migration has not run; the PascalCase overlay ' +
-      'convention (this change) is expected to clear most of the 9. 1.30.0 is when the remainder ' +
-      'is re-measured. One law, two lanes, one promotion.',
+      'law is settled. ONE LAW, TWO LANES, ONE PROMOTION: it moves with its AST twin, ' +
+      '`basalt/control-outside-home`, whose PLUGIN_RULE_GRACE entry carries the full argument and ' +
+      'the measurement, and it must never be promoted or extended alone — a consumer waiving one ' +
+      'spelling and failing the other is the exact confusion `WAIVER_ID_ALIASES` exists to close. ' +
+      'RE-MEASURED 2026-09-09 across the whole fleet on 1.29.2: 29 AST-lane incumbents in five ' +
+      "repos, plus three of basalt's own (data-table, notifications/center, theme-lab). Extended " +
+      'to 1.31.0 because 1.30.0 is the FIRST release in which either lane names a home a ' +
+      'provider-only consumer can reach — every home both messages listed was a shell slot, and ' +
+      'the shell-less `PageBar` sentence ships in this minor. Promoting in the same minor that ' +
+      'makes a rule satisfiable gives nobody a window to act. 1.31.0 is when the 29 are ' +
+      're-measured against that number.',
   },
 }
 
