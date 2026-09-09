@@ -7,19 +7,7 @@
  * Edge states: toggle the error switch to force the error envelope — unwrap() throws,
  * the query enters the error state, and the error message renders in the table section.
  */
-import {
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Paper,
-  Stack,
-  Switch,
-  Table,
-  Tabs,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Alert, Badge, Button, Group, Paper, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
 import { BasaltQueryDevtools, createBasaltQueryClient, toErrorMessage, unwrap } from 'basalt-ui'
 import {
   QueryClientProvider,
@@ -176,14 +164,13 @@ function QueryClientPanel({
 }) {
   return (
     <>
-      <Stack gap="md" p="md">
-        <div>
-          <Title order={3}>./query adapter</Title>
-          <Text size="sm" c="dimmed" mt={4}>
-            createBasaltQueryClient + unwrap + BasaltQueryDevtools (optional peer, lazy, prod-safe)
-            + error-envelope edge state
-          </Text>
-        </div>
+      <Stack gap="md">
+        {/* No in-body `<Title>` — the /data bar's "Query" tab names this view; the subpath it
+            demos moves into the lead (ComponentsPage's module doc has the wave's rule). */}
+        <Text size="sm" c="dimmed">
+          <code>./query</code>: createBasaltQueryClient + unwrap + BasaltQueryDevtools (optional
+          peer, lazy, prod-safe) + error-envelope edge state
+        </Text>
 
         <Paper p="sm">
           <Stack gap="xs">

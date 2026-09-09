@@ -10,11 +10,15 @@
  * laws C1–C5, C9. The page title is the breadcrumb (`staticData.title`), so there is no in-body
  * heading either (law C8).
  *
+ * It is also the page that demonstrates the ASIDE region on a landing route (`PageAside` at the
+ * bottom of this file, `docs/ASIDE-SPEC.md`), and the bar/aside split is the one-home law in
+ * practice: the bar holds what the page is read FROM, the aside how its main chart is DRAWN.
+ *
  * The data is a pure function of the filter state (`demo/analytics-data.ts`): a re-render caused by
  * opening the `Filters (n)` sheet must not reshuffle the numbers behind it.
  */
 import { ActionIcon, Stack } from '@mantine/core'
-import { PageBar, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
+import { PageAside, PageBar, Section, StatCard, StatGroup, WidgetGrid } from 'basalt-ui'
 import type { QueryStateLike } from 'basalt-ui'
 import {
   CompareFilter,
@@ -22,10 +26,13 @@ import {
   MultiSelectFilter,
   RangeFilter,
   SelectFilter,
+  SliderControl,
+  ToggleFilter,
   ViewTabs,
 } from 'basalt-ui/controls'
 import { DateRangePicker } from 'basalt-ui/controls-dates'
 import { BarSparkline, ChartCard, MultiLine, VX } from 'basalt-ui/charts'
+import type { ZoneSpec } from 'basalt-ui/charts'
 import { alpha } from 'basalt-ui/tokens'
 import { BasaltDataTable } from 'basalt-ui/data/table'
 import { field } from 'basalt-ui/router-tanstack'
@@ -42,7 +49,7 @@ import {
   sparklineBars,
   topPageColumns,
 } from './analytics-data'
-import type { Analytics } from './analytics-data'
+import type { Analytics, SalesPoint } from './analytics-data'
 import { BreakdownList, LiveChip } from './analytics-widgets'
 import { dashboardFilters } from './dashboard-range-store'
 import {
@@ -204,6 +211,62 @@ const SMALL_CHARTS: readonly {
   },
 ]
 
+/**
+ * A CENTERED rolling mean over both plotted series, `span` points wide — what the aside's
+ * `Smoothing` row does to the chart.
+ *
+ * CENTERED, not trailing: a trailing mean shifts every feature half a window to the right, which on
+ * a 30-point series is a visible lie about WHEN sales moved. The window shrinks at the edges instead
+ * of dropping points, so the line still spans the whole calendar rather than starting three days in.
+ *
+ * `span <= 1` returns the input BY IDENTITY, so "smoothing off" allocates nothing and `MultiLine`
+ * sees the same `data` reference it saw before — a memoized chart must not re-lay-out because a
+ * slider the reader never touched produced a fresh array.
+ *
+ * The parameter is `span` rather than `window` deliberately: `window` shadows the global this file
+ * already uses for `setTimeout`.
+ */
+function smoothSeries(points: SalesPoint[], span: number): SalesPoint[] {
+  if (span <= 1) return points
+  const half = Math.floor(span / 2)
+  return points.map((point, index) => {
+    const slice = points.slice(Math.max(0, index - half), index + half + 1)
+    const mean = (pick: (p: SalesPoint) => number): number =>
+      Math.round(slice.reduce((total, p) => total + pick(p), 0) / slice.length)
+    return { date: point.date, sales: mean((p) => p.sales), previous: mean((p) => p.previous) }
+  })
+}
+
+/** The target corridor's spread around the window's own mean — ±10%, one constant, not two. */
+const TARGET_TOLERANCE = 0.1
+
+/**
+ * The three bands the aside's `Target band` switch draws behind the sales line, derived from the
+ * VISIBLE window's mean rather than from a pinned number: a fixture that reshapes with the range,
+ * the currency and the bucket has no fixed target to hardcode, and a band that ignored those would
+ * sit off-plot the moment the reader switched to weeks.
+ *
+ * `alpha()` over a token, never a hex — the fills re-resolve per color scheme.
+ */
+function targetBands(points: readonly SalesPoint[]): ZoneSpec[] | undefined {
+  if (points.length === 0) return undefined
+  const mean = points.reduce((total, point) => total + point.sales, 0) / points.length
+  return [
+    { from: -Infinity, to: mean * (1 - TARGET_TOLERANCE), fill: alpha(VX.warnSolid, 0.07) },
+    {
+      from: mean * (1 - TARGET_TOLERANCE),
+      to: mean * (1 + TARGET_TOLERANCE),
+      fill: alpha(VX.accent, 0.1),
+    },
+    { from: mean * (1 + TARGET_TOLERANCE), to: Infinity, fill: alpha(VX.goodSolid, 0.07) },
+  ]
+}
+
+/** The `Smoothing` row's readout — `off` at the fallback, so the row states its own rest state. */
+function smoothingReadout(value: number): string {
+  return value <= 1 ? 'off' : `${value} pts`
+}
+
 export function DashboardPage() {
   const filters = dashboardFilters.useValues()
   // A local store exposes `field` handles, not a values object — each field's own `use()` is the
@@ -231,6 +294,17 @@ export function DashboardPage() {
   // `ViewTabs` in `ChartCard.actions` that only restyled the plot would not be a control worth a
   // slot.
   const grainPoints = useMemo(() => bucketByGrain(data.points, grain), [data.points, grain])
+  // The aside's two data-shaping fields, applied HERE and not inside the card: the smoothed series
+  // is also what the band's mean is computed over, so a corridor drawn against the raw mean would
+  // disagree with the line it sits behind by up to the smoothing's own bias.
+  const plotPoints = useMemo(
+    () => smoothSeries(grainPoints, filters.smoothing),
+    [grainPoints, filters.smoothing],
+  )
+  const bands = useMemo(
+    () => (filters.bands ? targetBands(plotPoints) : undefined),
+    [filters.bands, plotPoints],
+  )
   const ordersQuery = useMemo(() => buildBreakdownQuery(kpiQuery), [kpiQuery])
 
   // Stands in for a `refetch()`. The `SyncButton` owns the spinner, the relative age and the
@@ -249,9 +323,9 @@ export function DashboardPage() {
         actions={{
           // An ICON on the primary is what picks its mobile form (`docs/CONTROLS-SPEC.md` §2.1): with
           // one it becomes a filled `ActionIcon`, without one a compact filled button carrying the
-          // label. This page takes the icon branch because its header is already the busiest in the
-          // playground (a live chip, a sync, two shell globals and a kebab); `ControlsMobilePage`'s
-          // `Export` primary ships no icon and demonstrates the labelled branch.
+          // label. This page takes the icon branch because it still shares the phone bar with a
+          // sync, two shell globals and the kebab; `ControlsMobilePage`'s `Export` primary ships no
+          // icon and demonstrates the labelled branch.
           primary: {
             key: 'save',
             label: 'Save as report',
@@ -261,14 +335,29 @@ export function DashboardPage() {
           secondary: [
             // `kind: 'custom'` — the escape hatch for a control basalt does not model (linewatch's
             // live chip, argo's timer). basalt owns only the PLACEMENT: the node renders with no
-            // button chrome on desktop, and `mobile: 'bar'` keeps it mounted exactly ONCE, which is
-            // what anything holding live state needs — a `'more'` node is mounted a second time
-            // inside the kebab's dropdown.
-            { key: 'live', kind: 'custom', node: <LiveChip />, mobile: 'bar' },
+            // button chrome on desktop.
+            //
+            // `'more'`, not the `'bar'` it shipped with, and the reversal is a WIDTH verdict rather
+            // than a change of mind about the live-state law. That law still holds and is why
+            // `GlobalAction`'s doc states it: a `'more'` node is mounted a SECOND time inside the
+            // kebab's dropdown, so a control that owns a subscription pays twice. This chip owns a
+            // 1s interval, the second mount exists only while the dropdown is open, and against that
+            // the `'bar'` form cost ~81px of a 374px content box — measured at 390x844 it left the
+            // breadcrumb 101px against its own 96px floor (`app-header.module.css`), i.e. the page
+            // title truncated to buy a badge counting seconds. Law C7 says row 1 below `sm` is the
+            // primary plus ONE kebab; a page demonstrating the framework should not be the one place
+            // that reads as four rigid entries plus a kebab.
+            { key: 'live', kind: 'custom', node: <LiveChip />, mobile: 'more' },
             { key: 'accounts', label: 'Accounts', icon: <IconUser />, onClick: () => {} },
             { key: 'export', label: 'Export CSV', onClick: () => {}, mobile: 'more' },
           ],
         }}
+        // Stays on the phone bar, and not because it earned the slot: `PageBar.sync` takes no
+        // `mobile` placement, and law C12 says a page's refresh has exactly ONE shape — so folding
+        // it into the kebab from here would mean re-declaring it as a `kind: 'custom'` action,
+        // which loses the spinner, the relative age and the error tone on DESKTOP too. Its phone
+        // form is already icon-only (`sync-button.tsx`, CSS, one mount), so it costs ~36px against
+        // the live chip's ~81px; the rest of the ask is a package change, not a call-site one.
         sync={{ syncing, lastCompletedAt: syncedAt, onSync }}
         filters={
           <FilterSet>
@@ -396,12 +485,17 @@ export function DashboardPage() {
             }
           >
             <MultiLine
-              data={grainPoints}
+              // The one chart on this page the ASIDE governs: `plotPoints` carries its smoothing,
+              // `y.scale` its axis and `zones` its target corridor. The `Bucket` tabs in this card's
+              // own header stay the CARD's (law C1's third home) — the aside would be the wrong
+              // reach for a control that formats exactly one widget.
+              data={plotPoints}
               height={280}
               chartId="analytics-sales"
               ariaLabel="Total sales over time"
               getX={(d) => d.date}
-              y={{ domain: 'auto', format: (v) => integer(v) }}
+              y={{ domain: 'auto', format: (v) => integer(v), scale: filters.scale }}
+              {...(bands !== undefined && { zones: bands })}
               series={[
                 {
                   key: 'sales',
@@ -421,7 +515,7 @@ export function DashboardPage() {
                         mark: 'line' as const,
                         dash: 'dashed' as const,
                         strokeWidth: 1.5,
-                        getValue: (d: (typeof grainPoints)[number]) => d.previous,
+                        getValue: (d: (typeof plotPoints)[number]) => d.previous,
                       },
                     ]),
               ]}
@@ -527,6 +621,42 @@ export function DashboardPage() {
           highlightOnHover
         />
       </Section>
+
+      {/*
+       * The right-hand aside, on the app's LANDING route (`docs/ASIDE-SPEC.md` §0). It was
+       * demonstrated only on `/cbbi` and on a non-default tab of `/data` — two clicks off any path a
+       * reader actually takes — so the shipped fourth shell region was invisible to anyone judging
+       * the framework from the page it opens on.
+       *
+       * WRITTEN LAST because tree position IS reading order and nothing else: from `sm` up this
+       * portals into `AppShell.Aside`, and below `sm` it projects into `PageBar` row 2 as one
+       * `Display` pill opening a `FilterSheet`. That projection needs row 2 to EXIST — the bar above
+       * carries a four-filter `FilterSet` plus `filtersEnd`, so it does; on a page with neither, the
+       * same one node would render in flow at the bottom instead (still one mount, law C9).
+       *
+       * THE ONE-HOME LAW is what picks the three fields inside. The bar owns what is READ (window,
+       * comparison, currency, channels); the aside owns how the sales chart is DRAWN. `range` or
+       * `compare` repeated here would be a twin the bar already owns on the same viewport — the
+       * bar/aside sibling of C9 — so the aside binds only fields no `FilterSet` child touches
+       * (`demo/dashboard-range-store.ts` states the split at the definition).
+       */}
+      <PageAside title="Display" persistKey="dashboard">
+        <Section
+          title="Sales chart"
+          info="How `Total sales over time` is drawn. The page bar owns what it is drawn FROM."
+        >
+          {/* Two options, so `PanelChoice` keeps the full-width track rather than folding to a
+              `Select` — and the labels come off `dashboardFilters.labels()`, not a prop. */}
+          <SelectFilter field={dashboardFilters.field.scale} label="Y scale" />
+          <SliderControl
+            field={dashboardFilters.field.smoothing}
+            label="Smoothing"
+            hint="A centered rolling mean over the plotted points — 0 draws the raw series."
+            format={smoothingReadout}
+          />
+          <ToggleFilter field={dashboardFilters.field.bands} label="Target band" />
+        </Section>
+      </PageAside>
     </Stack>
   )
 }

@@ -17,15 +17,23 @@
 import { Link, linkOptions, redirect } from '@tanstack/react-router'
 import { defineNav, navGroup, navTarget } from 'basalt-ui/router-tanstack'
 
-// `/dashboard`'s store validates FOUR fields (`demo/dashboard-range-store.ts`), and
-// `validateSearch` returns every one of them resolved — so TanStack type-requires all four on any
-// link into it. Hoisted `as const` so the literals do not widen (see the row-8 trap below) and the
-// four keys are stated once rather than eight times.
+// `/dashboard`'s store validates SEVEN fields (`demo/dashboard-range-store.ts` — the page bar's
+// four plus the aside's three), and `validateSearch` returns every one of them resolved, so
+// TanStack type-requires all seven on any link into it. Hoisted `as const` so the literals do not
+// widen (see the row-8 trap below) and the keys are stated once rather than once per row.
+//
+// This fixture is also the one place the store's field set is spelled out by hand, deliberately: a
+// field added there and not here fails THIS file, which is the point — the guard is that a link
+// into a store-backed route carries the store's whole shape. Real call sites pass
+// `dashboardFilters.linkSearch` by reference (law C10) and never restate a key.
 const DASH_SEARCH = {
   range: '7d',
   compare: 'none',
   currency: 'USD',
   channels: [],
+  scale: 'linear',
+  smoothing: 0,
+  bands: false,
 } as const
 
 // ── the definition under test ────────────────────────────────────────────────────────────────────
@@ -216,7 +224,17 @@ export const searchThunkLiteralUnion = defineNav({
         label: 'Dashboard',
         link: linkOptions({
           to: '/dashboard',
-          search: () => ({ range: '7d', compare: 'none', currency: 'USD', channels: [] }),
+          // Spelled INLINE, never `...DASH_SEARCH`: that const is `as const`, so spreading it would
+          // make this row pass without ever exercising the contextual typing it exists to pin.
+          search: () => ({
+            range: '7d',
+            compare: 'none',
+            currency: 'USD',
+            channels: [],
+            scale: 'linear',
+            smoothing: 0,
+            bands: false,
+          }),
         }),
       },
     ]),
@@ -226,7 +244,15 @@ export const searchThunkLiteralUnion = defineNav({
 // The trap that survives, and the reason the row above is worth pinning rather than assuming: the
 // same thunk hoisted into a STANDALONE `linkOptions` call has no such contextual type, its return
 // widens to `{ range: string }`, and it is rejected. Inline it in the nav item, or write `as const`.
-const widenedSearch = () => ({ range: '7d', compare: 'none', currency: 'USD', channels: [] })
+const widenedSearch = () => ({
+  range: '7d',
+  compare: 'none',
+  currency: 'USD',
+  channels: [],
+  scale: 'linear',
+  smoothing: 0,
+  bands: false,
+})
 // @ts-expect-error a standalone thunk's `range` widens to `string` and misses the preset union
 export const hoistedThunk = linkOptions({ to: '/dashboard', search: widenedSearch })
 

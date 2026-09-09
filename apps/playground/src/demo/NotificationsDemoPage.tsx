@@ -19,18 +19,7 @@
  *   component hooks directly), it dispatches through the module-level `demoActions` bridge, which the
  *   page wires to real navigation / modal behaviour in an effect.
  */
-import {
-  Badge,
-  Button,
-  Code,
-  Divider,
-  Group,
-  Modal,
-  Paper,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core'
+import { Badge, Button, Code, Divider, Group, Modal, Paper, Stack, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from '@tanstack/react-router'
 import {
@@ -429,15 +418,14 @@ export function NotificationsDemoPage() {
   }, [navigate, openDetails])
 
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>./notifications adapter</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          notify helpers + notifyPromise + defineNotifications typed registry + emit() +
-          registry-resolved actions + persisted history store + NotificationBell +
-          NotificationCenter
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>` — the breadcrumb names the page; the subpath the page demos is
+          stated in the lead instead (ComponentsPage's module doc has the wave's rule). */}
+      <Text size="sm" c="dimmed">
+        <code>./notifications</code>: notify helpers + notifyPromise + defineNotifications typed
+        registry + emit() + registry-resolved actions + persisted history store + NotificationBell +
+        NotificationCenter
+      </Text>
 
       <Paper p="sm">
         <Stack gap="xs">

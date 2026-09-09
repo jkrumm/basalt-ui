@@ -67,7 +67,7 @@ accentBrightness } })` — one accent seed + five bounded knobs, contrast guaran
   `./query`'s exports move to `.`/`./state`, `./connectivity` folds into `./provider`, `./data`
   folds into `./data` (table + virtual-list) staying but the barrel narrows. `./controls-dates`
   STAYS separate (inlining it would pull `@mantine/dates` into `./controls`). Full symbol-level
-  mapping: `packages/basalt-ui/MIGRATING.md` § Unreleased.
+  mapping: `packages/basalt-ui/MIGRATING.md` § 1.29.0 § Consolidation.
 
 ## Charts
 

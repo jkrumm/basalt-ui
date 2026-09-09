@@ -137,7 +137,10 @@ export function QueryStateDemoPage() {
         subtitle={`Loading / error-with-retry / empty / success around one async result — the sibling EmptyState shipped without. refetch() calls: ${retries}`}
         tabs={<ViewTabs field={demoStore.field.scenario} options={SCENARIOS} />}
         actions={
-          <Group gap="lg" wrap="nowrap">
+          // Wraps: two labelled switches are ~220px of min-content, and `WidgetHeader`'s mobile
+          // rule already gives `.actions` its own full-width line below `sm` — the `nowrap` was
+          // the only thing defeating it at 390px.
+          <Group gap="sm" wrap="wrap">
             <Switch
               label="Skeletons"
               checked={skeleton}

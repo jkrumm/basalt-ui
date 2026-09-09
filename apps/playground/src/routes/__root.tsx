@@ -50,6 +50,15 @@ const navBadges = { dashboard: 4 }
  * self-contained and idempotent, so it folds into `'more'`; the color scheme is also reachable
  * from the account menu's settings rows, so nothing is lost on a phone.
  *
+ * Re-checked against the phone header's width budget rather than re-argued (2026-09-09), because
+ * `/dashboard` had overrun it. At 390x844 the header's content box is 374px and the two globals are
+ * `ctl` `ActionIcon`s: ~30px each plus one 6px gap, ~66px for the pair. The overrun was the PAGE's
+ * — a `kind: 'custom'` live chip at ~81px on top of the primary, the kebab and sync — and it is
+ * fixed where it was made (`demo/DashboardPage.tsx`). With that gone the rigid side is ~192px, so
+ * the breadcrumb keeps ~182px against its 96px floor. Both globals therefore keep `'bar'`: they are
+ * the two things a phone reader needs AT A GLANCE (am I online, is anything waiting), each is one
+ * icon, and demoting either would trade the law above for width the row no longer needs.
+ *
  * The date-range filter that used to sit here is gone: a page-level filter belongs in that page's
  * `PageBar.filters` (law C1), not in a persistent header slot every route pays for.
  */

@@ -17,7 +17,7 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   (G5, G11, G13). The invariant is honoured, not broken.
 - **Desktop and mobile are one declaration.** ONE `PageAside`, one node: from `sm` up it portals
   into `AppShell.Aside`, below `sm` it renders in flow where the page wrote it — never a second
-  tree (C9). Wave 1 stops there; the `Panel (n)` pill in `PageBar` row 2 opening those children as
+  tree (C9). Wave 1 stops there; the aside's pill in `PageBar` row 2 opening those children as
   44px `FilterSheet` rows (C15) is wave 2, and it replaces the in-flow stacking rather than adding
   a second mount.
 - **`PageAside` is law C9's ONE declared exception, and the viewport read stays in JS.** Every
@@ -43,6 +43,12 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   panel's; the panel paints only the page background. Its header is an `appShellHeaderHeight` band
   carrying the title in the head font (`--vx-text-md`/550 ink) — the title names the CONTENT
   (`"Composition"`), never the region (`"Panel"`).
+- **The mobile pill carries that same title** (chrome round 2026-09-09). It shipped labelled with the
+  literal word `Panel`, so the ONE projection a phone user ever reads was the one place this rule was
+  broken: the desktop header named the content while the pill named the region. Only the VISIBLE
+  label moved — `ariaLabel` was already the aside's `title` (`shell/page-bar.tsx`), which is why no
+  test caught it. The pill still carries no count: an aside's children are not a `FilterSet`, so
+  unlike `Filters (n)` there is no census to derive one from.
 - **The header's height tracks the shell's page-bar band, not a fixed 48px** (chrome round
   2026-09-02): `min-height` reads `--basalt-page-bar-h` first (`PageBar` row 2's measured height,
   published on `documentElement` — `shell/page-bar.tsx`) and falls back to `appShellHeaderHeight`
@@ -55,7 +61,8 @@ G1..G13 are cited below, not restated. Extends `docs/CONTROLS-SPEC.md`; laws C1�
   shape (an explicit `min-height` under the page's `box-sizing: border-box` reset, which absorbs its
   own border INSIDE the declared height), so the raw var undershoots the band's painted edge by
   exactly that border. The same `+ 1px` wraps both branches of the var/fallback, so the no-band
-  case still nets out at the unchanged 48px.
+  case still nets out at exactly `appShellHeaderHeight` — 48 when this was measured, 44 since the
+  2026-09-09 spacing pass moved that token; the fallback reads the var, so nothing here changed.
 - A `PageAside` child list IS the group list — no wrapper `Stack`; the body's `> * + *` rule draws
   the rhythm between direct children only.
 - **The one-home law**: the bar owns what is READ — view, window, sync — and the aside owns how it

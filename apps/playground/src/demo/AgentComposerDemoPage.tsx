@@ -29,7 +29,6 @@ import {
   Stack,
   Switch,
   Text,
-  Title,
 } from '@mantine/core'
 import type { ComposerAttachment, ComposerHandle, ComposerSubmit } from 'basalt-ui/agent-chat'
 import { Composer } from 'basalt-ui/agent-chat'
@@ -214,16 +213,15 @@ export function AgentComposerDemoPage() {
   )
 
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>Composer</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          Left/right slots, attachments, paste-to-attach, an async <code>onSubmit</code> with
-          optimistic-clear-then-restore-on-rejection, and a draft that survives a page reload (
-          <code>draftKey="agent-composer-demo"</code>). Type something, reload the page (F5), and it
-          comes back.
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>` — the bar's "Composer" tab is this view's one name (ComponentsPage's
+          module doc states the wave's page-chrome rule). */}
+      <Text size="sm" c="dimmed">
+        Left/right slots, attachments, paste-to-attach, an async <code>onSubmit</code> with
+        optimistic-clear-then-restore-on-rejection, and a draft that survives a page reload (
+        <code>draftKey="agent-composer-demo"</code>). Type something, reload the page (F5), and it
+        comes back.
+      </Text>
 
       <Paper p="sm">
         <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={4}>

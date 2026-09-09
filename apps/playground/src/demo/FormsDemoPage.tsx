@@ -7,7 +7,7 @@
  * on every value change via `useFormDraft`'s own subscription (`autosave: true`), restored on
  * mount, and cleared on successful submit.
  */
-import { Divider, NumberInput, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Divider, NumberInput, Paper, Stack, Text, TextInput } from '@mantine/core'
 import type { BarAction } from 'basalt-ui/controls'
 import {
   FormActions,
@@ -143,14 +143,13 @@ function ProjectForm() {
 
 export function FormsDemoPage() {
   return (
-    <Stack gap="md" p="md">
-      <div>
-        <Title order={3}>./forms adapter</Title>
-        <Text size="sm" c="dimmed" mt={4}>
-          useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft (autosave), laid out
-          through FormSection/FormRow/FormActions
-        </Text>
-      </div>
+    <Stack gap="md">
+      {/* No in-body `<Title>` — the breadcrumb names the page; the subpath the page demos is
+          stated in the lead instead (ComponentsPage's module doc has the wave's rule). */}
+      <Text size="sm" c="dimmed">
+        <code>./forms</code>: useBasaltForm + inputProps/fieldKey + FormErrorSummary + useFormDraft
+        (autosave), laid out through FormSection/FormRow/FormActions
+      </Text>
 
       <Paper p="sm">
         <Stack gap="xs">

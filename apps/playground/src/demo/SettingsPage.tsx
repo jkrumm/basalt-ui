@@ -281,7 +281,10 @@ function BillingSection() {
               : 'No active billing cycle'
           }
           control={
-            <Group gap="xs" wrap="nowrap">
+            // Wraps: a badge plus two `compact-sm` buttons is ~300px of content in a `SettingsRow`
+            // control slot, which at 390px has nowhere to put it. `justify="flex-end"` keeps the
+            // cluster right-aligned against the label whether it sits on one line or two.
+            <Group gap="xs" wrap="wrap" justify="flex-end">
               <Badge
                 size="sm"
                 variant="light"
@@ -549,7 +552,10 @@ function DeveloperSection() {
 
 export function SettingsPage() {
   return (
-    <Stack gap="md" maw={840} mx="auto" p="md">
+    // `maw`/`mx` stay — a reading measure is wanted here and both are harmless below the cap. The
+    // `p="md"` is gone: `AppShell.Main` already pads, and the second gutter cost a 390px phone
+    // ~32px a side (see ComponentsPage's module doc for the wave's page-chrome/gutter rule).
+    <Stack gap="md" maw={840} mx="auto">
       <AccountSection />
       <BillingSection />
       <AppearanceSection />

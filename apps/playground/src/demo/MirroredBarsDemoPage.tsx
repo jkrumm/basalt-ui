@@ -15,8 +15,10 @@
  * - **A qualified measurement is dimmed, not hidden.** `getBarOpacity` marks a bucket that
  *   measured only part of its span; it is a real reading, just a short one.
  */
-import { useMemo, useState } from 'react'
-import { SegmentedControl, Stack, Text } from '@mantine/core'
+import { useMemo } from 'react'
+import { Section } from 'basalt-ui'
+import { ViewTabs } from 'basalt-ui/controls'
+import { createLocalStore, field } from 'basalt-ui/state'
 import { ChartCard, MirroredBars, TooltipRow, VX } from 'basalt-ui/charts'
 import type { ChartSeries } from 'basalt-ui/charts'
 
@@ -141,29 +143,37 @@ function throughputExtraRows(d: Point) {
   )
 }
 
+/**
+ * The window size, store-bound (law C3) — same shape as `BandStripDemoPage`'s, deliberately: the
+ * two demos sit next to each other in `/charts`'s Primitives group, and a switch that is a
+ * `Section` tab on one block and a floating `SegmentedControl` on the other reads as two systems.
+ * `ChartCard.actions` would also be a legal home for a single-chart page (a basalt control sizes
+ * itself at `ctl` there). It is not the right one: this switch rebuilds the DATA the chart is
+ * given, not how the card draws it — the same distinction `/dashboard` states between its
+ * card-level `Bucket` tabs and its page-level filters.
+ */
+const mirroredViews = createLocalStore({
+  key: 'mirrored-window',
+  fields: { buckets: field.enum(['48', '144', '288'], '288') },
+}).labels({
+  buckets: {
+    '48': '48 buckets (unfolded)',
+    '144': '144 buckets',
+    '288': '288 buckets (folds)',
+  },
+})
+
 export function MirroredBarsDemoPage() {
-  const [size, setSize] = useState('288')
+  const [size] = mirroredViews.field.buckets.use()
   const count = Number(size)
   const points = useMemo(() => buildPoints(count), [count])
 
   return (
-    <Stack gap="lg">
-      <Stack gap="xs">
-        <Text size="sm" c="dimmed">
-          Download below the baseline, upload above it, each scaled to its own maximum. Click a
-          legend entry to drop a pane whole — bars, axis and tooltip row together.
-        </Text>
-        <SegmentedControl
-          value={size}
-          onChange={setSize}
-          data={[
-            { value: '48', label: '48 buckets (unfolded)' },
-            { value: '144', label: '144 buckets' },
-            { value: '288', label: '288 buckets (folds)' },
-          ]}
-        />
-      </Stack>
-
+    <Section
+      title="Mirrored bars"
+      subtitle="Download below the baseline, upload above it, each scaled to its own maximum. Click a legend entry to drop a pane whole — bars, axis and tooltip row together."
+      tabs={<ViewTabs field={mirroredViews.field.buckets} label="Window" />}
+    >
       <ChartCard
         title="Data carried"
         subtitle="What the line DID carry — not what it can, which is a different chart"
@@ -191,6 +201,6 @@ export function MirroredBarsDemoPage() {
           }}
         />
       </ChartCard>
-    </Stack>
+    </Section>
   )
 }
