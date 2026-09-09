@@ -81,10 +81,49 @@ consumer read this index, found nothing, and diffed a KPI row that had silently 
 
 ---
 
-## Unreleased
+## Unreleased — the `legendWins` collapse, and two things `ChartFrame` never said out loud
 
-_Nothing yet. Author the next section under this heading as `## Unreleased — <title>`; the
-release renames it and opens a new one here._
+**A patch. Nothing is added, renamed or removed.** One rendering regression 1.30.1 shipped is
+fixed; the other two entries correct documentation, not behaviour.
+
+### Charts — a stated `legend.maxRows` no longer costs a `fill` chart its whole plot
+
+1.30.1's `legendWins` drops `resolvePlotRect`'s `VX.minPlotHeight` floor so the caller's cap is
+paid for out of the frame's own cell. `ChartFrame` measures its OWN node, and under `fill` its
+`height: 100%` resolves to `auto` in a parent that states no height — so with the floor gone the
+sequence has a fixpoint at zero: plot 0 → the legend is the only content → the box IS the legend
+band → 0 again, forever. MEASURED in headless Chrome: a 7-entry `fill` chart at `maxRows: 3` in an
+unsized parent rendered a 29.375px frame and **no plot svg at all**; with nothing stated the same
+chart rendered a 120px plot in a 149.375px frame.
+
+The floor now stands while the frame measures exactly its own legend band and nothing else, which
+is the signature of a box nothing else sized. From there the frame is 120px + the band, the box has
+room, and `legendWins` applies normally.
+
+- **In the documented `fill` shape — a parent that states a height — nothing changes.** The plot
+  still yields the cell to a stated cap, below `VX.minPlotHeight` and down to 0 when the legend
+  band is taller than the cell. That is still the caller's arithmetic, made visible.
+- **`fill` in a parent that states no height is not a supported shape** and never was: the frame
+  has no external height to fill, so it settles on the plot floor. State a height on the parent
+  cell, or use `height` / `aspectRatio` instead of `fill`.
+- Pinned by `tests/layout/charts.layout.test.ts` INVARIANT 7 (both halves) — happy-dom cannot
+  observe a `ResizeObserver` fixpoint at all.
+
+### `ChartFrame` warns in dev when `height` or `aspectRatio` is passed with `fill`
+
+`fill` always won and the other two were never read; the JSDoc said so and nothing else did. Both
+now `console.error` once in dev through `common/errors.ts`' new `ignoredProp` builder. **No
+rendering moves** — the props were already ignored. A consumer carrying `height` alongside `fill`
+will see one message per prop and can delete the dead constants behind it. A mutually-exclusive
+union prop is the stronger fix and is deliberately not in a patch.
+
+### `legend.maxRows` counts ENTRIES, not rows — a documentation correction
+
+`ChartLegend` slices `entries.slice(0, cap)`. `maxRows: 3` on a 7-entry legend renders three
+entries and a `+4 more` chip, on ONE row at any width they fit. This is unchanged behaviour and
+matches `ChartLegend`'s own JSDoc; § 1.30.1's "takes the rows it asked for" and the name itself
+(plus `ChartTierMetrics.legendMaxRows`) said otherwise. **Nothing is renamed** — a public prop
+rename is not a patch, and the value you pass keeps meaning exactly what it always meant.
 
 ## 1.30.1 — finishing 1.30.0
 
@@ -118,8 +157,8 @@ exactly the case it was restored for. Measured: a 7-entry legend in a 92–150px
 entries at `maxRows` 3, 6 **and** 99, with five series drawn in colours nothing named.
 
 The fit now resolves an ABSENT cap only. When a caller states a number on a `fill` band, the legend
-takes the rows it asked for and **`VX.minPlotHeight` stops being a floor** — the plot yields the
-height instead. Both things that used to trim the number are framework DEFAULTS (the tier's cap,
+takes the ENTRIES it asked for (`maxRows` counts entries, not rows — see § Unreleased) and
+**`VX.minPlotHeight` stops being a floor** — the plot yields the height instead. Both things that used to trim the number are framework DEFAULTS (the tier's cap,
 and a floor about the plot); the stated number is the only intent in the room.
 
 - **Expect a taller legend and a shorter plot** anywhere you set `maxRows` on a docked/`fill` chart.

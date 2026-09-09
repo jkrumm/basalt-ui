@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import type { BasaltProps } from '../../common/props'
+import { ignoredProp } from '../../common/errors'
+import { useValidateProps } from '../../common/validate'
 import { VX } from '../../tokens'
 import { useChartSize } from '../hooks/useChartSize'
 import { deriveLegend } from '../series'
@@ -36,7 +38,13 @@ export type ChartFrameLegend = {
   /** Default 'bottom'. */
   placement?: LegendPlacement
   /**
-   * Wrap cap → "+N more" rollup at high cardinality.
+   * Rollup cap at high cardinality: the legend renders this many ENTRIES and folds the remainder
+   * into a `+N more` disclosure chip.
+   *
+   * **It counts entries, not rows** — the name is inherited and now load-bearing across
+   * `ChartTierMetrics.legendMaxRows`, so it is not renamed in a patch. `maxRows: 3` on a 7-entry
+   * legend renders three entries, which is ONE row at any width they fit on. `ChartLegend` slices
+   * (`entries.slice(0, cap)`); nothing here measures rows.
    *
    * An explicit value WINS OUTRIGHT — over the phone tier's two-row default (`chartTierMetrics`)
    * AND over a `fill` frame's measured fit (`legendEntryCap`). 1.30.0 fixed only the first half:
@@ -67,7 +75,8 @@ export type ChartFrameProps = BasaltProps & {
   series: readonly SeriesStyle[]
   /**
    * Height in pixels, or one per size step. Used when neither `aspectRatio` nor `fill` is set.
-   * Default 240.
+   * Default 240. Passing it WITH `fill` is a wiring mistake, not a fallback — `fill` wins and
+   * this is never read, which now warns once in dev (`common/errors.ts`' `ignoredProp`).
    *
    * `{ base: 180, md: 260 }` is the declarative escape from a page of fixed-height charts: the
    * steps are compared against the frame's own MEASURED width, not the viewport, so a chart squeezed
@@ -75,7 +84,8 @@ export type ChartFrameProps = BasaltProps & {
    * supported ({@link resolveFrameHeight}).
    */
   height?: number | ResponsiveChartHeight
-  /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set. */
+  /** height = Math.round(containerWidth / aspectRatio). Ignored when `fill` is set — which warns
+   * once in dev, for the same reason `height` does. */
   aspectRatio?: number
   /** Fill the parent flex/grid cell's measured height instead of a fixed/derived one. */
   fill?: boolean
@@ -219,6 +229,32 @@ export function ChartFrame({
       return next
     })
   }, [])
+
+  // The three sizing props are mutually exclusive and `fill` wins, silently — the type cannot say
+  // so without a union prop, which is a bigger change than a patch carries. Warn instead: a
+  // consumer passed `height` alongside `fill` for the life of a file and kept eight height
+  // constants (and a whole `compact` branch) that never moved a pixel, with nothing from tsc,
+  // oxlint or check-theme saying a word.
+  useValidateProps(
+    'ChartFrame',
+    () => [
+      fill && height !== undefined
+        ? ignoredProp(
+            'ChartFrame',
+            'height',
+            "`fill` is set — a fill frame takes its parent cell's measured height. Pass one or the other.",
+          )
+        : null,
+      fill && aspectRatio !== undefined
+        ? ignoredProp(
+            'ChartFrame',
+            'aspectRatio',
+            "`fill` is set — a fill frame takes its parent cell's measured height. Pass one or the other.",
+          )
+        : null,
+    ],
+    [fill, height, aspectRatio],
+  )
 
   const placement = legend === false ? 'bottom' : (legend.placement ?? 'bottom')
   const vertical = placement === 'left' || placement === 'right'

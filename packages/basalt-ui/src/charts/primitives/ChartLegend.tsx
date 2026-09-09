@@ -255,9 +255,11 @@ function LegendChild({ item }: { item: LegendEntry }) {
  * Shared legend for all non-sparkline charts. `highlighted`/`onHighlight` are optional — omit for
  * static legends without hover interactivity. `chartId` namespaces `split` clipPath ids so two
  * legends on the same page never collide. `groups` renders series → hairline divider → overlay →
- * reference bands instead of one flat smear. `maxRows` caps the number of rendered entries and
- * rolls the remainder into a `+N more` chip (row-accurate wrap measurement is `ChartFrame`'s job —
- * this is an entry-count cap, a deliberate simplification until that primitive lands).
+ * reference bands instead of one flat smear. `maxRows` caps the number of rendered ENTRIES and
+ * rolls the remainder into a `+N more` chip — it is an entry count, not a row count, in spite of
+ * the name (`entries.slice(0, cap)` below is the whole of it, and `ChartFrame` measures rows for a
+ * different purpose in `legendEntryCap`). The name is inherited and reaches the public
+ * `ChartTierMetrics.legendMaxRows`, so it stays until a minor can rename both.
  *
  * `onToggle` makes an entry a real toggle: clicking it hides the series in the plot, the tooltip,
  * and the auto y-domain together (`ChartFrame` owns the `hidden` set — see `docs/CHARTS-SPEC.md`

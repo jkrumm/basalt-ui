@@ -56,6 +56,20 @@ export function deprecatedProp(
 }
 
 /**
+ * A prop the component ACCEPTS, reads nothing from, and cannot report as wrong — because a SECOND
+ * prop it was passed alongside decides the same thing and won.
+ *
+ * Distinct from {@link deprecatedProp} (still read, going away) and {@link oneOf} (read, and the
+ * value is out of range): this one renders something the caller did not ask for and nothing in the
+ * type system, the linter or the console says so. `ChartFrame`'s `height` under `fill` is the
+ * reference case — meteo passed both for the life of the file and never learnt that eight height
+ * constants and a whole `compact` branch changed no pixel.
+ */
+export function ignoredProp(component: string, prop: string, because: string): string {
+  return message(component, `prop "${prop}" is ignored because ${because}`)
+}
+
+/**
  * An imperative call needs a layer that is not there — the optional peer is not installed, or the
  * mount that subscribes to its event bus is disabled. Both halves are named because the remedy
  * differs: install it, or stop turning it off.

@@ -2,8 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import { ThreadFeedRow, ThreadTranscript } from '../../../src/agent-chat'
 import type { AgentThread, ChatMessage, StreamStatus, TranscriptPart } from '../../../src/agent'
-import { Bars, BarSparkline, Donut, Heatmap, MultiLine, fmtAxisDate } from '../../../src/charts'
-import type { BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
+import {
+  BandStrip,
+  Bars,
+  BarSparkline,
+  Donut,
+  Heatmap,
+  MultiLine,
+  fmtAxisDate,
+} from '../../../src/charts'
+import type { BandStripSeries, BarsBar, ChartSeries, DonutDatum } from '../../../src/charts'
 import { FilterSet, SelectFilter, ViewTabs } from '../../../src/controls'
 import { BasaltDataTable } from '../../../src/data/table'
 import type { DataTableFacet } from '../../../src/data/table'
@@ -487,6 +495,17 @@ const HEAT_DATA: HeatCell[] = HEAT_ROWS.flatMap((row, ri) =>
   HEAT_COLS.map((col, ci) => ({ row, col, value: (ri + 1) * (ci + 1) })),
 )
 
+/** Band states, one per legend entry — `BandStrip` is the only `fill`-capable kind that also
+ * carries a `ChartFrame` legend, so it is what the `legendWins` invariants mount. */
+function buildBandSeries(seriesCount: number): BandStripSeries<ChartPoint>[] {
+  return Array.from({ length: seriesCount }, (_, i) => ({
+    key: `s${i}`,
+    label: `Series ${i + 1}`,
+    color: CHART_COLORS[i % CHART_COLORS.length] as string,
+    mark: 'bar' as const,
+  }))
+}
+
 function buildDonutData(seriesCount: number): DonutDatum<string>[] {
   return Array.from({ length: seriesCount }, (_, i) => ({ key: `s${i}`, value: 10 + i * 3 }))
 }
@@ -503,6 +522,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
     ...(spec.fill !== undefined && { fill: spec.fill }),
     ...(spec.aspectRatio !== undefined && { aspectRatio: spec.aspectRatio }),
   }
+  const legend = spec.legendMaxRows === undefined ? {} : { legend: { maxRows: spec.legendMaxRows } }
 
   const chart = (() => {
     switch (spec.kind) {
@@ -517,6 +537,20 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
             formatX={formatX}
             {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
             {...(spec.height !== undefined && { height: spec.height })}
+            {...legend}
+          />
+        )
+      case 'bandStrip':
+        return (
+          <BandStrip
+            data={buildChartData(seriesCount)}
+            chartId="fixture-chart"
+            getX={(d) => d.date}
+            series={buildBandSeries(seriesCount)}
+            getBand={(d) => ({ state: `s${Number(d.date.slice(-2)) % seriesCount}` })}
+            formatX={formatX}
+            {...sizing}
+            {...legend}
           />
         )
       case 'heatmap':
@@ -550,6 +584,7 @@ function ChartsFixture({ spec }: { spec: ChartsSpec }): ReactElement {
             formatX={formatX}
             {...(spec.xLabelRotate !== undefined && { xLabelRotate: spec.xLabelRotate })}
             {...(spec.height !== undefined && { height: spec.height })}
+            {...legend}
           />
         )
     }
