@@ -147,6 +147,69 @@ describe('doctor — a check that cannot run is not a check that passed', () => 
   })
 })
 
+/**
+ * `install-parity` and `guard-scan`, RESTORED in 1.30.0 after four minors absent with no MIGRATING
+ * row. Both had named consumers while gone: image-gen ran `doctor` in CI specifically to catch an
+ * install/manifest version mismatch and that step was a silent no-op, `guard-scan` is what makes a
+ * `basalt.roots` resolving to zero files impossible to ship green, and the CLAUDE-block basalt
+ * itself writes told a consumer's agent that "`basalt-ui doctor` prints where" it installed.
+ */
+describe('doctor — install-parity and guard-scan', () => {
+  it('prints WHERE basalt resolved and at what version — the CLAUDE-block’s claim', () => {
+    healthyFixture()
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain('node_modules/basalt-ui')
+    expect(log).toContain(CLI_VERSION)
+  })
+
+  // The pair, pinned together: the shipped CLAUDE-block tells a consumer's AGENT that doctor prints
+  // the install directory, and basalt WRITES that sentence into the consumer's own CLAUDE.md during
+  // `sync`. For four minors it described output the CLI had removed. Whichever half moves next, the
+  // other one has to move with it.
+  it('the shipped CLAUDE-block’s "doctor prints where" is a promise doctor keeps', () => {
+    const tpl = readFileSync(resolve(PKG_ROOT, 'agent/templates/CLAUDE-block.md.tpl'), 'utf8')
+    expect(tpl).toContain('`basalt-ui doctor` prints where')
+    healthyFixture()
+    expect(capture(() => doctor(dir)).log).toContain('basalt-ui resolves at')
+  })
+
+  it('hard-fails when the installed version and the manifest disagree', () => {
+    healthyFixture()
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {}, basaltVersion: '0.0.1' }))
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('install-parity')
+    expect(log).toContain('0.0.1')
+    expect(code).toBe(1)
+  })
+
+  it('passes without a version claim when the manifest records none', () => {
+    healthyFixture()
+    write(MANIFEST_PATH, JSON.stringify({ version: 1, files: {} }))
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).not.toContain('install-parity')
+    expect(code).toBe(0)
+  })
+
+  it('hard-fails when the guard would scan zero files', () => {
+    healthyFixture()
+    write('package.json', JSON.stringify({ name: 'fixture', basalt: { roots: ['nope'] } }))
+    const { code, log } = capture(() => doctor(dir))
+    expect(log).toContain('guard-scan')
+    expect(log).toContain('ZERO files')
+    expect(code).toBe(1)
+  })
+
+  // The two commands share `scannableFiles`, so a green guard-scan and a green check-theme scan
+  // can never mean different file sets — which is the whole reason the check is worth having.
+  it('reports the same count check-theme would scan', () => {
+    healthyFixture()
+    write('src/second.tsx', 'export const B = () => null\n')
+    const { log } = capture(() => doctor(dir))
+    expect(log).toContain('guard-scan: check-theme covers 2 file(s) under src')
+    expect(capture(() => checkTheme(dir)).code).toBe(0)
+  })
+})
+
 describe('doctor — tokens-only profile', () => {
   function tokensOnlyFixture(): void {
     write(
@@ -846,6 +909,54 @@ describe('init — the seeded lefthook.yml pins the guard to the local bin', () 
     const seeded = read('lefthook.yml')
     expect(seeded).toContain('BASALT_BIN: node_modules/.bin/basalt-ui')
     expect(seeded).toContain('extends:')
+  })
+})
+
+/**
+ * The shipped preset broke ITSELF for every non-root consumer at 1.29.0. Lefthook runs commands at
+ * the repo ROOT and `extends` merges commands WITHOUT a working directory, so after the resolver
+ * change (BASALT_CWD, else cwd, nothing inferred) `check-theme` reported `0 files scanned` — a hard
+ * failure — in any repo whose app is not at the root, and the default bin `bunx --no-install
+ * basalt-ui` resolved to nothing there under bun's isolated linker. image-share hand-patched
+ * `env: { BASALT_BIN, BASALT_CWD }` into it to commit at all.
+ */
+describe('the shipped lefthook preset — a monorepo consumer must not have to patch it', () => {
+  const preset = readFileSync(resolve(PKG_ROOT, 'configs/lefthook.yml'), 'utf8')
+
+  it('derives the bin from BASALT_CWD instead of bunx', () => {
+    expect(preset).toContain(
+      'run: ${BASALT_BIN:-${BASALT_CWD:+$BASALT_CWD/}node_modules/.bin/basalt-ui} check-theme',
+    )
+    expect(preset).not.toContain('bunx --no-install basalt-ui} check-theme')
+  })
+
+  it('names `root:` as a merging seam and spells the monorepo recipe out', () => {
+    expect(preset).toContain('MONOREPO RECIPE')
+    expect(preset).toContain("check-theme: { root: 'apps/web/' }")
+  })
+
+  // The preset claimed `check-theme` "now relocates to the single workspace package carrying a
+  // basalt config" — true until 1.29.0 deleted every inference, and a lie in the shipped file for
+  // three minors after.
+  it('no longer claims the CLI relocates itself', () => {
+    expect(preset).not.toContain('relocates to the single workspace package')
+  })
+
+  // `extends` alone is what init used to advise, and following it literally produces a hook that
+  // runs oxlint at the repo root where there is neither a config nor a binary.
+  it('init’s skip message gives the per-command root:, not just extends', () => {
+    write('package.json', JSON.stringify({ name: 'app', basalt: { roots: ['src'] } }))
+    write('src/app.tsx', 'export const App = () => null\n')
+    installBasalt()
+    execSync('git init -q', { cwd: dir })
+    mkdirSync(join(dir, 'app'), { recursive: true })
+    write('app/package.json', JSON.stringify({ name: 'inner', basalt: { roots: ['src'] } }))
+    write('app/src/app.tsx', 'export const App = () => null\n')
+    installBasalt('app')
+    const { log } = capture(() => init(join(dir, 'app')))
+    expect(log).toContain('skipped lefthook.yml')
+    expect(log).toContain("pre-commit.commands.{oxlint,oxfmt,check-theme}.root: 'app/'")
+    expect(log).toContain('working-directory: app')
   })
 })
 

@@ -12,13 +12,14 @@
  */
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { BasaltShell, PageBar } from './index'
+import { PageAside } from './page-aside'
 import type { SidebarSection } from './index'
 
 const BRAND = { name: 'Argo' }
@@ -419,5 +420,101 @@ describe('row 2 folds into two declared lines, not a wrap', () => {
     expect(slot).not.toBeNull()
     expect(slot?.hasAttribute('data-basalt-tier')).toBe(true)
     expect(slot?.contains(screen.getByTestId('tabs'))).toBe(true)
+  })
+})
+
+/**
+ * Row 2 is the aside's ONLY mobile home, and `PageBar` is what draws its trigger — so both halves
+ * of that seam are pinned here rather than in `page-aside.test.tsx`, which owns the projection
+ * itself (one node at each width) rather than what the trigger SAYS.
+ *
+ * Both cases run below `sm`, where `PageAside` projects instead of portalling: `useMediaQueryMatches`
+ * reads `window.matchMedia`, so a stub answering `matches: false` to every query IS the phone.
+ */
+describe('the aside pill, and the row 2 it needs to exist at all', () => {
+  let restoreMatchMedia: (() => void) | null = null
+
+  const installMobileMatchMedia = (): void => {
+    const original = window.matchMedia
+    window.matchMedia = (query: string): MediaQueryList =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList
+    restoreMatchMedia = () => {
+      window.matchMedia = original
+    }
+  }
+
+  afterEach(() => {
+    restoreMatchMedia?.()
+    restoreMatchMedia = null
+  })
+
+  test('the pill is labelled by the aside TITLE, never by the region word "Panel"', () => {
+    installMobileMatchMedia()
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="tabs" />} />
+          <PageAside title="Inspector">
+            <div data-testid="aside-child">Body</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    // `docs/ASIDE-SPEC.md` §0: the title names the CONTENT, never the region. "Panel" told a phone
+    // reader which BOX this is — which they can see — instead of what is in it, which they cannot;
+    // the desktop header has always painted `title` here.
+    const pill = screen.getByRole('button', { name: 'Inspector' })
+    expect(pill.textContent).toContain('Inspector')
+    expect(pill.textContent).not.toContain('Panel')
+    // Still no census — an aside's children are not a `FilterSet`, so there is no `(n)` to derive.
+    expect(pill.textContent).not.toMatch(/\(\d+\)/)
+  })
+
+  test('a bar with NO row 2 warns in dev — the aside is mounted with nowhere to hang its trigger', () => {
+    installMobileMatchMedia()
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar actions={{ primary: { key: 'new', label: 'New' } }} />
+          <PageAside title="Inspector">
+            <div data-testid="aside-child">Body</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    // The behaviour is unchanged and deliberate (`page-aside.test.tsx` pins it): with no row 2 the
+    // aside renders in flow. The warning is the only thing that makes it PREDICTABLE — nothing
+    // looks wrong on the desktop the author is building on.
+    expect(screen.queryByRole('button', { name: 'Inspector' })).toBeNull()
+    expect(warn).toHaveBeenCalled()
+    expect(String(warn.mock.calls[0]?.[0])).toContain('renders no row 2')
+    warn.mockRestore()
+  })
+
+  test('a bar WITH a row 2 does not warn — the pill is the trigger and the fallback never happens', () => {
+    installMobileMatchMedia()
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION}>
+          <PageBar tabs={<span data-testid="tabs" />} />
+          <PageAside title="Inspector">
+            <div data-testid="aside-child">Body</div>
+          </PageAside>
+        </BasaltShell>
+      </MantineProvider>,
+    )
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })

@@ -5,7 +5,7 @@
  * resolution back from `./index`, this package's shared CLI helpers.
  */
 import { existsSync } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 
 import { deriveSpacing } from '../tokens'
 import {
@@ -21,6 +21,7 @@ import {
   managedFiles,
   normalizeForLedger,
   parseJsonc,
+  placementNotices,
   pruneRetiredManagedFiles,
   readBasaltConfig,
   readIfExists,
@@ -232,26 +233,12 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
   })
   staleForCheck += pruned.removed.length + pruned.drifted.length
 
-  // Placement notices — informational, never affect the exit code (a skipped tooling seed or a
-  // relocated scaffold is a legitimate consumer choice, not a sync failure).
-  if (!placement.isPackageRepoRoot) {
-    console.log(
-      `basalt-ui sync: skipped lefthook.yml (this package is not the repo root — repo root ` +
-        `detected at ${placement.repoRoot}) — lefthook only reads config at the repo root; extend ` +
-        'node_modules/basalt-ui/configs/lefthook.yml from your root lefthook.yml instead.',
-    )
-    console.log(
-      `basalt-ui sync: skipped .github/workflows/check.yml (this package is not the repo root — ` +
-        `repo root detected at ${placement.repoRoot}) — GitHub Actions only reads .github/ at the ` +
-        'repo root; extend node_modules/basalt-ui/configs/check.yml from your root CI workflow instead.',
-    )
-  }
-  if (placement.relocatedQueryClient !== null) {
-    console.log(
-      `basalt-ui sync: skipped src/query-client.ts (found an existing query client at ` +
-        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
-        're-seeding at the original path.',
-    )
+  // Placement notices — informational, never affecting the exit code, and PERMANENT: `--check`
+  // hides them behind `--verbose` (it sits in consumers' CI chains, where three unchanging
+  // "skipped" paragraphs per run are noise indistinguishable from drift) but still prints the COUNT.
+  const placementSkips = placementNotices(cwd, placement)
+  if (opts.check !== true || syncFlags.includes('--verbose')) {
+    for (const line of placementSkips) console.log(`basalt-ui sync: ${line}`)
   }
 
   const rootsMessages = rootsNotices(rootsState)
@@ -298,7 +285,9 @@ export function sync(opts: SyncOptions = {}, invocationCwd: string = process.cwd
       console.error(`basalt-ui sync --check: ${staleForCheck} managed file(s) out of date.`)
       return 1
     }
-    console.log('✓ basalt-ui sync --check: all managed files current.')
+    const n = placementSkips.length
+    const skips = n === 0 ? '' : ` (${n} permanent placement skip(s) — --verbose for detail)`
+    console.log(`✓ basalt-ui sync --check: all managed files current.${skips}`)
     return 0
   }
 

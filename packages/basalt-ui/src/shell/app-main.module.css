@@ -89,7 +89,23 @@
   margin-bottom: calc(var(--app-shell-footer-offset, 0rem) + env(safe-area-inset-bottom, 0px));
   margin-inline-start: var(--app-shell-navbar-offset, 0rem);
   margin-inline-end: var(--app-shell-aside-offset, 0rem);
-  padding: var(--app-shell-padding);
+  /*
+   * The scrollport's own inset, SPLIT by axis — a gap under a divider is not a gutter beside a
+   * seam.
+   *
+   * Inline stays on `--app-shell-padding`, the one Mantine var this module still reads for a
+   * value rather than an offset, because Mantine owns the responsive switch (`shell/index.tsx`
+   * hands `AppShell` the `appShellInset`/`appShellInsetMobile` pair) and the header, the band and
+   * Main all have to land on the SAME number — re-deriving it here would fork it. It is an
+   * ALIGNMENT constraint: 20 at `sm`+ puts the page's first column on the sidebar nav icon
+   * column's x across the seam (`app-brand.module.css` states that arithmetic).
+   *
+   * Block is `stack-md` and is only breathing room under the band's single `--vx-divider` line —
+   * nothing aligns to it, so it has no business tracking a gutter that grew for an alignment
+   * reason. Holding it at 12 keeps the total chrome above the first card at ~97px (44 header + 40
+   * band + 1 seam + 12) — DOWN from 100 — even though the inline gutter grew 13 -> 20.
+   */
+  padding: var(--vx-space-stack-md) var(--app-shell-padding);
   /* Without this a wide flex/grid child (a bare table, a nowrap control row) sizes Main to ITSELF. */
   min-width: 0;
   overflow-y: auto;
@@ -107,9 +123,13 @@
 }
 
 /* Installed PWA (C5 consolidation, seeded from argo's `styles/native.css`): clear the landscape
- * notch on the side Main touches. `max()` is a FLOOR over `.main`'s own `padding` shorthand above
- * — same mechanism as `app-sidebar.module.css`'s left counterpart. The bottom inset already rides
- * `margin-bottom` above (`env(safe-area-inset-bottom)`); the PWA's top inset needs no rule here
+ * notch on the side Main touches. `max()` is a FLOOR over the INLINE value of `.main`'s `padding`
+ * shorthand above — same mechanism as `app-sidebar.module.css`'s left counterpart, and it still
+ * floors correctly now that the shorthand is two axes and the inline one is responsive: this rule
+ * reads the same `--app-shell-padding`, so the floor is against whichever of 20/8 is live, and on
+ * the phone half (8) it is doing MORE work than before, not less. It overrides only
+ * `padding-right`; the block padding keeps coming from the shorthand. The bottom inset already
+ * rides `margin-bottom` above (`env(safe-area-inset-bottom)`); the PWA's top inset needs no rule here
  * (the status bar uses the opaque `default` style, per argo's own seed comment). */
 @media (display-mode: standalone) {
   .main {

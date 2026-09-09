@@ -258,11 +258,38 @@ describe('shipped lefthook preset', () => {
     expect(globOf('check-theme')).toBeUndefined()
   })
 
-  it('runs check-theme through an overridable BASALT_BIN, never a bare bunx fetch', () => {
-    // `run:` is the one thing a consumer CANNOT override (an extends target wins on a colliding
-    // key), so the seam has to be inside the command: `env:` merges, and the default refuses to
-    // silently install a second copy of basalt from npm.
-    expect(preset).toContain('run: ${BASALT_BIN:-bunx --no-install basalt-ui} check-theme')
+  /**
+   * `run:` is the one thing a consumer CANNOT override (an extends target wins on a colliding key),
+   * so the seam has to be INSIDE the command — and `env:` merges, so `BASALT_BIN`/`BASALT_CWD` are
+   * reachable from the consumer's own file.
+   *
+   * The default used to be `bunx --no-install basalt-ui`, which resolved to NOTHING at a repo root
+   * under bun's isolated linker — the linker puts basalt beside the package that depends on it,
+   * never at the root, so the default was broken in exactly the monorepo layout `BASALT_CWD` exists
+   * for. Combined with 1.29.0's single resolver (BASALT_CWD, else cwd; nothing inferred) the shipped
+   * preset broke ITSELF for every non-root consumer: `✖ 0 files scanned`, exit 1, on the first
+   * commit after the bump. It now derives the bin from `BASALT_CWD`, so one setting covers both.
+   */
+  it('derives the bin from BASALT_CWD, and still lets BASALT_BIN win outright', () => {
+    expect(preset).toContain(
+      'run: ${BASALT_BIN:-${BASALT_CWD:+$BASALT_CWD/}node_modules/.bin/basalt-ui} check-theme',
+    )
+    // Narrowed to the RUN line: the comment above it still names the old default, which is what
+    // tells a consumer reading the shipped file why their patch is no longer needed.
+    expect(preset).not.toContain('bunx --no-install basalt-ui} check-theme')
+  })
+
+  it('spells the monorepo recipe out, because `extends` does not carry a working directory', () => {
+    expect(preset).toContain('MONOREPO RECIPE')
+    for (const command of ['oxlint', 'oxfmt', 'check-theme']) {
+      expect(preset).toContain(`${command}: { root: 'apps/web/' }`)
+    }
+  })
+
+  // The preset claimed check-theme "relocates to the single workspace package carrying a basalt
+  // config" — true until 1.29.0 deleted every inference, and a lie in the shipped file after it.
+  it('makes no claim that the CLI relocates itself', () => {
+    expect(preset).not.toContain('relocates to the single workspace package')
   })
 
   it('formats every SOURCE file type oxfmt handles, and nothing else', () => {

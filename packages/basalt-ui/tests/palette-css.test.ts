@@ -167,7 +167,7 @@ describe('buildPaletteCss core-only spacing', () => {
     expect(buildPaletteCss({ only: 'all' })).toBe(buildPaletteCss())
   })
 
-  it('drops 102 of the 116 spacing variables, taking the set from 244 to 142', () => {
+  it('drops 108 of the 122 spacing variables, taking the set from 250 to 142', () => {
     // 211 canonical (all kebab-case, since the 1.4.0 rename) + 32 legacy camelCase aliases
     // (default `legacyAliases: true`) = 243; the alias set is spacing-free, so it rides along
     // unchanged in both `all` and `core`. 211 = 202 at 1.20.0 plus the `nano`/`display` type rungs plus the ten control-tier
@@ -178,10 +178,19 @@ describe('buildPaletteCss core-only spacing', () => {
     // of `--vx-space-touch-target` (C5 consolidation) — a `SPACE_FIXED` value, not a `SPACE`
     // anchor, but emitted unconditionally in BOTH `all` and `core` (see `SPACE_FIXED.
     // spaceTouchTarget`'s doc for why it's the one member of that never-emitted group that IS a
-    // var), so it rides along in both counts the same way the alias set does = 244.
-    expect(all.size).toBe(244)
+    // var), so it rides along in both counts the same way the alias set does = 244, PLUS the two
+    // 2026-09 chrome-round additions (`--vx-space-app-shell-inset` and
+    // `--vx-space-app-shell-inset-mobile` — the page gutter, the one number the `--vx-*` layer did
+    // not expose, now responsive) = 246, PLUS the four of the same round's SECOND chrome pass
+    // (`--vx-space-app-shell-header-lead-min`, the header's breadcrumb floor, which shipped as a raw
+    // `96px` literal; and the card/section inset ladder `--vx-space-card-inset-y`/`-x` +
+    // `--vx-space-section-gap`, which NAME values the cards and `Section` already rendered so that
+    // the `< sm` override has a role token to re-point) = 250. That override is a `@media` block,
+    // not a fifth and sixth name — `varNames` is a SET, so re-declaring a var at a breakpoint moves
+    // none of these counts.
+    expect(all.size).toBe(250)
     expect(core.size).toBe(142)
-    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(116)
+    expect([...all].filter((n) => n.startsWith('space-'))).toHaveLength(122)
     expect([...core].filter((n) => n.startsWith('space-'))).toHaveLength(14)
   })
 
@@ -199,7 +208,7 @@ describe('buildPaletteCss core-only spacing', () => {
   it('touches spacing only — color, radius, type and status are identical', () => {
     const dropped = [...all].filter((n) => !core.has(n))
     expect(dropped.every((n) => n.startsWith('space-'))).toBe(true)
-    expect(dropped).toHaveLength(102)
+    expect(dropped).toHaveLength(108)
   })
 })
 
@@ -277,8 +286,10 @@ describe('legacy camelCase aliases (1.4.0 kebab-case rename)', () => {
   it('legacyAliases: false only removes the 32 alias lines — same canonical set either way', () => {
     const withAliases = varNames(buildPaletteCss())
     const withoutAliases = varNames(buildPaletteCss({ legacyAliases: false }))
-    // 211 + the 1.29.0 `--vx-space-touch-target` addition (C5 consolidation) = 212.
-    expect(withoutAliases.size).toBe(212)
+    // 211 + the 1.29.0 `--vx-space-touch-target` addition (C5 consolidation) = 212, + the two
+    // 2026-09 app-shell-inset vars = 214, + the four of that round's second chrome pass (the header
+    // lead floor and the three-var card/section inset ladder) = 218.
+    expect(withoutAliases.size).toBe(218)
     expect(withAliases.size).toBe(withoutAliases.size + 32)
     for (const name of withoutAliases) expect(withAliases.has(name)).toBe(true)
   })

@@ -518,6 +518,33 @@ const PAGE_TITLE_TAG = /<Title(?![\w.])(?:=>|[^>])*?>/g
 const PAGE_TITLE_ORDER_PROP = /\border\s*=\s*\{\s*([12])\s*\}/
 
 /**
+ * The text-lane twin of the plugin's `hasStaticTitleText`: does the body between `<Title …>` and
+ * `</Title>` spell a NAME out, or render a value?
+ *
+ * The law is "one NAME per page", and a name is written in words — so a `<Title order={1}>{
+ * knot.title}</Title>` on a nav-less detail route, and a card's hero value
+ * `<Title order={2}>{RANK_LABEL[rank]}</Title>`, are data rather than a second page name and stop
+ * reporting in BOTH lanes. Kept in step with the plugin deliberately: the two share one id, so one
+ * `theme-allow` covers both and they must not disagree about what they cover.
+ *
+ * Text-lane approximation, and the direction of its error is the safe one: everything outside the
+ * outermost `{…}` runs is stripped of braces' contents and what remains has to be blank. A
+ * LAUNDERED literal (`{'Users'}`, a substitution-free template) is read as the text it is, so the
+ * escape is the expression, not the braces.
+ */
+const PAGE_TITLE_BRACED_RUN = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g
+const PAGE_TITLE_LAUNDERED_LITERAL = /^\s*['"`][^'"`]*['"`]\s*$/
+
+function titleBodyNamesThePage(body: string): boolean {
+  let outsideBraces = body
+  for (const braced of body.match(PAGE_TITLE_BRACED_RUN) ?? []) {
+    if (PAGE_TITLE_LAUNDERED_LITERAL.test(braced.slice(1, -1))) return true
+    outsideBraces = outsideBraces.replace(braced, '')
+  }
+  return outsideBraces.replace(/<[^>]*>/g, '').trim() !== ''
+}
+
+/**
  * A raw Mantine selection control's opening tag — the text-lane twin of the oxlint plugin's
  * RAW_FILTER_TAGS. `Chip.Group` carries a dot, so the name class allows one.
  */
@@ -940,6 +967,27 @@ export const PLUGIN_RULE_IDS: ReadonlySet<string> = new Set([
   'query-dual-import',
 ])
 
+/**
+ * ONE LAW, TWO RULE IDS — the ids that waive each other, in BOTH directions.
+ *
+ * `raw-selection-control` (this lane) and `basalt/control-outside-home` (the oxlint plugin) are the
+ * same law read by two engines, and this lane's own message already says so. They keep separate ids
+ * because the two engines disagree often enough that a consumer needs to be able to name which one
+ * they are waiving — but a consumer waiving the LAW should not have to know that, and before this
+ * map they did: `theme-allow control-outside-home` parsed here (the plugin's ids are all known,
+ * see {@link PLUGIN_RULE_IDS}) and then covered nothing, so the only working annotation was
+ * `theme-allow raw-selection-control control-outside-home` — two ids, undocumented, one silent
+ * debug cycle per consumer. `in-body-page-title` needs no entry: it is one id in both lanes.
+ *
+ * Mirrored VERBATIM in `configs/oxlint-plugin.js` (which cannot import from this package — see its
+ * header); `check-source.test.ts` asserts the two agree. An alias only ever WIDENS what an
+ * annotation covers, so a waiver can never become stricter by being spelled the other way.
+ */
+export const WAIVER_ID_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  'control-outside-home': ['raw-selection-control'],
+  'raw-selection-control': ['control-outside-home'],
+}
+
 /** The shortest string accepted as a written reason — enough to exclude a stray separator. */
 const MIN_ALLOW_REASON_LENGTH = 4
 
@@ -1346,6 +1394,7 @@ function collectAllowAnnotations(
  */
 function annotationCovers(annotation: AllowAnnotation, kind: GuardKind): boolean {
   if (annotation.rules.includes(kind)) return true
+  if ((WAIVER_ID_ALIASES[kind] ?? []).some((alias) => annotation.rules.includes(alias))) return true
   if (annotation.scope === 'file') return false
   return annotation.rules.length === 0 && annotation.unknownRules.length === 0
 }
@@ -1998,7 +2047,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Title order={1}>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'In-body page title — a page is named ONCE, by the breadcrumb (staticData.title) or by PageBar.title in a shell-less app, and every section/card/table title is a WidgetHeader (docs/CONTROLS-SPEC.md law C8). An <Title order={1|2}> in the body is a second name for the same page, and it drifts. Prose / ArticleLayout / an overlay and anything under a content/ path are document headings and never report. Same law the oxlint plugin enforces as basalt/in-body-page-title — one id, two lanes, so one theme-allow covers both.',
+      'In-body page title — a page is named ONCE: by the breadcrumb (staticData.title), by PageBar.title, or by <PageTitle> on a shell-less surface (a route error, an auth gate, a standalone screen). Every section/card/table title is a WidgetHeader (docs/CONTROLS-SPEC.md law C8). An <Title order={1|2}> spelling a name out in the body is a second name for the same page, and it drifts. A Title rendering a VALUE — {doc.title}, {RANK_LABEL[rank]} — never reports: that is data, not a name. Prose / ArticleLayout / an overlay and anything under a content/ path never report either. Same law the oxlint plugin enforces as basalt/in-body-page-title — one id, two lanes, so one theme-allow covers both.',
   },
   'raw-selection-control': {
     kind: 'raw-selection-control',
@@ -2006,7 +2055,7 @@ export const GUARD_RULES = {
     // JSX-tag-shaped (`<Select …>`) — never appears in CSS text.
     appliesTo: (relPath) => !relPath.endsWith('.css'),
     message:
-      'Raw selection control with no home — a filter or tab belongs in a PageBar / Section / WidgetHeader slot and takes a `field` (a FieldHandle), so it owns the URL write and the localStorage mirror instead of carrying value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Use the bound control from basalt-ui/controls. A settings row, an overlay and an @mantine/form file are the declared non-homes and never report. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.',
+      'Raw selection control with no home — a filter or tab belongs in a PageBar / Section / WidgetHeader slot and takes a `field` (a FieldHandle), so it owns the URL write and the localStorage mirror instead of carrying value/onChange (docs/CONTROLS-SPEC.md laws C1–C3). Use the bound control from basalt-ui/controls. A settings row, an overlay and an @mantine/form file are the declared non-homes and never report. No shell? PageBar needs no BasaltShell: outside one it renders in flow, sticky, with its own title — so its slots are a reachable home for a provider-only app. This is the TEXT lane of basalt/control-outside-home, which answers the same question against the real AST — where the two disagree, the plugin is right.',
   },
   'inline-font-size': {
     kind: 'inline-font-size',
@@ -2125,6 +2174,12 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
   for (const annotation of fileScoped) {
     for (const rule of annotation.rules) {
       if (Object.hasOwn(GUARD_RULES, rule)) fileWaived.add(rule as GuardKind)
+      // The plugin-id spelling of a shared law reaches file scope too — a `theme-allow-file
+      // control-outside-home — <why>` names a rule this lane knows under another id, and honouring
+      // it on one lane only is the same silent half-application the line scope had.
+      for (const alias of WAIVER_ID_ALIASES[rule] ?? []) {
+        if (Object.hasOwn(GUARD_RULES, alias)) fileWaived.add(alias as GuardKind)
+      }
     }
   }
 
@@ -2432,6 +2487,16 @@ export function checkSource(text: string, relPath: string, cfg: GuardConfig): Fi
     for (const m of codeText.matchAll(PAGE_TITLE_TAG)) {
       const order = PAGE_TITLE_ORDER_PROP.exec(m[0])
       if (order === null) continue
+      // A self-closing `<Title order={1} />` renders no name at all, so it never reports — and the
+      // test has to be explicit rather than fall out of the body scan, which would otherwise run to
+      // the NEXT `</Title>` in the file and judge unrelated code. The plugin agrees by construction
+      // (an element with no children has no static text), and one id must not mean two verdicts.
+      if (m[0].endsWith('/>')) continue
+      const bodyStart = (m.index ?? 0) + m[0].length
+      const closeAt = codeText.indexOf('</Title>', bodyStart)
+      // No closing tag at all: no body to judge, so nothing names the page. See below for what a
+      // body has to hold before this kind reports.
+      if (closeAt === -1 || !titleBodyNamesThePage(codeText.slice(bodyStart, closeAt))) continue
       const startLine = codeText.slice(0, m.index ?? 0).split('\n').length
       const endLine = startLine + (m[0].split('\n').length - 1)
       if (isAllowedInRange(startLine, endLine, 'in-body-page-title')) continue

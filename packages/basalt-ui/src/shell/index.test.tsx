@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ActionGroup } from '../controls/actions'
 import { baseTheme } from '../theme'
+import { pxRem } from '../tokens'
+import { SPACE_STEP } from '../tokens/palette'
 import { PageAside } from './page-aside'
 import { BasaltShell, PageBar } from './index'
 import { toggleSidebar } from '../commands/shell-bridge'
@@ -20,6 +22,14 @@ const BRAND = { name: 'Argo' }
 const ONE_SECTION: SidebarSection[] = [
   { label: 'Main', items: [{ key: 'home', label: 'Home', icon: null }] },
 ]
+
+/**
+ * How Mantine's own `rem()` writes a px number into an AppShell variable — the plain rem string
+ * (`tokens`' `pxRem`) wrapped in the `--mantine-scale` multiplier. Both the header height and the
+ * page gutter below are asserted through it rather than against a typed literal, so a token move
+ * updates the expectation instead of reddening a test about something else.
+ */
+const mantineRem = (px: number): string => `calc(${pxRem(px)} * var(--mantine-scale))`
 
 const AWAITING: SidebarBlock = {
   kind: 'list',
@@ -125,11 +135,15 @@ describe('BasaltShell — the removed ReactNode slots', () => {
 })
 
 /**
- * §2.2's arithmetic guarantee is that a `menu` never exceeds `menuMax` rows — six rows at 44px fit
- * the headroom above the bar, and the menu runs `flip: false`, so a menu that overflows has no way
- * to escape upward and simply renders off-screen. The guarantee is only as good as the row count
- * the shell feeds `projectMobileNav`: counting `account` as ONE row while `accountRows` expands it
- * into up to seven is what let a nine-row More surface pick `menu`.
+ * What is under test here is the ROW COUNT the shell feeds `projectMobileNav`, not the threshold it
+ * is compared against: counting `account` as ONE row while `accountRows` expands it into up to
+ * seven is what let a nine-row More surface pick `menu`.
+ *
+ * The threshold is therefore pinned EXPLICITLY (`mobileNav.menuMax`) rather than inherited from
+ * `MOBILE_MENU_MAX_DEFAULT`. That default rose 6 -> 12 in the 2026-09 chrome round once the
+ * never-below-the-fold guarantee moved onto `.menuDropdown`'s own `max-height` (the popover scrolls
+ * and cannot render off-screen at any row count), so the constant is now a taste bound. A test that
+ * rode it would have silently stopped testing the count the day the taste changed.
  */
 describe('BasaltShell extraMoreRows', () => {
   const NAV: SidebarSection[] = [
@@ -159,13 +173,31 @@ describe('BasaltShell extraMoreRows', () => {
   test('an account expanding past menuMax raises the SHEET, not an overflowing menu', async () => {
     render(
       <MantineProvider>
-        <BasaltShell brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
+        <BasaltShell
+          brand={BRAND}
+          sections={NAV}
+          account={FAT_ACCOUNT}
+          mobileNav={{ menuMax: 6 }}
+        />
       </MantineProvider>,
     )
 
     fireEvent.click(screen.getByLabelText('More'))
     await waitFor(() => expect(document.querySelector('.mantine-Drawer-content')).not.toBeNull())
     expect(document.querySelector('[role="menu"]')).toBeNull()
+  })
+
+  /** The other half of the same contract: at the shipped default those seven rows stay a popover. */
+  test('the same account stays a MENU at the default menuMax of 12', async () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={NAV} account={FAT_ACCOUNT} />
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByLabelText('More'))
+    await waitFor(() => expect(document.querySelector('[role="menu"]')).not.toBeNull())
+    expect(document.querySelector('.mantine-Drawer-content')).toBeNull()
   })
 
   /** A `loading` account renders NO rows, so it must not conjure a More slot that opens empty. */
@@ -245,8 +277,11 @@ describe('BasaltShell header height (law C14)', () => {
       (m) => m[1],
     )
     expect(heights).toHaveLength(1)
-    // 48px, expressed the way Mantine's own `rem()` does.
-    expect(heights[0]).toContain('3rem')
+    // The token, expressed the way Mantine's own `rem()` does — read from `SPACE_STEP` rather than
+    // typed here, because the literal that used to sit here (`3rem`, the pre-1.30 48) went stale the
+    // moment `appShellHeaderHeight` moved to 44 and failed a test that has nothing to do with the
+    // number. What this case pins is the COUNT above: one declaration, no media override.
+    expect(heights[0]).toBe(mantineRem(SPACE_STEP.appShellHeaderHeight))
     // The navbar and footer ARE responsive, so their overrides prove the query blocks still exist —
     // the header simply is not among them any more.
     expect(css).toContain('--app-shell-footer-height:0rem')
@@ -267,6 +302,55 @@ describe('BasaltShell header height (law C14)', () => {
     // width-when-CLAIMED half is `page-aside.test.tsx`'s.
     expect(css).toContain('--app-shell-aside-width:0rem')
     expect(css).toContain('--app-shell-aside-offset:0px !important')
+  })
+
+  /**
+   * THE PAGE GUTTER, which was one `'sm'` spacing key — 13px on a 360px phone and 13px on a 2560px
+   * monitor, with no token behind it and no `padding` prop on `BasaltShellProps`. It is now the
+   * `appShellInsetMobile` / `appShellInset` pair, and this is the case that proves the pair is
+   * actually RESPONSIVE rather than merely written as an object.
+   *
+   * The two roads are asserted separately on purpose, because they are genuinely two mechanisms
+   * (verified in the installed Mantine 9.3 source, see `ShellFrame`'s own comment): `AppShell
+   * padding` becomes an `--app-shell-padding` variable through `assignPaddingVariables`, while
+   * `AppShell.Header px` is a Box STYLE PROP that emits `padding-inline` on a generated class. Both
+   * step at the same `(min-width: 48em)`, which is what keeps the header's inline padding on the
+   * main column's gutter at every width instead of only at one.
+   */
+  test('the page gutter is a responsive PAIR — the phone token below `sm`, the desktop token above', () => {
+    render(
+      <MantineProvider>
+        <BasaltShell brand={BRAND} sections={ONE_SECTION} />
+      </MantineProvider>,
+    )
+    const styles = [...document.querySelectorAll('style')].map((tag) => tag.textContent ?? '')
+
+    // Road 1 — `AppShell padding`. Base rule carries the phone value, the `sm` MIN-width block the
+    // desktop one (a responsive object emits no max-width twin; it is mobile-first).
+    const shellCss = styles.find((text) => text.includes('--app-shell-padding'))
+    expect(shellCss).toBeDefined()
+    const paddings = [...(shellCss ?? '').matchAll(/--app-shell-padding:\s*([^;]+)/g)].map(
+      (m) => m[1],
+    )
+    expect(paddings).toEqual([
+      mantineRem(SPACE_STEP.appShellInsetMobile),
+      mantineRem(SPACE_STEP.appShellInset),
+    ])
+    expect(shellCss).toContain('@media(min-width: 48em)')
+
+    // Road 2 — the header's `px`, on the class Mantine generated for it, so the header's inline
+    // padding lands on the same two numbers rather than staying at a third.
+    const headerClass = [...(document.querySelector('header')?.classList ?? [])].find((name) =>
+      styles.some((text) => text.includes(`.${name}{padding-inline:`)),
+    )
+    expect(headerClass).toBeDefined()
+    const headerCss = styles.find((text) => text.includes(`.${headerClass ?? ''}{padding-inline:`))
+    const insets = [...(headerCss ?? '').matchAll(/padding-inline:\s*([^;]+)/g)].map((m) => m[1])
+    expect(insets).toEqual([
+      mantineRem(SPACE_STEP.appShellInsetMobile),
+      mantineRem(SPACE_STEP.appShellInset),
+    ])
+    expect(headerCss).toContain('@media(min-width: 48em)')
   })
 
   test('an empty PageBar contributes no node — not in the header, not in the page flow', () => {

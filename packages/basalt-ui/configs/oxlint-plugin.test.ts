@@ -14,6 +14,7 @@ import { dirname, resolve } from 'node:path'
 // eslint-disable-next-line -- the plugin is plain JS; the ledger + id set are named exports beside it
 import basaltPlugin, {
   CTL_THEME_TAGS,
+  WAIVER_ID_ALIASES,
   DEPRECATED_EXPORTS,
   KNOWN_RULE_IDS,
   PLUGIN_RULE_ADVISORY,
@@ -21,7 +22,11 @@ import basaltPlugin, {
   RETIRED_RULE_IDS,
 } from './oxlint-plugin.js'
 import { CTL_THEME } from '../src/theme/ctl-theme'
-import { GUARD_RULES, PLUGIN_RULE_IDS } from '../src/guard/index.ts'
+import {
+  GUARD_RULES,
+  PLUGIN_RULE_IDS,
+  WAIVER_ID_ALIASES as GUARD_WAIVER_ID_ALIASES,
+} from '../src/guard/index.ts'
 import { PLUGIN_RULE_ID_LIST, SURFACES } from '../src/surfaces.ts'
 
 const PLUGIN_PATH = resolve(import.meta.dirname, 'oxlint-plugin.js')
@@ -1547,6 +1552,37 @@ describe('KNOWN_RULE_IDS', () => {
   })
 })
 
+// ── one law, two rule ids ──────────────────────────────────────────────────────────────────────
+
+/**
+ * `basalt/control-outside-home` and the guard's `raw-selection-control` are the SAME law read by
+ * two engines — the guard's own message says so — and a waiver naming either used to silence only
+ * the lane whose id it spelled. The working annotation was `theme-allow raw-selection-control
+ * control-outside-home`: two ids, undocumented, one silent debug cycle per consumer.
+ */
+describe('WAIVER_ID_ALIASES', () => {
+  it('is identical in both lanes', () => {
+    expect(WAIVER_ID_ALIASES).toEqual(GUARD_WAIVER_ID_ALIASES)
+  })
+
+  it('names only ids both registries know', () => {
+    for (const [id, aliases] of Object.entries(WAIVER_ID_ALIASES)) {
+      expect([id, KNOWN_RULE_IDS.has(id)]).toEqual([id, true])
+      for (const alias of aliases) expect([alias, KNOWN_RULE_IDS.has(alias)]).toEqual([alias, true])
+    }
+  })
+
+  it('waives the plugin rule under the TEXT lane’s id', () => {
+    const { code, rules } = run(
+      `import { Select } from '@mantine/core'\nexport const C = () => (\n  <div>\n` +
+        `    {/* theme-allow raw-selection-control — the Tauri header has no shell */}\n` +
+        `    <Select data={[]} />\n  </div>\n)\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('control-outside-home')
+  })
+})
+
 // ── theme-allow fails closed on a typo ─────────────────────────────────────────────────────────
 
 describe('theme-allow with an unrecognized rule id', () => {
@@ -1605,6 +1641,23 @@ const MANTINE_IMPORT = `import { Button, ScrollArea, SegmentedControl, Select } 
 const BASALT_IMPORT = `import { ChartCard, PageBar, Section, SettingsSection } from 'basalt-ui'\n`
 
 describe('basalt/hand-rolled-filter', () => {
+  /**
+   * The deliberate consequence of teaching the slot resolver to read an object spread: a slot IS a
+   * slot in either spelling, so a raw Mantine control conditionally spread into one moves from
+   * `control-outside-home` (warn, and the WRONG verdict — it does have a home) to this rule
+   * (error, and the right one). One home model or none; a spread that is a home for the rule that
+   * exempts and not for the rule that polices is the silent half-application this wave removes.
+   */
+  it('flags a raw Select handed to a slot written as an object spread', () => {
+    const { code, rules } = run(
+      `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = ({ cond }) => (\n` +
+        `  <Section {...(cond && { filters: <Select data={[]} /> })}>body</Section>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('hand-rolled-filter')
+    expect(rules).not.toContain('control-outside-home')
+  })
+
   it('flags a raw Mantine Select handed to a PageBar filters slot', () => {
     const { code, rules } = run(
       `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = () => <PageBar filters={<Select data={[]} />} />\n`,
@@ -2208,9 +2261,81 @@ describe('basalt/bound-control-outside-home', () => {
     )
     expect(rules).toContain('bound-control-outside-home')
   })
+
+  /**
+   * A slot written as an OBJECT SPREAD is the same home as a slot written as a JSXAttribute — and
+   * `exactOptionalPropertyTypes` FORCES the spread, because `tabs={cond ? <X/> : undefined}` is not
+   * assignable to an optional prop. Every control rule resolved homes off JSXAttribute nodes alone,
+   * so a strict consumer's conditional slot was a false positive on a rule scheduled to go `error`.
+   */
+  describe('a slot written as an object spread', () => {
+    it.each([
+      '{...(cond && { tabs: <SelectFilter field={f} /> })}',
+      '{...(cond ? { tabs: <SelectFilter field={f} /> } : {})}',
+      '{...{ filters: <SelectFilter field={f} /> }}',
+    ])('does NOT flag %s on a Section', (spread) => {
+      const { code, rules } = run(
+        `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = ({ cond }) => (\n  <Section ${spread}>body</Section>\n)\n`,
+      )
+      expect(code).toBe(0)
+      expect(rules).not.toContain('bound-control-outside-home')
+    })
+
+    it('does NOT flag a hoisted binding handed to a spread slot', () => {
+      const { rules } = run(
+        `${ASIDE_IMPORT}${CONTROLS_IMPORT}const tabs = <SelectFilter field={f} />\n` +
+          `export const C = ({ cond }) => <Section {...(cond && { tabs })}>body</Section>\n`,
+      )
+      expect(rules).not.toContain('bound-control-outside-home')
+    })
+
+    // Deliberately narrow: only a Property reaching a JSXSpreadAttribute through object / `&&` /
+    // `?:` nodes is claimed. A non-slot key, and an object built anywhere else, are not homes.
+    it('still flags a non-slot key in the same spread', () => {
+      const { rules } = run(
+        `${ASIDE_IMPORT}${CONTROLS_IMPORT}export const C = ({ cond }) => (\n` +
+          `  <Section {...(cond && { footer: <SelectFilter field={f} /> })}>body</Section>\n)\n`,
+      )
+      expect(rules).toContain('bound-control-outside-home')
+    })
+
+    it('still flags a slot-shaped object built inside a .map() callback', () => {
+      const { rules } = run(
+        `${CONTROLS_IMPORT}export const C = () => [1].map((k) => ({ tabs: <SelectFilter field={f} /> }))\n`,
+      )
+      expect(rules).toContain('bound-control-outside-home')
+    })
+
+    it('still flags one on a tag that is not a slot owner', () => {
+      const { rules } = run(
+        `import { Stack } from '@mantine/core'\n${CONTROLS_IMPORT}export const C = ({ cond }) => (\n` +
+          `  <Stack {...(cond && { tabs: <SelectFilter field={f} /> })} />\n)\n`,
+      )
+      expect(rules).toContain('bound-control-outside-home')
+    })
+  })
+
+  it('names PageBar as the reachable home for a shell-less app', () => {
+    const { output } = run(
+      `import { Stack } from '@mantine/core'\n${CONTROLS_IMPORT}` +
+        `export const C = () => (\n  <Stack>\n    <SelectFilter field={f} />\n  </Stack>\n)\n`,
+    )
+    expect(output).toContain('PageBar` needs no `BasaltShell`')
+  })
 })
 
 describe('basalt/control-size-literal', () => {
+  // Same widening as `hand-rolled-filter` above, for the same reason: a slot is a slot in either
+  // spelling, and the tier the message promises is mounted by the slot however it was written.
+  it('flags a size prop inside a slot written as an object spread', () => {
+    const { code, rules } = run(
+      `${BASALT_IMPORT}${MANTINE_IMPORT}export const C = ({ cond }) => (\n` +
+        `  <Section {...(cond && { actions: <Button size="xs">Go</Button> })}>body</Section>\n)\n`,
+    )
+    expect(code).toBe(1)
+    expect(rules).toContain('control-size-literal')
+  })
+
   it.each(['size="xs"', 'w={200}', 'fullWidth', 'visibleFrom="sm"', 'hiddenFrom="sm"'])(
     'flags %s on an element inside a home slot',
     (prop) => {
@@ -2553,6 +2678,43 @@ describe('basalt/in-body-page-title', () => {
       `// theme-allow in-body-page-title — a shell-less print view\nexport const C = () => <Title order={1}>Page</Title>\n`,
     )
     expect(rules).not.toContain('in-body-page-title')
+  })
+
+  // The narrowing that made C8 satisfiable — the law is "one NAME per page", and a name is
+  // written in words. rb hit both of these shapes 24 times across 12 files with no legal fix.
+  it('does NOT flag a nav-less detail route rendering the document title', () => {
+    const { code, rules } = run(
+      `export const C = ({ knot }) => <Title order={1}>{knot.title}</Title>\n`,
+    )
+    expect(code).toBe(0)
+    expect(rules).not.toContain('in-body-page-title')
+  })
+
+  it("does NOT flag a card's hero VALUE at order={2}", () => {
+    const { rules } = run(`export const C = ({ g }) => <Title order={2}>{RANK[g.rank]}</Title>\n`)
+    expect(rules).not.toContain('in-body-page-title')
+  })
+
+  // The escape is the EXPRESSION, not the braces: a literal laundered through `{…}` is still a
+  // static page name, and so is a substitution-free template.
+  it.each([`{'Users'}`, '{`Users`}'])('still flags a laundered literal %s', (child) => {
+    const { rules } = run(`export const C = () => <Title order={1}>${child}</Title>\n`)
+    expect(rules).toContain('in-body-page-title')
+  })
+
+  it('still flags a name with a value interpolated into it', () => {
+    const { rules } = run(`export const C = ({ n }) => <Title order={1}>Users {n}</Title>\n`)
+    expect(rules).toContain('in-body-page-title')
+  })
+
+  it('still flags a name nested one element deep', () => {
+    const { rules } = run(`export const C = () => <Title order={1}><span>Users</span></Title>\n`)
+    expect(rules).toContain('in-body-page-title')
+  })
+
+  it('names PageTitle as the shell-less answer', () => {
+    const { output } = run(`export const C = () => <Title order={1}>Page</Title>\n`)
+    expect(output).toContain('<PageTitle>')
   })
 })
 
@@ -3170,16 +3332,31 @@ describe('basalt/forms-field-key', () => {
     expect(rules).toContain('forms-field-key')
   })
 
-  // The second message: `field` still RETURNS `key`, so it is reported whether or not the element
-  // carries one — the remedy is the rename, never an added attribute.
+  // The second message: reported whether or not the element carries a key — the remedy is the
+  // rename, never an added attribute.
   it('flags a spread field() even when the element already has a key', () => {
-    const { code, rules, output } = run(
+    const { code, rules } = run(
       `import { field } from 'basalt-ui/forms'\n` +
         `export const C = () => <TextInput key="e" {...field(form, 'email')} />\n`,
     )
     expect(code).toBe(1)
     expect(rules).toContain('forms-field-key')
-    expect(output).toContain('@deprecated 1.27 alias')
+  })
+
+  /**
+   * The message has to state the version it is RUNNING at, not the one the deprecation was
+   * scheduled in. It used to say the alias "still bundles `key` INTO the returned object" and "is
+   * removed in 1.29.0" while running AT 1.29.x, where `field` no longer exists at all — a consumer
+   * reading it concluded nothing was broken, on a call site that does not compile.
+   */
+  it('says `field` no longer exists, not that it is merely deprecated', () => {
+    const { output } = run(
+      `import { field } from 'basalt-ui/forms'\n` +
+        `export const C = () => <TextInput {...field(form, 'email')} />\n`,
+    )
+    expect(output).toContain('NO LONGER EXISTS')
+    expect(output).toContain('does not compile')
+    expect(output).not.toContain('still bundles')
   })
 
   it('honours a theme-allow naming the rule', () => {

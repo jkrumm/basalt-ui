@@ -21,6 +21,7 @@ export const COMMAND_OPTIONS: Record<string, Record<string, { type: 'string' | '
   sync: {
     force: { type: 'boolean' },
     check: { type: 'boolean' },
+    verbose: { type: 'boolean' },
     'tokens-only': { type: 'boolean' },
     framework: { type: 'boolean' },
   },
@@ -65,7 +66,7 @@ export function unknownFlag(cmd: string, flags: readonly string[]): string | nul
 /** The one usage string — printed by `basalt help` / `--help` / `-h` AND the unknown-command fallback. */
 export const USAGE =
   'Usage: basalt-ui <--version | init [--with-router] [--with-query] [--merge-lint] |\n' +
-  '                  sync [--force] [--check] [--tokens-only|--framework] |\n' +
+  '                  sync [--force] [--check] [--verbose] [--tokens-only|--framework] |\n' +
   '                  check-theme [--audit-allows] |\n' +
   '                  doctor [--tokens-only|--framework] | guard-hook | tokens:css | fonts:css | help>\n\n' +
   'check-theme [--tokens-only|--framework] [--audit-allows]\n' +
@@ -89,9 +90,10 @@ export const USAGE =
   '  Checks THIS project only: the manifest exists, the oxlint preset is wired, the pre-commit\n' +
   '  hook runs check-theme (via `lefthook dump`), and the ai package major is consistent within\n' +
   '  this package.json. Profile is DECLARED, same as check-theme — never inferred.\n\n' +
-  'sync [--force] [--check] [--tokens-only|--framework]\n' +
+  'sync [--force] [--check] [--verbose] [--tokens-only|--framework]\n' +
   '  Refreshes an EXISTING install; it never creates one (that is init). A tokens-only consumer\n' +
-  '  has no scaffold to reconcile, so sync reports n/a and exits 0 there — as doctor does.\n\n' +
+  '  has no scaffold to reconcile, so sync reports n/a and exits 0 there — as doctor does.\n' +
+  '  --check prints the permanent placement skips as a COUNT; --verbose spells them out again.\n\n' +
   'check-theme / doctor / sync all resolve their project the same way: BASALT_CWD, else the\n' +
   'invocation cwd — nothing inferred, nothing ascended or descended into.\n' +
   '--tokens-only and --framework are alternatives; passing both is an error.\n\n' +

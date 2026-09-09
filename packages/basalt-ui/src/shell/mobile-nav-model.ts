@@ -9,9 +9,23 @@
  * The law it implements is the interaction model, not a heuristic: a slot is a DESTINATION, so a
  * tap navigates with no overlay to dismiss. An overlay exists only where a slot genuinely holds
  * more than one destination, and its surface is INFERRED from how many rows it holds rather than
- * configured — six rows is the arithmetic ceiling for a menu that pops out of a 56px bar without
- * ever rendering below the fold (6 x 44px + 8px padding = 272px against 415px of headroom on the
- * smallest supported viewport), so past that the surface becomes a bottom sheet.
+ * configured — up to `menuMax` rows it is a content-sized menu popping out of the tab, past that a
+ * bottom sheet.
+ *
+ * WHAT KEEPS THE MENU ABOVE THE FOLD IS CSS, NOT THIS CONSTANT. `.menuDropdown` declares
+ * `max-height: min(72dvh, 560px)` + `overflow-y: auto` + `overscroll-behavior: contain`, so the
+ * dropdown is bounded at ANY row count and scrolls inside itself past it. Measured at 390x844 the
+ * headroom above the bar is 772px (bar top 788, less the 8px menu offset and the 8px shift
+ * padding), so the 560px cap uses 73% of it; on the smallest supported viewport (320x568) the
+ * headroom is ~496px and 72dvh is 409px — the cap is binding on every supported phone, and the row
+ * count never is. The old arithmetic here ("6 x 44px + 8px padding against 415px of headroom") was
+ * stale in almost every number: rows are 40px (`--vx-space-mobile-nav-row-height`), the dropdown's
+ * own padding is `2 * --vx-space-stack-xs` = 8px, and the headroom figures above are the measured
+ * ones.
+ *
+ * `menuMax` therefore survives for the case a menu genuinely should not hold: a 30-destination nav
+ * still deserves a sheet, where a title, a close button and 62dvh of scroll read better than a
+ * tall popover hanging off one tab.
  */
 import type {
   MobileNavConfig,
@@ -29,11 +43,16 @@ import { sidebarBlockMobile } from './sidebar-block-model'
 export const MOBILE_MAX_TABS_DEFAULT = 5
 
 /**
- * Rows a slot may hold before it becomes a sheet instead of a menu. Arithmetic, not taste — see
- * the module doc: six rows is the last count a bottom-anchored, non-flipping menu fits above the
- * bar on the smallest supported viewport.
+ * Rows a slot may hold before it becomes a sheet instead of a menu.
+ *
+ * It was 6 on the theory that the count was what kept the menu above the fold. It is not — the
+ * dropdown's own `max-height` is (module doc), at every row count. What 6 actually did was flip
+ * the playground's ~11-row More slot into a full Drawer, which is the "big door on mobile" the
+ * owner reported. 12 keeps every realistic More surface a compact popover and leaves the sheet
+ * for the nav that has genuinely outgrown one. `mobileNav.menuMax` remains the consumer opt-out
+ * in both directions.
  */
-export const MOBILE_MENU_MAX_DEFAULT = 6
+export const MOBILE_MENU_MAX_DEFAULT = 12
 
 /** The overflow slot's reserved key. A slot like any other — it just exists only when needed. */
 export const MOBILE_MORE_KEY = '__more'
@@ -285,7 +304,13 @@ function sectionCandidate(section: SidebarSection, menuMax: number): Candidate {
           // The section's own identity wins when it declares one — the consumer configured the
           // SLOT — and falls back to the single destination's icon when it does not.
           icon: mobile?.icon ?? section.icon ?? only.icon,
-          active: hasActiveDestination(only),
+          // `isActiveDestination`, not the rollup — this collapse produced a LINK, and a link slot
+          // covers exactly the one key it navigates to, exactly as `itemCandidate` does. The two
+          // predicates agree TODAY (this branch needs `rows === 1`, `countRows` counts descendants,
+          // so `only` is childless whenever it is taken) — which is the point: activeness now reads
+          // the slot's own `covered` set instead of a non-local fact about what `rows === 1`
+          // implies. Widen the collapse and the rollup would light a tab whose tap lands elsewhere.
+          active: isActiveDestination(only),
           item: only,
         }
       }
@@ -474,7 +499,10 @@ export function projectMobileNav(
       label: only.label,
       short: only.short ?? only.label,
       icon: only.icon,
-      active: hasActiveDestination(only),
+      // Same as `sectionCandidate`'s collapse, for the same reason and with the same caveat: a
+      // LINK slot reads only the destination its tap reaches, and `rows === 1` makes the two
+      // predicates agree today — state the law locally rather than inherit it.
+      active: isActiveDestination(only),
       item: only,
     })
     return { slots }

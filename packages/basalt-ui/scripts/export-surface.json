@@ -68,6 +68,7 @@
     "toErrorMessage",
     "unwrap",
     "useAgentThreadRuns",
+    "useBasaltSpacing",
     "useBreakpoint",
     "useConnectivity"
   ],
@@ -215,6 +216,7 @@
     "NEUTRALIZED_ALLOW_TOKEN",
     "PLUGIN_RULE_IDS",
     "TOKENS_ONLY_DISABLED_KINDS",
+    "WAIVER_ID_ALIASES",
     "checkSource",
     "findAllowAnnotations",
     "guardKindRemedy",

@@ -333,6 +333,17 @@ function sanitizeSeverity(cfg: BasaltConfig): BasaltConfig {
   return { ...cfg, severity: kept as Partial<Record<GuardKind, GuardSeverity>> }
 }
 
+/** Does `cwd`'s own `package.json` carry a `basalt` key? — "misconfigured roots" vs "wrong
+ *  directory", the failure a root-invoked hook hits since 1.29.0's single resolver. Never a walk. */
+export function hasBasaltKey(cwd: string): boolean {
+  const raw = readIfExists(resolve(cwd, 'package.json'))
+  try {
+    return raw !== null && (JSON.parse(raw) as { basalt?: unknown }).basalt !== undefined
+  } catch {
+    return false
+  }
+}
+
 export function readBasaltConfig(cwd: string): BasaltConfig {
   try {
     const pkg = JSON.parse(readFileSync(resolve(cwd, 'package.json'), 'utf8')) as {
@@ -1112,6 +1123,44 @@ export function managedFiles(
   const rootTooling: ManagedFile[] = placement.isPackageRepoRoot ? [lefthook, ci] : []
 
   return [...rules, ...skills, claudeBlock, design, oxfmt, ...rootTooling, oxlintrc, ...scaffolds]
+}
+
+/**
+ * The PERMANENT placement skips as sentences — one text for `init` and `sync`, which carried two
+ * near-copies that had already drifted apart. Correct and unchanging, which is why `sync --check`
+ * hides them behind `--verbose`. `extends` alone is NOT the recipe for the hook, and saying only
+ * that shipped a broken one: lefthook merges the preset's commands but runs every one at the REPO
+ * ROOT, with no oxlint config, no local binary and no basalt config. `root:` moves the invocation
+ * cwd per command and merges (the preset does not define it) — see the preset's MONOREPO RECIPE.
+ */
+export function placementNotices(cwd: string, placement: PlacementFlags): string[] {
+  const out: string[] = []
+  const install = findBasaltInstall(cwd)
+  const asset = (n: string): string => shippedAssetPath(install, placement.repoRoot, n)
+  // Bare, no `./` — a lefthook `root:` and an Actions `working-directory:` are already repo-relative.
+  const pkg = relativePosix(placement.repoRoot, cwd).replace(/^\.\//, '')
+  const notRoot = `(not the repo root — repo root detected at ${placement.repoRoot})`
+  if (!placement.isPackageRepoRoot) {
+    out.push(
+      `skipped lefthook.yml ${notRoot} — lefthook only reads config at the repo root. Extend ` +
+        `${asset('configs/lefthook.yml')} from your root lefthook.yml AND give every merged ` +
+        `command \`root: '${pkg}/'\` — \`pre-commit.commands.{oxlint,oxfmt,check-theme}.root: ` +
+        `'${pkg}/'\` — or they run at the root where your oxlint config, your binaries and your ` +
+        'basalt config are not.',
+      `skipped .github/workflows/check.yml ${notRoot} — GitHub Actions only reads .github/ at the ` +
+        `repo root; copy the steps from ${asset('configs/check.yml')} into your root CI workflow ` +
+        `instead, and give each one \`working-directory: ${pkg}\` — the same relocation \`root:\` ` +
+        'performs for lefthook, and needed for the same reason.',
+    )
+  }
+  if (placement.relocatedQueryClient !== null) {
+    out.push(
+      `skipped src/query-client.ts (found an existing query client at ` +
+        `${relative(cwd, placement.relocatedQueryClient)}) — import it from there instead of ` +
+        're-seeding at the original path.',
+    )
+  }
+  return out
 }
 
 export type Manifest = {

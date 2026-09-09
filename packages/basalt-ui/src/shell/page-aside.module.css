@@ -49,12 +49,13 @@
 }
 
 /* The portalled form's band matches the SHELL-OWNED page-bar band exactly, whenever one is
- * present (`--basalt-page-bar-h`, `docs/DESIGN-SPEC.md` §5) — not a fixed 48px. `PageBar`
+ * present (`--basalt-page-bar-h`, `docs/DESIGN-SPEC.md` §5) — not a fixed header height. `PageBar`
  * publishes that var on `documentElement` from a ResizeObserver on the band's own content
  * (`shell/page-bar.tsx`), so it inherits down to every descendant, this header included, with no
  * extra wiring. Two seams, one line: MEASURED on `/cbbi` 1440x900, the band's outer edge (its own
  * `border-bottom`, `app-main.module.css` `.band:not(:empty)`) used to sit at y87 while this header
- * (unconditionally `var(--app-shell-header-height)`, 48px) sat at y96 — 9px apart.
+ * (unconditionally `var(--app-shell-header-height)`, 48px at the time — the token is 44 since the
+ * desktop-shell pass) sat at y96 — 9px apart.
  *
  * The `+ 1px` is not decorative. `--basalt-page-bar-h` measures the band's CONTENT box only (the
  * portalled row-2 wrapper `page-bar.tsx` attaches its ResizeObserver to); the band's own
@@ -63,9 +64,10 @@
  * under the page's global `box-sizing: border-box` reset — so its OWN `border-bottom` is absorbed
  * INSIDE whatever height is declared instead of adding on top. Feeding the raw var straight in
  * therefore undershoots by exactly the band's border: `calc(38px + 1px)` = 39px, matching the
- * band's true painted height, while the no-band fallback nets out unchanged (`calc((48px - 1px) +
- * 1px)` = 48px) because the same `+ 1px` also wraps that branch. Without a `PageBar` there is no
- * band seam to align to, so the header keeps closing the ordinary 48px top belt
+ * band's true painted height, while the no-band fallback nets out unchanged (`calc((44px - 1px) +
+ * 1px)` = 44px, reading today's `appShellHeaderHeight`) because the same `+ 1px` also wraps that
+ * branch. Without a `PageBar` there is no band seam to align to, so the header keeps closing the
+ * ordinary 44px top belt
  * (`docs/DESIGN-SPEC.md` §5) the header and sidebar-brand bands also close.
  */
 .panel[data-basalt-page-aside='shell'] .header {
@@ -81,7 +83,7 @@
 }
 
 /* A real title (docs/DESIGN-SPEC.md §5): mirrors `widget-header.module.css` `.heading` and the
- * breadcrumb's current-page treatment — the three 48px bands each carry one 550-weight head-font
+ * breadcrumb's current-page treatment — the three 44px bands each carry one 550-weight head-font
  * name. */
 .title {
   font-family: var(--basalt-font-head);

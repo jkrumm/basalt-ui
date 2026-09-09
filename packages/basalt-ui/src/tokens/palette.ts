@@ -312,8 +312,15 @@ const SPACE_ANCHORS_BASE = {
   controlHeightWidget: 24,
   /** The `size="ctl"` Mantine tier's resolved height (`docs/CONTROLS-SPEC.md` §5, C5) —
    * `PageBar`/`Section`/table toolbar/sidebar-block controls. Floored at 28px in
-   * {@link deriveSpacing}. */
-  controlHeightCtl: 30,
+   * {@link deriveSpacing}.
+   *
+   * 32, up from 30. At 30 this tier was the ONLY chrome number in the shell that did not agree with
+   * its neighbours: the sidebar search trigger is 32 (`sidebarSearchTriggerHeight`), a sidebar block
+   * row is 32 (`sidebarBlockRowHeight`), and a NavLink row resolves to ~32 (`2 * rowInsetY +
+   * rowLineHeight * text.md`) — so a `size="ctl"` button sitting beside any of them read 2px short
+   * and the whole band looked unresolved. 32 lands the entire chrome tier on ONE number, which is
+   * also the smallest square that still holds a 16px icon with a 8px surround. */
+  controlHeightCtl: 32,
   /** The touch hit-area size (`::before`) every home control expands to below `sm` (C15,
    * `docs/CONTROLS-SPEC.md` §5) — independent of the visible `controlHeightCtl` box, same shape as
    * `mobileNavBarHeight`/`mobileNavRowHeight`'s Apple HIG 44pt / WCAG 2.5.5 floors elsewhere in this
@@ -378,7 +385,7 @@ const SPACE_STEP_BASE = {
   // literal could drift from that header, which is exactly what happened. `SpaceValues.step` still
   // carries the key — see that type's own doc — it is just not part of this BASE table. The
   // `stickyHeaderClearanceMobile` sibling went with the two-row mobile header in 1.26.0: the header
-  // is one 48px row at every viewport now, so one clearance covers both.
+  // is one `appShellHeaderHeight` row at every viewport now, so one clearance covers both.
   /** NavLink leftSection icon-to-label gap — shared by `theme/nav-link.module.css` (every render
    * path) and `shell/app-sidebar.module.css`'s own `.link` rule (belt-and-suspenders on the same
    * DOM), and reused verbatim for `.footerBtn`/`.accountRow`'s icon gap (their own doc comments call
@@ -386,8 +393,14 @@ const SPACE_STEP_BASE = {
   navIconGap: 10,
   /** Sidebar region-to-region gap: `.brand`'s bottom padding and `.searchSlot`'s bottom padding (in
    * both the expanded and collapsed rail variants) — the searchSlot comment explicitly says its gap
-   * opens the nav region "the same way the brand row's own bottom padding does". */
-  sidebarRegionGap: 10,
+   * opens the nav region "the same way the brand row's own bottom padding does".
+   *
+   * 12, up from 10. This is the ONE gap the sidebar spends at all three of its seams (brand → search,
+   * search → nav, nav → account), so it is what separates the column's regions from each other; at 10
+   * it was indistinguishable from the gaps WITHIN a region (`sidebarSectionLabelGap`, the child-list
+   * margins), and the column read as one undifferentiated list of rows. 12 is the first step that
+   * reads as a region break without opening a hole. */
+  sidebarRegionGap: 12,
 
   // ── content/prose.module.css ──────────────────────────────────────────────────────────────────
   /** Blockquote rail's own vertical inset. */
@@ -549,8 +562,11 @@ const SPACE_STEP_BASE = {
   // ── shell/app-sidebar.module.css (beyond the shared/reused anchors above) ────────────────────
   /** Brand row's horizontal inset. */
   sidebarBrandInsetX: 7,
-  /** Gap between nav sections. */
-  sidebarSectionGap: 12,
+  /** Gap between nav sections. Paired with `sidebarSectionLabelGap` below: together they are the
+   * section's proximity law — MORE space above a section label than below it, so the label reads as
+   * belonging to the list it heads. 16/6, up from 12/2: at 12 above and 2 below the pair was
+   * INVERTED, gluing each label to the last row of the section before it. */
+  sidebarSectionGap: 16,
   /** Account row's top inset. */
   sidebarAccountInsetTop: 9,
   /** Account row's horizontal inset. */
@@ -559,8 +575,10 @@ const SPACE_STEP_BASE = {
   sidebarAccountInsetBottom: 2,
   /** Identity-initials avatar block's fixed size (width and height). */
   sidebarAvatarSize: 28,
-  /** Section-label row's bottom gap (before the first nav row). */
-  sidebarSectionLabelGap: 2,
+  /** Section-label row's bottom gap (before the first nav row) — the smaller half of the
+   * proximity pair documented on `sidebarSectionGap` above. 6, up from 2: 2 was hairline enough that
+   * the label looked welded to the first row rather than titling the list. */
+  sidebarSectionLabelGap: 6,
   /** Collapsible child-list wrapper's top margin. */
   sidebarChildListGapTop: 2,
   /** Collapsible child-list wrapper's bottom margin. */
@@ -588,15 +606,22 @@ const SPACE_STEP_BASE = {
 
   // ── shell/index.tsx (AppShell dimensions) ──────────────────────────────────────────────
   /** AppShell desktop header bar height — sized to hold one row of `size="md"` controls, so it
-   *  tracks `controlHeight`. Its level-0 coincidence with `appShellNavbarRailWidth` below is a
-   *  coincidence, not a law: this is a horizontal bar's HEIGHT (governed by control height), that
-   *  is a vertical rail's WIDTH (governed by icon footprint). They stay separate entries. */
+   *  tracks `controlHeight`. It no longer coincides with `appShellNavbarRailWidth` below, which is
+   *  the point that entry's own note was always making: this is a horizontal bar's HEIGHT (governed
+   *  by control height), that is a vertical rail's WIDTH (governed by icon footprint). Two separate
+   *  entries, and now visibly so. */
   /** AppShell header bar height — ONE value at every viewport since 1.26.0 (law C14,
    *  `docs/CONTROLS-SPEC.md` §2.1). The pre-1.26.0 `appShellHeaderMobileHeight` (97) existed only
    *  because the mobile header wrapped to a second, always-reserved page-actions row; `PageBar`
    *  folds that row's overflow into a kebab and moves its filters/tabs into the page flow, so the
-   *  bar is 48px on a phone too and there is no sum to keep in step any more. */
-  appShellHeaderHeight: 48,
+   *  bar is one row on a phone too and there is no sum to keep in step any more.
+   *
+   *  44, down from 48. The band holds ONE `ctl`-tier row (32 since this pass), so 48 left 8px of
+   *  dead air above and below it — the "too much spacing at the top bar" the header reads as. 44
+   *  keeps 6px of breathing room a side, still clears `touchControlHeight` (36) below `sm` and
+   *  `controlHeight` (42) for a `size="md"` control, and is the Apple HIG 44pt figure the rest of
+   *  this table already floors its touch targets at. */
+  appShellHeaderHeight: 44,
   /** AppShell navbar width, expanded — ONE entry for both the `base` (mobile, where the navbar is
    *  permanently collapsed and unused — see `MobileNav`) and the expanded `sm` value: the same
    *  `.root` at full width, genuinely one concept.
@@ -608,8 +633,9 @@ const SPACE_STEP_BASE = {
    *  (`sidebarAccountMenuWidth` 220 + the row inset), so the menu no longer overhangs the column it
    *  belongs to. */
   appShellNavbarWidth: 256,
-  /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above
-   *  despite sharing 48 at level 0 (see that entry's note). */
+  /** AppShell navbar width, collapsed icon rail. Separate from `appShellHeaderHeight` above, which
+   *  used to share 48 at level 0 and no longer does (see that entry's note) — the two were always
+   *  independent concepts and the shared literal was only ever hiding it. */
   appShellNavbarRailWidth: 48,
   /** AppShell ASIDE width, unfolded — the right-hand panel region a route claims by rendering
    *  `PageAside` (`docs/ASIDE-SPEC.md` §0). ONE entry for every viewport, same reasoning as
@@ -624,6 +650,36 @@ const SPACE_STEP_BASE = {
    *  `appShellNavbarRailWidth` (48) on purpose: the navbar rail hosts a full icon nav row and its
    *  hover targets, this one hosts exactly one `ctl`-tier icon button and nothing else. */
   appShellAsideRailWidth: 36,
+  /** The PAGE GUTTER — `AppShell.Main`'s own horizontal inset, i.e. the distance from the sidebar
+   *  seam (and from the viewport's right edge) to the first pixel of page content. Unlike its
+   *  `appShell*` neighbours above this one IS emitted as a `--vx-*` var (see `spaceDecls`'s doc in
+   *  `tokens/index.ts` for why), because it is the single most visible spacing number the framework
+   *  ships and a consumer retuning its identity has to be able to reach it.
+   *
+   *  20, up from the 13 (`SPACE_SCALE.sm`) the main column used to borrow. The sidebar's nav ICON
+   *  column already sits at x=20 — 10px of `.root` frame inset plus 10px of NavLink inset
+   *  (`rowInsetX`) — and the brand row claims to align with it while sitting at 13. 20 makes that
+   *  claim true across the seam: brand mark, nav icons and the page's first column all start on one
+   *  vertical line, and the content gets a seam-side gutter that reads deliberate instead of
+   *  incidental. */
+  appShellInset: 20,
+  /** The page gutter BELOW `sm` — the phone half of `appShellInset` above. A separate entry rather
+   *  than one responsive value for the same reason `appShellNavbarWidth` is one: there is no sidebar
+   *  seam to align to on a phone, so the number is answering a different question (how much of a
+   *  390px viewport to spend on margin) and must be free to move alone.
+   *
+   *  8, down from the same borrowed 13. 13 a side spends 26 of 390px — 6.7% of the viewport — on
+   *  margin before a single card is drawn, which is the "content spacing is too big" a phone reads
+   *  as. 8 keeps the content off the bezel without competing with the cards' own insets. */
+  appShellInsetMobile: 8,
+  /** The app header's BREADCRUMB FLOOR — `shell/app-header.module.css`'s `.lead` `min-width`, the
+   *  width below which the row's one elastic side may not shrink. A step, not the raw `96px` it
+   *  shipped as: every other dimension of that row (its height, its control tier, its gaps) tracks
+   *  density, so a frozen floor would grow relatively narrower at every level up — and it is a floor
+   *  measured in CHARACTERS of the crumb (~13 at level 0), which is exactly the quantity that moves
+   *  when the type and the row around it move. The full derivation of 96 is on the `.lead` rule
+   *  itself; this entry only owns the number. */
+  appShellHeaderLeadMin: 96,
 
   // ── shell/app-mobile-nav.module.css ───────────────────────────────────────────────────────────
   /** Tab's icon-to-label gap. */
@@ -709,11 +765,48 @@ const SPACE_STEP_BASE = {
   /** `data/virtual-list.tsx`'s skeleton row horizontal inset. */
   virtualRowInsetX: 12,
 
+  // ── The card/section inset ladder (`tokens/index.ts`'s `spaceMobileDecls` is its ONE home) ────
+  // The three numbers a page's CONTENT spends on itself, as opposed to the shell gutter around it
+  // (`appShellInset`/`appShellInsetMobile` above). They are grouped, and named, because they step
+  // TOGETHER below `sm` — the gutter went 20 -> 8 in the desktop-shell pass while the ladder inside
+  // it never moved, so a 390px phone still read "content spacing too big" after the gutter fix.
+  //
+  // Each value is deliberately the rung of an existing ladder rather than a fresh literal: the card
+  // inset IS `SPACE_SCALE.xs`/`.sm` (which is what `StatCard`/`ChartCard` spelled as
+  // `--mantine-spacing-xs`/`-sm` before they were named here) and the Section gap IS
+  // `SPACE.stackMd`. Naming them buys the ROLE, not a new number — a role the `< sm` override can
+  // then re-point without touching the scale every other consumer of `xs`/`sm` reads.
+  //
+  // There is deliberately NO `*Mobile` sibling for the two that step, unlike `appShellInsetMobile`:
+  // that one is a separate entry because a phone gutter answers a different question from a desktop
+  // one (how much of 390px to spend on margin, with no sidebar seam to align to). These two answer
+  // the SAME question one rung down, so the override reads the neighbouring rung (`scale.xs`,
+  // `anchors.stackSm`) and a second literal would only be a place for the ladder to drift apart.
+  /** Card inset, VERTICAL — `dashboard/stat-card.tsx` and `charts/primitives/ChartCard.tsx`, which
+   *  must render identically (a StatCard and a ChartCard sit in the same grid row). Does NOT step
+   *  below `sm`: the phone is short of WIDTH, and shaving the vertical inset of a card that already
+   *  hugs its content buys a few pixels at the cost of the card's own breathing room. */
+  cardInsetY: 11,
+  /** Card inset, HORIZONTAL — same two files, same must-match reason. This IS the half that steps
+   *  below `sm` (to `SPACE_SCALE.xs`), because horizontal is where a 390px viewport is short. */
+  cardInsetX: 13,
+  /** `dashboard/section.module.css`'s header→body and body-child gap — a page-level GROUPING
+   *  rhythm, which is why it reads the stack scale rather than the card-inset one. Steps to
+   *  `SPACE.stackSm` below `sm`. Distinct from `sidebarSectionGap` above, which is the gap between
+   *  two NAV sections inside the sidebar column. */
+  sectionGap: 12,
+
   // ── Controls — homes/tiers (`docs/CONTROLS-SPEC.md` §5) ──────────────────────────────────────
   /** `PageBar` row height (row 1 or row 2, each measured independently — the bar's own overall
    *  height is the sum published as `--basalt-page-bar-h`, computed by `PageBar` itself, not a
-   *  static token). */
-  pageBarRowHeight: 40,
+   *  static token).
+   *
+   *  36, down from 40. Row 1 portals into a shell-owned band directly under the app header
+   *  (`shell/page-bar.tsx`), so the two stack as visible chrome: at 40 against a 44 header the
+   *  secondary row all but matched the primary one, and the eye could not tell which band owned the
+   *  page. 36 puts it a clear step below the header while still holding a 32px `ctl` row with 2px a
+   *  side. */
+  pageBarRowHeight: 36,
   /** `WidgetHeader tier="section"` row height. */
   sectionHeaderHeight: 36,
   /** `WidgetHeader tier="widget"` row height. */

@@ -14,6 +14,14 @@
  * deliberately NOT forwarded — a responsive object on the public prop is exactly the seam that let
  * five call sites disagree.
  *
+ * **The law keys on the CONTAINER, not the viewport.** `WidgetGrid` renders its own
+ * `container-type: inline-size` box around the grid, so the counts follow the width the grid
+ * ACTUALLY has. The shell moves that width without moving the viewport — a `PageAside` claiming its
+ * 300px, the sidebar collapsing 256px → its 48px rail, a consumer's split pane — and a `@media`
+ * query sees none of it: it kept three chart columns in a 956px content box and every chart in the
+ * row went narrower than `VX.phoneChartWidth`, which is the exact condition the `lg` rung exists to
+ * avoid. See `widget-grid.module.css`'s header for the fallback.
+ *
  * **This is the sanctioned place `lg` enters the package.** `sm` is still the only breakpoint a
  * consumer writes (`docs/CONTROLS-SPEC.md` §2); `WidgetGrid` and `StatGroup` own `lg` internally so
  * nobody else has to.
@@ -77,18 +85,28 @@ export function WidgetGrid({ cols = 2, children, className, style }: WidgetGridP
 
   return (
     <WidgetGridColsContext.Provider value={resolved}>
-      <div
-        className={cx(classes.root, className)}
-        data-cols={cols}
-        style={
-          {
-            '--basalt-widget-grid-cols-sm': resolved.sm,
-            '--basalt-widget-grid-cols-lg': resolved.lg,
-            ...style,
-          } as CSSProperties
-        }
-      >
-        {children}
+      {/*
+        Two boxes, and the outer one is not decoration: a size container is a container for its
+        DESCENDANTS, never for itself, so the grid whose tracks the query decides has to sit inside
+        the box being measured. `className`/`style` land on the OUTER box because that is the root
+        element a consumer positions (`BasaltProps`) — and because measuring the box the consumer
+        sized is the whole point. `container-type: inline-size` contains the inline axis only, so
+        the wrapper's block size still comes from the grid: percentage heights resolve exactly as
+        before, and there is no paint containment, so nothing inside is clipped.
+      */}
+      <div className={cx(classes.container, className)} style={style}>
+        <div
+          className={classes.root}
+          data-cols={cols}
+          style={
+            {
+              '--basalt-widget-grid-cols-sm': resolved.sm,
+              '--basalt-widget-grid-cols-lg': resolved.lg,
+            } as CSSProperties
+          }
+        >
+          {children}
+        </div>
       </div>
     </WidgetGridColsContext.Provider>
   )

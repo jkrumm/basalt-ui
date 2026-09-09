@@ -241,7 +241,12 @@ exemption:
 ```
 
 `check-theme` fails loudly (instead of a false `✓`) when the configured roots resolve to zero
-scanned files, and `doctor`'s `guard-scan` check agrees with it. Each root's **parent** also
+scanned files, and `doctor`'s `guard-scan` check agrees with it — it shares `scannableFiles` with
+`check-theme`, so the two cannot disagree about what would be scanned. (`guard-scan` and
+`install-parity` were absent from `doctor` for four minors up to 1.29.2, with no MIGRATING row, and
+are back in 1.30.0. While they were gone a consumer CI step that ran `doctor` to catch an
+install/manifest version mismatch caught nothing, zero-file roots could ship as a permanently green
+guard, and this sentence described a check that did not exist.) Each root's **parent** also
 contributes its `index.html` and its `public/` tree — the Vite layout `basaltViteConfig` assumes,
 and where a raw `theme-color` or webmanifest `background_color` actually lives. `.json` is never
 blanket-scanned; `include` names one explicitly and is the only route to it. `profile:
@@ -375,7 +380,7 @@ Apply opacity with `alpha(token, a)` (backed by `color-mix`) — never `rgba()`,
 App-specific series colors live in the consumer, not the framework. The framework ships the factories:
 
 ```ts
-// src/theme/series.ts — the single guard-exempt file
+// src/lib/series.ts — the ONE path check-theme exempts by default (see the note below)
 import { defineSeries, groupTokens } from 'basalt-ui/tokens'
 
 // 1. Declare the series with light/dark pairs (ColorPair shape — hex strings per scheme)
@@ -401,6 +406,22 @@ export const colors = groupTokens(GROUP, SERIES)
 // 4. Hand the same map to BasaltProvider so the --vx-app-* vars are emitted
 export const paletteGroups = { [`${GROUP}-`]: SERIES }
 ```
+
+> **Put it at `<first basalt.root>/lib/series.ts`, or the guard reports it.** `defineSeries` takes
+> hex `ColorPair`s _by type_, so this is the one file the doctrine tells you to write raw hex in —
+> and the exemption is an exact PATH, not a shape: `check-theme` skips
+> `<first basalt.root>/lib/series.ts` (the same value `DESIGN.md`'s `{{SERIES_MODULE_PATH}}`
+> renders, so the two cannot drift), and nothing special-cases a file merely _because_ it calls
+> `defineSeries`. A series module anywhere else — `src/theme/series.ts`, say — reports `raw-hex`
+> twice per pair. Two ways out, and the second is not the same as the first:
+>
+> ```json
+> // package.json — `seriesModulePath` MOVES the default exemption; `exempt` REPLACES it wholesale
+> { "basalt": { "seriesModulePath": "src/theme/series.ts" } }
+> ```
+>
+> Writing your own `basalt.exempt` array REPLACES the series default rather than adding to it, so
+> list your series module in that array explicitly whenever you use the key at all.
 
 ```tsx
 // main.tsx — wire paletteGroups into BasaltProvider

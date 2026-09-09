@@ -22,12 +22,14 @@
  *    as the AppShell dimensions above (see `sidebarAccountMenuWidth`'s doc in `../tokens/palette`
  *    for why a fixed dropdown width needs to track density at all).
  *
- * Deliberately INTERNAL for now — exported from this module (so `../shell` can reach it) but NOT
- * re-exported by the root `.` barrel (`src/index.ts`), so it is not part of the published package
- * surface (same convention `scaleSpace`'s doc comment in `../tokens/palette` uses for the same
- * reason). These three `../shell` components are its only consumers today; promote it to the root
- * barrel — with a surface entry in this package's `CLAUDE.md` — if/when a consumer outside the
- * framework's own components needs the ACTIVE resolved spacing.
+ * PUBLIC since the desktop-shell spacing pass — re-exported by the root `.` barrel
+ * (`src/index.ts`), on exactly the trigger this doc used to name as the condition for promoting it:
+ * a consumer outside the framework's own components needs the ACTIVE resolved spacing. Laying its
+ * own chrome out beside the shell's — a sticky sub-header under the app header, a fixed rail beside
+ * the navbar — means matching numbers that are ALL JS-consumed (an AppShell dimension, a
+ * `<Menu width={…}>`), so unlike a CSS inset there is no `--vx-*` var to read them from instead;
+ * without this hook the consumer's only option was to hardcode the level-0 constants and silently
+ * desync at any other density.
  */
 import { useMantineTheme } from '@mantine/core'
 import { DEFAULT_SPACE_VALUES } from '../tokens/palette'

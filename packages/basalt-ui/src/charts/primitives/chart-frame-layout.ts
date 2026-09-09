@@ -40,6 +40,70 @@ export function resolveChartTier(containerW: number): ChartTier {
 }
 
 /**
+ * A chart height stated per size step instead of as one number — the declarative escape from "every
+ * chart on this page is 260px tall on a 375px phone too".
+ *
+ * `base` is required and is the height a box narrower than every named step gets; each further key
+ * is the height from that step UP. Keys are Mantine's breakpoint names so a consumer writes the
+ * vocabulary they already write, and nothing more than `sm`/`md`/`lg` is offered: `xs`/`xl` would
+ * be two more rungs nobody has asked a chart to have.
+ *
+ * ```tsx
+ * <ChartFrame series={series} height={{ base: 180, md: 260 }}>{…}</ChartFrame>
+ * ```
+ */
+export type ResponsiveChartHeight = {
+  /** Below the narrowest STATED step — and NOT the first-frame value; see {@link resolveFrameHeight}. */
+  base: number
+  /** From 768px of MEASURED container width up. */
+  sm?: number
+  /** From 992px up. */
+  md?: number
+  /** From 1200px up. */
+  lg?: number
+}
+
+/**
+ * The measured CONTAINER width, in px, each {@link ResponsiveChartHeight} key takes effect at.
+ *
+ * The numbers are what Mantine's `sm`/`md`/`lg` breakpoints resolve to at the 16px initial font
+ * size, so a consumer's mental model transfers — but they are compared against the element's own
+ * MEASURED box, never the viewport, for the reason {@link resolveChartTier} states: a chart in a
+ * `PageAside`-squeezed grid cell on a 1440px desktop is as narrow as one on a phone, and the
+ * viewport agrees with neither. Keeping them as plain numbers here is also what keeps this file
+ * Mantine-free — `theme.breakpoints` is on the coupled side of the boundary.
+ */
+const HEIGHT_STEP_WIDTH = { sm: 768, md: 992, lg: 1200 } as const
+
+/** Widest-first, so the first step that fits is the answer. */
+const HEIGHT_STEPS = ['lg', 'md', 'sm'] as const
+
+/**
+ * Resolve a `height` prop — a plain number, or a {@link ResponsiveChartHeight} — against the
+ * measured container width.
+ *
+ * A plain number passes through untouched: this is a WIDENING of the prop, not a replacement, and
+ * every existing `height={240}` must keep meaning exactly 240.
+ *
+ * An UNMEASURED box (`containerW <= 0` — SSR, or before the `ResizeObserver`'s first callback)
+ * resolves to the LARGEST stated step, matching {@link resolveChartTier}'s first-frame rule: the
+ * first paint must not be phone-shaped chrome that grows one frame later. Falling to `base` there
+ * would make every SSR'd chart short and then jump.
+ */
+export function resolveFrameHeight(
+  height: number | ResponsiveChartHeight,
+  containerW: number,
+): number {
+  if (typeof height === 'number') return height
+  const widest = HEIGHT_STEPS.find((step) => height[step] !== undefined)
+  if (containerW <= 0) return widest === undefined ? height.base : (height[widest] ?? height.base)
+  const step = HEIGHT_STEPS.find(
+    (name) => containerW >= HEIGHT_STEP_WIDTH[name] && height[name] !== undefined,
+  )
+  return step === undefined ? height.base : (height[step] ?? height.base)
+}
+
+/**
  * How much of `VX.margin` a phone-tier chart keeps as its FLOOR. The measured law is unchanged —
  * a side may still only grow past its floor (`autoMargin`) — this only stops a static token from
  * spending 44px of a 360px chart on a gutter three characters wide.
@@ -109,6 +173,28 @@ const PHONE_METRICS: ChartTierMetrics = {
 /** The resolved sizes for one tier. Frozen module constants — never a new object per render. */
 export function chartTierMetrics(tier: ChartTier): ChartTierMetrics {
   return tier === 'phone' ? PHONE_METRICS : DESKTOP_METRICS
+}
+
+/**
+ * Which legend cap applies: the caller's, or the tier's own default.
+ *
+ * **An explicit `callerMaxRows` wins OUTRIGHT.** This used to be `Math.min(caller, tier)`, which
+ * made the documented per-chart opt-out ("opt back out with an explicit `legend.maxRows`") false in
+ * the one direction anybody needs it. The tier's `PHONE_LEGEND_MAX_ROWS` is a DEFAULT for charts
+ * that said nothing — a chart that names a number has already answered the question the default
+ * exists to answer, and it matters because the tier keys on the measured box: a 380px inspector
+ * panel on a 1440px desktop is "a phone", so a six-series legend rolled up to two rows + `+4 more`
+ * with no way to say no. `margin` and `xLabelRotate` always had that escape; the legend did not.
+ *
+ * A `fill` frame's measured {@link legendEntryCap} still applies ON TOP of whatever wins here — it
+ * is a floor on the PLOT, not a tier default, so a chart that would otherwise render no plot at all
+ * still rolls up.
+ */
+export function resolveLegendMaxRows(input: {
+  callerMaxRows?: number | undefined
+  tier: ChartTier
+}): number | undefined {
+  return input.callerMaxRows ?? chartTierMetrics(input.tier).legendMaxRows
 }
 
 /**

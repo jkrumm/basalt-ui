@@ -550,6 +550,32 @@ describe('check-theme roots fail-loud', () => {
     expect(err).toContain('basalt.roots')
   })
 
+  /**
+   * The WRONG-DIRECTORY case, which since 1.29.0's single resolver (BASALT_CWD, else cwd; nothing
+   * inferred) is what a root-invoked hook or CI step actually hits: the shipped lefthook preset
+   * and the seeded CI both run at the repo ROOT while a monorepo's basalt config lives in a
+   * package below it. It printed the roots message above, which sends a consumer to edit
+   * `basalt.roots` in a package.json that has no `basalt` block at all — image-share spent more
+   * debugging on that than on any of 1.29.0's five API removals.
+   */
+  it('names the DIRECTORY, not the roots, when this package.json has no basalt key', () => {
+    writeFileSync(resolve(dir, 'package.json'), JSON.stringify({ name: 'fixture' }))
+    const { code, err } = run()
+    expect(code).toBe(1)
+    expect(err).toContain('has no "basalt" key')
+    expect(err).toContain('BASALT_CWD')
+    expect(err).toContain('root: <pkg>/')
+  })
+
+  it('does NOT claim a wrong directory when the basalt key is there and the roots are wrong', () => {
+    writeFileSync(
+      resolve(dir, 'package.json'),
+      JSON.stringify({ name: 'fixture', basalt: { roots: ['nonexistent-dir'] } }),
+    )
+    const { err } = run()
+    expect(err).not.toContain('has no "basalt" key')
+  })
+
   it('exits non-zero when explicitly configured roots match zero files', () => {
     writeFileSync(
       resolve(dir, 'package.json'),

@@ -1,4 +1,4 @@
-/* App-shell top bar layout. ONE 48px row on every viewport, spanning the FULL viewport width —
+/* App-shell top bar layout. ONE 44px row on every viewport, spanning the FULL viewport width —
  * [brand | collapse] [breadcrumb] ········ [page bar row 1] | [global actions].
  *
  * The leading zone is `app-brand.module.css`'s `.zone`: exactly `--app-shell-navbar-offset` wide,
@@ -36,17 +36,48 @@
  * overflows towards its START, so the sync button painted 30px INTO the page title. Measured in
  * Chrome: the title spanned 119.7–197.1 and the sync button 158.3–188.3.
  *
- * So the lead is now the elastic side (`flex: 1 1 auto`, `min-width: 0`, each crumb truncating via
- * its own `truncate` prop) and the control side is rigid. A row of buttons that genuinely does not
- * fit is not a shrinking problem — it is the OVERFLOW FOLD's problem, and basalt already owns that
- * (law C7: below `sm` row 1 is the primary plus ONE kebab).
+ * So the lead is now the elastic side (`flex: 1 1 auto`, each crumb truncating via its own
+ * `truncate` prop) and the control side is rigid. A row of buttons that genuinely does not fit is
+ * not a shrinking problem — it is the OVERFLOW FOLD's problem, and basalt already owns that (law
+ * C7: below `sm` row 1 is the primary plus ONE kebab).
+ *
+ * `min-width` is a FLOOR, not the `0` it used to be: elastic still, but never elastic to nothing.
+ * With `0` the breadcrumb was the row's entire shock absorber and it absorbed itself out of
+ * existence — and then the row overflowed anyway, because `.pageBar` and `.global` below are both
+ * rigid. Measured on /dashboard at exactly 768px (the `sm` breakpoint, where the navbar appears):
+ * 768 − 256 navbar = 512px of header left, against ~554px of row 1 + ~102px of globals + ~48px of
+ * gaps ≈ 704px. ~192px over, with the page title already at zero — so the fold bought nothing and
+ * cost the reader the one word saying where they are.
+ *
+ * 96px, because the current crumb is `VX.text.lg` (16px) at `font-stretch: 88%`, i.e. ~7px of
+ * average advance: 96px is ~13 characters ("Study progress") before the crumb's own `truncate`
+ * starts eliding, and a short title ("Dashboard", "Settings") fits with room to spare. Below that
+ * the crumb is an ellipsis with a letter in front of it, which is the state this floor exists to
+ * forbid.
+ *
+ * It reads a TOKEN (`SPACE_STEP.appShellHeaderLeadMin`) rather than the raw `96px` it shipped as,
+ * because the derivation above is entirely in units that move with density — the crumb's type size
+ * and its average advance — so a frozen floor would buy ~13 characters at level 0 and fewer at
+ * every level up. The rem fallback is the level-0 number, for a stylesheet loaded before the
+ * provider's.
+ *
+ * Unscoped by width on purpose — it costs nothing on a phone. At 390px the row is the breadcrumb
+ * plus ~66px of mobile bar, ~66px of globals and ~26px of gaps inside a 374px content box, so the
+ * floor is never the binding constraint there.
+ *
+ * The floor is NOT free above `sm`: on its own it adds its own 96px to that ~192px overflow. The
+ * `md` label fold in `controls/actions.tsx` (`BarEntry`, same 62em tier) is what pays for it —
+ * dropping up to `DESKTOP_SECONDARY_MAX` (3) labelled secondaries to `ctl`-tier icon buttons returns
+ * roughly 180-240px on that same row. The two are one change; neither is correct alone, and
+ * NEITHER is the real answer, which is measuring the row (a ResizeObserver fold) rather than
+ * declaring breakpoints for it. This pair is the cheap, declared interim until that exists.
  */
 .lead {
   display: flex;
   align-items: center;
   gap: var(--mantine-spacing-sm);
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: var(--vx-space-app-shell-header-lead-min, 96px);
 }
 
 /* No `overflow: hidden` here or on `.lead` above: Mantine's focus ring is `outline: 2px solid;
@@ -81,7 +112,8 @@
 }
 
 /*
- * The shell globals sit at the SAME 30px tier as everything else in the row, and they get there the
+ * The shell globals sit at the SAME 32px `ctl` tier as everything else in the row, and they get there
+ * the
  * same way a home's slot does — `HeaderGlobalActions` wraps this region in a `CtlSlot`, so a
  * consumer's bare `<ActionIcon>` in `globalActions` defaults to `size="ctl"` with no prop at the call
  * site (law C5). They rendered at Mantine's `md` 28px before, which is 2px under the page group
@@ -98,9 +130,17 @@
   flex-shrink: 0;
 }
 
+/* Glyph BOX, 1.125rem — the SAME decoration-class fixed size `page-bar.module.css` sets on row 1's
+ * own glyphs, and deliberately NOT a `--vx-space-*` token (an icon is not a gap; the shipped icon
+ * set draws on a 24px grid and the box is a fraction of the type size, not of the spacing scale).
+ * Do not re-litigate these in a token sweep.
+ * 1.125rem rather than the old 1rem for the same reason the page bar's grew — `controlHeightCtl`
+ * went 30 -> 32, and a glyph held at 16px inside a 32px control reads EMPTIER, not bigger. The two
+ * rows are ONE control family (`HeaderGlobalActions` and `PageBar` row 1 sit in the same 44px
+ * band), so they had to stop disagreeing by 2px on the same glyph. */
 .global :global(.mantine-ActionIcon-root) > svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 /*

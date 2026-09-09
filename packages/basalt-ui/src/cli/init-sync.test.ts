@@ -237,3 +237,69 @@ describe('sync — retired rules and skills', () => {
     expect(log).toContain('no longer ship')
   })
 })
+
+/**
+ * `sync --check` sits in consumers' CI `check` chains, and it printed three permanent "skipped"
+ * paragraphs (lefthook.yml, .github/workflows/check.yml, src/query-client.ts) on EVERY run — a
+ * state that is correct, unchanging, and in a CI log indistinguishable from the drift the gate
+ * exists to report. The count survives; the paragraphs move behind `--verbose`.
+ */
+describe('sync --check — a permanent skip is not drift', () => {
+  /** A non-root package with a real install, so the two repo-root-shaped seeds are skipped. */
+  function nonRootFixture(): string {
+    writeFixture('package.json', JSON.stringify({ name: 'root' }))
+    writeFixture('.git/HEAD', 'ref: refs/heads/master\n')
+    const app = join(dir, 'app')
+    writeFixture('app/package.json', JSON.stringify({ name: 'app' }))
+    capture(() => init(app))
+    return app
+  }
+
+  it('prints the skips in full on a normal sync', () => {
+    const app = nonRootFixture()
+    const { log } = capture(() => sync({}, app))
+    expect(log).toContain('skipped lefthook.yml')
+    expect(log).toContain('skipped .github/workflows/check.yml')
+  })
+
+  it('replaces them with a count on --check', () => {
+    const app = nonRootFixture()
+    const { code, log } = capture(() => sync({ check: true }, app))
+    expect(code).toBe(0)
+    expect(log).not.toContain('skipped lefthook.yml')
+    expect(log).toContain('2 permanent placement skip(s) — --verbose for detail')
+  })
+
+  it('spells them out again under --check --verbose', () => {
+    const app = nonRootFixture()
+    const { log } = capture(() => sync({ check: true, flags: ['--verbose'] }, app))
+    expect(log).toContain('skipped lefthook.yml')
+  })
+
+  it('says nothing about skips when there are none', () => {
+    writeFixture('package.json', JSON.stringify({ name: 'fixture' }))
+    capture(() => init(dir))
+    const { code, log } = capture(() => sync({ check: true }, dir))
+    expect(code).toBe(0)
+    expect(log).not.toContain('placement skip')
+  })
+})
+
+/**
+ * The seeded query client is a FACTORY, not a module-level singleton. `export const queryClient =
+ * createBasaltQueryClient()` is created once per PROCESS, so an SSR consumer (meteo is a TanStack
+ * Start app that prerenders routes) serves every request from one shared cache.
+ */
+describe('the seeded query client is SSR-safe', () => {
+  it('seeds a makeQueryClient() factory, never a module-level singleton', () => {
+    writeFixture(
+      'package.json',
+      JSON.stringify({ name: 'fixture', dependencies: { '@tanstack/react-query': '^5' } }),
+    )
+    capture(() => init(dir))
+    const seed = readFileSync(join(dir, 'src/query-client.ts'), 'utf8')
+    expect(seed).toContain('export function makeQueryClient()')
+    expect(seed).not.toMatch(/^export const queryClient =/m)
+    expect(seed).toContain('once per request')
+  })
+})

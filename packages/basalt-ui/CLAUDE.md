@@ -42,7 +42,7 @@ Named exports only — **no default exports**. Files `kebab-case`, components `P
 **C1 (1.29.0):** `./query`, `./connectivity` and bare `./data` are dropped — 26 published subpaths
 → 20. `section/` + `widget-header/` merged into `src/dashboard/` (internal only, no subpath
 change); `utils/`+`motion/`+`query/error-message` merged into `src/common/`. Full symbol mapping:
-`MIGRATING.md` § Unreleased.
+`MIGRATING.md` § 1.29.0 § Consolidation.
 
 `src/surfaces.ts` is the SSOT behind that table, `llms.txt`, `AGENTS.md`, the oxlint boundary globs
 and the doctrine triad; `check-coverage` and `tests/{surfaces-coverage,agents-sync,llms-sync}.test.ts`
@@ -246,8 +246,10 @@ Three tiers: **palette data** (pure data, zero React/Mantine/DOM) → **`--vx-*`
   state**, and the header is one token tall on every viewport. An empty home renders nothing (C14).
 - **Mobile nav is a TAB BAR, not a menu**, and `projectMobileNav` is a PURE projection: the surface
   is INFERRED from row count (0 drops the slot, 1 is a plain link, ≤ `menuMax` is a menu, more is a
-  sheet). `menuMax` is arithmetic against the smallest supported viewport, which is why the menu runs
-  `flip: false` and can never render below the fold.
+  sheet). The `menu` surface is a compact POPOVER, not a bottom sheet, and **`menuMax` is no longer
+  the never-below-the-fold guarantee** — the popover's own CSS `max-height` is, which is what let the
+  default rise 6 → 12. The constant is now a taste bound on how long one popover may get;
+  `mobileNav.menuMax` remains the per-app opt-out, and the menu still runs `flip: false`.
 - **Two mobile CSS facts that look like bugs**: `.bar` carries no `env(safe-area-inset-bottom)`
   because Mantine's `AppShell.Footer` rule already grows the box by it (the real gap is
   `--app-shell-footer-offset`, closed by `.mainSafeArea`); and the active indicator is a neutral
@@ -390,14 +392,42 @@ hard-fail their build.
 
 ## Deprecation lifecycle — maintainer mechanics (consumer-facing summary: `basalt-batteries.md`)
 
-Majors are banned, so a version number can never tell a consumer a name went away. The sunset runs
-through four artifacts instead, and all four land in the SAME commit: the export stays shipped
-(`@deprecated` JSDoc, delegating to the replacement), a row in `DEPRECATED_EXPORTS`
+**Every removal and every retype of a public export gets one minor of grace. No exceptions by
+convenience.** A `@deprecated` alias that forwards, or a union overload plus a one-line dev warn,
+ships in minor N; the hard break ships in N+1. This is the doctrine's other half: "no majors, breaks
+ship as `feat:` on the 1.x line" is only affordable if a plain minor is safe to take, and a minor
+that hands a consumer a raw `tsc` error with no autofix is not. The window is what converts a break
+into a lint finding with a mechanical remedy.
+
+**The inconsistency is the actual cost, and it is measured.** In the 1.25.0 → 1.29.2 fleet
+migration, `field` → `inputProps` (1.28.0) and `variant` → `tier` (1.28.0) both got `@deprecated`
+aliases — while `sidebarNavExtra` (1.26.0), `PageActions` → `PageBar` (1.26.0) and the
+`globalActions: ReactNode → GlobalAction[]` retype all shipped with none, in the same and adjacent
+minors. Two consumers named that pairing as the single thing that makes a basalt minor unsafe to
+take. `sidebarNavExtra` is the sharpest case: its removal is pinned as a `@ts-expect-error` in
+`src/shell/index.test.tsx:120`, so the hard break was KNOWN at authoring time, and its remedy is
+total and mechanical (`x` → `[{ kind: 'custom', key, node: x }]`) — exactly the shape
+`basalt/deprecated-export`'s autofix exists for.
+
+**When a forwarding alias is genuinely impossible** (the replacement is a different shape, not a
+different name), the window is still owed and is spent differently: keep the old prop accepted as a
+union arm for one minor, warn once in dev through `common/errors.ts`' `deprecatedProp`, and write
+the ledger row anyway. "It cannot be aliased" is an argument about the MECHANISM, never about
+whether a consumer gets a minor's notice.
+
+**A removal with no window needs a written reason in `MIGRATING.md`, in the removal's own row.**
+1.29.0's `BasaltNotifications` row is the reference: it names the exception, says why (superseded in
+1.2x, its own JSDoc warned against the double-mount) and takes the cost explicitly. An unexplained
+zero-window removal is a defect in this file's terms, not a judgement call.
+
+The sunset itself runs through four artifacts, and all four land in the SAME commit: the export
+stays shipped (`@deprecated` JSDoc, delegating to the replacement), a row in `DEPRECATED_EXPORTS`
 (`configs/oxlint-plugin.js` — `{ subpath, name, replacement, removeIn }`, plus `prop` for a JSX
 attribute) that `basalt/deprecated-export` reads to nudge every import/prop with an autofix
-preserving the LOCAL binding (`{ inputProps as field }`), a `MIGRATING.md` row under `##
-Unreleased`, and a `removeIn` at least one minor out (pinned by `oxlint-plugin.test.ts` —
-deprecating in 1.28.0 means removing in 1.29.0 at the earliest).
+preserving the LOCAL binding (`{ inputProps as field }`), a `MIGRATING.md` row in the NEWEST
+section (`## Unreleased` until the release renames it to its number — see that file's own preamble),
+and a `removeIn` at least one minor out (pinned by `oxlint-plugin.test.ts` — deprecating in 1.28.0
+means removing in 1.29.0 at the earliest).
 
 `basalt/deprecated-export` is **permanently `warn`** (`PLUGIN_RULE_ADVISORY`), and that is the whole
 difference between this mechanism and the grace one above. A grace entry promotes because the code
@@ -406,7 +436,13 @@ a schedule is exactly what the no-majors doctrine exists to avoid — enforcemen
 export stops existing, not when this rule changes level.
 
 **Removal is its own commit**, and it deletes the row, the export and the `@deprecated` JSDoc
-together while the `MIGRATING.md` row stays forever.
+together while the `MIGRATING.md` row stays forever. **Deleting the `DEPRECATED_EXPORTS` row also
+deletes the autofix**, which is a consumer-visible loss the removal has to state: 1.29.0 took
+`field` out of the ledger in the same minor it deleted the export, and that silently invalidated
+MIGRATING's own two-pass `oxlint --fix` recipe for anyone arriving from 1.27.x. Either keep the row
+one minor past the removal (the message already reads "removed in X"), or say plainly in the removal
+row that the fix is now manual.
+
 `oxlint-plugin.test.ts` scans every `src/**/index.ts(x)` barrel for a JSDoc `@deprecated` with no
 ledger row, so the published half cannot be forgotten; a deprecation written deeper in the tree is
 on the author.

@@ -96,10 +96,15 @@
   margin-inline-end: var(--vx-space-control-gap);
 }
 
+/* Glyph BOX, 1.125rem — a decoration-class fixed size, deliberately NOT a `--vx-space-*` token
+ * (an icon is not a gap; the shipped icon set draws on a 24px grid and the box is a fraction of
+ * the type size, not of the spacing scale). Do not re-litigate these in a token sweep.
+ * 1.125rem rather than the old 1rem because `controlHeightCtl` grew 30 -> 32: a glyph held at
+ * 16px inside a 32px control reads EMPTIER, not bigger. */
 .row1 :global(.mantine-Button-section) > svg,
 .row1 :global(.mantine-ActionIcon-root) > svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 /* Actions and sync are right-aligned; the lead (or the breadcrumb, in a shell) holds the left. */
@@ -114,21 +119,24 @@
 }
 
 /*
- * Row 2's rhythm is 8px · pills · 8px, NOT a 40px reserved row.
+ * Row 2's rhythm is 8px · pills · 8px, NOT a reserved row-height box.
  *
- * `min-height: var(--vx-space-page-bar-row-height)` (40px) left a 30px pill floating inside a 40px
- * box with the 5px above and below it belonging to nothing — and because the row sat in a `Stack`
- * that already spaced it, the visible gap between the header and the pills read as ~19px while the
- * gap from the pills to the first card read as ~19px too. Symmetric padding on the row itself is
- * one declaration owning both halves, so the sticky bar's published height covers exactly the band
- * it paints — including below `sm`, where `.row2` becomes a COLUMN of `.tabs` then `.pills` and
- * `padding-block` still owns both edges of the taller band.
+ * `min-height: var(--vx-space-page-bar-row-height)` was the defect, and the arithmetic is the whole
+ * reason it is gone. Measured when that token was 40 and `ctl` was 30: a 30px pill floated inside a
+ * 40px box with the 5px above and below it belonging to nothing — and because the row sat in a
+ * `Stack` that already spaced it, the visible gap between the header and the pills read as ~19px
+ * while the gap from the pills to the first card read as ~19px too. The desktop-shell pass has
+ * since moved both numbers (row height 40 -> 36, `ctl` 30 -> 32), which narrows that unowned band
+ * to 2px a side but does not close it: a HEIGHT token still hands its spare pixels to nobody.
+ * Symmetric padding on the row itself is one declaration owning both halves, so the sticky bar's
+ * published height covers exactly the band it paints — including below `sm`, where `.row2` becomes
+ * a COLUMN of `.tabs` then `.pills` and `padding-block` still owns both edges of the taller band.
  *
  * `stackXs` and not `stackSm`: the row sits inside the shell's own bordered band
  * (`app-main.module.css`'s `.band`), so it no longer has to carry the visual separation in
- * whitespace — 4px above and below a 30px `ctl` pill still clears it (38px total) and buys back 8px
+ * whitespace — 4px above and below a 32px `ctl` pill still clears it (40px total) and buys back 8px
  * of content on every page.
- * Row 1's 40px `--vx-space-page-bar-row-height` is untouched: it is a HEIGHT token, not padding.
+ * Row 1's 36px `--vx-space-page-bar-row-height` is untouched: it is a HEIGHT token, not padding.
  */
 .row2 {
   display: flex;

@@ -67,7 +67,7 @@ if (failures.length > 0) {
   console.error('export-surface snapshot mismatch:')
   for (const f of failures) console.error(`  ${f}`)
   console.error(
-    'If intentional: node --import scripts/css-noop-register.mjs scripts/export-surface.mjs --update',
+    'If intentional: node --import ./scripts/css-noop-register.mjs scripts/export-surface.mjs --update',
   )
   process.exit(1)
 }

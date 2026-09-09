@@ -418,6 +418,110 @@ layout('mobile nav — real layout', () => {
   })
 
   /**
+   * INVARIANT 9B — THE MORE SURFACE IS A POPOVER AT A ROW COUNT THAT USED TO RAISE THE DOOR.
+   *
+   * Eleven overflow rows is the playground's own More slot, and under `menuMax` 6 it opened a
+   * full-width bottom `Drawer` — the "big door on mobile" report. The default is 12 now, and this
+   * fixture deliberately does NOT pass `menuMax` so it grades the shipped default rather than a
+   * test-local one.
+   *
+   * The two halves are separate failures and both are asserted: the surface is a MENU and no
+   * Drawer exists at all (the door is gone), AND the menu still fits above the bar inside the
+   * viewport (the popover did not become the new way to render below the fold). `flip: false`
+   * means a menu that does not fit is simply off-screen, so the second half is not a formality —
+   * what holds it is `.menuDropdown`'s own `max-height: min(72dvh, 560px)`, at any row count, which
+   * is the whole reason the constant was free to move.
+   */
+  for (const viewport of [PHONE, PHONE_SMALL] as const) {
+    test(`an 11-row More surface opens as a menu, not a sheet (${viewport.name})`, async () => {
+      const p = await openFixture(
+        {
+          nav: { maxTabs: 5 },
+          sections: [
+            { label: 'Home', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
+            { label: 'Library', items: pages(11, 'lib') },
+          ],
+        },
+        viewport,
+      )
+      await p.tap(tab('More'))
+      await p.waitFor(MENU)
+
+      const sheets = await p.count(SHEET)
+      if (sheets !== 0) {
+        throw new Error(
+          `LAYOUT: 11 overflow rows raised ${sheets} Drawer(s). At menuMax 12 the More surface is ` +
+            'a popover — a sheet here is the "big door on mobile" regression.',
+        )
+      }
+
+      const menu = await p.box('More menu', MENU)
+      const bar = await p.box('bar', BAR)
+      expectFullyInside(
+        menu,
+        above(bar, p.viewport),
+        'the popover must still clear the bar and the viewport — `flip: false` means a menu that ' +
+          'does not fit is simply off-screen, and the dropdown max-height is what keeps it in',
+        p.viewport,
+      )
+      expectHeightAtMost(
+        menu,
+        p.viewport.height * 0.72 + 1,
+        'the dropdown caps at 72dvh and scrolls inside itself instead of growing with its rows',
+        [],
+        p.viewport,
+      )
+    })
+  }
+
+  /**
+   * INVARIANT 9C — the cap SCROLLS, it does not merely bind.
+   *
+   * 9B above asserts the popover is no taller than 72dvh, and that reading alone cannot tell a
+   * dropdown that caps and scrolls from one that caps and CLIPS: both measure the same box, and the
+   * clipping one has silently eaten its last rows. That distinction is the whole reason `menuMax`
+   * was free to rise from 6 to 12 — the promise is not "twelve rows fit", it is "however many rows
+   * there are, the surface stays above the fold and the rest are reachable".
+   *
+   * Twelve rows at the SHIPPED default (`menuMax` is not passed, deliberately, same as 9B), at
+   * `PHONE_SMALL`, which is the only supported viewport where the cap provably binds: 72dvh of 568
+   * is ~409px against twelve ~40px rows plus their group headings and the dropdown's own padding.
+   * On the taller phone the same content fits under the 560px arm of the `min()` and there would be
+   * nothing to scroll — asserting it there would pin the fixture's row count, not the law.
+   */
+  test('a 12-row More surface scrolls inside its cap instead of clipping', async () => {
+    const p = await openFixture(
+      {
+        nav: { maxTabs: 5 },
+        sections: [
+          { label: 'Home', items: [{ key: 'home', label: 'Home', mobile: 'tab', active: true }] },
+          { label: 'Library', items: pages(12, 'lib') },
+        ],
+      },
+      PHONE_SMALL,
+    )
+    await p.tap(tab('More'))
+    await p.waitFor(MENU)
+
+    const menu = await p.box('More menu', MENU)
+    const bar = await p.box('bar', BAR)
+    expectFullyInside(
+      menu,
+      above(bar, p.viewport),
+      'twelve rows is the shipped `menuMax` ceiling, and the surface at the ceiling must still ' +
+        'clear the bar — `flip: false` means a dropdown that does not fit is simply off-screen',
+      p.viewport,
+    )
+    expectScrolls(
+      'More menu',
+      await p.scroll(MENU),
+      'the dropdown must SCROLL past its cap, not clip at it — `max-height` with no scroll range ' +
+        'is a surface that silently drops its last destinations, which is the failure mode a ' +
+        'height bound on its own cannot tell apart from a correct one',
+    )
+  })
+
+  /**
    * INVARIANT 7 — the active indicator survives an icon-less consumer.
    *
    * basalt ships no icon dependency and supports a consumer that ships none either (image-share
