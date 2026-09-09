@@ -1,3 +1,11 @@
+## [1.30.1](https://github.com/jkrumm/basalt-ui/compare/v1.30.0...v1.30.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* automate MIGRATING's release rename, and correct what 1.30.0 published ([e8b03fa](https://github.com/jkrumm/basalt-ui/commit/e8b03fa35cb02fc7358933b9168d5a4c7506c92e))
+* make the responsive chart height reachable and the legend cap honoured ([5ab5bad](https://github.com/jkrumm/basalt-ui/commit/5ab5badbbbb4d2ed7962313b467e699f33f17554))
+
 # [1.30.0](https://github.com/jkrumm/basalt-ui/compare/v1.29.2...v1.30.0) (2026-09-09)
 
 
