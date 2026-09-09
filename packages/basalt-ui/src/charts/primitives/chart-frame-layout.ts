@@ -260,9 +260,10 @@ export function resolveLegendRollup(input: {
  *   column with `height: auto`, so that growth is automatic. Under `fill` the box CANNOT grow, so
  *   the legend is capped instead ({@link legendEntryCap}) — UNLESS the caller stated
  *   `legend.maxRows`, which is `legendWins`: there the floor itself yields, because a floor is a
- *   default and the caller's number is not. An unmeasured box (`resolvedHeight <= 0`, i.e. a
- *   `fill` frame before its first measurement) stays at 0 and renders nothing, exactly as before —
- *   the floor must never invent a height for a box nobody has measured.
+ *   default and the caller's number is not, but only as far as the box HAS room
+ *   ({@link SELF_MEASURED_SLACK}). An unmeasured box (`resolvedHeight <= 0`, i.e. a `fill` frame
+ *   before its first measurement) stays at 0 and renders nothing, exactly as before — the floor
+ *   must never invent a height for a box nobody has measured.
  */
 export function resolvePlotRect(input: {
   containerW: number
@@ -288,11 +289,44 @@ export function resolvePlotRect(input: {
     topBottomLegendHeight,
     legendWins = false,
   } = input
-  const plotFloor = legendWins ? 0 : VX.minPlotHeight
+  const room = resolvedHeight - topBottomLegendHeight
+  const plotFloor = legendWins && !isSelfMeasured(room) ? 0 : VX.minPlotHeight
   return {
     width: containerW === 0 ? minWidth : Math.max(containerW - sideLegendWidth, 1),
-    height: resolvedHeight <= 0 ? 0 : Math.max(resolvedHeight - topBottomLegendHeight, plotFloor),
+    height: resolvedHeight <= 0 ? 0 : Math.max(room, plotFloor),
   }
+}
+
+/**
+ * Sub-pixel slack on "the frame measures its own legend band and nothing else".
+ *
+ * MEASURED exact in the collapse this guards (both `ResizeObserver` contentRects read 29.375 in
+ * headless Chrome, `tests/layout/charts.layout.test.ts` INVARIANT 7) — the slack exists only so a
+ * future rounding or border difference between the two observers cannot re-open a fixpoint that
+ * has no other way out. A plot this thin has nothing to draw either way.
+ */
+const SELF_MEASURED_SLACK = 0.5
+
+/**
+ * Is the frame's height its OWN content rather than a box something else stated?
+ *
+ * `ChartFrame` measures its own node (`useChartSize` → visx `useParentSize` observes the element
+ * the ref is attached to, its name notwithstanding), and under `fill` its `height: 100%` resolves
+ * to `auto` in any parent that states no height. Its only children are the plot and the legend, so
+ * `room === 0` means the box IS the legend band — which happens exactly when no plot was drawn.
+ *
+ * That is why `legendWins` cannot yield the floor there: with the floor gone the sequence has a
+ * FIXPOINT AT ZERO — plot 0 → content is the legend → box = band → room 0 → plot 0, forever, and
+ * the chart never appears. Keeping the floor while `room` is 0 converges on the same box a `fill`
+ * frame in an unsized parent has always had (plot `VX.minPlotHeight`, box = plot + band), from
+ * which `room` is positive and `legendWins` applies normally.
+ *
+ * A NEGATIVE `room` is not this case and must keep yielding: a self-measured box can never be
+ * shorter than its own content, so a band taller than the box means the box was stated by
+ * something else, and spending all of it on legend rows is the caller's own arithmetic.
+ */
+function isSelfMeasured(room: number): boolean {
+  return room >= 0 && room < SELF_MEASURED_SLACK
 }
 
 /** Height of a legend band `rows` rows tall, wrapper padding included. */

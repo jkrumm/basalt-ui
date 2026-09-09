@@ -346,6 +346,28 @@ describe('resolvePlotRect — legendWins moves the cost onto the plot, never pas
         .height,
     ).toBe(0)
   })
+
+  /**
+   * The 1.30.1 collapse. A `fill` frame measures its OWN node, so in a parent that states no height
+   * its `height: 100%` is `auto` and the box is whatever it rendered — and once the plot is 0 that
+   * box IS the legend band. `legendWins` there is a fixpoint at zero (plot 0 → box = band → plot 0)
+   * and the chart never appears; MEASURED as a 29.375px frame with no plot svg at all
+   * (`tests/layout/charts.layout.test.ts` INVARIANT 7).
+   */
+  test('a box measuring exactly its own legend band keeps the floor — the zero fixpoint', () => {
+    const collapsed = { ...box, resolvedHeight: 94, topBottomLegendHeight: 94, legendWins: true }
+    expect(resolvePlotRect(collapsed).height).toBe(VX.minPlotHeight)
+  })
+
+  test('and one frame later, with room, legendWins applies again — a stable 120', () => {
+    const grown = {
+      ...box,
+      resolvedHeight: VX.minPlotHeight + 94,
+      topBottomLegendHeight: 94,
+      legendWins: true,
+    }
+    expect(resolvePlotRect(grown).height).toBe(VX.minPlotHeight)
+  })
 })
 
 /**

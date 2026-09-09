@@ -34,6 +34,9 @@ const DESKTOP: Viewport = { name: 'desktop', width: 1440, height: 900 }
 
 const FRAME = '[data-testid="chart-frame"]'
 const SVG = `${FRAME} svg`
+/** The PLOT's own svg, and only it — `SVG` also matches the nested `<svg>` visx's axis wraps each
+ * tick label in, so a bare `count(SVG)` is 6 on a chart with 5 ticks and cannot say "no plot". */
+const PLOT_SVG = `${FRAME} > div > svg`
 /** The `HoverOverlay` — focusable and `role="slider"` whenever the chart wires a keyboard handler,
  * which `CartesianChart` always does (`primitives/HoverOverlay.tsx`). */
 const OVERLAY = `${FRAME} rect[role="slider"]`
@@ -236,6 +239,74 @@ layout('Charts — real layout', () => {
       svg,
       VX.minPlotHeight,
       'expanding the phone legend rollup must not shrink the plot below its floor',
+    )
+  })
+
+  /**
+   * INVARIANT 7 — a stated `legend.maxRows` on a `fill` frame must never cost the chart ITSELF
+   * (1.30.1's `legendWins`). `legendWins` drops `resolvePlotRect`'s `VX.minPlotHeight` floor to 0
+   * so the caller's row count is honoured out of the frame's own cell; the cell is `containerH`,
+   * which `ChartFrame` measures on its OWN node (`useChartSize` → visx `useParentSize` observes the
+   * element the ref is on, its name notwithstanding). In an UNSIZED parent the frame's `height:
+   * 100%` therefore resolves against nothing and the only content it has is the legend — so the
+   * floor was the sole thing lifting it off zero, and dropping it has a FIXPOINT at zero: plot 0 →
+   * content = legend → containerH = legendH → plot = max(legendH − legendH, 0) = 0, forever.
+   *
+   * happy-dom cannot see one frame of this: `getBoundingClientRect` is a bare `DOMRect` and there
+   * is no `ResizeObserver` feedback loop to converge at all.
+   */
+  test('a stated maxRows on a fill frame in an UNSIZED parent still draws a plot', async () => {
+    const p = await openFixture(
+      chartFixture({ kind: 'bandStrip', fill: true, legendEntries: 7, legendMaxRows: 3 }),
+      PHONE,
+    )
+    await p.quiesce()
+
+    expect(await p.count(PLOT_SVG)).toBe(1)
+    const svg = await p.box('svg', SVG)
+    expectHeightAtLeast(
+      svg,
+      VX.minPlotHeight,
+      'a fill frame whose parent states no height has only its own content to measure — a stated ' +
+        'legend.maxRows must not be able to settle it at a zero-height plot',
+    )
+  })
+
+  /**
+   * INVARIANT 7, the CONTROL — the documented `fill` shape (a parent that states a height) is
+   * unaffected: the legend takes the rows it asked for and the plot takes the REST of the cell,
+   * below `VX.minPlotHeight` if that is what the caller's arithmetic comes to. That yielding is
+   * the whole point of `legendWins` and must survive whatever fixes the unsized case.
+   */
+  test('a stated maxRows on a fill frame in a SIZED parent yields the cell to the legend', async () => {
+    const p = await openFixture(
+      chartFixture({
+        kind: 'bandStrip',
+        fill: true,
+        legendEntries: 7,
+        legendMaxRows: 3,
+        containerHeight: 150,
+      }),
+      PHONE,
+    )
+    await p.quiesce()
+
+    const frame = await p.box('chart frame', FRAME)
+    expect(frame.box.height).toBeGreaterThanOrEqual(148)
+    expect(frame.box.height).toBeLessThanOrEqual(152)
+
+    expect(await p.count(PLOT_SVG)).toBe(1)
+    const svg = await p.box('svg', SVG)
+    expect(svg.box.height).toBeGreaterThan(0)
+    // The caller stated 3 and there are 7 entries, so the rollup chip is present and the legend is
+    // NOT trimmed below the stated number by the measured fit — 1.30.1's actual promise.
+    expect(await p.count(LEGEND_ENTRY)).toBe(3)
+    expect(await p.count(LEGEND_MORE)).toBe(1)
+    expectFullyInside(
+      svg,
+      frame,
+      'the plot yields height to the stated legend rows, but never spills past the cell it was ' +
+        'given',
     )
   })
 })
