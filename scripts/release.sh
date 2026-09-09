@@ -43,6 +43,7 @@ PACKAGE_PATH="packages/basalt-ui"
 REPO_URL="https://github.com/jkrumm/basalt-ui"
 RUN_TIMEOUT=1800  # 30m — a release run takes ~1m; this only ever fires on a wedge.
 START_TIMEOUT=180 # 3m for a dispatched/triggered run to appear.
+REGISTRY_TIMEOUT=300 # 5m for the published version to be readable from the registry.
 
 die() {
   echo "✖ $*" >&2
@@ -113,6 +114,31 @@ await_completion() {
   done
   [ "$(gh run view "$id" --json conclusion --jq .conclusion)" = "success" ] ||
     die "'$workflow' run $id failed — $REPO_URL/actions/runs/$id"
+}
+
+# Poll the registry until it actually serves the version that was just published, and FAIL if it
+# never does.
+#
+# This exists because the line it replaces was a single unretried `npm view` interpolated into the
+# success message — so the script could, and did, print `✔ basalt-ui v1.30.1 published — registry
+# reports 1.30.0` and exit 0. The whole reason this wrapper exists rather than a bare
+# `gh workflow run` is that a green exit means "on npm" (see CLAUDE.md § Release Process); a claim
+# printed beside evidence contradicting it is worse than no claim, because it is the line a reader
+# trusts instead of checking.
+#
+# Two independent reasons the read was stale, and the fix has to cover both: the registry needs a
+# moment to serve a just-published version, and `npm view` will answer from the local cache without
+# revalidating. `--prefer-online` forces the revalidation; the loop covers the propagation. A read
+# that fails outright (network, registry 5xx) is retried rather than treated as a mismatch — only a
+# DEFINITE wrong version, or the deadline, ends this.
+await_registry() {
+  local want="$1" deadline=$((SECONDS + REGISTRY_TIMEOUT)) got
+  while :; do
+    got=$(npm view --prefer-online basalt-ui version 2>/dev/null || echo '')
+    [ "$got" = "$want" ] && return 0
+    [ "$SECONDS" -lt "$deadline" ] || die "npm published v$want but the registry still serves '${got:-<unreadable>}' after ${REGISTRY_TIMEOUT}s — check $REPO_URL/actions and \`npm view basalt-ui versions\` before releasing again."
+    sleep 5
+  done
 }
 
 release_run() {
@@ -191,5 +217,9 @@ publish_id=$(await_new_run "$PUBLISH_WORKFLOW" "$publish_before")
 echo "  run: $REPO_URL/actions/runs/$publish_id" >&2
 await_completion "$publish_id" "$PUBLISH_WORKFLOW"
 
+# The claim is only made once the registry has been PROVEN to serve it — see `await_registry`.
+echo "▸ confirming the registry serves v$version…" >&2
+await_registry "$version"
+
 echo
-echo "✔ basalt-ui v$version published — registry reports $(npm view basalt-ui version)"
+echo "✔ basalt-ui v$version published — registry serves $version"

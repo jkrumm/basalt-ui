@@ -205,11 +205,18 @@ make release       # dry run, show the bump, confirm, publish, wait for npm
 bypasses branch protection. **Publish to npm** fires on `release: published` and is the one holding
 the OIDC identity that pushes to the registry **with provenance**.
 
-The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync), a dry
-run **always** first with the computed version read back, one confirmation on the number itself,
-and a follow-through to the _publish_ run — so a green exit means "on npm", not "the release job
-finished". `YES=1 make release` skips only the prompt. **The wrapper hard-refuses a major** — the
-one way to get one by accident is a stray `feat!:`/`BREAKING CHANGE:` footer reaching `master`.
+The wrapper adds what a bare dispatch can't: a preflight (on `master`, clean tree, in sync, and
+`release-migrating.ts --check`), a dry run **always** first with the computed version read back
+before the real one is offered, one confirmation on the number itself, a follow-through to the
+_publish_ run, and then a POLL of the registry until it actually serves that version — so a green
+exit means "on npm", not "the release job finished". That last step is load-bearing and was added
+after it wasn't: v1.30.1 printed `✔ … published — registry reports 1.30.0` and exited 0, because
+the read was a single unretried `npm view` interpolated into the success message and never compared
+to anything. It now retries (`--prefer-online`, so a cached metadata document can't answer) and
+`die`s on a version that never arrives.
+
+`YES=1 make release` skips only the prompt. **The wrapper hard-refuses a major** — the one way to
+get one by accident is a stray `feat!:`/`BREAKING CHANGE:` footer reaching `master`.
 Rewrite it as a plain `feat:` and release again.
 
 **Releasing is allowed — through `make release`, and only there.** No per-release permission is
