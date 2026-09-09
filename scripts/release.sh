@@ -218,7 +218,7 @@ echo "  run: $REPO_URL/actions/runs/$publish_id" >&2
 await_completion "$publish_id" "$PUBLISH_WORKFLOW"
 
 # The claim is only made once the registry has been PROVEN to serve it — see `await_registry`.
-echo "▸ confirming the registry serves v$version…" >&2
+echo "▸ confirming the registry serves v${version}…" >&2
 await_registry "$version"
 
 echo
